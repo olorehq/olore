@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/olorehq/olore/vault/schemas/package.schema.json",
+  "title": "olore Package",
+  "description": "Schema for olore documentation package metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Package name (lowercase, alphanumeric, hyphens)",
+      "pattern": "^[a-z0-9-]+$",
+      "examples": ["prisma", "nextjs", "zod"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Package version (semver, our internal versioning)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-z0-9.]+)?$",
+      "examples": ["1.0.0", "1.2.0", "2.0.0-beta.1"]
+    },
+    "libraryVersion": {
+      "type": "string",
+      "description": "Library version this documentation covers",
+      "examples": ["5.22.0", "14.0.0", "3.24.0"]
+    },
+    "libraryVersionRange": {
+      "type": "string",
+      "description": "Semver range of supported library versions",
+      "examples": [">=5.20.0 <6.0.0", "^14.0.0", ">=3.0.0"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the package"
+    },
+    "tier": {
+      "type": "integer",
+      "enum": [1, 2, 3],
+      "description": "Skill tier (1=simple pointer, 2=structured, 3=rich)"
+    },
+    "files": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of documentation files"
+    },
+    "source": {
+      "type": "object",
+      "description": "Source provenance information",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["github", "url"],
+          "description": "Source type"
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository (owner/repo)",
+          "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Git commit SHA",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Git branch name"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path within repository"
+        }
+      },
+      "required": ["type"]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of package creation"
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude", "codex", "opencode", "mcp"]
+      },
+      "description": "Supported agent types"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "libraryVersion",
+    "description",
+    "tier",
+    "files",
+    "source",
+    "createdAt",
+    "agents"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "prisma",
+      "version": "1.2.0",
+      "libraryVersion": "5.22.0",
+      "libraryVersionRange": ">=5.20.0 <6.0.0",
+      "description": "Prisma ORM documentation for AI coding agents",
+      "tier": 3,
+      "files": 420,
+      "source": {
+        "type": "github",
+        "repo": "prisma/docs",
+        "commit": "abc1234567890def1234567890abc1234567890ab",
+        "branch": "main",
+        "path": "content"
+      },
+      "createdAt": "2026-01-15T10:30:00Z",
+      "agents": ["claude", "codex", "opencode"]
+    }
+  ]
+}
