@@ -56,31 +56,34 @@ olore focuses on skills-based agent integration today:
 
 ```
 vault/
-├── configs/                      # Source definitions
+├── configs/                      # Source definitions (human-authored)
 │   ├── prisma.json
 │   └── zod.json
-│
-└── packages/                     # Curated docs (self-contained)
-    ├── prisma-docs/
-    │   ├── 5.22.0/
-    │   │   ├── olore-lock.json
-    │   │   ├── SKILL.md
-    │   │   ├── TOC.md  # Table of contents
-    │   │   └── contents/
-    │   │       └── *.md
-    │   └── 5.20.0/
-    │       ├── olore-lock.json
-    │       ├── SKILL.md
-    │       ├── TOC.md
-    │       └── contents/
-    │           └── *.md
-    └── zod-docs/
-        └── 3.24.0/
-            ├── olore-lock.json
-            ├── SKILL.md
-            ├── TOC.md
-            └── contents/
-                └── *.md
+├── packages/                     # Built docs (source of truth)
+│   ├── prisma/
+│   │   └── latest/
+│   │       ├── olore-lock.json   # Build metadata
+│   │       ├── SKILL.md
+│   │       ├── TOC.md
+│   │       └── contents/
+│   │           └── *.md
+│   └── zod/
+│       ├── latest/
+│       └── 3/
+└── schemas/                      # JSON schemas for validation
+
+web/
+├── scripts/
+│   └── generate-registry.ts      # Generates registry at build time
+├── public/
+│   └── registry/                 # Generated (gitignored)
+│       ├── index.json
+│       └── packages/*.json
+└── src/                          # Landing page
+
+.github/
+└── workflows/
+    └── publish-packages.yml      # Creates tarballs → GitHub Releases
 ```
 
 ### User Installation
@@ -145,41 +148,76 @@ See [package-format.md](package-format.md) for full specification.
 
 ## Registry
 
-Packages are distributed via GitHub Releases. The registry maps **library versions** to **package versions**:
+The registry is **generated at Vercel build time**, not committed to git. It is a derived artifact from:
+1. `olore-lock.json` files in `vault/packages/` (source of truth, in git)
+2. GitHub Releases metadata (queried via API at build time)
+
+See [ADR-0005](adr/0005-registry-generation-at-build-time.md) for full details.
+
+### Registry URL
+
+```
+https://olore.dev/registry/index.json          # Package index
+https://olore.dev/registry/packages/{name}.json # Per-package versions
+```
+
+### Publish Flow
+
+```
+/build-docs prisma@latest
+     │ Creates vault/packages/prisma/latest/
+     │ PR merged to main
+     ▼
+GitHub Action (publish-packages.yml)
+     │ Creates tarball, uploads to GitHub Releases
+     ▼
+Vercel Build (generate-registry.ts)
+     │ Scans olore-lock.json files
+     │ Queries GitHub Releases API
+     │ Generates public/registry/*.json
+     ▼
+olore.dev/registry/ serves generated JSON
+```
+
+### Registry Format
 
 ```json
-// https://raw.githubusercontent.com/olorehq/registry/main/index.json
+// https://olore.dev/registry/index.json
 {
   "version": 1,
+  "updated": "2026-01-20T02:00:00Z",
   "packages": {
     "prisma": {
-      "latest": "5.22.0",
-      "description": "Prisma ORM documentation",
-      "versions": {
-        "5.22.0": {
-          "package": "1.2.0",
-          "tarball": "https://github.com/olorehq/packages/releases/download/prisma@1.2.0/prisma-1.2.0.tar.gz",
-          "integrity": "sha256-abc123base64...",
-          "size": 1250000,
-          "files": 420
-        },
-        "5.20.0": {
-          "package": "1.0.0",
-          "tarball": "https://github.com/olorehq/packages/releases/download/prisma@1.0.0/prisma-1.0.0.tar.gz",
-          "integrity": "sha256-def456base64...",
-          "size": 1200000,
-          "files": 415
-        }
-      }
+      "description": "Prisma ORM documentation...",
+      "latest": "latest",
+      "versions": ["latest"]
+    }
+  }
+}
+```
+
+```json
+// https://olore.dev/registry/packages/prisma.json
+{
+  "name": "prisma",
+  "description": "Prisma ORM documentation...",
+  "versions": {
+    "latest": {
+      "version": "latest",
+      "files": 438,
+      "size": 993000,
+      "integrity": "sha256-...",
+      "downloadUrl": "https://github.com/olorehq/olore/releases/download/prisma@latest/prisma-latest.tar.gz",
+      "releasedAt": "2026-01-20T01:59:29Z"
     }
   }
 }
 ```
 
 **Version resolution:**
-- `olore install prisma` → Uses `latest` (5.22.0)
-- `olore install prisma@5.22.0` → Exact match
-- `olore install prisma@5` → Highest 5.x.x version
+- `olore install prisma` → Uses `latest`
+- `olore install prisma@latest` → Exact match
+- `olore install prisma@5` → Highest 5.x version
 
 ## Install Flow
 
@@ -380,8 +418,13 @@ The internal `package-builder` agent reads these templates at runtime, ensuring 
 | CLI framework | Commander.js |
 | HTTP client | undici / fetch |
 | Compression | tar |
-| Build | tsup |
+| CLI Build | tsup |
 | Testing | Vitest |
+| Web | Next.js (App Router) |
+| Web Hosting | Vercel |
+| Registry | Generated at Vercel build time |
+| Tarballs | GitHub Releases |
+| CI/CD | GitHub Actions |
 
 ## Security
 
