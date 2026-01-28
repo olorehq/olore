@@ -1,0 +1,333 @@
+---
+title: Long-term memory
+---
+
+## Overview
+
+LangChain agents use [LangGraph persistence](/oss/langgraph/persistence#memory-store) to enable long-term memory. This is a more advanced topic and requires knowledge of LangGraph to use.
+
+
+## Memory storage
+
+LangGraph stores long-term memories as JSON documents in a [store](/oss/langgraph/persistence#memory-store).
+
+Each memory is organized under a custom `namespace` (similar to a folder) and a distinct `key` (like a file name). Namespaces often include user or org IDs or other labels that makes it easier to organize information.
+
+This structure enables hierarchical organization of memories. Cross-namespace searching is then supported through content filters.
+
+:::python
+```python
+from langgraph.store.memory import InMemoryStore
+
+
+def embed(texts: list[str]) -> list[list[float]]:
+    # Replace with an actual embedding function or LangChain embeddings object
+    return [[1.0, 2.0] * len(texts)]
+
+
+# InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production use.
+store = InMemoryStore(index={"embed": embed, "dims": 2}) # [!code highlight]
+user_id = "my-user"
+application_context = "chitchat"
+namespace = (user_id, application_context) # [!code highlight]
+store.put( # [!code highlight]
+    namespace,
+    "a-memory",
+    {
+        "rules": [
+            "User likes short, direct language",
+            "User only speaks English & python",
+        ],
+        "my-key": "my-value",
+    },
+)
+# get the "memory" by ID
+item = store.get(namespace, "a-memory") # [!code highlight]
+# search for "memories" within this namespace, filtering on content equivalence, sorted by vector similarity
+items = store.search( # [!code highlight]
+    namespace, filter={"my-key": "my-value"}, query="language preferences"
+)
+```
+:::
+
+:::js
+```typescript
+import { InMemoryStore } from "@langchain/langgraph";
+
+const embed = (texts: string[]): number[][] => {
+    // Replace with an actual embedding function or LangChain embeddings object
+    return texts.map(() => [1.0, 2.0]);
+};
+
+// InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production use.
+const store = new InMemoryStore({ index: { embed, dims: 2 } }); // [!code highlight]
+const userId = "my-user";
+const applicationContext = "chitchat";
+const namespace = [userId, applicationContext]; // [!code highlight]
+
+await store.put( // [!code highlight]
+    namespace,
+    "a-memory",
+    {
+        rules: [
+            "User likes short, direct language",
+            "User only speaks English & TypeScript",
+        ],
+        "my-key": "my-value",
+    }
+);
+
+// get the "memory" by ID
+const item = await store.get(namespace, "a-memory"); // [!code highlight]
+
+// search for "memories" within this namespace, filtering on content equivalence, sorted by vector similarity
+const items = await store.search( // [!code highlight]
+    namespace,
+    {
+        filter: { "my-key": "my-value" },
+        query: "language preferences"
+    }
+);
+```
+:::
+
+For more information about the memory store, see the [Persistence](/oss/langgraph/persistence#memory-store) guide.
+
+## Read long-term memory in tools
+
+:::python
+```python A tool the agent can use to look up user information
+from dataclasses import dataclass
+
+from langchain_core.runnables import RunnableConfig
+from langchain.agents import create_agent
+from langchain.tools import tool, ToolRuntime
+from langgraph.store.memory import InMemoryStore
+
+
+@dataclass
+class Context:
+    user_id: str
+
+# InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production.
+store = InMemoryStore() # [!code highlight]
+
+# Write sample data to the store using the put method
+store.put( # [!code highlight]
+    ("users",),  # Namespace to group related data together (users namespace for user data)
+    "user_123",  # Key within the namespace (user ID as key)
+    {
+        "name": "John Smith",
+        "language": "English",
+    }  # Data to store for the given user
+)
+
+@tool
+def get_user_info(runtime: ToolRuntime[Context]) -> str:
+    """Look up user info."""
+    # Access the store - same as that provided to `create_agent`
+    store = runtime.store # [!code highlight]
+    user_id = runtime.context.user_id
+    # Retrieve data from store - returns StoreValue object with value and metadata
+    user_info = store.get(("users",), user_id) # [!code highlight]
+    return str(user_info.value) if user_info else "Unknown user"
+
+agent = create_agent(
+    model="claude-sonnet-4-5-20250929",
+    tools=[get_user_info],
+    # Pass store to agent - enables agent to access store when running tools
+    store=store, # [!code highlight]
+    context_schema=Context
+)
+
+# Run the agent
+agent.invoke(
+    {"messages": [{"role": "user", "content": "look up user information"}]},
+    context=Context(user_id="user_123") # [!code highlight]
+)
+```
+
+:::
+
+:::js
+```typescript A tool the agent can use to look up user information
+import * as z from "zod";
+import { createAgent, tool, type ToolRuntime } from "langchain";
+import { InMemoryStore } from "@langchain/langgraph";
+
+// InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production.
+const store = new InMemoryStore(); // [!code highlight]
+const contextSchema = z.object({
+  userId: z.string(),
+});
+
+// Write sample data to the store using the put method
+await store.put( // [!code highlight]
+  ["users"], // Namespace to group related data together (users namespace for user data)
+  "user_123", // Key within the namespace (user ID as key)
+  {
+    name: "John Smith",
+    language: "English",
+  } // Data to store for the given user
+);
+
+const getUserInfo = tool(
+  // Look up user info.
+  async (_, runtime: ToolRuntime<unknown, z.infer<typeof contextSchema>>) => {
+    // Access the store - same as that provided to `createAgent`
+    const userId = runtime.context.userId;
+    if (!userId) {
+      throw new Error("userId is required");
+    }
+    // Retrieve data from store - returns StoreValue object with value and metadata
+    const userInfo = await runtime.store.get(["users"], userId);
+    return userInfo?.value ? JSON.stringify(userInfo.value) : "Unknown user";
+  },
+  {
+    name: "getUserInfo",
+    description: "Look up user info by userId from the store.",
+    schema: z.object({}),
+  }
+);
+
+const agent = createAgent({
+  model: "gpt-4o-mini",
+  tools: [getUserInfo],
+  contextSchema,
+  // Pass store to agent - enables agent to access store when running tools
+  store, // [!code highlight]
+});
+
+// Run the agent
+const result = await agent.invoke(
+  { messages: [{ role: "user", content: "look up user information" }] },
+  { context: { userId: "user_123" } } // [!code highlight]
+);
+
+console.log(result.messages.at(-1)?.content);
+
+/**
+ * Outputs:
+ * User Information:
+ * - Name: John Smith
+ * - Language: English
+ */
+```
+
+:::
+
+<a id="write-long-term"></a>
+## Write long-term memory from tools
+
+:::python
+```python Example of a tool that updates user information
+from dataclasses import dataclass
+from typing_extensions import TypedDict
+
+from langchain.agents import create_agent
+from langchain.tools import tool, ToolRuntime
+from langgraph.store.memory import InMemoryStore
+
+
+# InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production.
+store = InMemoryStore() # [!code highlight]
+
+@dataclass
+class Context:
+    user_id: str
+
+# TypedDict defines the structure of user information for the LLM
+class UserInfo(TypedDict):
+    name: str
+
+# Tool that allows agent to update user information (useful for chat applications)
+@tool
+def save_user_info(user_info: UserInfo, runtime: ToolRuntime[Context]) -> str:
+    """Save user info."""
+    # Access the store - same as that provided to `create_agent`
+    store = runtime.store # [!code highlight]
+    user_id = runtime.context.user_id # [!code highlight]
+    # Store data in the store (namespace, key, data)
+    store.put(("users",), user_id, user_info) # [!code highlight]
+    return "Successfully saved user info."
+
+agent = create_agent(
+    model="claude-sonnet-4-5-20250929",
+    tools=[save_user_info],
+    store=store, # [!code highlight]
+    context_schema=Context
+)
+
+# Run the agent
+agent.invoke(
+    {"messages": [{"role": "user", "content": "My name is John Smith"}]},
+    # user_id passed in context to identify whose information is being updated
+    context=Context(user_id="user_123") # [!code highlight]
+)
+
+# You can access the store directly to get the value
+store.get(("users",), "user_123").value
+```
+
+:::
+
+:::js
+```typescript Example of a tool that updates user information
+import * as z from "zod";
+import { tool, createAgent, type ToolRuntime } from "langchain";
+import { InMemoryStore } from "@langchain/langgraph";
+
+// InMemoryStore saves data to an in-memory dictionary. Use a DB-backed store in production.
+const store = new InMemoryStore(); // [!code highlight]
+
+const contextSchema = z.object({
+  userId: z.string(),
+});
+
+// Schema defines the structure of user information for the LLM
+const UserInfo = z.object({
+  name: z.string(),
+});
+
+// Tool that allows agent to update user information (useful for chat applications)
+const saveUserInfo = tool(
+  async (
+    userInfo: z.infer<typeof UserInfo>,
+    runtime: ToolRuntime<unknown, z.infer<typeof contextSchema>>
+  ) => {
+    const userId = runtime.context.userId;
+    if (!userId) {
+      throw new Error("userId is required");
+    }
+    // Store data in the store (namespace, key, data)
+    await runtime.store.put(["users"], userId, userInfo);
+    return "Successfully saved user info.";
+  },
+  {
+    name: "save_user_info",
+    description: "Save user info",
+    schema: UserInfo,
+  }
+);
+
+const agent = createAgent({
+  model: "gpt-4o-mini",
+  tools: [saveUserInfo],
+  contextSchema,
+  store, // [!code highlight]
+});
+
+// Run the agent
+await agent.invoke(
+  { messages: [{ role: "user", content: "My name is John Smith" }] },
+  // userId passed in context to identify whose information is being updated
+  { context: { userId: "user_123" } } // [!code highlight]
+);
+
+// You can access the store directly to get the value
+const result = await store.get(["users"], "user_123");
+console.log(result?.value); // Output: { name: "John Smith" }
+
+```
+
+:::

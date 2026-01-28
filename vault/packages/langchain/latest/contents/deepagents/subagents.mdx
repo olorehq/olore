@@ -1,0 +1,734 @@
+---
+title: Subagents
+description: Learn how to use subagents to delegate work and keep context clean
+---
+
+Deep agents can create subagents to delegate work. You can specify custom subagents in the `subagents` parameter. Subagents are useful for [context quarantine](https://www.dbreunig.com/2025/06/26/how-to-fix-your-context.html#context-quarantine) (keeping the main agent's context clean) and for providing specialized instructions.
+
+```mermaid
+graph TB
+    Main[Main Agent] --> |task tool| Sub[Subagent]
+
+    Sub --> Research[Research]
+    Sub --> Code[Code]
+    Sub --> General[General]
+
+    Research --> |isolated work| Result[Final Result]
+    Code --> |isolated work| Result
+    General --> |isolated work| Result
+
+    Result --> Main
+```
+
+## Why use subagents?
+
+Subagents solve the **context bloat problem**. When agents use tools with large outputs (web search, file reads, database queries), the context window fills up quickly with intermediate results. Subagents isolate this detailed work—the main agent receives only the final result, not the dozens of tool calls that produced it.
+
+**When to use subagents:**
+- ✅ Multi-step tasks that would clutter the main agent's context
+- ✅ Specialized domains that need custom instructions or tools
+- ✅ Tasks requiring different model capabilities
+- ✅ When you want to keep the main agent focused on high-level coordination
+
+**When NOT to use subagents:**
+- ❌ Simple, single-step tasks
+- ❌ When you need to maintain intermediate context
+- ❌ When the overhead outweighs benefits
+
+## Configuration
+
+`subagents` should be a list of dictionaries or `CompiledSubAgent` objects. There are two types:
+
+### SubAgent (Dictionary-based)
+
+For most use cases, define subagents as dictionaries:
+
+**Required fields:**
+
+<ParamField body="name" type="str" required>
+    Unique identifier for the subagent.
+    The main agent uses this name when calling the `task()` tool.
+    The subagent name becomes metadata for `AIMessage`s and for streaming, which helps to differentiate between agents.
+</ParamField>
+
+<ParamField body="description" type="str" required>
+    What this subagent does. Be specific and action-oriented. The main agent uses this to decide when to delegate.
+</ParamField>
+
+<ParamField body="system_prompt" type="str" required>
+    Instructions for the subagent. Include tool usage guidance and output format requirements.
+</ParamField>
+
+<ParamField body="tools" type="list[Callable]" required>
+    Tools the subagent can use. Keep this minimal and include only what's needed.
+</ParamField>
+
+**Optional fields:**
+
+<ParamField body="model" type="str | BaseChatModel">
+    Override the main agent's model. Use the format `'provider:model-name'` (for example, `'openai:gpt-4o'`).
+</ParamField>
+
+<ParamField body="middleware" type="list[Middleware]">
+    Additional middleware for custom behavior, logging, or rate limiting.
+</ParamField>
+
+<ParamField body="interrupt_on" type="dict[str, bool]">
+    Configure human-in-the-loop for specific tools. Requires a checkpointer.
+</ParamField>
+
+### CompiledSubAgent
+
+For complex workflows, use a pre-built LangGraph graph:
+
+<ParamField body="name" type="str" required>
+    Unique identifier for the subagent.
+    The subagent name becomes metadata for `AIMessage`s and for streaming, which helps to differentiate between agents.
+</ParamField>
+
+<ParamField body="description" type="str" required>
+    What this subagent does.
+</ParamField>
+
+<ParamField body="runnable" type="Runnable" required>
+    A compiled LangGraph graph (must call `.compile()` first).
+</ParamField>
+
+## Using SubAgent
+
+:::python
+```python
+import os
+from typing import Literal
+from tavily import TavilyClient
+from deepagents import create_deep_agent
+
+tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
+def internet_search(
+    query: str,
+    max_results: int = 5,
+    topic: Literal["general", "news", "finance"] = "general",
+    include_raw_content: bool = False,
+):
+    """Run a web search"""
+    return tavily_client.search(
+        query,
+        max_results=max_results,
+        include_raw_content=include_raw_content,
+        topic=topic,
+    )
+
+research_subagent = {
+    "name": "research-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [internet_search],
+    "model": "openai:gpt-4o",  # Optional override, defaults to main agent model
+}
+subagents = [research_subagent]
+
+agent = create_deep_agent(
+    model="claude-sonnet-4-5-20250929",
+    subagents=subagents
+)
+```
+:::
+
+:::js
+```typescript
+import { tool } from "langchain";
+import { TavilySearch } from "@langchain/tavily";
+import { createDeepAgent } from "deepagents";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { z } from "zod";
+
+const internetSearch = tool(
+  async ({
+    query,
+    maxResults = 5,
+    topic = "general",
+    includeRawContent = false,
+  }: {
+    query: string;
+    maxResults?: number;
+    topic?: "general" | "news" | "finance";
+    includeRawContent?: boolean;
+  }) => {
+    const tavilySearch = new TavilySearch({
+      maxResults,
+      tavilyApiKey: process.env.TAVILY_API_KEY,
+      includeRawContent,
+      topic,
+    });
+    return await tavilySearch._call({ query });
+  },
+  {
+    name: "internet_search",
+    description: "Run a web search",
+    schema: z.object({
+      query: z.string().describe("The search query"),
+      maxResults: z.number().optional().default(5),
+      topic: z
+        .enum(["general", "news", "finance"])
+        .optional()
+        .default("general"),
+      includeRawContent: z.boolean().optional().default(false),
+    }),
+  },
+);
+
+const researchSubagent = {
+  name: "research-agent",
+  description: "Used to research more in depth questions",
+  systemPrompt: "You are a great researcher",
+  tools: [internetSearch],
+  model: new ChatAnthropic({model:"claude-sonnet-4-5-20250929"}),  // Optional override, defaults to main agent model
+};
+const subagents = [researchSubagent];
+
+const agent = createDeepAgent({
+  model: new ChatAnthropic({model:"claude-sonnet-4-5-20250929"}),
+  subagents: subagents,
+});
+```
+:::
+
+## Using CompiledSubAgent
+
+For more complex use cases, you can provide your custom subagents.
+You can create a custom subagent using LangChain's `create_agent` or by making a custom LangGraph graph using the [graph API](https://github.com/langchain-ai/docs/pull/).
+
+If you're creating a custom LangGraph graph, make sure that the graph has a [state key called `"messages"`](/oss/langgraph/quickstart#2-define-state):
+
+:::python
+```python
+from deepagents import create_deep_agent, CompiledSubAgent
+from langchain.agents import create_agent
+
+# Create a custom agent graph
+custom_graph = create_agent(
+    model=your_model,
+    tools=specialized_tools,
+    prompt="You are a specialized agent for data analysis..."
+)
+
+# Use it as a custom subagent
+custom_subagent = CompiledSubAgent(
+    name="data-analyzer",
+    description="Specialized agent for complex data analysis tasks",
+    runnable=custom_graph
+)
+
+subagents = [custom_subagent]
+
+agent = create_deep_agent(
+    model="claude-sonnet-4-5-20250929",
+    tools=[internet_search],
+    system_prompt=research_instructions,
+    subagents=subagents
+)
+```
+:::
+
+:::js
+```typescript
+import { createDeepAgent, CompiledSubAgent } from "deepagents";
+import { createAgent } from "langchain";
+
+// Create a custom agent graph
+const customGraph = createAgent({
+  model: yourModel,
+  tools: specializedTools,
+  prompt: "You are a specialized agent for data analysis...",
+});
+
+// Use it as a custom subagent
+const customSubagent: CompiledSubAgent = {
+  name: "data-analyzer",
+  description: "Specialized agent for complex data analysis tasks",
+  runnable: customGraph,
+};
+
+const subagents = [customSubagent];
+
+const agent = createDeepAgent({
+  model: "claude-sonnet-4-5-20250929",
+  tools: [internetSearch],
+  systemPrompt: researchInstructions,
+  subagents: subagents,
+});
+```
+:::
+
+## Streaming
+
+When streaming tracing information agents' names are available as `lc_agent_name` in metadata.
+When reviewing tracing information, you can use this metadata to differentiate which agent the data came from.
+
+The following example creates a deep agent with the name `main-agent` and a subagent with the name `research-agent`:
+
+```python
+import os
+from typing import Literal
+from tavily import TavilyClient
+from deepagents import create_deep_agent
+
+tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
+def internet_search(
+    query: str,
+    max_results: int = 5,
+    topic: Literal["general", "news", "finance"] = "general",
+    include_raw_content: bool = False,
+):
+    """Run a web search"""
+    return tavily_client.search(
+        query,
+        max_results=max_results,
+        include_raw_content=include_raw_content,
+        topic=topic,
+    )
+
+research_subagent = {
+    "name": "research-agent",
+    "description": "Used to research more in depth questions",
+    "system_prompt": "You are a great researcher",
+    "tools": [internet_search],
+    "model": "claude-sonnet-4-5-20250929",  # Optional override, defaults to main agent model
+}
+subagents = [research_subagent]
+
+agent = create_deep_agent(
+    model="claude-sonnet-4-5-20250929",
+    subagents=subagents,
+    name="main-agent"
+)
+```
+
+As you prompt your deepagents, all agent runs executed by a subagent or deep agent will have the agent name in their metadata.
+In this case the subagent with the name `"research-agent"`, will have `{'lc_agent_name': 'research-agent'}` in any associated agent run metadata:
+
+![LangSmith Example trace showing the metadata](/oss/images/deepagents/deepagents-langsmith.png)
+
+## The general-purpose subagent
+
+In addition to any user-defined subagents, deep agents have access to a `general-purpose` subagent at all times. This subagent:
+- Has the same system prompt as the main agent
+- Has access to all the same tools
+- Uses the same model (unless overridden)
+
+### When to use it
+
+The general-purpose subagent is ideal for context isolation without specialized behavior. The main agent can delegate a complex multi-step task to this subagent and get a concise result back without bloat from intermediate tool calls.
+
+<Card title="Example">
+    Instead of the main agent making 10 web searches and filling its context with results, it delegates to the general-purpose subagent: `task(name="general-purpose", task="Research quantum computing trends")`. The subagent performs all the searches internally and returns only a summary.
+</Card>
+
+## Best practices
+
+### Write clear descriptions
+
+The main agent uses descriptions to decide which subagent to call. Be specific:
+
+✅ **Good:** `"Analyzes financial data and generates investment insights with confidence scores"`
+
+❌ **Bad:** `"Does finance stuff"`
+
+### Keep system prompts detailed
+
+Include specific guidance on how to use tools and format outputs:
+
+:::python
+```python
+research_subagent = {
+    "name": "research-agent",
+    "description": "Conducts in-depth research using web search and synthesizes findings",
+    "system_prompt": """You are a thorough researcher. Your job is to:
+
+    1. Break down the research question into searchable queries
+    2. Use internet_search to find relevant information
+    3. Synthesize findings into a comprehensive but concise summary
+    4. Cite sources when making claims
+
+    Output format:
+    - Summary (2-3 paragraphs)
+    - Key findings (bullet points)
+    - Sources (with URLs)
+
+    Keep your response under 500 words to maintain clean context.""",
+    "tools": [internet_search],
+}
+```
+:::
+
+:::js
+```typescript
+const researchSubagent = {
+  name: "research-agent",
+  description: "Conducts in-depth research using web search and synthesizes findings",
+  systemPrompt: `You are a thorough researcher. Your job is to:
+
+  1. Break down the research question into searchable queries
+  2. Use internet_search to find relevant information
+  3. Synthesize findings into a comprehensive but concise summary
+  4. Cite sources when making claims
+
+  Output format:
+  - Summary (2-3 paragraphs)
+  - Key findings (bullet points)
+  - Sources (with URLs)
+
+  Keep your response under 500 words to maintain clean context.`,
+  tools: [internetSearch],
+};
+```
+:::
+
+### Minimize tool sets
+
+Only give subagents the tools they need. This improves focus and security:
+
+:::python
+```python
+# ✅ Good: Focused tool set
+email_agent = {
+    "name": "email-sender",
+    "tools": [send_email, validate_email],  # Only email-related
+}
+
+# ❌ Bad: Too many tools
+email_agent = {
+    "name": "email-sender",
+    "tools": [send_email, web_search, database_query, file_upload],  # Unfocused
+}
+```
+:::
+
+:::js
+```typescript
+// ✅ Good: Focused tool set
+const emailAgent = {
+  name: "email-sender",
+  tools: [sendEmail, validateEmail],  // Only email-related
+};
+
+// ❌ Bad: Too many tools
+const emailAgentBad = {
+  name: "email-sender",
+  tools: [sendEmail, webSearch, databaseQuery, fileUpload],  // Unfocused
+};
+```
+:::
+
+### Choose models by task
+
+Different models excel at different tasks:
+
+:::python
+```python
+subagents = [
+    {
+        "name": "contract-reviewer",
+        "description": "Reviews legal documents and contracts",
+        "system_prompt": "You are an expert legal reviewer...",
+        "tools": [read_document, analyze_contract],
+        "model": "claude-sonnet-4-5-20250929",  # Large context for long documents
+    },
+    {
+        "name": "financial-analyst",
+        "description": "Analyzes financial data and market trends",
+        "system_prompt": "You are an expert financial analyst...",
+        "tools": [get_stock_price, analyze_fundamentals],
+        "model": "openai:gpt-5",  # Better for numerical analysis
+    },
+]
+```
+:::
+
+:::js
+```typescript
+const subagents = [
+  {
+    name: "contract-reviewer",
+    description: "Reviews legal documents and contracts",
+    systemPrompt: "You are an expert legal reviewer...",
+    tools: [readDocument, analyzeContract],
+    model: "claude-sonnet-4-5-20250929",  // Large context for long documents
+  },
+  {
+    name: "financial-analyst",
+    description: "Analyzes financial data and market trends",
+    systemPrompt: "You are an expert financial analyst...",
+    tools: [getStockPrice, analyzeFundamentals],
+    model: "gpt-5",  // Better for numerical analysis
+  },
+];
+```
+:::
+
+### Return concise results
+
+Instruct subagents to return summaries, not raw data:
+
+:::python
+```python
+data_analyst = {
+    "system_prompt": """Analyze the data and return:
+    1. Key insights (3-5 bullet points)
+    2. Overall confidence score
+    3. Recommended next actions
+
+    Do NOT include:
+    - Raw data
+    - Intermediate calculations
+    - Detailed tool outputs
+
+    Keep response under 300 words."""
+}
+```
+:::
+
+:::js
+```typescript
+const dataAnalyst = {
+  systemPrompt: `Analyze the data and return:
+  1. Key insights (3-5 bullet points)
+  2. Overall confidence score
+  3. Recommended next actions
+
+  Do NOT include:
+  - Raw data
+  - Intermediate calculations
+  - Detailed tool outputs
+
+  Keep response under 300 words.`,
+};
+```
+:::
+
+## Common patterns
+
+### Multiple specialized subagents
+
+Create specialized subagents for different domains:
+
+:::python
+```python
+from deepagents import create_deep_agent
+
+subagents = [
+    {
+        "name": "data-collector",
+        "description": "Gathers raw data from various sources",
+        "system_prompt": "Collect comprehensive data on the topic",
+        "tools": [web_search, api_call, database_query],
+    },
+    {
+        "name": "data-analyzer",
+        "description": "Analyzes collected data for insights",
+        "system_prompt": "Analyze data and extract key insights",
+        "tools": [statistical_analysis],
+    },
+    {
+        "name": "report-writer",
+        "description": "Writes polished reports from analysis",
+        "system_prompt": "Create professional reports from insights",
+        "tools": [format_document],
+    },
+]
+
+agent = create_deep_agent(
+    model="claude-sonnet-4-5-20250929",
+    system_prompt="You coordinate data analysis and reporting. Use subagents for specialized tasks.",
+    subagents=subagents
+)
+```
+:::
+
+:::js
+```typescript
+import { createDeepAgent } from "deepagents";
+
+const subagents = [
+  {
+    name: "data-collector",
+    description: "Gathers raw data from various sources",
+    systemPrompt: "Collect comprehensive data on the topic",
+    tools: [webSearch, apiCall, databaseQuery],
+  },
+  {
+    name: "data-analyzer",
+    description: "Analyzes collected data for insights",
+    systemPrompt: "Analyze data and extract key insights",
+    tools: [statisticalAnalysis],
+  },
+  {
+    name: "report-writer",
+    description: "Writes polished reports from analysis",
+    systemPrompt: "Create professional reports from insights",
+    tools: [formatDocument],
+  },
+];
+
+const agent = createDeepAgent({
+  model: "claude-sonnet-4-5-20250929",
+  systemPrompt: "You coordinate data analysis and reporting. Use subagents for specialized tasks.",
+  subagents: subagents,
+});
+```
+:::
+
+**Workflow:**
+1. Main agent creates high-level plan
+2. Delegates data collection to data-collector
+3. Passes results to data-analyzer
+4. Sends insights to report-writer
+5. Compiles final output
+
+Each subagent works with clean context focused only on its task.
+
+## Troubleshooting
+
+### Subagent not being called
+
+**Problem**: Main agent tries to do work itself instead of delegating.
+
+**Solutions**:
+
+1. **Make descriptions more specific:**
+
+   :::python
+   ```python
+   # ✅ Good
+   {"name": "research-specialist", "description": "Conducts in-depth research on specific topics using web search. Use when you need detailed information that requires multiple searches."}
+
+   # ❌ Bad
+   {"name": "helper", "description": "helps with stuff"}
+   ```
+   :::
+
+   :::js
+   ```typescript
+   // ✅ Good
+   { name: "research-specialist", description: "Conducts in-depth research on specific topics using web search. Use when you need detailed information that requires multiple searches." }
+
+   // ❌ Bad
+   { name: "helper", description: "helps with stuff" }
+   ```
+   :::
+
+2. **Instruct main agent to delegate:**
+
+   :::python
+   ```python
+   agent = create_deep_agent(
+       system_prompt="""...your instructions...
+
+       IMPORTANT: For complex tasks, delegate to your subagents using the task() tool.
+       This keeps your context clean and improves results.""",
+       subagents=[...]
+   )
+   ```
+   :::
+
+   :::js
+   ```typescript
+   const agent = createDeepAgent({
+     systemPrompt: `...your instructions...
+
+     IMPORTANT: For complex tasks, delegate to your subagents using the task() tool.
+     This keeps your context clean and improves results.`,
+     subagents: [...]
+   });
+   ```
+   :::
+
+### Context still getting bloated
+
+**Problem**: Context fills up despite using subagents.
+
+**Solutions**:
+
+1. **Instruct subagent to return concise results:**
+
+   :::python
+   ```python
+   system_prompt="""...
+
+   IMPORTANT: Return only the essential summary.
+   Do NOT include raw data, intermediate search results, or detailed tool outputs.
+   Your response should be under 500 words."""
+   ```
+   :::
+
+   :::js
+   ```typescript
+   systemPrompt: `...
+
+   IMPORTANT: Return only the essential summary.
+   Do NOT include raw data, intermediate search results, or detailed tool outputs.
+   Your response should be under 500 words.`
+   ```
+   :::
+
+2. **Use filesystem for large data:**
+
+   :::python
+   ```python
+   system_prompt="""When you gather large amounts of data:
+   1. Save raw data to /data/raw_results.txt
+   2. Process and analyze the data
+   3. Return only the analysis summary
+
+   This keeps context clean."""
+   ```
+   :::
+
+   :::js
+   ```typescript
+   systemPrompt: `When you gather large amounts of data:
+   1. Save raw data to /data/raw_results.txt
+   2. Process and analyze the data
+   3. Return only the analysis summary
+
+   This keeps context clean.`
+   ```
+   :::
+
+### Wrong subagent being selected
+
+**Problem**: Main agent calls inappropriate subagent for the task.
+
+**Solution**: Differentiate subagents clearly in descriptions:
+
+:::python
+```python
+subagents = [
+    {
+        "name": "quick-researcher",
+        "description": "For simple, quick research questions that need 1-2 searches. Use when you need basic facts or definitions.",
+    },
+    {
+        "name": "deep-researcher",
+        "description": "For complex, in-depth research requiring multiple searches, synthesis, and analysis. Use for comprehensive reports.",
+    }
+]
+```
+:::
+
+:::js
+```typescript
+const subagents = [
+  {
+    name: "quick-researcher",
+    description: "For simple, quick research questions that need 1-2 searches. Use when you need basic facts or definitions.",
+  },
+  {
+    name: "deep-researcher",
+    description: "For complex, in-depth research requiring multiple searches, synthesis, and analysis. Use for comprehensive reports.",
+  }
+];
+```
+:::
