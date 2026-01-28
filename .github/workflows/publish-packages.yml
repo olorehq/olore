@@ -84,8 +84,8 @@ jobs:
             tar -czf "${TARBALL}" -C "${STAGING}" "${NAME}-${VERSION}"
             rm -rf "${STAGING}"
 
-            # Calculate SHA256
-            sha256sum "${TARBALL}" | awk '{print $1}' > "${TARBALL}.sha256"
+            # Calculate SHA256 in base64 (SRI format, matching CLI's sha256-<base64>)
+            openssl dgst -sha256 -binary "${TARBALL}" | base64 -w0 > "${TARBALL}.sha256"
 
             # Create release
             FILES=$(jq -r '.files' "${PKG_DIR}/olore-lock.json")

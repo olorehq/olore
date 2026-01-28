@@ -143,7 +143,7 @@ async function fetchSha256(url: string): Promise<string | null> {
     }
 
     const text = (await response.text()).trim();
-    // .sha256 file contains just the hash or "hash  filename"
+    // .sha256 file contains base64-encoded SHA256 hash (SRI format)
     const hash = text.split(/\s+/)[0];
     return `sha256-${hash}`;
   } catch {
