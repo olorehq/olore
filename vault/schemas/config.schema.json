@@ -15,6 +15,14 @@
       "pattern": "^[a-z0-9-]+$",
       "examples": ["zod", "prisma", "nextjs"]
     },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the documentation package. Used in registry index and CLI output. Should describe what the docs cover and when to use them.",
+      "examples": [
+        "Prisma ORM documentation. Use for Prisma Client, Schema, migrations, and queries.",
+        "Next.js framework documentation. Use for App Router, Server Components, routing, and APIs."
+      ]
+    },
     "_source": {
       "type": "object",
       "description": "Source configuration for fetching documentation",
@@ -38,7 +46,7 @@
       }
     }
   },
-  "required": ["name", "_source"],
+  "required": ["name", "description", "_source"],
   "additionalProperties": false,
   "allOf": [
     {
@@ -174,6 +182,7 @@
     {
       "$schema": "../schemas/config.schema.json",
       "name": "nextjs",
+      "description": "Next.js framework documentation. Use for App Router, Server Components, routing, data fetching, and APIs.",
       "_source": {
         "type": "github",
         "repo": "vercel/next.js",
@@ -188,6 +197,7 @@
     {
       "$schema": "../schemas/config.schema.json",
       "name": "tsf",
+      "description": "TanStack Form documentation. Use for form state management, validation, and field arrays.",
       "_source": {
         "type": "github",
         "repo": "TanStack/form",
@@ -200,6 +210,7 @@
     {
       "$schema": "../schemas/config.schema.json",
       "name": "prisma",
+      "description": "Prisma ORM documentation. Use for Prisma Client, Schema, migrations, and database queries.",
       "_source": {
         "type": "github",
         "repo": "prisma/docs",
@@ -212,6 +223,7 @@
     {
       "$schema": "../schemas/config.schema.json",
       "name": "example",
+      "description": "Example documentation package.",
       "_source": { "type": "url" },
       "files": {
         "getting-started": {
