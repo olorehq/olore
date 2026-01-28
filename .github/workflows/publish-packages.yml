@@ -8,188 +8,108 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Package to publish (e.g., "prisma@latest"). Leave empty to detect from recent changes.'
-        required: false
+        description: 'Package to publish (e.g., "prisma@latest")'
+        required: true
         type: string
+
+concurrency:
+  group: publish-packages
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
-  detect:
-    name: Detect changed packages
+  publish:
+    name: Publish packages
     runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.detect.outputs.packages }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Detect changed packages
+      - name: Detect packages to publish
         id: detect
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
         run: |
-          if [ -n "${{ inputs.package }}" ]; then
-            # Manual trigger with explicit package
-            NAME="${{ inputs.package }}"
-            PKG_NAME="${NAME%@*}"
-            PKG_VERSION="${NAME#*@}"
-            echo "packages=[{\"name\":\"${PKG_NAME}\",\"version\":\"${PKG_VERSION}\"}]" >> "$GITHUB_OUTPUT"
+          if [ -n "$INPUT_PACKAGE" ]; then
+            PKG_NAME="${INPUT_PACKAGE%@*}"
+            PKG_VERSION="${INPUT_PACKAGE#*@}"
+            echo "${PKG_NAME}/${PKG_VERSION}" > /tmp/packages.txt
             echo "Manual trigger: ${PKG_NAME}@${PKG_VERSION}"
           else
-            # Detect from changed olore-lock.json files
-            CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'vault/packages/**/olore-lock.json' || true)
-
-            if [ -z "$CHANGED" ]; then
-              echo "packages=[]" >> "$GITHUB_OUTPUT"
-              echo "No changed packages detected"
-              exit 0
-            fi
-
-            # Parse package name and version from paths like:
-            # vault/packages/prisma/latest/olore-lock.json
-            PACKAGES="["
-            FIRST=true
-            for FILE in $CHANGED; do
-              # Extract name and version from path
-              PKG_NAME=$(echo "$FILE" | cut -d'/' -f3)
-              PKG_VERSION=$(echo "$FILE" | cut -d'/' -f4)
-
-              if [ "$FIRST" = true ]; then
-                FIRST=false
-              else
-                PACKAGES+=","
-              fi
-              PACKAGES+="{\"name\":\"${PKG_NAME}\",\"version\":\"${PKG_VERSION}\"}"
-              echo "Detected: ${PKG_NAME}@${PKG_VERSION}"
-            done
-            PACKAGES+="]"
-
-            echo "packages=${PACKAGES}" >> "$GITHUB_OUTPUT"
+            git diff --name-only HEAD~1 HEAD -- 'vault/packages/**/olore-lock.json' \
+              | sed 's|vault/packages/||; s|/olore-lock.json||' \
+              > /tmp/packages.txt || true
           fi
 
-  publish:
-    name: Publish ${{ matrix.package.name }}@${{ matrix.package.version }}
-    needs: detect
-    if: needs.detect.outputs.packages != '[]'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(needs.detect.outputs.packages) }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate package exists
-        run: |
-          PKG_DIR="vault/packages/${{ matrix.package.name }}/${{ matrix.package.version }}"
-          if [ ! -f "${PKG_DIR}/olore-lock.json" ]; then
-            echo "::error::Package directory not found: ${PKG_DIR}"
-            exit 1
-          fi
-          echo "Package directory: ${PKG_DIR}"
-          ls -la "${PKG_DIR}"
-
-      - name: Check if release exists
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ matrix.package.name }}@${{ matrix.package.version }}"
-          LOCK_BUILT_AT=$(jq -r '.builtAt' "vault/packages/${{ matrix.package.name }}/${{ matrix.package.version }}/olore-lock.json")
-
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            RELEASE_DATE=$(gh release view "$TAG" --json publishedAt -q '.publishedAt')
-            echo "Release exists: ${TAG} (published: ${RELEASE_DATE})"
-            echo "Lock builtAt: ${LOCK_BUILT_AT}"
-
-            # Compare timestamps - only re-publish if lock file is newer
-            if [ "$(date -d "$LOCK_BUILT_AT" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$LOCK_BUILT_AT" +%s)" -gt \
-                 "$(date -d "$RELEASE_DATE" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$RELEASE_DATE" +%s)" ]; then
-              echo "Lock file is newer - will re-publish"
-              echo "should_publish=true" >> "$GITHUB_OUTPUT"
-              echo "release_exists=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "Release is up to date - skipping"
-              echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            fi
+          if [ ! -s /tmp/packages.txt ]; then
+            echo "No packages to publish"
+            echo "has_packages=false" >> "$GITHUB_OUTPUT"
           else
-            echo "No existing release for ${TAG}"
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "release_exists=false" >> "$GITHUB_OUTPUT"
+            echo "Packages to publish:"
+            cat /tmp/packages.txt
+            echo "has_packages=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create tarball
-        if: steps.check.outputs.should_publish == 'true'
-        run: |
-          NAME="${{ matrix.package.name }}"
-          VERSION="${{ matrix.package.version }}"
-          TARBALL_NAME="${NAME}-${VERSION}.tar.gz"
-          PKG_DIR="vault/packages/${NAME}/${VERSION}"
-
-          # Create tarball with top-level directory (CLI uses strip: 1)
-          STAGING_DIR=$(mktemp -d)
-          mkdir -p "${STAGING_DIR}/${NAME}-${VERSION}"
-          cp -r "${PKG_DIR}/"* "${STAGING_DIR}/${NAME}-${VERSION}/"
-          tar -czf "${TARBALL_NAME}" -C "${STAGING_DIR}" "${NAME}-${VERSION}"
-          rm -rf "${STAGING_DIR}"
-
-          # Calculate SHA256
-          sha256sum "${TARBALL_NAME}" | awk '{print $1}' > "${TARBALL_NAME}.sha256"
-
-          echo "Created: ${TARBALL_NAME} ($(du -h "${TARBALL_NAME}" | cut -f1))"
-          echo "SHA256: $(cat "${TARBALL_NAME}.sha256")"
-
-      - name: Delete existing release
-        if: steps.check.outputs.should_publish == 'true' && steps.check.outputs.release_exists == 'true'
+      - name: Publish each package
+        if: steps.detect.outputs.has_packages == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ matrix.package.name }}@${{ matrix.package.version }}"
-          gh release delete "$TAG" --yes --cleanup-tag || true
-          echo "Deleted existing release: ${TAG}"
+          while IFS= read -r PKG; do
+            NAME="${PKG%/*}"
+            VERSION="${PKG#*/}"
+            TAG="${NAME}@${VERSION}"
+            PKG_DIR="vault/packages/${NAME}/${VERSION}"
+            TARBALL="${NAME}-${VERSION}.tar.gz"
 
-      - name: Create release
-        if: steps.check.outputs.should_publish == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          NAME="${{ matrix.package.name }}"
-          VERSION="${{ matrix.package.version }}"
-          TAG="${NAME}@${VERSION}"
-          TARBALL_NAME="${NAME}-${VERSION}.tar.gz"
+            echo "::group::${TAG}"
 
-          # Read metadata from lock file
-          LOCK_FILE="vault/packages/${NAME}/${VERSION}/olore-lock.json"
-          FILES=$(jq -r '.files' "$LOCK_FILE")
-          BUILT_AT=$(jq -r '.builtAt' "$LOCK_FILE")
+            # Verify package exists
+            if [ ! -f "${PKG_DIR}/olore-lock.json" ]; then
+              echo "::warning::Skipping ${TAG} - olore-lock.json not found"
+              echo "::endgroup::"
+              continue
+            fi
 
-          NOTES="Documentation package: ${NAME}@${VERSION}
+            # Delete existing release if present
+            gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
 
-          - Files: ${FILES}
-          - Built: ${BUILT_AT}
-          - SHA256: $(cat "${TARBALL_NAME}.sha256")"
+            # Create tarball with top-level directory (CLI extracts with strip: 1)
+            STAGING=$(mktemp -d)
+            mkdir -p "${STAGING}/${NAME}-${VERSION}"
+            cp -r "${PKG_DIR}/"* "${STAGING}/${NAME}-${VERSION}/"
+            tar -czf "${TARBALL}" -C "${STAGING}" "${NAME}-${VERSION}"
+            rm -rf "${STAGING}"
 
-          gh release create "$TAG" \
-            --title "${NAME}@${VERSION}" \
-            --notes "$NOTES" \
-            "${TARBALL_NAME}" \
-            "${TARBALL_NAME}.sha256"
+            # Calculate SHA256
+            sha256sum "${TARBALL}" | awk '{print $1}' > "${TARBALL}.sha256"
 
-          echo "Published: ${TAG}"
+            # Create release
+            FILES=$(jq -r '.files' "${PKG_DIR}/olore-lock.json")
+            BUILT_AT=$(jq -r '.builtAt' "${PKG_DIR}/olore-lock.json")
 
-  trigger-deploy:
-    name: Trigger Vercel deploy
-    needs: publish
-    runs-on: ubuntu-latest
-    if: always() && needs.publish.result == 'success'
-    steps:
+            gh release create "$TAG" \
+              --title "${TAG}" \
+              --notes "Files: ${FILES} | Built: ${BUILT_AT} | SHA256: $(cat "${TARBALL}.sha256")" \
+              "${TARBALL}" \
+              "${TARBALL}.sha256"
+
+            echo "Published ${TAG} ($(du -h "${TARBALL}" | cut -f1))"
+            rm -f "${TARBALL}" "${TARBALL}.sha256"
+            echo "::endgroup::"
+          done < /tmp/packages.txt
+
       - name: Trigger Vercel redeploy
+        if: steps.detect.outputs.has_packages == 'true'
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
-          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK }}" ]; then
-            curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
-            echo "Triggered Vercel redeploy"
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            curl -sf -X POST "$VERCEL_DEPLOY_HOOK"
+            echo "Triggered Vercel redeploy to update registry"
           else
-            echo "No VERCEL_DEPLOY_HOOK secret configured - skipping"
-            echo "Registry will update on next Vercel deploy"
+            echo "No VERCEL_DEPLOY_HOOK configured - registry updates on next push"
           fi
