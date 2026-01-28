@@ -12,6 +12,7 @@ ADRs document significant architectural decisions with context, rationale, and c
 | [0002](0002-vibe-coding-agent-workflow.md) | Vibe Coding Agent Workflow | Accepted | 2026-01 |
 | [0003](0003-build-consume-separation.md) | Build vs Consume Separation | Accepted | 2026-01 |
 | [0004](0004-tarball-over-content-addressed-storage.md) | Tarball over Content-Addressed Storage | Accepted | 2026-01 |
+| [0005](0005-registry-generation-at-build-time.md) | Registry Generation at Build Time | Proposed | 2026-01 |
 
 ## ADR Format
 
