@@ -1,0 +1,65 @@
+{
+  "name": "@olorehq/olore",
+  "version": "0.1.0",
+  "description": "Universal documentation for any AI coding agent",
+  "keywords": [
+    "ai",
+    "documentation",
+    "claude",
+    "codex",
+    "coding-assistant",
+    "context",
+    "llm"
+  ],
+  "license": "AGPL-3.0",
+  "author": "olorehq",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olorehq/olore.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/olorehq/olore",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "olore": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:bin": "bun build src/cli.ts --compile --outfile dist/olore",
+    "build:bin:all": "npm run build:bin:darwin-arm64 && npm run build:bin:darwin-x64 && npm run build:bin:linux-x64 && npm run build:bin:linux-arm64",
+    "build:bin:darwin-arm64": "bun build src/cli.ts --compile --target=bun-darwin-arm64 --outfile dist/olore-darwin-arm64",
+    "build:bin:darwin-x64": "bun build src/cli.ts --compile --target=bun-darwin-x64 --outfile dist/olore-darwin-x64",
+    "build:bin:linux-arm64": "bun build src/cli.ts --compile --target=bun-linux-arm64 --outfile dist/olore-linux-arm64",
+    "build:bin:linux-x64": "bun build src/cli.ts --compile --target=bun-linux-x64 --outfile dist/olore-linux-x64",
+    "dev": "tsup --watch",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "lint": "eslint src/",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "generate-registry": "npx tsx scripts/generate-registry.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "fs-extra": "^11.3.3",
+    "ora": "^9.0.0",
+    "picocolors": "^1.1.1",
+    "tar": "^7.4.3"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.10.7",
+    "prettier": "^3.8.0",
+    "prettier-plugin-packagejson": "^2.5.22",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

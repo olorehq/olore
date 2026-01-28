@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/olorehq/olore/vault/schemas/config.schema.json",
+  "title": "Documentation Config",
+  "description": "Schema for olore documentation source configuration. This is the CONFIG file - build metadata goes in olore-lock.json.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema for IDE validation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Skill name (library name without '-docs' suffix). Install script adds 'olore-' prefix → /olore-zod",
+      "pattern": "^[a-z0-9-]+$",
+      "examples": ["zod", "prisma", "nextjs"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the documentation package. Used in registry index and CLI output. Should describe what the docs cover and when to use them.",
+      "examples": [
+        "Prisma ORM documentation. Use for Prisma Client, Schema, migrations, and queries.",
+        "Next.js framework documentation. Use for App Router, Server Components, routing, and APIs."
+      ]
+    },
+    "_source": {
+      "type": "object",
+      "description": "Source configuration for fetching documentation",
+      "oneOf": [
+        { "$ref": "#/$defs/githubSource" },
+        { "$ref": "#/$defs/urlSource" }
+      ]
+    },
+    "versions": {
+      "type": "object",
+      "description": "Documentation versions to build. Keys are version labels, values specify the git ref.",
+      "additionalProperties": {
+        "$ref": "#/$defs/versionEntry"
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "URL entries for URL-type sources. Keys become directory paths, leaf strings are URLs.",
+      "additionalProperties": {
+        "$ref": "#/$defs/urlEntries"
+      }
+    }
+  },
+  "required": ["name", "description", "_source"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "_source": {
+            "properties": { "type": { "const": "url" } },
+            "required": ["type"]
+          }
+        }
+      },
+      "then": {
+        "required": ["_source", "files"]
+      }
+    }
+  ],
+  "$defs": {
+    "versionEntry": {
+      "type": "object",
+      "description": "A version to build. Only contains 'ref' and optional overrides - build metadata goes in olore-lock.json.",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "Git ref to checkout (tag, branch, or commit SHA). Examples: 'v1.0.0', 'main', '@tanstack/react-form@1.27.7'"
+        },
+        "path": {
+          "type": "string",
+          "description": "Override the _source.path for this version. Useful when different versions have docs in different directories.",
+          "examples": ["docs", "packages/docs-v3"]
+        }
+      },
+      "required": ["ref"],
+      "additionalProperties": false
+    },
+    "githubSource": {
+      "type": "object",
+      "description": "Fetch documentation from a GitHub repository",
+      "properties": {
+        "type": {
+          "const": "github"
+        },
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository in 'owner/repo' format",
+          "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$",
+          "examples": ["vercel/next.js", "colinhacks/zod"]
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to documentation directory within the repo",
+          "default": ".",
+          "examples": ["docs", "content", "packages/docs/content"]
+        },
+        "extensions": {
+          "type": "array",
+          "description": "File extensions to include",
+          "items": {
+            "type": "string",
+            "pattern": "^\\.[a-zA-Z0-9]+$"
+          },
+          "default": [".md", ".mdx"],
+          "examples": [[".md", ".mdx"], [".md"]]
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Glob patterns to exclude files",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["**/internal/**", "CHANGELOG*"]]
+        },
+        "noDefaultExcludes": {
+          "type": "boolean",
+          "description": "Disable default exclude patterns (CHANGELOG, CONTRIBUTING, etc.)",
+          "default": false
+        },
+        "_disabled": {
+          "type": "boolean",
+          "description": "Skip processing this config",
+          "default": false
+        },
+        "_reason": {
+          "type": "string",
+          "description": "Reason for disabling this config"
+        }
+      },
+      "required": ["type", "repo"],
+      "additionalProperties": false
+    },
+    "urlSource": {
+      "type": "object",
+      "description": "Fetch documentation from URLs",
+      "properties": {
+        "type": {
+          "const": "url"
+        },
+        "convert": {
+          "type": "string",
+          "enum": ["html"],
+          "description": "Convert HTML pages to markdown (requires pandoc). Note: Does not work for SPA sites."
+        },
+        "_disabled": {
+          "type": "boolean",
+          "description": "Skip processing this config",
+          "default": false
+        },
+        "_reason": {
+          "type": "string",
+          "description": "Reason for disabling this config"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "urlEntries": {
+      "description": "Nested structure of URL entries. Keys become directory paths, leaf strings are URLs.",
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to a documentation file"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/urlEntries"
+          }
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "$schema": "../schemas/config.schema.json",
+      "name": "nextjs",
+      "description": "Next.js framework documentation. Use for App Router, Server Components, routing, data fetching, and APIs.",
+      "_source": {
+        "type": "github",
+        "repo": "vercel/next.js",
+        "path": "docs",
+        "extensions": [".md", ".mdx"]
+      },
+      "versions": {
+        "16.1.3": { "ref": "v16.1.3" },
+        "16.1.2": { "ref": "v16.1.2" }
+      }
+    },
+    {
+      "$schema": "../schemas/config.schema.json",
+      "name": "tsf",
+      "description": "TanStack Form documentation. Use for form state management, validation, and field arrays.",
+      "_source": {
+        "type": "github",
+        "repo": "TanStack/form",
+        "path": "docs"
+      },
+      "versions": {
+        "1.27.7": { "ref": "@tanstack/react-form@1.27.7" }
+      }
+    },
+    {
+      "$schema": "../schemas/config.schema.json",
+      "name": "prisma",
+      "description": "Prisma ORM documentation. Use for Prisma Client, Schema, migrations, and database queries.",
+      "_source": {
+        "type": "github",
+        "repo": "prisma/docs",
+        "path": "content"
+      },
+      "versions": {
+        "latest": { "ref": "main" }
+      }
+    },
+    {
+      "$schema": "../schemas/config.schema.json",
+      "name": "example",
+      "description": "Example documentation package.",
+      "_source": { "type": "url" },
+      "files": {
+        "getting-started": {
+          "installation": "https://example.com/docs/install.md"
+        }
+      },
+      "versions": {}
+    }
+  ]
+}

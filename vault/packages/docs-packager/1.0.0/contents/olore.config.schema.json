@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "olore.config.json",
+  "description": "Configuration for packaging local documentation with olore-docs-packager",
+  "type": "object",
+  "required": ["name", "version", "description", "contentPath"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for IDE validation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Package name (will be prefixed with 'olore-' when installed)",
+      "pattern": "^[a-z0-9-]+$",
+      "examples": ["my-project", "api-docs", "design-system"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Version string for the package",
+      "examples": ["1.0.0", "2.0.0", "2024.01"]
+    },
+    "description": {
+      "type": "string",
+      "description": "One-line description for skill discovery. Will appear in Claude Code's skill list.",
+      "maxLength": 200,
+      "examples": ["API documentation for the payment service", "Design system component reference"]
+    },
+    "contentPath": {
+      "type": "string",
+      "description": "Path to documentation files, relative to this config file",
+      "examples": ["./docs", "./documentation", "../shared-docs"]
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Output directory for the built package, relative to this config file",
+      "default": "./olore-package",
+      "examples": ["./olore-package", "./dist/docs", "../packages/my-docs"]
+    },
+    "extensions": {
+      "type": "array",
+      "description": "File extensions to include in the package",
+      "items": {
+        "type": "string",
+        "pattern": "^\\.[a-z0-9]+$"
+      },
+      "default": [".md", ".mdx"],
+      "examples": [[".md", ".mdx"], [".md", ".mdx", ".txt"]]
+    },
+    "exclude": {
+      "type": "array",
+      "description": "Glob patterns for files/directories to exclude",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "examples": [
+        ["**/drafts/**", "**/internal/**"],
+        ["**/node_modules/**", "**/*.test.md"]
+      ]
+    }
+  },
+  "additionalProperties": false
+}

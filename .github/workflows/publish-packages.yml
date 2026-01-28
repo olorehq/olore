@@ -1,0 +1,115 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'vault/packages/**/olore-lock.json'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish (e.g., "prisma@latest")'
+        required: true
+        type: string
+
+concurrency:
+  group: publish-packages
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect packages to publish
+        id: detect
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+        run: |
+          if [ -n "$INPUT_PACKAGE" ]; then
+            PKG_NAME="${INPUT_PACKAGE%@*}"
+            PKG_VERSION="${INPUT_PACKAGE#*@}"
+            echo "${PKG_NAME}/${PKG_VERSION}" > /tmp/packages.txt
+            echo "Manual trigger: ${PKG_NAME}@${PKG_VERSION}"
+          else
+            git diff --name-only HEAD~1 HEAD -- 'vault/packages/**/olore-lock.json' \
+              | sed 's|vault/packages/||; s|/olore-lock.json||' \
+              > /tmp/packages.txt || true
+          fi
+
+          if [ ! -s /tmp/packages.txt ]; then
+            echo "No packages to publish"
+            echo "has_packages=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Packages to publish:"
+            cat /tmp/packages.txt
+            echo "has_packages=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish each package
+        if: steps.detect.outputs.has_packages == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS= read -r PKG; do
+            NAME="${PKG%/*}"
+            VERSION="${PKG#*/}"
+            TAG="${NAME}@${VERSION}"
+            PKG_DIR="vault/packages/${NAME}/${VERSION}"
+            TARBALL="${NAME}-${VERSION}.tar.gz"
+
+            echo "::group::${TAG}"
+
+            # Verify package exists
+            if [ ! -f "${PKG_DIR}/olore-lock.json" ]; then
+              echo "::warning::Skipping ${TAG} - olore-lock.json not found"
+              echo "::endgroup::"
+              continue
+            fi
+
+            # Delete existing release if present
+            gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+
+            # Create tarball with top-level directory (CLI extracts with strip: 1)
+            STAGING=$(mktemp -d)
+            mkdir -p "${STAGING}/${NAME}-${VERSION}"
+            cp -r "${PKG_DIR}/"* "${STAGING}/${NAME}-${VERSION}/"
+            tar -czf "${TARBALL}" -C "${STAGING}" "${NAME}-${VERSION}"
+            rm -rf "${STAGING}"
+
+            # Calculate SHA256 in base64 (SRI format, matching CLI's sha256-<base64>)
+            openssl dgst -sha256 -binary "${TARBALL}" | base64 -w0 > "${TARBALL}.sha256"
+
+            # Create release
+            FILES=$(jq -r '.files' "${PKG_DIR}/olore-lock.json")
+            BUILT_AT=$(jq -r '.builtAt' "${PKG_DIR}/olore-lock.json")
+
+            gh release create "$TAG" \
+              --title "${TAG}" \
+              --notes "Files: ${FILES} | Built: ${BUILT_AT} | SHA256: $(cat "${TARBALL}.sha256")" \
+              "${TARBALL}" \
+              "${TARBALL}.sha256"
+
+            echo "Published ${TAG} ($(du -h "${TARBALL}" | cut -f1))"
+            rm -f "${TARBALL}" "${TARBALL}.sha256"
+            echo "::endgroup::"
+          done < /tmp/packages.txt
+
+      - name: Trigger Vercel redeploy
+        if: steps.detect.outputs.has_packages == 'true'
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            curl -sf -X POST "$VERCEL_DEPLOY_HOOK"
+            echo "Triggered Vercel redeploy to update registry"
+          else
+            echo "No VERCEL_DEPLOY_HOOK configured - registry updates on next push"
+          fi

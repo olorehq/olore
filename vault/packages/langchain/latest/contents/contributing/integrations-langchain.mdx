@@ -1,0 +1,91 @@
+---
+title: Contributing integrations
+sidebarTitle: Guide
+---
+
+**Integrations are a core component of LangChain.**
+
+LangChain provides standard interfaces for several different components (language models, vector stores, etc) that are crucial when building LLM applications. Contributing an integration helps expand LangChain's ecosystem and makes your service discoverable to millions of developers.
+
+## Why contribute an integration to LangChain?
+
+<Card title="Discoverability" icon="magnifying-glass">
+    LangChain is the most used framework for building LLM applications, with over 20 million monthly downloads.
+</Card>
+
+<Card title="Interoperability" icon="arrows-rotate">
+    LangChain components expose a standard interface, allowing developers to easily swap them for each other. If you implement a LangChain integration, any developer using a different component will easily be able to swap yours in.
+</Card>
+
+<Card title="Best Practices" icon="star">
+    Through their standard interface, LangChain components encourage and facilitate best practices (streaming, async, etc.) that improve developer experience and application performance.
+</Card>
+
+## Components to integrate
+
+While any component can be integrated into LangChain, there are specific types of integrations we encourage more:
+
+**Integrate these ✅**:
+- [**Chat Models**](/oss/integrations/chat): Most actively used component type
+- [**Tools/Toolkits**](/oss/integrations/tools): Enable agent capabilities
+- [**Retrievers**](/oss/integrations/retrievers): Core to RAG applications
+- [**Embedding Models**](/oss/integrations/text_embedding): Foundation for vector operations
+- [**Vector Stores**](/oss/integrations/vectorstores): Essential for semantic search
+
+**Not these ❌**:
+- **LLMs (Text-Completion Models)**: Deprecated in favor of [Chat Models](/oss/integrations/chat)
+- [**Document Loaders**](/oss/integrations/document_loaders): High maintenance burden
+- [**Key-Value Stores**](/oss/integrations/stores): Limited usage
+- **Document Transformers**: Niche use cases
+- **Model Caches**: Infrastructure concerns
+- **Graphs**: Complex abstractions
+- **Message Histories**: Storage abstractions
+- **Callbacks**: System-level components
+- **Chat Loaders**: Limited demand
+- **Adapters**: Edge case utilities
+
+## How to contribute an integration
+
+<Steps>
+    <Step title="Confirm eligibility">
+        Verify that your integration is in the list of [encouraged components](#components-to-integrate) we are currently accepting.
+    </Step>
+
+    <Step title="Implement your package">
+        <Card title="How to implement a LangChain integration" icon="link" href="/oss/contributing/implement-langchain" arrow />
+    </Step>
+
+    <Step title="Pass standard tests">
+        If applicable, implement support for LangChain's [standard test](/oss/contributing/standard-tests-langchain) suite for your integration and successfully run them.
+    </Step>
+
+    <Step title="Publish integration">
+        <Card title="How to publish an integration" icon="upload" href="/oss/contributing/publish-langchain" arrow />
+    </Step>
+
+    <Step title="Add documentation">
+        Open a PR to add documentation for your integration to the official LangChain docs.
+
+        <Accordion title="Integration documentation guide" icon="book">
+            An integration is only as useful as its documentation. To ensure a consistent experience for users, docs are required for all new integrations. We have a standard starting-point template for each type of integration for you to copy and modify.
+
+            In a new PR to the LangChain [docs repo](https://github.com/langchain-ai/docs), create a new file in the relevant directory under `src/oss/python/integrations/<component_type>/integration_name.mdx` using the appropriate template file:
+
+            - [Chat models](https://github.com/langchain-ai/docs/blob/main/src/oss/python/integrations/chat/TEMPLATE.mdx)
+            - [Tools and toolkits](https://github.com/langchain-ai/docs/blob/main/src/oss/python/integrations/tools/TEMPLATE.mdx)
+            - [Retrievers](https://github.com/langchain-ai/docs/blob/main/src/oss/python/integrations/retrievers/TEMPLATE.mdx)
+            - Text splitters - Coming soon
+            - Embedding models - Coming soon
+            - [Vector stores](https://github.com/langchain-ai/docs/blob/main/src/oss/python/integrations/vectorstores/TEMPLATE.mdx)
+            - Document loaders - Coming soon
+            - Key-value stores - Coming soon
+
+            For reference docs, please open an issue on the repo so that a maintainer can add them.
+        </Accordion>
+    </Step>
+
+    <Step title="Co-marketing" icon="megaphone">
+        (Optional) Engage with the LangChain team for joint [co-marketing](/oss/contributing/comarketing).
+    </Step>
+</Steps>
+

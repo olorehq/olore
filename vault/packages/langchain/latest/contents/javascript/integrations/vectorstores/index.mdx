@@ -1,0 +1,996 @@
+---
+title: "Vector stores"
+---
+
+## Overview
+
+A [vector store](/oss/integrations/vectorstores) stores [embedded](/oss/integrations/text_embedding) data and performs similarity search.
+
+```mermaid
+flowchart LR
+
+    subgraph "📥 Indexing phase (store)"
+        A[📄 Documents] --> B[🔢 Embedding model]
+        B --> C[🔘 Embedding vectors]
+        C --> D[(Vector store)]
+    end
+
+    subgraph "📤 Query phase (retrieval)"
+        E[❓ Query text] --> F[🔢 Embedding model]
+        F --> G[🔘 Query vector]
+        G --> H[🔍 Similarity search]
+        H --> D
+        D --> I[📄 Top-k results]
+    end
+```
+
+### Interface
+
+LangChain provides a unified interface for vector stores, allowing you to:
+
+- `addDocuments` - Add documents to the store.
+- `delete` - Remove stored documents by ID.
+- `similaritySearch` - Query for semantically similar documents.
+
+This abstraction lets you switch between different implementations without altering your application logic.
+
+### Initialization
+
+Most vectorstores in LangChain accept an embedding model as an argument when initializing the vector store.
+
+```typescript
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
+
+const embeddings = new OpenAIEmbeddings({
+  model: "text-embedding-3-small",
+});
+const vectorStore = new MemoryVectorStore(embeddings);
+```
+
+### Adding documents
+
+You can add documents to the vector store by using the `addDocuments` function.
+
+```typescript
+import { Document } from "@langchain/core/documents";
+const document = new Document({
+  pageContent: "Hello world",
+});
+await vectorStore.addDocuments([document]);
+```
+
+### Deleting documents
+
+You can delete documents from the vector store by using the `delete` function.
+
+```typescript
+await vectorStore.delete({
+  filter: {
+    pageContent: "Hello world",
+  },
+});
+```
+
+### Similarity search
+
+Issue a semantic query using `similaritySearch`, which returns the closest embedded documents:
+
+```typescript
+const results = await vectorStore.similaritySearch("Hello world", 10);
+```
+
+
+Many vector stores support parameters like:
+
+* `k` — number of results to return
+* `filter` — conditional filtering based on metadata
+
+### Similarity metrics & indexing
+
+Embedding similarity may be computed using:
+
+* **Cosine similarity**
+* **Euclidean distance**
+* **Dot product**
+
+Efficient search often employs indexing methods such as HNSW (Hierarchical Navigable Small World), though specifics depend on the vector store.
+
+### Metadata filtering
+
+Filtering by metadata (e.g., source, date) can refine search results:
+
+```typescript
+vectorStore.similaritySearch("query", 2, { source: "tweets" });
+```
+
+<important>
+Support for metadata-based filtering varies between implementations.
+Check the documentation of your chosen vector store for details.
+</important>
+
+## Top integrations
+
+**Select embedding model:**
+
+<AccordionGroup>
+<Accordion title="OpenAI">
+
+Install dependencies:
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/openai
+```
+```bash yarn
+yarn add @langchain/openai
+```
+```bash pnpm
+pnpm add @langchain/openai
+```
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+OPENAI_API_KEY=your-api-key
+```
+
+Instantiate the model:
+
+```typescript
+import { OpenAIEmbeddings } from "@langchain/openai";
+
+const embeddings = new OpenAIEmbeddings({
+  model: "text-embedding-3-large"
+});
+```
+
+</Accordion>
+<Accordion title="Azure">
+
+Install dependencies
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/openai
+```
+```bash yarn
+yarn add @langchain/openai
+```
+
+```bash pnpm
+pnpm add @langchain/openai
+```
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+AZURE_OPENAI_API_INSTANCE_NAME=<YOUR_INSTANCE_NAME>
+AZURE_OPENAI_API_KEY=<YOUR_KEY>
+AZURE_OPENAI_API_VERSION="2024-02-01"
+```
+
+Instantiate the model:
+
+```typescript
+import { AzureOpenAIEmbeddings } from "@langchain/openai";
+
+const embeddings = new AzureOpenAIEmbeddings({
+  azureOpenAIApiEmbeddingsDeploymentName: "text-embedding-ada-002"
+});
+```
+
+</Accordion>
+
+<Accordion title="AWS">
+
+Install dependencies:
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/aws
+```
+
+```bash yarn
+yarn add @langchain/aws
+```
+
+```bash pnpm
+pnpm add @langchain/aws
+```
+
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+BEDROCK_AWS_REGION=your-region
+```
+
+Instantiate the model:
+
+```typescript
+import { BedrockEmbeddings } from "@langchain/aws";
+
+const embeddings = new BedrockEmbeddings({
+  model: "amazon.titan-embed-text-v1"
+});
+```
+
+</Accordion>
+<Accordion title="Google Gemini">
+
+Install dependencies:
+
+<CodeGroup>
+```bash npm
+npm i @langchain/google-genai
+```
+
+```bash yarn
+yarn add @langchain/google-genai
+```
+
+```bash pnpm
+pnpm add @langchain/google-genai
+```
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+GOOGLE_API_KEY=your-api-key
+```
+
+Instantiate the model:
+
+```typescript
+import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+
+const embeddings = new GoogleGenerativeAIEmbeddings({
+  model: "text-embedding-004"
+});
+```
+
+</Accordion>
+<Accordion title="Google Vertex">
+
+Install dependencies:
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/google-vertexai
+```
+
+```bash yarn
+yarn add @langchain/google-vertexai
+```
+
+```bash pnpm
+pnpm add @langchain/google-vertexai
+```
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+```
+
+Instantiate the model:
+
+```typescript
+import { VertexAIEmbeddings } from "@langchain/google-vertexai";
+
+const embeddings = new VertexAIEmbeddings({
+  model: "gemini-embedding-001"
+});
+```
+
+</Accordion>
+<Accordion title="MistralAI">
+
+Install dependencies:
+
+<CodeGroup>
+```bash npm
+npm i @langchain/mistralai
+```
+
+```bash yarn
+yarn add @langchain/mistralai
+```
+
+```bash pnpm
+pnpm add @langchain/mistralai
+```
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+MISTRAL_API_KEY=your-api-key
+```
+
+Instantiate the model:
+
+```typescript
+import { MistralAIEmbeddings } from "@langchain/mistralai";
+
+const embeddings = new MistralAIEmbeddings({
+  model: "mistral-embed"
+});
+```
+
+</Accordion>
+<Accordion title="Cohere">
+
+Install dependencies:
+
+<CodeGroup>
+```bash npm
+npm i @langchain/cohere
+```
+
+```bash yarn
+yarn add @langchain/cohere
+```
+
+```bash pnpm
+pnpm add @langchain/cohere
+```
+
+</CodeGroup>
+
+Add environment variables:
+
+```bash
+COHERE_API_KEY=your-api-key
+```
+
+Instantiate the model:
+
+```typescript
+import { CohereEmbeddings } from "@langchain/cohere";
+
+const embeddings = new CohereEmbeddings({
+  model: "embed-english-v3.0"
+});
+```
+
+</Accordion>
+<Accordion title="Ollama">
+
+Install dependencies:
+
+<CodeGroup>
+```bash npm
+npm i @langchain/ollama
+```
+
+```bash yarn
+yarn add @langchain/ollama
+```
+
+```bash pnpm
+pnpm add @langchain/ollama
+```
+</CodeGroup>
+
+Instantiate the model:
+
+```typescript
+import { OllamaEmbeddings } from "@langchain/ollama";
+
+const embeddings = new OllamaEmbeddings({
+  model: "llama2",
+  baseUrl: "http://localhost:11434", // Default value
+});
+```
+
+</Accordion>
+</AccordionGroup>
+
+**Select vector store:**
+
+<AccordionGroup>
+<Accordion title="Memory">
+
+<CodeGroup>
+```bash
+npm i langchain
+```
+
+```bash yarn
+yarn add langchain
+```
+
+```bash pnpm
+pnpm add langchain
+```
+</CodeGroup>
+
+```typescript
+import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
+
+const vectorStore = new MemoryVectorStore(embeddings);
+```
+
+</Accordion>
+<Accordion title="Chroma">
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/community
+```
+
+```bash yarn
+yarn add @langchain/community
+```
+
+```bash pnpm
+pnpm add @langchain/community
+```
+
+</CodeGroup>
+
+```typescript
+import { Chroma } from "@langchain/community/vectorstores/chroma";
+
+const vectorStore = new Chroma(embeddings, {
+  collectionName: "a-test-collection",
+});
+```
+
+</Accordion>
+<Accordion title="FAISS">
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/community
+```
+
+```bash yarn
+yarn add @langchain/community
+```
+
+```bash
+pnpm add @langchain/community
+```
+
+</CodeGroup>
+
+```typescript
+import { FaissStore } from "@langchain/community/vectorstores/faiss";
+
+const vectorStore = new FaissStore(embeddings, {});
+```
+
+</Accordion>
+<Accordion title="MongoDB">
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/mongodb
+```
+
+```bash yarn
+yarn add @langchain/mongodb
+```
+
+```bash pnpm
+pnpm add @langchain/mongodb
+```
+
+</CodeGroup>
+
+```typescript
+import { MongoDBAtlasVectorSearch } from "@langchain/mongodb"
+import { MongoClient } from "mongodb";
+
+const client = new MongoClient(process.env.MONGODB_ATLAS_URI || "");
+const collection = client
+  .db(process.env.MONGODB_ATLAS_DB_NAME)
+  .collection(process.env.MONGODB_ATLAS_COLLECTION_NAME);
+
+const vectorStore = new MongoDBAtlasVectorSearch(embeddings, {
+  collection,
+  indexName: "vector_index",
+  textKey: "text",
+  embeddingKey: "embedding",
+});
+```
+
+</Accordion>
+<Accordion title="PGVector">
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/community
+```
+
+```bash yarn
+yarn add @langchain/community
+```
+
+```bash pnpm
+pnpm add @langchain/community
+```
+
+</CodeGroup>
+
+```typescript
+import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+
+const vectorStore = await PGVectorStore.initialize(embeddings, {});
+```
+
+</Accordion>
+<Accordion title="Pinecone">
+
+<CodeGroup>
+
+```bash npm
+npm i @langchain/pinecone
+```
+
+```bash yarn
+yarn add @langchain/pinecone
+```
+
+```bash pnpm
+pnpm add @langchain/pinecone
+```
+
+</CodeGroup>
+
+```typescript
+import { PineconeStore } from "@langchain/pinecone";
+import { Pinecone as PineconeClient } from "@pinecone-database/pinecone";
+
+const pinecone = new PineconeClient();
+const vectorStore = new PineconeStore(embeddings, {
+  pineconeIndex,
+  maxConcurrency: 5,
+});
+```
+
+</Accordion>
+<Accordion title="Qdrant">
+
+<CodeGroup>
+```bash npm
+npm i @langchain/qdrant
+```
+
+```bash yarn
+yarn add @langchain/qdrant
+```
+
+```bash pnpm
+pnpm add @langchain/qdrant
+```
+
+</CodeGroup>
+
+```typescript
+import { QdrantVectorStore } from "@langchain/qdrant";
+
+const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+  url: process.env.QDRANT_URL,
+  collectionName: "langchainjs-testing",
+});
+```
+
+</Accordion>
+
+<Accordion title="Weaviate">
+    <CodeGroup>
+        ```bash npm
+        npm i @langchain/weaviate
+        ```
+
+        ```bash yarn
+        yarn add @langchain/weaviate
+        ```
+
+        ```bash pnpm
+        pnpm add @langchain/weaviate
+        ```
+    </CodeGroup>
+
+    <CodeGroup>
+
+    ```typescript
+    import { WeaviateStore } from "@langchain/weaviate";
+
+    const vectorStore = new WeaviateStore(embeddings, {
+        client: weaviateClient,
+        indexName: "Langchainjs_test",
+    });
+    ```
+    </CodeGroup>
+</Accordion>
+
+</AccordionGroup>
+
+LangChain.js integrates with a variety of vector stores. You can check out a full list below:
+
+## All vector stores
+
+<Columns cols={3}>
+  <Card
+    title="AnalyticDB"
+    icon="link"
+    href="/oss/integrations/vectorstores/analyticdb"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Astra DB"
+    icon="link"
+    href="/oss/integrations/vectorstores/astradb"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Azion EdgeSQL"
+    icon="link"
+    href="/oss/integrations/vectorstores/azion-edgesql"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Azure AI Search"
+    icon="link"
+    href="/oss/integrations/vectorstores/azure_aisearch"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Azure Cosmos DB for MongoDB vCore"
+    icon="link"
+    href="/oss/integrations/vectorstores/azure_cosmosdb_mongodb"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Azure Cosmos DB for NoSQL"
+    icon="link"
+    href="/oss/integrations/vectorstores/azure_cosmosdb_nosql"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Cassandra"
+    icon="link"
+    href="/oss/integrations/vectorstores/cassandra"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Chroma"
+    icon="link"
+    href="/oss/integrations/vectorstores/chroma"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="ClickHouse"
+    icon="link"
+    href="/oss/integrations/vectorstores/clickhouse"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="CloseVector"
+    icon="link"
+    href="/oss/integrations/vectorstores/closevector"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Cloudflare Vectorize"
+    icon="link"
+    href="/oss/integrations/vectorstores/cloudflare_vectorize"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Convex"
+    icon="link"
+    href="/oss/integrations/vectorstores/convex"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Couchbase Query"
+    icon="link"
+    href="/oss/integrations/vectorstores/couchbase_query"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Couchbase Search"
+    icon="link"
+    href="/oss/integrations/vectorstores/couchbase_search"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Elasticsearch"
+    icon="link"
+    href="/oss/integrations/vectorstores/elasticsearch"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Faiss"
+    icon="link"
+    href="/oss/integrations/vectorstores/faiss"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Google Cloud SQL for PostgreSQL"
+    icon="link"
+    href="/oss/integrations/vectorstores/google_cloudsql_pg"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Google Vertex AI Matching Engine"
+    icon="link"
+    href="/oss/integrations/vectorstores/googlevertexai"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="SAP HANA Cloud Vector Engine"
+    icon="link"
+    href="/oss/integrations/vectorstores/hanavector"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="HNSWLib"
+    icon="link"
+    href="/oss/integrations/vectorstores/hnswlib"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="LanceDB"
+    icon="link"
+    href="/oss/integrations/vectorstores/lancedb"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="libSQL"
+    icon="link"
+    href="/oss/integrations/vectorstores/libsql"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="MariaDB"
+    icon="link"
+    href="/oss/integrations/vectorstores/mariadb"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="In-memory"
+    icon="link"
+    href="/oss/integrations/vectorstores/memory"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Milvus"
+    icon="link"
+    href="/oss/integrations/vectorstores/milvus"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Momento Vector Index (MVI)"
+    icon="link"
+    href="/oss/integrations/vectorstores/momento_vector_index"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="MongoDB Atlas"
+    icon="link"
+    href="/oss/integrations/vectorstores/mongodb_atlas"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="MyScale"
+    icon="link"
+    href="/oss/integrations/vectorstores/myscale"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Neo4j Vector Index"
+    icon="link"
+    href="/oss/integrations/vectorstores/neo4jvector"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Neon Postgres"
+    icon="link"
+    href="/oss/integrations/vectorstores/neon"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="OpenSearch"
+    icon="link"
+    href="/oss/integrations/vectorstores/opensearch"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="PGVector"
+    icon="link"
+    href="/oss/integrations/vectorstores/pgvector"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Pinecone"
+    icon="link"
+    href="/oss/integrations/vectorstores/pinecone"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Prisma"
+    icon="link"
+    href="/oss/integrations/vectorstores/prisma"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Qdrant"
+    icon="link"
+    href="/oss/integrations/vectorstores/qdrant"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Redis"
+    icon="link"
+    href="/oss/integrations/vectorstores/redis"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Rockset"
+    icon="link"
+    href="/oss/integrations/vectorstores/rockset"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="SingleStore"
+    icon="link"
+    href="/oss/integrations/vectorstores/singlestore"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Supabase"
+    icon="link"
+    href="/oss/integrations/vectorstores/supabase"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Tigris"
+    icon="link"
+    href="/oss/integrations/vectorstores/tigris"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Turbopuffer"
+    icon="link"
+    href="/oss/integrations/vectorstores/turbopuffer"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="TypeORM"
+    icon="link"
+    href="/oss/integrations/vectorstores/typeorm"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Typesense"
+    icon="link"
+    href="/oss/integrations/vectorstores/typesense"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Upstash Vector"
+    icon="link"
+    href="/oss/integrations/vectorstores/upstash"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="USearch"
+    icon="link"
+    href="/oss/integrations/vectorstores/usearch"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Vectara"
+    icon="link"
+    href="/oss/integrations/vectorstores/vectara"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Vercel Postgres"
+    icon="link"
+    href="/oss/integrations/vectorstores/vercel_postgres"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Voy"
+    icon="link"
+    href="/oss/integrations/vectorstores/voy"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Weaviate"
+    icon="link"
+    href="/oss/integrations/vectorstores/weaviate"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Xata"
+    icon="link"
+    href="/oss/integrations/vectorstores/xata"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Zep Open Source"
+    icon="link"
+    href="/oss/integrations/vectorstores/zep"
+    arrow="true"
+    cta="View guide"
+  />
+  <Card
+    title="Zep Cloud"
+    icon="link"
+    href="/oss/integrations/vectorstores/zep_cloud"
+    arrow="true"
+    cta="View guide"
+  />
+</Columns>
