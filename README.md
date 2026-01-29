@@ -203,4 +203,4 @@ See [GOVERNANCE.md](GOVERNANCE.md).
 
 ## License
 
-[AGPL-3.0](LICENSE)
+[MIT](LICENSE)
