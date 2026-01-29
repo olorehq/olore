@@ -119,6 +119,66 @@ export default function Home() {
           <SupportedAgents />
         </section>
 
+        {/* How To Use */}
+        <section className="border-b border-zinc-800 p-6">
+          <h2 className="mb-6 text-xl font-bold text-zinc-100 uppercase">
+            <span className="text-purple-500">&gt;&gt;</span> How_To_Use
+          </h2>
+          <div className="grid gap-px bg-zinc-800 font-mono text-sm md:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-zinc-950 p-6">
+              <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
+                <span className="text-cyan-500">01</span> Install
+              </p>
+              <p className="text-zinc-300">
+                <span className="text-zinc-600">$</span> olore install zod
+              </p>
+            </div>
+            <div className="bg-zinc-950 p-6">
+              <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
+                <span className="text-cyan-500">02</span> Invoke the skill
+              </p>
+              <p className="text-zinc-400">
+                <span className="text-zinc-600">&gt;</span>{" "}
+                <span className="text-zinc-300">/olore-zod-latest</span>{" "}
+                <span className="text-zinc-600">// Claude Code</span>
+              </p>
+              <p className="text-zinc-400">
+                <span className="text-zinc-600">&gt;</span>{" "}
+                <span className="text-zinc-300">$olore-zod-latest</span>{" "}
+                <span className="text-zinc-600">// Codex</span>
+              </p>
+              <p className="text-zinc-400">
+                <span className="text-zinc-600">&gt;</span>{" "}
+                <span className="text-zinc-300">olore-zod-latest</span>{" "}
+                <span className="text-zinc-600">// OpenCode</span>
+              </p>
+            </div>
+            <div className="bg-zinc-950 p-6">
+              <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
+                <span className="text-cyan-500">03</span> Agent loads docs
+              </p>
+              <p className="text-zinc-400">
+                Full documentation is now in context.
+                <br />
+                No hallucinations. No network.
+              </p>
+            </div>
+            <div className="bg-zinc-950 p-6">
+              <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
+                <span className="text-purple-500">TIP</span> Pin to project
+              </p>
+              <p className="text-zinc-400">
+                Add to <span className="text-zinc-300">CLAUDE.md</span> or{" "}
+                <span className="text-zinc-300">AGENTS.md</span>:
+              </p>
+              <p className="mt-2 text-zinc-500">
+                <span className="text-zinc-600">#</span> Use /olore-zod-latest
+                for Zod reference.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Before / After Brutalist */}
         {/* accuracy: not_stormtrooper_level */}
         <section className="grid border-b border-zinc-800 font-mono text-xs lg:grid-cols-2">

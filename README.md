@@ -77,6 +77,34 @@ olore list
 olore remove prisma
 ```
 
+## Usage
+
+After installing, skills are automatically available in your AI agent:
+
+**Claude Code:**
+```
+/olore-prisma-latest
+```
+
+**Codex:**
+```
+$olore-prisma-latest
+```
+
+**OpenCode:**
+```
+olore-prisma-latest
+```
+
+Invoke the skill and your agent loads the full documentation as context. No copy-paste, no hallucinations.
+
+**Pro tip:** Add skill references to your project's `CLAUDE.md` or `AGENTS.md` so agents automatically know which docs to use:
+
+```markdown
+# CLAUDE.md
+When working with Zod schemas, use `/olore-zod-latest` for reference.
+```
+
 ## Create Your Own Docs
 
 Add private documentation for your AI agent:
