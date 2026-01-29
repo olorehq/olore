@@ -34,8 +34,8 @@ export function getOlorePackagePath(name: string, version: string): string {
   return path.join(getOloreHome(), 'packages', name, version);
 }
 
-// Check if a symlink points to ~/.olore (installed) or elsewhere (linked)
-// On Windows, this also handles copied directories (since symlinks require admin)
+// Check if a symlink/junction points to ~/.olore (installed) or elsewhere (linked)
+// Falls back to directory check for legacy copied installs
 export function isInstalledPackage(symlinkPath: string): boolean {
   try {
     const target = fs.readlinkSync(symlinkPath);
@@ -43,7 +43,7 @@ export function isInstalledPackage(symlinkPath: string): boolean {
     // Use platform-aware path comparison (case-insensitive on Windows)
     return pathStartsWith(target, oloreHome);
   } catch {
-    // Not a symlink, check if it's a directory (copied install on Windows or old-style)
+    // Not a symlink/junction, check if it's a directory (legacy copied install)
     return fs.existsSync(symlinkPath) && fs.statSync(symlinkPath).isDirectory();
   }
 }
@@ -95,7 +95,7 @@ export interface PackageInfo {
 export interface InstalledPackageInfo extends PackageInfo {
   version: string;
   agent: string;
-  installType: 'installed' | 'linked' | 'copied'; // installed = via ~/.olore, linked = direct symlink, copied = old-style copy
+  installType: 'installed' | 'linked' | 'copied'; // installed = via ~/.olore, linked = direct symlink/junction, copied = legacy copy
   symlinkTarget: string | null;
 }
 
@@ -145,7 +145,7 @@ export async function getInstalledPackages(): Promise<InstalledPackageInfo[]> {
           // It's a symlink - check if it points to ~/.olore
           installType = isInstalledPackage(pkgPath) ? 'installed' : 'linked';
         } else {
-          // Not a symlink - old-style direct copy
+          // Not a symlink/junction - legacy direct copy
           installType = 'copied';
         }
 

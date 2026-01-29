@@ -120,8 +120,7 @@ export async function link(localPath: string): Promise<void> {
   console.log(pc.cyan(`  ${skillName}`) + pc.gray(' (OpenCode)'));
   console.log('');
   console.log(pc.gray(`Development mode: ${getLinkTypeText()} source (bypasses ~/.olore).`));
-  console.log(pc.gray('On Unix, changes to source are immediately visible.'));
-  console.log(pc.gray('On Windows, re-run link after changes.'));
+  console.log(pc.gray('Changes to source are immediately visible.'));
   console.log(
     pc.gray('Use ') + pc.cyan('olore install') + pc.gray(' for a stable copy in ~/.olore.')
   );

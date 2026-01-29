@@ -5,18 +5,24 @@ import fs from 'fs-extra';
 
 /**
  * Platform utilities for cross-platform compatibility.
- * Windows uses copies instead of symlinks to avoid admin privilege requirements.
+ * Windows uses NTFS junctions (no admin required), matching npm/pnpm/yarn behavior.
  */
 
 export const isWindows = process.platform === 'win32';
 
 /**
- * Create a symlink on Unix or copy on Windows.
- * Windows symlinks require admin privileges, so we copy instead.
+ * Create a directory symlink on Unix or NTFS junction on Windows.
+ * Junctions don't require admin privileges and are the standard approach
+ * used by npm, pnpm, and yarn on Windows.
+ * Falls back to copy if junction creation fails (e.g., non-NTFS filesystem).
  */
 export async function linkOrCopy(source: string, target: string): Promise<void> {
   if (isWindows) {
-    await fs.copy(source, target);
+    try {
+      await fs.symlink(source, target, 'junction');
+    } catch {
+      await fs.copy(source, target);
+    }
   } else {
     await fs.symlink(source, target, 'dir');
   }
@@ -77,12 +83,12 @@ export function pathStartsWith(child: string, parent: string): boolean {
  * Get the link action description for user-facing messages.
  */
 export function getLinkActionText(): string {
-  return isWindows ? 'Copying' : 'Creating symlinks';
+  return 'Linking';
 }
 
 /**
  * Get the link type description for user-facing messages.
  */
 export function getLinkTypeText(): string {
-  return isWindows ? 'copied to' : 'symlinked to';
+  return 'linked to';
 }
