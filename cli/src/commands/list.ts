@@ -1,5 +1,6 @@
 import pc from 'picocolors';
 
+import { diagnose } from '../core/doctor.js';
 import { getInstalledPackages } from '../core/paths.js';
 
 interface ListOptions {
@@ -18,7 +19,8 @@ export async function list(options: ListOptions): Promise<void> {
   }
 
   if (options.json) {
-    console.log(JSON.stringify(packages, null, 2));
+    const { issues } = await diagnose();
+    console.log(JSON.stringify({ packages, issueCount: issues.length }, null, 2));
     return;
   }
 
@@ -49,6 +51,17 @@ export async function list(options: ListOptions): Promise<void> {
   console.log(pc.gray(`Total: ${packages.length} packages`));
   console.log('');
   console.log(pc.gray('Types: installed = in ~/.olore, linked = dev symlink, copied = legacy'));
+
+  // Quick health check
+  const { issues } = await diagnose();
+  if (issues.length > 0) {
+    console.log('');
+    console.log(
+      pc.yellow(
+        `\u26a0 ${issues.length} issue${issues.length === 1 ? '' : 's'} detected. Run ${pc.cyan('olore doctor')} for details.`
+      )
+    );
+  }
 }
 
 function formatSize(bytes: number): string {

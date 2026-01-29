@@ -3,11 +3,13 @@ import { createRequire } from 'module';
 import { Command } from 'commander';
 import pc from 'picocolors';
 
+import { doctor } from './commands/doctor.js';
 import { init } from './commands/init.js';
 import { install } from './commands/install.js';
 import { link } from './commands/link.js';
 import { list } from './commands/list.js';
 import { order66 } from './commands/order66.js';
+import { prune } from './commands/prune.js';
 import { remove } from './commands/remove.js';
 
 const require = createRequire(import.meta.url);
@@ -91,6 +93,35 @@ program
   .action(async (pkg) => {
     try {
       await remove(pkg);
+    } catch (error) {
+      console.error(pc.red(`Error: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// Diagnose problems
+program
+  .command('doctor')
+  .description('Check for issues with installed packages')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    try {
+      await doctor(options);
+    } catch (error) {
+      console.error(pc.red(`Error: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// Clean up debris
+program
+  .command('prune')
+  .description('Remove dangling symlinks, orphaned packages, and partial installs')
+  .option('--dry-run', 'Show what would be removed without acting')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    try {
+      await prune(options);
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);
