@@ -11,12 +11,6 @@ Next.js (App Router), React 19, TypeScript, Tailwind CSS.
 
 This project uses **pnpm**. Do not use npm or yarn.
 
-First-time setup:
-```bash
-nvm use         # Use project Node version from .nvmrc
-npm i -g pnpm   # Install pnpm globally
-```
-
 ## Development Commands
 
 ```bash
