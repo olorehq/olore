@@ -81,7 +81,11 @@ export default function Home() {
               Codex, OpenCode.
             </p>
 
-            <CopyCommand />
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider">Quick Start</p>
+              <CopyCommand command="npm install -g @olorehq/olore" />
+              <CopyCommand command="olore install zod" />
+            </div>
           </div>
 
           <div className="bg-opacity-5 flex items-center justify-center bg-[url('/grid.svg')] bg-center p-12">

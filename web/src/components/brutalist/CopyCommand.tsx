@@ -10,9 +10,8 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-export function CopyCommand() {
+export function CopyCommand({ command = "olore install zod" }: { command?: string }) {
   const [copied, setCopied] = useState(false);
-  const command = "olore install zod";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(command);
