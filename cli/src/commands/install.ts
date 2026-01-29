@@ -4,14 +4,9 @@ import fs from 'fs-extra';
 import ora from 'ora';
 import pc from 'picocolors';
 
-import {
-  downloadAndExtractToTemp,
-  downloadAndInstall,
-  DownloadError,
-  formatBytes,
-} from '../core/download.js';
+import { downloadAndInstall, DownloadError, formatBytes } from '../core/download.js';
 import { detectAgents, getAgentPaths, getOlorePackagePath } from '../core/paths.js';
-import { expandPath, isLocalPath, isWindows, linkOrCopy } from '../core/platform.js';
+import { expandPath, isLocalPath, linkOrCopy } from '../core/platform.js';
 import { RegistryError, resolveVersion, VersionInfo } from '../core/registry.js';
 
 interface InstallOptions {
@@ -102,52 +97,32 @@ async function installFromLocal(localPath: string): Promise<void> {
 
   const agentPaths = getAgentPaths();
 
-  if (isWindows) {
-    // Windows: Copy directly to each agent's skills directory (skip ~/.olore)
-    const spinner = ora('Copying to agent directories...').start();
+  // Copy to ~/.olore central storage, then link to agent directories
+  const olorePath = getOlorePackagePath(packageName, packageVersion);
+  const spinner = ora('Copying to ~/.olore...').start();
 
-    const copied: string[] = [];
-    for (const [agent, skillsDir] of Object.entries(agentPaths)) {
-      const targetDir = path.join(skillsDir, skillName);
+  await fs.ensureDir(path.dirname(olorePath));
+  await fs.remove(olorePath);
+  await fs.copy(fullPath, olorePath);
 
-      await fs.ensureDir(skillsDir);
-      await fs.remove(targetDir);
-      await fs.copy(fullPath, targetDir);
+  spinner.succeed(`Copied to ${pc.gray(olorePath)}`);
 
-      copied.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
-    }
+  const linkSpinner = ora('Linking to agent directories...').start();
 
-    spinner.stop();
-    copied.forEach((line) => console.log(`  ${line}`));
-    console.log(pc.gray(`    └─ copied from ${fullPath}`));
-  } else {
-    // Unix: Copy to ~/.olore central storage, then symlink
-    const olorePath = getOlorePackagePath(packageName, packageVersion);
-    const spinner = ora('Copying to ~/.olore...').start();
+  const linked: string[] = [];
+  for (const [agent, skillsDir] of Object.entries(agentPaths)) {
+    const targetDir = path.join(skillsDir, skillName);
 
-    await fs.ensureDir(path.dirname(olorePath));
-    await fs.remove(olorePath);
-    await fs.copy(fullPath, olorePath);
+    await fs.ensureDir(skillsDir);
+    await fs.remove(targetDir);
+    await linkOrCopy(olorePath, targetDir);
 
-    spinner.succeed(`Copied to ${pc.gray(olorePath)}`);
-
-    const linkSpinner = ora('Creating symlinks...').start();
-
-    const linked: string[] = [];
-    for (const [agent, skillsDir] of Object.entries(agentPaths)) {
-      const targetDir = path.join(skillsDir, skillName);
-
-      await fs.ensureDir(skillsDir);
-      await fs.remove(targetDir);
-      await linkOrCopy(olorePath, targetDir);
-
-      linked.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
-    }
-
-    linkSpinner.stop();
-    linked.forEach((line) => console.log(`  ${line}`));
-    console.log(pc.gray(`    └─ all symlinked to ${olorePath}`));
+    linked.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
   }
+
+  linkSpinner.stop();
+  linked.forEach((line) => console.log(`  ${line}`));
+  console.log(pc.gray(`    └─ all linked to ${olorePath}`));
 
   console.log('');
   console.log(pc.green('Installation complete!'));
@@ -231,89 +206,44 @@ async function installFromRemote(pkg: string, optionsVersion?: string): Promise<
 
   const agentPaths = getAgentPaths();
 
-  if (isWindows) {
-    // Windows: Download to temp, then copy directly to each agent's skills directory
-    const downloadSpinner = ora('Downloading package...').start();
-    let tempDir: string;
+  // Download to ~/.olore central storage, then link to agent directories
+  const olorePath = getOlorePackagePath(name, versionInfo.version);
+  const downloadSpinner = ora('Downloading package...').start();
 
-    try {
-      tempDir = await downloadAndExtractToTemp(versionInfo.downloadUrl, versionInfo.integrity);
-      downloadSpinner.succeed('Downloaded and verified');
-    } catch (error) {
-      downloadSpinner.fail('Download failed');
-      if (error instanceof DownloadError) {
-        if (error.code === 'CHECKSUM_MISMATCH') {
-          console.log(pc.red('\nChecksum verification failed!'));
-          console.log(pc.gray('The downloaded package may be corrupted or tampered with.'));
-        } else {
-          console.log(pc.red(`\nDownload error: ${error.message}`));
-        }
+  try {
+    await downloadAndInstall(versionInfo.downloadUrl, olorePath, versionInfo.integrity);
+    downloadSpinner.succeed(`Downloaded to ${pc.gray(olorePath)}`);
+  } catch (error) {
+    downloadSpinner.fail('Download failed');
+    if (error instanceof DownloadError) {
+      if (error.code === 'CHECKSUM_MISMATCH') {
+        console.log(pc.red('\nChecksum verification failed!'));
+        console.log(pc.gray('The downloaded package may be corrupted or tampered with.'));
       } else {
-        console.log(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        console.log(pc.red(`\nDownload error: ${error.message}`));
       }
-      process.exit(1);
+    } else {
+      console.log(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`));
     }
-
-    try {
-      const copySpinner = ora('Copying to agent directories...').start();
-
-      const copied: string[] = [];
-      for (const [agent, skillsDir] of Object.entries(agentPaths)) {
-        const targetDir = path.join(skillsDir, skillName);
-
-        await fs.ensureDir(skillsDir);
-        await fs.remove(targetDir);
-        await fs.copy(tempDir, targetDir);
-
-        copied.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
-      }
-
-      copySpinner.stop();
-      copied.forEach((line) => console.log(`  ${line}`));
-    } finally {
-      // Clean up temp directory
-      await fs.remove(path.dirname(tempDir)).catch(() => {});
-    }
-  } else {
-    // Unix: Download to ~/.olore, then symlink
-    const olorePath = getOlorePackagePath(name, versionInfo.version);
-    const downloadSpinner = ora('Downloading package...').start();
-
-    try {
-      await downloadAndInstall(versionInfo.downloadUrl, olorePath, versionInfo.integrity);
-      downloadSpinner.succeed(`Downloaded to ${pc.gray(olorePath)}`);
-    } catch (error) {
-      downloadSpinner.fail('Download failed');
-      if (error instanceof DownloadError) {
-        if (error.code === 'CHECKSUM_MISMATCH') {
-          console.log(pc.red('\nChecksum verification failed!'));
-          console.log(pc.gray('The downloaded package may be corrupted or tampered with.'));
-        } else {
-          console.log(pc.red(`\nDownload error: ${error.message}`));
-        }
-      } else {
-        console.log(pc.red(`\nError: ${error instanceof Error ? error.message : 'Unknown error'}`));
-      }
-      process.exit(1);
-    }
-
-    const linkSpinner = ora('Creating symlinks...').start();
-
-    const linked: string[] = [];
-    for (const [agent, skillsDir] of Object.entries(agentPaths)) {
-      const targetDir = path.join(skillsDir, skillName);
-
-      await fs.ensureDir(skillsDir);
-      await fs.remove(targetDir);
-      await linkOrCopy(olorePath, targetDir);
-
-      linked.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
-    }
-
-    linkSpinner.stop();
-    linked.forEach((line) => console.log(`  ${line}`));
-    console.log(pc.gray(`    └─ all symlinked to ${olorePath}`));
+    process.exit(1);
   }
+
+  const linkSpinner = ora('Linking to agent directories...').start();
+
+  const linked: string[] = [];
+  for (const [agent, skillsDir] of Object.entries(agentPaths)) {
+    const targetDir = path.join(skillsDir, skillName);
+
+    await fs.ensureDir(skillsDir);
+    await fs.remove(targetDir);
+    await linkOrCopy(olorePath, targetDir);
+
+    linked.push(`${pc.green('✓')} ${agent} ${pc.gray('→')} ${pc.gray(targetDir)}`);
+  }
+
+  linkSpinner.stop();
+  linked.forEach((line) => console.log(`  ${line}`));
+  console.log(pc.gray(`    └─ all linked to ${olorePath}`));
 
   console.log('');
   console.log(pc.green('Installation complete!'));

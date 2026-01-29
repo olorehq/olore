@@ -161,47 +161,6 @@ export async function downloadAndInstall(
 }
 
 /**
- * Download and extract a package to a temp directory (for Windows installs)
- * Caller is responsible for cleaning up the returned temp directory
- * @param url Download URL for the tarball
- * @param integrity Expected checksum (sha256-...)
- * @returns Path to the temp directory containing extracted package
- */
-export async function downloadAndExtractToTemp(url: string, integrity: string): Promise<string> {
-  // Create temp directory for download
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olore-'));
-  const tarballPath = path.join(tempDir, 'package.tar.gz');
-  const extractDir = path.join(tempDir, 'package');
-
-  try {
-    // Download the tarball
-    await downloadFile(url, tarballPath);
-
-    // Verify checksum
-    const checksumValid = await verifyChecksum(tarballPath, integrity);
-    if (!checksumValid) {
-      const actual = await calculateChecksum(tarballPath);
-      throw new DownloadError(
-        `Checksum verification failed.\nExpected: ${integrity}\nActual: ${actual}`,
-        'CHECKSUM_MISMATCH'
-      );
-    }
-
-    // Extract to temp subdirectory
-    await extractTarball(tarballPath, extractDir);
-
-    // Remove tarball to save space, keep extracted files
-    await fs.remove(tarballPath);
-
-    return extractDir;
-  } catch (error) {
-    // Clean up on error
-    await fs.remove(tempDir).catch(() => {});
-    throw error;
-  }
-}
-
-/**
  * Get the size of a file in bytes
  */
 export async function getFileSize(filePath: string): Promise<number> {
