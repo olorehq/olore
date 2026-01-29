@@ -60,7 +60,7 @@ GitHub Releases:
 ```
 olore install prisma
        ↓
-GET github.com/olorehq/packages/releases/download/prisma@5.22.0/prisma-5.22.0.tar.gz
+GET github.com/olorehq/olore/releases/download/prisma@5.22.0/prisma-5.22.0.tar.gz
        ↓
 Verify SHA-256 hash
        ↓
@@ -197,7 +197,7 @@ prisma-5.22.0.tar.gz
       "latest": "5.22.0",
       "versions": {
         "5.22.0": {
-          "tarball": "https://github.com/olorehq/packages/releases/download/prisma@5.22.0/prisma-5.22.0.tar.gz",
+          "tarball": "https://github.com/olorehq/olore/releases/download/prisma@5.22.0/prisma-5.22.0.tar.gz",
           "sha256": "abc123...",
           "size": 1250000,
           "files": 420

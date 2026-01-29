@@ -50,12 +50,12 @@ Your AI hallucinates. Give it the docs. **Same docs, every agent.**
 ## Installation
 
 ```bash
-npm install -g olore
+npm install -g @olorehq/olore
 ```
 
 Or run directly with npx:
 ```bash
-npx olore install prisma
+npx @olorehq/olore install prisma
 ```
 
 ## Quick Start
@@ -168,7 +168,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Governance
 
-See [GOVERNANCE.md](GOVERNANCE.md) and the [Community Playbook](docs/community-playbook.md).
+See [GOVERNANCE.md](GOVERNANCE.md).
 
 ## License
 
