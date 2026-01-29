@@ -115,14 +115,6 @@ npm run build       # Verify build
 npm test            # Run tests
 ```
 
-**Commit prefixes:**
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `refactor:` - Code improvement
-- `docs:` - Documentation
-- `test:` - Tests
-- `chore:` - Maintenance
-
 **Breaking changes (post-1.0):** Removing commands, changing options, altering output format, changing exit codes.
 
 **Version source:** `package.json` only (CLI reads at runtime)
