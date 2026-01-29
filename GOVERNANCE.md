@@ -24,7 +24,7 @@ Active contributors who consistently improve the project can be invited as maint
 
 ## Security and Responsible Disclosure
 
-Report security issues privately via the project contact email listed in the README.
+Report security issues privately via [GitHub's private vulnerability reporting](https://github.com/olorehq/olore/security/advisories/new).
 
 ## Changes to This Document
 

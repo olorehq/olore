@@ -33,7 +33,7 @@ Public roadmap for olore development.
 - [x] Package tarballs generated (13 packages)
 - [x] Version resolution logic (`@5.22.0`, `@5`, `@latest`)
 - [x] Registry generation script (`npm run generate-registry`)
-- [ ] Deploy registry to GitHub Pages
+- [ ] Deploy registry to Vercel (olore.dev)
 - [ ] Upload tarballs to GitHub Releases
 - [ ] End-to-end install test (live registry)
 
@@ -61,7 +61,7 @@ Public roadmap for olore development.
 
 ### Phase 5: CI & Community
 
-- [x] GitHub issue templates (package request, contribution)
+- [ ] GitHub issue templates (package request, contribution)
 - [x] Config validation workflow (schema, repo, path, file count)
 - [ ] **Auto-build on merge** — When config PR merges, CI builds package automatically
   - Headless build script using Claude API

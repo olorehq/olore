@@ -10,7 +10,7 @@ Choose your path, young Padawan:
 | **Tools needed** | Just GitHub | Claude Code | TypeScript + Node |
 | **Difficulty** | ⭐ | ⭐⭐ | ⭐⭐⭐ |
 
-Not ready to submit a PR? [Request a package](https://github.com/olorehq/olore/issues/new?template=package-request.yml) and we'll build it for you.
+Not ready to submit a PR? [Request a package](https://github.com/olorehq/olore/issues/new) and we'll build it for you.
 
 > *"Do. Or do not. There is no try."* — Yodalf
 
