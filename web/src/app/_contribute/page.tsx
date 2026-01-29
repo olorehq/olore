@@ -192,7 +192,7 @@ export default function ContributePage() {
                 href="https://github.com/olorehq/olore/blob/main/LICENSE"
                 className="transition-colors hover:text-cyan-400"
               >
-                AGPL-3.0
+                MIT
               </a>
             </div>
             <div className="flex items-center gap-6">
