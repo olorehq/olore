@@ -1,8 +1,22 @@
+import fs from "fs";
+import path from "path";
+
 import { CopyCommand } from "../components/brutalist/CopyCommand";
 import { SupportedAgents } from "../components/brutalist/SupportedAgents";
 import { TerminalDemo } from "../components/brutalist/TerminalDemo";
 
+function getCliVersion(): string {
+  try {
+    const pkgPath = path.resolve(process.cwd(), "../cli/package.json");
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    return pkg.version;
+  } catch {
+    return "0.0.0";
+  }
+}
+
 export default function Home() {
+  const cliVersion = getCliVersion();
   return (
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-300 selection:bg-cyan-500/30 selection:text-cyan-200">
       <main className="mx-auto min-h-screen max-w-7xl border-x border-zinc-800">
@@ -63,7 +77,7 @@ export default function Home() {
                 />
               </a>
               <span className="border border-zinc-800 px-2 py-0.5 text-xs text-zinc-500">
-                v0.1.0
+                v{cliVersion}
               </span>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tighter text-zinc-100 uppercase md:text-6xl">
@@ -82,7 +96,9 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-zinc-500 uppercase tracking-wider">Quick Start</p>
+              <p className="text-xs tracking-wider text-zinc-500 uppercase">
+                Quick Start
+              </p>
               <CopyCommand command="npm install -g @olorehq/olore" />
               <CopyCommand command="olore install zod" />
             </div>

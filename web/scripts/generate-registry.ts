@@ -7,22 +7,22 @@
  * See: docs/adr/0005-registry-generation-at-build-time.md
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // --- Configuration ---
 
-const GITHUB_OWNER = 'olorehq';
-const GITHUB_REPO = 'olore';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
+const GITHUB_OWNER = "olorehq";
+const GITHUB_REPO = "olore";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT_DIR = path.resolve(__dirname, '..', '..');
-const VAULT_PACKAGES_DIR = path.join(ROOT_DIR, 'vault', 'packages');
-const VAULT_CONFIGS_DIR = path.join(ROOT_DIR, 'vault', 'configs');
-const OUTPUT_DIR = path.join(ROOT_DIR, 'web', 'public', 'registry');
+const ROOT_DIR = path.resolve(__dirname, "..", "..");
+const VAULT_PACKAGES_DIR = path.join(ROOT_DIR, "vault", "packages");
+const VAULT_CONFIGS_DIR = path.join(ROOT_DIR, "vault", "configs");
+const OUTPUT_DIR = path.join(ROOT_DIR, "web", "public", "registry");
 
 // --- Types ---
 
@@ -88,14 +88,12 @@ interface RegistryIndex {
 
 // --- GitHub API ---
 
-async function fetchRelease(
-  tag: string
-): Promise<ReleaseInfo | null> {
+async function fetchRelease(tag: string): Promise<ReleaseInfo | null> {
   const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${encodeURIComponent(tag)}`;
 
   const headers: Record<string, string> = {
-    Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'olore-registry-generator',
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "olore-registry-generator",
   };
 
   if (GITHUB_TOKEN) {
@@ -128,7 +126,7 @@ async function fetchRelease(
 
 async function fetchSha256(url: string): Promise<string | null> {
   const headers: Record<string, string> = {
-    'User-Agent': 'olore-registry-generator',
+    "User-Agent": "olore-registry-generator",
   };
 
   if (GITHUB_TOKEN) {
@@ -157,7 +155,7 @@ function discoverLockFiles(): OloreLock[] {
   const lockFiles: OloreLock[] = [];
 
   if (!fs.existsSync(VAULT_PACKAGES_DIR)) {
-    console.warn('vault/packages directory not found');
+    console.warn("vault/packages directory not found");
     return lockFiles;
   }
 
@@ -177,14 +175,14 @@ function discoverLockFiles(): OloreLock[] {
       const lockPath = path.join(
         packagePath,
         versionDir.name,
-        'olore-lock.json'
+        "olore-lock.json"
       );
 
       if (!fs.existsSync(lockPath)) continue;
 
       try {
         const lockData = JSON.parse(
-          fs.readFileSync(lockPath, 'utf-8')
+          fs.readFileSync(lockPath, "utf-8")
         ) as OloreLock;
         lockFiles.push(lockData);
       } catch (error) {
@@ -207,9 +205,7 @@ function readConfigDescription(name: string): string | undefined {
   if (!fs.existsSync(configPath)) return undefined;
 
   try {
-    const config = JSON.parse(
-      fs.readFileSync(configPath, 'utf-8')
-    ) as Config;
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Config;
     return config.description;
   } catch {
     return undefined;
@@ -219,11 +215,11 @@ function readConfigDescription(name: string): string | undefined {
 // --- Registry Generation ---
 
 async function generateRegistry(): Promise<void> {
-  console.log('Generating registry...');
+  console.log("Generating registry...");
   console.log(`  Vault: ${VAULT_PACKAGES_DIR}`);
   console.log(`  Output: ${OUTPUT_DIR}`);
   console.log(
-    `  GitHub token: ${GITHUB_TOKEN ? 'provided' : 'NOT SET (rate limits may apply)'}`
+    `  GitHub token: ${GITHUB_TOKEN ? "provided" : "NOT SET (rate limits may apply)"}`
   );
   console.log();
 
@@ -246,7 +242,7 @@ async function generateRegistry(): Promise<void> {
 
   for (const [name, locks] of packageMap) {
     const description =
-      locks[0].description || readConfigDescription(name) || '';
+      locks[0].description || readConfigDescription(name) || "";
 
     const registry: PackageRegistry = {
       name,
@@ -266,9 +262,7 @@ async function generateRegistry(): Promise<void> {
 
       // Find tarball asset
       const tarballName = `${name}-${lock.version}.tar.gz`;
-      const tarballAsset = release.assets.find(
-        (a) => a.name === tarballName
-      );
+      const tarballAsset = release.assets.find((a) => a.name === tarballName);
 
       if (!tarballAsset) {
         console.warn(
@@ -283,10 +277,9 @@ async function generateRegistry(): Promise<void> {
         (a) => a.name === `${tarballName}.sha256`
       );
 
-      let integrity = '';
+      let integrity = "";
       if (sha256Asset) {
-        integrity =
-          (await fetchSha256(sha256Asset.browser_download_url)) || '';
+        integrity = (await fetchSha256(sha256Asset.browser_download_url)) || "";
       }
 
       if (!integrity) {
@@ -312,12 +305,10 @@ async function generateRegistry(): Promise<void> {
   }
 
   console.log();
-  console.log(
-    `Registry: ${included} versions included, ${skipped} skipped`
-  );
+  console.log(`Registry: ${included} versions included, ${skipped} skipped`);
 
   // 4. Generate output files
-  fs.mkdirSync(path.join(OUTPUT_DIR, 'packages'), { recursive: true });
+  fs.mkdirSync(path.join(OUTPUT_DIR, "packages"), { recursive: true });
 
   // Generate index.json
   const index: RegistryIndex = {
@@ -344,20 +335,20 @@ async function generateRegistry(): Promise<void> {
       versions: registry.versions,
     };
 
-    const packagePath = path.join(OUTPUT_DIR, 'packages', `${name}.json`);
-    fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+    const packagePath = path.join(OUTPUT_DIR, "packages", `${name}.json`);
+    fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + "\n");
     console.log(`  Wrote ${path.relative(ROOT_DIR, packagePath)}`);
   }
 
   // Sort index packages alphabetically
-  const sortedPackages: RegistryIndex['packages'] = {};
+  const sortedPackages: RegistryIndex["packages"] = {};
   for (const key of Object.keys(index.packages).sort()) {
     sortedPackages[key] = index.packages[key];
   }
   index.packages = sortedPackages;
 
-  const indexPath = path.join(OUTPUT_DIR, 'index.json');
-  fs.writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');
+  const indexPath = path.join(OUTPUT_DIR, "index.json");
+  fs.writeFileSync(indexPath, JSON.stringify(index, null, 2) + "\n");
   console.log(`  Wrote ${path.relative(ROOT_DIR, indexPath)}`);
 
   console.log();
@@ -369,6 +360,6 @@ async function generateRegistry(): Promise<void> {
 // --- Main ---
 
 generateRegistry().catch((error) => {
-  console.error('Registry generation failed:', error);
+  console.error("Registry generation failed:", error);
   process.exit(1);
 });

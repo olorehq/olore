@@ -61,6 +61,9 @@ npx @olorehq/olore install prisma
 ## Quick Start
 
 ```bash
+# Search available packages
+olore search
+
 # Install from registry
 olore install prisma
 
