@@ -11,6 +11,7 @@ import { list } from './commands/list.js';
 import { order66 } from './commands/order66.js';
 import { prune } from './commands/prune.js';
 import { remove } from './commands/remove.js';
+import { search } from './commands/search.js';
 
 const require = createRequire(import.meta.url);
 // Path relative to compiled dist/cli.js
@@ -79,6 +80,20 @@ program
   .action(async (options) => {
     try {
       await list(options);
+    } catch (error) {
+      console.error(pc.red(`Error: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// Search available packages
+program
+  .command('search [query]')
+  .description('Search available packages in the registry')
+  .option('--json', 'Output as JSON')
+  .action(async (query, options) => {
+    try {
+      await search(query, options);
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);
