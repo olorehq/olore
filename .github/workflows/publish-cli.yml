@@ -1,0 +1,52 @@
+name: Publish CLI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cli/**'
+  workflow_dispatch:
+
+concurrency:
+  group: publish-cli
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      - name: Check if version already published
+        id: check
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view @olorehq/olore@$PACKAGE_VERSION version 2>/dev/null; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "Version $PACKAGE_VERSION already published, skipping"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing version $PACKAGE_VERSION"
+          fi
+
+      - name: Publish to npm
+        if: steps.check.outputs.published == 'false'
+        run: npm publish --access public --provenance
