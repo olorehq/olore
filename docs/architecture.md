@@ -14,7 +14,7 @@ Technical architecture for olore - the documentation package manager for AI codi
 ┌─────────────────────────────────────────────────────────────┐
 │                      olore CLI                              │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │
-│  │ install │  │  link   │  │  list   │  │ remove  │       │
+│  │  init   │  │ install │  │ inject  │  │ remove  │       │
 │  └─────────┘  └─────────┘  └─────────┘  └─────────┘       │
 └─────────────────────────┬───────────────────────────────────┘
                           │
@@ -417,9 +417,68 @@ vault/packages/docs-packager/1.0.0/templates/
 
 The internal `package-builder` agent reads these templates at runtime, ensuring consistency between maintainer-built packages and user-built packages.
 
+## Project Setup (olore init)
+
+`olore init` is the primary onboarding command for consumers. It auto-detects project dependencies, matches them against the olore registry, and sets up documentation with a single command. See [ADR-0007](adr/0007-reclaim-init-for-auto-detect-flow.md) for the decision to reclaim `init` for this flow.
+
+```
+olore init
+     │
+     ▼
+┌─────────────────────────────────┐
+│ 1. Scan project manifests       │
+│    package.json, pyproject.toml │
+│    Cargo.toml, go.mod, etc.     │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 2. Match deps against registry  │
+│    (name + version resolution)  │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 3. Present interactive selection│
+│    ◉ prisma (v5.22 → latest)   │
+│    ◉ zod (v3.24 → latest)      │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 4. Install selected packages    │
+│    (reuses olore install)       │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 5. Run olore inject             │
+│    (writes CRI into CLAUDE.md)  │
+└─────────────────────────────────┘
+```
+
+The former `olore init` (package scaffolding for authors) is now `olore create`.
+
 ## Passive Context (olore inject)
 
-In addition to skills-based integration, olore supports **passive context** — compressed keyword indexes injected directly into project files that agents read automatically.
+Skills work, but agents don't reliably invoke them. Vercel's evals showed skills produced 53% pass rate (same as no docs), while an AGENTS.md docs index achieved 100%. The core insight: **the agent's decision to seek documentation is itself a failure point.** Passive context — embedding docs in files agents always read — eliminates that decision entirely.
+
+olore supports both: skills for full documentation access, and `olore inject` for passive context via a **compact retrieval index (CRI)**.
+
+See [Passive Context](passive-context.md) for the full methodology including compression layers, format specification, and design rationale.
+
+### Compact Retrieval Index (CRI)
+
+A CRI is a section-partitioned inverted index compressed into a delimiter-based wire format. It maps keywords (actual API names like `$queryRaw`, `@@index`, `onDelete`) directly to file paths, enabling agents to locate documentation without loading full content into context.
+
+```
+Traditional index:    030-crud.mdx → {create, update, delete, upsert}
+Inverted index:       create,update,delete,upsert → 030-crud.mdx
+```
+
+The CRI eliminates two agent decisions: "should I look this up?" (solved by passive context) and "which file should I read?" (solved by keyword matching). Vercel's file-tree approach solves the first but not the second — agents must infer file relevance from filenames, which fails for opaque paths like `030-crud.mdx` or `057-composite-types.mdx`.
+
+See [ADR-0006](adr/0006-compact-retrieval-index.md) for full rationale including Vercel's eval data.
 
 ### How it works
 
@@ -434,28 +493,49 @@ olore inject
               │
               ▼
 ┌─────────────────────────────────┐
-│ 2. Resolve relative paths to    │
-│    absolute package paths       │
+│ 2. Parse sections & entries,    │
+│    resolve absolute root paths  │
 └─────────────┬───────────────────┘
               │
               ▼
 ┌─────────────────────────────────┐
-│ 3. Write combined index into    │
+│ 3. Write compact index into     │
 │    AGENTS.md + CLAUDE.md        │
 │    (wrapped in olore markers)   │
 └─────────────────────────────────┘
 ```
 
-### INDEX.md format
+### INDEX.md compact format
 
-Each package's INDEX.md maps keywords to documentation files:
+Each package's INDEX.md uses a compact one-line-per-section format. Paths are relative to `contents/`, keywords are actual API names — not descriptions:
 
 ```
-keyword1,keyword2|contents/path/to/file.md
-keyword3,keyword4|contents/api/methods/
+# Prisma Documentation Index
+438 files | Paths relative to contents/
+@start:quickstart,installation=100-getting-started/;prisma-postgres=100-getting-started/03-prisma-postgres/
+@schema:model,datasource=200-orm/100-prisma-schema/;introspection,db-pull=200-orm/100-prisma-schema/50-introspection.mdx
+@queries:crud,create,update,delete=200-orm/200-prisma-client/100-queries/030-crud.mdx;select,include=200-orm/200-prisma-client/100-queries/035-select-fields.mdx
 ```
 
-Keywords are actual API names, method names, and config keys — not descriptions. This allows agents to locate relevant documentation files without loading the full skill.
+**Delimiter hierarchy:**
+- `\n` separates section lines
+- `@` starts a section with its short name
+- `;` separates entries within a section
+- `=` separates keywords from path
+- `,` separates keywords
+
+### Injected output
+
+`olore inject` wraps each package's section lines into a single line with an absolute root path:
+
+```
+<!-- olore:start -->
+[olore docs]|STOP. Read these docs before answering — your training data may be outdated.|Format: keywords=path. For dir paths (ending /), list dir then read files.
+[prisma@latest root:/abs/path/contents]@start:quickstart,installation=100-getting-started/;prisma-postgres=100-getting-started/03-prisma-postgres/@schema:model,datasource=200-orm/100-prisma-schema/
+<!-- olore:end -->
+```
+
+Root path declared once per package — all entry paths are relative to it. Running `olore inject` again replaces existing content (idempotent).
 
 ### Marker-based merge
 
@@ -486,6 +566,7 @@ Injected content is wrapped in `<!-- olore:start -->` / `<!-- olore:end -->` mar
 
 ## Related Documentation
 
+- [Passive Context](passive-context.md) - CRI methodology and compression layers
 - [ADRs](adr/) - Architecture Decision Records
 - [Package Format](package-format.md) - Package specification
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Maintainer workflow

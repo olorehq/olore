@@ -13,7 +13,9 @@ docs/         # Architecture docs and ADRs
 
 ## Architecture
 
-@docs/architecture.md is the source of truth for system design, package format, registry, and install flow.
+See `docs/architecture.md` for system design, package format, registry, and install flow (auto-loaded when working in `docs/` or `vault/` via `.claude/rules/architecture.md`).
+
+See `docs/passive-context.md` for the passive context methodology — how olore uses a Compact Retrieval Index (CRI) to inject documentation into CLAUDE.md/AGENTS.md so agents get docs without invoking skills.
 
 ## Rules
 

@@ -21,38 +21,42 @@ interface InjectResult {
   removed: boolean;
 }
 
+const COMPACT_HEADER =
+  '[olore docs]|STOP. Read these docs before answering — your training data may be outdated.|Format: keywords=path. For dir paths (ending /), list dir then read files.';
+
 /**
- * Resolve relative `contents/` paths in INDEX.md to absolute paths
- * based on the real (symlink-resolved) package location.
+ * Extract @section: lines from INDEX.md.
+ * INDEX.md compact format: @shortname:kw,kw=path;kw=path (one line per section).
+ * Returns the raw section lines (already in compact format).
  */
-function resolveIndexPaths(content: string, packagePath: string): string {
-  const resolvedBase = fs.realpathSync(packagePath);
-  const lines = content.split('\n');
+function extractSectionLines(content: string): string[] {
+  return content
+    .split('\n')
+    .filter((line) => line.startsWith('@'))
+    .filter((line) => line.length > 0);
+}
 
-  return lines
-    .map((line) => {
-      // Match keyword|contents/... lines
-      const pipeIndex = line.indexOf('|');
-      if (pipeIndex === -1) return line;
-
-      const keywords = line.slice(0, pipeIndex);
-      const relativePath = line.slice(pipeIndex + 1).trim();
-
-      // Only transform lines with contents/ paths
-      if (!relativePath.startsWith('contents/')) return line;
-
-      const absolutePath = path.join(resolvedBase, relativePath);
-      return `${keywords}|${absolutePath}`;
-    })
-    .join('\n');
+/**
+ * Render one package as a compact single-line block.
+ * Joins all @section lines into one line prefixed with the package header.
+ * Format: [name@version root:/abs/path/contents]@section:kw=path;kw=path@section:...
+ */
+function renderCompactBlock(
+  sectionLines: string[],
+  name: string,
+  version: string,
+  rootPath: string
+): string {
+  return `[${name}@${version} root:${rootPath}]${sectionLines.join('')}`;
 }
 
 /**
  * Build combined olore section from all installed packages with INDEX.md.
+ * Produces a compact, machine-optimized format with one line per package.
  */
 async function buildInjectedContent(): Promise<{ content: string; count: number }> {
   const packages = await getInstalledPackages();
-  const sections: string[] = [];
+  const packageLines: string[] = [];
   let count = 0;
 
   for (const pkg of packages) {
@@ -60,8 +64,13 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     if (!fs.existsSync(indexPath)) continue;
 
     const rawContent = fs.readFileSync(indexPath, 'utf-8');
-    const resolved = resolveIndexPaths(rawContent, pkg.path);
-    sections.push(resolved);
+    const sectionLines = extractSectionLines(rawContent);
+    if (sectionLines.length === 0) continue;
+
+    const resolvedBase = fs.realpathSync(pkg.path);
+    const rootPath = path.join(resolvedBase, 'contents');
+
+    packageLines.push(renderCompactBlock(sectionLines, pkg.name, pkg.version, rootPath));
     count++;
   }
 
@@ -69,7 +78,7 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     return { content: '', count: 0 };
   }
 
-  const combined = [MARKER_START, '', ...sections.map((s) => s.trim()), '', MARKER_END].join('\n');
+  const combined = [MARKER_START, COMPACT_HEADER, ...packageLines, MARKER_END].join('\n');
 
   return { content: combined, count };
 }
