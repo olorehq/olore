@@ -65,6 +65,7 @@ vault/
 │   │       ├── olore-lock.json   # Build metadata
 │   │       ├── SKILL.md
 │   │       ├── TOC.md
+│   │       ├── INDEX.md          # Compressed keyword→file index
 │   │       └── contents/
 │   │           └── *.md
 │   └── zod/
@@ -96,6 +97,7 @@ web/
 │   │       ├── olore-lock.json
 │   │       ├── SKILL.md
 │   │       ├── TOC.md
+│   │       ├── INDEX.md
 │   │       └── contents/
 │   │           └── *.md
 │   └── zod-docs/
@@ -103,6 +105,7 @@ web/
 │           ├── olore-lock.json
 │           ├── SKILL.md
 │           ├── TOC.md
+│           ├── INDEX.md
 │           └── contents/
 │               └── *.md
 └── config.json                   # User preferences
@@ -111,6 +114,7 @@ web/
 ├── olore-lock.json
 ├── SKILL.md
 ├── TOC.md
+├── INDEX.md
 └── contents/
     └── *.md
 ```
@@ -394,7 +398,7 @@ olore has two build tools for different audiences:
 | `/build-docs` | `.claude/skills/build-docs/` | Maintainers: build from GitHub configs | Downloads from GitHub repos |
 | `docs-packager` | `vault/packages/docs-packager/` | Users: package local docs | User's local `./docs` folder |
 
-Both tools generate the same output format (SKILL.md, TOC.md, contents/) and use **shared templates** from `vault/packages/docs-packager/1.0.0/templates/` as the single source of truth.
+Both tools generate the same output format (SKILL.md, TOC.md, INDEX.md, contents/) and use **shared templates** from `vault/packages/docs-packager/1.0.0/templates/` as the single source of truth.
 
 ### Template Structure
 
@@ -405,10 +409,57 @@ vault/packages/docs-packager/1.0.0/templates/
 ├── skill-tier3.md    # SKILL.md for large docs (> 100 files)
 ├── toc-tier1.md      # TOC.md for small docs
 ├── toc-tier2.md      # TOC.md for medium docs
-└── toc-tier3.md      # TOC.md for large docs
+├── toc-tier3.md      # TOC.md for large docs
+├── index-tier1.md    # INDEX.md for small docs
+├── index-tier2.md    # INDEX.md for medium docs
+└── index-tier3.md    # INDEX.md for large docs
 ```
 
 The internal `package-builder` agent reads these templates at runtime, ensuring consistency between maintainer-built packages and user-built packages.
+
+## Passive Context (olore inject)
+
+In addition to skills-based integration, olore supports **passive context** — compressed keyword indexes injected directly into project files that agents read automatically.
+
+### How it works
+
+```
+olore inject
+     │
+     ▼
+┌─────────────────────────────────┐
+│ 1. Scan installed packages      │
+│    for INDEX.md files           │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 2. Resolve relative paths to    │
+│    absolute package paths       │
+└─────────────┬───────────────────┘
+              │
+              ▼
+┌─────────────────────────────────┐
+│ 3. Write combined index into    │
+│    AGENTS.md + CLAUDE.md        │
+│    (wrapped in olore markers)   │
+└─────────────────────────────────┘
+```
+
+### INDEX.md format
+
+Each package's INDEX.md maps keywords to documentation files:
+
+```
+keyword1,keyword2|contents/path/to/file.md
+keyword3,keyword4|contents/api/methods/
+```
+
+Keywords are actual API names, method names, and config keys — not descriptions. This allows agents to locate relevant documentation files without loading the full skill.
+
+### Marker-based merge
+
+Injected content is wrapped in `<!-- olore:start -->` / `<!-- olore:end -->` markers. Running `olore inject` again replaces existing content (idempotent). Running `olore inject --remove` strips the sections cleanly.
 
 ## Tech Stack
 

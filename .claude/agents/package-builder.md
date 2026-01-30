@@ -1,13 +1,13 @@
 ---
 name: package-builder
-description: Build a documentation package from config. Downloads docs, filters files, generates TOC.md and SKILL.md. Use proactively when building or updating documentation packages.
+description: Build a documentation package from config. Downloads docs, filters files, generates TOC.md, SKILL.md, and INDEX.md. Use proactively when building or updating documentation packages.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 
 # Package Builder
 
-Build a complete documentation package: download, filter, generate TOC.md and SKILL.md.
+Build a complete documentation package: download, filter, generate TOC.md, SKILL.md, and INDEX.md.
 
 ## Input
 
@@ -162,6 +162,27 @@ cat vault/packages/docs-packager/1.0.0/templates/skill-tier3.md
 ```
 
 Create `vault/packages/{config_name}/{version}/SKILL.md` following the template structure.
+
+### Step 7.5: Generate INDEX.md
+
+Read the appropriate index template based on tier:
+
+```bash
+# Tier 1
+cat vault/packages/docs-packager/1.0.0/templates/index-tier1.md
+
+# Tier 2
+cat vault/packages/docs-packager/1.0.0/templates/index-tier2.md
+
+# Tier 3
+cat vault/packages/docs-packager/1.0.0/templates/index-tier3.md
+```
+
+Create `vault/packages/{config_name}/{version}/INDEX.md` following the template structure.
+
+Format: Each content line is `keyword1,keyword2|contents/path/to/file.ext`
+
+Keywords should be actual API names, method names, config keys extracted from the file contents — not descriptions.
 
 ### Step 8: Update olore-lock.json
 

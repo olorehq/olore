@@ -5,6 +5,7 @@ import pc from 'picocolors';
 
 import { doctor } from './commands/doctor.js';
 import { init } from './commands/init.js';
+import { inject } from './commands/inject.js';
 import { install } from './commands/install.js';
 import { link } from './commands/link.js';
 import { list } from './commands/list.js';
@@ -137,6 +138,21 @@ program
   .action(async (options) => {
     try {
       await prune(options);
+    } catch (error) {
+      console.error(pc.red(`Error: ${(error as Error).message}`));
+      process.exit(1);
+    }
+  });
+
+// Inject doc indexes into project files
+program
+  .command('inject')
+  .description('Inject compressed doc indexes into AGENTS.md and CLAUDE.md')
+  .option('--remove', 'Remove injected content from project files')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    try {
+      await inject(options);
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);
