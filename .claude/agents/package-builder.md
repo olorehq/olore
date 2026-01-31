@@ -1,210 +1,62 @@
 ---
 name: package-builder
-description: Build a documentation package from config. Downloads docs, filters files, generates TOC.md, SKILL.md, and INDEX.md. Use proactively when building or updating documentation packages.
+description: Build a documentation package from config. Downloads docs, generates artifacts and index. Use proactively when building or updating documentation packages.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+skills: download-docs, build-artifacts, build-index
 ---
 
 # Package Builder
 
-Build a complete documentation package: download, filter, generate TOC.md, SKILL.md, and INDEX.md.
+Build a complete documentation package by executing three phases: download, build artifacts, and build index.
 
 ## Input
 
 `$ARGUMENTS` format: `{config_name}@{version}` (e.g., `prisma@latest`, `nextjs@16.1.3`)
 
 Optional flags:
-- `--force` - Re-download even if already built
+- `--force` - Re-download and rebuild even if already built
 
-## Execution Steps
+## Execution
 
-### Step 1: Parse Arguments and Load Config
+### Phase 1: Download docs
 
-Parse `$ARGUMENTS`:
-- Extract `config_name` and `version` from `{config_name}@{version}`
-- Check for `--force` flag
+Follow the **download-docs** skill instructions to:
+- Parse arguments and load config from `vault/configs/`
+- Check if already built (skip unless `--force`)
+- Download via `github.sh` or `url.sh`
+- Count files and determine tier
+- Filter files (GitHub >50 files, AI-based)
+- Update `olore-lock.json` with final file count
 
-Load config file:
-```bash
-cat vault/configs/{config_name}.json
-```
+If download is skipped (already exists, no `--force`), still continue to Phase 2 and 3 to ensure artifacts exist.
 
-Extract:
-- `name` - Package name
-- `_source.type` - Source type (`github` or `url`)
-- `_source.repo` - GitHub repo (if github type)
-- `versions.{version}.ref` - Git ref for the version
+### Phase 2: Build artifacts
 
-### Step 2: Check if Already Built
+Follow the **build-artifacts** skill instructions to:
+- Verify `contents/` exists
+- Determine tier from file count/size
+- Generate TOC.md from tier template
+- Generate SKILL.md from tier template (name: `olore-{config_name}-{version}`)
 
-```bash
-test -f vault/packages/{config_name}/{version}/olore-lock.json && echo "EXISTS" || echo "NOT_FOUND"
-```
+### Phase 3: Build index
 
-If exists and no `--force` flag:
-```
-⏭️ {config_name}@{version}: Already built (use --force to rebuild)
-```
-Return early.
+Follow the **build-index** skill instructions to:
+- Verify `contents/` exists
+- Determine tier from file count/size
+- Read file contents and extract keywords (API names, method names)
+- Generate INDEX.md in compact `keyword1,keyword2|path` format from tier template
 
-### Step 3: Download Documentation
-
-**For GitHub sources:**
-```bash
-bash -c 'source .claude/skills/build-docs/scripts/github.sh && download_from_github "vault/configs/{config_name}.json" "vault/packages" "{version}"'
-```
-
-**For URL sources:**
-```bash
-bash -c 'source .claude/skills/build-docs/scripts/url.sh && download_from_urls "vault/configs/{config_name}.json" "vault/packages" "{version}"'
-```
-
-Verify download succeeded:
-```bash
-test -f vault/packages/{config_name}/{version}/olore-lock.json && echo "OK" || echo "FAILED"
-```
-
-If download failed, return error:
-```
-❌ {config_name}@{version}: Download failed
-```
-
-### Step 4: Count Files and Determine Tier
-
-```bash
-file_count=$(find vault/packages/{config_name}/{version}/contents -type f \( -name "*.md" -o -name "*.mdx" \) | wc -l)
-total_size=$(du -sk vault/packages/{config_name}/{version}/contents | cut -f1)
-```
-
-| Tier | Criteria |
-|------|----------|
-| 1 | < 30 files AND < 500KB |
-| 2 | 30-100 files OR 500KB-2MB |
-| 3 | > 100 files OR > 2MB |
-
-### Step 5: Filter Files (GitHub sources with >50 files only)
-
-**Skip this step if:**
-- Source type is `url`
-- File count is ≤ 50
-
-**For GitHub sources with >50 files:**
-
-1. For each file, read only the **first 20-30 lines** to make filtering decisions:
-   - Frontmatter/metadata (YAML block)
-   - Title and first heading
-   - Opening paragraph describing the content
-
-   This is sufficient to identify file type (changelog, RFC, API doc, tutorial, etc.).
-   **Do NOT read entire files for filtering** - it wastes tokens on large repos.
-
-2. Evaluate each file against criteria:
-
-**KEEP** - Files that help developers USE the library:
-- API reference documentation
-- Usage guides and tutorials
-- Configuration and setup docs
-- Code examples and patterns
-- Integration guides
-- Troubleshooting guides
-
-**DELETE** - Files NOT useful for using the library:
-- Internal development docs
-- Contribution guidelines
-- Release notes and changelogs
-- Meeting notes, RFCs, proposals
-- Marketing and landing pages
-- Duplicate or stub files
-- Auto-generated index files with no content
-
-3. Delete files that should be removed:
-```bash
-rm "vault/packages/{config_name}/{version}/contents/{path_to_delete}"
-```
-
-4. Remove empty directories:
-```bash
-find vault/packages/{config_name}/{version}/contents -type d -empty -delete
-```
-
-### Step 6: Generate TOC.md
-
-Read the appropriate template based on tier:
-
-```bash
-# Tier 1
-cat vault/packages/docs-packager/1.0.0/templates/toc-tier1.md
-
-# Tier 2
-cat vault/packages/docs-packager/1.0.0/templates/toc-tier2.md
-
-# Tier 3
-cat vault/packages/docs-packager/1.0.0/templates/toc-tier3.md
-```
-
-Create `vault/packages/{config_name}/{version}/TOC.md` following the template structure.
-
-### Step 7: Generate SKILL.md
-
-**IMPORTANT:** The `name` field MUST be `olore-{config_name}-{version}` to match the installed folder name.
-
-Read the appropriate template based on tier:
-
-```bash
-# Tier 1
-cat vault/packages/docs-packager/1.0.0/templates/skill-tier1.md
-
-# Tier 2
-cat vault/packages/docs-packager/1.0.0/templates/skill-tier2.md
-
-# Tier 3
-cat vault/packages/docs-packager/1.0.0/templates/skill-tier3.md
-```
-
-Create `vault/packages/{config_name}/{version}/SKILL.md` following the template structure.
-
-### Step 7.5: Generate INDEX.md
-
-Read the appropriate index template based on tier:
-
-```bash
-# Tier 1
-cat vault/packages/docs-packager/1.0.0/templates/index-tier1.md
-
-# Tier 2
-cat vault/packages/docs-packager/1.0.0/templates/index-tier2.md
-
-# Tier 3
-cat vault/packages/docs-packager/1.0.0/templates/index-tier3.md
-```
-
-Create `vault/packages/{config_name}/{version}/INDEX.md` following the template structure.
-
-Format: Each content line is `keyword1,keyword2|contents/path/to/file.ext`
-
-Keywords should be actual API names, method names, config keys extracted from the file contents — not descriptions.
-
-### Step 8: Update olore-lock.json
-
-Update the lock file with final file count:
-
-```bash
-# Get final count
-final_count=$(find vault/packages/{config_name}/{version}/contents -type f \( -name "*.md" -o -name "*.mdx" \) | wc -l)
-```
-
-Update `files` field in olore-lock.json if filtering occurred.
-
-### Step 9: Return Summary
+### Phase 4: Return summary
 
 Return ONLY a brief summary in this format:
 
 ```
-✓ {config_name}@{version}: {final_count} files{filtered_info}, tier {tier}
+done: {config_name}@{version}: {final_count} files{filtered_info}, tier {tier}
 ```
 
 Examples:
-- `✓ prisma@latest: 312 files (126 filtered), tier 3`
-- `✓ zod@latest: 17 files, tier 1`
+- `done: prisma@latest: 312 files (126 filtered), tier 3`
+- `done: zod@latest: 17 files, tier 1`
 
 Do NOT return detailed file lists or full content - keep the response minimal.
