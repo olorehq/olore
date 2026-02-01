@@ -89,14 +89,27 @@ cat vault/packages/docs-packager/1.0.0/templates/index-tier3.md
 
 Create `vault/packages/{config_name}/{version}/INDEX.md` following the template structure.
 
-Format: Each content line is `keyword1,keyword2|contents/path/to/file.ext`
+**Format:** Compact `@section` lines consumed by `olore inject`:
 
-Keywords should be actual API names, method names, config keys extracted from the file contents -- not descriptions.
+```
+@section:keyword1,keyword2=path/to/file.mdx;keyword3,keyword4=path/to/dir/
+```
+
+| Delimiter | Separates |
+|-----------|-----------|
+| `@` | Section name from entries |
+| `;` | Entries within a section |
+| `=` | Keywords from file path |
+| `,` | Keywords |
+
+- Paths are relative to `contents/` (do NOT include the `contents/` prefix)
+- Paths ending in `/` are directories; paths ending in `.md`/`.mdx` are files
+- Keywords should be actual API names, method names, config keys — not descriptions
 
 **Process:**
 1. Read each file in `contents/`
 2. Extract keywords: API names, method names, config keys, class names, function signatures
-3. Map keywords to file paths in the compact format
+3. Group entries into logical `@section` lines (one line per section)
 4. Write INDEX.md following the tier template
 
 ### Step 5: Return Summary
