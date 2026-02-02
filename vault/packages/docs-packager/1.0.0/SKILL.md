@@ -5,7 +5,7 @@ description: Package local documentation into an olore skill. Use when the user 
 
 # Package Local Documentation
 
-Package local documentation files into an olore skill with TOC.md and SKILL.md.
+Package local documentation files into an olore skill with TOC.md, SKILL.md, and INDEX.md.
 
 ## Quick Start
 
@@ -83,6 +83,20 @@ Read the appropriate template and generate SKILL.md:
 **IMPORTANT:** The `name` field MUST be `olore-{name}-{version}` to match the installed folder.
 
 Write to `{output_path}/SKILL.md`
+
+### Step 5.5: Generate INDEX.md
+
+Read the appropriate index template based on tier:
+
+- Tier 1: [templates/index-tier1.md](templates/index-tier1.md)
+- Tier 2: [templates/index-tier2.md](templates/index-tier2.md)
+- Tier 3: [templates/index-tier3.md](templates/index-tier3.md)
+
+Write to `{output_path}/INDEX.md`
+
+Format: Each content line is `keyword1,keyword2|contents/path/to/file.ext`
+
+Keywords should be actual API names, method names, config keys extracted from the file contents.
 
 ### Step 6: Generate olore-lock.json
 

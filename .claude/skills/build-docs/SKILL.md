@@ -137,6 +137,24 @@ olore install ./vault/packages/prisma/latest
 
 After install/link, skills are available as `/olore-<name>-<version>` (e.g., `/olore-prisma-latest`).
 
+## Standalone Skills
+
+Individual phases can be run independently without the full pipeline:
+
+```
+/download-docs prisma@latest         # Download + filter only
+/build-artifacts prisma@latest       # Regenerate SKILL.md + TOC.md only
+/build-index prisma@latest           # Regenerate INDEX.md only
+```
+
+Use `--force` on any standalone skill to regenerate even if output exists.
+
+**Dependencies:**
+- `/download-docs` has no dependencies (runs first)
+- `/build-artifacts` requires `contents/` from `/download-docs`
+- `/build-index` requires `contents/` from `/download-docs`
+- `/build-artifacts` and `/build-index` are independent of each other
+
 ## Reference
 
 - [Adding new documentation](adding-docs.md) - Config file format, GitHub/URL sources
