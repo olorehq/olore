@@ -81,15 +81,16 @@ export default function Home() {
               </span>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tighter text-zinc-100 uppercase md:text-6xl">
-              Docs as
+              Stop the
               <br />
-              <span className="text-cyan-500">Agent Skills</span>
+              <span className="text-cyan-500">hallucinations.</span>
             </h1>
             <p className="mb-8 max-w-md text-lg leading-relaxed text-zinc-400">
-              <span className="text-purple-500">&gt;</span> Version-pinned
-              documentation.
+              <span className="text-purple-500">&gt;</span> Version-pinned docs
+              for AI coding agents.
               <br />
-              <span className="text-purple-500">&gt;</span> Works offline.{" "}
+              <span className="text-purple-500">&gt;</span> Inject into context
+              or use as skills.
               <br />
               <span className="text-purple-500">&gt;</span> For Claude Code,
               Codex, OpenCode.
@@ -124,58 +125,144 @@ export default function Home() {
           <h2 className="mb-6 text-xl font-bold text-zinc-100 uppercase">
             <span className="text-purple-500">&gt;&gt;</span> How_To_Use
           </h2>
-          <div className="grid gap-px bg-zinc-800 font-mono text-sm md:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-zinc-950 p-6">
+
+          {/* Step 1: Install */}
+          <div className="mb-px bg-zinc-800">
+            <div className="bg-zinc-950 p-6 font-mono text-sm">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">01</span> Install
+                <span className="text-cyan-500">01</span> Install docs
               </p>
               <p className="text-zinc-300">
                 <span className="text-zinc-600">$</span> olore install zod
               </p>
+              <p className="mt-2 text-xs text-zinc-600">
+                Downloads version-pinned docs to ~/.olore/ and symlinks them
+                into each agent&apos;s global skill directory — Claude Code,
+                Codex, OpenCode. Skills are available immediately.
+              </p>
             </div>
+          </div>
+
+          {/* Two Options */}
+          <div className="grid gap-px bg-zinc-800 font-mono text-sm md:grid-cols-2">
+            {/* Option A: Use as skills (default) */}
             <div className="bg-zinc-950 p-6">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">02</span> Invoke the skill
+                <span className="text-cyan-500">02a</span> Use as skills
               </p>
-              <p className="text-zinc-400">
-                <span className="text-zinc-600">&gt;</span>{" "}
-                <span className="text-zinc-300">/olore-zod-latest</span>{" "}
-                <span className="text-zinc-600">// Claude Code</span>
+              <p className="text-zinc-300">
+                Done — start coding.
               </p>
-              <p className="text-zinc-400">
-                <span className="text-zinc-600">&gt;</span>{" "}
-                <span className="text-zinc-300">$olore-zod-latest</span>{" "}
-                <span className="text-zinc-600">// Codex</span>
-              </p>
-              <p className="text-zinc-400">
-                <span className="text-zinc-600">&gt;</span>{" "}
-                <span className="text-zinc-300">olore-zod-latest</span>{" "}
-                <span className="text-zinc-600">// OpenCode</span>
+              <p className="mt-2 text-xs text-zinc-600">
+                After install, every coding agent on your machine can see
+                the doc skill. Agent reads the full docs when it decides
+                it needs them.
               </p>
             </div>
+            {/* Option B: Inject into context */}
             <div className="bg-zinc-950 p-6">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">03</span> Agent loads docs
+                <span className="text-cyan-500">02b</span> Inject into context
+                <span className="ml-2 border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] text-cyan-400">
+                  RECOMMENDED
+                </span>
               </p>
-              <p className="text-zinc-400">
-                Full documentation is now in context.
-                <br />
-                No hallucinations. No network.
+              <p className="text-zinc-300">
+                <span className="text-zinc-600">$</span> olore inject
+              </p>
+              <p className="mt-2 text-xs text-zinc-600">
+                Additionally writes a compact doc index into your
+                project&apos;s AGENTS.md &amp; CLAUDE.md. Docs are always
+                in context — no agent decision needed.
+              </p>
+              <p className="mt-2 text-xs text-zinc-600">
+                Commit it — your whole team gets the docs.
               </p>
             </div>
-            <div className="bg-zinc-950 p-6">
+          </div>
+
+          {/* Step 3 */}
+          <div className="mt-px bg-zinc-800">
+            <div className="bg-zinc-950 p-6 font-mono text-sm">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-purple-500">TIP</span> Pin to project
+                <span className="text-cyan-500">03</span> Code
               </p>
               <p className="text-zinc-400">
-                Add to <span className="text-zinc-300">CLAUDE.md</span> or{" "}
-                <span className="text-zinc-300">AGENTS.md</span>:
-              </p>
-              <p className="mt-2 text-zinc-500">
-                <span className="text-zinc-600">#</span> Use /olore-zod-latest
-                for Zod reference.
+                Your agent has the right docs. No hallucinated APIs. No
+                outdated patterns. Use both approaches together for maximum
+                coverage.
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* Two Approaches */}
+        <section className="border-b border-zinc-800">
+          <div className="border-b border-zinc-800 p-6">
+            <h2 className="text-xl font-bold text-zinc-100 uppercase">
+              <span className="text-purple-500">&gt;&gt;</span>{" "}
+              Inject_vs_Skills
+            </h2>
+          </div>
+          <div className="p-6">
+            <p className="mb-6 max-w-2xl text-sm leading-relaxed text-zinc-400">
+              olore supports two approaches.{" "}
+              <span className="text-zinc-300">Inject</span> writes a compact
+              doc index into AGENTS.md — always in context, zero agent
+              decisions.{" "}
+              <span className="text-zinc-300">Skills</span> generate full
+              doc packages — deeper access, but agents must decide to read them.
+              Vercel&apos;s evals show the difference:
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-mono text-sm uppercase">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-zinc-500">
+                    <th className="border-r border-zinc-800 px-6 py-4 font-bold">
+                      Configuration
+                    </th>
+                    <th className="w-48 px-6 py-4 font-bold">Pass Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="text-zinc-400">
+                  <tr className="border-b border-zinc-800">
+                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
+                      Baseline (no docs)
+                    </td>
+                    <td className="px-6 py-4">53%</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800">
+                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
+                      Skills (default)
+                    </td>
+                    <td className="px-6 py-4">53%</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800">
+                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
+                      Skills (explicit instructions)
+                    </td>
+                    <td className="px-6 py-4">79%</td>
+                  </tr>
+                  <tr>
+                    <td className="border-r border-zinc-800 px-6 py-4 font-bold text-zinc-200">
+                      AGENTS.md docs index
+                    </td>
+                    <td className="px-6 py-4 font-bold text-cyan-400">100%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs text-zinc-600">
+              Source:{" "}
+              <a
+                href="https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-500 underline transition-colors hover:text-cyan-400"
+              >
+                Vercel — AGENTS.md outperforms skills in our agent evals
+              </a>
+            </p>
           </div>
         </section>
 
@@ -184,11 +271,19 @@ export default function Home() {
         <section className="grid border-b border-zinc-800 font-mono text-xs lg:grid-cols-2">
           <div className="border-b border-zinc-800 bg-zinc-900/30 p-8 lg:border-r lg:border-b-0">
             <h3 className="mb-4 font-bold text-red-500/80 uppercase">
-              [ FAIL ] CONTEXT7 (LATEST DOCS)
+              [ NO DOCS ] 53% PASS RATE
             </h3>
             <div className="text-zinc-400 opacity-75">
               <span className="text-zinc-600">&gt;</span>{" "}
-              <span className="text-zinc-500">{"// You are using Zod v3"}</span>
+              <span className="text-zinc-500">
+                {"// Agent has no version-pinned docs"}
+              </span>
+              <br />
+              <span className="text-zinc-600">&gt;</span>{" "}
+              <span className="text-zinc-500">
+                {"// Relies on training data..."}
+              </span>
+              <br />
               <br />
               <span className="text-zinc-600">&gt;</span>{" "}
               <span className="text-purple-400">import</span> {"{"} z {"}"}{" "}
@@ -210,13 +305,19 @@ export default function Home() {
             title="Some soldiers finally learned to aim"
           >
             <h3 className="mb-4 font-bold text-green-500/80 uppercase">
-              [ SUCCESS ] OLORE (PINNED v3)
+              [ WITH OLORE ] 100% PASS RATE
             </h3>
             <div className="text-zinc-300 opacity-75">
               <span className="text-zinc-600">&gt;</span>{" "}
               <span className="text-zinc-500">
-                {"// Agent reads olore-zod-3 skill"}
+                {"// Docs available — injected or as skills"}
               </span>
+              <br />
+              <span className="text-zinc-600">&gt;</span>{" "}
+              <span className="text-zinc-500">
+                {"// Agent uses the right API"}
+              </span>
+              <br />
               <br />
               <span className="text-zinc-600">&gt;</span>{" "}
               <span className="text-purple-400">import</span> {"{"} z {"}"}{" "}
@@ -258,6 +359,17 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="text-zinc-400">
+                <tr className="border-b border-zinc-800">
+                  <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
+                    Reliability
+                  </td>
+                  <td className="border-r border-zinc-800 px-6 py-4">
+                    AGENT MUST INVOKE
+                  </td>
+                  <td className="bg-zinc-900/30 px-6 py-4 font-bold text-zinc-200">
+                    ALWAYS IN CONTEXT
+                  </td>
+                </tr>
                 <tr className="border-b border-zinc-800">
                   <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
                     Network
@@ -326,11 +438,14 @@ export default function Home() {
               "zod",
               "prisma",
               "nextjs",
+              "drizzle",
               "langchain",
-              "tanstack-form",
+              "tanstack-query",
               "claude-code",
               "codex",
               "opencode",
+              "cargo",
+              "agentskills",
             ].map((pkg) => (
               <span
                 key={pkg}
@@ -342,7 +457,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Features */}
+        {/* Features */}
         <section>
           <div className="border-b border-zinc-800 p-6">
             <h2 className="text-xl font-bold text-zinc-100 uppercase">
@@ -351,28 +466,28 @@ export default function Home() {
           </div>
           <div className="grid divide-y divide-zinc-800 md:grid-cols-3 md:divide-x md:divide-y-0">
             <FeatureItem
-              title="Instant Setup"
-              desc="One command installs formatted documentation directly into your agent's context."
+              title="Passive Context"
+              desc="Docs injected into AGENTS.md / CLAUDE.md. Agents read them automatically — no invocation decision needed."
             />
             <FeatureItem
               title="Offline-First"
-              desc="Optimized for local skills. No internet connection required after install."
+              desc="All documentation stored locally. No internet connection required after install."
             />
             <FeatureItem
               title="Private Docs"
               desc="Generate packages for your internal APIs. No data ever leaves your machine."
             />
             <FeatureItem
-              title="Accurate APIs"
+              title="Version Pinned"
               desc="Pin your documentation to your exact version. No more hallucinating future features."
             />
             <FeatureItem
-              title="Curated Packages"
-              desc="Official doc packages for Prisma, Next.js, LangChain, Zod, and more."
+              title="Compact Index"
+              desc="438 Prisma docs compressed to ~4KB. Keyword-based retrieval guides the agent to the right file."
             />
             <FeatureItem
-              title="Local First"
-              desc="Documentation stored locally. Fast, offline, secure, and always versioned."
+              title="Dual Mode"
+              desc="Two approaches: inject a compact index into AGENTS.md for passive context, or generate full skill packages for on-demand deep dives. Use both together."
             />
           </div>
         </section>
