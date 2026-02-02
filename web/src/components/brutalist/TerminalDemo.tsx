@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 
 const steps = [
-  { text: "> olore install zod", delay: 1000 },
+  { text: "> olore install prisma", delay: 1000 },
   { text: "Resolving packages...", delay: 400 },
-  { text: "[OK] zod (latest)", delay: 300 },
-  { text: "Linked to ~/.claude/skills/olore-zod-latest", delay: 600 },
-  { text: "> olore --help", delay: 1200 },
-  { text: "Usage: olore [options] [command]", delay: 200 },
-  { text: "...", delay: 300 },
-  { text: "May the Skill be with you.", delay: 800 },
+  { text: "[OK] prisma (latest) — 438 files", delay: 300 },
+  { text: "", delay: 400 },
+  { text: "> olore inject", delay: 1200 },
+  { text: "Injected 1 package into:", delay: 300 },
+  { text: "  CLAUDE.md ✓", delay: 200 },
+  { text: "  AGENTS.md ✓", delay: 200 },
+  { text: "", delay: 600 },
+  { text: "// Agent reads AGENTS.md automatically", delay: 800 },
+  { text: "// No skill invocation needed", delay: 400 },
+  { text: "// Docs always in context", delay: 400 },
   { text: "> ", delay: 3000 },
 ];
 

@@ -3,9 +3,21 @@
 import { useState } from "react";
 
 const agents = [
-  { name: "CLAUDE CODE", cmd: "/olore-zod-latest" },
-  { name: "CODEX", cmd: "$olore-zod-latest" },
-  { name: "OPENCODE", cmd: "olore-zod-latest" },
+  {
+    name: "CLAUDE CODE",
+    primary: "Reads CLAUDE.md automatically",
+    fallback: "/olore-zod-latest",
+  },
+  {
+    name: "CODEX",
+    primary: "Reads AGENTS.md automatically",
+    fallback: "$olore-zod-latest",
+  },
+  {
+    name: "OPENCODE",
+    primary: "Reads AGENTS.md automatically",
+    fallback: "olore-zod-latest",
+  },
 ];
 
 export function SupportedAgents() {
@@ -47,16 +59,24 @@ export function SupportedAgents() {
           </span>
         ))}
       </div>
-      <div className="mt-4 h-6 font-mono text-sm">
+      <div className="mt-4 h-12 font-mono text-sm">
         {activeAgent ? (
-          <p className="text-zinc-500">
-            <span className="text-cyan-500/70">&gt;</span>{" "}
-            <span className="text-zinc-400">{activeAgent.cmd}</span>
-          </p>
+          <>
+            <p className="text-zinc-400">
+              <span className="text-cyan-500/70">inject →</span>{" "}
+              {activeAgent.primary}
+            </p>
+            <p className="text-zinc-600">
+              <span className="text-zinc-700">skill →</span>{" "}
+              {activeAgent.fallback}
+            </p>
+          </>
         ) : (
           <p className="text-zinc-600">
             <span className="text-zinc-700">&gt;</span>{" "}
-            <span className="italic">hover to see command</span>
+            <span className="italic">
+              hover to see how each agent uses olore
+            </span>
           </p>
         )}
       </div>
