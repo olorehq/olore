@@ -3,6 +3,7 @@ import pc from 'picocolors';
 
 import { getInstalledPackages } from '../core/paths.js';
 import { fetchPackageIndex, PackageIndexEntry, RegistryError } from '../core/registry.js';
+import { checkForUpdates } from '../core/version-check.js';
 
 interface SearchOptions {
   json?: boolean;
@@ -102,6 +103,9 @@ export async function search(query: string | undefined, options: SearchOptions):
   console.log(pc.gray('\u2500'.repeat(colName + colDesc + colVersions + 12)));
   console.log(pc.gray(`${entries.length} package${entries.length === 1 ? '' : 's'} available`));
   console.log(`\nInstall with: ${pc.cyan('olore install <package>')}`);
+
+  // Check for CLI updates (non-blocking)
+  await checkForUpdates();
 }
 
 function truncate(str: string, maxLen: number): string {
