@@ -15,6 +15,8 @@ const steps = [
   { text: "// Agent reads AGENTS.md automatically", delay: 800 },
   { text: "// No skill invocation needed", delay: 400 },
   { text: "// Docs always in context", delay: 400 },
+  { text: "", delay: 600 },
+  { text: "May the Skill be with you.", delay: 800 },
   { text: "> ", delay: 3000 },
 ];
 
