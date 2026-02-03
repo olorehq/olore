@@ -14,6 +14,7 @@ import {
   resolveVersion,
   VersionInfo,
 } from '../core/registry.js';
+import { checkForUpdates } from '../core/version-check.js';
 
 interface InstallOptions {
   version?: string;
@@ -137,6 +138,9 @@ async function installFromLocal(localPath: string): Promise<void> {
   console.log(pc.cyan(`  /${skillName}`) + pc.gray(' (Claude Code)'));
   console.log(pc.cyan(`  $${skillName}`) + pc.gray(' (Codex)'));
   console.log(pc.cyan(`  ${skillName}`) + pc.gray(' (OpenCode)'));
+
+  // Check for CLI updates (non-blocking)
+  await checkForUpdates();
 }
 
 export async function install(pkg: string, options: InstallOptions): Promise<void> {
@@ -324,4 +328,7 @@ async function installFromRemote(pkg: string, optionsVersion?: string): Promise<
   console.log(pc.cyan(`  /${skillName}`) + pc.gray(' (Claude Code)'));
   console.log(pc.cyan(`  $${skillName}`) + pc.gray(' (Codex)'));
   console.log(pc.cyan(`  ${skillName}`) + pc.gray(' (OpenCode)'));
+
+  // Check for CLI updates (non-blocking)
+  await checkForUpdates();
 }
