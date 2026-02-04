@@ -1,0 +1,313 @@
+---
+title: 'Alerting Configuration'
+description: 'Configure comprehensive alerting for your uptime monitors to ensure your team is immediately notified when issues occur.'
+sidebarTitle: 'Alerting'
+---
+
+Effective alerting is crucial for maintaining service reliability. This guide covers how to configure alerting for all types of uptime monitors to ensure your team responds quickly to issues.
+
+## Alert Conditions
+
+Different monitor types trigger alerts based on specific failure conditions:
+
+### URL Monitor Alerts
+- **HTTP errors** (4xx, 5xx status codes)
+- **Response time threshold exceeded**
+- **Content validation failed**
+- **SSL certificate issues**
+- **Network connectivity problems**
+
+### TCP Monitor Alerts
+- **Connection failures**
+- **Timeout exceeded**
+- **Response validation failed**
+- **SSL certificate issues**
+
+### Heartbeat Monitor Alerts
+- **Missing pings** (no ping received within expected timeframe)
+- **Grace period exceeded**
+
+## Alert Channels
+
+Configure multiple notification methods to ensure alerts reach the right people:
+
+<Columns cols={2}>
+<Card title="Email Notifications" icon="envelope">
+Direct email alerts to individuals or distribution lists
+</Card>
+
+<Card title="Slack Integration" icon="slack">
+Team notifications in Slack channels with rich formatting
+</Card>
+
+<Card title="Webhook Integration" icon="code">
+Custom integrations with your existing tools and workflows
+</Card>
+
+<Card title="SMS Alerts" icon="mobile">
+Critical alerts via SMS for immediate attention (premium feature)
+</Card>
+</Columns>
+
+### Advanced Integrations
+- **PagerDuty** - On-call management and escalation
+- **Microsoft Teams** - Team collaboration and notifications
+- **Custom Webhooks** - Integration with ITSM, ChatOps, and monitoring tools
+
+## Alert Configuration Best Practices
+
+### Channel Selection by Severity
+
+**Low Priority Alerts:**
+- Email notifications
+- Slack channel for non-critical services
+- No immediate action required
+
+**Medium Priority Alerts:**
+- Email + Slack notifications
+- Team channel notifications
+- Action required during business hours
+
+**High Priority Alerts:**
+- All channels (Email + Slack + SMS)
+- PagerDuty escalation
+- Immediate action required
+
+### Alert Timing and Frequency
+
+**Immediate Alerts:**
+```yaml
+Trigger: First failure detected
+Channels: All configured channels
+Use for: Critical production services
+```
+
+**Delayed Alerts:**
+```yaml
+Trigger: After 2-3 consecutive failures
+Channels: Email, Slack
+Use for: Less critical services to reduce noise
+```
+
+**Escalation Alerts:**
+```yaml
+Trigger: Issue unresolved after X minutes
+Channels: SMS, PagerDuty
+Use for: Critical services requiring guaranteed response
+```
+
+## Configuring Email Alerts
+
+Email alerts provide detailed information about monitor failures:
+
+### Email Content
+- **Monitor name and type**
+- **Failure reason and error details**
+- **Affected locations**
+- **Failure duration**
+- **Direct links to monitor dashboard**
+
+### Email Configuration
+```yaml
+Recipients: team@company.com, oncall@company.com
+Subject: "[ALERT] {monitor_name} is DOWN"
+Format: HTML with detailed error information
+Frequency: Immediate, then digest for ongoing issues
+```
+
+## Slack Integration
+
+Slack alerts provide real-time team notifications with interactive elements:
+
+### Slack Alert Features
+- **Rich formatting** with monitor status and metrics
+- **Quick actions** like acknowledge or view details
+- **Thread updates** for ongoing incident tracking
+- **Channel routing** based on monitor tags or criticality
+
+### Setup Example
+```yaml
+Channel: #monitoring-alerts
+Message Format:
+  - Monitor name and status
+  - Error details and location
+  - Response time and availability metrics
+  - Quick action buttons
+```
+
+## Webhook Configuration
+
+Webhooks enable custom integrations with your existing tools:
+
+### Common Webhook Uses
+- **ITSM Integration** - Automatically create service tickets
+- **ChatOps** - Trigger automated response playbooks
+- **Custom Dashboards** - Update internal status pages
+- **Metrics Collection** - Feed data into analytics platforms
+
+### Webhook Payload Example
+```json
+{
+  "monitor": {
+    "name": "Production API",
+    "type": "url_monitor",
+    "id": "monitor_123"
+  },
+  "alert": {
+    "type": "monitor_failure",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "message": "HTTP 500 Internal Server Error"
+  },
+  "check_result": {
+    "status_code": 500,
+    "response_time": 5000,
+    "location": "us-east-1"
+  }
+}
+```
+
+## Alert Management
+
+### Alert Acknowledgment
+- **Manual Acknowledgment** - Team members can acknowledge alerts
+- **Auto-Acknowledgment** - Automatic acknowledgment when issues resolve
+- **Escalation Rules** - Escalate unacknowledged alerts after time periods
+
+### Alert Suppression
+- **Maintenance Windows** - Suppress alerts during planned maintenance
+- **Alert Grouping** - Combine related alerts to reduce noise
+- **Rate Limiting** - Prevent alert flooding during widespread outages
+
+### Alert History
+- **Timeline View** - See all alerts and resolutions over time
+- **Alert Analytics** - Track mean time to resolution and alert frequency
+- **Team Performance** - Monitor response times and acknowledgment rates
+
+## Advanced Alerting Strategies
+
+### Multi-Location Alerting
+
+**Regional Failures:**
+```yaml
+Condition: 1+ locations in same region failing
+Action: Email notification to regional team
+Escalation: If multiple regions affected
+```
+
+**Global Outages:**
+```yaml
+Condition: 3+ locations across regions failing
+Action: Immediate SMS + PagerDuty
+Escalation: Executive notification after 15 minutes
+```
+
+### Conditional Alerting
+
+**Business Hours vs. After Hours:**
+```yaml
+Business Hours (9 AM - 6 PM):
+  - Email + Slack notifications
+  - 30-minute escalation to manager
+
+After Hours:
+  - Immediate SMS to on-call engineer
+  - 15-minute escalation to backup
+```
+
+**Service Criticality:**
+```yaml
+Critical Services:
+  - Immediate multi-channel alerts
+  - No delay or batching
+
+Non-Critical Services:
+  - Email alerts only
+  - 15-minute delay for transient issues
+```
+
+### Performance Degradation Alerts
+
+Monitor performance trends and alert on degradation:
+
+```yaml
+Warning Threshold: Response time > 2x baseline
+Critical Threshold: Response time > 5x baseline
+Duration: Sustained for 5+ minutes
+Action: Graduated alerts based on severity
+```
+
+## Alert Testing and Validation
+
+### Regular Testing
+- **Test all alert channels monthly**
+- **Verify escalation rules work correctly**
+- **Confirm contact information is current**
+- **Validate webhook integrations**
+
+### Alert Simulation
+```bash
+# Test webhook endpoint
+curl -X POST https://your-webhook-url.com/alerts \
+  -H "Content-Type: application/json" \
+  -d '{"test": true, "monitor": "test-monitor"}'
+```
+
+## Troubleshooting Common Alert Issues
+
+### Missing Alerts
+
+**Symptoms:**
+- Service is down but no alerts received
+- Alerts delayed or inconsistent
+
+**Solutions:**
+1. Check alert channel configuration
+2. Verify contact information is current
+3. Test alert delivery manually
+4. Review alert suppression settings
+
+### Alert Fatigue
+
+**Symptoms:**
+- Too many false positive alerts
+- Team ignoring or delaying responses
+- Alert acknowledgment rates dropping
+
+**Solutions:**
+1. Adjust alert thresholds and timing
+2. Implement alert grouping and rate limiting
+3. Use maintenance windows during deployments
+4. Regular review and tuning of alert rules
+
+### Integration Failures
+
+**Symptoms:**
+- Slack/webhook alerts not delivering
+- PagerDuty escalations not working
+- Email alerts in spam folders
+
+**Solutions:**
+1. Verify integration credentials and permissions
+2. Check webhook endpoint availability
+3. Review email filtering and whitelist settings
+4. Test integrations regularly
+
+## Next Steps
+
+<Columns cols={2}>
+<Card title="Monitoring Locations" href="/detect/uptime-monitoring/locations">
+Configure optimal monitoring locations for accurate global coverage
+</Card>
+
+<Card title="Scheduling" href="/detect/uptime-monitoring/scheduling">
+Set up monitoring frequency and timing strategies
+</Card>
+
+<Card title="Alert Channels" href="/communicate/alerts/channels">
+Detailed configuration for specific alert channel types
+</Card>
+
+<Card title="Retries" href="/communicate/alerts/configuration">
+Configure retry strategies to reduce false positive alerts
+</Card>
+</Columns>

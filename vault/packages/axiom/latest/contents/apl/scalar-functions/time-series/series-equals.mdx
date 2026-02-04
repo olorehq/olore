@@ -1,0 +1,160 @@
+---
+title: series_equals
+description: 'This page explains how to use the series_equals function in APL.'
+---
+
+The `series_equals` function compares each element in a numeric dynamic array (series) to a specified value and returns a boolean array indicating which elements are equal to that value. This function is useful for filtering, conditional analysis, and identifying specific values within time series data.
+
+You can use `series_equals` when you want to identify occurrences of specific values in your data, such as finding exact matches for thresholds, status codes, or target values. Typical applications include anomaly detection, data validation, and conditional processing of time series data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, equality comparisons are typically done with the `eval` function and comparison operators like `==`. To compare multiple values, you usually need to expand arrays and apply comparisons row by row. In APL, `series_equals` works directly on dynamic arrays, making it efficient for series-wide comparisons.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_target=(duration==200)
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([150, 200, 250, 200])
+]
+| extend equals_200 = series_equals(values, 200)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, equality comparisons use the `=` operator, but this only works on single values, not arrays. To compare array elements, you typically need to unnest arrays and apply comparisons row by row. In APL, `series_equals` eliminates this complexity by directly comparing each element in an array to a target value.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN duration = 200 THEN 1 ELSE 0 END AS is_target
+FROM requests;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([150, 200, 250, 200])
+]
+| extend equals_200 = series_equals(values, 200)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_equals(array, value)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of real numeric values. |
+| `value`   | numeric | The value to compare against each array element. |
+
+### Returns
+
+A dynamic array of boolean values where each element indicates whether the corresponding input element equals the specified value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_equals` to identify requests that match specific duration thresholds or status codes across multiple requests per user.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend is_200ms = series_equals(durations, 200)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20is_200ms%20%3D%20series_equals(durations%2C%20200)%22%7D)
+
+**Output**
+
+| id   | durations           | is_200ms        |
+| ---- | ------------------- | --------------- |
+| u123 | [150, 200, 250]     | [false, true, false] |
+| u456 | [200, 200, 180]     | [true, true, false]  |
+
+This query identifies which request durations exactly equal 200ms for each user, useful for finding requests that hit specific performance targets.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_equals` to identify spans with specific duration values or status codes across multiple spans per service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(toreal(duration)) by ['service.name']
+| extend is_1s = series_equals(durations, toreal(1s))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(toreal(duration))%20by%20%5B'service.name'%5D%20%7C%20extend%20is_1s%20%3D%20series_equals(durations%2C%20toreal(1s))%22%7D)
+
+**Output**
+
+| service.name          | durations                | is_1s              |
+| --------------------- | ------------------------ | ------------------ |
+| frontend              | [800, 1000, 1200] | [false, true, false] |
+| productcatalogservice | [1000, 1000, 900] | [true, true, false] |
+
+This query identifies spans with exactly 1-second durations per service, useful for finding spans that hit specific latency targets.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_equals` to identify requests with specific status codes or durations that might indicate security events.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend is_500ms = series_equals(durations, 500)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20is_500ms%20%3D%20series_equals(durations%2C%20500)%22%7D)
+
+**Output**
+
+| status | durations           | is_500ms           |
+| ------ | ------------------- | ------------------ |
+| 200    | [300, 500, 400]     | [false, true, false] |
+| 500    | [500, 500, 600]     | [true, true, false] |
+
+This query identifies requests with exactly 500ms duration grouped by status code, useful for finding requests that hit specific timing thresholds.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Returns elements greater than a specified value. Use when you need threshold-based filtering instead of exact matches.
+- [series_greater_equals](/apl/scalar-functions/time-series/series-greater-equals): Returns elements greater than or equal to a specified value. Use for inclusive threshold comparisons.
+- [series_less](/apl/scalar-functions/time-series/series-less): Returns elements less than a specified value. Use for lower-bound filtering.
+- [series_less_equals](/apl/scalar-functions/time-series/series-less-equals): Returns elements less than or equal to a specified value. Use for inclusive lower-bound comparisons.
+- [series_not_equals](/apl/scalar-functions/time-series/series-not-equals): Returns elements not equal to a specified value. Use for exclusion-based filtering.

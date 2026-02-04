@@ -1,0 +1,161 @@
+---
+title: series_log
+description: 'This page explains how to use the series_log function in APL.'
+---
+
+The `series_log` function computes the natural logarithm (base e) of each element in a numeric dynamic array (series). This performs element-wise logarithmic transformation across the entire series.
+
+You can use `series_log` when you need to apply logarithmic transformations to time-series data. This is particularly useful for normalizing exponentially distributed data, linearizing exponential growth patterns, compressing wide value ranges, or preparing data for analysis that assumes log-normal distributions.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `log()` function within an `eval` command to calculate logarithms. In APL, `series_log` applies the logarithm operation to every element in an array simultaneously.
+
+<CodeGroup>
+```sql Splunk example
+... | eval log_value=log(value)
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([1, 10, 100, 1000])
+]
+| extend log_values = series_log(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you use the `LOG()` or `LN()` function to calculate natural logarithms on individual rows. In APL, `series_log` operates on entire arrays, applying the logarithm operation element-wise.
+
+<CodeGroup>
+```sql SQL example
+SELECT LN(value) AS log_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([1, 10, 100, 1000])
+]
+| extend log_values = series_log(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_log(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                     |
+| --------- | ------- | ----------------------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. Values must be positive. |
+
+### Returns
+
+A dynamic array where each element is the natural logarithm of the corresponding input element. Returns `null` for non-positive values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_log` to normalize request durations that follow an exponential distribution, making patterns easier to visualize and analyze.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend log_durations = series_log(durations)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20log_durations%20%3D%20series_log(durations)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| id   | durations              | log_durations              |
+| ---- | ---------------------- | -------------------------- |
+| u123 | [50, 100, 500, 1000]   | [3.91, 4.61, 6.21, 6.91]   |
+| u456 | [25, 75, 200, 800]     | [3.22, 4.32, 5.30, 6.68]   |
+
+This query applies logarithmic transformation to request durations, compressing the range and making it easier to compare values across different scales.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_log` to linearize exponentially growing span durations, making trends more apparent in visualization.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| summarize durations = make_list(duration_ms) by ['service.name']
+| extend log_durations = series_log(durations)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20summarize%20durations%20%3D%20make_list(duration_ms)%20by%20%5B'service.name'%5D%20%7C%20extend%20log_durations%20%3D%20series_log(durations)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| service.name | durations                | log_durations              |
+| ------------ | ------------------------ | -------------------------- |
+| frontend     | [10, 50, 250, 1000]      | [2.30, 3.91, 5.52, 6.91]   |
+| checkout     | [20, 100, 500, 2000]     | [3.00, 4.61, 6.21, 7.60]   |
+
+This query applies logarithmic transformation to span durations, making exponential growth patterns appear linear for easier analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_log` to normalize request volumes that follow exponential patterns, making anomaly detection more effective.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_counts = make_list(req_duration_ms) by status
+| extend log_counts = series_log(request_counts)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_counts%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20log_counts%20%3D%20series_log(request_counts)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| status | request_counts         | log_counts                 |
+| ------ | ---------------------- | -------------------------- |
+| 200    | [100, 500, 1000, 5000] | [4.61, 6.21, 6.91, 8.52]   |
+| 401    | [10, 50, 100, 500]     | [2.30, 3.91, 4.61, 6.21]   |
+
+This query applies logarithmic transformation to request counts, making it easier to detect unusual patterns in security events across different scales.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_pow](/apl/scalar-functions/time-series/series-pow): Raises series elements to a power. Use as the inverse operation to logarithms when working with exponentials.
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element. Use before `series_log` to ensure positive values.
+- [series_magnitude](/apl/scalar-functions/time-series/series-magnitude): Computes the magnitude of a series. Use when you need Euclidean norm instead of logarithmic transformation.
+- [log](/apl/scalar-functions/mathematical-functions#log): Scalar function for single values. Use for individual calculations instead of array operations.
+

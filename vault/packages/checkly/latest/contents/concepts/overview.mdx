@@ -1,0 +1,23 @@
+---
+title: 'Core Concepts Overview'
+description: 'Learn about the core concepts of Checkly'
+sidebarTitle: 'Overview'
+---
+
+Organization in Checkly refers to how you structure and manage your monitoring setup through Groups and hierarchical organization. Groups allow you to organize your checks and centralize settings like base URLs, headers, variables and other properties a collection of checks can share. 
+
+## What is Organization?
+Think of Organization as the filing system for your monitoring infrastructure. Just as you wouldn't want all your code files in a single directory, you don't want hundreds of Checks scattered without structure. Organization provides the frameworks—primarily through Groups—to create logical boundaries, share common configurations, and manage complexity as your monitoring grows.
+
+Good Organization transforms monitoring from a collection of individual tests into a coherent system that reflects your application architecture and team responsibilities. It makes monitoring more maintainable, discoverable, and aligned with how your teams actually work.
+
+## Groups as Organizational Units
+Example use cases for groups are organizing your checks around different applications, teams, or functional areas. Use the CheckGroupV2 construct to organize your Checks into groups. This comes with the following benefits: Your Checks are organized in a folder in the Checkly web UI. You can trigger all Checks in a group from the web UI and via a command line trigger.
+
+Groups serve multiple organizational purposes simultaneously. They act as configuration templates, execution units, and logical containers. Group-level configurations, such as the runtime, activated & muted state, tags, and alert channels, will override check-level configurations. 
+## Flexible Configuration Inheritance
+We're making group-level overrides for scheduling strategy, locations, retries and alert settings optional. This means Groups can now act more like folders, with zero config shared, giving you more flexibility. 
+This evolution allows Groups to serve different organizational needs—they can be strict configuration templates that enforce consistency, or they can be loose organizational containers that simply provide structure without imposing shared settings.
+## Scaling Through Organization
+As you can see, groups in their current incarnation are mostly handy configuration buckets for common properties. In the future we will expand the group features to make them smarter. 
+Effective Organization becomes more critical as teams and applications grow. It enables delegation of monitoring responsibilities, clear ownership boundaries, and the ability to manage monitoring complexity through logical decomposition. Organization ensures that monitoring scales with your infrastructure rather than becoming a maintenance burden.

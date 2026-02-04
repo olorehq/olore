@@ -1,0 +1,162 @@
+---
+title: 'split'
+description: 'This page explains how to use the split function in APL.'
+---
+
+The `split` function splits a string into an array of substrings based on a delimiter. Use this function to tokenize log messages, parse delimited data, or break down structured text into individual components for analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `split` function similarly. APL's `split` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval parts=split(field, ",")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parts = split(field, ',')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, string splitting varies by database. APL's `split` provides standardized string splitting.
+
+<CodeGroup>
+```sql SQL example
+SELECT STRING_SPLIT(field, ',') AS parts FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parts = split(field, ',')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+split(source, delimiter)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| source | string | Yes | The source string to split. |
+| delimiter | string | Yes | The delimiter string to split on. |
+
+### Returns
+
+Returns a string array containing the substrings separated by the delimiter.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Split URI paths into segments for hierarchical analysis of API endpoint structure.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend path_segments = split(uri, '/')
+| extend segment_count = array_length(path_segments)
+| extend first_segment = tostring(path_segments[1])
+| summarize request_count = count() by first_segment, segment_count
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20path_segments%20%3D%20split(uri%2C%20%27%2F%27)%20%7C%20extend%20segment_count%20%3D%20array_length(path_segments)%20%7C%20extend%20first_segment%20%3D%20tostring(path_segments%5B1%5D)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20first_segment%2C%20segment_count%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| first_segment | segment_count | request_count |
+|---------------|---------------|---------------|
+| api | 4 | 5432 |
+| users | 3 | 2341 |
+| products | 3 | 1987 |
+
+This query splits URIs by forward slashes to analyze API endpoint hierarchy and identify the most accessed top-level paths.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Parse dot-notation service names into components for hierarchical analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_parts = split(['service.name'], '-')
+| extend service_type = tostring(service_parts[0])
+| extend part_count = array_length(service_parts)
+| summarize span_count = count() by service_type, part_count
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_parts%20%3D%20split(%5B%27service.name%27%5D%2C%20%27-%27)%20%7C%20extend%20service_type%20%3D%20tostring(service_parts%5B0%5D)%20%7C%20extend%20part_count%20%3D%20array_length(service_parts)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20service_type%2C%20part_count%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service_type | part_count | span_count |
+|--------------|------------|------------|
+| frontend | 1 | 4532 |
+| checkout | 1 | 3421 |
+| cart | 1 | 2987 |
+
+This query splits service names by hyphens to extract service type prefixes and analyze service naming patterns.
+
+</Tab>
+<Tab title="Security logs">
+
+Parse comma-separated attack indicators from security headers or URIs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend simulated_threats = 'sql_injection,xss,path_traversal'
+| extend threat_list = split(simulated_threats, ',')
+| extend threat_count = array_length(threat_list)
+| extend has_multiple_threats = threat_count > 1
+| project _time, uri, threat_list, threat_count, has_multiple_threats, id, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20simulated_threats%20%3D%20'sql_injection%2Cxss%2Cpath_traversal'%20%7C%20extend%20threat_list%20%3D%20split(simulated_threats%2C%20'%2C')%20%7C%20extend%20threat_count%20%3D%20array_length(threat_list)%20%7C%20extend%20has_multiple_threats%20%3D%20threat_count%20%3E%201%20%7C%20project%20_time%2C%20uri%2C%20threat_list%2C%20threat_count%2C%20has_multiple_threats%2C%20id%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | threat_list | threat_count | has_multiple_threats | id | status |
+|-------|-----|-------------|--------------|----------------------|-------|--------|
+| 2024-11-06T10:00:00Z | /admin | ["sql_injection","xss","path_traversal"] | 3 | true | user123 | 403 |
+
+This query splits comma-separated threat indicators to analyze the types and combinations of security threats.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [parse_csv](/apl/scalar-functions/string-functions/parse-csv): Parses CSV strings with proper quote handling. Use this for CSV data instead of split.
+- [extract_all](/apl/scalar-functions/string-functions/extract-all): Extracts multiple regex matches. Use this when you need pattern-based tokenization.
+- [strcat_delim](/apl/scalar-functions/string-functions/strcat-delim): Concatenates strings with delimiters. Use this to reverse the split operation.
+- [indexof](/apl/scalar-functions/string-functions/indexof): Finds delimiter positions. Use this when you need to know where splits would occur.
+

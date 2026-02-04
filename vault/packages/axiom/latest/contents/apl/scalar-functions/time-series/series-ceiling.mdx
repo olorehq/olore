@@ -1,0 +1,158 @@
+---
+title: series_ceiling
+description: 'This page explains how to use the series_ceiling function in APL.'
+---
+
+The `series_ceiling` function applies the ceiling operation to each element in a dynamic array (series) of numeric values. It rounds each number up to the nearest integer, returning the smallest integer that’s greater than or equal to the input value. This function is useful when you need to normalize fractional values upward or ensure minimum thresholds in your data analysis.
+
+You can use `series_ceiling` when working with metrics that need to be rounded up for capacity planning, resource allocation, or when dealing with partial counts that should be treated as whole units. Common applications include calculating minimum required resources, rounding up processing times for SLA calculations, and normalizing fractional measurements.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `eval` command with the `ceil()` function to round values up. In APL, `series_ceiling` applies the ceiling operation to all elements in a dynamic array at once.
+
+<CodeGroup>
+```sql Splunk example
+... | eval rounded_duration = ceil(duration)
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([1.2, 2.7, 3.1, 4.9])
+]
+| extend ceiling_values = series_ceiling(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you use the `CEILING()` or `CEIL()` function to round individual values up. However, this only works on scalar values, not arrays. In APL, `series_ceiling` operates on entire dynamic arrays, making it convenient for series analysis.
+
+<CodeGroup>
+```sql SQL example
+SELECT CEILING(duration) AS rounded_duration
+FROM requests;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([1.2, 2.7, 3.1, 4.9])
+]
+| extend ceiling_values = series_ceiling(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_ceiling(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the ceiling (rounded up to the nearest integer) of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_ceiling` to round up request durations for capacity planning, ensuring you allocate sufficient resources based on worst-case scenarios.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms / 1000.0) by id
+| extend ceiling_durations = series_ceiling(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms%20%2F%201000.0)%20by%20id%20%7C%20extend%20ceiling_durations%20%3D%20series_ceiling(durations)%22%7D)
+
+**Output**
+
+| id   | durations           | ceiling_durations |
+| ---- | ------------------- | ----------------- |
+| u123 | [0.12, 0.87, 1.23] | [1, 1, 2]         |
+| u456 | [2.45, 0.56]       | [3, 1]            |
+
+This query converts request durations to seconds and rounds them up to ensure adequate resource allocation for each user.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_ceiling` to round up span durations for SLA calculations, ensuring you meet minimum performance guarantees.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations_seconds = make_list(duration / 1s) by ['service.name']
+| extend ceiling_durations = series_ceiling(durations_seconds)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations_seconds%20%3D%20make_list(duration%20%2F%201s)%20by%20%5B'service.name'%5D%20%7C%20extend%20ceiling_durations%20%3D%20series_ceiling(durations_seconds)%22%7D)
+
+**Output**
+
+| service.name          | durations_seconds    | ceiling_durations |
+| --------------------- | -------------------- | ----------------- |
+| frontend              | [0.2, 1.3, 0.8]     | [1, 2, 1]         |
+| productcatalogservice | [0.05, 0.12, 2.1]   | [1, 1, 3]         |
+
+This query converts span durations to seconds and rounds them up for conservative SLA planning per service.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_ceiling` to round up processing times for security checks, ensuring adequate time allocation for threat detection processes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize processing_times = make_list(req_duration_ms / 100.0) by status
+| extend ceiling_processing_times = series_ceiling(processing_times)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20processing_times%20%3D%20make_list(req_duration_ms%20%2F%20100.0)%20by%20status%20%7C%20extend%20ceiling_processing_times%20%3D%20series_ceiling(processing_times)%22%7D)
+
+**Output**
+
+| status | processing_times    | ceiling_processing_times |
+| ------ | ------------------- | ------------------------ |
+| 200    | [1.2, 3.4, 0.8]    | [2, 4, 1]                |
+| 401    | [5.7, 2.1]         | [6, 3]                   |
+
+This query scales processing times and rounds them up to ensure sufficient time allocation for security processing by HTTP status code.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to remove negative signs without rounding.
+- [series_add](/apl/scalar-functions/time-series/series-add): Performs element-wise addition between two arrays. Use when you need to combine values instead of calculating ratios.
+- [series_cosine_similarity](/apl/scalar-functions/time-series/series-cosine-similarity): Calculates cosine similarity between two arrays. Use when you need normalized similarity measures rather than raw dot products.
+- [series_divide](/apl/scalar-functions/time-series/series-divide): Performs element-wise division between two arrays. Use when you need to calculate ratios or normalize values.
+- [series_dot_product](/apl/scalar-functions/time-series/series-dot-product): Calculates the dot product between two arrays. Use when you need the raw dot product value rather than normalized similarity.
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Calculates the sum of all elements in a single array. Use when you need to sum elements within one array rather than computing dot products.

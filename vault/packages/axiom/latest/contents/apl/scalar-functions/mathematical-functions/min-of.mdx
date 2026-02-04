@@ -1,0 +1,95 @@
+---
+title: min_of
+description: 'This page explains how to use the min_of function in APL.'
+---
+
+Use the `min_of` function in APL to determine the minimum value among two or more scalar values. The function returns the smallest of its arguments, making it especially useful when you want to compare metrics, constants, or calculated expressions in queries.
+
+You typically use `min_of` when you want to:
+
+- Compare numeric or time-based values across multiple fields or constants.
+- Apply conditional logic in summarization or filtering steps.
+- Normalize or bound values when computing metrics.
+
+Unlike aggregation functions such as `min()`, which work across rows in a group, `min_of` operates on values within a single row or context.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you often use the `eval` command with the `min` function to compare multiple values. APL’s `min_of` is similar, but used as a scalar function directly in expressions.
+
+<CodeGroup>
+```sql Splunk example
+eval smallest=min(field1, field2)
+````
+
+```kusto APL equivalent
+extend smallest = min_of(field1, field2)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you typically use `LEAST()` to find the smallest of multiple values. APL’s `min_of` is the equivalent of `LEAST()`.
+
+<CodeGroup>
+```sql SQL example
+SELECT LEAST(col1, col2, col3) AS min_val FROM table;
+```
+
+```kusto APL equivalent
+extend min_val = min_of(col1, col2, col3)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+min_of(Expr1, Expr2, ..., ExprN)
+```
+
+### Parameters
+
+The function takes a comma-separated list of expressions to compare. All values must be of the same type.
+
+### Returns
+
+The function returns the smallest of the provided values. The type of the return value matches the type of the input arguments.
+
+## Use case example
+
+You have two data points for the size of HTTP responses: header size and body size. You want to find the minimum of these two values for each event.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend min_size = min_of(resp_header_size_bytes, resp_body_size_bytes)
+| project _time, id, resp_header_size_bytes, resp_body_size_bytes, min_size
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20min_size%20%3D%20min_of(resp_header_size_bytes%2C%20resp_body_size_bytes)%20%7C%20project%20_time%2C%20id%2C%20resp_header_size_bytes%2C%20resp_body_size_bytes%2C%20min_size%22%7D)
+
+**Output**
+
+| _time            | id                                      | resp_header_size_bytes | resp_body_size_bytes | min_size  |
+|------------------|-----------------------------------------|------------------------|----------------------|-----------|
+| May 15, 11:31:05 | 739b0433-39aa-4891-a5e0-3bde3cb40386    | 41 B               | 3,410 B          | 41    |
+| May 15, 11:31:05 | 3016c439-ea30-454b-858b-06f0a66f44b9    | 53 B               | 5,333 B          | 53    |
+| May 15, 11:31:05 | b26b0a5c-bc73-4693-86ad-be9e0cc767d6    | 60 B               | 2,936 B          | 60    |
+| May 15, 11:31:05 | 8d939423-26ae-43f7-9927-13499e7cc7d3    | 60 B               | 2,896 B          | 60    |
+| May 15, 11:31:05 | 10c37b1a-5639-4c99-a232-c8295e3ce664    | 63 B               | 4,871 B          | 63    |
+| May 15, 11:31:05 | 4aa1821a-6906-4ede-9417-3097efb76b89    | 78 B               | 1,729 B          | 78    |
+| May 15, 11:31:05 | 6325de66-0033-4133-b2f3-99fa70f8c9c0    | 96 B               | 4,232 B          | 96    |

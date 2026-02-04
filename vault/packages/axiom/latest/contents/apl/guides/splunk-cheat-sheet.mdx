@@ -1,0 +1,292 @@
+---
+title: 'Migrate from Splunk SPL to APL'
+description: 'This step-by-step guide provides a high-level mapping from Splunk SPL to APL.'
+sidebarTitle: Splunk SPL
+keywords: ['axiom documentation', 'documentation', 'axiom', 'splunk', 'apl', 'searching', 'aggregation', 'time frames', 'sorting', 'functions']
+---
+
+Splunk and Axiom are powerful tools for log analysis and data exploration. The data explorer interface uses Axiom Processing Language (APL). There are some differences between the query languages for Splunk and Axiom. When transitioning from Splunk to APL, you will need to understand how to convert your Splunk SPL queries into APL.
+
+**This guide provides a high-level mapping from Splunk to APL.**
+
+## Basic Searching 
+
+Splunk uses a `search` command for basic searching, while in APL, simply specify the dataset name followed by a filter.
+
+**Splunk:**
+
+```bash
+search index="myIndex" error
+```
+
+**APL:** 
+
+```kusto
+['myDatasaet']
+| where FieldName contains “error”
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20method%20contains%20%27GET%27%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Filtering 
+
+In Splunk, perform filtering using the `search` command, usually specifying field names and their desired values. In APL, perform filtering by using the `where` operator.
+
+**Splunk:** 
+
+```bash
+Search index=”myIndex” error 
+| stats count
+```
+
+**APL:** 
+
+```kusto
+['myDataset']
+| where fieldName contains “error”
+| count 
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20content_type%20contains%20%27text%27\n|%20count\n|%20limit%2010%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Aggregation 
+
+In Splunk, the `stats` command is used for aggregation. In APL, perform aggregation using the `summarize` operator.
+
+**Splunk:** 
+
+```bash
+search index="myIndex" 
+| stats count by status
+```
+
+**APL:** 
+
+```kusto
+['myDataset'] 
+| summarize count() by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20count()%20by%20status%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Time Frames 
+
+In Splunk, select a time range for a search in the time picker on the search page. In APL, filter by a time range using the where operator and the `timespan` field of the dataset.
+
+**Splunk:** 
+
+```bash
+search index="myIndex" earliest=-1d@d latest=now
+```
+
+**APL:**
+
+```kusto
+['myDataset']
+| where _time >= ago(1d) and _time <= now()
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20_time%20%3E=%20ago(1d)%20and%20_time%20%3C=%20now()%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Sorting 
+
+In Splunk, the `sort` command is used to order the results of a search. In APL, perform sorting by using the `sort by` operator.
+
+**Splunk:** 
+
+```bash
+search index="myIndex" 
+| sort - content_type
+```
+
+**APL:** 
+
+```kusto
+['myDataset'] 
+| sort by countent_type desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20sort%20by%20content_type%20desc%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Selecting Fields 
+
+In Splunk, use the fields command to specify which fields to include or exclude in the search results. In APL, use the `project` operator, `project-away` operator, or the `project-keep` operator to specify which fields to include in the query results.
+
+**Splunk:** 
+
+```bash
+index=main sourcetype=mySourceType
+| fields status, responseTime
+```
+
+**APL:** 
+
+```kusto
+['myDataset'] 
+| extend newName = oldName
+| project-away oldName
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20newStatus%20=%20status%20\n|%20project-away%20status%20%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Renaming Fields 
+
+In Splunk, rename fields using the `rename` command, while in APL rename fields using the `extend,` and `project` operator. Here is the general syntax:
+
+**Splunk:** 
+
+```bash
+index="myIndex" sourcetype="mySourceType"
+| rename oldFieldName AS newFieldName
+```
+
+**APL:** 
+
+```kusto
+['myDataset']
+| where method == "GET"
+| extend new_field_name = content_type
+| project-away content_type
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20method%20==%20%27GET%27\n|%20extend%20new_field_name%20=%20content_type\n|%20project-away%20content_type%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Calculated Fields 
+
+In Splunk, use the `eval` command to create calculated fields based on the values of other fields, while in APL use the `extend` operator to create calculated fields based on the values of other fields.
+
+**Splunk**
+
+```bash
+search index="myIndex" 
+| eval newField=field1+field2
+```
+
+**APL:** 
+
+```kusto
+['myDataset'] 
+| extend newField = field1 + field2
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20calculatedFields%20=%20req_duration_ms%20%2b%20resp_body_size_bytes%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Structure and Concepts
+
+The following table compares concepts and data structures between Splunk and APL logs.
+
+|     Concept           |   Splunk                     |    APL                                  |       Comment                   |
+|----------------------------------|----------------------------------------|------------------------|---------------------------------------------------------------------------------|
+|   data caches                    |     buckets | caching and retention policies  | Controls the period and caching level for the data.This setting directly affects the performance of queries.                                                                       |
+| logical partition of data        | index       |      dataset                    |     Allows logical separation of the data.                                                                                                                                         | 
+| structured event metadata        | N/A         | dataset                         | Splunk doesn’t expose the concept of metadata to the search language. APL logs have the concept of a dataset, which has fields and columns. Each event instance is mapped to a row.|
+| data record                      |     event   |      row                        |          Terminology change only.                                                                                                                                                  |
+| types                            | datatype    | datatype                        | APL data types are more explicit because they are set on the fields. Both have the ability to work dynamically with data types and roughly equivalent sets of data types.          |
+| query and search                 | search      | query                           | Concepts essentially are the same between APL and Splunk| 
+
+## Functions 
+
+The following table specifies functions in APL that are equivalent to Splunk Functions.
+
+| Splunk               |                APL                        |
+|----------------------|-------------------------------------------|
+| strcat               | strcat()                                  |
+| split                | split()                                   |
+| if                   | iff()                                     |
+| tonumber             | todouble(), tolong(), toint()             |
+| upper, lower         | toupper(), tolower()                      |
+| replace              | replace_string() or replace_regex()       |
+| substr               | substring()                               |
+| tolower              | tolower()                                 |
+| toupper              | toupper()                                 |
+| match                | matches regex                             |
+| regex                | matches regex **(in splunk, regex is an operator. In APL, it’s a relational operator.)** |
+| searchmatch           |     ==      **(In splunk, `searchmatch` allows searching the exact string.)** |
+| random               | rand(), rand(n)  **(Splunk’s function returns a number between zero to 231 -1. APL returns a number between 0.0 and 1.0, or if a parameter is provided, between 0 and n-1.)** |
+| now                  | now()                                     |
+
+In Splunk, the function is invoked by using the `eval` operator. In APL, it’s used as part of the `extend` or `project`.
+
+In Splunk, the function is invoked by using the `eval` operator. In APL, it can be used with the `where` operator.
+
+## Filter
+ 
+APL log queries start from a tabular result set in which a filter is applied. In Splunk, filtering is the default operation on the current index. You may also use the where operator in Splunk, but we don’t recommend it.
+
+| Product          | Operator |              Example                                           |
+|:-----------------|:------------------|:------------------------------------------------------|
+| Splunk | **search**        | Sample.Logs="330009.2" method="GET" _indextime>-24h              |
+| APL | **where** | ['sample-http-logs'] <br />&#124; where method == "GET" and _time > ago(24h)|
+
+## Get n events or rows for inspection 
+
+APL log queries also support `take` as an alias to `limit`. In Splunk, if the results are ordered, `head` returns the first n results. In APL, `limit` isn’t ordered, but it returns the first n rows that are found.
+
+|          Product      | Operator         |      Example |
+|-----------------------|-------------------|---------------|
+|       Splunk          | head              | Sample.Logs=330009.2 <br />&#124; head 100 | 
+|       APL                   | limit             | ['sample-htto-logs'] <br />&#124; limit 100 |
+
+## Get the first *n* events or rows ordered by a field or column
+
+For the bottom results, in Splunk, use `tail`. In APL, specify ordering direction by using `asc`.
+
+| Product              | Operator        | Example       |
+|:---------------------|:----------------|:--------------|
+| Splunk               | head |  Sample.Logs="33009.2" <br />&#124; sort Event.Sequence <br />&#124; head 20 |
+| APL                  | top | ['sample-http-logs']<br />&#124; top 20 by method |
+
+## Extend the result set with new fields or columns
+
+Splunk has an `eval` function, but it’s not comparable to the `eval` operator in APL. Both the `eval` operator in Splunk and the `extend` operator in APL support only scalar functions and arithmetic operators.
+
+|          Product              |        Operator            |       Example |
+|:------------------------------|:--------------------------|:---------------|
+| Splunk | eval |  Sample.Logs=330009.2<br />&#124; eval state= if(Data.Exception = "0", "success", "error") |
+| APL | extend | ['sample-http-logs']<br />&#124; extend Grade = iff(req_duration_ms >= 80, "A", "B") |
+
+## Rename
+
+APL uses the `project` operator to rename a field. In the `project` operator, a query can take advantage of any indexes that are prebuilt for a field. Splunk has a `rename` operator that does the same.
+
+| Product | Operator | Example |
+|:---|:---|:---|
+| Splunk | rename |  Sample.Logs=330009.2<br />&#124; rename Date.Exception as execption |
+| APL | project | ['sample-http-logs']<br />&#124; project updated_status = status |
+
+## Format results and projection
+
+Splunk uses the `table` command to select which columns to include in the results. APL has a `project` operator that does the same and [more](/apl/tabular-operators/project-operator).
+
+| Product | Operator | Example |
+|:---------|:---|:---|
+| Splunk | table | Event.Rule=330009.2<br />&#124; table rule, state |
+| APL | project | ['sample-http-logs']<br />&#124; project status, method |
+
+Splunk uses the `field -` command to select which columns to exclude from the results. APL has a `project-away` operator that does the same.
+
+| Product | Operator | Example |
+|:---|:---|:---|
+| Splunk | **fields -** | Sample.Logs=330009.2`<br />&#124; fields - quota, hightest_seller |
+| APL | **project-away** |['sample-http-logs']<br />&#124; project-away method, status |
+
+## Aggregation
+
+See the [list of summarize aggregations functions](/apl/aggregation-function/statistical-functions) that are available.
+
+| Splunk operator | Splunk example | APL operator | APL example |
+|:---|:---|:---|:---|
+| **stats** |  search (Rule=120502.*)<br />&#124; stats count by OSEnv, Audience |  summarize | ['sample-http-logs']<br />&#124; summarize count() by content_type, status
+
+## Sort
+
+In Splunk, to sort in ascending order, you must use the `reverse` operator. APL also supports defining where to put nulls, either at the beginning or at the end.
+
+| Product | Operator | Example |
+|:---|:---|:---|
+| Splunk | sort |  Sample.logs=120103 <br />&#124; sort Data.Hresult <br />&#124; reverse |
+| APL | order by | ['sample-http-logs'] <br />&#124; order by status desc |
+
+Whether you’re just starting your transition or you’re in the thick of it, this guide can serve as a helpful roadmap to assist you in your journey from Splunk to Axiom Processing Language.
+
+Dive into the Axiom Processing Language, start converting your Splunk queries to APL, and explore the rich capabilities of the Query tab. Embrace the learning curve, and remember, every complex query you master is another step forward in your data analytics journey.

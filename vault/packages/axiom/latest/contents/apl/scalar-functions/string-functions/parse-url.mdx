@@ -1,0 +1,167 @@
+---
+title: 'parse_url'
+description: 'This page explains how to use the parse_url function in APL.'
+---
+
+The `parse_url` function parses an absolute URL string into a dynamic object containing all URL components (scheme, host, port, path, query parameters, etc.). Use this function to extract and analyze specific parts of URLs from logs, web traffic data, or API requests.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` or URL-specific extractions. APL's `parse_url` provides structured URL parsing in one function.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=url "(?<scheme>https?)://(?<host>[^/]+)(?<path>.*)"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_url(url)
+| extend scheme = parsed.scheme, host = parsed.host, path = parsed.path
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, URL parsing requires complex string manipulation. APL's `parse_url` provides structured parsing natively.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(url, '://', -1), '/', 1) AS host FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_url(url)
+| extend host = parsed.host
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_url(url)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| url | string | Yes | An absolute URL string to parse. |
+
+### Returns
+
+Returns a dynamic object containing URL components: `scheme`, `host`, `port`, `path`, `username`, `password`, `query`, `fragment`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Parse URLs from HTTP logs to analyze traffic patterns by host and path.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend full_url = strcat('https://api.example.com', uri)
+| extend parsed = parse_url(full_url)
+| extend host = tostring(parsed.host)
+| extend path = tostring(parsed.path)
+| summarize request_count = count() by host, path
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20full_url%20%3D%20strcat(%27https%3A%2F%2Fapi.example.com%27%2C%20uri)%20%7C%20extend%20parsed%20%3D%20parse_url(full_url)%20%7C%20extend%20host%20%3D%20tostring(parsed.host)%20%7C%20extend%20path%20%3D%20tostring(parsed.path)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20host%2C%20path%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| host | path | request_count |
+|------|------|---------------|
+| api.example.com | /api/users | 2341 |
+| api.example.com | /api/orders | 1987 |
+| api.example.com | /api/products | 1654 |
+
+This query parses complete URLs to extract host and path information for traffic analysis and API endpoint usage patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract URL components from span attributes to analyze service communication patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend url = strcat('http://', ['service.name'], ':8080/api/endpoint')
+| extend parsed = parse_url(url)
+| extend host = tostring(parsed.host)
+| extend port = toint(parsed.port)
+| summarize span_count = count() by host, port
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20url%20%3D%20strcat(%27http%3A%2F%2F%27%2C%20%5B%27service.name%27%5D%2C%20%27%3A8080%2Fapi%2Fendpoint%27)%20%7C%20extend%20parsed%20%3D%20parse_url(url)%20%7C%20extend%20host%20%3D%20tostring(parsed.host)%20%7C%20extend%20port%20%3D%20toint(parsed.port)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20host%2C%20port%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| host | port | span_count |
+|------|------|------------|
+| frontend | 8080 | 4532 |
+| checkout | 8080 | 3421 |
+| cart | 8080 | 2987 |
+
+This query parses service URLs from traces to understand port usage and service endpoints in a distributed system.
+
+</Tab>
+<Tab title="Security logs">
+
+Parse URLs from security logs to identify suspicious patterns in schemes, hosts, or paths.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend full_url = strcat('http://example.com', uri)
+| extend parsed = parse_url(full_url)
+| extend scheme = tostring(parsed.scheme)
+| extend path = tostring(parsed.path)
+| extend has_traversal = indexof(path, '..') >= 0
+| project _time, full_url, scheme, path, has_traversal, id, status
+| where has_traversal
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20full_url%20%3D%20strcat(%27http%3A%2F%2Fexample.com%27%2C%20uri)%20%7C%20extend%20parsed%20%3D%20parse_url(full_url)%20%7C%20extend%20scheme%20%3D%20tostring(parsed.scheme)%20%7C%20extend%20path%20%3D%20tostring(parsed.path)%20%7C%20extend%20has_traversal%20%3D%20indexof(path%2C%20%27..%27)%20%3E%3D%200%20%7C%20project%20_time%2C%20full_url%2C%20scheme%2C%20path%2C%20has_traversal%2C%20id%2C%20status%20%7C%20where%20has_traversal%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | full_url | scheme | path | has_traversal | id | status |
+|-------|----------|--------|------|---------------|-------|--------|
+| 2024-11-06T10:00:00Z | `http://example.com/../../etc/passwd` | http | `/../../etc/passwd` | true | user123 | 403 |
+
+This query parses URLs from failed access attempts and checks for path traversal patterns, helping identify potential security threats.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [parse_urlquery](/apl/scalar-functions/string-functions/parse-urlquery): Parses only URL query parameters. Use this when you only need query string parsing.
+- [format_url](/apl/scalar-functions/string-functions/format-url): Constructs URLs from components. Use this to reverse the parsing operation and build URLs.
+- [url_decode](/apl/scalar-functions/string-functions/url-decode): Decodes URL-encoded strings. Use this to decode individual URL components.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by delimiters. Use this for simpler URL tokenization without full parsing.
+

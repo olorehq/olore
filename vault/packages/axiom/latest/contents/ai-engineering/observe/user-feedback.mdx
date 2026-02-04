@@ -1,0 +1,392 @@
+---
+title: "User feedback"
+description: "Capture user ratings and comments on AI capability outputs to identify quality issues and prioritize improvements."
+sidebarTitle: User feedback
+keywords: ["ai engineering", "feedback", "thumbs up", "thumbs down", "user signals", "ratings"]
+---
+
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "/snippets/replace-domain.mdx"
+
+User feedback captures direct signals from end users about your AI capability’s performance. By linking feedback events to traces, you can correlate user perception with system behavior to understand exactly what went wrong and prioritize high-impact improvements.
+
+## How user feedback works
+
+User feedback collection works across your server and client in the following way:
+
+1. **Server**: Your AI capability runs inside `withSpan`, which creates a trace. Extract `traceId` and `spanId` from the span and return them to the client alongside the AI response.
+1. **Client**: When users provide feedback (thumbs up/down, ratings, comments), send it to Axiom with the trace IDs. This links the feedback to the exact trace.
+1. **Axiom Console**: View feedback events and click through to see the corresponding AI trace to understand what happened.
+
+## Types of feedback
+
+Axiom AI SDK supports the following feedback types:
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `thumb` | Thumbs up (+1) or down (-1) | Response quality rating |
+| `number` | Numeric value | Similarity score (0-1), star rating (1-5) |
+| `bool` | Boolean true/false | "Was this helpful?" |
+| `text` | Free-form string | User comments |
+| `enum` | Constrained string value | Category selection |
+| `signal` | No value, indicates event occurred | "User copied response" |
+
+## Prerequisites
+
+- [Create an Axiom account](https://app.axiom.co/register).
+- [Create a dataset in Axiom](/reference/datasets#create-dataset) dedicated for storing feedback data. Feedback events are stored separately from trace data.
+- [Create an API token in Axiom](/reference/tokens) with minimal permissions because it's exposed in the frontend. Add ingest-only permissions to the feedback dataset you have created.
+- Install Axiom AI SDK in your project. For more information, see [Quickstart](/ai-engineering/quickstart).
+
+## Server-side configuration
+
+On the server side, capture trace context with `withSpan` when you run your AI capability, and pass the trace and span IDs to the frontend using `FeedbackLinks`:
+
+```ts
+import { withSpan } from 'axiom/ai';
+import type { FeedbackLinks } from 'axiom/ai/feedback';
+
+async function runMyCapability(input: string) {
+  return await withSpan({ capability: 'my-capability', step: 'generate' }, async (span) => {
+    const links: FeedbackLinks = {
+      traceId: span.spanContext().traceId,
+      spanId: span.spanContext().spanId,
+      capability: 'my-capability',
+    };
+
+    const result = await generateResponse(input);
+
+    return { result, links };
+  });
+}
+```
+
+`FeedbackLinks` links feedback events to traces, and allows you to see what your AI capability did when a user provided feedback.
+
+```ts
+type FeedbackLinks = {
+  traceId: string;      // Required: The trace ID from your AI capability
+  capability: string;   // Required: The name of your capability
+  spanId?: string;      // Optional: Link to a specific span
+  step?: string;        // Optional: Step within the capability
+  conversationId?: string; // Optional: Refers to `attributes.gen_ai.conversation_id`
+  userId?: string;      // Optional: User providing feedback
+};
+```
+
+## Client-side configuration
+
+On the client side, initialize a feedback client with your Axiom credentials:
+
+```ts
+import { createFeedbackClient, Feedback } from 'axiom/ai/feedback';
+
+const { sendFeedback } = createFeedbackClient({
+  token: process.env.AXIOM_FEEDBACK_TOKEN,
+  dataset: process.env.AXIOM_FEEDBACK_DATASET,
+  url: process.env.AXIOM_URL
+});
+```
+
+<Info>
+For browser-based feedback collection, use environment variables prefixed for your framework. For example, use `NEXT_PUBLIC_` for Next.js.
+</Info>
+
+Store the following environment variables:
+
+```bash .env
+AXIOM_FEEDBACK_TOKEN="API_TOKEN"
+AXIOM_FEEDBACK_DATASET="DATASET_NAME"
+AXIOM_URL="AXIOM_DOMAIN"
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+### Send feedback
+
+Use the `Feedback` helper to create feedback objects, and send them with `sendFeedback`:
+
+<Tabs>
+<Tab title="Thumbs up/down">
+
+```ts
+// Thumbs up
+await sendFeedback(
+  links,
+  Feedback.thumbUp({ name: 'response-quality' })
+);
+
+// Thumbs down with a comment
+await sendFeedback(
+  links,
+  Feedback.thumbDown({
+    name: 'response-quality',
+    message: 'The answer was incorrect',
+  })
+);
+
+// Using the generic thumb function
+await sendFeedback(
+  links,
+  Feedback.thumb({
+    name: 'response-quality',
+    value: 'up', // or 'down'
+    message: 'Very helpful!',
+  })
+);
+```
+
+</Tab>
+<Tab title="Numeric">
+
+```ts
+// Star rating
+await sendFeedback(
+  links,
+  Feedback.number({
+    name: 'star-rating',
+    value: 4,
+  })
+);
+
+// Similarity score
+await sendFeedback(
+  links,
+  Feedback.number({
+    name: 'relevance-score',
+    value: 0.85,
+  })
+);
+```
+
+</Tab>
+<Tab title="Boolean">
+
+```ts
+await sendFeedback(
+  links,
+  Feedback.bool({
+    name: 'was-helpful',
+    value: true,
+  })
+);
+```
+
+</Tab>
+<Tab title="Text">
+
+```ts
+await sendFeedback(
+  links,
+  Feedback.text({
+    name: 'user-comment',
+    value: 'This response saved me hours of debugging!',
+  })
+);
+```
+
+</Tab>
+<Tab title="Enum">
+
+Use enums for constrained text values:
+
+```ts
+await sendFeedback(
+  links,
+  Feedback.enum({
+    name: 'issue-category',
+    value: 'hallucination', // or 'off-topic', 'incomplete', etc.
+  })
+);
+```
+
+</Tab>
+<Tab title="Signal">
+
+Signals indicate an event occurred without a value. Use signals for implicit feedback like copying or regenerating:
+
+```ts
+// User copied the response
+await sendFeedback(
+  links,
+  Feedback.signal({ name: 'response-copied' })
+);
+
+// User regenerated the response
+await sendFeedback(
+  links,
+  Feedback.signal({ name: 'response-regenerated' })
+);
+```
+
+</Tab>
+<Tab title="Metadata">
+
+All feedback types support optional metadata for additional context. Metadata can contain an arbitrary set of attributes:
+
+```ts
+await sendFeedback(
+  links,
+  Feedback.thumbUp({
+    name: 'response-quality',
+    message: 'Great answer!',
+    metadata: {
+      userId: 'user-123',
+      sessionId: 'session-456',
+      responseLength: 250,
+    },
+  })
+);
+```
+
+</Tab>
+</Tabs>
+
+### Error handling
+
+The feedback client logs errors to the JavaScript console by default. To handle errors differently, pass an `onError` callback:
+
+```ts
+const { sendFeedback } = createFeedbackClient(
+  {
+    token: process.env.AXIOM_FEEDBACK_TOKEN,
+    dataset: process.env.AXIOM_FEEDBACK_DATASET,
+    url: process.env.AXIOM_URL,
+  },
+  {
+    onError: (error, context) => {
+      // Log to your error tracking service
+      console.error('Feedback failed:', error, context.links);
+    },
+  }
+);
+```
+
+## Example: Chat interface with feedback
+
+This example shows a complete pattern for a chat interface with thumbs up/down feedback in Next.js.
+
+<Tabs>
+<Tab title="Server-side code">
+
+The server-side code returns the trace and span IDs to the client-side code, which is used to link the feedback to the trace:
+
+```ts /app/actions.ts expandable
+'use server';
+
+import { withSpan } from 'axiom/ai';
+import type { FeedbackLinks } from 'axiom/ai/feedback';
+
+export async function chat(messages: Message[]) {
+  return await withSpan({ capability: 'support-agent', step: 'respond' }, async (span) => {
+    // Add your AI logic here: call OpenAI, Anthropic, etc.
+    const response = await generateResponse(messages);
+
+    // Extract trace context to pass to the client
+    const links: FeedbackLinks = {
+      traceId: span.spanContext().traceId,
+      spanId: span.spanContext().spanId,
+      capability: 'support-agent',
+    };
+
+    return { response, links };
+  });
+}
+```
+
+</Tab>
+<Tab title="Client-side code">
+
+The client-side code captures feedback and sends it to the server:
+
+```tsx expandable /app/components/ChatMessage.tsx expandable
+'use client';
+
+import { useState } from 'react';
+import { createFeedbackClient, Feedback } from 'axiom/ai/feedback';
+import type { FeedbackLinks } from 'axiom/ai/feedback';
+
+const { sendFeedback } = createFeedbackClient({
+  url: process.env.NEXT_PUBLIC_AXIOM_URL,
+  dataset: process.env.NEXT_PUBLIC_AXIOM_FEEDBACK_DATASET,
+  token: process.env.NEXT_PUBLIC_AXIOM_FEEDBACK_TOKEN,
+});
+
+function ChatMessage({ message, links }: { message: string; links: FeedbackLinks }) {
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+
+  const handleFeedback = async (value: 'up' | 'down') => {
+    setFeedback(value);
+    await sendFeedback(
+      links,
+      Feedback.thumb({ name: 'response-quality', value })
+    );
+  };
+
+  return (
+    <div>
+      <p>{message}</p>
+      <button
+        onClick={() => handleFeedback('up')}
+        disabled={feedback !== null}
+      >
+        👍
+      </button>
+      <button
+        onClick={() => handleFeedback('down')}
+        disabled={feedback !== null}
+      >
+        👎
+      </button>
+    </div>
+  );
+}
+```
+
+</Tab>
+</Tabs>
+
+## View feedback in Console
+
+After collecting feedback, analyze it in the Axiom Console.
+
+### AI engineering tab
+
+Using the AI engineering tab, analyze the feedback events for each capability.
+
+1. Click the AI engineering tab.
+1. Click **Feedback** in the sidebar.
+1. Select the capability from the dropdown.
+1. Optional: Click <Icon icon="filter" iconType="regular"/> to filter the feedback events by name.
+1. Click the feedback event to see the details.
+
+To determine what your capability did when a user gave their feedback:
+1. Click **View** in the Trace column to navigate to the corresponding AI trace.
+1. Analyze the trace in the waterfall view. For more information, see [Traces](/query-data/traces#waterfall-view-of-traces).
+
+### Query tab
+
+Using the Query tab, query the feedback dataset as any other dataset. For example, to see the number of thumbs up and thumbs down for each capability:
+
+```kusto
+['feedback']
+| where event == 'feedback'
+| summarize
+    thumbs_up = countif(kind == 'thumb' and value == 1),
+    thumbs_down = countif(kind == 'thumb' and value == -1)
+  by capability = ['links.capability']
+```
+
+To determine what your capability did when a user gave their feedback:
+
+1. Click the feedback event in the list.
+1. In the event details panel, click the trace ID to navigate to the corresponding AI trace.
+1. Analyze the trace in the waterfall view. For more information, see [Traces](/query-data/traces#waterfall-view-of-traces).
+
+## What’s next?
+
+- Learn how to use feedback insights to improve your capabilities in [Iterate](/ai-engineering/iterate).
+- Set up evaluations to systematically test improvements in [Evaluate](/ai-engineering/evaluate/overview).

@@ -1,0 +1,95 @@
+---
+title: 'Scheduling'
+description: 'Learn about scheduling strategies in Checkly'
+sidebarTitle: 'Scheduling'
+---
+
+## Scheduling Strategies
+
+Checkly provides two scheduling strategies for running checks: **Round-robin** or **Parallel scheduling**. To select a scheduling strategy go to ‘Scheduling and locations’ when creating or editing a check.
+
+### Round-robin
+
+Using **Round-robin Scheduling**, your check will run on one of the selected locations each time it is scheduled. The next check run will be scheduled on a different location from the list until all locations have been run once, and the check rotates back to the first location in the list.
+
+When using the **Round-robin Scheduling** strategy you can choose to have retries to run from a random location of the ones selected, or run it from the same location as the first attempt.
+
+Use **Round-robin Scheduling** when the service you are monitoring can be considered available as long as at least one location is available and detecting a regional outage is not critical.
+
+### Parallel
+
+With **Parallel Scheduling**, each time the check is scheduled it will run once from each selected location. When running a check in parallel, retries will always be run from the same location as the first attempt.
+
+Use **Parallel Scheduling** to reduce detection times for regional outages and reduce time to detect service degradations that impact the customer experience.
+
+## Best Practices
+
+### Frequency Guidelines by Service Criticality
+
+**Critical Production Services:**
+
+- **Frequency**: Every 10 Seconds - 2 Minutes
+- **Examples**: Payment processing, user authentication, core APIs
+- **Rationale**: Immediate detection of issues affecting users
+
+
+**Important Services:**
+- **Frequency**: Every 5-10 minutes  
+- **Examples**: Secondary APIs, admin interfaces, reporting tools
+- **Rationale**: Quick detection with reasonable resource usage
+
+**Non-Critical Services:**
+- **Frequency**: Every 15-30 minutes
+- **Examples**: Documentation sites, internal tools, dev environments
+- **Rationale**: Monitor availability without excessive overhead
+
+### Frequency Guidelines by Service Type
+
+**E-commerce Sites:**
+- **Homepage**: Every 1 minute (critical for revenue)
+- **Product Pages**: Every 5 minutes
+- **Search API**: Every 2 minutes
+- **Checkout Flow**: Every 30 seconds
+
+**SaaS Applications:**
+- **Login Endpoint**: Every 1 minute
+- **Core Features**: Every 5 minutes
+- **Admin Interfaces**: Every 15 minutes
+- **Status Pages**: Every 10 minutes
+
+**Database Servers:**
+- **Primary Database**: Every 2 minutes
+- **Read Replicas**: Every 5 minutes
+- **Backup Systems**: Every 15 minutes
+
+
+### Resource Impact Considerations
+
+**Server Load Management:**
+- Higher frequency = more requests to your servers
+- Use round-robin scheduling to distribute load
+- Consider rate limiting and caching implications
+- Monitor your server metrics during frequency changes
+
+**Monitoring Budget:**
+- More frequent checks = higher monitoring costs
+- Balance detection speed with budget constraints
+- Review and adjust frequencies based on actual value
+
+### Initial Configuration
+1. **Start conservative** with 5-10 minute intervals
+2. **Monitor high-impact services more frequently**
+3. **Adjust based on actual failure patterns**
+4. **Consider business hours and user activity**
+
+### Ongoing Optimization
+- **Review frequency effectiveness** quarterly
+- **Adjust during high-risk periods** (deployments, traffic spikes)
+- **Balance detection speed with cost constraints**
+- **Use data-driven decisions** based on incident history
+
+### Documentation and Communication
+- **Document scheduling rationale** for different services
+- **Communicate frequency changes** to relevant teams
+- **Track scheduling effectiveness** over time
+- **Regular review with stakeholders**

@@ -1,0 +1,280 @@
+---
+title: 'Send data from JavaScript app to Axiom'
+description: 'This page explains how to send data from a JavaScript app to Axiom.'
+overview: 'High-level, interpreted programming language for web development'
+sidebarTitle: JavaScript
+github: "https://github.com/axiomhq/axiom-js"
+keywords: ['js', 'javascript', 'node', 'typescript', 'ts', 'node.js']
+logoId: 'javascript'
+isPopular: true
+popularityOrder: 8
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import ReplaceDataset from "/snippets/replace-dataset.mdx"
+
+JavaScript is a versatile, high-level programming language primarily used for creating dynamic and interactive web content.
+
+To send data from a JavaScript app to Axiom, use one of the following libraries of the Axiom JavaScript SDK:
+
+- <a href="#use-%40axiomhq%2Fjs">@axiomhq/js</a>
+- <a href="#use-%40axiomhq%2Flogging">@axiomhq/logging</a>
+
+The choice between these options depends on your individual requirements:
+
+| Capabilities                                        | @axiomhq/js | @axiomhq/logging |
+|-----------------------------------------------------|-------------|------------------|
+| Send data to Axiom                                  | Yes         | Yes              |
+| Query data                                          | Yes         | No               |
+| Capture errors                                      | Yes         | No               |
+| Create annotations                                  | Yes         | No               |
+| Transports                                          | No          | Yes              |
+| Structured logging by default                       | No          | Yes              |
+| Send data to multiple places from a single function | No          | Yes              |
+
+The `@axiomhq/logging` library is a logging solution that also serves as the base for other libraries like `@axiomhq/react` and `@axiomhq/nextjs`.
+
+<Info>
+The @axiomhq/js and the @axiomhq/logging libraries are part of the Axiom JavaScript SDK, an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-js).
+</Info>
+
+<Prerequisites />
+
+## Use @axiomhq/js
+
+### Install @axiomhq/js
+
+In your terminal, go to the root folder of your JavaScript app and run the following command:
+
+    ```shell
+    npm install @axiomhq/js
+    ```
+
+### Configure environment variables
+
+Configure the environment variables in one of the following ways:
+- Export the API token as `AXIOM_TOKEN`.
+- Pass the API token to the constructor of the client:
+
+    ```ts
+    import { Axiom } from '@axiomhq/js';
+
+    const axiom = new Axiom({
+      token: process.env.AXIOM_TOKEN,
+    });
+    ```
+
+- Install the [Axiom CLI](/reference/cli), and then run the following command:
+
+    ```sh
+    eval $(axiom config export -f)
+    ```
+
+### Send data to Axiom
+
+The following example sends data to Axiom:
+
+```ts
+axiom.ingest('DATASET_NAME', [{ foo: 'bar' }]);
+await axiom.flush();
+```
+
+<Info>
+<ReplaceDataset />
+</Info>
+
+The client automatically batches events in the background. In most cases, call `flush()` only before your application exits.
+
+### Query data
+
+The following example queries data from Axiom:
+
+```ts
+const res = await axiom.query(`['DATASET_NAME'] | where foo == 'bar' | limit 100`);
+console.log(res);
+```
+
+<Info>
+<ReplaceDataset />
+</Info>
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-js/tree/main/examples).
+
+### Capture errors
+
+To capture errors, pass a method `onError` to the client:
+
+```ts
+let client = new Axiom({
+  token: '',
+  ...,
+  onError: (err) => {
+    console.error('ERROR:', err);
+  }
+});
+```
+
+By default, `onError` is set to `console.error`.
+
+### Create annotations
+
+The following example creates an annotation:
+
+```ts
+import { annotations } from '@axiomhq/js';
+
+const client = new annotations.Service({ token: process.env.AXIOM_TOKEN });
+
+await annotations.create({
+  type: 'deployment',
+  datasets: ['DATASET_NAME'],
+  title: 'New deployment',
+  description: 'Deployed version 1.0.0',
+})
+```
+
+## Use @axiomhq/logging
+
+### Install @axiomhq/logging
+
+In your terminal, go to the root folder of your JavaScript app and run the following command:
+
+```bash
+npm install @axiomhq/logging
+```
+
+### Send data to Axiom
+
+The following example sends data to Axiom:
+
+```ts
+import { Logger, AxiomJSTransport, ConsoleTransport } from "@axiomhq/logging";
+import { Axiom } from "@axiomhq/js";
+
+const axiom = new Axiom({
+  token: process.env.AXIOM_TOKEN,
+});
+
+const logger = new Logger(
+  {
+    transports: [
+      new AxiomJSTransport({ 
+        axiom,
+        dataset: process.env.AXIOM_DATASET,
+      }),
+      new ConsoleTransport(),
+    ],
+  }
+);
+
+logger.info("Hello, world!");
+```
+
+#### Transports
+
+The `@axiomhq/logging` library includes the following transports:
+
+- `ConsoleTransport`: Logs to the console.
+
+    ```ts
+    import { ConsoleTransport } from "@axiomhq/logging";
+
+    const transport = new ConsoleTransport({
+      logLevel: "warn",
+      prettyPrint: true,
+    });
+    ```
+
+- `AxiomJSTransport`: Sends logs to Axiom using the @axiomhq/js library.
+
+    ```ts
+    import { Axiom } from "@axiomhq/js";
+    import { AxiomJSTransport } from "@axiomhq/logging";
+
+    const axiom = new Axiom({
+      token: process.env.AXIOM_TOKEN,
+    });
+
+    const transport = new AxiomJSTransport({
+      axiom,
+      dataset: process.env.AXIOM_DATASET,
+      logLevel: "warn",
+    });
+    ```
+
+- `ProxyTransport`: Sends logs the [proxy server function](/send-data/nextjs#proxy-for-client-side-usage) that acts as a proxy between your application and Axiom. It’s particularly useful when your application runs on top of a server-enabled framework like Next.js or Remix.
+
+    ```ts
+    import { ProxyTransport } from "@axiomhq/logging";
+
+    const transport = new ProxyTransport({
+      url: "/proxy",
+      logLevel: "warn",
+      autoFlush: { durationMs: 1000 },
+    });
+    ```
+
+Alternatively, create your own transports by implementing the `Transport` interface:
+
+```ts
+import { Transport } from "@axiomhq/logging";
+
+class MyTransport implements Transport {
+  log(log: Transport['log']) {
+    console.log(log);
+  }
+
+  flush() {
+    console.log("Flushing logs");
+  }
+}
+```
+
+#### Logging levels
+
+The `@axiomhq/logging` library includes the following logging levels:
+
+- `debug`: Debug-level logs.
+- `info`: Informational logs.
+- `warn`: Warning logs.
+- `error`: Error logs.
+
+#### Formatters
+
+Formatters are used to change the content of a log before sending it to a transport. For example:
+
+```ts
+import { Logger, LogEvent } from "@axiomhq/logging";
+
+const myCustomFormatter = (event: LogEvent) => {
+  const upperCaseKeys = {
+    ...event,
+    fields: Object.fromEntries(
+      Object.entries(event.fields).map(([key, value]) => [key.toUpperCase(), value])
+    ),
+  };
+
+  return upperCaseKeys;
+};
+
+const logger = new Logger({
+  formatters: [myCustomFormatter],
+});
+
+logger.info("Hello, world!");
+```
+
+## Related logging options
+
+### Send data from JavaScript libraries and frameworks
+
+To send data to Axiom from JavaScript libraries and frameworks, see the following:
+- [Send data from React app](/send-data/react)
+- [Send data from Next.js app](/send-data/nextjs)
+
+### Send data from Node.js
+
+While the Axiom JavaScript SDK works on both the backend and the browsers, Axiom provides transports for some of the popular loggers:
+
+- [Pino](/guides/pino)
+- [Winston](/guides/winston)

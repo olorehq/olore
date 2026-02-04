@@ -1,0 +1,151 @@
+---
+title: unicode_codepoints_to_string
+description: 'This page explains how to use the unicode_codepoints_to_string function in APL.'
+---
+
+Use the `unicode_codepoints_to_string` function to convert an array of Unicode code points into a UTF-8 encoded string. This function is helpful when your data represents characters as numeric values—such as integer arrays from encodings, logs, or telemetry fields—and you want to decode them into readable text.
+
+You can use `unicode_codepoints_to_string` to reconstruct log messages, parse encoded payloads, or normalize fragmented character sequences for visualization, comparison, or filtering.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t have a built-in function that directly converts an array of Unicode code points into a string. You typically need to use custom scripts, external commands, or workaround expressions to achieve similar functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval decoded=custom_decode_function(codepoints)
+````
+
+```kusto APL equivalent
+print decoded = unicode_codepoints_to_string(dynamic([72, 101, 108, 108, 111]))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t define a standard function for converting arrays of Unicode code points into strings. Implementing such functionality typically requires procedural code (e.g., in PL/pgSQL or T-SQL) or custom UDFs.
+
+<CodeGroup>
+```sql SQL example
+-- Pseudo-code in PL/pgSQL
+SELECT array_to_string(array_agg(chr(code)), '') FROM codepoints;
+```
+
+```kusto APL equivalent
+print decoded = unicode_codepoints_to_string(dynamic([72, 101, 108, 108, 111]))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+unicode_codepoints_to_string(array)
+```
+
+### Parameters
+
+| Name    | Type      | Description                                            |
+| ------- | --------- | ------------------------------------------------------ |
+| `array` | `dynamic` | An array of integers representing Unicode code points. |
+
+### Returns
+
+A string constructed from the given Unicode code points using UTF-8 encoding.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Sometimes HTTP logs store user-agent strings or query parameters as numeric arrays for compact storage. You can use `unicode_codepoints_to_string` to decode those sequences.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend codepoints = dynamic([72, 84, 84, 80])
+| extend decoded_method = unicode_codepoints_to_string(codepoints)
+| project _time, decoded_method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20codepoints%20%3D%20dynamic(%5B72%2C%2084%2C%2084%2C%2080%5D)%20%7C%20extend%20decoded_method%20%3D%20unicode_codepoints_to_string(codepoints)%20%7C%20project%20_time%2C%20decoded_method%22%7D)
+
+**Output**
+
+| _time               | decoded_method |
+| -------------------- | --------------- |
+| 2025-07-29T14:12:00Z | HTTP            |
+
+This query decodes the static Unicode array `[72, 84, 84, 80]` into the string `'HTTP'`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In tracing systems, service metadata might be emitted as numeric codes for efficiency. You can use `unicode_codepoints_to_string` to interpret those codes during post-processing.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'checkout'
+| extend trace_label_codepoints = dynamic([67, 72, 69, 67, 75])
+| extend decoded_label = unicode_codepoints_to_string(trace_label_codepoints)
+| project _time, trace_id, ['service.name'], decoded_label
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'checkout'%20%7C%20extend%20trace_label_codepoints%20%3D%20dynamic(%5B67%2C%2072%2C%2069%2C%2067%2C%2075%5D)%20%7C%20extend%20decoded_label%20%3D%20unicode_codepoints_to_string(trace_label_codepoints)%20%7C%20project%20_time%2C%20trace_id%2C%20%5B'service.name'%5D%2C%20decoded_label%22%7D)
+
+**Output**
+
+| _time               | trace_id        | ['service.name'] | decoded_label |
+| -------------------- | ---------------- | ----------------- | -------------- |
+| 2025-07-29T14:20:00Z | d4e9aefb8cc31b4d | checkout   | CHECK          |
+
+The query decodes a fixed array into the label `'CHECK'` to tag traces visually in dashboards.
+
+</Tab>
+<Tab title="Security logs">
+
+Sometimes security tools emit obfuscated payloads as numeric arrays. You can decode and inspect them using `unicode_codepoints_to_string`.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend obfuscated_uri = dynamic([47, 108, 111, 103, 105, 110])
+| extend decoded_uri = unicode_codepoints_to_string(obfuscated_uri)
+| project _time, uri, decoded_uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20obfuscated_uri%20%3D%20dynamic(%5B47%2C%20108%2C%20111%2C%20103%2C%20105%2C%20110%5D)%20%7C%20extend%20decoded_uri%20%3D%20unicode_codepoints_to_string(obfuscated_uri)%20%7C%20project%20_time%2C%20uri%2C%20decoded_uri%22%7D)
+
+**Output**
+
+| _time               | uri      | decoded_uri |
+| -------------------- | -------- | ------------ |
+| 2025-07-29T14:30:00Z | /blocked | /login       |
+
+This example shows how to reconstruct a denied URI (`/login`) from its obfuscated form using code points.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Combines multiple arrays. Useful when merging code point arrays from different strings.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array. Use it to check how many code points a string contains.
+- [parse_path](apl/scalar-functions/string-functions/parse-path): Parses a path into components. Use it with `unicode_codepoints_from_string` when decoding or inspecting URL paths.
+- [unicode_codepoints_from_string](/apl/scalar-functions/string-functions/unicode-codepoints-from-string): TODO

@@ -1,0 +1,55 @@
+---
+title: Koa
+description: "Adds performance instrumentation for Koa. (default)"
+supported:
+  - javascript.node
+  - javascript.koa
+---
+
+For more information on setting up Sentry Koa support, see the [Koa Sentry documentation](/platforms/javascript/guides/koa/).
+
+<Alert>
+
+This integration only works in the Node.js and Bun runtimes.
+
+</Alert>
+
+_Import name: `Sentry.koaIntegration`_
+
+This integration is enabled by default when performance monitoring is enabled. If you'd like to modify your default integrations, read [this](./../#modifying-default-integrations).
+
+The `koaIntegration` adds instrumentation for the Koa framework to capture spans using [`@opentelemetry/instrumentation-koa`](https://www.npmjs.com/package/@opentelemetry/instrumentation-koa).
+
+```JavaScript
+Sentry.init({
+  integrations: [Sentry.koaIntegration()],
+});
+```
+
+## Options
+
+### `ignoreLayersType`
+
+Requires SDK version `9.29.0` or higher.
+
+_Type: `Array<'middleware' | 'router'>`_
+
+An array of Koa layer types to ignore when creating spans. This allows you to filter out specific types of middleware or router spans from being sent to Sentry.
+
+```javascript
+// To ignore middleware spans
+const Sentry = require('@sentry/node');
+
+Sentry.init({
+  integrations: [
+    Sentry.koaIntegration({
+      ignoreLayersType: ['middleware']
+    })
+  ],
+})
+```
+
+## Supported Versions
+
+- `koa`: `^2.0.0`
+- `@koa/router`: `>=8`

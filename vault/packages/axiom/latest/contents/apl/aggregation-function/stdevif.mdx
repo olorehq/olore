@@ -1,0 +1,149 @@
+---
+title: stdevif
+description: 'This page explains how to use the stdevif aggregation function in APL.'
+---
+
+The `stdevif` aggregation function in APL computes the standard deviation of values in a group based on a specified condition. This is useful when you want to calculate variability in data, but only for rows that meet a particular condition. For example, you can use `stdevif` to find the standard deviation of response times in an HTTP log, but only for requests that resulted in a 200 status code.
+
+The `stdevif` function is useful when you want to analyze the spread of data values filtered by specific criteria, such as analyzing request durations in successful transactions or monitoring trace durations of specific services in OpenTelemetry data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `stdev` function is used to calculate the standard deviation, but you need to use an `if` function or a `where` clause to filter data. APL simplifies this by combining both operations in `stdevif`.
+
+<CodeGroup>
+```sql Splunk example
+| stats stdev(req_duration_ms) as stdev_req where status="200"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize stdevif(req_duration_ms, status == "200") by geo.country
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `STDDEV` function is used to compute the standard deviation, but it requires the use of a `CASE WHEN` expression to apply a conditional filter. APL integrates the condition directly into the `stdevif` function.
+
+<CodeGroup>
+```sql SQL example
+SELECT STDDEV(CASE WHEN status = '200' THEN req_duration_ms END)
+FROM sample_http_logs
+GROUP BY geo.country;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize stdevif(req_duration_ms, status == "200") by geo.country
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize stdevif(column, condition)
+```
+
+### Parameters
+
+- **column**: The column that contains the numeric values for which you want to calculate the standard deviation.
+- **condition**: The condition that must be true for the values to be included in the standard deviation calculation.
+
+### Returns
+
+The `stdevif` function returns a floating-point number representing the standard deviation of the specified column for the rows that satisfy the condition.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this example, you calculate the standard deviation of request durations (`req_duration_ms`), but only for successful HTTP requests (status code 200).
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize stdevif(req_duration_ms, status == '200') by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20stdevif%28req_duration_ms%2C%20status%20%3D%3D%20%27200%27%29%20by%20%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| geo.country | stdev_req_duration_ms |
+|-------------|-----------------------|
+| US          | 120.45                |
+| Canada      | 98.77                 |
+| Germany     | 134.92                |
+
+This query calculates the standard deviation of request durations for HTTP 200 responses, grouped by country.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this example, you calculate the standard deviation of span durations, but only for traces from the `frontend` service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize stdevif(duration, ['service.name'] == "frontend") by kind
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20summarize%20stdevif%28duration%2C%20%5B%27service.name%27%5D%20%3D%3D%20%27frontend%27%29%20by%20kind%22%7D)
+
+**Output**
+
+| kind     | stdev_duration |
+|----------|----------------|
+| server   | 45.78          |
+| client   | 23.54          |
+
+This query computes the standard deviation of span durations for the `frontend` service, grouped by span type (`kind`).
+
+</Tab>
+<Tab title="Security logs">
+
+In this example, you calculate the standard deviation of request durations for security events from specific HTTP methods, filtered by `POST` requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize stdevif(req_duration_ms, method == "POST") by ['geo.city']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20stdevif%28req_duration_ms%2C%20method%20%3D%3D%20%27POST%27%29%20by%20%5B%27geo.city%27%5D%22%7D)
+
+**Output**
+
+| geo.city | stdev_req_duration_ms |
+|----------|-----------------------|
+| New York | 150.12                |
+| Berlin   | 130.33                |
+
+This query calculates the standard deviation of request durations for `POST` HTTP requests, grouped by the originating city.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**avgif**](/apl/aggregation-function/avgif): Similar to `stdevif`, but instead of calculating the standard deviation, `avgif` computes the average of values that meet the condition.
+- [**sumif**](/apl/aggregation-function/sumif): Computes the sum of values that meet the condition. Use `sumif` when you want to aggregate total values instead of analyzing data spread.
+- [**varianceif**](/apl/aggregation-function/varianceif): Returns the variance of values that meet the condition, which is a measure of how spread out the data points are.
+- [**countif**](/apl/aggregation-function/countif): Counts the number of rows that satisfy the specified condition.
+- [**minif**](/apl/aggregation-function/minif): Retrieves the minimum value that satisfies the given condition, useful when finding the smallest value in filtered data.

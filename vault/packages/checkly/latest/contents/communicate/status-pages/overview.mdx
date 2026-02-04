@@ -1,0 +1,110 @@
+---
+title: 'Status Pages Overview'
+description: 'Create professional status pages to communicate service health, incidents, and maintenance to your customers with automatic incident management and custom branding.'
+sidebarTitle: 'Overview'
+---
+
+
+
+Status pages provide transparent communication about your service health and incidents to customers, users, and stakeholders. Checkly's status pages automatically reflect your monitoring results and create a professional interface for incident communication.
+![Status page example](/images/docs/images/status-pages/status-pages-overview-1.png)
+
+
+## Core Status Page components
+
+### Services
+
+A service represents a functional piece of your application or website, such as landing page, API, support portal etc. You manage your services from the service overview page, accessible in the sidebar.
+
+<Note>
+The number of services and subscribers you can have varies by plan. [View pricing](https://checklyhq.com/pricing)
+</Note>
+
+When naming a service, use a name that is identifiable for your users, as this is used when sending out incident notifications.
+
+<Tip>Learn more about contextual services in [Communicate User Feature Availability with Status Pages](/guides/communicate-availability).</Tip>
+
+A service can be used by multiple status pages. When an incident is opened for a service, it will appear on all pages that use it. Subscribers of each of those pages will receive email notifications for the incident.
+
+![Diagram showing the incident flow for manual incidents](/images/docs/images/status-pages/status-pages-manual-incident.jpg)
+
+### Connecting Services and Status Pages
+
+To display a service on a Status Page, go to the Status Page editor and open the `Services` dropdown on the card you want to display your service on.
+
+Select your service from the list and save your Status Page. The page will now display the selected service.
+
+You can also create new services directly from the dropdown by entering a new service name and pressing `Create`.
+
+You can display the same service on multiple pages. An incident declared on that service will be shown on all status pages which contain that service.
+
+### Connecting Checks to Service to automate Incidents (paid plans)
+
+A Check can also be associated with a Service, and automatically open Incidents whenever it fails. [See incident automation for more details](/communicate/status-pages/incidents#incident-automation).
+
+![Diagram showing the incident flow for automatic incidents](/images/docs/images/status-pages/status-pages-automatic-incident.jpg)
+
+## Uptime calculation
+
+Status pages display an uptime percentage for each service, as well as an overall uptime for each card. Here's how these values are calculated:
+
+### Time window
+
+Uptime is calculated based on the **last 90 days** of data. This provides a meaningful long-term view of service reliability while remaining recent enough to reflect current performance.
+
+### Service uptime
+
+Service uptime represents the percentage of time the service was operational within the 90-day window. The calculation is:
+
+```
+Uptime = ((Total time - Downtime) / Total time) × 100
+```
+
+For example, if a service had 1 day of downtime over 90 days, the uptime would be approximately 98.89%.
+
+### Card uptime
+
+The uptime shown for a card is the **average uptime** of all services displayed within that card.
+
+### What affects uptime
+
+Uptime is determined by **incidents**, not directly by check results. Here's how it works:
+
+- **Manual incidents**: When you [create an incident](/communicate/status-pages/incidents#creating-an-incident) affecting a service, the incident duration counts as downtime.
+- **Automated incidents**: When [incident automation](/communicate/status-pages/incidents#incident-automation) is enabled for a check, any check failure that triggers an alert will automatically open an incident, which counts as downtime. The incident is resolved when the check recovers.
+
+<Note>
+If you don't have incident automation enabled, check failures won't automatically affect your uptime. You would need to manually create incidents to reflect downtime in your uptime calculations.
+</Note>
+
+## Best practices for status pages
+
+### Service organization
+
+Create Services that align with how your users think about your application:
+
+```yaml
+# Good Service examples
+Frontend Application:
+  - Website loading and navigation
+  - User interface responsiveness
+  - Client-side functionality
+
+API Services:
+  - Core API endpoints
+  - Authentication services
+  - Data processing capabilities
+
+Third-party Integrations:
+  - Payment processors
+  - Email delivery services
+  - External data sources
+```
+
+<Tip>
+Create services to match how your users perceive your system, not according to your internal architecture. Users care about "Login" working, not whether your "Auth microservice cluster" is healthy.
+</Tip>
+
+### Incident communication
+
+When an incident occurs, provide clear updates that explain what's happening and how it affects users. Write in plain language, avoiding technical jargon unless your audience is technical. Update the incident as you learn more about the issue, and close it with an explanation of what was fixed. Where possible, communicate proactively to maximize chances to warn users before they encounter problems themselves.

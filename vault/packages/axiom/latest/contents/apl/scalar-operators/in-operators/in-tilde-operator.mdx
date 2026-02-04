@@ -1,0 +1,144 @@
+---
+title: 'in~'
+description: 'This page explains how to use the in~ operator in APL.'
+sidebarTitle: 'in~'
+---
+
+The `in~` operator in APL filters records based on whether a value matches any element in a specified set using case-insensitive comparison. Use this operator to check if a field value equals one of several values regardless of letter case, which is more concise and efficient than chaining multiple equality checks with `or`. The `in~` operator works with any scalar type, including strings, numbers, booleans, datetime values, and dynamic arrays.
+
+Use the `in~` operator when you need case-insensitive matching against multiple values, such as when filtering logs where the case of values might vary (for example, HTTP methods that could be 'GET', 'get', or 'Get').
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, string comparisons are case-insensitive by default. APL requires the explicit `in~` operator for case-insensitive matching. Use `in~` when you want to match values regardless of case.
+
+<CodeGroup>
+```sql Splunk example
+index=web_logs | where method IN ("get", "post", "put")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where method in~ ('get', 'post', 'put')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `IN` operator's case sensitivity depends on the database collation. APL's `in~` operator explicitly performs case-insensitive matching, similar to SQL databases with case-insensitive collation.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM sample_http_logs WHERE LOWER(method) IN ('get', 'post', 'put')
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where method in~ ('get', 'post', 'put')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+Expression in~ (Value1, Value2, ...)
+```
+
+### Parameters
+
+| Name       | Type              | Required | Description                                                                                                                                                        |
+| ---------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Expression | scalar            | Yes      | The value to find in the given set, ignoring letter case.                                                                                             |
+| Value      | scalar or tabular | Yes      | The values to compare against the expression. Specify individual scalar values, a dynamic array, or a subquery. When using a subquery with multiple columns, APL uses the first column. The operator supports up to 1,000,000 unique values in the set. |
+
+### Returns
+
+Returns `true` if the expression value matches any value in the specified set (case-insensitive). Returns `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Filter HTTP logs by method regardless of case.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where method in~ ('get', 'post')
+| project _time, method, uri, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20method%20in~%20('get'%2C%20'post')%20%7C%20project%20_time%2C%20method%2C%20uri%2C%20status%22%7D)
+
+**Output**
+
+| _time               | method | uri        | status |
+| ------------------- | ------ | ---------- | ------ |
+| 2024-10-17 10:15:00 | GET    | /api/users | 200    |
+| 2024-10-17 10:16:30 | Post   | /api/data  | 201    |
+| 2024-10-17 10:17:45 | get    | /api/items | 200    |
+
+This query filters the HTTP logs to return requests with GET or POST methods, regardless of how the method is capitalized in the data.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Identify traces by span kind regardless of case variations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where kind in~ ('server', 'client')
+| project _time, trace_id, ['service.name'], kind, duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20kind%20in~%20('server'%2C%20'client')%20%7C%20project%20_time%2C%20trace_id%2C%20%5B'service.name'%5D%2C%20kind%2C%20duration%22%7D)
+
+**Output**
+
+| _time               | trace_id | service.name | kind   | duration |
+| ------------------- | -------- | ------------ | ------ | -------- |
+| 2024-10-17 11:00:00 | abc123   | frontend     | Server | 45ms     |
+| 2024-10-17 11:00:05 | def456   | checkout     | CLIENT | 120ms    |
+| 2024-10-17 11:00:10 | ghi789   | cart         | server | 30ms     |
+
+This query filters traces to show spans with server or client kind, regardless of case, helping you analyze external-facing operations.
+
+</Tab>
+</Tabs>
+
+## Performance considerations
+
+When two operators perform the same task, use the case-sensitive one (`in`) for better performance. Use `in~` only when case-insensitive matching is necessary.
+
+## Use with dynamic arrays
+
+When you pass a dynamic array with nested arrays, APL flattens them into a single list. For instance, `x in~ (dynamic(['a', ['b', 'c']]))` is equivalent to `x in~ ('a', 'b', 'c')`.
+
+```kusto
+let methods = dynamic(['get', 'post']);
+['sample-http-logs']
+| where method in~ (methods)
+```
+
+## List of related operators
+
+- [in](/apl/scalar-operators/in-operators/in-operator): Use for case-sensitive matching to include values. Better performance than `in~`.
+- [!in](/apl/scalar-operators/in-operators/not-in-operator): Use for case-sensitive exclusion. Returns `true` if the value is not in the set.
+- [!in~](/apl/scalar-operators/in-operators/not-in-tilde-operator): Use for case-insensitive exclusion. Excludes values regardless of case.
+- [where](/apl/tabular-operators/where-operator): Use to filter rows based on conditions. The `in~` operator is commonly used within `where` clauses.
+- [=~](/apl/scalar-operators/string-operators): Use for single value case-insensitive equality checks. Use `in~` when checking against multiple values.

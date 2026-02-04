@@ -1,0 +1,159 @@
+---
+title: series_fill_backward
+description: 'This page explains how to use the series_fill_backward function in APL.'
+---
+
+The `series_fill_backward` function fills missing values (nulls) in a numeric dynamic array (series) by propagating the last known value backward through the array. This function is useful for handling gaps in time series data where you want to use the most recent available value to fill earlier missing data points.
+
+You can use `series_fill_backward` when you have time series data with missing values and want to fill gaps using the last observed value. This is particularly useful for forward-looking analysis, forecasting scenarios, or when the most recent data point is the best estimate for missing earlier values. Typical applications include financial data analysis, sensor data processing, and performance monitoring where recent values are more relevant.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, filling missing values typically requires complex `eval` expressions with `fillnull` or custom logic using `streamstats` and `filldown`. The backward filling approach is less common and usually requires manual implementation. In APL, `series_fill_backward` provides a direct, efficient way to perform backward filling on dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | fillnull value=0 | streamstats window=5 current=f last(field) as filled_field
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([null, null, 100, null, 200])
+]
+| extend filled_values = series_fill_backward(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, filling missing values backward requires complex window functions with `LAG()` or custom logic using `LAST_VALUE()` with specific window specifications. Most SQL implementations focus on forward filling rather than backward filling. In APL, `series_fill_backward` simplifies this operation by directly handling backward propagation of values in arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT LAST_VALUE(value) OVER (ORDER BY timestamp ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS filled_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([null, null, 100, null, 200])
+]
+| extend filled_values = series_fill_backward(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_fill_backward(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values that may contain null values. |
+
+### Returns
+
+A dynamic array where null values are replaced by the last non-null value encountered when traversing the array backward.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_fill_backward` to fill missing request duration data using the most recent available values, which is useful for analyzing performance trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend filled_durations = series_fill_backward(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20filled_durations%20%3D%20series_fill_backward(durations)%22%7D)
+
+**Output**
+
+| id   | durations           | filled_durations    |
+| ---- | ------------------- | ------------------- |
+| u123 | [null, 150, null, 200] | [150, 150, 150, 200] |
+| u456 | [100, null, null, 300] | [100, 300, 300, 300] |
+
+This query fills missing request durations with the most recent available values, useful for maintaining continuity in performance analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_fill_backward` to fill missing span duration data using the most recent observed values for better trace analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend filled_durations = series_fill_backward(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20filled_durations%20%3D%20series_fill_backward(durations)%22%7D)
+
+**Output**
+
+| service.name          | durations                | filled_durations         |
+| --------------------- | ------------------------ | ------------------------ |
+| frontend              | [null, 100ms, null, 200ms] | [100ms, 100ms, 100ms, 200ms] |
+| productcatalogservice | [50ms, null, null, 150ms]  | [50ms, 150ms, 150ms, 150ms] |
+
+This query fills missing span durations with the most recent available values, useful for maintaining continuity in service performance analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_fill_backward` to fill missing request duration data using the most recent values for consistent security analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend filled_durations = series_fill_backward(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20filled_durations%20%3D%20series_fill_backward(durations)%22%7D)
+
+**Output**
+
+| status | durations           | filled_durations    |
+| ------ | ------------------- | ------------------- |
+| 200    | [null, 150, null, 250] | [150, 150, 150, 250] |
+| 500    | [100, null, null, 400] | [100, 400, 400, 400] |
+
+This query fills missing request durations with the most recent available values grouped by status code, useful for consistent security analysis across different response types.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_fill_forward](/apl/scalar-functions/time-series/series-fill-forward): Fills missing values by propagating the first known value forward. Use when you want to use the earliest available value to fill gaps.
+- [series_fill_const](/apl/scalar-functions/time-series/series-fill-const): Fills missing values with a constant value. Use when you want to replace nulls with a specific default value.
+- [series_fill_linear](/apl/scalar-functions/time-series/series-fill-linear): Fills missing values using linear interpolation. Use when you want smooth transitions between known values.
+- [series_equals](/apl/scalar-functions/time-series/series-equals): Compares each element to a specified value. Use for identifying specific values after filling operations.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Returns elements greater than a specified value. Use for threshold analysis after filling missing data.

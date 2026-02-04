@@ -1,0 +1,94 @@
+---
+title: 'Multistep Checks Overview'
+description: 'Monitor complex API workflows with sequential requests using Playwright API testing mode for comprehensive end-to-end validation.'
+sidebarTitle: 'Overview'
+---
+
+import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Multistep Check Construct](/constructs/multistep-check).
+</Tip>
+
+## What are Multistep Checks?
+
+Multistep checks are API-focused tests that perform multiple sequential HTTP requests within a single check. They're designed to test complete user workflows that span multiple API endpoints, ensuring that complex business processes work correctly from start to finish.
+
+**Multistep checks are perfect for:**
+- User authentication and authorization flows
+- E-commerce checkout and payment processes
+- Data processing and workflow pipelines
+- Multi-step form submissions
+- Complex business transaction testing
+- API dependency chain validation
+
+## How Multistep Checks Work
+
+Multistep checks execute a series of API requests in sequence, with the ability to pass data between steps:
+
+1. **Step Execution** - Runs each API request in defined order
+2. **Data Flow** - Passes response data from one step to the next
+3. **State Validation** - Verifies system state at each step
+4. **Error Handling** - Manages failures and rollback scenarios
+5. **Performance Tracking** - Measures timing across the entire workflow
+6. **Result Aggregation** - Combines results from all steps
+
+<Tip>
+Multistep checks are powered by Playwright's API testing mode, providing excellent debugging capabilities and detailed request/response logging.
+</Tip>
+
+## Key Capabilities
+
+<Accordion title="Sequential API Request Execution">
+Execute multiple API calls in a predefined order, ensuring each step completes successfully before proceeding to the next.
+</Accordion>
+
+<Accordion title="Data Passing Between Requests">
+Extract data from API responses and use it in subsequent requests, enabling realistic workflow testing with dynamic values.
+</Accordion>
+
+<Accordion title="Complex Authentication Flows">
+Handle multi-step authentication processes like OAuth flows, token refresh sequences, and session-based authentication chains.
+</Accordion>
+
+<Accordion title="Workflow State Validation">
+Verify that each step in your business process maintains proper state and data consistency throughout the entire workflow.
+</Accordion>
+
+<Accordion title="Performance Measurement Across Steps">
+Monitor response times and performance metrics for individual steps and the complete workflow to identify bottlenecks.
+</Accordion>
+
+## Timeouts
+
+As with Browser checks, Checkly runs Multistep checks for a maximum of 240s. Scripts exceeding this will timeout. For more information on how to work with the timeout limits for Multistep and Browser checks, see [Timeouts](/detect/synthetic-monitoring/browser-checks/timeouts).
+
+## Built-in Runtime Variables
+
+The Multistep Check [runtime](/platform/runtimes/overview) exposes a set of environment variables (e.g. `process.env.CHECK_NAME`) that indicate what check, check type etc. you are running.
+
+<GenericRuntimeVariablesTable/>
+
+[Learn more about environment variables.](/platform/variables)
+
+## Multistep Check Results
+
+Multistep check results are navigated using the tree on the left side of the screen. If you are running checks in parallel, first select the location you are interested in.
+
+<Frame>
+  <img src="/images/docs/images/multistep-api-checks/multistep-check-results.png" alt="Multistep check results page" />
+</Frame>
+
+In the result tree, the top node shows the check run log and the check run configuration.
+
+Each Playwright request is shown as a separate node under the test step in which it was performed. Selecting a request node opens the request details. Here you can view:
+* The request and response body
+* Headers and any request parameters
+* A breakdown of the request timings 
+* If you've made assertions in the same test step as this request, then those assertions will be shown here
+
+The default request user-agent is `Checkly/1.0 (https://www.checklyhq.com)`. If you would like to use a different user-agent, you can add `test.use({userAgent: 'customUserAgent'})` to your script.
+
+Currently, only requests done using the Playwright `request` are shown as nodes in the tree, requests done via e.g Axios or HTTPS are not.
+
+Learn more in our documentation on [Results](/concepts/results).

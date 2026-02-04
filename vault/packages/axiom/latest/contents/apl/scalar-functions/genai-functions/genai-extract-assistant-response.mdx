@@ -1,0 +1,106 @@
+---
+title: 'genai_extract_assistant_response'
+description: 'This page explains how to use the genai_extract_assistant_response function in APL.'
+---
+
+The `genai_extract_assistant_response` function extracts the assistant’s response from a GenAI messages array. It returns the content of the last message with the 'assistant' role, which typically contains the AI model’s generated response to the user.
+
+You can use this function to analyze AI responses, evaluate response quality, perform sentiment analysis on AI outputs, or track specific response patterns for monitoring and debugging.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would need to use complex eval statements with mvfilter and mvindex to extract assistant messages.
+
+<CodeGroup>
+```sql Splunk example
+| eval assistant_msgs=mvfilter(match(role, "assistant"))
+| eval response=mvindex(assistant_msgs, -1)
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend response = genai_extract_assistant_response(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need to unnest arrays, filter by role, and select the last message, which is more verbose.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  content as assistant_response
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY msg_index DESC) as rn
+  FROM conversations
+  CROSS JOIN UNNEST(messages) WITH OFFSET AS msg_index
+  WHERE role = 'assistant'
+) WHERE rn = 1
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend assistant_response = genai_extract_assistant_response(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_extract_assistant_response(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a string containing the content of the last assistant message in the conversation, or an empty string if no assistant message is found.
+
+## Example
+
+Extract the assistant's response from a GenAI conversation.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend ai_response = genai_extract_assistant_response(['attributes.gen_ai.input.messages'])
+| where strlen(ai_response) > 0
+| project _time, ai_response
+| limit 3
+```
+
+**Output**
+
+| _time | ai_response |
+|-------|-------------|
+| 2024-01-15T10:30:00Z | To reset your password, click on the 'Forgot Password' link on the login page. |
+| 2024-01-15T10:31:00Z | Our business hours are Monday to Friday, 9 AM to 5 PM EST. |
+
+This query extracts AI responses, helping you analyze response quality and patterns.
+
+## List of related functions
+
+- [genai_extract_user_prompt](/apl/scalar-functions/genai-functions/genai-extract-user-prompt): Extracts the user's prompt. Use this to analyze what users are asking.
+- [genai_extract_system_prompt](/apl/scalar-functions/genai-functions/genai-extract-system-prompt): Extracts the system prompt. Use this to understand how the AI is configured.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content by any role. Use this when you need messages from roles other than assistant.
+- [genai_concat_contents](/apl/scalar-functions/genai-functions/genai-concat-contents): Concatenates all message contents. Use this when you need the full conversation instead of just the assistant's response.
+- [genai_has_tool_calls](/apl/scalar-functions/genai-functions/genai-has-tool-calls): Checks for tool calls in messages. Use this to detect when the assistant made function calls.
+

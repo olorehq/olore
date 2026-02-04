@@ -1,0 +1,122 @@
+---
+title: trim_space
+description: 'This page explains how to use the trim_space function in APL.'
+---
+
+Use the `trim_space` function in APL to remove leading and trailing whitespace characters from a string. This function is especially useful when cleaning up input from logs, APIs, or user-generated content where strings may contain unintended spaces. You can apply `trim_space` to normalize data before comparisons, joins, or aggregations that depend on exact string matches.
+
+Use `trim_space` when you need to ensure that extraneous spaces at the beginning or end of a string don’t interfere with your analysis or results.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the `trim` function removes leading and trailing spaces. APL’s `trim_space` works similarly.
+
+<CodeGroup>
+```sql Splunk example
+| eval cleaned_field = trim(uri)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned_uri = trim_space(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `TRIM()` function removes leading and trailing whitespace by default. APL’s `trim_space` achieves the same behavior.
+
+<CodeGroup>
+```sql SQL example
+SELECT TRIM(uri) AS cleaned_uri FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned_uri = trim_space(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+trim_space(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description               |
+| ----- | ------ | ------------------------- |
+| value | string | The input string to trim. |
+
+### Returns
+
+A string with all leading and trailing whitespace removed. The function does not modify internal whitespace.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+When analyzing request URIs from logs, trailing or leading spaces can lead to false negatives in equality comparisons. Use `trim_space` to normalize request paths.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = trim_space(uri)
+| summarize count() by cleaned_uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20cleaned_uri%20%3D%20trim_space(uri)%20%7C%20summarize%20count()%20by%20cleaned_uri%22%7D)
+
+**Output**
+
+| cleaned_uri     | count |
+| ---------------- | ----- |
+| /api/data        | 120   |
+| /api/data/submit | 88    |
+| /login           | 42    |
+
+This query removes leading and trailing spaces from each `uri` and aggregates request counts by the cleaned path.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, service names or span IDs can have unintended spaces when injected from external tools. Use `trim_space` to standardize span IDs before filtering.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend clean_span_id = trim_space(span_id)
+| summarize count() by clean_span_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20clean_span_id%20%3D%20trim_space(span_id)%20%7C%20summarize%20count()%20by%20clean_span_id%22%7D)
+
+**Output**
+
+| clean_span_id  | count |
+| ---------------- | ----- |
+| 53c9e2f4e8794a6a | 17    |
+| a3ff4f1e5b9d1c22 | 14    |
+| 12c4b9f7da984dc7 | 21    |
+
+This query trims each `span_id` and aggregates span counts, ensuring ID formatting does not affect grouping.
+
+</Tab>
+</Tabs>

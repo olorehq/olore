@@ -1,0 +1,104 @@
+---
+title: 'genai_extract_tool_calls'
+description: 'This page explains how to use the genai_extract_tool_calls function in APL.'
+---
+
+The `genai_extract_tool_calls` function extracts tool call requests from GenAI messages. When an AI model decides to use external tools or functions, it generates tool call messages. This function retrieves those calls so you can analyze what tools are being invoked.
+
+You can use this function to monitor tool usage patterns, debug function calling, track API integrations, or analyze which tools are most frequently requested by your AI applications.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would need to filter and extract tool call information from nested message structures manually.
+
+<CodeGroup>
+```sql Splunk example
+| eval tool_calls=mvfilter(match(role, "assistant") AND isnotnull(tool_calls))
+| eval tools=spath(tool_calls, "tool_calls")
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend tools = genai_extract_tool_calls(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need to unnest arrays and extract JSON fields for tool calls.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  JSON_EXTRACT(content, '$.tool_calls') as tool_calls
+FROM conversations
+CROSS JOIN UNNEST(messages)
+WHERE JSON_EXTRACT(content, '$.tool_calls') IS NOT NULL
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend tool_calls = genai_extract_tool_calls(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_extract_tool_calls(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a dynamic object containing the tool calls from the conversation, or null if no tool calls are found. Tool calls typically include function name, arguments, and call ID.
+
+## Example
+
+Extract tool calls from a GenAI conversation to analyze which functions are being invoked.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend tool_calls = genai_extract_tool_calls(['attributes.gen_ai.input.messages'])
+| where isnotnull(tool_calls)
+| extend tool_name = tostring(tool_calls[0]['function']['name'])
+| summarize call_count = count() by tool_name
+| top 5 by call_count
+```
+
+**Output**
+
+| tool_name | call_count |
+|-----------|------------|
+| get_weather | 245 |
+| search_database | 189 |
+| send_email | 123 |
+
+This query shows which tools are most frequently called, helping you understand integration usage patterns.
+
+## List of related functions
+
+- [genai_extract_function_results](/apl/scalar-functions/genai-functions/genai-extract-function-results): Extracts function call results. Use this to see the outcomes of the tool calls.
+- [genai_has_tool_calls](/apl/scalar-functions/genai-functions/genai-has-tool-calls): Checks if messages contain tool calls. Use this to quickly filter conversations with function calling.
+- [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response): Extracts assistant text responses. Use this when you need the text response instead of tool calls.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content by role. Use this for more granular extraction of specific message types.
+

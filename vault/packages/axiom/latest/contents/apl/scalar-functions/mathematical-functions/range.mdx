@@ -1,0 +1,163 @@
+---
+title: range
+description: 'This page explains how to use the range function in APL.'
+---
+
+Use the `range` function in APL to create a dynamic array of evenly spaced values. You can generate numeric, datetime, or timespan sequences that increase by a constant step, which defaults to 1 for numbers and 1 hour for time-based types. The function stops once the value exceeds the specified endpoint or the maximum result size.
+
+`range` is useful when you want to produce test values, synthetic sequences, time intervals, or loop-like constructs without relying on input data. It helps you populate arrays that can be expanded or joined with real data for further analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In SPL, generating sequences often involves `makeresults` combined with `streamstats` or manual iteration logic. APL’s `range` function simplifies this by producing arrays of equally spaced values directly.
+
+<CodeGroup>
+```sql Splunk example
+| makeresults count=10
+| streamstats count as x
+````
+
+```kusto APL equivalent
+print r = range(1, 10, 1)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, generating a series of numbers usually involves recursive CTEs. APL’s `range` is more concise and efficient for creating sequences without writing complex recursion logic.
+
+<CodeGroup>
+```sql SQL example
+WITH RECURSIVE seq AS (
+  SELECT 1 AS x
+  UNION ALL
+  SELECT x + 1 FROM seq WHERE x < 10
+)
+SELECT * FROM seq;
+```
+
+```kusto APL equivalent
+print r = range(1, 10, 1)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+range(start, stop [, step])
+```
+
+### Parameters
+
+| Name  | Type                                | Required | Description                                                               |
+| ----- | ----------------------------------- | -------- | ------------------------------------------------------------------------- |
+| start | scalar (number, datetime, timespan) | ✓       | First value in the array.                                                 |
+| stop  | scalar (same type as `start`)       | ✓       | Upper bound of the array. The last value is less than or equal to `stop`. |
+| step  | scalar (same type as `start`)       |          | Difference between values. Defaults to 1 (numeric) or 1h (time).          |
+
+### Returns
+
+A dynamic array that includes values starting at `start`, incremented by `step`, up to and including `stop` (if it aligns exactly with a step). The array truncates if it reaches the system limit of 1,048,576 elements.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Generate an array of durations to help classify HTTP request latencies.
+
+**Query**
+
+```kusto
+print r = range(100, 500, 100)
+| project r
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20r%20%3D%20range(100%2C%20500%2C%20100)%20%7C%20project%20r%22%7D)
+
+**Output**
+
+```json
+[
+  100,
+  200,
+  300,
+  400,
+  500
+]
+```
+
+This creates an array of thresholds that you can use to bucket or filter request durations in `['sample-http-logs']`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Build a set of time intervals to align span activity over a fixed period.
+
+**Query**
+
+```kusto
+print intervals = range(datetime(2025-07-29T12:00:00Z), datetime(2025-07-29T13:00:00Z), 15m)
+| project intervals
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20intervals%20%3D%20range(datetime(2025-07-29T12%3A00%3A00Z)%2C%20datetime(2025-07-29T13%3A00%3A00Z)%2C%2015m)%20%7C%20project%20intervals%22%7D)
+
+**Output**
+
+```json
+[
+  "2025-07-29T12:00:00Z",
+  "2025-07-29T12:15:00Z",
+  "2025-07-29T12:30:00Z",
+  "2025-07-29T12:45:00Z",
+  "2025-07-29T13:00:00Z"
+]
+```
+
+This array helps divide the hour into 15-minute blocks for analyzing activity in `['otel-demo-traces']`.
+
+</Tab>
+<Tab title="Security logs">
+
+Create a list of expected hourly intervals to detect missing logs.
+
+**Query**
+
+```kusto
+print expected = range(datetime(2025-07-29T00:00:00Z), datetime(2025-07-29T05:00:00Z), 1h)
+| project expected
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20expected%20%3D%20range(datetime(2025-07-29T00%3A00%3A00Z)%2C%20datetime(2025-07-29T05%3A00%3A00Z)%2C%201h)%20%7C%20project%20expected%22%7D)
+
+**Output**
+
+```json
+[
+  "2025-07-29T00:00:00Z",
+  "2025-07-29T01:00:00Z",
+  "2025-07-29T02:00:00Z",
+  "2025-07-29T03:00:00Z",
+  "2025-07-29T04:00:00Z",
+  "2025-07-29T05:00:00Z"
+]
+```
+
+This produces an array of expected log collection times for the `['sample-http-logs']` dataset. You can join this with actual data to detect missing records.
+
+</Tab>
+</Tabs>

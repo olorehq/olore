@@ -1,0 +1,102 @@
+---
+title: 'genai_has_tool_calls'
+description: 'This page explains how to use the genai_has_tool_calls function in APL.'
+---
+
+The `genai_has_tool_calls` function checks whether a GenAI messages array contains any tool calls or function calls. It returns a boolean value indicating if the AI model requested to use external tools or functions during the conversation.
+
+You can use this function to filter conversations that use function calling, monitor tool usage patterns, identify integration opportunities, or track feature adoption of function calling capabilities.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would check if tool-related fields exist in the messages.
+
+<CodeGroup>
+```sql Splunk example
+| eval has_tools=if(isnotnull(tool_calls), "true", "false")
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend has_tools = genai_has_tool_calls(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would check for existence of tool calls in the messages array.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  EXISTS(
+    SELECT 1 FROM UNNEST(messages) 
+    WHERE JSON_EXTRACT(content, '$.tool_calls') IS NOT NULL
+  ) as has_tools
+FROM conversations
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend has_tools = genai_has_tool_calls(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_has_tool_calls(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a boolean value: `true` if the messages contain tool calls, `false` otherwise.
+
+## Example
+
+Check if a GenAI conversation contains any tool calls or function calls.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend has_tools = genai_has_tool_calls(['attributes.gen_ai.input.messages'])
+| summarize 
+    conversations_with_tools = countif(has_tools),
+    total_conversations = count(),
+    adoption_rate = round(100.0 * countif(has_tools) / count(), 2)
+```
+
+**Output**
+
+| conversations_with_tools | total_conversations | adoption_rate |
+|--------------------------|---------------------|---------------|
+| 345 | 1450 | 23.79 |
+
+This query tracks function calling adoption, helping you understand feature usage trends.
+
+## List of related functions
+
+- [genai_extract_tool_calls](/apl/scalar-functions/genai-functions/genai-extract-tool-calls): Extracts the actual tool calls. Use this after confirming tool calls exist to analyze what tools are being called.
+- [genai_extract_function_results](/apl/scalar-functions/genai-functions/genai-extract-function-results): Extracts function results. Use this to analyze the outcomes of tool calls.
+- [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles): Lists all message roles. Use this to understand conversation structure when tool calls are present.
+- [genai_conversation_turns](/apl/scalar-functions/genai-functions/genai-conversation-turns): Counts conversation turns. Analyze this alongside tool usage to understand complexity.
+

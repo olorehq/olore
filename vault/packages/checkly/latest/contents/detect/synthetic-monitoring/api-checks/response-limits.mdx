@@ -1,0 +1,24 @@
+---
+title: API Response time limits
+sidebarTitle: Response time limits
+---
+
+
+Sometimes an API is just slow, but not broken. We call that "degraded" and you can specify when an API checks should be 
+marked as degraded using the menu in the API check editor.
+
+![api soft limits and degradation thresholds](/images/docs/images/api-checks/limits.png)
+
+You can set two thresholds:
+
+1. The **Degraded at** threshold e.g. 5 seconds.
+2. The **Fail at** threshold when we consider the check to be failing due to being too slow, e.g. 20 sec.
+
+The benefit of using the degraded state is that it does not affect your check's success ratio like a failed state does. 
+
+You can enable alerts to be send when an API checks is degraded. This way you are notified of possible problems before things
+get out of hand. See [alerting](/communicate/alerts/) for more details.
+
+
+> All API checks are hard capped at a timeout of **30 seconds**, this means the **"Fail at"** threshold has a maximum value of 30 seconds.
+

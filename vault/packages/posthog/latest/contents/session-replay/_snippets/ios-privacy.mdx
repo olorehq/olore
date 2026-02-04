@@ -1,0 +1,54 @@
+To replace any type of `UIView` with a redacted version in the replay, set the [accessibilityIdentifier](https://developer.apple.com/documentation/uikit/uiaccessibilityidentification/1623132-accessibilityidentifier) to `ph-no-capture`:
+
+```swift
+let imvProfilePhoto = UIImageView(frame: CGRect(x: 50, y: 50, width: 100, height: 100))
+imvProfilePhoto.accessibilityIdentifier = "ph-no-capture"
+```
+
+> **Note:** For SwiftUI please refer to the [Masking in SwiftUI](#masking-in-swiftui) section below
+
+### Masking in SwiftUI
+
+- When using the [SwiftUI TextField](https://developer.apple.com/documentation/swiftui/textfield) with [UITextInputTraits](https://developer.apple.com/documentation/uikit/uitextinputtraits), setting traits such as `TextField("Email", text: ...).keyboardType(.emailAddress)` will always be automatically masked since it's for private text.
+- The [SwiftUI SecureField](https://developer.apple.com/documentation/swiftui/securefield) view is always automatically masked.
+- You can manually mark a SwiftUI View for masking using the `postHogMask()` view modifier:
+
+  ```swift
+  // This view (and children) will *always* be masked in session replay recordings
+  MyCoolView()
+    .postHogMask()
+  ```
+- The `postHogNoMask()` view modifier can be used to prevent a view from being masked in session recordings, regardless of any default masking behavior:
+
+  ```swift
+  // This view (and children) will *never* be masked in session replay recordings
+  MyCoolView()
+    .postHogNoMask()
+  ```
+
+
+<CalloutBox title="SwiftUI and Xcode 26" type="caution" icon="IconInfo">
+
+Apps built with Xcode 26 use a new SwiftUI rendering model that changes how SwiftUI views map to UIKit. This can cause `postHogMask()` and `postHogNoMask()` to behave inconsistently on primitive views like `Text`, `Image`, and `Button`.
+
+**If you're building with Xcode 26**, update to [version 3.36.2](https://github.com/PostHog/posthog-ios/releases/tag/3.36.2) or later to ensure these modifiers work correctly.
+
+</CalloutBox>
+
+### Handling sensitive third-party screens
+
+Third-party components (like payment forms or authentication screens) are often rendered in separate view hierarchies that can't be accessed or modified for masking.
+
+For these cases, manually controlling the recording state is the only reliable solution. For example:
+
+```ios_swift
+// Stop session recording before showing a third-party payment sheet
+PostHogSDK.shared.stopSessionRecording()
+
+// Present third-party payment sheet
+presentPaymentSheet()
+
+// ... 
+// Some time later when the sheet is dismissed, resume recording
+PostHogSDK.shared.startSessionRecording()
+```

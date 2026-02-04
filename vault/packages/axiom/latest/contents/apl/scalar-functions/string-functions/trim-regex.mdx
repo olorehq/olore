@@ -1,0 +1,157 @@
+---
+title: 'trim_regex'
+description: 'This page explains how to use the trim_regex function in APL.'
+---
+
+The `trim_regex` function removes all leading and trailing matches of a regular expression pattern from a string. Use this function to clean strings from both ends using pattern matching, normalize data with complex prefix/suffix patterns, or prepare strings for consistent analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use multiple `rex` commands for bidirectional trimming. APL's `trim_regex` handles both ends in one operation.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=field mode=sed "s/^pattern//g"
+| rex field=field mode=sed "s/pattern$//g"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_regex('pattern', field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, bidirectional regex trimming requires nested functions. APL's `trim_regex` provides a single-function solution.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_REPLACE(REGEXP_REPLACE(field, '^pattern', ''), 'pattern$', '') AS cleaned FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_regex('pattern', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+trim_regex(regex, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| regex | string | Yes | The regular expression pattern to remove from both ends. |
+| text | string | Yes | The source string to trim. |
+
+### Returns
+
+Returns the source string with leading and trailing regex matches removed.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Remove leading and trailing slashes or special characters from URIs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = trim_regex('[/]+', uri)
+| summarize request_count = count() by cleaned_uri, method
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20cleaned_uri%20%3D%20trim_regex(%27%5B%2F%5D%2B%27%2C%20uri)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20cleaned_uri%2C%20method%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_uri | method | request_count |
+|-------------|--------|---------------|
+| api/users | GET | 2341 |
+| api/orders | POST | 1987 |
+
+This query removes leading and trailing slashes from URIs, normalizing paths for consistent endpoint analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Clean service names by removing environment prefixes and version suffixes.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend cleaned_service = trim_regex('(^(dev|prod|staging)-)|(-v[0-9.]+$)', ['service.name'])
+| summarize span_count = count() by cleaned_service
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20cleaned_service%20%3D%20trim_regex(%27(%5E(dev%7Cprod%7Cstaging)-)%7C(-v%5B0-9.%5D%2B%24)%27%2C%20%5B%27service.name%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20cleaned_service%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_service | span_count |
+|-----------------|------------|
+| frontend | 4532 |
+| checkout | 3421 |
+| cart | 2987 |
+
+This query removes both environment prefixes and version suffixes from service names, enabling aggregation across all environments and versions.
+
+</Tab>
+<Tab title="Security logs">
+
+Remove leading/trailing whitespace and special characters from user identifiers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_id = trim_regex('[^a-zA-Z0-9_]+', id)
+| summarize attempts = count() by cleaned_id, status
+| sort by attempts desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20cleaned_id%20%3D%20trim_regex('%5B%5Ea-zA-Z0-9_%5D%2B'%2C%20id)%20%7C%20summarize%20attempts%20%3D%20count()%20by%20cleaned_id%2C%20status%20%7C%20sort%20by%20attempts%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_id | status | attempts |
+|------------|--------|-----------------|
+| user123 | 401 | 45 |
+| admin | 403 | 32 |
+
+This query cleans user IDs by removing whitespace and special characters from both ends, ensuring accurate counting when identifiers have formatting inconsistencies.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [trim](/apl/scalar-functions/string-functions/trim): Removes leading and trailing characters. Use this for simple character-based trimming without regex.
+- [trim_start_regex](/apl/scalar-functions/string-functions/trim-start-regex): Removes leading regex matches. Use this for pattern trimming only from the start.
+- [trim_end_regex](/apl/scalar-functions/string-functions/trim-end-regex): Removes trailing regex matches. Use this for pattern trimming only from the end.
+- [replace_regex](/apl/scalar-functions/string-functions/replace-regex): Replaces regex matches. Use this when you need to replace patterns anywhere, not just trim ends.
+

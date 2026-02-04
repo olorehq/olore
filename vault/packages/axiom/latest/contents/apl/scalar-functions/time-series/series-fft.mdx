@@ -1,0 +1,73 @@
+---
+title: series_fft
+description: 'This page explains how to use the series_fft function in APL.'
+---
+
+The `series_fft` function applies the Fast Fourier Transform (FFT) on a series, taking a series of complex numbers in the time/spatial domain and transforming it to the frequency domain. The transformed complex series represents the magnitude and phase of the frequencies appearing in the original series. Use the complementary function `series_ifft` to transform from the frequency domain back to the time/spatial domain.
+
+You can use `series_fft` when you want to analyze the frequency components of your data, detect periodic patterns, or perform spectral analysis. Typical applications include identifying seasonal patterns in logs, detecting anomalies in telemetry data, analyzing network traffic patterns, and performing signal processing on time series data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, FFT operations aren’t natively available and typically require external tools or complex workarounds. Most Splunk users rely on statistical functions and time-based aggregations for pattern analysis. In APL, `series_fft` provides direct access to frequency domain analysis, enabling sophisticated signal processing capabilities.
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t provide FFT functionality. Database systems typically require specialized extensions or external libraries for frequency domain analysis. Most SQL users rely on window functions and statistical aggregations for time series analysis. In APL, `series_fft` brings advanced signal processing capabilities directly into the query language.
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_fft(x_real [, x_imaginary])
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `x_real`   | dynamic | A numeric array representing the real component of the series to transform. |
+| `x_imaginary`   | dynamic | Optional: A dynamic array of real numeric values representing the imaginary component of the series. Only specify this if the input series contains complex numbers. |
+
+### Returns
+
+The function returns the complex FFT in two series. The first series for the real component and the second one for the imaginary component.
+
+## Example
+
+Use `series_fft` to identify periodic patterns in request durations, such as daily or hourly cycles in application performance.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by bin(_time, 1h)
+| extend fft_analysis = series_fft(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20bin(_time%2C%201h)%20%7C%20extend%20fft_analysis%20%3D%20series_fft(durations)%22%7D)
+
+**Output**
+
+| durations | fft_analysis    |
+| --------------------------- | -------------------------- |
+| 0.5440150626057182 | 20.661607812192038 |
+| 0.4854750276771741 | -0.9608495167924037 |
+
+## List of related functions
+
+- [series_ifft](/apl/scalar-functions/time-series/series-ifft): Performs the inverse FFT to convert frequency domain data back to time domain. Use when you need to reconstruct the original signal from frequency components.
+- [series_fir](/apl/scalar-functions/time-series/series-fir): Applies a finite impulse response filter to a series. Use for signal filtering and noise reduction.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use for trigonometric analysis of periodic patterns.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use for analyzing periodic components in signals.
+- [series_exp](/apl/scalar-functions/time-series/series-exp): Calculates the exponential of each element in an array. Use for exponential growth analysis instead of frequency analysis.

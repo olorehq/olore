@@ -1,0 +1,38 @@
+---
+title: 'Anomaly monitors'
+description: 'This section introduces the Monitors tab and explains how to create monitors.'
+sidebarTitle: 'Anomaly'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+Anomaly monitors allow you to aggregate your event data and compare the results of this aggregation to what can be considered normal for the query. When the results are too much above or below the value that Axiom expects based on the event history, the monitor enters the alert state. The monitor remains in the alert state until the results no longer deviate from the expected value. This can happen without the results returning to their previous level if they stabilize around a new value. An anomaly monitor sends you a notification each time it enters or exits the alert state.
+
+## Create anomaly monitor
+
+To create an anomaly monitor, follow these steps:
+
+1. Click the **Monitors** tab, and then click **New monitor**.
+1. Click **Anomaly monitor**.
+1. Name your monitor and add a description.
+1. Configure the monitor using the following options:
+    - The comparison operator is the rule to apply when comparing the results to the expected value. The possible values are **above**, **below**, and **above or below**.
+    - The tolerance factor controls the sensitivity of the monitor. Axiom combines the tolerance factor with a measure of how much the results of your query tend to vary, and uses them to determine how much deviation from the expected value to tolerate before triggering the monitor. The higher the tolerance factor, the wider the tolerated range of deviation. When the results of the aggregation stay within this range, the monitor doesn’t trigger. When the results of the aggregation cross this range, the monitor triggers. The tolerance factor can be any positive numeric value.
+    - The frequency is how often the monitor runs. This is a positive integer number of minutes.
+    - The range is the time range for your query. This is a positive integer number of minutes. A longer time range allows the anomaly monitor to consider a larger number of datapoints when calculating the expected value.
+    - **Alert on no data** triggers the monitor when your query doesn’t return any data. Your query returns no data if no events match your filters and an aggregation used in the query is undefined. For example, you take the average of a field not present in any matching events. The monitor sends a notification when data returns after a no-data alert state. Notifications about deviations from the expected value take precedence over notifications about data returning after a no-data state.
+    - You can group by attributes when defining your query. By default, your monitor enters the alert state if any of the values returned for the group-by attributes deviate from the expected value, and remains in the alert state until none of the values returned deviates from the expected value. To trigger the monitor separately for each group that deviates from the expected value, enable **Notify by group**. At most one trigger notification is sent per monitor run. This option only has an effect if the monitor’s query groups by a non-time field.
+    - Toggle **Require seasonality** to compare the results to seasonal patterns in your data. For example, your query produces a time series that increases at the same time each morning. Without accounting for seasonality, the monitor compares to recent results only. By toggling **Require seasonality**, the monitor compares the results to the same time of the previous day or week and only triggers if the results deviate from the expected seasonal pattern.
+1. Click **Add notifier**, and then select the notifiers that define how you want to receive notifications for this monitor. For more information, see [Notifiers](#notifiers).
+1. To define your query, use one of the following options:
+    - To use the visual query builder, click **Simple query builder**. Click **Visualize** to select an aggregation method, and then click **Run query** to preview the results.
+    - To use Axiom Processing Language (APL), click **Advanced query language**. Write a query where the final clause uses the `summarize` operator and bins the results by `_time`, and then click **Run query** to preview the results. For more information, see [Introduction to APL](/apl/introduction).
+    In the preview, the boundary where the monitor triggers is displayed as a dashed line. Where there isn’t enough data to compute a boundary, the chart is grayed out. If the monitor preview shows that it alerts when you don’t want it to, try increasing the tolerance. Inversely, try decreasing the tolerance if the monitor preview shows that it doesn’t alert when you want it to.
+1. Click **Create**.
+
+You have created an anomaly monitor. Axiom alerts you when the results from your query are too high or too low compared to what’s expected based on the event history.
+
+In the chart, the red dotted line displays the tolerance range around the expected value over time. When the results of the query cross this range, the monitor triggers.
+
+## Examples
+
+For real-world use cases, see [Monitor examples](/monitor-data/monitor-examples).

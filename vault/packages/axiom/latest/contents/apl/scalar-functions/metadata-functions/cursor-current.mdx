@@ -1,0 +1,129 @@
+---
+title: cursor_current
+description: 'This page explains how to use the cursor_current function in APL.'
+---
+
+Use the `cursor_current` function in APL to retrieve a cursor string that represents the current point in the query execution. A cursor is a unique identifier that marks a specific position in your data stream, allowing you to resume queries from that exact point in subsequent executions.
+
+You use `cursor_current` when implementing incremental data processing, change data capture (CDC) patterns, or any scenario where you need to track the last processed position in your data. This is particularly useful for building efficient data synchronization pipelines, continuous monitoring systems, and incremental analytics workflows.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use time-based bookmarks or the `_indextime` field to track processing positions. APL's `cursor_current` provides a more robust cursor mechanism that works across query executions and handles distributed data more reliably.
+
+<CodeGroup>
+```sql Splunk example
+| stats max(_indextime) as last_processed
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cursor = cursor_current()
+| summarize max(_time), last_cursor = make_list(cursor)[0]
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `MAX(timestamp)` or row IDs to track the last processed record. APL's `cursor_current` provides a system-level cursor that captures the exact query execution position, which is more reliable for distributed systems.
+
+<CodeGroup>
+```sql SQL example
+SELECT MAX(timestamp) as last_processed_time
+FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cursor = cursor_current()
+| summarize max(_time), processing_cursor = make_list(cursor)[0]
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+cursor_current()
+```
+
+### Parameters
+
+This function takes no parameters.
+
+### Returns
+
+A `string` representing a cursor that marks the current position in the query execution. This cursor can be stored and used in subsequent queries to resume processing from the same point.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `cursor_current` to track the last processed position when implementing incremental log processing pipelines.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend processing_cursor = cursor_current()
+| where status != '200'
+| summarize error_count = count(), last_cursor = make_list(processing_cursor)[0] by bin(_time, 5m)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20processing_cursor%20%3D%20cursor_current()%20%7C%20where%20status%20!%3D%20'200'%20%7C%20summarize%20error_count%20%3D%20count()%2C%20last_cursor%20%3D%20make_list(processing_cursor)[0]%20by%20bin(_time%2C%205m)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| error_count | last_cursor      |
+| ----------- | ---------------- |
+| 343,769     | 0ddnv2035n4lc-082f23975a003f6b-00006d10 |
+
+This query captures cursor positions alongside error counts, allowing you to resume processing from the last successful position in case of failures or for incremental updates.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `cursor_current` to implement incremental trace processing for building derived metrics or alerts based on span data.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_cursor = cursor_current()
+| where kind == 'server'
+| summarize span_count = count(), latest_cursor = make_list(trace_cursor)[0] by ['service.name'], bin(_time, 5m)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20trace_cursor%20%3D%20cursor_current()%20%7C%20where%20kind%20%3D%3D%20'server'%20%7C%20summarize%20span_count%20%3D%20count()%2C%20latest_cursor%20%3D%20make_list(trace_cursor)[0]%20by%20%5B'service.name'%5D%2C%20bin(_time%2C%205m)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| ['service.name'] | span_count | latest_cursor    |
+| ----------------- | ---------- | ---------------- |
+| frontend          | 234        | cur_xyz456abc789 |
+| cart              | 187        | cur_mno123pqr456 |
+
+This query tracks the processing position for each service, enabling resumable trace analysis and incremental metric computation.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [ingestion_time](/apl/scalar-functions/metadata-functions/ingestion-time): Use `ingestion_time` to get the time when data was ingested. Use `cursor_current` for resumable query execution tracking.
+- [now](/apl/scalar-functions/datetime-functions#now): Use `now` to get the current query execution time. Use `cursor_current` for position tracking in data streams.
+- [bin](/apl/scalar-functions/rounding-functions#bin): Use `bin` to group data into time buckets. Use `cursor_current` alongside `bin` for checkpointed time-series processing.
+

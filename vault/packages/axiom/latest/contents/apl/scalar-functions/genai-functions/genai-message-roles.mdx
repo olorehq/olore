@@ -1,0 +1,103 @@
+---
+title: 'genai_message_roles'
+description: 'This page explains how to use the genai_message_roles function in APL.'
+---
+
+The `genai_message_roles` function extracts an array of all message roles from a GenAI conversation. This provides a sequence view of conversation participants, showing the order and types of messages (user, assistant, system, tool, etc.).
+
+You can use this function to analyze conversation patterns, validate conversation structure, detect role sequences, or understand conversation flow and complexity.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would extract the role field from all messages in an array.
+
+<CodeGroup>
+```sql Splunk example
+| eval roles=mvindex(role, 0, mvcount(role))
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend roles = genai_message_roles(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would unnest the array and collect roles into an array.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  ARRAY_AGG(role ORDER BY msg_index) as roles
+FROM conversations
+CROSS JOIN UNNEST(messages) WITH OFFSET AS msg_index
+GROUP BY conversation_id
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend roles = genai_message_roles(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_message_roles(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a dynamic array containing all the roles in the conversation in their original order (for example, `['system', 'user', 'assistant', 'user', 'assistant']`).
+
+## Example
+
+Extract all message roles from a GenAI conversation to understand the conversation structure.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend roles = genai_message_roles(['attributes.gen_ai.input.messages'])
+| extend role_sequence = tostring(roles)
+| summarize conversation_count = count() by role_sequence
+| top 5 by conversation_count
+```
+
+**Output**
+
+| role_sequence | conversation_count |
+|---------------|--------------------|
+| ["system","user","assistant"] | 850 |
+| ["system","user","assistant","user","assistant"] | 345 |
+| ["user","assistant"] | 189 |
+
+This query identifies the most common conversation patterns, helping you understand typical user interaction flows.
+
+## List of related functions
+
+- [genai_get_role](/apl/scalar-functions/genai-functions/genai-get-role): Gets the role at a specific index. Use this when you need a specific role rather than the full sequence.
+- [genai_conversation_turns](/apl/scalar-functions/genai-functions/genai-conversation-turns): Counts conversation turns. Use this for a numerical metric of conversation length.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content for a specific role. Use this after identifying roles of interest.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of messages. Apply this to the roles array to count messages.
+- [array_index_of](/apl/scalar-functions/array-functions/array-index-of): Finds the position of a role. Use this to detect if specific roles exist in the conversation.
+

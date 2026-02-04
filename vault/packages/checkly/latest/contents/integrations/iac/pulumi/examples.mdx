@@ -1,0 +1,722 @@
+---
+title: 'Pulumi Examples'
+description: 'Comprehensive examples for different check types and configurations using the Checkly Pulumi provider'
+sidebarTitle: 'Examples'
+---
+
+
+This page provides comprehensive examples of how to use the Checkly Pulumi provider to create various types of monitoring checks and configurations.
+
+## Basic API Checks
+
+### Simple GET Request
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+new checkly.Check('simple-get-api', {
+  name: 'Simple GET API Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1', 'us-west-2'],
+  tags: ['api', 'simple'],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+new checkly.Check('simple-get-api', {
+  name: 'Simple GET API Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1', 'us-west-2'],
+  tags: ['api', 'simple'],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+### POST Request with JSON Body
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+new checkly.Check('post-api-check', {
+  name: 'POST API with JSON Body',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1'],
+  tags: ['api', 'post'],
+  request: {
+    method: 'POST',
+    url: 'https://api.example.com/users',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${process.env.API_TOKEN}',
+    },
+    body: JSON.stringify({
+      name: 'John Doe',
+      email: 'john@example.com',
+    }),
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '201',
+      },
+      {
+        source: 'JSON_BODY',
+        property: '$.id',
+        comparison: 'EXISTS',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+new checkly.Check('post-api-check', {
+  name: 'POST API with JSON Body',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1'],
+  tags: ['api', 'post'],
+  request: {
+    method: 'POST',
+    url: 'https://api.example.com/users',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${process.env.API_TOKEN}',
+    },
+    body: JSON.stringify({
+      name: 'John Doe',
+      email: 'john@example.com',
+    }),
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '201',
+      },
+      {
+        source: 'JSON_BODY',
+        property: '$.id',
+        comparison: 'EXISTS',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+## Browser Checks
+
+### Basic Page Load Check
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+new checkly.Check('basic-browser-check', {
+  name: 'Basic Page Load Check',
+  activated: true,
+  frequency: 10,
+  type: 'BROWSER',
+  locations: ['eu-west-1'],
+  tags: ['browser', 'basic'],
+  script: `
+  const { expect, test } = require('@playwright/test')
+
+  test('basic page load', async ({ page }) => {
+    const response = await page.goto('https://example.com')
+    expect(response.status()).toBeLessThan(400)
+
+    // Check page title
+    await expect(page).toHaveTitle(/Example Domain/)
+
+    // Take screenshot
+    await page.screenshot({ path: 'screenshot.jpg' })
+  })`,
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+new checkly.Check('basic-browser-check', {
+  name: 'Basic Page Load Check',
+  activated: true,
+  frequency: 10,
+  type: 'BROWSER',
+  locations: ['eu-west-1'],
+  tags: ['browser', 'basic'],
+  script: `
+  const { expect, test } = require('@playwright/test')
+
+  test('basic page load', async ({ page }) => {
+    const response = await page.goto('https://example.com')
+    expect(response.status()).toBeLessThan(400)
+
+    // Check page title
+    await expect(page).toHaveTitle(/Example Domain/)
+
+    // Take screenshot
+    await page.screenshot({ path: 'screenshot.jpg' })
+  })`,
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+### Login Flow Check
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+new checkly.Check('login-flow-check', {
+  name: 'Login Flow Check',
+  activated: true,
+  frequency: 10,
+  type: 'BROWSER',
+  locations: ['eu-west-1'],
+  tags: ['browser', 'login'],
+  script: `
+  const { expect, test } = require('@playwright/test')
+
+  test('login flow', async ({ page }) => {
+    // Navigate to login page
+    await page.goto('https://app.example.com/login')
+
+    // Fill login form
+    await page.fill('#email', process.env.TEST_USER_EMAIL)
+    await page.fill('#password', process.env.TEST_USER_PASSWORD)
+
+    // Submit form
+    await page.click('#login-button')
+
+    // Wait for redirect and verify login
+    await page.waitForURL('**/dashboard')
+    await expect(page.locator('.user-profile')).toBeVisible()
+
+    // Verify user is logged in
+    const userText = await page.locator('.user-name').textContent()
+    expect(userText).toContain('Test User')
+  })`,
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+new checkly.Check('login-flow-check', {
+  name: 'Login Flow Check',
+  activated: true,
+  frequency: 10,
+  type: 'BROWSER',
+  locations: ['eu-west-1'],
+  tags: ['browser', 'login'],
+  script: `
+  const { expect, test } = require('@playwright/test')
+
+  test('login flow', async ({ page }) => {
+    // Navigate to login page
+    await page.goto('https://app.example.com/login')
+
+    // Fill login form
+    await page.fill('#email', process.env.TEST_USER_EMAIL)
+    await page.fill('#password', process.env.TEST_USER_PASSWORD)
+
+    // Submit form
+    await page.click('#login-button')
+
+    // Wait for redirect and verify login
+    await page.waitForURL('**/dashboard')
+    await expect(page.locator('.user-profile')).toBeVisible()
+
+    // Verify user is logged in
+    const userText = await page.locator('.user-name').textContent()
+    expect(userText).toContain('Test User')
+  })`,
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+## Check Groups
+
+### Organizing Related Checks
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+// Create a check group
+const apiGroup = new checkly.CheckGroup('api-monitoring-group', {
+  name: 'API Monitoring Group',
+  activated: true,
+  locations: ['eu-west-1', 'us-west-2'],
+  tags: ['api', 'group'],
+  concurrency: 2,
+  useGlobalAlertSettings: true,
+})
+
+// Add checks to the group
+new checkly.Check('health-check', {
+  name: 'Health Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  groupId: apiGroup.id,
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+
+new checkly.Check('metrics-check', {
+  name: 'Metrics Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  groupId: apiGroup.id,
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/metrics',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+// Create a check group
+const apiGroup = new checkly.CheckGroup('api-monitoring-group', {
+  name: 'API Monitoring Group',
+  activated: true,
+  locations: ['eu-west-1', 'us-west-2'],
+  tags: ['api', 'group'],
+  concurrency: 2,
+  useGlobalAlertSettings: true,
+})
+
+// Add checks to the group
+new checkly.Check('health-check', {
+  name: 'Health Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  groupId: apiGroup.id,
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+
+new checkly.Check('metrics-check', {
+  name: 'Metrics Check',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  groupId: apiGroup.id,
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/metrics',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+## Alert Channels
+
+### Email Alert Channel
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+const emailAlertChannel = new checkly.AlertChannel('email-alerts', {
+  email: {
+    address: 'alerts@example.com',
+  },
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: false,
+})
+
+// Use the alert channel in a check
+new checkly.Check('monitored-api', {
+  name: 'Monitored API',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1'],
+  alertChannelSubscriptions: [emailAlertChannel.id],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: false,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+const emailAlertChannel = new checkly.AlertChannel('email-alerts', {
+  email: {
+    address: 'alerts@example.com',
+  },
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: false,
+})
+
+// Use the alert channel in a check
+new checkly.Check('monitored-api', {
+  name: 'Monitored API',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1'],
+  alertChannelSubscriptions: [emailAlertChannel.id],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: false,
+})
+```
+</Tab>
+</Tabs>
+
+### Slack Alert Channel
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+
+const slackAlertChannel = new checkly.AlertChannel('slack-alerts', {
+  slack: {
+    channel: '#monitoring',
+    url: process.env.SLACK_WEBHOOK_URL,
+  },
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+})
+
+// Use the alert channel in a check
+new checkly.Check('critical-api', {
+  name: 'Critical API',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1', 'us-west-2'],
+  alertChannelSubscriptions: [slackAlertChannel.id],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/critical',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: false,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+
+const slackAlertChannel = new checkly.AlertChannel('slack-alerts', {
+  slack: {
+    channel: '#monitoring',
+    url: process.env.SLACK_WEBHOOK_URL,
+  },
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+})
+
+// Use the alert channel in a check
+new checkly.Check('critical-api', {
+  name: 'Critical API',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1', 'us-west-2'],
+  alertChannelSubscriptions: [slackAlertChannel.id],
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/critical',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: false,
+})
+```
+</Tab>
+</Tabs>
+
+## Advanced Configurations
+
+### Environment-Specific Configurations
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const checkly = require('@checkly/pulumi')
+const pulumi = require('@pulumi/pulumi')
+
+const config = new pulumi.Config()
+const environment = config.require('environment')
+
+// Environment-specific configurations
+const envConfigs = {
+  dev: {
+    frequency: 30,
+    locations: ['eu-west-1'],
+    tags: ['dev'],
+  },
+  staging: {
+    frequency: 15,
+    locations: ['eu-west-1', 'us-west-2'],
+    tags: ['staging'],
+  },
+  prod: {
+    frequency: 5,
+    locations: ['eu-west-1', 'us-west-2', 'ap-southeast-1'],
+    tags: ['prod'],
+  },
+}
+
+const currentConfig = envConfigs[environment]
+
+new checkly.Check('environment-aware-check', {
+  name: `API Check - ${environment}`,
+  activated: true,
+  frequency: currentConfig.frequency,
+  type: 'API',
+  locations: currentConfig.locations,
+  tags: currentConfig.tags,
+  request: {
+    method: 'GET',
+    url: `https://${environment}-api.example.com/health`,
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import * as checkly from '@checkly/pulumi'
+import * as pulumi from '@pulumi/pulumi'
+
+const config = new pulumi.Config()
+const environment = config.require('environment')
+
+// Environment-specific configurations
+const envConfigs: Record<string, any> = {
+  dev: {
+    frequency: 30,
+    locations: ['eu-west-1'],
+    tags: ['dev'],
+  },
+  staging: {
+    frequency: 15,
+    locations: ['eu-west-1', 'us-west-2'],
+    tags: ['staging'],
+  },
+  prod: {
+    frequency: 5,
+    locations: ['eu-west-1', 'us-west-2', 'ap-southeast-1'],
+    tags: ['prod'],
+  },
+}
+
+const currentConfig = envConfigs[environment]
+
+new checkly.Check('environment-aware-check', {
+  name: `API Check - ${environment}`,
+  activated: true,
+  frequency: currentConfig.frequency,
+  type: 'API',
+  locations: currentConfig.locations,
+  tags: currentConfig.tags,
+  request: {
+    method: 'GET',
+    url: `https://${environment}-api.example.com/health`,
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+</Tab>
+</Tabs>
+
+## Best Practices
+
+<Columns cols={2}>
+<Card title="Naming Conventions" icon="tag">
+**Consistent Naming**
+- Use descriptive names for resources
+- Include environment prefixes
+- Follow team naming conventions
+- Use consistent tagging strategies
+</Card>
+
+<Card title="Resource Organization" icon="folder">
+**Logical Grouping**
+- Group related checks together
+- Use check groups for organization
+- Separate environments with stacks
+- Maintain clear resource hierarchy
+</Card>
+
+<Card title="Security" icon="shield">
+**Secure Configuration**
+- Use environment variables for secrets
+- Never commit API keys to version control
+- Use Pulumi's secret management
+- Implement least-privilege access
+</Card>
+
+<Card title="Monitoring Strategy" icon="chart-line">
+**Effective Monitoring**
+- Define clear success criteria
+- Use appropriate check frequencies
+- Implement proper alerting
+- Monitor from multiple locations
+</Card>
+</Columns>
+
+<Tip>
+When creating multiple similar checks, consider using loops or functions to reduce code duplication and maintain consistency.
+</Tip>
+
+<Warning>
+Always test your Pulumi configurations in a development environment before deploying to production. Use `pulumi preview` to review changes before applying them.
+</Warning>

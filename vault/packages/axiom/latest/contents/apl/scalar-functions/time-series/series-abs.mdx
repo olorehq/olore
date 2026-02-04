@@ -1,0 +1,157 @@
+---
+title: series_abs
+description: 'This page explains how to use the series_abs function in APL.'
+---
+
+The `series_abs` function transforms all values in a numeric dynamic array (series) into their absolute values. This means that it converts negative values to their positive equivalents while leaving non-negative values unchanged.
+
+You can use `series_abs` when you want to normalize data and remove the effect of directionality. For example, it’s useful in time-series scenarios where you want to analyze the magnitude of changes regardless of whether they’re positive or negative. Typical applications include error analysis, performance monitoring, and anomaly detection.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, absolute values are usually calculated with the `eval` function and the `abs()` expression. In APL, you apply `series_abs` to an array column to calculate absolute values for all elements in one step.
+
+<CodeGroup>
+```sql Splunk example
+... | eval abs_duration=abs(duration)
+````
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([-2, -1, 0, 1, 2])
+]
+| extend abs_values = series_abs(x)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you calculate absolute values with the `ABS()` scalar function, but this only applies to single values, not arrays. In APL, `series_abs` applies the operation to every element in a dynamic array, which makes it convenient for series analysis.
+
+<CodeGroup>
+```sql SQL example
+SELECT ABS(duration) AS abs_duration
+FROM requests;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([-2, -1, 0, 1, 2])
+]
+| extend abs_values = series_abs(x)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_abs(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the absolute value of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_abs` to analyze request durations by focusing on their magnitude, regardless of whether values are represented as positive or negative deviations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend abs_durations = series_abs(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20abs_durations%20%3D%20series_abs(durations)%22%7D)
+
+**Output**
+
+| id   | durations           | abs_durations    |
+| ---- | ------------------- | ----------------- |
+| u123 | [-50, 30, -10, 20] | [50, 30, 10, 20] |
+| u456 | [5, -7, -3, 9]     | [5, 7, 3, 9]     |
+
+This query collects request durations for each user, then converts them into absolute values for magnitude-based analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_abs` to evaluate span durations as absolute values when analyzing deviations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend abs_durations = series_abs(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20abs_durations%20%3D%20series_abs(durations)%22%7D)
+
+**Output**
+
+| service.name          | durations                | abs_durations         |
+| --------------------- | ------------------------ | ---------------------- |
+| frontend              | [-200ms, 300ms, -100ms] | [200ms, 300ms, 100ms] |
+| productcatalogservice | [50ms, -80ms, 120ms]    | [50ms, 80ms, 120ms]   |
+
+This query aggregates span durations per service and applies `series_abs` to analyze absolute values of latencies.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_abs` to normalize anomalous request durations before analyzing request patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend abs_durations = series_abs(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20abs_durations%20%3D%20series_abs(durations)%22%7D)
+
+**Output**
+
+| status | durations           | abs_durations    |
+| ------ | ------------------- | ----------------- |
+| 200    | [-10, 15, -20, 5]  | [10, 15, 20, 5]  |
+| 500    | [25, -40, -35, 30] | [25, 40, 35, 30] |
+
+This query groups request durations by status code and applies `series_abs` to focus on the magnitude of request times.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_acos](/apl/scalar-functions/time-series/series-acos): Returns the arc cosine of each element in an array. Use when you need to invert cosine transformations instead of sine.
+- [series_asin](/apl/scalar-functions/time-series/series-asin): Applies the arc sine function element-wise to array values. Use this when you need the inverse sine instead of the inverse cosine.
+- [series_atan](/apl/scalar-functions/time-series/series-atan): Returns the arc tangent of each element in an array. Useful for handling tangent-derived data.

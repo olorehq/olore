@@ -1,0 +1,73 @@
+---
+title: series_ifft
+description: 'This page explains how to use the series_ifft function in APL.'
+---
+
+The `series_ifft` function applies the Inverse Fast Fourier Transform (IFFT) on a series, taking a series of complex numbers in the frequency domain and transforming it back to the time/spatial domain using the Fast Fourier Transform. This function is the complementary function of `series_fft`. Commonly the original series is transformed to the frequency domain for spectral processing and then back to the time/spatial domain.
+
+You can use `series_ifft` when you want to reconstruct time-domain signals from frequency-domain data, implement frequency-domain filtering, or perform signal synthesis. This is particularly useful after applying frequency-domain operations like filtering or when you need to convert processed frequency data back to the original time domain. Typical applications include signal reconstruction, frequency-domain filtering, noise reduction, and advanced signal processing workflows.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, IFFT operations aren’t natively available and typically require external tools or complex workarounds. Most Splunk users rely on statistical functions and time-based aggregations for signal reconstruction. In APL, `series_ifft` provides direct access to inverse frequency domain analysis, enabling sophisticated signal reconstruction capabilities.
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t provide IFFT functionality. Database systems typically require specialized extensions or external libraries for inverse frequency domain analysis. Most SQL users rely on window functions and statistical aggregations for signal reconstruction. In APL, `series_ifft` brings advanced inverse signal processing capabilities directly into the query language.
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_ifft(fft_real [, fft_imaginary])
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `fft_real`   | dynamic | A dynamic array of real numeric values representing the real component of the series to transform. |
+| `fft_imaginary`   | dynamic | Optional: A dynamic array of real numeric values representing the imaginary component of the series. Only specify this if the input series contains complex numbers. |
+
+### Returns
+
+The function returns the complex inverse FFT in two series. The first series for the real component and the second one for the imaginary component.
+
+## Example
+
+The example below shows how `series_ifft` reverses the effect of `series_fft` by reconstructing the original time-domain signal from frequency-domain data.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by bin(_time, 1h)
+| extend reconstructed_durations = series_ifft(series_fft(durations)[0])
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20bin(_time%2C%201h)%20%7C%20extend%20reconstructed_durations%20%3D%20series_ifft(series_fft(durations)%5B0%5D)%22%7D)
+
+**Output**
+
+| durations | reconstructed_durations    |
+| --------------------------- | -------------------------- |
+| 0.5848084109504474 | 0.5848084110671455 |
+| 0.5506109370041884 | 0.5506109371007348 |
+
+## List of related functions
+
+- [series_fft](/apl/scalar-functions/time-series/series-fft): Performs Fast Fourier Transform to convert time domain to frequency domain. Use before applying frequency-domain operations.
+- [series_fir](/apl/scalar-functions/time-series/series-fir): Applies a finite impulse response filter to a series. Use for time-domain filtering instead of frequency-domain processing.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use for generating periodic components in signal synthesis.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use for generating periodic components with phase shifts.
+- [series_exp](/apl/scalar-functions/time-series/series-exp): Calculates the exponential of each element in an array. Use for exponential signal components instead of frequency reconstruction.

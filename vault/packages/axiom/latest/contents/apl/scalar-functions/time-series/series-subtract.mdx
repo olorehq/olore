@@ -1,0 +1,165 @@
+---
+title: series_subtract
+description: 'This page explains how to use the series_subtract function in APL.'
+---
+
+The `series_subtract` function performs element-wise subtraction between two numeric dynamic arrays (series). Each element in the first series is subtracted by the corresponding element at the same position in the second series.
+
+You can use `series_subtract` when you need to compute differences between two time-series datasets. This is particularly useful for calculating deltas, deviations from baselines, changes over time, or comparing metrics between different groups or time periods.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `eval` command with the subtraction operator to calculate differences between fields. In APL, `series_subtract` operates on entire arrays at once, performing element-wise subtraction efficiently.
+
+<CodeGroup>
+```sql Splunk example
+... | eval difference=value1 - value2
+```
+
+```kusto APL equivalent
+datatable(series1: dynamic, series2: dynamic)
+[
+  dynamic([10, 20, 30]), dynamic([5, 8, 12])
+]
+| extend difference = series_subtract(series1, series2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you subtract values using the `-` operator on individual columns. In APL, `series_subtract` performs element-wise subtraction across entire arrays stored in single columns.
+
+<CodeGroup>
+```sql SQL example
+SELECT value1 - value2 AS difference
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(series1: dynamic, series2: dynamic)
+[
+  dynamic([10, 20, 30]), dynamic([5, 8, 12])
+]
+| extend difference = series_subtract(series1, series2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_subtract(series1, series2)
+```
+
+### Parameters
+
+| Parameter  | Type    | Description                                          |
+| ---------- | ------- | ---------------------------------------------------- |
+| `series1`  | dynamic | A dynamic array of numeric values (minuend).        |
+| `series2`  | dynamic | A dynamic array of numeric values (subtrahend).     |
+
+### Returns
+
+A dynamic array where each element is the result of subtracting the corresponding element of `series2` from `series1`. If the arrays have different lengths, the shorter array is extended with `null` values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_subtract` to calculate the difference between current and baseline request durations, helping identify performance degradations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize current = make_list(req_duration_ms) by ['geo.city']
+| extend baseline = dynamic([50, 55, 48, 52, 49])
+| extend delta = series_subtract(current, baseline)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20current%20%3D%20make_list(req_duration_ms)%20by%20%5B'geo.city'%5D%20%7C%20extend%20baseline%20%3D%20dynamic(%5B50%2C%2055%2C%2048%2C%2052%2C%2049%5D)%20%7C%20extend%20delta%20%3D%20series_subtract(current%2C%20baseline)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| geo.city   | current            | baseline           | delta             |
+| ---------- | ------------------ | ------------------ | ----------------- |
+| Seattle    | [60, 65, 58, 62, 59] | [50, 55, 48, 52, 49] | [10, 10, 10, 10, 10] |
+| Portland   | [45, 50, 43, 47, 44] | [50, 55, 48, 52, 49] | [-5, -5, -5, -5, -5] |
+
+This query calculates the difference between current request durations and baseline values, showing performance changes per city.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_subtract` to compare span durations between different service versions or time periods.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| summarize current = make_list(duration_ms) by ['service.name']
+| extend previous = dynamic([100, 120, 95, 110, 105])
+| extend improvement = series_subtract(previous, current)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20summarize%20current%20%3D%20make_list(duration_ms)%20by%20%5B'service.name'%5D%20%7C%20extend%20previous%20%3D%20dynamic(%5B100%2C%20120%2C%2095%2C%20110%2C%20105%5D)%20%7C%20extend%20improvement%20%3D%20series_subtract(previous%2C%20current)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| service.name | current                | previous               | improvement          |
+| ------------ | ---------------------- | ---------------------- | -------------------- |
+| frontend     | [80, 95, 75, 90, 85]   | [100, 120, 95, 110, 105] | [20, 25, 20, 20, 20] |
+| checkout     | [110, 125, 105, 120, 115] | [100, 120, 95, 110, 105] | [-10, -5, -10, -10, -10] |
+
+This query compares current span durations with previous measurements, calculating performance improvements (positive values) or degradations (negative values).
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_subtract` to detect anomalous behavior by comparing request patterns against expected baselines.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize observed = make_list(req_duration_ms) by status
+| extend expected = dynamic([45, 50, 48, 49, 47])
+| extend anomaly_score = series_subtract(observed, expected)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20observed%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20expected%20%3D%20dynamic(%5B45%2C%2050%2C%2048%2C%2049%2C%2047%5D)%20%7C%20extend%20anomaly_score%20%3D%20series_subtract(observed%2C%20expected)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| status | observed            | expected           | anomaly_score      |
+| ------ | ------------------- | ------------------ | ------------------ |
+| 200    | [46, 51, 49, 50, 48] | [45, 50, 48, 49, 47] | [1, 1, 1, 1, 1]    |
+| 500    | [145, 150, 148, 149, 147] | [45, 50, 48, 49, 47] | [100, 100, 100, 100, 100] |
+
+This query calculates anomaly scores by comparing observed request durations against expected baselines, with large positive values indicating potential issues.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_multiply](/apl/scalar-functions/time-series/series-multiply): Performs element-wise multiplication of two series. Use when you need to multiply rather than subtract.
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element. Use after subtraction to get magnitude of differences.
+- [series_stats](/apl/scalar-functions/time-series/series-stats): Returns statistical summary of a series. Use to analyze the result of subtraction operations.
+- [series_sign](/apl/scalar-functions/time-series/series-sign): Returns the sign of each element. Use after subtraction to determine direction of changes.
+

@@ -1,0 +1,44 @@
+---
+
+title: 'Troubleshooting Multistep Checks'
+description: 'Learn how to troubleshoot multistep checks.'
+sidebarTitle: Troubleshooting
+---
+
+Multistep checks are a powerful tool for monitoring complex API workflows. However, they can sometimes be tricky to troubleshoot. Here are some common issues and solutions:
+
+## Authentication and Authorization
+**Issue: Authentication failures or token expiration**
+
+**Solutions**:
+1. Verify credentials are current and valid
+2. Implement token refresh logic for long workflows
+3. Check API permissions for all required endpoints
+4. Use environment variables for sensitive credentials
+
+## Data Flow Problems
+**Issue: Variables not passing correctly between steps**
+
+**Solutions**:
+1. Verify variable assignment syntax and scope
+2. Add logging to track variable values
+3. Check JSON parsing and data extraction logic
+4. Validate API response formats match expectations
+
+## Timing and Performance Issues
+**Issue: Workflows timing out or running slowly**
+
+**Solutions**:
+1. Optimize API performance and database queries
+2. Increase timeout values for complex operations
+3. Implement parallel processing where possible
+4. Add monitoring for long-running operations
+
+## Error Handling and Recovery
+**Issue: Workflows failing without proper cleanup**
+
+**Solutions**:
+1. Implement try-catch blocks with proper error handling
+2. Add cleanup logic in finally blocks
+3. Design idempotent operations for safe retries
+4. Create rollback procedures for failed transactions

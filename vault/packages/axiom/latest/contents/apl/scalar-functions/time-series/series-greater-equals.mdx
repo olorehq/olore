@@ -1,0 +1,156 @@
+---
+title: series_greater_equals
+description: 'This page explains how to use the series_greater_equals function in APL.'
+---
+
+The `series_greater_equals` function compares two numeric arrays element by element and returns a new array of Boolean values. Each element in the result is `true` if the corresponding element in the first array is greater than or equal to the corresponding element in the second array, and `false` otherwise.
+
+You use this function when you want to perform threshold comparisons across two series of values, such as checking performance metrics against baselines, comparing observed values to expected ranges, or evaluating time-aligned logs and traces.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically perform comparisons on fields or with `eval` expressions rather than array-based functions. If you want to compare series of values, you usually use `eval` with conditional expressions, but SPL doesn’t provide direct array-to-array comparison. In APL, `series_greater_equals` lets you apply the comparison element by element on arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval greater_equals = if(field1 >= field2, true(), false())
+````
+
+```kusto APL equivalent
+print result = series_greater_equals(dynamic([2,4,6]), dynamic([1,4,10]))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not natively support array-to-array operations in the same way. You often need to `UNNEST` arrays or join on row numbers to compare values across two arrays. APL provides a direct function, `series_greater_equals`, that simplifies these operations by applying the comparison across the entire array at once.
+
+<CodeGroup>
+```sql SQL example
+-- SQL-style comparison would require unnesting
+SELECT a.value >= b.value AS greater_equals
+FROM UNNEST(ARRAY[2,4,6]) WITH ORDINALITY a(value, i)
+JOIN UNNEST(ARRAY[1,4,10]) WITH ORDINALITY b(value, j)
+  ON a.i = b.j
+```
+
+```kusto APL equivalent
+print result = series_greater_equals(dynamic([2,4,6]), dynamic([1,4,10]))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_greater_equals(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type                              | Description                                                  |
+| --------- | --------------------------------- | ------------------------------------------------------------ |
+| `array1`  | dynamic (array of numeric values) | The first input array.                                       |
+| `array2`  | dynamic (array of numeric values) | The second input array. Must be the same length as `array1`. |
+
+### Returns
+
+A dynamic array of Boolean values where each element is `true` if `array1[i] >= array2[i]`, and `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can compare observed request durations against a threshold series to identify requests that are slower than expected.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend threshold = dynamic([100,100,100])
+| extend exceeds = series_greater_equals(durations, threshold)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20threshold%20%3D%20dynamic(%5B100%2C100%2C100%5D)%20%7C%20extend%20exceeds%20%3D%20series_greater_equals(durations%2C%20threshold)%22%7D)
+
+**Output**
+
+| id   | durations     | threshold      | exceeds            |
+| ---- | ------------- | -------------- | ------------------ |
+| u123 | [120,80,150] | [100,100,100] | [true,false,true] |
+
+This query groups request durations by user ID, builds a list of durations, and checks each against the threshold series of 100 ms.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can compare span durations from one service with expected baselines to detect performance regressions.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'checkout'
+| summarize durations = make_list(duration) by trace_id
+| extend baseline = dynamic([100ms,200ms,300ms])
+| extend slower = series_greater_equals(durations, baseline)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'checkout'%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20trace_id%20%7C%20extend%20baseline%20%3D%20dynamic(%5B100ms%2C200ms%2C300ms%5D)%20%7C%20extend%20slower%20%3D%20series_greater_equals(durations%2C%20baseline)%22%7D)
+
+**Output**
+
+| trace_id | durations            | baseline             | slower             |
+| --------- | -------------------- | -------------------- | ------------------ |
+| t001      | [120ms,180ms,400ms] | [100ms,200ms,300ms] | [true,false,true] |
+
+This query checks if spans in the checkout service are slower than the defined baseline series.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can compare the frequency of failed status codes against a threshold to detect suspicious behavior.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '500'
+| summarize fails = make_list(req_duration_ms) by ['geo.country']
+| extend threshold = dynamic([200,200,200])
+| extend suspicious = series_greater_equals(fails, threshold)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'500'%20%7C%20summarize%20fails%20%3D%20make_list(req_duration_ms)%20by%20%5B'geo.country'%5D%20%7C%20extend%20threshold%20%3D%20dynamic(%5B200%2C200%2C200%5D)%20%7C%20extend%20suspicious%20%3D%20series_greater_equals(fails%2C%20threshold)%22%7D)
+
+**Output**
+
+| geo.country | fails          | threshold      | suspicious         |
+| ----------- | -------------- | -------------- | ------------------ |
+| US          | [210,190,300] | [200,200,200] | [true,false,true] |
+
+This query aggregates failed requests by country, builds a series of durations, and compares them against a 200 ms threshold to highlight suspiciously slow failures.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Compares two arrays and returns `true` where the first array element is greater than the second.
+- [series_less](/apl/scalar-functions/time-series/series-less): Compares two arrays and returns `true` where the first array element is less than the second.
+- [series_less_equals](/apl/scalar-functions/time-series/series-less-equals): Compares two arrays and returns `true` where the first array element is less than or equal to the second.
+- [series_not_equals](/apl/scalar-functions/time-series/series-not-equals): Compares two arrays and returns `true` where elements aren’t equal.

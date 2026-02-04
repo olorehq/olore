@@ -1,0 +1,123 @@
+---
+title: checkly runtimes
+description: 'List all available runtimes and their dependencies.'
+sidebarTitle: 'checkly runtimes'
+---
+
+The `checkly runtimes` command displays all available runtime environments and their installed dependencies. This helps you understand what packages and versions are available for your checks in the Checkly cloud infrastructure.
+
+<Tip>Learn more about Checkly runtimes in our [Runtimes documentation](/platform/runtimes/overview).</Tip>
+
+## Usage
+
+List all available runtimes with their dependency versions.
+
+```bash Terminal
+npx checkly runtimes
+```
+
+Example output:
+```bash Terminal
+[
+  {
+    "name": "2025.04",
+    "description": "The main update is Playwright 1.51.1. The Node.js version is v22.11.0.",
+    "stage": "CURRENT",
+    "dependencies": {
+      "@playwright/test": "1.51.1",
+      "@axe-core/playwright": "4.10.1",
+      "@azure/identity": "4.9.1",
+      "@azure/keyvault-secrets": "4.9.0",
+      "@checkly/playwright-helpers": "1.0.3"
+      ...
+      ...
+```
+
+## Runtime Information
+
+### Runtime Versions
+
+Each runtime environment includes:
+
+- **Runtime name** (e.g., `2025.04`)
+- **Description** and release information (highlights and Node.js version)
+- **Playwright version** for browser automation
+- **Built-in packages** and their versions
+
+### Package Availability
+
+Common packages included in Checkly runtimes:
+
+- **HTTP clients**: axios
+- **Utilities**: lodash, moment, date-fns
+- **Testing**: expect
+- **Cryptography**: crypto-js, jsonwebtoken
+- **Environment**: dotenv
+
+## Configuration
+
+### Setting Runtime in Configuration
+
+Specify a runtime version in your `checkly.config.ts`:
+
+```typescript checkly.config.ts highlight={6}
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  projectName: 'My Project',
+  checks: {
+    runtimeId: '2025.04',
+  }
+  /* More options... */
+})
+```
+
+Or in your runtime-dependent checks:
+
+```typescript apicheck.ts highlight={5}
+import { ApiCheck } from 'checkly/constructs'
+
+new ApiCheck('books-api-check-2', {
+  name: 'Books API',
+  runtimeId: '2025.04',
+  /* More options... */
+```
+
+Or in your check groups:
+
+```typescript checkgroup.check.ts highlight={5}
+import { CheckGroupV2 } from 'checkly/constructs'
+
+const syntheticGroup = new CheckGroupV2('check-group-synthetics', {
+  name: 'Synthetic Monitors Group',
+  runtimeId: '2025.04',
+  /* More options... */
+})
+```
+
+### Runtime Compatibility
+
+When selecting a runtime, consider:
+
+- **Package versions** your code depends on
+- **Node.js features** you're using
+- **Playwright compatibility** for browser checks
+- **Long-term support** for production environments
+
+<Tip>Use the latest runtime for new projects to benefit from the newest features and security updates.</Tip>
+
+
+## Runtime Updates
+
+Checkly regularly updates runtimes with:
+- **Security patches** for Node.js and dependencies
+- **New package versions** and additional utilities
+- **Performance improvements** and bug fixes
+- **Extended browser support** via Playwright updates
+
+Check the [Checkly changelog](https://feedback.checklyhq.com/changelog) for runtime update announcements.
+
+## Related Commands
+
+- [`checkly test`](/cli/checkly-test) - Test checks with current runtime
+- [`checkly deploy`](/cli/checkly-deploy) - Deploy checks to specified runtime

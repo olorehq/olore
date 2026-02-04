@@ -1,0 +1,152 @@
+---
+title: 'strcat_delim'
+description: 'This page explains how to use the strcat_delim function in APL.'
+---
+
+The `strcat_delim` function concatenates between 2 and 64 arguments with a specified delimiter between each argument. Use this function to build delimited strings like CSV rows, create formatted lists, or join fields with consistent separators.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically concatenate with repeated delimiters. APL's `strcat_delim` provides a more concise approach.
+
+<CodeGroup>
+```sql Splunk example
+| eval combined=field1.",".field2.",".field3
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend combined = strcat_delim(',', field1, field2, field3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `CONCAT_WS` (concat with separator) for delimited concatenation. APL's `strcat_delim` provides similar functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT CONCAT_WS(',', field1, field2, field3) AS combined FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend combined = strcat_delim(',', field1, field2, field3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strcat_delim(delimiter, arg1, arg2, ..., argN)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| delimiter | string | Yes | The separator string to insert between arguments. |
+| arg1, arg2, ..., argN | any | Yes | Between 2 and 64 expressions to concatenate. Non-string values are converted to strings. |
+
+### Returns
+
+Returns all arguments concatenated with the delimiter between each argument.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Create CSV-formatted log records for export or integration with external systems.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend csv_record = strcat_delim(',', method, status, uri, req_duration_ms, ['geo.country'])
+| project _time, csv_record
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20csv_record%20%3D%20strcat_delim(%27%2C%27%2C%20method%2C%20status%2C%20uri%2C%20req_duration_ms%2C%20%5B%27geo.country%27%5D)%20%7C%20project%20_time%2C%20csv_record%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | csv_record |
+|-------|------------|
+| 2024-11-06T10:00:00Z | GET,200,/api/users,145,United States |
+| 2024-11-06T10:01:00Z | POST,201,/api/orders,234,United Kingdom |
+
+This query formats log fields as CSV records with comma delimiters, making them ready for export to spreadsheet applications or data warehouses.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Build pipe-delimited trace summaries for log aggregation systems.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_summary = strcat_delim(' | ', ['service.name'], kind, tostring(duration), trace_id)
+| project _time, trace_summary
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20trace_summary%20%3D%20strcat_delim(%27%20%7C%20%27%2C%20%5B%27service.name%27%5D%2C%20kind%2C%20tostring(duration)%2C%20trace_id)%20%7C%20project%20_time%2C%20trace_summary%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | trace_summary |
+|-------|---------------|
+| 2024-11-06T10:00:00Z | frontend \| server \| 125ms \| abc123 |
+| 2024-11-06T10:01:00Z | checkout \| client \| 234ms \| def456 |
+
+This query creates pipe-delimited trace summaries that are easy to read and parse, combining service, kind, duration, and trace ID.
+
+</Tab>
+<Tab title="Security logs">
+
+Format security alerts with structured field separators for SIEM integration.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend alert = strcat_delim(' :: ', 'SECURITY_EVENT', status, method, uri, id, ['geo.country'])
+| project _time, alert
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20alert%20%3D%20strcat_delim('%20%3A%3A%20'%2C%20'SECURITY_EVENT'%2C%20status%2C%20method%2C%20uri%2C%20id%2C%20%5B'geo.country'%5D)%20%7C%20project%20_time%2C%20alert%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | alert |
+|-------|-------|
+| 2024-11-06T10:00:00Z | SECURITY_EVENT :: 403 :: GET :: /admin :: user123 :: United States |
+| 2024-11-06T10:01:00Z | SECURITY_EVENT :: 401 :: POST :: /api :: user456 :: Unknown |
+
+This query creates structured security alerts with double-colon delimiters, making them easy to parse in SIEM systems while remaining human-readable.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings without delimiters. Use this when you want direct concatenation or need custom separators for each position.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by delimiters. Use this to reverse strcat_delim operations and extract individual fields.
+- [parse_csv](/apl/scalar-functions/string-functions/parse-csv): Parses CSV strings. Use this to parse the output of strcat_delim with comma delimiters.
+- [format_url](/apl/scalar-functions/string-functions/format-url): Formats URLs from components. Use this specifically for URL construction rather than general delimited concatenation.
+

@@ -1,0 +1,75 @@
+---
+title: Authentication
+description: 'How to authenticate with the Checkly CLI'
+sidebarTitle: 'Authentication'
+---
+Before you can use the Checkly CLI, you need to authenticate with your Checkly account. There are different ways to authenticate depending on the environment where you are running the CLI from.
+
+## Interactive
+
+When **running the CLI interactively** from your dev environment, just use the built-in `login` command. If you have multiple
+Checkly accounts, it will prompt which account you want to target.
+
+```bash Terminal
+npx checkly login
+```
+
+Once authenticated, you can switch between accounts using:
+
+```bash Terminal
+npx checkly switch
+```
+
+... or quickly find out which account you are currently targeting with:
+
+```bash Terminal
+npx checkly whoami
+```
+
+To log out and clear your stored credentials:
+
+```bash Terminal
+npx checkly logout
+```
+
+## From CI
+
+You can also authenticate using environment variables, which is useful for CI/CD pipelines and automated environments.
+
+You will need to export two environment variables in the shell:
+- `CHECKLY_API_KEY`
+- `CHECKLY_ACCOUNT_ID`
+
+To get your API key, go to your Settings page in Checkly and grab a API key from [the API keys tab](https://app.checklyhq.com/settings/user/api-keys) and your Account ID from the [Account settings tab](https://app.checklyhq.com/settings/account/general).
+
+Set the account ID and API key as follows:
+
+```bash Terminal
+# Set your Checkly API key
+export CHECKLY_API_KEY=your_api_key_here
+
+# Set your Checkly account ID
+export CHECKLY_ACCOUNT_ID=your_account_id_here
+```
+
+To verify you're properly authenticated:
+
+```bash Terminal
+npx checkly whoami
+```
+
+This will display your account information and confirm your authentication status.
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="`npx checkly login` doesn't open a browser window">
+If `npx checkly login` doesn't automatically open a browser window to authenticate, you can generate a direct link instead.
+
+When prompted with:
+
+> Do you want to open a browser window to continue with login? (Y/n)
+
+Enter "n". The CLI will provide a link that you can copy and paste into your browser to authenticate.
+</Accordion>
+</AccordionGroup>

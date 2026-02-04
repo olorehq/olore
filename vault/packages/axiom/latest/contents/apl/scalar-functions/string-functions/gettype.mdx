@@ -1,0 +1,154 @@
+---
+title: 'gettype'
+description: 'This page explains how to use the gettype function in APL.'
+---
+
+The `gettype` function returns the runtime type of its argument as a string. Use this function when you need to determine the data type of fields, validate data structures, or debug type-related issues in your queries.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `typeof` to check types. APL's `gettype` provides similar functionality with consistent type names.
+
+<CodeGroup>
+```sql Splunk example
+| eval field_type=typeof(field_name)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend field_type = gettype(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, type checking varies by database. APL's `gettype` provides a standardized approach to runtime type detection.
+
+<CodeGroup>
+```sql SQL example
+SELECT TYPEOF(field_name) AS field_type FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend field_type = gettype(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+gettype(expression)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| expression | any | Yes | The expression whose type you want to determine. |
+
+### Returns
+
+Returns a string representing the runtime type: `string`, `int`, `long`, `real`, `bool`, `datetime`, `timespan`, `dynamic`, `array`, `dictionary`, or `null`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Identify the data types of fields to ensure proper query operations and data validation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend status_type = gettype(status), 
+         duration_type = gettype(req_duration_ms),
+         time_type = gettype(_time)
+| project status, status_type, req_duration_ms, duration_type, _time, time_type
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20status_type%20%3D%20gettype(status)%2C%20duration_type%20%3D%20gettype(req_duration_ms)%2C%20time_type%20%3D%20gettype(_time)%20%7C%20project%20status%2C%20status_type%2C%20req_duration_ms%2C%20duration_type%2C%20_time%2C%20time_type%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | status_type | req_duration_ms | duration_type | _time | time_type |
+|--------|-------------|-----------------|---------------|-------|-----------|
+| 200 | string | 145 | long | 2024-11-06T10:00:00Z | datetime |
+| 404 | string | 89 | long | 2024-11-06T10:01:00Z | datetime |
+| 500 | string | 234 | long | 2024-11-06T10:02:00Z | datetime |
+
+This query identifies the data types of key fields in HTTP logs, helping ensure that data is in the expected format for analysis and troubleshooting type-related query issues.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Validate trace field types to ensure proper data ingestion and processing.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_type = gettype(['service.name']),
+         duration_type = gettype(duration),
+         kind_type = gettype(kind)
+| summarize type_counts = count() by service_type, duration_type, kind_type
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_type%20%3D%20gettype(%5B%27service.name%27%5D)%2C%20duration_type%20%3D%20gettype(duration)%2C%20kind_type%20%3D%20gettype(kind)%20%7C%20summarize%20type_counts%20%3D%20count()%20by%20service_type%2C%20duration_type%2C%20kind_type%22%7D)
+
+**Output**
+
+| service_type | duration_type | kind_type | type_counts |
+|--------------|---------------|-----------|-------------|
+| string | timespan | string | 8765 |
+
+This query validates the types of trace fields, helping identify data quality issues where fields might have unexpected types due to ingestion problems.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect type inconsistencies in security logs that might indicate data manipulation or logging errors.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend id_type = gettype(id),
+         status_type = gettype(status),
+         uri_type = gettype(uri)
+| summarize failed_attempts = count() by id_type, status_type, uri_type
+| sort by failed_attempts desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20id_type%20%3D%20gettype(id)%2C%20status_type%20%3D%20gettype(status)%2C%20uri_type%20%3D%20gettype(uri)%20%7C%20summarize%20failed_attempts%20%3D%20count()%20by%20id_type%2C%20status_type%2C%20uri_type%20%7C%20sort%20by%20failed_attempts%20desc%22%7D)
+
+**Output**
+
+| id_type | status_type | uri_type | failed_attempts |
+|---------|-------------|----------|-----------------|
+| string | string | string | 2341 |
+
+This query validates field types in failed authentication logs, helping detect anomalies where expected string fields might have different types due to injection attempts or data corruption.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnull](/apl/scalar-functions/string-functions/isnull): Checks if a value is null. Use this to specifically test for null values rather than getting the type.
+- [isnotnull](/apl/scalar-functions/string-functions/isnotnull): Checks if a value is not null. Use this in filters when you need to exclude null values.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses JSON strings into dynamic types. Use this before gettype when working with JSON data.
+

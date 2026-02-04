@@ -1,0 +1,151 @@
+---
+title: translate
+description: 'This page explains how to use the translate function in APL.'
+---
+
+Use the `translate` function in APL (Axiom Processing Language) to substitute characters in a string, one by one, based on their position in two input lists. For every character in the input string that matches a character in the first list, `translate` replaces it with the character at the same position in the second list.
+
+This function is useful when you want to:
+- Replace specific characters without using complex regular expressions.
+- Normalize text by mapping characters to a consistent format.
+- Obfuscate or scrub data by transforming characters to placeholders.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you often use `replace` or `gsub` to transform string values. These functions support regular expressions and substring replacements, but they don’t directly support fixed-position character substitution.
+
+In APL, `translate` lets you replace multiple characters in a string at once, based on positionally aligned character sets.
+
+<CodeGroup>
+```sql Splunk example
+... | eval masked_id=replace(id, "[abc]", "x")
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend masked_id = translate('abc', 'xxx', id)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+If you’re familiar with ANSI SQL, APL’s `translate` function works like SQL’s `TRANSLATE`. Both functions take a character source set, a target set, and a string to process.
+
+<CodeGroup>
+```sql SQL example
+SELECT TRANSLATE(id, 'abc', 'xyz') FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend new_id = translate('abc', 'xyz', id)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+translate(searchList, replacementList, source)
+```
+
+### Parameters
+
+| Name              | Type   | Description                                                                |
+| ----------------- | ------ | -------------------------------------------------------------------------- |
+| `searchList`      | string | Characters to search for in the input string.                              |
+| `replacementList` | string | Characters to replace each match in `searchList`. |
+| `source`          | string | The input string to evaluate.                                              |
+
+### Returns
+
+A string with characters from `searchList` replaced by corresponding characters in `replacementList`. If `replacementList` is shorter than `searchList`, Axiom repeatedly uses the last character of `replacementList` to match the length of the search.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `translate` to mask user IDs by replacing all lowercase letters with asterisks.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend masked_id = translate('0123456789abcdefghijklmnopqrstuvwxyz', '##########*', id)
+| project _time, id, masked_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20masked_id%20%3D%20translate('abcdefghijklmnopqrstuvwxyz'%2C%20'*'%2C%20id)%20%7C%20project%20_time%2C%20id%2C%20masked_id%22%7D)
+
+**Output**
+
+| _time               | id    | masked_id |
+| -------------------- | ----- | ---------- |
+| 2025-07-28T12:34:56Z | `bd6d8f17-2b8d-4b71-af20-f23dc8d20202` | `**#*#*##-#*#*-#*##-**##-*##**#*#####`    |
+| 2025-07-28T12:35:01Z | `1e317368-9ed4-4e8c-b535-b59a68ffda05` | `#*######-#**#-#*#*-*###-*##*##****##`   |
+
+This query masks characters in the `id` field by replacing numbers with hashes and letters with asterisks.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `translate` to remove vowels from service names for compact representation.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend compact_service = translate('aeiou', '', ['service.name'])
+| project _time, ['service.name'], compact_service
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20compact_service%20%3D%20translate('aeiou'%2C%20''%2C%20%5B'service.name'%5D)%20%7C%20project%20_time%2C%20%5B'service.name'%5D%2C%20compact_service%22%7D)
+
+**Output**
+
+| _time               | service.name          | compact_service |
+| -------------------- | --------------------- | ---------------- |
+| 2025-07-28T10:00:00Z | product-catalog | prdct-ctlg     |
+| 2025-07-28T10:01:00Z | frontend              | frntnd           |
+
+This example reduces the length of the `service.name` field by eliminating vowels.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `translate` to standardize HTTP status codes by masking digits with a symbol.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend normalized_status = translate('0123456789', '#', status)
+| project _time, status, normalized_status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20normalized_status%20%3D%20translate('0123456789'%2C%20'%23'%2C%20status)%20%7C%20project%20_time%2C%20status%2C%20normalized_status%22%7D)
+
+**Output**
+
+| _time               | status | normalized_status |
+| -------------------- | ------ | ------------------ |
+| 2025-07-28T13:45:00Z | 200    | ###                |
+| 2025-07-28T13:45:05Z | 404    | ###                |
+
+This use case replaces all digits in HTTP status codes with `#` characters, helping anonymize numeric values.
+
+</Tab>
+</Tabs>

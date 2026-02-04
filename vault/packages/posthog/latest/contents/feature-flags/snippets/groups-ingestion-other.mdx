@@ -1,0 +1,44 @@
+Not all libraries support group analytics yet, but you can work around this issue by sending events in specific formats.
+
+This section uses our [capture API](/docs/api/capture) for examples but you can adapt this approach to any library.
+
+#### Capturing events with groups
+
+```shell
+POST https://[your-instance].com/i/v0/e/
+Content-Type: application/json
+Body:
+{
+    "api_key": "<ph_project_api_key>",
+    "event": "event_name",
+    "properties": {
+        "distinct_id": "distinct_id_of_your_user",
+        "key1": "value1",
+        "key2": "value2",
+        "$groups": {
+            "company": "id:5"
+        }
+    }
+}
+```
+
+#### Updating group properties
+
+```shell
+POST https://[your-instance].com/i/v0/e/
+Content-Type: application/json
+Body:
+{
+    "api_key": "<ph_project_api_key>",
+    "event": "$groupidentify",
+    "properties": {
+        "distinct_id": "distinct_id_of_your_user",
+        "$group_type": "company",
+        "$group_key": "id:5",
+        "$group_set": {
+            "company_name": "Awesome Inc",
+            "employees": 11
+        }
+    }
+}
+```

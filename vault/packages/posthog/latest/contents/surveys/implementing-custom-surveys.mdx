@@ -1,0 +1,520 @@
+---
+title: Implementing custom surveys
+sidebar: Docs
+showTitle: true
+availability:
+    free: none
+    selfServe: full
+    enterprise: full
+---
+
+> Custom surveys is currently supported only with the [JavaScript Web SDK](/docs/libraries/js).
+
+At its most basic level, a survey is a collection of response events. If you wanted to, you could capture events from anywhere, like in this example of a hardcoded Next.js feedback survey:
+
+```js-web
+'use client'
+import { usePostHog } from '@posthog/react';
+
+export default function Feedback() {
+  const posthog = usePostHog();
+
+  const handleFeedbackSubmit = (e) => {
+    e.preventDefault();
+    const feedback = e.target.elements.feedback.value;
+    posthog.capture("survey sent", {
+      $survey_id: '018ed910-3b24-0000-e3fd-d51c59aa74b2',
+      $survey_questions: [
+        {
+          id: "a3071551-d599-4eeb-9ffe-69e93dc647b6",
+          question: "Do you like PostHog?",
+        }
+      ],
+      $survey_response_a3071551-d599-4eeb-9ffe-69e93dc647b6: "Yes!"
+    })
+  }
+
+  return (
+    <div>
+      <h1>Give us feedback</h1>
+      <form onSubmit={handleFeedbackSubmit}>
+        <textarea
+          id="feedbackInput"
+          name="feedback"
+          placeholder="Enter your feedback here..."
+          required
+        ></textarea>
+        <button type="submit">Submit Feedback</button>
+      </form>
+    </div>
+  );
+}
+```
+
+The benefit of using PostHog beyond this is that it handles:
+
+1. **Survey content.** Customize question type, text, and more. Change it at runtime without needing to redeploy your app.
+
+2. **Display conditions.** This means not showing the same survey multiple times, the wrong survey, or a survey that has collected enough responses. Leverage property filters, cohorts, feature flags, and more.
+
+If you create a [popover survey](/docs/surveys/creating-surveys#presentation), updating and display conditions are handled automatically. When you create one in **API mode**, you need to add logic to fetch and display surveys yourself with the help of the [JavaScript Web SDK or snippet](/docs/libraries/js).
+
+## Rendering surveys programmatically
+
+Although we recommend using popover surveys and display conditions, if you want to show surveys programmatically without setting up all the extra logic needed for API surveys, you can render surveys programmatically with the `displaySurvey` (recommended) or `renderSurvey` (deprecated) method.
+
+import OnSurveysLoaded from './_snippets/onsurveysloaded-callout.md'
+
+<OnSurveysLoaded />
+
+### Using displaySurvey (recommended)
+
+The `displaySurvey` method is the recommended way to show surveys programmatically. It supports two display types:
+
+1. **Popover surveys** - Shows surveys as styled popovers (same as regular surveys)
+2. **Inline surveys** - Renders surveys within a specific HTML element
+
+#### Popover surveys
+
+To display a survey as a popover, simply call `displaySurvey` with the survey ID:
+
+```js
+import React from 'react';
+import { DisplaySurveyType } from 'posthog-js';
+import { usePostHog } from '@posthog/react';
+
+const coolSurveyID = "01942e4c-d028-0000-6ab5-afb4ed961263"
+
+function App() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    // Will be called only once on first load, respecting conditions defined in dashboard
+    posthog.displaySurvey(coolSurveyID, {
+      displayType: DisplaySurveyType.Popover,
+      ignoreConditions: false,
+      ignoreDelay: false
+    });
+  }, []);
+
+  const handleForceShowSurvey = () => {
+    // Force display ignoring conditions and delays
+    posthog.displaySurvey(coolSurveyID, {
+      displayType: DisplaySurveyType.Popover,
+      ignoreConditions: true,
+      ignoreDelay: true
+    });
+  };
+
+  return (
+    <div className="App">
+      <h1>Survey Tutorial with PostHog</h1>
+      <div className="survey-controls">
+        <button onClick={handleForceShowSurvey}>
+          Force Show Survey
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+#### Pre-filling survey responses
+
+You can pre-fill survey answers programmatically by passing prefill data to `displaySurvey` or `renderSurvey`. This works with single choice, multiple choice, and rating questions.
+
+```js
+import React from 'react';
+import { DisplaySurveyType } from 'posthog-js';
+import { usePostHog } from '@posthog/react';
+
+const coolSurveyID = "01942e4c-d028-0000-6ab5-afb4ed961263"
+
+function App() {
+  const posthog = usePostHog();
+
+  const handleShowPrefilled = () => {
+    posthog.displaySurvey(coolSurveyID, {
+      displayType: DisplaySurveyType.Popover,
+      prefillData: {
+        0: 'Very Satisfied',      // Single choice (by value)
+        1: 9,                      // Rating
+        2: ['Analytics', 'Flags']  // Multiple choice (array of values)
+      }
+    });
+  };
+
+  return (
+    <div className="App">
+      <h1>Survey Tutorial with PostHog</h1>
+      <div className="survey-controls">
+        <button onClick={handleShowPrefilled}>
+          Show Pre-filled Survey
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+**Prefill data format:**
+
+- Keys are question indices (0-based: `0` for first question, `1` for second, etc.)
+- Values depend on question type:
+  - **Single choice**: String matching the exact choice text (e.g., `'Very Satisfied'`)
+  - **Multiple choice**: Array of strings matching choice texts (e.g., `['Analytics', 'Flags']`)
+  - **Rating**: Number within the rating scale (e.g., `9` for a 0-10 scale)
+  - **Open text**: String value for the text field
+
+**Important notes:**
+- Pre-filled values must match exactly with the choice text defined in your survey
+- Invalid values are silently ignored
+- Users can modify pre-filled answers before submitting
+- Question indices are 0-based (first question is `0`, second is `1`, etc.)
+
+#### Inline surveys
+
+To display a survey inline within a specific element, specify the `displayType` and `selector`:
+
+```js
+import React from 'react';
+import { DisplaySurveyType } from 'posthog-js';
+import { usePostHog } from '@posthog/react';
+
+const coolSurveyID = "01942e4c-d028-0000-6ab5-afb4ed961263"
+
+function App() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog.displaySurvey(coolSurveyID, {
+      displayType: DisplaySurveyType.Inline,
+      ignoreConditions: false,
+      ignoreDelay: false,
+      selector: '#survey-container'
+    });
+  }, []);
+
+  const handleForceShowInlineSurvey = () => {
+    // Will ignore both conditions and delays
+    posthog.displaySurvey(coolSurveyID, {
+      displayType: DisplaySurveyType.Inline,
+      ignoreConditions: true,
+      ignoreDelay: true,
+      selector: '#survey-container'
+    });
+  };
+
+  return (
+    <div className="App">
+      <h1>Survey Tutorial with PostHog</h1>
+      <div className="survey-controls">
+        <button onClick={handleForceShowInlineSurvey}>
+          Force Show Inline Survey
+        </button>
+      </div>
+      <div id="survey-container">
+        <p>Survey will render here</p>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Using renderSurvey (deprecated)
+
+> **Note:** The `renderSurvey` method is deprecated in favor of `displaySurvey`. While `renderSurvey` will continue to work for backwards compatibility, we recommend using `displaySurvey` for all new implementations as it supports both styled and unstyled surveys with more flexible options.
+
+The legacy `renderSurvey` method renders an **unstyled** survey in a specific HTML element, ignoring any display conditions:
+
+```js
+import './App.css';
+import React from 'react';
+import { usePostHog } from '@posthog/react';
+
+function App() {
+  const posthog = usePostHog();
+
+  const coolSurveyID = "01942e4c-d028-0000-6ab5-afb4ed961263"
+
+  const handleRenderSurvey = () => {
+    posthog.renderSurvey(coolSurveyID, '#survey-container');
+  };
+
+  return (
+    <div className="App">
+      <h1>Survey Tutorial with PostHog</h1>
+      <div className="survey-controls">
+        <button onClick={handleRenderSurvey}>
+          Render Survey
+        </button>
+      </div>
+      <div id="survey-container">
+        <p>Survey will render here</p>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+This renders an unstyled survey in the `#survey-container` element that looks like this:
+
+<ProductScreenshot
+    imageLight="https://res.cloudinary.com/dmukukwp6/image/upload/Clean_Shot_2025_01_03_at_15_01_34_2x_761478ffdc.png"
+    imageDark="https://res.cloudinary.com/dmukukwp6/image/upload/Clean_Shot_2025_01_03_at_15_01_34_2x_761478ffdc.png"
+    alt="Survey templates"
+    classes="rounded"
+/>
+
+You can then style the survey by targeting the classes like `survey-box`, `survey-question`, `textarea`, `buttons`, `footer-branding`, and `thank-you-message`.
+
+## Fetching surveys manually
+
+For more control over your surveys, you can use API surveys. When implementing an API survey, there are two options for fetching surveys from PostHog:
+
+1. To get all surveys, call `getSurveys(callback, forceReload)`. This means you still need to handle display conditions yourself.
+
+2. To get surveys enabled for the current user, call `getActiveMatchingSurveys(callback, forceReload)`. This always returns an active survey if the user meets the display conditions, as long as the user (determined by their distinct ID) has not already dismissed or responded the survey.
+
+Surveys are requested on first load and then cached by default by the JavaScript SDK. If you want to force an API call to get an updated list of surveys, pass `true` to the `forceReload` parameter. You only need to do this if you want changed surveys to appear mid-session for users.
+
+Both methods return a callback with an array of surveys in this format:
+
+```json
+// Example surveys response:
+[{
+  "id": "your_survey_id",
+  "name": "Your survey name",
+  "description": "Metadata describing your survey",
+  "type": "api", // "api" or "popover"
+  "linked_flag_key": null, // Linked feature flag key, if any.
+  "targeting_flag_key": "your_survey_targeting_flag_key",
+  "questions": [
+    {
+      "type": "single_choice",
+      "choices": [
+        "Yes",
+        "No"
+      ],
+      "question": "Are you enjoying PostHog?",
+      "id": "7ce5b831-dc71-4648-b6b0-b583d48a0c11" // Each question has a UUID
+    }
+  ],
+  "conditions": null,
+  "appearance": {},
+  "start_date": "2023-09-19T13:10:49.505000Z",
+  "end_date": null
+}]
+```
+
+As an example, we can use `getActiveMatchingSurveys()` to make our Next.js feedback survey more dynamic:
+
+```js-web
+'use client'
+import { usePostHog } from '@posthog/react';
+import { useEffect, useState } from 'react';
+
+export default function Feedback() {
+  const [survey, setSurvey] = useState({})
+  const posthog = usePostHog()
+
+  useEffect(() => {
+    posthog.getActiveMatchingSurveys((surveys) => {
+      if (surveys.length > 0) {
+        const survey = surveys[0];
+        setSurvey(survey)
+      }
+    });
+  }, [posthog]);
+
+  const handleFeedbackSubmit = (e) => {
+    e.preventDefault();
+    const feedback = e.target.elements.feedback.value;
+    const responseKey = `$survey_response_${survey.questions[0].id}`; // $survey_response_7ce5b831-dc71-4648-b6b0-b583d48a0c11
+    posthog.capture("survey sent", {
+      $survey_id: survey.id,
+      [responseKey]: feedback
+    })
+  }
+
+  return (
+    <div>
+      {survey && (
+        <>
+          <h1>{survey.questions[0].question}</h1>
+          <form onSubmit={handleFeedbackSubmit}>
+            <textarea
+              id="feedbackInput"
+              name="feedback"
+              placeholder={survey.appearance.placeholder}
+              required
+            ></textarea>
+            <button type="submit">Submit Feedback</button>
+          </form>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+> **Tip:** To keep track of surveys shown, dismissed, or responded to, store values in a cookie or local storage like this:
+> ```js-web
+> //... other code
+> posthog.capture("survey sent", {
+>   $survey_id: survey.id,
+>   $survey_response_7ce5b831-dc71-4648-b6b0-b583d48a0c11: feedback
+> })
+> localStorage.setItem(`hasInteractedWithSurvey_${survey.id}`, 'true');
+> ```
+
+## Capture survey responses
+
+The main event you must capture to track survey results is `survey sent`. PostHog supports two formats for survey responses, but we strongly recommend using ID-based responses as they are more reliable and resistant to changes in question ordering:
+
+```js-web
+/**
+ * Example survey response:
+ *
+ * [{
+ *   "id": "your_survey_id",
+ *   ...otherFields,
+ *   "questions": [
+ *     {
+ *       ...otherQuestionFields,
+ *       "question": "Are you enjoying PostHog?",
+ *       "id": "7ce5b831-dc71-4648-b6b0-b583d48a0c11" // Each question has a UUID
+ *     },
+ *     {
+ *       ...otherQuestionFields,
+ *       "question": "What is your favorite color?",
+ *       "id": "cbeee176-54e0-4757-befd-f4e8fb33b9a9"
+ *     }
+ *   ],
+ * }]
+ */
+
+const responses = survey.questions.map((question) => {
+  const responseKey = `$survey_response_${question.id}`;
+  return {
+    [responseKey]: questionResponse // this is the response you're tracking in your survey implementation
+  }
+})
+
+posthog.capture("survey sent", {
+    $survey_id: survey.id, // required
+    ...responses
+})
+```
+
+For backward compatibility, PostHog also supports index-based responses, but these are more fragile as they depend on question order:
+
+```js-web
+posthog.capture("survey sent", {
+    $survey_id: survey.id,
+    $survey_response: questionResponseForFirstQuestion, // Index-based (legacy, position 0)
+    $survey_response_1: questionResponseForSecondQuestion // Index-based (legacy, position 1)
+})
+```
+
+### Response formats
+
+Survey responses expect text, so you should convert numbers to text e.g. `8` should be converted to `"8"`.
+
+For multiple choice surveys, the response must be an array of values with the selected choices e.g., `$survey_response_multiple_choice_1: ["response_1", "response_2"]`.
+
+### Capturing multiple responses
+
+For surveys with multiple questions, use ID-based properties to ensure your responses remain valid even if questions are reordered:
+
+```js-web
+/**
+ * Example survey response:
+ *
+ * [{
+ *   "id": "your_survey_id",
+ *   ...otherFields,
+ *   "questions": [
+ *     {
+ *       ...otherQuestionFields,
+ *       "question": "What can we do to improve our product?",
+ *       "type": "open_text",
+ *       "id": "cbeee176-54e0-4757-befd-f4e8fb33b9a9"
+ *     },
+ *     {
+ *       ...otherQuestionFields,
+ *       "question": "How can we improve our Surveys product?",
+ *       "type": "rating",
+ *       scale: 10,
+ *       "id": "7ce5b831-dc71-4648-b6b0-b583d48a0c11" // Each question has a UUID
+ *     },
+ *     {
+ *       ...otherQuestionFields,
+ *       "question": "What should we build next?",
+ *       "type": "multiple_choice",
+ *       "choices": ["Better analysis tools", "Better documentation and more examples", "More templates"],
+ *       "id": "cbeee176-54e0-4757-befd-f4e8fb33b9a9"
+ *     }
+ *   ],
+ * }]
+ */
+
+const responses = survey.questions.map((question) => {
+  const responseKey = `$survey_response_${question.id}`;
+
+  if (question.type === 'multiple_choice') {
+    return {
+      [responseKey]: ["Better analysis tools", "More templates"] // this is the response you're tracking in your survey implementation
+    }
+  }
+
+  return {
+    [responseKey]: questionResponse // this is the response you're tracking in your survey implementation
+  }
+})
+
+posthog.capture("survey sent", {
+    $survey_id: survey.id, // required
+    ...responses
+})
+```
+
+While index-based responses are still supported, we recommend using ID-based responses for all new implementations:
+
+```js-web
+// Legacy format (not recommended for new implementations)
+posthog.capture("survey sent", {
+    $survey_id: survey.id,
+    $survey_response: "PostHog is a great tool",
+    $survey_response_1: 10,
+    $survey_response_2: ["More templates"]
+})
+```
+
+> **Note:** While PostHog's survey results page supports both formats, custom dashboards and insights might need updates if you switch from index-based to ID-based responses. We recommend planning this transition carefully if you have existing custom analytics based on survey responses.
+
+## Capture survey lifecycle events
+
+There are two other events you should capture to track the full lifecycle of a survey. They are `survey shown` and `survey dismissed`:
+
+```js-web
+// 1. When a user is shown a survey
+posthog.capture("survey shown", {
+    $survey_id: survey.id // required
+})
+
+// 2. When a user has dismissed a survey
+posthog.capture("survey dismissed", {
+    $survey_id: survey.id // required
+})
+```
+
+Capturing all three events ensures you have a full implementation matching popup surveys and that your analysis is accurate in PostHog.

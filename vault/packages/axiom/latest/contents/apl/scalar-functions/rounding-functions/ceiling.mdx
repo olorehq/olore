@@ -1,0 +1,130 @@
+---
+title: ceiling
+description: 'This page explains how to use the ceiling function in APL.'
+---
+
+Use the `ceiling` function to round a numeric value up to the smallest integer greater than or equal to the input. This function is useful when you need to ensure that fractional values always round up, such as when calculating resource allocations, pagination counts, or bucket sizes.
+
+Use `ceiling` when you want to convert decimal numbers to whole numbers by rounding up. For example, if you have 7.2 requests per second and need to provision whole server instances, `ceiling` ensures you allocate 8 instances rather than 7.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `ceil` or `ceiling` function to round up values. APL's `ceiling` function works the same way.
+
+<CodeGroup>
+```sql Splunk example
+| eval rounded_up = ceil(request_time)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend rounded_up = ceiling(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `CEILING` or `CEIL` function performs the same operation. APL's syntax is nearly identical.
+
+<CodeGroup>
+```sql SQL example
+SELECT CEILING(request_duration) AS rounded_up FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend rounded_up = ceiling(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+ceiling(number)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `number` | `real` | The numeric value to round up. |
+
+### Returns
+
+An integer representing the smallest whole number greater than or equal to the input value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Round request durations up to whole milliseconds for consistent bucketing.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend duration_bucket = ceiling(req_duration_ms) * 100
+| summarize request_count = count() by duration_bucket
+| order by duration_bucket asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20duration_bucket%20%3D%20ceiling(req_duration_ms)%20*%20100%20%7C%20summarize%20request_count%20%3D%20count()%20by%20duration_bucket%20%7C%20order%20by%20duration_bucket%20asc%22%7D)
+
+**Output**
+
+| duration_bucket | request_count |
+| --------------- | ------------- |
+| 100             | 1250          |
+| 200             | 3420          |
+| 300             | 2180          |
+| 400             | 890           |
+
+This query groups requests into 100ms buckets using `ceiling` to ensure all fractional durations round up to the next bucket boundary.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Calculate the minimum number of seconds to allocate for trace processing.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_seconds = ceiling(duration / 1s)
+| summarize avg_duration_seconds = avg(duration_seconds) by ['service.name']
+| order by avg_duration_seconds desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_seconds%20%3D%20ceiling(duration%20%2F%201s)%20%7C%20summarize%20avg_duration_seconds%20%3D%20avg(duration_seconds)%20by%20%5B'service.name'%5D%20%7C%20order%20by%20avg_duration_seconds%20desc%22%7D)
+
+**Output**
+
+| service.name    | avg_duration_seconds |
+| --------------- | -------------------- |
+| checkout        | 5                    |
+| product-catalog | 3                    |
+| cart            | 2                    |
+| frontend        | 1                    |
+
+This query rounds span durations up to whole seconds to estimate resource allocation per service.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [floor](/apl/scalar-functions/rounding-functions/floor): Rounds down to the largest integer less than or equal to the input. Use `ceiling` when you need to round up instead.
+- [bin](/apl/scalar-functions/rounding-functions/bin): Rounds values down to a multiple of a specified bin size. Use `ceiling` for simple upward rounding to integers.
+- [round](/apl/scalar-functions/mathematical-functions): Rounds to the nearest integer or specified precision. Use `ceiling` when you always need to round up.

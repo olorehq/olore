@@ -1,0 +1,71 @@
+---
+title: 'Cron Jobs Configuration'
+description: 'Learn how to configure heartbeat monitors with cron jobs.'
+sidebarTitle: Cron Jobs
+---
+
+## With Scheduled Jobs and Cron
+
+Monitor your existing cron jobs and scheduled tasks by adding heartbeat pings to their success paths.
+
+### Linux/Unix Cron Example
+
+```bash
+# /etc/crontab
+# Daily backup at 2 AM with heartbeat monitoring
+0 2 * * * /usr/local/bin/backup.sh
+
+# /usr/local/bin/backup.sh
+#!/bin/bash
+set -e
+
+# Run backup
+pg_dump mydb > /backups/backup-$(date +%Y%m%d).sql
+aws s3 cp /backups/backup-$(date +%Y%m%d).sql s3://my-backup-bucket/
+
+# Ping heartbeat only if backup succeeded
+curl -m 5 --retry 3 https://ping.checklyhq.com/your-backup-heartbeat-id
+```
+
+### Windows Task Scheduler Example
+
+```batch
+@echo off
+REM backup.bat
+echo Starting backup...
+
+REM Run backup commands
+pg_dump mydb > backup.sql
+aws s3 cp backup.sql s3://my-backup-bucket/
+
+REM Ping heartbeat on success
+curl -m 5 --retry 3 https://ping.checklyhq.com/your-backup-heartbeat-id
+```
+
+### Systemd Timer Example
+
+```ini
+# /etc/systemd/system/backup.service
+[Unit]
+Description=Daily Database Backup
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup.sh
+User=backup
+Group=backup
+
+# /etc/systemd/system/backup.timer
+[Unit]
+Description=Run backup daily at 2 AM
+Requires=backup.service
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+

@@ -1,0 +1,538 @@
+---
+title: 'Pulumi Best Practices'
+description: 'Best practices for managing monitoring as code with the Checkly Pulumi provider'
+sidebarTitle: 'Best Practices'
+---
+
+
+This guide covers best practices for effectively managing your Checkly monitoring infrastructure using the Pulumi provider, ensuring maintainable, secure, and scalable monitoring as code.
+
+## Resource Management
+
+### Naming Conventions
+
+<Columns cols={2}>
+<Card title="Resource Names" icon="tag">
+**Consistent Naming**
+- Use descriptive, lowercase names with hyphens
+- Include environment prefixes (dev, staging, prod)
+- Follow team-established conventions
+- Avoid generic names like "check1" or "test"
+</Card>
+
+<Card title="Tagging Strategy" icon="bookmark">
+**Organized Tagging**
+- Use consistent tag patterns across resources
+- Include environment, team, and purpose tags
+- Enable easy filtering and reporting
+- Document your tagging strategy
+</Card>
+</Columns>
+
+**Good Examples:**
+```javascript
+// Good naming examples
+new checkly.Check('prod-api-health-check', {
+  name: 'Production API Health Check',
+  tags: ['prod', 'api', 'health', 'team-backend'],
+})
+
+new checkly.Check('staging-login-flow-check', {
+  name: 'Staging Login Flow Check',
+  tags: ['staging', 'browser', 'auth', 'team-frontend'],
+})
+```
+
+**Avoid:**
+```javascript
+// Avoid these naming patterns
+new checkly.Check('check1', { name: 'Test' })
+new checkly.Check('my_check', { name: 'My Check' })
+```
+
+### Resource Organization
+
+<Tip>
+Organize your Pulumi code into logical modules and use check groups to maintain clear relationships between related resources.
+</Tip>
+
+```javascript
+// Organize by service/domain
+const apiChecks = require('./checks/api')
+const browserChecks = require('./checks/browser')
+const alertChannels = require('./alerts')
+
+// Create service-specific groups
+const apiGroup = new checkly.CheckGroup('api-monitoring', {
+  name: 'API Monitoring',
+  tags: ['api', 'monitoring'],
+})
+
+// Add related checks to groups
+apiChecks.forEach(check => {
+  new checkly.Check(check.name, {
+    ...check,
+    groupId: apiGroup.id,
+  })
+})
+```
+
+## Security Best Practices
+
+### Secret Management
+
+<Warning>
+Never commit API keys, passwords, or other sensitive information directly in your Pulumi code or version control.
+</Warning>
+
+**Use Environment Variables:**
+```javascript
+// Good: Use environment variables
+new checkly.Check('authenticated-api', {
+  request: {
+    headers: {
+      'Authorization': `Bearer ${process.env.API_TOKEN}`,
+    },
+  },
+})
+```
+
+**Use Pulumi Configuration:**
+```bash
+# Set secrets in Pulumi config
+pulumi config set checkly:apiKey your_api_key --secret
+pulumi config set checkly:accountId your_account_id
+```
+
+**Access in Code:**
+```javascript
+const config = new pulumi.Config()
+const apiKey = config.requireSecret('checkly:apiKey')
+const accountId = config.require('checkly:accountId')
+```
+
+### Access Control
+
+<Columns cols={2}>
+<Card title="API Key Security" icon="key">
+**Secure API Keys**
+- Use dedicated API keys for Pulumi
+- Rotate keys regularly
+- Limit key permissions when possible
+- Monitor key usage
+</Card>
+
+<Card title="Team Access" icon="users">
+**Team Permissions**
+- Use Pulumi organizations for team collaboration
+- Implement role-based access control
+- Review access permissions regularly
+- Use separate stacks for different environments
+</Card>
+</Columns>
+
+## Environment Management
+
+### Stack Strategy
+
+<Callout type="info" emoji="🏗️">
+Use separate Pulumi stacks for different environments to maintain isolation and enable environment-specific configurations.
+</Callout>
+
+```bash
+# Create environment-specific stacks
+pulumi stack init dev
+pulumi stack init staging
+pulumi stack init prod
+```
+
+**Environment-Specific Configuration:**
+```javascript
+const config = new pulumi.Config()
+const environment = config.require('environment')
+
+const envConfig = {
+  dev: {
+    frequency: 30,
+    locations: ['eu-west-1'],
+    alertChannels: ['dev-alerts'],
+  },
+  staging: {
+    frequency: 15,
+    locations: ['eu-west-1', 'us-west-2'],
+    alertChannels: ['staging-alerts'],
+  },
+  prod: {
+    frequency: 5,
+    locations: ['eu-west-1', 'us-west-2', 'ap-southeast-1'],
+    alertChannels: ['prod-alerts', 'pager-duty'],
+  },
+}
+
+const currentConfig = envConfig[environment]
+```
+
+### Configuration Management
+
+<Tip>
+Use Pulumi's configuration system to manage environment-specific settings and avoid hardcoding values.
+</Tip>
+
+```bash
+# Set environment-specific configs
+pulumi config set environment dev --stack dev
+pulumi config set environment staging --stack staging
+pulumi config set environment prod --stack prod
+
+# Set environment-specific URLs
+pulumi config set apiUrl https://dev-api.example.com --stack dev
+pulumi config set apiUrl https://staging-api.example.com --stack staging
+pulumi config set apiUrl https://api.example.com --stack prod
+```
+
+## Monitoring Strategy
+
+### Check Frequency Optimization
+
+<Columns cols={2}>
+<Card title="Critical Services" icon="alert-triangle">
+**High Frequency**
+- 1-5 minute intervals for critical APIs
+- Multiple locations for redundancy
+- Immediate alerting on failures
+- Comprehensive assertions
+</Card>
+
+<Card title="Non-Critical Services" icon="info">
+**Lower Frequency**
+- 10-30 minute intervals for non-critical services
+- Single location monitoring
+- Delayed alerting
+- Basic health checks
+</Card>
+</Columns>
+
+### Location Strategy
+
+```javascript
+// Critical service - multiple locations
+new checkly.Check('critical-payment-api', {
+  frequency: 1,
+  locations: ['eu-west-1', 'us-west-2', 'ap-southeast-1'],
+  tags: ['critical', 'payment'],
+})
+
+// Non-critical service - single location
+new checkly.Check('admin-dashboard', {
+  frequency: 30,
+  locations: ['eu-west-1'],
+  tags: ['admin', 'non-critical'],
+})
+```
+
+### Assertion Best Practices
+
+**Comprehensive API Checks:**
+```javascript
+new checkly.Check('comprehensive-api-check', {
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/health',
+    assertions: [
+      // Status code check
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+      // Response time check
+      {
+        source: 'RESPONSE_TIME',
+        comparison: 'LESS_THAN',
+        target: '1000',
+      },
+      // JSON body validation
+      {
+        source: 'JSON_BODY',
+        property: '$.status',
+        comparison: 'EQUALS',
+        target: 'healthy',
+      },
+      // Header validation
+      {
+        source: 'HEADERS',
+        property: 'content-type',
+        comparison: 'CONTAINS',
+        target: 'application/json',
+      },
+    ],
+  },
+})
+```
+
+## Code Organization
+
+### Modular Structure
+
+<Tip>
+Organize your Pulumi code into logical modules to improve maintainability and reusability.
+</Tip>
+
+**Recommended Project Structure:**
+```
+my-checkly-monitoring/
+├── index.js                 # Main entry point
+├── checks/
+│   ├── api.js              # API check definitions
+│   ├── browser.js          # Browser check definitions
+│   └── groups.js           # Check group definitions
+├── alerts/
+│   └── channels.js         # Alert channel definitions
+├── config/
+│   └── environments.js     # Environment configurations
+└── utils/
+    └── helpers.js          # Helper functions
+```
+
+**Module Example:**
+```javascript
+// checks/api.js
+const checkly = require('@checkly/pulumi')
+
+function createApiChecks(environment) {
+  return [
+    {
+      name: 'health-check',
+      url: `https://${environment}-api.example.com/health`,
+      frequency: environment === 'prod' ? 5 : 30,
+    },
+    {
+      name: 'metrics-check',
+      url: `https://${environment}-api.example.com/metrics`,
+      frequency: environment === 'prod' ? 10 : 60,
+    },
+  ]
+}
+
+module.exports = { createApiChecks }
+```
+
+### Reusable Functions
+
+```javascript
+// utils/helpers.js
+function createStandardApiCheck(name, url, options = {}) {
+  return {
+    name,
+    activated: true,
+    frequency: options.frequency || 10,
+    type: 'API',
+    locations: options.locations || ['eu-west-1'],
+    tags: options.tags || [],
+    request: {
+      method: 'GET',
+      url,
+      assertions: [
+        {
+          source: 'STATUS_CODE',
+          comparison: 'EQUALS',
+          target: '200',
+        },
+        ...(options.assertions || []),
+      ],
+    },
+    useGlobalAlertSettings: true,
+  }
+}
+
+module.exports = { createStandardApiCheck }
+```
+
+## CI/CD Integration
+
+### Automated Deployments
+
+<Columns cols={2}>
+<Card title="GitHub Actions" icon="github">
+**GitHub Workflow**
+- Deploy on push to main branch
+- Preview changes on pull requests
+- Use Pulumi GitHub Actions
+- Secure secret management
+</Card>
+
+<Card title="Other CI/CD" icon="git-merge">
+**Other Platforms**
+- GitLab CI/CD integration
+- Jenkins pipeline support
+- Azure DevOps integration
+- CircleCI configuration
+</Card>
+</Columns>
+
+**GitHub Actions Example:**
+```yaml
+name: Deploy Monitoring Infrastructure
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Deploy to Production
+        run: pulumi up --yes --stack prod
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+```
+
+## Testing and Validation
+
+### Preview Changes
+
+<Tip>
+Always use `pulumi preview` before deploying to understand what changes will be made to your infrastructure.
+</Tip>
+
+```bash
+# Preview changes before deployment
+pulumi preview --stack prod
+
+# Preview specific changes
+pulumi preview --stack prod --show-replacement-steps
+```
+
+### Validation Strategies
+
+<AccordionGroup>
+<Accordion title="Configuration Validation">
+- Validate environment variables are set
+- Check API key permissions
+- Verify account ID format
+- Test connectivity to Checkly API
+</Accordion>
+
+<Accordion title="Resource Validation">
+- Verify check configurations
+- Test alert channel connectivity
+- Validate check group assignments
+- Confirm location availability
+</Accordion>
+
+<Accordion title="Deployment Validation">
+- Monitor initial check runs
+- Verify alert channel notifications
+- Check resource relationships
+- Validate performance metrics
+</Accordion>
+</AccordionGroup>
+
+## Performance Considerations
+
+### Resource Limits
+
+<Warning>
+Be mindful of Checkly's resource limits and pricing when creating large numbers of checks or high-frequency monitoring.
+</Warning>
+
+**Optimization Strategies:**
+- Use appropriate check frequencies
+- Group related checks to reduce overhead
+- Monitor resource usage and costs
+- Implement check deactivation for non-critical services
+
+### Scalability
+
+```javascript
+// Use loops for similar checks
+const endpoints = [
+  '/health',
+  '/metrics',
+  '/status',
+  '/ready',
+]
+
+endpoints.forEach(endpoint => {
+  new checkly.Check(`api-${endpoint.replace('/', '')}`, {
+    name: `API ${endpoint} Check`,
+    request: {
+      method: 'GET',
+      url: `https://api.example.com${endpoint}`,
+    },
+    // ... other configuration
+  })
+})
+```
+
+## Maintenance and Updates
+
+### Regular Reviews
+
+<Callout type="info" emoji="📅">
+Schedule regular reviews of your monitoring infrastructure to ensure it remains effective and up-to-date.
+</Callout>
+
+**Review Checklist:**
+- [ ] Check for unused or obsolete resources
+- [ ] Review and update check frequencies
+- [ ] Validate alert channel configurations
+- [ ] Update check assertions and thresholds
+- [ ] Review performance and cost metrics
+- [ ] Update documentation and runbooks
+
+### Documentation
+
+<Tip>
+Maintain comprehensive documentation of your monitoring infrastructure, including runbooks, troubleshooting guides, and configuration details.
+</Tip>
+
+**Documentation Requirements:**
+- Resource naming conventions
+- Environment configurations
+- Alert escalation procedures
+- Troubleshooting guides
+- Change management procedures
+
+## Common Pitfalls to Avoid
+
+<AccordionGroup>
+<Accordion title="Resource Drift">
+**Problem**: Manual changes in Checkly UI create drift with Pulumi state
+**Solution**: Always manage resources through Pulumi or document manual changes
+</Accordion>
+
+<Accordion title="Secret Exposure">
+**Problem**: Committing secrets to version control
+**Solution**: Use environment variables and Pulumi's secret management
+</Accordion>
+
+<Accordion title="Over-Monitoring">
+**Problem**: Too many checks or too frequent monitoring
+**Solution**: Focus on critical paths and optimize check frequencies
+</Accordion>
+
+<Accordion title="Poor Naming">
+**Problem**: Unclear or inconsistent resource names
+**Solution**: Establish and follow naming conventions
+</Accordion>
+</AccordionGroup>
+
+<Warning>
+Remember that monitoring infrastructure is critical to your application's reliability. Always test changes in development environments before deploying to production.
+</Warning>

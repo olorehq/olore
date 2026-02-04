@@ -1,0 +1,787 @@
+---
+title: 'Browser Check Best Practices'
+description: 'Proven strategies, optimization techniques, and reliability patterns for implementing effective browser automation monitoring with Checkly.'
+sidebarTitle: 'Best Practices'
+---
+
+Effective browser monitoring requires thoughtful test design, reliable selectors, and robust error handling. These best practices ensure your browser checks are maintainable, reliable, and provide actionable insights about user experience.
+
+## Test Design Principles
+
+### 1. Focus on Critical User Journeys
+Prioritize the most important user workflows that directly impact business value:
+
+```typescript
+// High-priority user journeys
+const criticalJourneys = {
+  tier1: [
+    'User login/authentication',
+    'Purchase/checkout flow', 
+    'Account registration',
+    'Password reset'
+  ],
+  tier2: [
+    'Search and filtering',
+    'Profile management',
+    'Settings configuration',
+    'Content creation'
+  ],
+  tier3: [
+    'Help and support access',
+    'Advanced feature usage',
+    'Integration setup',
+    'Report generation'
+  ]
+}
+
+// Example: Critical login workflow
+test('User authentication flow - Critical Path', async ({ page }) => {
+  await page.goto('https://app.example.com/login')
+  
+  // Use realistic credentials
+  await page.fill('[data-testid="email"]', process.env.TEST_USER_EMAIL)
+  await page.fill('[data-testid="password"]', process.env.TEST_USER_PASSWORD)
+  await page.click('[data-testid="login-button"]')
+  
+  // Verify successful authentication
+  await expect(page.locator('[data-testid="user-dashboard"]')).toBeVisible()
+  await expect(page.locator('[data-testid="user-menu"]')).toContainText('Welcome')
+})
+```
+
+### 2. Design for Realistic User Behavior
+Simulate actual user interactions and decision patterns:
+
+```typescript
+// Good: Realistic user behavior
+test('E-commerce product discovery', async ({ page }) => {
+  await page.goto('https://shop.example.com')
+  
+  // User browses categories first
+  await page.hover('[data-testid="electronics-category"]')
+  await page.click('[data-testid="laptops-subcategory"]')
+  
+  // Applies filters gradually
+  await page.selectOption('[data-testid="brand-filter"]', 'apple')
+  await page.waitForSelector('[data-testid="filtered-results"]')
+  
+  // Sorts by preference
+  await page.selectOption('[data-testid="sort-by"]', 'price-low-high')
+  await page.waitForSelector('[data-testid="sorted-results"]')
+  
+  // Views product details
+  await page.click('[data-testid="product-card"]:first-child')
+  await expect(page.locator('[data-testid="product-details"]')).toBeVisible()
+  
+  // Reads reviews before deciding
+  await page.click('[data-testid="reviews-tab"]')
+  await expect(page.locator('[data-testid="customer-reviews"]')).toBeVisible()
+})
+
+// Avoid: Unrealistic direct navigation
+test('Direct product purchase - Not realistic', async ({ page }) => {
+  // Users rarely go directly to a specific product URL
+  await page.goto('https://shop.example.com/products/laptop-123')
+  await page.click('[data-testid="buy-now"]')
+})
+```
+
+### 3. Use Representative Test Data
+Ensure test data reflects real user scenarios:
+
+```typescript
+// Dynamic test data generation
+const generateTestUser = () => {
+  const timestamp = Date.now()
+  const randomId = Math.random().toString(36).substr(2, 9)
+  
+  return {
+    email: `test-${timestamp}@example.com`,
+    firstName: 'Test',
+    lastName: 'User',
+    company: 'Test Company',
+    phone: '+1-555-0123',
+    address: {
+      street: '123 Test Street',
+      city: 'Boston',
+      state: 'MA',
+      zipCode: '02101'
+    }
+  }
+}
+
+test('User registration with realistic data', async ({ page }) => {
+  const testUser = generateTestUser()
+  
+  await page.goto('https://app.example.com/register')
+  await page.fill('[name="firstName"]', testUser.firstName)
+  await page.fill('[name="lastName"]', testUser.lastName)
+  await page.fill('[name="email"]', testUser.email)
+  await page.fill('[name="company"]', testUser.company)
+  
+  // Use realistic password patterns
+  await page.fill('[name="password"]', 'SecureTest123!')
+  await page.fill('[name="confirmPassword"]', 'SecureTest123!')
+  
+  await page.click('[type="submit"]')
+})
+```
+
+## Selector Strategy and Element Interaction
+
+### 1. Implement a Selector Hierarchy
+Use stable, maintainable selectors in order of preference:
+
+```typescript
+// Selector preference hierarchy
+const selectorStrategy = {
+  // 1. Test IDs (most stable)
+  testId: '[data-testid="submit-button"]',
+  
+  // 2. Text content (semantic and readable)
+  text: 'text=Submit Order',
+  
+  // 3. Role-based selectors (accessible)
+  role: 'role=button[name="Submit"]',
+  
+  // 4. Specific CSS selectors
+  css: 'button.submit-btn[type="submit"]',
+  
+  // 5. XPath (last resort)
+  xpath: '//button[@class="submit-btn" and @type="submit"]'
+}
+
+// Good selector practices
+test('Login with stable selectors', async ({ page }) => {
+  await page.goto('https://app.example.com/login')
+  
+  // Preferred: Test IDs
+  await page.fill('[data-testid="email-input"]', 'user@example.com')
+  await page.fill('[data-testid="password-input"]', 'password123')
+  await page.click('[data-testid="login-button"]')
+  
+  // Alternative: Text content
+  await page.click('text=Sign In')
+  
+  // Alternative: Role-based
+  await page.click('role=button[name="Login"]')
+})
+
+// Avoid: Brittle selectors
+test('Fragile selectors to avoid', async ({ page }) => {
+  // Avoid: Position-dependent selectors
+  await page.click('button:nth-child(3)')
+  
+  // Avoid: Generic class names
+  await page.click('.btn')
+  
+  // Avoid: Complex hierarchical selectors
+  await page.click('div > div > div > button')
+  
+  // Avoid: Absolute XPath
+  await page.click('/html/body/div[1]/div[2]/form/button')
+})
+```
+
+### 2. Implement Robust Wait Strategies
+Use appropriate waiting mechanisms for different scenarios:
+
+```typescript
+// Comprehensive wait strategies
+test('Robust waiting patterns', async ({ page }) => {
+  await page.goto('https://app.example.com')
+  
+  // Wait for specific elements
+  await page.waitForSelector('[data-testid="page-loaded"]')
+  
+  // Wait for network state
+  await page.waitForLoadState('networkidle')
+  
+  // Wait for URL changes
+  await page.click('[data-testid="navigate-dashboard"]')
+  await page.waitForURL('**/dashboard')
+  
+  // Wait for element state changes
+  await page.waitForSelector('[data-testid="submit-button"]:not([disabled])')
+  
+  // Wait for custom conditions
+  await page.waitForFunction(() => window.dataLoaded === true)
+  
+  // Wait for API responses
+  await page.waitForResponse(response => 
+    response.url().includes('/api/user') && response.status() === 200
+  )
+  
+  // Conditional waiting with timeouts
+  try {
+    await page.waitForSelector('[data-testid="optional-modal"]', { timeout: 5000 })
+    await page.click('[data-testid="modal-close"]')
+  } catch (error) {
+    // Continue if modal doesn't appear
+    console.log('Optional modal not present')
+  }
+})
+```
+
+### 3. Handle Dynamic Content Effectively
+Deal with dynamic and asynchronous content:
+
+```typescript
+// Dynamic content handling
+test('Handle dynamic and async content', async ({ page }) => {
+  await page.goto('https://app.example.com/dashboard')
+  
+  // Wait for data loading
+  await page.waitForSelector('[data-testid="loading-spinner"]', { state: 'hidden' })
+  
+  // Handle infinite scroll
+  const loadMoreContent = async () => {
+    let previousCount = 0
+    let currentCount = await page.locator('[data-testid="content-item"]').count()
+    
+    while (currentCount > previousCount) {
+      previousCount = currentCount
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+      await page.waitForTimeout(1000) // Allow content to load
+      currentCount = await page.locator('[data-testid="content-item"]').count()
+    }
+  }
+  
+  await loadMoreContent()
+  
+  // Handle real-time updates
+  const initialCount = await page.locator('[data-testid="notification"]').count()
+  
+  // Trigger action that generates notifications
+  await page.click('[data-testid="send-message"]')
+  
+  // Wait for new notification
+  await page.waitForFunction(
+    (expectedCount) => document.querySelectorAll('[data-testid="notification"]').length > expectedCount,
+    initialCount
+  )
+  
+  // Handle form field dependencies
+  await page.selectOption('[data-testid="country-select"]', 'US')
+  await page.waitForSelector('[data-testid="state-select"]:not([disabled])')
+  await page.selectOption('[data-testid="state-select"]', 'CA')
+})
+```
+
+## Performance and Reliability Optimization
+
+### 1. Optimize Test Execution Speed
+Implement techniques to improve test performance:
+
+```typescript
+// Performance optimization techniques
+test('Optimized test execution', async ({ page }) => {
+  // Block unnecessary resources
+  await page.route('**/*.{png,jpg,jpeg,gif,svg,woff,woff2}', route => route.abort())
+  await page.route('**/analytics/**', route => route.abort())
+  await page.route('**/tracking/**', route => route.abort())
+  
+  // Parallel navigation and actions
+  await Promise.all([
+    page.goto('https://app.example.com'),
+    page.waitForSelector('[data-testid="main-content"]')
+  ])
+  
+  // Batch similar operations
+  await Promise.all([
+    page.fill('[data-testid="first-name"]', 'John'),
+    page.fill('[data-testid="last-name"]', 'Doe'),
+    page.fill('[data-testid="email"]', 'john@example.com')
+  ])
+  
+  // Use efficient selectors
+  const fastLocator = page.locator('[data-testid="specific-element"]')
+  const slowLocator = page.locator('div').filter({ hasText: 'Some text' }).locator('button')
+  
+  // Prefer direct element interactions
+  await fastLocator.click()
+})
+
+// Resource management
+test.beforeEach(async ({ page }) => {
+  // Configure performance settings
+  await page.setExtraHTTPHeaders({
+    'User-Agent': 'Checkly-Monitor/1.0'
+  })
+  
+  // Set reasonable timeouts
+  page.setDefaultTimeout(30000)
+  page.setDefaultNavigationTimeout(30000)
+})
+```
+
+### 2. Implement Error Recovery Patterns
+Design tests that gracefully handle failures:
+
+```typescript
+// Error recovery and resilience
+test('Resilient test patterns', async ({ page }) => {
+  const maxRetries = 3
+  let attempt = 0
+  
+  // Retry wrapper for flaky operations
+  const retryOperation = async (operation, description) => {
+    for (attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await operation()
+        console.log(`${description} succeeded on attempt ${attempt}`)
+        return
+      } catch (error) {
+        console.log(`${description} failed on attempt ${attempt}: ${error.message}`)
+        if (attempt === maxRetries) throw error
+        await page.waitForTimeout(1000 * attempt) // Exponential backoff
+      }
+    }
+  }
+  
+  // Handle intermittent network issues
+  await retryOperation(async () => {
+    await page.goto('https://app.example.com', { waitUntil: 'networkidle' })
+  }, 'Page navigation')
+  
+  // Graceful degradation for optional features
+  try {
+    await page.click('[data-testid="promotional-banner-close"]', { timeout: 3000 })
+  } catch {
+    // Banner might not be present, continue test
+  }
+  
+  // Handle authentication state
+  const isLoggedIn = await page.locator('[data-testid="user-menu"]').isVisible()
+  if (!isLoggedIn) {
+    await page.click('[data-testid="login-link"]')
+    await page.fill('[data-testid="email"]', process.env.TEST_USER_EMAIL)
+    await page.fill('[data-testid="password"]', process.env.TEST_USER_PASSWORD)
+    await page.click('[data-testid="login-button"]')
+  }
+  
+  // Conditional workflows
+  const hasNotifications = await page.locator('[data-testid="notification-badge"]').isVisible()
+  if (hasNotifications) {
+    await page.click('[data-testid="notification-bell"]')
+    await page.click('[data-testid="mark-all-read"]')
+  }
+})
+```
+
+### 3. Mobile and Cross-Browser Optimization
+Ensure tests work across different devices and browsers:
+
+```typescript
+// Mobile-optimized testing
+test('Mobile-responsive workflow', async ({ page }) => {
+  // Set mobile viewport
+  await page.setViewportSize({ width: 375, height: 812 })
+  
+  await page.goto('https://app.example.com')
+  
+  // Mobile-specific interactions
+  await page.click('[data-testid="mobile-menu-toggle"]')
+  await expect(page.locator('[data-testid="mobile-nav"]')).toBeVisible()
+  
+  // Touch gestures simulation
+  const productCarousel = page.locator('[data-testid="product-carousel"]')
+  await productCarousel.hover()
+  
+  // Swipe gesture
+  const box = await productCarousel.boundingBox()
+  await page.mouse.move(box.x + box.width * 0.75, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2)
+  await page.mouse.up()
+  
+  // Mobile form interactions
+  await page.fill('[data-testid="search-input"]', 'test query')
+  await page.keyboard.press('Enter') // Mobile keyboard
+  
+  // Verify mobile-specific elements
+  await expect(page.locator('[data-testid="mobile-footer"]')).toBeVisible()
+})
+
+// Cross-browser compatibility patterns
+const browserSpecificActions = {
+  chromium: async (page) => {
+    // Chrome-specific actions
+    await page.evaluate(() => {
+      if ('serviceWorker' in navigator) {
+        // Test service worker functionality
+      }
+    })
+  },
+  
+  webkit: async (page) => {
+    // Safari-specific considerations
+    await page.waitForTimeout(500) // Safari might be slower
+  },
+  
+  firefox: async (page) => {
+    // Firefox-specific handling
+    await page.setExtraHTTPHeaders({
+      'User-Agent': 'Mozilla/5.0 Firefox'
+    })
+  }
+}
+```
+
+## Authentication and Session Management
+
+### 1. Efficient Authentication Strategies
+Optimize authentication for test reliability and speed:
+
+```typescript
+// Reusable authentication state
+test.describe('Authenticated workflows', () => {
+  let authState
+  
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage()
+    
+    // Perform login once
+    await page.goto('https://app.example.com/login')
+    await page.fill('[data-testid="email"]', process.env.TEST_USER_EMAIL)
+    await page.fill('[data-testid="password"]', process.env.TEST_USER_PASSWORD)
+    await page.click('[data-testid="login-button"]')
+    
+    // Wait for authentication to complete
+    await page.waitForSelector('[data-testid="user-dashboard"]')
+    
+    // Save authentication state
+    authState = await page.context().storageState()
+    await page.close()
+  })
+  
+  test.beforeEach(async ({ page }) => {
+    // Reuse authentication state
+    await page.context().addInitScript(() => {
+      // Set authentication tokens if needed
+      localStorage.setItem('auth_token', 'test-token')
+    })
+  })
+  
+  test('User profile management', async ({ page }) => {
+    // User is already authenticated
+    await page.goto('https://app.example.com/profile')
+    await expect(page.locator('[data-testid="profile-form"]')).toBeVisible()
+  })
+})
+
+// Multi-factor authentication handling
+test('MFA authentication flow', async ({ page }) => {
+  await page.goto('https://app.example.com/login')
+  await page.fill('[data-testid="email"]', process.env.MFA_USER_EMAIL)
+  await page.fill('[data-testid="password"]', process.env.MFA_USER_PASSWORD)
+  await page.click('[data-testid="login-button"]')
+  
+  // Handle MFA prompt
+  await expect(page.locator('[data-testid="mfa-prompt"]')).toBeVisible()
+  
+  // In test environment, use predetermined MFA code
+  await page.fill('[data-testid="mfa-code"]', process.env.TEST_MFA_CODE)
+  await page.click('[data-testid="verify-mfa"]')
+  
+  // Verify successful authentication
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible()
+})
+```
+
+### 2. Session and State Management
+Handle user sessions and application state effectively:
+
+```typescript
+// Session state management
+test('Session persistence and recovery', async ({ page, context }) => {
+  // Set up initial session state
+  await context.addInitScript(() => {
+    // Simulate existing user session
+    localStorage.setItem('user_preferences', JSON.stringify({
+      theme: 'dark',
+      language: 'en',
+      notifications: true
+    }))
+    
+    sessionStorage.setItem('cart_items', JSON.stringify([
+      { id: 1, name: 'Product A', quantity: 2 }
+    ]))
+  })
+  
+  await page.goto('https://app.example.com')
+  
+  // Verify session state is applied
+  await expect(page.locator('[data-testid="dark-theme"]')).toBeVisible()
+  await expect(page.locator('[data-testid="cart-count"]')).toContainText('2')
+  
+  // Test session timeout handling
+  await context.addInitScript(() => {
+    // Simulate expired session
+    localStorage.removeItem('auth_token')
+  })
+  
+  // Navigate to protected page
+  await page.goto('https://app.example.com/protected')
+  
+  // Should redirect to login
+  await expect(page).toHaveURL(/.*login/)
+})
+```
+
+## Visual Testing and Validation
+
+### 1. Visual Regression Testing
+Implement visual validation for UI consistency:
+
+```typescript
+// Visual regression testing
+test('Visual consistency validation', async ({ page }) => {
+  await page.goto('https://app.example.com')
+  
+  // Full page screenshot
+  await expect(page).toHaveScreenshot('homepage-full.png', {
+    fullPage: true,
+    threshold: 0.2 // Allow 20% difference
+  })
+  
+  // Component-specific screenshots
+  await expect(page.locator('[data-testid="header"]')).toHaveScreenshot('header.png')
+  await expect(page.locator('[data-testid="footer"]')).toHaveScreenshot('footer.png')
+  
+  // Mobile visual testing
+  await page.setViewportSize({ width: 375, height: 812 })
+  await expect(page).toHaveScreenshot('homepage-mobile.png')
+  
+  // Dark mode visual testing
+  await page.click('[data-testid="theme-toggle"]')
+  await expect(page).toHaveScreenshot('homepage-dark.png')
+})
+
+// Visual element validation
+test('UI element visual validation', async ({ page }) => {
+  await page.goto('https://app.example.com/dashboard')
+  
+  // Verify specific visual elements
+  const chartElement = page.locator('[data-testid="analytics-chart"]')
+  await expect(chartElement).toBeVisible()
+  
+  // Color and style validation
+  const styles = await chartElement.evaluate((el) => {
+    const computed = window.getComputedStyle(el)
+    return {
+      backgroundColor: computed.backgroundColor,
+      borderColor: computed.borderColor,
+      fontSize: computed.fontSize
+    }
+  })
+  
+  expect(styles.backgroundColor).toBe('rgb(255, 255, 255)')
+  expect(styles.fontSize).toBe('14px')
+})
+```
+
+### 2. Performance Monitoring Integration
+Monitor Core Web Vitals and performance metrics:
+
+```typescript
+// Performance monitoring in browser checks
+test('Performance metrics validation', async ({ page }) => {
+  // Start performance monitoring
+  await page.goto('https://app.example.com', { waitUntil: 'networkidle' })
+  
+  // Collect Core Web Vitals
+  const vitals = await page.evaluate(() => {
+    return new Promise((resolve) => {
+      const vitals = {}
+      
+      // Largest Contentful Paint
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries()
+        vitals.lcp = entries[entries.length - 1].startTime
+      }).observe({ entryTypes: ['largest-contentful-paint'] })
+      
+      // First Input Delay
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries()
+        vitals.fid = entries[0].processingStart - entries[0].startTime
+      }).observe({ entryTypes: ['first-input'] })
+      
+      // Cumulative Layout Shift
+      let clsValue = 0
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) {
+            clsValue += entry.value
+          }
+        }
+        vitals.cls = clsValue
+      }).observe({ entryTypes: ['layout-shift'] })
+      
+      setTimeout(() => resolve(vitals), 5000)
+    })
+  })
+  
+  // Assert performance thresholds
+  expect(vitals.lcp).toBeLessThan(2500) // LCP < 2.5s
+  expect(vitals.fid).toBeLessThan(100)  // FID < 100ms
+  expect(vitals.cls).toBeLessThan(0.1)  // CLS < 0.1
+  
+  // Custom performance metrics
+  const navigationTiming = await page.evaluate(() => {
+    const timing = performance.getEntriesByType('navigation')[0]
+    return {
+      domContentLoaded: timing.domContentLoadedEventEnd - timing.domContentLoadedEventStart,
+      loadComplete: timing.loadEventEnd - timing.loadEventStart,
+      timeToInteractive: timing.domInteractive - timing.navigationStart
+    }
+  })
+  
+  expect(navigationTiming.domContentLoaded).toBeLessThan(1000)
+  expect(navigationTiming.timeToInteractive).toBeLessThan(3000)
+})
+```
+
+## Maintenance and Optimization
+
+### 1. Test Organization and Structure
+Maintain clean, organized test suites:
+
+```typescript
+// Organized test structure
+test.describe('E-commerce Platform', () => {
+  test.describe('User Authentication', () => {
+    test('User login with valid credentials', async ({ page }) => {
+      // Test implementation
+    })
+    
+    test('User login with invalid credentials', async ({ page }) => {
+      // Test implementation
+    })
+    
+    test('Password reset workflow', async ({ page }) => {
+      // Test implementation
+    })
+  })
+  
+  test.describe('Shopping Cart', () => {
+    test.beforeEach(async ({ page }) => {
+      // Common setup for cart tests
+      await authenticateUser(page)
+      await addProductToCart(page)
+    })
+    
+    test('Add product to cart', async ({ page }) => {
+      // Test implementation
+    })
+    
+    test('Remove product from cart', async ({ page }) => {
+      // Test implementation
+    })
+  })
+})
+
+// Reusable helper functions
+const authenticateUser = async (page) => {
+  await page.goto('https://app.example.com/login')
+  await page.fill('[data-testid="email"]', process.env.TEST_USER_EMAIL)
+  await page.fill('[data-testid="password"]', process.env.TEST_USER_PASSWORD)
+  await page.click('[data-testid="login-button"]')
+  await page.waitForSelector('[data-testid="user-dashboard"]')
+}
+
+const addProductToCart = async (page) => {
+  await page.goto('https://app.example.com/products/test-product')
+  await page.click('[data-testid="add-to-cart"]')
+  await page.waitForSelector('[data-testid="cart-notification"]')
+}
+```
+
+### 2. Environment and Configuration Management
+Handle different environments and configurations:
+
+```typescript
+// Environment-specific configuration
+const config = {
+  development: {
+    baseUrl: 'https://dev.example.com',
+    timeout: 60000,
+    retries: 3
+  },
+  staging: {
+    baseUrl: 'https://staging.example.com',
+    timeout: 30000,
+    retries: 2
+  },
+  production: {
+    baseUrl: 'https://app.example.com',
+    timeout: 15000,
+    retries: 1
+  }
+}
+
+const env = process.env.NODE_ENV || 'production'
+const currentConfig = config[env]
+
+test.use({
+  baseURL: currentConfig.baseUrl,
+  timeout: currentConfig.timeout
+})
+
+// Feature flag handling
+test('Feature flag dependent functionality', async ({ page }) => {
+  await page.goto('/')
+  
+  // Check if feature is enabled
+  const featureEnabled = await page.evaluate(() => {
+    return window.featureFlags?.newDashboard === true
+  })
+  
+  if (featureEnabled) {
+    await expect(page.locator('[data-testid="new-dashboard"]')).toBeVisible()
+  } else {
+    await expect(page.locator('[data-testid="legacy-dashboard"]')).toBeVisible()
+  }
+})
+```
+
+### 3. Monitoring and Alerting Strategy
+Configure effective monitoring for browser checks:
+
+```yaml
+# Browser check monitoring strategy
+Critical User Journeys:
+  frequency: Every 2 minutes
+  locations: [us-east-1, eu-west-1, ap-southeast-1]
+  thresholds:
+    response_time: 5000ms
+    success_rate: 95%
+  alerts:
+    immediate: true
+    channels: [slack, pagerduty, email]
+
+Standard User Workflows:
+  frequency: Every 10 minutes
+  locations: [us-east-1, eu-west-1]
+  thresholds:
+    response_time: 10000ms
+    success_rate: 90%
+  alerts:
+    after_failures: 2
+    channels: [slack, email]
+
+Performance Monitoring:
+  core_web_vitals: true
+  thresholds:
+    lcp: 2500ms
+    fid: 100ms
+    cls: 0.1
+  alerts:
+    degradation: 20%
+    duration: 30 minutes
+```
+
+
+<Tip>
+Use Playwright's built-in debugging features like `page.pause()` and `--debug` mode during test development to understand and optimize your user journey tests.
+</Tip>

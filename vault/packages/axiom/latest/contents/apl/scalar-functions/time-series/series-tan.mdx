@@ -1,0 +1,160 @@
+---
+title: series_tan
+description: 'This page explains how to use the series_tan function in APL.'
+---
+
+The `series_tan` function computes the tangent of each numeric element in a dynamic array. You use it when you work with time series or other array-based datasets and want to transform values using the trigonometric tangent. For example, you can convert request durations, latency values, or span durations into their tangent values for mathematical modeling, anomaly detection, or visualization.
+
+This function is useful when you want to:
+
+- Apply trigonometric transformations to time series data.
+- Prepare data for advanced mathematical or statistical analysis.
+- Detect periodic or angular patterns in logs, traces, or security events.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t include a direct `tan` function for arrays. In SPL, you often use `eval` with `tan()` on scalar values. In APL, `series_tan` applies the tangent function element-wise to an entire array, which makes it better suited for time series or dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval tan_val=tan(duration)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend series = pack_array(req_duration_ms, req_duration_ms*2, req_duration_ms*3)
+| extend tan_series = series_tan(series)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use the `TAN()` function on scalar values, but there is no native array type or array-wide trigonometric function. In APL, `series_tan` applies `tan` to each array element, which makes it easy to work with time series data.
+
+<CodeGroup>
+```sql SQL example
+SELECT TAN(duration) AS tan_val
+FROM otel_demo_traces;
+```
+
+```kusto APL equivalent
+['otel-demo-traces']
+| extend series = pack_array(duration, duration*2, duration*3)
+| extend tan_series = series_tan(series)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_tan(array)
+```
+
+### Parameters
+
+| Parameter | Type                              | Description                                                   |
+| --------- | --------------------------------- | ------------------------------------------------------------- |
+| `array`   | dynamic (array of numeric values) | The array of numeric values to apply the tangent function to. |
+
+### Returns
+
+A dynamic array where each element is the tangent of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to analyze request durations and apply a trigonometric transformation to highlight periodic anomalies.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend tan_series = series_tan(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20tan_series%20%3D%20series_tan(durations)%22%7D)
+
+**Output**
+
+| id   | durations        | tan_series           |
+| ---- | ---------------- | --------------------- |
+| A123 | [100, 200, 300] | [1.56, -2.19, -0.14] |
+| B456 | [150, 250, 350] | [14.10, -0.75, 0.51] |
+
+This query groups request durations by user ID, transforms them into arrays, and applies the tangent function element-wise.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You want to transform span durations for mathematical modeling of system behavior.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans = make_list(duration) by ['service.name']
+| extend tan_series = series_tan(spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20tan_series%20%3D%20series_tan(spans)%22%7D)
+
+**Output**
+
+| service.name | spans                 | tan_series         |
+| ------------ | --------------------- | ------------------- |
+| frontend     | [50ms, 100ms, 150ms] | [0.05, 0.10, 0.15] |
+| cartservice  | [75ms, 125ms, 175ms] | [0.07, 0.13, 0.18] |
+
+This query collects span durations for each service, builds arrays, and applies tangent transformation for further modeling.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to detect anomalies in request durations for failed HTTP requests by applying the tangent transformation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status != '200'
+| summarize durations = make_list(req_duration_ms) by geo.country
+| extend tan_series = series_tan(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20!%3D%20'200'%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20%5B'geo.country'%5D%20%7C%20extend%20tan_series%20%3D%20series_tan(durations)%22%7D)
+
+**Output**
+
+| geo.country | durations        | tan_series          |
+| ----------- | ---------------- | -------------------- |
+| US          | [120, 220, 320] | [2.57, -1.37, 0.73] |
+| UK          | [140, 240, 340] | [9.96, -0.46, 0.28] |
+
+This query filters failed requests, groups their durations by country, and applies tangent transformation to detect anomalies.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use it to normalize negative values in arrays.
+- [series_acos](/apl/scalar-functions/time-series/series-acos): Computes the arccosine of each element in an array. Use when you want the inverse cosine.
+- [series_atan](/apl/scalar-functions/time-series/series-atan): Computes the arctangent of each element in an array. Use when you want the inverse tangent.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use it when analyzing cyclical data with a phase shift.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use it when analyzing cyclical data with a phase shift.

@@ -1,0 +1,150 @@
+---
+title: trim
+description: 'This page explains how to use the trim function in APL.'
+---
+
+## Introduction
+
+The `trim` function removes all leading and trailing characters from a string that are part of a specified cutset. A cutset is a set of characters, and `trim` removes any of them if they appear at the beginning or end of the string.
+
+Use the `trim` function when you want to normalize or clean string values by stripping unwanted characters such as quotes, spaces, slashes, or punctuation. It’s useful in log analysis, standardizing OpenTelemetry attributes, or cleaning identifiers in security logs.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `trim` function removes characters from both ends of a string, using a list of characters. APL’s `trim` works the same way: it uses a cutset of characters, not a regular expression.
+
+<CodeGroup>
+```sql Splunk example
+... | eval cleaned=trim(field, "-")
+````
+
+```kusto APL equivalent
+print s='--https://axiom.co--'
+| extend cleaned=trim("--", s)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `TRIM` removes whitespace or specified characters from both ends of a string. APL’s `trim` works similarly, but instead of supporting keywords like `BOTH`, `LEADING`, or `TRAILING`, it uses separate functions: `trim` for both ends, `ltrim` for the start, and `rtrim` for the end. Like SQL, it operates on characters, not regular expressions.
+
+<CodeGroup>
+```sql SQL example
+SELECT TRIM(BOTH '-' FROM '--hello--');
+```
+
+```kusto APL equivalent
+print s='--hello--'
+| extend cleaned=trim("--", s)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+trim(cutset, source)
+```
+
+### Parameters
+
+| Name   | Type   | Required | Description                                                                  |
+| ------ | ------ | -------- | ---------------------------------------------------------------------------- |
+| cutset | string | ✓       | The set of characters to remove from both the beginning and end of `source`. |
+| source | string | ✓       | The source string to process.                                                |
+
+### Returns
+
+A string with all leading and trailing characters removed that match any character in the cutset.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use `trim` to normalize URLs by removing leading and trailing slashes before grouping.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend clean_uri = trim("/", uri)
+| summarize count() by clean_uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20clean_uri%20%3D%20trim('%2F'%2C%20uri)%20%7C%20summarize%20count()%20by%20clean_uri%22%7D)
+
+**Output**
+
+| clean_uri       | count |
+| --------------- | ----- |
+| api/login       | 120   |
+| product/details | 85    |
+| cart/add        | 62    |
+
+This query removes leading and trailing slashes from the `uri` field so that identical paths group consistently.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In traces, you can use `trim` to standardize service names by removing surrounding underscores or dashes.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend clean_service = trim("-_", ['service.name'])
+| summarize avg(duration) by clean_service
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20clean_service%20%3D%20trim('-_'%2C%20%5B'service.name'%5D)%20%7C%20summarize%20avg(duration)%20by%20clean_service%22%7D)
+
+**Output**
+
+| clean_service   | avg_duration |
+| --------------- | ------------ |
+| frontend        | 120ms        |
+| cart      | 210ms        |
+| checkout  | 310ms        |
+
+This query ensures service names are consistent before calculating averages.
+
+</Tab>
+<Tab title="Security logs">
+
+When analyzing user IDs, you can use `trim` to remove unwanted wrapping characters, such as hashes or quotes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend clean_id = trim("#", id)
+| summarize count() by clean_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20clean_id%20%3D%20trim('%23'%2C%20id)%20%7C%20summarize%20count()%20by%20clean_id%22%7D)
+
+**Output**
+
+| clean_id | count |
+| -------- | ----- |
+| user123  | 42    |
+| user456  | 38    |
+| user789  | 55    |
+
+This query strips hashes around user IDs so they can be counted reliably.
+
+</Tab>
+</Tabs>

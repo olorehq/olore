@@ -1,0 +1,99 @@
+---
+title: 'genai_get_role'
+description: 'This page explains how to use the genai_get_role function in APL.'
+---
+
+The `genai_get_role` function retrieves the role of a message at a specific position in a GenAI messages array. This allows you to understand who sent a particular message in the conversation (user, assistant, system, tool, etc.).
+
+You can use this function to validate conversation structure, analyze message patterns, verify conversation flow, or process conversations based on role sequences.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would use `mvindex` to access the role field at a specific position.
+
+<CodeGroup>
+```sql Splunk example
+| eval message_role=mvindex(role, 2)
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend message_role = genai_get_role(messages, 2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would unnest the array and access the role at a specific offset.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  role as message_role
+FROM conversations
+CROSS JOIN UNNEST(messages) WITH OFFSET AS pos
+WHERE pos = 2
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend message_role = genai_get_role(messages, 2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_get_role(messages, index)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+| index | long | Yes | The zero-based position of the message whose role you want to retrieve. Use 0 for the first message, 1 for the second, etc. |
+
+### Returns
+
+Returns a string containing the role of the message at the specified index (such as 'user', 'assistant', 'system', 'tool', 'function'), or an empty string if the index is out of bounds.
+
+## Example
+
+Get the role of the first message in a GenAI conversation.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend first_role = genai_get_role(['attributes.gen_ai.input.messages'], 0)
+| summarize conversations_with_system = countif(first_role == 'system'), total_conversations = count()
+```
+
+**Output**
+
+| conversations_with_system | total_conversations |
+|---------------------------|---------------------|
+| 1250 | 1450 |
+
+This query verifies that most conversations are properly initialized with system prompts.
+
+## List of related functions
+
+- [genai_get_content_by_index](/apl/scalar-functions/genai-functions/genai-get-content-by-index): Gets content at a specific index. Combine with genai_get_role to understand both role and content at positions.
+- [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles): Lists all roles in the conversation. Use this to get a complete picture of all roles rather than checking individual positions.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content filtered by role. Use this when you need content from a specific role type.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the total number of messages. Use this to validate index bounds before accessing positions.
+

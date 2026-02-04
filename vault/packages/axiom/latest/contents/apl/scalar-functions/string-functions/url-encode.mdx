@@ -1,0 +1,154 @@
+---
+title: 'url_encode'
+description: 'This page explains how to use the url_encode function in APL.'
+---
+
+The `url_encode` function converts a string into a format that can be safely transmitted over the Internet by encoding special characters. Use this function to prepare strings for URLs, build query parameters, or ensure data integrity in web requests.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `urlencode`. APL's `url_encode` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval encoded=urlencode(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend encoded = url_encode(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, URL encoding varies by database. APL's `url_encode` provides standardized URL encoding.
+
+<CodeGroup>
+```sql SQL example
+SELECT URL_ENCODE(field) AS encoded FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend encoded = url_encode(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+url_encode(url)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| url | string | Yes | The input string to encode for URL transmission. |
+
+### Returns
+
+Returns the string with special characters encoded for safe URL transmission.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Encode log field values for safe inclusion in generated URLs or API calls.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend search_term = 'hello world & special chars'
+| extend encoded_search = url_encode(search_term)
+| extend api_url = strcat('/api/search?q=', encoded_search)
+| project _time, search_term, encoded_search, api_url
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20search_term%20%3D%20%27hello%20world%20%26%20special%20chars%27%20%7C%20extend%20encoded_search%20%3D%20url_encode(search_term)%20%7C%20extend%20api_url%20%3D%20strcat(%27%2Fapi%2Fsearch%3Fq%3D%27%2C%20encoded_search)%20%7C%20project%20_time%2C%20search_term%2C%20encoded_search%2C%20api_url%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | search_term | encoded_search | api_url |
+|-------|-------------|----------------|---------|
+| 2024-11-06T10:00:00Z | hello world & special chars | hello%20world%20%26%20special%20chars | /api/search?q=hello%20world%20%26%20special%20chars |
+
+This query encodes search terms for safe use in API URLs, ensuring special characters don't break the URL structure.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Encode service metadata for inclusion in trace URLs or external system integrations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_info = strcat(['service.name'], ': ', kind)
+| extend encoded_info = url_encode(service_info)
+| extend trace_url = strcat('https://tracing.example.com/trace/', trace_id, '?service=', encoded_info)
+| project _time, service_info, encoded_info, trace_url
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_info%20%3D%20strcat(%5B%27service.name%27%5D%2C%20%27%3A%20%27%2C%20kind)%20%7C%20extend%20encoded_info%20%3D%20url_encode(service_info)%20%7C%20extend%20trace_url%20%3D%20strcat(%27https%3A%2F%2Ftracing.example.com%2Ftrace%2F%27%2C%20trace_id%2C%20%27%3Fservice%3D%27%2C%20encoded_info)%20%7C%20project%20_time%2C%20service_info%2C%20encoded_info%2C%20trace_url%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service_info | encoded_info | trace_url |
+|-------|--------------|--------------|-----------|
+| 2024-11-06T10:00:00Z | frontend: server | frontend%3A%20server | https://tracing.example.com/trace/abc123?service=frontend%3A%20server |
+
+This query encodes service information for safe inclusion in trace viewing URLs, enabling proper link generation in monitoring dashboards.
+
+</Tab>
+<Tab title="Security logs">
+
+Encode alert details for safe transmission to webhook endpoints or SIEM systems.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend alert_message = strcat('Security Alert: ', method, ' to ', uri, ' from ', ['geo.country'])
+| extend encoded_alert = url_encode(alert_message)
+| extend webhook_url = strcat('https://alerts.example.com/webhook?message=', encoded_alert)
+| project _time, alert_message, encoded_alert, webhook_url
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20alert_message%20%3D%20strcat('Security%20Alert%3A%20'%2C%20method%2C%20'%20to%20'%2C%20uri%2C%20'%20from%20'%2C%20%5B'geo.country'%5D)%20%7C%20extend%20encoded_alert%20%3D%20url_encode(alert_message)%20%7C%20extend%20webhook_url%20%3D%20strcat('https%3A%2F%2Falerts.example.com%2Fwebhook%3Fmessage%3D'%2C%20encoded_alert)%20%7C%20project%20_time%2C%20alert_message%2C%20encoded_alert%2C%20webhook_url%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | alert_message | encoded_alert | webhook_url |
+|-------|---------------|---------------|-------------|
+| 2024-11-06T10:00:00Z | Security Alert: GET to /admin from United States | Security%20Alert%3A%20GET%20to%20%2Fadmin%20from%20United%20States | https://alerts.example.com/webhook?message=Security%20Alert%3A%20GET%20to%20%2Fadmin%20from%20United%20States |
+
+This query encodes security alert messages for safe transmission via webhooks, ensuring special characters in URIs or messages don't break the webhook URL.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [url_decode](/apl/scalar-functions/string-functions/url-decode): Decodes URL-encoded strings. Use this to reverse the encoding operation.
+- [format_url](/apl/scalar-functions/string-functions/format-url): Formats URLs from components. Use this for building complete URLs from parts.
+- [parse_url](/apl/scalar-functions/string-functions/parse-url): Parses URLs into components. Use this to extract parts before encoding.
+- [base64_encode_tostring](/apl/scalar-functions/string-functions/base64-encode-tostring): Encodes strings as Base64. Use this for Base64 encoding rather than URL encoding.
+

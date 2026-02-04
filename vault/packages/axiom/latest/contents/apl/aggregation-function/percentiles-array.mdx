@@ -1,0 +1,162 @@
+---
+title: percentiles_array
+description: 'This page explains how to use the percentiles_array function in APL.'
+---
+
+Use the `percentiles_array` aggregation function in APL to calculate multiple percentile values over a numeric expression in one pass. This function is useful when you want to understand the distribution of numeric data points, such as response times or durations, by summarizing them at several key percentiles like the 25th, 50th, and 95th.
+
+You can use `percentiles_array` to:
+
+- Analyze latency or duration metrics across requests or operations.
+- Identify performance outliers.
+- Visualize percentile distributions in dashboards.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you typically calculate percentiles one at a time using the `perc` function. To get multiple percentiles, you repeat the function with different percentile values. In APL, `percentiles_array` lets you specify multiple percentiles in a single function call and returns them as an array.
+
+<CodeGroup>
+```sql Splunk example
+... | stats perc95(duration), perc50(duration), perc25(duration) by service
+```
+
+```kusto APL equivalent
+['otel-demo-traces']
+| summarize percentiles_array(duration, 25, 50, 95) by ['service.name']
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL typically lacks a built-in function to calculate multiple percentiles in a single operation. Instead, you use `PERCENTILE_CONT` or `PERCENTILE_DISC` with `WITHIN GROUP`, repeated for each desired percentile. In APL, `percentiles_array` simplifies this with a single function call that returns all requested percentiles as an array.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  service,
+  PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY duration) AS p25,
+  PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY duration) AS p50,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration) AS p95
+FROM traces
+GROUP BY service
+```
+
+```kusto APL equivalent
+['otel-demo-traces']
+| summarize percentiles_array(duration, 25, 50, 95) by ['service.name']
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+percentiles_array(Field, Percentile1, Percentile2, ...)
+```
+
+### Parameters
+
+- `Field` is the name of the field for which you want to compute percentile values.
+- `Percentile1`, `Percentile2`, ... are numeric percentile values between 0 and 100.
+
+### Returns
+
+An array of numbers where each element is the value at the corresponding percentile.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `percentiles_array` to understand the spread of request durations per HTTP method, highlighting performance variability.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize percentiles_array(req_duration_ms, 25, 50, 95) by method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20percentiles_array(req_duration_ms%2C%2025%2C%2050%2C%2095)%20by%20method%22%7D)
+
+**Output**
+
+| method | P25       | P50       | P95      |
+|--------|-----------|-----------|----------|
+|   GET  | 0.3981 ms | 0.7352 ms | 1.981 ms |
+|  POST  | 0.3261 ms | 0.7162 ms | 2.341 ms |
+|   PUT  | 0.3324 ms | 0.7772 ms | 1.341 ms |
+| DELETE | 0.2332 ms | 0.4652 ms | 1.121 ms |
+
+This query calculates the 25th, 50th, and 95th percentiles of request durations for each HTTP method. It helps identify performance differences between different methods.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `percentiles_array` to analyze the distribution of span durations by service to detect potential bottlenecks.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize percentiles_array(duration, 50, 90, 99) by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20percentiles_array(duration%2C%2050%2C%2090%2C%2099)%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name          | P50      | P90       | P99       | P99       |
+|-----------------------|----------|-----------|-----------|-----------|
+| recommendationservice |  1.96 ms |  2.965 ms |  3.477 ms |  3.477 ms |
+|     frontendproxy     | 3.767 ms | 13.101 ms | 39.735 ms | 39.735 ms |
+|    shippingservice    | 2.119 ms |  3.085 ms |  9.739 ms |  9.739 ms |
+|    checkoutservice    | 1.454 ms | 12.342 ms | 29.542 ms | 29.542 ms |
+
+This query shows latency patterns across services by computing the median, 90th, and 99th percentile of span durations.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `percentiles_array` to assess outlier response times per status code, which can reveal abnormal activity or service issues.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize percentiles_array(req_duration_ms, 50, 95, 99) by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20percentiles_array(req_duration_ms%2C%2050%2C%2095%2C%2099)%20by%20status%22%7D)
+
+**Output**
+
+| status | P50       | P95      | P99      |
+|--------|-----------|----------|----------|
+|   200  | 0.7352 ms | 1.981 ms | 2.612 ms |
+|   201  | 0.7856 ms | 1.356 ms | 2.234 ms |
+|   301  | 0.8956 ms | 1.547 ms | 2.546 ms |
+|   500  | 0.6587 ms | 1.856 ms | 2.856 ms |
+
+This query helps identify whether requests resulting in errors (like 500) are significantly slower than successful ones.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [avg](/apl/aggregation-function/avg): Returns the average value. Use it when a single central tendency is sufficient.
+- [percentile](/apl/aggregation-function/percentile): Returns a single percentile value. Use it when you only need one percentile.
+- [percentile_if](/apl/aggregation-function/percentileif): Returns a single percentile value for the records that satisfy a condition.
+- [percentiles_arrayif](/apl/aggregation-function/percentiles-arrayif): Returns an array of percentile values for the records that satisfy a condition.
+- [sum](/apl/aggregation-function/sum): Returns the sum of a numeric column.

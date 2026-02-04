@@ -1,0 +1,160 @@
+---
+title: indexof_regex
+description: 'This page explains how to use the indexof_regex function in APL.'
+---
+
+Use the `indexof_regex` function to find the position of the first match of a regular expression in a string. The function is helpful when you want to locate a pattern within a larger text field and take action based on its position. For example, you can use `indexof_regex` to extract fields from semi-structured logs, validate string formats, or trigger alerts when specific patterns appear in log data.
+
+The function returns the zero-based index of the first match. If no match is found, it returns `-1`. Use `indexof_regex` when you need more flexibility than simple substring search (`indexof`), especially when working with dynamic or non-fixed patterns.
+
+<Note>
+All regex functions of APL use the [RE2 regex syntax](https://github.com/google/re2/wiki/Syntax).
+</Note>
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Use `match()` in Splunk SPL to perform regular expression matching. However, `match()` returns a Boolean, not the match position. APL’s `indexof_regex` is similar to combining `match()` with additional logic to extract position, which isn’t natively supported in SPL.
+
+<CodeGroup>
+```sql Splunk example
+... | eval match_index=if(match(field, "pattern"), 0, -1)
+````
+
+```kusto APL equivalent
+['dataset']
+| extend match_index = indexof_regex(field, 'pattern')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a built-in function to return the index of a regex match. You typically use `REGEXP_LIKE` for Boolean evaluation. `indexof_regex` provides a more direct and powerful way to find the exact match position in APL.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN REGEXP_LIKE(field, 'pattern') THEN 0 ELSE -1 END FROM table;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend match_index = indexof_regex(field, 'pattern')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+indexof_regex(string, match [, start [, occurrence [, length]]])
+```
+
+### Parameters
+
+| Name       | Type   | Required | Description |
+| ---------- | ------ | -------- | --- |
+| string     | string | Yes       | The input text to inspect. |
+| match      | string | Yes       | The regular expression pattern to search for. |
+| start      | int    |          | The index in the string where to begin the search. If negative, the function starts that many characters from the end. |
+| occurrence | int    |          | Which instance of the pattern to match. Defaults to `1` if not specified. |
+| length     | int    |          | The number of characters to search through. Use `-1` to search to the end of the string. |
+
+### Returns
+
+The function returns the position (starting at zero) where the pattern first matches within the string. If the pattern isn’t found, the result is `-1`.
+
+The function returns `null` in the following cases:
+
+- The `start` value is negative.
+- The `occurrence` value is less than 1.
+- The `length` is set to a value below `-1`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `indexof_regex` to detect whether the URI in a log entry contains an encoded user ID by checking for patterns like `user-[0-9]+`.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend user_id_pos = indexof_regex(uri, 'user-[0-9]+')
+| where user_id_pos != -1
+| project _time, id, uri, user_id_pos
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20user_id_pos%20%3D%20indexof_regex(uri%2C%20'user-%5B0-9%5D%2B')%20%7C%20where%20user_id_pos%20!%3D%20-1%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20user_id_pos%22%7D)
+
+**Output**
+
+| _time               | id     | uri                      | user_id_pos |
+| -------------------- | ------ | ------------------------ | ------------- |
+| 2025-06-10T12:34:56Z | user42 | /api/user-12345/settings | 5             |
+| 2025-06-10T12:35:07Z | user91 | /v2/user-6789/dashboard  | 4             |
+
+The query finds log entries where the URI contains a user ID pattern and shows the position of the match in the URI string.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `indexof_regex` to detect trace IDs that include a specific structure, such as four groups of hex digits.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend match_index = indexof_regex(trace_id, '^[0-9a-f]{8}-[0-9a-f]{4}')
+| where match_index == 0
+| project _time, trace_id, match_index
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20match_index%20%3D%20indexof_regex(trace_id%2C%20'%5E%5B0-9a-f%5D%7B8%7D-%5B0-9a-f%5D%7B4%7D')%20%7C%20where%20match_index%20%3D%3D%200%20%7C%20project%20_time%2C%20trace_id%2C%20match_index%22%7D)
+
+**Output**
+
+| _time               | trace_id                            | match_index |
+| -------------------- | ------------------------------------ | ------------ |
+| 2025-06-10T08:23:12Z | ab12cd34-1234-5678-9abc-def123456789 | 0            |
+| 2025-06-10T08:24:55Z | fe98ba76-4321-abcd-8765-fedcba987654 | 0            |
+
+This query finds spans where the trace ID begins with a specific regex pattern, helping validate span ID formatting.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `indexof_regex` to locate suspicious request patterns such as attempts to access system files (`/etc/passwd`).
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend passwd_index = indexof_regex(uri, '/etc/passwd')
+| where passwd_index != -1
+| project _time, id, uri, passwd_index
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20passwd_index%20%3D%20indexof_regex(uri%2C%20'%2Fetc%2Fpasswd')%20%7C%20where%20passwd_index%20!%3D%20-1%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20passwd_index%22%7D)
+
+**Output**
+
+| _time               | id     | uri                            | passwd_index |
+| -------------------- | ------ | ------------------------------ | ------------- |
+| 2025-06-10T10:15:45Z | user88 | /cgi-bin/view?path=/etc/passwd | 20            |
+
+This query detects HTTP requests attempting to access sensitive file paths, a common indicator of intrusion attempts.
+
+</Tab>
+</Tabs>

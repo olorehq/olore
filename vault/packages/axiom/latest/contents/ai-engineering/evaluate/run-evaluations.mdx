@@ -1,0 +1,94 @@
+---
+title: "Run evaluations"
+description: "Learn how to run evaluations using the Axiom CLI and interpret the results."
+keywords: ["ai engineering", "cli", "run evals", "commands", "testing"]
+---
+
+The Axiom AI SDK CLI provides commands for running evaluations locally or in CI/CD pipelines.
+
+## Run evaluations
+
+The simplest way to run evaluations is to execute all of them in your project:
+
+```bash
+axiom eval
+```
+
+You can also target specific evaluations by name, file path, or glob pattern:
+
+```bash
+# By evaluation name
+axiom eval spam-classification
+
+# By file path
+axiom eval src/evals/spam-classification.eval.ts
+
+# By glob pattern
+axiom eval "**/*spam*.eval.ts"
+```
+
+To see which evaluations are available without running them:
+
+```bash
+axiom eval --list
+```
+
+## Common options
+
+For quick local testing without sending traces to Axiom, use debug mode:
+
+```bash
+axiom eval --debug
+```
+
+To compare results against a previous evaluation, view both runs in the Axiom Console where you can analyze differences in scores, latency, and cost.
+
+## Run experiments with flags
+
+Flags let you test different configurations without changing code. Override flag values directly in the command:
+
+```bash
+# Single flag
+axiom eval --flag.ticketClassification.model=gpt-4o
+
+# Multiple flags
+axiom eval \
+  --flag.ticketClassification.model=gpt-4o \
+  --flag.ticketClassification.temperature=0.3
+```
+
+For complex experiments, load flag overrides from a JSON file:
+
+```bash
+axiom eval --flags-config=experiments/gpt4.json
+```
+
+## Understanding output
+
+When you run an evaluation, the CLI shows progress, scores, and a link to view detailed results in the Axiom Console:
+
+```
+✓ spam-classification (4/4 passed)
+  ✓ Test case 1: spam detection
+  ✓ Test case 2: legitimate question
+
+Scorers:
+  category-match: 100% (4/4)
+  high-confidence: 75% (3/4)
+
+Results:
+  Total: 4 test cases
+  Passed: 4 (100%)
+  Duration: 3.2s
+  Cost: $0.0024
+
+View full report:
+https://app.axiom.co/your-org/ai-engineering/evaluations?runId=ABC123
+```
+
+Click the link to view results in the Console, compare runs, and analyze performance.
+
+## What's next?
+
+To learn how to view and analyze evaluation results, see [Analyze results](/ai-engineering/evaluate/analyze-results).
+

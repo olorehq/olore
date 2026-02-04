@@ -1,0 +1,156 @@
+---
+title: bag_has_key
+description: 'This page explains how to use the bag_has_key function in APL.'
+---
+
+Use the `bag_has_key` function in APL to check whether a dynamic property bag contains a specific key. This is helpful when your data includes semi-structured or nested fields encoded as dynamic objects, such as JSON-formatted logs or telemetry metadata.
+
+You often encounter property bags in observability data where log entries, spans, or alerts carry key–value metadata. Use `bag_has_key` to filter, conditionally process, or join such records based on the existence of specific keys, without needing to extract the values themselves.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you often check whether a key exists in a JSON object using `spath` and conditional logic. APL simplifies this with `bag_has_key`, which returns a boolean directly and avoids explicit parsing.
+
+<CodeGroup>
+```sql Splunk example
+| eval hasKey=if(isnull(spath(data, "keyName")), false, true)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| where bag_has_key(dynamic_field, 'keyName')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t include native support for property bags or dynamic fields. You typically use JSON functions to access keys in JSON-formatted strings. In APL, dynamic fields are first-class, and `bag_has_key` provides direct support for key existence checks.
+
+<CodeGroup>
+```sql SQL example
+SELECT *
+FROM logs
+WHERE JSON_EXTRACT(json_column, '$.keyName') IS NOT NULL
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where bag_has_key(dynamic_field, 'keyName')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+bag_has_key(bag: dynamic, key: string) 
+```
+
+### Parameters
+
+| Name  | Type      | Description                                                      |
+| ----- | --------- | ---------------------------------------------------------------- |
+| `bag` | `dynamic` | A dynamic value representing a property bag (e.g., JSON object). |
+| `key` | `string`  | The key to check for within the property bag.                    |
+
+### Returns
+
+Returns a `bool` value:
+
+- `true` if the specified key exists in the property bag
+- `false` otherwise
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `bag_has_key` to filter log entries that include a specific metadata key embedded in a dynamic object.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend metadata = bag_pack('source', 'cdn', 'env', 'prod')
+| where bag_has_key(metadata, 'env')
+| project _time, id, method, uri, status, metadata
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20metadata%20%3D%20bag_pack%28%27source%27%2C%20%27cdn%27%2C%20%27env%27%2C%20%27prod%27%29%20%7C%20where%20bag_has_key%28metadata%2C%20%27env%27%29%20%7C%20project%20_time%2C%20id%2C%20method%2C%20uri%2C%20status%2C%20metadata%22%7D)
+
+**Output**
+
+| _time            | id   | method | uri            | status | metadata                      |
+| ----------------- | ---- | ------ | -------------- | ------ | ----------------------------- |
+| 2025-05-27T12:30Z | u123 | GET    | /login         | 200    | \{'source':'cdn','env':'prod'\} |
+| 2025-05-27T12:31Z | u124 | POST   | /cart/checkout | 500    | \{'source':'cdn','env':'prod'\} |
+
+The query filters logs where the synthetic `metadata` bag includes the key `'env'`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `bag_has_key` to filter spans that include specific dynamic span attributes.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend attributes = bag_pack('user', 'alice', 'feature_flag', 'beta')
+| where bag_has_key(attributes, 'feature_flag')
+| project _time, trace_id, span_id, ['service.name'], kind, attributes
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20attributes%20%3D%20bag_pack%28%27user%27%2C%20%27alice%27%2C%20%27feature_flag%27%2C%20%27beta%27%29%20%7C%20where%20bag_has_key%28attributes%2C%20%27feature_flag%27%29%20%7C%20project%20_time%2C%20trace_id%2C%20span_id%2C%20%5B%27service.name%27%5D%2C%20kind%2C%20attributes%22%7D)
+
+**Output**
+
+| _time            | trace_id | span_id | ['service.name'] | kind   | attributes                              |
+| ----------------- | --------- | -------- | ----------------- | ------ | --------------------------------------- |
+| 2025-05-27T10:02Z | abc123    | span567  | frontend          | client | \{'user':'alice','feature_flag':'beta'\} |
+
+The query selects spans with dynamic `attributes` bags containing the `'feature_flag'` key.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `bag_has_key` to identify HTTP logs where the request metadata contains sensitive audit-related keys.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend audit_info = bag_pack('action', 'delete', 'reason', 'admin_override')
+| where bag_has_key(audit_info, 'reason')
+| project _time, id, uri, status, audit_info
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20audit_info%20%3D%20bag_pack%28%27action%27%2C%20%27delete%27%2C%20%27reason%27%2C%20%27admin_override%27%29%20%7C%20where%20bag_has_key%28audit_info%2C%20%27reason%27%29%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20status%2C%20audit_info%22%7D)
+
+**Output**
+
+| _time            | id   | uri           | status | audit_info                                    |
+| ----------------- | ---- | ------------- | ------ | ---------------------------------------------- |
+| 2025-05-27T13:45Z | u999 | /admin/delete | 403    | \{'action':'delete','reason':'admin_override'\} |
+
+The query returns only logs where the `audit_info` bag includes the `'reason'` key, indicating administrative override events.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [bag_keys](/apl/scalar-functions/array-functions/bag-keys): Returns all keys in a dynamic property bag. Use it when you need to enumerate available keys.
+- [bag_pack](/apl/scalar-functions/array-functions/bag-pack): Converts a list of key-value pairs to a dynamic property bag. Use when you need to build a bag.

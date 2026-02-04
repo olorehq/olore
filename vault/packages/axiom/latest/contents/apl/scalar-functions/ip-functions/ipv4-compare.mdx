@@ -1,0 +1,99 @@
+---
+title: ipv4_compare
+description: 'This page explains how to use the ipv4_compare function in APL.'
+---
+
+The `ipv4_compare` function in APL allows you to compare two IPv4 addresses lexicographically or numerically. This is useful for sorting IP addresses, validating CIDR ranges, or detecting overlaps between IP ranges. It’s particularly helpful in analyzing network logs, performing security investigations, and managing IP-based filters or rules.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, similar functionality can be achieved using `sort` or custom commands. In APL, `ipv4_compare` is a dedicated function for comparing two IPv4 addresses.
+
+<CodeGroup>
+```sql Splunk example
+| eval comparison = if(ip1 < ip2, -1, if(ip1 == ip2, 0, 1))
+```
+
+```kusto APL equivalent
+| extend comparison = ipv4_compare(ip1, ip2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you might manually parse or order IP addresses as strings. In APL, `ipv4_compare` simplifies this task with built-in support for IPv4 comparison.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE 
+  WHEN ip1 < ip2 THEN -1
+  WHEN ip1 = ip2 THEN 0
+  ELSE 1
+END AS comparison
+FROM ips;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend comparison = ipv4_compare(ip1, ip2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+ipv4_compare(ip1, ip2)
+```
+
+### Parameters
+
+| Parameter | Type   | Description                                      |
+|-----------|--------|--------------------------------------------------|
+| `ip1`     | string | The first IPv4 address to compare.               |
+| `ip2`     | string | The second IPv4 address to compare.              |
+
+### Returns
+
+- Returns `1` if the long representation of `ip1` is greater than the long representation of `ip2`
+- Returns `0` if the long representation of `ip1` is equal to the long representation of `ip2`
+- Returns `-1` if the long representation of `ip1` is less than the long representation of `ip2`
+- Returns `null` if the conversion fails.
+
+## Use case example
+
+You can use `ipv4_compare` to sort logs based on IP addresses or to identify connections between specific IPs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend ip1 = '192.168.1.1', ip2 = '192.168.1.10'
+| extend comparison = ipv4_compare(ip1, ip2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20ip1%20%3D%20%27192.168.1.1%27%2C%20ip2%20%3D%20%27192.168.1.10%27%20%7C%20extend%20comparison%20%3D%20ipv4_compare(ip1%2C%20ip2)%22%7D)
+
+**Output**
+
+| ip1         | ip2          | comparison |
+|-------------|--------------|------------|
+| 192.168.1.1 | 192.168.1.10 | -1         |
+
+This query compares two hardcoded IP addresses. It returns `-1`, indicating that `192.168.1.1` is lexicographically less than `192.168.1.10`.
+
+## List of related functions
+
+- [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range): Checks if an IP address is within a specified range.
+- [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private): Checks if an IPv4 address is within private IP ranges.
+- [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4): Converts a dotted-decimal IP address into a numeric representation.

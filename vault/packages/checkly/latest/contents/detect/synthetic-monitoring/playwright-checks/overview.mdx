@@ -1,0 +1,116 @@
+---
+title: Overview
+sidebarTitle: Overview
+description: 'Run your Playwright end-to-end test suite as synthetic production monitoring.'
+tags: ['synthetic-monitoring', 'playwright-checks']
+---
+
+## What are Playwright Check Suites?
+
+**Playwright Check Suites turn your Playwright end-to-end tests into production monitors.** Run entire test suites, specific projects, or tagged tests globally without modifying your existing code or configuration.
+
+<Warning>
+**Known limitations**: Playwright Check Suites do not currently support monorepo workspaces for dependency installation.
+Each check run has a maximum execution time of 30 minutes.
+</Warning>
+
+<Frame>
+  ![Playwright Check Suites test result](/images/pwn-test-result.png)
+</Frame>
+
+**Use Playwright Check Suites to:**
+- Turn E2E tests into global synthetic monitors
+- Monitor complex user workflows across browsers and regions
+- Detect issues in critical business processes
+- Verify functionality after deployments
+
+## How Playwright Check Suites Work
+
+<Steps>
+<Step title="1. Select tests">
+Choose which tests to turn into monitors using Playwright projects or tags from your existing configuration.
+</Step>
+<Step title="Choose frequency and locations">
+Specify the locations to run the check from, and set its frequency
+
+</Step>
+<Step title="Deploy globally">
+Run selected tests on schedules from global locations with performance tracking and detailed reporting.
+</Step>
+
+<Step title="Get alerted">
+Receive notifications when tests fail or performance degrades.
+</Step>
+</Steps>
+
+## Test Selection
+
+Control which tests run as monitors using:
+
+- **Projects**: Select browser and project configurations from your Playwright config with `pwProjects`
+- **Tags**: Choose tests marked with specific tags (e.g., `@critical`, `@smoke`) with `pwTags`
+- **Combinations**: Mix tags and projects for precise control
+- **testCommand**: Use `npx playwright test ...` to select the tests you want to create a monitor for, using playwright flags like `--grep-invert` or `--projects`
+
+Configure test selection in your `checkly.config.ts` file:
+
+```typescript checkly.config.ts
+export default defineConfig({
+  checks: {
+    playwrightChecks: [
+      {
+        name: "Marketing Environment",
+        logicalId: "environment-marketing-suite",
+        // Select the tests defined in
+        // the `environment-marketing` Playwright project
+        pwProjects: ["environment-marketing"],
+      },
+      {
+        name: "@critical tests",
+        logicalId: "critical-tests",
+        // Select tests tagged as `@critical`
+        pwTags: ["@critical"],
+      },
+            {
+        name: "customTestCommand",
+        logicalId: "custom-testCommand-critical-no-smoke",
+        // Select tests not tagged as `@smoke` and tagged as @critical
+        testCommand: "npx playwright test --grep-invert @smoke --grep @critical"
+      },
+    ],
+  },
+})
+```
+
+<Tip>
+Learn more about [test organization strategies](/detect/synthetic-monitoring/playwright-checks/test-organization) for selecting and grouping tests.
+</Tip>
+
+## Monitoring Configuration
+
+Customize how your checks run:
+
+- **Frequency**: Schedule runs at regular intervals
+- **Locations**: Deploy to multiple global regions
+- **Alerting**: Set up notifications and escalation
+- **Dependencies**: Use private packages and custom registries (see [custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies))
+
+## Getting Started
+
+<Columns cols={2}>
+<Card title="Quickstart Guide" href="/quickstarts/playwright-check">
+Deploy your first Playwright Check Suite
+</Card>
+
+<Card title="Construct Reference" href="/constructs/playwright-check/">
+Construct configuration options and examples
+</Card>
+
+<Card title="Add to Group" href="/detect/synthetic-monitoring/playwright-checks/add-to-group">
+Organize checks with groups
+</Card>
+
+<Card title="Custom Dependencies" href="/detect/synthetic-monitoring/playwright-checks/custom-dependencies">
+Use private packages and custom registries
+</Card>
+</Columns>

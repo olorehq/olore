@@ -1,0 +1,69 @@
+---
+title: Checkly Agent Changelog
+sidebarTitle: Agent Changelog
+description: Release history for the Checkly Agent
+rss: true
+---
+
+For major release announcements and summaries, see Checkly's [product changelog](https://feedback.checklyhq.com/changelog?c=Checkly+Agent), filtered by `Checkly Agent`.
+
+Learn more about:
+
+- updating to the latest version in
+  [updating the agent container](/platform/private-locations/agent-configuration#updating-the-agent-container)
+- supported runtimes for each agent version in
+  [agent version and runtimes](/platform/private-locations/agent-configuration#agent-version-and-runtimes)
+
+## Full release history
+
+<Update label="v6.3.0" tags={["December 2025"]}>
+  - Added [agent-dev image](https://www.checklyhq.com/docs/platform/private-locations/dev-agent/) including build tools to support building native npm packages. Going forward, the dev variant is published as a separate image rather than a tag on the main agent image
+  - Improved secret scrubbing speed
+  - Improved error logging for hanging or long running Playwright Check Suite jobs
+</Update>
+
+<Update label="v6.2.0" tags={["December 2025"]}>
+  Ensured `devDependencies` are not installed in the agent image
+</Update>
+
+<Update label="v6.1.7" tags={["December 2025"]}>
+  - Added support for a [dev image](https://www.checklyhq.com/docs/platform/private-locations/dev-agent/) including build tools to support building native npm packages
+  - Improved internal logging and metrics for [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview)
+  - Browser and Multistep checks using runtime 2025.04 now automatically scrub the `Authorization` header from requests
+</Update>
+
+<Update label="v6.1.6" tags={["November 2025"]}>
+  Added Checkly environment variables and configuration to [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). See the docs on [Playwright Check Suites environment variables](/detect/synthetic-monitoring/playwright-checks/environment-variables):
+  - Adds support for `CHECKLY` to all checkly triggered runs: scheduled checks and test sessions triggered through either `npx checkly test`, `npx checkly trigger` or `npx checkly pw-test`
+  - Includes the environment variable `CI` as true only for test session triggered runs
+</Update>
+
+<Update label="v6.1.5" tags={["November 2025"]}>
+  Added Playwright test metrics to the check overview page, including **Test performance** and **Test statuses** graphs
+</Update>
+
+<Update label="v6.1.4" tags={["October 2025"]}>
+  Minor patches on reporting
+</Update>
+
+<Update label="v6.1.3" tags={["August 2025"]}>
+  Improved and centralized secret scrubbing for more reliable removal of sensitive data
+</Update>
+
+<Update label="v6.1.2" tags={["August 2025"]}>
+  Added support for `CHECKLY_SECRET_*` environment variables. Secrets containing special characters (e.g. `@`, `%`, `!`, `+`) are now reliably scrubbed from traces, including when they appear in encoded form in URLs or request payloads. Learn more in our documentation on [Dynamic Secret Scrubbing](/platform/dynamic-secret-scrubbing/)
+</Update>
+
+<Update label="v6.1.1" tags={["July 2025"]}>
+  Fixed an issue where checks could fail behind proxies during dependency installation because proxy-related environment variables were not consistently available
+</Update>
+
+<Update label="v6.1.0" tags={["July 2025"]}>
+  - Added runtime secret detection for Browser and Multistep checks (enabled for selected accounts)
+
+  - See the [product changelog](https://feedback.checklyhq.com/changelog/checkly-agent-610-playwright-check-suites-and-more) for details on changes from version 6.0.1 to 6.1.0
+</Update>
+
+<Update label="v6.0.7" tags={["June 2025"]}>
+  Internal improvements and fixes related to networking and request handling
+</Update>

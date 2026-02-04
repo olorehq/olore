@@ -1,0 +1,116 @@
+---
+title: Translate SPL to APL skill
+description: "This page explains how to use the translate SPL to APL skill to give AI coding agents the ability to convert Splunk queries to Axiom."
+sidebarTitle: Translate SPL to APL
+keywords: ["skills", "ai agents", "spl", "apl", "splunk", "migration", "amp", "claude code", "cursor", "query translation"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The translate SPL to APL skill helps AI agents translate Splunk queries to Axiom:
+
+- **Command mappings**: Complete translation of SPL commands to APL operators
+- **Function equivalents**: Mapping of SPL functions to APL functions
+- **Syntax transformations**: Handle differences in time handling, field escaping, and query structure
+- **Common patterns**: Ready-to-use translations for frequent query patterns
+- **Performance tips**: Guidance on writing efficient APL queries
+
+<Prerequisites />
+
+## Install translate SPL to APL skill
+
+Choose one of the following ways to install the translate SPL to APL skill:
+
+<Tabs>
+<Tab title="Quick install">
+
+Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
+
+```bash
+npx skills add axiomhq/skills
+```
+
+</Tab>
+<Tab title="Amp">
+
+Install the translate SPL to APL skill globally with [Amp](https://ampcode.com/manual#get-started):
+
+    ```bash
+    amp skill add --global axiomhq/skills/skills/spl-to-apl --name spl-to-apl --overwrite
+    ```
+
+</Tab>
+<Tab title="Claude">
+
+<Info>
+Skills are available for users on Pro, Max, Team, and Enterprise plans.
+</Info>
+
+1. Clone the Axiom Skills repository:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git
+    ```
+
+1. Compress the `skills/spl-to-apl` folder into a zip file.
+1. Enable code execution in **Settings > Capabilities**.
+1. Upload the zip file to your agent's capabilities in **Settings > Capabilities**.
+
+For more information, see the [Claude documentation](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+
+</Tab>
+<Tab title="Claude Code">
+
+Clone the Axiom Skills repository and symlink the translate SPL to APL skill to your Claude Code skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/spl-to-apl ~/.claude/skills/spl-to-apl
+    ```
+
+For more information, see the [Claude Code documentation](https://code.claude.com/docs/en/skills).
+
+</Tab>
+<Tab title="Cursor">
+
+Clone the Axiom Skills repository and symlink the translate SPL to APL skill to Cursor's Claude-compatible skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/spl-to-apl ~/.claude/skills/spl-to-apl
+    ```
+
+For more information, see the [Cursor documentation](https://cursor.com/docs/context/skills).
+
+</Tab>
+<Tab title="Other agents">
+
+Clone the Axiom Skills repository and reference the translate SPL to APL skill in your agent configuration:
+
+```bash
+git clone https://github.com/axiomhq/skills.git
+```
+
+The translate SPL to APL skill is located at `skills/spl-to-apl/`.
+
+</Tab>
+</Tabs>
+
+<SkillsCredentials />
+
+## Use translate SPL to APL skill
+
+The translate SPL to APL skill activates automatically when you ask your AI agent to:
+
+- Translate SPL queries to APL
+- Migrate Splunk queries to APL
+- Find APL equivalents of SPL commands
+- Convert Splunk dashboards or saved searches
+
+Example prompts:
+
+- "Convert this SPL query to APL: `index=logs | stats count by host`"
+- "What's the APL equivalent of `timechart span=5m count by status`?"
+- "Translate this Splunk search to APL"
+- "How to write `eval` statements in APL?"

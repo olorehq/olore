@@ -1,0 +1,179 @@
+---
+title: Web Workers
+description: "Learn how to use Sentry's Browser SDK in Web Workers API."
+keywords: ["webworkers"]
+sidebar_order: 9000
+supported:
+  - javascript
+notSupported:
+  - javascript.cordova
+  - javascript.node
+  - javascript.aws-lambda
+  - javascript.azure-functions
+  - javascript.connect
+  - javascript.express
+  - javascript.fastify
+  - javascript.gcp-functions
+  - javascript.hapi
+  - javascript.hono
+  - javascript.koa
+  - javascript.nestjs
+  - javascript.deno
+  - javascript.cloudflare
+  - javascript.bun
+---
+
+Sentry's Browser SDK supports the [Web Workers API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API).
+You can use the SDK in different ways, though we recommend initializing it in the main thread to capture unhandled errors from workers automatically.
+
+## Recommended Setup
+
+_Available since_ : 9.40.0
+
+To capture unhandled errors from Web Workers, initialize Sentry in your application code that runs on the main thread 
+and let the SDK know about the web worker:
+
+```javascript {filename:index.js} {1-5,9-10}
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+  dsn: "___PUBLIC_DSN___",
+});
+
+const worker = new Worker("worker.js");
+
+// Add the integration before listening to worker messages
+Sentry.addIntegration(Sentry.webWorkerIntegration({ worker }));
+
+worker.onmessage = (event) => {
+  // ...
+}
+```
+
+Then, establish communication between the worker and the SDK:
+
+```javascript {filename:worker.js}{1-4}
+import * as Sentry from "@sentry/browser";
+
+// Call this before posting any message
+Sentry.registerWebWorker({ self })
+
+// Errors from `onmessage` callback of `worker.js`
+// will be captured automatically.
+self.postMessage("Worker ready!");
+self.onmessage = (event) => {
+  // ...
+}
+```
+
+<Alert level="warning" title="The Order Matters">
+
+Make sure to initialize Sentry in both the main thread and the worker before either starts listening for messages.
+The Sentry SDK sends messages from the worker to the main thread, so if you start listening before Sentry is initialized, 
+the messages will appear in your listeners and you will have to handle them manually.
+
+</Alert>
+
+### Multiple Workers
+
+The `sentryWebWorkerIntegration` allows you to register multiple workers. 
+You can add them either when you initialize the integration, or later on. 
+This is helpful, if you have workers that are initialized at different points in time in your application lifecycle.
+
+```javascript {filename:index.js} {1-5, 10-14, 18}
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+  dsn: "___PUBLIC_DSN___",
+});
+
+const worker1 = new Worker("worker.js");
+const worker2 = new Worker("worker2.js");
+
+// Multiple workers can be added directly:
+const webWorkerIntegration = Sentry.webWorkerIntegration({ worker: [worker1, worker2] });
+Sentry.addIntegration(webWorkerIntegration);
+
+// or later on:
+const worker3 = new Worker("worker3.js");
+webWorkerIntegration.addWorker(worker3);
+```
+
+<Alert level="warning" title="Keep in Mind">
+
+- Every worker must call `Sentry.registerWebWorker({ self })` to register itself with the SDK.
+- Do not call `Sentry.webWorkerIntegration()` multiple times! This will lead to unexpected behavior.
+
+</Alert>
+
+## Manually Capturing Errors
+
+To capture errors or messages manually, via `Sentry.captureMessage` or `Sentry.captureException` inside Web Workers, you can also import the SDK in the worker and initialize it.
+
+```javascript {filename:worker.js} {1-5,9}
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+  dsn: "___PUBLIC_DSN___",
+});
+
+self.onmessage = (message) => {
+  // This message will be captured
+  Sentry.captureMessage("Message received");
+
+  // This error will also be captured.
+  throw new Error();
+};
+```
+
+Note that initializing the SDK in the worker **completely decouples** it from the SDK running on the main thread.
+This means that data like user, tags, traces or scope data set on either side will not be shared with the other side.
+
+Sometimes, this is the better approach, for instance if you develop a worker that is used in arbitrary applications.
+Other times, if the worker is just part of your application, you likely want to use the [SDK from the main thread](#recommended-setup).
+
+<Alert level="warning" title="Keep in Mind">
+
+If you initialize the SDK in the worker, don't use the `Sentry.webWorkerIntegration` to register the worker.
+Likewise, don't use the `Sentry.registerWebWorker` in the worker. Both methods are only supposed to be used when relying on the SDK [from the main thread](#recommended-setup).
+
+</Alert>
+
+### Integrations
+
+Note, that if you use non-default integrations inside web workers, they may not function as expected. 
+However, non-default integrations that are enabled on the main thread SDK won't be affected and will work as expected. 
+This includes Session Replay.
+
+## Source Maps
+
+To ensure that errors from web workers are properly mapped to their original source code, you need to provide source maps to Sentry.
+You likely already provide source maps to Sentry for your main application code, but you might need to make adjustments for your worker.
+
+Importantly, ensure that your bundler also **emits source maps** for the worker bundle(s).
+
+### Vite
+If you use Vite to build your worker, note that the worker build does not take the same plugin as the main code build.
+Therefore, you need to add Sentry's Vite plugin to the worker build, in addition to the top-level `plugins` array:
+
+```javascript {filename:vite.config.mjs}{1-4,8-9,13,16-17}
+const sentryPlugin = sentryVitePlugin({
+  org: "sentry-sdks",
+  project: "javascript",
+});
+
+export default defineConfig({
+  build: {
+    // This enables source maps for main and worker bundles
+    sourcemap: "hidden",
+  },
+
+  // Vite plugin for main bundle
+  plugins: [sentryPlugin],
+
+  worker: {
+    // Vite plugin for worker bundle
+    plugins: () => [...sentryPlugin],
+  },
+});
+```

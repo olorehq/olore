@@ -1,0 +1,355 @@
+---
+title: checkly trigger
+description: 'Trigger checks already in your Checkly account.'
+sidebarTitle: 'checkly trigger'
+---
+
+import CliCommandPrerequisites from '/snippets/cli-command-prerequisites.mdx';
+
+The `checkly trigger` command executes checks that are already deployed in your Checkly account. Unlike the `test` command, `trigger` works with any checks in your account regardless of how they were created - via CLI constructs, the web UI, or Terraform.
+
+<CliCommandPrerequisites command="checkly trigger" />
+
+## Usage
+
+The basic command triggers all checks in your account that are already deployed.
+
+```bash Terminal
+npx checkly trigger [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
+| `--env, -e` | Env vars to be passed to the check run. Default: empty. Multiple values can be passed. |
+| `--env-file` | dotenv file path to be passed. For example `--env-file="./.env"` |
+| `--fail-on-no-matching` | Exit with a failing status code when there are no matching tests. |
+| `--location, -l` | The location to run the checks at. |
+| `--private-location` | The private location to run checks at. |
+| `--record` | Record check results in Checkly as a test session with full logs, traces and videos. |
+| `--reporter, -r` | A list of custom reporters for the test output. |
+| `--retries` | How many times to retry a check run. |
+| `--tags, -t` | Filter the checks to be run using a comma separated list of tags. |
+| `--test-session-name, -n` | A name to use when storing results in Checkly with `--record`. |
+| `--timeout` | A timeout (in seconds) to wait for checks to complete. |
+| `--verbose, -v` | Always show the full logs of the checks. |
+
+## Command Options
+
+<ResponseField name="--config" type="string" alias="-c">
+
+Specify a configuration file to use instead of the `checkly.config.ts` or `checkly.config.js` in the current directory.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --config checkly.config.ts
+npx checkly trigger -c="./checkly.staging.config.ts"
+```
+
+</ResponseField>
+
+<ResponseField name="--env">
+
+[Environment variables](/cli/environment-variables) to be passed to the check run. Multiple values can be passed and passed variables overwrite any existing variables stored in your Checkly account.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --env KEY=value
+npx checkly trigger -e KEY=value
+```
+
+**Examples:**
+
+```bash Terminal
+# Single environment variable
+npx checkly trigger --env ENVIRONMENT_URL="https://staging.acme.com"
+
+# Multiple environment variables
+npx checkly trigger --env API_URL=https://api.example.com --env API_KEY=secret123
+```
+
+</ResponseField>
+
+<ResponseField name="--env-file" type="string">
+Path to a dotenv file containing environment variables.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --env-file=".env"
+npx checkly trigger -e=".env"
+```
+
+**Examples:**
+
+```bash Terminal
+# Use default .env file
+npx checkly trigger --env-file=".env"
+
+# Use environment-specific file
+npx checkly trigger --env-file=".env.production"
+
+# Use file from different directory
+npx checkly trigger --env-file="./config/.env.staging"
+```
+
+The dotenv file should contain KEY=value pairs, one per line.
+
+</ResponseField>
+
+<ResponseField name="--location" type="string" alias="-l">
+The location to run the checks at.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --location="us-east-1"
+npx checkly trigger -l="us-east-1"
+```
+
+Choose from available Checkly public locations like us-east-1, eu-west-1, ap-southeast-1, etc.
+</ResponseField>
+
+<ResponseField name="--private-location" type="string">
+
+The private location to run checks at.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --private-location="my-private-location"
+```
+
+**Examples:**
+
+```bash Terminal
+# Use private location
+npx checkly trigger --private-location="datacenter-1"
+
+# Combine with tags
+npx checkly trigger --private-location="internal-network" --tags="internal"
+
+# With custom config
+npx checkly trigger --private-location"vpc-location" --config="internal.config.js"
+```
+
+Private locations must be configured in your Checkly account before use.
+</ResponseField>
+
+<ResponseField name="--tags">
+Filter checks using tags. Checks run if they contain all specified tags in a single --tags flag. Multiple --tags flags create OR conditions.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --tags="tag1,tag2"
+npx checkly trigger -t="tag1,tag2"
+```
+
+**Examples:**
+
+```bash Terminal
+# Single tag
+npx checkly trigger --tags="production"
+
+# Multiple tags (AND condition)
+npx checkly trigger --tags="production,webapp"
+
+# Multiple tag groups (OR condition)
+npx checkly trigger --tags="production,webapp" --tags="production,backend"
+# Runs checks with (production AND webapp) OR (production AND backend)
+```
+
+Tags are comma-separated within a single flag for AND logic, multiple flags for OR logic.
+</ResponseField>
+
+<ResponseField name="--test-session-name" type="string" >
+
+A name to use when storing results in Checkly with `--record`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --record --test-session-name="Custom session name"
+```
+
+</ResponseField>
+
+<ResponseField name="--reporter" type="string">
+
+Custom reporters for test output formatting.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --reporter list
+npx checkly trigger -r list
+```
+
+**Examples:**
+
+```bash Terminal
+# List reporter (default)
+npx checkly trigger --reporter list
+
+# Dot reporter for minimal output
+npx checkly trigger --reporter dot
+
+# CI-optimized reporter
+npx checkly trigger --reporter ci
+
+# GitHub Actions reporter
+npx checkly trigger --reporter github
+
+# JSON output for programmatic use
+npx checkly trigger --reporter json > results.json
+```
+
+Available options: `list`, `dot`, `ci`, `github`, `json`. Each provides different output formatting.
+</ResponseField>
+
+<ResponseField name="--verbose" type="boolean">
+
+Always show the full logs of the checks.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --verbose
+npx checkly trigger -v
+```
+
+</ResponseField>
+
+<ResponseField name="--fail-on-no-matching" type="boolean">
+Exit with a failing status code when there are no matching tests.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --fail-on-no-matching
+npx checkly trigger --no-fail-on-no-matching
+```
+
+**Examples:**
+
+```bash Terminal
+# Default behavior (enabled)
+npx checkly trigger --tags non-existent-tag
+# Exits with error if no checks match
+
+# Disable the behavior
+npx checkly trigger --no-fail-on-no-matching --tags optional-tag
+# Exits successfully even if no checks match
+```
+
+Enabled by default. Use `--no-fail-on-no-matching` to allow zero matches without failure.
+</ResponseField>
+
+<ResponseField name="--record" type="boolean">
+
+Record check results in Checkly as a test session with full logs, traces and videos.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --record
+```
+
+**Examples:**
+
+```bash Terminal
+# Basic recording
+npx checkly trigger --record
+
+# Record with custom name
+npx checkly trigger --record --test-session-name "Deploy validation"
+
+# Record specific checks
+npx checkly trigger --record --tags critical
+```
+
+Records provide full visibility including logs, traces, and videos for debugging failed checks.
+</ResponseField>
+
+<ResponseField name="--retries" type="number" default="0">
+
+How many times to retry a failed check run.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --retries="2"
+```
+
+**Examples:**
+
+```bash Terminal
+# No retries (default)
+npx checkly trigger --retries 0
+
+# Retry twice on failure
+npx checkly trigger --retries 2
+
+# Maximum retries
+npx checkly trigger --retries 3
+```
+
+Default: 0, Maximum: 3. Useful for handling transient failures.
+</ResponseField>
+
+<ResponseField name="--timeout" type="number" default="600">
+
+Timeout in seconds to wait for checks to complete.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --timeout 300
+```
+
+**Examples:**
+
+```bash Terminal
+# Quick timeout for fast checks
+npx checkly trigger --timeout 60
+
+# Default timeout
+npx checkly trigger --timeout 600
+
+# Extended timeout for slow checks
+npx checkly trigger --timeout 1200
+```
+
+Default: 600 seconds (10 minutes). Adjust based on your longest-running checks.
+</ResponseField>
+
+## Key Differences from `checkly test`
+
+`npx checkly test` and `npx checkly trigger` serve different purposes in the Checkly ecosystem. Here's a comparison of their key features:
+
+| Feature | `checkly test` | `checkly trigger` |
+|---------|---------------|------------------|
+| **Source** | Local project files | Deployed checks in account |
+| **File patterns** | Supports file matching | Not applicable |
+| **Check creation** | Can run checks from code | Uses existing checks only |
+| **Snapshots** | Can update snapshots | Cannot update snapshots |
+| **Dependencies** | Requires local project | Works independently |
+
+## Use Cases
+
+### Pre-deployment Validation
+Run your deployed checks before promoting code to production:
+
+```bash Terminal
+npx checkly trigger --tags staging --record --test-session-name "Pre-prod validation"
+```
+
+<Tip>If your production deployment includes monitoring changes and updates, [use `npx checkly test`](/cli/checkly-test) to validate your preview environment with the updated monitoring configuration.</Tip>
+
+## Related Commands
+
+- [`checkly deploy`](/cli/checkly-deploy) - Deploy your Checkly configuration
+- [`checkly test`](/cli/checkly-test) - Test your setup before deployment

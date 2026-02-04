@@ -1,0 +1,46 @@
+---
+title: 'Match monitors'
+description: 'This section introduces the Monitors tab and explains how to create monitors.'
+sidebarTitle: 'Match'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+Match monitors allow you to continuously filter your log data and send you matching events. Axiom sends a notification for each matching event. By default, the notification message contains the entire matching event in JSON format. When you define your match monitor using APL, you can control which event attributes to include in the notification message.
+
+Axiom recommends using match monitors for alerting purposes only. A match monitor can send 10 notifications per minute and 500 notifications per day. A notification can usually include events up to 0.1 MB but the maximum size can be smaller depending on the type of the notifier.
+
+## Create match monitor
+
+To create a match monitor, follow these steps:
+
+1. Click the **Monitors** tab, and then click **New monitor**.
+1. Click **Match monitor**.
+1. Name your monitor and add a description.
+1. Click **Add notifier**, and then select the notifiers that define how you want to receive notifications for this monitor. For more information, see [Notifiers](#notifiers).
+1. To define your query, use one of the following options:
+    - To use the visual query builder, click **Simple query builder**. Select the filters, and then click **Run query** to preview the recent events that match your filters. To preview matching events over a specific period, select the time range.
+    - To use Axiom Processing Language (APL), click **Advanced query language**. Write a query using the `where` operator to filter for events, and then click **Run query** to preview the results. To transform matching events before sending them to you, use the `extend` and the `project` operators. Don’t use aggregations in your query. For more information, see [Introduction to APL](/apl/introduction).
+1. When the preview displays the events that you want to match, click **Create**. You can’t create a match monitor if more than 500 events match your query within the past 24 hours.
+
+You have created a match monitor, and Axiom alerts you about every event that matches the filters you set. Each notification contains the event details as shown in the preview.
+
+<Info>
+If you define your query using APL, you can use the following limited set of tabular operators:
+
+- [extend](/apl/tabular-operators/extend-operator)
+- [extend-valid](/apl/tabular-operators/extend-valid-operator)
+- [parse](/apl/tabular-operators/parse-operator)
+- parse-kv
+- [project](/apl/tabular-operators/project-operator)
+- [project-away](/apl/tabular-operators/project-away-operator)
+- [project-keep](/apl/tabular-operators/project-keep-operator)
+- project-rename
+- [project-reorder](/apl/tabular-operators/project-reorder-operator)
+- [where](/apl/tabular-operators/where-operator)
+
+This restriction only applies to tabular operators.
+</Info>
+
+## Examples
+
+For real-world use cases, see [Monitor examples](/monitor-data/monitor-examples).

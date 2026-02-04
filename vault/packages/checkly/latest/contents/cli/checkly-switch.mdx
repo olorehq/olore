@@ -1,0 +1,94 @@
+---
+title: checkly switch
+description: 'Switch between multiple Checkly accounts.'
+sidebarTitle: 'checkly switch'
+---
+
+The `checkly switch` command switches between multiple Checkly accounts that you have access to with your current credentials. Useful when you need to manage monitoring across different organizations or environments.
+
+<Accordion title="Prerequisites">
+Before using `checkly switch`, ensure you have:
+
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- Access to multiple Checkly accounts (team memberships, client projects, etc.)
+
+If you only have access to one account, this command will indicate no alternative accounts are available.
+</Accordion>
+
+## Usage
+
+The basic command displays available accounts and provides an interactive selection interface.
+
+```bash Terminal
+npx checkly switch [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--account-id, -a` | The id of the account you want to switch to. |
+
+
+## Command Options
+
+<ResponseField name="--account-id, -a" type="string">
+
+The `switch` command asks you to select an account interactively by default. Use this option to switch accounts non-interactively by specifying the target account ID directly.
+
+**Usage:**
+
+```bash Terminal
+npx checkly switch --account-id="a43....."
+npx checkly switch -a="a43....."
+```
+
+## Examples
+
+<Tabs>
+<Tab title="Standard Switch">
+
+```bash Terminal
+# Standard account switching
+npx checkly switch
+
+# Output
+? Which account do you want to use?
+  Production
+  Staging
+  Demo
+  ...
+```
+
+</Tab>
+<Tab title="Automatic Switch">
+
+```bash Terminal
+# Verbose account switching with details
+npx checkly switch --account-id="a43....."
+
+# Output
+Account switched to "a43....."
+```
+
+</Tab>
+</Tabs>
+
+</ResponseField>
+
+## Troubleshooting
+
+### No Alternative Accounts
+If you see "No alternative accounts available":
+- You only have access to one Checkly account
+- Contact account administrators to request access to additional accounts
+- Consider using separate authentication for different accounts
+
+### Account Not Listed
+If an expected account doesn't appear:
+- Verify you have active access to that account
+- Check that your user hasn't been removed from the account
+- Try logging out and back in to refresh account permissions
+
+## Related Commands
+
+- [`checkly login`](/cli/checkly-login) - Sign in to your Checkly account
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information

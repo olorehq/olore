@@ -1,0 +1,587 @@
+---
+title: "Migrate from SQL to APL"
+description: "This guide helps you migrate SQL to APL, helping you understand key differences and providing you with query examples."
+sidebarTitle: SQL
+keywords: ['axiom documentation', 'documentation', 'axiom', 'apl', 'sql', 'guide', 'migration guide', 'sql query']
+---
+
+## Introduction 
+
+As data grows exponentially, organizations are continuously seeking more efficient and powerful tools to manage and analyze their data. The Query tab, which utilizes the Axiom Processing Language (APL), is one such service that offers fast, scalable, and interactive data exploration capabilities.
+
+This tutorial helps you migrate SQL to APL, helping you understand key differences and providing you with query examples.
+
+## Introduction to Axiom Processing Language (APL)
+
+Axiom Processing Language (APL) is the language used by the Query tab, a fast and highly scalable data exploration service. APL is optimized for real-time and historical data analytics, making it a suitable choice for various data analysis tasks.
+
+**Tabular operators**: In APL, there are several tabular operators that help you manipulate and filter data, similar to SQL’s SELECT, FROM, WHERE, GROUP BY, and ORDER BY clauses. Some of the commonly used tabular operators are: 
+
+- `extend`: Adds new columns to the result set.
+- `project`: Selects specific columns from the result set.
+- `where`: Filters rows based on a condition.
+- `summarize`: Groups and aggregates data similar to the GROUP BY clause in SQL.
+- `sort`: Sorts the result set based on one or more columns, similar to ORDER BY in SQL.
+
+## Key differences between SQL and APL 
+
+While SQL and APL are query languages, there are some key differences to consider: 
+
+- APL is designed for querying large volumes of structured, semi-structured, and unstructured data.
+- APL is a pipe-based language, meaning you can chain multiple operations using the pipe operator (`|`) to create a data transformation flow.
+- APL doesn’t use SELECT, and FROM clauses like SQL. Instead, it uses keywords such as summarize, extend, where, and project.
+- APL is case-sensitive, whereas SQL isn’t.
+
+## Benefits of migrating from SQL to APL: 
+
+- **Time Series Analysis:** APL is particularly strong when it comes to analyzing time-series data (logs, telemetry data, etc.). It has a rich set of operators designed specifically for such scenarios, making it much easier to handle time-based analysis.
+
+- **Pipelining:** APL uses a pipelining model, much like the UNIX command line. You can chain commands together using the pipe (`|`) symbol, with each command operating on the results of the previous command. This makes it very easy to write complex queries.
+
+- **Easy to Learn:** APL is designed to be simple and easy to learn, especially for those already familiar with SQL. It doesn’t require any knowledge of database schemas or the need to specify joins.
+
+- **Scalability:** APL is a more scalable platform than SQL. This means that it can handle larger amounts of data.
+
+- **Flexibility:** APL is a more flexible platform than SQL. This means that it can be used to analyze different types of data.
+
+- **Features:** APL offers more features and capabilities than SQL. This includes features such as real-time analytics,  and time-based analysis.
+
+## Basic APL Syntax 
+
+A basic APL query follows this structure: 
+
+```kusto
+| <DatasetName>
+| <FilteringOperation> 
+| <ProjectionOperation> 
+| <AggregationOperation>
+```
+
+## Query Examples 
+
+Let’s see some examples of how to convert SQL queries to APL.
+
+## SELECT with a simple filter 
+
+**SQL:** 
+
+```sql
+SELECT *
+FROM [Sample-http-logs]
+WHERE method = 'GET';
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| where method == 'GET'
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20method%20==%20%27GET%27%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## COUNT with GROUP BY
+
+**SQL:** 
+
+```sql
+SELECT Country, COUNT(*)
+FROM [Sample-http-logs]
+GROUP BY method;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize count() by method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20count()%20by%20method%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Top N results
+
+**SQL:** 
+
+```sql
+SELECT TOP 10 Status, Method
+FROM [Sample-http-logs]
+ORDER BY Method DESC;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| top 10 by method desc
+| project status, method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|top%2010%20by%20method%20desc%20\n|%20project%20status,%20method%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Simple filtering and projection
+
+**SQL:** 
+
+```sql
+SELECT method, status, geo.country
+FROM [Sample-http-logs]
+WHERE resp_header_size_bytes >= 18;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| where resp_header_size_bytes >= 18
+| project method, status, ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|where%20resp_header_size_bytes%20%3E=18%20\n|%20project%20method,%20status,%20[%27geo.country%27]%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## COUNT with a HAVING clause
+
+**SQL:** 
+
+```sql
+SELECT geo.country
+FROM [Sample-http-logs]
+GROUP BY geo.country
+HAVING COUNT(*) > 100;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize count() by ['geo.country']
+| where count_ > 100
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20count()%20by%20[%27geo.country%27]\n|%20where%20count_%20%3E%20100%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Multiple Aggregations 
+
+**SQL:** 
+
+```sql
+SELECT geo.country,
+       COUNT(*) AS TotalRequests,
+       AVG(req_duration_ms) AS AverageRequest,
+       MIN(req_duration_ms) AS MinRequest,
+       MAX(req_duration_ms) AS MaxRequest
+FROM [Sample-http-logs]
+GROUP BY geo.country;
+```
+
+**APL:** 
+
+```kusto
+Users
+| summarize TotalRequests = count(),
+            AverageRequest = avg(req_duration_ms),
+            MinRequest = min(req_duration_ms),
+            MaxRequest = max(req_duration_ms) by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20totalRequests%20=%20count(),%20Averagerequest%20=%20avg(req_duration_ms),%20MinRequest%20=%20min(req_duration_ms),%20MaxRequest%20=%20max(req_duration_ms)%20by%20[%27geo.country%27]%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+### Sum of a column 
+
+**SQL:** 
+
+```sql
+SELECT SUM(resp_body_size_bytes) AS TotalBytes
+FROM  [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+[‘sample-http-logs’]
+| summarize TotalBytes = sum(resp_body_size_bytes)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20TotalBytes%20=%20sum(resp_body_size_bytes)%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+### Average of a column 
+
+**SQL:**
+
+```sql
+SELECT AVG(req_duration_ms) AS AverageRequest
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize AverageRequest = avg(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20AverageRequest%20=%20avg(req_duration_ms)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Minimum and Maximum Values of a column 
+
+**SQL:** 
+
+```sql
+SELECT MIN(req_duration_ms) AS MinRequest, MAX(req_duration_ms) AS MaxRequest
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize MinRequest = min(req_duration_ms), MaxRequest = max(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20MinRequest%20=%20min(req_duration_ms),%20MaxRequest%20=%20max(req_duration_ms)%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Count distinct values 
+
+**SQL:** 
+
+```sql
+SELECT COUNT(DISTINCT method) AS UniqueMethods
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize UniqueMethods = dcount(method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|summarize%20UniqueMethods%20=%20dcount(method)%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Standard deviation of a data
+
+**SQL:**
+
+```sql
+SELECT STDDEV(req_duration_ms) AS StdDevRequest
+FROM  [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize StdDevRequest = stdev(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20stdDEVRequest%20=%20stdev(req_duration_ms)%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Variance of a data 
+
+**SQL:**
+
+```sql
+SELECT VAR(req_duration_ms) AS VarRequest
+FROM  [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize VarRequest = variance(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20VarRequest%20=%20variance(req_duration_ms)%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Multiple aggregation functions 
+
+**SQL:**
+
+```sql
+SELECT COUNT(*) AS TotalDuration, SUM(req_duration_ms) AS TotalDuration, AVG(Price) AS AverageDuration
+FROM  [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize TotalOrders = count(), TotalDuration = sum( req_duration_ms), AverageDuration = avg(req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20TotalOrders%20=%20count(),%20TotalDuration%20=%20sum(req_duration_ms),%20AverageDuration%20=%20avg(req_duration_ms)%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Aggregation with GROUP BY and ORDER BY 
+
+**SQL:** 
+
+```sql
+SELECT status, COUNT(*) AS TotalStatus, SUM(resp_header_size_bytes) AS TotalRequest
+FROM [Sample-http-logs];
+GROUP BY status
+ORDER BY TotalSpent DESC;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize TotalStatus = count(), TotalRequest = sum(resp_header_size_bytes) by status
+| order by TotalRequest desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20TotalStatus%20=%20count(),%20TotalRequest%20=%20sum(resp_header_size_bytes)%20by%20status\n|%20order%20by%20TotalRequest%20desc%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Count with a condition 
+
+**SQL:** 
+
+```sql
+SELECT COUNT(*) AS HighContentStatus
+FROM  [Sample-http-logs];
+WHERE resp_header_size_bytes  > 1;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| where resp_header_size_bytes > 1
+| summarize HighContentStatus = count()
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20resp_header_size_bytes%20%3E%201\n|%20summarize%20HighContentStatus%20=%20count()%20%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Aggregation with HAVING 
+
+**SQL:** 
+
+```sql
+SELECT Status
+FROM [Sample-http-logs];
+GROUP BY Status
+HAVING COUNT(*) > 10;
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| summarize OrderCount = count() by status
+| where OrderCount > 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20OrderCount%20=%20count()%20by%20status\n|%20where%20OrderCount%20%3E%2010%20%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Count occurrences of a value in a field 
+
+**SQL:** 
+
+```sql
+SELECT content_type, COUNT(*) AS RequestCount
+FROM  [Sample-http-logs];
+WHERE content_type = ‘text/csv’;
+```
+
+**APL:** 
+
+```kusto
+ ['sample-http-logs'];
+| where content_type == 'text/csv'
+| summarize RequestCount = count()
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20content_type%20==%20%27text/csv%27%20\n|%20summarize%20RequestCount%20=%20count()%20%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## String Functions: 
+
+## Length of a string 
+
+**SQL:** 
+
+```sql
+SELECT LEN(Status) AS NameLength
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend NameLength = strlen(status)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20NameLength%20=%20strlen(status)%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Concatentation 
+
+**SQL:**
+
+```sql
+SELECT CONCAT(content_type, ' ', method) AS FullLength
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend FullLength = strcat(content_type, ' ', method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20FullLength%20=%20strcat(content_type,%20%27%20%27,%20method)%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Substring 
+
+**SQL:** 
+
+```sql
+SELECT SUBSTRING(content_type, 1, 10) AS ShortDescription
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend ShortDescription = substring(content_type, 0, 10)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20ShortDescription%20=%20substring(content_type,%200,%2010)%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Left and Right 
+
+**SQL:**
+
+```sql
+SELECT LEFT(content_type, 3) AS LeftTitle, RIGHT(content_type, 3) AS RightTitle
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend LeftTitle = substring(content_type, 0, 3), RightTitle = substring(content_type, strlen(content_type) - 3, 3)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20LeftTitle%20=%20substring(content_type,%200,%203),%20RightTitle%20=%20substring(content_type,%20strlen(content_type)%20-%203,%203)%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Replace
+
+**SQL:** 
+
+```sql
+SELECT REPLACE(StaTUS, 'old', 'new') AS UpdatedStatus
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend UpdatedStatus = replace('old', 'new', status)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20UpdatedStatus%20=%20replace(%27old%27,%20%27new%27,%20status)%20%20%22,%22queryOptions%22:{%22quickRange%22:%2215d%22}})
+
+## Upper and Lower 
+
+**SQL:**
+
+```sql
+SELECT UPPER(FirstName) AS UpperFirstName, LOWER(LastName) AS LowerLastName
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| project upperFirstName = toupper(content_type), LowerLastNmae = tolower(status)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20project%20upperFirstName%20=%20toupper(content_type),%20LowerLastNmae%20=%20tolower(status)%20%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## LTrim and RTrim 
+
+**SQL:** 
+
+```sql
+SELECT LTRIM(content_type) AS LeftTrimmedFirstName, RTRIM(content_type) AS RightTrimmedLastName
+FROM  [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend LeftTrimmedFirstName = trim_start(' ', content_type), RightTrimmedLastName = trim_end(' ', content_type)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20project%20LeftTrimmedFirstName%20=%20trim_start(%27%27,%20content_type),%20RightTrimmedLastName%20=%20trim_end(%27%27,%20content_type)%20%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Trim 
+
+**SQL:**
+
+```sql
+SELECT TRIM(content_type) AS TrimmedFirstName
+FROM [Sample-http-logs];
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend TrimmedFirstName = trim(' ', content_type)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20TrimmedFirstName%20=%20trim(%27%20%27,%20content_type)%20%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Reverse 
+
+**SQL:**
+
+```sql
+SELECT REVERSE(Method) AS ReversedFirstName
+FROM [Sample-http-logs];
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend ReversedFirstName = reverse(method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20project%20ReservedFirstnName%20=%20reverse(method)%20%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Case-insensitive search 
+
+**SQL:**
+
+```sql
+SELECT Status, Method
+FROM “Sample-http-logs”
+WHERE LOWER(Method) LIKE 'get’';
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| where tolower(method) contains 'GET'
+| project status, method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20tolower(method)%20contains%20%27GET%27\n|%20project%20status,%20method%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Take the First Step Today: Dive into APL 
+
+The journey from SQL to APL might seem daunting at first, but with the right approach, it can become an empowering transition. It’s about expanding your data query capabilities to leverage the advanced, versatile, and fast querying infrastructure that APL provides. In the end, the goal is to enable you to draw more value from your data, make faster decisions, and ultimately propel your business forward.
+
+Try converting some of your existing SQL queries to APL and observe the performance difference. Explore the Axiom Processing Language and start experimenting with its unique features.
+
+**Happy querying!**

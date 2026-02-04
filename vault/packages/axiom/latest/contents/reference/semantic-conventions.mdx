@@ -1,0 +1,127 @@
+---
+title: Semantic conventions
+description: 'This page explains Axiom’s support for OTel semantic conventions and what it means for your data.'
+---
+
+[OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) specify standard attribute names and values for different kinds of operations and data.
+
+## Trace attributes in Axiom
+
+The OTel trace attributes you send to Axiom are available under the following fields:
+
+- Attributes that follow semantic conventions are nested fields under the `attributes` field. For example, `attributes.http.method` or `attributes.http.url`.
+- Resource attributes that follow semantic conventions are nested fields under the `resource` field. For example, `resource.host.name` or `resource.host.id`.
+- Custom attributes that don’t match any semantic conventions are nested fields under the `attributes.custom` map field.
+
+For more information on map fields and querying nested fields, see [Map fields](/apl/data-types/map-fields).
+
+## Supported versions
+
+For the versions of OTel semantic conventions that Axiom supports, see [System requirements](/reference/system-requirements#opentelemetry).
+
+(Recommended) When you send OTel data to Axiom, include the version of the OTel semantic conventions that your data follows. This ensures that your data is properly shaped in Axiom.
+
+If you don’t define the version and Axiom can’t detect it, Axiom defaults to the version specified in [System requirements](/reference/system-requirements#opentelemetry). In this case, Axiom nests attributes that don’t match the semantic conventions of the default version under the `attributes.custom` map field.
+
+## Semantic conventions upgrades
+
+To guarantee the best logging experience with OTel, Axiom regularly updates the list of supported versions of semantic conventions and sometimes the default version. These updates can change the shape of your data. Axiom announces these changes in the [Changelog](https://axiom.co/changelog) and you might need to take action:
+
+- If you send data to Axiom using an unsupported version of OTel semantic conventions, be aware that the shape of your data can change when Axiom adds support for new versions.
+- When you send OTel data to Axiom, include the version of the OTel semantic conventions that your data follows. This ensures that your data is properly shaped in Axiom and it won’t be affected when Axiom changes the default version.
+
+In addition, the shape of your data can change when you choose to migrate to a newer version of OTel semantic conventions.
+
+See the sections below for more details on how your data can change and the actions you need to take when this happens.
+
+### Changes to list of supported versions
+
+After Axiom adds support for new versions of OTel semantic conventions, the shape of your data can change when the following are all true:
+
+- Before the update, you sent data to Axiom using an unsupported version of OTel semantic conventions.
+- After the update, the version of OTel semantic conventions that you used becomes supported.
+
+In this case, the shape of your data can change:
+
+- Before the update, attributes that Axiom couldn’t match to the previously supported semantic conventions were nested under the `attributes.custom` map field.
+- After the update, Axiom matches these attributes to the newly supported semantic conventions. The newly recognized attributes are nested under the `attributes` or `resource` fields, similarly to all other attributes that follow semantic conventions.
+
+When the shape of your data changes, you need to [take action](#take-action-when-shape-of-data-changes).
+
+### Changes to default version
+
+If you don’t specify the version of the OTel semantic conventions that your data follows when you send OTel data to Axiom, Axiom interprets the data using the default version.
+
+After Axiom changes the default version of OTel semantic conventions, the shape of your data can change when you don’t specify the version of the OTel semantic conventions in the data you send to Axiom. For this reason, to prevent changes to your data, include the version of the OTel semantic conventions that your data follows when you send OTel data to Axiom. This ensures that your data is properly shaped in Axiom and it won’t be affected when Axiom changes the default version.
+
+When Axiom updates the default version of OTel semantic conventions, the shape of your data can change:
+
+- Before the update, attributes that become supported between the old and the new default versions are nested under the `attributes.custom` field. After the update, these attributes are nested under the `attributes` or `resource` fields.
+- Before the update, attributes that became deprecated between the old and the new default versions are nested under the `attributes` or `resource` fields. After the update, these attributes are nested under the `attributes.custom` field.
+
+When the shape of your data changes, you need to [take action](#take-action-when-shape-of-data-changes).
+
+### Migrate to new version
+
+When you choose to migrate to a newer version of OTel semantic conventions, the shape of your data can change. Some attributes can become supported, deprecated, renamed, or relocated.
+
+When the shape of your data changes, you need to [take action](#take-action-when-shape-of-data-changes).
+
+### Determine changes between versions
+
+To determine the changes between different versions of OTel semantic conventions, compare the [schema files](https://github.com/open-telemetry/semantic-conventions/tree/main/schemas) or the [changelog](https://github.com/open-telemetry/semantic-conventions/releases) in the OTel documentation. This informs you about how the shape of your data can change as a result of semantic conventions upgrades.
+
+## Take action when shape of data changes
+
+When some attributes are relocated or renamed, the shape of your data changes and you need to take action.
+
+For example, assume that Axiom supports OTel semantic conventions up to version 1.25. You send data to Axiom that follows version 1.32 and you don’t specify the version. On June 12th 2025, Axiom adds support for versions up to 1.32 and makes version 1.32 the default. The following happens with the attribute `db.system.name`:
+
+- You send the attribute `db.system.name` to Axiom because your data follows version 1.32. The shape of the data you send to Axiom doesn’t change during the update.
+- Before the update, Axiom interpreted your data using the old default version 1.25. It didn’t recognize `db.system.name` and nested it under `attributes.custom`.
+- After the update, Axiom interprets your data using the new default version 1.32. It recognizes `db.system.name` properly and nests it under `attributes`.
+
+As a result, the attribute is relocated from `['attributes.custom']['db.system.name']` to `['attributes.db.system.name']`. You need to update all saved queries, dashboards, or monitors that reference the attribute. You have the following options:
+
+- [Update queries to reference the new location](#reference-new-location)
+- [Update queries to reference both locations](#reference-both-locations)
+
+### Reference new location
+
+When you update affected queries to reference the new location, the query results only include data you send after the semantic conventions upgrade.
+
+For example, a saved query references the old location before the update:
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == "frontend"
+| project ['attributes.custom']['db.system.name']
+```
+
+After the update, change the query to the following:
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == "frontend"
+| project ['attributes.db.system.name']
+```
+
+### Reference both locations
+
+To ensure that affected queries include data from the attribute that you send before and after the semantic conventions upgrade, use [coalesce](/apl/scalar-functions/string-functions#coalesce) in your query. This function evaluates a list of expressions and returns the first non-null value. In this case, pass the old and the new locations of the attribute to the `coalesce` function.
+
+For example, a saved query references the old location before the update:
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == "frontend"
+| project ['attributes.custom']['db.system.name']
+```
+
+After the update, change the query to the following:
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == "frontend"
+| project coalesce(['attributes.custom']['db.system.name'], ['attributes.db.system.name'])
+```

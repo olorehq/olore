@@ -1,0 +1,160 @@
+---
+title: 'strlen'
+description: 'This page explains how to use the strlen function in APL.'
+---
+
+The `strlen` function returns the length of a string in characters. Use this function to validate field lengths, filter by size constraints, or analyze text content patterns in your logs.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `len` function. APL's `strlen` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval length=len(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend length = strlen(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `LENGTH` or `LEN` depending on the database. APL's `strlen` provides standardized string length measurement.
+
+<CodeGroup>
+```sql SQL example
+SELECT LENGTH(field) AS length FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend length = strlen(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strlen(source)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| source | string | Yes | The string to measure. |
+
+### Returns
+
+Returns the length of the string in characters (not bytes).
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Analyze URI lengths to identify potential long-URL attacks or data exfiltration attempts.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend uri_length = strlen(uri)
+| summarize avg_length = avg(uri_length),
+            max_length = max(uri_length),
+            long_uri_count = countif(uri_length > 200) by method, status
+| sort by max_length desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20uri_length%20%3D%20strlen(uri)%20%7C%20summarize%20avg_length%20%3D%20avg(uri_length)%2C%20max_length%20%3D%20max(uri_length)%2C%20long_uri_count%20%3D%20countif(uri_length%20%3E%20200)%20by%20method%2C%20status%20%7C%20sort%20by%20max_length%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| method | status | avg_length | max_length | long_uri_count |
+|--------|--------|------------|------------|----------------|
+| GET | 200 | 45.3 | 512 | 234 |
+| POST | 404 | 38.7 | 387 | 89 |
+
+This query analyzes URI length patterns to identify unusually long requests that might indicate attacks or data exfiltration attempts.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Monitor trace ID and span ID length consistency to validate instrumentation correctness.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_id_length = strlen(trace_id)
+| extend span_id_length = strlen(span_id)
+| summarize id_length_consistent = countif(trace_id_length == span_id_length),
+            trace_avg = avg(trace_id_length),
+            span_avg = avg(span_id_length) by ['service.name']
+| sort by id_length_consistent desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20trace_id_length%20%3D%20strlen(trace_id)%20%7C%20extend%20span_id_length%20%3D%20strlen(span_id)%20%7C%20summarize%20id_length_consistent%20%3D%20countif(trace_id_length%20%3D%3D%20span_id_length)%2C%20trace_avg%20%3D%20avg(trace_id_length)%2C%20span_avg%20%3D%20avg(span_id_length)%20by%20%5B%27service.name%27%5D%20%7C%20sort%20by%20id_length_consistent%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | id_length_consistent | trace_avg | span_avg |
+|--------------|---------------------|-----------|----------|
+| frontend | 4532 | 32.0 | 16.0 |
+| checkout | 3421 | 32.0 | 16.0 |
+
+This query validates that trace and span IDs have expected lengths, helping identify instrumentation issues where IDs might be malformed.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect potential buffer overflow attacks by identifying unusually long user identifiers or input fields.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend id_length = strlen(id)
+| extend uri_length = strlen(uri)
+| where id_length > 50 or uri_length > 500
+| project _time, id, id_length, uri, uri_length, status, ['geo.country']
+| sort by id_length desc, uri_length desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20id_length%20%3D%20strlen(id)%20%7C%20extend%20uri_length%20%3D%20strlen(uri)%20%7C%20where%20id_length%20%3E%2050%20or%20uri_length%20%3E%20500%20%7C%20project%20_time%2C%20id%2C%20id_length%2C%20uri%2C%20uri_length%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20sort%20by%20id_length%20desc%2C%20uri_length%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | id | id_length | uri | uri_length | status | geo.country |
+|-------|----|-----------|----|------------|--------|-------------|
+| 2024-11-06T10:00:00Z | verylong... | 87 | /api/... | 612 | 403 | Unknown |
+
+This query identifies requests with abnormally long identifiers or URIs, which could indicate buffer overflow attempts or other injection attacks.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [substring](/apl/scalar-functions/string-functions/substring): Extracts parts of strings. Use this with strlen to extract specific length substrings.
+- [isempty](/apl/scalar-functions/string-functions/isempty): Checks if a string is empty. Use this to test for zero-length strings more explicitly.
+- [countof](/apl/scalar-functions/string-functions/countof): Counts substring occurrences. Use this when you need occurrence counts rather than total length.
+- [format_bytes](/apl/scalar-functions/string-functions/format-bytes): Formats bytes as strings. Use this to format length values for display.
+

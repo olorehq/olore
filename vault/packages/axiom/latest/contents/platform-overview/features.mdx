@@ -1,0 +1,73 @@
+---
+title: "Features"
+description: "Comprehensive overview of Axiom’s components, features, and capabilities across the platform."
+keywords: ["capabilities", "features", "components", "eventdb", "console", "integrations", "api", "security", "compliance", "intelligence", "spotlight", "canvas", "ai engineering"]
+mode: "wide"
+---
+
+| Component | Sub-Component | Feature | Description |
+| :--------- | :------------ | :------ | :---------- |
+| **Data Platform** | Deployment | Axiom Cloud | Axiom hosts and manages all infrastructure in its own cloud. |
+|  |  |  |  |
+| **EventDB** | - | - | Foundation of Axiom’s platform for ingesting, storing, and querying timestamped event data at scale. |
+| **EventDB** | Ingest | - | Ingest pipeline that’s coordination-free, durable by default, and scales linearly without requiring Kafka or other heavy middleware. |
+| **EventDB** | Storage | - | Custom block-based format on object storage, with extreme compression (average 25×, up to 50× for more structured events) and efficient metadata. |
+| **EventDB** | Query | - | Serverless ephemeral runtimes that spin up on demand to process queries, powered by the Axiom Processing Language (APL). |
+| **EventDB** | Query | [APL (Axiom Processing Language)](/apl/introduction) | Powerful query language supporting filtering, aggregations, transformations, and specialized operators. |
+| **EventDB** | Query | [Virtual fields](/query-data/virtual-fields) | Ability to derive new values from data in real-time during queries without pre-structuring or transforming data during ingestion. |
+|  |  |  |  |
+| **MetricsDB** | - | - | Dedicated metrics datastore purpose-built for high-cardinality time-series data without the cost penalties of traditional metrics systems. |
+| **MetricsDB** | Ingest | [OpenTelemetry Metrics](/send-data/opentelemetry) | Native support for OpenTelemetry (gRPC over HTTP) metrics protocol. |
+| **MetricsDB** | Storage | High-cardinality native | Store metrics with high-cardinality tags without performance degradation. |
+| **MetricsDB** | Query | [APL-powered queries](/query-data/metrics/query-metrics) | Query metrics with support for time-series aggregations, dimensional filtering, and cross-metric correlations. |
+|  |  |  |  |
+| **Console** | - | - | Web UI for data management, querying, dashboarding, monitoring, and user administration. |
+| **Console** | Query | [Simple Query Builder](/query-data/explore) | Guided interface to quickly filter and group data. |
+| **Console** | Query | [Advanced Query Builder](/query-data/explore) | A full APL-based environment for complex aggregations, transformations, and correlations. |
+| **Console** | Query | [Natural-language querying](/query-data/explore#generate-query-using-ai) | Generate valid APL queries from plain English descriptions using AI. |
+| **Console** | Query | [Canvas](/query-data/explore#canvas) | Lightweight workspace to display multiple charts side by side for quick visual correlation and comparison. |
+| **Console** | Query | [Visualizations](/query-data/visualizations) | Charts, graphs, and other visual components to make sense of query results. |
+| **Console** | Query | [Trace waterfall](/query-data/traces) | Dedicated interface for analyzing distributed traces. |
+| **Console** | Query | [Saved queries](/query-data/datasets#saved-queries) | Save and share queries with team members for easy reuse. |
+| **Console** | Query | [Views](/query-data/views) | Apply filters and transformations to datasets to create reusable virtual tables with scoped access control. |
+| **Console** | Stream | [Live tailing](/query-data/stream) | Real-time streaming view of incoming logs and events. |
+| **Console** | Dashboards | - | Combine multiple visual elements (charts, tables, logs, etc.) onto a single page. |
+| **Console** | Dashboards | [AI-powered dashboard generation](/dashboards/create#generate-dashboards-using-ai) | Describe requirements in natural language and generate complete dashboards instantly. |
+| **Console** | Dashboards | [Elements](/dashboard-elements/create) | Various chart types, log streams, notes, and more to tailor each dashboard. |
+| **Console** | Dashboards | [Annotations](/query-data/annotate-charts) | Mark points in time or highlight events directly in your dashboards. |
+| **Console** | Monitors | [Threshold monitors](/monitor-data/threshold-monitors) | Checks if aggregated values exceed or fall below a predefined threshold (for example, error counts > 100). |
+| **Console** | Monitors | [Match monitors](/monitor-data/match-monitors) | Triggers on specific log patterns or conditions for each event. |
+| **Console** | Monitors | [Anomaly monitors](/monitor-data/anomaly-monitors) | Learns from historical data to detect unexpected deviations or spikes. |
+| **Console** | Alerting | [Notifiers](/monitor-data/notifiers-overview) (Webhooks, Email, Slack, and more) | Sends notifications through various channels including email, chat platforms, incident management systems, and custom webhook integrations. |
+| **Console** | Governance | [Dataset management](/reference/datasets) | Data retention controls, trim functionality, field vacuuming, and dataset sharing capabilities. |
+| **Console** | Governance | [Role-Based Access Control (RBAC)](/reference/settings) | Fine-grained permissions at the organization and dataset levels. |
+| **Console** | Governance | [Audit logs](/reference/audit-log) | Track every change and action taken by users within Axiom. |
+| | | | |
+| **Intelligence** | - | - | AI-powered features that accelerate insights and automate data analysis. |
+| **Intelligence** | Analysis | [Spotlight](/console/intelligence/spotlight) | Automatically identify differences between selected events and baseline data for root cause analysis and anomaly investigation. Quickly understand key differences with AI-generated summaries. |
+| **Intelligence** | Agent integration | [MCP Server](/console/intelligence/mcp-server) | Model Context Protocol server enabling AI agents to query data, list datasets, and access monitors using APL. |
+|  |  |  |  |
+| **AI Engineering** | - | - | Tools for building, evaluating, and monitoring AI capabilities with confidence. |
+| **AI Engineering** | Observe | [LLM observability](/ai-engineering/observe) | Collect data on LLM calls and tool executions using OpenTelemetry instrumentation. |
+| **AI Engineering** | Evaluate | [Evaluations](/ai-engineering/evaluate/overview) | Systematically test AI capabilities against reference data. |
+| | | | |
+| **Integrations** | - | - | A wide range of official and community tools to collect logs, metrics, and traces and send them into Axiom. |
+| **Integrations** | Popular connectors | [OpenTelemetry](/send-data/opentelemetry), [Vector](/send-data/vector), [Cribl](/send-data/cribl), and [more](/send-data/methods) | Common shippers and pipeline tools for bridging data sources to Axiom. |
+| **Integrations** | AWS | [CloudWatch Forwarder](/send-data/cloudwatch), [Lambda Extension](/send-data/aws-lambda), [Kinesis](/send-data/aws-firehose), [S3](/send-data/aws-s3) | Official AWS-based ingestion solutions. |
+| **Integrations** | Language libraries | [Go](/guides/go), [Python](/guides/python), [Node.js](/guides/opentelemetry-nodejs), [Java](/guides/opentelemetry-java), [Ruby](/guides/opentelemetry-ruby), [Rust](/guides/rust), [.NET](/guides/opentelemetry-dotnet) | SDKs to send logs and metrics directly from applications. |
+| | | | |
+| **APIs and CLI** | - | - | Programmatic and command-line interfaces for ingesting, querying, and managing Axiom resources. |
+| **APIs and CLI** | REST API | [Endpoints](/restapi/introduction) | Programmatic interfaces for ingesting data, running queries, retrieving results, and managing annotations and tokens. |
+| **APIs and CLI** | REST API | [API tokens and Personal Access Tokens](/reference/tokens) | Authentication mechanisms for API access with basic and advanced tokens, plus personal tokens. |
+| **APIs and CLI** | CLI | [Auth and dataset management]() | Create datasets, set tokens, or update config from a shell. |
+| **APIs and CLI** | CLI | [Query from terminal](/restapi/query) | Execute queries in APL or simpler filters directly in a command-line session. |
+| **APIs and CLI** | [Terraform Provider](https://registry.terraform.io/providers/axiomhq/axiom/latest) | - | Terraform provider for programmatically creating and managing Axiom resources including datasets, notifiers, monitors, and users. |
+| | | | |
+| **Security and Compliance** | - | - | Axiom’s data protection measures and compliance with major privacy/security frameworks. |
+| **Security and Compliance** | [Compliance](/platform-overview/security) | SOC 2 Type II, GDPR, CCPA, HIPAA | Meets industry standards for data handling and privacy. |
+
+## Related links
+
+- Explore Axiom’s interactive demo [Playground](https://play.axiom.co/) to try these features.
+- Check Axiom’s [roadmap](/platform-overview/roadmap) for upcoming features.
+- [Contact](https://axiom.co/contact) Axiom if you have a feature request.

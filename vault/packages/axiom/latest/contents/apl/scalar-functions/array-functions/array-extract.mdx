@@ -1,0 +1,163 @@
+---
+title: array_extract
+description: 'This page explains how to use the array_extract function in APL.'
+---
+
+Use the `array_extract` function to extract specific values from a dynamic array using a JSON path expression. You can use this function to transform structured array data, such as arrays of objects, into simpler arrays of scalars. This is useful when working with nested JSON-like structures where you need to extract only selected fields for analysis, visualization, or filtering.
+
+Use `array_extract` when:
+
+- You need to pull scalar values from arrays of objects.
+- You want to simplify a nested data structure before further analysis.
+- You are working with structured logs or metrics where key values are nested inside arrays.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `spath` with a wildcard or field extraction logic to navigate nested structures. APL’s `array_extract` uses JSON path syntax to extract array elements that match a given pattern.
+
+<CodeGroup>
+```sql Splunk example
+| eval arr=mvappend("{\"id\":1,\"value\":true}", "{\"id\":2,\"value\":false}")
+| spath input=arr path="{}.value" output=extracted_value
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend extracted_value = array_extract(dynamic([{'id': 1, 'value': true}, {'id': 2, 'value': false}]), @'$[*].value')
+| project _time, extracted_value
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t offer native support for JSON path queries on arrays in standard syntax. While some engines support functions like `JSON_VALUE` or `JSON_TABLE`, they operate on single objects. APL’s `array_extract` provides a concise and expressive way to query arrays using JSON path.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_EXTRACT(data, '$[*].value') AS extracted_value
+FROM my_table;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend extracted_value = array_extract(dynamic([{'id': 1, 'value': true}, {'id': 2, 'value': false}]), @'$[*].value')
+| project _time, extracted_value
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+array_extract(sourceArray, jsonPath)
+```
+
+### Parameters
+
+| Name          | Type      | Description                                             |
+| ------------- | --------- | ------------------------------------------------------- |
+| `sourceArray` | `dynamic` | A JSON-like dynamic array to extract values from.       |
+| `jsonPath`    | `string`  | A JSON path expression to select values from the array. |
+
+### Returns
+
+A dynamic array of values that match the JSON path expression. The function always returns an array, even when the path matches only one element or no elements.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `array_extract` to retrieve specific fields from structured arrays, such as arrays of request metadata.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend extracted_value = array_extract(dynamic([{'id': 1, 'value': true}, {'id': 2, 'value': false}]), @'$[*].value')
+| project _time, extracted_value
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20extracted_value%20%3D%20array_extract%28dynamic%28[%7B'id'%3A%201%2C%20'value'%3A%20true%7D%2C%20%7B'id'%3A%202%2C%20'value'%3A%20false%7D]%29%2C%20%40'%24%5B*%5D.value'%29%20%7C%20project%20_time%2C%20extracted_value%22%7D)
+
+**Output**
+
+| _time           | extracted_value   |
+| ---------------- | ------------------ |
+| Jun 24, 09:28:10 | ["true", "false"] |
+| Jun 24, 09:28:10 | ["true", "false"] |
+| Jun 24, 09:28:10 | ["true", "false"] |
+
+This query extracts the `value` field from an array of objects, returning a flat array of booleans in string form.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `array_extract` to extract service names from a nested structure—for example, collecting `service.name` from span records in a trace bundle.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize traces=make_list(pack('trace_id', trace_id, 'service', ['service.name'])) by span_id
+| extend services=array_extract(traces, @'$[*].service')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20traces%3Dmake_list%28pack%28'trace_id'%2C%20trace_id%2C%20'service'%2C%20%5B'service.name'%5D%29%29%20by%20span_id%20%7C%20extend%20services%3Darray_extract%28traces%2C%20%40'%24%5B*%5D.service'%29%22%7D)
+
+**Output**
+
+| span_id           | services                               |
+| ---------------- | -------------------------------------- |
+| 24157518330f7967 | [frontend-proxy] |
+| 209a0815d291d88a | [currency] |
+| aca763479149f1d0 | [frontend-web] |
+
+This query collects and extracts the `service.name` fields from a constructed nested structure of spans.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `array_extract` to extract HTTP status codes from structured log entries grouped into sessions.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize events=make_list(pack('uri', uri, 'status', status)) by id
+| extend status_codes=array_extract(events, @'$[*].status')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20events%3Dmake_list%28pack%28'uri'%2C%20uri%2C%20'status'%2C%20status%29%29%20by%20id%20%7C%20extend%20status_codes%3Darray_extract%28events%2C%20%40'%24%5B*%5D.status'%29%22%7D)
+
+**Output**
+
+| id    | status_codes          |
+| ----- | ---------------------- |
+| user1 | [200] |
+| user2 | [201] |
+| user3 | [200] |
+
+This query extracts all HTTP status codes per user session, helping to identify patterns like repeated failures or suspicious behavior.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_slice](/apl/scalar-functions/array-functions/array-slice): Returns a subarray like `array_extract`, but supports negative indexing.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array. Useful before applying `array_extract`.
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Joins arrays end-to-end. Use before or after slicing arrays with `array_extract`.
+- [array_index_of](/apl/scalar-functions/array-functions/array-index-of): Finds the position of an element in an array, which can help set the `startIndex` for `array_extract`.

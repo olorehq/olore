@@ -1,0 +1,99 @@
+---
+title: 'Results'
+description: 'Learn about the results of Checkly'
+sidebarTitle: 'Results'
+---
+
+Check **Results** are the outcomes of every monitoring test that Checkly runs. You can select any check on the main Checkly dashboard to get an overview of the results they have produced so far. Select a check and you will see a breakdown of its recent runs, together with key availability and performance metrics. 
+
+Each time a Check executes—whether it's testing an API endpoint, clicking through a user flow, or verifying a service connection—it generates a **Result** that captures everything that happened during that test run.
+
+**Results** are more than just pass or fail indicators. They're comprehensive records that include performance metrics, error details, screenshots, network traces, and any other telemetry that helps you understand not just whether something worked, but how well it worked and why it might have failed.
+
+## Understanding Result Data
+
+You can select any check on the main Checkly dashboard to get an overview of the results they have produced so far.
+
+## Check results overview
+
+Select a check and you will see a breakdown of its recent runs, together with key availability and performance metrics.
+
+![check results overview](/images/docs/images/monitoring/check-overview.png)
+
+### Summary section
+
+The summary at the top of the page allows for filtering based on the page's data points and the selected timeframe and locations. Retried check runs do not influence this section; only the final results are considered.
+
+![check results overview summary](/images/docs/images/monitoring/check-overview-summary.png)
+
+Based on the user's selection, the metrics in the summary will also be updated to show the most important numbers at a glance.
+
+### Monitoring results chart
+
+The monitoring results chart shows a summary of the run results in the selected time period where each bar represents a part of that time period. You can change the time period in the summary section. 
+
+Hovering a bar in the chart will show the results of all check runs executed during that time. You can quickly filter the check run results in the right sidepanel by clicking a bar in the chart.
+
+![check results overview time ribbon](/images/docs/images/monitoring/check-overview-monitoring-result-chart.png)
+
+
+When retries are enabled, an additional icon highlights that the check result contains multiple check runs.
+
+### Monitoring results sidebar
+
+On the right side you can view the check result broken down per check run and location for the selected time frame. If you select a bar in the monitoring results chart it will filter out the corresponding results in the sidebar. Click any result to navigate to the check results screen for detailed information about the check run.
+
+### Performance
+
+Depending on the type of check, different performance metrics will be shown in the Performance section.
+
+For Browser checks, several performance metrics are shown in separate charts:
+
+1. The total duration of the check run
+![check overview browser session duration graph](/images/docs/images/monitoring/check-overview-performance-browser.png)
+
+
+2. Load timings for the first page navigation
+![check overview load timings graph](/images/docs/images/monitoring/check-overview-performance-loading.png)
+
+3. A breakdown of different error types
+![check overview errors graph](/images/docs/images/monitoring/check-overview-errors.png)
+
+4. An interactivity summary
+![check overview interactivity graph](/images/docs/images/monitoring/check-overview-interactivity.png)
+
+5. A visual stability breakdown
+![check overview visual stability graph](/images/docs/images/monitoring/check-overview-visual-stability.png)
+
+For API checks, a detailed response time breakdown is shown:
+![check overview api performance graph](/images/docs/images/monitoring/check-overview-performance-api.png)
+
+For Multistep checks, a response time breakdown is shown per step:
+![check overview multistep performance graph](/images/docs/images/monitoring/check-overview-performance-multistep.png)
+
+A performance comparison by location will also be included for both types of check:
+![check overview location performance graph](/images/docs/images/monitoring/check-overview-locations.png)
+
+## Navigating individual check results
+
+The check result page will contain results from multiple locations when using [parallel scheduling](/monitoring/global-locations/#scheduling-strategies). Navigate between each location using the sidebar.
+![Viewing multiple attempts from the dropdown](/images/docs/images/monitoring/location-select.gif)
+
+To learn more about the results shown for each check type, refer to the documentation for the specific monitor:
+* [API checks](/detect/synthetic-monitoring/api-checks/overview#api-check-results)
+* [Browser checks](/detect/synthetic-monitoring/browser-checks/overview#browser-check-results)
+* [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview#multistep-check-results)
+* [Heartbeat monitors](/detect/uptime-monitoring/heartbeat-monitors/overview#heartbeat-monitor-results)
+* [TCP monitors](/detect/uptime-monitoring/tcp-monitors/overview#tcp-monitor-results)
+* [DNS monitors](/detect/uptime-monitoring/tcp-monitors/overview#dns-monitor-results)
+* [URL monitors](/detect/uptime-monitoring/url-monitors/overview#url-monitor-results)
+
+## Check results with retries
+
+When checks are retried, a dropdown will indicate that the check result contains multiple check runs:
+1. The initial failed attempt
+2. The final result (which may have failed or succeeded)
+
+When selecting a check run, all data and assets are available for inspection for each attempt.
+
+![Viewing multiple attempts from the dropdown](/images/docs/images/monitoring/check-retries.gif)

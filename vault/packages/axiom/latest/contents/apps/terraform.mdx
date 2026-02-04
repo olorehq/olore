@@ -1,0 +1,213 @@
+---
+title: 'Connect Axiom with Terraform'
+description: 'Provision and manage Axiom resources such as datasets and monitors with Terraform.'
+sidebarTitle: Terraform
+keywords: ['axiom documentation', 'documentation', 'axiom', 'terraform', 'provision', 'resources']
+---
+
+Axiom Terraform Provider lets you provision and manage Axiom resources (datasets, notifiers, monitors, and users) with Terraform. This means that you can programmatically create resources, access existing ones, and perform further infrastructure automation tasks.
+
+Install the Axiom Terraform Provider from the [Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest). To see the provider in action, check out the [example](https://github.com/axiomhq/terraform-provider-axiom/blob/main/example/main.tf).
+
+This guide explains how to install the provider and perform some common procedures such as creating new resources and accessing existing ones. For the full API reference, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/docs).
+
+## Prerequisites
+
+- [Sign up for a free Axiom account](https://app.axiom.co/register). All you need is an email address.
+- [Create an advanced API token in Axiom](/reference/tokens#create-advanced-api-token) with the permissions to perform the actions you want to use Terraform for. For example, to use Terraform to create and update datasets, create the advanced API token with these permissions.
+- [Create a Terraform account](https://app.terraform.io/signup/account).
+- [Install the Terraform CLI](https://developer.hashicorp.com/terraform/cli).
+
+## Install the provider
+
+To install the Axiom Terraform Provider from the [Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest), follow these steps:
+
+1. Add the following code to your Terraform configuration file. Replace `API_TOKEN` with the Axiom API token you have generated. For added security, store the API token in an environment variable.
+
+    ```hcl
+    terraform {
+      required_providers {
+        axiom = {
+          source  = "axiomhq/axiom"
+        }
+      }
+    }
+
+    provider "axiom" {
+      api_token = "API_TOKEN"
+    }
+    ```
+
+2. In your terminal, go to the folder of your main Terraform configuration file, and then run the command `terraform init`.
+
+## Create new resources
+
+### Create dataset
+
+To create a dataset in Axiom using the provider, add the following code to your Terraform configuration file. Customize the `name` and `description` fields.
+
+```hcl
+resource "axiom_dataset" "test_dataset" {
+  name = "test_dataset"
+  description = "This is a test dataset created by Terraform."
+}
+```
+
+### Create notifier
+
+To create a Slack notifier in Axiom using the provider, add the following code to your Terraform configuration file. Replace `SLACK_URL` with the webhook URL from your Slack instance. For more information on obtaining this URL, see the [Slack documentation](https://api.slack.com/messaging/webhooks).
+
+```hcl
+resource "axiom_notifier" "test_slack_notifier" {
+  name = "test_slack_notifier"
+  properties = {
+    slack = {
+      slack_url = "SLACK_URL"
+    }
+  }
+}
+```
+To create a Discord notifier in Axiom using the provider, add the following code to your Terraform configuration file.
+- Replace `DISCORD_CHANNEL` with the webhook URL from your Discord instance. For more information on obtaining this URL, see the [Discord documentation](https://discord.com/developers/resources/webhook).
+- Replace `DISCORD_TOKEN` with your Discord API token. For more information on obtaining this token, see the [Discord documentation](https://discord.com/developers/topics/oauth2).
+
+```hcl
+resource "axiom_notifier" "test_discord_notifier" {
+  name = "test_discord_notifier"
+  properties = {
+    discord = {
+      discord_channel = "DISCORD_CHANNEL"
+      discord_token = "DISCORD_TOKEN"
+    }
+  }
+}
+```
+
+To create an email notifier in Axiom using the provider, add the following code to your Terraform configuration file. Replace `EMAIL1` and `EMAIL2` with the email addresses you want to notify.
+
+```hcl
+resource "axiom_notifier" "test_email_notifier" {
+  name = "test_email_notifier"
+  properties = {
+    email= {
+      emails = ["EMAIL1","EMAIL2"]
+    }
+  }
+}
+```
+
+For more information on the types of notifier you can create, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/resources/notifier).
+
+### Create monitor
+
+To create a monitor in Axiom using the provider, add the following code to your Terraform configuration file and customize it:
+
+```hcl
+resource "axiom_monitor" "test_monitor" {
+  depends_on       = [axiom_dataset.test_dataset, axiom_notifier.test_slack_notifier]
+
+  # `type` can be one of the following:
+  # - "Threshold": For numeric values against thresholds. It requires `operator` and `threshold`.
+  # - "MatchEvent": For detecting specific events. It doesn’t require `operator` and `threshold`.
+  # - "AnomalyDetection": For detecting anomalies. It requires `compare_days` and `tolerance, operator`.
+
+  type             = "Threshold"
+
+  name             = "test_monitor"
+  description      = "This is a test monitor created by Terraform."
+  apl_query        = "['test_dataset'] | summarize count() by bin_auto(_time)"
+  interval_minutes = 5
+  
+  # `operator` is required for threshold and anomaly detection monitors.
+  # Valid values are "Above", "AboveOrEqual", "Below", "BelowOrEqual".
+  operator         = "Above"
+
+  range_minutes    = 5
+
+  # `threshold` is required for threshold monitors
+  threshold        = 1
+
+  # `compare_days` and `tolerance` are required for anomaly detection monitors.
+  # Uncomment the two lines below for anomaly detection monitors.
+  # compare_days     = 7
+  # tolerance        = 25
+  
+  notifier_ids = [
+    axiom_notifier.test_slack_notifier.id
+  ]
+  alert_on_no_data = false
+  notify_by_group  = false
+}
+```
+
+This example creates a monitor using the dataset `test_dataset` and the notifier `test_slack_notifier`. These are resources you have created and accessed in the sections above.
+- Customize the `name` and the `description` fields.
+- In the `apl_query` field, specify the APL query for the monitor.
+
+For more information on these fields, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/resources/monitor).
+
+### Create user
+
+To create a user in Axiom using the provider, add the following code to your Terraform configuration file. Customize the `name`, `email`, and `role` fields.
+
+```hcl
+resource "axiom_user" "test_user" {
+  name  = "test_user"
+  email = "test@abc.com"
+  role  = "user"
+}
+```
+
+## Access existing resources
+
+### Access existing dataset
+
+To access an existing dataset, follow these steps:
+
+1. Determine the ID of the Axiom dataset by sending a GET request to the [`datasets` endpoint of the Axiom API](/restapi/endpoints/getDatasets).
+2. Add the following code to your Terraform configuration file. Replace `DATASET_ID` with the ID of the Axiom dataset.
+
+    ```hcl
+    data "axiom_dataset" "test_dataset" {
+      id = "DATASET_ID"
+    }
+    ```
+
+### Access existing notifier
+
+To access an existing notifier, follow these steps:
+
+1. Determine the ID of the Axiom notifier by sending a GET request to the `notifiers` endpoint of the Axiom API.
+2. Add the following code to your Terraform configuration file. Replace `NOTIFIER_ID` with the ID of the Axiom notifier.
+
+    ```hcl
+    data "axiom_dataset" "test_slack_notifier" {
+      id = "NOTIFIER_ID"
+    }
+    ```
+
+### Access existing monitor
+
+To access an existing monitor, follow these steps:
+
+1. Determine the ID of the Axiom monitor by sending a GET request to the `monitors` endpoint of the Axiom API.
+2. Add the following code to your Terraform configuration file. Replace `MONITOR_ID` with the ID of the Axiom monitor.
+
+    ```hcl
+    data "axiom_monitor" "test_monitor" {
+      id = "MONITOR_ID"
+    }
+    ```
+
+### Access existing user
+
+To access an existing user, follow these steps:
+
+1. Determine the ID of the Axiom user by sending a GET request to the `users` endpoint of the Axiom API.
+2. Add the following code to your Terraform configuration file. Replace `USER_ID` with the ID of the Axiom user.
+
+    ```hcl
+    data "axiom_user" "test_user" {
+      id = "USER_ID"
+    }
+    ```

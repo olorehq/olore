@@ -1,0 +1,152 @@
+---
+title: percentileif
+description: 'This page explains how to use the percentileif aggregation function in APL.'
+---
+
+The `percentileif` aggregation function calculates the percentile of a numeric column, conditional on a specified boolean predicate. This function is useful for filtering data dynamically and determining percentile values based only on relevant subsets of data.
+
+You can use `percentileif` to gain insights in various scenarios, such as:
+
+- Identifying response time percentiles for HTTP requests from specific regions.
+- Calculating percentiles of span durations for specific service types in OpenTelemetry traces.
+- Analyzing security events by percentile within defined risk categories.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+The `percentileif` aggregation in APL works similarly to `percentile` combined with conditional filtering in SPL. However, APL integrates the condition directly into the aggregation for simplicity.
+
+<CodeGroup>
+```sql Splunk example
+stats perc95(req_duration_ms) as p95 where geo.country="US"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize percentileif(req_duration_ms, 95, geo.country == 'US')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you typically calculate percentiles using window functions or aggregate functions combined with a `WHERE` clause. APL simplifies this by embedding the condition directly in the `percentileif` aggregation.
+
+<CodeGroup>
+```sql SQL example
+SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY req_duration_ms)
+FROM sample_http_logs
+WHERE geo_country = 'US'
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize percentileif(req_duration_ms, 95, geo.country == 'US')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize percentileif(Field, Percentile, Predicate)
+```
+
+### Parameters
+
+| Parameter       | Description                                                                                                  |
+|------------------|--------------------------------------------------------------------------------------------------------------|
+| `Field` | The numeric field from which to calculate the percentile.                                                   |
+| `Percentile`    | A number between 0 and 100 that specifies the percentile to calculate.                                        |
+| `Predicate`     | A Boolean expression that filters rows to include in the calculation.                                         |
+
+### Returns
+
+The function returns a single numeric value representing the specified percentile of the `Field` for rows where the `Predicate` evaluates to `true`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use `percentileif` to analyze request durations for specific HTTP methods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize post_p90 = percentileif(req_duration_ms, 90, method == "POST"), get_p90 = percentileif(req_duration_ms, 90, method == "GET") by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20post_p90%20%3D%20percentileif(req_duration_ms%2C%2090%2C%20method%20%3D%3D%20'POST')%2C%20get_p90%20%3D%20percentileif(req_duration_ms%2C%2090%2C%20method%20%3D%3D%20'GET')%20by%20bin_auto(_time)%22%7D)
+
+**Output**
+
+| post_p90 | get_p90 |
+|--------------|---|
+| 1.691 ms   | 1.453 ms |
+
+This query calculates the 90th percentile of request durations for HTTP POST and GET methods.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can use `percentileif` to measure span durations for specific services and operation kinds.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize percentileif(duration, 95, ['service.name'] == 'frontend' and kind == 'server')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20summarize%20percentileif%28duration%2C%2095%2C%20%5B%27service.name%27%5D%20%3D%3D%20%27frontend%27%20and%20kind%20%3D%3D%20%27server%27%29%22%7D)
+
+**Output**
+
+| Percentile95  |
+|---------------|
+| 1.2s          |
+
+This query calculates the 95th percentile of span durations for server spans in the `frontend` service.
+
+</Tab>
+<Tab title="Security logs">
+
+You can use `percentileif` to calculate response time percentiles for specific HTTP status codes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize percentileif(req_duration_ms, 75, status == '404')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20percentileif%28req_duration_ms%2C%2075%2C%20status%20%3D%3D%20%27404%27%29%22%7D)
+
+**Output**
+
+| Percentile75 |
+|--------------|
+| 350          |
+
+This query calculates the 75th percentile of request durations for HTTP 404 errors.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [percentile](/apl/aggregation-function/percentile): Calculates the percentile for all rows without any filtering. Use `percentile` when you don’t need conditional filtering.
+- [avgif](/apl/aggregation-function/avgif): Calculates the average of a numeric column based on a condition. Use `avgif` for mean calculations instead of percentiles.
+- [minif](/apl/aggregation-function/minif): Returns the minimum value of a numeric column where a condition is true. Use `minif` for identifying the lowest values within subsets.
+- [maxif](/apl/aggregation-function/maxif): Returns the maximum value of a numeric column where a condition is true. Use `maxif` for identifying the highest values within subsets.
+- [sumif](/apl/aggregation-function/sumif): Sums a numeric column based on a condition. Use `sumif` for conditional total calculations.

@@ -1,0 +1,34 @@
+---
+title: 'Threshold monitors'
+description: 'This section introduces the Monitors tab and explains how to create monitors.'
+sidebarTitle: Threshold
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+Threshold monitors allow you to periodically aggregate your event data and compare the results of this aggregation to a threshold that you define. When the results cross the threshold, the monitor enters the alert state. The monitor remains in the alert state until the results no longer cross the threshold. A threshold monitor sends you a notification each time it enters or exits the alert state.
+
+## Create threshold monitor
+
+To create a threshold monitor, follow these steps:
+
+1. Click the **Monitors** tab, and then click **New monitor**.
+1. Click **Threshold monitor**.
+1. Name your monitor and add a description.
+1. Configure the monitor using the following options:
+    - The threshold is the value to compare the results of the query to. This can be any numeric value.
+    - The comparison operator is the rule to apply when comparing the results to the threshold. The possible values are **above**, **above or equal**, **below**, and **below or equal**.
+    - The frequency is how often the monitor runs. This is a positive integer number of minutes.
+    - The range is the time range for your query. This is a positive integer number of minutes. The end time is the time the monitor runs.
+    - **Alert on no data** triggers the monitor when your query doesn’t return any data. Your query returns no data if no events match your filters and an aggregation used in the query is undefined. For example, you take the average of a field not present in any matching events. The monitor sends a notification when data returns after a no-data alert state. Notifications about crossing the threshold take precedence over notifications about data returning after a no-data state.
+    - You can group by attributes when defining your query. By default, your monitor enters the alert state if any of the values returned for the group-by attributes cross the threshold, and remains in the alert state until none of the values returned cross the threshold. To trigger the monitor separately for each group that crosses the threshold, enable **Notify by group**. At most one trigger notification is sent per monitor run. This option only has an effect if the monitor’s query groups by a non-time field.
+1. Click **Add notifier**, and then select the notifiers that define how you want to receive notifications for this monitor. For more information, see [Notifiers](#notifiers).
+1. To define your query, use one of the following options:
+    - To use the visual query builder, click **Simple query builder**. Click **Visualize** to select an aggregation method, and then click **Run query** to preview the results in a chart. The monitor enters the alert state if any points on the chart cross the threshold. Optionally, use filters to specify which events to aggregate, and group by fields to split the aggregation across the values of these fields.
+    - To use Axiom Processing Language (APL), click **Advanced query language**. Write a query where the final clause uses the `summarize` operator, and then click **Run query** to preview the results. For more information, see [Introduction to APL](/apl/introduction). If your query returns a chart, the monitor enters the alert state if any points on the chart cross the threshold. If your query returns a table, the monitor enters the alert state if any numeric values in the table cross the threshold. If your query uses the `bin_auto` function, Axiom displays a warning. To ensure that the monitor preview gives an accurate picture of future performance, use `bin` rather than `bin_auto`.
+1. Click **Create**.
+
+You have created a threshold monitor, and Axiom alerts you when the results from your query cross the threshold.
+
+## Examples
+
+For real-world use cases, see [Monitor examples](/monitor-data/monitor-examples).

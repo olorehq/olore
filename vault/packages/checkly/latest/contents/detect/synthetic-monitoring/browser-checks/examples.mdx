@@ -1,0 +1,733 @@
+---
+title: 'Browser Check Examples'
+description: 'Real-world examples and implementation patterns for monitoring user workflows with Checkly browser checks across different industries and scenarios.'
+sidebarTitle: 'Examples'
+---
+
+These real-world use cases demonstrate how to implement comprehensive user journey monitoring across different industries and scenarios.
+
+## E-commerce and Retail
+
+### Product Discovery and Purchase Flow
+Monitor the complete customer journey from browsing to purchase:
+
+```typescript
+test('Complete e-commerce purchase workflow', async ({ page }) => {
+  // Product browsing and search
+  await page.goto('https://shop.example.com')
+  await page.fill('[data-testid="search-input"]', 'wireless headphones')
+  await page.click('[data-testid="search-button"]')
+  
+  // Verify search results
+  await expect(page.locator('[data-testid="search-results"]')).toBeVisible()
+  await expect(page.locator('.product-card')).toHaveCountGreaterThan(0)
+  
+  // Select and view product
+  await page.click('.product-card:first-child')
+  await expect(page.locator('[data-testid="product-title"]')).toBeVisible()
+  await expect(page.locator('[data-testid="product-price"]')).toBeVisible()
+  await expect(page.locator('[data-testid="add-to-cart"]')).toBeEnabled()
+  
+  // Add to cart
+  await page.click('[data-testid="add-to-cart"]')
+  await expect(page.locator('[data-testid="cart-notification"]')).toBeVisible()
+  
+  // Proceed to checkout
+  await page.click('[data-testid="cart-icon"]')
+  await expect(page.locator('[data-testid="cart-items"]')).toBeVisible()
+  await page.click('[data-testid="checkout-button"]')
+  
+  // Checkout process
+  await page.fill('[name="email"]', 'customer@example.com')
+  await page.fill('[name="firstName"]', 'John')
+  await page.fill('[name="lastName"]', 'Doe')
+  await page.fill('[name="address"]', '123 Main Street')
+  await page.fill('[name="city"]', 'Boston')
+  await page.selectOption('[name="state"]', 'MA')
+  await page.fill('[name="zipCode"]', '02101')
+  
+  // Payment information (test mode)
+  await page.fill('[name="cardNumber"]', '4242424242424242')
+  await page.fill('[name="expiryDate"]', '12/25')
+  await page.fill('[name="cvv"]', '123')
+  
+  // Complete purchase
+  await page.click('[data-testid="place-order"]')
+  
+  // Verify order confirmation
+  await expect(page.locator('[data-testid="order-confirmation"]')).toBeVisible()
+  await expect(page.locator('[data-testid="order-number"]')).toContainText('#')
+  await expect(page.locator('[data-testid="order-total"]')).toBeVisible()
+})
+```
+
+### Mobile Shopping Experience
+Test responsive design and mobile-specific features:
+
+```typescript
+test('Mobile shopping experience', async ({ page }) => {
+  // Set mobile viewport
+  await page.setViewportSize({ width: 375, height: 812 })
+  
+  await page.goto('https://shop.example.com')
+  
+  // Mobile navigation
+  await page.click('[data-testid="mobile-menu-toggle"]')
+  await expect(page.locator('[data-testid="mobile-nav"]')).toBeVisible()
+  await page.click('[data-testid="categories-link"]')
+  
+  // Touch interactions
+  await page.click('[data-testid="electronics-category"]')
+  await expect(page.locator('.category-products')).toBeVisible()
+  
+  // Swipe through product images
+  const productImage = page.locator('[data-testid="product-image"]')
+  await productImage.hover()
+  await page.mouse.down()
+  await page.mouse.move(100, 0)
+  await page.mouse.up()
+  
+  // Mobile checkout optimization
+  await page.click('[data-testid="quick-buy"]')
+  await expect(page.locator('[data-testid="mobile-checkout"]')).toBeVisible()
+  
+  // Mobile payment methods
+  await page.click('[data-testid="apple-pay"]')
+  // Verify Apple Pay dialog (would be mocked in test environment)
+})
+```
+
+### Inventory and Availability Monitoring
+Ensure product availability information is accurate:
+
+```typescript
+test('Product availability and inventory updates', async ({ page }) => {
+  await page.goto('https://shop.example.com/products/popular-item')
+  
+  // Check stock status
+  const stockStatus = page.locator('[data-testid="stock-status"]')
+  await expect(stockStatus).toBeVisible()
+  
+  const stockText = await stockStatus.textContent()
+  if (stockText.includes('In Stock')) {
+    // Verify add to cart is enabled
+    await expect(page.locator('[data-testid="add-to-cart"]')).toBeEnabled()
+    
+    // Test quantity selection
+    await page.fill('[data-testid="quantity-input"]', '2')
+    await page.click('[data-testid="add-to-cart"]')
+    await expect(page.locator('[data-testid="cart-count"]')).toContainText('2')
+  } else if (stockText.includes('Out of Stock')) {
+    // Verify add to cart is disabled
+    await expect(page.locator('[data-testid="add-to-cart"]')).toBeDisabled()
+    
+    // Check notification signup
+    await expect(page.locator('[data-testid="notify-when-available"]')).toBeVisible()
+  }
+  
+  // Check delivery estimates
+  await page.fill('[data-testid="zip-code-input"]', '10001')
+  await page.click('[data-testid="check-delivery"]')
+  await expect(page.locator('[data-testid="delivery-estimate"]')).toBeVisible()
+})
+```
+
+## SaaS and Software Platforms
+
+### User Onboarding and Setup
+Monitor new user registration and initial setup flows:
+
+```typescript
+test('SaaS user onboarding workflow', async ({ page }) => {
+  // Landing page and signup
+  await page.goto('https://app.saas.com')
+  await page.click('[data-testid="get-started"]')
+  
+  // Registration form
+  const timestamp = Date.now()
+  const testEmail = `test-${timestamp}@example.com`
+  
+  await page.fill('[name="firstName"]', 'Jane')
+  await page.fill('[name="lastName"]', 'Smith')
+  await page.fill('[name="email"]', testEmail)
+  await page.fill('[name="password"]', 'SecurePassword123!')
+  await page.check('[name="termsAccepted"]')
+  await page.click('[type="submit"]')
+  
+  // Email verification (simulated)
+  await expect(page.locator('[data-testid="verification-notice"]')).toBeVisible()
+  await page.goto(`https://app.saas.com/verify?token=test-token&email=${testEmail}`)
+  
+  // Account setup wizard
+  await expect(page.locator('[data-testid="welcome-wizard"]')).toBeVisible()
+  
+  // Company information
+  await page.fill('[name="companyName"]', 'Test Company')
+  await page.selectOption('[name="companySize"]', '10-50')
+  await page.selectOption('[name="industry"]', 'Technology')
+  await page.click('[data-testid="next-step"]')
+  
+  // Use case selection
+  await page.check('[data-testid="use-case-analytics"]')
+  await page.check('[data-testid="use-case-reporting"]')
+  await page.click('[data-testid="next-step"]')
+  
+  // Integration setup
+  await page.click('[data-testid="connect-google-analytics"]')
+  // Handle OAuth flow (mocked in test)
+  await page.click('[data-testid="authorize-integration"]')
+  await page.click('[data-testid="complete-setup"]')
+  
+  // Verify dashboard access
+  await expect(page).toHaveURL(/.*dashboard/)
+  await expect(page.locator('[data-testid="welcome-banner"]')).toBeVisible()
+  await expect(page.locator('[data-testid="onboarding-checklist"]')).toBeVisible()
+})
+```
+
+### Feature Usage and Navigation
+Test core application functionality and user workflows:
+
+```typescript
+test('Core feature workflow - Project management', async ({ page }) => {
+  // Login to application
+  await page.goto('https://app.project-manager.com/login')
+  await page.fill('[name="email"]', process.env.TEST_USER_EMAIL)
+  await page.fill('[name="password"]', process.env.TEST_USER_PASSWORD)
+  await page.click('[type="submit"]')
+  
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible()
+  
+  // Create new project
+  await page.click('[data-testid="create-project"]')
+  await page.fill('[name="projectName"]', 'Test Project')
+  await page.fill('[name="description"]', 'Automated test project')
+  await page.selectOption('[name="template"]', 'software-development')
+  await page.click('[data-testid="create"]')
+  
+  // Verify project creation
+  await expect(page.locator('[data-testid="project-header"]')).toContainText('Test Project')
+  
+  // Add team members
+  await page.click('[data-testid="add-member"]')
+  await page.fill('[data-testid="member-email"]', 'teammate@example.com')
+  await page.selectOption('[data-testid="member-role"]', 'developer')
+  await page.click('[data-testid="send-invitation"]')
+  
+  // Create tasks
+  await page.click('[data-testid="add-task"]')
+  await page.fill('[name="taskTitle"]', 'Setup development environment')
+  await page.selectOption('[name="priority"]', 'high')
+  await page.selectOption('[name="assignee"]', 'teammate@example.com')
+  await page.click('[data-testid="save-task"]')
+  
+  // Verify task appears in project board
+  await expect(page.locator('[data-testid="task-board"]')).toContainText('Setup development environment')
+  
+  // Test drag and drop functionality
+  const task = page.locator('[data-testid="task-card"]').first()
+  const inProgressColumn = page.locator('[data-testid="in-progress-column"]')
+  await task.dragTo(inProgressColumn)
+  
+  // Verify task moved
+  await expect(inProgressColumn).toContainText('Setup development environment')
+})
+```
+
+### Subscription and Billing Workflows
+Monitor payment and subscription management:
+
+```typescript
+test('Subscription upgrade workflow', async ({ page }) => {
+  // Navigate to billing settings
+  await page.goto('https://app.saas.com/dashboard')
+  await page.click('[data-testid="user-menu"]')
+  await page.click('[data-testid="billing-settings"]')
+  
+  // Current plan information
+  await expect(page.locator('[data-testid="current-plan"]')).toBeVisible()
+  await expect(page.locator('[data-testid="plan-name"]')).toContainText('Basic')
+  
+  // View upgrade options
+  await page.click('[data-testid="upgrade-plan"]')
+  await expect(page.locator('[data-testid="pricing-table"]')).toBeVisible()
+  
+  // Select premium plan
+  await page.click('[data-testid="select-premium"]')
+  
+  // Billing information update
+  await page.fill('[name="cardNumber"]', '4242424242424242')
+  await page.fill('[name="expiryDate"]', '12/25')
+  await page.fill('[name="cvv"]', '123')
+  await page.fill('[name="billingZip"]', '02101')
+  
+  // Confirm upgrade
+  await page.click('[data-testid="confirm-upgrade"]')
+  
+  // Verify upgrade success
+  await expect(page.locator('[data-testid="upgrade-success"]')).toBeVisible()
+  await expect(page.locator('[data-testid="current-plan"]')).toContainText('Premium')
+  
+  // Verify new features are available
+  await page.goto('https://app.saas.com/dashboard')
+  await expect(page.locator('[data-testid="premium-features"]')).toBeVisible()
+})
+```
+
+## Financial Services
+
+### Online Banking Workflows
+Monitor critical banking operations and security:
+
+```typescript
+test('Online banking - Account management', async ({ page }) => {
+  // Secure login with multi-factor authentication
+  await page.goto('https://bank.example.com/login')
+  await page.fill('[name="username"]', process.env.BANK_USERNAME)
+  await page.fill('[name="password"]', process.env.BANK_PASSWORD)
+  await page.click('[type="submit"]')
+  
+  // Handle 2FA (simulated)
+  await expect(page.locator('[data-testid="2fa-prompt"]')).toBeVisible()
+  await page.fill('[name="authCode"]', '123456') // Test code
+  await page.click('[data-testid="verify-2fa"]')
+  
+  // Account dashboard
+  await expect(page.locator('[data-testid="account-dashboard"]')).toBeVisible()
+  await expect(page.locator('[data-testid="account-balance"]')).toBeVisible()
+  
+  // View account details
+  await page.click('[data-testid="checking-account"]')
+  await expect(page.locator('[data-testid="account-number"]')).toBeVisible()
+  await expect(page.locator('[data-testid="transaction-history"]')).toBeVisible()
+  
+  // Transaction filtering
+  await page.selectOption('[data-testid="date-range"]', 'last-30-days')
+  await page.click('[data-testid="apply-filter"]')
+  await expect(page.locator('[data-testid="filtered-transactions"]')).toBeVisible()
+  
+  // Download statements
+  await page.click('[data-testid="download-statement"]')
+  await page.selectOption('[data-testid="statement-format"]', 'pdf')
+  await page.click('[data-testid="generate-download"]')
+  
+  // Verify download initiated
+  await expect(page.locator('[data-testid="download-status"]')).toContainText('Preparing')
+})
+```
+
+### Money Transfer and Payments
+Test fund transfer and payment processing:
+
+```typescript
+test('Money transfer workflow', async ({ page }) => {
+  // Navigate to transfer section
+  await page.goto('https://bank.example.com/dashboard')
+  await page.click('[data-testid="transfer-money"]')
+  
+  // Internal transfer setup
+  await page.click('[data-testid="internal-transfer"]')
+  await page.selectOption('[data-testid="from-account"]', 'checking-001')
+  await page.selectOption('[data-testid="to-account"]', 'savings-002')
+  await page.fill('[name="amount"]', '100.00')
+  await page.fill('[name="memo"]', 'Test transfer')
+  
+  // Schedule transfer
+  await page.click('[data-testid="schedule-transfer"]')
+  await page.selectOption('[data-testid="schedule-type"]', 'immediate')
+  
+  // Review and confirm
+  await page.click('[data-testid="review-transfer"]')
+  await expect(page.locator('[data-testid="transfer-summary"]')).toBeVisible()
+  await expect(page.locator('[data-testid="transfer-amount"]')).toContainText('$100.00')
+  
+  // Security confirmation
+  await page.fill('[name="confirmationCode"]', '123456')
+  await page.click('[data-testid="confirm-transfer"]')
+  
+  // Verify success
+  await expect(page.locator('[data-testid="transfer-success"]')).toBeVisible()
+  await expect(page.locator('[data-testid="confirmation-number"]')).toBeVisible()
+  
+  // External transfer (ACH)
+  await page.click('[data-testid="external-transfer"]')
+  await page.click('[data-testid="add-external-account"]')
+  await page.fill('[name="bankName"]', 'Test Bank')
+  await page.fill('[name="routingNumber"]', '021000021')
+  await page.fill('[name="accountNumber"]', '1234567890')
+  await page.selectOption('[name="accountType"]', 'checking')
+  
+  // Micro-deposit verification (simulated)
+  await page.click('[data-testid="verify-micro-deposits"]')
+  await page.fill('[name="deposit1"]', '0.01')
+  await page.fill('[name="deposit2"]', '0.02')
+  await page.click('[data-testid="verify-amounts"]')
+  
+  await expect(page.locator('[data-testid="account-verified"]')).toBeVisible()
+})
+```
+
+### Investment Platform Monitoring
+Test investment account access and trading functionality:
+
+```typescript
+test('Investment platform workflow', async ({ page }) => {
+  // Login and portfolio overview
+  await page.goto('https://invest.example.com/login')
+  await page.fill('[name="email"]', process.env.INVESTOR_EMAIL)
+  await page.fill('[name="password"]', process.env.INVESTOR_PASSWORD)
+  await page.click('[type="submit"]')
+  
+  // Portfolio dashboard
+  await expect(page.locator('[data-testid="portfolio-value"]')).toBeVisible()
+  await expect(page.locator('[data-testid="day-change"]')).toBeVisible()
+  await expect(page.locator('[data-testid="holdings-table"]')).toBeVisible()
+  
+  // Research and stock lookup
+  await page.fill('[data-testid="symbol-search"]', 'AAPL')
+  await page.click('[data-testid="search-button"]')
+  await expect(page.locator('[data-testid="stock-chart"]')).toBeVisible()
+  await expect(page.locator('[data-testid="stock-price"]')).toBeVisible()
+  
+  // Place order (paper trading)
+  await page.click('[data-testid="place-order"]')
+  await page.selectOption('[data-testid="order-type"]', 'market')
+  await page.fill('[name="quantity"]', '10')
+  await page.click('[data-testid="buy-button"]')
+  
+  // Order review
+  await expect(page.locator('[data-testid="order-preview"]')).toBeVisible()
+  await expect(page.locator('[data-testid="estimated-cost"]')).toBeVisible()
+  
+  // Confirm order (test mode)
+  await page.click('[data-testid="confirm-order"]')
+  await expect(page.locator('[data-testid="order-submitted"]')).toBeVisible()
+  
+  // Check order status
+  await page.click('[data-testid="orders-tab"]')
+  await expect(page.locator('[data-testid="pending-orders"]')).toBeVisible()
+})
+```
+
+## Healthcare and Life Sciences
+
+### Patient Portal Access
+Monitor patient information access and appointment scheduling:
+
+```typescript
+test('Patient portal workflow', async ({ page }) => {
+  // Patient login
+  await page.goto('https://portal.healthsystem.com/login')
+  await page.fill('[name="patientId"]', process.env.PATIENT_ID)
+  await page.fill('[name="dateOfBirth"]', '01/01/1980')
+  await page.fill('[name="zipCode"]', '02101')
+  await page.click('[type="submit"]')
+  
+  // Health dashboard
+  await expect(page.locator('[data-testid="health-summary"]')).toBeVisible()
+  await expect(page.locator('[data-testid="upcoming-appointments"]')).toBeVisible()
+  
+  // View medical records
+  await page.click('[data-testid="medical-records"]')
+  await expect(page.locator('[data-testid="records-list"]')).toBeVisible()
+  
+  // Lab results
+  await page.click('[data-testid="lab-results"]')
+  await expect(page.locator('[data-testid="recent-labs"]')).toBeVisible()
+  
+  // Schedule appointment
+  await page.click('[data-testid="schedule-appointment"]')
+  await page.selectOption('[data-testid="provider"]', 'Dr. Smith')
+  await page.selectOption('[data-testid="appointment-type"]', 'follow-up')
+  
+  // Select available time
+  await page.click('[data-testid="calendar-view"]')
+  await page.click('[data-testid="available-slot"]')
+  await page.fill('[name="reason"]', 'Follow-up consultation')
+  
+  // Confirm appointment
+  await page.click('[data-testid="book-appointment"]')
+  await expect(page.locator('[data-testid="appointment-confirmed"]')).toBeVisible()
+  
+  // Prescription refills
+  await page.click('[data-testid="prescriptions"]')
+  await expect(page.locator('[data-testid="active-prescriptions"]')).toBeVisible()
+  await page.click('[data-testid="request-refill"]')
+  await page.selectOption('[data-testid="pharmacy"]', 'Main Street Pharmacy')
+  await page.click('[data-testid="submit-refill"]')
+  
+  await expect(page.locator('[data-testid="refill-requested"]')).toBeVisible()
+})
+```
+
+### Telemedicine Platform
+Test video consultation and virtual care workflows:
+
+```typescript
+test('Telemedicine consultation workflow', async ({ page }) => {
+  // Join virtual waiting room
+  await page.goto('https://telehealth.example.com/appointment/123456')
+  await page.fill('[name="patientName"]', 'John Doe')
+  await page.fill('[name="dateOfBirth"]', '01/01/1980')
+  await page.click('[data-testid="join-waiting-room"]')
+  
+  // Camera and microphone setup
+  await expect(page.locator('[data-testid="media-setup"]')).toBeVisible()
+  await page.click('[data-testid="test-camera"]')
+  await page.click('[data-testid="test-microphone"]')
+  await page.click('[data-testid="continue-to-call"]')
+  
+  // Pre-visit questionnaire
+  await page.check('[data-testid="symptom-fever"]')
+  await page.check('[data-testid="symptom-cough"]')
+  await page.fill('[name="symptoms-duration"]', '3 days')
+  await page.selectOption('[name="pain-level"]', '4')
+  await page.click('[data-testid="submit-questionnaire"]')
+  
+  // Virtual consultation (simulated)
+  await expect(page.locator('[data-testid="video-call-interface"]')).toBeVisible()
+  await expect(page.locator('[data-testid="provider-video"]')).toBeVisible()
+  await expect(page.locator('[data-testid="patient-video"]')).toBeVisible()
+  
+  // Call controls
+  await page.click('[data-testid="mute-audio"]')
+  await page.click('[data-testid="unmute-audio"]')
+  await page.click('[data-testid="toggle-video"]')
+  
+  // Chat functionality
+  await page.fill('[data-testid="chat-input"]', 'Can you see my screen clearly?')
+  await page.click('[data-testid="send-chat"]')
+  
+  // End consultation
+  await page.click('[data-testid="end-call"]')
+  await expect(page.locator('[data-testid="consultation-summary"]')).toBeVisible()
+  
+  // Download visit summary
+  await page.click('[data-testid="download-summary"]')
+})
+```
+
+## Education and E-Learning
+
+### Online Course Platform
+Monitor student learning experience and course delivery:
+
+```typescript
+test('Online learning platform workflow', async ({ page }) => {
+  // Student login
+  await page.goto('https://learn.university.edu/login')
+  await page.fill('[name="studentId"]', process.env.STUDENT_ID)
+  await page.fill('[name="password"]', process.env.STUDENT_PASSWORD)
+  await page.click('[type="submit"]')
+  
+  // Student dashboard
+  await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible()
+  await expect(page.locator('[data-testid="enrolled-courses"]')).toBeVisible()
+  
+  // Access course
+  await page.click('[data-testid="course-tile"]')
+  await expect(page.locator('[data-testid="course-content"]')).toBeVisible()
+  
+  // Watch lecture video
+  await page.click('[data-testid="lecture-video"]')
+  await expect(page.locator('[data-testid="video-player"]')).toBeVisible()
+  
+  // Video controls
+  await page.click('[data-testid="play-button"]')
+  await page.click('[data-testid="fullscreen"]')
+  await page.click('[data-testid="captions"]')
+  
+  // Take notes
+  await page.click('[data-testid="notes-panel"]')
+  await page.fill('[data-testid="notes-textarea"]', 'Important concept about data structures')
+  await page.click('[data-testid="save-notes"]')
+  
+  // Complete assignment
+  await page.click('[data-testid="assignments-tab"]')
+  await page.click('[data-testid="open-assignment"]')
+  
+  // File upload
+  await page.setInputFiles('[data-testid="file-upload"]', './test-assignment.pdf')
+  await page.fill('[name="submission-comments"]', 'Completed assignment as requested')
+  await page.click('[data-testid="submit-assignment"]')
+  
+  await expect(page.locator('[data-testid="submission-success"]')).toBeVisible()
+  
+  // Take quiz
+  await page.click('[data-testid="quiz-tab"]')
+  await page.click('[data-testid="start-quiz"]')
+  
+  // Answer questions
+  await page.check('[data-testid="question-1-option-a"]')
+  await page.fill('[data-testid="question-2-answer"]', 'The algorithm has O(n log n) complexity')
+  await page.selectOption('[data-testid="question-3-select"]', 'binary-search')
+  
+  // Submit quiz
+  await page.click('[data-testid="submit-quiz"]')
+  await expect(page.locator('[data-testid="quiz-score"]')).toBeVisible()
+})
+```
+
+## Media and Entertainment
+
+### Video Streaming Platform
+Test content discovery and playback functionality:
+
+```typescript
+test('Video streaming platform workflow', async ({ page }) => {
+  // User login and personalization
+  await page.goto('https://stream.example.com/login')
+  await page.fill('[name="email"]', process.env.STREAMING_EMAIL)
+  await page.fill('[name="password"]', process.env.STREAMING_PASSWORD)
+  await page.click('[type="submit"]')
+  
+  // Home page and recommendations
+  await expect(page.locator('[data-testid="home-hero"]')).toBeVisible()
+  await expect(page.locator('[data-testid="recommended-content"]')).toBeVisible()
+  
+  // Content discovery
+  await page.fill('[data-testid="search-input"]', 'science fiction')
+  await page.click('[data-testid="search-button"]')
+  await expect(page.locator('[data-testid="search-results"]')).toBeVisible()
+  
+  // Filter and sort
+  await page.selectOption('[data-testid="genre-filter"]', 'sci-fi')
+  await page.selectOption('[data-testid="release-year"]', '2020-2024')
+  await page.selectOption('[data-testid="sort-by"]', 'rating')
+  
+  // Select content
+  await page.click('[data-testid="content-card"]:first-child')
+  await expect(page.locator('[data-testid="content-details"]')).toBeVisible()
+  
+  // Start watching
+  await page.click('[data-testid="play-button"]')
+  await expect(page.locator('[data-testid="video-player"]')).toBeVisible()
+  
+  // Player controls
+  await page.hover('[data-testid="video-player"]')
+  await page.click('[data-testid="pause-button"]')
+  await page.click('[data-testid="volume-control"]')
+  await page.click('[data-testid="settings-menu"]')
+  
+  // Quality settings
+  await page.selectOption('[data-testid="quality-select"]', '1080p')
+  await page.selectOption('[data-testid="audio-track"]', 'English')
+  await page.click('[data-testid="subtitles"]')
+  
+  // Add to watchlist
+  await page.click('[data-testid="add-to-watchlist"]')
+  await expect(page.locator('[data-testid="watchlist-confirmation"]')).toBeVisible()
+  
+  // Continue watching from different device simulation
+  await page.goto('https://stream.example.com/continue-watching')
+  await expect(page.locator('[data-testid="resume-playback"]')).toBeVisible()
+})
+```
+
+## Performance and Accessibility Monitoring
+
+### Core Web Vitals Validation
+Monitor user experience metrics across different pages:
+
+```typescript
+test('Performance monitoring - Core Web Vitals', async ({ page }) => {
+  // Measure page load performance
+  const startTime = Date.now()
+  await page.goto('https://app.example.com')
+  
+  // Wait for page to be fully loaded
+  await page.waitForLoadState('networkidle')
+  const loadTime = Date.now() - startTime
+  
+  // Core Web Vitals collection
+  const vitals = await page.evaluate(() => {
+    return new Promise((resolve) => {
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries()
+        const vitals = {}
+        
+        entries.forEach((entry) => {
+          if (entry.entryType === 'largest-contentful-paint') {
+            vitals.lcp = entry.startTime
+          }
+          if (entry.entryType === 'first-input') {
+            vitals.fid = entry.processingStart - entry.startTime
+          }
+          if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
+            vitals.cls = (vitals.cls || 0) + entry.value
+          }
+        })
+        
+        setTimeout(() => resolve(vitals), 5000)
+      }).observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] })
+    })
+  })
+  
+  // Assert performance thresholds
+  expect(loadTime).toBeLessThan(3000) // Page load < 3 seconds
+  expect(vitals.lcp).toBeLessThan(2500) // LCP < 2.5 seconds
+  expect(vitals.fid).toBeLessThan(100) // FID < 100ms
+  expect(vitals.cls).toBeLessThan(0.1) // CLS < 0.1
+})
+```
+
+### Accessibility Compliance Testing
+Ensure web accessibility standards are met:
+
+```typescript
+test('Accessibility compliance validation', async ({ page }) => {
+  await page.goto('https://app.example.com')
+  
+  // Keyboard navigation testing
+  await page.keyboard.press('Tab')
+  const focusedElement = await page.evaluate(() => document.activeElement.tagName)
+  expect(['BUTTON', 'A', 'INPUT']).toContain(focusedElement)
+  
+  // Screen reader compatibility
+  const ariaLabels = await page.locator('[aria-label]').count()
+  expect(ariaLabels).toBeGreaterThan(0)
+  
+  // Color contrast validation
+  const buttons = page.locator('button')
+  const buttonCount = await buttons.count()
+  
+  for (let i = 0; i < buttonCount; i++) {
+    const button = buttons.nth(i)
+    const isVisible = await button.isVisible()
+    if (isVisible) {
+      const styles = await button.evaluate((el) => {
+        const computed = window.getComputedStyle(el)
+        return {
+          color: computed.color,
+          backgroundColor: computed.backgroundColor
+        }
+      })
+      
+      // Basic contrast check (simplified)
+      expect(styles.color).not.toBe(styles.backgroundColor)
+    }
+  }
+  
+  // Form accessibility
+  const inputs = page.locator('input')
+  const inputCount = await inputs.count()
+  
+  for (let i = 0; i < inputCount; i++) {
+    const input = inputs.nth(i)
+    const hasLabel = await input.evaluate((el) => {
+      return el.labels && el.labels.length > 0 || 
+             el.getAttribute('aria-label') ||
+             el.getAttribute('aria-labelledby')
+    })
+    expect(hasLabel).toBeTruthy()
+  }
+})
+```
+
+<Note>
+Browser checks provide comprehensive validation of user experiences. Combine them with API checks and multistep checks for complete application monitoring coverage across all user touchpoints.
+</Note>
+
+<Tip>
+Use realistic test data and user scenarios in your browser checks to ensure they accurately represent actual user behavior and catch real-world issues.
+</Tip>

@@ -1,0 +1,130 @@
+---
+title: floor
+description: 'This page explains how to use the floor function in APL.'
+---
+
+Use the `floor` function to round a numeric value down to the largest integer less than or equal to the input. This function is useful when you need to ensure that fractional values always round down, such as when calculating completed intervals, resource consumption, or discrete counts.
+
+Use `floor` when you want to convert decimal numbers to whole numbers by truncating the fractional part. For example, if a user has completed 2.7 sessions, `floor` returns 2 to represent fully completed sessions.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `floor` function to round down values. APL's `floor` function works identically.
+
+<CodeGroup>
+```sql Splunk example
+| eval completed_seconds = floor(duration_ms / 1000)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend completed_seconds = floor(req_duration_ms / 1000)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `FLOOR` function performs the same operation. APL's syntax is nearly identical.
+
+<CodeGroup>
+```sql SQL example
+SELECT FLOOR(request_duration / 1000) AS completed_seconds FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend completed_seconds = floor(req_duration_ms / 1000)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+floor(number)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `number` | `real` | The numeric value to round down. |
+
+### Returns
+
+An integer representing the largest whole number less than or equal to the input value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Calculate completed seconds from millisecond durations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend completed_ms = floor(req_duration_ms)
+| summarize request_count = count() by completed_ms
+| order by completed_ms asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20completed_ms%20%3D%20floor(req_duration_ms)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20completed_ms%20%7C%20order%20by%20completed_ms%20asc%22%7D)
+
+**Output**
+
+| completed_seconds | request_count |
+| ----------------- | ------------- |
+| 0                 | 8540          |
+| 1                 | 2310          |
+| 2                 | 890           |
+| 3                 | 245           |
+
+This query converts request durations to whole milliseconds by rounding down, then groups requests by their completion time.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Group traces by completed duration intervals.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_seconds = floor(duration / 1s)
+| summarize trace_count = count() by duration_seconds, ['service.name']
+| order by trace_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_seconds%20%3D%20floor(duration%20%2F%201s)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20duration_seconds%2C%20%5B'service.name'%5D%20%7C%20order%20by%20trace_count%20desc%22%7D)
+
+**Output**
+
+| duration_seconds | service.name | trace_count |
+| ---------------- | ------------ | ----------- |
+| 0                | frontend         | 1850        |
+| 0                | frontend-proxy     | 580         |
+| 599                | load-generator         | 420         |
+| 600                | cart     | 210         |
+
+This query rounds span durations down to whole seconds to analyze the distribution of trace durations per service.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [ceiling](/apl/scalar-functions/rounding-functions/ceiling): Rounds up to the smallest integer greater than or equal to the input. Use `floor` when you need to round down instead.
+- [bin](/apl/scalar-functions/rounding-functions/bin): Rounds values down to a multiple of a specified bin size. Use `floor` for simple downward rounding to integers.
+- [round](/apl/scalar-functions/mathematical-functions): Rounds to the nearest integer or specified precision. Use `floor` when you always need to round down.

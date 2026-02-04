@@ -1,0 +1,190 @@
+---
+title: geo_info_from_ip_address
+description: 'This page explains how to use the geo_info_from_ip_address function in APL.'
+---
+
+The `geo_info_from_ip_address` function in APL retrieves geographic information based on an IP address. It maps an IP address to attributes such as city, region, and country, allowing you to perform location-based analytics on your datasets. This function is particularly useful for analyzing web logs, security events, and telemetry data to uncover geographic trends or detect anomalies based on location.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the equivalent process often involves using lookup tables or add-ons to resolve IP addresses into geographic details. In APL, `geo_info_from_ip_address` performs the resolution natively within the query, streamlining the workflow.
+
+<CodeGroup>
+```sql Splunk example
+| eval geo_info = iplocation(client_ip)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend geo_info = geo_info_from_ip_address(client_ip)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, geographic information retrieval typically requires a separate database or API integration. In APL, the `geo_info_from_ip_address` function directly provides geographic details, simplifying the query process.
+
+<CodeGroup>
+```sql SQL example
+SELECT ip_to_location(client_ip) AS geo_info
+FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend geo_info = geo_info_from_ip_address(client_ip)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+geo_info_from_ip_address(ip_address)
+```
+
+### Parameters
+
+| Parameter   | Type   | Description                                  |
+|-------------|--------|----------------------------------------------|
+| `ip_address` | string | The IP address for which to retrieve geographic information. |
+
+### Returns
+
+A dynamic object containing the IP address’s geographic attributes (if available). The object contains the following fields:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| country | string | Country name |
+| state | string | State (subdivision) name |
+| city | string | City name |
+| latitude | real | Latitude coordinate |
+| longitude | real | Longitude coordinate |
+| country_iso | string | ISO code of the country |
+| time_zone | string | Time zone in which the IP address is located |
+
+## Use case example
+
+Use geographic data to analyze web log traffic.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend geo_info = geo_info_from_ip_address('172.217.22.14')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20geo_info%20%3D%20geo_info_from_ip_address('172.217.22.14')%22%7D)
+
+**Output**
+
+```json geo_info
+{
+  "state": "",
+  "longitude": -97.822,
+  "latitude": 37.751,
+  "country_iso": "US",
+  "country": "United States",
+  "city": "",
+  "time_zone": "America/Chicago"
+}
+```
+
+This query identifies the geographic location of the IP address `172.217.22.14`.
+
+## List of related functions
+
+- [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4): Matches any IP address in a string column with a list of IP addresses or ranges.
+- [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4): Checks if a single IP address is present in a string column.
+- [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range): Checks if an IP address is within a specified range.
+- [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private): Checks if an IPv4 address is within private IP ranges.
+
+## IPv4 Examples
+
+### Extract geolocation information from IPv4 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('172.217.11.4')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%27172.217.11.4%27%29%22%7D)
+
+### Project geolocation information from IPv4 address
+
+```kusto
+['sample-http-logs']
+| project ip_location=geo_info_from_ip_address('20.53.203.50')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20project%20ip_location%3Dgeo_info_from_ip_address%28%2720.53.203.50%27%29%22%7D)
+
+### Filter geolocation information from IPv4 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('20.53.203.50')
+| where ip_location.country == "Australia" and ip_location.country_iso == "AU" and ip_location.state == "New South Wales"
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%2720.53.203.50%27%29%5Cn%7C%20where%20ip_location.country%20%3D%3D%20%5C%22Australia%5C%22%20and%20ip_location.country_iso%20%3D%3D%20%5C%22AU%5C%22%20and%20ip_location.state%20%3D%3D%20%5C%22New%20South%20Wales%5C%22%22%7D)
+
+### Group geolocation information from IPv4 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('20.53.203.50')
+| summarize Count=count() by ip_location.state, ip_location.city, ip_location.latitude, ip_location.longitude
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%2720.53.203.50%27%29%5Cn%7C%20summarize%20Count%3Dcount%28%29%20by%20ip_location.state%2C%20ip_location.city%2C%20ip_location.latitude%2C%20ip_location.longitude%22%7D)
+
+## IPv6 Examples
+
+### Extract geolocation information from IPv6 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('2607:f8b0:4005:805::200e')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%272607%3Af8b0%3A4005%3A805%3A%3A200e%27%29%22%7D)
+
+### Project geolocation information from IPv6 address
+
+```kusto
+['sample-http-logs']
+| project ip_location=geo_info_from_ip_address('2a03:2880:f12c:83:face:b00c::25de')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20project%20ip_location%3Dgeo_info_from_ip_address%28%272a03%3A2880%3Af12c%3A83%3Aface%3Ab00c%3A%3A25de%27%29%22%7D)
+
+### Filter geolocation information from IPv6 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('2a03:2880:f12c:83:face:b00c::25de')
+| where ip_location.country == "United States" and ip_location.country_iso == "US" and ip_location.state == "Florida"
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%272a03%3A2880%3Af12c%3A83%3Aface%3Ab00c%3A%3A25de%27%29%5Cn%7C%20where%20ip_location.country%20%3D%3D%20%5C%22United%20States%5C%22%20and%20ip_location.country_iso%20%3D%3D%20%5C%22US%5C%22%20and%20ip_location.state%20%3D%3D%20%5C%22Florida%5C%22%22%7D)
+
+### Group geolocation information from IPv6 address
+
+```kusto
+['sample-http-logs']
+| extend ip_location = geo_info_from_ip_address('2a03:2880:f12c:83:face:b00c::25de')
+| summarize Count=count() by ip_location.state, ip_location.city, ip_location.latitude, ip_location.longitude
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20ip_location%20%3D%20geo_info_from_ip_address%28%272a03%3A2880%3Af12c%3A83%3Aface%3Ab00c%3A%3A25de%27%29%5Cn%7C%20summarize%20Count%3Dcount%28%29%20by%20ip_location.state%2C%20ip_location.city%2C%20ip_location.latitude%2C%20ip_location.longitude%22%7D)

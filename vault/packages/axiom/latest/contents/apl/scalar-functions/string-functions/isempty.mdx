@@ -1,0 +1,157 @@
+---
+title: 'isempty'
+description: 'This page explains how to use the isempty function in APL.'
+---
+
+The `isempty` function returns true if the argument is an empty string or null. Use this function to filter out records with missing or empty string values, validate data completeness, or identify fields that need default values.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you check for empty values using conditions like `field=""` or `isnull(field)`. APL's `isempty` combines both checks.
+
+<CodeGroup>
+```sql Splunk example
+| where field="" OR isnull(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isempty(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you check for empty or null values using separate conditions. APL's `isempty` provides a more concise approach.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE field IS NULL OR field = '';
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isempty(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isempty(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | scalar | Yes | The value to check for emptiness or null. |
+
+### Returns
+
+Returns `true` if the value is an empty string or null, otherwise returns `false`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Identify HTTP requests with missing or empty geographic information for data quality monitoring.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_empty_city = isempty(['geo.city']),
+         has_empty_country = isempty(['geo.country'])
+| where has_empty_city or has_empty_country
+| summarize incomplete_records = count() by has_empty_city, has_empty_country, status
+| sort by incomplete_records desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20has_empty_city%20%3D%20isempty(%5B%27geo.city%27%5D)%2C%20has_empty_country%20%3D%20isempty(%5B%27geo.country%27%5D)%20%7C%20where%20has_empty_city%20or%20has_empty_country%20%7C%20summarize%20incomplete_records%20%3D%20count()%20by%20has_empty_city%2C%20has_empty_country%2C%20status%20%7C%20sort%20by%20incomplete_records%20desc%22%7D)
+
+**Output**
+
+| has_empty_city | has_empty_country | status | incomplete_records |
+|----------------|-------------------|--------|--------------------|
+| true | false | 200 | 1234 |
+| true | true | 404 | 567 |
+| false | true | 500 | 234 |
+
+This query identifies requests with incomplete geographic data, helping assess data quality and identify potential issues with geo-IP lookups.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Find traces with missing service information to identify instrumentation gaps.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend empty_service = isempty(['service.name']),
+         empty_kind = isempty(kind)
+| where empty_service or empty_kind
+| summarize problematic_spans = count() by empty_service, empty_kind
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20empty_service%20%3D%20isempty(%5B%27service.name%27%5D)%2C%20empty_kind%20%3D%20isempty(kind)%20%7C%20where%20empty_service%20or%20empty_kind%20%7C%20summarize%20problematic_spans%20%3D%20count()%20by%20empty_service%2C%20empty_kind%22%7D)
+
+**Output**
+
+| empty_service | empty_kind | problematic_spans |
+|---------------|------------|-------------------|
+| false | true | 234 |
+| true | false | 89 |
+
+This query identifies spans with missing required fields, helping improve observability instrumentation by highlighting gaps in trace data.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect authentication attempts with missing user identifiers that might indicate anonymized or suspicious activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '401' or status == '403'
+| extend empty_id = isempty(id)
+| summarize failed_attempts = count(), empty_id_attempts = countif(empty_id) by status
+| extend anonymous_percentage = round(100.0 * empty_id_attempts / failed_attempts, 2)
+| sort by failed_attempts desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20where%20status%20%3D%3D%20%27401%27%20or%20status%20%3D%3D%20%27403%27%20%7C%20extend%20empty_id%20%3D%20isempty(id)%20%7C%20summarize%20failed_attempts%20%3D%20count()%2C%20empty_id_attempts%20%3D%20countif(empty_id)%20by%20status%20%7C%20extend%20anonymous_percentage%20%3D%20round(100.0%20*%20empty_id_attempts%20%2F%20failed_attempts%2C%202)%20%7C%20sort%20by%20failed_attempts%20desc%22%7D)
+
+**Output**
+
+| status | failed_attempts | empty_id_attempts | anonymous_percentage |
+|--------|-----------------|-------------------|----------------------|
+| 401 | 1234 | 345 | 27.96 |
+| 403 | 987 | 123 | 12.46 |
+
+This query analyzes the percentage of failed authentication attempts without user IDs, helping security teams identify potential anonymous attack patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnotempty](/apl/scalar-functions/string-functions/isnotempty): Returns true if a value is not empty and not null. Use this for the inverse check of isempty.
+- [isnull](/apl/scalar-functions/string-functions/isnull): Checks only if a value is null. Use this when you specifically need to test for null without checking for empty strings.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null or non-empty value. Use this to provide default values for empty fields.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns the length of a string. Use this when you need to check if a string has content beyond just emptiness.
+

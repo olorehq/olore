@@ -1,0 +1,140 @@
+---
+title: System Reliability Engineering (SRE) skill
+description: "This page explains how to use the SRE skill to give AI coding agents expert investigation capabilities for incidents and debugging."
+sidebarTitle: SRE
+keywords: ["skills", "ai agents", "axiom-sre", "amp", "claude code", "cursor", "sre", "incident response", "debugging", "root cause analysis"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The SRE skill turns AI agents into expert SRE investigators:
+
+- **Investigation methodology**: Hypothesis-driven debugging with systematic triage using Golden Signals and USE/RED methods
+- **APL query patterns**: Reference materials for constructing effective Axiom queries
+- **Memory system**: Persistent storage that learns from debugging sessions, capturing what works and what doesn't
+- **API helpers**: Scripts for querying Axiom directly from the agent
+
+<Prerequisites />
+
+## Install SRE skill
+
+Choose one of the following ways to install the SRE skill:
+
+<Tabs>
+<Tab title="Quick install">
+
+Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
+
+```bash
+npx skills add axiomhq/skills
+```
+
+</Tab>
+<Tab title="Amp">
+
+Install the SRE skill globally with [Amp](https://ampcode.com/manual#get-started):
+
+    ```bash
+    amp skill add --global axiomhq/skills/skills/sre --name axiom-sre --overwrite
+    ```
+
+</Tab>
+<Tab title="Claude">
+
+<Info>
+Skills are available for users on Pro, Max, Team, and Enterprise plans.
+</Info>
+
+1. Clone the Axiom Skills repository:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git
+    ```
+
+1. Compress the `skills/sre` folder into a zip file.
+1. Enable code execution in **Settings > Capabilities**.
+1. Upload the zip file to your agent's capabilities in **Settings > Capabilities**.
+
+For more information, see the [Claude documentation](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+
+</Tab>
+<Tab title="Claude Code">
+
+Clone the Axiom Skills repository and symlink the SRE skill to your Claude Code skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/sre ~/.claude/skills/axiom-sre
+    ```
+
+For more information, see the [Claude Code documentation](https://code.claude.com/docs/en/skills).
+
+</Tab>
+<Tab title="Cursor">
+
+Clone the Axiom Skills repository and symlink the SRE skill to Cursor's Claude-compatible skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/sre ~/.claude/skills/axiom-sre
+    ```
+
+For more information, see the [Cursor documentation](https://cursor.com/docs/context/skills).
+
+</Tab>
+<Tab title="Other agents">
+
+Clone the Axiom Skills repository and reference the SRE skill in your agent configuration:
+
+```bash
+git clone https://github.com/axiomhq/skills.git
+```
+
+The SRE skill is located at `skills/sre/`.
+
+</Tab>
+</Tabs>
+
+<SkillsCredentials />
+
+## Use SRE skill
+
+The SRE skill activates automatically when you ask your AI agent about:
+
+- Incident response and debugging
+- Root cause analysis
+- Log investigation
+- Production troubleshooting
+
+Example prompts:
+
+- "Investigate why API latency increased in the last hour"
+- "Find the root cause of the 500 errors in production"
+- "Analyze error patterns in the logs dataset"
+
+## Memory system
+
+The SRE skill learns from every debugging session. The memory system initializes automatically on first use. Memory persists at `~/.config/amp/memory/axiom-sre/` (global) or `.agents/memory/axiom-sre/` (project/local).
+
+### Tell the agent to remember things
+
+- `Remember this for next time.`
+- `Save this query, it worked.`
+- `Add to memory: the orders team uses #orders-oncall.`
+
+### Learn automatically
+
+The SRE skill automatically captures what works and what doesn't when:
+
+- A query or approach finds the root cause.
+- You correct it, and it records what didn't work and what did.
+- A debugging session completes successfully.
+
+### Customize with your own knowledge
+
+Customize the SRE skill by adding your own knowledge to the knowledge base files:
+
+- `kb/facts.md`: Team contacts, Slack channels, conventions.
+- `kb/integrations.md`: Database connections, API endpoints.
+- `kb/patterns.md`: Failure patterns you've seen before.

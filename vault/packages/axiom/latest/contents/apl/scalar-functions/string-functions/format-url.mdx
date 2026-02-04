@@ -1,0 +1,153 @@
+---
+title: 'format_url'
+description: 'This page explains how to use the format_url function in APL.'
+---
+
+The `format_url` function constructs a properly formatted URL from a dynamic object containing URL components (scheme, host, path, port, etc.). Use this function when you need to build URLs programmatically from parsed components or when reconstructing URLs from log data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically concatenate URL parts manually with `eval`. APL's `format_url` provides a structured approach.
+
+<CodeGroup>
+```sql Splunk example
+| eval full_url=scheme."://".host.":".port.path
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend full_url = format_url(dynamic({'scheme': 'https', 'host': host, 'port': 443, 'path': path}))
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, URL formatting requires string concatenation with null handling. APL's `format_url` simplifies this operation.
+
+<CodeGroup>
+```sql SQL example
+SELECT CONCAT(scheme, '://', host, COALESCE(CONCAT(':', port), ''), path) AS url FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend url = format_url(dynamic({'scheme': scheme, 'host': host, 'port': port, 'path': path}))
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+format_url(url_parts)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| url_parts | dynamic | Yes | A dynamic object containing URL components: scheme, host, path, port, fragment, user, password, query. |
+
+### Returns
+
+Returns a properly formatted URL string constructed from the provided components.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Reconstruct full URLs from parsed components to analyze complete request patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend full_url = format_url(dynamic({'scheme': 'https', 'host': 'api.example.com', 'path': uri}))
+| project _time, method, status, full_url
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20full_url%20%3D%20format_url(dynamic(%7B%27scheme%27%3A%20%27https%27%2C%20%27host%27%3A%20%27api.example.com%27%2C%20%27path%27%3A%20uri%7D))%20%7C%20project%20_time%2C%20method%2C%20status%2C%20full_url%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | method | status | full_url |
+|-------|--------|--------|----------|
+| 2024-11-06T10:00:00Z | GET | 200 | `https://api.example.com/api/users` |
+| 2024-11-06T10:01:00Z | POST | 201 | `https://api.example.com/api/orders` |
+| 2024-11-06T10:02:00Z | GET | 200 | `https://api.example.com/api/products` |
+
+This query reconstructs full URLs from URI paths by adding the scheme and host, useful for generating clickable links in reports.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Build URLs from trace attributes to identify the full endpoints being called.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_url = format_url(dynamic({'scheme': 'http', 'host': 'localhost', 'port': 8080, 'path': strcat('/', ['service.name'])}))
+| project _time, ['service.name'], service_url, trace_id
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_url%20%3D%20format_url(dynamic(%7B%27scheme%27%3A%20%27http%27%2C%20%27host%27%3A%20%27localhost%27%2C%20%27port%27%3A%208080%2C%20%27path%27%3A%20strcat(%27%2F%27%2C%20%5B%27service.name%27%5D)%7D))%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20service_url%2C%20trace_id%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service.name | service_url | trace_id |
+|-------|--------------|-------------|----------|
+| 2024-11-06T10:00:00Z | frontend | `http://localhost:8080/frontend` | abc123 |
+| 2024-11-06T10:01:00Z | checkout | `http://localhost:8080/checkout` | def456 |
+| 2024-11-06T10:02:00Z | cart | `http://localhost:8080/cart` | ghi789 |
+
+This query constructs service URLs from trace data, helping visualize the actual endpoints in a distributed system.
+
+</Tab>
+<Tab title="Security logs">
+
+Construct URLs with authentication parameters to audit access attempts.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend access_url = format_url(dynamic({'scheme': 'https', 'host': 'secure.example.com', 'path': uri, 'user': id}))
+| project _time, access_url, status, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20access_url%20%3D%20format_url(dynamic(%7B'scheme'%3A%20'https'%2C%20'host'%3A%20'secure.example.com'%2C%20'path'%3A%20uri%2C%20'user'%3A%20id%7D))%20%7C%20project%20_time%2C%20access_url%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | access_url | status | geo.country |
+|-------|------------|--------|-------------|
+| 2024-11-06T10:00:00Z | https://user123@secure.example.com/admin | 403 | United States |
+| 2024-11-06T10:01:00Z | https://user456@secure.example.com/api/secret | 401 | Unknown |
+
+This query constructs complete URLs including user information for failed authentication attempts, helping security teams understand the full context of access attempts.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [parse_url](/apl/scalar-functions/string-functions/parse-url): Parses a URL string into its components. Use this to reverse the formatting operation and extract URL parts.
+- [parse_urlquery](/apl/scalar-functions/string-functions/parse-urlquery): Parses URL query parameters. Use this when you need to work with query string parameters specifically.
+- [url_encode](/apl/scalar-functions/string-functions/url-encode): Encodes a string for safe use in URLs. Use this to encode individual URL components before formatting.
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this for simple URL construction without the structure of format_url.
+

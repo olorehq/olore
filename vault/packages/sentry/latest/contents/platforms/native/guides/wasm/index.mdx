@@ -1,0 +1,108 @@
+---
+title: WebAssembly
+description: "Learn about how Sentry processes WASM crash reports."
+---
+
+WebAssembly allows you to compile native code into a platform-independent bytecode format, which, for example, permits you to run native C, C++, or Rust code in a web browser.
+
+**This feature is still developing, so may be rough around the edges.**
+
+Debugging support for WebAssembly is an ongoing effort by the WebAssembly community.
+Support for it in Sentry is limited by what's possible in that ecosystem.
+
+<Alert>
+
+Want to be an early adopter, but running into issues? Please reach out to us
+[on GitHub](https://github.com/getsentry/symbolicator/issues/new/choose), we
+would love to talk.
+
+</Alert>
+
+## Requirements
+
+As of now it's possible to get crash reports uploaded to Sentry if your compiler can
+output [WASM DWARF debug information](https://yurydelendik.github.io/webassembly-dwarf/)
+alongside the binary code. In addition, you need to upload your WebAssembly
+debug information files to Sentry or use a symbol server as you
+would for our other platforms.
+
+For this process to work, we require debug information files to be augmented by a
+`build_id` custom section. We provide a tool called [wasm-split](https://github.com/getsentry/symbolicator/tree/master/crates/wasm-split)
+that can automatically add this section if missing and splits off
+the debug information so it isn't sent to customers.
+
+## Using wasm-split
+
+Once your compiler has produced a `.wasm` file, you can use our [wasm-split](https://github.com/getsentry/symbolicator/tree/master/crates/wasm-split)
+tool to add a `build_id` (if missing) and split the file into a debug information
+file and a final stripped `.wasm` file without debug information:
+
+```shell
+wasm-split /path/to/file.wasm -d /path/to/file.debug.wasm --strip
+```
+
+This command modifies the `file.wasm` in place to add the `build_id`, then removes all
+debug information. The debug information is put in a `file.debug.wasm` which
+then needs to be uploaded to Sentry. For more information, see [Debug Information Files](/platforms/native/guides/wasm/data-management/debug-files/).
+
+## Crash Reporting
+
+If you want to have crash reporting in the browser, the recommended way with Sentry is to use
+the `@sentry/wasm` package and apply its `wasmIntegration` to your `@sentry/browser` configuration.
+This is [documented in detail](/platforms/javascript/guides/wasm/) in the JavaScript platform docs.
+
+## Custom Crash Reports
+
+It's likely that if you're working with WebAssembly, you want to send custom
+crash reports; for example, if you don't execute WebAssembly in a browser, but in your
+own runtime. In that case, you can follow the general protocol documentation which
+also covers how to describe WebAssembly frames: [stack trace interface](https://develop.sentry.dev/sdk/data-model/event-payloads/stacktrace/).
+
+Here is an example event for WebAssembly:
+
+```javascript
+{
+  "platform": "native",
+  "debug_meta": {
+    "images": [
+      {
+        // the URL where the wasm file lives
+        "code_file": "http://localhost:8002/demo.wasm",
+        // indicates a web assembly module
+        "type": "wasm",
+        // the contents of the build_id section in hex,
+        // truncated to 32 characters with a 0 appended
+        "debug_id": "9e5cbc5553b44e8b9c69d18cdd7bfd2e0"
+      }
+    ]
+  },
+  "exception": {
+    "values": [
+      {
+        "stacktrace": {
+          "frames": [
+            // wasm frame
+            {
+              "function": "wasm_func",
+              "abs_path": "http://localhost:8002/demo.wasm",
+              // the absolute offset in the wasm file for the instruction
+              "instruction_addr": "0x8c",
+              // indicates that the instruction_addr is relative to the 1st
+              // module in the debug_info images list.
+              "addr_mode": "rel:0"
+            },
+            // javascript frame
+            {
+              "function": "crash",
+              "abs_path": "http://localhost:8002/index.html",
+              "lineno": 24,
+              "platform": "javascript"
+            }
+          ]
+        },
+        "type": "Error"
+      }
+    ]
+  }
+}
+```

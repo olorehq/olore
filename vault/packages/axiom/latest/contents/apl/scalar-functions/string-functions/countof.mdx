@@ -1,0 +1,156 @@
+---
+title: 'countof'
+description: 'This page explains how to use the countof function in APL.'
+---
+
+The `countof` function counts the occurrences of a plain substring within a string. Use this function when you need to find how many times a specific text pattern appears in log messages, user input, or any string field without using regular expressions.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might use a combination of `rex` and counting operations. APL's `countof` provides a simpler approach for counting plain string occurrences.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message max_match=0 "error"
+| eval error_count=mvcount(error)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend error_count = countof('GET', method)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically calculate string occurrences using length differences. APL's `countof` provides a more direct approach.
+
+<CodeGroup>
+```sql SQL example
+SELECT (LENGTH(field) - LENGTH(REPLACE(field, 'search', ''))) / LENGTH('search') AS count FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend count = countof('search', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+countof(search, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| search | string | Yes | The plain substring to search for within the text. |
+| text | string | Yes | The source string where occurrences are counted. |
+
+### Returns
+
+Returns the number of times the search string appears in the text.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count how many times specific HTTP methods appear in URIs to identify API usage patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend api_segments = countof('/', uri)
+| summarize avg_depth = avg(api_segments), request_count = count() by method
+| sort by request_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20api_segments%20%3D%20countof(%27%2F%27%2C%20uri)%20%7C%20summarize%20avg_depth%20%3D%20avg(api_segments)%2C%20request_count%20%3D%20count()%20by%20method%20%7C%20sort%20by%20request_count%20desc%22%7D)
+
+**Output**
+
+| method | avg_depth | request_count |
+|--------|-----------|---------------|
+| GET | 3.2 | 5432 |
+| POST | 2.8 | 2341 |
+| PUT | 2.5 | 876 |
+| DELETE | 2.1 | 234 |
+
+This query counts the number of forward slashes in URIs to determine the average API endpoint depth by HTTP method, helping identify API structure complexity.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Count occurrences of specific terms in span names to analyze service operation patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend has_http = countof('frontend', ['service.name'])
+| summarize services_with_frontend = sum(has_http), total_spans = count()
+| extend percentage = round(100.0 * services_with_frontend / total_spans, 2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20has_http%20%3D%20countof(%27frontend%27%2C%20%5B%27service.name%27%5D)%20%7C%20summarize%20services_with_frontend%20%3D%20sum(has_http)%2C%20total_spans%20%3D%20count()%20%7C%20extend%20percentage%20%3D%20round(100.0%20*%20services_with_frontend%20%2F%20total_spans%2C%202)%22%7D)
+
+**Output**
+
+| services_with_frontend | total_spans | percentage |
+|----------------------|-------------|------------|
+| 1234 | 8765 | 14.08 |
+
+This query counts how many spans contain 'frontend' in their service name to understand the proportion of frontend-related operations in your traces.
+
+</Tab>
+<Tab title="Security logs">
+
+Count slashes in URIs to analyze URL structure and detect unusual patterns that might indicate security threats.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend slash_count = countof('/', uri)
+| where slash_count > 5
+| project _time, uri, slash_count, id, status, ['geo.country']
+| sort by slash_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20slash_count%20%3D%20countof(%27%2F%27%2C%20uri)%20%7C%20where%20slash_count%20%3E%205%20%7C%20project%20_time%2C%20uri%2C%20slash_count%2C%20id%2C%20status%2C%20%5B%27geo.country%27%5D%20%7C%20sort%20by%20slash_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | slash_count | id | status | geo.country |
+|-------|-----|-------------|-------|--------|-------------|
+| 2024-11-06T10:00:00Z | /api/v1/users/12345/posts/67890/comments | 6 | user123 | 200 | US |
+| 2024-11-06T10:01:00Z | /admin/config/settings/advanced/security | 5 | user456 | 200 | UK |
+
+This query identifies URIs with unusually high slash counts, which can help detect complex or potentially suspicious URL patterns that might warrant further investigation.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [countof_regex](/apl/scalar-functions/string-functions/countof-regex): Counts substring occurrences using regular expressions. Use this when you need pattern matching instead of exact string matching.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns the length of a string. Use this when you need the total character count rather than occurrence counting.
+- [indexof](/apl/scalar-functions/string-functions/indexof): Finds the position of the first occurrence of a substring. Use this when you need to know where a substring appears, not how many times.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts substrings using regular expressions. Use this when you need to capture matched text rather than count occurrences.
+

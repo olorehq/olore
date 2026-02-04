@@ -1,0 +1,71 @@
+---
+title: How to Automate Microsoft Live Login with Playwright
+subTitle: Dealing with Microsoft authentication
+date: 2020-06-22
+author: Tim Nolet
+githubUser: tnolet
+tags:
+  - login
+  - e2e
+sidebarTitle: Microsoft Live Auth
+weight: 8
+learn_playwright:
+  parent: "E2E examples"
+---
+
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Playwright allows us to automate logging in to a Microsoft Online account.
+
+## Steps
+
+1. We start at `https://login.microsoftonline.com/`
+2. We provide the username and password, injected by using environment variables
+3. We are redirected to the main account page
+
+```ts ms-account-login.spec.ts
+import { test } from '@playwright/test'
+
+test('test', async ({ page }) => {
+  await page.goto('https://login.microsoftonline.com/')
+
+  await page.getByRole('heading', { name: 'Sign in' }).click()
+  await page.getByPlaceholder('Email address, phone number').fill(process.env.MS_USERNAME)
+  await page.getByRole('button', { name: 'Next' }).click()
+
+  await page.getByTestId('i0118').fill(process.env.MS_PASSWORD)
+  await page.getByTestId('textButtonContainer').getByRole('button', { name: 'Sign in' }).click()
+  await page.getByTestId('checkboxField').check()
+  await page.getByLabel('Stay signed in?').click()
+})
+```
+Run this example as follows. Replace the username and password placeholder with your own credentials.
+
+
+
+```sh
+MS_USER=username MS_PWD=password npx playwright test ms-account-login.spec.ts
+```
+
+
+```sh
+SET MS_USER=username
+SET MS_PWD=password
+npx playwright test ms-account-login.spec.ts
+```
+
+
+
+
+> This example does not work when you have 2-factor authentication enabled, and you might trigger a recaptcha check.
+
+## Takeaways
+
+1. Use environment variables to inject secrets.
+2. Wait for the navigation as you are redirected to Microsoft.
+3. Wait for the navigation as you are redirected back to the start site.
+
+<SignUpCta />

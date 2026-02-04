@@ -1,0 +1,97 @@
+---
+title: 'genai_estimate_tokens'
+description: 'This page explains how to use the genai_estimate_tokens function in APL.'
+---
+
+The `genai_estimate_tokens` function estimates the number of tokens in a text string. This estimation helps you predict API costs, validate input sizes, and monitor token usage before making actual API calls to LLM services.
+
+You can use this function to validate prompt sizes, estimate costs before API calls, monitor content length, or analyze token efficiency across different prompts.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there’s no direct equivalent for token estimation. You would typically use character or word count as a rough approximation.
+
+<CodeGroup>
+```sql Splunk example
+| eval estimated_tokens=len(text)/4
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend estimated_tokens = genai_estimate_tokens(text)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need to use character-based estimations, which are less accurate than proper token counting.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  text,
+  LENGTH(text) / 4 as estimated_tokens
+FROM prompts
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend estimated_tokens = genai_estimate_tokens(text)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_estimate_tokens(text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| text | string | Yes | The text string for which you want to estimate the token count. |
+
+### Returns
+
+Returns a long integer representing the estimated number of tokens in the input text.
+
+## Example
+
+Estimate the number of tokens in a GenAI conversation prompt.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend user_prompt = genai_extract_user_prompt(['attributes.gen_ai.input.messages'])
+| extend estimated_tokens = genai_estimate_tokens(user_prompt)
+| summarize avg_tokens = avg(estimated_tokens), max_tokens = max(estimated_tokens)
+```
+
+**Output**
+
+| avg_tokens | max_tokens |
+|------------|------------|
+| 245 | 1024 |
+
+This query analyzes prompt token usage patterns, helping you predict costs and validate input sizes.
+
+## List of related functions
+
+- [genai_cost](/apl/scalar-functions/genai-functions/genai-cost): Calculates the actual cost based on token usage. Use this in combination with token estimates to predict costs.
+- [strlen](/apl/scalar-functions/string-functions#strlen): Returns string length in characters. Use this for a simpler character count without token estimation.
+- [string_size](/apl/scalar-functions/string-functions/string-size): Returns string length in characters. Use this when you need character count instead of token count.
+- [genai_input_cost](/apl/scalar-functions/genai-functions/genai-input-cost): Calculates input token cost. Combine with token estimation to predict prompt costs.
+

@@ -1,0 +1,128 @@
+---
+title: Build dashboards skill
+description: "This page explains how to use the build dashboards skill to give AI coding agents the ability to design and build Axiom dashboards."
+sidebarTitle: Build dashboards
+keywords: ["skills", "ai agents", "dashboards", "amp", "claude code", "cursor", "charts", "visualization", "smartfilters"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The build dashboards skill turns AI agents into dashboard design experts:
+
+- **Design methodology**: Decision-first dashboard design with overview-to-drilldown structure
+- **Chart types**: Complete reference for statistic, time series, table, pie, log stream, heatmap, and more
+- **APL patterns**: Golden signal queries, cardinality guardrails, and time-based aggregations
+- **Smart filters**: Interactive filtering with cascading dropdowns
+- **API helpers**: Scripts for creating, updating, and validating dashboards via the Axiom API
+- **Templates**: Pre-built dashboard templates for common use cases
+
+<Prerequisites />
+
+## Install build dashboards skill
+
+Choose one of the following ways to install the build dashboards skill:
+
+<Tabs>
+<Tab title="Quick install">
+
+Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
+
+```bash
+npx skills add axiomhq/skills
+```
+
+</Tab>
+<Tab title="Amp">
+
+Install the build dashboards skill globally with [Amp](https://ampcode.com/manual#get-started):
+
+    ```bash
+    amp skill add --global axiomhq/skills/skills/building-dashboards --name building-dashboards --overwrite
+    ```
+
+</Tab>
+<Tab title="Claude">
+
+<Info>
+Skills are available for users on Pro, Max, Team, and Enterprise plans.
+</Info>
+
+1. Clone the Axiom Skills repository:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git
+    ```
+
+1. Compress the `skills/building-dashboards` folder into a zip file.
+1. Enable code execution in **Settings > Capabilities**.
+1. Upload the zip file to your agent's capabilities in **Settings > Capabilities**.
+
+For more information, see the [Claude documentation](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+
+</Tab>
+<Tab title="Claude Code">
+
+Clone the Axiom Skills repository and symlink the build dashboards skill to your Claude Code skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/building-dashboards ~/.claude/skills/building-dashboards
+    ```
+
+For more information, see the [Claude Code documentation](https://code.claude.com/docs/en/skills).
+
+</Tab>
+<Tab title="Cursor">
+
+Clone the Axiom Skills repository and symlink the build dashboards skill to Cursor's Claude-compatible skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/building-dashboards ~/.claude/skills/building-dashboards
+    ```
+
+For more information, see the [Cursor documentation](https://cursor.com/docs/context/skills).
+
+</Tab>
+<Tab title="Other agents">
+
+Clone the Axiom Skills repository and reference the build dashboards skill in your agent configuration:
+
+```bash
+git clone https://github.com/axiomhq/skills.git
+```
+
+The build dashboards skill is located at `skills/building-dashboards/`.
+
+</Tab>
+</Tabs>
+
+<SkillsCredentials />
+
+## Use build dashboards skill
+
+The build dashboards skill activates automatically when you ask your AI agent to:
+
+- Create or design dashboards
+- Migrate Splunk dashboards to Axiom
+- Configure chart types and options
+- Build smart filters for interactive filtering
+
+Example prompts:
+
+- "Create a service health dashboard for the API"
+- "Build a dashboard with error rate, latency percentiles, and traffic trends"
+- "Add a smart filter dropdown for filtering by environment"
+- "Migrate this Splunk dashboard to Axiom"
+
+## Dashboard templates
+
+The build dashboards skill includes pre-built templates:
+
+| Template | Use case |
+| --- | --- |
+| `service-overview.json` | Single-service on-call dashboard with heatmap |
+| `service-overview-with-filters.json` | Single-service dashboard with smart filter dropdowns |
+| `api-health.json` | HTTP API with traffic, errors, and latency |
+| `blank.json` | Minimal dashboard skeleton for custom dashboards |

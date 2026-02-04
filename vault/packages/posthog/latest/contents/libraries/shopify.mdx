@@ -1,0 +1,159 @@
+---
+title: Shopify
+platformLogo: shopify
+---
+
+export const eventLight = 'https://res.cloudinary.com/dmukukwp6/image/upload/v1711383938/posthog.com/contents/images/tutorials/shopify/event-light.png'
+export const eventDark = 'https://res.cloudinary.com/dmukukwp6/image/upload/v1711383938/posthog.com/contents/images/tutorials/shopify/event-dark.png'
+
+PostHog makes it easy to get data about traffic and usage of your Shopify store. Integrating PostHog into your site enables analytics about user behavior, custom events capture, session recordings, A/B testing, and more.
+
+This guide walks you through integrating PostHog into your Shopify store using a manual implementation. 
+
+> **Third-party solutions**
+> There are several unofficial, third-party Shopify x PostHog integrations, such as [PixieHog](https://pixiehog.com/). Some users find success with these integrations, but we're unable to provide support for them as they are created and run by third-party teams. Instead, we recommend following the guide below as a first step. 
+
+## Installing PostHog manually into the theme
+
+![Shopify Dashboard](https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/tutorials/shopify/shopify-dashboard.png)
+
+1. You should now be seeing a code editor. Click on `theme.liquid` under 'Layout' on the left sidebar
+1. Navigate until you see the closing `</head>` tag. Paste your snippet there, before that tag:
+
+![Shopify Snippet](https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/tutorials/shopify/snippet.png)
+
+3. Click the green save button on the top right and you're good to go - PostHog should now be capturing events on your Shopify store!
+
+> To confirm PostHog is configured correctly, visit your store and then check if the events from your session appear in the [PostHog activity tab](https://us.posthog.com/events). This may take a few minutes.
+
+
+### Enabling heatmap
+
+The heatmap won't work on Shopify out of the box because Shopify has very strict CSP headers, particularly `frame-ancestors`.
+
+You can bypass this issue and enable the heatmap by running a Cloudflare worker that rewrites the `frame-ancestors` header. We recommend using a separate subdomain like `heatmap.myshop.com` from your production site to minimize impact. Here is a simple Cloudflare worker that updates this header:
+
+```js
+export default {
+  async fetch(request) {
+    const response = await fetch(request);
+    const newResponse = new Response(response.body, response);
+
+    newResponse.headers.set(
+      'Content-Security-Policy',
+      "frame-ancestors 'self' *.posthog.com"
+    );
+
+    return newResponse;
+  }
+};
+```
+
+### Enabling toolbar
+
+If you're having trouble viewing the PostHog toolbar, ensure your Shopify theme is not hiding empty `div`s.
+
+```css
+a:empty,
+ul:empty,
+dl:empty,
+/* div:empty, -- Make sure this rule is turned off! */
+section:empty,
+article:empty,
+p:empty,
+h1:empty,
+h2:empty,
+h3:empty,
+h4:empty,
+h5:empty,
+h6:empty {
+  display: none;
+}
+```
+
+### Tracking conversions
+
+Shopify's checkout flow doesn't allow arbitrary JavaScript to be run, so the PostHog JavaScript snippet cannot be used directly on the checkout page or post-purchase page. However, you can still track conversions by using a [custom web pixel](https://shopify.dev/docs/api/web-pixels-api#custom-web-pixels).
+
+#### Setting up a custom web pixel
+
+To set this up, first, go to the [customer events](https://admin.shopify.com/settings/customer_events) tab in your store settings, click "Add custom pixel," and give your pixel a name.
+
+Next, add code that contains:
+
+1. The customer events you want to subscribe to. You can find a complete list in Shopify's [Web Pixels API documentation](https://shopify.dev/docs/api/web-pixels-api/standard-events).
+
+2. Your PostHog JavaScript snippet which you can get from [your project settings](https://us.posthog.com/settings/project#snippet).
+
+3. The rest of your PostHog capture logic. 
+
+As an example, here is the code for subscribing to a `checkout_completed` event. Every time a user checks out, we capture an event. We also call [`posthog.identify()`](/docs/product-analytics/identify) so that we can track the user across different sessions:
+
+```js
+analytics.subscribe("checkout_completed", (event) => {
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('<ph_project_api_key>', { api_host: '<ph_client_api_host>', defaults: '<ph_posthog_js_defaults>' })
+
+  const checkout = event.data.checkout;
+
+  posthog.identify(checkout.email, {
+      email: checkout.email,
+      first_name: checkout.billingAddress.firstName,
+      last_name:  checkout.billingAddress.lastName,
+    }
+  )
+  posthog.capture('merch store order submitted', {
+    value: checkout.totalPrice.amount,
+    currency: checkout.totalPrice.currencyCode,
+    created_at: event.timestamp,
+    order_number: checkout.order.id,
+    userId: event.clientId,
+    order_id: checkout.order.id,
+    products: checkout.lineItems.map((item) => {
+      return {
+        product_id: item.id,
+        title: item.variant.product.title,
+        quantity: item.quantity,
+        price: item.variant.price.amount,
+        currency: item.variant.price.currencyCode,
+        sku: item.variant.sku,
+        size: item.variant.product.size
+      };
+    }),
+  })
+});
+```
+
+In the above code, we capture the event with details like `userID`, `order_number`, and the product array with `product_id`, `price`, and more. This is then viewable in PostHog:
+
+<ProductScreenshot 
+  imageLight={eventLight} 
+  imageDark={eventDark} 
+  alt="Shopify events in PostHog" 
+/>
+
+We recommend _only_ using a Shopify pixel for tracking conversions. If using a pixel for other events (like `collection_viewed` or `product_viewed`), you may see CORS errors when viewing those webpages. While it doesn't affect the functionality of the pixel, everything else can be done using PostHog installed globally on your site.
+
+#### Tracking items added to the cart
+
+To track _which_ product a user adds to their cart, we can use a `data-ph-capture-attribute` on the 'Add to cart' button (generally in `product.liquid` in Shopify). While this still requires adding code, it's less involved than creating a custom event. For example, capturing the product title and price (divided by 100) looks like this:
+
+```html
+<input type="submit" class="add-to-cart-button" value="{{ 'products.product.add_to_cart' | t }}" 
+    data-ph-capture-attribute-product-name="{{product.title}}" 
+    data-ph-capture-attribute-product-price="{{product.price | divided_by: 100 }}"
+/>
+```
+
+Once set up, the _Add to cart_ button autocapture event in PostHog will include the properties for each of the attributes prefixed with `data-ph-capture-attribute-` and their values.
+
+![Data attributes in an autocaptured event](https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/tutorials/shopify/autocapture-data-attributes.png)
+
+## What can you do with this data?
+
+You can use this data to answer questions like:
+
+- Which products are being _left in the cart_ most often?
+- Which products are being _purchased together_ most often?
+- Which marketing campaigns are driving sales of different products?
+- How does regionality of shoppers affect the products they buy?

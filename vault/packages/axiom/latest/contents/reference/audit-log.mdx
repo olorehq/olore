@@ -1,0 +1,253 @@
+---
+title: 'Track activity in Axiom'
+description: "This page explains how to track activity in your Axiom organization with the audit log."
+sidebarTitle: Audit log
+keywords: ['audit logs', 'track activity']
+---
+
+The audit log allows you to track who did what and when within your Axiom organization.
+
+Tracking activity in your Axiom organization with the audit log is useful for legal compliance reasons. For example, you can investigate the following:
+
+- Track who has accessed the Axiom platform.
+- Track organization access over time.
+- Track data access over time.
+
+The audit log also make it easier to manage your Axiom organization. They allow you to do the following, among others:
+
+- Track changes made by your team to your observability posture.
+- Track monitoring performance and identify which monitors generate the most query load.
+- Monitor query costs and optimize expensive queries before they impact your budget.
+- Trace queries back to their source (monitors or direct queries) for debugging.
+
+The audit log is available to all organizations. By default, you can query the audit log for the previous three days. You can purchase full access to the audit log as an add-on on the Axiom Cloud plan. For more information, see [Manage add-ons](/reference/usage-billing#manage-add-ons).
+
+## Explore audit log
+
+1. Go to the Query tab, and then click **APL**.
+1. Query the `axiom-audit` dataset. For example, run the query `['axiom-audit']` to display the raw audit log data in a table.
+1. Optional: Customize your query to filter or summarize the audit log. For more information, see [Explore data](/query-data/explore).
+1. Click **Run**.
+
+The `action` field specifies the type of activity that happened in your Axiom organization.
+
+## Export audit log
+
+1. Run the query to [display the audit log](#explore-audit-log).
+1. Click <Icon icon="ellipsis-vertical" iconType="solid"/> **More > Download as JSON**.
+
+## Give access to audit log
+
+The audit log is only accessible to users with the Owner role. To allow other users to access the audit log:
+1. [Create a view](/query-data/views) that defines the parts of the audit log that you want the user to access.
+1. [Give the user access](/reference/settings) to the view.
+
+## Use cases and examples
+
+The audit log captures rich context about queries run in your organization:
+
+- **Query representation**: Privacy-safe representations of queries help you understand query patterns without exposing sensitive data.
+- **Query source**: Track whether queries originated from monitors or direct queries.
+- **Query cost**: Monitor resource consumption in query units for cost optimization.
+- **Storage bytes scanned**: Understand data volumes processed by each query.
+
+The examples below illustrate how the audit log can help you optimize performance, manage costs, and debug issues by tracing queries back to their origin.
+
+### Monitor high-cost queries
+
+Identify queries that consume significant resources:
+
+```kusto
+['axiom-audit']
+| where action == 'runAPLQueryCost'
+| where ['properties.query_cost_gbms'] > 1000
+```
+
+This query lists queries costing more than 1000 query units and helps you spot expensive queries and optimize them before they impact your budget.
+
+<Tip>
+[Create a threshold monitor](/monitor-data/threshold-monitors) using this query to receive alerts when expensive queries run. Adjust the `query_cost_gbms` threshold based on your organization’s usage patterns.
+</Tip>
+
+### Track monitor query load
+
+Understanding which monitors generate the most query activity helps you optimize performance:
+
+```kusto
+['axiom-audit']
+| where action == 'runAPLQueryCost'
+| where source == 'monitor'
+| summarize 
+    total_queries = count(),
+    total_cost = sum(['properties.query_cost_gbms']),
+    avg_cost = avg(['properties.query_cost_gbms'])
+    by ['resource.id']
+| sort by total_cost desc
+```
+
+Use this to identify monitors that might benefit from query optimization or frequency adjustments.
+
+### Analyze dataset usage
+
+Find out which datasets are used the most:
+
+```kusto
+['axiom-audit']
+| where action == 'runAPLQuery'
+| where isnotnull(['properties.datasets'])
+| summarize 
+    query_count = count()
+    by ['properties.datasets'], bin(_time, 1d)
+| sort by query_count desc
+```
+
+This query helps you understand how your team interacts with Axiom and identifies datasets that may need optimization.
+
+### Track ingest by dataset
+
+Track how much data each dataset ingests over time:
+
+```kusto
+['axiom-audit']
+| where action == "usageCalculated"
+| extend ingest_gb = tolong(['properties.hourlyIngestBytes']) / pow(1024, 3)
+| summarize IngestGB = sum(ingest_gb) by bin_auto(_time), tostring(['properties.dataset'])
+| sort by IngestGB desc
+```
+
+### Determine total data ingest
+
+Determine total data ingest across all datasets over time:
+
+```kusto
+['axiom-audit']
+| where action == "usageCalculated"
+| extend ingest_gb = tolong(['properties.hourlyIngestBytes']) / pow(1024, 3)
+| summarize TotalIngestGB = sum(ingest_gb) by bin_auto(_time)
+```
+
+<Tip>
+[Create a dashboard](/dashboards/overview) with these queries to continuously monitor your ingestion patterns.
+
+[Create a threshold monitor](/monitor-data/threshold-monitors) to alert you when ingestion exceeds a threshold.
+</Tip>
+
+### Track query sources
+
+See the distribution of queries across different sources:
+
+```kusto
+['axiom-audit']
+| where action == 'runAPLQuery'
+| summarize query_count = count() by source
+| sort by query_count desc
+```
+
+This helps you understand how your team interacts with Axiom and where queries originate.
+
+## List of trackable actions
+
+The `action` field specifies the type of activity that happened in your Axiom organization. The actions that Audit logs allow you to track are the following:
+
+- aplDelete
+- createAnnotation
+- createAPIToken
+- createDashboard
+- createDataset
+- createEndpoint
+- createFlowConfiguration
+- createFlowDestination
+- createFlowReplay
+- createFlowStream
+- createGroup
+- createMapField
+- createMonitor
+- createNotifier
+- createOrg
+- createOrgStorage
+- createPersonalToken
+- createRole
+- createUser
+- createView
+- createVirtualField
+- deleteAnnotation
+- deleteAPIToken
+- deleteDashboard
+- deleteDataset
+- deleteEndpoint
+- deleteFlowConfiguration
+- deleteFlowDestination
+- deleteGroup
+- deleteMapField
+- deleteMonitor
+- deleteNotifier
+- deleteOrg
+- deletePersonalToken
+- deleteRepo
+- deleteRole
+- deleteSession
+- deleteShareLink
+- deleteView
+- downgradeOrg
+- downgradePlan
+- fieldLimitApproached
+- fieldLimitExceeded
+- getDashboard
+- getDatasetFields
+- getField
+- getSharedRepos
+- logout
+- logoutEverywhere
+- messageSent
+- notifierFailed
+- notifierTriggered
+- notifyCustomerIOIssues
+- postRepos
+- regenerateAPIToken
+- regeneratePersonalToken
+- removeRBAC
+- removeUserFromOrg
+- resolveMonitor
+- resolveMonitorAll
+- resumeFlowReplay
+- resumeFlowStream
+- rotateSharedAccessKeys
+- runAPLQuery
+- sendOrgDeletedEmails
+- sendOrgMonthlyIngestedExceededEmail
+- sendOrgMonthlyIngestedNearLimitEmail
+- sendUserDeletedEmail
+- sendWelcomeEmail
+- setEnableAI
+- shareRepo
+- stopFlowReplay
+- stopFlowStream
+- streamDataset
+- triggerNotifier
+- triggerNotifierWithID
+- trimDataset
+- unShareRepo
+- updateDashboard
+- updateDataset
+- updateDatasetSettings
+- updateEndpoint
+- updateField
+- updateFlowConfiguration
+- updateFlowDestination
+- updateGroup
+- updateMapFields
+- updateMonitor
+- updateNotifier
+- updateOrg
+- updatePersonalToken
+- updateRepo
+- updateRole
+- updateUser
+- updateUserSettings
+- updateView
+- updateVirtualField
+- upgradeOrg
+- upgradePlan
+- usageCalculated
+- useShareLink
+- vacuumDataset

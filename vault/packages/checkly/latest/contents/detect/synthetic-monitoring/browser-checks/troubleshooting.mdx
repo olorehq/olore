@@ -1,0 +1,92 @@
+---
+title: 'Trouble Shotting and Debugging'
+description: 'Learn how to troubleshoot browser checks.'
+sidebarTitle: Troubleshooting
+---
+
+## Common Issues
+
+<Accordion title="Element Selection Problems">
+**Issue: Elements not found or interactions failing**
+
+**Solutions**:
+1. Use browser dev tools to test selectors
+2. Add explicit waits for dynamic content
+3. Use more specific or stable selectors
+4. Check for iframe or shadow DOM elements
+
+</Accordion>
+
+<Accordion title="Timing and Race Conditions">
+**Issue: Tests failing due to timing issues**
+
+**Solutions**:
+1. Use `waitForSelector()` instead of fixed delays
+2. Wait for network requests to complete
+3. Use `waitForLoadState()` for page readiness
+4. Implement proper error handling and retries
+
+</Accordion>
+
+<Accordion title="Authentication and Session Issues">
+**Issue: Login failures or session timeouts**
+
+**Solutions**:
+1. Verify credentials are correct and active
+2. Handle multi-factor authentication scenarios
+3. Use session storage for authentication state
+4. Test login flow separately from main workflow
+
+</Accordion>
+
+<Accordion title="Performance and Timeout Issues">
+**Issue: Tests timing out or running too slowly**
+
+**Solutions**:
+1. Optimize page load performance
+2. Increase timeout values for slow operations
+3. Use parallel execution where possible
+4. Monitor and alert on performance degradation
+
+</Accordion>
+
+ ## Error Handling and Debugging
+
+
+<Accordion title="Wait Strategies">
+```typescript
+// Wait for specific conditions
+await page.waitForSelector('[data-testid="loading-complete"]')
+await page.waitForURL('**/dashboard')
+await page.waitForFunction(() => window.dataLoaded === true)
+
+// Wait for network requests
+await page.waitForResponse(response => 
+  response.url().includes('/api/user') && response.status() === 200
+)
+
+// Timeout configuration
+await page.waitForSelector('.slow-element', { timeout: 30000 })
+```
+
+</Accordion>
+
+<Accordion title="Error Recovery">
+```typescript
+// Graceful error handling
+try {
+  await page.click('.optional-popup-close', { timeout: 5000 })
+} catch (error) {
+  // Continue if popup doesn't appear
+  console.log('No popup to close')
+}
+
+// Conditional interactions
+const isLoggedIn = await page.locator('.user-menu').isVisible()
+if (!isLoggedIn) {
+  await page.click('.login-button')
+  // Handle login flow
+}
+```
+
+</Accordion>

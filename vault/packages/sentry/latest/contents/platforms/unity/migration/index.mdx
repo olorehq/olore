@@ -1,0 +1,221 @@
+---
+title: Migration Guide
+description: "Learn more about migrating to the current version."
+sidebar_order: 8000
+---
+
+## Migrating to 4.0.0
+
+### Minimum Unity version
+
+Unity 2020 support has been removed as it reached End of Life in 2023. The minimum supported version is now Unity 2021.
+
+### Ubuntu version requirement for Linux servers
+
+If you are running your game on a Linux server, note that `sentry-native` is now built on Ubuntu 22.04 instead of Ubuntu 20.04 (which reached EOL in May 2025). If you are running on Ubuntu 20.04, you should update the OS before upgrading to this SDK version.
+
+### Programmatic configuration changes
+
+The deprecated `RuntimeConfiguration` and `BuildtimeConfiguration` classes have been removed. You must now use the single `OptionsConfiguration` script for all programmatic configuration. Use preprocessor directives to set platform-specific options:
+
+```csharp
+public class SentryOptionsConfiguration : OptionsConfiguration
+{
+    public override void Configure(SentryUnityOptions options)
+    {
+#if UNITY_IOS
+        // iOS-specific configuration
+        options.IosNativeInitializationType = NativeInitializationType.Runtime;
+#elif UNITY_ANDROID
+        // Android-specific configuration
+        options.AndroidNativeInitializationType = NativeInitializationType.Runtime;
+#endif
+        // Common configuration
+        options.Debug = true;
+    }
+}
+```
+
+### Callback signature changes
+
+Several callback signatures have been updated to receive the `SentryEvent` that triggered the capture, allowing for context-aware decisions:
+
+#### SetBeforeCaptureScreenshot
+
+**Before:**
+```csharp
+options.SetBeforeCaptureScreenshot(() =>
+{
+    return true; // Capture screenshot
+});
+```
+
+**After:**
+```csharp
+options.SetBeforeCaptureScreenshot(sentryEvent =>
+{
+    // You can now make decisions based on the actual event
+    return sentryEvent.Level >= SentryLevel.Error;
+});
+```
+
+#### SetBeforeCaptureViewHierarchy
+
+**Before:**
+```csharp
+options.SetBeforeCaptureViewHierarchy(() =>
+{
+    return true; // Capture view hierarchy
+});
+```
+
+**After:**
+```csharp
+options.SetBeforeCaptureViewHierarchy(sentryEvent =>
+{
+    // You can now make decisions based on the actual event
+    return sentryEvent.Level >= SentryLevel.Error;
+});
+```
+
+### API removals and changes
+
+#### User feedback API
+
+The deprecated `SentrySdk.CaptureUserFeedback` method and all associated members have been removed. Use the newer `SentrySdk.CaptureFeedback` instead:
+
+**Before:**
+```csharp
+SentrySdk.CaptureUserFeedback(new UserFeedback(eventId, "user@example.com", "User comment", "User Name"));
+```
+
+**After:**
+```csharp
+var feedbackResult = SentrySdk.CaptureFeedback(new UserFeedback
+{
+    Email = "user@example.com",
+    Message = "User comment",
+    Name = "User Name"
+}, out var captureResult);
+```
+
+Note that `CaptureFeedback` now returns a `SentryId` and provides a `CaptureFeedbackResult` out parameter to indicate capture success or failure reason.
+
+#### Breadcrumb level changes
+
+`BreadcrumbLevel.Critical` has been renamed to `BreadcrumbLevel.Fatal` for consistency with other Sentry SDKs:
+
+**Before:**
+```csharp
+SentrySdk.AddBreadcrumb("Critical error", level: BreadcrumbLevel.Critical);
+```
+
+**After:**
+```csharp
+SentrySdk.AddBreadcrumb("Critical error", level: BreadcrumbLevel.Fatal);
+```
+
+### Behavioral changes
+
+#### Span and transaction lifecycle
+
+Spans and Transactions now implement `IDisposable` and can be used with `using` statements/declarations. They will automatically finish with a status of OK when they pass out of scope if not already finished:
+
+```csharp
+using (var transaction = SentrySdk.StartTransaction("my-transaction", "operation"))
+{
+    // Transaction will automatically finish when the using block exits
+}
+
+// Or with using declaration
+using var span = transaction.StartChild("child-operation");
+// Span will automatically finish at the end of the scope
+```
+
+Note that `SpanTracer` and `TransactionTracer` are now `sealed` classes.
+
+#### Backpressure handling
+
+Backpressure handling is now enabled by default. The SDK will monitor system health and reduce the sampling rate of events and transactions when the system is under load. Sampling rates return to original levels when the system is healthy again.
+
+#### Automatic breadcrumbs
+
+The SDK now always adds a breadcrumb when capturing an exception. The option to opt-out of this behavior has been removed.
+
+### Tag changes
+
+The SDK no longer sets tags automatically. Tag promotion from contexts now happens exclusively in Sentry. The following tags have been removed:
+- `unity.device.unique_identifier`
+- `unity.gpu.supports_instancing`
+
+The `Unity` context has been extended with `IsMainThread` to support this change.
+
+### Trace ID persistence
+
+The SDK no longer refreshes the trace ID when the game loses and regains focus. The trace ID now persists from game start to game end. The SDK automatically adds breadcrumbs on focus lifecycle events.
+
+## Migrating to 3.0.0
+
+### Changes to the initialization behaviour on iOS and Android
+
+The native layer on mobile platforms (iOS and Android) no longer self-initializes before the Unity game engine starts. Previously, the SDK would use the options at build-time and bake them into the native layer. Instead, the SDK will now take the options passed into the Configure callback and use those to initialize the native SDKs. This allows users to modify the native SDK's options at runtime programmatically. The initialization behaviour is controlled by the `IosNativeInitializationType` and `AndroidNativeInitializationType` options.
+
+To restore the previous behaviour, you can set the `IosNativeInitializationType` and `AndroidNativeInitializationType` options to `BuildTime`.
+
+### Changes to the programmatic configuration
+
+The Runtime- and BuildTime-Configuration have been merged into a single OptionsConfiguration script. This allows for programmatic configuration of the SDK in one place using preprocessor directives instead of having to duplicate setting options in two different files.
+
+You can still use the old configuration classes, but they have been deprecated and will be removed in a future version. Going forward, you should use the new OptionsConfiguration script and make use of the preprocessor directives when setting options for different platforms.
+
+## Migrating to 0.28.0
+
+### Breaking Changes
+
+The base classes for the Scriptable Objects used for programmatic configuration have been updated:
+
+- `Sentry.Unity.ScriptableOptionsConfiguration` has been changed to `SentryRuntimeOptionsConfiguration`
+- `Sentry.Unity.Editor.ScriptableOptionsConfiguration` has been changed to `SentryBuildtimeOptionsConfiguration`
+
+If you make use of the programmatic configuration, you'll need to update your implementation with these base classes.
+
+## Migrating to 0.11.0
+
+### Programmatic Configuration Changes
+
+You no longer need to to call `SentryUnity.Init`. Instead, you can let the SDK self-initialize and modify the options taken from the Sentry Unity editor configuration window by providing a `ScriptableOptionsConfiguration` object.
+
+- Open the Sentry Unity editor configuration window.
+- Go to the `Options Config` tab.
+- Click `Create options configuration`.
+  - This will prompt you to pick a location for your version of the scriptable options configuration script.
+  - It will also create an instance of the ScriptableOptionsConfiguration and set in it the configuration window.
+- Add your code to the newly created script.
+
+Learn more in our [options documentation](/platforms/unity/configuration/options/).
+
+## Migrating From 0.7.0 or Earlier
+
+Starting from version 0.7.0, the SDK is [aliasing](https://blog.sentry.io/2022/02/24/alias-an-approach-to-net-assembly-conflict-resolution) its dependencies. We do this to avoid creating conflicts with other packages. This also means that if you were relying on our dependencies for certain types like `System.Text.Json`, then you'll have to import them into your project yourself going forward.
+
+## Migrating From 0.3.0 or Earlier
+
+The Sentry SDK deprecated the use of JSON files to store options and now uses scriptable objects instead. If you're migrating from version 0.3.0 or older, make sure to upgrade to version 0.15.0 first. It's the last version that supports options stored in JSON format. When you open the Sentry configuration editor window in version 0.15.0, your JSON file will be automatically converted into a scriptable object. This support will be dropped in version 0.16.0 and later.
+
+## Migrating From `sentry.unity.lite` to `sentry.unity`
+
+<Alert>
+
+The Sentry Unity Lite SDK is deprecated for mobile, desktop, WebGL, and console players.
+Customers using Unity 5.x can still use the Sentry Unity Lite as it continues to be compatible with sentry.io.
+
+The updated Sentry Unity SDK requires Unity version 2019.4 or higher with .NET Standard 2.0 scripting profile.
+
+</Alert>
+
+
+1. Remove the old `Sentry.cs` and `SentrySdk.cs` files from your project.
+2. Remove the old initialization code `gameObject.AddComponent<SentrySdk>().Dsn = "___PUBLIC_DSN___";`.
+3. Install the new [Sentry Unity SDK](/platforms/unity/).
+4. Calls to the API such as `SentrySdk.CaptureMessage("Test event");` will continue to work and don't require any change.
+5. Browse the documentation to learn more about the new capabilities of the SDK such as [enriching events](/platforms/unity/enriching-events/), [tracing](/platforms/unity/tracing/) and [configuration](/platforms/unity/configuration/).

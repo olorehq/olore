@@ -1,0 +1,83 @@
+---
+title: Subscriptions
+availability:
+    features:
+        subscriptions:
+            free: false
+            selfServe: true
+            boost: true
+            scale: true
+            enterprise: true
+---
+import AddSlackToWorkspace from '../workflows/_snippets/add-posthog-to-slack-workspace.mdx'
+import AddSlackToChannel from '../workflows/_snippets/add-posthog-to-slack-channel.mdx'
+
+export const newSubscriptionLight = "https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/features/subscriptions/new-subscription-button-light-mode.png"
+export const newSubscriptionDark = "https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/features/subscriptions/new-subscription-button-dark-mode.png"
+export const slackSubsLight = "https://res.cloudinary.com/dmukukwp6/image/upload/slack_config_light_b5a1c93ad5.png"
+export const slackSubsDark = "https://res.cloudinary.com/dmukukwp6/image/upload/slack_config_dark_3abf83e8fe.png"
+export const slackAddLight = "https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/features/subscriptions/slack-subscription-add-light-mode.png"
+export const slackAddDark = "https://res.cloudinary.com/dmukukwp6/image/upload/v1710055416/posthog.com/contents/images/features/subscriptions/slack-subscription-add-dark-mode.png"
+
+Subscriptions enable you to send [insights](/docs/product-analytics/insights) or [dashboards](/docs/product-analytics/dashboards) to your email or Slack on a regular basis. 
+
+<FeatureAvailability availability={_frontmatter.availability.features.subscriptions} />
+
+> **Looking to subscribe to events or actions?** See our [realtime destination docs](/docs/cdp/destinations) to learn how to send event or action data to webhooks, Slack, and more.
+
+To get started, open the dropdown menu in the top right of any insight or dashboard and click **Subscribe**.
+
+<ProductScreenshot
+    imageLight = {newSubscriptionLight} 
+    imageDark = {newSubscriptionDark}
+    classes="rounded"
+    alt="New Subscription Button"
+/>
+
+## Email subscriptions
+
+When configuring an email subscription you can subscribe multiple emails at once, whether they are a member of your PostHog team or not and set the frequency of the subscription.
+
+<ProductScreenshot
+    imageLight = 'https://res.cloudinary.com/dmukukwp6/image/upload/v1715288461/posthog.com/contents/images/features/subscriptions/email-light.png' 
+    imageDark = 'https://res.cloudinary.com/dmukukwp6/image/upload/v1715288461/posthog.com/contents/images/features/subscriptions/email-dark.png'
+    classes="rounded"
+    alt="New Subscription Button"
+/>
+
+Once saved, any emails not already subscribed receives a notification email informing them what you have subscribed them to. You can optionally include a small personalized message that is sent along to them.
+
+## Slack subscriptions
+
+There are three steps to setting up a Slack subscription:
+1. Adding the PostHog Slack app to your workspace
+2. Adding the PostHog Slack app to specific channels
+3. Creating a new Slack subscription in PostHog
+
+### 1. Adding the PostHog Slack app to your workspace
+
+<AddSlackToWorkspace/>
+
+### 2. Adding the PostHog Slack app to specific channels
+
+<AddSlackToChannel/>
+
+### 3. Creating a new Slack subscription in PostHog
+
+After installing the app, head back to PostHog and add a new subscription. You can do this in any dashboard or insight by clicking the top right menu, then **Subscribe**, and then **Add subscription**.
+
+<ProductScreenshot
+    imageLight = {slackAddLight} 
+    imageDark = {slackAddDark}
+    classes="rounded"
+    alt="Add to Slack button"
+/>
+
+You can then select any channel the app has access to and set a frequency. **Private channels** are only listed if you have already added PostHog to the relevant channel.
+
+<ProductScreenshot
+    imageLight = {slackSubsLight} 
+    imageDark = {slackSubsDark}
+    classes="rounded"
+    alt="Slack channel selection"
+/>

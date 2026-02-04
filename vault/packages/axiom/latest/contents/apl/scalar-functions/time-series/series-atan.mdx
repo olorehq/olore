@@ -1,0 +1,154 @@
+---
+title: series_atan
+description: 'This page explains how to use the series_atan function in APL.'
+---
+
+The `series_atan` function computes the arc tangent (inverse tangent) for each element in a numeric array (also known as a series). You use it to transform a dynamic array of numbers into their corresponding arc tangent values, expressed in radians. This is useful when you work with time series or array data and want to normalize, analyze, or transform it using trigonometric operations.
+
+You often use `series_atan` in scenarios where you want to transform numeric measurements into angular values for further statistical analysis, pattern recognition, or anomaly detection.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `eval atan(x)` to calculate the arc tangent of a scalar value, but SPL doesn’t provide a built-in function for applying `atan` across arrays or time series directly. In APL, `series_atan` applies the operation element-wise to arrays, making it easier to work with dynamic and time series data.
+
+<CodeGroup>
+```sql Splunk example
+... | eval angle=atan(value)
+````
+
+```kusto APL equivalent
+datatable(arr: dynamic)
+[
+    dynamic([0, 1, -1])
+]
+| extend atan_arr = series_atan(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `ATAN(x)` for scalar values. To work with arrays, you typically need to unnest the array, apply `ATAN` to each element, and then aggregate the results back. APL simplifies this with `series_atan`, which applies the arc tangent function element-wise to the entire array.
+
+<CodeGroup>
+```sql SQL example
+SELECT ATAN(value)
+FROM numbers;
+```
+
+```kusto APL equivalent
+datatable(arr: dynamic)
+[
+    dynamic([0, 1, -1])
+]
+| extend atan_arr = series_atan(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_atan(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array with the arc tangent of each input element. The results are in radians.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to analyze request durations by converting them into angular values for specialized statistical transformations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms)
+| extend atan_durations = series_atan(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20%7C%20extend%20atan_durations%20%3D%20series_atan(durations)%22%7D)
+
+**Output**
+
+| durations        | atan_durations           |
+| ---------------- | ------------------------- |
+| [10, 200, 5000] | [1.4711, 1.5658, 1.5706] |
+
+The query aggregates request durations, then transforms them into their arc tangent equivalents for normalized comparison.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You want to transform span durations into angular values for advanced time series modeling.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans = make_list(duration) by ['service.name']
+| extend atan_spans = series_atan(spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20atan_spans%20%3D%20series_atan(spans)%22%7D)
+
+**Output**
+
+| service.name    | spans                 | atan_spans       |
+| --------------- | --------------------- | ----------------- |
+| frontend        | [00:00:01, 00:00:03] | [0.7854, 1.2490] |
+| checkoutservice | [00:00:05, 00:00:07] | [1.3734, 1.4289] |
+
+The query collects span durations by service and transforms them into arc tangent values.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to analyze failed login attempts by transforming their request durations into angular values.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize failed_durations = make_list(req_duration_ms) by id
+| extend atan_failed = series_atan(failed_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20failed_durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20atan_failed%20%3D%20series_atan(failed_durations)%22%7D)
+
+**Output**
+
+| id     | failed_durations | atan_failed              |
+| ------ | ----------------- | ------------------------- |
+| user42 | [20, 200, 800]   | [1.5208, 1.5658, 1.5696] |
+
+The query collects durations and applies the arc tangent function element-wise.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_asin](/apl/scalar-functions/time-series/series-asin): Applies the arc sine function element-wise to array values. Use this when you need the inverse sine instead of the inverse cosine.
+- [series_acos](/apl/scalar-functions/time-series/series-acos): Returns the arc cosine of each element in an array. Use when you need to invert cosine transformations instead of sine.

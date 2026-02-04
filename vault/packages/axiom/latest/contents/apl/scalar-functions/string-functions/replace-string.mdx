@@ -1,0 +1,165 @@
+---
+title: 'replace_string'
+description: 'This page explains how to use the replace_string function in APL.'
+---
+
+The `replace_string` function replaces all occurrences of a plain string with another string. Use this function when you need exact string matching without regular expression patterns, which makes it faster and simpler than regex-based replacement.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `replace` for simple string replacements. APL's `replace_string` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval cleaned=replace(field, "old_text", "new_text")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = replace_string('old_text', 'new_text', field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `REPLACE` for string replacements. APL's `replace_string` provides similar functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT REPLACE(field, 'old_text', 'new_text') AS cleaned FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = replace_string('old_text', 'new_text', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+replace_string(lookup, rewrite, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| lookup | string | Yes | The plain string to search for and replace. |
+| rewrite | string | Yes | The replacement string. |
+| text | string | Yes | The source string to perform replacements on. |
+
+### Returns
+
+Returns the text with all occurrences of the lookup string replaced by the rewrite string. Matches do not overlap.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Normalize HTTP methods by replacing abbreviations with full names for consistency.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend normalized_method = replace_string('GET', 'Retrieve', method)
+| extend normalized_method = replace_string('POST', 'Create', normalized_method)
+| extend normalized_method = replace_string('PUT', 'Update', normalized_method)
+| extend normalized_method = replace_string('DELETE', 'Remove', normalized_method)
+| summarize request_count = count() by normalized_method, status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20normalized_method%20%3D%20replace_string(%27GET%27%2C%20%27Retrieve%27%2C%20method)%20%7C%20extend%20normalized_method%20%3D%20replace_string(%27POST%27%2C%20%27Create%27%2C%20normalized_method)%20%7C%20extend%20normalized_method%20%3D%20replace_string(%27PUT%27%2C%20%27Update%27%2C%20normalized_method)%20%7C%20extend%20normalized_method%20%3D%20replace_string(%27DELETE%27%2C%20%27Remove%27%2C%20normalized_method)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20normalized_method%2C%20status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| normalized_method | status | request_count |
+|-------------------|--------|---------------|
+| Retrieve | 200 | 5432 |
+| Create | 201 | 2341 |
+| Retrieve | 404 | 1234 |
+| Update | 200 | 987 |
+
+This query replaces HTTP method abbreviations with descriptive action names, making logs more readable for non-technical audiences.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Standardize service names by replacing environment-specific prefixes.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend clean_service = replace_string('prod-', '', ['service.name'])
+| extend clean_service = replace_string('staging-', '', clean_service)
+| extend clean_service = replace_string('dev-', '', clean_service)
+| summarize span_count = count() by clean_service, kind
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20clean_service%20%3D%20replace_string(%27prod-%27%2C%20%27%27%2C%20%5B%27service.name%27%5D)%20%7C%20extend%20clean_service%20%3D%20replace_string(%27staging-%27%2C%20%27%27%2C%20clean_service)%20%7C%20extend%20clean_service%20%3D%20replace_string(%27dev-%27%2C%20%27%27%2C%20clean_service)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20clean_service%2C%20kind%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| clean_service | kind | span_count |
+|---------------|------|------------|
+| frontend | server | 4532 |
+| checkout | client | 3421 |
+| cart | internal | 2987 |
+
+This query removes environment prefixes from service names to enable cross-environment analysis and aggregation.
+
+</Tab>
+<Tab title="Security logs">
+
+Anonymize IP addresses by replacing specific segments for privacy compliance.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend simulated_ip = '192.168.1.100'
+| extend anonymized_ip = replace_string('.100', '.XXX', simulated_ip)
+| extend anonymized_ip = replace_string('.1.', '.X.', anonymized_ip)
+| project _time, uri, simulated_ip, anonymized_ip, status, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20simulated_ip%20%3D%20'192.168.1.100'%20%7C%20extend%20anonymized_ip%20%3D%20replace_string('.100'%2C%20'.XXX'%2C%20simulated_ip)%20%7C%20extend%20anonymized_ip%20%3D%20replace_string('.1.'%2C%20'.X.'%2C%20anonymized_ip)%20%7C%20project%20_time%2C%20uri%2C%20simulated_ip%2C%20anonymized_ip%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | simulated_ip | anonymized_ip | status | geo.country |
+|-------|-----|--------------|---------------|--------|-------------|
+| 2024-11-06T10:00:00Z | /admin | 192.168.1.100 | 192.168.X.XXX | 403 | United States |
+| 2024-11-06T10:01:00Z | /api/secret | 192.168.1.100 | 192.168.X.XXX | 401 | Unknown |
+
+This query anonymizes IP addresses by replacing specific octets with placeholders, enabling security analysis while maintaining privacy compliance.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [replace](/apl/scalar-functions/string-functions/replace): Replaces strings using regular expressions. Use this when you need pattern matching capabilities.
+- [replace_regex](/apl/scalar-functions/string-functions/replace-regex): Alias for replace with regex support. Use this for pattern-based replacements.
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this when building new strings rather than replacing parts of existing ones.
+- [substring](/apl/scalar-functions/string-functions/substring): Extracts parts of strings. Use this when you need to extract rather than replace text.
+

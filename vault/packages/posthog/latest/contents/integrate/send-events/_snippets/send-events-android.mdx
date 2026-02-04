@@ -1,0 +1,69 @@
+import NamingTip from "./naming-tip.mdx" 
+import SettingProperties from "./setting-properties-text.mdx" 
+import Intro from "./intro.mdx" 
+
+<Intro />
+
+```kotlin
+import com.posthog.PostHog
+
+PostHog.capture(event = "user_signed_up")
+```
+
+<NamingTip />
+
+<SettingProperties />
+
+```kotlin
+import com.posthog.PostHog
+
+PostHog.capture(
+    event = "user_signed_up",
+    properties = mapOf(
+        "login_type" to "email",
+        "is_free_trial" to true
+    )
+)
+```
+
+### Autocapture 
+
+PostHog autocapture automatically tracks the following events for you:
+
+-   **Application Opened** - when the app is opened from a closed state or when the app comes to the foreground. (e.g. from the app switcher)
+-   **Deep Link Opened** - when the app is opened from a deep link.
+-   **Application Backgrounded** - when the app is sent to the background by the user.
+-   **Application Installed** - when the app is installed.
+-   **Application Updated** - when the app is updated.
+-   **$screen** - when the user navigates. (if using `android.app.Activity`)
+-   **$exception** - when the app throws exceptions.
+
+### Capturing screen views
+
+With [`captureScreenViews = true`](/docs/libraries/android#all-configuration-options), PostHog will try to record all screen changes automatically.
+
+The `screenTitle` will be the [`<activity>`](https://developer.android.com/guide/topics/manifest/activity-element)'s `android:label`, if not set it'll fallback to the [`<application>`](https://developer.android.com/guide/topics/manifest/application-element)'s `android:label` or the [`<activity>`](https://developer.android.com/guide/topics/manifest/activity-element)'s `android:name`.
+
+```xml
+<activity
+    android:name="com.example.app.ChildActivity"
+    android:label="@string/title_child_activity"
+    ...
+</activity>
+```
+
+If you want to manually send a new screen capture event, use the `screen` function.
+
+This function requires a `screenTitle`. You may also pass in an optional `properties` object.
+
+```kotlin
+import com.posthog.PostHog
+
+PostHog.screen(
+    screenTitle = "Dashboard",
+    properties = mapOf(
+        "background" to "blue",
+        "hero" to "superhog"
+    )
+)
+```

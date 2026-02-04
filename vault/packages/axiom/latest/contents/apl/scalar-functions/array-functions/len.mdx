@@ -1,0 +1,158 @@
+---
+title: len
+description: 'This page explains how to use the len function in APL.'
+---
+
+Use the `len` function in APL (Axiom Processing Language) to determine the length of a string or the number of elements in an array. This function is useful when you want to filter, sort, or analyze data based on the size of a value—whether that’s the number of characters in a request URL or the number of cities associated with a user.
+
+Use `len` when you need to:
+
+- Measure string lengths (for example, long request URIs).
+- Count elements in dynamic arrays (such as tags or multi-value fields).
+- Create conditional expressions based on the length of values.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you often use the `len` function within `eval` or `where` expressions to determine string length or array size. In APL, `len` works similarly, but is used as a standalone scalar function.
+
+<CodeGroup>
+```sql Splunk example
+... | eval uri_length=len(uri)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uri_length = len(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `LENGTH()` for strings and `CARDINALITY()` for arrays. In APL, `len` handles both cases—string and array—depending on the input type.
+
+<CodeGroup>
+```sql SQL example
+SELECT LENGTH(uri) AS uri_length FROM http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uri_length = len(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+len(value)
+```
+
+### Parameters
+
+| Name  | Type            | Description                                       |
+| ----- | --------------- | ------------------------------------------------- |
+| value | string or array | The input to measure—either a string or an array. |
+
+### Returns
+
+- If `value` is a string, returns the number of characters.
+- If `value` is an array, returns the number of elements.
+- Returns `null` if the input is `null`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `len` to find requests with long URIs, which might indicate poorly designed endpoints or potential abuse.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend uri_length = len(uri)
+| where uri_length > 100
+| project _time, id, uri, uri_length
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20uri_length%20%3D%20len(uri)%20%7C%20where%20uri_length%20%3E%20100%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20uri_length%22%7D)
+
+**Output**
+
+| _time               | id      | uri                               | uri_length |
+| -------------------- | ------- | --------------------------------- | ----------- |
+| 2025-06-18T12:34:00Z | user123 | /api/products/search?query=...    | 132         |
+| 2025-06-18T12:35:00Z | user456 | /download/file/very/long/path/... | 141         |
+
+The query filters logs for URIs longer than 100 characters and displays their lengths.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `len` to identify traces with IDs of unexpected length, which might indicate instrumentation issues or data inconsistencies.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_id_length = len(trace_id)
+| summarize count() by trace_id_length
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%3Dmake_list(req_duration_ms)%20by%20id%20%7C%20extend%20sorted%3Dsort_array(durations%2C%20'desc')%20%7C%20extend%20top_3%3Darray_extract(sorted%2C%200%2C%203)%22%7D)
+
+**Output**
+
+| trace_id_length | count |
+| ----------------- | ----- |
+| 32                | 4987  |
+| 16                | 12    |
+
+The query summarizes trace IDs by their lengths to find unexpected values.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `len` to analyze request methods and flag unusually short ones (e.g., malformed logs or attack vectors).
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend method_length = len(method)
+| where method_length < 3
+| project _time, id, method, method_length
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20method_length%20%3D%20len(method)%20%7C%20where%20method_length%20%3C%203%20%7C%20project%20_time%2C%20id%2C%20method%2C%20method_length%22%7D)
+
+**Output**
+
+| _time               | id      | method | method_length |
+| -------------------- | ------- | ------ | -------------- |
+| 2025-06-18T13:10:00Z | user789 | P      | 1              |
+| 2025-06-18T13:12:00Z | user222 | G      | 1              |
+
+The query finds suspicious or malformed request methods that are unusually short.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array. Use this when working specifically with arrays.
+- [array_slice](/apl/scalar-functions/array-functions/array-slice): Returns a subarray like `array_extract`, but supports negative indexing.
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Joins arrays end-to-end. Use before or after slicing arrays with `array_extract`.

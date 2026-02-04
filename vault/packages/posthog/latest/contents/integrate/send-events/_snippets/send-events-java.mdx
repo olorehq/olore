@@ -1,0 +1,24 @@
+import SettingProperties from "./setting-properties-text.mdx" 
+import NamingTip from "./naming-tip.mdx" 
+import Intro from "./intro.mdx" 
+
+<Intro />
+
+```java
+posthog.capture("distinct_id_of_the_user", "user_signed_up");
+```
+
+<NamingTip />
+
+<SettingProperties />
+
+```java
+posthog.capture(
+    "distinct_id_of_the_user",
+    "user_signed_up",
+    PostHogCaptureOptions
+        .builder()
+        .property("login_type", "email")
+        .property("is_free_trial", true)
+        .build());
+```

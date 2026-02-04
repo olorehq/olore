@@ -1,0 +1,159 @@
+---
+title: series_fill_linear
+description: 'This page explains how to use the series_fill_linear function in APL.'
+---
+
+The `series_fill_linear` function fills missing values (nulls) in a numeric dynamic array (series) using linear interpolation between known values. This function creates smooth transitions between existing data points by calculating intermediate values based on the linear relationship between adjacent non-null values.
+
+You can use `series_fill_linear` when you have time series data with missing values and want to create smooth, realistic interpolated values between known data points. This is particularly useful for maintaining data continuity, creating smooth visualizations, or when missing values represent gradual changes rather than abrupt shifts. Typical applications include sensor data processing, financial time series analysis, and performance monitoring where smooth trends are expected.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, linear interpolation isn’t natively available and typically requires complex `eval` expressions with custom logic or external tools. Most Splunk users rely on `fillnull` with constants or forward/backward filling. In APL, `series_fill_linear` provides direct access to sophisticated interpolation capabilities for smooth data reconstruction.
+
+<CodeGroup>
+```sql Splunk example
+... | fillnull value=0 | streamstats window=5 current=f avg(field) as interpolated_field
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([100, null, null, 200])
+]
+| extend interpolated_values = series_fill_linear(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not provide native linear interpolation functionality. Database systems typically require specialized extensions, custom functions, or complex window function combinations to achieve interpolation. Most SQL users rely on simple filling methods or external processing. In APL, `series_fill_linear` brings advanced interpolation capabilities directly into the query language.
+
+<CodeGroup>
+```sql SQL example
+SELECT AVG(value) OVER (ORDER BY timestamp ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS interpolated_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([100, null, null, 200])
+]
+| extend interpolated_values = series_fill_linear(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_fill_linear(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values that may contain null values. |
+
+### Returns
+
+A dynamic array where null values are replaced with linearly interpolated values based on adjacent non-null values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_fill_linear` to create smooth interpolated values for missing request durations, which is useful for maintaining realistic performance trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend interpolated_durations = series_fill_linear(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20interpolated_durations%20%3D%20series_fill_linear(durations)%22%7D)
+
+**Output**
+
+| id   | durations           | interpolated_durations    |
+| ---- | ------------------- | ------------------------- |
+| u123 | [100, null, null, 200] | [100, 133.3, 166.7, 200] |
+| u456 | [150, null, 300]     | [150, 225, 300]          |
+
+This query creates smooth interpolated values for missing request durations, useful for maintaining realistic performance trends in analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_fill_linear` to create smooth interpolated values for missing span durations, which is useful for maintaining realistic latency trends.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend interpolated_durations = series_fill_linear(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20interpolated_durations%20%3D%20series_fill_linear(durations)%22%7D)
+
+**Output**
+
+| service.name          | durations                | interpolated_durations         |
+| --------------------- | ------------------------ | ------------------------------ |
+| frontend              | [100ms, null, null, 200ms] | [100ms, 133.3ms, 166.7ms, 200ms] |
+| productcatalogservice | [50ms, null, 150ms]        | [50ms, 100ms, 150ms]           |
+
+This query creates smooth interpolated values for missing span durations, useful for maintaining realistic latency trends in service performance analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_fill_linear` to create smooth interpolated values for missing request durations, which is useful for maintaining realistic attack pattern analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend interpolated_durations = series_fill_linear(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20interpolated_durations%20%3D%20series_fill_linear(durations)%22%7D)
+
+**Output**
+
+| status | durations           | interpolated_durations    |
+| ------ | ------------------- | ------------------------- |
+| 200    | [100, null, null, 250] | [100, 150, 200, 250] |
+| 500    | [200, null, 400]     | [200, 300, 400]         |
+
+This query creates smooth interpolated values for missing request durations grouped by status code, useful for maintaining realistic patterns in security analysis across different response types.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_fill_forward](/apl/scalar-functions/time-series/series-fill-forward): Fills missing values by propagating the first known value forward. Use when you want to use the earliest available value to fill gaps.
+- [series_fill_backward](/apl/scalar-functions/time-series/series-fill-backward): Fills missing values by propagating the last known value backward. Use when you want to use the most recent available value to fill gaps.
+- [series_fill_const](/apl/scalar-functions/time-series/series-fill-const): Fills missing values with a constant value. Use when you want to replace nulls with a specific default value.
+- [series_equals](/apl/scalar-functions/time-series/series-equals): Compares each element to a specified value. Use for identifying specific values after filling operations.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Returns elements greater than a specified value. Use for threshold analysis after filling missing data.

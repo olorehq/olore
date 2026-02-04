@@ -1,0 +1,170 @@
+---
+title: series_sign
+description: 'This page explains how to use the series_sign function in APL.'
+---
+
+The `series_sign` function returns the sign of each element in a numeric dynamic array (series). The function returns -1 for negative numbers, 0 for zero, and 1 for positive numbers.
+
+You can use `series_sign` when you need to identify the direction or polarity of values in time-series data. This is particularly useful for detecting changes in trends, classifying values by their sign, or preparing data for further analysis where only the direction matters, not the magnitude.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically implement sign detection using conditional statements with `eval`. In APL, `series_sign` provides a built-in function that operates on entire arrays efficiently.
+
+<CodeGroup>
+```sql Splunk example
+... | eval sign=case(value>0, 1, value<0, -1, true(), 0)
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([-5, -2, 0, 3, 7])
+]
+| extend signs = series_sign(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you use the `SIGN()` function to determine the sign of individual values. In APL, `series_sign` applies this operation element-wise across entire arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT SIGN(value) AS sign_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([-5, -2, 0, 3, 7])
+]
+| extend signs = series_sign(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_sign(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is:
+- `-1` if the corresponding input element is negative
+- `0` if the corresponding input element is zero
+- `1` if the corresponding input element is positive
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_sign` to detect whether request durations are above or below a baseline by first subtracting the baseline, then examining the sign.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend baseline = 100
+| extend deviations = series_subtract(durations, dynamic([100, 100, 100, 100, 100]))
+| extend trend = series_sign(deviations)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20baseline%20%3D%20100%20%7C%20extend%20deviations%20%3D%20series_subtract(durations%2C%20dynamic(%5B100%2C%20100%2C%20100%2C%20100%2C%20100%5D))%20%7C%20extend%20trend%20%3D%20series_sign(deviations)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| id   | durations              | deviations            | trend          |
+| ---- | ---------------------- | --------------------- | -------------- |
+| u123 | [120, 95, 105, 80, 110] | [20, -5, 5, -20, 10]  | [1, -1, 1, -1, 1] |
+| u456 | [85, 100, 90, 105, 95]  | [-15, 0, -10, 5, -5]  | [-1, 0, -1, 1, -1] |
+
+This query calculates deviations from a baseline and uses `series_sign` to classify whether each request was slower (1), faster (-1), or equal (0) to the baseline.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_sign` to identify performance improvements or degradations by comparing current spans against previous measurements.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| summarize current = make_list(duration_ms) by ['service.name']
+| extend previous = dynamic([100, 120, 95, 110, 105])
+| extend change = series_subtract(current, previous)
+| extend direction = series_sign(change)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20summarize%20current%20%3D%20make_list(duration_ms)%20by%20%5B'service.name'%5D%20%7C%20extend%20previous%20%3D%20dynamic(%5B100%2C%20120%2C%2095%2C%20110%2C%20105%5D)%20%7C%20extend%20change%20%3D%20series_subtract(current%2C%20previous)%20%7C%20extend%20direction%20%3D%20series_sign(change)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| service.name | current                | change                 | direction         |
+| ------------ | ---------------------- | ---------------------- | ----------------- |
+| frontend     | [95, 115, 100, 105, 110] | [-5, -5, 5, -5, 5]     | [-1, -1, 1, -1, 1] |
+| checkout     | [105, 125, 90, 115, 100] | [5, 5, -5, 5, -5]      | [1, 1, -1, 1, -1] |
+
+This query compares current and previous span durations, using `series_sign` to classify each change as improvement (-1), degradation (1), or no change (0).
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_sign` to classify request patterns as above or below normal thresholds, helping identify potential security anomalies.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize counts = make_list(req_duration_ms) by status
+| extend threshold = dynamic([50, 50, 50, 50, 50])
+| extend difference = series_subtract(counts, threshold)
+| extend alert_flag = series_sign(difference)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20counts%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20threshold%20%3D%20dynamic(%5B50%2C%2050%2C%2050%2C%2050%2C%2050%5D)%20%7C%20extend%20difference%20%3D%20series_subtract(counts%2C%20threshold)%20%7C%20extend%20alert_flag%20%3D%20series_sign(difference)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| status | counts              | difference         | alert_flag       |
+| ------ | ------------------- | ------------------ | ---------------- |
+| 200    | [45, 52, 48, 55, 50] | [-5, 2, -2, 5, 0]  | [-1, 1, -1, 1, 0] |
+| 401    | [60, 75, 55, 80, 70] | [10, 25, 5, 30, 20] | [1, 1, 1, 1, 1]  |
+
+This query compares request metrics against thresholds and uses `series_sign` to create alert flags, where 1 indicates above-threshold activity that might warrant investigation.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element. Use when you need magnitude without direction information.
+- [series_subtract](/apl/scalar-functions/time-series/series-subtract): Performs element-wise subtraction. Often used before `series_sign` to compute deviations from baselines.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Returns boolean comparison results. Use when you need explicit comparison against a threshold.
+- [series_less](/apl/scalar-functions/time-series/series-less): Returns boolean comparison results. Use for direct comparison instead of sign-based classification.
+

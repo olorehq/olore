@@ -1,0 +1,170 @@
+---
+title: hash
+description: 'This page explains how to use the hash function in APL.'
+---
+
+Use the `hash` scalar function to transform any data type as a string of bytes into a signed integer. The result is deterministic so the value is always identical given the same input data.
+
+Use the `hash` function to:
+
+- Anonymise personally identifiable information (PII) while preserving joinability.
+- Create reproducible buckets for sampling, sharding, or load-balancing.
+- Build low-cardinality keys for fast aggregation and look-ups.
+- You need a reversible-by-key surrogate or a quick way to distribute rows evenly.
+
+<Note>
+Don’t use `hash` to generate values for long term usage. `hash` is generic and the underlying hashing algorithm may change. For long term stability, use the [other hash functions](/apl/scalar-functions/hash-functions) with specific algorithm like `hash_sha1`.
+</Note>
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk’s `hash` (or `md5`, `sha1`, etc.) returns a hexadecimal string and lets you pick an algorithm. In APL `hash` always returns a 64-bit integer that trades cryptographic strength for speed and compactness. Use `hash_sha256` if you need a cryptographically secure digest.
+
+<CodeGroup>
+
+```sql Splunk example
+... | eval anon_id = md5(id) | stats count by anon_id
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend anon_id = hash(id)
+| summarize count() by anon_id
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL often exposes vendor-specific functions such as `HASH` (BigQuery), `HASH_BYTES` (SQL Server), or `MD5`. These return either bytes or hex strings. In APL `hash` always yields an `int64`. To emulate SQL’s modulo bucketing, pipe the result into the arithmetic operator that you need.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT HASH(id) % 10 AS bucket, COUNT(*) AS requests
+FROM sample_http_logs
+GROUP BY bucket
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend bucket = abs(hash(id) % 10)
+| summarize requests = count() by bucket
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hash(source [, salt])
+```
+
+### Parameters
+
+| Name      | Type     | Description                                                                                 |
+| --------- | -------- | ------------------------------------------------------------------------------------------- |
+| valsourceue | scalar | Any scalar expression except `real`.                                                        |
+| salt  | `int`    | (Optional) Salt that lets you derive a different 64-bit domain while keeping determinism. |
+
+### Returns
+
+The signed integer hash of `source` (and `salt` if supplied).
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Hash requesters to see your busiest anonymous users.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend anon_id = hash(id)
+| summarize requests = count() by anon_id
+| top 5 by requests
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20anon_id%20%3D%20hash%28id%29%20%7C%20summarize%20requests%20%3D%20count%28%29%20by%20anon_id%20%7C%20top%205%20by%20requests%22%7D)
+
+**Output**
+
+| anon_id             | requests |
+| -------------------- | -------- |
+| -5872831405421830129 | 128      |
+| 902175364502087611   | 97       |
+| -354879610945237854  | 85       |
+| 6423087105927348713  | 74       |
+| -919087345721004317  | 69       |
+
+The query replaces raw IDs with hashed surrogates, counts requests per surrogate, then lists the five most active requesters without exposing PII.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Hash trace IDs to see which anonymous trace has the most spans.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_bucket = hash(trace_id)
+| summarize spans = count() by trace_bucket
+| sort by spans desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20trace_bucket%20%3D%20hash(trace_id)%20%7C%20summarize%20spans%20%3D%20count()%20by%20trace_bucket%20%7C%20sort%20by%20spans%20desc%22%7D)
+
+**Output**
+
+| trace_bucket               | spans |
+|----------------------------|-------|
+|  8,858,860,617,655,667,000 |    62 |
+|  4,193,515,424,067,409,000 |    62 |
+|  1,779,014,838,419,064,000 |    62 |
+|  5,399,024,001,804,211,000 |    62 |
+| -2,480,347,067,347,939,000 |    62 |
+
+</Tab>
+<Tab title="Security logs">
+
+Group suspicious endpoints without leaking the exact URI.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend uri_hash = hash(uri)
+| summarize requests = count() by uri_hash, status
+| top 10 by requests
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20uri_hash%20%3D%20hash%28uri%29%20%7C%20summarize%20requests%20%3D%20count%28%29%20by%20uri_hash%2C%20status%20%7C%20top%2010%20by%20requests%22%7D)
+
+**Output**
+
+| uri_hash           | status | requests |
+| ------------------- | ------ | -------- |
+| -123640987553821047 | 404    | 230      |
+| 4385902145098764321 | 403    | 145      |
+| -85439034872109873  | 401    | 132      |
+| 493820743209857311  | 404    | 129      |
+| -90348122345872001  | 500    | 118      |
+
+The query hides sensitive path information yet still lets you see which hashed endpoints return the most errors.
+
+</Tab>
+</Tabs>

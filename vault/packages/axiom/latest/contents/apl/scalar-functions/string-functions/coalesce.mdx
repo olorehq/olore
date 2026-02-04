@@ -1,0 +1,159 @@
+---
+title: 'coalesce'
+description: 'This page explains how to use the coalesce function in APL.'
+---
+
+The `coalesce` function evaluates a list of expressions and returns the first non-null (or non-empty for strings) value. Use this function to handle missing data, provide default values, or select the first available field from multiple options in your queries.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `coalesce` command similarly to APL, but the syntax is slightly different. APL's `coalesce` works identically to Splunk's version.
+
+<CodeGroup>
+```sql Splunk example
+| eval result=coalesce(field1, field2, field3)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = coalesce(field1, field2, field3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `COALESCE` is a standard function with the same behavior. APL's `coalesce` function works identically to SQL's `COALESCE`.
+
+<CodeGroup>
+```sql SQL example
+SELECT COALESCE(field1, field2, field3) AS result FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = coalesce(field1, field2, field3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+coalesce(expr1, expr2, ..., exprN)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| expr1, expr2, ..., exprN | scalar | Yes | A list of expressions to evaluate. At least one expression is required. |
+
+### Returns
+
+Returns the value of the first expression that is not null. For string expressions, returns the first non-empty string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Provide fallback values when analyzing HTTP logs where certain fields might be missing or empty.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend location = coalesce(['geo.city'], ['geo.country'], 'Unknown')
+| summarize request_count = count() by location
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20location%20%3D%20coalesce(%5B%27geo.city%27%5D%2C%20%5B%27geo.country%27%5D%2C%20%27Unknown%27)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20location%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| location | request_count |
+|----------|---------------|
+| New York | 1523 |
+| London | 987 |
+| United States | 654 |
+| Unknown | 234 |
+
+This query uses `coalesce` to select the city if available, fall back to country if city is missing, and finally use 'Unknown' if both are missing, ensuring comprehensive location tracking.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Handle missing or null span attributes in distributed traces by providing default values.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend span_kind = coalesce(kind, 'unknown')
+| summarize span_count = count() by span_kind, ['service.name']
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20span_kind%20%3D%20coalesce(kind%2C%20%27unknown%27)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20span_kind%2C%20%5B%27service.name%27%5D%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| span_kind | service.name | span_count |
+|-----------|--------------|------------|
+| server | frontend | 2345 |
+| client | checkout | 1876 |
+| internal | cart | 1234 |
+| unknown | product-catalog | 567 |
+
+This query uses `coalesce` to provide a default value for span kinds, ensuring that traces with missing kind information are still included in the analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+Ensure user identification in security logs by selecting from multiple possible identifier fields.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend user_identifier = coalesce(id, uri, 'anonymous')
+| summarize failed_attempts = count() by user_identifier, status
+| sort by failed_attempts desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20user_identifier%20%3D%20coalesce(id%2C%20uri%2C%20'anonymous')%20%7C%20summarize%20failed_attempts%20%3D%20count()%20by%20user_identifier%2C%20status%20%7C%20sort%20by%20failed_attempts%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| user_identifier | status | failed_attempts |
+|----------------|--------|-----------------|
+| user123 | 401 | 45 |
+| user456 | 403 | 32 |
+| /admin | 401 | 28 |
+| anonymous | 401 | 15 |
+
+This query uses `coalesce` to identify users from failed authentication attempts, trying the user ID first, then falling back to the URI, and finally marking truly anonymous attempts.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnotnull](/apl/scalar-functions/string-functions/isnotnull): Checks if a value is not null. Use this to explicitly test for null values before using coalesce.
+- [isnull](/apl/scalar-functions/string-functions/isnull): Checks if a value is null. Use this to identify which values would be skipped by coalesce.
+- [isempty](/apl/scalar-functions/string-functions/isempty): Checks if a string is empty or null. Use this with coalesce when working specifically with string data.
+- [isnotempty](/apl/scalar-functions/string-functions/isnotempty): Checks if a string is not empty and not null. Use this to validate strings before coalescing them.

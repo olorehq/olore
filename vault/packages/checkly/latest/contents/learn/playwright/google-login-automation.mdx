@@ -1,0 +1,74 @@
+---
+title: How to Automate Google Login with Playwright
+subTitle: Dealing with Google authentication
+date: 2020-06-22
+author: Tim Nolet
+githubUser: tnolet
+tags:
+  - login
+  - e2e
+sidebarTitle: Google Auth
+weight: 9
+learn_playwright:
+  parent: "E2E examples"
+---
+
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Social login using your personal Google or Google Gsuite account is a common use case for many login scenarios.
+
+## Steps
+
+1. We start at a site that offers Google as an authentication provider. In this case we use [Stack Overflow](https://stackoverflow.com/).
+2. We fetch the login page and click the "Login with Google" button.
+3. We are redirect to Google.
+4. We provide the username and password, injected by using environment variables.
+5. We are redirected back to the starting.
+
+```ts google-login.spec.ts
+import { test } from '@playwright/test'
+
+test('Google login', async ({ page }) => {
+  await page.goto('https://stackoverflow.com/users/login')
+
+  await page.getByRole('button', { name: 'Log in with Google' }).click()
+  await page.getByLabel('Email or phone').fill(process.env.GOOGLE_USER)
+  await page.getByRole('button', { name: 'Next' }).click()
+
+  await page.getByLabel('Enter your password').fill(process.env.GOOGLE_PWD)
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+})
+
+```
+
+Run this example as follows. Replace the username and password placeholder with your own credentials.
+
+
+
+```sh
+GOOGLE_USER=username GOOGLE_PWD=password npx playwright test google-login.spec.ts
+```
+
+
+```sh
+SET GOOGLE_USER=username
+SET GOOGLE_PWD=password
+npx playwright test google-login.spec.ts
+```
+
+
+
+
+<Note> This example does not work when you have 2-factor authentication enabled, and you might trigger a recaptcha check.</Note>
+
+## Takeaways
+
+1. Use environment variables to inject secrets.
+2. Waiting for the navigation as you are redirected to Google is done automatically.
+3. Waiting for the navigation as you are redirected back to the start site is done automatically.
+
+<SignUpCta />

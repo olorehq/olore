@@ -1,0 +1,158 @@
+---
+title: series_add
+description: 'This page explains how to use the series_add function in APL.'
+---
+
+The `series_add` function performs element-wise addition between two dynamic arrays (series) of numeric values. It adds corresponding elements from both arrays and returns a new array containing the results. This function is useful when you need to combine or aggregate data from multiple time series or when performing mathematical operations across parallel datasets.
+
+You can use `series_add` when you want to combine metrics from different sources, calculate cumulative values, or perform mathematical transformations on time-series data. Common applications include merging performance metrics, calculating total resource usage, and combining error rates from multiple services.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `eval` command with mathematical operators to add values. However, adding arrays element-wise requires more complex operations. In APL, `series_add` directly performs element-wise addition on dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval combined_value = field1 + field2
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([1, 2, 3]), dynamic([4, 5, 6])
+]
+| extend combined_series = series_add(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you add individual values using the `+` operator, but there's no built-in function for element-wise array addition. You would need to unnest arrays and perform complex joins. In APL, `series_add` handles this operation directly on dynamic arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT value1 + value2 AS sum_value
+FROM my_table;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([1, 2, 3]), dynamic([4, 5, 6])
+]
+| extend sum_series = series_add(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_add(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| `array1`  | dynamic | The first dynamic array of numeric values.    |
+| `array2`  | dynamic | The second dynamic array of numeric values.   |
+
+### Returns
+
+A dynamic array where each element is the sum of the corresponding elements from `array1` and `array2`. If the arrays have different lengths, the result array has the length of the shorter array.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_add` to combine request durations from different processing stages to calculate total processing time.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize stage1_durations = make_list(req_duration_ms), stage2_durations = make_list(req_duration_ms * 0.3) by id
+| extend total_durations = series_add(stage1_durations, stage2_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20stage1_durations%20%3D%20make_list(req_duration_ms)%2C%20stage2_durations%20%3D%20make_list(req_duration_ms%20*%200.3)%20by%20id%20%7C%20extend%20total_durations%20%3D%20series_add(stage1_durations%2C%20stage2_durations)%22%7D)
+
+**Output**
+
+| id   | stage1_durations | stage2_durations | total_durations |
+| ---- | ---------------- | ---------------- | --------------- |
+| u123 | [100, 200, 150] | [30, 60, 45]    | [130, 260, 195] |
+| u456 | [80, 120]       | [24, 36]        | [104, 156]      |
+
+This query combines processing durations from two stages to calculate the total processing time for each user's requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_add` to combine span durations from different services to analyze total request processing time.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize frontend_durations = make_list(iff(['service.name'] == 'frontend', duration, 0ms)), backend_durations = make_list(iff(['service.name'] == 'cart', duration, 0ms)) by trace_id
+| extend total_durations = series_add(frontend_durations, backend_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20frontend_durations%20%3D%20make_list(iff(%5B'service.name'%5D%20%3D%3D%20'frontend'%2C%20duration%2C%200ms))%2C%20backend_durations%20%3D%20make_list(iff(%5B'service.name'%5D%20%3D%3D%20'cart'%2C%20duration%2C%200ms))%20by%20trace_id%20%7C%20extend%20total_durations%20%3D%20series_add(frontend_durations%2C%20backend_durations)%22%7D)
+
+**Output**
+
+| trace_id | frontend_durations       | backend_durations        | total_durations          |
+| -------- | ------------------------ | ------------------------ | ------------------------ |
+| t123     | [00:00:01, 00:00:00.5]   | [00:00:00.2, 00:00:00.3] | [00:00:01.2, 00:00:00.8] |
+| t456     | [00:00:00.8]             | [00:00:00.4]             | [00:00:01.2]             |
+
+This query adds frontend and backend service durations to calculate the combined processing time per trace.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_add` to combine request durations from different security checks to analyze total security processing overhead.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize auth_durations = make_list(req_duration_ms * 0.1), validation_durations = make_list(req_duration_ms * 0.05) by status
+| extend total_security_durations = series_add(auth_durations, validation_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20auth_durations%20%3D%20make_list(req_duration_ms%20*%200.1)%2C%20validation_durations%20%3D%20make_list(req_duration_ms%20*%200.05)%20by%20status%20%7C%20extend%20total_security_durations%20%3D%20series_add(auth_durations%2C%20validation_durations)%22%7D)
+
+**Output**
+
+| status | auth_durations   | validation_durations | total_security_durations |
+| ------ | ---------------- | -------------------- | ------------------------ |
+| 200    | [10, 20, 15]     | [5, 10, 7.5]         | [15, 30, 22.5]           |
+| 401    | [25, 30]         | [12.5, 15]           | [37.5, 45]               |
+
+This query combines authentication and validation processing times to calculate total security overhead by HTTP status code.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to remove negative signs without rounding.
+- [series_cosine_similarity](/apl/scalar-functions/time-series/series-cosine-similarity): Calculates cosine similarity between two arrays. Use when you need normalized similarity measures rather than raw dot products.
+- [series_divide](/apl/scalar-functions/time-series/series-divide): Performs element-wise division between two arrays. Use when you need to calculate ratios or normalize values.
+- [series_dot_product](/apl/scalar-functions/time-series/series-dot-product): Calculates the dot product between two arrays. Use when you need the raw dot product value rather than normalized similarity.
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Calculates the sum of all elements in a single array. Use when you need to sum elements within one array rather than computing dot products.

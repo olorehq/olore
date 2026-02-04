@@ -1,0 +1,126 @@
+---
+title: bin_auto
+description: 'This page explains how to use the bin_auto function in APL.'
+---
+
+Use the `bin_auto` function to round datetime values down to fixed-size bins where the bin size is automatically determined by the query's time range. This function simplifies time-series analysis by automatically selecting an appropriate granularity based on the data being queried.
+
+The `bin_auto` function is designed for use with the [summarize operator](/apl/tabular-operators/summarize-operator) and works exclusively with the `_time` column. It automatically adjusts the bin size to provide meaningful aggregation intervals, making it ideal for dashboards and visualizations where the time range varies.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, automatic time bucketing is handled by the `timechart` command, which automatically selects span sizes. APL's `bin_auto` provides similar automatic binning within the `summarize` operator.
+
+<CodeGroup>
+```sql Splunk example
+| timechart count
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by bin_auto(_time)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not have a direct equivalent to automatic time binning. You typically need to calculate the bin size manually based on the query time range. APL's `bin_auto` handles this automatically.
+
+<CodeGroup>
+```sql SQL example
+-- Manual calculation required based on time range
+SELECT DATE_TRUNC('hour', timestamp) AS time_bucket, COUNT(*)
+FROM logs
+GROUP BY time_bucket
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by bin_auto(_time)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+bin_auto(expression)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `expression` | `datetime` | A datetime expression to round. Typically the `_time` column. |
+
+### Returns
+
+The nearest multiple of the automatically determined bin size below the input expression. The bin size is calculated based on the query's time range to provide an appropriate number of data points.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Create a time-series view of HTTP traffic with automatic time granularity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_count = count() by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_count%20%3D%20count()%20by%20bin_auto(_time)%22%7D)
+
+**Output**
+
+| request_count |
+| ------------- |
+| 4520          |
+
+This query automatically groups HTTP requests into time buckets based on the query time range, making it easy to visualize traffic patterns without manually specifying bin sizes.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Monitor span counts over time with adaptive time resolution.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize span_count = count() by bin_auto(_time), ['service.name']
+| order by span_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20span_count%20%3D%20count()%20by%20bin_auto(_time)%2C%20%5B'service.name'%5D%20%7C%20order%20by%20span_count%20desc%22%7D)
+
+**Output**
+
+| service.name | span_count |
+| ------------ | ---------- |
+| frontend     | 1250       |
+| cart         | 430        |
+| checkout     | 180        |
+
+This query provides a time-series breakdown of span activity per service, with the time granularity automatically adjusted based on the query's time range.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [bin](/apl/scalar-functions/rounding-functions/bin): Rounds values down to a specified bin size. Use `bin` when you need explicit control over the interval size.
+- [floor](/apl/scalar-functions/rounding-functions/floor): Rounds down to the largest integer less than or equal to the input. Use `bin_auto` for datetime-specific binning with automatic sizing.
+- [summarize](/apl/tabular-operators/summarize-operator): The `bin_auto` function is designed for use within the `summarize` operator for time-based aggregations.

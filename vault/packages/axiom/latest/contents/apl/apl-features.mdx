@@ -1,0 +1,376 @@
+---
+title: "All features of Axiom Processing Language (APL)"
+description: "This page gives an overview about all the features of Axiom Processing Language (APL)."
+sidebarTitle: All features
+keywords: ['axiom documentation', 'documentation', 'axiom', 'APL', 'axiom processing language', 'data explorer', 'getiing started guide', 'summarize', 'filter']
+---
+
+| Category               | Feature                                                                                      | Description |
+|:-----------------------|:---------------------------------------------------------------------------------------------|:------------|
+| Aggregation function   | [arg_max](/apl/aggregation-function/arg-max)                                                | Returns the row where an expression evaluates to the maximum value. |
+| Aggregation function   | [arg_min](/apl/aggregation-function/arg-min)                                                | Returns the row where an expression evaluates to the minimum value. |
+| Aggregation function   | [avg](/apl/aggregation-function/avg)                                                        | Returns an average value across the group. |
+| Aggregation function   | [avgif](/apl/aggregation-function/avgif)                                                    | Calculates the average value of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [count](/apl/aggregation-function/count)                                                    | Returns a count of the group without/with a predicate. |
+| Aggregation function   | [countif](/apl/aggregation-function/countif)                                                | Returns a count of rows for which the predicate evaluates to true. |
+| Aggregation function   | [dcount](/apl/aggregation-function/dcount)                                                  | Returns an estimate for the number of distinct values that are taken by a scalar expression in the summary group. |
+| Aggregation function   | [dcountif](/apl/aggregation-function/dcountif)                                              | Returns an estimate of the number of distinct values of an expression of rows for which the predicate evaluates to true. |
+| Aggregation function   | [histogram](/apl/aggregation-function/histogram)                                            | Returns a timeseries heatmap chart across the group. |
+| Aggregation function   | [histogramif](/apl/aggregation-function/histogramif)                                        | Creates a histogram for rows where a condition evaluates to true. |
+| Aggregation function   | [make_list_if](/apl/aggregation-function/make-list-if)                                      | Creates a dynamic JSON object (array) of an expression values in the group for which the predicate evaluates to true. |
+| Aggregation function   | [make_list](/apl/aggregation-function/make-list)                                            | Creates a dynamic JSON object (array) of all the values of an expression in the group. |
+| Aggregation function   | [make_set_if](/apl/aggregation-function/make-set-if)                                        | Creates a dynamic JSON object (array) of the set of distinct values that an expression takes in records for which the predicate evaluates to true. |
+| Aggregation function   | [make_set](/apl/aggregation-function/make-set)                                              | Creates a dynamic JSON array of the set of distinct values that an expression takes in the group. |
+| Aggregation function   | [max](/apl/aggregation-function/max)                                                        | Returns the maximum value across the group. |
+| Aggregation function   | [maxif](/apl/aggregation-function/maxif)                                                    | Calculates the maximum value of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [min](/apl/aggregation-function/min)                                                        | Returns the minimum value across the group. |
+| Aggregation function   | [minif](/apl/aggregation-function/minif)                                                    | Returns the minimum of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [percentile](/apl/aggregation-function/percentile)                                          | Calculates the requested percentiles of the group and produces a timeseries chart. |
+| Aggregation function   | [percentileif](/apl/aggregation-function/percentileif)                                      | Calculates the requested percentiles of the field for the rows where the predicate evaluates to true. |
+| Aggregation function   | [percentiles_array](/apl/aggregation-function/percentiles-array)                            | Returns an array of numbers where each element is the value at the corresponding percentile. |
+| Aggregation function   | [percentiles_arrayif](/apl/aggregation-function/percentiles-arrayif)                        | Returns an array of percentile values for the records that satisfy the condition. |
+| Aggregation function   | [rate](/apl/aggregation-function/rate)                                                      | Calculates the rate of values in a group per second. |
+| Aggregation function   | [spotlight](/apl/aggregation-function/spotlight)                                            | Compares a selected set of events against a baseline and surface the most significant differences. |
+| Aggregation function   | [stdev](/apl/aggregation-function/stdev)                                                    | Calculates the standard deviation of an expression across the group. |
+| Aggregation function   | [stdevif](/apl/aggregation-function/stdevif)                                                | Calculates the standard deviation of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [sum](/apl/aggregation-function/sum)                                                        | Calculates the sum of an expression across the group. |
+| Aggregation function   | [sumif](/apl/aggregation-function/sumif)                                                    | Calculates the sum of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [topk](/apl/aggregation-function/topk)                                                      | Calculates the top values of an expression across the group in a dataset. |
+| Aggregation function   | [topkif](/apl/aggregation-function/topkif)                                                  | Calculates the top values of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [variance](/apl/aggregation-function/variance)                                              | Calculates the variance of an expression across the group. |
+| Aggregation function   | [varianceif](/apl/aggregation-function/varianceif)                                          | Calculates the variance of an expression in records for which the predicate evaluates to true. |
+| Aggregation function   | [phrases](/apl/aggregation-function/phrases)                                                | Extracts and counts common phrases or word sequences from text fields. |
+| Array function         | [array_concat](/apl/scalar-functions/array-functions/array-concat)                              | Concatenates arrays into one. |
+| Array function         | [array_extract](/apl/scalar-functions/array-functions/array-extract)                            | Extracts values from a nested array. |
+| Array function         | [array_iff](/apl/scalar-functions/array-functions/array-iff)                                    | Filters array by condition. |
+| Array function         | [array_index_of](/apl/scalar-functions/array-functions/array-index-of)                          | Returns index of item in array. |
+| Array function         | [array_length](/apl/scalar-functions/array-functions/array-length)                              | Returns length of array. |
+| Array function         | [array_reverse](/apl/scalar-functions/array-functions/array-reverse)                            | Reverses array elements. |
+| Array function         | [array_rotate_left](/apl/scalar-functions/array-functions/array-rotate-left)                    | Rotates array values to the left. |
+| Array function         | [array_rotate_right](/apl/scalar-functions/array-functions/array-rotate-right)                  | Rotates array values to the right. |
+| Array function         | [array_select_dict](/apl/scalar-functions/array-functions/array-select-dict)                    | Selects dictionary from array of dictionaries. |
+| Array function         | [array_shift_left](/apl/scalar-functions/array-functions/array-shift-left)                      | Shifts array values to the left. |
+| Array function         | [array_shift_right](/apl/scalar-functions/array-functions/array-shift-right)                    | Shifts array values to the right. |
+| Array function         | [array_slice](/apl/scalar-functions/array-functions/array-slice)                                | Returns slice of an array. |
+| Array function         | [array_sort_asc](/apl/scalar-functions/array-functions/array-sort-asc)                                | Sorts an array in ascending order. |
+| Array function         | [array_sort_desc](/apl/scalar-functions/array-functions/array-sort-desc)                                | Sorts an array in descending order. |
+| Array function         | [array_split](/apl/scalar-functions/array-functions/array-split)                                | Splits array by indices. |
+| Array function         | [array_sum](/apl/scalar-functions/array-functions/array-sum)                                    | Sums array elements. |
+| Array function         | [bag_has_key](/apl/scalar-functions/array-functions/bag-has-key)                                | Checks if dynamic object has a specific key. |
+| Array function         | [bag_keys](/apl/scalar-functions/array-functions/bag-keys)                                      | Returns keys of a dynamic property bag. |
+| Array function         | [bag_pack](/apl/scalar-functions/array-functions/bag-pack)                                      | Creates a dynamic property bag from key-value pairs. |
+| Array function         | [bag_zip](/apl/scalar-functions/array-functions/bag-zip)                                        | Combines two arrays of keys and values into a dynamic property bag. |
+| Array function         | [isarray](/apl/scalar-functions/array-functions/isarray)                                        | Checks if value is an array. |
+| Array function         | [len](/apl/scalar-functions/array-functions/len)                                                | Returns array or string length. |
+| Array function         | [pack_array](/apl/scalar-functions/array-functions/pack-array)                                  | Packs input into a dynamic array. |
+| Array function         | [pack_dictionary](/apl/scalar-functions/array-functions/pack-dictionary)                        | Returns a dictionary from key-value mappings. |
+| Array function         | [strcat_array](/apl/scalar-functions/array-functions/strcat-array)                              | Joins array elements into a string using a delimiter. |
+| Conditional function   | [case](/apl/scalar-functions/conditional-function#case)                                         | Evaluates conditions and returns the first matched result. |
+| Conditional function   | [iff](/apl/scalar-functions/conditional-function#iff)                                           | Returns one of two values based on predicate. |
+| Conversion function    | [dynamic_to_json](/apl/scalar-functions/conversion-functions/dynamic-to-json)                  | Converts dynamic value to JSON string. |
+| Conversion function    | [ensure_field](/apl/scalar-functions/conversion-functions/ensure-field)                        | Returns value of field or typed null. |
+| Conversion function    | [isbool](/apl/scalar-functions/conversion-functions/isbool)                                     | Checks if expression evaluates to boolean. |
+| Conversion function    | [toarray](/apl/scalar-functions/conversion-functions/toarray)                                   | Converts to array. |
+| Conversion function    | [tobool](/apl/scalar-functions/conversion-functions/tobool)                                     | Converts to boolean. |
+| Conversion function    | [todatetime](/apl/scalar-functions/conversion-functions/todatetime)                            | Converts to datetime. |
+| Conversion function    | [todouble](/apl/scalar-functions/conversion-functions/todouble)              | Converts to real. `todouble` and `toreal` are synonyms. |
+| Conversion function    | [todynamic](/apl/scalar-functions/conversion-functions/todynamic)                               | Converts to dynamic. |
+| Conversion function    | [tohex](/apl/scalar-functions/conversion-functions/tohex)                                       | Converts to hexadecimal string. |
+| Conversion function    | [toint](/apl/scalar-functions/conversion-functions/toint)                                       | Converts to integer. `toint` and `tolong` are synonyms. |
+| Conversion function    | [tolong](/apl/scalar-functions/conversion-functions/toint)                                     | Converts to signed 64-bit long. `toint` and `tolong` are synonyms. |
+| Conversion function    | [toreal](/apl/scalar-functions/conversion-functions/todouble)              | Converts to real. `todouble` and `toreal` are synonyms. |
+| Conversion function    | [tostring](/apl/scalar-functions/conversion-functions/tostring)                                 | Converts to string. |
+| Conversion function    | [totimespan](/apl/scalar-functions/conversion-functions/totimespan)                             | Converts to timespan. |
+| Datetime function      | [ago](/apl/scalar-functions/datetime-functions#ago)                                             | Subtracts timespan from current time. |
+| Datetime function      | [datetime_add](/apl/scalar-functions/datetime-functions#datetime-add)                           | Adds amount to datetime. |
+| Datetime function      | [datetime_diff](/apl/scalar-functions/datetime-functions#datetime-diff)                         | Difference between two datetimes. |
+| Datetime function      | [datetime_part](/apl/scalar-functions/datetime-functions#datetime-part)                         | Extracts part of a datetime. |
+| Datetime function      | [dayofmonth](/apl/scalar-functions/datetime-functions#dayofmonth)                               | Day number in month. |
+| Datetime function      | [dayofweek](/apl/scalar-functions/datetime-functions#dayofweek)                                 | Days since previous Sunday. |
+| Datetime function      | [dayofyear](/apl/scalar-functions/datetime-functions#dayofyear)                                 | Day number in year. |
+| Datetime function      | [endofday](/apl/scalar-functions/datetime-functions#endofday)                                   | Returns end of day. |
+| Datetime function      | [endofmonth](/apl/scalar-functions/datetime-functions#endofmonth)                               | Returns end of month. |
+| Datetime function      | [endofweek](/apl/scalar-functions/datetime-functions#endofweek)                                 | Returns end of week. |
+| Datetime function      | [endofyear](/apl/scalar-functions/datetime-functions#endofyear)                                 | Returns end of year. |
+| Datetime function      | [getmonth](/apl/scalar-functions/datetime-functions#getmonth)                                   | Month of a datetime. |
+| Datetime function      | [getyear](/apl/scalar-functions/datetime-functions#getyear)                                     | Year of a datetime. |
+| Datetime function      | [hourofday](/apl/scalar-functions/datetime-functions#hourofday)                                 | Hour number of the day. |
+| Datetime function      | [monthofyear](/apl/scalar-functions/datetime-functions#monthofyear)                             | Month number of year. |
+| Datetime function      | [now](/apl/scalar-functions/datetime-functions#now)                                             | Returns current UTC time. |
+| Datetime function      | [startofday](/apl/scalar-functions/datetime-functions#startofday)                               | Returns start of day. |
+| Datetime function      | [startofmonth](/apl/scalar-functions/datetime-functions#startofmonth)                           | Returns start of month. |
+| Datetime function      | [startofweek](/apl/scalar-functions/datetime-functions#startofweek)                             | Returns start of week. |
+| Datetime function      | [startofyear](/apl/scalar-functions/datetime-functions#startofyear)                             | Returns start of year. |
+| Datetime function      | [unixtime_microseconds_todatetime](/apl/scalar-functions/datetime-functions/unixtime-microseconds-todatetime) | Converts microsecond Unix timestamp to datetime. |
+| Datetime function      | [unixtime_milliseconds_todatetime](/apl/scalar-functions/datetime-functions/unixtime-milliseconds-todatetime) | Converts millisecond Unix timestamp to datetime. |
+| Datetime function      | [unixtime_nanoseconds_todatetime](/apl/scalar-functions/datetime-functions/unixtime-nanoseconds-todatetime) | Converts nanosecond Unix timestamp to datetime. |
+| Datetime function      | [unixtime_seconds_todatetime](/apl/scalar-functions/datetime-functions/unixtime-seconds-todatetime) | Converts second Unix timestamp to datetime. |
+| Datetime function      | [week_of_year](/apl/scalar-functions/datetime-functions/week-of-year) | Returns the ISO 8601 week number from a datetime expression. |
+| GenAI function         | [genai_concat_contents](/apl/scalar-functions/genai-functions/genai-concat-contents)           | Concatenates message contents from a GenAI conversation array. |
+| GenAI function         | [genai_conversation_turns](/apl/scalar-functions/genai-functions/genai-conversation-turns)     | Counts the number of conversation turns in GenAI messages. |
+| GenAI function         | [genai_cost](/apl/scalar-functions/genai-functions/genai-cost)                                 | Calculates the total cost for input and output tokens. |
+| GenAI function         | [genai_estimate_tokens](/apl/scalar-functions/genai-functions/genai-estimate-tokens)           | Estimates the number of tokens in a text string. |
+| GenAI function         | [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response) | Extracts the assistant’s response from a GenAI conversation. |
+| GenAI function         | [genai_extract_function_results](/apl/scalar-functions/genai-functions/genai-extract-function-results) | Extracts function call results from GenAI messages. |
+| GenAI function         | [genai_extract_system_prompt](/apl/scalar-functions/genai-functions/genai-extract-system-prompt) | Extracts the system prompt from a GenAI conversation. |
+| GenAI function         | [genai_extract_tool_calls](/apl/scalar-functions/genai-functions/genai-extract-tool-calls)     | Extracts tool calls from GenAI messages. |
+| GenAI function         | [genai_extract_user_prompt](/apl/scalar-functions/genai-functions/genai-extract-user-prompt)   | Extracts the user prompt from a GenAI conversation. |
+| GenAI function         | [genai_get_content_by_index](/apl/scalar-functions/genai-functions/genai-get-content-by-index) | Gets message content by index position. |
+| GenAI function         | [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role)   | Gets message content by role. |
+| GenAI function         | [genai_get_pricing](/apl/scalar-functions/genai-functions/genai-get-pricing)                   | Gets pricing information for a specific AI model. |
+| GenAI function         | [genai_get_role](/apl/scalar-functions/genai-functions/genai-get-role)                         | Gets the role of a message at a specific index. |
+| GenAI function         | [genai_has_tool_calls](/apl/scalar-functions/genai-functions/genai-has-tool-calls)             | Checks if GenAI messages contain tool calls. |
+| GenAI function         | [genai_input_cost](/apl/scalar-functions/genai-functions/genai-input-cost)                     | Calculates the cost for input tokens. |
+| GenAI function         | [genai_is_truncated](/apl/scalar-functions/genai-functions/genai-is-truncated)                 | Checks if a GenAI response was truncated. |
+| GenAI function         | [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles)               | Extracts all message roles from a GenAI conversation. |
+| GenAI function         | [genai_output_cost](/apl/scalar-functions/genai-functions/genai-output-cost)                   | Calculates the cost for output tokens. |
+| Hash function          | [hash_md5](/apl/scalar-functions/hash-functions#hash-md5)                                       | Returns MD5 hash. |
+| Hash function          | [hash_sha1](/apl/scalar-functions/hash-functions#hash-sha1)                                     | Returns SHA-1 hash. |
+| Hash function          | [hash_sha256](/apl/scalar-functions/hash-functions#hash-sha256)                                 | Returns SHA256 hash. |
+| Hash function          | [hash_sha512](/apl/scalar-functions/hash-functions#hash-sha512)                                 | Returns SHA512 hash. |
+| Hash function          | [hash](/apl/scalar-functions/hash-functions/hash)                                               | Returns integer hash of input. |
+| IP function            | [format_ipv4_mask](/apl/scalar-functions/ip-functions/format-ipv4-mask)                         | Formats IPv4 and mask to CIDR. |
+| IP function            | [format_ipv4](/apl/scalar-functions/ip-functions/format-ipv4)                                   | Formats netmask into IPv4 string. |
+| IP function            | [geo_info_from_ip_address](/apl/scalar-functions/ip-functions/geo-info-from-ip-address)         | Extracts geolocation from IP address. |
+| IP function            | [has_any_ipv4_prefix](/apl/scalar-functions/ip-functions/has-any-ipv4-prefix)                   | Checks if IPv4 starts with any prefix. |
+| IP function            | [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4)                                 | Checks if any of given IPv4s exist in column. |
+| IP function            | [has_ipv4_prefix](/apl/scalar-functions/ip-functions/has-ipv4-prefix)                           | Checks if IPv4 starts with specified prefix. |
+| IP function            | [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4)                                         | Checks if IPv4 is valid and in source text. |
+| IP function            | [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare)                                 | Compares two IPv4 addresses. |
+| IP function            | [ipv4_is_in_any_range](/apl/scalar-functions/ip-functions/ipv4-is-in-any-range)                 | Checks if IPv4 is in any specified range. |
+| IP function            | [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range)                         | Checks if IPv4 is in a given range. |
+| IP function            | [ipv4_is_match](/apl/scalar-functions/ip-functions/ipv4-is-match)                               | Matches IPv4 against a pattern. |
+| IP function            | [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private)                           | Checks if IPv4 is private. |
+| IP function            | [ipv4_netmask_suffix](/apl/scalar-functions/ip-functions/ipv4-netmask-suffix)                   | Extracts netmask suffix. |
+| IP function            | [ipv6_compare](/apl/scalar-functions/ip-functions/ipv6-compare)                                 | Compares two IPv6 addresses. |
+| IP function            | [ipv6_is_in_any_range](/apl/scalar-functions/ip-functions/ipv6-is-in-any-range)                 | Checks if IPv6 is in any range. |
+| IP function            | [ipv6_is_in_range](/apl/scalar-functions/ip-functions/ipv6-is-in-range)                         | Checks if IPv6 is in range. |
+| IP function            | [ipv6_is_match](/apl/scalar-functions/ip-functions/ipv6-is-match)                               | Checks if IPv6 matches pattern. |
+| IP function            | [parse_ipv4_mask](/apl/scalar-functions/ip-functions/parse-ipv4-mask)                           | Converts IPv4 and mask to long integer. |
+| IP function            | [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4)                                     | Converts IPv4 to long integer. |
+| Logical operator       | [!=](/apl/scalar-operators/logical-operators)                                                      | Returns `true` if either one (or both) of the operands are null, or they aren’t equal to each other. Otherwise, `false`. |
+| Logical operator       | [==](/apl/scalar-operators/logical-operators)                                                      | Returns `true` if both operands are non-null and equal to each other. Otherwise, `false`. |
+| Logical operator       | [and](/apl/scalar-operators/logical-operators)                                                     | Returns `true` if both operands are `true`. |
+| Logical operator       | [or](/apl/scalar-operators/logical-operators)                                                      | Returns `true` if one of the operands is `true`, regardless of the other operand. |
+| Mathematical function  | [abs](/apl/scalar-functions/mathematical-functions#abs)                                          | Returns absolute value. |
+| Mathematical function  | [acos](/apl/scalar-functions/mathematical-functions#acos)                                        | Returns arccosine of a number. |
+| Mathematical function  | [asin](/apl/scalar-functions/mathematical-functions#asin)                                        | Returns arcsine of a number. |
+| Mathematical function  | [atan](/apl/scalar-functions/mathematical-functions#atan)                                        | Returns arctangent of a number. |
+| Mathematical function  | [atan2](/apl/scalar-functions/mathematical-functions#atan2)                                      | Returns angle between x-axis and point (y, x). |
+| Mathematical function  | [cos](/apl/scalar-functions/mathematical-functions#cos)                                          | Returns cosine of a number. |
+| Mathematical function  | [cot](/apl/scalar-functions/mathematical-functions#cot)                                          | Returns cotangent of a number. |
+| Mathematical function  | [degrees](/apl/scalar-functions/mathematical-functions#degrees)                                  | Converts radians to degrees. |
+| Mathematical function  | [exp](/apl/scalar-functions/mathematical-functions#exp)                                          | Returns e^x. |
+| Mathematical function  | [exp10](/apl/scalar-functions/mathematical-functions#exp10)                                      | Returns 10^x. |
+| Mathematical function  | [exp2](/apl/scalar-functions/mathematical-functions#exp2)                                        | Returns 2^x. |
+| Mathematical function  | [gamma](/apl/scalar-functions/mathematical-functions#gamma)                                      | Returns gamma function of x. |
+| Mathematical function  | [isinf](/apl/scalar-functions/mathematical-functions#isinf)                                      | Returns `true` if x is infinite. |
+| Mathematical function  | [isint](/apl/scalar-functions/mathematical-functions#isint)                                      | Returns `true` if x is an integer. |
+| Mathematical function  | [isnan](/apl/scalar-functions/mathematical-functions#isnan)                                      | Returns `true` if x is NaN. |
+| Mathematical function  | [log](/apl/scalar-functions/mathematical-functions#log)                                          | Returns natural logarithm of x. |
+| Mathematical function  | [log10](/apl/scalar-functions/mathematical-functions#log10)                                      | Returns base-10 logarithm. |
+| Mathematical function  | [log2](/apl/scalar-functions/mathematical-functions#log2)                                        | Returns base-2 logarithm. |
+| Mathematical function  | [loggamma](/apl/scalar-functions/mathematical-functions#loggamma)                                | Returns log of absolute gamma function. |
+| Mathematical function  | [max_of](/apl/scalar-functions/mathematical-functions/max-of)                                    | Returns largest value among arguments. |
+| Mathematical function  | [min_of](/apl/scalar-functions/mathematical-functions/min-of)                                    | Returns smallest value among arguments. |
+| Mathematical function  | [not](/apl/scalar-functions/mathematical-functions#not)                                          | Reverses boolean value. |
+| Mathematical function  | [pi](/apl/scalar-functions/mathematical-functions#pi)                                            | Returns value of Pi. |
+| Mathematical function  | [pow](/apl/scalar-functions/mathematical-functions#pow)                                          | Returns value raised to a power. |
+| Mathematical function  | [radians](/apl/scalar-functions/mathematical-functions#radians)                                  | Converts degrees to radians. |
+| Mathematical function  | [rand](/apl/scalar-functions/mathematical-functions/rand)                                  | Returns pseudo-random numbers between 0 (inclusive) and 1 (exclusive). |
+| Mathematical function  | [range](/apl/scalar-functions/mathematical-functions/range)                                  | Returns a dynamic array of evenly spaced values. |
+| Mathematical function  | [round](/apl/scalar-functions/mathematical-functions#round)                                      | Rounds value to given precision. |
+| Mathematical function  | [set_difference](/apl/scalar-functions/mathematical-functions/set-difference)                   | Returns array difference. |
+| Mathematical function  | [set_has_element](/apl/scalar-functions/mathematical-functions/set-has-element)                 | Returns `true` if set contains an element. |
+| Mathematical function  | [set_intersect](/apl/scalar-functions/mathematical-functions/set-intersect)                     | Returns array intersection. |
+| Mathematical function  | [set_union](/apl/scalar-functions/mathematical-functions/set-union)                             | Returns array union. |
+| Mathematical function  | [sign](/apl/scalar-functions/mathematical-functions#sign)                                        | Returns sign of number. |
+| Mathematical function  | [sin](/apl/scalar-functions/mathematical-functions#sin)                                          | Returns sine of a number. |
+| Mathematical function  | [sqrt](/apl/scalar-functions/mathematical-functions#sqrt)                                        | Returns square root of a number. |
+| Mathematical function  | [tan](/apl/scalar-functions/mathematical-functions#tan)                                          | Returns tangent of a number. |
+| Metadata function      | [column_ifexists](/apl/scalar-functions/metadata-functions/column-ifexists)                        | Checks if a field with a given name exists in the dataset. |
+| Metadata function      | [cursor_current](/apl/scalar-functions/metadata-functions/cursor-current)                        | Retrieves a cursor string representing the current query execution point. |
+| Metadata function      | [ingestion_time](/apl/scalar-functions/metadata-functions/ingestion-time)                        | Retrieves the timestamp of when each record was ingested into Axiom. |
+| Numerical operator     | [-](/apl/scalar-operators/numerical-operators)                                                       | Subtract. Example: `0.26 - 0.23` |
+| Numerical operator     | [!=](/apl/scalar-operators/numerical-operators)                                                      | Not equals. Example: `2 != 1` |
+| Numerical operator     | [*](/apl/scalar-operators/numerical-operators)                                                       | Multiply. Example: `1s * 5`, `5 * 5` |
+| Numerical operator     | [/](/apl/scalar-operators/numerical-operators)                                                       | Divide. Example: `10m / 1s`, `4 / 2` |
+| Numerical operator     | [\<](/apl/scalar-operators/numerical-operators)                                                       | Less. Example: `1 < 2`, `1 <= 1` |
+| Numerical operator     | [\<=](/apl/scalar-operators/numerical-operators)                                                      | Less or Equal. Example: `5 <= 6` |
+| Numerical operator     | [%](/apl/scalar-operators/numerical-operators)                                                       | Modulo. Example: `10 % 3`, `5 % 2` |
+| Numerical operator     | [+](/apl/scalar-operators/numerical-operators)                                                       | Add. Example: `3.19 + 3.19`, `ago(10m) + 10m` |
+| Numerical operator     | [==](/apl/scalar-operators/numerical-operators)                                                      | Equals. Example: `3 == 3` |
+| Numerical operator     | [>](/apl/scalar-operators/numerical-operators)                                                       | Greater. Example: `0.23 > 0.22`, `now() > ago(1d)` |
+| Numerical operator     | [>=](/apl/scalar-operators/numerical-operators)                                                      | Greater or Equal. Example: `7 >= 6` |
+| Pair function          | [find_pair](/apl/scalar-functions/pair-functions/find-pair)                                      | Searches an array of key-value pairs for the first pair matching specified patterns. |
+| Pair function          | [pair](/apl/scalar-functions/pair-functions/pair)                                                | Creates a dynamic object representing a key-value pair. |
+| Pair function          | [parse_pair](/apl/scalar-functions/pair-functions/parse-pair)                                    | Parses a pair string into its key and value components. |
+| Rounding function      | [bin](/apl/scalar-functions/rounding-functions/bin)                                              | Rounds values down to an integer multiple of a specified bin size. |
+| Rounding function      | [bin_auto](/apl/scalar-functions/rounding-functions/bin-auto)                                    | Rounds datetime values down to a fixed-size bin with automatic size selection. |
+| Rounding function      | [ceiling](/apl/scalar-functions/rounding-functions/ceiling)                                      | Rounds a number up to the smallest integer greater than or equal to the input. |
+| Rounding function      | [floor](/apl/scalar-functions/rounding-functions/floor)                                          | Rounds a number down to the largest integer less than or equal to the input. |
+| Set membership operator | [in](/apl/scalar-operators/in-operators/in-operator)                                            | Equals to one of the elements (case-sensitive). Example: `"abc" in ("123", "345", "abc")` |
+| Set membership operator | [in~](/apl/scalar-operators/in-operators/in-tilde-operator)                                     | Equals to one of the elements (case-insensitive). Example: `"abc" in~ ("123", "345", "ABC")` |
+| Set membership operator | [!in](/apl/scalar-operators/in-operators/not-in-operator)                                       | Not equals to any of the elements (case-sensitive). Example: `"bca" !in ("123", "345", "abc")` |
+| Set membership operator | [!in~](/apl/scalar-operators/in-operators/not-in-tilde-operator)                                | Not equals to any of the elements (case-insensitive). Example: `"bca" !in~ ("123", "345", "ABC")` |
+| SQL function           | [format_sql](/apl/scalar-functions/sql-functions#format-sql)                                     | Converts parsed SQL data model back into SQL statement. |
+| SQL function           | [parse_sql](/apl/scalar-functions/sql-functions#parse-sql)                                       | Parses and analyzes SQL queries. |
+| String function        | [base64_decode_toarray](/apl/scalar-functions/string-functions/base64-decode-toarray)         | Decodes a Base64-encoded string into an array of bytes. |
+| String function        | [base64_decode_tostring](/apl/scalar-functions/string-functions/base64-decode-tostring)         | Decodes a base64 string to a UTF-8 string. |
+| String function        | [base64_encode_fromarray](/apl/scalar-functions/string-functions/base64-encode-fromarray)         | Converts a sequence of bytes into a Base64-encoded string. |
+| String function        | [base64_encode_tostring](/apl/scalar-functions/string-functions/base64-encode-tostring)         | Encodes a string as base64 string. |
+| String function        | [coalesce](/apl/scalar-functions/string-functions/coalesce)                                      | Returns the first non-null/non-empty value from a list. |
+| String function        | [countof_regex](/apl/scalar-functions/string-functions/countof-regex)                           | Counts occurrences of a regex in a string. |
+| String function        | [countof](/apl/scalar-functions/string-functions/countof)                                        | Counts occurrences of a substring in a string. |
+| String function        | [extract_all](/apl/scalar-functions/string-functions/extract-all)                                | Gets all matches for a regular expression from a text string. |
+| String function        | [extract](/apl/scalar-functions/string-functions/extract)                                        | Gets a match for a regular expression from a text string. |
+| String function        | [format_bytes](/apl/scalar-functions/string-functions/format-bytes)                              | Formats a number of bytes as a string including units. |
+| String function        | [format_url](/apl/scalar-functions/string-functions/format-url)                                  | Formats a string into a valid URL. |
+| String function        | [gettype](/apl/scalar-functions/string-functions/gettype)                                        | Returns the runtime type of an argument. |
+| String function        | [indexof](/apl/scalar-functions/string-functions/indexof)                                        | Returns index of the first occurrence of a substring. |
+| String function        | [isascii](/apl/scalar-functions/string-functions/isascii)                                        | Returns `true` if all characters in an input string are ASCII characters. |
+| String function        | [isempty](/apl/scalar-functions/string-functions/isempty)                                        | Returns `true` if the argument is empty or null. |
+| String function        | [isnotempty](/apl/scalar-functions/string-functions/isnotempty)                                  | Returns `true` if the argument isn’t empty or null. |
+| String function        | [isnotnull](/apl/scalar-functions/string-functions/isnotnull)                                    | Returns `true` if the argument isn’t null. |
+| String function        | [isnull](/apl/scalar-functions/string-functions/isnull)                                          | Returns `true` if the argument is null. |
+| String function        | [parse_bytes](/apl/scalar-functions/string-functions/parse-bytes)                                | Parses byte-size string to number of bytes. |
+| String function        | [parse_csv](/apl/scalar-functions/string-functions/parse-csv)                                    | Splits a CSV-formatted string into an array. |
+| String function        | [parse_json](/apl/scalar-functions/string-functions/parse-json)                                  | Parses a string as a JSON value. |
+| String function        | [parse_url](/apl/scalar-functions/string-functions/parse-url)                                    | Parses a URL string and returns parts in a dynamic object. |
+| String function        | [parse_urlquery](/apl/scalar-functions/string-functions/parse-urlquery)                          | Parses a URL query string into key-value pairs. |
+| String function        | [quote](/apl/scalar-functions/string-functions/quote)                          | Returns a string representing the input enclosed in double quotes, with internal quotes and escape sequences handled appropriately. |
+| String function        | [replace_regex](/apl/scalar-functions/string-functions/replace-regex)                            | Replaces regex matches with another string. |
+| String function        | [replace_string](/apl/scalar-functions/string-functions/replace-string)                          | Replaces string matches with another string. |
+| String function        | [replace](/apl/scalar-functions/string-functions/replace)                                        | Replaces all regex matches with another string. |
+| String function        | [reverse](/apl/scalar-functions/string-functions/reverse)                                        | Reverses a string. |
+| String function        | [split](/apl/scalar-functions/string-functions/split)                                            | Splits a string into an array using a delimiter. |
+| String function        | [strcat_delim](/apl/scalar-functions/string-functions/strcat-delim)                              | Concatenates 2–64 arguments with a delimiter. |
+| String function        | [strcat](/apl/scalar-functions/string-functions/strcat)                                          | Concatenates 1–64 arguments. |
+| String function        | [strcmp](/apl/scalar-functions/string-functions/strcmp)                                          | Compares two strings. |
+| String function        | [string-size](/apl/scalar-functions/string-functions/string-size)                                          | Returns the length, in characters, of the input string. |
+| String function        | [strip_ansi_escapes](/apl/scalar-functions/string-functions/strip-ansi-escapes)                  | Removes ANSI escape sequences from strings. |
+| String function        | [strlen](/apl/scalar-functions/string-functions/strlen)                                          | Returns the length of a string. |
+| String function        | [strrep](/apl/scalar-functions/string-functions/strrep)                                          | Repeats a string a given number of times. |
+| String function        | [substring](/apl/scalar-functions/string-functions/substring)                                    | Extracts a substring. |
+| String function        | [tolower](/apl/scalar-functions/string-functions/tolower)                                        | Converts string to lowercase. |
+| String function        | [totitle](/apl/scalar-functions/string-functions/totitle)                                        | Converts string to title case. |
+| String function        | [toupper](/apl/scalar-functions/string-functions/toupper)                                        | Converts string to uppercase. |
+| String function        | [translate](/apl/scalar-functions/string-functions/translate)                                        | Substitutes characters in a string, one by one, based on their position in two input lists. |
+| String function        | [trim_end_regex](/apl/scalar-functions/string-functions/trim-end-regex)                          | Trims trailing characters using regex. |
+| String function        | [trim_end](/apl/scalar-functions/string-functions/trim-end)                                      | Trims trailing characters. |
+| String function        | [trim_regex](/apl/scalar-functions/string-functions/trim-regex)                                  | Trims characters matching a regex. |
+| String function        | [trim_space](/apl/scalar-functions/string-functions/trim-space)                                  | Removes all leading and trailing whitespace from a string. |
+| String function        | [trim_start_regex](/apl/scalar-functions/string-functions/trim-start-regex)                      | Trims leading characters using regex. |
+| String function        | [trim_start](/apl/scalar-functions/string-functions/trim-start)                                  | Trims leading characters. |
+| String function        | [trim](/apl/scalar-functions/string-functions/trim)                                              | Trims leading/trailing characters. |
+| String function        | [unicode_codepoints_from_string](/apl/scalar-functions/string-functions/unicode-codepoints-from-string)                                             | Converts a UTF-8 string into an array of Unicode code points. |
+| String function        | [unicode_codepoints_to_string](/apl/scalar-functions/string-functions/unicode-codepoints-to-string)                                             | Converts an array of Unicode code points into a UTF-8 encoded string. |
+| String function        | [url_decode](/apl/scalar-functions/string-functions/url-decode)                                  | Decodes a URL-encoded string. |
+| String function        | [url_encode](/apl/scalar-functions/string-functions/url-encode)                                  | Encodes characters into a URL-friendly format. |
+| String operator        | [!=](/apl/scalar-operators/string-operators)                                                      | Not equals (case-sensitive). Example: `"abc" != "ABC"` |
+| String operator        | [!~](/apl/scalar-operators/string-operators)                                                      | Not equals (case-insensitive). Example: `"aBc" !~ "xyz"` |
+| String operator        | [!contains_cs](/apl/scalar-operators/string-operators)                                           | RHS doesn’t occur in LHS (case-sensitive). Example: `"parentSpanId" !contains_cs "Id"` |
+| String operator        | [!contains](/apl/scalar-operators/string-operators)                                              | RHS doesn’t occur in LHS (case-insensitive). Example: `"parentSpanId" !contains "abc"` |
+| String operator        | [!endswith_cs](/apl/scalar-operators/string-operators)                                           | RHS isn’t a closing subsequence of LHS (case-sensitive). Example: `"parentSpanId" !endswith_cs "Span"` |
+| String operator        | [!endswith](/apl/scalar-operators/string-operators)                                              | RHS isn’t a closing subsequence of LHS (case-insensitive). Example: `"parentSpanId" !endswith "Span"` |
+| String operator        | [!has_cs](/apl/scalar-operators/string-operators)                                                | RHS isn’t a whole term in LHS (case-sensitive). Example: `"North America" !has_cs "America"` |
+| String operator        | [!has](/apl/scalar-operators/string-operators)                                                   | RHS isn’t a whole term in LHS (case-insensitive). Example: `"North America" !has "america"` |
+| String operator        | [!hasprefix_cs](/apl/scalar-operators/string-operators)                                          | LHS string doesn’t start with the RHS string (case-sensitive). Example: `"DOCS_file" !hasprefix_cs "DOCS"` |
+| String operator        | [!hasprefix](/apl/scalar-operators/string-operators)                                             | LHS string doesn’t start with the RHS string (case-insensitive). Example: `"Admin_User" !hasprefix "Admin"` |
+| String operator        | [!hassuffix_cs](/apl/scalar-operators/string-operators)                                          | LHS string doesn’t end with the RHS string (case-sensitive). Example: `"Document.HTML" !hassuffix_cs ".HTML"` |
+| String operator        | [!hassuffix](/apl/scalar-operators/string-operators)                                             | LHS string doesn’t end with the RHS string (case-insensitive). Example: `"documentation.docx" !hassuffix ".docx"` |
+| String operator        | [!matches regex](/apl/scalar-operators/string-operators)                                         | LHS doesn’t contain a match for RHS. Example: `"parentSpanId" !matches regex "g.*r"` |
+| String operator        | [!startswith_cs](/apl/scalar-operators/string-operators)                                         | RHS isn’t an initial subsequence of LHS (case-sensitive). Example: `"parentSpanId" !startswith_cs "parent"` |
+| String operator        | [!startswith](/apl/scalar-operators/string-operators)                                            | RHS isn’t an initial subsequence of LHS (case-insensitive). Example: `"parentSpanId" !startswith "Id"` |
+| String operator        | [==](/apl/scalar-operators/string-operators)                                                      | Equals (case-sensitive). Example: `"aBc" == "aBc"` |
+| String operator        | [=~](/apl/scalar-operators/string-operators)                                                      | Equals (case-insensitive). Example: `"abc" =~ "ABC"` |
+| String operator        | [contains_cs](/apl/scalar-operators/string-operators)                                            | RHS occurs as a subsequence of LHS (case-sensitive). Example: `"parentSpanId" contains_cs "Id"` |
+| String operator        | [contains](/apl/scalar-operators/string-operators)                                               | RHS occurs as a subsequence of LHS (case-insensitive). Example: `"parentSpanId" contains "Span"` |
+| String operator        | [endswith_cs](/apl/scalar-operators/string-operators)                                            | RHS is a closing subsequence of LHS (case-sensitive). Example: `"parentSpanId" endswith_cs "Id"` |
+| String operator        | [endswith](/apl/scalar-operators/string-operators)                                               | RHS is a closing subsequence of LHS (case-insensitive). Example: `"parentSpanId" endswith "Id"` |
+| String operator        | [has_cs](/apl/scalar-operators/string-operators)                                                 | RHS is a whole term in LHS (case-sensitive). Example: `"North America" has_cs "America"` |
+| String operator        | [has](/apl/scalar-operators/string-operators)                                                    | RHS is a whole term in LHS (case-insensitive). Example: `"North America" has "america"` |
+| String operator        | [has_any](/apl/scalar-operators/string-operators)                                                | RHS has any whole term in LHS (case-insensitive). Example: `"North America" has_any ("america", "europe")` |
+| String operator        | [has_any_cs](/apl/scalar-operators/string-operators)                                             | RHS has any whole term in LHS (case-sensitive). Example: `"North America" has_any_cs ("America", "Europe")` |
+| String operator        | [hasprefix_cs](/apl/scalar-operators/string-operators)                                           | LHS string starts with the RHS string (case-sensitive). Example: `"DOCS_file" hasprefix_cs "DOCS"` |
+| String operator        | [hasprefix](/apl/scalar-operators/string-operators)                                              | LHS string starts with the RHS string (case-insensitive). Example: `"Admin_User" hasprefix "Admin"` |
+| String operator        | [hassuffix_cs](/apl/scalar-operators/string-operators)                                           | LHS string ends with the RHS string (case-sensitive). Example: `"Document.HTML" hassuffix_cs ".HTML"` |
+| String operator        | [hassuffix](/apl/scalar-operators/string-operators)                                              | LHS string ends with the RHS string (case-insensitive). Example: `"documentation.docx" hassuffix ".docx"` |
+| String operator        | [matches regex](/apl/scalar-operators/string-operators)                                          | LHS contains a match for RHS. Example: `"parentSpanId" matches regex "g.*r"` |
+| String operator        | [startswith_cs](/apl/scalar-operators/string-operators)                                          | RHS is an initial subsequence of LHS (case-sensitive). Example: `"parentSpanId" startswith_cs "parent"` |
+| String operator        | [startswith](/apl/scalar-operators/string-operators)                                             | RHS is an initial subsequence of LHS (case-insensitive). Example: `"parentSpanId" startswith "parent"` |
+| Tabular operator       | [count](/apl/tabular-operators/count-operator)                                              | Returns an integer representing the total number of records in the dataset. |
+| Tabular operator       | [distinct](/apl/tabular-operators/distinct-operator)                                        | Returns a dataset with unique values from the specified fields, removing any duplicate entries. |
+| Tabular operator       | [extend-valid](/apl/tabular-operators/extend-valid-operator)                                | Returns a table where the specified fields are extended with new values based on the given expression for valid rows. |
+| Tabular operator       | [extend](/apl/tabular-operators/extend-operator)                                            | Returns the original dataset with one or more new fields appended, based on the defined expressions. |
+| Tabular operator       | [externaldata](/apl/tabular-operators/externaldata-operator)                                | Returns a table with the specified schema, containing data retrieved from an external source. |
+| Tabular operator       | [getschema](/apl/tabular-operators/getschema-operator)                                      | Returns the schema of the input, including field names and their data types. |
+| Tabular operator       | [join](/apl/tabular-operators/join-operator)                                                | Returns a dataset containing rows from two different tables based on conditions. |
+| Tabular operator       | [limit](/apl/tabular-operators/limit-operator)                                              | Returns the top N rows from the input dataset. |
+| Tabular operator       | [lookup](/apl/tabular-operators/lookup-operator)                                            | Returns a dataset where rows from one dataset are enriched with matching columns from a lookup table based on conditions. |
+| Tabular operator       | [make-series](/apl/tabular-operators/make-series)                                            | Returns a dataset where the specified field is aggregated into a time series. |
+| Tabular operator       | [mv-expand](/apl/tabular-operators/mv-expand)                                              | Returns a dataset where the specified field is expanded into multiple rows. |
+| Tabular operator       | [order](/apl/tabular-operators/order-operator)                                              | Returns the input dataset, sorted according to the specified fields and order. |
+| Tabular operator       | [parse](/apl/tabular-operators/parse-operator)                                              | Returns the input dataset with new fields added based on the specified parsing pattern. |
+| Tabular operator       | [parse-kv](/apl/tabular-operators/parse-kv)                                              | Returns a dataset where key-value pairs are extracted from a string field into individual columns. |
+| Tabular operator       | [parse-where](/apl/tabular-operators/parse-where)                                              | Returns a dataset where values from a string are extracted based on a pattern. |
+| Tabular operator       | [project-away](/apl/tabular-operators/project-away-operator)                                | Returns the input dataset excluding the specified fields. |
+| Tabular operator       | [project-keep](/apl/tabular-operators/project-keep-operator)                                | Returns a dataset with only the specified fields. |
+| Tabular operator       | [project-rename](/apl/tabular-operators/project-rename)                                | Returns a dataset where the specified field is renamed according to the specified pattern. |
+| Tabular operator       | [project-reorder](/apl/tabular-operators/project-reorder-operator)                          | Returns a table with the specified fields reordered as requested followed by any unspecified fields in their original order. |
+| Tabular operator       | [project](/apl/tabular-operators/project-operator)                                          | Returns a dataset containing only the specified fields. |
+| Tabular operator       | [redact](/apl/tabular-operators/redact-operator)                                            | Returns the input dataset with sensitive data replaced or hashed. |
+| Tabular operator       | [sample](/apl/tabular-operators/sample-operator)                                            | Returns a table containing the specified number of rows, selected randomly from the input dataset. |
+| Tabular operator       | [search](/apl/tabular-operators/search-operator)                                            | Returns all rows where the specified keyword appears in any field. |
+| Tabular operator       | [sort](/apl/tabular-operators/sort-operator)                                                | Returns a table with rows ordered based on the specified fields. |
+| Tabular operator       | [summarize](/apl/tabular-operators/summarize-operator)                                      | Returns a table where each row represents a unique combination of values from the by fields, with the aggregated results calculated for the other fields. |
+| Tabular operator       | [take](/apl/tabular-operators/take-operator)                                                | Returns the specified number of rows from the dataset. |
+| Tabular operator       | [top](/apl/tabular-operators/top-operator)                                                  | Returns the top N rows from the dataset based on the specified sorting criteria. |
+| Tabular operator       | [union](/apl/tabular-operators/union-operator)                                              | Returns all rows from the specified tables or queries. |
+| Tabular operator       | [where](/apl/tabular-operators/where-operator)                                              | Returns a filtered dataset containing only the rows where the condition evaluates to true. |
+| Time series function          | [series_abs](/apl/scalar-functions/time-series/series-abs)                                        | Returns the absolute value of a series. |
+| Time series function          | [series_acos](/apl/scalar-functions/time-series/series-acos)                                        | Returns the inverse cosine (arccos) of a series. |
+| Time series function          | [series_add](/apl/scalar-functions/time-series/series-add)                                        | Performs element-wise addition between two series. |
+| Time series function          | [series_asin](/apl/scalar-functions/time-series/series-asin)                                        | Returns the inverse sine (arcsin) of a series. |
+| Time series function          | [series_atan](/apl/scalar-functions/time-series/series-atan)                                        | Returns the inverse tangent (arctan) of a series. |
+| Time series function          | [series_ceiling](/apl/scalar-functions/time-series/series-ceiling)                                        | Rounds each element up to the nearest integer. |
+| Time series function          | [series_cos](/apl/scalar-functions/time-series/series-cos)                                        | Returns the cosine of a series. |
+| Time series function          | [series_cosine_similarity](/apl/scalar-functions/time-series/series-cosine-similarity)                                        | Calculates the cosine similarity between two series. |
+| Time series function          | [series_divide](/apl/scalar-functions/time-series/series-divide)                                        | Performs element-wise division between two series. |
+| Time series function          | [series_dot_product](/apl/scalar-functions/time-series/series-dot-product)                                        | Calculates the dot product between two series. |
+| Time series function          | [series_equals](/apl/scalar-functions/time-series/series-equals)                                        | Compares each element in a series to a specified value and returns a boolean array. |
+| Time series function          | [series_exp](/apl/scalar-functions/time-series/series-exp)                                        | Calculates the exponential (e^x) of each element in a series. |
+| Time series function          | [series_fft](/apl/scalar-functions/time-series/series-fft)                                        | Performs a Fast Fourier Transform on a series, converting time-domain data into frequency-domain representation. |
+| Time series function          | [series_fill_backward](/apl/scalar-functions/time-series/series-fill-backward)                                        | Fills missing values by propagating the last known value backward through the array. |
+| Time series function          | [series_fill_const](/apl/scalar-functions/time-series/series-fill-const)                                        | Fills missing values with a specified constant value. |
+| Time series function          | [series_fill_forward](/apl/scalar-functions/time-series/series-fill-forward)                                        | Fills missing values by propagating the first known value forward through the array. |
+| Time series function          | [series_fill_linear](/apl/scalar-functions/time-series/series-fill-linear)                                        | Fills missing values using linear interpolation between known values. |
+| Time series function          | [series_fir](/apl/scalar-functions/time-series/series-fir)                                        | Applies a Finite Impulse Response filter to a series using a specified filter kernel. |
+| Time series function          | [series_floor](/apl/scalar-functions/time-series/series-floor)                                        | Rounds down each element in a series to the nearest integer. |
+| Time series function          | [series_greater](/apl/scalar-functions/time-series/series-greater)                                        | Returns the elements of a series that are greater than a specified value. |
+| Time series function          | [series_greater_equals](/apl/scalar-functions/time-series/series-greater-equals)                                        | Returns the elements of a series that are greater than or equal to a specified value. |
+| Time series function          | [series_ifft](/apl/scalar-functions/time-series/series-ifft)                                        | Performs an Inverse Fast Fourier Transform on a series, converting frequency-domain data back into time-domain representation. |
+| Time series function          | [series_iir](/apl/scalar-functions/time-series/series-iir)                                        | Applies an Infinite Impulse Response filter to a series. |
+| Time series function          | [series_less](/apl/scalar-functions/time-series/series-less)                                        | Returns the elements of a series that are less than a specified value. |
+| Time series function          | [series_less_equals](/apl/scalar-functions/time-series/series-less-equals)                                        | Returns the elements of a series that are less than or equal to a specified value. |
+| Time series function          | [series_log](/apl/scalar-functions/time-series/series-log)                                        | Returns the natural logarithm of each element in a series. |
+| Time series function          | [series_magnitude](/apl/scalar-functions/time-series/series-magnitude)                                        | Calculates the Euclidean norm (magnitude) of a series. |
+| Time series function          | [series_max](/apl/scalar-functions/time-series/series-max)                                        | Returns the maximum value from a series. |
+| Time series function          | [series_min](/apl/scalar-functions/time-series/series-min)                                        | Returns the minimum value from a series. |
+| Time series function          | [series_multiply](/apl/scalar-functions/time-series/series-multiply)                                        | Performs element-wise multiplication of two series. |
+| Time series function          | [series_not_equals](/apl/scalar-functions/time-series/series-not-equals)                                        | Returns the elements of a series that aren’t equal to a specified value. |
+| Time series function          | [series_pearson_correlation](/apl/scalar-functions/time-series/series-pearson-correlation)                                        | Calculates the Pearson correlation coefficient between two series. |
+| Time series function          | [series_pow](/apl/scalar-functions/time-series/series-pow)                                        | Raises each element in a series to a specified power. |
+| Time series function          | [series_sign](/apl/scalar-functions/time-series/series-sign)                                        | Returns the sign of each element in a series. |
+| Time series function          | [series_sin](/apl/scalar-functions/time-series/series-sin)                                        | Returns the sine of a series. |
+| Time series function          | [series_stats](/apl/scalar-functions/time-series/series-stats)                                        | Computes comprehensive statistical measures for a series. |
+| Time series function          | [series_stats_dynamic](/apl/scalar-functions/time-series/series-stats-dynamic)                                        | Computes statistical measures and returns them in a dynamic object format. |
+| Time series function          | [series_subtract](/apl/scalar-functions/time-series/series-subtract)                                        | Performs element-wise subtraction between two series. |
+| Time series function          | [series_sum](/apl/scalar-functions/time-series/series-sum)                                        | Returns the sum of a series. |
+| Time series function          | [series_tan](/apl/scalar-functions/time-series/series-tan)                                        | Returns the tangent of a series. |
+| Type function          | [iscc](/apl/scalar-functions/type-functions/iscc)                                        | Checks whether a value is a valid credit card (CC) number. |
+| Type function          | [isimei](/apl/scalar-functions/type-functions/isimei)                                              | Checks whether a value is a valid International Mobile Equipment Identity (IMEI) number. |
+| Type function          | [ismap](/apl/scalar-functions/type-functions/ismap)                                              | Checks whether a value is of the `dynamic` type and represents a mapping. |
+| Type function          | [isreal](/apl/scalar-functions/type-functions/isreal)                                            | Checks whether a value is a real number. |
+| Type function          | [isstring](/apl/scalar-functions/type-functions/isstring)                                        | Checks whether a value is a string. |
+| Type function          | [isutf8](/apl/scalar-functions/type-functions/isutf8)                                        | Checks whether a value is a valid UTF-8 encoded sequence. |

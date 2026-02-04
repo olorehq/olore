@@ -1,0 +1,162 @@
+---
+title: 'reverse'
+description: 'This page explains how to use the reverse function in APL.'
+---
+
+The `reverse` function reverses the order of characters in a string. Use this function to analyze strings from right to left, detect palindromes, or transform data for specific pattern matching requirements.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, reversing strings typically requires custom functions or scripts. APL's `reverse` provides this functionality natively.
+
+<CodeGroup>
+```sql Splunk example
+| eval reversed=mvreverse(split(field, ""))| eval reversed=mvjoin(reversed, "")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend reversed = reverse(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, string reversal varies by database with different functions. APL's `reverse` provides standardized string reversal.
+
+<CodeGroup>
+```sql SQL example
+SELECT REVERSE(field) AS reversed FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend reversed = reverse(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+reverse(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The input string to reverse. |
+
+### Returns
+
+Returns the input string with its characters in reverse order.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Detect palindromic patterns in URIs or identifiers for data validation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend reversed_uri = reverse(uri)
+| extend is_palindrome = uri == reversed_uri
+| summarize palindrome_count = countif(is_palindrome), total_count = count() by method
+| extend palindrome_percentage = round(100.0 * palindrome_count / total_count, 2)
+| sort by palindrome_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20reversed_uri%20%3D%20reverse(uri)%20%7C%20extend%20is_palindrome%20%3D%20uri%20%3D%3D%20reversed_uri%20%7C%20summarize%20palindrome_count%20%3D%20countif(is_palindrome)%2C%20total_count%20%3D%20count()%20by%20method%20%7C%20extend%20palindrome_percentage%20%3D%20round(100.0%20*%20palindrome_count%20%2F%20total_count%2C%202)%20%7C%20sort%20by%20palindrome_count%20desc%22%7D)
+
+**Output**
+
+| method | palindrome_count | total_count | palindrome_percentage |
+|--------|-----------------|-------------|----------------------|
+| GET | 12 | 8765 | 0.14 |
+| POST | 5 | 2341 | 0.21 |
+| PUT | 2 | 987 | 0.20 |
+
+This query detects palindromic URIs by comparing them with their reversed versions, which can help identify unusual or test data patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Analyze trace IDs by examining their reversed format for pattern detection.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend reversed_trace = reverse(trace_id)
+| extend first_char = substring(trace_id, 0, 1)
+| extend last_char = substring(reversed_trace, 0, 1)
+| extend matches = first_char == last_char
+| summarize match_count = countif(matches), total = count() by ['service.name']
+| extend match_percentage = round(100.0 * match_count / total, 2)
+| sort by match_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20reversed_trace%20%3D%20reverse(trace_id)%20%7C%20extend%20first_char%20%3D%20substring(trace_id%2C%200%2C%201)%20%7C%20extend%20last_char%20%3D%20substring(reversed_trace%2C%200%2C%201)%20%7C%20extend%20matches%20%3D%20first_char%20%3D%3D%20last_char%20%7C%20summarize%20match_count%20%3D%20countif(matches)%2C%20total%20%3D%20count()%20by%20%5B%27service.name%27%5D%20%7C%20extend%20match_percentage%20%3D%20round(100.0%20*%20match_count%20%2F%20total%2C%202)%20%7C%20sort%20by%20match_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | match_count | total | match_percentage |
+|--------------|-------------|-------|------------------|
+| frontend | 287 | 4532 | 6.33 |
+| checkout | 216 | 3421 | 6.31 |
+| cart | 189 | 2987 | 6.33 |
+
+This query analyzes trace ID patterns by checking if the first and last characters match, which can help validate ID generation algorithms.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect reverse proxy attacks or unusual URI patterns by analyzing reversed strings.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend reversed_uri = reverse(uri)
+| extend has_reversed_exploit = indexof(reversed_uri, 'drowssap') >= 0 or indexof(reversed_uri, 'nigol') >= 0
+| where has_reversed_exploit or status == '403' or status == '401'
+| project _time, uri, reversed_uri, has_reversed_exploit, id, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20reversed_uri%20%3D%20reverse(uri)%20%7C%20extend%20has_reversed_exploit%20%3D%20indexof(reversed_uri%2C%20%27drowssap%27)%20%3E%3D%200%20or%20indexof(reversed_uri%2C%20%27nigol%27)%20%3E%3D%200%20%7C%20where%20has_reversed_exploit%20or%20status%20%3D%3D%20%27403%27%20or%20status%20%3D%3D%20%27401%27%20%7C%20project%20_time%2C%20uri%2C%20reversed_uri%2C%20has_reversed_exploit%2C%20id%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | reversed_uri | has_reversed_exploit | id | status |
+|-------|-----|--------------|----------------------|-------|--------|
+| 2024-11-06T10:00:00Z | /admin | nimda/ | false | user123 | 403 |
+| 2024-11-06T10:01:00Z | /loginpassword | drowssapnigol/ | true | user456 | 401 |
+
+This query detects potentially obfuscated attack patterns by examining reversed URIs for suspicious keywords like 'password' or 'login' spelled backwards.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [substring](/apl/scalar-functions/string-functions/substring): Extracts parts of strings. Use this with reverse to extract from the end of strings.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns string length. Use this with reverse for position calculations from the right.
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this to build strings with reversed components.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings into arrays. Use this with reverse to process tokens in reverse order.
+

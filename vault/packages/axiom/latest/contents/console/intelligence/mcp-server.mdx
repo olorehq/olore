@@ -1,0 +1,308 @@
+---
+title: Axiom MCP Server
+description: "This page explains how to get deeper insights with Axiom MCP Server."
+sidebarTitle: MCP Server
+---
+
+import Prerequisites from "/snippets/minimal-prerequisites.mdx"
+import ReplaceToken from "/snippets/replace-token.mdx"
+import PrerequisiteToken from "/snippets/prerequisite-token.mdx"
+import ReplaceOrgId from "/snippets/replace-org-id.mdx"
+
+Axiom MCP Server is a [Model Context Protocol](https://modelcontextprotocol.io/) server implementation that enables AI agents to query your data using Axiom Processing Language (APL).
+
+For guidance on when to use Axiom MCP Server and Axiom Skills, see [AI agents](/console/intelligence/ai-agents-overview).
+
+## Current capabilities
+
+### Supported MCP tools
+
+Axiom MCP Server supports the following MCP [tools](https://modelcontextprotocol.io/docs/concepts/tools):
+
+- `getDashboard`: Get dashboard details
+- `getDatasetSchema`: Get dataset schema
+- `getMonitors`: List monitoring configurations
+- `getMonitorsHistory`: Get monitor execution history
+- `getSavedQueries`: Retrieve saved APL queries
+- `listDashboards`: List dashboards
+- `listDatasets`: List available Axiom datasets
+- `queryApl`: Execute APL queries against Axiom datasets
+
+### Supported MCP prompts
+
+Axiom MCP Server supports the following MCP [prompts](https://modelcontextprotocol.io/docs/concepts/prompts):
+
+- `correlate-events-across-datasets`: Find patterns and correlations between events across multiple datasets
+- `data-quality-investigation`: Investigate data quality issues including missing data, inconsistencies, and collection problems
+- `detect-anomalies-in-events`: Generic anomaly detection using statistical analysis and pattern recognition across any dataset
+- `establish-performance-baseline`: Establish performance baselines for a dataset to enable effective monitoring and anomaly detection
+- `explore-unknown-dataset`: Exploration of an unknown dataset to understand its structure, content, and potential use cases
+- `monitor-health-analysis`: Comprehensive analysis of monitor health, alert patterns, and effectiveness
+
+Axiom plans to support MCP [resources](https://modelcontextprotocol.io/docs/concepts/resources) in the future.
+
+Axiom MCP Server works with all AI agents that support MCP.
+
+<Prerequisites />
+
+## Setup
+
+<Tabs>
+<Tab title="Claude">
+
+### Claude
+
+If you’re on the Pro, Team, or Enterprise plan:
+
+1. Add Axiom to the list of remote MCP servers:
+    - If you’re on the Pro plan, follow the [Claude documentation](https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp#h_3d1a65aded) to add Axiom to the list of remote MCP servers using the URL `https://mcp.axiom.co/mcp`.
+    - If you’re on the Team or Enterprise plan, ask your organization admin to follow the [Claude documentation](https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp#h_3d1a65aded) to add Axiom to the list of remote MCP servers using the URL `https://mcp.axiom.co/mcp`.
+1. In [Claude.ai](https://claude.ai/settings/connectors) or [Claude Desktop](https://claude.ai/download), go to **Settings > Connectors**.
+1. Find Axiom in the list.
+1. Click **Connect**.
+1. Authenticate the request in your browser.
+
+In [Claude Code](https://claude.ai/code), follow the [Claude Code documentation](https://code.claude.com/docs/en/mcp#installing-mcp-servers) to add Axiom to the list of remote MCP servers using the URL `https://mcp.axiom.co/mcp`.
+
+If you’re on the Free plan:
+
+1. Install [Claude Desktop](https://claude.ai/download).
+1. In Claude Desktop, go to **Settings > Developers**, and then click **Edit Config**.
+1. Add the following to `claude_desktop_config.json`:
+
+    ```json claude_desktop_config.json
+    {
+        "mcpServers": {
+            "axiom": {
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "mcp-remote",
+                    "https://mcp.axiom.co/mcp"
+                ]
+            }
+        }
+    }
+    ```
+
+1. Restart Claude Desktop.
+1. Authenticate the request in your browser.
+
+</Tab>
+<Tab title="Cursor">
+
+### Cursor
+
+1. Install [Cursor](https://cursor.com/home).
+1. [Install Axiom MCP Server](https://cursor.com/en/install-mcp?name=axiom&config=eyJ1cmwiOiJodHRwczovL21jcC5heGlvbS5jby9tY3AifQ%3D%3D).
+1. Authenticate the request in your browser.
+
+</Tab>
+<Tab title="Other clients">
+
+### Other clients
+
+If your agent supports connecting to remote MCP servers directly:
+
+1. In your AI agent, add a remote MCP connection with the following details:
+
+    - **Name:** `Axiom`
+    - **Server URL:** `https://mcp.axiom.co/mcp`
+
+    For AI agents that require server-sent events (SSE), use the server URL `https://mcp.axiom.co/sse`.
+
+1. Authenticate the request in your browser. You can later revoke access on the Profile page of the Axiom Console.
+
+If your agent doesn’t support connecting to remote MCP servers directly, use the [mcp-remote library](https://www.npmjs.com/package/mcp-remote):
+
+1. Add the `mcp-remote` library to the configuration file of your AI agent. For example:
+
+    ```json
+    {
+        "mcpServers": {
+            "axiom": {
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "mcp-remote",
+                    "https://mcp.axiom.co/mcp"
+                ]
+            }
+        }
+    }
+    ```
+
+1. Restart your AI agent.
+1. Authenticate the request in your browser. You can later revoke access on the Profile page of the Axiom Console.
+
+### Header-based authentication
+
+If your AI agent doesn’t support browser-based OAuth authentication (for example, Agent Builder from OpenAI), authenticate by passing headers directly:
+
+1. [Create a personal access token](/reference/tokens#personal-access-tokens-pat).
+1. [Determine organization ID](/reference/tokens#determine-organization-id).
+1. Configure your AI agent to use the server URL `https://mcp.axiom.co/mcp`.
+1. Configure your AI agent to send the following headers with each request to the server URL:
+
+    - **Authorization:** `Bearer PERSONAL_ACCESS_TOKEN`
+    - **x-axiom-org-id:** `ORGANIZATION_ID`
+
+    <Info>
+    Replace `PERSONAL_ACCESS_TOKEN` with the personal access token you have generated.
+
+    <ReplaceOrgId />
+    </Info>
+
+    If your AI agent only supports setting the Authorization header, pass the organization ID as a URL parameter: `https://mcp.axiom.co/mcp?org-id=ORGANIZATION_ID`
+
+</Tab>
+</Tabs>
+
+The setup explained above uses a remote MCP connection and is the recommended approach for most use cases. Alternatively, deploy Axiom MCP Server locally on your machine for more control.
+
+<Accordion title="Local setup">
+
+## Local setup
+
+With the local setup:
+
+- You run Axiom MCP Server yourself.
+- You authenticate using an API token instead of OAuth 2.0.
+- You can’t use the MCP prompts mentioned in [Current capabilities](#current-capabilities).
+
+### Install
+
+Run the following to install the latest built binary from [GitHub](https://github.com/axiomhq/axiom-mcp/releases):
+
+```bash
+go install github.com/axiomhq/axiom-mcp@latest
+```
+
+<Info>
+Axiom MCP Server is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/mcp-server-axiom).
+</Info>
+
+### Create API token
+
+<PrerequisiteToken />
+
+### Configure
+
+Configure your AI agent to use the MCP Server in one of the following ways:
+
+- Use a [config file](#config-file)
+- Use [environment variables](#environment-variables)
+
+#### Config file
+
+1. Create a config file where you specify the authentication and configuration details. For example:
+
+    ```bash config.txt
+    token API_TOKEN
+    url https://api.axiom.co
+    query-rate 1
+    query-burst 1
+    datasets-rate 1
+    datasets-burst 1
+    monitors-rate 1
+    monitors-burst 1
+    ```
+
+    <Info>
+    <ReplaceToken />
+    </Info>
+
+    Optionally, configure the rate and the burst limits at the query, dataset, and monitor levels. The rate limit is the maximum number of requests that your AI agent can make per second. The burst limit is the maximum number of requests that your AI agent can make in a short period (burst) before the rate limit applies to further requests.
+
+1. In the settings of your AI agent, reference the binary file of Axiom MCP Server and the config file you have previously created.
+
+    For example, if you use the Claude desktop app, add `axiom` to the `mcpServers` section of the Claude configuration file. The default path is `~/Library/Application Support/Claude/claude_desktop_config.json` on MacOS and `%APPDATA%\Claude\claude_desktop_config.json` on Windows.
+
+    ```json claude_desktop_config.json
+    {
+      "mcpServers": {
+        "axiom": {
+          "command": "PATH_AXIOM_MCP_BINARY",
+          "args": [
+            "--config",
+            "PATH_AXIOM_MCP_CONFIG"
+          ]
+        }
+      }
+    }
+    ```
+
+    <Info>
+    Replace `PATH_AXIOM_MCP_BINARY` with the path the binary file of Axiom MCP Server.
+
+    Replace `PATH_AXIOM_MCP_CONFIG` with the path the config file you have previously created.
+    </Info>
+
+#### Environment variables
+
+In the settings of your AI agent, use environment variables to specify the authentication details and the binary file of Axiom MCP Server.
+
+For example, if you use the Claude desktop app, add `axiom` to the `mcpServers` section of the Claude configuration file. The default path is `~/Library/Application Support/Claude/claude_desktop_config.json` on MacOS and `%APPDATA%\Claude\claude_desktop_config.json` on Windows.
+
+```json claude_desktop_config.json
+{
+  "mcpServers": {
+    "axiom": {
+      "command": "PATH_AXIOM_MCP_BINARY",
+      "env": {
+        "AXIOM_TOKEN": "API_TOKEN",
+        "AXIOM_URL": "https://api.axiom.co",
+        "AXIOM_QUERY_RATE": "1",
+        "AXIOM_QUERY_BURST": "1",
+        "AXIOM_DATASETS_RATE": "1",
+        "AXIOM_DATASETS_BURST": "1",
+        "AXIOM_MONITORS_RATE": "1",
+        "AXIOM_MONITORS_BURST": "1"
+      }
+    }
+  }
+}
+```
+
+<Info>
+Replace `PATH_AXIOM_MCP_BINARY` with the path the binary file of Axiom MCP Server.
+
+<ReplaceToken />
+
+<ReplaceDomain />
+</Info>
+
+Optionally, configure the rate and the burst limits at the query, dataset, and monitor levels. The rate limit is the maximum number of requests that your AI agent can make per second. The burst limit is the maximum number of requests that your AI agent can make in a short period (burst) before the rate limit applies to further requests.
+
+</Accordion>
+
+## Token hygiene
+
+The remote MCP Server uses OAuth for authentication which handles credential isolation automatically. Agents never see your tokens. You can [revoke access](#revoke-access) at any time.
+
+For the local setup or when using [Axiom Skills](/console/intelligence/skills), you configure API tokens directly. For detailed guidance on secure token configuration, see [Token hygiene for AI agents](/console/intelligence/ai-agents-overview#token-hygiene-for-ai-agents).
+
+## Use MCP Server
+
+After setting up the Axiom MCP Server, you can:
+
+- Ask your own questions about your event data. For example:
+
+    - “List datasets.”
+    - “Get the data schema for the dataset `logs`.”
+    - “Get the most common status codes in the last 30 minutes in the dataset `logs`.”
+
+- Use the [prebuilt prompts](#supported-mcp-prompts). For example, in Claude, click **+ > Add from Axiom** to access them.
+
+To answer your questions, your AI client can use the [supported MCP tools](#supported-mcp-tools).
+
+## Revoke access
+
+Using the procedure above, you authorized your AI client to access your event data in Axiom.
+
+To revoke access:
+
+1. In Axiom, go to <Icon icon="gear" iconType="solid"/> **Settings > Profile**.
+1. In the Sessions section, find the session where you authorized your AI client, and then click <Icon icon="trash" iconType="light"/> **Delete** on the right.
+
+If you connected to Axiom MCP Server using the `mcp-remote` library, clear the `.mcp-auth` folder. This is where Axiom MCP Server stores credential information. On a Mac, the default path is `~/.mcp-auth`.

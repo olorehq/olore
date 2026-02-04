@@ -1,0 +1,17 @@
+Update [posthog-php](/docs/integrate/server/php) to version 2.1.0 or above to make use of the new functionality.
+
+```php
+# Capturing an event with groups
+PostHog::capture([
+    'distinctId' => 'user_distinct_id',
+    'event' => 'some_event',
+    '$groups' => ['company' => 'id:5']
+]);
+
+# Updating a groups properties
+PostHog::groupIdentify([
+    'groupType' => 'company',
+    'groupKey' => 'id:5',
+    'properties' => ['company_name' => 'Awesome Inc', 'employees' => 11]
+]);
+```

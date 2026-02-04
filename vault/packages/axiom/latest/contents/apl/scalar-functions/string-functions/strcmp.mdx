@@ -1,0 +1,136 @@
+---
+title: 'strcmp'
+description: 'This page explains how to use the strcmp function in APL.'
+---
+
+The `strcmp` function compares two strings lexicographically and returns an integer indicating their relationship. Use this function to sort strings, validate string ordering, or implement custom comparison logic in your queries.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use comparison operators. APL's `strcmp` provides explicit lexicographic comparison with numeric return values.
+
+<CodeGroup>
+```sql Splunk example
+| eval result=case(str1<str2, -1, str1>str2, 1, true(), 0)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = strcmp(str1, str2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, string comparison varies. APL's `strcmp` provides C-style string comparison returning -1, 0, or 1.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE 
+  WHEN str1 < str2 THEN -1
+  WHEN str1 > str2 THEN 1
+  ELSE 0
+END AS result FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = strcmp(str1, str2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strcmp(string1, string2)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| string1 | string | Yes | The first string to compare. |
+| string2 | string | Yes | The second string to compare. |
+
+### Returns
+
+Returns an integer: -1 if string1 is less than string2, 0 if they are equal, 1 if string1 is greater than string2.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Compare HTTP methods to establish custom ordering for request type analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend method_order = strcmp(method, 'GET')
+| summarize get_requests = countif(method_order == 0),
+            before_get = countif(method_order < 0),
+            after_get = countif(method_order > 0) by status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20method_order%20%3D%20strcmp(method%2C%20%27GET%27)%20%7C%20summarize%20get_requests%20%3D%20countif(method_order%20%3D%3D%200)%2C%20before_get%20%3D%20countif(method_order%20%3C%200)%2C%20after_get%20%3D%20countif(method_order%20%3E%200)%20by%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | get_requests | before_get | after_get |
+|--------|--------------|------------|-----------|
+| 200 | 5432 | 1234 | 2109 |
+| 404 | 1987 | 234 | 120 |
+
+This query uses strcmp to categorize HTTP methods relative to 'GET', enabling analysis of request type distribution by status code.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Compare service names to establish ordering for service dependency analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend name_comparison = strcmp(['service.name'], 'frontend')
+| extend is_frontend = name_comparison == 0
+| extend before_frontend = name_comparison < 0
+| extend after_frontend = name_comparison > 0
+| summarize span_count = count() by is_frontend, before_frontend, after_frontend
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20name_comparison%20%3D%20strcmp(%5B%27service.name%27%5D%2C%20%27frontend%27)%20%7C%20extend%20is_frontend%20%3D%20name_comparison%20%3D%3D%200%20%7C%20extend%20before_frontend%20%3D%20name_comparison%20%3C%200%20%7C%20extend%20after_frontend%20%3D%20name_comparison%20%3E%200%20%7C%20summarize%20span_count%20%3D%20count()%20by%20is_frontend%2C%20before_frontend%2C%20after_frontend%22%7D)
+
+**Output**
+
+| is_frontend | before_frontend | after_frontend | span_count |
+|-------------|-----------------|----------------|------------|
+| true | false | false | 4532 |
+| false | true | false | 3421 |
+| false | false | true | 6012 |
+
+This query categorizes services based on their lexicographic position relative to 'frontend', helping organize service hierarchies.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [tolower](/apl/scalar-functions/string-functions/tolower): Converts strings to lowercase. Use this before strcmp for case-insensitive comparison.
+- [toupper](/apl/scalar-functions/string-functions/toupper): Converts strings to uppercase. Use this before strcmp for case-insensitive comparison.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns string length. Use this to compare strings by length rather than lexicographically.
+- [indexof](/apl/scalar-functions/string-functions/indexof): Finds substring positions. Use this for substring comparison rather than full string comparison.
+

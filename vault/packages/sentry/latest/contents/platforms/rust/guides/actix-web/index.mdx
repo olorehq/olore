@@ -1,0 +1,95 @@
+---
+title: Actix Web
+description: "Learn about monitoring your Actix Web application with Sentry."
+---
+
+The Sentry SDK offers a middleware for the [Actix Web](https://actix.rs/) framework that supports:
+
+- Capturing server errors returned by Actix Web services.
+- Starting a [transaction](/concepts/key-terms/tracing/) for each request-response cycle.
+
+## Install
+
+To add Sentry with the Actix Web integration to your Rust project, add a new dependency to your `Cargo.toml`:
+
+```toml {filename:Cargo.toml}
+[dependencies]
+actix-web = "4.11.0"
+sentry = { version = "{{@inject packages.version('sentry.rust') }}", features = ["actix"] }
+```
+
+## Configure
+
+Initialize and configure the Sentry client. This will enable a set of default integrations, such as panic reporting.
+Then, initialize Actix Web with the Sentry middleware.
+The Sentry middleware provides correct request and trace association for any captured errors or panics, so it should be the first to process the request, that means it should be the last in your chain of `wrap` calls.
+
+<Alert level="warning">
+
+Macros like `#[tokio::main]` and `#[actix_web::main]` are not supported. The Sentry client must be initialized before the async runtime is started, as shown below.
+
+</Alert>
+
+```rust {filename:main.rs}
+use std::io;
+
+use actix_web::{get, App, Error, HttpRequest, HttpServer};
+
+#[get("/")]
+async fn failing(_req: HttpRequest) -> Result<String, Error> {
+    Err(io::Error::new(io::ErrorKind::Other, "An error happens here").into())
+}
+
+fn main() -> io::Result<()> {
+    let _guard = sentry::init((
+        "___PUBLIC_DSN___",
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            // Capture all traces and spans. Set to a lower value in production
+            traces_sample_rate: 1.0,
+            // Capture user IPs and potentially sensitive headers when using HTTP server integrations
+            // see https://docs.sentry.io/platforms/rust/data-management/data-collected for more info
+            send_default_pii: true,
+            // Capture all HTTP request bodies, regardless of size
+            max_request_body_size: sentry::MaxRequestBodySize::Always,
+            ..Default::default()
+        },
+    ));
+
+    actix_web::rt::System::new().block_on(async {
+        HttpServer::new(|| {
+            App::new()
+                .wrap(
+                    sentry::integrations::actix::Sentry::builder()
+                        .capture_server_errors(true) // Capture server errors
+                        .start_transaction(true) // Start a transaction (Sentry root span) for each request
+                        .finish(),
+                )
+                .service(failing)
+        })
+        .bind("127.0.0.1:3001")?
+        .run()
+        .await
+    })?;
+
+    Ok(())
+}
+```
+
+## Verify
+
+The snippet above sets up a service that always fails, so you can test that everything is working as soon as you set it up.
+
+Send a request to the application. The response error will be captured by Sentry.
+
+```bash
+curl http://localhost:3001/
+```
+
+<Alert>
+
+Learn more about manually capturing an error or message in our <PlatformLink to="/usage/">Usage documentation</PlatformLink>.
+
+</Alert>
+
+To view and resolve the recorded error, log into [sentry.io](https://sentry.io) and select your project. Clicking on the error's title will open a page where you can see detailed information and mark it as resolved.

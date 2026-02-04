@@ -1,0 +1,104 @@
+---
+title: Playwright Check Suite Environment Variables
+sidebarTitle: Environment Variables
+description: "Customize your Playwright Check Suite runs based on the execution environment."
+tags: ["synthetic-monitoring", "playwright-checks", "environment-variables"]
+---
+
+<Note>
+  For information on creating and managing environment variables and secrets (including the difference between variables and secrets, inheritance, and where to set them), see the [Environment Variables documentation](/platform/variables).
+</Note>
+
+## Built-in variables available in Playwright Check Suites
+
+Checkly sets the following environment variables on every Playwright Check Suite run:
+
+| Variable | Description |
+|----------|-------------|
+| `CHECKLY` | Set to `1` for all check runs executed by Checkly.<br/>Useful to distinguish Checkly runs from local runs. |
+| `CHECKLY_RUN_SOURCE` | Indicates how the check was triggered.<br/>Useful to customize the nature of your test depending on how it is run.<br/>See [CHECKLY_RUN_SOURCE values](#checkly-run-source-values) below. |
+| `CI` | Set to `1` for CLI runs (`npx checkly test` or `npx checkly trigger`) and [deployment](/integrations/ci-cd/github/deployments)-triggered checks. |
+| `ACCOUNT_ID` | The UUID of the Checkly account. |
+| `CHECK_NAME` | The name of the check. |
+| `CHECKLY_CHECK_ID` | The UUID of the check. |
+| `CHECKLY_REGION` | The region where the check was executed. |
+
+### `CHECKLY_RUN_SOURCE` values
+
+| Value | Description |
+|-------|-------------|
+| `CLI_DEPLOY` | Used for the first run of Checks deployed using `npx checkly deploy`. |
+| `DEPLOYMENT` | Used for Check runs triggered as part of a [CI/CD deployment](/integrations/ci-cd/github/deployments). |
+| `GROUP_RUN_ALL` | Used for Check runs triggered from a Group's edit screen, by clicking the "Run all checks" button. |
+| `SCHEDULE_NOW` | Used for Check runs triggered manually by clicking "Schedule now" in the webapp. |
+| `SCHEDULER` | Used for Check runs triggered as part of their regular schedule. |
+| `TEST_NO_RECORD` | Used for Check runs triggered by the `npx checkly test` CLI command. |
+| `TEST_RECORD` | Used for Check runs triggered by the `npx checkly test --record` or `npx checkly pw-test` CLI commands. |
+| `TRIGGER_API` | Used for Check runs triggered by the API. |
+| `TRIGGER_NO_RECORD` | Used for Check runs triggered by the `npx checkly trigger` CLI command. |
+| `TRIGGER_RECORD` | Used for Check runs triggered by the `npx checkly trigger --record` CLI command. |
+
+## Use built-in variables
+
+Common ways to use Checkly's built-in environment variables:
+
+
+### Adjust behavior based on trigger type
+
+Set different behavior for scheduled runs versus manual triggers:
+
+```typescript highlight={4}
+import { test } from '@playwright/test';
+
+test('API health check', async ({ request }) => {
+  const isScheduledRun = process.env.CHECKLY_RUN_SOURCE === 'SCHEDULER';
+
+  // Use shorter timeout for scheduled runs
+  const timeout = isScheduledRun ? 5000 : 30000;
+
+  const response = await request.get('https://api.example.com/health', {
+    timeout
+  });
+
+  // ... assertions
+});
+```
+
+### Configure Playwright based on environment
+
+Adjust your Playwright configuration to always record traces on Checkly. 
+
+In your  `playwright.config.ts`, use the CHECKLY variable to identify it's from Checkly.
+
+```typescript playwright.config.ts highlight={7}
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+
+  use: {
+    // Always trace in Checkly to compare successful and failed runs, only on retry elsewhere
+    trace: process.env.CHECKLY === '1' ? 'on' : 'on-first-retry',
+  },
+});
+```
+
+### Access region information
+
+Use region information for debugging or region-specific behavior:
+
+```typescript highlight={10}
+import { test } from '@playwright/test';
+
+test('geo-specific content test', async ({ page }) => {
+  await page.goto('https://example.com');
+
+  // Log region for debugging
+  console.log(`Running in region: ${process.env.CHECKLY_REGION}`);
+
+  // Region-specific assertions
+  if (process.env.CHECKLY_REGION?.startsWith('eu-')) {
+    // Expect EU-specific content, like a cookie banner
+  }
+});
+```
+

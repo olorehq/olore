@@ -1,0 +1,149 @@
+---
+title: avgif
+description: 'This page explains how to use the avgif aggregation function in APL.'
+---
+
+The `avgif` aggregation function in APL allows you to calculate the average value of a field, but only for records that satisfy a given condition. This function is particularly useful when you need to perform a filtered aggregation, such as finding the average response time for requests that returned a specific status code or filtering by geographic regions. The `avgif` function is highly valuable in scenarios like log analysis, performance monitoring, and anomaly detection, where focusing on subsets of data can provide more accurate insights.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you achieve similar functionality using the combination of a `stats` function with conditional filtering. In APL, `avgif` provides this filtering inline as part of the aggregation function, which can simplify your queries.
+
+<CodeGroup>
+```sql Splunk example
+| stats avg(req_duration_ms) by id where status = "200"
+```
+
+```kusto APL equivalent
+['sample-http-logs'] 
+| summarize avgif(req_duration_ms, status == "200") by id
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you can use a `CASE` statement inside an `AVG` function to achieve similar behavior. APL simplifies this with `avgif`, allowing you to specify the condition directly.
+
+<CodeGroup>
+```sql SQL example
+SELECT id, AVG(CASE WHEN status = '200' THEN req_duration_ms ELSE NULL END) 
+FROM sample_http_logs 
+GROUP BY id
+```
+
+```kusto APL equivalent
+['sample-http-logs'] 
+| summarize avgif(req_duration_ms, status == "200") by id
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize avgif(expr, predicate) by grouping_field
+```
+
+### Parameters
+
+- **`expr`**: The field for which you want to calculate the average.
+- **`predicate`**: A boolean condition that filters which records are included in the calculation.
+- **`grouping_field`**: (Optional) A field by which you want to group the results.
+
+### Returns
+
+The function returns the average of the values from the `expr` field for the records that satisfy the `predicate`. If no records match the condition, the result is `null`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this example, you calculate the average request duration for HTTP status 200 in different cities.
+
+**Query**
+
+```kusto
+['sample-http-logs'] 
+| summarize avgif(req_duration_ms, status == "200") by ['geo.city']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20avgif%28req_duration_ms%2C%20status%20%3D%3D%20%22200%22%29%20by%20%5B%27geo.city%27%5D%22%7D)
+
+**Output**
+
+| geo.city   | avg_req_duration_ms |
+|------------|---------------------|
+| New York   | 325                 |
+| London     | 400                 |
+| Tokyo      | 275                 |
+
+This query calculates the average request duration (`req_duration_ms`) for HTTP requests that returned a status of 200 (`status == "200"`), grouped by the city where the request originated (`geo.city`).
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this example, you calculate the average span duration for traces that ended with HTTP status 500.
+
+**Query**
+
+```kusto
+['otel-demo-traces'] 
+| summarize avgif(duration, status == "500") by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20summarize%20avgif%28duration%2C%20status%20%3D%3D%20%22500%22%29%20by%20%5B%27service.name%27%5D%22%7D)
+
+**Output**
+
+| service.name          | avg_duration |
+|-----------------------|--------------|
+| checkoutservice       | 500ms        |
+| frontend              | 600ms        |
+| cartservice           | 475ms        |
+
+This query calculates the average span duration (`duration`) for traces where the status code is 500 (`status == "500"`), grouped by the service name (`service.name`).
+
+</Tab>
+<Tab title="Security logs">
+
+In this example, you calculate the average request duration for failed HTTP requests (status code 400 or higher) by country.
+
+**Query**
+
+```kusto
+['sample-http-logs'] 
+| summarize avgif(req_duration_ms, toint(status) >= 400) by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20avgif%28req_duration_ms%2C%20toint%28status%29%20%3E%3D%20400%29%20by%20%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| geo.country   | avg_req_duration_ms |
+|---------------|---------------------|
+| USA           | 450                 |
+| Canada        | 500                 |
+| Germany       | 425                 |
+
+This query calculates the average request duration (`req_duration_ms`) for failed HTTP requests (`status >= 400`), grouped by the country of origin (`geo.country`).
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**minif**](/apl/aggregation-function/minif): Returns the minimum value of an expression, filtered by a predicate. Use when you want to find the smallest value for a subset of data.
+- [**maxif**](/apl/aggregation-function/maxif): Returns the maximum value of an expression, filtered by a predicate. Use when you are looking for the largest value within specific conditions.
+- [**countif**](/apl/aggregation-function/countif): Counts the number of records that match a condition. Use when you want to know how many records meet a specific criterion.
+- [**sumif**](/apl/aggregation-function/sumif): Sums the values of a field that match a given condition. Ideal for calculating the total of a subset of data.

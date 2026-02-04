@@ -1,0 +1,147 @@
+---
+title: min
+description: 'This page explains how to use the min aggregation function in APL.'
+---
+
+The `min` aggregation function in APL returns the minimum value from a set of input values. You can use this function to identify the smallest numeric or comparable value in a column of data. This is useful when you want to find the quickest response time, the lowest transaction amount, or the earliest date in log data. It’s ideal for analyzing performance metrics, filtering out abnormal low points in your data, or discovering outliers.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the `min` function works similarly to APL's `min` aggregation, allowing you to find the minimum value in a field across your dataset. The main difference is in the query structure and syntax between the two.
+
+<CodeGroup>
+
+```sql Splunk example
+| stats min(duration) by id
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize min(req_duration_ms) by id
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `MIN` function works almost identically to the APL `min` aggregation. You use it to return the smallest value in a column of data, grouped by one or more fields.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT MIN(duration), id FROM sample_http_logs GROUP BY id;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize min(req_duration_ms) by id
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize min(Expression)
+```
+
+### Parameters
+
+- `Expression`: The expression from which to calculate the minimum value. Typically, this is a numeric or date/time field.
+
+### Returns
+
+The function returns the smallest value found in the specified column or expression.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this use case, you analyze HTTP logs to find the minimum request duration for each unique user.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize min(req_duration_ms) by id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20min(req_duration_ms)%20by%20id%22%7D)
+
+**Output**
+
+| id         | min_req_duration_ms |
+|------------|---------------------|
+| user_123   | 32                  |
+| user_456   | 45                  |
+
+This query returns the minimum request duration for each user, helping you identify the fastest responses.
+
+</Tab>
+
+<Tab title="OpenTelemetry traces">
+
+Here, you analyze OpenTelemetry trace data to find the minimum span duration per service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize min(duration) by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20min(duration)%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name       | min_duration |
+|--------------------|--------------|
+| frontend           | 2ms          |
+| checkoutservice    | 5ms          |
+
+This query returns the minimum span duration for each service in the trace logs.
+
+</Tab>
+
+<Tab title="Security logs">
+
+In this example, you analyze security logs to find the minimum request duration for each HTTP status code.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize min(req_duration_ms) by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20min(req_duration_ms)%20by%20status%22%7D)
+
+**Output**
+
+| status   | min_req_duration_ms |
+|----------|---------------------|
+| 200      | 10                  |
+| 404      | 40                  |
+
+This query returns the minimum request duration for each HTTP status code, helping you identify if certain statuses are associated with faster or slower response times.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**max**](/apl/aggregation-function/max): Returns the maximum value from a set of values. Use `max` when you need to find the highest value instead of the lowest.
+- [**avg**](/apl/aggregation-function/avg): Calculates the average of a set of values. Use `avg` to find the mean value instead of the minimum.
+- [**count**](/apl/aggregation-function/count): Counts the number of records or distinct values. Use `count` when you need to know how many records or unique values exist, rather than calculating the minimum.
+- [**sum**](/apl/aggregation-function/sum): Adds all values together. Use `sum` when you need the total of a set of values rather than the minimum.
+- [**percentile**](/apl/aggregation-function/percentile): Returns the value at a specified percentile. Use `percentile` if you need a value that falls at a certain point in the distribution of your data, rather than the minimum.

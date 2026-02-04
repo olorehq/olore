@@ -1,0 +1,135 @@
+---
+title: 'Limits'
+description: 'This reference article explains the pricing-based and system-wide limits and requirements imposed by Axiom.'
+sidebarTitle: Limits
+keywords: ['axiom documentation', 'documentation', 'axiom', 'reference', 'settings', 'field restrictions', 'time stamp', 'time stamp field', 'limits', 'requirements', 'pricing', 'usage']
+---
+
+Axiom applies certain limits and requirements to guarantee good service across the platform. Some of these limits depend on your pricing plan, and some of them are applied system-wide. This reference article explains all limits and requirements applied by Axiom.
+
+Limits are necessary to prevent potential issues that could arise from the ingestion of excessively large events or data structures that are too complex. Limits help maintain system performance, allow for effective data processing, and manage resources effectively.
+
+## Pricing-based limits
+
+The table below summarizes the limits applied to each pricing plan. For more details on pricing and contact information, see the [Axiom pricing page](https://axiom.co/pricing).
+
+|                                      | Personal                    | Axiom Cloud                         |
+|:--------------------------------------|:-----------------------------|:-------------------------------------|
+| Always Free storage                  | 25 GB                       | 100 GB                              |
+| Always Free data loading             | 500 GB / month              | 1,000 GB / month                    |
+| Always Free query compute            | 10 GB-hours / month         | 100 GB-hours / month                |
+| Maximum data loading                 | 500 GB / month              | –                                   |
+| Maximum data retention               | 30 days                     | Custom                              |
+| [Datasets](/reference/datasets)                             | 2                           | 100 *                               |
+| Fields per dataset                   | 256                         | 1,024 *                             |
+| Users                                | 1                           | 1,000 *                             |
+| [Monitors](/monitor-data/monitors)                             | 3                           | 500 *                               |
+| [Notifiers](/monitor-data/notifiers-overview)                            | Email, Discord              | All supported                       |
+| [Supported edge deployments](/reference/edge-deployments)         | US                          | US                                  |
+
+\* Soft limit that can be increased upon request.
+
+If you’re on the Axiom Cloud plan and you exceed the Always Free allowances outlined above, additional charges apply based on your usage above the allowance. For more information, see the [Axiom pricing page](https://axiom.co/pricing).
+
+All plans include unlimited bandwidth, API access, and data sources subject to the [Fair Use Policy](https://axiom.co/terms).
+
+To see how much of your allowance each dataset uses, go to <Icon icon="gear" iconType="solid"/> **Settings > Usage**.
+
+For more information on how to save on data loading, data retention, and querying costs, see [Optimize usage](/reference/optimize-usage).
+
+### Restrictions on datasets and fields
+
+Axiom restricts the number of datasets and the number of fields in your datasets. The number of datasets and fields you can use is based on your pricing plan and explained in the table above.
+
+If you ingest a new event that would exceed the allowed number of fields in a dataset, Axiom returns an error and rejects the event. To prevent this error, ensure that the number of fields in your events are within the allowed limits.
+
+To reduce the number of fields in a dataset, use one of the following approaches:
+- [Trim the dataset](/reference/datasets#trim-dataset) and [vacuum its fields](/reference/datasets#vacuum-fields).
+- Use [map fields](/apl/data-types/map-fields).
+
+## System-wide limits
+
+The following limits are applied to all accounts, irrespective of the pricing plan.
+
+### Limits on ingested data
+
+The table below summarizes the limits Axiom applies to each data ingest. These limits are independent of your pricing plan.
+
+|                              | Limit     |
+| ---------------------------- | --------- |
+| Maximum field size           | 1 MB      |
+| Maximum events in a batch    | 10,000    |
+| Maximum field name length    | 200 bytes |
+
+If you try to ingest data that exceeds these limits, Axiom does the following:
+- Replaces strings that are too long with `<invalid string: too long>`.
+- Replaces binary with `<invalid data>`.
+- Truncates maps and slices that nest deeper than 100 levels and replaces them with `nil` at the cut-off level.
+- Converts the following float values to `nil`:
+    - NaN
+    - +Infty
+    - -Infty
+
+### Special fields
+
+Axiom creates the following two fields automatically for a new dataset:
+
+- `_time` is the timestamp of the event. If the data you ingest doesn’t have a `_time` field, Axiom assigns the time of the data ingest to the events. If you ingest data using the [Ingest data](/restapi/endpoints/ingestToDataset) API endpoint, you can specify the timestamp field with the [timestamp-field](/restapi/endpoints/ingestToDataset#parameter-timestamp-field) parameter.
+- `_sysTime` is the time when you ingested the data.
+
+In most cases, use `_time` to define the timestamp of events. In rare cases, if you experience clock skews on your event-producing systems, `_sysTime` can be useful.
+
+### Reserved field names
+
+Axiom reserves the following field names for internal use:
+
+- `_blockInfo`
+- `_cursor`
+- `_rowID`
+- `_source`
+- `_sysTime`
+
+Don’t ingest data that contains these fields names. If you try to ingest a field with a reserved name, Axiom renames the ingested field to `_user_FIELDNAME`. For example, if you try to ingest the field `_sysTime`, Axiom renames it to `_user_sysTime`.
+
+In general, avoid ingesting field names that start with `_`.
+
+### Requirements for timestamp field
+
+The most important field requirement is about the timestamp.
+
+<Note>
+All events stored in Axiom must have a `_time` timestamp field. If the data you ingest doesn’t have a `_time` field, Axiom assigns the time of the data ingest to the events. To specify the timestamp yourself, include a `_time` field in the ingested data.
+</Note>
+
+If you include the `_time` field in the ingested data, follow these requirements:
+
+- Timestamps are specified in the `_time` field.
+- The `_time` field contains timestamps in a valid time format. Axiom accepts many date strings and timestamps without knowing the format in advance, including Unix Epoch, RFC3339, or ISO 8601.
+- The `_time` field is a field with UTF-8 encoding.
+- The `_time` field isn’t used for any other purpose.
+
+### Requirements for log level fields
+
+The Stream and Query tabs allow you to easily detect warnings and errors in your logs by highlighting the severity of log entries in different colors. As a prerequisite, specify the log level in the data you send to Axiom.
+
+For Open Telemetry logs, specify the log level in the following fields:
+- `severity`
+- `severityNumber`
+- `severityText`
+
+For AWS Lambda logs, specify the log level in the following fields:
+- `record.error`
+- `record.level`
+- `record.severity`
+- `type`
+
+For logs from other sources, specify the log level in the following fields:
+- `level`
+- `@level`
+- `severity`
+- `@severity`
+- `status.code`
+
+## Temporary account-specific limits
+
+If you send a large amount of data in a short amount of time and with a high frequency of API requests, Axiom may temporarily restrict or disable your ability to send data to Axiom. This is to prevent abuse of the platform and to guarantee consistent and high-quality service to all customers. In this case, Axiom kindly asks you to reconsider your approach to data collection. For example, to reduce the total number of API requests, try sending your data in larger batches. This adjustment both streamlines Axiom operations and improves the efficiency of your data ingest. If you often experience these temporary restrictions and have a good reason for changing these limits, please [contact Support](https://axiom.co/contact).

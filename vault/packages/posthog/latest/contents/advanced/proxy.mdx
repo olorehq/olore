@@ -1,0 +1,67 @@
+---
+title: Deploy a reverse proxy
+sidebar: Docs
+showTitle: true
+---
+
+import ProxyPlatforms from './proxy/_snippets/proxy-platforms'
+import ProxyDecisionTree from './proxy/_snippets/proxy-decision-tree'
+import ManagedReverseProxy from './proxy/_snippets/managed-reverse-proxy.mdx'
+
+A reverse proxy helps you capture more complete usage data. Ad blockers maintain lists of known analytics domains and block requests to them. A reverse proxy bypasses this by routing events through your own domain, which ad blockers haven't cataloged. This typically increases event capture by 10-30% depending on your user base.
+
+A reverse proxy sends events to PostHog through your own subdomain (like `e.yourdomain.com`) instead of directly to PostHog's domain.
+
+You don't need a reverse proxy to start using PostHog. We recommend setting one up before going to production for more reliable data capture.
+
+## Set up managed reverse proxy
+
+<ManagedReverseProxy />
+
+## Deploy your own proxy
+
+If the managed proxy doesn't work for your use case, you can deploy your own reverse proxy.
+
+<CalloutBox icon="IconWarning" title="Self-hosted proxies" type="fyi">
+
+If you use a self-hosted proxy, PostHog can't help troubleshoot configuration issues.
+
+</CalloutBox>
+
+Choose your platform and follow the setup guide:
+
+<ProxyPlatforms />
+
+### Find the right self-hosted option
+
+<ProxyDecisionTree />
+
+For technical requirements, routing configuration, and best practices when running your own proxy, see the [self-hosted proxy reference](/docs/advanced/proxy/proxy-reference).
+
+## FAQ
+
+### Why doesn't PostHog use its own proxy?
+
+We do use our own infrastructure. But ad blockers specifically target well-known analytics domains. When they visit `posthog.com`, they catalog our tracking scripts and add them to block lists.
+
+Your proxy works because ad blockers haven't visited your domain to catalog your setup. They don't know what to block.
+
+### Does PostHog provide static IP addresses?
+
+No. Our domains use AWS infrastructure with load balancing, which rotates IPs for performance and reliability.
+
+If your firewall requires IP allowlisting, you have two options:
+
+**Option 1: Use domain-based filtering**
+
+Allow outbound HTTPS traffic on port 443 to `*.posthog.com`, or allow specific domains: `us.i.posthog.com` and `us-assets.i.posthog.com`. Replace `us` with `eu` for EU region.
+
+**Option 2: Deploy a reverse proxy with a static IP**
+
+This is the recommended approach for enterprise environments with strict firewall policies.
+
+1. Deploy a reverse proxy in your infrastructure
+2. Assign your proxy a static IP address
+3. Allowlist only your proxy's IP in your firewall
+
+This gives you full control over network routing without depending on PostHog's infrastructure.

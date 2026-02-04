@@ -1,0 +1,302 @@
+---
+title: 'StatusPageService Construct'
+description: 'Learn how to configure status page services with the Checkly CLI.'
+sidebarTitle: 'Status Page Service'
+---
+
+<Tip>
+Learn more about Status Pages in [the Status Pages overview](/communicate/status-pages/overview).
+</Tip>
+
+Use Status Page Services to allow monitors and checks to trigger incidents and to be displayed on status pages. Services represent individual components or systems that you want to show uptime information for.
+
+<CodeGroup>
+
+```ts Basic Example
+import { StatusPage, StatusPageService } from "checkly/constructs"
+
+const apiService = new StatusPageService("api-service", {
+  name: "API Service",
+})
+
+new StatusPage("company-status", {
+  name: "Company Status",
+  url: "company-status",
+  cards: [
+    {
+      name: "Core Services",
+      services: [apiService],
+    },
+  ],
+})
+```
+
+```ts Complete Example
+import { BrowserCheck, StatusPage, StatusPageService } from "checkly/constructs"
+
+const webService = new StatusPageService("web-app", {
+  name: "Web Application",
+})
+
+new BrowserCheck("homepage-check", {
+  name: "Homepage Check",
+  code: {
+    entrypoint: "home.spec.ts",
+  },
+  triggerIncident: {
+    // trigger an incident by using a status page service
+    service: webService,
+    severity: "MEDIUM",
+    name: "Homepage Disruption",
+    description: "The homepage check has failed.",
+    notifySubscribers: true,
+  },
+})
+
+new StatusPage("acme-status", {
+  name: "A.C.M.E Status",
+  url: "acme-status",
+  customDomain: "status.acme.com",
+  logo: "https://acme.com/logo.png",
+  redirectTo: "https://acme.com",
+  favicon: "https://acme.com/favicon.ico",
+  defaultTheme: "DARK",
+  cards: [
+    // add a status page service to a status page
+    {
+      name: "User-Facing Services",
+      services: [webService],
+    },
+  ],
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+<Tabs>
+<Tab title="Status Page Service">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Display name for the service on the status page |
+
+</Tab>
+</Tabs>
+
+## `StatusPageService` Options
+
+<ResponseField name="name" type="string" required>
+Display name for the service on the status page. This name appears in the status page cards and helps users identify which service component is being monitored.
+
+**Usage:**
+
+```ts highlight={2}
+new StatusPageService("api-service", {
+  name: "API Service",
+})
+```
+
+**Use cases**: User-facing service identification, infrastructure monitoring, regional service tracking, team-specific services.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```ts Application Status
+import { ApiCheck, StatusPage, StatusPageService } from "checkly/constructs"
+
+// Define status page services
+const webAppService = new StatusPageService("web-app", {
+  name: "Web Application",
+})
+
+// Include service status on status page
+new StatusPage("saas-company-status", {
+  name: "SaaS Company Service Status",
+  url: "saas-company-status",
+  customDomain: "status.saascompany.com",
+  logo: "https://saascompany.com/assets/logo.png",
+  redirectTo: "https://saascompany.com",
+  favicon: "https://saascompany.com/favicon.ico",
+  defaultTheme: "AUTO",
+  cards: [
+    {
+      name: "Core Platform",
+      services: [webAppService],
+    },
+  ],
+})
+
+new ApiCheck("web-api-check", {
+  name: "Web API Check",
+  request: {
+    url: "app.example.com/api/status",
+    method: "GET",
+  },
+  // Trigger service incidents from your checks and monitors
+  triggerIncident: {
+    service: webAppService,
+    name: "Web API Outage",
+    description: "Web API is down",
+    severity: "MAJOR",
+    notifySubscribers: true,
+  },
+})
+```
+
+```ts E-commerce Platform
+import { StatusPage, StatusPageService, UrlMonitor } from "checkly/constructs"
+
+// Define services for all the core parts of your infrastructure
+const storefrontService = new StatusPageService("storefront", {
+  name: "Online Store",
+})
+
+const checkoutApiService = new StatusPageService("checkout-api", {
+  name: "Checkout & Cart",
+})
+
+const cdnService = new StatusPageService("cdn", {
+  name: "Image & Asset Delivery",
+})
+
+new StatusPage("ecommerce-status", {
+  name: "E-commerce Platform Status",
+  url: "ecommerce-platform-status",
+  logo: "https://shop.example.com/logo.png",
+  redirectTo: "https://shop.example.com",
+  defaultTheme: "LIGHT",
+  // Group and display your services in your status page
+  cards: [
+    {
+      name: "Shopping Experience",
+      services: [storefrontService, checkoutApiService],
+    },
+    {
+      name: "Content Delivery",
+      services: [cdnService],
+    },
+  ],
+})
+
+new UrlMonitor("storefront-monitor", {
+  name: "Storefront Monitor",
+  request: {
+    url: "https://shop.example.com",
+  },
+  triggerIncident: {
+    name: "Storefront Uptime",
+    description: "The storefront is down",
+    severity: "MAJOR",
+    notifySubscribers: true,
+    service: storefrontService,
+  },
+})
+```
+
+```ts Minimal Status Page
+import { StatusPage, StatusPageService } from "checkly/constructs"
+
+const mainService = new StatusPageService("main-service", {
+  name: "Main Service",
+})
+
+new StatusPage("simple-status", {
+  name: "Simple Status Page",
+  url: "simple-status",
+  cards: [
+    {
+      name: "Service Status",
+      services: [mainService],
+    },
+  ],
+})
+```
+
+</CodeGroup>
+
+## Service Reusability
+
+StatusPageService instances can be reused across multiple status pages:
+
+```ts
+// Define services once
+const apiService = new StatusPageService("api-service", {
+  name: "API Service",
+})
+
+const databaseService = new StatusPageService("database-service", {
+  name: "Database Service",
+})
+
+// Use in multiple status pages
+new StatusPage("public-status", {
+  name: "Public Status Page",
+  url: "public-status",
+  cards: [
+    {
+      name: "Core Services",
+      services: [apiService, databaseService],
+    },
+  ],
+})
+
+new StatusPage("internal-status", {
+  name: "Internal Status Page",
+  url: "internal-status",
+  cards: [
+    {
+      name: "Infrastructure",
+      services: [databaseService], // Same service, different page
+    },
+    {
+      name: "APIs",
+      services: [apiService], // Same service, different page
+    },
+  ],
+})
+```
+
+## Integration with Checks and Monitors
+
+Status Page Services represent logical groupings of functionality. You'll typically have multiple checks monitoring different aspects of each service, but the service itself provides a high-level view for your status page visitors. Enable checks and monitors to trigger incidents by using the `triggerIncident` property.
+
+```ts highlight=12,27
+import { ApiCheck, StatusPageService, UrlMonitor } from "checkly/constructs"
+
+const criticalAppService = new StatusPageService("critical-app-service", {
+  name: "Critical Application Infrastructure",
+})
+
+new UrlMonitor("storefront-monitor", {
+  name: "Storefront Monitor",
+  request: {
+    url: "https://shop.example.com",
+  },
+  triggerIncident: {
+    name: "Storefront Uptime",
+    description: "The storefront is down",
+    severity: "MAJOR",
+    notifySubscribers: true,
+    service: criticalAppService,
+  },
+})
+
+new ApiCheck("web-api-check", {
+  name: "Web API Check",
+  request: {
+    url: "app.example.com/api/status",
+    method: "GET",
+  },
+  triggerIncident: {
+    service: criticalAppService,
+    name: "Web API Outage",
+    description: "Web API is down",
+    severity: "MAJOR",
+    notifySubscribers: true,
+  },
+})
+```

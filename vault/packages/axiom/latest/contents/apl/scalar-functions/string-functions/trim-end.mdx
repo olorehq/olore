@@ -1,0 +1,157 @@
+---
+title: 'trim_end'
+description: 'This page explains how to use the trim_end function in APL.'
+---
+
+The `trim_end` function removes all trailing occurrences of specified characters from a string. Use this function to clean log data, remove trailing whitespace or punctuation, or standardize string formats by removing unwanted suffixes.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rtrim` for trailing whitespace. APL's `trim_end` provides more flexibility with custom character sets.
+
+<CodeGroup>
+```sql Splunk example
+| eval cleaned=rtrim(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_end(' ', field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `RTRIM` for trailing characters. APL's `trim_end` provides similar functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT RTRIM(field) AS cleaned FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_end(' ', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+trim_end(cutset, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| cutset | string | Yes | A string containing characters to remove from the end. |
+| text | string | Yes | The source string to trim. |
+
+### Returns
+
+Returns the source string with all trailing characters in the cutset removed.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Remove trailing slashes and query parameters from URIs for endpoint grouping.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = trim_end('/?&', uri)
+| summarize request_count = count() by cleaned_uri, method
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20cleaned_uri%20%3D%20trim_end(%27%2F%3F%26%27%2C%20uri)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20cleaned_uri%2C%20method%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_uri | method | request_count |
+|-------------|--------|---------------|
+| /api/users | GET | 2341 |
+| /api/orders | POST | 1987 |
+| /api/products | GET | 1654 |
+
+This query removes trailing slashes and query separator characters from URIs, enabling better endpoint aggregation.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Clean trailing characters from service names for consistent grouping.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend cleaned_service = trim_end('-_', ['service.name'])
+| summarize span_count = count() by cleaned_service
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20cleaned_service%20%3D%20trim_end(%27-_%27%2C%20%5B%27service.name%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20cleaned_service%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_service | span_count |
+|-----------------|------------|
+| frontend | 4532 |
+| checkout | 3421 |
+| cart | 2987 |
+
+This query removes trailing hyphens and underscores from service names, standardizing naming conventions for analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+Clean trailing punctuation from user identifiers in security logs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_id = trim_end('.,;!?', id)
+| summarize attempts = count() by cleaned_id, status
+| sort by attempts desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20cleaned_id%20%3D%20trim_end('.%2C%3B!%3F'%2C%20id)%20%7C%20summarize%20attempts%20%3D%20count()%20by%20cleaned_id%2C%20status%20%7C%20sort%20by%20attempts%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_id | status | failed_attempts |
+|------------|--------|-----------------|
+| user123 | 401 | 45 |
+| admin | 403 | 32 |
+
+This query removes trailing punctuation from user IDs in authentication attempts, ensuring accurate counting when IDs have inconsistent formatting.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [trim_start](/apl/scalar-functions/string-functions/trim-start): Removes leading characters. Use this to trim from the beginning instead of the end.
+- [trim](/apl/scalar-functions/string-functions/trim): Removes both leading and trailing characters. Use this when you need to clean both ends.
+- [trim_end_regex](/apl/scalar-functions/string-functions/trim-end-regex): Removes trailing matches using regex. Use this for pattern-based trimming.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces strings. Use this when you need to remove characters from anywhere, not just the end.
+

@@ -1,0 +1,487 @@
+---
+title: 'Playwright Check Suite'
+description: 'Learn how to configure Playwright check suites with the Checkly CLI.'
+sidebarTitle: 'Playwright Check Suites'
+---
+
+import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
+
+<Tip>
+Learn more about Playwright Check Suites in [the Playwright Check Suites overview](/detect/synthetic-monitoring/playwright-checks/overview).
+</Tip>
+
+Use Playwright Check Suites to reuse your existing Playwright test suite to run it as end-to-end tests and synthetic monitoring. The examples below show how to configure Playwright Check Suites for different testing and monitoring scenarios.
+
+<Accordion title="Prerequisites">
+Before creating Playwright Check Suites, ensure you have:
+
+- An initialized Checkly CLI project
+- A running Playwright test suite
+- A public website you want to monitor
+- Understanding of [Playwright test syntax and structure](/learn/playwright/overview)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { PlaywrightCheck } from "checkly/constructs"
+
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "./playwright.config.ts",
+})
+```
+
+```ts Advanced Example
+import { PlaywrightCheck } from "checkly/constructs"
+
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  include: ['.npmrc','test-files/**'],
+  playwrightConfigPath: "./playwright.config.ts",
+  installCommand: "npm ci",
+  testCommand: "npx playwright test --retries=2",
+  pwProjects: ["chromium"],
+  pwTags: ["e2e"],
+
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+The Playwright Check Suite configuration consists of specific Playwright Check Suite options and inherited general monitoring options.
+
+<Tabs>
+<Tab title="Playwright Check Suite">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `playwrightConfigPath` | `string` | ✅ | - | Path to the Playwright configuration file (playwright.config.js/ts) |
+| `installCommand` | `string` | ❌ | - | Command to install dependencies before running tests |
+| `testCommand` | `string` | ❌ | `npx playwright test` | Command to execute Playwright tests |
+| `pwProjects` | `string` `string[]` | ❌ | - | Specific Playwright projects to run from your configuration |
+| `pwTags` | `string` `string[]` | ❌ | - | Tags to filter which tests to run using Playwright's grep functionality |
+| `include` | `string` `string[]` | ❌ | - | File patterns to include when bundling the test project |
+
+</Tab>
+<Tab title="General Monitor">
+
+  <GeneralMonitorOptionsTable />
+
+</Tab>
+</Tabs>
+
+### Playwright Check Suite Options
+
+<ResponseField name="playwrightConfigPath" type="string" required>
+
+The path to the Playwright configuration file (`playwright.config.js/ts`) which defines test settings, browser configurations, and project structure.
+
+**Usage:**
+
+```ts highlight={3}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+})
+```
+
+</ResponseField>
+
+<ResponseField name="installCommand" type="string">
+
+The command to install dependencies before running tests. This configuration is useful for ensuring test dependencies are available in the runtime environment.
+
+Checkly defaults to using npm, but automatically detects other package managers if lock files are present.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  installCommand: "npm ci",
+})
+```
+
+</ResponseField>
+
+<ResponseField name="testCommand" type="string" default="npx playwright test">
+
+The command to execute Playwright tests when running `npx checkly test` or running your Playwright Check Suite as monitor.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  testCommand: "npx playwright test --grep@checkly --config=playwright.foo.config.ts",
+})
+```
+
+<Info>If you configure the `testCommand` property and `pwTags` or `pwProjects` the options will be merged and all configurations applied to `npx playwright test`.</Info>
+
+</ResponseField>
+
+<ResponseField name="pwProjects" type="string">
+
+The defined projects to run from your Playwright configuration.
+
+**Usage:**
+
+<CodeGroup>
+
+```ts Single project highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  pwProjects: "chromium",
+})
+```
+
+```ts Multiple projects highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  pwProjects: ["chromium", "firefox"],
+})
+```
+
+</CodeGroup>
+
+<Tip>[Playwright Test Projects](https://playwright.dev/docs/test-projects) let you run different test files in different browsers and with different settings. They're the recommended way to group and bundle test functionality.</Tip>
+
+</ResponseField>
+
+<ResponseField name="pwTags" type="string">
+
+The tags to filter which tests to run using Playwright's grep functionality.
+
+Tests matching any of these tags will be executed.
+
+**Usage:**
+
+<CodeGroup>
+
+```ts Single project highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  pwTags: "@smoke",
+})
+```
+
+```ts Multiple projects highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  pwTags: ["@smoke", "@critical"],
+})
+```
+
+</CodeGroup>
+
+<Tip>Learn more about test tags and annotations in [the Playwright annotation docs](https://playwright.dev/docs/test-annotations#annotate-tests).</Tip>
+
+</ResponseField>
+
+<ResponseField name="include" type="string">
+
+Defines the glob patterns for files and directories that should be included when bundling the Playwright Check Suite. Use this option to manually include additional test files, helper utilities, or other resources that might be outside of the tests directory that your playwright config file points to.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  include: ['.npmrc','test-files/**'],
+})
+```
+
+<Info>
+The Playwright Check Suite bundling process uses a breadth-first search algorithm starting from the entrypoint to recursively find all local file dependencies. It parses `import`/`require` statements and follows the dependency graph to include all necessary files.
+
+Use `include` to bundle files that are not directly imported/required.
+</Info>
+
+</ResponseField>
+
+### General Check Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your Playwright Check Suite that will be displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+```ts highlight={2}
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+})
+```
+
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+
+How often the Playwright Check Suite should run. Use the `Frequency` enum to set the check interval.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("my-pwt-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  frequency: Frequency.EVERY_5M,
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts High Frequency
+// For critical user journeys
+new PlaywrightCheck("my-pwt-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  frequency: Frequency.EVERY_2M,
+  pwTags: ["@critical"],
+})
+```
+
+```ts Standard Frequency
+// For regular monitoring
+new PlaywrightCheck("my-pwt-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  frequency: Frequency.EVERY_2M,
+  pwTags: ["@monitoring"],
+})
+```
+
+</CodeGroup>
+
+**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+
+Array of public location codes where the Playwright Check Suite should run. Multiple locations provide geographic coverage and redundancy.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("my-pwt-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-1"],
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Global Coverage
+// Comprehensive global monitoring
+new PlaywrightCheck("global-pwt-check-suite", {
+  name: "Global Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  locations: [
+    "us-east-1", // N. Virginia
+    "us-west-1", // N. California
+    "eu-west-1", // Ireland
+    "ap-southeast-1", // Singapore
+    "ap-northeast-1", // Tokyo
+  ],
+})
+```
+
+```ts Regional Focus
+// Focus on specific regions
+new PlaywrightCheck("europe-pwt-check-suite", {
+  name: "Europe Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  locations: ["eu-west-1", "eu-central-1"],
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Global user experience monitoring, regional performance testing, compliance requirements.
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+
+Whether the Playwright Check Suite is enabled and will run according to its schedule.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("disabled-pwt-check-suite", {
+  name: "Disabled Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  activated: false,
+})
+```
+
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" default="[]">
+
+Array of Checkly tags to organize and categorize your Playwright Check Suite in the Checkly infrastructure.
+
+**Usage:**
+
+```ts highlight={4}
+new PlaywrightCheck("my-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  tags: ["pwt", "critical"],
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Priority Tags
+new PlaywrightCheck("my-check-suite", {
+  name: "My Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  tags: ["critical", "revenue", "high-priority"],
+})
+```
+
+```ts Environment Tags
+new PlaywrightCheck("staging-check-suite", {
+  name: "Staging Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  tags: ["staging"],
+  /* More options... */
+})
+
+new PlaywrightCheck("prod-check-suite", {
+  name: "Production Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  tags: ["production"],
+  /* More options... */
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Organization, filtering, alerting rules, reporting.
+</ResponseField>
+
+<ResponseField name="environmentVariables" type="object[]" default="[]">
+
+Check-level environment variables that will be available during test execution. Useful for test configuration and sensitive data.
+
+**Usage:**
+
+```ts highlight={4-7}
+new PlaywrightCheck("user-flow-pwt-check-suite", {
+  name: "User Flow Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  environmentVariables: [
+    { key: "TEST_USERNAME", value: "testuser@example.com" },
+    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key` | `string` | ✅ | Environment variable name |
+| `value` | `string` | ✅ | Environment variable value |
+| `secret` | `boolean` | ❌ | Whether the value should be encrypted and hidden |
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Test Credentials
+new PlaywrightCheck("user-flow-pwt-check-suite", {
+  name: "User Flow Playwright Check Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  environmentVariables: [
+    { key: "TEST_USERNAME", value: "testuser@example.com" },
+    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+})
+```
+
+```ts Environment settings
+new PlaywrightCheck("feature-test", {
+  name: "Feature Flag Test",
+  playwrightConfigPath: "../playwright.config.ts",
+  environmentVariables: [
+    {
+      key: "BASE_URL",
+      value: "https://example.com",
+    },
+  ],
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Test configuration, authentication, API keys, feature flags, environment-specific settings.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```ts Multi-browser Support
+const playwrightChecks = new PlaywrightCheck("multi-browser-check", {
+  name: "Multi-browser check suite",
+  playwrightConfigPath: "./playwright.config.ts",
+  // Playwright Check Suites support all browsers
+  // defined in your `playwight.config`
+  pwProjects: ["chromium", "firefox", "webkit"],
+})
+```
+
+```ts Project-dependency Support
+// Often, it makes sense to define different Playwright projects
+// in your `playwright.config` and make them depend on each other
+// to perform setup tasks:
+//
+// projects: [
+//   {
+//     name: "setup",
+//     use: { ...devices["Desktop Chrome"] },
+//     testMatch: /.*\.setup\.ts/,
+//   },
+//   {
+//     name: "e2e",
+//     use: { ...devices["Desktop Chrome"] },
+//     dependencies: ["setup"],
+//     testMatch: /.*\.spec\.ts/,
+//   },
+// ]
+
+// Playwright Check Suites support, detect and run your
+// Playwright project dependencies.
+//
+// Learn more in the Playwright docs:
+const playwrightChecks = new PlaywrightCheck("multi-browser-check", {
+  name: "Multi-browser check suite",
+  playwrightConfigPath: "./playwright.config.ts",
+  // https://playwright.dev/docs/test-projects#dependencies
+  pwProjects: ["e2e"], // this will run `setup` and then `e2e`
+})
+```
+
+</CodeGroup>

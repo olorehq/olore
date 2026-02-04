@@ -1,0 +1,80 @@
+---
+title: How to Test File Uploads with Playwright
+subTitle: Modifying account settings with a file upload
+date: 2020-07-22
+author: Giovanni Rago
+githubUser: ragog
+tags:
+  - e2e
+  - file upload
+weight: 2
+
+sidebarTitle: File uploads
+
+learn_playwright:
+  parent: "E2E examples"
+---
+
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Most services allow users to upload files to their accounts. This can be a profile picture, a document, or any other type of file.
+Testing this functionality is crucial to ensure that users can upload files without any issues. In this example, we will
+show you how to test file uploads using Playwright.
+
+## Steps
+
+Account properties to verify can run the gamut from simple text to connected third party services. In this example, we
+will focus on a popular case: changing a profile image by uploading one of our own.
+
+On our [test site](https://danube-web.shop/), such a test could look as follows:
+
+```ts title="file-upload.ts"
+// Example code for testing file uploads
+import { test, expect } from '@playwright/test';
+
+test('upload profile image', async ({ page }) => {
+  // Login to the website
+  await page.goto('https://danube-web.shop/login');
+  await page.fill('#email', process.env.USER_EMAIL!);
+  await page.fill('#password', process.env.USER_PASSWORD!);
+  await page.click('#login-button');
+
+  // Navigate to profile page
+  await page.goto('https://danube-web.shop/profile');
+
+  // Upload file
+  await page.setInputFiles('input[type="file"]', process.env.FILE_PATH!);
+  await page.click('#upload-button');
+
+  // Verify upload success
+  await expect(page.locator('#upload-success')).toBeVisible();
+  await expect(page.locator('#upload-success')).toContainText('Upload successful');
+});
+```
+**macOS/Linux:**
+```sh
+USER_EMAIL=user@email.com USER_PASSWORD=supersecure1 FILE_PATH=file.jpg npx playwright test file-upload.ts
+```
+
+**Windows:**
+```sh
+SET USER_EMAIL=user@email.com
+SET USER_PASSWORD=supersecure1
+SET FILE_PATH=file.jpg
+npx playwright test file-upload.ts
+```
+
+Here, we are simply checking for a message giving us feedback on the status of the upload. Depending on the website we are testing, it might be possible to also download the profile image afterwards to run a comparison locally for a more robust check.
+
+## Takeaways
+1. Use environment variables to inject secrets.
+2. Use `setInputFiles` (Playwright) to upload the file.
+3. If possible, download the file from the platform and compare it with the one that was just uploaded.
+
+## Further reading
+1. Official documentation from [Playwright](https://playwright.dev/docs/input#upload-files)
+
+<SignUpCta />

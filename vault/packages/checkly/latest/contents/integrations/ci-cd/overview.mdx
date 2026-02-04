@@ -1,0 +1,44 @@
+---
+title: 'CI/CD'
+description: 'Core to our Monitoring as Code approach is running your checks from your CI/CD pipeline and use them as E2E tests.'
+sidebarTitle: 'Overview'
+---
+
+import MainCicdCards from "/snippets/main-cicd-cards.mdx"
+import CliEnvVars from "/snippets/cli-env-vars.mdx"
+
+Regardless of the provider or platform you use, integrating Checkly into your CI/CD pipeline boils down to **four basic steps**:
+
+1. Store your checks as code and `git push`. Preferably store your checks alongside your application code. Just like unit tests.
+2. Wait for your application to be deployed. This can be done through hooks, lifecycle events or wait scripts.
+3. Run your checks using `npx checkly test` and pass in any variables like an `ENVIRONMENT_URL`.
+4. If the checks pass successfully, run `npx checkly deploy`.
+
+With this approach, you can validate your application and infrastructure before deploying to production, staging or any other environments.
+Simultaneously , you can life cycle (create/update/delete) your checks from your code base as part of your CI/CD workflow.
+## CI/CD Integration with the Checkly CLI
+
+The preferred and most flexible way to integrate Checkly with your CI/CD is through the [Checkly CLI](/cli).
+
+<MainCicdCards />
+
+## CI/CD Integration using vendor webhooks
+
+- [Vercel](/integrations/ci-cd/vercel/overview)
+- [GitHub deployments](/integrations/ci-cd/github/deployments)
+
+## CI/CD Basics
+We've optimized the [Checkly CLI](/cli) to work in any CI/CD workflow. Here are the basics you need to know that
+will come in handy when adapting the examples we give you to your own, specific setup.
+
+1. For **authentication**, make sure to set the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` parameters as environment variables
+in your CI/CD platform.
+2. Set the **reporter** you want to use for the `test` command using the `--reporter` flag, i.e. `--reporter=dot`.
+3. To store a **test session** with full logging, traces and vides, set the `--record` flag for the `test` command.
+4. Use the `--force` flag on the `deploy` and / or `destroy` commands to skip the normal confirmation steps.
+
+When using the `--record` flag, the CLI will attempt to parse `git` specific information from
+the environment to display in the recorded test session as metadata. However, you can also set these data items specifically
+by using environment variables.
+
+<CliEnvVars />

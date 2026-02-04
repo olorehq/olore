@@ -1,0 +1,221 @@
+---
+title: 'Virtual fields'
+description: 'Virtual fields allow you to derive new values from your data in real time, eliminating the need for up-front data structuring, enhancing flexibility and efficiency.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'virtual fields', 'virtualization', 'array functions', 'filters', 'literals', 'numeric operators']
+---
+
+Virtual fields allow you to derive new values from your data in real time.
+
+One of the most powerful features of Axiom are virtual fields. With virtual fields, there is no need to do any up-front planning of how to structure or transform your data. Instead, send your data as-is and then use virtual fields to manipulate your data in real-time during queries.
+
+The feature is also known as derived fields, but Axiom’s virtual fields have some unique properties that make them much more powerful.
+
+<Tip>
+Virtual fields are query-time representations only. They don't create new data in storage.
+</Tip>
+
+This page introduces you to virtual fields, their features, how to manage them, and how to get the best out of them.
+
+## Creating a virtual field
+
+To create a virtual field, follow these steps:
+
+1. Go to the Datasets tab.
+2. Select the dataset where you want to create the virtual field.
+3. Click <Icon icon="function" iconType="light"/> **Virtual fields** in the top right. You see a list of all the virtual fields for the dataset.
+4. Click **Add virtual field**.
+5. Fill in the following fields:
+    - **Name** and **Description** help your team understand what the virtual field is about.
+    - **Expression** is the formula applied to every event to calculate the virtual field. The expression produces a result such as a `boolean`, `string`, `number`, or `object`.
+    The **Preview** section displays the result of applying the expression to some of your data. Use this section to verify the expression and the resulting values of the virtual field.
+
+The power of virtual fields is in letting you manipulate data on read instead of on write, allowing you to adjust and update virtual fields over time as well as easily add new ones without worrying that the data has already been indexed.
+
+## Usage
+
+### Visualizations
+
+Virtual fields are available as parameters to visualizations but, as the type of a virtual field can be any of the supported types, it’s important to make sure that you use a virtual field that produces the correct type of argument.
+
+### Filters
+
+Virtual fields are available in the filter menu and all filter options are presented. It’s important to ensure that you are using a supported filter operation for the type of result your virtual field produces.
+
+## Group By
+
+Virtual fields can be used for segmentation in the same way as any standard field.
+
+## Virtual fields vs ingest-time parsing
+
+When deciding how to structure your data, consider the trade-offs between using virtual fields (query-time parsing) and parsing fields at ingest time.
+
+### When to use virtual fields
+
+Virtual fields are ideal when:
+
+- You need flexibility to experiment with different data transformations.
+- Your query patterns are still evolving and you're not sure which fields you'll need.
+- You want to derive new fields without re-ingesting historical data.
+- The fields are used infrequently or for ad-hoc analysis.
+
+### When to parse at ingest time
+
+For high-performance use cases, parsing fields at ingest time is often the better choice:
+
+- **Query performance**: Virtual fields re-parse data on every query execution. For frequently queried fields, especially during incident response when teams run many ad-hoc queries, this adds latency. Parsed fields at ingest time reduce your storage and query hours usage. For more information, see [Virtual fields for simple transformations](/reference/performance#virtual-fields-for-simple-transformations).
+- **Compression benefits**: When you parse fields from a JSON body to top-level fields, Axiom uses specialized data-aware compression techniques based on the detected data types. This results in more efficient storage compared to keeping data as unparsed strings. For more information, see [Overusing runtime JSON parsing](/reference/performance#overusing-runtime-json-parsing-parse_json).
+
+### Storage considerations
+
+Parsing fields from a body to top-level attributes doesn't double your storage usage. Axiom's compression is optimized for typed, structured data at the top level, and stores parsed fields efficiently. However, there is some data redundancy if you keep the original body field alongside the parsed fields. To minimize redundancy, remove the parsed fields from the body after extraction during your ingest pipeline.
+
+<Tip>
+For a balance between flexibility and performance, parse your most frequently queried fields at ingest time while using virtual fields for less common or experimental transformations.
+</Tip>
+
+## Reference
+
+Virtual fields are APL expressions and share all the same functions and syntax as APL expressions. For more information, see [Introduction to APL](/apl/introduction).
+
+The list of APL scalar functions:
+
+- [String functions](/apl/scalar-functions/string-functions)
+- [Math functions](/apl/scalar-functions/mathematical-functions)
+- [Array functions](/apl/scalar-functions/array-functions)
+- [Conversion functions](/apl/scalar-functions/conversion-functions)
+- [Hash functions](/apl/scalar-functions/hash-functions)
+- [DateTime/Timespan functions](/apl/scalar-functions/datetime-functions)
+- [Rounding functions](/apl/scalar-functions/rounding-functions)
+- [Conditional functions](/apl/scalar-functions/conditional-function)
+- [IP functions](/apl/scalar-functions/ip-functions)
+
+<Tip>
+Virtual fields may reference other virtual fields. The order of the fields is important. Ensure that the referenced field is specified before the field that references it.
+</Tip>
+
+{/*
+### Literals
+
+| Functions | Description                         |
+| ------------- | --------------------------------------- |
+| `strings`     | single and double quotes are supported. |
+| `numbers`     | `101`, `101.1`                          |
+| `booleans`    | `true` and `false`                      |
+| `arrays`      | `["one", "two", "three"]`               |
+| `maps`        | `{ region: "us-east-1" }`               |
+| `nil` -       | `nil`                                   |
+
+### Arithmetic operators
+
+| Operator | Description |
+| ------------ | --------------- |
+| `+`          | addition        |
+| `-`          | subtraction     |
+| `*`          | multiplication  |
+| `/`          | division        |
+| `%`          | modulus         |
+| `**`         | pow             |
+
+### Comparison operators
+
+| Operator | Description          |
+| ------------ | ------------------------ |
+| `==`         | equal                    |
+| `!=`         | not equal                |
+| `<`          | less than                |
+| `>`          | greater than             |
+| `<=`         | less than or equal to    |
+| `>=`         | greater than or equal to |
+
+### Logical operators
+
+| Operator                           | 
+| -------------------------------------- |
+| `and` or `&&`                          |
+| `or` or `                              |    
+| `not` or `!`                           |
+| `success ? 'yes' : 'no'` - ternary |
+
+### String operators
+
+| Operator | Description |
+| ------------ | --------------- |
+| `+`          | concatenation   |
+| `matches`    | regular expression match     |
+| `contains`   | string contains |
+| `startsWith` | has prefix      |
+| `endsWith`   | has suffix      |
+
+<CallOut kind="info">
+  To test the negative case of not matching, wrap the operator in a `not()` operator:
+  <br />
+  `not ("us-east-1" contains "us")`
+  <br />
+  Use parenthesis because the operator `not` has precedence over the operator `contains`.
+</CallOut>
+
+### Numeric operators
+
+In addition to the [arithmetic operators](#arithmetic-operators):
+
+- `..` - numeric range
+
+<CallOut kind="example">`age in 18..45`</CallOut>
+
+<CallOut kind="tip">The range is inclusive: `1..3 == [1, 2, 3]`</CallOut>
+
+### Membership operators
+
+| Operator | Description      |
+| ------------ | -------------------- |
+| `in`         | contains         |
+| `not in`     | doesn’t contain |
+
+Examples:
+`{Arrays: metadata.region in ["us-east-1", "us-east-2"]}`
+`{Maps: 'region' in { region: 'us-east-1 } // true}`
+
+### Built-ins
+
+| Operator | Description                                                  |
+| ------------ | ---------------------------------------------------------------- |
+| `len`        | length of an array, map, or string                               |
+| `all`        | return true if all element satisfies the predicate          |
+| `none`       | return true if all element doesn’t satisfies the predicate |
+| `any`        | return true if any element satisfies the predicate          |
+| `one`        | return true if exactly ONE element satisfies the predicate  |
+| `filter`     | filter array by the predicate                                    |
+| `map`        | map all items with the closure                                   |
+| `count`      | returns number of elements what satisfies the predicate          |
+
+<CallOut kind="example" title="Ensure all comments are less than 280 chars">
+  {'all(comments, {.Size < 280})'}
+</CallOut>
+
+<CallOut kind="example" title="Ensure there is exactly one private repo">
+  {'one(repos, {.private})'}
+</CallOut>
+
+### Closures
+
+- `{...}` - closure
+
+Closures allowed only with builtin functions. To access the current item, used the `#` symbol.
+
+<CallOut kind="example">{'`map(0..9, {# / 2})`'}</CallOut>
+
+If the item of array is struct, it’s possible to access fields of struct with omitted `#` symbol (`#.Value` becomes `.Value`).
+
+<CallOut kind="example">{'filter(comments, {len(.body) > 280})'}</CallOut>
+
+### Slices
+
+- `myArray[:]` - slice
+
+Slices can work with arrays or strings
+
+<CallOut kind="example">
+  The variable `myArray` is `[1, 2, 3, 4, 5]`
+  <br /> `myArray[1:5] == [2, 3, 4] myArray[3:] == [4, 5] myArray[:4] == [1, 2, 3] myArray[:] == myArray`
+</CallOut>
+*/}

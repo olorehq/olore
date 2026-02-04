@@ -1,0 +1,665 @@
+---
+title: "Send data from Flutter app"
+description: "This page explains how to send data from Flutter apps to Axiom."
+sidebarTitle: "Flutter"
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "/snippets/replace-domain.mdx"
+
+This page explains how to send structured logs from Flutter apps to Axiom using a custom logging library built with the [Dio HTTP client](https://pub.dev/packages/dio).
+
+<Prerequisites />
+- [Install Flutter SDK](https://docs.flutter.dev/install) version 3.0.0 or higher.
+
+## Install required dependencies
+
+To install the required Flutter dependencies, add these lines to your `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  dio: ^5.4.0
+  intl: ^0.19.0
+```
+
+Then run the following code in your terminal to install dependencies:
+
+```bash
+flutter pub get
+```
+
+- **dio**: A powerful HTTP client for Dart that handles network requests to send logs to Axiom.
+- **intl**: Provides internationalization and date/time formatting utilities for creating properly formatted timestamps.
+
+## Create axiom_logger.dart file
+
+Create a `lib/axiom_logger.dart` file with the following content. This file defines the logger configuration, log levels, and the main logging functionality that sends structured logs to Axiom.
+
+The logger implementation below includes the following key features:
+
+- **Log Levels**: Five severity levels (debug, info, warning, error, critical) for categorizing log entries.
+- **Batching**: Logs are buffered and sent in batches to reduce network overhead and improve performance.
+- **Immediate Sending**: Critical logs are sent immediately to ensure important events are captured right away.
+- **Metadata Support**: Attach custom metadata to logs for richer context and easier filtering.
+- **Automatic Timestamps**: Logs are automatically timestamped in ISO 8601 format.
+
+```dart lib/axiom_logger.dart expandable
+import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
+
+/// Log level enumeration
+enum LogLevel {
+  debug,
+  info,
+  warning,
+  error,
+  critical,
+}
+
+/// Extension to convert LogLevel to string
+extension LogLevelExtension on LogLevel {
+  String get name {
+    switch (this) {
+      case LogLevel.debug:
+        return 'DEBUG';
+      case LogLevel.info:
+        return 'INFO';
+      case LogLevel.warning:
+        return 'WARNING';
+      case LogLevel.error:
+        return 'ERROR';
+      case LogLevel.critical:
+        return 'CRITICAL';
+    }
+  }
+}
+
+/// Configuration for the Axiom Logger
+class AxiomLoggerConfig {
+  final String domain;
+  final String dataset;
+  final String apiToken;
+  final Duration timeout;
+  final bool enableDebugLogs;
+
+  AxiomLoggerConfig({
+    required this.domain,
+    required this.dataset,
+    required this.apiToken,
+    this.timeout = const Duration(seconds: 10),
+    this.enableDebugLogs = false,
+  });
+
+  String get ingestUrl => '$domain/v1/ingest/$dataset';
+}
+
+/// Main Axiom Logger class
+class AxiomLogger {
+  final AxiomLoggerConfig config;
+  late final Dio _dio;
+  final List<Map<String, dynamic>> _logBuffer = [];
+  final int _batchSize;
+  final Duration _flushInterval;
+  bool _isInitialized = false;
+
+  AxiomLogger({
+    required this.config,
+    int batchSize = 10,
+    Duration flushInterval = const Duration(seconds: 5),
+  })  : _batchSize = batchSize,
+        _flushInterval = flushInterval {
+    _initializeDio();
+  }
+
+  void _initializeDio() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: config.domain,
+        connectTimeout: config.timeout,
+        receiveTimeout: config.timeout,
+        headers: {
+          'Authorization': 'Bearer ${config.apiToken}',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    if (config.enableDebugLogs) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          requestHeader: true,
+          responseHeader: false,
+        ),
+      );
+    }
+
+    _isInitialized = true;
+  }
+
+  /// Log a message with specified level
+  Future<void> log(
+    LogLevel level,
+    String message, {
+    Map<String, dynamic>? metadata,
+    bool sendImmediately = false,
+  }) async {
+    if (!_isInitialized) {
+      print('AxiomLogger: Logger not initialized');
+      return;
+    }
+
+    final logEntry = _createLogEntry(level, message, metadata);
+
+    if (sendImmediately) {
+      await _sendLogs([logEntry]);
+    } else {
+      _logBuffer.add(logEntry);
+      if (_logBuffer.length >= _batchSize) {
+        await flush();
+      }
+    }
+  }
+
+  /// Create a structured log entry
+  Map<String, dynamic> _createLogEntry(
+    LogLevel level,
+    String message,
+    Map<String, dynamic>? metadata,
+  ) {
+    final now = DateTime.now().toUtc();
+    final timestamp = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(now);
+
+    return {
+      '_time': timestamp,
+      'level': level.name,
+      'message': message,
+      if (metadata != null) ...metadata,
+    };
+  }
+
+  /// Flush all buffered logs to Axiom
+  Future<bool> flush() async {
+    if (_logBuffer.isEmpty) {
+      return true;
+    }
+
+    final logsToSend = List<Map<String, dynamic>>.from(_logBuffer);
+    _logBuffer.clear();
+
+    return await _sendLogs(logsToSend);
+  }
+
+  /// Send logs to Axiom
+  Future<bool> _sendLogs(List<Map<String, dynamic>> logs) async {
+    try {
+      final response = await _dio.post(
+        config.ingestUrl,
+        data: jsonEncode(logs),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        if (config.enableDebugLogs) {
+          print('AxiomLogger: Successfully sent ${logs.length} log(s) to Axiom');
+        }
+        return true;
+      } else {
+        print('AxiomLogger: Failed to send logs. Status: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('AxiomLogger: Error sending logs to Axiom: $e');
+      return false;
+    }
+  }
+
+  /// Convenience methods for different log levels
+  Future<void> debug(String message, {Map<String, dynamic>? metadata}) async {
+    await log(LogLevel.debug, message, metadata: metadata);
+  }
+
+  Future<void> info(String message, {Map<String, dynamic>? metadata}) async {
+    await log(LogLevel.info, message, metadata: metadata);
+  }
+
+  Future<void> warning(String message, {Map<String, dynamic>? metadata}) async {
+    await log(LogLevel.warning, message, metadata: metadata);
+  }
+
+  Future<void> error(String message, {Map<String, dynamic>? metadata}) async {
+    await log(LogLevel.error, message, metadata: metadata);
+  }
+
+  Future<void> critical(String message, {Map<String, dynamic>? metadata}) async {
+    await log(LogLevel.critical, message, metadata: metadata, sendImmediately: true);
+  }
+
+  /// Dispose resources
+  Future<void> dispose() async {
+    await flush();
+    _dio.close();
+  }
+}
+```
+
+## Create main.dart file
+
+Create an `example/main.dart` file with the following content. This file demonstrates how to use the Axiom Logger with different log levels and metadata.
+
+```dart example/main.dart expandable
+import 'package:flutter_logging/axiom_logger.dart';
+
+/// Example usage of the Axiom Logger
+Future<void> main() async {
+  print('=== Flutter Axiom Logger Test ===\n');
+
+  // Initialize the logger with your Axiom configuration
+  final config = AxiomLoggerConfig(
+    domain: 'AXIOM_DOMAIN',
+    dataset: 'DATASET_NAME',
+    apiToken: 'API_TOKEN',
+    enableDebugLogs: true, // Enable to see HTTP requests/responses
+  );
+
+  final logger = AxiomLogger(
+    config: config,
+    batchSize: 5, // Send logs in batches of 5
+    flushInterval: Duration(seconds: 3),
+  );
+
+  print('Logger initialized. Sending test logs to Axiom...\n');
+
+  try {
+    // Test 1: Simple info log
+    print('Test 1: Sending INFO log...');
+    await logger.info(
+      'Application started successfully',
+      metadata: {
+        'app_name': 'Flutter Logging Demo',
+        'version': '1.0.0',
+        'environment': 'development',
+      },
+    );
+
+    // Test 2: Debug log with metadata
+    print('Test 2: Sending DEBUG log with metadata...');
+    await logger.debug(
+      'User authentication flow initiated',
+      metadata: {
+        'user_id': 'user_12345',
+        'session_id': 'session_abc123',
+        'ip_address': '192.168.1.100',
+      },
+    );
+
+    // Test 3: Warning log
+    print('Test 3: Sending WARNING log...');
+    await logger.warning(
+      'High memory usage detected',
+      metadata: {
+        'memory_mb': 512,
+        'threshold_mb': 400,
+        'process': 'main_app',
+      },
+    );
+
+    // Test 4: Error log
+    print('Test 4: Sending ERROR log...');
+    await logger.error(
+      'Failed to connect to database',
+      metadata: {
+        'error_code': 'DB_CONN_001',
+        'database': 'production_db',
+        'retry_count': 3,
+        'last_error': 'Connection timeout after 30s',
+      },
+    );
+
+    // Test 5: Multiple logs to test batching
+    print('Test 5: Sending multiple logs to test batching...');
+    for (int i = 1; i <= 3; i++) {
+      await logger.info(
+        'Processing batch item $i',
+        metadata: {
+          'batch_id': 'batch_001',
+          'item_number': i,
+          'status': 'processing',
+        },
+      );
+    }
+
+    // Test 6: Critical log (sends immediately)
+    print('Test 6: Sending CRITICAL log (immediate send)...');
+    await logger.critical(
+      'System failure: Out of memory',
+      metadata: {
+        'available_memory_mb': 10,
+        'required_memory_mb': 500,
+        'action_taken': 'emergency_shutdown',
+      },
+    );
+
+    // Flush any remaining buffered logs
+    print('\nFlushing remaining logs...');
+    await logger.flush();
+
+    print('\n✅ All logs sent successfully!');
+    print('\nYou can now check your Axiom dashboard at:');
+    print('https://app.axiom.co/DATASET_NAME');
+
+  } catch (e) {
+    print('❌ Error during logging: $e');
+  } finally {
+    // Clean up resources
+    await logger.dispose();
+    print('\nLogger disposed. Test complete.');
+  }
+}
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+## Run the app and observe logs in Axiom
+
+1. Run the following code in your terminal to run the Flutter example:
+
+    ```bash
+    dart run example/main.dart
+    ```
+
+    The app sends logs with different severity levels to Axiom, demonstrating batching, immediate sending for critical logs, and the use of custom metadata.
+
+1. In Axiom, go to the Stream tab, and then click your dataset. This page displays the logs sent to Axiom and enables you to monitor and analyze your app's behavior and performance.
+
+## Send data from an existing Flutter project
+
+### Basic integration
+
+To add Axiom logging to your existing Flutter app, follow these steps:
+
+1. Add the Axiom Logger to your project by copying the `axiom_logger.dart` file to your `lib` directory.
+1. Initialize the logger early in your app's lifecycle, typically in your `main()` function.
+
+    ```dart
+    import 'package:your_app/axiom_logger.dart';
+
+    void main() async {
+      // Initialize logger
+      final config = AxiomLoggerConfig(
+        domain: 'https://your-axiom-domain.com',
+        dataset: 'your-dataset',
+        apiToken: 'your-api-token',
+        enableDebugLogs: false, // Set to true for development
+      );
+
+      final logger = AxiomLogger(config: config);
+
+      // Log app startup
+      await logger.info('App started', metadata: {
+        'version': '1.0.0',
+        'platform': 'Flutter',
+      });
+
+      runApp(MyApp(logger: logger));
+    }
+    ```
+
+1. Use the logger throughout your app to capture important events, errors, and debug information. For example:
+
+   ```dart
+   // Log user actions
+   await logger.info('User logged in', metadata: {
+     'user_id': userId,
+     'login_method': 'email',
+   });
+
+   // Log errors with context
+   try {
+     await someOperation();
+   } catch (e, stackTrace) {
+     await logger.error('Operation failed', metadata: {
+       'error': e.toString(),
+       'stack_trace': stackTrace.toString(),
+       'operation': 'someOperation',
+     });
+   }
+   ```
+
+### Integration with Flutter error handling
+
+Capture Flutter framework errors and send them to Axiom:
+
+```dart
+void main() async {
+  final config = AxiomLoggerConfig(
+    domain: 'https://your-axiom-domain.com',
+    dataset: 'your-dataset',
+    apiToken: 'your-api-token',
+  );
+
+  final logger = AxiomLogger(config: config);
+
+  // Capture Flutter framework errors
+  FlutterError.onError = (FlutterErrorDetails details) async {
+    await logger.error(
+      'Flutter framework error',
+      metadata: {
+        'exception': details.exception.toString(),
+        'stack_trace': details.stack.toString(),
+        'library': details.library ?? 'unknown',
+        'context': details.context?.toString(),
+      },
+    );
+  };
+
+  // Capture async errors
+  PlatformDispatcher.instance.onError = (error, stack) {
+    logger.error(
+      'Uncaught async error',
+      metadata: {
+        'error': error.toString(),
+        'stack_trace': stack.toString(),
+      },
+    );
+    return true;
+  };
+
+  runApp(MyApp(logger: logger));
+}
+```
+
+### Logging user interactions
+
+Track user behavior and navigation patterns:
+
+```dart
+class MyHomePage extends StatefulWidget {
+  final AxiomLogger logger;
+
+  const MyHomePage({required this.logger});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    widget.logger.info('User navigated to home page', metadata: {
+      'timestamp': DateTime.now().toIso8601String(),
+      'screen': 'home',
+    });
+  }
+
+  Future<void> _handleButtonPress() async {
+    await widget.logger.debug('Button pressed', metadata: {
+      'button': 'submit',
+      'screen': 'home',
+    });
+
+    // Your button logic here
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Home')),
+      body: ElevatedButton(
+        onPressed: _handleButtonPress,
+        child: Text('Submit'),
+      ),
+    );
+  }
+}
+```
+
+### Performance monitoring
+
+Log performance metrics to identify bottlenecks:
+
+```dart
+Future<void> performExpensiveOperation(AxiomLogger logger) async {
+  final stopwatch = Stopwatch()..start();
+
+  try {
+    await someExpensiveTask();
+
+    stopwatch.stop();
+    await logger.info('Operation completed', metadata: {
+      'operation': 'expensive_task',
+      'duration_ms': stopwatch.elapsedMilliseconds,
+      'status': 'success',
+    });
+  } catch (e) {
+    stopwatch.stop();
+    await logger.error('Operation failed', metadata: {
+      'operation': 'expensive_task',
+      'duration_ms': stopwatch.elapsedMilliseconds,
+      'status': 'failed',
+      'error': e.toString(),
+    });
+  }
+}
+```
+
+### Best practices
+
+- **Use appropriate log levels**: Reserve `critical` for system failures, `error` for recoverable errors, `warning` for potential issues, `info` for important events, and `debug` for development details.
+- **Add contextual metadata**: Include relevant information like user IDs, session IDs, device info, and operation context to make logs more useful.
+- **Dispose properly**: Always call `logger.dispose()` when your app closes to ensure buffered logs are sent.
+- **Handle errors gracefully**: Wrap logging calls in try-catch blocks to prevent logging failures from crashing your app.
+- **Use batching wisely**: Adjust `batchSize` and `flushInterval` based on your app's logging volume and network conditions.
+
+## Reference
+
+### List of log fields
+
+| Field Category      | Field Name      | Description                                                  |
+| ------------------- | --------------- | ------------------------------------------------------------ |
+| Core Fields         |                 |                                                              |
+|                     | \_time          | ISO 8601 formatted timestamp when the log event occurred.    |
+|                     | level           | Log severity level (DEBUG, INFO, WARNING, ERROR, CRITICAL).  |
+|                     | message         | The main log message describing the event.                   |
+| Custom Metadata     |                 |                                                              |
+|                     | app\_name       | Name of the application generating the log.                  |
+|                     | version         | Application version number.                                  |
+|                     | environment     | Deployment environment (development, staging, production).   |
+|                     | user\_id        | Unique identifier for the user associated with the event.    |
+|                     | session\_id     | Unique identifier for the user session.                      |
+|                     | error\_code     | Application-specific error code.                             |
+|                     | duration\_ms    | Duration of an operation in milliseconds.                    |
+|                     | status          | Status of an operation (success, failed, processing).        |
+| Device & Platform   |                 |                                                              |
+|                     | platform        | Operating system or platform (iOS, Android, Web, Desktop).   |
+|                     | device\_model   | Specific device model generating the log.                    |
+|                     | os\_version     | Operating system version.                                    |
+| Custom Fields       |                 |                                                              |
+|                     | *               | Any custom fields added via the metadata parameter.          |
+
+### Logger configuration options
+
+#### AxiomLoggerConfig
+
+The `AxiomLoggerConfig` class configures how the logger connects to Axiom:
+
+* **domain**: The base URL of your Axiom deployment (for example, `https://us-east-1.aws.edge.axiom.co`).
+* **dataset**: The name of the Axiom dataset where logs are sent.
+* **apiToken**: Your Axiom API token for authentication.
+* **timeout**: Maximum time to wait for HTTP requests (default: 10 seconds).
+* **enableDebugLogs**: Enable verbose HTTP logging for debugging (default: false).
+
+#### AxiomLogger
+
+The `AxiomLogger` class manages log creation and transmission:
+
+* **batchSize**: Number of logs to buffer before automatically flushing to Axiom (default: 10).
+* **flushInterval**: Time interval for automatic flushing (default: 5 seconds). Note: Automatic interval-based flushing is not yet implemented but can be added.
+
+### Log levels
+
+The logger supports five log levels in increasing order of severity:
+
+1. **DEBUG**: Detailed information for diagnosing problems, typically used during development.
+2. **INFO**: Confirmation that things are working as expected, such as successful operations.
+3. **WARNING**: Indication that something unexpected happened, but the app continues to work normally.
+4. **ERROR**: A more serious problem that prevented a specific operation from completing.
+5. **CRITICAL**: A severe error that may cause the app to fail or require immediate attention. Critical logs are sent immediately, bypassing the buffer.
+
+### Key methods
+
+#### Logging methods
+
+* `log(level, message, {metadata, sendImmediately})`: Core logging method that accepts any log level.
+* `debug(message, {metadata})`: Convenience method for DEBUG level logs.
+* `info(message, {metadata})`: Convenience method for INFO level logs.
+* `warning(message, {metadata})`: Convenience method for WARNING level logs.
+* `error(message, {metadata})`: Convenience method for ERROR level logs.
+* `critical(message, {metadata})`: Convenience method for CRITICAL level logs (sends immediately).
+
+#### Management methods
+
+* `flush()`: Manually send all buffered logs to Axiom. Returns a boolean indicating success.
+* `dispose()`: Clean up resources, flush remaining logs, and close HTTP connections. Call this when shutting down the logger.
+
+### Dependencies
+
+#### dio
+
+The [Dio package](https://pub.dev/packages/dio) is a powerful HTTP client for Dart that provides:
+
+* Request and response interceptors for debugging and modifying HTTP traffic.
+* Support for timeouts, custom headers, and authentication.
+* Error handling and retry mechanisms.
+* FormData, file uploading, and downloading capabilities.
+
+In this logger, Dio handles all HTTP communication with Axiom's ingest API, including authentication via Bearer tokens and proper JSON serialization of log batches.
+
+#### intl
+
+The [intl package](https://pub.dev/packages/intl) provides internationalization and localization support, including:
+
+* Date and time formatting using standard patterns.
+* Number formatting for different locales.
+* Message translation support.
+
+In this logger, intl is used to format timestamps in ISO 8601 format (`yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`), ensuring consistent and parseable timestamp strings across all log entries.
+
+### Error handling
+
+The logger includes built-in error handling:
+
+* Network failures are caught and logged to the console without crashing the app.
+* Failed log sends return `false` from the `flush()` method, allowing you to implement retry logic.
+* Uninitialized logger calls are safely ignored with console warnings.
+
+### Thread safety
+
+The logger is designed for use in Flutter's single-threaded Dart environment. All async operations use Dart's `Future` API, ensuring proper sequencing of log operations without race conditions.

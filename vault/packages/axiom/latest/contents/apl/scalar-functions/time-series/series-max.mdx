@@ -1,0 +1,139 @@
+---
+title: series_max
+description: 'This page explains how to use the series_max function in APL.'
+---
+
+The `series_max` function compares two numeric arrays element by element and returns a new array. Each position in the result contains the maximum value between the corresponding elements from the two input arrays.
+
+You use `series_max` when you want to create an envelope or upper bound from multiple series, combine baseline metrics with actual values, or merge data from different sources by keeping the higher value at each point. For example, you can compare response times across different servers and keep the higher value at each time point, or combine SLA thresholds with actual measurements.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, element-wise maximum comparisons typically require custom logic with `eval` or `foreach`. In contrast, APL provides the specialized `series_max` function to directly compare arrays element by element and return the maximum values.
+
+<CodeGroup>
+```sql Splunk example
+... | timechart avg(cpu_usage) as cpu1, avg(cpu_usage_backup) as cpu2
+| eval max_cpu = if(cpu1 > cpu2, cpu1, cpu2)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series primary = avg(req_duration_ms), backup = avg(req_duration_ms) on _time step 1m
+| extend max_values = series_max(primary, backup)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use the `GREATEST()` function to compare scalar values. To compare sequences element-wise, you need window functions or complex joins. In APL, `series_max` simplifies this by applying the maximum operation across arrays in a single step.
+
+<CodeGroup>
+```sql SQL example
+SELECT _time,
+       GREATEST(t1.req_duration_ms, t2.req_duration_ms) AS max_duration
+FROM logs t1
+JOIN logs t2
+  ON t1._time = t2._time
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series series1 = avg(req_duration_ms), series2 = avg(req_duration_ms) on _time step 1m
+| extend max_series = series_max(series1, series2)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_max(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type  | Description                                                                |
+| --------- | ----- | -------------------------------------------------------------------------- |
+| `array1`  | array | The first array of numeric values.                                         |
+| `array2`  | array | The second array of numeric values. Must have the same length as `array1`. |
+
+### Returns
+
+An array of numeric values. Each element is the maximum of the corresponding elements from `array1` and `array2`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to create an upper bound by comparing request durations across two different cities and keeping the higher value at each time point.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| make-series london_avg = avgif(req_duration_ms, ['geo.city'] == 'London'),
+             paris_avg = avgif(req_duration_ms, ['geo.city'] == 'Paris')
+             on _time step 1h
+| extend max_duration = series_max(london_avg, paris_avg)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20make-series%20london_avg%20%3D%20avgif(req_duration_ms%2C%20%5B'geo.city'%5D%20%3D%3D%20'London')%2C%20paris_avg%20%3D%20avgif(req_duration_ms%2C%20%5B'geo.city'%5D%20%3D%3D%20'Paris')%20on%20_time%20step%201h%20%7C%20extend%20max_duration%20%3D%20series_max(london_avg%2C%20paris_avg)%22%7D)
+
+**Output**
+
+| london_avg      | paris_avg       | max_duration    |
+| --------------- | --------------- | --------------- |
+| [120, 150, 100] | [180, 130, 190] | [180, 150, 190] |
+
+This query compares response times between two cities and creates a series containing the higher value at each time point.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to track the maximum count between successful and failed requests at each time point to identify the dominant request type.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| make-series success_count = countif(status == '200'),
+             failure_count = countif(status != '200')
+             on _time step 1h
+| extend max_count = series_max(success_count, failure_count)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20make-series%20success_count%20%3D%20countif(status%20%3D%3D%20'200')%2C%20failure_count%20%3D%20countif(status%20!%3D%20'200')%20on%20_time%20step%201h%20%7C%20extend%20max_count%20%3D%20series_max(success_count%2C%20failure_count)%22%7D)
+
+**Output**
+
+| success_count  | failure_count | max_count      |
+| -------------- | ------------- | -------------- |
+| [300, 280, 310] | [10, 290, 15] | [300, 290, 310] |
+
+This query compares success and failure counts and returns the higher value at each time point, helping you understand the dominant traffic pattern.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_min](/apl/scalar-functions/time-series/series-min): Compares two arrays and returns the minimum value at each position.
+- [series_less](/apl/scalar-functions/time-series/series-less): Compares two arrays and returns `true` where elements in the first array are less than the second.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Compares two arrays and returns `true` where the first array element is greater than the second.
+- [max](/apl/aggregation-function/max): Aggregation function that returns the maximum value across grouped records.

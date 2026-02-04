@@ -1,0 +1,105 @@
+---
+title: 'genai_extract_system_prompt'
+description: 'This page explains how to use the genai_extract_system_prompt function in APL.'
+---
+
+The `genai_extract_system_prompt` function extracts the system prompt from a GenAI messages array. The system prompt typically contains instructions that define the AI assistant’s behavior, personality, and capabilities. It’s usually the first message with role 'system'.
+
+You can use this function to audit AI behavior configurations, monitor prompt changes, analyze consistency across conversations, or validate that correct system instructions are being used.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would need to filter messages by role and extract the first system message.
+
+<CodeGroup>
+```sql Splunk example
+| eval system_msgs=mvfilter(match(role, "system"))
+| eval system_prompt=mvindex(system_msgs, 0)
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend system_prompt = genai_extract_system_prompt(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would unnest the array and filter for the first system role message.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  content as system_prompt
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY msg_index) as rn
+  FROM conversations
+  CROSS JOIN UNNEST(messages) WITH OFFSET AS msg_index
+  WHERE role = 'system'
+) WHERE rn = 1
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend system_prompt = genai_extract_system_prompt(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_extract_system_prompt(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a string containing the content of the system message, or an empty string if no system message is found.
+
+## Example
+
+Extract the system prompt from a GenAI conversation to verify AI configuration.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend system_prompt = genai_extract_system_prompt(['attributes.gen_ai.input.messages'])
+| where isnotempty(system_prompt)
+| summarize conversation_count = count() by system_prompt
+| top 3 by conversation_count
+```
+
+**Output**
+
+| system_prompt | conversation_count |
+|---------------|--------------------|
+| You are a helpful customer service assistant. | 1250 |
+| You are a technical support expert specializing in software troubleshooting. | 845 |
+
+This query helps you understand which system prompts are most commonly used and track prompt variations.
+
+## List of related functions
+
+- [genai_extract_user_prompt](/apl/scalar-functions/genai-functions/genai-extract-user-prompt): Extracts the user's prompt. Use this to analyze what users are asking, while system prompts define AI behavior.
+- [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response): Extracts the assistant's response. Use this to see how the AI responded based on the system prompt.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content by any role. Use this for more flexible extraction when you need other specific roles.
+- [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles): Lists all message roles. Use this to understand conversation structure and verify system message presence.
+

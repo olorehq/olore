@@ -1,0 +1,152 @@
+---
+title: isutf8
+description: 'This page explains how to use the isutf8 function in APL.'
+---
+
+Use the `isutf8` function to check whether a string is a valid UTF-8 encoded sequence. The function returns a boolean indicating whether the input conforms to UTF-8 encoding rules.
+
+`isutf8` is useful when working with data from external sources such as logs, telemetry events, or data pipelines, where encoding issues can cause downstream processing to fail or produce incorrect results. By filtering out or isolating invalid UTF-8 strings, you can ensure better data quality and avoid unexpected behavior during parsing or transformation.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk doesn’t provide a built-in function to directly check if a string is valid UTF-8. Users typically rely on workarounds using field transformations or regex, which can be error-prone or incomplete. APL provides `isutf8` as a simple and reliable alternative.
+
+<CodeGroup>
+```sql Splunk example
+| eval valid_utf8=if(match(field, "some-regex-pattern"), true, false)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isutf8(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not define a standard function to validate UTF-8 encoding in strings. Some platforms offer vendor-specific functions, but behavior varies. APL offers `isutf8` as a consistent, built-in way to validate string encoding.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE IS_UTF8(uri) = true;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isutf8(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isutf8(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                   |
+| ----- | ------ | ----------------------------- |
+| value | string | The input string to validate. |
+
+### Returns
+
+A `bool` value:
+
+- `true` if the input string is valid UTF-8.
+- `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use `isutf8` to detect and exclude malformed UTF-8 entries in HTTP request logs that could indicate issues with upstream data encoding.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where not(isutf8(uri)) or not(isutf8(method))
+| project _time, id, method, uri, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20not%28isutf8%28uri%29%29%20or%20not%28isutf8%28method%29%29%20%7C%20project%20_time%2C%20id%2C%20method%2C%20uri%2C%20status%22%7D)
+
+**Output**
+
+| _time               | id     | method | uri             | status |
+| -------------------- | ------ | ------ | --------------- | ------ |
+| 2025-07-09T13:32:05Z | user42 | GET    | �/broken-path   | 500    |
+| 2025-07-09T14:10:17Z | user99 | POST   | /submit-form%80 | 200    |
+
+This query identifies records where the `uri` or `method` fields contain invalid UTF-8 characters, which may point to upstream client encoding issues or malformed requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In distributed traces, malformed span names or service identifiers can cause trace visualizations to fail. Use `isutf8` to validate such fields.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where not(isutf8(['service.name']))
+| project _time, trace_id, span_id, ['service.name'], kind, status_code
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20not%28isutf8%28%5B'service.name'%5D%29%29%20%7C%20project%20_time%2C%20trace_id%2C%20span_id%2C%20%5B'service.name'%5D%2C%20kind%2C%20status_code%22%7D)
+
+**Output**
+
+| _time               | trace_id | span_id | ['service.name'] | kind   | status_code |
+| -------------------- | --------- | -------- | ----------------- | ------ | ------------ |
+| 2025-07-09T13:50:10Z | abc123    | xyz789   | fron��dproxy      | server | 200          |
+
+This query isolates spans where the service name contains invalid UTF-8 characters, helping you detect encoding issues in trace metadata.
+
+</Tab>
+<Tab title="Security logs">
+
+Security analysts often inspect logs for anomalies. Use `isutf8` to detect tampered or improperly encoded request paths that could indicate obfuscation or injection attempts.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '403' and not(isutf8(uri))
+| project _time, id, method, uri, ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'403'%20and%20not(isutf8(uri))%20%7C%20project%20_time%2C%20id%2C%20method%2C%20uri%2C%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| _time               | id     | method | uri         | geo.country |
+| -------------------- | ------ | ------ | ----------- | ----------- |
+| 2025-07-09T12:45:02Z | user23 | GET    | /bad%FFpath | Germany     |
+
+This query flags 403 responses with URIs containing invalid UTF-8, which could signal attempts to bypass filters or exploit encoding vulnerabilities.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isimei](/apl/scalar-functions/type-functions/isimei): Checks whether a value is a valid International Mobile Equipment Identity (IMEI) number.
+- [isreal](/apl/scalar-functions/type-functions/ismap): Checks whether a value is a real number.
+- [iscc](/apl/scalar-functions/type-functions/iscc): Checks whether a value is a valid credit card (CC) number.
+- [isstring](/apl/scalar-functions/type-functions/isstring): Checks whether a value is a string. Use this for scalar string validation.

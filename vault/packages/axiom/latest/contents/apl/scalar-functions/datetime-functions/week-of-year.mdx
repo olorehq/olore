@@ -1,0 +1,157 @@
+---
+title: week_of_year
+description: 'This page explains how to use the week_of_year function in APL.'
+---
+
+Use the `week_of_year` function in APL to extract the ISO 8601 week number from a datetime expression. The ISO 8601 standard defines the first week of the year as the one that contains the first Thursday of the year, and weeks start on Mondays.
+
+You can use `week_of_year` to group records by week when analyzing trends over time. This is especially useful for weekly aggregation in dashboards, anomaly detection, and cohort analysis.
+
+Use it when you want to:
+
+- Track activity or metrics week by week.
+- Normalize data across different timeframes by weekly intervals.
+- Generate week-based summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%V` or `%U` specifiers to extract the week of the year. In APL, the `week_of_year` function directly extracts the ISO 8601 week number from a datetime.
+
+<CodeGroup>
+```sql Splunk example
+... | eval week=strftime(_time, "%V")
+````
+
+```kusto APL equivalent
+... | extend week = week_of_year(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you often use `EXTRACT(WEEK FROM timestamp)` or `DATEPART(WEEK, timestamp)`. These implementations may differ slightly across platforms in how they define the first week of the year. APL uses the ISO 8601 definition via `week_of_year`.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(WEEK FROM timestamp_column) AS week FROM events;
+```
+
+```kusto APL equivalent
+['dataset'] 
+| extend week = week_of_year(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+week_of_year(datetime)
+```
+
+### Parameters
+
+| Name     | Type       | Description               |
+| -------- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+A `long` representing the ISO 8601 week number (from 1 to 53).
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Group HTTP log events by week to understand traffic trends and average request duration.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend week = week_of_year(_time)
+| summarize avg(req_duration_ms) by week
+| sort by week asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20week%20%3D%20week_of_year(_time)%20%7C%20summarize%20avg(req_duration_ms)%20by%20week%20%7C%20sort%20by%20week%20asc%22%7D)
+
+**Output**
+
+| week | avg_req_duration_ms |
+| ---- | ---------------------- |
+| 1    | 243.8                  |
+| 2    | 251.1                  |
+| 3    | 237.4                  |
+
+This query extracts the ISO week number for each record and calculates the average request duration per week.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use weekly grouping to monitor changes in span durations for frontend services over time.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'frontend'
+| extend week = week_of_year(_time)
+| summarize avg_duration = avg(duration) by week
+| sort by week asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'frontend'%20%7C%20extend%20week%20%3D%20week_of_year(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20week%20%7C%20sort%20by%20week%20asc%22%7D)
+
+**Output**
+
+| week | avg_duration    |
+| ---- | ---------------- |
+| 1    | 00:00:01.2340000 |
+| 2    | 00:00:01.1750000 |
+| 3    | 00:00:01.2890000 |
+
+This query shows how the average span duration changes weekly for the `frontend` service.
+
+</Tab>
+<Tab title="Security logs">
+
+Count HTTP errors by week to detect unusual spikes in failed requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status startswith '5'
+| extend week = week_of_year(_time)
+| summarize error_count = count() by week
+| sort by week asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20startswith%20'5'%20%7C%20extend%20week%20%3D%20week_of_year(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20week%20%7C%20sort%20by%20week%20asc%22%7D)
+
+**Output**
+
+| week | error_count |
+| ---- | ------------ |
+| 1    | 18           |
+| 2    | 34           |
+| 3    | 12           |
+
+This query detects week-by-week patterns in server error frequency, helping identify problem periods.
+
+</Tab>
+</Tabs>

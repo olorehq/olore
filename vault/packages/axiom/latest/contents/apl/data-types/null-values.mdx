@@ -1,0 +1,24 @@
+---
+title: 'Null values'
+description: 'This page explains how APL represents missing values.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'scalar', 'null', 'datetime', 'dynamic', 'guid', 'int']
+---
+
+All scalar data types in APL have a special value that represents a missing value. This value is called the null value, or null.
+
+## Null literals
+
+The null value of a scalar type D is represented in the query language by the null literal D(null). The following query returns a single row full of null values:
+
+```kusto
+print bool(null), datetime(null), dynamic(null), int(null), long(null), real(null), double(null), time(null)
+```
+
+## Predicates on null values
+
+The scalar function [isnull()](/apl/scalar-functions/string-functions#isnull()) can be used to determine if a scalar value is the null value. The corresponding function [isnotnull()](/apl/scalar-functions/string-functions#isnotnull()) can be used to determine if a scalar value isn’t the null value.
+
+## Equality and inequality of null values
+
+- Equality (`==`): Applying the equality operator to two null values yields `bool(null)`. Applying the equality operator to a null value and a non-null value yields `bool(false)`.
+- inequality(`!=`): Applying the inequality operator to two null values yields `bool(null)`. Applying the inequality operator to a null value and a non-null value yields `bool(true)`.

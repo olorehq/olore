@@ -1,0 +1,47 @@
+---
+title: 'Maintenance Windows'
+description: 'Schedule planned maintenance periods to prevent false alerts.'
+sidebarTitle: 'Maintenance Windows'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Maintenance Window Construct](/constructs/maintenance-window).
+</Tip>
+
+Maintenance windows allow you to schedule planned downtime for your services, preventing false alerts and preserving accurate availability metrics during system updates, deployments, and infrastructure maintenance activities. During these windows, Checkly stops executing checks for the targeted services, eliminating false alerts while preserving historical availability data.
+
+
+## Creating a maintenance window
+
+Navigate to the Maintenance Windows page indicated by the wrench icon on the menu. Then click "create new" in the top right corner.
+
+After giving your window an appropriate name, the core options you have are:
+
+### Setting a schedule
+
+![Maintenance window schedule](/images/maintenance-schedule-3.png)
+
+Set your preferred starting date and time for your maintenance window. **Note that all times are in UTC.**
+
+#### Setting repeats
+
+If your maintenance window repeats at a certain cadence, toggle the **repeat** option. Here you can set
+
+1. The amount of repetitions.
+2. The unit of repetition, i.e. **Day**, **Week** or **Month**.
+3. The date on which the repetition cycle should end.
+
+> If you schedule a window on the 31st and add a **monthly repeat cycle**, your schedule will also activate on
+> the 30th of the relevant months and the 28th or 29th of February depending on the leap year.
+
+### Adding checks and check groups
+
+![Maintenance window checks](/images/maintenance-checks-2.png)
+
+You need to select which checks and/or check groups are targeted by your maintenance window. You do this by:
+
+- Adding the relevant check tags.
+- Adding the relevant check group tags.
+
+This way, any checks or check groups created *after* creating your maintenance window can still be made part of the window; no
+need to update the maintenance window configuration. Just set the correct tags.

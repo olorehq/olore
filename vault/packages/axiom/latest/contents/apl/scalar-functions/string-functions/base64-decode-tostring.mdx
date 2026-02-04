@@ -1,0 +1,150 @@
+---
+title: 'base64_decode_tostring'
+description: 'This page explains how to use the base64_decode_tostring function in APL.'
+---
+
+The `base64_decode_tostring` function decodes a Base64-encoded string back to its original UTF-8 text format. Use this function when you need to decode Base64-encoded data received from APIs, stored in configurations, or logged in encoded format.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might not have a built-in Base64 decoding function and would typically rely on external scripts. In APL, `base64_decode_tostring` provides native Base64 decoding directly in your queries.
+
+<CodeGroup>
+```sql Splunk example
+| eval decoded=base64decode(field_name)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend decoded = base64_decode_tostring(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, Base64 decoding typically requires database-specific functions like `FROM_BASE64()` in MySQL or custom functions. APL provides `base64_decode_tostring` as a standard function.
+
+<CodeGroup>
+```sql SQL example
+SELECT FROM_BASE64(field_name) AS decoded FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend decoded = base64_decode_tostring(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+base64_decode_tostring(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The Base64-encoded string to be decoded to UTF-8. |
+
+### Returns
+
+Returns the decoded UTF-8 string from the Base64-encoded input.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Decode Base64-encoded messages or tokens in HTTP logs to analyze their content.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend decoded_message = base64_decode_tostring('VGhpcyBpcyBhIHRlc3QgbWVzc2FnZQ==')
+| project _time, decoded_message, status, uri
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20decoded_message%20%3D%20base64_decode_tostring(%27VGhpcyBpcyBhIHRlc3QgbWVzc2FnZQ%3D%3D%27)%20%7C%20project%20_time%2C%20decoded_message%2C%20status%2C%20uri%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | decoded_message | status | uri |
+|-------|----------------|--------|-----|
+| 2024-11-06T10:00:00Z | This is a test message | 200 | /api/data |
+| 2024-11-06T10:01:00Z | This is a test message | 200 | /api/users |
+
+This query decodes a Base64-encoded message, which is useful when analyzing encoded payloads or authentication tokens in HTTP requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Decode Base64-encoded span attributes or metadata in distributed traces.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend decoded_attr = base64_decode_tostring('Y2hlY2tvdXQ=')
+| project _time, ['service.name'], decoded_attr, trace_id
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20decoded_attr%20%3D%20base64_decode_tostring(%27Y2hlY2tvdXQ%3D%27)%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20decoded_attr%2C%20trace_id%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service.name | decoded_attr | trace_id |
+|-------|--------------|--------------|----------|
+| 2024-11-06T10:00:00Z | frontend | checkout | abc123 |
+| 2024-11-06T10:01:00Z | cart | checkout | def456 |
+
+This query decodes Base64-encoded attributes in traces, which can be useful when trace metadata is transmitted in encoded format.
+
+</Tab>
+<Tab title="Security logs">
+
+Decode Base64-encoded authentication tokens or credentials in security logs for investigation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend decoded_token = base64_decode_tostring('YWRtaW46cGFzc3dvcmQ=')
+| project _time, decoded_token, status, uri, id
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20decoded_token%20%3D%20base64_decode_tostring('YWRtaW46cGFzc3dvcmQ%3D')%20%7C%20project%20_time%2C%20decoded_token%2C%20status%2C%20uri%2C%20id%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | decoded_token | status | uri | id |
+|-------|--------------|--------|-----|-----|
+| 2024-11-06T10:00:00Z | admin:password | 401 | /api/login | user123 |
+| 2024-11-06T10:01:00Z | admin:password | 403 | /admin | user456 |
+
+This query decodes Base64-encoded credentials from failed authentication attempts, which is useful for security investigations and identifying brute-force attack patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [base64_encode_tostring](/apl/scalar-functions/string-functions/base64-encode-tostring): Encodes a UTF-8 string into Base64 format. Use this when you need to encode data for transmission or storage.
+- [base64_decode_toarray](/apl/scalar-functions/string-functions/base64-decode-toarray): Decodes a Base64 string into an array of bytes. Use this when you need to work with the raw binary representation.
+- [base64_encode_fromarray](/apl/scalar-functions/string-functions/base64-encode-fromarray): Encodes an array of bytes into a Base64 string. Use this when working with binary data rather than text strings.
+- [url_decode](/apl/scalar-functions/string-functions/url-decode): Decodes a URL-encoded string. Use this when working with URL encoding rather than Base64 encoding.

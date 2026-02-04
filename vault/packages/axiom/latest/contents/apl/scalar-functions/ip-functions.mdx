@@ -1,0 +1,34 @@
+---
+title: IP functions
+description: 'This section explains how to use IP functions in APL.'
+sidebarTitle: Overview
+keywords: ['axiom documentation', 'documentation', 'axiom', 'format ipv4', 'parse_ipv4', 'ipv4', 'ipv4 is private', 'netmask', 'suffix']
+---
+
+The table summarizes the IP functions available in APL.
+
+| Function                                                                                | Description |
+|-----------------------------------------------------------------------------------------|-------------|
+| [format_ipv4](/apl/scalar-functions/ip-functions/format-ipv4)                           | Parses input with a netmask and returns string representing IPv4 address.            |
+| [format_ipv4_mask](/apl/scalar-functions/ip-functions/format-ipv4-mask)                           | Formats an IPv4 address and a bitmask into CIDR notation.            |
+| [geo_info_from_ip_address](/apl/scalar-functions/ip-functions/geo-info-from-ip-address) | Extracts geographical, geolocation, and network information from IP addresses.            |
+| [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4)                         | Returns a Boolean value indicating whether the specified column contains any of the given IPv4 addresses.            |
+| [has_any_ipv4_prefix](/apl/scalar-functions/ip-functions/has-any-ipv4-prefix)           | Returns a Boolean value indicating whether the IPv4 address matches any of the specified prefixes.            |
+| [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4)                                 | Returns a Boolean value indicating whether the given IPv4 address is valid and found in the source text.            |
+| [has_ipv4_prefix](/apl/scalar-functions/ip-functions/has-ipv4-prefix)                   | Returns a Boolean value indicating whether the given IPv4 address starts with a specified prefix.            |
+| [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare)                         | Compares two IPv4 addresses.            |
+| [ipv4_is_in_any_range](/apl/scalar-functions/ip-functions/ipv4-is-in-any-range)         | Returns a Boolean value indicating whether the given IPv4 address is in any specified range.            |
+| [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range)                 | Checks if IPv4 string address is in IPv4-prefix notation range.            |
+| [ipv4_is_match](/apl/scalar-functions/ip-functions/ipv4-is-match)                       | Returns a Boolean value indicating whether the given IPv4 matches the specified pattern.            |
+| [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private)                   | Checks if IPv4 string address belongs to a set of private network IPs.            |
+| [ipv4_netmask_suffix](/apl/scalar-functions/ip-functions/ipv4-netmask-suffix)           | Returns the value of the IPv4 netmask suffix from IPv4 string address.            |
+| [ipv6_compare](/apl/scalar-functions/ip-functions/ipv6-compare)                         | Compares two IPv6 addresses.            |
+| [ipv6_is_in_any_range](/apl/scalar-functions/ip-functions/ipv6-is-in-any-range)         | Returns a Boolean value indicating whether the given IPv6 address is in any specified range.            |
+| [ipv6_is_in_range](/apl/scalar-functions/ip-functions/ipv6-is-in-range)                 | Checks if IPv6 string address is in IPv6-prefix notation range.            |
+| [ipv6_is_match](/apl/scalar-functions/ip-functions/ipv6-is-match)                       | Returns a Boolean value indicating whether the given IPv6 matches the specified pattern.            |
+| [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4)                             | Converts input to long (signed 64-bit) number representation.            |
+| [parse_ipv4_mask](/apl/scalar-functions/ip-functions/parse-ipv4-mask)                   | Converts input string and IP-prefix mask to long (signed 64-bit) number representation.            |
+
+## IP-prefix notation
+
+You can define IP addresses with IP-prefix notation using a slash (`/`) character. The IP address to the left of the slash is the base IP address. The number (1 to 32) to the right of the slash is the number of contiguous bits in the netmask. For example, `192.168.2.0/24` has an associated net/subnetmask containing 24 contiguous bits or `255.255.255.0` in dotted decimal format.

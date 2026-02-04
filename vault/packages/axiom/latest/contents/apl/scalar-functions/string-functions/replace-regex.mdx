@@ -1,0 +1,160 @@
+---
+title: 'replace_regex'
+description: 'This page explains how to use the replace_regex function in APL.'
+---
+
+The `replace_regex` function replaces all matches of a regular expression pattern with another string. This function is an alias for `replace` and provides the same functionality for regex-based text replacement.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` with mode=sed for regex replacements. APL's `replace_regex` provides the same functionality with simpler syntax.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message mode=sed "s/error_([0-9]+)/ERROR-\\1/g"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend formatted = replace_regex('error_([0-9]+)', 'ERROR-$1', uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `REGEXP_REPLACE` for regex replacements. APL's `replace_regex` provides similar functionality with consistent syntax.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_REPLACE(field, 'pattern', 'replacement', 'g') AS result FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = replace_regex('pattern', 'replacement', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+replace_regex(regex, rewrite, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| regex | string | Yes | The regular expression pattern to search for. Can include capture groups. |
+| rewrite | string | Yes | The replacement string. Use $0 for the entire match, $1 for the first capture group, etc. |
+| text | string | Yes | The source string to perform replacements on. |
+
+### Returns
+
+Returns the text with all regex matches replaced by the rewrite pattern. Non-overlapping matches.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Standardize HTTP status codes by adding descriptive prefixes for better readability.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend formatted_status = replace_regex('^(2[0-9]{2})$', 'SUCCESS-$1', status)
+| extend formatted_status = replace_regex('^(4[0-9]{2})$', 'CLIENT_ERROR-$1', formatted_status)
+| extend formatted_status = replace_regex('^(5[0-9]{2})$', 'SERVER_ERROR-$1', formatted_status)
+| summarize request_count = count() by formatted_status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20formatted_status%20%3D%20replace_regex(%27%5E(2%5B0-9%5D%7B2%7D)%24%27%2C%20%27SUCCESS-%241%27%2C%20status)%20%7C%20extend%20formatted_status%20%3D%20replace_regex(%27%5E(4%5B0-9%5D%7B2%7D)%24%27%2C%20%27CLIENT_ERROR-%241%27%2C%20formatted_status)%20%7C%20extend%20formatted_status%20%3D%20replace_regex(%27%5E(5%5B0-9%5D%7B2%7D)%24%27%2C%20%27SERVER_ERROR-%241%27%2C%20formatted_status)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20formatted_status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| formatted_status | request_count |
+|------------------|---------------|
+| SUCCESS-200 | 8765 |
+| CLIENT_ERROR-404 | 2341 |
+| SERVER_ERROR-500 | 1234 |
+| CLIENT_ERROR-403 | 987 |
+
+This query adds descriptive prefixes to status codes using regex capture groups, making log analysis more intuitive.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract and reformat duration values in span attributes by normalizing units.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_str = strcat(tostring(duration / 1ms), 'ms')
+| extend normalized = replace_regex('([0-9]+)ms', '$1 milliseconds', duration_str)
+| project _time, ['service.name'], duration, duration_str, normalized
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20duration_str%20%3D%20strcat(tostring(duration%20%2F%201ms)%2C%20%27ms%27)%20%7C%20extend%20normalized%20%3D%20replace_regex(%27(%5B0-9%5D%2B)ms%27%2C%20%27%241%20milliseconds%27%2C%20duration_str)%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20duration%2C%20duration_str%2C%20normalized%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service.name | duration | duration_str | normalized |
+|-------|--------------|----------|--------------|------------|
+| 2024-11-06T10:00:00Z | frontend | 125ms | 125ms | 125 milliseconds |
+| 2024-11-06T10:01:00Z | checkout | 234ms | 234ms | 234 milliseconds |
+
+This query normalizes duration format using regex capture groups to ensure consistent unit representation across different services.
+
+</Tab>
+<Tab title="Security logs">
+
+Mask sensitive data patterns like credit card numbers or SSNs using regex capture groups.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend masked_uri = replace_regex('([0-9]{4})[0-9]{8}([0-9]{4})', '$1********$2', uri)
+| extend masked_uri = replace_regex('([0-9]{3})-[0-9]{2}-([0-9]{4})', '$1-XX-$2', masked_uri)
+| project _time, uri, masked_uri, id, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20masked_uri%20%3D%20replace_regex('(%5B0-9%5D%7B4%7D)%5B0-9%5D%7B8%7D(%5B0-9%5D%7B4%7D)'%2C%20'%241********%242'%2C%20uri)%20%7C%20extend%20masked_uri%20%3D%20replace_regex('(%5B0-9%5D%7B3%7D)-%5B0-9%5D%7B2%7D-(%5B0-9%5D%7B4%7D)'%2C%20'%241-XX-%242'%2C%20masked_uri)%20%7C%20project%20_time%2C%20uri%2C%20masked_uri%2C%20id%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | masked_uri | id | status |
+|-------|-----|------------|-------|--------|
+| 2024-11-06T10:00:00Z | /api?cc=1234567890123456 | /api?cc=1234********3456 | user123 | 403 |
+| 2024-11-06T10:01:00Z | /api?ssn=123-45-6789 | /api?ssn=123-XX-6789 | user456 | 401 |
+
+This query masks sensitive personally identifiable information like credit card numbers and SSNs using regex capture groups to preserve format while hiding sensitive digits.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [replace](/apl/scalar-functions/string-functions/replace): Alias for replace_regex. Use either name based on preference.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces plain string matches without regex. Use this for faster replacement when regex patterns are not needed.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts the first regex match. Use this when you need to capture text rather than modify it.
+- [extract_all](/apl/scalar-functions/string-functions/extract-all): Extracts all regex matches. Use this when you need multiple captured values without replacement.
+

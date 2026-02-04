@@ -1,0 +1,107 @@
+---
+title: tostring
+description: 'This page explains how to use the tostring function in APL.'
+---
+
+Use the `tostring` function to convert various data types to a string representation. This is helpful when you need to normalize values from different sources into string format for string operations, concatenation, or display purposes.
+
+You typically use `tostring` when working with numeric values, booleans, or other types that need to be converted to strings for string manipulation, formatting, or when combining values in string operations.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `tostring` or `tostring()` function to convert values to strings. In APL, `tostring` provides similar functionality for converting various types to string format.
+
+<CodeGroup>
+```sql Splunk example
+... | eval status_str = tostring(status_code)
+```
+
+```kusto APL equivalent
+... | extend status_str = tostring(status_code)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CAST(... AS VARCHAR)` or `TO_CHAR` functions to convert values to strings. In APL, `tostring` provides a simpler way to convert various types to string values.
+
+<CodeGroup>
+```sql SQL example
+SELECT CAST(123 AS VARCHAR) AS status_str FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend status_str = tostring(123)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+tostring(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to string. |
+
+### Returns
+
+If the expression value is non-null, the result is a string representation of the expression. If the expression value is null, the result is an empty string.
+
+### Conversion behavior
+
+The `tostring` function converts values based on their type:
+
+- **Integer**: Formatted as base-10 string.
+- **Float**: Formatted using Go’s `FormatFloat` function with precision `-1`. For more information, see the [Go documentation](https://pkg.go.dev/strconv#FormatFloat).
+- **Boolean**: Returns `"true"` or `"false"`. Nil Boolean values return `"false"`.
+- **Duration**: Returns duration-formatted strings. For example, `"1m20s"`.
+- **Datetime**: Returns RFC3339Nano formatted datetime string.
+
+## Use case example
+
+Convert trace attributes to strings for string-based analysis and reporting.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where isnotempty(['attributes.http.response.status_code'])
+| extend status_str = tostring(['attributes.http.response.status_code'])
+| extend duration_str = tostring(duration)
+| extend trace_summary = strcat('Service: ', ['service.name'], ', Status: ', status_str, ', Duration: ', duration_str)
+| project _time, trace_id, ['service.name'], status_str, trace_summary
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20isnotempty(%5B'attributes.http.response.status_code'%5D)%20%7C%20extend%20status_str%20%3D%20tostring(%5B'attributes.http.response.status_code'%5D)%20%7C%20extend%20duration_str%20%3D%20tostring(duration)%20%7C%20extend%20trace_summary%20%3D%20strcat('Service%3A%20'%2C%20%5B'service.name'%5D%2C%20'%2C%20Status%3A%20'%2C%20status_str%2C%20'%2C%20Duration%3A%20'%2C%20duration_str)%20%7C%20project%20_time%2C%20trace_id%2C%20%5B'service.name'%5D%2C%20status_str%2C%20trace_summary%22%7D)
+
+**Output**
+
+| _time | trace_id | service.name | status_str | trace_summary |
+| ----- | -------- | ------------ | ---------- | ------------- |
+| Jun 24, 09:28:10 | abc123 | frontend | 200 | Service: frontend, Status: 200, Duration: 150000000 |
+
+This example converts trace attributes to strings and creates a summary message, enabling formatted trace reporting and analysis.
+
+## List of related functions
+
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use `strcat` with `tostring` to combine converted values into formatted strings.
+- [strcat-delim](/apl/scalar-functions/string-functions/strcat-delim): Concatenates strings with a delimiter. Use `strcat-delim` with `tostring` to join converted values with separators.
+- [toint](/apl/scalar-functions/conversion-functions/toint): Converts input to integer. Use `toint` to convert strings back to integers when needed.

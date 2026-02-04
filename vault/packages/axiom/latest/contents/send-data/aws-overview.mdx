@@ -1,0 +1,72 @@
+---
+title: 'Send data from AWS to Axiom'
+description: 'This page explains how to send data from different AWS services to Axiom.'
+overview: 'Overview of Amazon Web Services cloud computing platform'
+sidebarTitle: Overview
+keywords: ['aws', 'axiom documentation', 'documentation', 'axiom', 'aws cloudfront', 'ADOT', 'amazon s3', 'aws s3', 'aws lambda', 'aws', 'cloudwatch', 'amazon']
+logoId: 'aws'
+darkLogoId: 'awsdark'
+enlargeLogo: true
+---
+
+For most AWS services, the fastest and easiest way to send logs to Axiom is the [Axiom CloudWatch Forwarder](/send-data/cloudwatch). It’s subscribed to one or more of your CloudWatch Log Groups and runs as a Lambda function. To determine which AWS service sends logs to Amazon CloudWatch and/or Amazon S3, see the [AWS Documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html).
+
+## Choose the best method to send data
+
+To choose the best method to send data from AWS services to Axiom, consider that Amazon CloudWatch Logs captures three main types of logs:
+- **Service logs**: More than 30 AWS services, including Amazon API Gateway, AWS Lambda, AWS CloudTrail, can send service logs to CloudWatch.
+- **Vended logs**: Automatically published by certain AWS services like Amazon VPC and Amazon Route 53.
+- **Custom logs**: Logs from your own applications, on-premise resources, and other clouds.
+
+You can only send vended logs to Axiom through Amazon CloudWatch. Use the [Axiom CloudWatch Forwarder](/send-data/cloudwatch) to send vended logs from Amazon CloudWatch to Axiom for richer insights. After sending vended logs to Axiom, shorten the retention period for these logs in Amazon CloudWatch to cut costs even more.
+
+For service logs and custom logs, you can skip Amazon CloudWatch altogether and send them to Axiom using open-source collectors like [Fluent Bit](/send-data/fluent-bit), [Fluentd](/send-data/fluentd) and [Vector](/send-data/vector). Completely bypassing Amazon CloudWatch results in significant cost savings.
+
+## Amazon services exclusively supported by Axiom CloudWatch Forwarder
+
+To send data from the following Amazon services to Axiom, use the [Axiom CloudWatch Forwarder](/send-data/cloudwatch).
+
+- Amazon API Gateway
+- Amazon Aurora MySQL
+- Amazon Chime
+- Amazon CloudWatch
+- Amazon CodeWhisperer
+- Amazon Cognito
+- Amazon Connect
+- AWS AppSync
+- AWS Elastic Beanstalk
+- AWS CloudHSM
+- AWS CloudTrail
+- AWS CodeBuild
+- AWS DataSync
+- AWS Elemental MediaTailor
+- AWS Fargate
+- AWS Glue
+
+To send evaluation event logs from Amazon CloudWatch to Axiom, you can also use [Amazon Data Firehose](/send-data/aws-firehose).
+
+## Amazon services supported by other methods
+
+The table below summarizes the methods you can use to send data from the other supported Amazon services to Axiom.
+
+| Supported Amazon service                                    | Supported methods to send data to Axiom                                                                                              |
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| Amazon Bedrock                                              | [Axiom CloudWatch Forwarder](/send-data/cloudwatch)<br />[AWS S3 Forwarder](/send-data/aws-s3)<br />[Amazon Data Firehose](/send-data/aws-firehose)  |
+| Amazon CloudFront                                           | [AWS S3 Forwarder](/send-data/aws-s3)                                                                                                |
+| Amazon Data Firehose                                        | [Amazon Data Firehose](/send-data/aws-firehose)                                                                                      |
+| Amazon Elastic Container Service                            | [Fluentbit](/send-data/fluent-bit)                                                                                                   |
+| Amazon Elastic Load Balancing (ELB)                         | [Fluentbit](/send-data/fluent-bit)                                                                                                   |
+| Amazon ElastiCache (Redis OSS)                              | [Axiom CloudWatch Forwarder](/send-data/cloudwatch)<br />[Amazon Data Firehose](/send-data/aws-firehose)                               |
+| Amazon EventBridge Pipes                                    | [Axiom CloudWatch Forwarder](/send-data/cloudwatch)<br />[AWS S3 Forwarder](/send-data/aws-s3)<br />[Amazon Data Firehose](/send-data/aws-firehose) |
+| Amazon FinSpace                                             | [Axiom CloudWatch Forwarder](/send-data/cloudwatch)<br />[AWS S3 Forwarder](/send-data/aws-s3)<br />[Amazon Data Firehose](/send-data/aws-firehose) |
+| Amazon S3                                                   | [AWS S3 Forwarder](/send-data/aws-s3)<br />[Vector](/send-data/vector)                                                               |
+| Amazon Virtual Private Cloud (VPC)                          | [AWS S3 Forwarder](/send-data/aws-s3)                                                                                                |
+| AWS Fault Injection Service                                 | [AWS S3 Forwarder](/send-data/aws-s3)                                                                                                |
+| AWS FireLens                                                | [AWS FireLens](/send-data/aws-firelens)                                                                                              |
+| AWS Global Accelerator                                      | [AWS S3 Forwarder](/send-data/aws-s3)                                                                                                |
+| AWS IoT Core                                                | [AWS IoT](/send-data/aws-iot-rules)                                                                                                  |
+| AWS Lambda                                                  | [AWS Lambda](/send-data/aws-lambda)                                                                                                  |
+
+<Note>
+    To request support for AWS services not listed above, please [reach out to Axiom](https://axiom.co/contact).
+</Note>

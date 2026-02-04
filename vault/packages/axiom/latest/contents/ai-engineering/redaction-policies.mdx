@@ -1,0 +1,243 @@
+---
+title: "Redaction policies"
+description: "This page explains how to use redaction policies in the Axiom AI SDK to control what data is captured in AI spans"
+---
+
+Axiom AI SDK provides flexible redaction policies to control what data is captured in OpenTelemetry spans. This allows you to balance observability needs with privacy and compliance requirements.
+
+## Built-in redaction policies
+
+Axiom AI SDK provides two built-in redaction policies:
+
+| Policy                | What gets captured  | What gets excluded  | When to use |
+|:----------------------|:-------------------|:-------------------|:-------------|
+| [AxiomDefault](#axiomdefault-policy)          | Full data           | –           | Full observability |
+| [OpenTelemetryDefault](#opentelemetrydefault-policy)  | Model metadata, token usage, error info | Prompt text, AI responses, tool args and results | Privacy-first |
+
+If you don’t specify a redaction policy, Axiom AI SDK applies `AxiomDefault`.
+
+To determine which redaction policy fits your needs, see the following comparison:
+
+<Tabs>
+<Tab title="AxiomDefault">
+
+### AxiomDefault policy
+
+By default, Axiom AI SDK captures all data for maximum observability.
+
+**What gets captured:**
+- Full prompt text and AI responses in chat spans
+- Complete tool arguments and return values on tool spans
+- All standard OpenTelemetry attributes (model name, token usage, etc.)
+
+<Info>
+Capturing full message content increases span size and storage costs.
+</Info>
+
+**When to use:**
+- You need full visibility into AI interactions
+- Data privacy isn’t a concern
+- Debugging complex AI workflows
+
+</Tab>
+<Tab title="OpenTelemetryDefault">
+
+### OpenTelemetryDefault policy
+
+The OpenTelemetry default policy excludes sensitive content.
+
+**What gets captured:**
+- Model metadata (name, provider, version)
+- Token usage and performance metrics
+- Error information and status codes
+
+**What gets excluded:**
+- Prompt text and AI responses
+- Tool arguments and return values
+
+**When to use:**
+- Handling sensitive or personal data
+- Compliance requirements restrict data capture
+- You only need performance and error metrics
+
+</Tab>
+</Tabs>
+
+### What gets captured
+
+To determine which redaction policy fits your needs, see the following examples about what gets captured with each defaultpolicy:
+
+<Tabs>
+<Tab title="AxiomDefault">
+<Tabs>
+<Tab title="Chat spans">
+```json
+{
+  "gen_ai.operation.name": "chat",
+  "gen_ai.request.model": "gpt-4o-mini",
+  "gen_ai.input.messages": "[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Hello, how are you?\"}]}]",
+  "gen_ai.output.messages": "[{\"role\":\"assistant\",\"content\":\"I'm doing well, thank you for asking!\"}]",
+  "gen_ai.usage.input_tokens": 12,
+  "gen_ai.usage.output_tokens": 15,
+  "gen_ai.usage.total_tokens": 27
+}
+```
+</Tab>
+
+<Tab title="Tool spans">
+```json
+{
+  "gen_ai.tool.name": "weather_lookup",
+  "gen_ai.tool.description": "Get current weather for a location",
+  "gen_ai.tool.arguments": "{\"location\":\"San Francisco\",\"units\":\"celsius\"}",
+  "gen_ai.tool.message": "{\"temperature\":18,\"condition\":\"partly cloudy\"}"
+}
+```
+</Tab>
+</Tabs>
+</Tab>
+
+<Tab title="OpenTelemetryDefault">
+<Tabs>
+<Tab title="Chat spans">
+```json
+{
+  "gen_ai.operation.name": "chat",
+  "gen_ai.request.model": "gpt-4o-mini",
+  "gen_ai.usage.input_tokens": 12,
+  "gen_ai.usage.output_tokens": 15,
+  "gen_ai.usage.total_tokens": 27
+}
+```
+
+<Info>
+Message content (`gen_ai.input.messages` and `gen_ai.output.messages`) is excluded for privacy.
+</Info>
+
+</Tab>
+
+<Tab title="Tool spans">
+```json
+{
+  "gen_ai.tool.name": "weather_lookup",
+  "gen_ai.tool.description": "Get current weather for a location"
+}
+```
+
+<Info>
+Tool arguments and results (`gen_ai.tool.arguments` and `gen_ai.tool.message`) are excluded for privacy.
+</Info>
+
+</Tab>
+</Tabs>
+</Tab>
+</Tabs>
+
+## Global configuration
+
+Set a default redaction policy for your entire application using `initAxiomAI`:
+
+<CodeGroup>
+```ts Full data capture
+import { trace } from '@opentelemetry/api';
+import { initAxiomAI, RedactionPolicy } from 'axiom/ai';
+
+const tracer = trace.getTracer("my-tracer");
+
+initAxiomAI({ tracer, redactionPolicy: RedactionPolicy.AxiomDefault });
+```
+
+```ts Privacy-first
+import { trace } from '@opentelemetry/api';
+import { initAxiomAI, RedactionPolicy } from 'axiom/ai';
+
+const tracer = trace.getTracer("my-tracer");
+
+initAxiomAI({ tracer, redactionPolicy: RedactionPolicy.OpenTelemetryDefault });
+```
+</CodeGroup>
+
+<Info>
+In [Quickstart](/ai-engineering/quickstart), `initAxiomAI` is called in your instrumentation file (`/src/instrumentation.ts`).
+</Info>
+
+## Per-operation override
+
+You can configure different policies for each operation. Axiom resolves redaction policies in the following order (from highest to lowest precedence):
+
+1. Per-operation policy
+1. Global policy
+1. Default policy
+
+Override the global or default policy for specific operations by passing a `redactionPolicy` to `withSpan`:
+
+```ts
+import { withSpan, RedactionPolicy } from 'axiom/ai';
+import { generateText } from 'ai';
+
+const result = await withSpan(
+  { capability: 'customer_support', step: 'handle_sensitive_query' },
+  async (span) => {
+    span.setAttribute('user.id', userId);
+    return generateText({
+      model: wrappedModel,
+      prompt: 'Process this sensitive customer data...'
+    });
+  },
+  { redactionPolicy: RedactionPolicy.OpenTelemetryDefault }
+);
+```
+
+## Custom redaction policies
+
+Create custom policies by defining an `AxiomAIRedactionPolicy` object:
+
+```ts
+import { trace } from '@opentelemetry/api';
+import { initAxiomAI, AxiomAIRedactionPolicy } from 'axiom/ai';
+
+const tracer = trace.getTracer("my-tracer");
+
+// Custom policy: capture messages but not tool payloads
+const customPolicy: AxiomAIRedactionPolicy = {
+  captureMessageContent: 'full',
+  mirrorToolPayloadOnToolSpan: false
+};
+
+initAxiomAI({ tracer, redactionPolicy: customPolicy });
+```
+
+The `AxiomAIRedactionPolicy` object has two properties:
+
+<ParamField path="captureMessageContent" type="'full' | 'off'" default="'full'">
+Controls whether prompt and response text is included in chat spans.
+
+- `'full'`: Include complete message content
+- `'off'`: Exclude all message content
+</ParamField>
+
+<ParamField path="mirrorToolPayloadOnToolSpan" type="boolean" default="true">
+Controls whether tool arguments and results are duplicated on tool spans.
+
+- `true`: Mirror tool data for easier querying
+- `false`: Only capture tool metadata (name, description)
+</ParamField>
+
+The [built-in policies](#built-in-redaction-policies) configure the `AxiomAIRedactionPolicy` object in the following way:
+
+| Default policy | captureMessageContent | mirrorToolPayloadOnToolSpan |
+|:--------|:----------------------|:-----------------------------|
+| AxiomDefault | `'full'` | `true` |
+| OpenTelemetryDefault | `'off'` | `false` |
+
+## Related documentation
+
+<CardGroup cols={2}>
+<Card title="Axiom AI SDK instrumentation" href="/ai-engineering/observe/axiom-ai-sdk-instrumentation">
+Learn how to instrument your AI applications with Axiom AI SDK
+</Card>
+
+<Card title="OpenTelemetry attributes" href="/ai-engineering/observe/gen-ai-attributes">
+Understand the OpenTelemetry attributes captured by Axiom AI SDK
+</Card>
+</CardGroup>

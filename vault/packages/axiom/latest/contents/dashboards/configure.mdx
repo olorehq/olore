@@ -1,0 +1,77 @@
+---
+title: 'Configure dashboards'
+description: 'This page explains how to configure your dashboards.'
+sidebarTitle: Configure
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'collaboration', 'queries', 'visualizations', 'filters', 'charts', 'simple query builder', 'advanced query builder']
+---
+
+## Select time range
+
+When you select the time range, you specify the time interval for which you want to display data in the dashboard. Changing the time range affects the data displayed in all dashboard elements.
+
+To select the time range:
+1. In the top right, click <Icon icon="clock" iconType="regular"/> **Time range**.
+1. Choose one of the following options:
+    - Use the **Quick range** items to quickly select popular time ranges.
+    - Use the **Custom start/end date** fields to select specific times.
+1. Click **Apply**.
+
+## Select refresh rate
+
+Your dashboard regularly queries your data in the background to show the latest trends. The refresh rate is the time interval between these queries.
+
+To select the refresh rate:
+1. In the top right, click <Icon icon="clock" iconType="regular"/> **Time range**.
+1. Select one of the options in **Refresh rate**.
+1. Click **Apply**.
+
+<Warning>
+Each time your dashboard refreshes, it runs a query on your data which results in query costs. Selecting a short refresh rate (such as 15 s) for a long time range (such as 90 days) means that your dashboard frequently runs large queries in the background. To optimize query costs, choose a refresh rate that’s appropriate for the time range of your dashboard.
+</Warning>
+
+## Share dashboards
+
+To specify who can access a dashboard:
+
+1. In the top right, click <img src="/doc-assets/icons/share.svg" className="inline-icon" alt="Share" /> **Share**.
+1. Select one of the following:
+    - Select **Just Me** to make the dashboard private. Only you can access the dashboard.
+    - Select a group in your Axiom organization. Only members of the selected group can access the dashboard. For more information about groups, see [Access](/reference/settings).
+    - Select **Everyone** to make the dashboard accessible to all users in your Axiom organization.
+1. At the bottom, click **Save** to save your changes to the dashboard.
+
+<Note>
+  The data that individual users see in the dashboard is determined by the datasets the users have access to. If a user has access to a dashboard but only to some of the datasets referenced in the dashboard’s charts, the user only sees data from the datasets they have access to.
+</Note>
+
+### Share dashboards with time range
+
+To share a dashboard with a specific time range:
+
+1. [Specify who can access a dashboard](#share-dashboards).
+1. Determine the dashboard URL in your browser’s address bar.
+1. Add time range parameters to the dashboard URL.
+    - For standard time ranges, add `?t_qr=RANGE` to the dashboard URL. Replace `RANGE` with the time range. For example, `?t_qr=7d` for the last 7 days.
+    - For custom time ranges, add `?t_ts=START&t_te=END` to the dashboard URL. Replace `START` and `END` with the start and end times in ISO 8601 format. For example, `?t_ts=2023-01-01T00:00:00.000Z&t_te=2023-01-07T23:59:59.999Z` for January 1-7, 2023.
+    - To compare your current time range against a previous period, add `?t_qr=RANGE&t_against=COMPARISON` or `?t_ts=START&t_te=END&t_against=COMPARISON` to the dashboard URL. Replace `COMPARISON` with the comparison period. For example, `?t_qr=24h&t_against=-1d` to compare the last 24 hours against the same time yesterday.
+
+## Control display of annotations
+
+To specify the types of annotations to display in all dashboard elements:
+
+1. In the top right, click <Icon icon="diamond" iconType="light"/> **Annotations**.
+1. Select one of the following:
+    - Show all annotations
+    - Hide all annotations
+    - Selective determine the annotations types to display
+1. At the bottom, click **Save** to save your changes to the dashboard.
+
+## Set dashboard as homepage
+
+To set a dashboard as the homepage of your browser, click <Icon icon="house" iconType="light"/> **Set as homepage** in the top right.
+
+## Enter full screen
+
+Full-screen mode is useful for displaying the dashboard on a TV or shared monitor.
+
+To enter full-screen mode, click <Icon icon="up-right-and-down-left-from-center" iconType="regular"/> **Full screen** in the top right.

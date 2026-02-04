@@ -1,0 +1,135 @@
+---
+title: quote
+description: 'This page explains how to use the quote function in APL.'
+---
+
+Use the `quote` function in APL to return a string literal representation of a given input value. This function wraps the value in double quotation marks and escapes any internal double quotes or special characters as needed. This is especially useful when you want to ensure that string values are safely embedded in dynamically constructed queries, logs, or debug output without being misinterpreted.
+
+You can use `quote` to:
+
+- Safely format strings for output or reuse.
+- Prevent syntax errors when generating queries dynamically.
+- Inspect values that contain special or unexpected characters.
+
+Use this function when you need to serialize a string value exactly as it would appear in an APL query.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk doesn’t provide a direct equivalent to `quote`. However, you can use `tostring()` or `replace()` combinations to prepare literal-safe outputs, although escaping and quoting must often be handled manually.
+
+<CodeGroup>
+```sql Splunk example
+| eval quoted_value="'" . replace(myfield,"'","\\'") . "'"
+````
+
+```kusto APL equivalent
+datatable(s:string) 
+[
+  'O\'Reilly', 
+  'simple'
+]
+| extend quoted = quote(s)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not have a direct `quote()` function. You typically handle quoting and escaping manually using `REPLACE()` or `CONCAT()` to build quoted strings, which can be error-prone for nested or dynamic queries.
+
+<CodeGroup>
+```sql SQL example
+SELECT CONCAT('''', REPLACE(name, '''', ''''''), '''') AS quoted_name FROM authors;
+```
+
+```kusto APL equivalent
+datatable(name:string)
+[
+  'O\'Reilly', 
+  'simple'
+]
+| extend quoted_name = quote(name)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+quote(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                   |
+| ----- | ------ | ----------------------------- |
+| value | string | The value to quote and escape |
+
+### Returns
+
+A `string` value representing the input enclosed in double quotes, with internal quotes and escape sequences handled appropriately.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you might want to safely quote URI strings for inclusion in alerts or dashboards.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where method == 'POST'
+| summarize count() by quoted_uri = quote(uri)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20method%20%3D%3D%20'POST'%20%7C%20summarize%20count()%20by%20quoted_uri%20%3D%20quote(uri)%22%7D)
+
+**Output**
+
+| quoted_uri         | count_ |
+| ------------------- | ------- |
+| "/api/login"        | 83      |
+| "/api/purchase"     | 61      |
+| "/search?q%3Derror" | 12      |
+
+This query quotes the URI paths in log entries, ensuring that any special characters are preserved in output.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, quoting `service.name` values helps safely display or export the names in logs or dashboards where special characters could otherwise break formatting.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize count() by quoted_service = quote(['service.name'])
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20count()%20by%20quoted_service%20%3D%20quote(%5B'service.name'%5D)%22%7D)
+
+**Output**
+
+| quoted_service         | count_ |
+| ----------------------- | ------- |
+| "frontend"              | 1041    |
+| "checkoutservice"       | 853     |
+| "productcatalogservice" | 790     |
+
+The query quotes service names for safe export or logging.
+
+</Tab>
+</Tabs>

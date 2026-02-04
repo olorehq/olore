@@ -1,0 +1,149 @@
+---
+title: 'Browser Checks Overview'
+description: 'Monitor end-to-end user flows and realistic interactions with automated browser testing using Playwright.'
+sidebarTitle: 'Overview'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Browser Check Construct](/constructs/browser-check).
+</Tip>
+
+<Frame>
+  <img src="/images/browser-check-ide.png" alt="Browser check overview" />
+</Frame>
+
+## What are Browser Checks?
+
+Browser checks are automated tests that use real browsers to interact with your web applications. They simulate user journeys like logging in, filling out forms, making purchases, or navigating through complex workflows, ensuring your critical user paths work and perform correctly.
+
+**Browser checks are perfect for detecting downtime and performance issues in:**
+- User authentication flows
+- E-commerce checkout processes
+- Form submissions and user journey validation
+- Frontend performance monitoring
+
+<Info>
+Supported Browsers:
+- **Chromium**: Default browser, fast and reliable
+- **Chrome**: Google Chrome for production-like testing
+- **Mobile Simulation**: Test responsive designs and mobile workflows
+</Info>
+
+## How Browser Checks Work
+
+Checkly uses Playwright to power your Browser checks. [Playwright](https://playwright.dev/docs/intro) is a robust, open-source framework for browser automation and end-to-end web application testing. It enables you to write idiomatic, reliable tests and easily control interactions within a web page. Browser checks execute automated test scripts in real browsers:
+
+1. **Browser Launch** - Starts a real browser instance (Chromium or Chrome)
+2. **Page Navigation** - Navigates to your web application
+3. **User Interactions** - Simulates clicks, typing, form fills, and navigation
+4. **Assertions** - Validates page content, elements, and user experience
+5. **Performance Monitoring** - Captures Core Web Vitals and timing metrics
+6. **Results Collection** - Records screenshots, videos, and detailed logs
+7. **Alerts** - Triggers alerts if any of the assertions fail
+
+## Check Structure
+
+<Tabs>
+<Tab title="Structure in the Checkly UI">
+<Frame>
+  <img src="/images/browser-check-settings.png" alt="Browser check dashboard" />
+</Frame>
+
+Create your Playwright test file in the Checkly IDE, then configure the check settings in the Checkly UI.
+</Tab>
+<Tab title="Structure in Code">
+Browser checks use Playwright's test framework with a familiar structure. 
+
+It works by connecting constructs to handle the configuration of your Browser Check, and then referencing the test file in your repository.
+
+```ts browser-check.ts
+import { BrowserCheck, Frequency } from 'checkly/constructs'
+import * as path from 'path'
+
+new BrowserCheck('browser-check-1', {
+  name: 'Browser check #1',
+  frequency: Frequency.EVERY_10M,
+  locations: ['us-east-1', 'eu-west-1'],
+  code: {
+    entrypoint: path.join(__dirname, 'home.spec.js')
+  }
+})
+```
+
+```typescript home.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('User login workflow', async ({ page }) => {
+  // Navigate to login page
+  await page.goto('https://app.example.com/login')
+  
+  // Fill in credentials
+  await page.fill('[data-testid="email"]', 'user@example.com')
+  await page.fill('[data-testid="password"]', 'securepassword')
+  
+  // Submit login form
+  await page.click('[data-testid="login-button"]')
+  
+  // Verify successful login
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible()
+  await expect(page).toHaveURL(/.*dashboard/)
+})
+```
+</Tab>
+
+</Tabs>
+<Info>
+To learn more about Playwright, see the our [Playwright documentation](/learn/playwright).
+</Info>
+
+## Browser Check Results
+
+Individual browser check results contain:
+
+* A short check summary, including errors broken down by category
+![check results browser summary](/images/docs/images/monitoring/check-results-browser-summary.png)
+
+* When using Playwright Test Runner you will have an additional section displaying the test steps, error message, and assets (traces, videos, screenshots)
+
+* An error log, only if your script failed
+![check results browser error log](/images/docs/images/monitoring/check-results-browser-error-log.png)
+
+* Expandable tabs on page your script navigated to
+![check results browser page navigation](/images/docs/images/monitoring/check-results-browser-page-navigations.png)
+
+  When expanded, each tab shows its own navigation/loading time ribbon and web vitals...
+  ![check results browser page navigation top](/images/docs/images/monitoring/check-results-browser-navigation-top.png)
+
+  ...together with browser console logs, network logs and any screenshots that had been taken (including one screenshot taken automatically on failure)
+  ![check results browser page navigation bottom](/images/docs/images/monitoring/check-results-browser-navigation-bottom.png)
+
+* A job log for the check
+![check results browser job log](/images/docs/images/monitoring/check-results-browser-job-log.png)
+
+Learn more in our documentation on [Results](/concepts/results).
+
+## Key Capabilities
+<Accordion title="Real Browser Automation">
+Execute scripts in real Chromium browsers to test complex user interactions, JavaScript functionality, and dynamic content.
+</Accordion>
+
+<Accordion title="Playwright Native Support">
+Write tests using Playwright's powerful API for cross-browser automation with built-in waiting, assertions, and debugging capabilities.
+</Accordion>
+
+<Accordion title="Visual Regression Testing">
+Capture and compare screenshots to detect unintended visual changes in your application's UI.
+</Accordion>
+
+<Accordion title="Performance Metric Collection">
+Monitor Core Web Vitals, page load times, and custom performance metrics to ensure optimal user experience.
+</Accordion>
+
+<Accordion title="Mobile Device Simulation">
+Test responsive designs and mobile-specific functionality by emulating various devices and screen sizes.
+</Accordion>
+
+<Accordion title="Global Monitoring Locations">
+Run checks from multiple worldwide locations to verify performance and availability across different regions.
+</Accordion>
+

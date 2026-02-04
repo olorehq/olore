@@ -1,0 +1,550 @@
+---
+title: 'TcpMonitor Construct'
+description: 'Learn how to configure TCP monitors with the Checkly CLI.'
+sidebarTitle: 'TCP Monitor'
+---
+
+import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
+
+<Tip>
+Learn more about TCP Monitors in [the TCP monitor overview](/detect/uptime-monitoring/tcp-monitors/overview).
+</Tip>
+
+Use TCP Monitors to verify connectivity and response times of your TCP services. The examples below show how to configure monitoring for different types of services.
+
+<Accordion title="Prerequisites">
+Before creating TCP Monitors, ensure you have:
+
+- An initialized Checkly CLI project
+- Network access to the TCP services you want to monitor
+- Knowledge of the target hostname and port number
+- Understanding of the expected response format (if sending data)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { TcpAssertionBuilder, TcpMonitor } from "checkly/constructs"
+
+new TcpMonitor("database-tcp-1", {
+  name: "Database Connection Check",
+  activated: true,
+  maxResponseTime: 5000,
+  degradedResponseTime: 2000,
+  request: {
+    hostname: "db.example.com",
+    port: 5432,
+    ipFamily: "IPv4",
+    assertions: [TcpAssertionBuilder.responseTime().lessThan(1000)],
+  },
+})
+```
+
+```ts Advanced Example
+import { Frequency, TcpAssertionBuilder, TcpMonitor } from "checkly/constructs"
+
+new TcpMonitor("redis-tcp-1", {
+  name: "Redis Service Check",
+  activated: true,
+  frequency: Frequency.EVERY_5M,
+  locations: ["us-east-1", "eu-west-1"],
+  maxResponseTime: 3000,
+  degradedResponseTime: 1500,
+  tags: ["redis", "cache", "critical"],
+  request: {
+    hostname: "redis.example.com",
+    port: 6379,
+    ipFamily: "IPv4",
+    data: "PING\r\n",
+    assertions: [
+      TcpAssertionBuilder.responseTime().lessThan(500),
+      TcpAssertionBuilder.responseData().contains("PONG"),
+    ],
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+The TCP Monitoring configuration consists of specific TCP monitoring options and inherited general monitoring options.
+
+<Tabs>
+<Tab title="TCP Monitor">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `request` | `object` | ✅ | - | TCP connection configuration object |
+| `degradedResponseTime` | `number` | ❌ | `4000` | Response time threshold in milliseconds for degraded status |
+| `maxResponseTime` | `number` | ❌ | `5000` | Maximum response time in milliseconds before marking as failed |
+
+</Tab>
+<Tab title="General Monitor">
+
+  <GeneralMonitorOptionsTable />
+
+</Tab>
+</Tabs>
+
+### `TcpMonitor` Options
+
+<ResponseField name="request" type="object" required>
+TCP connection configuration that defines the hostname, port, and optional data to send.
+
+**Usage:**
+
+```ts
+new TcpMonitor("tcp-monitor", {
+  name: "Database TCP Check",
+  request: {
+    hostname: "db.example.com",
+    port: 5432,
+    assertions: [TcpAssertionBuilder.responseTime().lessThan(1000)],
+  },
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `hostname` | `string` | ✅ | - | The hostname to connect to (without scheme or port) |
+| `port` | `number` | ✅ | - | The port number for the TCP connection |
+| `ipFamily` | `string` | ❌ | `'IPv4'` | IP family: `'IPv4'` \| `'IPv6'` |
+| `data` | `string` | ❌ | - | Data to send to the target host |
+| `assertions` | `TcpAssertion[]` | ❌ | `[]` | Response assertions using `TcpAssertionBuilder` |
+
+**Examples:**
+
+<Tabs>
+<Tab title="Database Connection">
+
+```ts
+new TcpMonitor("database-check", {
+  name: "Database Connectivity",
+  request: {
+    hostname: "postgres.example.com",
+    port: 5432,
+    ipFamily: "IPv4",
+    assertions: [TcpAssertionBuilder.responseTime().lessThan(1000)],
+  },
+})
+```
+
+</Tab>
+<Tab title="Redis with Commands">
+
+```ts
+new TcpMonitor("redis-ping", {
+  name: "Redis PING Test",
+  request: {
+    hostname: "cache.example.com",
+    port: 6379,
+    data: "PING\r\n",
+    assertions: [
+      TcpAssertionBuilder.responseTime().lessThan(500),
+      TcpAssertionBuilder.responseData().contains("PONG"),
+    ],
+  },
+})
+```
+
+</Tab>
+<Tab title="IPv6 Connection">
+
+```ts
+new TcpMonitor("ipv6-service", {
+  name: "IPv6 Service Check",
+  request: {
+    hostname: "2001:db8::1",
+    port: 80,
+    ipFamily: "IPv6",
+    assertions: [TcpAssertionBuilder.responseTime().lessThan(2000)],
+  },
+})
+```
+
+</Tab>
+</Tabs>
+
+**Use cases**: Database connectivity, cache service monitoring, custom TCP service validation.
+</ResponseField>
+
+<ResponseField name="degradedResponseTime" type="number" default="4000">
+Response time threshold in milliseconds for marking the monitor as degraded (warning state).
+
+Usage:
+```ts highlight={3}
+new TcpMonitor("tiered-monitoring", {
+  name: "Tiered Monitoring",
+  degradedResponseTime: 1000, // Warning at 1 second
+  maxResponseTime: 3000, // Fail at 3 seconds
+  request: {
+    hostname: "service.example.com",
+    port: 3306,
+  },
+})
+```
+
+Examples:
+```ts
+// Progressive performance alerts
+new TcpMonitor("mysql-performance", {
+  name: "MySQL Performance Monitoring",
+  degradedResponseTime: 800, // Warn at 800ms
+  maxResponseTime: 2000, // Fail at 2s
+  request: {
+    hostname: "mysql.example.com",
+    port: 3306,
+    assertions: [TcpAssertionBuilder.responseTime().lessThan(2000)],
+  },
+})
+```
+
+**Use cases**: Early performance warnings, gradual degradation detection.
+</ResponseField>
+
+<ResponseField name="maxResponseTime" type="number" default="5000">
+Maximum response time in milliseconds before the monitor is marked as failed.
+
+Usage:
+```ts highlight={3}
+new TcpMonitor("fast-db", {
+  name: "Fast DB Connection",
+  maxResponseTime: 2000, // 2 seconds max
+  request: {
+    hostname: "fast-db.example.com",
+    port: 5432,
+  },
+})
+```
+
+Examples:
+```ts
+// Low-latency database requirement
+new TcpMonitor("performance-db", {
+  name: "Performance Database",
+  maxResponseTime: 1000, // Fail at 1 second
+  degradedResponseTime: 500, // Warning at 500ms
+  request: {
+    hostname: "db.example.com",
+    port: 5432,
+  },
+})
+
+// Service with higher tolerance
+new TcpMonitor("batch-service", {
+  name: "Batch Processing Service",
+  maxResponseTime: 10000, // 10 seconds
+  request: {
+    hostname: "batch.example.com",
+    port: 8080,
+  },
+})
+```
+
+**Use cases**: Performance monitoring, SLA compliance, connection timeout management.
+</ResponseField>
+
+### `TcpMonitor` Assertions
+
+To define `assertions` for the `request` of an `TcpMonitor` you should use the `TcpAssertionBuilder`. The following sources are available for TCP monitor assertions:
+
+- `responseTime()`: Assert the total response time of the TCP request
+- `responseData()`: Assert the value in the response data
+
+Here are some examples:
+
+- Assert the total response time of the TCP request
+
+```ts
+TcpAssertionBuilder.responseTime().lessThan(1000),
+// Equivalent to:
+{ source: 'RESPONSE_TIME', comparison: 'LESS_THAN', target: '1000' }
+```
+
+- Asserting the value in the response
+
+```ts
+TcpAssertionBuilder.responseData().contains('ping')
+// Equivalent to:
+{ source: 'RESPONSE_DATA', comparison: 'CONTAINS', target: 'ping' }
+```
+
+Learn more in our docs on [Assertions](/detect/assertions).
+
+### General Monitor Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your TCP monitor that will be displayed in the Checkly dashboard and used in notifications.
+
+Usage:
+```ts highlight={2}
+new TcpMonitor('my-tcp-monitor', {
+  name: 'Database Connection Monitor'
+  /* More options ... */
+})
+```
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the TCP monitor should run. Use the `Frequency` enum to set the check interval.
+
+Usage:
+```ts highlight={4}
+import { Frequency } from 'checkly/constructs'
+
+new TcpMonitor("my-monitor", {
+  frequency: Frequency.EVERY_2M,
+  /* More options ... */
+})
+```
+
+Examples:
+
+<Tabs>
+<Tab title="Critical Services">
+
+```ts
+// Database connectivity (high frequency)
+new TcpMonitor("critical-db", {
+  name: "Critical Database",
+  frequency: Frequency.EVERY_1M, // Every minute
+  /* More options ... */
+})
+```
+
+</Tab>
+<Tab title="Standard Services">
+
+```ts
+// Application service (standard frequency)
+new TcpMonitor("app-service", {
+  name: "Application Service",
+  frequency: Frequency.EVERY_5M, // Every 5 minutes
+  /* More options ... */
+})
+```
+
+</Tab>
+<Tab title="Background Services">
+
+```ts
+// Background service (low frequency)
+new TcpMonitor("background-service", {
+  name: "Background Processing",
+  frequency: Frequency.EVERY_15M, // Every 15 minutes
+  /* More options ... */
+})
+```
+
+</Tab>
+</Tabs>
+
+**Available frequencies**: `EVERY_10S`, `EVERY_20S`, `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of public location codes where the TCP monitor should run from. Multiple locations provide geographic coverage.
+
+Usage:
+```ts highlight={2}
+new TcpMonitor('global-monitor', {
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+})
+```
+
+Examples:
+
+<Tabs>
+<Tab title="Multi-Region Database">
+
+```ts
+// Database replication monitoring
+new TcpMonitor("global-db", {
+  name: "Global Database Connectivity",
+  frequency: Frequency.EVERY_2M,
+  locations: [
+    "us-east-1", // N. Virginia
+    "eu-west-1", // Ireland
+    "ap-southeast-1", // Singapore
+  ],
+  request: {
+    hostname: "db.example.com",
+    port: 5432,
+  },
+})
+```
+
+</Tab>
+<Tab title="Regional Service">
+
+```ts
+// Regional service monitoring
+new TcpMonitor("eu-service", {
+  name: "European Service Monitor",
+  frequency: Frequency.EVERY_5M,
+  locations: ["eu-west-1", "eu-central-1"],
+  request: {
+    hostname: "db.example.com",
+    port: 5432,
+  },
+})
+```
+
+</Tab>
+</Tabs>
+
+**Use cases**: Global connectivity testing, regional service monitoring, network latency analysis.
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+Whether the TCP monitor is enabled and will run according to its schedule.
+
+Usage:
+```ts highlight={2}
+new TcpMonitor('my-monitor', {
+  activated: false // Disabled monitor
+})
+```
+
+Examples:
+```ts
+// Temporarily disable a monitor
+new TcpMonitor("maintenance-db", {
+  name: "Database Under Maintenance",
+  activated: false,
+  request: {
+    hostname: "maint-db.example.com",
+    port: 5432,
+  },
+})
+```
+</ResponseField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Database (PostgreSQL)">
+    ```ts
+    new TcpMonitor("postgres-check", {
+      name: "PostgreSQL Connection",
+      frequency: Frequency.EVERY_5M,
+      maxResponseTime: 5000,
+      degradedResponseTime: 2000,
+      tags: ["database", "postgres"],
+      request: {
+        hostname: "db.example.com",
+        port: 5432,
+        assertions: [TcpAssertionBuilder.responseTime().lessThan(1000)],
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="Redis Cache">
+    ```ts
+    new TcpMonitor("redis-check", {
+      name: "Redis Connectivity",
+      frequency: Frequency.EVERY_2M,
+      maxResponseTime: 2000,
+      degradedResponseTime: 1000,
+      tags: ["cache", "redis"],
+      request: {
+        hostname: "cache.example.com",
+        port: 6379,
+        data: "PING\r\n",
+        assertions: [
+          TcpAssertionBuilder.responseTime().lessThan(500),
+          TcpAssertionBuilder.responseData().contains("PONG"),
+        ],
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="SMTP Server">
+    ```ts
+    new TcpMonitor("smtp-check", {
+      name: "SMTP Server Check",
+      frequency: Frequency.EVERY_10M,
+      maxResponseTime: 10000,
+      degradedResponseTime: 5000,
+      tags: ["email", "smtp"],
+      request: {
+        hostname: "mail.example.com",
+        port: 587,
+        assertions: [
+          TcpAssertionBuilder.responseTime().lessThan(3000),
+          TcpAssertionBuilder.responseData().contains("220"),
+        ],
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="SSH Server">
+    ```ts
+    new TcpMonitor("ssh-check", {
+      name: "SSH Connectivity",
+      frequency: Frequency.EVERY_15M,
+      maxResponseTime: 5000,
+      degradedResponseTime: 2000,
+      tags: ["ssh", "server"],
+      request: {
+        hostname: "server.example.com",
+        port: 22,
+        assertions: [
+          TcpAssertionBuilder.responseTime().lessThan(1000),
+          TcpAssertionBuilder.responseData().contains("SSH"),
+        ],
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="Custom Application Port">
+    ```ts
+    new TcpMonitor("app-port-check", {
+      name: "Custom Application Port",
+      frequency: Frequency.EVERY_5M,
+      maxResponseTime: 3000,
+      degradedResponseTime: 1500,
+      tags: ["application", "custom-port"],
+      request: {
+        hostname: "app.example.com",
+        port: 8080,
+        data: "HEALTH\n",
+        assertions: [
+          TcpAssertionBuilder.responseTime().lessThan(1000),
+          TcpAssertionBuilder.responseData().contains("OK"),
+        ],
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="Connection Failure Test">
+    ```ts
+    new TcpMonitor("blocked-port-check", {
+      name: "Verify Port is Blocked",
+      frequency: Frequency.EVERY_30M,
+      maxResponseTime: 5000,
+      degradedResponseTime: 2000,
+      tags: ["security", "firewall"],
+      request: {
+        hostname: "secure.example.com",
+        port: 23, // Telnet port that should be blocked
+        assertions: [TcpAssertionBuilder.responseTime().lessThan(5000)],
+      },
+    })
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+When sending data to services, ensure you use proper protocol formatting. For example, Redis commands should end with `\r\n`.
+</Warning>

@@ -1,0 +1,33 @@
+---
+title: 'Enrich Axiom experience with AWS PrivateLink'
+description: 'This page explains how to enrich your Axiom experience with AWS PrivateLink.'
+sidebarTitle: AWS PrivateLink
+---
+
+[AWS PrivateLink](https://aws.amazon.com/privatelink/) is a networking service provided by Amazon Web Services (AWS) that allows you to securely access services hosted on the AWS cloud over a private network connection. With AWS PrivateLink, you can access Axiom directly from your AWS without an internet gateway or NAT device, simplifying your network setup.
+
+## Cross-region support
+
+The Axiom service is hosted in the `us-east-1` region. Axiom supports native cross-region PrivateLink for the following regions:
+
+US regions:
+- `us-east-2`
+- `us-west-1`
+- `us-west-2`
+
+EU regions:
+- `eu-west-1`
+- `eu-west-2`
+- `eu-west-3`
+- `eu-central-1`
+
+To connect to a region that isn’t listed above, [contact Axiom](https://axiom.co/contact).
+
+## Setup
+
+1. In your VPC Console, go to **PrivateLink and Lattice > Endpoints**, and then click **Create endpoint**.
+1. Select **PrivateLink ready partner services**, and then enter `com.amazonaws.vpce.us-east-1.vpce-svc-05a64735cdf68866b` as the service name.
+1. Under **Service Region**, turn on **Cross-region endpoint**, and then select the `us-east-1` region. This is the region where the Axiom service is hosted, and it’s independent of your VPC’s region.
+1. Click **Verify service**.
+1. Select the VPC and subnets that you want to connect to the Axiom VPC service endpoint. Ensure that **Enable DNS name** is turned on and the security group accepts inbound traffic on TCP port `443`.
+1. Finish the setup and wait for the VPC endpoint to become available. This usually takes 10 minutes.

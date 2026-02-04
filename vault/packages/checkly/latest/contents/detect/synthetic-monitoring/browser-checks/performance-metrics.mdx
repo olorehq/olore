@@ -1,0 +1,135 @@
+---
+title: Performance & Web Vitals
+description: 'Web Vitals for browser checks'
+sidebarTitle: 'Performance Metrics'
+---
+
+Checkly automatically collect Network Waterfalls & Performance signals (**Web Vitals**) for each of the pages you visit in the browser session.
+
+<Frame>
+      <img
+        className="block dark:hidden"
+        src="/images/next/browser-check-performance-results-light.png"
+        alt="Light mode interface"
+      />
+      <img
+        className="hidden dark:block"
+        src="/images/next/browser-check-performance-results-dark.png"
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+
+<Callout type="warning" emoji="⚠️">
+Checkly only collects tracing and web vitals data if your browser check meets the following criteria:
+- It is based on **Playwright**.
+- It runs on any **runtime above [2021.06](/cli/checkly-runtimes)**
+</Callout>
+
+
+## Network Waterfalls
+For each page you visit, we automatically collect the following:
+
+1. Any `error`, `warning` or `info` level console messages.
+2. Any network requests, like `xhr/fetch`, `javascript`, `css` and others.
+
+You can use this data to quickly find issues with the pages you visit. Use cases are:
+
+- Finding critical errors in your JavaScript by scanning the console logs.
+- Pinpoint missing images or other resources: they will show a `404` in the network tab.
+
+
+## Web Performance Vitals
+
+For each page your script visits, we automatically collect a set of five [Web Vitals](https://web.dev/learn-web-vitals/).
+Web Vitals are user focused quality signals for web pages that indicate a good, ok or poor user experience.
+
+<Accordion title="First Contentful Paint (FCP)" icon="paintbrush">
+**Initial Content Display**
+Measures the time from when the page starts loading to when any content is rendered. A large FCP means users see a white screen for too long, doubting whether the page works at all.
+
+[Read more about FCP over at web.dev](https://web.dev/fcp/)
+</Accordion>
+
+<Accordion title="Largest Contentful Paint (LCP)" icon="image">
+**Main Content Loading**
+Measures the time to render the largest visual item within the browser viewport. High LCP means users wait too long before the most useful part of your page loads.
+
+[Read more about LCP over at web.dev](https://web.dev/lcp/)
+</Accordion>
+
+<Accordion title="Cumulative Layout Shift (CLS)" icon="arrows-to-circle">
+**Visual Stability**
+An aggregate metric that signals screen elements "jumping around" as the page loads. Low CLS means you have a stable page layout.
+
+[Read more about CLS over at web.dev](https://web.dev/cls/)
+</Accordion>
+
+<Accordion title="Total Blocking Time (TBT)" icon="clock">
+**Main Thread Responsiveness**
+Reflects the time a web page is "blocked" from receiving user input because the main rendering thread is busy. High TBT means sluggish user interactions.
+
+[Read more about TBT over at web.dev](https://web.dev/tbt/)
+</Accordion>
+
+<Accordion title="Time to First Byte (TTFB)" icon="server">
+**Server Response Time**
+Indicates how long it took for your server to respond with the first byte of content. TTFB can vary based on location and network conditions.
+
+[Read more about TTFB over at web.dev](https://web.dev/time-to-first-byte/)
+</Accordion>
+
+<Callout type="info" emoji="💡">
+Web Vitals are a part [Google Lighthouse](https://developers.google.com/web/tools/lighthouse), but the two are not the same: Web Vitals are a lighter, higher-level tool built on existing browser APIs. Being less resource-intensive than Lighthouse, Web Vitals can be reliably calculated for you on cloud resources every minute.
+</Callout>
+
+### Why are some Web Vitals not reported?
+
+Checkly automatically instruments your Playwright code to collect Web Vitals metrics. However, in some cases we will not
+be able to collect a good measurement. There are multiple reasons for this:
+
+#### Route-Based Navigation
+
+A Single Page App like a React, Vue or Angular app only has one HTML page load event and then relies on route changes.
+The underlying [library we use for collecting Web Vitals](https://github.com/GoogleChrome/web-vitals) does not yet account for this.
+The folks over at Google are aware of this and [posted an FAQ](https://web.dev/vitals-spa-faq/).
+
+#### Insufficient Measurement Time
+
+Cumulative Layout Shift (CLS) relies on layout events accumulating over time. If your script exits very fast, or triggers
+a redirect, there might not be enough time to actually "catch" this metric.
+
+#### User Interaction Needed
+
+Some metrics require a small amount of interaction to effectively "trigger". Clicking a button or other screen element
+in your Playwright script can help here.
+
+
+<Callout type="tip" emoji="🔄">
+We are constantly tweaking and updating our Web Vitals collection code, so expect improvements in the future!
+</Callout>
+
+### Lab metrics vs. Field metrics
+
+Checkly collects "lab" metrics for you. These are different from "field" metrics.
+
+<Columns cols={2}>
+<Card title="Lab Metrics" icon="flask">
+**Controlled Environment**
+- Collected in synthetic environments
+- Generated by your Browser check scripts
+- Useful for establishing baselines
+- Helps identify performance regressions
+- Perfect for pre-deployment testing
+</Card>
+
+<Card title="Field Metrics" icon="users">
+**Real User Monitoring (RUM)**
+- Based on real user traffic
+- Collected "in the wild"
+- Varies by device, location, network
+- Provides actual user experience data
+- Essential for production monitoring
+</Card>
+</Columns>
+

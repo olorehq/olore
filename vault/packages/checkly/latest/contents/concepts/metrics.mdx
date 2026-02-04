@@ -1,0 +1,432 @@
+---
+title: 'Metrics'
+sidebarTitle: 'Metrics'
+description: 'Understanding the performance and reliability metrics tracked across all Checkly check types'
+---
+
+Checkly tracks a comprehensive set of metrics across all check types to provide insights into the performance, reliability, and user experience of your applications and services. This page explains each metric, what it measures, and which check types support it.
+
+## Response Time Metrics
+
+Response time metrics measure how quickly your services respond to requests, providing crucial insights into performance and user experience.
+
+### Average Response Time
+
+**What it measures:** The arithmetic mean response time across all check executions within the selected time period.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Establishing performance baselines
+- Detecting performance degradation trends
+- Comparing performance across different time periods
+- Setting SLA thresholds
+</Accordion>
+
+### 95th Percentile Response Time (P95)
+
+**What it measures:** The response time value below which 95% of all requests fall. This metric filters out the slowest 5% of requests to give you a more realistic view of typical user experience.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- SLA monitoring and compliance
+- Performance budgeting
+- Capacity planning
+- Identifying performance outliers
+</Accordion>
+
+### 99th Percentile Response Time (P99)
+
+**What it measures:** The response time value below which 99% of all requests fall. This metric helps identify the worst-case performance experienced by users.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Understanding worst-case user experience
+- Setting performance alerts for edge cases
+- Optimizing for the most demanding scenarios
+</Accordion>
+
+### Median Response Time (P50)
+
+**What it measures:** The middle value of all response times when sorted from fastest to slowest. Half of all requests complete faster than this time, and half complete slower.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Understanding typical user experience
+- Baseline performance monitoring
+- Comparing with average response time to identify skewed distributions
+- Performance trend analysis
+</Accordion>
+
+### Minimum Response Time
+
+**What it measures:** The fastest response time recorded during the selected time period.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Understanding best-case performance
+- Capacity planning for optimal conditions
+- Performance optimization validation
+- Network latency analysis
+</Accordion>
+
+### Maximum Response Time
+
+**What it measures:** The slowest response time recorded during the selected time period.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Identifying performance spikes
+- Troubleshooting worst-case scenarios
+- Setting timeout thresholds
+- Performance regression detection
+</Accordion>
+
+## Success Rate Metrics
+
+Success rate metrics measure the reliability and availability of your services.
+
+### Success Rate
+
+**What it measures:** The percentage of check executions that completed successfully according to the defined success criteria (e.g., HTTP 2xx status codes, successful script execution).
+
+**Unit:** Percentage (0-100%)  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- SLA compliance monitoring
+- Service reliability tracking
+- Availability reporting
+- Alerting on service degradation
+</Accordion>
+
+### Error Rate
+
+**What it measures:** The percentage of check executions that failed to meet the defined success criteria.
+
+**Unit:** Percentage (0-100%)  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Error monitoring and alerting
+- Quality assurance
+- Incident detection
+- Performance troubleshooting
+</Accordion>
+
+### Total Requests
+
+**What it measures:** The total number of check executions performed during the selected time period.
+
+**Unit:** Count  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Volume analysis and capacity planning
+- Understanding check execution frequency
+- Billing and usage tracking
+- Performance correlation analysis
+</Accordion>
+
+### Successful Requests
+
+**What it measures:** The total number of check executions that completed successfully according to the defined success criteria.
+
+**Unit:** Count  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Availability reporting
+- SLA compliance tracking
+- Performance analysis
+- Success trend monitoring
+</Accordion>
+
+### Failed Requests
+
+**What it measures:** The total number of check executions that failed to meet the defined success criteria.
+
+**Unit:** Count  
+**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+
+<Accordion title="Use cases">
+- Error analysis and troubleshooting
+- Incident detection and response
+- Quality assurance metrics
+- Failure pattern identification
+</Accordion>
+
+## Core Web Vitals (Browser-Specific)
+
+Core Web Vitals are a set of metrics defined by Google that measure real-world user experience for loading performance, interactivity, and visual stability.
+
+### First Contentful Paint (FCP)
+
+**What it measures:** The time from when the page starts loading to when any part of the page's content is rendered on the screen.
+
+**Unit:** Seconds  
+**Precision:** 3 decimal places  
+**Available for:** Browser, Multistep checks only
+
+**Google's thresholds:**
+- Good: d 1.8 seconds
+- Needs improvement: 1.8 - 3.0 seconds
+- Poor: > 3.0 seconds
+
+### Largest Contentful Paint (LCP)
+
+**What it measures:** The time from when the page starts loading to when the largest text block or image element is rendered.
+
+**Unit:** Seconds  
+**Precision:** 3 decimal places  
+**Available for:** Browser, Multistep checks only
+
+**Google's thresholds:**
+- Good: ≤ 2.5 seconds
+- Needs improvement: 2.5 - 4.0 seconds
+- Poor: > 4.0 seconds
+
+### Cumulative Layout Shift (CLS)
+
+**What it measures:** A measure of how much visible content shifts during the loading process. Lower scores indicate better visual stability.
+
+**Unit:** Score (0-1+)  
+**Precision:** 4 decimal places  
+**Available for:** Browser, Multistep checks only
+
+**Google's thresholds:**
+- Good: ≤ 0.1
+- Needs improvement: 0.1 - 0.25
+- Poor: > 0.25
+
+### First Input Delay (FID)
+
+**What it measures:** The time from when a user first interacts with your page (clicks a link, taps a button, etc.) to the time when the browser actually responds to that interaction.
+
+**Unit:** Milliseconds  
+**Precision:** 1 decimal place  
+**Available for:** Browser, Multistep checks only
+
+**Google's thresholds:**
+- Good: ≤ 100 milliseconds
+- Needs improvement: 100 - 300 milliseconds
+- Poor: > 300 milliseconds
+
+<Accordion title="Use cases">
+- Measuring interactivity responsiveness
+- Optimizing JavaScript execution timing
+- Improving user experience for interactive elements
+- Performance budgeting for user interactions
+</Accordion>
+
+### Time to Interactive (TTI)
+
+**What it measures:** The time from when the page starts loading to when it's visually rendered, its initial scripts have loaded, and it's capable of reliably responding to user input quickly.
+
+**Unit:** Seconds  
+**Precision:** 3 decimal places  
+**Available for:** Browser, Multistep checks only
+
+<Accordion title="Use cases">
+- Measuring page interactivity readiness
+- Optimizing JavaScript loading and execution
+- Improving user experience for dynamic content
+- Performance budgeting for interactive features
+</Accordion>
+
+## Browser-Specific Performance Metrics
+
+Additional performance metrics specific to browser and multistep checks that provide insights into page loading and user experience.
+
+### Average Page Load Time
+
+**What it measures:** The total time required for a web page to fully load, including all resources like images, scripts, and stylesheets.
+
+**Unit:** Seconds  
+**Precision:** 2 decimal places  
+**Available for:** Browser, Multistep checks only
+
+<Accordion title="Use cases">
+- Overall page performance monitoring
+- User experience optimization
+- Performance benchmarking
+- Load testing correlation
+</Accordion>
+
+### Average Script Duration
+
+**What it measures:** The total time taken to execute all JavaScript code during a browser check, including user-defined scripts and page interactions.
+
+**Unit:** Seconds  
+**Precision:** 2 decimal places  
+**Available for:** Browser, Multistep checks only
+
+<Accordion title="Use cases">
+- Script performance optimization
+- Execution time monitoring
+- Automation efficiency tracking
+- Performance regression detection
+</Accordion>
+
+### Performance Score
+
+**What it measures:** An overall performance rating (0-100) calculated based on various performance metrics including Core Web Vitals and page load characteristics.
+
+**Unit:** Score (0-100)  
+**Precision:** 1 decimal place  
+**Available for:** Browser, Multistep checks only
+
+<Accordion title="Use cases">
+- Overall performance assessment
+- Performance comparison across time periods
+- Performance goal setting and tracking
+- Quality gate decisions
+</Accordion>
+
+## Heartbeat-Specific Metrics
+
+These metrics are specific to heartbeat checks, which monitor the availability and consistency of scheduled processes or services.
+
+### Uptime Percentage
+
+**What it measures:** The percentage of time that expected heartbeat signals were received within the configured time windows.
+
+**Unit:** Percentage (0-100%)  
+**Precision:** 3 decimal places  
+**Available for:** Heartbeat checks only
+
+<Accordion title="Use cases">
+- Service availability monitoring
+- SLA compliance for batch processes
+- Monitoring scheduled jobs and cron tasks
+</Accordion>
+
+### Missed Heartbeats
+
+**What it measures:** The total count of expected heartbeat signals that were not received within the configured grace period.
+
+**Unit:** Count  
+**Available for:** Heartbeat checks only
+
+<Accordion title="Use cases">
+- Failure detection
+- Alerting on missed scheduled processes
+- Tracking reliability of automated systems
+</Accordion>
+
+### Average Heartbeat Interval
+
+**What it measures:** The average time between received heartbeat signals during the selected time period.
+
+**Unit:** Seconds  
+**Precision:** 2 decimal places  
+**Available for:** Heartbeat checks only
+
+<Accordion title="Use cases">
+- Monitoring heartbeat consistency
+- Analyzing scheduled job patterns
+- Detecting irregular execution intervals
+- Performance optimization of scheduled processes
+</Accordion>
+
+### Longest Gap
+
+**What it measures:** The longest continuous period without receiving an expected heartbeat signal.
+
+**Unit:** Seconds  
+**Precision:** 2 decimal places  
+**Available for:** Heartbeat checks only
+
+<Accordion title="Use cases">
+- Identifying longest service outages
+- Understanding worst-case availability gaps
+- Setting appropriate alerting thresholds
+- Incident analysis and postmortem data
+</Accordion>
+
+### Heartbeat Consistency Score
+
+**What it measures:** A score (0-100) representing how consistently heartbeat signals are received at their expected intervals.
+
+**Unit:** Score (0-100)  
+**Precision:** 1 decimal place  
+**Available for:** Heartbeat checks only
+
+<Accordion title="Use cases">
+- Measuring scheduled process reliability
+- Comparing consistency across different services
+- Quality assessment of automated systems
+- Setting performance benchmarks
+</Accordion>
+
+## Additional Metrics by Check Type
+
+### TCP Connection Time
+
+**What it measures:** The time required to establish a TCP connection to the target host and port.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** TCP checks only
+
+<Accordion title="Use cases">
+- Network connectivity monitoring
+- Port availability testing
+- Network latency analysis
+- Infrastructure health monitoring
+</Accordion>
+
+### DNS Resolution Time
+
+**What it measures:** The time required to resolve the hostname to an IP address via DNS lookup.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, URL, TCP checks (when hostname is used)
+
+<Accordion title="Use cases">
+- DNS performance monitoring
+- Network troubleshooting
+- Infrastructure optimization
+- Geographic performance analysis
+</Accordion>
+
+### SSL Handshake Time
+
+**What it measures:** The time required to complete the SSL/TLS handshake process for secure connections.
+
+**Unit:** Milliseconds  
+**Precision:** 2 decimal places  
+**Available for:** API, Browser, URL checks (HTTPS only)
+
+<Accordion title="Use cases">
+- SSL/TLS performance monitoring
+- Certificate validation timing
+- Security overhead analysis
+- HTTPS optimization
+</Accordion>
+
+---
+
+<Note>
+For complete metric definitions and API response formats, see the [Analytics API Reference](/api-reference/analytics/metrics).
+</Note>

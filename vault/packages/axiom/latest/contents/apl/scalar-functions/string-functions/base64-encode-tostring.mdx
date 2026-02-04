@@ -1,0 +1,150 @@
+---
+title: 'base64_encode_tostring'
+description: 'This page explains how to use the base64_encode_tostring function in APL.'
+---
+
+The `base64_encode_tostring` function encodes a string into Base64 format. Use this function when you need to encode data for transmission or storage in systems that only support text-based formats, such as APIs, configuration files, or log analysis pipelines.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you might not have a built-in Base64 encoding function and would typically rely on external scripts or commands. In APL, `base64_encode_tostring` provides native Base64 encoding directly in your queries.
+
+<CodeGroup>
+```sql Splunk example
+| eval encoded=base64encode(field_name)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend encoded = base64_encode_tostring(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, Base64 encoding typically requires database-specific functions like `TO_BASE64()` in MySQL or custom functions. APL provides `base64_encode_tostring` as a standard function.
+
+<CodeGroup>
+```sql SQL example
+SELECT TO_BASE64(field_name) AS encoded FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend encoded = base64_encode_tostring(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+base64_encode_tostring(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The input string to be encoded as Base64. |
+
+### Returns
+
+Returns the input string encoded as a Base64 string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Encode HTTP content types for secure transmission or storage in Base64 format.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend encoded_content_type = base64_encode_tostring(content_type)
+| project _time, content_type, encoded_content_type
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20encoded_content_type%20%3D%20base64_encode_tostring(content_type)%20%7C%20project%20_time%2C%20content_type%2C%20encoded_content_type%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | content_type | encoded_content_type |
+|-------|--------------|---------------------|
+| 2024-11-06T10:00:00Z | application/json | YXBwbGljYXRpb24vanNvbg== |
+| 2024-11-06T10:01:00Z | text/html | dGV4dC9odG1s |
+
+This query encodes the content type of each HTTP request into Base64 format, which is useful when you need to pass content types through systems that have character restrictions.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Encode service names in traces for compatibility with external systems.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend encoded_service = base64_encode_tostring(['service.name'])
+| project _time, ['service.name'], encoded_service, trace_id
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20encoded_service%20%3D%20base64_encode_tostring(%5B%27service.name%27%5D)%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20encoded_service%2C%20trace_id%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service.name | encoded_service | trace_id |
+|-------|--------------|-----------------|----------|
+| 2024-11-06T10:00:00Z | frontend | ZnJvbnRlbmQ= | abc123 |
+| 2024-11-06T10:01:00Z | checkout | Y2hlY2tvdXQ= | def456 |
+
+This query encodes service names into Base64 format, which can be useful when transmitting trace metadata to systems with specific encoding requirements.
+
+</Tab>
+<Tab title="Security logs">
+
+Encode user IDs or sensitive identifiers in security logs for obfuscation or transmission.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend encoded_id = base64_encode_tostring(id)
+| project _time, id, encoded_id, status, uri
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20encoded_id%20%3D%20base64_encode_tostring(id)%20%7C%20project%20_time%2C%20id%2C%20encoded_id%2C%20status%2C%20uri%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | id | encoded_id | status | uri |
+|-------|----|-----------| -------|-----|
+| 2024-11-06T10:00:00Z | user123 | dXNlcjEyMw== | 401 | /api/login |
+| 2024-11-06T10:01:00Z | user456 | dXNlcjQ1Ng== | 403 | /admin |
+
+This query encodes user IDs from failed authentication attempts into Base64 format, which can be useful for secure log transmission or when integrating with systems that require encoded identifiers.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [base64_decode_tostring](/apl/scalar-functions/string-functions/base64-decode-tostring): Decodes a Base64-encoded string back to its original UTF-8 format. Use this when you need to reverse the encoding operation.
+- [base64_encode_fromarray](/apl/scalar-functions/string-functions/base64-encode-fromarray): Encodes an array of bytes into a Base64 string. Use this when working with binary data rather than text strings.
+- [base64_decode_toarray](/apl/scalar-functions/string-functions/base64-decode-toarray): Decodes a Base64 string into an array of bytes. Use this when you need to work with the raw binary representation.
+- [url_encode](/apl/scalar-functions/string-functions/url-encode): Encodes a URL string for safe transmission. Use this when working with URLs rather than general text encoding.

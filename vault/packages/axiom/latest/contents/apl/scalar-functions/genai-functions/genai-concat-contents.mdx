@@ -1,0 +1,99 @@
+---
+title: 'genai_concat_contents'
+description: 'This page explains how to use the genai_concat_contents function in APL.'
+---
+
+The `genai_concat_contents` function concatenates all message contents from a GenAI conversation array into a single string. This is useful when you need to combine multiple conversation messages into a single text field for analysis, full-text search, or creating a complete conversation transcript.
+
+You can use this function to create searchable conversation transcripts, prepare data for analysis, or consolidate conversation history for reporting.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would typically use multiple `eval` commands with `mvjoin` to concatenate array values, but there’s no direct equivalent for extracting and joining message contents from nested structures.
+
+<CodeGroup>
+```sql Splunk example
+| eval all_content=mvjoin(messages, " ")
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend all_content = genai_concat_contents(messages, ' ')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need to unnest the array and use `STRING_AGG` or similar functions to concatenate values, which is more verbose.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  STRING_AGG(content, ' ') as all_content
+FROM conversations
+CROSS JOIN UNNEST(messages) as msg
+GROUP BY conversation_id
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend all_content = genai_concat_contents(messages, ' ')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_concat_contents(messages, separator)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains a `role` and `content` field. |
+| separator | string | No | The string used to separate message contents. Default is a space character (`' '`). |
+
+### Returns
+
+Returns a string containing all message contents concatenated together with the specified separator.
+
+## Example
+
+Create a searchable conversation transcript from a GenAI conversation array.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend conversation_text = genai_concat_contents(['attributes.gen_ai.input.messages'], ' / ')
+```
+
+**Output**
+
+| conversation_text |
+|-------------------|
+| "Hello, how are you? / I'm good, thank you! / What's your name? / My name is John. / What's your favorite color? / My favorite color is blue. /" |
+
+This query concatenates the message contents of a GenAI conversation array with a separator of `/`.
+
+## List of related functions
+
+- [genai_extract_user_prompt](/apl/scalar-functions/genai-functions/genai-extract-user-prompt): Extracts only the user's prompt instead of all messages. Use this when you need just the user's input.
+- [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response): Extracts only the assistant's response. Use this when you need just the AI's output.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content filtered by a specific role. Use this when you need messages from a particular role like 'system' or 'tool'.
+- [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles): Extracts all message roles from a conversation. Use this to understand the conversation structure.
+- [strcat_array](/apl/scalar-functions/array-functions/strcat-array): Concatenates a simple string array. Use this for non-GenAI arrays that don't have the message structure.
+

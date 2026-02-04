@@ -1,0 +1,356 @@
+---
+title: 'Multistep Check Construct'
+description: 'Learn how to configure multistep checks with the Checkly CLI.'
+sidebarTitle: 'Multistep Check'
+---
+
+<Tip>
+Learn more about Multistep Checks in [the Multistep Checks overview](/detect/synthetic-monitoring/multistep-checks/overview).
+</Tip>
+
+Use Multistep Checks to run complex end-to-end workflows with Playwright that span multiple endpoints. The examples below show how to configure Multistep Checks for different testing scenarios.
+
+<Accordion title="Prerequisites">
+Before creating Multistep Checks, ensure you have:
+
+- An initialized Checkly CLI project
+- Public endpoints you want to monitor
+- Runtime `2023.09` or later (Multistep Checks require [newer runtimes](platform/runtimes/runtime-specification))
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { MultiStepCheck } from "checkly/constructs"
+import * as path from "path"
+
+new MultiStepCheck("multistep-check-1", {
+  name: "Multistep Check #1",
+  locations: ["us-east-1", "eu-west-1"],
+  code: {
+    entrypoint: path.join(__dirname, "multi-step.spec.ts"),
+  },
+})
+```
+
+```ts Advanced Example
+import { MultiStepCheck, Frequency } from "checkly/constructs"
+import * as path from "path"
+
+new MultiStepCheck("complex-multistep-check", {
+  name: "Complex User Journey",
+  activated: true,
+  runtimeId: "2025.04",
+  frequency: Frequency.EVERY_15M,
+  locations: ["us-east-1", "eu-west-1"],
+  tags: ["e2e", "user-journey", "critical"],
+  environmentVariables: [
+    { key: "BASE_URL", value: "https://app.example.com" },
+    { key: "TEST_USER_EMAIL", value: "test@example.com" },
+    { key: "TEST_USER_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+  code: {
+    entrypoint: path.join(__dirname, "user-journey.spec.ts"),
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+<Tabs>
+<Tab title="Multistep Check">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `code` | `object` | ✅ | - | The Playwright test code |
+
+</Tab>
+<Tab title="General Check">
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Friendly name for your check |
+| `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
+| `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
+| `environmentVariables` | `object[]` | ❌ | `[]` | Check-level environment variables |
+| `frequency` | `Frequency` | ❌ | - | How often to run your check |
+| `group` | `CheckGroup` | ❌ | - | The CheckGroup this check belongs to |
+| `locations` | `string[]` | ❌ | `[]` | Array of public location codes |
+| `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
+| `runtimeId` | `string` | ❌ | - | The ID of the runtime to use (2023.09 or later required) |
+| `privateLocations` | `string[]` | ❌ | `[]` | Array of Private Location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configuring retries |
+| `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
+| `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
+| `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+
+</Tab>
+</Tabs>
+
+### Multistep Check Options
+
+<ResponseField name="code" type="object" required>
+The Playwright test code that defines your Multistep Check monitor.
+
+**Usage:**
+
+```ts
+// Using file reference
+code: {
+  entrypoint: path.join(__dirname, "user-journey.spec.ts")
+}
+
+// Using inline content
+code: {
+  content: `
+    import { test, expect } from "@playwright/test"
+
+    test("complete workflow", async ({ request }) => {
+      // Multistep logic here
+    })
+  `
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entrypoint` | `string` | ❌ | Path to a `.spec.js` or `.spec.ts` file containing the Playwright test |
+| `content` | `string` | ❌ | Inline JavaScript/TypeScript code as a string |
+
+<Info>
+You must provide either `entrypoint` or `content`, but not both.
+</Info>
+
+**Examples:**
+
+<Tabs>
+<Tab title="CRUD API">
+
+```ts
+new MultiStepCheck("onboarding-flow", {
+  name: "Complete User Onboarding",
+  runtimeId: "2025.04",
+  code: {
+    entrypoint: path.join(__dirname, "group.spec.ts")
+  }
+})
+
+// group.spec.ts
+import { test, expect } from "@playwright/test"
+
+const baseUrl = "https://api.checklyhq.com/v1"
+
+const headers = {
+  Authorization: `Bearer ${process.env.API_KEY}`,
+  "x-checkly-account": process.env.ACCOUNT_ID,
+}
+
+test("Verify Group API", async ({ request }) => {
+  /**
+   * Create a group
+   */
+  const group = await test.step("POST /check-groups", async () => {
+    const response = await request.post(`${baseUrl}/check-groups/`, {
+      data: {
+        locations: ["eu-west-1"],
+        name: "createdViaApiCheck",
+      },
+      headers,
+    })
+    expect(response).toBeOK()
+
+    return response.json()
+  })
+
+  /**
+   * Get the newly created group
+   */
+  await test.step("GET /check-groups/{id}", async () => {
+    const response = await request.get(`${baseUrl}/check-groups/${group.id}`, {
+      headers,
+    })
+    expect(response).toBeOK()
+
+    const receivedGroup = await response.json()
+    expect(receivedGroup.id).toEqual(group.id)
+  })
+
+  /**
+   * Update the new group
+   */
+  await test.step("PUT /check-groups/{id}", async () => {
+    const response = await request.put(`${baseUrl}/check-groups/${group.id}`, {
+      data: {
+        tags: ["public-api", "added-by-check"],
+      },
+      headers,
+    })
+    expect(response).toBeOK()
+  })
+
+  /**
+   * Delete the new group
+   */
+  await test.step("DELETE /check-group/{id}", async () => {
+    const response = await request.delete(
+      `${baseUrl}/check-groups/${group.id}`,
+      { headers },
+    )
+    expect(response).toBeOK()
+  })
+})
+```
+
+</Tab>
+<Tab title="Degraded state">
+
+```ts
+new MultiStepCheck("degraded-example", {
+  name: "Degraded Example",
+  runtimeId: "2025.04",
+  code: {
+    entrypoint: path.join(__dirname, "degraded.spec.ts")
+  },
+})
+
+// degraded.spec.ts
+import { test, expect } from "@playwright/test"
+import { getAPIResponseTime, markCheckAsDegraded } from "@checkly/playwright-helpers"
+
+const baseUrl = "https://api.spacexdata.com/v3"
+
+test("SpaceX-API Dragon Capsules & Next Launch", async ({ request }) => {
+  await test.step("get all capsules", async () => {
+    const response = await request.get(`${baseUrl}/dragons`)
+
+    // Check 200 status code
+    expect(response).toBeOK()
+
+    // Check degraded status
+    expect.soft(getAPIResponseTime(response), 'GET /dragons too slow').toBeLessThanOrEqual(200)
+
+    return response.json()
+  })
+
+  // Trigger degraded state if check failed due to soft assertion
+  if (test.info().errors.length) {
+    markCheckAsDegraded('Check degraded due to soft assertion failure.')
+  }
+})
+```
+
+</Tab>
+</Tabs>
+
+**Use cases**: Complex API journeys, end-to-end API workflows, business process validation.
+</ResponseField>
+
+### General Check Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your multistep check that will be displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+```ts highlight={2}
+new MultiStepCheck("my-multistep", {
+  name: "Complete User Journey Test"
+})
+```
+
+</ResponseField>
+
+<ResponseField name="runtimeId" type="string">
+The ID of the runtime to use for executing the multistep check. Required to be `2023.09` or later for multistep check support.
+
+Usage:
+```ts highlight={3}
+new MultiStepCheck("my-multistep", {
+  name: 'My Multistep Check',
+  runtimeId: "2025.04" // Use latest runtime for best performance
+  /* More options... */
+})
+```
+
+<Warning>
+Multistep checks require runtime `2023.09` or later. Earlier runtimes do not support multistep functionality.
+</Warning>
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the multistep check should run. Use the `Frequency` enum to set the check interval.
+
+Usage:
+```ts highlight={5}
+import { Frequency } from 'checkly/constructs'
+
+new MultiStepCheck("my-multistep", {
+  name: "My Multistep Check",
+  frequency: Frequency.EVERY_15M,
+  /* More options... */
+})
+```
+
+**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of public location codes where the multistep check should run. Multiple locations provide geographic coverage and user experience insights.
+
+Usage:
+```ts highlight={3}
+new MultiStepCheck("global-check", {
+  name: "Global Multistep Check",
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-1"]
+  /* More options... */
+})
+```
+
+Examples:
+
+<Tabs>
+<Tab title="Global User Experience">
+
+```ts
+// Worldwide API testing
+new MultiStepCheck("global-journey", {
+  name: "Global API Journey",
+  locations: [
+    "us-east-1",      // N. Virginia
+    "us-west-1",      // N. California
+    "eu-west-1",      // Ireland
+    "ap-southeast-1", // Singapore
+    "ap-northeast-1"  // Tokyo
+  ],
+  /* More options... */
+})
+```
+
+</Tab>
+<Tab title="Regional Focus">
+
+```ts
+// European user focus
+new MultiStepCheck("eu-workflow", {
+  name: "European API Journey",
+  locations: ["eu-west-1", "eu-central-1"],
+  /* More options... */
+})
+```
+
+</Tab>
+</Tabs>
+
+**Use cases**: Global API monitoring, regional API testing, geographic compliance validation.
+</ResponseField>
+
+<Warning>
+Multistep checks are only supported on runtime `2023.09` or later. Make sure to specify a compatible `runtimeId` in your check configuration.
+</Warning>

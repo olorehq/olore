@@ -1,0 +1,27 @@
+---
+title: 'Set statement'
+description: 'The set statement is used to set a query option in your APL query.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'set statement', 'strict types']
+---
+
+The `set` statement is used to set a query option. Options enabled with the `set` statement only have effect for the duration of the query.
+
+The `set` statement affects how your query is processed and the returned results.
+
+## Syntax 
+
+```kusto
+set OptionName=OptionValue
+```
+
+## Strict types
+
+The `stricttypes` query option lets you specify only the exact type of the data type declaration needed in your query. Otherwise, it throws a **QueryFailed** error.
+
+## Example 
+
+```kusto
+set stricttypes; 
+['Dataset'] 
+| where number == 5
+```

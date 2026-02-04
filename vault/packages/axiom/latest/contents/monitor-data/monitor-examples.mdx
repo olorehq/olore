@@ -1,0 +1,70 @@
+---
+title: 'Monitor examples'
+description: 'This page presents example monitor configurations for some common alerting use cases.'
+sidebarTitle: Examples
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+## Notify on all occurrences of error
+
+To receive a notification on all occurrences of an error, create a match monitor where the filter conditions match the events reporting the error.
+
+To receive only certain attributes in the notification message, use the `project` operator.
+
+## Notify when error rate above threshold
+
+To receive a notification when the error rate exceeds a threshold, [create a threshold monitor](/monitor-data/threshold-monitors) with an APL query that identifies the rate of error messages.
+
+For example, logs in your dataset `['sample_dataset']` have a `status.code` attribute that takes the value `ERROR` when a log is about an error. In this case, the following example query tracks the error rate every minute:
+
+``` apl
+['sample_dataset']
+| extend is_error = case(['status.code'] == 'ERROR', 1, 0)
+| summarize avg(error) by bin(_time, 1m)
+```
+
+Other options:
+- To trigger the monitor when the error rate is above or equal to 0.01, set the threshold value to 0.01 and the comparison operator to `above or equal`.
+- To run the monitor every 5 minutes, set the frequency to 5.
+- To keep the monitor in the alert state until 10 minutes have passed with the per-minute error rate remaining below your threshold value, set the range to 10.
+
+## Notify when number of error messages above threshold
+
+To receive a notification when the number of error message of a given type exceeds a threshold, create a threshold monitor with an APL query that counts the different error messages.
+
+For example, logs in your dataset `['sample_dataset']` have a `error.message` attribute. In this case, the following example query counts errors by type every 5 minutes:
+
+``` apl
+['sample_dataset']
+| summarize count() by ['error.message'], bin(_time, 5m)
+```
+
+Other options:
+- To trigger the monitor when the count is above or equal to 10 for any individual message type, set the threshold to 10 and the comparison operator to **above or equal**.
+- To run the monitor every 5 minutes, set the frequency to 5.
+- To run the monitor the query with a range of 10 minutes, set the range to 10.
+
+By default, the monitor enters the alert state when any of the counts returned by the query cross the threshold, and remains in the alert state until no counts cross the threshold. To alert separately for each message value instead, enable **Notify by group**.
+
+## Notify when response times spike
+
+To receive a notification whenever your response times spike without having to rely on a single threshold, [create an anomaly monitor](/monitor-data/anomaly-monitors) with an APL query that tracks your median response time.
+
+For example, you have a dataset `['my_traces']` of trace data with the following:
+- Route information is in the `route` field.
+- Duration information is in the `duration` field.
+- For top-level spans, the `parent_span_id` field is empty.
+
+The following query gives median response times by route in one-minute intervals:
+
+``` apl
+['my_traces'] 
+| where isempty(parent_span_id)
+| summarize percentile(duration, 50) by ['route'], bin(_time, 1m)
+```
+
+Other options:
+- To only trigger the monitor when response times are unusually high for a route, set the comparison operator to **above**.
+- To run the monitor every 5 minutes, set the frequency to 5.
+- To consider the previous 30 minutes of data when determining what sort of variation is expected for median response times for a route, set the range to 30.
+- To notify separately for each route, enable **Notify by group**.

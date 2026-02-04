@@ -1,0 +1,156 @@
+---
+title: 'strrep'
+description: 'This page explains how to use the strrep function in APL.'
+---
+
+The `strrep` function repeats a string a specified number of times with an optional delimiter. Use this function to generate test data, create patterns for matching, or build formatted strings with repeated elements.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, repeating strings typically requires custom functions or loops. APL's `strrep` provides this functionality natively.
+
+<CodeGroup>
+```sql Splunk example
+| eval repeated=mvjoin(mvappend("text","text","text"), "")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend repeated = strrep('text', 3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `REPEAT` or `REPLICATE` depending on the database. APL's `strrep` provides standardized string repetition.
+
+<CodeGroup>
+```sql SQL example
+SELECT REPEAT('text', 3) AS repeated FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend repeated = strrep('text', 3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strrep(value, multiplier, delimiter)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The string to repeat. |
+| multiplier | int | Yes | Number of repetitions (1 to 1024). Values over 1024 are capped at 1024. |
+| delimiter | string | No | Optional delimiter between repetitions (default: empty string). |
+
+### Returns
+
+Returns the string repeated the specified number of times with optional delimiters between repetitions.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Create visual separators or formatting patterns for log output visualization.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend separator = strrep('=', 50)
+| extend formatted_log = strcat(separator, '\n', method, ' ', uri, ' ', status, '\n', separator)
+| project _time, formatted_log
+| limit 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20separator%20%3D%20strrep(%27%3D%27%2C%2050)%20%7C%20extend%20formatted_log%20%3D%20strcat(separator%2C%20%27%5Cn%27%2C%20method%2C%20%27%20%27%2C%20uri%2C%20%27%20%27%2C%20status%2C%20%27%5Cn%27%2C%20separator)%20%7C%20project%20_time%2C%20formatted_log%20%7C%20limit%205%22%7D)
+
+**Output**
+
+| _time | formatted_log |
+|-------|---------------|
+| 2024-11-06T10:00:00Z | ================================================== GET /api/users 200 ================================================== |
+
+This query creates visual separators using repeated equal signs, making log output more readable and organized.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Generate indentation patterns based on trace depth for hierarchical visualization.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend simulated_depth = 3
+| extend indentation = strrep('  ', simulated_depth)
+| extend formatted_span = strcat(indentation, ['service.name'], ': ', kind)
+| project _time, formatted_span, trace_id
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20simulated_depth%20%3D%203%20%7C%20extend%20indentation%20%3D%20strrep(%27%20%20%27%2C%20simulated_depth)%20%7C%20extend%20formatted_span%20%3D%20strcat(indentation%2C%20%5B%27service.name%27%5D%2C%20%27%3A%20%27%2C%20kind)%20%7C%20project%20_time%2C%20formatted_span%2C%20trace_id%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | formatted_span | trace_id |
+|-------|----------------|----------|
+| 2024-11-06T10:00:00Z | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frontend: server | abc123 |
+| 2024-11-06T10:01:00Z | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;checkout: client | def456 |
+
+This query creates hierarchical indentation for trace visualization by repeating spaces based on simulated span depth.
+
+</Tab>
+<Tab title="Security logs">
+
+Generate test patterns for attack signature detection or create anonymization masks.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend id_length = strlen(id)
+| extend anonymized_id = strcat(substring(id, 0, 3), strrep('*', id_length - 6), substring(id, id_length - 3, 3))
+| project _time, id, anonymized_id, status, uri
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20id_length%20%3D%20strlen(id)%20%7C%20extend%20anonymized_id%20%3D%20strcat(substring(id%2C%200%2C%203)%2C%20strrep('*'%2C%20id_length%20-%206)%2C%20substring(id%2C%20id_length%20-%203%2C%203))%20%7C%20project%20_time%2C%20id%2C%20anonymized_id%2C%20status%2C%20uri%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | id | anonymized_id | status | uri |
+|-------|----|--------------| --------|-----|
+| 2024-11-06T10:00:00Z | user123456 | use****456 | 403 | /admin |
+| 2024-11-06T10:01:00Z | admin12345 | adm***345 | 401 | /api |
+
+This query creates anonymized user IDs by replacing middle characters with repeated asterisks, maintaining partial visibility for analysis while protecting privacy.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this with strrep to build complex repeated patterns.
+- [strcat_delim](/apl/scalar-functions/string-functions/strcat-delim): Concatenates strings with delimiters. Use strrep's delimiter parameter as an alternative for repeated patterns.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns string length. Use this to calculate how many repetitions you need.
+- [substring](/apl/scalar-functions/string-functions/substring): Extracts parts of strings. Use this with strrep for complex pattern building.
+

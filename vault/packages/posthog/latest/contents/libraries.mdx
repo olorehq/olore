@@ -1,0 +1,22 @@
+---
+title: PostHog SDK comparison
+sidebarTitle: Libraries
+sidebar: Docs
+showTitle: true
+---
+
+import LibraryComparison from "components/LibraryComparison"
+
+PostHog provides a number of both official and community maintained libraries to help you easily integrate with your preferred language or framework.
+
+This document outlines all of our current client-side and server-side libraries, as well as which features each of them currently supports.
+
+>**Note:** Session recording and autocapture are not possible in server libraries.
+
+<LibraryComparison />
+
+## Developer tools
+
+In addition to SDKs, PostHog offers tools for managing your analytics infrastructure programmatically:
+
+- **[Terraform provider](https://registry.terraform.io/providers/PostHog/posthog/latest)** - Manage dashboards, insights, and other PostHog resources as infrastructure-as-code.

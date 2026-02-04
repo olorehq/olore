@@ -1,0 +1,48 @@
+---
+title: Platforms
+sidebar_order: 2
+notoc: true
+og_image: /og-images/platforms.png
+---
+
+Sentry provides code-level observability that makes it easy to diagnose issues and learn continuously about your application code health. Data is captured by using an SDK within your application’s runtime. The Sentry team builds and maintains SDKs for most popular languages and frameworks, but there’s also a large ecosystem supported by the community.
+
+If your use case is very specific, or not covered by Sentry, you'll find documentation on how to report events on your own using our [SDK API](https://develop.sentry.dev/sdk/overview/).
+
+<Alert>
+
+It's considered bad practice to use Sentry SDKs in third-party plugins, packages, and libraries (such as payment SDKs or embeddable widgets) meant to be consumed by other apps. If an app uses a Sentry SDK in addition to a third-party package with its own Sentry SDK installed, the following issues can occur:
+
+- Version conflicts.
+- [Signal handlers](https://en.wikipedia.org/wiki/C_signal_handling) may overwrite each other, leading to one of the Sentry SDKs operating incorrectly.
+- Third-party SDKs and libraries may leak users' PII data to the third-party's Sentry organization.
+
+We also <Link to="https://sentry.zendesk.com/hc/en-us/articles/23961784367387">discourage using Sentry alongside other APM tools</Link> because it can lead to a number of side-effects that negatively impact performance and stability of the application.
+
+</Alert>
+
+<PlatformFilter />
+
+{/* dirty hack to avoid having a dedicated component for this illustration*/}
+<style jsx>{`
+  .community-image-container img {
+    max-width: 450px;
+    height: auto;
+    border: none !important;
+    box-shadow: none !important;
+    margin-top: 3rem;
+  }
+`}</style>
+<div className="community-image-container">
+  ![Community Supported](./community.png)
+</div>
+
+## SDKs Supported by Our Community
+
+These SDKs are maintained and supported by [the Sentry community](https://open.sentry.io/). While generally our community does a great job at responding to issues, it's important to understand that Sentry staff cannot help you with issues using a community-supported SDK.
+
+<CommunitySupportedPlatforms />
+
+## Other Platforms
+
+Still can't find your favorite language or framework? Then we encourage you to consider [writing your own SDK](https://develop.sentry.dev/sdk/).

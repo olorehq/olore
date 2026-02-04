@@ -1,0 +1,261 @@
+---
+title: 'Multistep Check Structure'
+description: 'Learn how to structure your multistep checks with Playwright.'
+sidebarTitle: MaC Structure
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Multistep Check Construct](/constructs/multistep-check).
+</Tip>
+
+## Multistep Check Construct
+
+```ts multistep-check.ts
+import { MultiStepCheck, Frequency } from 'checkly/constructs'
+import * as path from 'path'
+
+new MultiStepCheck('multistep-check-1', {
+  name: 'Multistep Check #1',
+  runtimeId: '2025.04',
+  frequency: Frequency.EVERY_10M,
+  locations: ['us-east-1', 'eu-west-1'],
+  code: {
+    entrypoint: path.join(__dirname, 'onboarding.spec.ts')
+  }
+})
+```
+
+
+## Test Script
+
+Multistep checks use Playwright's `test.step()` function to organize sequential operations:
+
+```typescript check-group.spec.ts
+import { test, expect } from '@playwright/test' // 1
+
+const headers = { // 2
+  Authorization: `Bearer ${process.env.API_KEY}`,
+  'x-checkly-account': process.env.ACCOUNT_ID,
+}
+
+const baseUrl = process.env.API_URL ?? 'https://api.checklyhq.com/v1'
+
+test('create and delete a check group', async ({ request }) => { // 3
+  const createdGroup = await test.step('POST /check-groups', async () => { // 4
+    const response = await request.post(`${baseUrl}/check-groups`, {
+      data: {
+        locations: ['eu-west-1'],
+        name: 'exampleCheckGroup',
+      },
+      headers,
+    })
+    expect(response).toBeOK() // 5
+    return response.json() // 6
+  })
+
+  await test.step('DELETE /check-group/{id}', async () => { // 7
+    const response = await request.delete(`${baseUrl}/check-groups/${createdGroup.id}`, {
+      headers,
+    })
+    expect(response).toBeOK()
+  })
+})
+```
+## Test Structure
+Let's look at the code above step-by-step, as it determines what our Multistep check will do.
+
+**1. Initial declarations:** Import the Playwright test framework.
+
+**2. Define our headers:** In many cases, you will have to authenticate when requesting data by providing authorization headers. Use [environment variables](/platform/variables) to avoid having any confidential data in your test.
+
+**3. Establish environment:** Create a new test and leverage the Playwright `request` fixture to make API requests in the test steps.
+
+**4. Declare our first `test.step`:** The test step uses the `request` to perform a `post` request, using the headers we defined earlier.
+
+<Warning>
+Always use `await` before `test.step`, otherwise the test will fail.
+</Warning>
+
+**5. Define our assertion:** Use the `expect(response)` method to assert if the response was successful (the response code is in the range of 200 - 299) with `toBeOK()`. Should the request return anything outside of the 'OK' range, the check will fail and in a production scenario, trigger any configured alerts.
+
+**6. Return the response for future usage:** Return the request response in JSON format, so we can use it in the next test step.
+
+**7. Declare our second `test.step`:** In order to remove the test group we just created, and avoid cluttering our system with test data, remove it by sending a `delete` request using the group ID that was returned in our earlier test step. Use the same `toBeOK()` assertion as in the previous test step.
+
+If you want to build on the above example, you can add additional assertions, ensuring that the data returned is correct and contains a specific check, or add a `PUT` and `GET` test step to verify more of the `/check-groups` functionality.
+
+
+## API Request Capabilities
+
+### HTTP Methods Support
+
+<Tabs>
+<Tab title="GET">
+```typescript
+const response = await request.get('/api/users/123')
+```
+</Tab>
+<Tab title="POST">
+```typescript
+const response = await request.post('/api/users', {
+  data: { name: 'John', email: 'john@example.com' }
+})
+```
+</Tab>
+<Tab title="PUT/PATCH">
+```typescript
+const response = await request.patch('/api/users/123', {
+  data: { status: 'active' }
+})
+```
+</Tab>
+<Tab title="DELETE">
+```typescript
+const response = await request.delete('/api/users/123')
+```
+</Tab>
+<Tab title="Custom Headers">
+```typescript
+const response = await request.get('/api/protected', {
+  headers: {
+    'Authorization': 'Bearer token123',
+    'Content-Type': 'application/json',
+    'X-API-Version': 'v2'
+  }
+})
+```
+</Tab>
+</Tabs>
+
+### Request Configuration
+
+<Tabs>
+<Tab title="Query Parameters">
+```typescript
+const response = await request.get('/api/search', {
+  params: {
+    q: 'javascript',
+    limit: 10,
+    offset: 0
+  }
+})
+```
+</Tab>
+<Tab title="Form Data">
+```typescript
+const response = await request.post('/api/upload', {
+  form: {
+    file: fs.readFileSync('document.pdf'),
+    description: 'Important document'
+  }
+})
+```
+</Tab>
+<Tab title="JSON Data">
+```typescript
+const response = await request.post('/api/data', {
+  data: {
+    items: [
+      { id: 1, name: 'Item 1' },
+      { id: 2, name: 'Item 2' }
+    ]
+  }
+})
+```
+</Tab>
+</Tabs>
+
+## Data Flow Between Steps
+
+### Variable Passing
+```typescript
+test('E-commerce purchase workflow', async ({ request }) => {
+  let authToken, cartId, orderId
+
+  await test.step('User authentication', async () => {
+    const response = await request.post('/api/auth/login', {
+      data: {
+        email: process.env.TEST_USER_EMAIL,
+        password: process.env.TEST_USER_PASSWORD
+      }
+    })
+    
+    const auth = await response.json()
+    authToken = auth.access_token
+  })
+
+  await test.step('Create shopping cart', async () => {
+    const response = await request.post('/api/cart', {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      data: { items: [] }
+    })
+    
+    const cart = await response.json()
+    cartId = cart.id
+  })
+
+  await test.step('Add products to cart', async () => {
+    const response = await request.post(`/api/cart/${cartId}/items`, {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      data: {
+        productId: 'PROD_123',
+        quantity: 2,
+        price: 29.99
+      }
+    })
+    
+    expect(response.status()).toBe(201)
+  })
+
+  await test.step('Checkout and create order', async () => {
+    const response = await request.post(`/api/cart/${cartId}/checkout`, {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      data: {
+        paymentMethod: 'test_card',
+        shippingAddress: {
+          street: '123 Main St',
+          city: 'Boston',
+          zipCode: '02101'
+        }
+      }
+    })
+    
+    const order = await response.json()
+    orderId = order.id
+    expect(order.status).toBe('confirmed')
+  })
+
+  await test.step('Verify order processing', async () => {
+    const response = await request.get(`/api/orders/${orderId}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+    
+    const order = await response.json()
+    expect(order.paymentStatus).toBe('paid')
+    expect(order.fulfillmentStatus).toBe('pending')
+  })
+})
+```
+
+### Response Data Extraction
+```typescript
+await test.step('Extract and validate response data', async () => {
+  const response = await request.get('/api/complex-data')
+  const data = await response.json()
+  
+  // Extract nested data
+  const userId = data.user.profile.id
+  const permissions = data.user.roles.map(role => role.permissions).flat()
+  const lastLoginDate = new Date(data.user.lastLogin)
+  
+  // Validate extracted data
+  expect(userId).toBeGreaterThan(0)
+  expect(permissions).toContain('read:profile')
+  expect(lastLoginDate).toBeInstanceOf(Date)
+  
+  // Store for next steps
+  return { userId, permissions, lastLoginDate }
+})
+```
+
+

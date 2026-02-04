@@ -1,0 +1,77 @@
+This is the main endpoint for querying data from PostHog. You can find all the details on what it does and how you can use it in our [API queries doc](/docs/api/queries).
+
+If you don't want to read that, here's an example of how to use it to get events where the `$current_url` contains blog using the `HogQLQuery` query type and SQL.
+
+> **Tip:** Always include a descriptive `name` parameter in your queries. This makes them easier to identify and analyze in the [`query_log` table](/docs/data/query-log).
+
+<MultiLanguage>
+
+
+```bash
+curl \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $POSTHOG_PERSONAL_API_KEY" \
+  <ph_app_host>/api/projects/:project_id/query/ \
+  -d '{
+        "query": {
+          "kind": "HogQLQuery",
+          "query": "select properties.$current_url from events where properties.$current_url like '\''%/blog%'\'' limit 100"
+        },
+        "name": "get 100 blog urls"
+      }'
+```
+
+```python
+import requests
+import json
+
+url = "<ph_app_host>/api/projects/{project_id}/query/"
+headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer {POSTHOG_PERSONAL_API_KEY}'
+}
+payload = {
+    "query": {
+        "kind": "HogQLQuery",
+        "query": "select properties.$current_url from events where properties.$current_url like '%/blog%' limit 100"
+    },
+    "name": "get 100 blog urls"
+}
+response = requests.post(url, headers=headers, data=json.dumps(payload))
+print(response.json())
+```
+
+```node
+import fetch from "node-fetch";
+
+async function createQuery() {
+  const url = "<ph_app_host>/api/projects/:project_id/query/";
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer {POSTHOG_PERSONAL_API_KEY}"
+  };
+
+  const payload = {
+    "query": {
+      "kind": "HogQLQuery",
+      "query": "select properties.$current_url from events where properties.$current_url like '%/blog%' limit 100"
+    },
+    "name": "get 100 blog urls"
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  console.log(data);
+}
+
+createQuery()
+```
+
+</MultiLanguage>
+
+Again, more details about this endpoint are available in our [API queries doc](/docs/api/queries).

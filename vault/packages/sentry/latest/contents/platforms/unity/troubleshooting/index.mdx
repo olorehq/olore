@@ -1,0 +1,98 @@
+---
+title: Troubleshooting
+sidebar_order: 9000
+description: "Learn more about how to troubleshoot common issues with the Unity SDK. "
+---
+
+## Build Issues
+
+### Disabling the Sentry SDK for selected platforms
+
+If you want to disable the SDK for a specific platform, you can use the [programmatic configuration](/platforms/unity/configuration/options/programmatic-configuration/) to have your own code run as part of the initialization and disable the SDK like in the example below:
+
+```csharp
+using Sentry.Unity;
+
+public class SentryOptionConfiguration : SentryOptionsConfiguration
+{
+    public override void Configure(SentryUnityOptions options)
+    {
+#if UNITY_ANDROID
+        options.Enabled = false;
+#endif
+    }
+}
+
+```
+
+### Build input file cannot be found: '\*\*/Libraries/io.sentry.unity/Plugins/iOS/SentryNativeBridge.m'
+
+You can resolve this issue by creating a clean build or choosing "Replace" when prompted. Alternatively, you can remove the unused `SentryNativeBridge.m`from the **UnityFramework Target > Compile Sources** in the project settings. Instead of relying on Unity to copy the `SentryNativeBridge.m` over to the generated Xcode project, starting with 0.12.0, the SDK copies it manually to `**/Libraries/io.sentry.unity/SentryNativeBridge.m`.
+
+### Failed to locate the Sentry package
+
+This happens if you've copied some of the SDK files directly to the Assets folder. You can resolve this issue by installing the SDK with UPM.
+
+## Runtime issues
+
+### Android: Initialization fails - APK+OBB
+
+When exporting your Unity project as APK+OBB, the `ScriptableSentryOptions` configuration file stored in `/Resources/Sentry` may end up in the OBB file instead of the main APK. This can cause initialization issues if the OBB file is not available when the SDK attempts to auto-initialize.
+
+**Workaround (requires Unity SDK version `4.0.0 or later`):**
+
+Instead of relying on the ScriptableObject configuration and auto-initialization, you can manually initialize the SDK from your code:
+
+```csharp
+using Sentry;
+
+public class GameInitializer : MonoBehaviour
+{
+    private void Start()
+    {
+        SentrySdk.Init(options =>
+        {
+            options.Dsn = "YOUR_DSN_HERE";
+            options.Debug = true;
+            // Add other configuration options as needed
+        });
+    }
+}
+```
+
+Since this way the options are embedded in code, the reliance on the `/Resources` being available at the time of initialization falls away.
+Prior to version `4.0.0`, native support is limited when programmatically initializing the SDK.
+
+### Library not loaded: @rpath/Sentry.framework/Sentry
+
+If you encounter the following error:
+
+```
+2021-10-29 15:21:40.011452-0400 MyApp[2180:186329] Error loading /var/containers/Bundle/Application/88CC4619-7C5D-4BB1-9F4B-5AAD7EC4BF9C/MyApp.app/Frameworks/UnityFramework.framework/UnityFramework:  dlopen(/var/containers/Bundle/Application/88CC4619-7C5D-4BB1-9F4B-5AAD7EC4BF9C/MyApp.app/Frameworks/UnityFramework.framework/UnityFramework, 265): Library not loaded: @rpath/Sentry.framework/Sentry
+  Referenced from: /private/var/containers/Bundle/Application/88CC4619-7C5D-4BB1-9F4B-5AAD7EC4BF9C/MyApp.app/Frameworks/UnityFramework.framework/UnityFramework
+  Reason: image not found
+```
+
+This can happen if you've copied some of the SDK files directly to the Assets folder and the `Sentry.Unity.Editor.iOS.dll` which runs when you build an iOS player wasn't able to copy the `Sentry.framework` to the final app. Enabling debug mode in the Sentry editor window would display more information in the Unity console.
+
+You can resolve this issue by installing the SDK with UPM.
+
+## Events
+
+### Universal Windows Platform - Events Not Sent
+
+In order to send events to Sentry, you will need to activate the InternetClient Capability in your Player Settings.
+
+### Mono JIT stack trace is incomplete on crashes
+
+This is a [known limitation](https://github.com/getsentry/sentry-unity/issues/884#issuecomment-1233035296) of the Mono JIT scripting backend, resulting from the native code not being able to see the actual generated code at the time of a crash. There are no debug files we can use to provide more information to stack traces since all code is generated when running the managed code. Using the IL2CPP scripting backend may provide more information, if that's an option for you.
+
+### Sentry didn't capture Unity's test/helper function ForceCrash
+
+Unity provides a function to test crashes called `UnityEngine.Diagnostics.Utils.ForceCrash()`. The Sentry SDK subscribes to the signal handlers and captures **all signals** received by it.
+But the result of that function doesn't get invoked our callback.
+Outside of this helper function, Sentry is unaware of any **real world** crash type that isn't invoking our signal handlers.
+
+### Screenshot contain artifacts
+
+The screenshot capture relies on Unity's `ScreenCapture.CaptureScreenshotIntoRenderTexture` function. When capturing errors in the Editor, this might lead to artifacts or scaling issues in the captured screenshot.

@@ -1,0 +1,128 @@
+---
+title: Control costs skill
+description: "This page explains how to use the control costs skill to give AI coding agents the ability to analyze usage and optimize Axiom costs."
+sidebarTitle: Control costs
+keywords: ["skills", "ai agents", "cost control", "amp", "claude code", "cursor", "usage", "optimization", "waste"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The control costs skill helps AI agents optimize Axiom usage and reduce costs:
+
+- **Waste identification**: Find unused columns, never-queried datasets, and high-volume low-value data
+- **Query analysis**: Analyze query patterns to identify optimization opportunities
+- **Dashboard deployment**: Deploy cost control dashboards with ingest trends, burn rate, and projections
+- **Monitor creation**: Set up monitors for contract limits, spike detection, and reduction glidepaths
+- **Analysis workflow**: Systematic approach to prioritize and analyze datasets by impact
+
+<Prerequisites />
+
+## Install control costs skill
+
+Choose one of the following ways to install the control costs skill:
+
+<Tabs>
+<Tab title="Quick install">
+
+Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
+
+```bash
+npx skills add axiomhq/skills
+```
+
+</Tab>
+<Tab title="Amp">
+
+Install the control costs skill globally with [Amp](https://ampcode.com/manual#get-started):
+
+    ```bash
+    amp skill add --global axiomhq/skills/skills/controlling-costs --name controlling-costs --overwrite
+    ```
+
+</Tab>
+<Tab title="Claude">
+
+<Info>
+Skills are available for users on Pro, Max, Team, and Enterprise plans.
+</Info>
+
+1. Clone the Axiom Skills repository:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git
+    ```
+
+1. Compress the `skills/controlling-costs` folder into a zip file.
+1. Enable code execution in **Settings > Capabilities**.
+1. Upload the zip file to your agent's capabilities in **Settings > Capabilities**.
+
+For more information, see the [Claude documentation](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+
+</Tab>
+<Tab title="Claude Code">
+
+Clone the Axiom Skills repository and symlink the control costs skill to your Claude Code skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/controlling-costs ~/.claude/skills/controlling-costs
+    ```
+
+For more information, see the [Claude Code documentation](https://code.claude.com/docs/en/skills).
+
+</Tab>
+<Tab title="Cursor">
+
+Clone the Axiom Skills repository and symlink the control costs skill to Cursor's Claude-compatible skills directory:
+
+    ```bash
+    git clone https://github.com/axiomhq/skills.git ~/axiom-skills
+    ln -s ~/axiom-skills/skills/controlling-costs ~/.claude/skills/controlling-costs
+    ```
+
+For more information, see the [Cursor documentation](https://cursor.com/docs/context/skills).
+
+</Tab>
+<Tab title="Other agents">
+
+Clone the Axiom Skills repository and reference the control costs skill in your agent configuration:
+
+```bash
+git clone https://github.com/axiomhq/skills.git
+```
+
+The control costs skill is located at `skills/controlling-costs/`.
+
+</Tab>
+</Tabs>
+
+<SkillsCredentials />
+
+## Use control costs skill
+
+The control costs skill activates automatically when you ask your AI agent to:
+
+- Reduce Axiom costs or find waste
+- Set up cost control dashboards and monitors
+- Analyze query coverage and unused data
+- Track ingest spend and burn rate
+
+Example prompts:
+
+- "Help reduce Axiom costs"
+- "Find unused columns in the datasets"
+- "Set up cost control monitoring for the organization"
+- "Which datasets are being paid for but never queried?"
+
+## Cost control workflow
+
+The control costs skill follows a phased approach:
+
+| Phase | Description |
+| --- | --- |
+| Discovery | Capture baseline ingest statistics and build analysis queue |
+| Dashboard | Deploy cost control dashboard with trends and projections |
+| Monitors | Create monitors for contract limits and spike detection |
+| Optimization | Analyze datasets to find waste and recommend actions |
+| Glidepath | Track reduction progress with weekly threshold updates |

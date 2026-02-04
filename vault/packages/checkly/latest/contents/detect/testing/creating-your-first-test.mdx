@@ -1,0 +1,215 @@
+---
+title: 'Creating Your First Test'
+description: 'Get started with Checkly by creating and running your first Playwright test for application monitoring'
+sidebarTitle: 'Creating Your First Test'
+---
+
+Checkly enables you to transform your existing Playwright tests into powerful synthetic monitors that run continuously across global locations. This guide will walk you through creating your first test, from setup to deployment.
+
+<AccordionGroup>
+<Accordion title="Prerequisites">
+- Node.js 18+ installed
+- A Checkly account (sign up at [checklyhq.com](https://www.checklyhq.com))
+- Basic familiarity with JavaScript/TypeScript
+</Accordion>
+</AccordionGroup>
+
+
+## Step 1: Initialize Your Project
+
+Start by creating a new Checkly project using the CLI:
+
+```bash Terminal
+npm create checkly@latest
+```
+
+This command will:
+- Create a new project directory
+- Install the Checkly CLI and dependencies
+- Set up a basic project structure
+- Generate example checks to get you started
+
+You'll be prompted to:
+- Choose your project name
+- Select your preferred language (JavaScript or TypeScript)
+- Configure basic project settings
+
+## Step 2: Project Structure
+
+After initialization, your project will have the following structure:
+
+```
+my-checkly-project/
+├── __checks__/              # Your test files go here
+│   ├── api.check.ts         # Example API check
+│   ├── heartbeat.check.ts   # Example heartbeat check
+│   └── homepage.spec.ts     # Example Playwright test
+├── checkly.config.ts        # Checkly configuration
+├── package.json             # Node.js dependencies
+└── README.md
+```
+
+## Step 3: Configure Your Project
+
+Open `checkly.config.ts` to configure your monitoring setup:
+
+```ts Checkly.config.ts
+import { defineConfig } from '@checkly/cli'
+
+export default defineConfig({
+  projectName: 'My First Checkly Project',
+  logicalId: 'my-first-project',
+  repoUrl: 'https://github.com/yourusername/your-repo',
+  checks: {
+    // Global check settings
+    activated: true,
+    muted: false,
+    runtimeId: '2025.04',
+    frequency: 5, // Run every 5 minutes
+    locations: ['us-east-1', 'eu-west-1'], // Global locations
+    tags: ['production', 'critical'],
+    
+    // Browser check specific settings
+    browserChecks: {
+      frequency: 10, // Browser checks every 10 minutes
+      testMatch: '**/__checks__/*.spec.ts',
+    },
+  },
+  cli: {
+    runLocation: 'eu-west-1', // Location for local testing
+  },
+})
+```
+
+## Step 4: Write Your First Test
+
+Create a new Playwright test file in the `__checks__` directory:
+
+```ts Playwright.test.ts
+// __checks__/my-first-test.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('Homepage loads successfully', async ({ page }) => {
+  // Navigate to your application
+  const response = await page.goto('https://www.checklyhq.com')
+  
+  // Verify the page loaded successfully
+  expect(response?.status()).toBeLessThan(400)
+  
+  // Check the page title
+  const title = await page.title()
+  expect(title).toContain('Checkly')
+  
+  // Verify key elements are present
+  await expect(page.locator('p')).toBeVisible()
+  
+  // Take a screenshot for debugging
+  await page.screenshot({ path: 'homepage.jpg' })
+})
+
+```
+
+## Step 5: Test Locally
+
+Before deploying, test your checks locally:
+
+```bash Terminal
+# Test all checks
+npx checkly test
+
+# Test with recording (saves videos and traces)
+npx checkly test --record
+
+# Test specific checks
+npx checkly test homepage
+
+# Pass environment variables
+npx checkly test --env ENVIRONMENT_URL="https://staging.example.com"
+```
+
+The local test runner will:
+- Execute your Playwright tests
+- Run API checks
+- Generate screenshots, videos, and traces
+- Provide detailed output and debugging information
+
+## Step 6: View Results
+
+After deployment, you can:
+- View check results in the [Checkly dashboard](https://app.checklyhq.com)
+- Set up alert channels to get notified of failures
+- Access detailed traces and screenshots
+- Monitor performance trends over time
+
+## Advanced Check Configuration
+
+For more control over your browser checks:
+
+```ts Checkly.config.ts
+// __checks__/advanced-browser.check.ts
+import { BrowserCheck, Frequency } from '@checkly/cli/constructs'
+
+new BrowserCheck('advanced-check', {
+  name: 'Advanced Browser Check',
+  activated: true,
+  frequency: Frequency.EVERY_5M,
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  tags: ['critical', 'user-journey'],
+  code: {
+    entrypoint: './advanced-test.spec.ts',
+  },
+  retryStrategy: {
+    type: 'linear',
+    baseBackoffSeconds: 60,
+    maxRetries: 2,
+  },
+})
+```
+
+## Best Practices
+
+1. **Start Simple**: Begin with basic page load tests before adding complex interactions
+2. **Use Page Object Model**: Organize your tests with reusable page objects
+3. **Test Critical User Journeys**: Focus on the most important user flows
+4. **Set Appropriate Frequencies**: Don't over-monitor; balance coverage with costs
+5. **Use Environment Variables**: Keep sensitive data and URLs configurable
+6. **Add Meaningful Assertions**: Test both functionality and performance
+7. **Take Screenshots**: Helpful for debugging when tests fail
+8. **Monitor APIs and UI**: Combine browser and API checks for comprehensive coverage
+
+## Troubleshooting
+
+### Common Issues
+
+**Check fails locally but works in browser:**
+- Verify selectors are stable
+- Add proper waits for dynamic content
+- Check for timing issues
+
+**Environment variable not found:**
+```bash Terminal
+npx checkly test --env VARIABLE_NAME="value"
+```
+
+**Login required for testing:**
+```ts Playwright.test.ts  
+// Use Playwright's built-in authentication
+test.use({ storageState: 'auth.json' })
+```
+
+**Getting help:**
+- Check the [Checkly documentation](https://www.checklyhq.com/docs)
+- Join the [Checkly community](https://www.checklyhq.com/slack)
+- Review example projects on [GitHub](https://github.com/checkly)
+
+## Next Steps
+
+Once you have your first test running:
+
+1. **Add More Tests**: Cover additional user journeys and API endpoints
+2. **Set Up CI/CD**: Integrate Checkly into your deployment pipeline
+3. **Configure Alerts**: Set up notifications for your team
+4. **Explore Traces**: Use OpenTelemetry integration for deeper insights
+5. **Scale Your Monitoring**: Add checks for different environments and regions
+
+Congratulations! You've successfully created your first Checkly test. Your application is now being monitored continuously across global locations, helping you catch issues before your users do.

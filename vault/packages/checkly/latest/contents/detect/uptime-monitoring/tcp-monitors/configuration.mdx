@@ -1,0 +1,74 @@
+---
+title: 'TCP Monitor Configuration'
+description: 'Configure your TCP monitor to ensure TCP services are reachable and responding as expected.'
+sidebarTitle: 'Configuration'
+---
+
+<Tip>
+To configure a TCP monitor using code, learn more about the [TCP Monitor Construct](/constructs/tcp-monitor).
+</Tip>
+
+### Basic Setup
+
+Configure your TCP monitor by specifying the target service:
+
+<Frame>
+  <img src="/images/tcp-request.png" alt="TCP monitor setup interface showing hostname, port, and protocol selection" />
+</Frame>
+
+* **Hostname and port:** The server you want to monitor (e.g. `tcpbin.com` or `192.168.1.1`) and a port (e.g. 4242)
+* **IP family:** Choose between IPv4 (default) or IPv6
+* **This request should fail**: Enable this option to treat connection failures (e.g. timeouts or refused ports) as passed. Please note that successful connections will continue to pass. Only failed assertions will cause the check to fail
+* **Data to send**: The content included in the TCP request. For example, this could be text or protocol-specific commands expected by the target service
+
+### Assertions
+
+Use assertions to validate TCP connection timing and response data returned by the service.
+
+<Frame>
+  <img src="/images/tcp-assertion.png" alt="TCP monitor connection options showing timeout settings and data fields" />
+</Frame>
+
+* **Response time**: Assert that the TCP connection completes within a specified time threshold
+* **Response data**: Validate the data returned by the server after sending a payload. For example, when sending `USER anonymous\r\n`, you can assert that the response contains `331 Please specify the password`
+
+For more details, see our documentation on [Assertions](/detect/assertions).
+
+### Response Time Limits
+
+Set performance thresholds to ensure your application meets speed requirements:
+
+<Frame>
+  <img src="/images/tcp-response.png" alt="TCP monitor assertions interface showing response validation options" />
+</Frame>
+
+* **Degraded After**: Time threshold (in milliseconds) after which the check is marked as degraded but not failed. Use for performance warnings without triggering failure alerts
+* **Failed After**: Time threshold after which the check fails completely. Use for hard performance limits where slow responses should trigger alerts
+
+### Frequency
+
+Set how often the monitor runs (every 10 seconds to 24 hours):
+
+<Frame>
+  <img src="/images/tcp-frequency.png" alt="TCP monitor frequency selection interface" />
+</Frame>
+
+### Scheduling & Locations
+
+<Frame>
+  <img src="/images/tcp-scheduling-strategy.png" alt="TCP monitor scheduling strategy and location selection interface" />
+</Frame>
+
+* **Strategy:** Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/monitoring/global-locations#scheduling-strategies)
+* **Locations:** Select one or more [public](/monitoring/global-locations/) or [private](/platform/private-locations/overview) locations to run the monitor from
+
+### Additional Settings
+
+* **Name:** Give your monitor a clear name to identify it in dashboards and alerts
+* **Tags:** Use tags to organize monitors across dashboards and [maintenance windows](/communicate/maintenance-windows/overview)
+* **Retries:** Define how failed runs should be retried. See [retry strategies](/communicate/alerts/retries)
+* **Alerting:** Configure your [alert settings](/communicate/alerts/configuration), [alert channels](/communicate/alerts/channels), or set up [webhooks](/integrations/alerts/webhooks) for custom integrations
+
+<Note>
+TCP monitors provide network-level connectivity verification. For application-level monitoring, consider adding [synthetic monitoring](/detect/synthetic-monitoring/overview) to your monitoring strategy.
+</Note>

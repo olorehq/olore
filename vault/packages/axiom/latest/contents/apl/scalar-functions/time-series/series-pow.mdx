@@ -1,0 +1,162 @@
+---
+title: series_pow
+description: 'This page explains how to use the series_pow function in APL.'
+---
+
+The `series_pow` function raises each element in a numeric dynamic array (series) to a specified power. This performs element-wise exponentiation across the entire series.
+
+You can use `series_pow` when you need to apply power transformations to time-series data. This is particularly useful for non-linear data transformations, calculating exponential growth patterns, applying polynomial features in analysis, or emphasizing larger values in your data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `pow()` function within an `eval` command to calculate powers. In APL, `series_pow` applies the power operation to every element in an array simultaneously.
+
+<CodeGroup>
+```sql Splunk example
+... | eval squared=pow(value, 2)
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([2, 3, 4, 5])
+]
+| extend squared = series_pow(x, 2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you use the `POWER()` function to raise values to a power on individual rows. In APL, `series_pow` operates on entire arrays, applying the exponentiation operation element-wise.
+
+<CodeGroup>
+```sql SQL example
+SELECT POWER(value, 2) AS squared
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic)
+[
+  dynamic([2, 3, 4, 5])
+]
+| extend squared = series_pow(x, 2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_pow(array, power)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                     |
+| --------- | ------- | ----------------------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values (base).       |
+| `power`   | real    | The exponent to which to raise each element.    |
+
+### Returns
+
+A dynamic array where each element is the result of raising the corresponding input element to the specified power.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_pow` to emphasize outliers by squaring request durations, making larger values more prominent in analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend squared_durations = series_pow(durations, 2)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20squared_durations%20%3D%20series_pow(durations%2C%202)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| id   | durations           | squared_durations      |
+| ---- | ------------------- | ---------------------- |
+| u123 | [50, 100, 75, 200]  | [2500, 10000, 5625, 40000] |
+| u456 | [30, 45, 60, 90]    | [900, 2025, 3600, 8100]    |
+
+This query squares request durations to amplify the differences, making performance anomalies more visible for analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_pow` to calculate exponential penalty scores based on span durations, emphasizing longer spans.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| summarize durations = make_list(duration_ms) by ['service.name']
+| extend penalty_score = series_pow(durations, 1.5)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20summarize%20durations%20%3D%20make_list(duration_ms)%20by%20%5B'service.name'%5D%20%7C%20extend%20penalty_score%20%3D%20series_pow(durations%2C%201.5)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| service.name | durations            | penalty_score             |
+| ------------ | -------------------- | ------------------------- |
+| frontend     | [100, 200, 150, 250] | [1000, 2828, 1837, 3952]  |
+| checkout     | [50, 75, 60, 100]    | [353, 649, 464, 1000]     |
+
+This query applies a power transformation to span durations, creating a penalty score that disproportionately penalizes longer spans.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_pow` to calculate non-linear risk scores based on request counts, where higher volumes represent exponentially greater risk.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_counts = make_list(req_duration_ms) by status
+| extend risk_factor = series_pow(request_counts, 1.8)
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_counts%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20risk_factor%20%3D%20series_pow(request_counts%2C%201.8)%20%7C%20take%205%22%7D)
+
+**Output**
+
+| status | request_counts     | risk_factor                  |
+| ------ | ------------------ | ---------------------------- |
+| 200    | [50, 60, 55, 58]   | [1767, 2601, 2121, 2419]     |
+| 401    | [100, 120, 110, 115] | [6309, 8710, 7328, 7926]     |
+
+This query applies an exponential transformation to request counts, creating risk scores where high-volume patterns receive disproportionately higher scores.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_multiply](/apl/scalar-functions/time-series/series-multiply): Performs element-wise multiplication of two series. Use when you need multiplication between two series instead of raising to a power.
+- [series_log](/apl/scalar-functions/time-series/series-log): Computes the natural logarithm of each element. Use as the inverse operation to exponentials.
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element. Use when you need magnitude without power transformations.
+- [series_sign](/apl/scalar-functions/time-series/series-sign): Returns the sign of each element. Useful before applying power operations to handle negative values.
+

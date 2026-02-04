@@ -1,0 +1,106 @@
+---
+title: 'phrases'
+description: 'This page explains how to use the phrases aggregation function in APL.'
+---
+
+The `phrases` aggregation extracts and counts common phrases or word sequences from text fields across a dataset. It analyzes text content to identify frequently occurring phrases, helping you discover patterns, trends, and common topics in your data.
+
+You can use this aggregation to identify common user queries, discover trending topics, extract key phrases from logs, or analyze conversation patterns in AI applications.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there’s no built-in phrases function, but you might use the `rare` or `top` commands on tokenized text.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message "(?<words>\w+)"
+| top words
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize phrases(uri, 10)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need complex string manipulation and grouping to extract common phrases.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  phrase,
+  COUNT(*) as frequency
+FROM (
+  SELECT UNNEST(SPLIT(message, ' ')) as phrase
+  FROM logs
+)
+GROUP BY phrase
+ORDER BY frequency DESC
+LIMIT 10
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize phrases(uri, 10)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize phrases(column, max_phrases)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `column` | string | Yes | The column containing text data from which to extract phrases. |
+| `max_phrases` | long | Yes | The maximum number of top phrases to return. |
+
+### Returns
+
+Returns a dynamic array containing the most common phrases found in the specified column, ordered by frequency.
+
+## Example
+
+Extract common phrases from GenAI conversation text to identify trending topics and patterns.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend conversation_text = genai_concat_contents(['attributes.gen_ai.input.messages'], ' | ')
+| summarize common_phrases = phrases(conversation_text, 20)
+```
+
+**Output**
+| Count | common_phrases |
+|----------------|---------------|
+| 3 | first query |
+| 3 | cover related future queries |
+| 3 | use title case |
+
+This query identifies the most common phrases in GenAI conversations, helping you discover trending topics and user needs.
+
+## List of related functions
+
+- [make_list](/apl/aggregation-function/make-list): Creates an array of all values. Use this when you need all occurrences rather than common phrases.
+- [make_set](/apl/aggregation-function/make-set): Creates an array of unique values. Use this for distinct values without frequency analysis.
+- [topk](/apl/aggregation-function/topk): Returns top K values by a specific aggregation. Use this for numerical top values rather than phrase extraction.
+- [count](/apl/aggregation-function/count): Counts occurrences. Combine with group by for manual phrase counting if you need more control.
+- [dcount](/apl/aggregation-function/dcount): Counts distinct values. Use this to understand the variety of phrases before extracting top ones.
+

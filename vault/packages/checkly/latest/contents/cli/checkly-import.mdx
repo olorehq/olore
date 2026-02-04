@@ -1,0 +1,164 @@
+---
+title: checkly import
+description: 'Import existing resources into your CLI-managed project.'
+sidebarTitle: 'checkly import'
+---
+
+<Tip>Learn more about importing existing Checkly resources in [the "Importing Existing Resources" guide](/cli/importing).</Tip>
+
+The `checkly import` command imports existing resources from your Checkly account into your CLI-managed project. This allows you to bring existing checks, alert channels, and other resources under code management using a structured three-phase workflow.
+
+<Accordion title="Prerequisites">
+Before using `checkly import`, ensure you have:
+
+- An initialized Checkly CLI project
+- A Checkly account with existing resources to import
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+</Accordion>
+
+## Usage
+
+Import all resources from your account into the current project.
+
+```bash Terminal
+npx checkly import [resources] [options]
+```
+
+**Examples:**
+
+```bash Terminal
+# Import a specific resource by its ID
+npx checkly import check:2ce8...
+```
+
+**Available resource types to import**:
+
+- `check` - Individual monitoring checks
+- `check-group` - Collections of related checks
+- `alert-channel` - Notification channels
+- `maintenance-window` - Scheduled maintenance periods
+- `private-location` - Custom monitoring locations
+- `dashboard` - Public status dashboards
+- `snippet` - Reusable code snippets
+- `status-page` - Status page configurations
+- `status-page-service` - Status page service definitions
+
+`npx checkly import` starts an interactive process that generates an import plan, applies it to create Check files, and commits the changes to mark resources as managed by your CLI project.
+
+| Option | Description |
+|--------|-------------|
+| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts|js` file in the current directory. |
+| `--root` | The root folder in which to write generated code files. |
+
+## Command Options
+
+<ResponseField name="--config, -c" type="string">
+
+Specify a particular configuration file to use instead of the default `checkly.config.ts` or `checkly.config.js`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly import --config=<file-path>
+npx checkly import -c=<file-path>
+```
+
+**Examples:**
+
+```bash Terminal
+$ npx checkly import --config="./checkly.staging.config.ts"
+```
+
+</ResponseField>
+
+<ResponseField name="--root" type="string">
+
+Preview generated code without creating an actual import plan.
+
+**Usage:**
+
+```bash Terminal
+npx checkly import --root=<root-folder>
+npx checkly import -r=<root-folder>
+```
+
+**Examples:**
+
+```bash Terminal
+$ npx checkly import --root="./src/checks"
+```
+
+</ResponseField>
+
+## Import Workflow
+
+The import process follows a three-phase workflow for safe resource migration:
+
+### 1. Plan Generation
+
+Analyze your account, generate an import plan and create code files for your resources.
+
+```bash Terminal
+npx checkly import
+```
+
+### 2. Plan Application
+
+ Apply the generated plan and link the imported resources to your CLI project, but keeps the mapping in a pending state.
+
+```bash Terminal
+npx checkly import apply
+```
+
+### 3. Plan Commitment
+
+Commit the applied changes and mark resources as CLI-managed.
+
+```bash Terminal
+npx checkly import commit
+```
+
+## Subcommands
+
+### `checkly import apply`
+Apply a previously generated import plan to create the actual code files in your project structure.
+
+```bash Terminal
+npx checkly import apply
+```
+
+### `checkly import commit`
+Commit an applied import plan to finalize the import and mark resources as managed by your CLI project.
+
+```bash Terminal
+npx checkly import commit
+```
+
+### `checkly import cancel`
+Cancel a generated plan that hasn't been committed to discard any pending import operations.
+
+```bash Terminal
+npx checkly import cancel
+```
+
+## Best Practices
+
+### Before Importing
+
+1. **Rely on version control and git** to track changes
+2. **Review your account** resources to understand what will be imported
+3. **Plan directory structure** using `--root` if needed
+4. **Import specific resources** using `resource-type:id` syntax
+
+### After Importing
+
+1. **Review generated code** for accuracy and style consistency
+2. **Test imported checks** using `checkly test`
+3. **Commit to version control** to track changes
+4. **Deploy to verify** everything works as expected
+
+## Related Commands
+
+- [`checkly deploy`](/cli/checkly-deploy) - Deploy imported resources
+- [`checkly test`](/cli/checkly-test) - Test imported checks locally

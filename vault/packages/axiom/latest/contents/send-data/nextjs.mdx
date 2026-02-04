@@ -1,0 +1,872 @@
+---
+title: "Send data from Next.js app to Axiom"
+description: "This page explains how to send data from your Next.js app to Axiom."
+overview: "React framework for production-grade applications"
+sidebarTitle: Next.js
+keywords: ["js", "axiom documentation", "documentation", "axiom", "guide", "logs", "nextjs", "next.js", "next", "next-axiom", "@axiomhq/nextjs", "javascript"]
+isPopular: true
+popularityOrder: 9
+logoId: "nextJs"
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+
+Next.js is a popular open-source JavaScript framework built on top of React, developed by Vercel. It’s used by a wide range of companies and organizations, from startups to large enterprises, due to its performance benefits and developer-friendly features.
+
+To send data from your Next.js app to Axiom, choose one of the following options:
+
+- [Axiom Vercel app](/apps/vercel)
+- [@axiomhq/nextjs library](#use-axiomhq-nextjs-library)
+- [next-axiom library](#use-next-axiom-library)
+
+The choice between these options depends on your individual requirements:
+
+- The two options can collect different event types.
+    | Event type       | Axiom Vercel app | @axiomhq/nextjs library | next-axiom library |
+    | ---------------- |:----------------:|:-----------------------:|:------------------:|
+    | Application logs | Yes              | Yes                     | Yes                |
+    | Web Vitals       | No               | Yes                     | Yes                |
+    | HTTP logs        | Yes              | Yes                     | No                |
+    | Build logs       | Yes              | No                      | No                 |
+    | Tracing          | Yes              | Yes                     | No                 |
+
+- If you already use Vercel for deployments, the Axiom Vercel app can be easier to integrate into your existing experience.
+- The cost of these options can differ widely depending on the volume of data you transfer. The Axiom Vercel app depends on Vercel Drains, a feature that’s only available on paid plans. For more information, see [the blog post on the changes to Vercel Drains](https://axiom.co/blog/changes-to-vercel-log-drains).
+- The @axiomhq/nextjs library is the recommended choice if you want to send data from your Next.js app to Axiom without using Vercel Drains.
+- The next-axiom library is no longer under active development. It’s supported with bug fixes, but it won’t receive new features.
+
+For information on the Axiom Vercel app and migrating from the Vercel app to the next-axiom library, see [Axiom Vercel app](/apps/vercel).
+
+The rest of this page explains how to send data from your Next.js app to Axiom using the next-axiom or the @axiomhq/nextjs library.
+
+<Prerequisites />
+- [A new or existing Next.js app](https://nextjs.org/).
+
+## Use @axiomhq/nextjs library
+
+The @axiomhq/nextjs library is part of the Axiom JavaScript SDK, an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-js).
+
+### Install @axiomhq/nextjs
+
+1. In your terminal, go to the root folder of your Next.js app and run the following command:
+
+    ```sh
+    npm install --save @axiomhq/js @axiomhq/logging @axiomhq/nextjs @axiomhq/react
+    ```
+
+1. Create the folder `lib/axiom` to store configurations for Axiom.
+1. Create a `axiom.ts` file in the `lib/axiom` folder with the following content:
+
+    ```ts lib/axiom/axiom.ts [expandable]
+    import { Axiom } from '@axiomhq/js';
+
+    const axiomClient = new Axiom({
+      token: process.env.NEXT_PUBLIC_AXIOM_TOKEN!,
+    });
+
+    export default axiomClient;
+    ```
+
+1. In the `lib/axiom` folder, create a `server.ts` file with the following content:
+
+    ```ts lib/axiom/server.ts [expandable]
+    import axiomClient from '@/lib/axiom/axiom';
+    import { Logger, AxiomJSTransport } from '@axiomhq/logging';
+    import { createAxiomRouteHandler, nextJsFormatters } from '@axiomhq/nextjs';
+
+    export const logger = new Logger({
+      transports: [
+        new AxiomJSTransport({ axiom: axiomClient, dataset: process.env.NEXT_PUBLIC_AXIOM_DATASET! }),
+      ],
+      formatters: nextJsFormatters,
+    });
+
+    export const withAxiom = createAxiomRouteHandler(logger);
+    ```
+
+    The `createAxiomRouteHandler` is a builder function that returns a wrapper for your route handlers. The wrapper handles successful responses and errors thrown within the route handler. For more information on the logger, see [the @axiomhq/logging library](/guides/javascript#use-axiomhqlogging).
+
+1.  In the `lib/axiom` folder, create a `client.ts` file with the following content:
+
+    <Warning>
+    Ensure the API token you use on the client side has the appropriate permissions. Axiom recommends you create a client-side token with the only permission to ingest data into a specific dataset.
+
+    If you don’t want to expose the token to the client, use the [proxy transport](#proxy-for-client-side-usage) to send logs to Axiom.
+    </Warning>
+
+    ```ts lib/axiom/client.ts [expandable]
+    'use client';
+    import axiomClient from '@/lib/axiom/axiom';
+    import { Logger, AxiomJSTransport } from '@axiomhq/logging';
+    import { createUseLogger, createWebVitalsComponent } from '@axiomhq/react';
+    import { nextJsFormatters } from '@axiomhq/nextjs/client';
+
+    export const logger = new Logger({
+      transports: [
+        new AxiomJSTransport({ axiom: axiomClient, dataset: process.env.NEXT_PUBLIC_AXIOM_DATASET! }),
+      ],
+      formatters: nextJsFormatters,
+    });
+
+    const useLogger = createUseLogger(logger);
+    const WebVitals = createWebVitalsComponent(logger);
+
+    export { useLogger, WebVitals };
+    ```
+
+For more information on React client side helpers, see [React](/send-data/react).
+
+### Capture traffic requests
+
+To capture traffic requests, create a `middleware.ts` file in the root folder of your Next.js app with the following content:
+
+```ts middleware.ts [expandable]
+import { logger } from "@/lib/axiom/server";
+import { transformMiddlewareRequest } from "@axiomhq/nextjs";
+import { NextResponse } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
+
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  logger.info(...transformMiddlewareRequest(request));
+
+  event.waitUntil(logger.flush());
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
+};
+```
+
+### Web Vitals
+
+To capture Web Vitals, add the `WebVitals` component to the `app/layout.tsx` file:
+
+```tsx /app/layout.tsx [expandable]
+import { WebVitals } from "@/lib/axiom/client";
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <WebVitals />
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### Logs
+
+Send logs to Axiom from different parts of your app. Each log function call takes a message and an optional `fields` object.
+
+```ts [expandable]
+import { logger } from "@/lib/axiom/server";
+
+logger.debug("Login attempt", { user: "j_doe", status: "success" }); // Results in {"message": "Login attempt", "fields": {"user": "j_doe", "status": "success"}}
+logger.info("Payment completed", { userID: "123", amount: "25USD" });
+logger.warn("API rate limit exceeded", {
+  endpoint: "/users/1",
+  rateLimitRemaining: 0,
+});
+logger.error("System Error", { code: "500", message: "Internal server error" });
+```
+
+#### Route handlers
+
+You can use the `withAxiom` function exported from the setup file in `lib/axiom/server.ts` to wrap your route handlers.
+
+```ts
+import { logger } from "@/lib/axiom/server";
+import { withAxiom } from "@/lib/axiom/server";
+
+export const GET = withAxiom(async () => {
+  return new Response("Hello World!");
+});
+```
+
+For more information on customizing the data sent to Axiom, see [Advanced route handlers](#advanced-route-handlers).
+
+#### Client components
+
+To send logs from client components, add `useLogger` to your component:
+
+```tsx [expandable]
+"use client";
+import { useLogger } from "@/lib/axiom/client";
+
+export default function ClientComponent() {
+  const log = useLogger();
+  log.debug("User logged in", { userId: 42 });
+  const handleClick = () => log.info("User logged out");
+  return (
+    <div>
+      <h1>Logged in</h1>
+      <button onClick={handleClick}>Log out</button>
+    </div>
+  );
+}
+```
+
+#### Server components
+
+To send logs from server components, use the following:
+
+```tsx [expandable]
+import { logger } from "@/lib/axiom/server";
+import { after } from "next/server";
+
+export default async function ServerComponent() {
+  log.info("User logged in", { userId: 42 });
+
+  after(() => {
+    logger.flush();
+  });
+
+  return <h1>Logged in</h1>;
+}
+```
+
+### Capture errors
+
+#### Capture errors on Next 15 or later
+
+To capture errors on Next 15 or later, use the `onRequestError` option. Create an `instrumentation.ts` file in the `src` or root folder of your Next.js app (depending on your configuration) with the following content:
+
+    ```ts instrumentation.ts [expandable]
+    import { logger } from "@/lib/axiom/server";
+    import { createOnRequestError } from "@axiomhq/nextjs";
+
+    export const onRequestError = createOnRequestError(logger);
+    ```
+
+Alternatively, customize the error logging by creating a custom `onRequestError` function:
+
+    ```ts [expandable]
+    import { logger } from "@/lib/axiom/server";
+    import { transformOnRequestError } from "@axiomhq/nextjs";
+    import { Instrumentation } from "next";
+
+    export const onRequestError: Instrumentation.onRequestError = async (
+      error,
+      request,
+      ctx
+    ) => {
+      logger.error(...transformOnRequestError(error, request, ctx));
+      await logger.flush();
+    };
+    ```
+
+#### Capture errors on Next 14 or earlier
+
+To capture routing errors on Next 14 or earlier, use the [error handling mechanism of Next.js](https://nextjs.org/docs/app/building-your-application/routing/error-handling):
+1. Create an `error.tsx` file in the `app` folder.
+1. Inside your component function, add `useLogger` to send the error to Axiom. For example:
+
+    ```tsx [expandable]
+    "use client";
+
+    import NavTable from "@/components/NavTable";
+    import { LogLevel } from "@axiomhq/logging";
+    import { useLogger } from "@/lib/axiom/client";
+    import { usePathname } from "next/navigation";
+
+    export default function ErrorPage({
+      error,
+    }: {
+      error: Error & { digest?: string };
+    }) {
+      const pathname = usePathname();
+      const log = useLogger({ source: "error.tsx" });
+      let status = error.message == "Invalid URL" ? 404 : 500;
+
+      log.log(LogLevel.error, error.message, {
+          error: error.name,
+          cause: error.cause,
+          stack: error.stack,
+          digest: error.digest,
+          request: {
+          host: window.location.href,
+          path: pathname,
+          statusCode: status,
+          },
+      });
+
+      return (
+        <div className="p-8">
+          Ops! An Error has occurred:{" "}
+          <p className="text-red-400 px-8 py-2 text-lg">`{error.message}`</p>
+          <div className="w-1/3 mt-8">
+              <NavTable />
+          </div>
+        </div>
+      );
+    }
+    ```
+
+### Advanced customizations
+
+This section describes some advanced customizations.
+
+#### Proxy for client-side usage
+
+Instead of sending logs directly to Axiom, you can send them to a proxy endpoint in your Next.js app. This is useful if you don’t want to expose the Axiom API token to the client or if you want to send the logs from the client to transports on your server.
+
+1. Create a `client.ts` file in the `lib/axiom` folder with the following content:
+
+    ```ts lib/axiom/client.ts [expandable]
+    'use client';
+
+    import { Logger, ProxyTransport } from '@axiomhq/logging';
+    import { createUseLogger, createWebVitalsComponent } from '@axiomhq/react';
+
+    export const logger = new Logger({
+      transports: [
+        new ProxyTransport({ url: '/api/axiom', autoFlush: true }),
+      ],
+    });
+
+    const useLogger = createUseLogger(logger);
+    const WebVitals = createWebVitalsComponent(logger);
+
+    export { useLogger, WebVitals };
+    ```
+
+1. In the `/app/api/axiom` folder, create a `route.ts` file with the following content. This example uses `/api/axiom` as the Axiom proxy path.
+
+    ```ts /app/api/axiom/route.ts
+    import { logger } from "@/lib/axiom/server";
+    import { createProxyRouteHandler } from "@axiomhq/nextjs";
+
+    export const POST = createProxyRouteHandler(logger);
+    ```
+
+For more information on React client side helpers, see [React](/send-data/react).
+
+#### Customize data reports sent to Axiom
+
+To customize the reports sent to Axiom, use the `onError` and `onSuccess` functions that the `createAxiomRouteHandler` function accepts in the configuration object.
+
+In the `lib/axiom/server.ts` file, use the `transformRouteHandlerErrorResult` and `transformRouteHandlerSuccessResult` functions to customize the data sent to Axiom by adding fields to the report object:
+
+```ts [expandable]
+import { Logger, AxiomJSTransport } from '@axiomhq/logging';
+import { 
+  createAxiomRouteHandler, 
+  getLogLevelFromStatusCode, 
+  nextJsFormatters, 
+  transformRouteHandlerErrorResult, 
+  transformRouteHandlerSuccessResult 
+} from '@axiomhq/nextjs';
+
+/* ... your logger setup ... */
+
+export const withAxiom = createAxiomRouteHandler(logger, {
+  onError: (error) => {
+    if (error.error instanceof Error) {
+      logger.error(error.error.message, error.error);
+    }
+    const [message, report] = transformRouteHandlerErrorResult(error);
+    report.customField = "customValue";
+    report.request.searchParams = error.req.nextUrl.searchParams;
+
+    logger.log(getLogLevelFromStatusCode(report.statusCode), message, report);
+    logger.flush();
+  },
+  onSuccess: (data) => {
+    const [message, report] = transformRouteHandlerSuccessResult(data);
+    report.customField = "customValue";
+    report.request.searchParams = data.req.nextUrl.searchParams;
+
+    logger.info(message, report);
+    logger.flush();
+  },
+});
+```
+
+<Warning>
+Changing the `transformSuccessResult()` or `transformErrorResult()` functions can change the shape of your data. This can affect dashboards (especially auto-generated dashboards) and other integrations.
+
+Axiom recommends you add fields on top of the ones returned by the default `transformSuccessResult()` or `transformErrorResult()` functions, without replacing the default fields.
+</Warning>
+
+Alternatively, create your own `transformSuccessResult()` or `transformErrorResult()` functions:
+
+```ts [expandable]
+import { Logger, AxiomJSTransport } from '@axiomhq/logging';
+import { 
+  createAxiomRouteHandler, 
+  getLogLevelFromStatusCode, 
+  nextJsFormatters, 
+  transformRouteHandlerErrorResult, 
+  transformRouteHandlerSuccessResult 
+} from '@axiomhq/nextjs';
+
+/* ... your logger setup ... */
+
+export const transformSuccessResult = (
+  data: SuccessData
+): [message: string, report: Record<string, any>] => {
+  const report = {
+    request: {
+      type: "request",
+      method: data.req.method,
+      url: data.req.url,
+      statusCode: data.res.status,
+      durationMs: data.end - data.start,
+      path: new URL(data.req.url).pathname,
+      endTime: data.end,
+      startTime: data.start,
+    },
+  };
+
+  return [
+    `${data.req.method} ${report.request.path} ${
+      report.request.statusCode
+    } in ${report.request.endTime - report.request.startTime}ms`,
+    report,
+  ];
+};
+
+export const transformRouteHandlerErrorResult = (data: ErrorData): [message: string, report: Record<string, any>] => {
+  const statusCode = data.error instanceof Error ? getNextErrorStatusCode(data.error) : 500;
+
+  const report = {
+    request: {
+      startTime: new Date().getTime(),
+      endTime: new Date().getTime(),
+      path: data.req.nextUrl.pathname ?? new URL(data.req.url).pathname,
+      method: data.req.method,
+      host: data.req.headers.get('host'),
+      userAgent: data.req.headers.get('user-agent'),
+      scheme: data.req.url.split('://')[0],
+      ip: data.req.headers.get('x-forwarded-for'),
+      region: getRegion(data.req),
+      statusCode: statusCode,
+    },
+  };
+
+  return [
+    `${data.req.method} ${report.request.path} ${report.request.statusCode} in ${report.request.endTime - report.request.startTime}ms`,
+    report,
+  ];
+};
+
+export const withAxiom = createAxiomRouteHandler(logger, {
+  onError: (error) => {
+    if (error.error instanceof Error) {
+      logger.error(error.error.message, error.error);
+    }
+    const [message, report] = transformRouteHandlerErrorResult(error);
+    report.customField = "customValue";
+    report.request.searchParams = error.req.nextUrl.searchParams;
+
+    logger.log(getLogLevelFromStatusCode(report.statusCode), message, report);
+    logger.flush();
+  },
+  onSuccess: (data) => {
+    const [message, report] = transformRouteHandlerSuccessResult(data);
+    report.customField = "customValue";
+    report.request.searchParams = data.req.nextUrl.searchParams;
+
+    logger.info(message, report);
+    logger.flush();
+  },
+});
+```
+
+#### Change the log level from Next.js built-in function errors
+
+By default, Axiom uses the following log levels:
+
+- Errors thrown by the `redirect()` function are logged as `info`.
+- Errors thrown by the `forbidden()`, `notFound()` and `unauthorized()` functions are logged as `warn`.
+
+To customize this behavior, provide a custom `logLevelByStatusCode()` function when logging errors from your route handler:
+
+```ts [expandable]
+import { Logger, AxiomJSTransport, LogLevel } from '@axiomhq/logging';
+import {
+  createAxiomRouteHandler,
+  nextJsFormatters,
+  transformRouteHandlerErrorResult,
+} from '@axiomhq/nextjs';
+
+/* ... your logger setup ... */
+
+const getLogLevelFromStatusCode = (statusCode: number) => {
+  if (statusCode >= 300 && statusCode < 400) {
+    return LogLevel.info;
+  } else if (statusCode >= 400 && statusCode < 500) {
+    return LogLevel.warn;
+  }
+  return LogLevel.error;
+};
+
+export const withAxiom = createAxiomRouteHandler(logger, {
+  onError: (error) => {
+    if (error.error instanceof Error) {
+      logger.error(error.error.message, error.error);
+    }
+    const [message, report] = transformRouteHandlerErrorResult(error);
+    report.customField = 'customValue';
+    report.request.searchParams = error.req.nextUrl.searchParams;
+
+    logger.log(getLogLevelFromStatusCode(report.statusCode), message, report);
+    logger.flush();
+  }
+});
+
+```
+
+Internally, the status code gets captured in the `transformErrorResult()` function using a `getNextErrorStatusCode()` function. To compose these functions yourself, create your own `getNextErrorStatusCode()` function and inject the result into the `transformErrorResult()` report.
+
+```ts [expandable]
+import { Logger, AxiomJSTransport, LogLevel } from '@axiomhq/logging';
+import {
+  createAxiomRouteHandler,
+  nextJsFormatters,
+  transformRouteHandlerErrorResult,
+} from '@axiomhq/nextjs';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { isHTTPAccessFallbackError } from 'next/dist/client/components/http-access-fallback/http-access-fallback';
+
+import axiomClient from '@/lib/axiom/axiom';
+
+export const logger = new Logger({
+  transports: [
+    new AxiomJSTransport({ axiom: axiomClient, dataset: process.env.NEXT_PUBLIC_AXIOM_DATASET! }),
+  ],
+  formatters: nextJsFormatters,
+});
+
+export const getNextErrorStatusCode = (error: Error & { digest?: string }) => {
+  if (!error.digest) {
+    return 500;
+  }
+
+  if (isRedirectError(error)) {
+    return parseInt(error.digest.split(';')[3]);
+  } else if (isHTTPAccessFallbackError(error)) {
+    return parseInt(error.digest.split(';')[1]);
+  }
+};
+
+const getLogLevelFromStatusCode = (statusCode: number) => {
+  if (statusCode >= 300 && statusCode < 400) {
+    return LogLevel.info;
+  } else if (statusCode >= 400 && statusCode < 500) {
+    return LogLevel.warn;
+  }
+  return LogLevel.error;
+};
+
+export const withAxiom = createAxiomRouteHandler(logger, {
+  onError: (error) => {
+    if (error.error instanceof Error) {
+      logger.error(error.error.message, error.error);
+    }
+    const [message, report] = transformRouteHandlerErrorResult(error);
+
+    const statusCode = error.error instanceof Error ? getNextErrorStatusCode(error.error) : 500;
+    report.request.statusCode = statusCode;
+
+    report.customField = 'customValue';
+    report.request.searchParams = error.req.nextUrl.searchParams;
+
+    logger.log(getLogLevelFromStatusCode(report.statusCode), message, report);
+    logger.flush();
+  },
+});
+```
+
+### Server execution context
+
+The `serverContextFieldsFormatter` function included in the `nextJsFormatters` adds the server execution context to the logs, this is useful to have information about the scope where the logs were generated.
+
+By default, the `createAxiomRouteHandler` function adds a `request_id` field to the logs using this server context and the server context fields formatter.
+
+#### Route handlers server context
+
+The `createAxiomRouteHandler` accepts a `store` field in the configuration object. The store can be a map, an object, or a function that accepts a request and context. It returns a map or an object.
+
+The fields in the store are added to the `fields` object of the log report. For example, you can use this to add a `trace_id` field to every log report within the same function execution in the route handler.
+
+```ts [expandable]
+import { Logger, AxiomJSTransport } from '@axiomhq/logging';
+import { createAxiomRouteHandler, nextJsFormatters } from '@axiomhq/nextjs';
+import { NextRequest } from 'next/server';
+
+import axiomClient from '@/lib/axiom/axiom';
+
+export const logger = new Logger({
+  transports: [
+    new AxiomJSTransport({ axiom: axiomClient, dataset: process.env.NEXT_PUBLIC_AXIOM_DATASET! }),
+  ],
+  formatters: nextJsFormatters,
+});
+
+export const withAxiom = createAxiomRouteHandler(logger, {
+  store: (req: NextRequest) => {
+    return {
+      request_id: crypto.randomUUID(),
+      trace_id: req.headers.get('x-trace-id'),
+    };
+  },
+});
+```
+
+#### Sever context on arbitrary functions
+
+You can also add the server context to any function that runs in the server. For example, server actions, middleware, and server components.
+
+```ts [expandable]
+"use server";
+import { runWithServerContext } from "@axiomhq/nextjs";
+
+export const serverAction = () =>
+  runWithServerContext({ request_id: crypto.randomUUID() }, () => {
+    return "Hello World";
+  });
+
+```
+
+```ts middleware.ts [expandable]
+import { runWithServerContext } from '@axiomhq/nextjs';
+
+export const middleware = (req: NextRequest) => 
+  runWithServerContext({ trace_id: req.headers.get('x-trace-id') }, () => {
+    // trace_id will be added to the log fields
+    logger.info(...transformMiddlewareRequest(request));
+
+    // trace_id will also be added to the log fields
+    log.info("Hello from middleware");
+
+    event.waitUntil(logger.flush());
+    return NextResponse.next();
+  });
+```
+
+## Use next-axiom library
+
+The next-axiom library is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/next-axiom).
+
+### Install next-axiom
+
+1. In your terminal, go to the root folder of your Next.js app and run the following command:
+
+    ```sh
+    npm install --save next-axiom
+    ```
+
+1. Add the following environment variables to your Next.js app:
+
+    - `NEXT_PUBLIC_AXIOM_DATASET` is the name of the Axiom dataset where you want to send data.
+    - `NEXT_PUBLIC_AXIOM_TOKEN` is the Axiom API token you have generated.
+
+1. In the `next.config.ts` file, wrap your Next.js configuration in `withAxiom`:
+
+```js
+const { withAxiom } = require("next-axiom");
+
+module.exports = withAxiom({
+  // Your existing configuration.
+});
+```
+
+### Capture traffic requests
+
+To capture traffic requests, create a `middleware.ts` file in the root folder of your Next.js app:
+
+```ts [expandable]
+import { Logger } from 'next-axiom'
+import { NextResponse } from 'next/server'
+import type { NextFetchEvent, NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
+    const logger = new Logger({ source: 'middleware' }); // traffic, request
+    logger.middleware(request)
+
+    event.waitUntil(logger.flush())
+    return NextResponse.next()
+}
+
+// For more information, see Matching Paths below
+export const config = {
+}
+```
+
+### Web Vitals
+
+To send Web Vitals to Axiom, add the `AxiomWebVitals` component from next-axiom to the `app/layout.tsx` file:
+
+```ts [expandable]
+import { AxiomWebVitals } from "next-axiom";
+
+export default function RootLayout() {
+  return (
+    <html>
+      ...
+      <AxiomWebVitals />
+      <div>...</div>
+    </html>
+  );
+}
+```
+
+Web Vitals are only sent from production deployments.
+
+### Logs
+
+Send logs to Axiom from different parts of your app. Each log function call takes a message and an optional `fields` object.
+
+```ts [expandable]
+log.debug("Login attempt", { user: "j_doe", status: "success" }); // Results in {"message": "Login attempt", "fields": {"user": "j_doe", "status": "success"}}
+log.info("Payment completed", { userID: "123", amount: "25USD" });
+log.warn("API rate limit exceeded", {
+  endpoint: "/users/1",
+  rateLimitRemaining: 0,
+});
+log.error("System Error", { code: "500", message: "Internal server error" });
+```
+
+#### Route handlers
+
+Wrap your route handlers in `withAxiom` to add a logger to your request and log exceptions automatically:
+
+```ts [expandable]
+import { withAxiom, AxiomRequest } from "next-axiom";
+
+export const GET = withAxiom((req: AxiomRequest) => {
+  req.log.info("Login function called");
+
+  // You can create intermediate loggers
+  const log = req.log.with({ scope: "user" });
+  log.info("User logged in", { userId: 42 });
+
+  return NextResponse.json({ hello: "world" });
+});
+```
+
+#### Client components
+
+To send logs from client components, add `useLogger` from next-axiom to your component:
+
+```ts [expandable]
+"use client";
+import { useLogger } from "next-axiom";
+
+export default function ClientComponent() {
+  const log = useLogger();
+  log.debug("User logged in", { userId: 42 });
+  return <h1>Logged in</h1>;
+}
+```
+
+#### Server components
+
+To send logs from server components, add `Logger` from next-axiom to your component, and call flush before returning:
+
+```ts [expandable]
+import { Logger } from "next-axiom";
+
+export default async function ServerComponent() {
+  const log = new Logger();
+  log.info("User logged in", { userId: 42 });
+
+  // ...
+
+  await log.flush();
+  return <h1>Logged in</h1>;
+}
+```
+
+#### Log levels
+
+The log level defines the lowest level of logs sent to Axiom. Choose one of the following levels (from lowest to highest):
+
+- `debug` is the default setting. It means that you send all logs to Axiom.
+- `info`
+- `warn`
+- `error` means that you only send the highest-level logs to Axiom.
+- `off` means that you don’t send any logs to Axiom.
+
+For example, to send all logs except for debug logs to Axiom:
+
+```sh
+export NEXT_PUBLIC_AXIOM_LOG_LEVEL=info
+```
+
+### Capture errors
+
+To capture routing errors, use the [error handling mechanism of Next.js](https://nextjs.org/docs/app/building-your-application/routing/error-handling):
+
+1. Go to the `app` folder.
+2. Create an `error.tsx` file.
+3. Inside your component function, add `useLogger` from next-axiom to send the error to Axiom. For example:
+
+```ts [expandable]
+"use client";
+
+import NavTable from "@/components/NavTable";
+import { LogLevel } from "@/next-axiom/logger";
+import { useLogger } from "next-axiom";
+import { usePathname } from "next/navigation";
+
+export default function ErrorPage({
+  error,
+}: {
+  error: Error & { digest?: string };
+}) {
+  const pathname = usePathname();
+  const log = useLogger({ source: "error.tsx" });
+  let status = error.message == "Invalid URL" ? 404 : 500;
+
+  log.logHttpRequest(
+    LogLevel.error,
+    error.message,
+    {
+      host: window.location.href,
+      path: pathname,
+      statusCode: status,
+    },
+    {
+      error: error.name,
+      cause: error.cause,
+      stack: error.stack,
+      digest: error.digest,
+    }
+  );
+
+  return (
+    <div className="p-8">
+      Ops! An Error has occurred:{" "}
+      <p className="text-red-400 px-8 py-2 text-lg">`{error.message}`</p>
+      <div className="w-1/3 mt-8">
+        <NavTable />
+      </div>
+    </div>
+  );
+}
+```
+
+### Extend logger
+
+To extend the logger, use `log.with` to create an intermediate logger. For example:
+
+```ts [expandable]
+const logger = useLogger().with({ userId: 42 });
+logger.info("Hi"); // will ingest { ..., "message": "Hi", "fields" { "userId": 42 }}
+```

@@ -1,0 +1,151 @@
+---
+title: count
+description: 'This page explains how to use the count aggregation function in APL.'
+---
+
+The `count` aggregation in APL returns the total number of records in a dataset or the total number of records that match specific criteria. This function is useful when you need to quantify occurrences, such as counting log entries, user actions, or security events.
+
+When to use `count`:
+
+- To count the total number of events in log analysis, such as the number of HTTP requests or errors.
+- To monitor system usage, such as the number of transactions or API calls.
+- To identify security incidents by counting failed login attempts or suspicious activities.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `count` function works similarly to APL, but the syntax differs slightly.
+
+<CodeGroup>
+```sql Splunk example
+| stats count by status
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by status
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `count` function works similarly, but APL uses different syntax for querying.
+
+<CodeGroup>
+```sql SQL example
+SELECT status, COUNT(*)
+FROM sample_http_logs
+GROUP BY status
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by status
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize count() [by GroupingColumn]
+```
+
+### Parameters
+
+- **GroupingColumn** (optional): A column to group the count results by. If not specified, the total number of records across the dataset is returned.
+
+### Returns
+
+- A table with the count of records for the entire dataset or grouped by the specified column.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can count the number of HTTP requests by status to get a sense of how many requests result in different HTTP status codes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize count() by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20count()%20by%20status%22%7D)
+
+**Output**
+
+| status | count |
+|--------|-------|
+| 200    | 1500  |
+| 404    | 200   |
+
+This query counts the total number of HTTP requests for each status code in the logs.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+For OpenTelemetry traces, you can count the total number of spans for each service, which helps you monitor the distribution of requests across services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize count() by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%5Cn%7C%20summarize%20count()%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name          | count |
+|-----------------------|-------|
+| frontend              | 1000  |
+| cartservice           | 500   |
+
+This query counts the number of spans for each service in the OpenTelemetry traces dataset.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can count the number of requests by country to identify where the majority of traffic or suspicious activity originates.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize count() by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20count()%20by%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| geo.country | count |
+|-------------|-------|
+| US          | 3000  |
+| DE          | 500   |
+
+This query counts the number of requests originating from each country.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**sum**](/apl/aggregation-function/sum): Use `sum` to calculate the total sum of a numeric field, as opposed to counting the number of records.
+- [**avg**](/apl/aggregation-function/avg): The `avg` function calculates the average of a numeric field. Use it when you want to determine the mean value of data instead of the count.
+- [**min**](/apl/aggregation-function/min): The `min` function returns the minimum value of a numeric field, helping to identify the smallest value in a dataset.
+- [**max**](/apl/aggregation-function/max): The `max` function returns the maximum value of a numeric field, useful for identifying the largest value.
+- [**countif**](/apl/aggregation-function/countif): The `countif` function allows you to count only records that meet specific conditions, giving you more flexibility in your count queries.

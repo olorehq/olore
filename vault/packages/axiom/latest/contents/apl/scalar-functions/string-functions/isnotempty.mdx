@@ -1,0 +1,157 @@
+---
+title: 'isnotempty'
+description: 'This page explains how to use the isnotempty function in APL.'
+---
+
+The `isnotempty` function returns true if the argument isn’t an empty string and isn’t null. Use this function to filter for records with valid, non-empty values, ensure data quality, or validate that required fields contain actual content.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you check for non-empty values using conditions like `field!=""` and `isnotnull(field)`. APL's `isnotempty` combines both checks.
+
+<CodeGroup>
+```sql Splunk example
+| where field!="" AND isnotnull(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnotempty(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you check for non-empty and non-null values using separate conditions. APL's `isnotempty` provides a more concise approach.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE field IS NOT NULL AND field <> '';
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnotempty(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isnotempty(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | scalar | Yes | The value to check for non-emptiness and non-null. |
+
+### Returns
+
+Returns `true` if the value is not an empty string and not null, otherwise returns `false`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Filter HTTP logs to only include requests with valid geographic information for accurate location-based analytics.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where isnotempty(['geo.city']) and isnotempty(['geo.country'])
+| summarize request_count = count() by ['geo.city'], ['geo.country']
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20where%20isnotempty(%5B%27geo.city%27%5D)%20and%20isnotempty(%5B%27geo.country%27%5D)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20%5B%27geo.city%27%5D%2C%20%5B%27geo.country%27%5D%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| geo.city | geo.country | request_count |
+|----------|-------------|---------------|
+| New York | United States | 2341 |
+| London | United Kingdom | 1987 |
+| Tokyo | Japan | 1654 |
+| Paris | France | 1432 |
+
+This query filters requests to only include those with complete geographic information, ensuring accurate location-based analysis without null or empty values.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Analyze only traces with complete service information to ensure accurate service performance metrics.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where isnotempty(['service.name']) and isnotempty(kind)
+| summarize avg_duration = avg(duration), span_count = count() by ['service.name'], kind
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20where%20isnotempty(%5B%27service.name%27%5D)%20and%20isnotempty(kind)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%2C%20span_count%20%3D%20count()%20by%20%5B%27service.name%27%5D%2C%20kind%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | kind | avg_duration | span_count |
+|--------------|------|--------------|------------|
+| frontend | server | 125ms | 4532 |
+| checkout | client | 89ms | 3421 |
+| cart | internal | 56ms | 2987 |
+
+This query filters traces to only include spans with complete service and kind information, ensuring reliable performance analysis without incomplete data.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify authenticated users by filtering out requests without valid user identifiers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend authenticated = isnotempty(id)
+| summarize total_attempts = count(), authenticated_attempts = countif(authenticated) by status
+| extend authenticated_percentage = round(100.0 * authenticated_attempts / total_attempts, 2)
+| sort by total_attempts desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20authenticated%20%3D%20isnotempty(id)%20%7C%20summarize%20total_attempts%20%3D%20count()%2C%20authenticated_attempts%20%3D%20countif(authenticated)%20by%20status%20%7C%20extend%20authenticated_percentage%20%3D%20round(100.0%20*%20authenticated_attempts%20%2F%20total_attempts%2C%202)%20%7C%20sort%20by%20total_attempts%20desc%22%7D)
+
+**Output**
+
+| status | total_attempts | authenticated_attempts | authenticated_percentage |
+|--------|----------------|------------------------|--------------------------|
+| 401 | 1234 | 889 | 72.04 |
+| 403 | 987 | 864 | 87.53 |
+
+This query distinguishes between authenticated and anonymous failed access attempts by checking if user IDs are present, helping security teams understand attack patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isempty](/apl/scalar-functions/string-functions/isempty): Returns true if a value is empty or null. Use this for the inverse check of isnotempty.
+- [isnotnull](/apl/scalar-functions/string-functions/isnotnull): Checks only if a value is not null. Use this when you specifically need to test for null without checking for empty strings.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns the length of a string. Use this when you need to ensure strings have minimum content length beyond just being non-empty.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null or non-empty value. Use this to select from multiple fields or provide defaults.
+

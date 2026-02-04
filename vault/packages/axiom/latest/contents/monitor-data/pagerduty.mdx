@@ -1,0 +1,35 @@
+---
+title: 'PagerDuty notifier'
+description: 'This page explains how to create and configure a PagerDuty notifier.'
+sidebarTitle: PagerDuty
+keywords: ['axiom documentation', 'documentation', 'axiom', 'pagerduty', 'alerting', 'apps', 'performance', 'critical issues', 'notifiers']
+---
+
+Use a PagerDuty notifier to use all the incident management features of PagerDuty with Axiom.
+
+## Benefits of using PagerDuty with Axiom
+
+- Increase the performance and availability of your apps and services.
+- Use specific insights in your backend, apps, and workloads by running PagerDuty in tandem with Axiom.
+- Detect critical issues before any disruption happens to your resources: Axiom automatically opens and closes PagerDuty incidents.
+- Obtain deep understanding of the issue root cause by visualising the data using Axiom.
+
+Axiom creates PagerDuty events that arise from critical issues, disruptions, vulnerabilities, or workloads downtime on a service created in PagerDuty. The alert on Axiom side is linked to the PagerDuty Event allowing for Axiom to automatically close the Event incident if the Alert is resolved. This ensures no duplicate Events on PagerDuty side are created for the corresponding ones on Axiom side.
+
+### Prerequisites
+
+- Ensure you have [Admin base role](https://support.pagerduty.com/docs/user-roles) in PagerDuty.
+
+## Create PagerDuty notifier
+
+To create a PagerDuty notifier, follow these steps:
+
+1. In PagerDuty’s Events V2 API, create a new service named **Axiom** with the default settings. Copy the integration key. For more information, see the [PagerDuty documentation](https://support.pagerduty.com/main/docs/services-and-integrations#create-a-service)
+1. In Axiom, click the **Monitors** tab, and then click **Manage notifiers** on the right.
+1. Click **New notifier** on the top right.
+1. Name your notifier.
+1. Click **Slack**.
+1. Enter the integration key you have previously generated.
+1. Click **Create**.
+
+You can now add your PagerDuty notifier to a specific monitor in Axiom. If any incident happens on your monitor, Axiom notifies you on the PagerDuty Service Activity dashboard.

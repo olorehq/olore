@@ -1,0 +1,566 @@
+---
+title: 'API Check Examples'
+description: 'Real-world examples and implementation patterns for monitoring APIs with Checkly API checks across different industries and scenarios.'
+sidebarTitle: 'Examples'
+---
+
+API checks excel at validating backend services, microservices, and third-party integrations. These real-world use cases demonstrate how to implement comprehensive API monitoring across different industries and scenarios.
+
+## E-commerce and Retail
+
+### Product Catalog APIs
+Monitor product data retrieval and search functionality:
+
+```typescript
+// Product search API validation
+{
+  "method": "GET",
+  "url": "https://api.shop.com/v1/products/search?q=laptop&limit=10",
+  "headers": {
+    "Authorization": "Bearer {{API_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const data = JSON.parse(response.body)",
+    "expect(data.products).to.be.an('array')",
+    "expect(data.products.length).to.be.at.most(10)",
+    "expect(data.products[0]).to.have.property('id')",
+    "expect(data.products[0]).to.have.property('name')",
+    "expect(data.products[0]).to.have.property('price')",
+    "expect(data.total_count).to.be.a('number')"
+  ]
+}
+```
+
+### Inventory Management
+Validate stock levels and inventory updates:
+
+```typescript
+// Inventory check API
+{
+  "method": "GET",
+  "url": "https://api.shop.com/v1/inventory/{{PRODUCT_ID}}",
+  "headers": {
+    "Authorization": "Bearer {{INVENTORY_TOKEN}}",
+    "Content-Type": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const inventory = JSON.parse(response.body)",
+    "expect(inventory.product_id).to.equal('{{PRODUCT_ID}}')",
+    "expect(inventory.available_quantity).to.be.a('number')",
+    "expect(inventory.available_quantity).to.be.at.least(0)",
+    "expect(inventory.reserved_quantity).to.be.a('number')",
+    "expect(inventory.last_updated).to.match(/\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/)"
+  ]
+}
+```
+
+### Payment Gateway Integration
+Monitor payment processing and transaction APIs:
+
+```typescript
+// Payment gateway health check
+{
+  "method": "POST",
+  "url": "https://api.payments.com/v1/transactions/validate",
+  "headers": {
+    "Authorization": "Bearer {{PAYMENT_API_KEY}}",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "amount": 100,
+    "currency": "USD",
+    "payment_method": "test_card",
+    "test_mode": true
+  },
+  "assertions": [
+    "expect(response.status).to.be.oneOf([200, 201])",
+    "const transaction = JSON.parse(response.body)",
+    "expect(transaction.status).to.be.oneOf(['authorized', 'succeeded'])",
+    "expect(transaction.amount).to.equal(100)",
+    "expect(transaction.currency).to.equal('USD')",
+    "expect(transaction.transaction_id).to.match(/^txn_/)"
+  ]
+}
+```
+
+## SaaS and Software Platforms
+
+### User Authentication APIs
+Validate authentication and authorization flows:
+
+```typescript
+// OAuth token validation
+{
+  "method": "POST",
+  "url": "https://api.saas.com/v1/auth/token",
+  "headers": {
+    "Content-Type": "application/x-www-form-urlencoded"
+  },
+  "body": "grant_type=client_credentials&client_id={{CLIENT_ID}}&client_secret={{CLIENT_SECRET}}",
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const auth = JSON.parse(response.body)",
+    "expect(auth.access_token).to.be.a('string')",
+    "expect(auth.token_type).to.equal('Bearer')",
+    "expect(auth.expires_in).to.be.a('number')",
+    "expect(auth.expires_in).to.be.above(3600)", // At least 1 hour
+    "expect(auth.scope).to.include('read')"
+  ]
+}
+```
+
+### User Management APIs
+Monitor user profile and account management:
+
+```typescript
+// User profile retrieval
+{
+  "method": "GET",
+  "url": "https://api.saas.com/v1/users/{{USER_ID}}",
+  "headers": {
+    "Authorization": "Bearer {{ACCESS_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const user = JSON.parse(response.body)",
+    "expect(user.id).to.equal('{{USER_ID}}')",
+    "expect(user.email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)",
+    "expect(user.status).to.be.oneOf(['active', 'pending', 'suspended'])",
+    "expect(user.created_at).to.be.a('string')",
+    "expect(user.last_login).to.be.a('string')"
+  ]
+}
+```
+
+### Subscription and Billing APIs
+Validate subscription status and billing operations:
+
+```typescript
+// Subscription status check
+{
+  "method": "GET",
+  "url": "https://api.saas.com/v1/subscriptions/{{SUBSCRIPTION_ID}}",
+  "headers": {
+    "Authorization": "Bearer {{API_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const subscription = JSON.parse(response.body)",
+    "expect(subscription.id).to.equal('{{SUBSCRIPTION_ID}}')",
+    "expect(subscription.status).to.be.oneOf(['active', 'trial', 'past_due', 'canceled'])",
+    "expect(subscription.plan).to.have.property('id')",
+    "expect(subscription.current_period_end).to.be.a('string')",
+    "expect(new Date(subscription.current_period_end)).to.be.above(new Date())"
+  ]
+}
+```
+
+## Financial Services
+
+### Account Balance APIs
+Monitor account information and balance retrieval:
+
+```typescript
+// Account balance check
+{
+  "method": "GET",
+  "url": "https://api.bank.com/v1/accounts/{{ACCOUNT_ID}}/balance",
+  "headers": {
+    "Authorization": "Bearer {{BANKING_TOKEN}}",
+    "X-Client-ID": "{{CLIENT_ID}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const balance = JSON.parse(response.body)",
+    "expect(balance.account_id).to.equal('{{ACCOUNT_ID}}')",
+    "expect(balance.available_balance).to.be.a('number')",
+    "expect(balance.current_balance).to.be.a('number')",
+    "expect(balance.currency).to.match(/^[A-Z]{3}$/)",
+    "expect(balance.last_updated).to.be.a('string')"
+  ]
+}
+```
+
+### Transaction Processing
+Validate transaction creation and processing:
+
+```typescript
+// Transaction validation
+{
+  "method": "POST",
+  "url": "https://api.bank.com/v1/transactions",
+  "headers": {
+    "Authorization": "Bearer {{BANKING_TOKEN}}",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "from_account": "{{FROM_ACCOUNT}}",
+    "to_account": "{{TO_ACCOUNT}}",
+    "amount": 50.00,
+    "currency": "USD",
+    "description": "API Test Transfer",
+    "test_mode": true
+  },
+  "assertions": [
+    "expect(response.status).to.be.oneOf([200, 201, 202])",
+    "const transaction = JSON.parse(response.body)",
+    "expect(transaction.id).to.be.a('string')",
+    "expect(transaction.status).to.be.oneOf(['pending', 'processing', 'completed'])",
+    "expect(transaction.amount).to.equal(50.00)",
+    "expect(transaction.currency).to.equal('USD')"
+  ]
+}
+```
+
+### Compliance and Risk APIs
+Monitor regulatory compliance and risk assessment:
+
+```typescript
+// AML/KYC validation
+{
+  "method": "POST",
+  "url": "https://api.compliance.com/v1/kyc/validate",
+  "headers": {
+    "Authorization": "Bearer {{COMPLIANCE_TOKEN}}",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "customer_id": "{{CUSTOMER_ID}}",
+    "document_type": "passport",
+    "document_number": "TEST123456"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const validation = JSON.parse(response.body)",
+    "expect(validation.status).to.be.oneOf(['verified', 'pending', 'rejected'])",
+    "expect(validation.confidence_score).to.be.a('number')",
+    "expect(validation.confidence_score).to.be.within(0, 100)",
+    "expect(validation.risk_level).to.be.oneOf(['low', 'medium', 'high'])"
+  ]
+}
+```
+
+## Healthcare and Life Sciences
+
+### Patient Management APIs
+Monitor patient data access and management:
+
+```typescript
+// Patient record retrieval (FHIR compliant)
+{
+  "method": "GET",
+  "url": "https://api.healthcare.com/fhir/Patient/{{PATIENT_ID}}",
+  "headers": {
+    "Authorization": "Bearer {{HEALTHCARE_TOKEN}}",
+    "Accept": "application/fhir+json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const patient = JSON.parse(response.body)",
+    "expect(patient.resourceType).to.equal('Patient')",
+    "expect(patient.id).to.equal('{{PATIENT_ID}}')",
+    "expect(patient.identifier).to.be.an('array')",
+    "expect(patient.name).to.be.an('array')",
+    "expect(patient.active).to.be.a('boolean')"
+  ]
+}
+```
+
+### Appointment Scheduling
+Validate appointment booking and management:
+
+```typescript
+// Appointment availability check
+{
+  "method": "GET",
+  "url": "https://api.healthcare.com/v1/appointments/availability",
+  "headers": {
+    "Authorization": "Bearer {{HEALTHCARE_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "params": {
+    "provider_id": "{{PROVIDER_ID}}",
+    "date": "2024-03-15",
+    "service_type": "consultation"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const availability = JSON.parse(response.body)",
+    "expect(availability.date).to.equal('2024-03-15')",
+    "expect(availability.slots).to.be.an('array')",
+    "availability.slots.forEach(slot => {",
+    "  expect(slot.start_time).to.match(/^\\d{2}:\\d{2}$/)",
+    "  expect(slot.available).to.be.a('boolean')",
+    "})"
+  ]
+}
+```
+
+## IoT and Smart Devices
+
+### Device Status Monitoring
+Monitor IoT device connectivity and status:
+
+```typescript
+// IoT device status check
+{
+  "method": "GET",
+  "url": "https://api.iot.com/v1/devices/{{DEVICE_ID}}/status",
+  "headers": {
+    "Authorization": "Bearer {{IOT_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const device = JSON.parse(response.body)",
+    "expect(device.device_id).to.equal('{{DEVICE_ID}}')",
+    "expect(device.status).to.be.oneOf(['online', 'offline', 'maintenance'])",
+    "expect(device.last_seen).to.be.a('string')",
+    "expect(device.battery_level).to.be.within(0, 100)",
+    "expect(device.firmware_version).to.match(/^\\d+\\.\\d+\\.\\d+$/)"
+  ]
+}
+```
+
+### Sensor Data APIs
+Validate sensor data collection and processing:
+
+```typescript
+// Sensor data retrieval
+{
+  "method": "GET",
+  "url": "https://api.iot.com/v1/sensors/{{SENSOR_ID}}/data",
+  "headers": {
+    "Authorization": "Bearer {{IOT_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "params": {
+    "start_time": "2024-03-15T00:00:00Z",
+    "end_time": "2024-03-15T23:59:59Z"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const data = JSON.parse(response.body)",
+    "expect(data.sensor_id).to.equal('{{SENSOR_ID}}')",
+    "expect(data.readings).to.be.an('array')",
+    "data.readings.forEach(reading => {",
+    "  expect(reading.timestamp).to.be.a('string')",
+    "  expect(reading.value).to.be.a('number')",
+    "  expect(reading.unit).to.be.a('string')",
+    "})"
+  ]
+}
+```
+
+## Media and Content Management
+
+### Content Delivery APIs
+Monitor content serving and CDN performance:
+
+```typescript
+// Content metadata API
+{
+  "method": "GET",
+  "url": "https://api.media.com/v1/content/{{CONTENT_ID}}",
+  "headers": {
+    "Authorization": "Bearer {{MEDIA_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const content = JSON.parse(response.body)",
+    "expect(content.id).to.equal('{{CONTENT_ID}}')",
+    "expect(content.type).to.be.oneOf(['video', 'audio', 'image', 'document'])",
+    "expect(content.url).to.match(/^https?:\\/\\//)",
+    "expect(content.file_size).to.be.a('number')",
+    "expect(content.duration).to.be.a('number')",
+    "expect(content.status).to.equal('published')"
+  ]
+}
+```
+
+### Video Streaming APIs
+Validate video processing and streaming:
+
+```typescript
+// Video stream health check
+{
+  "method": "GET",
+  "url": "https://api.streaming.com/v1/streams/{{STREAM_ID}}/health",
+  "headers": {
+    "Authorization": "Bearer {{STREAMING_TOKEN}}",
+    "Accept": "application/json"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const stream = JSON.parse(response.body)",
+    "expect(stream.stream_id).to.equal('{{STREAM_ID}}')",
+    "expect(stream.status).to.be.oneOf(['live', 'idle', 'error'])",
+    "expect(stream.bitrate).to.be.a('number')",
+    "expect(stream.viewers).to.be.a('number')",
+    "expect(stream.quality).to.be.oneOf(['720p', '1080p', '4K'])"
+  ]
+}
+```
+
+## API Monitoring Best Practices by Use Case
+
+### High-Frequency Monitoring
+```yaml
+# Critical business APIs
+Frequency: Every 1-2 minutes
+Locations: Primary user regions
+Thresholds:
+  - Response time: < 500ms (degraded), < 2000ms (failed)
+  - Status codes: 2xx expected
+  - Availability: > 99.9%
+
+Use Cases:
+  - Payment processing
+  - User authentication
+  - Core business transactions
+```
+
+### Standard Business APIs
+```yaml
+# Important but non-critical APIs
+Frequency: Every 5-10 minutes
+Locations: Global coverage
+Thresholds:
+  - Response time: < 1000ms (degraded), < 5000ms (failed)
+  - Status codes: 2xx expected
+  - Availability: > 99.5%
+
+Use Cases:
+  - Product catalogs
+  - User profiles
+  - Content management
+```
+
+### Background and Batch APIs
+```yaml
+# Batch processing and background services
+Frequency: Every 15-30 minutes
+Locations: Primary regions
+Thresholds:
+  - Response time: < 3000ms (degraded), < 10000ms (failed)
+  - Status codes: 2xx or 202 expected
+  - Availability: > 99%
+
+Use Cases:
+  - Data processing
+  - Report generation
+  - Backup operations
+```
+
+## Advanced API Monitoring Patterns
+
+### Health Check Endpoints
+Create comprehensive health checks that validate multiple components:
+
+```typescript
+// Multi-component health check
+{
+  "method": "GET",
+  "url": "https://api.example.com/health",
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const health = JSON.parse(response.body)",
+    "expect(health.status).to.equal('healthy')",
+    "expect(health.database).to.equal('connected')",
+    "expect(health.redis).to.equal('connected')",
+    "expect(health.external_apis).to.be.an('object')",
+    "Object.values(health.external_apis).forEach(status => {",
+    "  expect(status).to.be.oneOf(['healthy', 'degraded'])",
+    "})"
+  ]
+}
+```
+
+### Rate Limiting Validation
+Monitor API rate limiting and quota management:
+
+```typescript
+// Rate limit monitoring
+{
+  "method": "GET",
+  "url": "https://api.example.com/v1/data",
+  "headers": {
+    "Authorization": "Bearer {{API_TOKEN}}"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "expect(response.headers['x-rate-limit-limit']).to.exist",
+    "expect(response.headers['x-rate-limit-remaining']).to.exist",
+    "const remaining = parseInt(response.headers['x-rate-limit-remaining'])",
+    "expect(remaining).to.be.above(10)" // Ensure sufficient quota
+  ]
+}
+```
+
+### Error Response Validation
+Validate that error responses are properly formatted:
+
+```typescript
+// Error handling validation
+{
+  "method": "GET",
+  "url": "https://api.example.com/v1/invalid-endpoint",
+  "assertions": [
+    "expect(response.status).to.equal(404)",
+    "const error = JSON.parse(response.body)",
+    "expect(error.error).to.be.a('string')",
+    "expect(error.error_code).to.be.a('string')",
+    "expect(error.message).to.include('not found')",
+    "expect(error.request_id).to.be.a('string')"
+  ]
+}
+```
+
+## Integration with Development Workflow
+
+### Environment-Specific Monitoring
+```typescript
+// Development environment
+Base URL: https://api-dev.example.com
+Frequency: Every 15 minutes
+Alerts: Development team only
+
+// Staging environment  
+Base URL: https://api-staging.example.com
+Frequency: Every 5 minutes
+Alerts: QA team and development leads
+
+// Production environment
+Base URL: https://api.example.com
+Frequency: Every 1 minute
+Alerts: On-call engineer, operations team
+```
+
+### CI/CD Integration
+Monitor API deployments and validate releases:
+
+```typescript
+// Post-deployment validation
+{
+  "method": "GET",
+  "url": "https://api.example.com/version",
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const version = JSON.parse(response.body)",
+    "expect(version.build_number).to.equal('{{EXPECTED_BUILD}}')",
+    "expect(version.environment).to.equal('production')",
+    "expect(version.healthy).to.be.true"
+  ]
+}
+```
+
+<Note>
+API checks provide the foundation for comprehensive application monitoring. Combine multiple API checks with browser and multistep checks for complete coverage of your application ecosystem.
+</Note>

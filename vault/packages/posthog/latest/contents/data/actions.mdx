@@ -1,0 +1,126 @@
+---
+title: Actions
+sidebar: Docs
+showTitle: true
+availability:
+    free: full
+    selfServe: full
+    enterprise: full
+---
+
+## What is an action?
+
+Actions are a way of combining several related events into one, which you can then analyze in [insights](/docs/product-analytics/insights) and [dashboards](/docs/product-analytics/dashboards) as if it were a single event.
+
+Actions can include autocapture events, custom events, or pageviews, and support filters for:
+
+- Event properties (e.g. UTM tags)
+- Person properties (e.g. location, operating system)
+- Feature flags (e.g. beta test groups and feature toggles)
+- Cohorts (e.g. groups of users with related properties)
+- Autocapture elements (e.g. text and CSS selectors)
+
+You can also use actions to "rename" events by creating an action based on a single event and giving it easy to understand name.
+
+## How are actions useful?
+
+Actions are great for analzying related events as if they were one.
+
+At PostHog, for example, we track custom events like `insight created`, `insight analyzed`, and `dashboard created`. These are all different ways to interacting with product analytics.
+
+We then combine these and similar events into an action called `Product Analytics Interactions`, which gives us an aggregate view of product analytics usage.
+
+Actions are also useful for tracking conversions on your website. Our website homepage, for example, has several call to actions (CTAs) to signup to PostHog. We combine all these events into a single `Homepage CTA` action, so we can track all clicks from the signup page in a trends insight and run A/B tests with this action as a goal.
+
+## How to create an action
+
+You can create new actions by either: 
+
+1. Clicking the "New action" button in the "Actions" tab in [Data Management](https://us.posthog.com/data-management/actions).
+
+2. Using the [PostHog Toolbar](/docs/toolbar) to tag the elements that are relevant – see our step-by-step tutorial on [creating actions using the toolbar](/tutorials/how-to-capture-events-the-easy-way).
+
+Actions are retroactive, meaning they also apply to past events, not only events that happen after the action was created.
+
+You can create actions using events from three sources:
+
+### 1. Autocapture
+
+[Autocapture](/docs/product-analytics/autocapture) actions are based on frontend elements from your website, such as a button or an input. 
+
+The easiest way to select them is [using the toolbar](/tutorials/how-to-capture-events-the-easy-way), but you can also set them manually by providing something to identify the element, like a selector.
+
+Our autocapture functionality captures a lot of frontend elements by default, but you'll need to manually set anything else you want to be captured. 
+ 
+Autocapture captures any click or change of input or submission of `a`, `button`, `form`, `input`, `select`, `textarea`, and `label` tags. All other elements need to be set manually. This is important to remember if you deviate from established HTML practices, such as using a `div` as a button.
+
+Autocapture is also conservative regarding `input` tags to prevent grabbing sensitive data. See [our Autocapture docs](/docs/product-analytics/autocapture) for more details.
+
+There are three ways to match your elements:
+
+1. **Text:** The text on the element, if applicable. If you have buttons across your site, all saying ‘Sign Up’, you can track **ALL** of them, site-wide, as the same action, by choosing `Text: "Sign Up"` and not matching the URL.
+
+2. **Only match if URL contains:** The URL where this action needs to take place. If you choose to match the URL as well, it will track any button on that page if it contains the ‘Sign Up’ text (which could be more than one button).
+
+3. **Matching selectors:** details below.
+
+You can have more than one match type selected_. Having multiple fields selected is an `AND` statement, so all of them will need to match an event for it to count as the action.
+
+#### Matching selectors
+
+You can use <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors" target="_blank" rel="noopener">standard basic CSS selectors</a> to uniquely identify the elements you care about.
+
+The following types of selectors are supported:
+
+<ul>
+    <li>
+        <strong>Recommended:</strong> Attribute selectors. Example:
+        <code>[data-attr="value"]</code> will match elements that have the given attribute and value.
+    </li>
+    <li>
+        <strong>ID selectors.</strong> Example: <code>#speciallink</code> will match
+        elements with ID "speciallink".
+    </li>
+    <li>
+        <strong>Class selectors.</strong> Example: <code>.importantlink</code> will match
+        elements with CSS class "importantlink".
+    </li>
+    <li>
+        <strong>Type selectors.</strong> Example: <code>input</code> will match any
+        <code>&lt;input&gt;</code> elements.
+    </li>
+    <li>
+        Combinators are also supported (e.g. descendant or child combinators).
+        {' '}
+        <a
+            href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors#combinators"
+            target="_blank"
+            rel="noopener"
+        >
+            Learn more
+        </a>{' '}
+        about combinators. Examples: <code>form > [data-attr="submit"]</code> or <code>button span</code>.
+    </li>
+</ul>
+
+The following patterns _are not_ currently supported:
+
+- Wildcard operators (e.g. <code>*</code>, <code>~</code>, <code>|</code>)
+- Combining multiple attribute selectors
+- [Non-alphanumeric classes](https://github.com/PostHog/posthog/issues/15480) (like clases containing `-`, `[]`, `.`)
+
+Note that webhooks matching is stricter than query matching, see [issue](https://github.com/PostHog/posthog/issues/20492)
+
+### 2. Pageviews
+
+Actions can be created using pageview events that match URLs containing a specific string, an exact match, or a regex pattern.
+
+Regex matching is commonly used for URLs containing IDs like `/some/path/123/view`, which could be matched by a regex like `/some/path/\d+/view` into a single action.
+
+### 3. Custom events
+
+Custom events can be sent to your PostHog instance via our [API](/docs/api), or one of our [SDKs](/docs/getting-started/install).
+
+### Further reading
+
+- [The complete guide to event tracking](/tutorials/event-tracking-guide)

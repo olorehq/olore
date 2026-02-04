@@ -1,0 +1,144 @@
+---
+title: '!in~'
+description: 'This page explains how to use the !in~ operator in APL.'
+sidebarTitle: '!in~'
+---
+
+The `!in~` operator in APL filters records based on whether a value doesn't match any element in a specified set using case-insensitive comparison. Use this operator to exclude records where a field value equals one of several values regardless of letter case, which is more concise and efficient than chaining multiple inequality checks with `and`. The `!in~` operator works with any scalar type, including strings, numbers, booleans, datetime values, and dynamic arrays.
+
+Use the `!in~` operator when you need to exclude specific values with case-insensitive matching, such as filtering out known HTTP methods or status codes regardless of their capitalization in the data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, string comparisons are case-insensitive by default. APL requires the explicit `!in~` operator for case-insensitive exclusion. Use `!in~` when you want to exclude values regardless of case.
+
+<CodeGroup>
+```sql Splunk example
+index=web_logs | where NOT method IN ("options", "head")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where method !in~ ('options', 'head')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `NOT IN` operator's case sensitivity depends on the database collation. APL's `!in~` operator explicitly performs case-insensitive exclusion, similar to SQL databases with case-insensitive collation.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM sample_http_logs WHERE LOWER(method) NOT IN ('options', 'head')
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where method !in~ ('options', 'head')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+Expression !in~ (Value1, Value2, ...)
+```
+
+### Parameters
+
+| Name       | Type              | Required | Description                                                                                                                                                        |
+| ---------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Expression | scalar            | Yes      | The value to check against the exclusion set, ignoring letter case.                                                                                         |
+| Value      | scalar or tabular | Yes      | The values to exclude. Specify individual scalar values, a dynamic array, or a subquery. When using a subquery with multiple columns, APL uses the first column. The operator supports up to 1,000,000 unique values in the set. |
+
+### Returns
+
+Returns `true` if the expression value does not match any value in the specified set (case-insensitive). Returns `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Filter HTTP logs to exclude certain methods regardless of case.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where method !in~ ('options', 'head')
+| project _time, method, uri, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20method%20!in~%20('options'%2C%20'head')%20%7C%20project%20_time%2C%20method%2C%20uri%2C%20status%22%7D)
+
+**Output**
+
+| _time               | method | uri        | status |
+| ------------------- | ------ | ---------- | ------ |
+| 2024-10-17 10:15:00 | GET    | /api/users | 200    |
+| 2024-10-17 10:16:30 | POST   | /api/data  | 201    |
+| 2024-10-17 10:17:45 | DELETE | /api/item  | 204    |
+
+This query filters the HTTP logs to exclude OPTIONS and HEAD requests regardless of case, helping you focus on substantive requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Exclude internal span kinds regardless of case variations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where kind !in~ ('internal', 'producer', 'consumer')
+| project _time, trace_id, ['service.name'], kind, duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20kind%20!in~%20('internal'%2C%20'producer'%2C%20'consumer')%20%7C%20project%20_time%2C%20trace_id%2C%20%5B'service.name'%5D%2C%20kind%2C%20duration%22%7D)
+
+**Output**
+
+| _time               | trace_id | service.name | kind   | duration |
+| ------------------- | -------- | ------------ | ------ | -------- |
+| 2024-10-17 11:00:00 | abc123   | frontend     | server | 45ms     |
+| 2024-10-17 11:00:05 | def456   | checkout     | client | 120ms    |
+| 2024-10-17 11:00:10 | ghi789   | cart         | Server | 30ms     |
+
+This query filters traces to exclude internal and messaging spans, helping you focus on client-server interactions.
+
+</Tab>
+</Tabs>
+
+## Performance considerations
+
+When two operators perform the same task, use the case-sensitive one (`!in`) for better performance. Use `!in~` only when case-insensitive exclusion is necessary.
+
+## Use with dynamic arrays
+
+When you pass a dynamic array with nested arrays, APL flattens them into a single list. For instance, `x !in~ (dynamic(['a', ['b', 'c']]))` is equivalent to `x !in~ ('a', 'b', 'c')`.
+
+```kusto
+let excluded_methods = dynamic(['options', 'head', 'trace']);
+['sample-http-logs']
+| where method !in~ (excluded_methods)
+```
+
+## List of related operators
+
+- [in](/apl/scalar-operators/in-operators/in-operator): Use for case-sensitive matching to include values.
+- [!in](/apl/scalar-operators/in-operators/not-in-operator): Use for case-sensitive exclusion. Better performance than `!in~`.
+- [in~](/apl/scalar-operators/in-operators/in-tilde-operator): Use for case-insensitive matching to include values.
+- [where](/apl/tabular-operators/where-operator): Use to filter rows based on conditions. The `!in~` operator is commonly used within `where` clauses.
+- [!~](/apl/scalar-operators/string-operators): Use for single value case-insensitive inequality checks. Use `!in~` when checking against multiple values.

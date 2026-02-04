@@ -1,0 +1,109 @@
+---
+title: 'Environments in Checkly'
+description: 'Learn about the environments of Checkly'
+sidebarTitle: 'Environments'
+---
+
+**Environments** in Checkly represent the different stages and contexts where your applications run—from development and staging to production and beyond. Using the CLI, you can run your commands from your CI/CD pipeline and target different environments like staging and production.
+
+Think of **Environments** as the different places your application lives throughout its lifecycle. Each **Environment** represents a distinct deployment context with its own domain, configurations, database connections, and operational characteristics. Checkly's approach to environments ensures that your monitoring strategy adapts seamlessly as your code moves from development through to production.
+
+The power of Checkly lies in consistency with flexibility—you can define the same monitoring logic once and apply it across multiple **Environments**, while still allowing for environment-specific customizations like different URLS, assertions, authentication credentials, or performance thresholds.
+
+## In Practice
+For instance, we can infer the hostname by setting the ENVIRONMENT_URL to determine the staging or production hostname. This approach allows you to write monitoring code that automatically adapts to different environments without requiring separate configurations for each deployment stage.
+
+You test your checks locally, or inside your CI/CD pipeline to make sure they run reliably against your staging and production environments. You deploy your checks to Checkly, so we can run them around the clock as monitors and alert you when things break.
+
+## Configuration Management Across Environments
+<Note>Checkly supports **environment variables** to manage configuration differences between environments. You can define environment variables in the Checkly dashboard and reference them in your test scripts.</Note>
+
+Environment management in Checkly integrates with modern development practices. This is very powerful when combined with passing environment variables using one of the flags --env or --env-file as you can target staging, test and preview environment with specific URLs, credentials and other common variables that differ between environments. 
+
+You can maintain separate configuration files for different environments, allowing the same monitoring code to behave appropriately whether it's testing your local development setup, validating a staging deployment, or monitoring production services.
+
+## Real-World Environment Examples
+Here's how you might structure monitoring across environments:
+
+
+### Development Environment Example:
+
+```typescript
+// checkly.dev.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  projectName: 'My App - Development',
+  checks: {
+    frequency: Frequency.EVERY_1M, // More frequent testing in dev
+    locations: ['us-east-1'], // Single location for dev
+    activated: true,
+  },
+  cli: {
+    runLocation: 'us-east-1'
+  }
+})
+```
+
+### Production Environment Example:
+
+```typescript
+// checkly.prod.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  projectName: 'My App - Production',
+  checks: {
+    frequency: Frequency.EVERY_5M, // Less frequent in production
+    locations: ['us-east-1', 'eu-west-1', 'ap-south-1'], // Global coverage
+    activated: true,
+  },
+  cli: {
+    runLocation: 'us-east-1'
+  }
+})
+```
+
+### Using Environment Variables in Checks:
+
+```typescript
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+
+new ApiCheck('api-health-check', {
+  name: 'API Health Check',
+  request: {
+    method: 'GET',
+    // Uses different URLs based on environment
+    url: process.env.ENVIRONMENT_URL || 'https://api.example.com',
+    headers: {
+      'Authorization': `Bearer ${process.env.API_TOKEN}`
+    },
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      // Different response time expectations per environment
+      AssertionBuilder.responseTime().lessThan(
+        process.env.NODE_ENV === 'production' ? 500 : 2000
+      )
+    ]
+  }
+})
+```
+### Running Against Different Environments:
+
+```bash
+# Test against staging
+ENVIRONMENT_URL=https://staging-api.example.com \
+API_TOKEN=staging_token_123 \
+npx checkly test --config checkly.staging.config.ts
+
+# Deploy to production monitoring
+ENVIRONMENT_URL=https://api.example.com \
+API_TOKEN=prod_token_456 \
+npx checkly deploy --config checkly.prod.config.ts
+```
+
+
+## Environments in the Development Lifecycle
+Automate regional monitoring setups, ensuring every environment, from staging to production, is monitored uniformly. Create a check group | Checkly Public API This ensures that the monitoring you develop and test in lower environments translates directly to production monitoring, reducing the gap between what you test and what you monitor.
+
+The Environment concept enables a true "shift-left" approach to monitoring, where monitoring considerations become part of the development process rather than an afterthought. You can validate that your monitoring works correctly before your application reaches production, ensuring comprehensive coverage from day one of any deployment.

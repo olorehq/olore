@@ -1,0 +1,160 @@
+---
+title: series_fir
+description: 'This page explains how to use the series_fir function in APL.'
+---
+
+The `series_fir` function applies a Finite Impulse Response (FIR) filter to a numeric dynamic array (series) using a specified filter kernel. This function performs digital signal processing operations such as smoothing, noise reduction, and frequency filtering on time series data.
+
+You can use `series_fir` when you want to apply signal processing techniques to your time series data, such as smoothing noisy data, removing high-frequency noise, or implementing custom filtering operations. This is particularly useful for preprocessing data before analysis, removing artifacts, or extracting specific frequency components. Typical applications include sensor data processing, financial time series analysis, and performance monitoring where noise reduction is important.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, FIR filtering isn’t natively available and typically requires external tools or complex workarounds using statistical functions like `movingavg` or `streamstats`. Most Splunk users rely on simple moving averages for smoothing. In APL, `series_fir` provides direct access to sophisticated digital signal processing capabilities with custom filter kernels.
+
+<CodeGroup>
+```sql Splunk example
+... | streamstats window=5 current=f avg(field) as smoothed_field
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([100, 120, 110, 130, 105])
+]
+| extend filtered_values = series_fir(values, dynamic([0.2, 0.2, 0.2, 0.2, 0.2]))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not provide FIR filtering functionality. Database systems typically require specialized extensions or external libraries for digital signal processing. Most SQL users rely on window functions with simple averages for smoothing. In APL, `series_fir` brings advanced signal processing capabilities directly into the query language.
+
+<CodeGroup>
+```sql SQL example
+SELECT AVG(value) OVER (ORDER BY timestamp ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS smoothed_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([100, 120, 110, 130, 105])
+]
+| extend filtered_values = series_fir(values, dynamic([0.2, 0.2, 0.2, 0.2, 0.2]))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_fir(array, kernel)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values representing the input signal. |
+| `kernel`  | dynamic | A dynamic array of numeric values representing the FIR filter coefficients. |
+
+### Returns
+
+A dynamic array representing the filtered signal after applying the FIR filter.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_fir` to smooth noisy request duration data using a moving average filter, which helps identify underlying performance trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend smoothed_durations = series_fir(durations, dynamic([0.2, 0.2, 0.2, 0.2, 0.2]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20smoothed_durations%20%3D%20series_fir(durations%2C%20dynamic(%5B0.2%2C%200.2%2C%200.2%2C%200.2%2C%200.2%5D))%22%7D)
+
+**Output**
+
+| id   | durations           | smoothed_durations    |
+| ---- | ------------------- | --------------------- |
+| u123 | [100, 120, 110, 130, 105] | [100, 110, 110, 115, 115] |
+| u456 | [150, 140, 160, 135, 145] | [150, 145, 150, 147.5, 144] |
+
+This query applies a 5-point moving average filter to request durations, useful for smoothing out noise and identifying underlying performance trends.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_fir` to smooth noisy span duration data using a low-pass filter, which helps identify consistent latency patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend smoothed_durations = series_fir(durations, dynamic([0.25, 0.25, 0.25, 0.25]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20smoothed_durations%20%3D%20series_fir(durations%2C%20dynamic(%5B0.25%2C%200.25%2C%200.25%2C%200.25%5D))%22%7D)
+
+**Output**
+
+| service.name          | durations                | smoothed_durations         |
+| --------------------- | ------------------------ | -------------------------- |
+| frontend              | [100ms, 120ms, 110ms, 130ms] | [100ms, 110ms, 110ms, 115ms] |
+| product-catalog | [50ms, 60ms, 55ms, 65ms]     | [50ms, 55ms, 55ms, 60ms]   |
+
+This query applies a 4-point moving average filter to span durations, useful for smoothing out noise and identifying consistent latency patterns across services.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_fir` to smooth noisy request duration data using a high-pass filter to detect anomalies while removing baseline noise.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend filtered_durations = series_fir(durations, dynamic([-0.1, -0.1, 0.4, -0.1, -0.1]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20filtered_durations%20%3D%20series_fir(durations%2C%20dynamic(%5B-0.1%2C%20-0.1%2C%200.4%2C%20-0.1%2C%20-0.1%5D))%22%7D)
+
+**Output**
+
+| status | durations           | filtered_durations    |
+| ------ | ------------------- | --------------------- |
+| 200    | [100, 120, 110, 130, 105] | [-2, 2, 4, 2, -2] |
+| 500    | [200, 220, 210, 230, 205] | [-2, 2, 4, 2, -2] |
+
+This query applies a high-pass filter to request durations grouped by status code, useful for detecting anomalies while removing baseline noise in security analysis.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_fft](/apl/scalar-functions/time-series/series-fft): Performs Fast Fourier Transform on a series. Use for frequency domain analysis before applying filters.
+- [series_ifft](/apl/scalar-functions/time-series/series-ifft): Performs inverse FFT to convert frequency domain back to time domain. Use after frequency domain filtering.
+- [series_fill_linear](/apl/scalar-functions/time-series/series-fill-linear): Fills missing values using linear interpolation. Use for data preprocessing before filtering.
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use for analyzing filter output magnitudes.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use for generating filter kernels or analyzing periodic components.

@@ -1,0 +1,154 @@
+---
+title: 'IncidentTrigger Configuration'
+description: 'Learn how to configure status page incident automation with the Checkly CLI.'
+sidebarTitle: 'Incident Trigger'
+---
+
+<Tip>
+Learn more about Status Pages in [the Status Pages overview](/communicate/status-pages/overview).
+</Tip>
+
+Use incident triggers to automatically create and resolve an incident and notify subscribers based on the alert configuration of a monitor or check. This allows you to link synthetic monitoring failures directly to incidents on your status pages.
+
+<CodeGroup>
+```ts Basic Example highlight={12-19,28}
+import {
+  Frequency,
+  IncidentTrigger,
+  PlaywrightCheck,
+  StatusPageService,
+} from "checkly/constructs";
+
+const searchService = new StatusPageService("search-service", {
+  name: "Search Service",
+});
+
+const searchIncidentTrigger: IncidentTrigger = {
+  service: searchService,
+  severity: "MINOR",
+  name: "Search is down",
+  description:
+    "Some users experience issues with the product search. We're investigating.",
+  notifySubscribers: true,
+};
+
+new PlaywrightCheck("playwright-check-suite", {
+  name: "Search Monitoring",
+  playwrightConfigPath: "../playwright.config.ts",
+  activated: true,
+  pwProjects: ["Search Monitoring"],
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-2"],
+  frequency: Frequency.EVERY_10M,
+  triggerIncident: searchIncidentTrigger,
+});
+```
+</CodeGroup>
+
+## Configuration
+
+<Tabs>
+<Tab title="Incident Trigger">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `service` | `StatusPageService` | ✅ | - | The status page service that this incident will be associated with |
+| `severity` | `IncidentSeverity` | ✅ | - | The severity level of the incident. (`MINOR`, `MEDIUM`, `MAJOR`, `CRITICAL`) |
+| `name` | `string` | ✅ | - | The name of the incident. |
+| `description` | `string` | ✅ | - | A detailed description of the incident. |
+| `notifySubscribers` | `boolean` | ✅ | - | Whether to notify subscribers when the incident is triggered |
+
+</Tab>
+</Tabs>
+
+## `IncidentTrigger` Options
+
+<ResponseField name="service" type="StatusPageService" required>
+The status page service that this incident will be associated with. When a check or monitor fails, an incident is created for this service and connected status pages.
+
+**Usage:**
+
+```ts highlight={6}
+const searchService = new StatusPageService("search-service", {
+  name: "Search Service",
+})
+
+const incidentTrigger: IncidentTrigger = {
+  service: searchService,
+  /* More options... */
+}
+```
+
+**Use cases**: Linking monitors to specific services, automatic incident creation, service-based status tracking.
+</ResponseField>
+
+<ResponseField name="severity" type="IncidentSeverity" required>
+The severity level of the incident. Determines how the incident is displayed and prioritized.
+
+**Options:**
+- `MINOR` - Minor impact, most users unaffected
+- `MEDIUM` - Moderate impact, some users affected
+- `MAJOR` - Major impact, many users affected
+- `CRITICAL` - Critical impact, all users affected
+
+**Usage:**
+
+```ts highlight={3}
+const incidentTrigger: IncidentTrigger = {
+  service: searchService,
+  severity: "MAJOR",
+  /* More options... */
+}
+```
+
+**Use cases**: Incident prioritization, user communication, escalation workflows.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+The name of the incident displayed on the status page. Should clearly communicate the issue to users.
+
+**Usage:**
+
+```ts highlight={3}
+const incidentTrigger: IncidentTrigger = {
+  service: searchService,
+  name: "Search is down",
+  /* More options... */
+}
+```
+
+**Use cases**: User communication, incident identification, status page clarity.
+</ResponseField>
+
+<ResponseField name="description" type="string" required>
+A detailed description of the incident. Provides context to users about what's happening and potential impact.
+
+**Usage:**
+
+```ts highlight={3-4}
+const incidentTrigger: IncidentTrigger = {
+  service: searchService,
+  description:
+    "Some users experience issues with the product search. We're investigating.",
+  /* More options... */
+}
+```
+
+**Use cases**: User communication, incident context, expectation setting.
+</ResponseField>
+
+<ResponseField name="notifySubscribers" type="boolean" required>
+Whether to notify status page subscribers when the incident is triggered. When `true`, subscribers receive notifications via their configured channels.
+
+**Usage:**
+
+```ts highlight={3}
+const incidentTrigger: IncidentTrigger = {
+  service: searchService,
+  notifySubscribers: true,
+  /* More options... */
+}
+```
+
+**Use cases**: Proactive user communication, incident awareness, stakeholder updates.
+</ResponseField>
+

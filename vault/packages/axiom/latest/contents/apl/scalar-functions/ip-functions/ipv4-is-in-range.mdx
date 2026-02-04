@@ -1,0 +1,104 @@
+---
+title: ipv4_is_in_range
+description: 'This page explains how to use the ipv4_is_in_range function in APL.'
+---
+
+The `ipv4_is_in_range` function in Axiom Processing Language (APL) determines whether an IPv4 address falls within a specified range of addresses. This function is particularly useful for filtering or grouping logs based on geographic regions, network blocks, or security zones.
+
+You can use this function to:
+
+- Analyze logs for requests originating from specific IP address ranges.
+- Detect unauthorized or suspicious activity by isolating traffic outside trusted IP ranges.
+- Aggregate metrics for specific IP blocks or subnets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+The `ipv4_is_in_range` function in APL operates similarly to the `cidrmatch` function in Splunk SPL. Both determine whether an IP address belongs to a specified range, but APL uses a different syntax and format.
+
+<CodeGroup>
+```sql Splunk example
+| eval in_range = cidrmatch("192.168.0.0/24", ip_address)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend in_range = ipv4_is_in_range(ip_address, '192.168.0.0/24')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a built-in equivalent for determining if an IP address belongs to a CIDR range. In SQL, you would typically need custom functions or expressions to achieve this. APL’s `ipv4_is_in_range` provides a concise way to perform this operation.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE
+    WHEN ip_address BETWEEN '192.168.0.0' AND '192.168.0.255' THEN 1
+    ELSE 0
+END AS in_range
+FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend in_range = ipv4_is_in_range(ip_address, '192.168.0.0/24')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+ipv4_is_in_range(ip: string, range: string)
+```
+
+### Parameters
+
+| Parameter | Type   | Description                                               |
+|-----------|--------|-----------------------------------------------------------|
+| `ip`      | string | The IPv4 address to evaluate.                             |
+| `range`   | string | The IPv4 range in CIDR notation (e.g., `192.168.1.0/24`). |
+
+### Returns
+
+- `true` if the IPv4 address is in the range.
+- `false` otherwise.
+- `null` if the conversion of a string wasn’t successful.
+
+## Use case example
+
+You can use `ipv4_is_in_range` to identify traffic from specific geographic regions or service provider IP blocks.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend in_range = ipv4_is_in_range('192.168.1.0', '192.168.1.0/24')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20in_range%20%3D%20ipv4_is_in_range('192.168.1.0'%2C%20'192.168.1.0%2F24')%22%7D)
+
+**Output**
+
+| geo.city | in_range |
+|----------|-------|
+| Seattle  | true   |
+| Denver   | true   |
+
+This query identifies the number of requests from IP addresses in the specified range.
+
+## List of related functions
+
+- [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare): Compares two IPv4 addresses lexicographically. Use for sorting or range evaluations.
+- [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private): Checks if an IPv4 address is within private IP ranges.
+- [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4): Converts a dotted-decimal IP address into a numeric representation.
