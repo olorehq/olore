@@ -1,0 +1,46 @@
+This override is used by the [`cache` adapter](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/adapters/cache.ts) that is provided by OpenNext to the NextServer. It is also used by OpenNext if `enableCacheInterception` is set to `true` in the configuration and by the `initializationFunction` for prepopulating the cache.
+
+It is used for the cache tags (i.e. `revalidateTag` and `revalidatePath`). It does not handle anything related to the ISR/SSG cache or the fetch cache used by Next.js.
+It's main role is to determine if a path is stale based on the tags and also to update the tag cache when `revalidateTag` is called.
+
+The current implementation differs from the way Next.js standalone handle cache tags. In the standalone version, the cache tags are stored in a file, and every time a cache entry is accessed, it has to check for every tags if the entry is stale. This approach is very read heavy and doesn't work well with DB like DynamoDB.
+We choose to go another way. We store tags for every path that exists in the cache. This way, we can easily know if a path is stale by just checking the path instead of every tags used. This approach is more write heavy but it's a tradeoff we are willing to make.
+This also has the drawback of needing to prepopulate the cache with all the tags that are used in the application. This is done by the `initializationFunction`.
+
+We might allow to choose how cache tags are handled in the future depending on the `TagCache` implementation. If you need this feature, feel free to open an issue on the [GitHub repository](https://github.com/opennextjs/opennextjs-aws).
+
+If you want to better understand how to implement your own TagCache, the easiest way would be to take a look at the existing [included TagCache](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/tagCache).
+
+## Included TagCache
+
+### dynamodb
+
+The DynamoDB TagCache will store the cache tags in a DynamoDB table. It is used by default if you don't provide any TagCache in your configuration.
+It uses the `@aws-sdk/client-dynamodb` to interact with DynamoDB.
+
+##### Requirements
+
+- You need to provide the `CACHE_DYNAMO_TABLE`, `CACHE_BUCKET_REGION` environment variable to your server.
+- DynamoDB table should have a primary key `path` of type `String` and a sort key `tag` of type `String`. (It can reuse the same table as the one used by the default `tagCache`)
+
+### dynamodb-lite
+
+The DynamoDBLite TagCache will store the cache tags in a DynamoDB table.
+This implementation is a lighter version of the `dynamodb` TagCache as it uses `aws4fetch` to interact with DynamoDB.
+
+##### Requirements
+
+- You need to provide the `CACHE_DYNAMO_TABLE`, `CACHE_BUCKET_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` environment variables to your server.
+- DynamoDB table should have a primary key `path` of type `String` and a sort key `tag` of type `String`. (It can reuse the same table as the one used by the default `tagCache`)
+
+### dynamodb-nextMode
+
+TBA
+
+### dummy
+
+The Dummy TagCache is a dummy implementation that will throw an exception. It should not be used unless you want to disable cache tags.
+
+### fs-dev
+
+The FsDev TagCache is a simple implementation that stores the cache tags in a file in the `.open-next/cache` folder and interact with it using the filesystem. It is useful for development purposes only.

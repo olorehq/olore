@@ -1,0 +1,38 @@
+import { Callout } from "nextra/components";
+
+## `__name` issues
+
+When using the OpenNext adapter, Wrangler processes the worker's code with [esbuild](https://esbuild.github.io/), and by default
+enables the [`keep-names`](https://esbuild.github.io/api/#keep-names) option. While this is generally useful for debugging, it can
+cause issues with certain Next.js libraries (e.g. [next-themes](https://www.npmjs.com/package/next-themes)) that convert scripts
+to strings. This happens because `esbuild` introduces a `__name` function at the top of modules, which may inadvertently appear
+in the generated script strings. When these strings are evaluated at runtime, the `__name` function might therefore not be defined,
+leading to errors logged in the developper console:
+
+```
+Uncaught ReferenceError: __name is not defined
+```
+
+<Callout>
+  Note that depending on your minification settings, the `__name` identifier might be minified, making the
+  error message less clear and potentially not explicitly mentioning `__name` in such cases.
+</Callout>
+
+### How to fix such issues
+
+To fix the issue you can simply set the `keep_names` option to `false` in your [`wrangler.jsonc` file](https://developers.cloudflare.com/workers/wrangler/configuration), like in the following example:
+
+```jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "my-app",
+  "keep_names": false,
+  /* ... */
+}
+```
+
+One potential drawback of this solution is that, depending on your minification settings, you may lose the ability to view the original
+function names in debugging tools.
+
+<Callout>You must use Wrangler version `4.13.0` or later to use this option.</Callout>

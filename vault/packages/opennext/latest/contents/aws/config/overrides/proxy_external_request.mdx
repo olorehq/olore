@@ -1,0 +1,17 @@
+This override is used by OpenNext to proxy rewritten requests to external services. It is used either in the `external` middleware (if set) or in the default/splitted server if the middleware is bundled.
+
+If you want to better understand how to implement your own ProxyExternalRequest, the easiest way would be to take a look at the existing [included ProxyExternalRequest](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/proxyExternalRequest).
+
+## Included Proxy External Request
+
+### node
+
+This uses node-proxy to proxy the request to the external service.
+
+### fetch
+
+This uses fetch to proxy the request to the external service. It doesn't work in Node.js
+
+### dummy
+
+This is a dummy implementation that throws a FatalError.

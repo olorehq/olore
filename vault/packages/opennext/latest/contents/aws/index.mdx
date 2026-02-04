@@ -1,0 +1,55 @@
+import { SITE } from "../../config";
+import { Callout } from "nextra/components";
+import WindowsSupport from "../../shared/WindowsSupport.mdx";
+
+<Callout>
+This docs is for the V3 of OpenNext. If you are looking for the V2 docs, you can find them [here](/aws/v2).
+
+If you're migrating from V2 to V3, you can find the migration guide [here](/aws/migration#from-opennext-v2).
+
+</Callout>
+
+### AWS
+
+---
+
+OpenNext takes the Next.js build output and converts it into packages that can be deployed across a variety of environments.
+Natively OpenNext has support for AWS Lambda, [Cloudflare](/cloudflare), and classic Node.js Server.
+
+One notable feature of OpenNext is its ability to split the Next.js output, enabling selective deployment to different targets such as AWS Lambda, Cloudflare Workers, or Amazon ECS. This facilitates a tailored deployment strategy that aligns with the specific needs of your application.
+
+Thanks to this, you could deploy part of your API to ECS, another part to Cloudflare Workers, your SSR routes to another ECS cluster, and your ISR/SSG routes to Lambda.
+
+---
+
+OpenNext AWS is currently maintained by the [SST](https://sst.dev) community; notably, [conico974](https://github.com/conico974) and [khuezy](https://github.com/khuezy).
+
+We need your help keeping it up to date and feature complete. Make sure to [**join us on Discord**](https://discord.gg/opennextjs) and [**star us on GitHub**](https://github.com/opennextjs/opennextjs-aws).
+
+---
+
+OpenNext aims to support all Next.js 15 features. Some features are work in progress. Please open a [new issue](https://github.com/opennextjs/opennextjs-aws/issues/new) to let us know!
+
+- [x] App & Pages Router
+- [x] API routes
+- [x] Dynamic routes
+- [x] Static site generation (SSG)
+- [x] Server-side rendering (SSR)
+- [x] [Incremental static regeneration (ISR)](/aws/inner_workings/caching)
+- [x] Middleware
+- [x] Image optimization
+- [x] [NextAuth.js](https://next-auth.js.org)
+- [x] [Running in lambda@edge](/aws/config/simple_example#running-in-lambdaedge)
+- [x] [No cold start](/aws/inner_workings/components/warmer)
+- [x] Support for after
+- [x] [Composable Caching](https://nextjs.org/blog/composable-caching) (`'use cache'`)
+
+---
+
+<Callout type="info">
+  <WindowsSupport />
+</Callout>
+
+---
+
+[Get started](/aws/get_started) with deploying your app with OpenNext and your favorite framework.

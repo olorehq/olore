@@ -1,0 +1,6 @@
+This override is used by OpenNext to resolve the origin of the request. This is for internal requests only and is needed to support the `external` middleware.
+This is only used by the external middleware.
+
+At build time, we may not know where the splitted server will be deployed, so we need to resolve the origin at runtime. This is why we need this override. The origin is resolved by this override will need to be handled by the wrapper used. At the moment, only the `aws-cloudfront` and the `cloudflare-edge` wrapper are able to do so.
+
+If you want to better understand how to implement your own OriginResolver, the easiest way would be to take a look at the existing [included OriginResolver](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/originResolver).

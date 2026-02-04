@@ -1,0 +1,78 @@
+import { Callout } from "nextra/components";
+
+## Develop and deploy
+
+### Development workflow
+
+The primary purpose of `@opennextjs/cloudflare` is to take a Next.js application, built with standard Next.js tooling, and convert it into a format compatible with Cloudflare Workers.
+
+This code transformation process takes some time, making the adapter less than ideal for active application development, where a very fast feedback loop and other quality-of-life features, such as Hot Module Replacement (HMR), are crucial. Fortunately, Vercel already provides excellent tooling for this workflow, which Next.js developers are likely already familiar with.
+
+We recommend that developers continue using the tools they are already comfortable with for local development and then use `@opennextjs/cloudflare` when they are ready to deploy their applications to the Cloudflare platform.
+
+Let's explore, in more detail, the application development workflow we recommend for the best developer experience.
+
+#### Create a new application based on a template
+
+To create a new Next.js app, pre-configured to run on Cloudflare using `@opennextjs/cloudflare`, run:
+
+```bash
+npm create cloudflare@latest -- my-next-app --framework=next --platform=workers
+```
+
+#### Develop locally using `next dev`
+
+We believe that the best development workflow uses the `next dev` command provided by Next.js.
+
+To access Cloudflare resources using the `getCloudflareContext` API while running `next dev`, you will need to update the Next.js configuration to call `initOpenNextCloudflareForDev`, as shown in the following example:
+
+```ts
+// next.config.ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();
+```
+
+#### Use `opennextjs-cloudflare` to build and test on the Workers runtime
+
+After you've finished iterating on your Next.js application with `next dev`, you can convert it to a Cloudflare Worker by running the [`opennextjs-cloudflare build` command](/cloudflare/cli#build-command). This will generate the Worker code in the `.open-next` directory.
+
+You can then preview the app locally in the Cloudflare Workers runtime.
+
+To preview your worker locally, run the [`opennextjs-cloudflare preview` command](/cloudflare/cli#preview-command). This will populate the cache and create a local server that runs your worker in the Cloudflare Workers runtime. Testing your worker is important to ensure that it has been properly built and is working as expected.
+
+### Deploy your application to Cloudflare Workers
+
+Both the [`deploy`](/cloudflare/cli#deploy-command) and [`upload`](/cloudflare/cli#upload-command) commands of `opennextjs-cloudflare` can be used to deploy your application to cloudflare Workers. Both commands will initialize the remote cache and upload your application to the Cloudflare infrastructure.
+
+While `deploy` will start serving your application as soon as it is uploaded, `upload` only creates a new version of the application so that you can use [gradual deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/gradual-deployments/).
+
+#### Local build
+
+Use the `build` command followed by either `deploy` or `upload` to deploy your local build.
+
+<Callout type="warning">
+  When running the `build` command locally, `.dev.vars` and [Next `.env`
+  files](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables) might
+  override your configuration. It is preferreable to use a CD system as [Workers
+  Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) to deploy your application for reproducible
+  deployments.
+</Callout>
+
+#### Workers Builds
+
+When using Workers Builds, make sure to setup your environment variables as explained in [this guide](https://opennext.js.org/cloudflare/howtos/env-vars#production).
+
+You can then connect your GitHub repository by following [the documentation](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/).
+
+In the Build settings:
+
+- The "Build command" should be set to `npx @opennextjs/cloudflare build`.
+- The "Deploy command" should be set to `npx @opennextjs/cloudflare deploy` (or `upload` to use gradual deployments).

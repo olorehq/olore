@@ -1,0 +1,73 @@
+import { Callout } from "nextra/components";
+import WindowsSupport from "../../shared/WindowsSupport.mdx";
+
+## Cloudflare
+
+The [`@opennextjs/cloudflare`](https://www.npmjs.com/package/@opennextjs/cloudflare) adapter lets you deploy Next.js apps to [Cloudflare Workers](https://developers.cloudflare.com/workers) using the [Node.js "runtime" from Next.js](https://nextjs.org/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+
+### Get Started
+
+##### New apps
+
+To create a new Next.js app, pre-configured to run on Cloudflare using `@opennextjs/cloudflare`, run:
+
+```
+npm create cloudflare@latest -- my-next-app --framework=next --platform=workers
+```
+
+##### Existing Next.js apps
+
+Follow the guide [here](/cloudflare/get-started) to use [@opennextjs/cloudflare](https://www.npmjs.com/package/@opennextjs/cloudflare) with an existing Next.js app.
+
+### Supported Next.js runtimes
+
+Next.js has [two "runtimes"](https://nextjs.org/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes) — "Edge" and "Node.js". When you use `@opennextjs/cloudflare`, your app should use the Node.js runtime, which is more fully featured, and allows you to use the [Node.js APIs](https://developers.cloudflare.com/workers/runtime-apis/nodejs/) that are provided by the Cloudflare Workers runtime.
+
+This is an important difference from `@cloudflare/next-on-pages`, which only supports the "Edge" runtime. The Edge Runtime code in Next.js [intentionally constrains which APIs from Node.js can be used](https://github.com/vercel/next.js/blob/canary/packages/next/src/build/webpack/plugins/middleware-plugin.ts#L820), and the "Edge" runtime does not support all Next.js features.
+
+### Supported Next.js versions
+
+All minor and patch versions of Next.js 16 and the latest minors of Next.js 14 and 15 are supported.
+Next.js 14 support will be dropped Q1 2026. It is [no more supported](https://nextjs.org/support-policy#supported-versions) by the Next.js team.
+
+To help improve compatibility, we encourage you to [report bugs](https://github.com/opennextjs/opennextjs-cloudflare/issues) and contribute code!
+
+### Supported Next.js features
+
+- [x] [App Router](https://nextjs.org/docs/app)
+- [x] [Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
+- [x] [Dynamic routes](https://nextjs.org/docs/app/building-your-application/routing/dynamic-routes)
+- [x] [Static Site Generation (SSG)](https://nextjs.org/docs/app/building-your-application/rendering/server-components#static-rendering-default)
+- [x] [Server-Side Rendering (SSR)](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
+- [x] [Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+- [ ] [Node Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware#runtime) introduced in 15.2 are not yet supported
+- [x] [Image optimization](https://nextjs.org/docs/app/building-your-application/optimizing/images) (See [this guide](/cloudflare/howtos/image) to configure [Cloudflare Images](https://developers.cloudflare.com/images/))
+- [x] [Partial Prerendering (PPR)](https://nextjs.org/docs/app/building-your-application/rendering/partial-prerendering)
+- [x] [Pages Router](https://nextjs.org/docs/pages)
+- [x] [Incremental Static Regeneration (ISR)](https://nextjs.org/docs/app/building-your-application/data-fetching/incremental-static-regeneration)
+- [x] [Support for after](https://nextjs.org/blog/next-15-rc#executing-code-after-a-response-with-nextafter-experimental)
+- [x] [Composable Caching](https://nextjs.org/blog/composable-caching) (`'use cache'`)
+
+We welcome both contributions and feedback!
+
+### Windows support
+
+<WindowsSupport />
+
+### How `@opennextjs/cloudflare` Works
+
+The OpenNext Cloudflare adapter works by taking the Next.js build output and transforming it, so that it can run in Cloudflare Workers.
+
+When you add [@opennextjs/cloudflare](https://www.npmjs.com/package/@opennextjs/cloudflare) as a dependency to your Next.js app, and then run `npx @opennextjs/cloudflare` the adapter first builds your app by running the `build` script in your `package.json`, and then transforms the build output to a format that you can run locally using [Wrangler](https://developers.cloudflare.com/workers/wrangler/), and deploy to Cloudflare.
+
+You can view the code for `@opennextjs/cloudflare` [here](https://github.com/opennextjs/opennextjs-cloudflare/blob/main/packages/cloudflare/src) to understand what it does under the hood.
+
+### Note on Worker Size Limits
+
+The size limit of a Cloudflare Worker is 3 MiB on the Workers Free plan, and 10 MiB on the Workers Paid plan. After building your Worker, `wrangler` will show both the original and compressed sizes:
+
+```
+Total Upload: 13833.20 KiB / gzip: 2295.89 KiB
+```
+
+Only the latter (compressed size) matters for [the Worker size limit](https://developers.cloudflare.com/workers/platform/limits/#worker-size).

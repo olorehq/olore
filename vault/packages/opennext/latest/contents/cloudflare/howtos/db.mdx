@@ -1,0 +1,229 @@
+This page will show you how to setup some popular database ORM libraries to use in OpenNext. There are some subtleties to be aware of when using these libraries in Cloudflare Workers, so we will cover those here.
+
+If you encounter issue with a specific library, please open an issue on the [OpenNext GitHub repository](https://github.com/opennextjs/opennextjs-cloudflare/issues).
+
+## Drizzle ORM
+
+[Drizzle](https://developers.cloudflare.com/d1/reference/community-projects/#drizzle-orm) is a TypeScript ORM for SQL databases. It is designed to be lightweight and easy to use, making it a great choice for Cloudflare Workers.
+There is not much specific to configure in Drizzle, but there is one important thing to note is that you don't want to have a global client.
+
+### `lib/db.ts`
+
+Instead of creating a global client, you should create a new client for each request. This is because some adapters (like Postgres) will use a connection pool, and reuse the same connection for multiple requests. This is not allowed in Cloudflare Workers, and will cause subsequent requests to fail.
+
+#### PostgreSQL
+
+Instead of that :
+
+```ts
+//lib/db.ts
+import { drizzle } from "drizzle-orm/node-postgres";
+import * as schema from "./schema/pg";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.PG_URL,
+});
+
+export const db = drizzle({ client: pool, schema });
+```
+
+You should do this instead:
+
+```ts
+//lib/db.ts
+import { drizzle } from "drizzle-orm/node-postgres";
+// You can use cache from react to cache the client during the same request
+// this is not mandatory and only has an effect for server components
+import { cache } from "react";
+import * as schema from "./schema/pg";
+import { Pool } from "pg";
+
+export const getDb = cache(() => {
+  const pool = new Pool({
+    connectionString: process.env.PG_URL,
+    // You don't want to reuse the same connection for multiple requests
+    maxUses: 1,
+  });
+  return drizzle({ client: pool, schema });
+});
+```
+
+#### D1 example
+
+```ts
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { drizzle } from "drizzle-orm/d1";
+import { cache } from "react";
+import * as schema from "./schema/d1";
+
+export const getDb = cache(() => {
+  const { env } = getCloudflareContext();
+  return drizzle(env.MY_D1, { schema });
+});
+
+// This is the one to use for static routes (i.e. ISR/SSG)
+export const getDbAsync = cache(async () => {
+  const { env } = await getCloudflareContext({ async: true });
+  return drizzle(env.MY_D1, { schema });
+});
+```
+
+#### Hyperdrive example
+
+```ts
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { cache } from "react";
+import * as schema from "./schema/pg";
+import { Pool } from "pg";
+
+export const getDb = cache(() => {
+  const { env } = getCloudflareContext();
+  const connectionString = env.HYPERDRIVE.connectionString;
+  const pool = new Pool({
+    connectionString,
+    // You don't want to reuse the same connection for multiple requests
+    maxUses: 1,
+  });
+  return drizzle({ client: pool, schema });
+});
+
+// This is the one to use for static routes (i.e. ISR/SSG)
+export const getDbAsync = cache(async () => {
+  const { env } = await getCloudflareContext({ async: true });
+  const connectionString = env.HYPERDRIVE.connectionString;
+  const pool = new Pool({
+    connectionString,
+    // You don't want to reuse the same connection for multiple requests
+    maxUses: 1,
+  });
+  return drizzle({ client: pool, schema });
+});
+```
+
+You can then use the `getDb` function to get a new client for each request. This will ensure that you don't run into any issues with connection pooling.
+
+## Prisma ORM
+
+[Prisma](https://developers.cloudflare.com/d1/reference/community-projects/#prisma-orm) is a popular ORM for Node.js and TypeScript. It is designed to be easy to use and provides a lot of features out of the box. However, there are some subtleties to be aware of when using Prisma in Cloudflare Workers.
+
+### `schema.prisma`
+
+When using prisma in OpenNext, you do not want to provide an output directory for the generated client.
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+```
+
+This is because the generated client needs to be patched by OpenNext to work with Cloudflare Workers. If you provide an output directory, OpenNext will not be able to patch the client and it will not work.
+
+### `next.config.ts`
+
+Because prisma has some specific exports for cloudflare workers, you need to add the following to your `next.config.ts` file:
+
+```ts
+const nextConfig: NextConfig = {
+  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+};
+```
+
+By doing this, this will ensure that both the generated client and the prisma client are included in the build for the `workerd` runtime.
+
+### `lib/db.ts`
+
+Instead of creating a global client, you should create a new client for each request. This is because some adapters (like Postgres) will use a connection pool, and reuse the same connection for multiple requests. This is not allowed in Cloudflare Workers, and will cause subsequent requests to fail.
+
+#### D1 example
+
+Instead of that :
+
+```ts
+//lib/db.ts
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { PrismaClient } from "@prisma/client";
+import { PrismaD1 } from "@prisma/adapter-d1";
+
+const { env } = getCloudflareContext();
+const adapter = new PrismaD1(env.MY_D1);
+export const db = new PrismaClient();
+```
+
+You should do this instead:
+
+```ts
+//lib/db.ts
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+// You can use cache from react to cache the client during the same request
+// this is not mandatory and only has an effect for server components
+import { cache } from "react";
+import { PrismaClient } from "@prisma/client";
+import { PrismaD1 } from "@prisma/adapter-d1";
+
+export const getDb = cache(() => {
+  const { env } = getCloudflareContext();
+  const adapter = new PrismaD1(env.MY_D1);
+  return new PrismaClient({ adapter });
+});
+
+// If you need access to `getCloudflareContext` in a static route (i.e. ISR/SSG), you should use the async version of `getCloudflareContext` to get the context.
+export const getDbAsync = async () => {
+  const { env } = await getCloudflareContext({ async: true });
+  const adapter = new PrismaD1(env.MY_D1);
+  const prisma = new PrismaClient({ adapter });
+  return prisma;
+};
+```
+
+You can then use the `getDb` function to get a new client for each request. This will ensure that you don't run into any issues with connection pooling.
+
+#### PostgreSQL
+
+You can also use Prisma with PostgreSQL. The setup is similar to the D1 setup above, but you need to use the `PrismaPostgres` adapter instead of the `PrismaD1` adapter.
+
+```ts
+import { cache } from "react";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+export const getDb = cache(() => {
+  const connectionString = process.env.PG_URL ?? "";
+  const adapter = new PrismaPg({ connectionString, maxUses: 1 });
+  const prisma = new PrismaClient({ adapter });
+  return prisma;
+});
+```
+
+You can then use the `getDb` function to get a new client for each request. This will ensure that you don't run into any issues with connection pooling.
+
+#### Hyperdrive
+
+You can also use Prisma with Hyperdrive. The setup is similar to the PostgreSQL setup above.
+
+```ts
+//lib/db.ts
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+// You can use cache from react to cache the client during the same request
+// this is not mandatory and only has an effect for server components
+import { cache } from "react";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+export const getDb = cache(() => {
+  const { env } = getCloudflareContext();
+  const connectionString = env.HYPERDRIVE.connectionString;
+  const adapter = new PrismaPg({ connectionString, maxUses: 1 });
+  return new PrismaClient({ adapter });
+});
+
+// This is the one to use for static routes (i.e. ISR/SSG)
+export const getDbAsync = async () => {
+  const { env } = await getCloudflareContext({ async: true });
+  const connectionString = env.HYPERDRIVE.connectionString;
+  const adapter = new PrismaPg({ connectionString, maxUses: 1 });
+  return new PrismaClient({ adapter });
+};
+```

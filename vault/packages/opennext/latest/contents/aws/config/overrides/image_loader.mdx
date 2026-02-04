@@ -1,0 +1,42 @@
+This override is used by OpenNext and more specifically by the image server to be able to load images from a custom source. Images are not bundled with the image server and are loaded from the source specified in the override.
+
+This is used for internal image only (i.e. src without host). External source are already handled by the image server.
+
+If you want to better understand how to implement your own ImageLoader, the easiest way would be to take a look at the existing [included ImageLoader](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/imageLoader).
+
+## Included ImageLoader
+
+### s3
+
+The S3 ImageLoader will load images from an S3 bucket. It is used by default if you don't provide any ImageLoader in your configuration.
+It uses the `@aws-sdk/client-s3` to interact with S3.
+
+##### Requirements
+
+- You need to provide the `BUCKET_KEY_PREFIX`, `BUCKET_NAME` environment variables to your server.
+
+### s3-lite
+
+The `s3-lite` ImageLoader will load images from an S3 bucket. It uses the `aws4fetch` to interact with S3.
+
+##### Requirements
+
+- You need to provide the `BUCKET_KEY_PREFIX`, `BUCKET_NAME` environment variables to your server.
+- Can also provide `BUCKET_REGION`. It fallbacks to `AWS_REGION` ?? `AWS_DEFAULT_REGION`. This should be set by AWS automatically. You can read more about how this works on AWS Lambdas [here](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime).
+
+### host
+
+The Host ImageLoader will load images from the host.
+This implementation will directly fetch the image from the host.
+
+##### Requirements
+
+The host should be provided in the headers of the request, either in the `X-Forwarded-Host` or the `Host` header.
+
+### fs-dev
+
+The FsDev ImageLoader is a simple implementation that loads images from the `.open-next/assets` folder and interact with it using the filesystem. It is useful for development purposes only.
+
+### dummy
+
+The Dummy ImageLoader is a dummy implementation that will throw an exception. It should not be used.

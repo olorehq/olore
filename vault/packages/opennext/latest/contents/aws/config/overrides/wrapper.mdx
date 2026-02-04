@@ -1,0 +1,75 @@
+This is the main entrypoint of the server. It is used for every server and allow you to run either in serverless mode or as a long running server.
+
+If you want to better understand how to implement your own Wrapper, the easiest way would be to take a look at one of the existing [included Wrapper](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/wrappers).
+
+Couple of things to note :
+
+- If you want to use streaming (for the `node` runtime of next), you'll need to create a `StreamCreator` and pass it to the `handler`. You can find some example in the [node](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/wrappers/node.ts) or [aws-lambda-streaming](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/wrappers/aws-lambda-streaming.ts) wrapper.
+- If you don't use streaming (like in the default `aws-lambda` wrapper), you may still need to provide a fake `StreamCreator` to the `handler` to avoid a weird issue with Node itself (see [here](https://github.com/opennextjs/opennextjs-aws/blob/f685ddea8f8a5c82591dc02713aff7138f2d9896/packages/open-next/src/overrides/wrappers/aws-lambda.ts#L49-L65) for an example and a more thorough explanation).
+- If you use the `edge` runtime of Next (either for the external middleware or for an `edge` route or page), you don't need the `StreamCreator` at all.
+- If you are in a serverless environment and it supports `waitUntil`, you should pass it to the handler as it is done in the [cloudflare-edge wrapper](https://github.com/opennextjs/opennextjs-aws/blob/87b59e59a8a0bf1e83d2d1df9efa0ad3bfc912f5/packages/open-next/src/overrides/wrappers/cloudflare-edge.ts#L65-L67). This might not be necessary depending on where you run it (for example the `aws-lambda-streaming` or the `node` wrapper doesn't need it.)
+
+## Included Wrappers
+
+### aws-lambda
+
+The `aws-lambda` Wrapper is the default wrapper for AWS Lambda. It is used by default if you don't provide any Wrapper in your configuration.
+
+#### Features
+
+- [ ] Streaming
+- [ ] Proper support for `waitUntil`
+
+### aws-lambda-streaming
+
+The `aws-lambda-streaming` Wrapper is a wrapper that allows you to use streaming in AWS Lambda. Streaming must be enabled for this lambda.
+
+#### Features
+
+- [x] Streaming
+- [x] Proper support for `waitUntil`
+
+### cloudflare-edge
+
+The `cloudflare-edge` Wrapper is the wrapper for Cloudflare Workers. It should be used for the external middleware and for the `edge` runtime of Next.
+
+#### Features
+
+- [x] Streaming
+- [x] Proper support for `waitUntil`
+
+### cloudflare-node
+
+The `cloudflare-node` Wrapper is the wrapper for Cloudflare Workers. It should be used only with the `node` runtime of Next and if you use `@opennextjs/cloudflare`.
+
+#### Features
+
+- [x] Streaming
+- [x] Proper support for `waitUntil`
+
+### node
+
+The `node` Wrapper is the wrapper for classic Node.js Server. This one is a long running server.
+
+#### Features
+
+- [x] Streaming
+- [x] Proper support for `waitUntil`
+
+### express-dev
+
+The `express-dev` Wrapper is the wrapper for a classic Express server. It is a long running process and should be used for development purposes only.
+
+#### Features
+
+- [x] Streaming
+- [x] Proper support for `waitUntil`
+
+### dummy
+
+The `dummy` Wrapper is a dummy implementation that will just forward the event and `StreamCreator` to the handler.
+
+#### Features
+
+- [ ] Streaming
+- [ ] Proper support for `waitUntil`

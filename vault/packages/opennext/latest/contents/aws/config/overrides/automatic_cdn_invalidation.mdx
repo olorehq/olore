@@ -1,0 +1,35 @@
+import { Callout } from "nextra/components";
+
+Available since `@opennextjs/aws` 3.4.0
+
+Not enabled by default. This override is used by OpenNext when routes have been On-Demand revalidated and the CDN needs to be updated. It is not called for ISR revalidation.
+It will be called for `revalidatePath`, `revalidateTag` and `res.revalidate()`.
+
+If you want to better understand how to implement your own Automatic CDN Invalidation, the easiest way would be to take a look at the existing [included Automatic CDN Invalidation](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/cdnInvalidation)
+
+## Included Automatic CDN Invalidation
+
+### dummy
+
+The Dummy AutomaticCDNInvalidation is a dummy implementation that will do nothing. It is the default implementation.
+
+### cloudfront
+
+<Callout type='warning'>
+Cloudfront invalidation can be very expensive. Manual CloudFront path invalidation incurs costs. According to the [AWS CloudFront pricing page](https://aws.amazon.com/cloudfront/pricing/):
+
+> No additional charge for the first 1,000 paths requested for invalidation each month. Thereafter, $0.005 per path requested for invalidation.
+
+This implementation will send an invalidation request for every route that needs to be invalidated (the request invalidates 2 paths, one for the route itself and one for the data route).
+
+Tag cache invalidation could end up triggering thousands of invalidation requests.
+
+Only use this implementation if you are aware of the costs and are willing to pay for it.
+
+</Callout>
+
+The CloudFront Automatic CDN Invalidation will invalidate the cache of the CloudFront distribution.
+
+##### Requirements
+
+- You need to provide the `CLOUDFRONT_DISTRIBUTION_ID` environment variable to your server.

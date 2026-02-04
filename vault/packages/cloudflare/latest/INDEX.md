@@ -1,0 +1,33 @@
+# Cloudflare Documentation Index
+3926 files | Paths relative to contents/
+@start:quickstart,getting-started,setup,installation,first-steps=workers/get-started/guide.mdx;pages-quickstart,deploy=pages/get-started/guide.mdx;cloudflare-one-setup,zero-trust=cloudflare-one/setup/
+@workers:workers,runtime,bindings,fetch,request,response=workers/runtime-apis/;wrangler,cli=workers/wrangler/;workers-api,rest-api=workers/configuration/api/;compatibility-dates=workers/configuration/compatibility-dates/;examples=workers/examples/
+@pages:pages,pages-functions,pages-framework=pages/functions/;next-js,remix,nuxt,svelte=pages/framework-guides/;deployment,pages-build=pages/configuration/;pages-bindings=pages/functions/bindings/
+@durable-objects:durable-objects,do,coordination,websocket,hibernation=durable-objects/;do-api,storage-api=durable-objects/api/;do-examples=durable-objects/examples/
+@d1:d1,database,sql,sqlite,query=d1/;d1-api,d1-client=d1/build-with-d1/;migrations=d1/reference/migrations/;d1-limits=d1/platform/limits/
+@r2:r2,object-storage,bucket,s3-compatible=r2/;r2-api,workers-r2=r2/api/workers/;presigned-urls=r2/api/s3/presigned-urls/;r2-examples=r2/examples/
+@kv:kv,key-value,namespace,kv-api=kv/;kv-bindings=kv/api/;kv-examples=kv/examples/;ttl=kv/api/write-key-value-pairs/
+@queues:queues,message-queue,batch,consumer,producer=queues/;queue-api=queues/reference/;queue-configuration=queues/configuration/
+@hyperdrive:hyperdrive,database-pooling,postgres,mysql=hyperdrive/;hyperdrive-configuration=hyperdrive/configuration/
+@workers-ai:workers-ai,inference,llm,ai-models=workers-ai/;text-generation=workers-ai/models/text-generation/;embeddings=workers-ai/models/text-embeddings/;image-generation=workers-ai/models/text-to-image/;speech-recognition=workers-ai/models/speech-recognition/
+@ai-gateway:ai-gateway,openai,anthropic,azure-openai=ai-gateway/;ai-gateway-providers=ai-gateway/providers/;caching=ai-gateway/configuration/caching/;rate-limiting=ai-gateway/configuration/rate-limiting/
+@vectorize:vectorize,vector-database,embeddings,similarity-search=vectorize/;vectorize-api=vectorize/reference/
+@agents:agents,ai-agents,workflows,orchestration=agents/
+@dns:dns,dns-records,nameservers,zone=dns/;create-dns-records=dns/manage-dns-records/how-to/create-dns-records.mdx;dnssec=dns/dnssec/;secondary-dns=dns/secondary-dns/
+@ssl:ssl,tls,certificates,https,edge-certificates=ssl/;ssl-for-saas=ssl/ssl-for-saas/;custom-certificates=ssl/edge-certificates/custom-certificates/;client-certificates=ssl/client-certificates/;mtls=ssl/client-certificates/mutual-tls/
+@cache:cache,cache-rules,cache-keys,purge=cache/;cache-api=cache/how-to/cache-api/;tiered-cache=cache/how-to/tiered-cache/;cache-reserve=cache/advanced-configuration/cache-reserve/
+@rules:rules,transform-rules,url-rewrite,http-headers=rules/;page-rules=rules/page-rules/;redirect-rules=rules/url-forwarding/single-redirects/;origin-rules=rules/origin-rules/;configuration-rules=rules/configuration-rules/
+@waf:waf,firewall,managed-rules,rate-limiting,ddos=waf/;custom-rules=waf/custom-rules/;rate-limiting-rules=waf/rate-limiting-rules/;waf-analytics=waf/analytics/
+@bots:bot-management,bot-fight,super-bot-fight=bots/;bot-score=bots/concepts/bot-score/;javascript-detections=bots/concepts/javascript-detections/
+@cloudflare-one:cloudflare-one,zero-trust,warp,access,gateway=cloudflare-one/;access-policies=cloudflare-one/policies/access/;gateway-policies=cloudflare-one/policies/gateway/;tunnel,cloudflared=cloudflare-one/networks/connectors/cloudflare-tunnel/
+@load-balancing:load-balancer,load-balancing,health-checks,steering=load-balancing/;load-balancer-create=load-balancing/load-balancers/create-load-balancer/;origin-pools=load-balancing/pools/;health-checks=load-balancing/monitors/
+@api-shield:api-shield,schema-validation,jwt-validation,mtls=api-shield/;api-discovery=api-shield/management-and-monitoring/api-discovery/;sequence-analytics=api-shield/security/sequence-analytics/
+@turnstile:turnstile,captcha,challenge,widget=turnstile/;client-side-rendering=turnstile/get-started/client-side-rendering/;server-side-validation=turnstile/get-started/server-side-validation/
+@analytics:analytics,graphql-api,web-analytics=analytics/;graphql-analytics=analytics/graphql-api/;analytics-engine=analytics/analytics-engine/
+@logs:logs,logpush,logpull,datasets=logs/;logpush-job=logs/logpush/logpush-job/;log-fields=logs/reference/log-fields/
+@images:images,image-resizing,variants,optimization=images/;transform-images=images/transform-images/;url-format=images/transform-images/url-format/;flexible-variants=images/transform-images/flexible-variants/
+@stream:stream,video,live-streaming,playback=stream/;stream-upload=stream/uploading-videos/;stream-playback=stream/viewing-videos/;live-inputs=stream/stream-live/
+@zaraz:zaraz,third-party-tools,tag-manager=zaraz/;zaraz-trigger=zaraz/get-started/create-trigger/;zaraz-actions=zaraz/get-started/create-actions/
+@email-routing:email-routing,email-forwarding,custom-addresses=email-routing/;email-workers=email-routing/email-workers/
+@terraform:terraform,infrastructure-as-code,iac=terraform/;terraform-examples=terraform/additional-configurations/
+@api:api,rest-api,authentication,api-tokens=fundamentals/api/;api-keys=fundamentals/api/get-started/keys/;wrangler-api=fundamentals/api/reference/wrangler-api.mdx
