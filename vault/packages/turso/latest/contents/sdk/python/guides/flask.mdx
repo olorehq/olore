@@ -1,0 +1,100 @@
+---
+title: Flask + Turso
+sidebarTitle: Flask
+description: Set up Turso in your Flask project in minutes
+---
+
+![Flask banner](/images/guides/flask-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Flask app &mdash; [learn more](https://flask.palletsprojects.com/en/3.0.x/installation/#create-an-environment)
+
+<Steps>
+
+<Step title="Install the libSQL dialect">
+
+```bash
+pip install sqlalchemy-libsql python-dotenv
+```
+
+</Step>
+
+<Step title="Retrieve database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+</Step>
+
+<Step title="Create database models">
+
+```python models.py
+from sqlalchemy import String
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
+class Base(DeclarativeBase):
+    pass
+
+class Item(Base):
+    __tablename__ = "items"
+    id: Mapped[str] = mapped_column(primary_key=True)
+    foo: Mapped[str] = mapped_column(String(255))
+    bar: Mapped[str] = mapped_column(String(100))
+    def __repr__(self) -> str:
+        return f"Item(id={self.id!r}, foo={self.foo!r}, bar={self.bar!r})"
+```
+
+</Step>
+
+<Step title="Query">
+
+```python
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from models import Item
+
+load_dotenv()
+
+# Get environment variables
+TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
+
+# construct special SQLAlchemy URL
+dbUrl = f"sqlite+{TURSO_DATABASE_URL}/?authToken={TURSO_AUTH_TOKEN}&secure=true"
+
+engine = create_engine(dbUrl, connect_args={'check_same_thread': False}, echo=True)
+
+@app.route("/", methods=(["GET"]))
+def home():
+    session = Session(engine)
+
+    # get & print items
+    stmt = select(Item)
+
+    for item in session.scalars(stmt):
+        print(item)
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Social App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-find-me-on-python-htmx"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

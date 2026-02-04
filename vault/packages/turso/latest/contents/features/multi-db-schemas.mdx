@@ -1,0 +1,167 @@
+---
+title: Multi-DB Schemas (Deprecated)
+description: Create and share a single schema across multiple databases.
+---
+
+<Warning>
+  This feature is now deprecated for all new users. Existing paid users can
+  continue to use Multi-DB Schemas &mdash; [read the
+  announcement](https://turso.tech/blog/upcoming-changes-to-the-turso-platform-and-roadmap)
+</Warning>
+
+Turso allows you to create a single schema and share it across multiple databases. This is useful for creating a multi-tenant application where each tenant has their own database.
+
+<Info>
+
+Try the [Turso Per User Starter](https://github.com/notrab/turso-per-user-starter) to get started with a multi-tenant application using Next.js, Drizzle, Clerk, libSQL, and Turso Multi-DB Schemas.
+
+</Info>
+
+## How it works
+
+1. You create a database that is used as the parent schema database.
+2. You create one or more databases that are used as the child databases.
+3. You apply schema changes to the parent database, child databases are automatically updated with the new schema.
+
+## Usage
+
+You can create and manage parent or child databases using the [Turso CLI](/cli/db/create), and [Platform API](/api-reference/databases/create).
+
+<iframe
+
+src="https://www.youtube.com/embed/Slacu1aGm8A"
+title="Multi database schema changes"
+frameBorder="0"
+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+allowFullScreen
+className="w-full aspect-video"
+
+> </iframe>
+
+### Turso CLI
+
+Make sure you have the [Turso CLI](/cli/installation) installed, and [logged in](/cli/auth/login).
+
+<Steps>
+
+<Step title="Create Parent Database">
+
+Create a single database using the `--type` flag set to `schema`:
+
+```bash
+turso db create parent-db --type schema
+```
+
+</Step>
+
+<Step title="Create Schema">
+
+Connect to your database using the shell to `CREATE TABLE`, `CREATE TRIGGER`, `CREATE VIEW`, and anything else to setup your schema:
+
+```bash
+turso db shell parent-db
+```
+
+</Step>
+
+<Step title="Create Child Database(s)">
+
+Create one or more child databases using the `--schema` flag with the name of the parent database:
+
+```bash
+turso db create child-db --schema parent-db
+```
+
+</Step>
+
+<Step title="Apply Additional Schema Changes">
+
+You can now apply additional schema changes to the parent database, and the child databases will be automatically updated:
+
+```bash
+turso db shell parent-db "CREATE TABLE users (id INT PRIMARY KEY, name TEXT);"
+```
+
+</Step>
+
+</Steps>
+
+### Platform API
+
+Make sure you have an API Token, and know your Organization name:
+
+<Steps>
+
+<Step title="Create Parent Database">
+
+Create a database and set the `is_schema` field to `true`:
+
+```bash
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "parent-db",
+      "group": "default",
+      "is_schema": true
+  }'
+```
+
+</Step>
+
+<Step title="Create Schema">
+
+Connect to your database using the shell, [SDK](/sdk), or migration script to `CREATE TABLE`, `CREATE TRIGGER`, `CREATE VIEW`, and anything else to setup your schema:
+
+```bash Turso CLI
+turso db shell parent-db
+```
+
+</Step>
+
+<Step title="Create Child Database(s)">
+
+Create one or more child databases and pass the `schema` field the name of your parent database:
+
+```bash
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "child-db",
+      "group": "default",
+      "schema": "parent-db"
+  }'
+```
+
+</Step>
+
+<Step title="Apply Additional Schema Changes">
+
+You can now apply additional schema changes to the parent database, and the child databases will be automatically updated:
+
+```bash
+turso db shell parent-db "CREATE TABLE users (id INT PRIMARY KEY, name TEXT);"
+```
+
+</Step>
+
+</Steps>
+
+## Things to know
+
+- Schema databases cannot be shared across groups or globally via an organization/account.
+- You can (but not recommended) `INSERT` rows into the parent database that can be queried by the child database(s).
+  - Be aware of any constraints that may conflict with the child database(s).
+- You can't delete a parent database if it has one or more child databases.
+- When a migration is applied to the schema database:
+  - It's first run as a dry-run on the schema and all other associated databases.
+  - If successful, a migration job is created.
+  - Tasks are created for each database that references this schema.
+  - The migration is then applied to each referencing database.
+  - Finally, if all tasks succeed, the migration is applied to the schema database itself.
+  - You can't create or delete a database if there are any migrations running.
+- **During a migration, all databases are locked to write operations.**
+- Make sure any application querying the child databases handle any databases not yet updated with the schema.
+- You cannot apply schema changes to a child database directly. You must use the parent (schema) database.
+- You can check the status of a migration using the `/jobs` endpoint &mdash; [learn more](/sdk/http/reference#schema-migration-jobs).

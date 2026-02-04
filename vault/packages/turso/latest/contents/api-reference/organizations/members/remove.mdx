@@ -1,0 +1,24 @@
+---
+sidebarTitle: Remove
+openapi: "DELETE /v1/organizations/{organizationSlug}/members/{username}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE https://api.turso.tech/v1/organizations/{organizationSlug}/members/{username} \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const member = await turso.organizations.removeMember("mycompany", "iku");
+```
+
+</RequestExample>

@@ -1,0 +1,143 @@
+---
+title: Turso Quickstart (Rust)
+sidebarTitle: Quickstart
+description: Get started with Turso and Rust using the libSQL crate in a few simple steps
+---
+
+In this Rust quickstart we will learn how to:
+
+- Retrieve database credentials
+- Install the Rust libSQL crate
+- Connect to a local or remote Turso database
+- Execute a query using SQL
+- Sync changes to local database (optional)
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+    You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+    <Snippet file="retrieve-database-credentials.mdx" />
+
+    <Info>You will want to store these as environment variables.</Info>
+
+  </Step>
+
+  <Step title="Install">
+
+    First begin by installing the `libsql` [crate](https://crates.io/crates/libsql):
+
+    ```bash
+    cargo add libsql
+    ```
+
+  </Step>
+
+  <Step title="Connect">
+
+You must first create a `Database` object and then open a `Connection` to it:
+
+<AccordionGroup>
+  <Accordion title="Embedded Replicas">
+
+```rust
+use libsql::Builder;
+
+let url = std::env::var("TURSO_DATABASE_URL").expect("TURSO_DATABASE_URL must be set");
+let token = std::env::var("TURSO_AUTH_TOKEN").expect("TURSO_AUTH_TOKEN must be set");
+
+let db = Builder::new_remote_replica("local.db", url, token)
+    .build()
+    .await?;
+let conn = db.connect()?;
+```
+
+  </Accordion>
+  <Accordion title="Local only">
+
+```rust
+use libsql::Builder;
+
+let db = Builder::new_local("local.db").build().await?;
+let conn = db.connect()?;
+```
+
+  </Accordion>
+  <Accordion title="Remote only">
+
+```rust
+use libsql::Builder;
+
+let url = std::env::var("TURSO_DATABASE_URL").expect("TURSO_DATABASE_URL must be set");
+let token = std::env::var("TURSO_AUTH_TOKEN").expect("TURSO_AUTH_TOKEN must be set");
+
+let db = Builder::new_remote(url, token)
+    .build()
+    .await?;
+let conn = db.connect()?;
+```
+
+  </Accordion>
+</AccordionGroup>
+
+  </Step>
+
+  <Step title="Execute">
+
+You can execute a SQL query against your existing database by calling `execute()`:
+
+```rust
+conn.execute("SELECT * FROM users", ()).await?;
+```
+
+If you need to use placeholders for values, you can do that:
+
+<CodeGroup>
+
+```rust Positional
+conn.execute("SELECT * FROM users WHERE id = ?1", libsql::params![1]).await?;
+```
+
+```rust Named
+conn.execute("INSERT INTO users (name) VALUES (:name)", libsql::named_params! { ":name": "Iku" }).await?;
+```
+
+</CodeGroup>
+
+To retrieve results from a query, you can use the `query()` method:
+
+```rust
+let mut rows = conn.query("SELECT * FROM users", ()).await?;
+
+while let Some(row) = rows.next().await? {
+    let id: i64 = row.get(0)?;
+    let name: String = row.get(1)?;
+    println!("User: {} - {}", id, name);
+}
+```
+
+  </Step>
+
+  <Step title="Sync (Embedded Replicas only)">
+
+When using embedded replicas you should call `sync()` on the database type to sync your local database with the primary database:
+
+```rust
+db.sync().await.unwrap();
+```
+
+You can also set up automatic periodic syncing when creating the database:
+
+```rust
+use std::time::Duration;
+
+let db = Builder::new_remote_replica("local.db", url, token)
+    .sync_interval(Duration::from_secs(60))
+    .build()
+    .await?;
+```
+
+This will automatically sync the database every 60 seconds.
+
+  </Step>
+</Steps>

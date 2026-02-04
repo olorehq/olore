@@ -1,0 +1,46 @@
+---
+title: Closest Region
+description: Returns the closest region to the user's location.
+sidebarTitle: Closest Region
+api: "GET https://region.turso.io"
+---
+
+#### Response
+
+<ResponseField name="server" type="string">
+  The location code for the server responding.
+</ResponseField>
+
+<ResponseField name="client" type="string">
+  The location code for the client request.
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl https://region.turso.io
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const { server, client } = await turso.locations.closest();
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "server": "lhr",
+  "client": "lhr"
+}
+```
+
+</ResponseExample>

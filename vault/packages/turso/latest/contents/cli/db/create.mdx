@@ -1,0 +1,112 @@
+---
+title: db create
+sidebarTitle: create
+---
+
+You can create a new database in a specific group using the following command:
+
+```bash
+turso db create [database-name]
+```
+
+<Info>
+
+The `[database-name]` argument is optional. If you don't provide a name, the Turso team will use the name of your project.
+
+</Info>
+
+<Info>
+
+If you have more than one group, you will need to pass the `--group` flag.
+
+</Info>
+
+## Flags
+
+| Flag                  | Description                                                                                                                                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--enable-extensions` | Enables experimental support for SQLite extensions.                                                                                                                                                                                   |
+| `--from-csv`          | Create the database from a csv file.                                                                                                                                                                                                  |
+| `--csv-table-name`    | Name of the table in the csv file.                                                                                                                                                                                                    |
+| `--from-db`           | Select another database to copy data from.                                                                                                                                                                                            |
+| `--timestamp`         | Set a point in time in the past to copy data from the selected database.<br /><br />Must be used with the 'from-db' flag. Must be in [RFC3339](https://datatracker.ietf.org/doc/html/rfc3339) format like '2023-09-29T10:16:13-03:00' |
+| `--from-dump`         | Create the database from a local SQLite dump.                                                                                                                                                                                         |
+| `--from-dump-url`     | Create the database from a remote SQLite dump.                                                                                                                                                                                        |
+| `--from-file`         | Create the database from a local SQLite3-compatible file.                                                                                                                                                                             |
+| `--group`             | Create the database in the specified group.                                                                                                                                                                                           |
+| `--size-limit`        | The maximum size of the database in bytes. Values with units are also accepted, e.g. 1mb, 256mb, 1gb.                                                                                                                                 |
+| `--canary`            | Use database canary build.                                                                                                                                                                                                            |
+| `-w`, `--wait`        | Wait for the database to be ready to receive requests.                                                                                                                                                                                |
+| `-h`, `--help`        | Get help for create.                                                                                                                                                                                                                  |
+
+## Examples
+
+The examples below outline the most common use cases for the `db create` command.
+
+### Create database in a specific group
+
+You can create a new database in a specific group using the `--group` flag:
+
+```bash
+turso db create [database-name] --group <group-name>
+```
+
+### Create database from SQLite file
+
+You can create a new Turso database from an existing SQLite file using the `--from-file` flag:
+
+```bash
+turso db create [database-name] --from-file ./path/to/file.db
+```
+
+<Info>
+
+The file size is limited to 2GB.
+
+</Info>
+
+### Create database from SQLite dump
+
+You can create a new database using the output of `.dump` using the `--from-dump` flag:
+
+```bash
+turso db create [database-name] --from-dump ./path/to/dump.sql
+```
+
+### Create database from another existing database
+
+You can create a new Turso database from an existing database using the `--from-db` flag:
+
+```bash
+turso db create [database-name] --from-db <existing-database-name>
+```
+
+### Create database from a point in time
+
+You can create a new Turso database from an existing database at a specific point in time using the `--from-db` and `--timestamp` flags:
+
+```bash
+turso db create [database-name] --from-db <existing-database-name> --timestamp 2024-01-01T10:10:10-10:00
+```
+
+### Create database from a CSV file
+
+You can create a new Turso database from a CSV file using the `--from-csv` flag:
+
+```bash
+turso db create [database-name] --from-csv ./path/to/file.csv --csv-table-name <desired-table-name>
+```
+
+### Create a database with extensions enabled
+
+You can create a database with experimental support for SQLite [extensions](/libsql#extensions) using the `--enable-extensions` flag:
+
+```bash
+turso db create [database-name] --enable-extensions
+```
+
+<Note>
+
+Using `--enable-extensions` will enable extensions on all databases in the group.
+
+</Note>

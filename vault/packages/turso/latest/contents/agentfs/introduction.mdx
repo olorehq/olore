@@ -1,0 +1,47 @@
+---
+title: AgentFS
+description: A filesystem for AI agents, built on Turso
+sidebarTitle: Overview
+---
+
+AgentFS is a filesystem for AI agents. It provides copy-on-write isolation, letting agents safely modify files while keeping your original data untouched.
+It is available both as a CLI, that wraps an existing program in a sandboxed session, and an SDK that allows you to build custom agents with a filesystem
+abstraction.
+
+## Key Features
+
+- **Copy-on-Write Isolation** — Run agents in sandboxed environments where changes are isolated from your source tree
+- **Single File Storage** — Everything stored in one portable SQLite database for easy sharing and snapshotting
+- **Built-in Auditing** — Every file operation is recorded and queryable
+- **Cloud Sync** — Optionally sync agent state to Turso Cloud
+
+## Quick Start
+
+```bash
+# Install
+curl -fsSL https://agentfs.ai/install | bash
+
+# Run a shell in an isolated environment
+cd /path/to/project
+agentfs run bash
+
+# Any changes are isolated - your original files are safe
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/agentfs/installation">
+    Install the AgentFS CLI
+  </Card>
+  <Card title="Agentic Coding" icon="robot" href="/agentfs/guides/sandbox">
+    Run AI coding agents safely
+  </Card>
+  <Card title="AgentFS SDKs" icon="robot" href="/agentfs/sdk">
+    Build custom agents with the AgentFS SDKs 
+  </Card>
+</CardGroup>
+
+<Warning>
+This software is ALPHA; use only for development, testing, and experimentation. We are working to make it production-ready, but do not use it for critical data until it is ready.
+</Warning>

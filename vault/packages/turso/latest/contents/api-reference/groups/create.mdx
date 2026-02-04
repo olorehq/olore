@@ -1,0 +1,36 @@
+---
+sidebarTitle: Create
+openapi: "POST /v1/organizations/{organizationSlug}/groups"
+---
+
+<Warning>
+  Creating more than one group is limited to Scaler, Pro and Enterprise plans.
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/groups' \
+-H 'Authorization: Bearer TOKEN' \
+-H 'Content-Type: application/json' \
+-d '{
+    "name": "new-group",
+    "location": "lhr"
+}'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const group = await turso.groups.create("new-group", {
+  location: "lhr",
+  extensions: ["vector", "uuid"], // 'all'
+});
+```
+
+</RequestExample>

@@ -1,0 +1,197 @@
+---
+title: Reference
+description: libSQL PHP Reference
+---
+
+## Installing
+
+Install the package to your project using composer:
+
+```console
+composer require turso/libsql
+```
+
+## Initializing
+
+Make sure to add `use Libsql\Database` to access the `Database` object.
+
+```php
+$db = new Database("local.db")
+```
+
+## In-Memory Databases
+
+libSQL supports connecting to [in-memory
+databases](https://www.sqlite.org/inmemorydb.html) for cases where you don't
+require persistence:
+
+```php
+$db = new Database(":memory:");
+```
+
+Or the simpler:
+
+```php
+$db = new Database();
+```
+
+## Local Development
+
+You can work locally by passing a path as the first parameter.
+
+```php
+$db = new Database("local.db")
+```
+
+Or more explicitly:
+
+```php
+$db = new Database(path: "local.db")
+```
+
+## Remote Only
+
+You can use a remote only database by passing `url` and `authToken`.
+
+```php
+$db = new Database(
+    url: getenv('TURSO_URL'),
+    authToken: getenv('TURSO_AUTH_TOKEN'),
+);
+```
+
+## Embedded Replicas
+
+You can work with embedded replicas by passing a `path`, `url` and `authToken`.
+Embedded replicas can sync from the remote URL and delegate writes to the
+remote primary database:
+
+```php
+$db = new Database(
+    path: 'test.db',
+    url: getenv('TURSO_URL'),
+    authToken: getenv('TURSO_AUTH_TOKEN'),
+);
+```
+
+### Sync Interval
+
+The `sync_interval` function allows you to set an interval for automatic synchronization of the database in the background:
+
+```php
+$db = new Database(
+    path: 'test.db',
+    url: getenv('TURSO_URL'),
+    authToken: getenv('TURSO_AUTH_TOKEN'),
+    syncInterval: 300, // Sync every 3 seconds
+);
+```
+
+### Manual Sync
+
+The `sync` function allows you to sync manually the local database with the
+remote counterpart:
+
+```php
+$db->sync()
+```
+
+### Read Your Own Writes
+
+The `readYourWrites` parameter configures the database connection to ensure
+that writes are immediately visible to subsequent read operations initiated by
+the same connection. This is **enabled by default**, and is particularly
+important in distributed systems to ensure consistency from the perspective of
+the writing process.
+
+You can disable this behavior by passing `false`:
+
+```php
+$db = new Database(
+    path: 'test.db',
+    url: getenv('TURSO_URL'),
+    authToken: getenv('TURSO_AUTH_TOKEN'),
+    readYourWrites: false,
+);
+```
+
+## Simple Query
+
+You can acquire a connection from a database and call `query()` to invoke a
+SQL statement, as well as optional arguments:
+
+<CodeGroup>
+
+```php Query
+$rows = $conn->query("SELECT * FROM users");
+```
+
+```php Arguments
+$rows = $conn->query("SELECT * FROM users WHERE id = ?1", [1]);
+```
+
+```php Named Arguments
+$rows = $conn->query("SELECT * FROM users WHERE id = :id", [":id" => 1]);
+```
+
+</CodeGroup>
+
+## Prepared Statements
+
+You can prepare a cached statement using `prepare()`, bind parameters, and then
+query it:
+
+```php
+$stmt = $conn->prepare("SELECT * FROM users where id = ?");
+$rows = $stmt->bind([1])->query();
+```
+
+## Placeholders
+
+libSQL supports the use of positional and named placeholders within SQL statements:
+
+<CodeGroup>
+
+```rust Positional
+conn->query("SELECT * FROM users WHERE id = ?", [1]);
+```
+
+```rust Named
+conn->execute("INSERT INTO users (name) VALUES (:name)", [ ":name" => "Iku" ]);
+```
+
+</CodeGroup>
+
+## Batch Transactions
+
+A batch consists of multiple SQL statements executed sequentially within an
+implicit transaction. The backend handles the transaction: success commits all
+changes, while any failure results in a full rollback with no modifications.
+
+```php
+$conn->execute_batch("
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+  );
+
+  INSERT INTO users (name) VALUES ('Alice');
+  INSERT INTO users (name) VALUES ('Bob');
+");
+```
+
+## Interactive Transactions
+
+Interactive transactions in SQLite ensure the consistency of a series of read
+and write operations within a transaction's scope. These transactions give you
+control over when to commit or roll back changes, isolating them from other
+client activity.
+
+```php
+$tx = conn->transaction();
+
+$tx->execute("INSERT INTO users (name) VALUES (?1)", ["Iku"]);
+$tx->execute("INSERT INTO users (name) VALUES (?1)", ["Iku 2"]);
+
+tx->commit(); // or, $tx->rollback()
+```

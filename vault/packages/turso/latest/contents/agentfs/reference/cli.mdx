@@ -1,0 +1,309 @@
+---
+title: CLI Reference
+description: Complete reference for the AgentFS command-line interface
+sidebarTitle: CLI
+---
+
+Complete reference for the `agentfs` command-line tool.
+
+<Info>
+For the latest reference, see [MANUAL.md](https://github.com/tursodatabase/agentfs/blob/main/MANUAL.md) in the repository.
+</Info>
+
+## Installation
+
+```bash
+curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
+```
+
+## Commands
+
+### agentfs init
+
+Initialize a new agent filesystem.
+
+```bash
+agentfs init [OPTIONS] [ID]
+```
+
+**Arguments:**
+- `ID` - Agent identifier (default: `agent-{timestamp}`)
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--force` | Overwrite existing agent filesystem |
+| `--base <PATH>` | Base directory for overlay filesystem |
+| `--sync-remote-url <URL>` | Remote Turso database URL |
+
+**Example:**
+
+```bash
+agentfs init my-agent
+agentfs init my-overlay --base /path/to/project
+```
+
+---
+
+### agentfs run
+
+Execute a program in a sandboxed environment.
+
+```bash
+agentfs run [OPTIONS] <COMMAND> [ARGS]...
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--session <ID>` | Named session for persistence |
+| `--allow <PATH>` | Allow write access to directory |
+| `--no-default-allows` | Disable default allowed directories |
+| `--experimental-sandbox` | Use ptrace sandbox (Linux) |
+| `--strace` | Show intercepted syscalls |
+
+**Examples:**
+
+```bash
+agentfs run /bin/bash
+agentfs run --session my-project python3 agent.py
+agentfs run --allow /tmp --allow ~/.cache /bin/bash
+```
+
+---
+
+### agentfs mount
+
+Mount an agent filesystem or list mounts.
+
+```bash
+agentfs mount [OPTIONS] [ID_OR_PATH] [MOUNT_POINT]
+```
+
+Without arguments, lists all mounted filesystems.
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-a, --auto-unmount` | Automatically unmount on exit |
+| `--allow-root` | Allow root user access |
+| `-f, --foreground` | Run in foreground |
+| `--uid <UID>` | User ID for files |
+| `--gid <GID>` | Group ID for files |
+
+**Examples:**
+
+```bash
+agentfs mount                              # List mounts
+agentfs mount my-agent ./mnt               # Mount agent
+agentfs mount my-agent ./mnt -a -f         # Foreground with auto-unmount
+```
+
+**Unmounting:**
+- Linux: `fusermount -u <MOUNT_POINT>`
+- macOS: `umount <MOUNT_POINT>`
+
+---
+
+### agentfs serve mcp
+
+Start an MCP (Model Context Protocol) server.
+
+```bash
+agentfs serve mcp <ID_OR_PATH> [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--tools <TOOLS>` | Comma-separated list of tools |
+
+**Available Tools:**
+
+| Category | Tools |
+|----------|-------|
+| Filesystem | `read_file`, `write_file`, `readdir`, `mkdir`, `remove`, `rename`, `stat`, `access` |
+| Key-Value | `kv_get`, `kv_set`, `kv_delete`, `kv_list` |
+
+**Examples:**
+
+```bash
+agentfs serve mcp my-agent
+agentfs serve mcp my-agent --tools read_file,readdir,stat
+```
+
+---
+
+### agentfs serve nfs
+
+Start an NFS server.
+
+```bash
+agentfs serve nfs <ID_OR_PATH> [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--bind <IP>` | IP to bind (default: `127.0.0.1`) |
+| `--port <PORT>` | Port (default: `11111`) |
+
+**Example:**
+
+```bash
+agentfs serve nfs my-agent --bind 0.0.0.0 --port 2049
+```
+
+**Mounting:**
+
+```bash
+mount -t nfs -o vers=3,tcp,port=11111,mountport=11111,nolock localhost:/ /mnt
+```
+
+---
+
+### agentfs sync
+
+Synchronize with a remote Turso database.
+
+```bash
+agentfs sync <ID_OR_PATH> <SUBCOMMAND>
+```
+
+**Subcommands:**
+
+| Command | Description |
+|---------|-------------|
+| `pull` | Pull remote changes |
+| `push` | Push local changes |
+| `stats` | View sync statistics |
+| `checkpoint` | Create checkpoint |
+
+**Example:**
+
+```bash
+agentfs sync my-agent pull
+agentfs sync my-agent push
+```
+
+---
+
+### agentfs fs
+
+Filesystem operations on agent databases.
+
+#### agentfs fs ls
+
+```bash
+agentfs fs ls <ID_OR_PATH> [FS_PATH]
+```
+
+List files. Output: `f <name>` for files, `d <name>` for directories.
+
+#### agentfs fs cat
+
+```bash
+agentfs fs cat <ID_OR_PATH> <FILE_PATH>
+```
+
+Display file contents.
+
+#### agentfs fs write
+
+```bash
+agentfs fs write <ID_OR_PATH> <FILE_PATH> <CONTENT>
+```
+
+Write content to a file.
+
+**Examples:**
+
+```bash
+agentfs fs ls my-agent
+agentfs fs cat my-agent /config.json
+agentfs fs write my-agent /hello.txt "Hello, world!"
+```
+
+---
+
+### agentfs diff
+
+Show filesystem changes in overlay mode.
+
+```bash
+agentfs diff <ID_OR_PATH>
+```
+
+---
+
+### agentfs timeline
+
+Display agent action timeline.
+
+```bash
+agentfs timeline [OPTIONS] <ID_OR_PATH>
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--limit <N>` | Limit entries (default: 100) |
+| `--filter <TOOL>` | Filter by tool name |
+| `--status <STATUS>` | Filter: `pending`, `success`, `error` |
+| `--format <FORMAT>` | Output: `table`, `json` |
+
+**Examples:**
+
+```bash
+agentfs timeline my-agent
+agentfs timeline my-agent --filter web_search --status error
+agentfs timeline my-agent --format json
+```
+
+---
+
+### agentfs completions
+
+Manage shell completions.
+
+```bash
+agentfs completions install [SHELL]
+agentfs completions uninstall [SHELL]
+agentfs completions show
+```
+
+Supported: `bash`, `zsh`, `fish`, `powershell`
+
+## Environment Variables
+
+Variables set inside the sandbox:
+
+| Variable | Description |
+|----------|-------------|
+| `AGENTFS` | Set to `1` inside sandbox |
+| `AGENTFS_SANDBOX` | Sandbox type |
+| `AGENTFS_SESSION` | Session ID |
+
+## Files
+
+| Path | Description |
+|------|-------------|
+| `.agentfs/<ID>.db` | Agent filesystem database |
+| `~/.config/agentfs/` | Configuration directory |
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/agentfs/installation">
+    Installation instructions
+  </Card>
+  <Card title="Sandbox Guide" icon="shield" href="/agentfs/guides/sandbox">
+    Running agents in sandboxes
+  </Card>
+</CardGroup>

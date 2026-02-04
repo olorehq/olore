@@ -1,0 +1,91 @@
+---
+title: OAuth
+description: Integrate Turso with your application using OAuth.
+---
+
+Something about PKCE. Link to code example with Next.js showing this flow working.
+
+## Quickstart
+
+<Steps>
+
+<Step title="Request a client_id from Turso">
+  You will need to request a `client_id` from Turso to integrate your
+  application with Turso's OAuth.
+</Step>
+
+<Step title="Authorize">
+
+You will need to redirect users to the authorization endpoint to authorize your application with Turso.
+
+The URL must contain the following:
+
+| URL Parameter           | Description                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `client_id`             | Your application's client ID.                                                                  |
+| `redirect_uri`          | The URL (**encoded**) to redirect the user to after they authorize.                            |
+| `response_type`         | The type of response you want to receive. <br />Use `code` for the authorization code flow.    |
+| `code_challenge_method` | The method used to generate the code challenge. <br />Use `S256` for the SHA-256 hash.         |
+| `code_challenge`        | The code challenge generated from a PKCE code verifier. <br />Must be unique, provided by you. |
+
+```bash
+curl -X POST 'https://api.turso.tech/v1/oauth/authorize?client_id=$client_id&redirect_uri=$redirect_uri&response_type=code&code_challenge_method=S256&code_challenge=$code_challenge' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+</Step>
+
+<Step title="Follow location response header">
+
+The response headers will contain the `location` that you will use to redirect users.
+
+```bash Example
+http://localhost:3000/oauth/turso?code=ZGMYN2M2YZGTMGMWYY0ZOTY2LTK0YZUTYTRINTZLNTLLODI3
+```
+
+This location contains the authorization `code` that you can use to generate an access token in the next step.
+
+</Step>
+
+<Step title="Generate Token">
+
+| URL Parameter   | Description                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `client_id`     | Your application's client ID.                                                                      |
+| `redirect_uri`  | The URL to redirect the user to after they authorize your application.                             |
+| `grant_type`    | The type of grant you want to use. <br />Use `authorization_code` for the authorization code flow. |
+| `code_verifier` | The code verifier used to generate the code challenge.                                             |
+| `code`          | The authorization code received from the authorization endpoint (step 1).                          |
+
+```bash
+curl -X POST "https://api.turso.tech/v1/oauth/token?grant_type=authorization_code&code=$code&redirect_uri=$redirect_uri&client_id=$client_id&code_verifier=$code_verifier"
+  -H "Authorization: Basic base64(client_id:client_secret)"
+```
+
+Note: The `Authorization` header uses `Basic Auth`. A base64 encoded string of your `client_id` and `client_secret`.
+
+This will return a response with the `access_token` for the Turso user:
+
+```json
+{
+  "access_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzaUljcF92LUVlNkVUSzRKVk4tREh3In0.JQTFL5K4FDPGDhEmZhMOk82g8zDdpk4mJkBS7nN0Rjts8fcnsLam4MVF9sktvhE67rQ9zAkYRg4Cq7aVqhntDg",
+  "token_type": "Bearer"
+}
+```
+
+</Step>
+
+<Step title="Make an API request">
+
+You can now access any of the Turso Platform API resources using the `access_token` returned in the previous step.
+
+```bash
+curl -L https://api.turso.tech/v1/locations \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+</Step>
+
+</Steps>
+
+## Things to know

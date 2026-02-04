@@ -1,0 +1,37 @@
+---
+sidebarTitle: Create Token
+openapi: "POST /v1/organizations/{organizationSlug}/databases/{databaseName}/auth/tokens"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases/{databaseName}/auth/tokens?expiration=2w&authorization=full-access' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const token = await turso.databases.createToken("my-db", {
+  expiration: "2w",
+  authorization: "full-access",
+});
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json
+{
+  "jwt": "TOKEN"
+}
+```
+
+</ResponseExample>

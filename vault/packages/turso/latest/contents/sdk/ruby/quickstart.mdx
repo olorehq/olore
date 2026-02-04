@@ -1,0 +1,113 @@
+---
+title: Turso Quickstart (Ruby)
+sidebarTitle: Quickstart
+description: Get started with Turso and Ruby using the libSQL client in a few simple steps.
+---
+
+<Snippet file="technical-preview-banner.mdx" />
+
+In this Ruby quickstart we will learn how to:
+
+- Retrieve database credentials
+- Install the libSQL package
+- Connect to a local or remote Turso database
+- Execute a query using SQL
+- Sync changes to local database (optional)
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+    You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+    <Snippet file="retrieve-database-credentials.mdx" />
+
+    <Snippet file="mobile-secrets-warning.mdx" />
+
+  </Step>
+
+  <Step title="Install">
+
+    Inside your Ruby project, install the following Rubygem:
+
+    ```bash
+    bundle add turso_libsql
+    ```
+
+  </Step>
+
+  <Step title="Connect">
+
+<AccordionGroup>
+  <Accordion title="Embedded Replicas">
+
+```rb
+require 'turso_libsql'
+
+db =Libsql::Database.new(
+  path: 'local.db',
+  url: ENV['TURSO_DATABASE_URL'],
+  auth_token: ENV['TURSO_AUTH_TOKEN'],
+  sync_interval: 100
+)
+```
+
+  </Accordion>
+  <Accordion title="Local only">
+
+```rb
+require 'turso_libsql'
+
+db = Libsql::Database.new(path: 'local.db')
+```
+
+  </Accordion>
+  <Accordion title="Remote only">
+
+```rb
+require 'turso_libsql'
+
+db = Libsql::Database.new(
+  url: ENV['TURSO_DATABASE_URL'],
+  auth_token: ENV['TURSO_AUTH_TOKEN']
+)
+```
+
+  </Accordion>
+</AccordionGroup>
+
+  </Step>
+
+  <Step title="Execute">
+
+You can execute a SQL query against your existing database by preparing a statement and then executing it:
+
+```c
+db.connect do |conn|
+  rows = conn.query 'SELECT * FROM users'
+  rows.close
+end
+```
+
+If you need to use placeholders for values, you can do that:
+
+<CodeGroup>
+
+```c Positional
+name = 'Iku'
+rows = conn.execute 'INSERT INTO users (id) VALUES (?)', [name]
+```
+
+</CodeGroup>
+
+  </Step>
+
+  <Step title="Sync (Embedded Replicas only)">
+
+When using embedded replicas, you should call `sync` on the database to sync your local database with the primary database, unless you are using `sync_interval` (though there is no issue with calling `sync` with `sync_interval` enabled):
+
+```rb
+db.sync
+```
+
+  </Step>
+</Steps>

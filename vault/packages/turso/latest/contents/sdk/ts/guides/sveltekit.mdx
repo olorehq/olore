@@ -1,0 +1,101 @@
+---
+title: SvelteKit + Turso
+sidebarTitle: SvelteKit
+description: Set up Turso in your SvelteKit project in minutes
+---
+
+![SvelteKit banner](/images/guides/svelte-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a SvelteKit app &mdash; [learn more](https://kit.svelte.dev/docs/creating-a-project)
+
+<Steps>
+
+<Step title="Install the libSQL SDK">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Configure database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+</Step>
+
+<Step title="Configure libSQL Client.">
+
+<CodeGroup>
+
+```ts Node.js / Serverless
+import { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } from "$env/static/private";
+import { createClient } from "@libsql/client";
+
+export const turso = createClient({
+  url: TURSO_DATABASE_URL,
+  authToken: TURSO_AUTH_TOKEN,
+});
+```
+
+```ts Edge Runtimes
+import { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } from "$env/static/private";
+import { createClient } from "@libsql/client/web";
+
+export const turso = createClient({
+  url: TURSO_DATABASE_URL,
+  authToken: TURSO_AUTH_TOKEN,
+});
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Execute SQL">
+
+<CodeGroup>
+
+```ts src/routes/+page.server.ts
+import { turso } from "$lib/turso.server";
+
+export async function load() {
+  const { rows } = await turso.execute("SELECT * FROM table_name");
+
+  return { rows };
+}
+```
+
+```svelte src/routes/+page.svelte
+<script lang="ts">
+  export let data
+</script>
+
+<ul>
+  {#each data.rows as row}
+    <li>{row.id}</li>
+  {/each}
+</ul>
+```
+
+</CodeGroup>
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Blog"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-at-the-polls"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

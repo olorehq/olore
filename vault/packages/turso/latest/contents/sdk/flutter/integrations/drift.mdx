@@ -1,0 +1,90 @@
+---
+title: Drift + Turso / LibSQL
+sidebarTitle: Drift
+description: Configure `drift` to work with `libsql_dart`
+---
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+
+<Steps>
+
+<Step title="Add packages to your project">
+
+```bash
+flutter pub add drift_libsql drift drift_flutter dev:build_runner dev:drift_dev
+```
+
+</Step>
+
+<Step title="Retrieve database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+</Step>
+
+<Step title="Create a table schema">
+
+```dart
+class TaskTable extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text()();
+  TextColumn get description => text()();
+  BoolColumn get completed => boolean()();
+}
+```
+
+</Step>
+
+<Step title="Create db class">
+
+```dart
+@DriftDatabase(tables: [TaskTable])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase(super.e);
+
+  @override
+  int get schemaVersion => 1;
+}
+```
+
+</Step>
+
+<Step title="Run build runner">
+
+```bash
+dart run build_runner build
+```
+
+</Step>
+
+<Step title="Create the db">
+
+```dart
+final db = AppDatabase(DriftLibsqlDatabase(
+    "${dir.path}/replica.db",
+    syncUrl: url,
+    authToken: token,
+    readYourWrites: true,
+    syncIntervalSeconds: 3,
+  ));
+```
+
+</Step>
+
+<Step title="Perform SQL operations">
+
+```dart
+await db.into(db.taskTable).insert(TaskTableCompanion.insert(
+	title: task.title,
+	description: task.description,
+	completed: task.completed));
+```
+
+</Step>
+
+</Steps>

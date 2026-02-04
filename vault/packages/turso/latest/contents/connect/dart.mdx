@@ -1,0 +1,89 @@
+---
+title: Connect to Turso using Dart
+sidebarTitle: Dart
+---
+
+<Steps>
+
+<Step title="Install">
+
+Add the turso_dart package to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  turso_dart:
+```
+
+Then run:
+
+```bash
+dart pub get
+```
+
+</Step>
+
+<Step title="Connect">
+
+Create a client connection. You can connect to an in-memory database or a local file:
+
+```dart
+import 'package:turso_dart/turso_dart.dart';
+
+// In memory
+final client = TursoClient.memory();
+
+// Or local file
+final client = TursoClient.local('/path/to/local.db');
+
+await client.connect();
+```
+
+</Step>
+
+<Step title="Create table">
+
+Create a table for customers:
+
+```dart
+await client.execute(
+  "CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY, name TEXT)"
+);
+```
+
+</Step>
+
+<Step title="Insert data">
+
+Insert some data into the customers table:
+
+```dart
+await client.query("INSERT INTO customers(name) VALUES ('John Doe')");
+await client.query("INSERT INTO customers(name) VALUES ('Jane Smith')");
+```
+
+</Step>
+
+<Step title="Query data">
+
+Query all customers from the table:
+
+```dart
+final result = await client.query("SELECT * FROM customers");
+print(result);
+```
+
+</Step>
+
+<Step title="Prepared statements">
+
+Use prepared statements for better performance and security:
+
+```dart
+final statement = await client.prepare("SELECT * FROM customers WHERE id = ?");
+final result = await statement.query(positional: [1]);
+print(result);
+```
+
+</Step>
+
+</Steps>

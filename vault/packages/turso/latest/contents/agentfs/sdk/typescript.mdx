@@ -1,0 +1,299 @@
+---
+title: TypeScript/JavaScript SDK
+description: Complete reference for the AgentFS TypeScript and JavaScript SDK
+sidebarTitle: TypeScript SDK
+---
+
+Build stateful AI agents with the AgentFS TypeScript SDK, supporting both Node.js and browser environments.
+
+## Installation
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install agentfs-sdk
+    ```
+  </Tab>
+  <Tab title="bun">
+    ```bash
+    bun add agentfs-sdk
+    ```
+  </Tab>
+  <Tab title="deno">
+    ```typescript
+    import { AgentFS } from "npm:agentfs-sdk";
+    ```
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+```typescript
+import { AgentFS } from 'agentfs-sdk';
+
+// Persistent storage with identifier
+const agent = await AgentFS.open({ id: 'my-agent' });
+// Creates: .agentfs/my-agent.db
+
+// Or use ephemeral in-memory database
+const ephemeralAgent = await AgentFS.open();
+
+// Use the three main APIs
+// Key-value store
+await agent.kv.set('key', 'value');
+// Filesystem
+await agent.fs.writeFile('/file.txt', 'data');
+// Tool tracking
+await agent.tools.record(...);
+```
+
+## Core APIs
+
+### AgentFS Class
+
+The main entry point for all AgentFS operations.
+
+#### `AgentFS.open(options?: AgentFSOptions)`
+
+Creates or opens an AgentFS database.
+
+```typescript
+interface AgentFSOptions {
+  /**
+   * Optional unique identifier for the agent.
+   * - If provided: Creates persistent storage at `.agentfs/{id}.db`
+   * - If omitted: Uses ephemeral in-memory database
+   */
+  id?: string;
+}
+
+// Persistent storage
+const agent = await AgentFS.open({ id: 'my-agent' });
+// Creates: .agentfs/my-agent.db
+
+// Ephemeral in-memory database
+const ephemeralAgent = await AgentFS.open();
+```
+
+#### Properties
+
+- `kv`: Key-value store interface
+- `fs`: Filesystem interface
+- `tools`: Tool call tracking interface
+- `db`: Direct access to the underlying Turso database
+
+### Key-Value Store API
+
+Fast, typed storage for agent state and configuration.
+
+#### `kv.set(key: string, value: any)`
+
+Store a value with automatic JSON serialization.
+
+```typescript
+await agent.kv.set('user:123', {
+  name: 'Alice',
+  preferences: { theme: 'dark' }
+});
+
+await agent.kv.set('session:current', 'abc-123');
+await agent.kv.set('counter', 42);
+```
+
+#### `kv.get<T>(key: string): Promise<T | undefined>`
+
+Retrieve a value with automatic deserialization.
+
+```typescript
+interface UserData {
+  name: string;
+  preferences: { theme: string };
+}
+
+const user = await agent.kv.get<UserData>('user:123');
+if (user) {
+  console.log(user.name); // Type-safe access
+}
+```
+
+#### `kv.delete(key: string)`
+
+Remove a key-value pair.
+
+```typescript
+await agent.kv.delete('session:expired');
+```
+
+#### `kv.list(prefix: string): Promise<{ key: string, value: any }[]>`
+
+List keys matching a prefix.
+
+```typescript
+// List all user keys
+const userEntries = await agent.kv.list('user:');
+for (const { key, value } of userEntries) {
+  console.log(key, value);
+}
+
+// List all keys (empty prefix)
+const allEntries = await agent.kv.list('');
+```
+
+### Filesystem API
+
+POSIX-like filesystem operations for managing agent data.
+
+#### `fs.writeFile(path: string, data: string | Buffer)`
+
+Write data to a file, creating parent directories as needed.
+
+```typescript
+// Write text
+await agent.fs.writeFile('/reports/summary.md', '# Report\nContent...');
+
+// Write binary data
+const imageBuffer = await fetch(url).then(r => r.arrayBuffer());
+await agent.fs.writeFile('/images/chart.png', Buffer.from(imageBuffer));
+```
+
+#### `fs.readFile(path: string, options?: BufferEncoding): Promise<Buffer | string>`
+
+Read file contents. Returns a Buffer by default, or a string if encoding is specified.
+
+```typescript
+// Read as Buffer (default)
+const data = await agent.fs.readFile('/reports/summary.md');
+const text = data.toString('utf-8');
+
+// Read as string with encoding
+const content = await agent.fs.readFile('/reports/summary.md', 'utf-8');
+
+// For JSON files
+const jsonData = await agent.fs.readFile('/config.json');
+const config = JSON.parse(jsonData.toString());
+```
+
+#### `fs.readdir(path: string): Promise<string[]>`
+
+List directory contents.
+
+```typescript
+const files = await agent.fs.readdir('/reports');
+// Returns: ['summary.md', '2024/', 'archive/']
+
+// Check each entry type
+for (const entry of files) {
+  const stats = await agent.fs.stat(`/reports/${entry}`);
+  if (stats.isDirectory()) {
+    console.log(`Directory: ${entry}`);
+  } else {
+    console.log(`File: ${entry} (${stats.size} bytes)`);
+  }
+}
+```
+
+#### `fs.stat(path: string): Promise<Stats>`
+
+Get file or directory metadata.
+
+```typescript
+interface Stats {
+  size: number;        // File size in bytes
+  mode: number;        // File mode/permissions
+  mtime: number;       // Modified time (Unix timestamp)
+  ctime: number;       // Created time (Unix timestamp)
+  isFile(): boolean;
+  isDirectory(): boolean;
+}
+
+const stats = await agent.fs.stat('/reports/summary.md');
+console.log(`Size: ${stats.size} bytes`);
+console.log(`Modified: ${new Date(stats.mtime * 1000)}`);
+```
+
+#### `fs.exists(path: string): Promise<boolean>`
+
+Check if a file or directory exists.
+
+```typescript
+if (await agent.fs.exists('/reports/draft.md')) {
+  console.log('Draft exists');
+}
+```
+
+#### `fs.deleteFile(path: string)`
+
+Delete a file.
+
+```typescript
+await agent.fs.deleteFile('/reports/old.md');
+```
+
+### Tool Call Tracking API
+
+Record and query agent tool invocations for debugging and compliance.
+
+#### `tools.record(name, started_at, completed_at, parameters?, result?, error?): Promise<number>`
+
+Record a tool invocation.
+
+```typescript
+await agent.tools.record(
+  name: string,           // Tool identifier
+  started_at: number,     // Unix timestamp (seconds)
+  completed_at: number,   // Unix timestamp (seconds)
+  parameters?: any,       // Tool parameters (JSON-serializable)
+  result?: any,           // Tool result (JSON-serializable)
+  error?: string          // Error message if failed
+);
+
+// Example: Track an API call
+const start = Date.now() / 1000;
+const response = await callOpenAI(prompt);
+
+const id = await agent.tools.record(
+  'openai_completion',
+  start,
+  Date.now() / 1000,
+  { prompt, model: 'gpt-4', temperature: 0.7 },
+  { response, tokensUsed: 150 }
+);
+```
+
+#### `tools.get(id: number): Promise<ToolCall | undefined>`
+
+Get details of a specific tool call.
+
+```typescript
+const toolCall = await agent.tools.get(42);
+if (toolCall) {
+  console.log('Duration:', toolCall.duration_ms, 'ms');
+}
+```
+
+## Browser Support
+
+AgentFS works in browser environments using WebAssembly:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module">
+    import { AgentFS } from 'https://unpkg.com/agentfs-sdk/dist/browser.js';
+
+    const agent = await AgentFS.open({ id: 'browser-agent' });
+
+    // All APIs work the same in browser
+    await agent.kv.set('browser:data', { platform: 'web' });
+    await agent.fs.writeFile('/notes.txt', 'Hello from browser!');
+  </script>
+</head>
+</html>
+```
+
+## Support
+
+- [GitHub Issues](https://github.com/tursodatabase/agentfs/issues) - Bug reports and feature requests
+- [Discord](https://tur.so/discord) - Community support and discussions
+- [Examples](https://github.com/tursodatabase/agentfs/tree/main/examples) - Sample applications

@@ -1,0 +1,93 @@
+---
+title: Turso + Railway
+sidebarTitle: 
+description: Deploy a Rust app using [Turso embedded replicas](/features/embedded-replicas) to [Railway](https://railway.app/).
+---
+
+![Koyeb banner](/images/platforms/railway-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- [Install the Railway CLI](https://docs.railway.app/guides/cli#installing-the-cli)
+
+<Steps>
+
+<Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+</Step>
+
+<Step title="Get application code">
+    Fork and clone the following embedded replica project from GitHub locally:
+
+    <Card
+        title="Recipe book API with Turso Embedded replicas + Actix Web"
+        icon="github"
+        href="https://github.com/tursodatabase/embedded-replicas-with-rust"
+    >
+    See the full source code
+    </Card>
+</Step>
+
+<Step title="Create a new Railway project">
+
+Run the following command to create a new Railway project. Provide the project's name when prompted.
+
+```sh
+railway init
+```
+
+</Step>
+
+<Step title="Add a service to the Railway project">
+
+[Create a new empty service](https://docs.railway.app/guides/services#creating-a-service) on your Railway project to act as your app's deployment target.
+
+</Step>
+
+<Step title="Link application to service">
+
+Run the following command to list and select the service to link to your application:
+
+```sh
+railway service
+```
+
+</Step>
+
+<Step title="Add database credentials">
+
+Open the service on your Railway dashboard and add your Turso database Credentials.
+
+```sh
+TURSO_DATABASE_URL=libsql://[db-name]-[github-username].turso.io
+TURSO_AUTH_TOKEN=...
+LOCAL_DB=file:db/recipe-book.db
+```
+
+</Step>
+
+<Step title="Deploy">
+
+Run the following command to deploy your application:
+
+```sh
+railway up
+```
+
+<Warning>
+If you are on a free plan, you'll need to connect your Railway account to GitHub to have access to code deployments.
+</Warning>
+
+</Step>
+
+</Steps>

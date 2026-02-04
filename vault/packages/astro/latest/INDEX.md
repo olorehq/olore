@@ -1,0 +1,21 @@
+# Astro Documentation Index
+392 files | Paths relative to contents/
+@start:install,setup,create-astro,prerequisites,getting-started=install-and-setup.mdx;quickstart,new-project,astro-new=getting-started.mdx;editor,vscode,ide,editor-setup=editor-setup.mdx;dev,build,preview,develop-and-build=develop-and-build.mdx
+@config:astro-config,defineConfig,configuration,site,base,trailingSlash,output,adapter=reference/configuration-reference.mdx;environment-variables,env,import-meta-env,dotenv=guides/environment-variables.mdx;configuring-astro=guides/configuring-astro.mdx
+@cli:astro-dev,astro-build,astro-preview,astro-check,astro-sync,cli-commands,command-line=reference/cli-reference.mdx;flags,options=reference/cli-reference.mdx
+@components:astro-components,component-structure,frontmatter,component-script,props,slots=basics/astro-components.mdx;layouts,layout-props,markdown-layouts=basics/layouts.mdx;framework-components,react,vue,svelte,solid,preact,hydration,client-directives=guides/framework-components.mdx
+@pages:astro-pages,pages-routing,file-based-routing,dynamic-routes,getStaticPaths,params=basics/astro-pages.mdx;routing,redirects,rewrites,middleware-routing=guides/routing.mdx;routing-reference,route-priority=reference/routing-reference.mdx
+@content:content-collections,defineCollection,loader,schema,getCollection,getEntry,render=guides/content-collections.mdx;markdown,mdx,frontmatter,markdown-pages=guides/markdown-content.mdx;content-loader-reference,content-loaders=reference/content-loader-reference.mdx
+@api:Astro-global,Astro-props,Astro-request,Astro-url,Astro-cookies,Astro-redirect,Astro-rewrite,Astro-locals,context-object=reference/api-reference.mdx;endpoints,api-routes,json-response,GET,POST,DELETE=guides/endpoints.mdx;data-fetching,fetch,api-calls=guides/data-fetching.mdx
+@directives:client-load,client-idle,client-visible,client-media,client-only,is-inline,set-html,set-text,define-vars=reference/directives-reference.mdx;server-directives,server-defer,server-island=reference/directives-reference.mdx
+@images:astro-image,Image,Picture,getImage,image-optimization,remote-images,responsive-images=guides/images.mdx;image-service-reference,image-service-api,getConfiguredImageService=reference/image-service-reference.mdx
+@styling:css,scoped-styles,global-styles,sass,postcss,tailwind,styling-guide=guides/styling.mdx;css-modules,css-preprocessors,ui-frameworks=guides/styling.mdx
+@middleware:middleware,sequence,onRequest,next,defineMiddleware,context=guides/middleware.mdx;authentication,auth-patterns=guides/authentication.mdx
+@islands:islands-architecture,partial-hydration,interactive-components,astro-island=concepts/islands.mdx;server-islands,server-defer,server-components=guides/server-islands.mdx;client-side-scripts,script-tags,hoisting=guides/client-side-scripts.mdx
+@typescript:typescript-setup,tsconfig,type-imports,content-types,astro-check,type-safety=guides/typescript.mdx;programmatic-reference,container-api,loadRenderer,renderToString=reference/programmatic-reference.mdx
+@deploy:deploy-guides,vercel,netlify,cloudflare,aws,docker,static-hosts=guides/deploy/;node-adapter,cloudflare-adapter,vercel-adapter,netlify-adapter=reference/adapter-reference.mdx
+@integrations:integrations-guide,astro-integration-api,addRenderer,addMiddleware,injectRoute,addWatchFile=guides/integrations-guide/;integrations-reference,astro-integration,hooks,updateConfig=reference/integrations-reference.mdx;publish-to-npm,publishing-integrations=reference/publish-to-npm.mdx
+@errors:error-codes,error-reference,troubleshooting,debugging=reference/error-reference.mdx;error-messages,common-errors=reference/errors/;troubleshooting-guide=guides/troubleshooting.mdx
+@advanced:view-transitions,transition-animate,transition-name,ViewTransitions=guides/view-transitions.mdx;prefetch,link-prefetching,prefetch-strategy=guides/prefetch.mdx;actions,astro-actions,server-actions=guides/actions.mdx;astro-db,database,drizzle=guides/astro-db.mdx
+@tutorial:tutorial-intro,build-a-blog,astro-tutorial,step-by-step=tutorial/;tutorial-setup,project-setup=tutorial/1-setup/;pages-tutorial=tutorial/2-pages/;components-tutorial=tutorial/3-components/
+@upgrade:upgrade-astro,migration,breaking-changes,upgrade-guides=upgrade-astro.mdx;migrate-to-astro,framework-migration=guides/migrate-to-astro/;upgrade-to-v5,v5-migration=guides/upgrade-to/

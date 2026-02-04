@@ -1,0 +1,43 @@
+---
+sidebarTitle: Create Token
+openapi: "POST /v1/organizations/{organizationSlug}/groups/{groupName}/auth/tokens"
+---
+
+<Info>
+
+Tokens cannot be retrieved once created, and cannot be revoked individually.
+
+</Info>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/groups/{groupName}/auth/tokens?expiration=2w&authorization=full-access' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const token = await turso.groups.createToken("default", {
+  expiration: "2w",
+  authorization: "full-access",
+});
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json
+{
+  "jwt": "TOKEN"
+}
+```
+
+</ResponseExample>

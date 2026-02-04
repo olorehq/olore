@@ -1,0 +1,162 @@
+---
+title: C Reference
+sidebarTitle: Reference
+description: libSQL C Reference
+---
+
+<Snippet file="technical-preview-banner.mdx" />
+
+## Installing
+
+To use the libSQL C bindings, you need to include the `libsql.h` header file in your project and link against the `liblibsql.so` shared library.
+
+<Card title="libSQL C" href="https://github.com/tursodatabase/libsql">
+  Build from source code
+</Card>
+
+Before using libSQL, you need to call the setup function:
+
+```c
+libsql_setup((libsql_config_t){0});
+```
+
+## In-Memory Databases
+
+libSQL supports connecting to [in-memory
+databases](https://www.sqlite.org/inmemorydb.htm databases for cases where you don't require persistence:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){.path = ":memory:"});
+libsql_connection_t conn = libsql_database_connect(db);
+```
+
+## Local Development
+
+You can work locally using an SQLite file:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){.path = "local.db"});
+libsql_connection_t conn = libsql_database_connect(db);
+```
+
+## Remote Databases
+
+You can connect to remote databases using a URL and auth token:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){
+    .url = "TURSO_DATABASE_URL",
+    .auth_token = "TURSO_AUTH_TOKEN"
+});
+libsql_connection_t conn = libsql_database_connect(db);
+```
+
+## Embedded Replicas
+
+You can work with embedded replicas that can sync from the remote URL and delegate writes to the remote primary database:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){
+    .path = "local.db",
+    .url = "TURSO_DATABASE_URL",
+    .auth_token = "TURSO_AUTH_TOKEN"
+});
+libsql_connection_t conn = libsql_database_connect(db);
+```
+
+### Manual Sync
+
+The `libsql_database_sync` function allows you to sync manually the local database with the remote counterpart:
+
+```c
+libsql_sync_t sync = libsql_database_sync(db);
+```
+
+### Sync Interval
+
+The `sync_interval` parameter in the database description allows you to set an interval for automatic synchronization of the database in the background:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){
+    .path = "local.db",
+    .url = "TURSO_DATABASE_URL",
+    .auth_token = "TURSO_AUTH_TOKEN",
+    .sync_interval = 60000
+});
+```
+
+### Read Your Own Writes
+
+The `not_read_your_writes` parameter in the database description configures the database connection to ensure that writes are immediately visible to subsequent read operations initiated by the same connection. This is **enabled by default**, and you can disable it by setting `not_read_your_writes` to `true`:
+
+```c
+libsql_database_t db = libsql_database_init((libsql_database_desc_t){
+    .path = "local.db",
+    .url = "TURSO_DATABASE_URL",
+    .auth_token = "TURSO_AUTH_TOKEN",
+    .not_read_your_writes = true
+});
+```
+
+## Simple query
+
+You can use `libsql_connection_batch` for simple queries without parameters:
+
+```c
+libsql_batch_t batch = libsql_connection_batch(conn, "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
+```
+
+For queries with results, use `libsql_connection_prepare` and `libsql_statement_query`:
+
+```c
+libsql_statement_t stmt = libsql_connection_prepare(conn, "SELECT * FROM users");
+libsql_rows_t rows = libsql_statement_query(stmt);
+```
+
+## Prepared Statements
+
+You can prepare a statement using `libsql_connection_prepare` and then execute it with `libsql_statement_execute` or `libsql_statement_query`:
+
+```c
+libsql_statement_t stmt = libsql_connection_prepare(conn, "INSERT INTO users (name) VALUES (?)");
+libsql_statement_bind_value(stmt, libsql_text("John Doe", 8));
+libsql_execute_t result = libsql_statement_execute(stmt);
+```
+
+## Placeholders
+
+libSQL supports the use of positional and named placeholders within SQL statements:
+
+<CodeGroup>
+
+```c Positional
+libsql_statement_t stmt = libsql_connection_prepare(conn, "SELECT * FROM users WHERE id = ?");
+libsql_statement_bind_value(stmt, libsql_integer(1));
+```
+
+```c Named
+libsql_statement_t stmt = libsql_connection_prepare(conn, "SELECT * FROM users WHERE id = :id");
+libsql_statement_bind_named(stmt, ":id", libsql_integer(1));
+```
+
+</CodeGroup>
+
+## Transactions
+
+libSQL supports transactions:
+
+```c
+libsql_transaction_t tx = libsql_connection_transaction(conn);
+// Perform operations within the transaction
+libsql_transaction_commit(tx); // or libsql_transaction_rollback(tx)
+```
+
+## Cleanup
+
+Remember to clean up resources when you're done:
+
+```c
+libsql_statement_deinit(stmt);
+libsql_connection_deinit(conn);
+libsql_database_deinit(db);
+```

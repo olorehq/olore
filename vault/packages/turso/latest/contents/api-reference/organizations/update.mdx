@@ -1,0 +1,30 @@
+---
+sidebarTitle: Update
+openapi: "PATCH /v1/organizations/{organizationSlug}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X PATCH https://api.turso.tech/v1/organizations/{organizationSlug} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "overages": true
+  }'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const organization = await turso.organizations.update("mycompany", {
+  overages: true,
+});
+```
+
+</RequestExample>

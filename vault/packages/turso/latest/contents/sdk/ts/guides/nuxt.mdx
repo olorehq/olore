@@ -1,0 +1,115 @@
+---
+title: Nuxt + Turso
+sidebarTitle: Nuxt
+description: Set up Turso in your Nuxt project in minutes
+---
+
+![Nuxt banner](/images/guides/nuxt-banner.png)
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Nuxt app &mdash; [learn more](https://nuxt.com/docs/getting-started/installation#new-project)
+
+<Steps>
+
+<Step title="Install the libSQL SDK">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Configure database credentials">
+
+Get the database URL:
+
+```bash
+turso db show --url <database-name>
+```
+
+Get the database authentication token:
+
+```bash
+turso db tokens create <database-name>
+```
+
+Assign credentials to the environment variables inside `.env`.
+
+```bash
+NUXT_TURSO_DATABASE_URL=
+NUXT_TURSO_AUTH_TOKEN=
+```
+
+</Step>
+
+<Step title="Configure variables inside Nuxt's runtime config.">
+
+```ts nuxt.config.ts
+export default defineNuxtConfig({
+  runtimeConfig: {
+    turso: {
+      databaseUrl: "",
+      authToken: "",
+    },
+  },
+});
+```
+
+<Note>
+  Make sure that names of the keys in the `runtimeConfig` object match the names
+  of your environment variables. Read more about this
+  [here](https://nuxt.com/docs/guide/going-further/runtime-config).
+</Note>
+
+</Step>
+
+<Step title="Configure libSQL Client.">
+
+```ts server/utils/turso.ts
+import { createClient } from "@libsql/client";
+// You can optionally pass in the event to useRuntimeConfig
+// import { H3Event } from "h3";
+
+export function useTurso(/* event: H3Event */) {
+  const { turso } = useRuntimeConfig(/* event */);
+
+  return createClient({
+    url: turso.databaseUrl,
+    authToken: turso.authToken,
+  });
+}
+```
+
+</Step>
+
+<Step title="Execute SQL">
+
+```ts server/api/items.get.ts
+export default defineEventHandler(async (event) => {
+  const client = useTurso(/* event */);
+  const { rows } = await client.execute("select * from table_name");
+
+  return {
+    data: {
+      items: rows,
+    },
+  };
+});
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Website + App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-top-web-frameworks"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

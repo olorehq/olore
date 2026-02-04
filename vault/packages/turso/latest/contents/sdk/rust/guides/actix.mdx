@@ -1,0 +1,101 @@
+---
+title: Turso + Actix
+sidebarTitle: Actix
+description: Set up Turso in your Actix project in minutes
+---
+
+![Actix banner](/images/guides/actix-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have an Actix app &mdash; [learn more](https://actix.rs/docs/getting-started)
+
+<Steps>
+
+<Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+</Step>
+
+<Step title="Add the libsql crate to the project">
+
+```sh
+cargo add libsql
+```
+
+<Note>
+Optionally, you can add a package such as [`dotenvy`](https://docs.rs/dotenvy/latest/dotenvy) to help you work with `.env` files:
+
+```sh
+cargo add dotenvy
+```
+</Note>
+
+</Step>
+
+<Step title="Execute SQL">
+
+```rust
+#[tokio::main]
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().route("/", web::get().to(index)).route("/items", web::get().to(get_items)))
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
+}
+
+async fn get_items() -> Result<HttpResponse, Error> {
+    dotenv().expect(".env file not found");
+
+    let db_url = env::var("TURSO_DATABASE_URL").unwrap();
+    let auth_token = env::var("TURSO_AUTH_TOKEN").unwrap();
+    let db_file = env::var("LOCAL_DB").unwrap();
+
+    let db = Builder::new_remote_replica(db_file, url, auth_token)
+    .read_your_writes(true)
+    .build()
+    .await
+    .unwrap();
+
+    let conn = db.connect().unwrap();
+
+    let mut results = conn.query("SELECT * FROM items", ()).await.unwrap();
+
+    let mut items: Vec<T> = Vec::new();
+
+    while let Some(row) = results.next().await.unwrap() {
+        let item: Item = Item {
+            task: row.get(0).unwrap(),
+        };
+        items.push(item);
+    }
+
+    Ok(HttpResponse::Ok().json(items))
+}
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Turso + Actix Web Traffic Tracker"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-web-traffic-tracker-actix"
+  >
+    See the full source code
+  </Card>
+</CardGroup>
