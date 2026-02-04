@@ -1,0 +1,40 @@
+---
+title: Vercel AI SDK
+pcx_content_type: configuration
+sidebar:
+  order: 3
+---
+
+import {
+  Details,
+  Tabs,
+  TabItem
+} from "~/components";
+import CodeSnippets from "~/components/ai-gateway/code-examples.astro";
+
+The [Vercel AI SDK](https://sdk.vercel.ai/) is a TypeScript library for building AI applications. The SDK supports many different AI providers, tools for streaming completions, and more.
+To use Cloudflare AI Gateway with Vercel AI SDK, you will need to use the `ai-gateway-provider` package.
+
+## Installation
+
+```bash
+npm install ai-gateway-provider
+```
+
+## Examples 
+
+<CodeSnippets forceClient="aisdk" />
+
+### Fallback Providers
+
+To specify model or provider fallbacks to handle request failures and ensure reliability, you can pass an array of models to the `model` option.
+
+```js title=""
+const { text } = await generateText({
+  model: aigateway([
+		openai.chat("gpt-5.1"), anthropic("claude-sonnet-4-5")
+  ]),
+  prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+});
+```
+
