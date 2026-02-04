@@ -1,0 +1,74 @@
+---
+title: Connect to Turso using Rust
+sidebarTitle: Rust
+---
+
+<Steps>
+
+<Step title="Install">
+
+Add the Turso crate to your Rust project:
+
+```bash
+cargo add turso
+```
+
+</Step>
+
+<Step title="Connect">
+
+Here's how you can connect to a local SQLite database:
+
+```rust
+use turso::Builder;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db = Builder::new_local("sqlite.db").build().await?;
+    let conn = db.connect()?;
+
+    Ok(())
+}
+```
+
+</Step>
+
+<Step title="Create table">
+
+Create a table for users:
+
+```rust
+conn.execute(
+    "CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL
+    )",
+    ()
+).await?;
+```
+
+</Step>
+
+<Step title="Insert data">
+
+Insert some data into the users table:
+
+```rust
+conn.execute("INSERT INTO users (username) VALUES (?)", ("alice",)).await?;
+conn.execute("INSERT INTO users (username) VALUES (?)", ("bob",)).await?;
+```
+
+</Step>
+
+<Step title="Query data">
+
+Query all users from the table:
+
+```rust
+let res = conn.query("SELECT * FROM users", ()).await?;
+println!("{:?}", res);
+```
+
+</Step>
+
+</Steps>

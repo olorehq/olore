@@ -1,0 +1,24 @@
+---
+sidebarTitle: Delete
+openapi: "DELETE /v1/organizations/{organizationSlug}/groups/{groupName}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE 'https://api.turso.tech/v1/organizations/{organizationSlug}/groups/{groupName}' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const group = await turso.groups.delete("new-group");
+```
+
+</RequestExample>

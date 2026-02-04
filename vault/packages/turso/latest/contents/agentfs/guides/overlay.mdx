@@ -1,0 +1,191 @@
+---
+title: Copy-on-Write Overlays
+description: How copy-on-write isolation works in AgentFS
+sidebarTitle: Copy-on-Write Overlays
+---
+
+AgentFS uses an overlay filesystem to provide copy-on-write isolation. This lets agents freely modify files while keeping your original data safe.
+
+## How Overlay Works
+
+An overlay filesystem combines two layers:
+
+```
+┌────────────────────────────────────┐
+│         Merged View (what you see) │
+├────────────────────────────────────┤
+│  Delta Layer (AgentFS database)    │  ← Writes go here
+├────────────────────────────────────┤
+│  Base Layer (original directory)   │  ← Read-only
+└────────────────────────────────────┘
+```
+
+**Reading a file:**
+1. Check delta layer first
+2. If not found, read from base layer
+
+**Writing a file:**
+1. Copy file to delta layer (if from base)
+2. Write changes to delta layer
+3. Base layer is never modified
+
+**Deleting a file:**
+1. Create a "whiteout" marker in delta layer
+2. File appears deleted in merged view
+3. Original file in base layer is untouched
+
+## Creating an Overlay Filesystem
+
+### With `agentfs run`
+
+The simplest way - automatically creates an overlay over your current directory:
+
+```bash
+cd /path/to/project
+agentfs run /bin/bash
+```
+
+### With `agentfs init --base`
+
+Create an overlay explicitly:
+
+```bash
+agentfs init my-overlay --base /path/to/project
+```
+
+Then mount it:
+
+```bash
+agentfs mount my-overlay ./workspace
+```
+
+Or run a command in it:
+
+```bash
+agentfs run --session my-overlay /bin/bash
+```
+
+## Viewing Changes
+
+See what's different from the base:
+
+```bash
+agentfs diff my-overlay
+```
+
+## Practical Examples
+
+### Safe Refactoring
+
+Let an agent refactor your code without risk:
+
+```bash
+cd my-project
+agentfs run --session refactor python3 refactor_agent.py
+
+# Review what changed
+agentfs diff refactor
+
+# Happy? Apply changes manually or via script
+# Not happy? Just delete the session
+rm .agentfs/refactor.db
+```
+
+### Testing Destructive Operations
+
+Try something dangerous safely:
+
+```bash
+agentfs run --session test /bin/bash
+$ rm -rf src/  # Yikes!
+$ exit
+
+# Original files are fine
+ls src/  # Still there!
+
+# Only the overlay was affected
+agentfs fs ls test  # Shows the deletion
+```
+
+### Parallel Experiments
+
+Run multiple experiments on the same codebase:
+
+```bash
+# Experiment A
+agentfs run --session exp-a python3 approach_a.py
+
+# Experiment B (same base, different changes)
+agentfs run --session exp-b python3 approach_b.py
+
+# Compare results
+agentfs diff exp-a
+agentfs diff exp-b
+```
+
+## Storage Efficiency
+
+The overlay only stores:
+- **Modified files** - Full copy after first write
+- **New files** - Stored entirely in delta
+- **Deleted files** - Small whiteout marker
+
+Original files are never duplicated. A 10GB project with 1MB of changes only uses ~1MB in the delta layer.
+
+## Technical Details
+
+### File Operations
+
+| Operation | Behavior |
+|-----------|----------|
+| Read existing file | Pass through to base |
+| Write existing file | Copy to delta, then write |
+| Create new file | Write directly to delta |
+| Delete file | Create whiteout in delta |
+| Rename file | Delete old + create new |
+
+### Whiteouts
+
+When you delete a base file, AgentFS creates a "whiteout" - a marker that hides the file:
+
+```sql
+-- Whiteouts in the database
+SELECT * FROM fs_inode WHERE whiteout = 1;
+```
+
+### Database Schema
+
+The delta layer is stored in SQLite:
+
+```sql
+-- Files and directories
+CREATE TABLE fs_inode (
+    ino INTEGER PRIMARY KEY,
+    parent_ino INTEGER,
+    name TEXT,
+    mode INTEGER,
+    size INTEGER,
+    ...
+    whiteout INTEGER DEFAULT 0
+);
+
+-- File contents
+CREATE TABLE fs_block (
+    ino INTEGER,
+    block_num INTEGER,
+    data BLOB
+);
+```
+
+See the [AgentFS Specification](https://github.com/tursodatabase/agentfs/blob/main/SPEC.md) for the complete schema.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sessions" icon="clock" href="/agentfs/guides/sessions">
+    Share state between agents
+  </Card>
+  <Card title="Syncing" icon="cloud" href="/agentfs/guides/sync">
+    Sync overlays to Turso Cloud
+  </Card>
+</CardGroup>

@@ -1,0 +1,97 @@
+---
+title: Installation
+description: Install the AgentFS CLI on Linux, macOS, and Windows
+sidebarTitle: Installation
+---
+
+## Quick Install
+
+The fastest way to install AgentFS:
+
+```bash
+curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
+```
+
+This installs the `agentfs` binary to `~/.cargo/bin`.
+
+## Platform-Specific Instructions
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
+    ```
+
+    After installation, restart your terminal or run:
+    ```bash
+    source ~/.zshrc  # or ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Linux">
+    **Using the installer:**
+    ```bash
+    curl -fsSL https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.sh | sh
+    ```
+
+    After installation, restart your terminal or run:
+    ```bash
+    source ~/.bashrc  # or ~/.zshrc
+    ```
+
+    **Requirements:**
+    - FUSE must be available for filesystem mounting
+    - On Ubuntu/Debian: `sudo apt install fuse3`
+    - On Fedora: `sudo dnf install fuse3`
+  </Tab>
+  <Tab title="Windows">
+    **Using PowerShell:**
+    ```powershell
+    irm https://github.com/tursodatabase/agentfs/releases/latest/download/agentfs-installer.ps1 | iex
+    ```
+
+    Or download the binary directly from the [releases page](https://github.com/tursodatabase/agentfs/releases).
+  </Tab>
+</Tabs>
+
+## Verify Installation
+
+```bash
+agentfs --version
+```
+
+## Shell Completions
+
+Enable tab completion for your shell:
+
+```bash
+# Auto-detect shell
+agentfs completions install
+
+# Or specify shell explicitly
+agentfs completions install bash
+agentfs completions install zsh
+agentfs completions install fish
+```
+
+Restart your shell after installing completions.
+
+## Building from Source
+
+Requires Rust 1.70+:
+
+```bash
+git clone https://github.com/tursodatabase/agentfs.git
+cd agentfs/cli
+cargo install --path .
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agentic Coding" icon="robot" href="/agentfs/guides/sandbox">
+    Run AI coding agents safely
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/agentfs/reference/cli">
+    Full command reference
+  </Card>
+</CardGroup>

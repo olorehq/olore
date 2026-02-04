@@ -1,0 +1,58 @@
+---
+title: Reference
+---
+
+## Embedded Replicas
+
+You can work with [embedded replicas](/features/embedded-replicas) that can sync from the remote database to a local SQLite file, and delegate writes to the remote primary database:
+
+```py
+import os
+
+import libsql
+
+conn = libsql.connect("local.db", sync_url=os.getenv("LIBSQL_URL"),
+                      auth_token=os.getenv("LIBSQL_AUTH_TOKEN"))
+conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER);")
+conn.execute("INSERT INTO users(id) VALUES (1);")
+conn.commit()
+
+print(conn.execute("select * from users").fetchall())
+```
+
+<Snippet file="embedded-replicas-warning.mdx" />
+
+### Periodic Sync
+
+You can automatically sync at intervals by passing time in seconds to the `sync_interval` option. For example, to sync every minute, you can use the following code:
+
+```py
+conn = libsql.connect("local.db", sync_interval=60, sync_url=os.getenv("LIBSQL_URL"),
+                      auth_token=os.getenv("LIBSQL_AUTH_TOKEN"))
+```
+
+### Manual Sync
+
+The `Sync` function allows you to sync manually the local database with the remote counterpart:
+
+```py
+conn.execute("INSERT INTO users(id) VALUES (2);")
+conn.commit()
+conn.sync()
+```
+
+## Encryption
+
+To enable encryption on a SQLite file, pass the encryption secret to the `encryption_key` option:
+
+```py
+conn = libsql.connect("encrypted.db", sync_url=os.getenv("LIBSQL_URL"),
+                      auth_token=os.getenv("LIBSQL_AUTH_TOKEN"),
+                      encryption_key=os.getenv("ENCRYPTION_KEY"))
+```
+
+<Info>
+
+Encrypted databases appear as raw data and cannot be read as standard SQLite databases. You must use the libSQL client for any operations — [learn more](/libsql#encryption-at-rest).
+
+</Info>

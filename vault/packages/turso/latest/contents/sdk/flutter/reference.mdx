@@ -1,0 +1,224 @@
+---
+title: Reference
+description: libSQL Flutter / Dart Reference
+---
+
+The libSQL package for Flutter / Dart contains everything you need to work with Turso / libSQL and works flawlessly with all features, because it’s build on top libSQL Rust crate and `flutter_rust_bridge` package, allowing for seamless communication between Rust and Dart.
+
+## Add the package to your project
+
+```bash
+flutter pub add libsql_dart
+```
+
+Alternatively, manually add it to your project's `pubspec.yaml`
+
+```yaml
+libsql_dart:
+```
+
+## Initializing
+
+Call `LibsqlClient` constructor to create the database client. Different configurations are supported, allowing connection to in-memory database, local sqlite file, remote Turso / libSQL database, or embedded replica.
+
+## In-Memory Databases
+
+libSQL supports connecting to [in-memory databases](https://www.sqlite.org/inmemorydb.html) for cases where you don't require persistence:
+
+```dart
+final client = LibsqlClient(":memory:");
+```
+
+## Local Development
+
+You can work locally using an SQLite file and passing the path to `LibsqlClient`:
+
+```dart
+final dir = await getApplicationCacheDirectory();
+final path = '${dir.path}/local.db';
+
+final client = LibsqlClient(path);
+```
+
+## Remote
+
+You can work with remote database by passing your Turso Database URL:
+
+```dart
+final client = LibsqlClient('<TURSO_OR_LIBSQL_URL>')
+	..authToken = '<TOKEN>';
+```
+
+## Embedded Replicas
+
+You can work with embedded replicas by passing your Turso Database URL to `syncUrl`:
+
+```dart
+final dir = await getApplicationCacheDirectory();
+final path = '${dir.path}/local.db';
+
+final client = LibsqlClient(path)
+	..authToken = '<TOKEN>'
+	..syncUrl = '<TURSO_OR_LIBSQL_URL>'
+	..readYourWrites = true;
+```
+
+<Snippet file="embedded-replicas-warning.mdx" />
+
+### Connect
+
+```dart
+await client.connect();
+```
+
+### Manual Sync
+
+The `sync()` function allows you to sync manually the local database with the remote counterpart:
+
+```ts
+await client.sync();
+```
+
+### Periodic Sync
+
+You can automatically sync at intervals by configuring the `syncIntervalSeconds` property when instantiating the client:
+
+```dart
+final dir = await getApplicationCacheDirectory();
+final path = '${dir.path}/local.db';
+
+final client = LibsqlClient(path)
+	..authToken = '<TOKEN>'
+	..syncUrl = '<TURSO_OR_LIBSQL_URL>'
+	..syncIntervalSeconds = 5
+	..readYourWrites = true;
+```
+
+### Encryption at rest
+
+To enable encryption on a SQLite file, pass the `encryptionKey`:
+
+```dart
+final dir = await getApplicationCacheDirectory();
+final path = '${dir.path}/local.db';
+
+final client = LibsqlClient(path)..encryptionKey = '<KEY>';
+```
+
+Encrypted databases appear as raw data and cannot be read as standard SQLite databases. You must use the libSQL client for any operations &mdash; [learn more](/libsql#encryption-at-rest).
+
+## Execute
+
+Returns number of rows affected:
+
+```dart
+await client.execute("create table if not exists customers (id integer primary key, name text);");
+```
+
+## Query
+
+Returns rows as `List<Map<String, dynamic>>`. Will returns empty list when is not performing select query:
+
+```dart
+await client.query("insert into customers(name) values ('John Doe')");
+
+print(await client.query("select * from customers"));
+```
+
+## Placeholders
+
+libSQL supports the use of positional and named placeholders within SQL statements:
+
+<CodeGroup>
+
+```dart Positional
+final statement = await client
+	.prepare("select * from customers where id = ?");
+
+await statement.query(positional: [1])
+```
+
+```dart Named
+final statement = await client
+	.prepare("select * from customers where id = :id");
+
+await statement.query(named: {"id": 1})
+```
+
+</CodeGroup>
+
+<br />
+
+<Info>
+
+libSQL supports the same named placeholder characters as SQLite &mdash; `:`, `@` and `$`.
+
+</Info>
+
+## Batch Transactions
+
+A batch consists of multiple SQL statements executed sequentially within an implicit transaction. The backend handles the transaction: success commits all changes, while any failure results in a full rollback with no modifications.
+
+```dart
+await client.batch("""insert into customers (name) values ('Jane Doe'); insert into customers (name) values ('Jake Doe');""");
+```
+
+## Transaction Modes
+
+| Mode                                  | SQLite command               | Description                                                                                                                                                                                        |
+| ------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LibsqlTransactionBehavior.immediate` | `BEGIN IMMEDIATE`            | The transaction may execute statements that read and write data. Write transactions executed on a replica are forwarded to the primary instance, and can't operate in parallel.                    |
+| `LibsqlTransactionBehavior.readOnly`  | `BEGIN TRANSACTION READONLY` | The transaction may only execute statements that read data (select). Read transactions can occur on replicas, and can operate in parallel with other read transactions.                            |
+| `LibsqlTransactionBehavior.deferred_` | `BEGIN DEFERRED`             | The transaction starts in read mode, then changes to write as soon as a write statement is executed. This mode change may fail if there is a write transaction currently executing on the primary. |
+
+## Interactive Transactions
+
+Interactive transactions in SQLite ensure the consistency of a series of read and write operations within a transaction's scope. These transactions give you control over when to commit or roll back changes, isolating them from other client activity.
+
+| Method       | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| `execute()`  | Similar to `execute()` except within the context of the transaction |
+| `query()`    | Similar to `query()` except within the context of the transaction   |
+| `commit()`   | Commits all write statements in the transaction                     |
+| `rollback()` | Rolls back the entire transaction                                   |
+
+```dart
+final tx = await client.transaction();
+
+await tx
+	.execute("update customers set name = 'John Noe' where id = 1");
+await tx
+	.execute("update customers set name = 'Jane Noe' where id = 2");
+print(await tx
+	.query("select * from customers where id = ?", positional: [1]));
+
+await tx.commit();
+```
+
+<br />
+
+<Warning>
+  Interactive transactions in libSQL lock the database for writing until
+  committed or rolled back, with a 5-second timeout. They can impact performance
+  on high-latency or busy databases.
+</Warning>
+
+## ATTACH
+
+You can attach multiple databases to the current connection using the `ATTACH` attachment:
+
+```dart
+final tx = await client.transaction(behavior: LibsqlTransactionBehavior.readOnly);
+
+await tx.execute("ATTACH "<database-id>" AS attached");
+
+print(await tx.execute("SELECT * FROM attached.customers"));
+
+await tx.commit();
+```
+
+<Info>
+  Make sure to [allow `ATTACH`](/cli/db/config/attach/allow) and create a token
+  with the permission to attach a database &mdash; [learn
+  more](/features/attach-database)
+</Info>

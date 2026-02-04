@@ -1,0 +1,24 @@
+---
+sidebarTitle: Invalidate Tokens
+openapi: "POST /v1/organizations/{organizationSlug}/groups/{groupName}/auth/rotate"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/groups/{groupName}/auth/rotate' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const response = await turso.groups.invalidateTokens("default");
+```
+
+</RequestExample>

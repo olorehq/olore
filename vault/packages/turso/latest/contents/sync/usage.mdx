@@ -1,0 +1,245 @@
+---
+title: Usage
+description: How to enable and use sync with Turso across TypeScript, Python, and Go.
+---
+
+This guide shows how to set up a Turso database and use the sync features from your application.
+
+<Note>
+This particular usage uses the Turso Cloud to sync the local Turso databases and assumes that you have an account.
+</Note>
+
+<Steps>
+
+<Step title="1. Setup Turso Cloud database">
+
+- Follow our [Quickstart](/quickstart) to install the CLI, create a database
+
+- Get the database URL (`libsql://...`):
+```
+turso db show <db>
+```
+
+- Create a token for your app:
+```
+turso db tokens create <db>
+```
+
+</Step>
+
+<Step title="2. Setup a basic connection with sync">
+
+You need three essentials to enable sync:
+- Local path: where the local, synced tursodb file is stored
+- Remote URL: your Turso Cloud URL (`libsql://...`)
+- Auth token: Turso Cloud token to authenticate requests
+
+<CodeGroup>
+
+```ts TypeScript
+import { connect } from '@tursodatabase/sync';
+
+const db = await connect({
+  path: './app.db',                               // local path
+  url: 'libsql://...',                            // remote URL (generated with turso db show <db-name> --url)
+  authToken: process.env.TURSO_AUTH_TOKEN,        // authentication token (generated with turso db tokens create <db-name>)
+  // longPollTimeoutMs: 10_000,                   // optional: server waits before replying to pull
+  // bootstrapIfEmpty: false,                     // set to false to avoid bootstrapping on first run
+});
+```
+
+```py Python
+import os
+import turso.sync
+
+conn = turso.sync.connect(
+    path="./app.db",                                  # local path
+    remote_url="libsql://...",                        # remote URL (generated with turso db show <db-name> --url)
+    remote_auth_token=os.environ["TURSO_AUTH_TOKEN"], # authentication token (generated with turso db tokens create <db-name>)
+    # long_poll_timeout_ms=10_000,                    # optional: server waits before replying to pull
+    # bootstrap_if_empty=False,                       # set to false to avoid bootstrapping on first run
+)
+```
+
+```go Go
+package main
+
+import (
+	"turso"
+)
+
+db, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
+  Path:              "./app.db",                    // local path
+  RemoteUrl:         "libsql://...",                // remote URL (generated with turso db show <db-name> --url)
+  RemoteAuthToken:   os.Getenv("TURSO_AUTH_TOKEN"), // authentication token (generated with turso db tokens create <db-name>)
+  // LongPollTimeoutMs: 10_000,                     // optional: server waits before replying to pull
+  // BootstrapIfEmpty: false,                       // set to false to avoid bootstrapping on first run
+})
+```
+
+</CodeGroup>
+
+<Note>
+On the first run, the local database is automatically bootstrapped from the remote &mdash; so the remote must be reachable during the initial connect.
+
+If you set `bootstrap_if_empty` to `false`, the local database will start empty instead.
+You can bootstrap or update it later at any time by explicitly calling `pull()`.
+</Note>
+
+</Step>
+
+<Step title="3. Push changes">
+
+Push sends your local changes to the Turso Cloud server. Under the hood, logical statements are sent, and on conflicts the strategy is "last push wins".
+
+<CodeGroup>
+
+```ts TypeScript
+await db.exec("CREATE TABLE IF NOT EXISTS notes(id TEXT PRIMARY KEY, body TEXT)");
+await db.exec("INSERT INTO notes VALUES ('n1', 'hello')");
+
+await db.push();
+```
+
+```py Python
+conn.execute("CREATE TABLE IF NOT EXISTS notes(id TEXT PRIMARY KEY, body TEXT)")
+conn.commit()
+conn.execute("INSERT INTO notes VALUES ('n1', 'hello')")
+conn.commit()
+
+conn.push()
+```
+
+```go Go
+// create *sql.DB instance
+conn, err := db.Connect(ctx)
+if err != nil {
+  return err
+}
+
+_, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS notes(id TEXT PRIMARY KEY, body TEXT)")
+if err != nil {
+  return err
+}
+_, err = conn.ExecContext(ctx, "INSERT INTO notes VALUES ('n1', 'hello')")
+if err != nil {
+  return err
+}
+
+if err := db.Push(ctx); err != nil {
+	return err
+}
+```
+
+</CodeGroup>
+</Step>
+
+<Step title="4. Pull changes">
+
+Pull fetches remote changes and applies them locally. It returns a boolean indicating whether anything changed.
+
+- Configure `long_poll_timeout_ms`/`LongPollTimeoutMs` if you want the server to wait for changes and avoid empty replies.
+- If you pushed earlier, a subsequent pull can still return that something changed due to server-side conflict resolution frames.
+
+<CodeGroup>
+
+```ts TypeScript
+// Returns true if anything changed locally
+const changed = await db.pull();
+console.info('pulled changes:', changed);
+```
+
+```py Python
+changed = conn.pull()
+print("pulled changes:", changed)
+```
+
+```go Go
+changed, err := db.Pull(ctx)
+if err != nil {
+	return err
+}
+log.Println("pulled changes:", changed)
+```
+
+</CodeGroup>
+</Step>
+
+<Step title="5. Checkpoint">
+
+Checkpoint compacts the local WAL to bound local disk usage while preserving sync state.
+
+<CodeGroup>
+
+```ts TypeScript
+await db.checkpoint();
+```
+
+```py Python
+conn.checkpoint()
+```
+
+```go Go
+if err := db.Checkpoint(ctx); err != nil {
+	return err
+}
+```
+
+</CodeGroup>
+</Step>
+
+<Step title="6. Stats">
+
+Stats help you observe sync behavior and usage (WAL sizes, last push/pull times, network usage, revision, etc.).
+
+<CodeGroup>
+
+```ts TypeScript
+const s = await db.stats();
+console.info({
+  cdcOperations: s.cdcOperations,
+  mainWalSize: s.mainWalSize,
+  revertWalSize: s.revertWalSize,
+  networkReceivedBytes: s.networkReceivedBytes,
+  networkSentBytes: s.networkSentBytes,
+  lastPullUnixTime: s.lastPullUnixTime,
+  lastPushUnixTime: s.lastPushUnixTime,
+  revision: s.revision,
+});
+```
+
+```py Python
+s = conn.stats()
+print({
+    "cdc_operations": s.cdc_operations,
+    "main_wal_size": s.main_wal_size,
+    "revert_wal_size": s.revert_wal_size,
+    "network_received_bytes": s.network_received_bytes,
+    "network_sent_bytes": s.network_sent_bytes,
+    "last_pull_unix_time": s.last_pull_unix_time,
+    "last_push_unix_time": s.last_push_unix_time,
+    "revision": s.revision,
+})
+```
+
+```go Go
+s, err := db.Stats(ctx)
+if err != nil {
+	return err
+}
+log.Printf("stats: cdc=%v, main=%d revert=%d rx=%d tx=%d pull=%d push=%d revision=%s",
+  s.CdcOperations,
+  s.MainWalSize,
+  s.RevertWalSize,
+  s.NetworkReceivedBytes,
+  s.NetworkSentBytes,
+  s.LastPullUnixTime,
+  s.LastPushUnixTime,
+  s.Revision,
+)
+```
+
+</CodeGroup>
+</Step>
+
+</Steps>

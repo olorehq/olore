@@ -1,0 +1,24 @@
+---
+sidebarTitle: List Instances
+openapi: "GET /v1/organizations/{organizationSlug}/databases/{databaseName}/instances"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L https://api.turso.tech/v1/organizations/{organizationSlug}/databases/{databaseName}/instances \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const instances = await turso.databases.listInstances("my-db");
+```
+
+</RequestExample>

@@ -1,0 +1,107 @@
+---
+title: Turso Quickstart (Python)
+sidebarTitle: Quickstart
+description: Get started with Turso and Python using the libSQL client in a few simple steps.
+---
+
+In this Python quickstart we will learn how to:
+
+- Retrieve database credentials
+- Install the libSQL package
+- Connect to a Turso database
+- Execute a query using SQL
+- Sync changes to local database (optional)
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+  </Step>
+
+  <Step title="Install">
+
+First begin by adding libSQL to your project:
+
+    ```bash
+    pip install libsql
+    ```
+
+  </Step>
+
+  <Step title="Connect">
+
+Then import the package:
+
+    ```py
+    import libsql
+    ```
+
+Now connect to your local or remote database using the libSQL connector:
+
+<AccordionGroup>
+  <Accordion title="Embedded Replicas">
+    ```py
+    url = os.getenv("TURSO_DATABASE_URL")
+    auth_token = os.getenv("TURSO_AUTH_TOKEN")
+
+    conn = libsql.connect("hello.db", sync_url=url, auth_token=auth_token)
+    conn.sync()
+    ```
+
+  </Accordion>
+
+  <Accordion title="Local only">
+    ```py
+    conn = libsql.connect("hello.db")
+    cur = conn.cursor()
+    ```
+
+  </Accordion>
+
+  {/* <Accordion title="Remote only">
+    ```py
+    url = os.getenv("TURSO_DATABASE_URL")
+    auth_token = os.getenv("TURSO_AUTH_TOKEN")
+
+    conn = libsql.connect(database=url, auth_token=auth_token)
+    ```
+
+  </Accordion> */}
+</AccordionGroup>
+
+  </Step>
+
+  <Step title="Execute">
+
+You can execute SQL queries against your existing database as follows:
+
+```py
+conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER);")
+conn.execute("INSERT INTO users(id) VALUES (10);")
+
+print(conn.execute("select * from users").fetchall())
+```
+
+  </Step>
+
+  <Step title="Sync (Embedded Replicas only)">
+
+When using embedded replicas you should call `sync()` on the connector to sync your local database with the primary database.
+
+```py
+conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER);")
+conn.execute("INSERT INTO users(id) VALUES (1);")
+conn.commit()
+
+conn.sync()
+
+print(conn.execute("select * from users").fetchall())
+```
+
+  </Step>
+</Steps>

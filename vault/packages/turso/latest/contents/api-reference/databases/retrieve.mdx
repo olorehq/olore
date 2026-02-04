@@ -1,0 +1,24 @@
+---
+sidebarTitle: Retrieve
+openapi: "GET /v1/organizations/{organizationSlug}/databases/{databaseName}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases/{databaseName}' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const database = await turso.databases.retrieve("my-db");
+```
+
+</RequestExample>

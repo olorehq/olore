@@ -1,0 +1,157 @@
+---
+title: Sync with Turso Cloud
+description: Synchronize agent filesystems with remote Turso databases
+sidebarTitle: Sync with Turso Cloud
+---
+
+AgentFS can sync with [Turso Cloud](https://turso.tech), enabling backup, collaboration, and distributed agent deployments.
+
+## Setting Up Sync
+
+### 1. Create a Turso Database
+
+If you don't have a Turso account, [sign up](https://turso.tech) first.
+
+Create a database for your agent:
+
+```bash
+turso db create my-agent-db
+```
+
+Get the database URL:
+
+```bash
+turso db show my-agent-db --url
+# Output: libsql://my-agent-db-username.turso.io
+```
+
+### 2. Initialize with Sync
+
+Create a new agent filesystem with sync enabled:
+
+```bash
+agentfs init my-agent --sync-remote-url libsql://my-agent-db-username.turso.io
+```
+
+Or add sync to an existing agent:
+
+```bash
+# Edit the database to add sync configuration
+# (Feature coming soon)
+```
+
+## Sync Commands
+
+### Pull Remote Changes
+
+Download changes from Turso Cloud:
+
+```bash
+agentfs sync my-agent pull
+```
+
+### Push Local Changes
+
+Upload local changes to Turso Cloud:
+
+```bash
+agentfs sync my-agent push
+```
+
+### View Sync Status
+
+Check sync statistics:
+
+```bash
+agentfs sync my-agent stats
+```
+
+### Create Checkpoint
+
+Force a sync checkpoint:
+
+```bash
+agentfs sync my-agent checkpoint
+```
+
+## Use Cases
+
+### Backup and Recovery
+
+Automatically back up agent state:
+
+```bash
+# After important work
+agentfs sync my-agent push
+
+# On a new machine
+agentfs init my-agent --sync-remote-url libsql://...
+agentfs sync my-agent pull
+```
+
+### Multi-Machine Agents
+
+Run agents on multiple machines with shared state:
+
+```bash
+# Machine A
+agentfs run --session shared-agent python3 agent.py
+agentfs sync shared-agent push
+
+# Machine B
+agentfs sync shared-agent pull
+agentfs run --session shared-agent python3 agent.py
+```
+
+## Partial Sync
+
+For large filesystems, use partial sync to only fetch what's needed:
+
+```bash
+agentfs init my-agent \
+  --sync-remote-url libsql://... \
+  --sync-partial-prefetch \
+  --sync-partial-segment-size 1000
+```
+
+### Partial Sync Options
+
+| Option | Description |
+|--------|-------------|
+| `--sync-partial-prefetch` | Enable prefetching |
+| `--sync-partial-segment-size` | Segment size for partial sync |
+| `--sync-partial-bootstrap-query` | Custom bootstrap query |
+| `--sync-partial-bootstrap-length` | Bootstrap prefix length |
+
+## Authentication
+
+Sync requires a Turso auth token. Set it via environment variable:
+
+```bash
+export TURSO_AUTH_TOKEN=$(turso db tokens create my-agent-db)
+```
+
+Or create a long-lived token:
+
+```bash
+turso db tokens create my-agent-db --expiration none
+```
+
+## Conflict Resolution
+
+AgentFS uses last-write-wins for conflicts. If the same file is modified on multiple machines:
+
+1. Push from Machine A succeeds
+2. Push from Machine B fails (conflict)
+3. Machine B must pull first, then push
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Turso Cloud" icon="cloud" href="https://turso.tech">
+    Learn more about Turso Cloud
+  </Card>
+  <Card title="NFS Server" icon="network-wired" href="/agentfs/guides/nfs">
+    Remote access via NFS
+  </Card>
+</CardGroup>

@@ -1,0 +1,30 @@
+---
+sidebarTitle: Create
+openapi: "POST /v1/auth/api-tokens/{tokenName}"
+---
+
+<Warning>
+
+The `token` in the response is never revealed again. Store this somewhere safe, and never share or commit it to source control.
+
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const apiToken = await turso.apiTokens.create("my-token");
+```
+
+</RequestExample>

@@ -1,0 +1,25 @@
+---
+title: Authentication
+description:
+---
+
+The Turso API uses API tokens to authenticate requests. You can create and revoke API tokens using the [Turso CLI](/cli) and [Authentication API](/api-reference/tokens/create).
+
+API tokens allow access to manage all API resources, including creating and destroying database.
+
+- Use environment variables when working with API tokens.
+- Never share your API token in public, including repositories, and CI/CD Actions.
+
+Turso uses Bearer authentication, and requires your API token to be passed with all protected requests in the `Authorization` header:
+
+```bash
+Authorization: Bearer TOKEN
+```
+
+## Base URL
+
+The Turso API is located at the following URL:
+
+```bash
+https://api.turso.tech
+```

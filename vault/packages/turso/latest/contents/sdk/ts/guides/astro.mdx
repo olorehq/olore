@@ -1,0 +1,73 @@
+---
+title: Astro + Turso
+sidebarTitle: Astro
+description: Set up Turso in your Astro project in minutes.
+---
+
+![Astro banner](/images/guides/astro-banner.png)
+
+## Prerequisites
+
+To get the most out of this guide, you'll need to:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have an Astro project &mdash; [learn more](https://docs.astro.build/en/install/auto/#1-run-the-setup-wizard)
+
+<Steps>
+
+<Step title="Install the libSQL SDK">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Configure database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+</Step>
+
+<Step title="Configure libSQL client">
+
+```ts src/turso.ts
+import { createClient } from "@libsql/client/web";
+
+export const turso = createClient({
+  url: import.meta.env.TURSO_DATABASE_URL!,
+  authToken: import.meta.env.TURSO_AUTH_TOKEN,
+});
+```
+
+<Note>
+  Astro will soon introduce a new ENV API. [Take a
+  look](https://docs.astro.build/en/reference/configuration-reference/#experimentalenv).
+</Note>
+
+</Step>
+
+<Step title="Execute SQL">
+
+```ts
+---
+import { turso } from './turso'
+
+const { rows } = await turso.execute('SELECT * FROM table_name')
+---
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Blog"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-tustro-blog"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

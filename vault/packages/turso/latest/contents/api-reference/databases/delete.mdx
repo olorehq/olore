@@ -1,0 +1,24 @@
+---
+sidebarTitle: Delete
+openapi: "DELETE /v1/organizations/{organizationSlug}/databases/{databaseName}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases/{databaseName}' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const database = await turso.databases.delete("my-db");
+```
+
+</RequestExample>

@@ -1,0 +1,71 @@
+---
+title: Point-in-Time Recovery
+description:
+---
+
+Turso supports point-in-time recovery (PITR) for databases. PITR allows you to restore a database to a specific point in time. This is useful for recovering from user errors, such as dropping a table by mistake.
+
+<Info>
+
+Backups are created automatically at `COMMIT`. Free plan users can restore to any point in time within the last 24 hours. Developer, Scaler, and Pro users can restore to any point in time within the last 10, 30, or 90 days, respectively.
+
+</Info>
+
+## How it works
+
+1. You create a new database from the existing database using the CLI or API.
+2. You update your application to use the new database connection string.
+3. You delete the old database when you no longer need it.
+
+<Info>
+
+The newly created database includes data only from periods prior to the specified timestamp. Additionally, there may be a gap of up to 15 seconds in the data immediately preceding the timestamp, as this depends on the timing of Turso's most recent periodic batch checkpoint.
+
+</Info>
+
+## Usage
+
+<CodeGroup>
+
+```bash CLI
+turso db create my-new-database --from-db my-existing-database --timestamp 2024-01-01T00:00:00Z
+```
+
+```bash Platform API
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default",
+      "seed": {
+        "type:": "database",
+        "name": "my-existing-database",
+        "timestamp": "2024-01-01T00:00:00Z"
+      }
+  }'
+```
+
+</CodeGroup>
+
+Refer to the following references for more details about all arguments:
+
+<CardGroup>
+
+<Card horizontal title="CLI Reference" icon="terminal" href="/cli/db/create">
+
+</Card>
+
+<Card horizontal title="API Reference" icon="code" href="/api-reference/databases/create">
+
+</Card>
+
+</CardGroup>
+
+## Things to know
+
+- Restoring from a PITR creates a new database. You will need to update your application to use the new database connection string.
+- You cannot restore from a PITR to a database that already exists.
+- You will need to [create a new token](/cli/db/tokens/create) (or use a group token) to connect to the new database.
+- You will need to manually delete the old database when you no longer need it.
+- Restores count towards your plan's database quota.

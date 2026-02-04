@@ -1,0 +1,228 @@
+---
+title: Turso Quickstart (Go)
+sidebarTitle: Quickstart
+description: Get started with Turso and Go using the libSQL client in a few simple steps.
+---
+
+The libSQL package is designed to work with [`database/sql`](https://pkg.go.dev/database/sql) to provide the usual methods you'd expect when working with databases in Go.
+
+<Info>
+
+The `go-libsql` package uses CGO. You can use `github.com/tursodatabase/libsql-client-go/libsql` instead, but it doesn't support embedded replicas.
+
+</Info>
+
+In this Go quickstart we will learn how to:
+
+- Retrieve database credentials
+- Install Go libSQL
+- Connect to a local or remote Turso database
+- Execute a query using SQL
+- Sync changes to local database (optional)
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+  </Step>
+
+  <Step title="Install">
+
+First begin by adding libSQL to your project:
+
+<AccordionGroup>
+  <Accordion title="Local / Embedded Replicas">
+    ```bash
+    go get github.com/tursodatabase/go-libsql
+    ```
+
+  </Accordion>
+
+  <Accordion title="Remote only">
+    ```bash
+    go get github.com/tursodatabase/libsql-client-go/libsql
+    ```
+
+  </Accordion>
+
+</AccordionGroup>
+
+  </Step>
+
+  <Step title="Connect">
+
+Now connect to your local or remote database using the libSQL connector:
+
+<AccordionGroup>
+  <Accordion title="Embedded Replicas">
+    ```go
+    package main
+
+    import (
+      "database/sql"
+      "fmt"
+      "os"
+      "path/filepath"
+
+      "github.com/tursodatabase/go-libsql"
+    )
+
+    func main() {
+        dbName := "local.db"
+        primaryUrl := "libsql://[DATABASE].turso.io"
+        authToken := "..."
+
+        dir, err := os.MkdirTemp("", "libsql-*")
+        if err != nil {
+            fmt.Println("Error creating temporary directory:", err)
+            os.Exit(1)
+        }
+        defer os.RemoveAll(dir)
+
+        dbPath := filepath.Join(dir, dbName)
+
+        connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
+            libsql.WithAuthToken(authToken),
+        )
+        if err != nil {
+            fmt.Println("Error creating connector:", err)
+            os.Exit(1)
+        }
+        defer connector.Close()
+
+        db := sql.OpenDB(connector)
+        defer db.Close()
+    }
+    ```
+
+  </Accordion>
+
+  <Accordion title="Local only">
+    ```go
+    package main
+
+    import (
+      "database/sql"
+      "fmt"
+      "os"
+
+      _ "github.com/tursodatabase/go-libsql"
+    )
+
+    func main() {
+      dbName := "file:./local.db"
+
+      db, err := sql.Open("libsql", dbName)
+      if err != nil {
+        fmt.Fprintf(os.Stderr, "failed to open db %s", err)
+        os.Exit(1)
+      }
+      defer db.Close()
+    }
+    ```
+
+  </Accordion>
+
+  <Accordion title="Remote only">
+    ```go
+    package main
+
+    import (
+      "database/sql"
+      "fmt"
+      "os"
+
+      _ "github.com/tursodatabase/libsql-client-go/libsql"
+    )
+
+    func main() {
+      url := "libsql://[DATABASE].turso.io?authToken=[TOKEN]"
+
+      db, err := sql.Open("libsql", url)
+      if err != nil {
+        fmt.Fprintf(os.Stderr, "failed to open db %s: %s", url, err)
+        os.Exit(1)
+      }
+      defer db.Close()
+    }
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+  </Step>
+
+  <Step title="Execute">
+
+You can execute a SQL query against your existing database. Create a function to query your database that accepts the pointer to `sql.DB` as an argument:
+
+```go
+type User struct {
+	ID   int
+	Name string
+}
+
+func queryUsers(db *sql.DB)  {
+  rows, err := db.Query("SELECT * FROM users")
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to execute query: %v\n", err)
+    os.Exit(1)
+  }
+  defer rows.Close()
+
+  var users []User
+
+  for rows.Next() {
+    var user User
+
+    if err := rows.Scan(&user.ID, &user.Name); err != nil {
+      fmt.Println("Error scanning row:", err)
+      return
+    }
+
+    users = append(users, user)
+    fmt.Println(user.ID, user.Name)
+  }
+
+  if err := rows.Err(); err != nil {
+    fmt.Println("Error during rows iteration:", err)
+  }
+}
+```
+
+Now inside `func main()` call `queryUsers` and pass in the pointer to `sql.DB`:
+
+```go
+queryUsers(db)
+```
+
+  </Step>
+
+  <Step title="Sync (Embedded Replicas only)">
+
+When using embedded replicas you should call `Sync()` on the connector to sync your local database with the primary database.
+
+```go
+if err := connector.Sync(); err != nil {
+  fmt.Println("Error syncing database:", err)
+}
+```
+
+The connector can automatically sync your database at a regular interval when using the `WithSyncInterval` option:
+
+```go
+syncInterval := time.Minute
+
+connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
+    libsql.WithAuthToken(authToken),
+    libsql.WithSyncInterval(syncInterval),
+)
+```
+
+  </Step>
+</Steps>

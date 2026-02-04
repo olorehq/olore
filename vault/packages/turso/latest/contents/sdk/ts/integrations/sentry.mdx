@@ -1,0 +1,59 @@
+---
+title: Sentry
+description: Trace slow queries and capture SQL errors with Sentry.
+---
+
+The [Sentry](https://sentry.io/integrations/turso) integration for `@libsql/client` provides tracing, breadcrumbs, and error handling for SQL queries.
+
+<Snippet file="technical-preview-banner.mdx" />
+
+## Install
+
+```bash
+npm install sentry-integration-libsql-client
+```
+
+## Quickstart
+
+Once you have a `@libsql/client` instance, you can integrate it with Sentry like this:
+
+```ts
+import * as Sentry from "@sentry/node";
+import { createClient } from "@libsql/client";
+import { libsqlIntegration } from "sentry-integration-libsql-client";
+
+const libsqlClient = createClient({
+  url: "libsql://...",
+  authToken: "...",
+});
+
+Sentry.init({
+  dsn: "...",
+  integrations: [libsqlIntegration(libsqlClient, Sentry)],
+});
+
+await libsqlClient.execute("SELECT * FROM users");
+```
+
+## Options
+
+By default, everything is turned on. You can configure what you want by passing a third argument to the `libsqlIntegration` function.
+
+| Option        | Default | Description                            |
+| ------------- | ------- | -------------------------------------- |
+| `tracing`     | `true`  | Enable tracing for SQL queries.        |
+| `breadcrumbs` | `true`  | Enable breadcrumbs for SQL queries.    |
+| `errors`      | `true`  | Enable error handling for SQL queries. |
+
+```ts
+Sentry.init({
+  dsn: "...",
+  integrations: [
+    libsqlIntegration(libsqlClient, Sentry, {
+      tracing: false,
+      breadcrumbs: false,
+      errors: false,
+    }),
+  ],
+});
+```

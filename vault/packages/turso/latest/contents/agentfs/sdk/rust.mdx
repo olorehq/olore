@@ -1,0 +1,411 @@
+---
+title: Rust SDK
+description: Complete reference for the AgentFS Rust SDK
+sidebarTitle: Rust SDK
+---
+
+Build high-performance stateful AI agents with the AgentFS Rust SDK.
+
+## Installation
+
+Add AgentFS to your `Cargo.toml`:
+
+```toml
+[dependencies]
+agentfs = "0.1"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+```
+
+## Quick Start
+
+```rust
+use agentfs::{AgentFS, AgentFSOptions};
+use anyhow::Result;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Persistent storage with identifier
+    let agent = AgentFS::open(AgentFSOptions::with_id("my-agent")).await?;
+    // Creates: .agentfs/my-agent.db
+
+    // Or use ephemeral in-memory database
+    let ephemeral = AgentFS::open(AgentFSOptions::ephemeral()).await?;
+
+    // Use the three main APIs
+    agent.kv.set("key", "value").await?;              // Key-value store
+    agent.fs.write_file("/file.txt", b"data").await?; // Filesystem
+    agent.tools.record(...).await?;                   // Tool tracking
+
+    Ok(())
+}
+```
+
+## Core APIs
+
+### AgentFS Struct
+
+The main entry point for all AgentFS operations.
+
+#### `AgentFS::open(options: AgentFSOptions)`
+
+Creates or opens an AgentFS database.
+
+```rust
+use agentfs::{AgentFS, AgentFSOptions};
+
+// Persistent storage with identifier
+let agent = AgentFS::open(AgentFSOptions::with_id("my-agent")).await?;
+// Creates: .agentfs/my-agent.db
+
+// Ephemeral in-memory database
+let ephemeral = AgentFS::open(AgentFSOptions::ephemeral()).await?;
+```
+
+**AgentFSOptions Configuration:**
+
+```rust
+pub struct AgentFSOptions {
+    /// Optional unique identifier for the agent.
+    /// - If Some(id): Creates persistent storage at `.agentfs/{id}.db`
+    /// - If None: Uses ephemeral in-memory database
+    pub id: Option<String>,
+}
+
+impl AgentFSOptions {
+    /// Create options for a persistent agent with the given ID
+    pub fn with_id(id: impl Into<String>) -> Self;
+
+    /// Create options for an ephemeral in-memory agent
+    pub fn ephemeral() -> Self;
+}
+```
+
+#### Fields
+
+- `kv`: Key-value store interface
+- `fs`: Filesystem interface
+- `tools`: Tool call tracking interface
+- `db`: Direct access to the underlying Turso database
+
+### Key-Value Store API
+
+Fast, typed storage with Serde serialization support.
+
+#### `kv.set<T: Serialize>(key: &str, value: T)`
+
+Store any serializable value.
+
+```rust
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+struct UserPreferences {
+    theme: String,
+    language: String,
+}
+
+// Store structured data
+agent.kv.set("user:preferences", UserPreferences {
+    theme: "dark".to_string(),
+    language: "en".to_string(),
+}).await?;
+
+// Store primitives
+agent.kv.set("counter", 42).await?;
+agent.kv.set("active", true).await?;
+```
+
+#### `kv.get<T: DeserializeOwned>(key: &str) -> Option<T>`
+
+Retrieve and deserialize values.
+
+```rust
+// Get with type inference
+let prefs: Option<UserPreferences> = agent.kv.get("user:preferences").await?;
+
+// Handle missing values
+if let Some(count) = agent.kv.get::<i32>("counter").await? {
+    println!("Counter: {}", count);
+}
+
+// With default
+let theme = agent.kv.get::<String>("theme").await?.unwrap_or("light".to_string());
+```
+
+#### `kv.delete(key: &str)`
+
+Remove a key-value pair.
+
+```rust
+agent.kv.delete("session:expired").await?;
+```
+
+#### `kv.list(options: ListOptions)`
+
+List keys with filtering and pagination.
+
+```rust
+use agentfs::ListOptions;
+
+// List all keys
+let all_keys = agent.kv.list(ListOptions::default()).await?;
+
+// Filter by prefix
+let user_keys = agent.kv.list(ListOptions {
+    prefix: Some("user:".to_string()),
+    limit: Some(100),
+    cursor: None,
+}).await?;
+
+// Paginate
+let page1 = agent.kv.list(ListOptions {
+    limit: Some(10),
+    ..Default::default()
+}).await?;
+
+let page2 = agent.kv.list(ListOptions {
+    limit: Some(10),
+    cursor: page1.cursor,
+    ..Default::default()
+}).await?;
+```
+
+#### `kv.clear()`
+
+Remove all key-value pairs.
+
+```rust
+agent.kv.clear().await?;
+```
+
+### Filesystem API
+
+POSIX-like filesystem operations for managing agent data.
+
+#### `fs.write_file(path: &str, data: &[u8])`
+
+Write bytes to a file, creating parent directories as needed.
+
+```rust
+// Write text
+agent.fs.write_file("/report.md", b"# Report\nContent...").await?;
+
+// Write string
+let content = "Hello, World!";
+agent.fs.write_file("/greeting.txt", content.as_bytes()).await?;
+
+// Write binary
+let image_data = std::fs::read("./chart.png")?;
+agent.fs.write_file("/images/chart.png", &image_data).await?;
+```
+
+#### `fs.read_file(path: &str) -> Vec<u8>`
+
+Read file contents as bytes.
+
+```rust
+// Read as bytes
+let data = agent.fs.read_file("/report.md").await?;
+
+// Convert to string
+let text = String::from_utf8(data)?;
+
+// Parse JSON
+let json_data = agent.fs.read_file("/config.json").await?;
+let config: serde_json::Value = serde_json::from_slice(&json_data)?;
+```
+
+#### `fs.mkdir(path: &str)`
+
+Create a directory, optionally creating parent directories.
+
+```rust
+// Create single directory
+agent.fs.mkdir("/reports").await?;
+
+// Create nested directories
+agent.fs.mkdir_p("/reports/2024/Q4").await?;
+```
+
+#### `fs.readdir(path: &str) -> Vec<DirEntry>`
+
+List directory contents with metadata.
+
+```rust
+let entries = agent.fs.readdir("/reports").await?;
+
+for entry in entries {
+    println!("Name: {}", entry.name);
+    println!("Type: {:?}", entry.entry_type);
+    println!("Size: {} bytes", entry.size);
+    println!("Modified: {:?}", entry.modified);
+}
+
+// Filter by type
+let files: Vec<_> = entries
+    .iter()
+    .filter(|e| e.entry_type == EntryType::File)
+    .collect();
+```
+
+#### `fs.stat(path: &str) -> FileStat`
+
+Get file or directory metadata.
+
+```rust
+let stat = agent.fs.stat("/report.md").await?;
+
+println!("Size: {} bytes", stat.size);
+println!("Type: {:?}", stat.file_type);
+println!("Created: {:?}", stat.created);
+println!("Modified: {:?}", stat.modified);
+println!("Permissions: {:o}", stat.mode);
+
+if stat.is_file() {
+    println!("It's a file");
+} else if stat.is_directory() {
+    println!("It's a directory");
+}
+```
+
+#### `fs.exists(path: &str) -> bool`
+
+Check if a file or directory exists.
+
+```rust
+if agent.fs.exists("/config.json").await? {
+    let config = agent.fs.read_file("/config.json").await?;
+}
+```
+
+#### `fs.rm(path: &str)`
+
+Remove a file or empty directory.
+
+```rust
+// Remove file
+agent.fs.rm("/old-report.md").await?;
+
+// Remove empty directory
+agent.fs.rm("/empty-dir").await?;
+
+// Remove directory tree
+agent.fs.rm_rf("/old-data").await?;
+```
+
+#### `fs.rename(old_path: &str, new_path: &str)`
+
+Move or rename files and directories.
+
+```rust
+// Rename file
+agent.fs.rename("/draft.md", "/final.md").await?;
+
+// Move to different directory
+agent.fs.rename("/temp/data.json", "/archive/data.json").await?;
+```
+
+#### `fs.copy_file(src: &str, dest: &str)`
+
+Copy a file to a new location.
+
+```rust
+agent.fs.copy_file("/template.md", "/new-report.md").await?;
+```
+
+### Tool Call Tracking API
+
+Record and query agent tool invocations.
+
+#### `tools.record()`
+
+Record a tool invocation with timing and I/O data.
+
+```rust
+use agentfs::ToolCall;
+use chrono::Utc;
+use serde_json::json;
+
+let start = Utc::now();
+// ... perform operation ...
+let end = Utc::now();
+
+agent.tools.record(ToolCall {
+    name: "web_search".to_string(),
+    started_at: start,
+    ended_at: end,
+    input: json!({
+        "query": "rust async programming",
+        "max_results": 10
+    }),
+    output: json!({
+        "results_count": 8,
+        "success": true
+    }),
+}).await?;
+```
+
+#### `tools.list(options: ToolListOptions)`
+
+Query recorded tool calls.
+
+```rust
+use agentfs::ToolListOptions;
+use chrono::{Duration, Utc};
+
+// Get recent calls
+let recent = agent.tools.list(ToolListOptions {
+    limit: Some(10),
+    ..Default::default()
+}).await?;
+
+// Filter by name
+let searches = agent.tools.list(ToolListOptions {
+    name: Some("web_search".to_string()),
+    limit: Some(100),
+    ..Default::default()
+}).await?;
+
+// Time range query
+let last_hour = agent.tools.list(ToolListOptions {
+    since: Some(Utc::now() - Duration::hours(1)),
+    until: Some(Utc::now()),
+    ..Default::default()
+}).await?;
+```
+
+#### `tools.get(id: &str) -> Option<ToolCall>`
+
+Get details of a specific tool call.
+
+```rust
+if let Some(call) = agent.tools.get("call_123abc").await? {
+    let duration = call.ended_at - call.started_at;
+    println!("Tool: {}", call.name);
+    println!("Duration: {}ms", duration.num_milliseconds());
+}
+```
+
+#### `tools.delete(id: &str)`
+
+Remove a tool call record.
+
+```rust
+agent.tools.delete("call_123abc").await?;
+```
+
+#### `tools.clear()`
+
+Remove all tool call records.
+
+```rust
+agent.tools.clear().await?;
+```
+
+## Support
+
+- [GitHub Issues](https://github.com/tursodatabase/agentfs/issues) - Bug reports and feature requests
+- [Discord](https://tur.so/discord) - Community support
+- [Examples](https://github.com/tursodatabase/agentfs/tree/main/examples/rust) - Sample applications

@@ -1,0 +1,108 @@
+---
+title: Flutter + Turso
+sidebarTitle: Flutter
+description: Set up Turso in your Flutter project in minutes
+---
+
+![Flutter banner](/images/guides/flutter-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Flutter app &mdash; [learn more](https://docs.flutter.dev/get-started/codelab)
+
+<Steps>
+
+<Step title="Add HTTP Package">
+
+```bash
+dart pub add http
+```
+
+</Step>
+
+<Step title="Retrieve database credentials">
+
+Get the database URL:
+
+```bash
+turso db show --url <database-name>
+```
+
+Get the database authentication token:
+
+```bash
+turso db tokens create <database-name>
+```
+
+Pass the credentials to the flutter app by using the `--dart-define` flags:
+
+```bash
+flutter run --debug \
+  --dart-define=TURSO_URL="..." \
+  --dart-define=TURSO_AUTH_TOKEN="..."
+```
+
+<Warning>
+  Make sure that the `TURSO_URL` passed above should be modified to use the
+  `https` protocol instead of `libsql`. (e.g "https://[db-name].turso.io")
+</Warning>
+
+</Step>
+
+<Step title="Execute SQL">
+
+```dart lib/main.dart
+import 'package:http/http.dart' as http;
+
+const String tursoDbUrl =
+    String.fromEnvironment("TURSO_URL", defaultValue: "");
+const String tursoAuthToken =
+    String.fromEnvironment("TURSO_AUTH_TOKEN", defaultValue: "");
+
+late Future<List<T>> itemResults;
+
+Future<List<T>> getItems() async {
+  final response = await http.post(Uri.parse(tursoDbUrl),
+      headers: {
+        HttpHeaders.authorizationHeader: "Bearer $tursoAuthToken",
+        HttpHeaders.acceptHeader: "application/json"
+      },
+      body: json.encode({
+        "statements": ["select * from table_name"]
+      }));
+
+  var itemList = List<T>.from(jsonDecode(response.body)[0]["results"]
+          ["rows"]
+      .map((dynamic item) => item[0]));
+  return itemList;
+}
+
+itemResults = getItems();
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Recipe App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app_recipe_book"
+  >
+    See the full source code
+  </Card>
+  <Card
+    title="Todo App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/flutter_todo_list"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

@@ -1,0 +1,65 @@
+---
+title: Turso Quickstart (TypeScript / JS)
+sidebarTitle: Quickstart
+description: Get started with Turso and TypeScript using the libSQL client in a few simple steps
+---
+
+In this JavaScript quickstart we will learn how to:
+
+- Retrieve database credentials
+- Install the JavaScript libSQL client
+- Connect to a remote Turso database
+- Execute a query using SQL
+
+<Steps>
+  <Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+  </Step>
+
+  <Step title="Install @libsql/client">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+  </Step>
+  <Step title="Initialize a new client">
+    Next add your database URL and auth token:
+
+<Snippet file="configure-libsql-client-ts.mdx" />
+
+  </Step>
+  <Step title="Execute a query using SQL">
+
+You can execute a SQL query against your existing database by calling `execute()`:
+
+```ts
+await turso.execute("SELECT * FROM users");
+```
+
+If you need to use placeholders for values, you can do that:
+
+<CodeGroup>
+
+```ts Positional
+await turso.execute({
+  sql: "SELECT * FROM users WHERE id = ?",
+  args: [1],
+});
+```
+
+```ts Named
+await turso.execute({
+  sql: "INSERT INTO users VALUES (:name)",
+  args: { name: "Iku" },
+});
+```
+
+</CodeGroup>
+
+  </Step>
+</Steps>

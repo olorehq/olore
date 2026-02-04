@@ -1,0 +1,74 @@
+---
+title: Remix + Turso
+sidebarTitle: Remix
+description: Set up Turso in your Remix project in minutes
+---
+
+![Remix banner](/images/guides/remix-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Remix app &mdash; [learn more](https://remix.run/docs/en/main/start/quickstart#quick-start)
+
+<Steps>
+
+<Step title="Install the libSQL SDK">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Configure database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+</Step>
+
+<Step title="Configure libSQL Client.">
+
+<Snippet file="configure-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Execute SQL">
+
+```ts app/routes/_index.ts
+import type { LoaderFunction } from "@remix-run/node";
+
+import { turso } from "~/lib/turso";
+
+export const loader: LoaderFunction = async () => {
+  const { rows } = await turso.execute("SELECT * from TABLE_NAME");
+
+  return {
+    items: rows,
+  };
+};
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="E-commerce Store"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-the-mug-store"
+  >
+    See the full source code
+  </Card>
+  <Card
+    title="CRM App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/app-turso-crm"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

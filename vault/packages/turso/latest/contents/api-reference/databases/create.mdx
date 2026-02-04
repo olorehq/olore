@@ -1,0 +1,31 @@
+---
+sidebarTitle: Create
+openapi: "POST /v1/organizations/{organizationSlug}/databases"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default"
+  }'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const database = await turso.databases.create("new-database", {
+  group: "default",
+});
+```
+
+</RequestExample>

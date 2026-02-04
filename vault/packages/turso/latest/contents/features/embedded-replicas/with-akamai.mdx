@@ -1,0 +1,75 @@
+---
+title: Turso + Linode by Akamai
+sidebarTitle: Turso + Akamai
+description: Deploy a JavaScript/Rust app using [Turso embedded replicas](/features/embedded-replicas) to [Akamai](https://www.linode.com/).
+---
+
+![Akamai banner](/images/platforms/akamai-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have an Akamai account - [create one](https://login.linode.com/signup)
+
+<Steps>
+
+<Step title="Retrieve database credentials">
+
+You will need an existing database to continue. If you don't have one, [create one](/quickstart).
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+<Info>You will want to store these as environment variables.</Info>
+
+</Step>
+
+<Step>
+    Fork one of the following embedded replica projects from GitHub
+
+    <CardGroup cols={2}>
+        <Card
+            title="My Expenses Tracker - (Elysia + Bun)"
+            icon="github"
+            href="https://github.com/tursodatabase/embedded-replicas-with-js"
+        >
+        See the full source code
+        </Card>
+        <Card
+            title="Web Traffic API - (Rust)"
+            icon="github"
+            href="https://github.com/tursodatabase/embedded-replicas-with-rust"
+        >
+        See the full source code
+        </Card>
+    </CardGroup>
+</Step>
+
+<Step title="Set up a Linode server">
+
+Configure and create a new linode. Then, [set up SSH authentication](https://www.linode.com/docs/guides/use-public-key-authentication-with-ssh/) to securely access the Linode server from your terminal.
+
+Prepare the newly created linode server environment by accessing and set it up for Rust/JavaScript development depending on the project you forked earlier. Install and set up [Git](https://git-scm.com/) too.
+
+</Step>
+
+<Step title="Transfer project to Linode server">
+
+SSH into your server, clone the project from GitHub, and follow its README instructions to set it up.
+
+</Step>
+
+<Step title="Deploy">
+
+Build, run the project, and set up load balancing for it.
+[pm2](https://www.npmjs.com/package/pm2) is one of the good candidates out there with built-in load balancing, log monitoring, and bug/exception alerts.
+
+<Info>
+You can go with your favorite options for where to buy domains, reverse proxy setup, and SSL certificates. [Caddy](https://caddyserver.com/) is another good option here.
+</Info>
+
+</Step>
+
+</Steps>

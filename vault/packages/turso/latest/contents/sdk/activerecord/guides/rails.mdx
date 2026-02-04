@@ -1,0 +1,138 @@
+---
+title: Ruby on Rails + Turso
+sidebarTitle: Ruby on Rails
+description: Set up Turso in your Ruby on Rails project in minutes.
+---
+
+<Snippet file="technical-preview-banner.mdx" />
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Rails app &mdash; [learn more](https://guides.rubyonrails.org/getting_started.html)
+
+<Steps>
+
+<Step title="Install the libsql_activerecord Rubygem">
+
+Add the following to your Gemfile:
+
+```ruby
+gem 'libsql_activerecord'
+```
+
+Then run:
+
+```bash
+bundle install
+```
+
+</Step>
+
+<Step title="Configure database credentials">
+
+<Snippet file="retrieve-database-credentials.mdx" />
+
+Add your Turso credentials to your Rails credentials file or environment variables.
+
+</Step>
+
+<Step title="Use the libsql adapter">
+
+```yml
+default: &default
+  adapter: libsql
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  url: <%= ENV['TURSO_DATABASE_URL'] %>
+  auth_token: <%= ENV['TURSO_AUTH_TOKEN'] %>
+  path: storage/development.sqlite3 # For embedded replica
+```
+
+</Step>
+
+<Step title="Create and run migrations">
+
+Generate a migration:
+
+```bash
+rails generate migration CreateProducts name:string description:text
+```
+
+Run the migration:
+
+```bash
+rails db:migrate
+```
+
+</Step>
+
+<Step title="Define models">
+
+Create a model in `app/models/product.rb`:
+
+```ruby
+class Product < ApplicationRecord
+  validates :name, presence: true
+end
+```
+
+</Step>
+
+<Step title="Use in controllers">
+
+In your controllers, you can now use ActiveRecord methods to interact with your Turso database:
+
+```ruby
+class ProductsController < ApplicationController
+  def index
+    @products = Product.all
+  end
+
+  def create
+    @product = Product.new(product_params)
+    if @product.save
+      redirect_to @product, notice: 'Product was successfully created.'
+    else
+      render :new
+    end
+  end
+
+  private
+
+  def product_params
+    params.require(:product).permit(:name, :description)
+  end
+end
+```
+
+</Step>
+
+<Step title="Execute raw SQL (if needed)">
+
+You can also execute raw SQL queries:
+
+```ruby
+results = ActiveRecord::Base.connection.execute("SELECT * FROM products")
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Ruby on Rails App"
+    icon="github"
+    href="https://github.com/tursodatabase/libsql-activerecord/tree/main/examples/railsapp"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

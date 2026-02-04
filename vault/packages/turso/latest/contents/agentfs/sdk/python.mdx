@@ -1,0 +1,327 @@
+---
+title: Python SDK
+description: AgentFS Python SDK for building AI agents
+sidebarTitle: Python SDK
+---
+
+The AgentFS Python SDK provides an async interface for building AI agents with persistent storage.
+
+## Installation
+
+```bash
+pip install agentfs-sdk
+```
+
+## Quick Start
+
+```python
+import asyncio
+from agentfs_sdk import AgentFS, AgentFSOptions
+
+async def main():
+    # Open an agent filesystem
+    agent = await AgentFS.open(AgentFSOptions(id='my-agent'))
+
+    # Use key-value store
+    await agent.kv.set('config', {'debug': True})
+    config = await agent.kv.get('config')
+
+    # Use filesystem
+    await agent.fs.write_file('/notes.txt', 'Hello, AgentFS!')
+    content = await agent.fs.read_file('/notes.txt')
+
+    # Track tool calls
+    call_id = await agent.tools.start('search', {'query': 'Python'})
+    await agent.tools.success(call_id, {'results': ['result1']})
+
+    await agent.close()
+
+asyncio.run(main())
+```
+
+## Opening a Filesystem
+
+### By Agent ID
+
+Creates database at `.agentfs/{id}.db`:
+
+```python
+agent = await AgentFS.open(AgentFSOptions(id='my-agent'))
+```
+
+### By Path
+
+Specify a custom database path:
+
+```python
+agent = await AgentFS.open(AgentFSOptions(path='./data/mydb.db'))
+```
+
+### Context Manager
+
+Automatically closes the database:
+
+```python
+async with await AgentFS.open(AgentFSOptions(id='my-agent')) as agent:
+    await agent.kv.set('key', 'value')
+    # Database is closed when exiting
+```
+
+## Key-Value Store
+
+Simple key-value storage with JSON serialization.
+
+### Set a Value
+
+```python
+await agent.kv.set('user:123', {'name': 'Alice', 'age': 30})
+await agent.kv.set('counter', 42)
+await agent.kv.set('active', True)
+```
+
+### Get a Value
+
+```python
+user = await agent.kv.get('user:123')
+# Returns None if key doesn't exist
+```
+
+### List Keys
+
+```python
+# List all keys with prefix
+keys = await agent.kv.list('user:')
+# Returns: ['user:123', 'user:456', ...]
+```
+
+### Delete a Key
+
+```python
+await agent.kv.delete('user:123')
+```
+
+## Filesystem
+
+POSIX-like filesystem operations.
+
+### Write a File
+
+Creates parent directories automatically:
+
+```python
+await agent.fs.write_file('/data/config.json', '{"key": "value"}')
+
+# Write bytes
+await agent.fs.write_file('/data/image.png', image_bytes)
+```
+
+### Read a File
+
+```python
+# Read as string (default)
+content = await agent.fs.read_file('/data/config.json')
+
+# Read as bytes
+data = await agent.fs.read_file('/data/image.png', encoding=None)
+```
+
+### List Directory
+
+```python
+entries = await agent.fs.readdir('/data')
+# Returns: ['config.json', 'image.png', ...]
+```
+
+### Get File Stats
+
+```python
+stats = await agent.fs.stat('/data/config.json')
+print(f"Size: {stats.size} bytes")
+print(f"Modified: {stats.mtime}")
+print(f"Is file: {stats.is_file()}")
+print(f"Is directory: {stats.is_dir()}")
+```
+
+### Delete a File
+
+```python
+await agent.fs.delete_file('/data/config.json')
+```
+
+### Create Directory
+
+```python
+await agent.fs.mkdir('/data/subdir')
+```
+
+## Tool Calls
+
+Track and analyze tool/function calls for debugging and auditing.
+
+### Start and Complete
+
+```python
+# Start a tool call
+call_id = await agent.tools.start('search', {'query': 'Python'})
+
+# ... perform the operation ...
+
+# Mark as successful
+await agent.tools.success(call_id, {'results': ['result1', 'result2']})
+
+# Or mark as failed
+await agent.tools.error(call_id, 'Connection timeout')
+```
+
+### Record Completed Call
+
+If you have start and end times:
+
+```python
+await agent.tools.record(
+    name='search',
+    started_at=1234567890.0,
+    completed_at=1234567892.0,
+    parameters={'query': 'Python'},
+    result={'results': ['result1']}
+)
+```
+
+### Query Tool Calls
+
+```python
+# Get by name
+calls = await agent.tools.get_by_name('search', limit=10)
+
+# Get recent calls
+recent = await agent.tools.get_recent(since=1234567890.0)
+
+# Get by ID
+call = await agent.tools.get(42)
+```
+
+### Get Statistics
+
+```python
+stats = await agent.tools.get_stats()
+for stat in stats:
+    print(f"{stat.name}:")
+    print(f"  Total calls: {stat.total_calls}")
+    print(f"  Successful: {stat.successful}")
+    print(f"  Failed: {stat.failed}")
+    print(f"  Avg duration: {stat.avg_duration_ms:.2f}ms")
+```
+
+## Complete Example
+
+```python
+import asyncio
+import time
+from agentfs_sdk import AgentFS, AgentFSOptions
+
+async def main():
+    async with await AgentFS.open(AgentFSOptions(id='demo-agent')) as agent:
+        # Store configuration
+        await agent.kv.set('agent:config', {
+            'model': 'gpt-4',
+            'temperature': 0.7
+        })
+
+        # Create a research document
+        research = """
+        # Research Notes
+
+        ## Topic: AgentFS
+
+        AgentFS provides persistent storage for AI agents.
+        """
+
+        await agent.fs.write_file('/research/agentfs.md', research)
+
+        # Track a simulated tool call
+        call_id = await agent.tools.start('web_search', {
+            'query': 'AgentFS documentation'
+        })
+
+        # Simulate some work
+        await asyncio.sleep(0.1)
+
+        await agent.tools.success(call_id, {
+            'results_count': 5,
+            'top_result': 'https://docs.turso.tech/agentfs'
+        })
+
+        # List what we created
+        files = await agent.fs.readdir('/research')
+        print(f"Files: {files}")
+
+        # Get tool stats
+        stats = await agent.tools.get_stats()
+        for stat in stats:
+            print(f"{stat.name}: {stat.total_calls} calls")
+
+asyncio.run(main())
+```
+
+## API Reference
+
+### AgentFS
+
+| Method | Description |
+|--------|-------------|
+| `AgentFS.open(options)` | Open or create an agent filesystem |
+| `agent.close()` | Close the database connection |
+| `agent.kv` | Key-value store interface |
+| `agent.fs` | Filesystem interface |
+| `agent.tools` | Tool calls interface |
+
+### AgentFSOptions
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `str` | Agent identifier (creates `.agentfs/{id}.db`) |
+| `path` | `str` | Custom database path |
+
+### KvStore
+
+| Method | Description |
+|--------|-------------|
+| `set(key, value)` | Store a value |
+| `get(key)` | Retrieve a value |
+| `delete(key)` | Delete a key |
+| `list(prefix)` | List keys with prefix |
+
+### Filesystem
+
+| Method | Description |
+|--------|-------------|
+| `write_file(path, content)` | Write file contents |
+| `read_file(path, encoding)` | Read file contents |
+| `readdir(path)` | List directory entries |
+| `stat(path)` | Get file metadata |
+| `delete_file(path)` | Delete a file |
+| `mkdir(path)` | Create directory |
+
+### ToolCalls
+
+| Method | Description |
+|--------|-------------|
+| `start(name, params)` | Start tracking a call |
+| `success(id, result)` | Mark call as successful |
+| `error(id, message)` | Mark call as failed |
+| `record(...)` | Record a completed call |
+| `get(id)` | Get call by ID |
+| `get_by_name(name, limit)` | Query by tool name |
+| `get_recent(since)` | Get recent calls |
+| `get_stats()` | Get usage statistics |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Agents" icon="robot" href="/agentfs/integrations/openai-agents">
+    Using AgentFS with OpenAI Agents SDK
+  </Card>
+  <Card title="LlamaIndex" icon="llama" href="/agentfs/integrations/llamaindex">
+    Using AgentFS with LlamaIndex
+  </Card>
+</CardGroup>

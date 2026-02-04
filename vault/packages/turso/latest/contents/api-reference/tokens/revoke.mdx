@@ -1,0 +1,24 @@
+---
+sidebarTitle: Revoke
+openapi: "DELETE /v1/auth/api-tokens/{tokenName}"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE 'https://api.turso.tech/v1/auth/api-tokens/{tokenName}' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const response = await turso.apiTokens.revoke("my-token");
+```
+
+</RequestExample>

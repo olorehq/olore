@@ -1,0 +1,95 @@
+---
+title: Connect to Turso using Go
+sidebarTitle: Go
+---
+
+<Steps>
+
+<Step title="Install">
+
+Add the Turso package to your Go project:
+
+```bash
+go get github.com/tursodatabase/turso-go
+go install github.com/tursodatabase/turso-go
+```
+
+</Step>
+
+<Step title="Connect">
+
+Here's how you can connect to a local SQLite database:
+
+```go
+package main
+
+import (
+    "database/sql"
+    "fmt"
+    _ "github.com/tursodatabase/turso-go"
+)
+
+func main() {
+    conn, _ := sql.Open("turso", "sqlite.db")
+    defer conn.Close()
+}
+```
+
+</Step>
+
+<Step title="Create table">
+
+Create a table for users:
+
+```go
+_, err := conn.Exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL
+  )
+`)
+if err != nil {
+    panic(err)
+}
+```
+
+</Step>
+
+<Step title="Insert data">
+
+Insert some data into the users table:
+
+```go
+_, err = conn.Exec("INSERT INTO users (username) VALUES (?)", "alice")
+if err != nil {
+    panic(err)
+}
+
+_, err = conn.Exec("INSERT INTO users (username) VALUES (?)", "bob")
+if err != nil {
+    panic(err)
+}
+```
+
+</Step>
+
+<Step title="Query data">
+
+Query all users from the table:
+
+```go
+stmt, _ := conn.Prepare("SELECT * FROM users")
+defer stmt.Close()
+
+rows, _ := stmt.Query()
+for rows.Next() {
+    var id int
+    var username string
+    _ = rows.Scan(&id, &username)
+    fmt.Printf("User: ID: %d, Username: %s\n", id, username)
+}
+```
+
+</Step>
+
+</Steps>

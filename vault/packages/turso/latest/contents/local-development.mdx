@@ -1,0 +1,187 @@
+---
+title: Local Development
+description: Build locally using SQLite, libSQL Server or Turso.
+---
+
+Developers can build locally with Turso using either of the following methods:
+
+- [SQLite](#sqlite) &mdash; local SQLite database file
+- [Turso CLI](#turso-cli) &mdash; managed libSQL server
+- [Turso Database](#turso-database) &mdash; remote Turso database
+
+## Using a dump locally
+
+You can always dump your production database and use it locally for development:
+
+<Steps>
+  <Step title="Create a dump using the Turso CLI">
+
+```bash
+turso db shell your-database .dump > dump.sql
+```
+
+  </Step>
+
+  <Step title="Create SQLite file from dump">
+
+```bash
+cat dump.sql | sqlite3 local.db
+```
+
+  </Step>
+
+  <Step title="Connect to SQLite file">
+
+    You can use any of the methods below with the `local.db` file, or you can use a new file name if you prefer to create a database from scratch.
+
+  </Step>
+</Steps>
+
+## SQLite
+
+There are a few things to keep in mind when using SQLite for local development:
+
+- Doesn't have all the features of libSQL
+- Works with non-serverless based Turso SDKs
+
+When working with an [SDK](/sdk), you can pass it a `file:` URL to connect to a SQLite database file instead of a remote Turso database:
+
+<CodeGroup>
+
+```ts JavaScript
+import { createClient } from "@libsql/client";
+
+const client = createClient({
+  url: "file:local.db",
+});
+```
+
+```rust Rust
+let client = libsql_client::Client::from_config(libsql_client::Config {
+    url: url::Url::parse("file:local.db").unwrap(),
+    auth_token: None,
+})
+.await
+.unwrap();
+```
+
+```go Go
+package main
+
+import (
+  "database/sql"
+  "fmt"
+  "os"
+
+  _ "github.com/tursodatabase/go-libsql"
+)
+
+func main() {
+  dbName := "file:./local.db"
+
+  db, err := sql.Open("libsql", dbName)
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to open db %s", err)
+    os.Exit(1)
+  }
+  defer db.Close()
+}
+```
+
+```python Python
+import libsql_client
+
+client = libsql_client.create_client_sync(
+    url="file:local.db"
+)
+```
+
+</CodeGroup>
+
+<br />
+
+<Info>
+
+You don't need to provide an `authToken` in development.
+
+</Info>
+
+<Info>
+
+It's recommended to use environment variables for both `url` and `authToken` for a seamless developer experience.
+
+</Info>
+
+## Turso CLI
+
+If you're using [libSQL](/libsql) specific features like [extensions](/libsql#extensions), you should use the Turso CLI:
+
+```bash
+turso dev
+```
+
+This will start a local libSQL server and create a database for you. You can then connect to it using the `url` option in your SDK:
+
+<CodeGroup>
+
+```ts JavaScript
+import { createClient } from "@libsql/client";
+
+const client = createClient({
+  url: "http://127.0.0.1:8080",
+});
+```
+
+```rust Rust
+let client = libsql_client::Client::from_config(libsql_client::Config {
+    url: url::Url::parse("http://127.0.0.1:8080").unwrap(),
+    auth_token: None,
+})
+.await
+.unwrap();
+```
+
+```python Python
+import libsql_client
+
+client = libsql_client.create_client_sync(
+    url="http://127.0.0.1:8080"
+)
+```
+
+</CodeGroup>
+
+<br />
+
+<Warning>
+
+Changes will be lost when you stop the server.
+
+</Warning>
+
+If you want to persist changes, or use a production dump, you can pass the `--db-file` flag with the name of the SQLite file:
+
+```bash
+turso dev --db-file local.db
+```
+
+## Turso Database
+
+If you already have a database created with Turso, you can use that same one in development by passing the `url` option to your SDK.
+
+<Warning>
+
+Keep in mind that using the Turso hosted database will incur platform costs and count towards your quota. Consider using [SQLite](#sqlite) or [Turso CLI](#turso-cli) for local development to avoid platform costs.
+
+</Warning>
+
+## Connecting a GUI
+
+During development you can easily connect to a SQLite, libSQL, or Turso database using one of the tools below:
+
+- [Beekeeper Studio](https://www.beekeeperstudio.io/db/libsql-client/) &mdash; macOS, Linux, and Windows
+- [Outerbase](https://www.outerbase.com) &mdash; Runs in the browser
+- [TablePlus](https://tableplus.com) &mdash; macOS, Windows, and Linux
+- [Dataflare](https://dataflare.app) &mdash; Paid (with limited free version) macOS, Windows, and Linux
+- [Outerbase Studio](https://libsqlstudio.com) - Runs in the browser
+- [DBeaver](https://dbeaver.io) - macOS, Windows, and Linux

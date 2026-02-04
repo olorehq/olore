@@ -1,0 +1,113 @@
+---
+title: Quasar + Turso
+sidebarTitle: Quasar
+description: Set up Turso in your Quasar project in minutes
+---
+
+![Quasar banner](/images/guides/quasar-banner.png)
+
+## Prerequisites
+
+Before you start, make sure you:
+
+- [Install the Turso CLI](/cli/installation)
+- [Sign up or login to Turso](/cli/authentication#signup)
+- Have a Quasar app &mdash; [learn more](https://quasar.dev/start/quick-start#step-1-create-a-project)
+
+<Steps>
+
+<Step title="Install the libSQL SDK">
+
+<Snippet file="install-libsql-client-ts.mdx" />
+
+</Step>
+
+<Step title="Configure database credentials">
+
+Get the database URL:
+
+```bash
+turso db show --url <database-name>
+```
+
+Get the database authentication token:
+
+```bash
+turso db tokens create <database-name>
+```
+
+Assign credentials to the environment variables inside `.env.local`.
+
+```bash
+VITE_TURSO_DATABASE_URL="..."
+VITE_TURSO_AUTH_TOKEN="..."
+```
+
+</Step>
+
+<Step title="Configure libSQL Client">
+
+```js
+import { createClient } from "@libsql/client/web";
+
+const turso = createClient({
+  url: import.meta.env.VITE_TURSO_DATABASE_URL,
+  authToken: import.meta.env.VITE_TURSO_AUTH_TOKEN,
+});
+```
+
+<Info>
+  Avoid a [gotcha
+  moment](https://github.com/quasarframework/quasar/discussions/16071) by
+  modifying the app configuration using the settings below.
+</Info>
+
+```javascript quasar.config.js
+{
+  build: {
+    target: {
+      browser: [
+        'es2020', 'edge88', 'firefox78', 'chrome87', 'safari13.1'
+      ],
+      node: 'node16'
+    },
+    extendViteConf(config) {
+      config.optimizeDeps = {
+        esbuildOptions: {
+          target: 'es2020',
+        }
+      }
+    }
+  }
+}
+```
+
+</Step>
+
+<Step title="Fetch data from Turso.">
+
+```js IndexPage.vue
+import { ref } from "vue";
+
+const items = ref();
+
+const { rows } = await turso.execute("select * from my-table");
+
+items.value = rows;
+```
+
+</Step>
+
+</Steps>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card
+    title="Todo App"
+    icon="github"
+    href="https://github.com/tursodatabase/examples/tree/master/quasar-todo-list"
+  >
+    See the full source code
+  </Card>
+</CardGroup>

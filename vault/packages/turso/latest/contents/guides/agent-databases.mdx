@@ -1,0 +1,203 @@
+---
+title: Agent Databases
+---
+
+<Info>
+Looking for a complete agent state management solution? Check out [AgentFS](/agentfs/introduction) - our specialized SDK designed specifically for AI agents, offering filesystem operations, key-value storage, and automatic tool call tracking in a single database file.
+</Info>
+
+AI agents need databases to store context, track state, and maintain memory across executions. Turso Database offers two powerful approaches:
+
+- **Embedded Databases** for local-first agent processing, and
+
+- **Turso Sync** for distributed agent coordination with cloud persistence.
+
+## Embedded Databases (Local-First)
+
+Use embedded databases for agents that process data locally within a single workflow, need offline-capable access, or work with temporary data without sharing state with other agents.
+
+Local data pipelines, on-device processing of sensitive data, development/testing workflows, and single-agent analysis tasks.
+
+```javascript
+import { connect } from "@tursodatabase/database";
+
+// Create a local embedded database for this agent
+const db = await connect("agent-workflow.db");
+
+// Agent can now store and query data locally
+const stmt = db.prepare(`
+  CREATE TABLE IF NOT EXISTS steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL,
+    result TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+stmt.run();
+
+// Track agent workflow steps
+db.prepare("INSERT INTO steps (action, result) VALUES (?, ?)").run(
+  "fetch_data",
+  "success",
+);
+```
+
+Benefit from zero network latency, full offline capability, complete data privacy, and simple single-file deployment.
+
+<Info>
+
+Data is isolated to this agent instance with no built-in multi-agent collaboration or cross-session persistence (unless you manage the file yourself).
+
+</Info>
+
+## Turso Sync (Cloud-Connected)
+
+Use Turso Sync for agents that need persistent memory across sessions, coordinate with other agents, or require cloud-backed durability for long-running workflows.
+
+💡 Conversational agents with session memory, multi-agent coordination systems, long-running workflows with recovery needs, and agents reporting to central systems.
+
+```javascript
+import { connect } from "@tursodatabase/database";
+
+// Connect to a synced database (embedded locally, synced to Turso Cloud)
+const db = await connect({
+  path: "agent-memory.db",
+  url: "https://your-database.turso.io",
+  authToken: "your-auth-token",
+  sync: "full", // Bidirectional sync
+});
+
+// Agent can access data from previous sessions or other agents
+const previousContext = db
+  .prepare("SELECT * FROM conversation_history WHERE session_id = ?")
+  .all("session-123");
+
+// New data is automatically synced to cloud and other agent instances
+db.prepare("INSERT INTO agent_actions (agent_id, action) VALUES (?, ?)").run(
+  "agent-1",
+  "processed_document",
+);
+
+// Manually trigger sync if needed
+await db.sync();
+```
+
+💡 Persistent memory across restarts, multi-agent coordination via shared state, cloud backup and durability, with fast local reads and background sync.
+
+<Info>
+
+**Sync modes:** `sync` (bidirectional), `pull` (cloud → agent), `push` (agent → cloud).
+
+</Info>
+
+## Multi-Agent Architectures
+
+### Pattern 1: Isolated Agent Databases
+
+Each agent gets its own embedded database. Best for independent agents with no shared state.
+
+```javascript
+// Agent 1
+const agent1DB = await connect("agent-1.db");
+
+// Agent 2
+const agent2DB = await connect("agent-2.db");
+```
+
+<Info>
+
+Independent agents performing separate tasks with no coordination needs and maximum isolation.
+
+</Info>
+
+### Pattern 2: Shared Database with Sync
+
+Multiple agents connect to the same synced database. Best for coordinated agent systems.
+
+```javascript
+// Agent 1 connects and writes tasks
+const agent1DB = await connect({
+  path: "agent-1-local.db",
+  url: "https://shared-tasks.turso.io",
+  authToken: process.env.TURSO_TOKEN,
+  sync: "full",
+});
+
+agent1DB.prepare("INSERT INTO tasks (status) VALUES (?)").run("pending");
+
+// Agent 2 connects to same database and reads tasks
+const agent2DB = await connect({
+  path: "agent-2-local.db",
+  url: "https://shared-tasks.turso.io", // Same database
+  authToken: process.env.TURSO_TOKEN,
+  sync: "full",
+});
+
+const pendingTasks = agent2DB
+  .prepare("SELECT * FROM tasks WHERE status = ?")
+  .all("pending");
+```
+
+💡 Agents coordinating work through shared task queues or a common knowledge base.
+
+### Pattern 3: Hub-and-Spoke
+
+A central synced database with agents pushing results and pulling new tasks.
+
+```javascript
+// Worker agents push results only
+const workerDB = await connect({
+  path: "worker-local.db",
+  url: "https://hub.turso.io",
+  authToken: process.env.WORKER_TOKEN,
+  sync: "push", // Only push results to cloud
+});
+
+// Coordinator agent pulls from all workers
+const coordinatorDB = await connect({
+  path: "coordinator-local.db",
+  url: "https://hub.turso.io",
+  authToken: process.env.COORDINATOR_TOKEN,
+  sync: "pull", // Only pull data from cloud
+});
+```
+
+💡 Many worker agents feeding results to a central coordinator for monitoring or aggregation with unidirectional data flow.
+
+## Database-Per-Agent Pattern
+
+For systems managing many agents, you can create individual databases for each agent using the [Platform API](https://docs.turso.tech/api-reference):
+
+```javascript
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  token: process.env.TURSO_PLATFORM_API_TOKEN,
+  org: process.env.TURSO_ORG_NAME,
+});
+
+// Create a dedicated database for each agent
+async function provisionAgentDatabase(agentId) {
+  const database = await turso.databases.create(`agent-${agentId}`, {
+    group: "default",
+  });
+
+  console.log(`Database created for agent ${agentId}: ${database.Name}`);
+  return database;
+}
+```
+
+<Info>
+
+Complete isolation between agents, independent scaling per agent, improved security (compromised agent only affects one database), and easy cleanup when agents are retired.
+
+</Info>
+
+## Examples
+
+Explore these examples to see agent database patterns in action:
+
+- [sync-node](https://github.com/tursodatabase/turso/blob/main/examples/javascript/sync-node) — Node.js with bidirectional sync to Turso Cloud
+- [sync-wasm-vite](https://github.com/tursodatabase/turso/blob/main/examples/javascript/sync-wasm-vite) — Browser (WASM) with bidirectional sync to Turso Cloud
+- [database-node](https://github.com/tursodatabase/turso/blob/main/examples/javascript/database-node) — Node.js, local file database (no sync)
+- [database-wasm-vite](https://github.com/tursodatabase/turso/blob/main/examples/javascript/database-wasm-vite) — Browser (WASM), local database in the browser

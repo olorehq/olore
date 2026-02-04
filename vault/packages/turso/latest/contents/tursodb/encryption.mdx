@@ -1,0 +1,219 @@
+---
+title: Encryption
+---
+
+Turso Database provides native encryption for data at rest using industry-standard AEAD algorithms. Each database page is encrypted individually, ensuring data integrity and security across all environments.
+
+- **Page-level encryption**: Each 4 KiB page is encrypted individually with a unique nonce
+- **AEAD algorithms**: Support for AEGIS-256 (fast, modern) and AES-GCM (NIST-approved)
+- **Data integrity**: Built-in authentication tags prevent tampering and corruption
+- **High performance**: As little as 6% read overhead and 14% write overhead
+- **In-memory keys**: Encryption keys are never stored on disk
+
+Turso Database with encryption is perfect for:
+
+<CardGroup cols={2}>
+  <Card title="Fintech Applications" icon="credit-card">
+    Meet regulatory requirements for sensitive financial data
+  </Card>
+
+<Card title="Privacy-Focused Products" icon="user-shield">
+  Build user trust with strong data protection
+</Card>
+
+<Card title="Healthcare Apps" icon="heart-pulse">
+  Protect patient data and meet HIPAA compliance
+</Card>
+
+  <Card title="AI/ML Applications" icon="brain">
+    Secure training data and model outputs
+  </Card>
+</CardGroup>
+
+## What's Encrypted
+
+<CardGroup cols={2}>
+  <Card title="Encrypted" icon="lock">
+    - All database pages with your data - The database file - Write-Ahead Log
+    (WAL) file
+  </Card>
+  <Card title="Not Encrypted" icon="lock-open">
+    - The database header (first 100 bytes)
+  </Card>
+</CardGroup>
+
+## Generate an Encryption Key
+
+Generate a secure encryption key in hexadecimal format. The key size depends on the cipher you choose:
+
+<Tabs>
+  <Tab title="256-bit (32 bytes)">
+    For AEGIS-256 variants and AES-256-GCM:
+
+    ```bash
+    openssl rand -hex 32
+    ```
+
+    Output example:
+    ```
+    2d7a30108d3eb3e45c90a732041fe54778bdcf707c76749fab7da335d1b39c1d
+    ```
+
+  </Tab>
+
+  <Tab title="128-bit (16 bytes)">
+    For AEGIS-128 variants and AES-128-GCM:
+
+    ```bash
+    openssl rand -hex 16
+    ```
+
+    Output example:
+    ```
+    5f3e2a8c9b1d4f6e7a2c8d4b9e1f3a6c
+    ```
+
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Store your key securely!** If you lose the encryption key, you will not be
+  able to access your encrypted database. Keys are never stored on disk.
+</Warning>
+
+## Create an Encrypted Database
+
+<Steps>
+
+<Step title="Launch with encryption">
+
+Use the `--experimental-encryption` flag and specify your cipher and key in the connection URI:
+
+```bash
+tursodb --experimental-encryption "file:encrypted.db?cipher=aegis256&hexkey=YOUR_HEX_KEY"
+```
+
+Replace `YOUR_HEX_KEY` with the key you generated above.
+
+</Step>
+
+<Step title="Create and insert data">
+
+Once in the interactive shell, create a table and insert some data:
+
+```sql
+CREATE TABLE secrets (id INT, data TEXT);
+INSERT INTO secrets VALUES (1, 'sensitive information');
+INSERT INTO secrets VALUES (2, 'confidential data');
+```
+
+</Step>
+
+<Step title="Verify encryption">
+
+Exit the shell (type `.quit`) and try to open the database without the key:
+
+```bash
+tursodb encrypted.db
+```
+
+You won't be able to access the data. The database is encrypted on disk.
+
+</Step>
+
+</Steps>
+
+## Open an Encrypted Database
+
+To access an existing encrypted database, provide the same cipher and key used during creation:
+
+```bash
+tursodb --experimental-encryption "file:encrypted.db?cipher=aegis256&hexkey=YOUR_HEX_KEY"
+```
+
+Then query your data:
+
+```sql
+SELECT * FROM secrets;
+```
+
+## Supported Ciphers
+
+Turso Database supports multiple variants of two AEAD encryption algorithms, offering different trade-offs between performance and compatibility.
+
+### AES-GCM
+
+NIST-approved standard for compliance requirements. Widely supported across industries.
+
+| Cipher          | Key Size           | URI Value   | Use Case                             |
+| --------------- | ------------------ | ----------- | ------------------------------------ |
+| **AES-128-GCM** | 128-bit (16 bytes) | `aes128gcm` | Compliance with 128-bit requirements |
+| **AES-256-GCM** | 256-bit (32 bytes) | `aes256gcm` | Maximum security for compliance      |
+
+### AEGIS
+
+Modern, high-performance cipher family optimized for speed. **Recommended for most use cases.**
+
+| Cipher          | Key Size           | URI Value    | Use Case                               |
+| --------------- | ------------------ | ------------ | -------------------------------------- |
+| **AEGIS-128L**  | 128-bit (16 bytes) | `aegis128l`  | Balanced performance, 128-bit security |
+| **AEGIS-128X2** | 128-bit (16 bytes) | `aegis128x2` | 2x parallel processing                 |
+| **AEGIS-128X4** | 128-bit (16 bytes) | `aegis128x4` | 4x parallel processing, maximum speed  |
+| **AEGIS-256**   | 256-bit (32 bytes) | `aegis256`   | Balanced 256-bit security              |
+| **AEGIS-256X2** | 256-bit (32 bytes) | `aegis256x2` | 2x parallel processing, 256-bit        |
+| **AEGIS-256X4** | 256-bit (32 bytes) | `aegis256x4` | 4x parallel, maximum speed & security  |
+
+<Info>
+
+**Choosing a cipher:**
+
+- Use `aegis128L` for 128 bit encryption, `aegis256` for 256 bit encryption (default recommendation)
+- Use the other AEGIS variants if your hardware supports it `aegis128X2` `aegis128X4` `aegis256x2` `aegis256x4`
+- For AES, use `aes128gcm` for 128 bit encryption, `aes256gcm` for 256 bit encryption
+
+</Info>
+
+## URI Parameters
+
+When creating or opening an encrypted database, use the following URI format:
+
+```
+file:database.db?cipher=CIPHER&hexkey=HEX_KEY
+```
+
+| Parameter | Required | Description                  | Values                                                   |
+| --------- | -------- | ---------------------------- | -------------------------------------------------------- |
+| `cipher`  | Yes      | Encryption algorithm         | See [Supported Ciphers](#supported-ciphers)              |
+| `hexkey`  | Yes      | Encryption key in hex format | 32-character hex (128-bit) or 64-character hex (256-bit) |
+
+**Example URIs:**
+
+```bash
+# AEGIS-256 with 256-bit key
+file:encrypted.db?cipher=aegis256&hexkey=2d7a30108d3eb3e45c90a732041fe54778bdcf707c76749fab7da335d1b39c1d
+
+# AES-128-GCM with 128-bit key
+file:encrypted.db?cipher=aes128gcm&hexkey=5f3e2a8c9b1d4f6e7a2c8d4b9e1f3a6c
+
+# AEGIS-256X4 (max performance) with 256-bit key
+file:encrypted.db?cipher=aegis256x4&hexkey=2d7a30108d3eb3e45c90a732041fe54778bdcf707c76749fab7da335d1b39c1d
+```
+
+## Performance
+
+Encryption overhead is minimal, especially for smaller databases:
+
+- **Read operations**: ~6% overhead with AEGIS-256
+- **Write operations**: ~14% overhead with AEGIS-256
+- **Overall**: ~1-3% total time overhead for mixed workloads
+
+For detailed benchmarks, see the [encryption announcement blog post](https://turso.tech/blog/introducing-fast-native-encryption-in-turso-database).
+
+## Coming Soon
+
+Future encryption features in development:
+
+- **Key derivation from passphrases**: Use memorable passphrases instead of raw keys
+- **Encrypt existing databases**: Migrate unencrypted databases to encrypted format
+- **Key rotation**: Update encryption keys without data loss
+- **`ATTACH` support**: Work with multiple encrypted databases simultaneously

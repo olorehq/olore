@@ -1,0 +1,89 @@
+---
+title: Agentic Coding
+description: Run AI coding agents safely with AgentFS sandboxing
+sidebarTitle: Agentic Coding
+---
+
+AgentFS lets you run AI coding agents like Claude Code, Codex, and OpenCode in a sandboxed environment where file changes are isolated from your original source tree.
+
+## Supported Agents
+
+| Agent | Command |
+|-------|---------|
+| [Claude Code](https://code.claude.com/docs/en/overview) | `agentfs run claude` |
+| [Codex](https://openai.com/codex/) | `agentfs run codex` |
+| [OpenCode](https://opencode.ai/) | `agentfs run opencode` |
+| Any CLI tool | `agentfs run <command>` |
+
+## Workflow
+
+Here's a typical agentic coding workflow. This example uses Claude Code, but the workflow is the same with OpenCode, Codex, and others.
+
+### Step 1: Clone the Repository
+
+Clone the git repository to a host directory. Keep this source tree clean from build artifacts. When there's a merge to main, pull to this repository to keep it up-to-date.
+
+```bash
+git clone https://github.com/tursodatabase/agentfs.git
+cd agentfs
+```
+
+### Step 2: Start an AgentFS Session
+
+Use `agentfs run` with the `--session` flag to start a session. Pick a name that can eventually become your git branch name.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    agentfs run --session fix-bug-123 claude
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    agentfs run --session fix-bug-123 codex
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    agentfs run --session fix-bug-123 opencode
+    ```
+  </Tab>
+</Tabs>
+
+The agent now runs in a copy-on-write environment. Your original source tree remains untouched while the agent works.
+
+### Step 3 (Optional): Manual Investigation
+
+If the agent does something unusual, open another terminal and join the same session to investigate:
+
+```bash
+agentfs run --session fix-bug-123 bash
+```
+
+The filesystem is shared between the shell and the agent. You can browse files, run tests, or check what's happening while the agent works.
+
+### Step 4: Push to Branch
+
+Once the agent has completed the work, ask it to create a branch, commit the code, and push:
+
+> "Create a branch called fix-bug-123, commit these changes, and push to origin"
+
+You can then create a PR manually from the pushed branch.
+
+## Why This Workflow?
+
+- **Clean source tree** - Your original clone stays pristine and easy to update from upstream
+- **Isolated changes** - Each task gets its own session, preventing cross-contamination
+- **Easy investigation** - Join any session to see what's happening in real-time
+- **Standard git flow** - Push branches and create PRs as usual
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-Agent Sessions" icon="clock" href="/agentfs/guides/sessions">
+    Share state between agents and terminals
+  </Card>
+  <Card title="Auditing" icon="magnifying-glass" href="/agentfs/guides/auditing">
+    Inspect what an agent did with diff and timeline
+  </Card>
+</CardGroup>

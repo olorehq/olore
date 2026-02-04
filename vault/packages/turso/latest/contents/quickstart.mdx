@@ -1,0 +1,135 @@
+---
+title: Quickstart
+description: Welcome to Turso! Get started with Turso in minutes.
+---
+
+**In this quickstart you will learn how to:**
+
+1. Install the Turso CLI
+2. Signup to Turso
+3. Create your first Turso Database
+4. Connect to Database Shell
+
+<Steps>
+
+<Step title="Install the Turso CLI">
+
+We'll be using the Turso CLI throughout this quickstart to manage databases, create replicas in other regions, and connect to the database shell.
+
+<CodeGroup>
+
+```bash macOS
+brew install tursodatabase/tap/turso
+```
+
+```bash Linux
+curl -sSfL https://get.tur.so/install.sh | bash
+```
+
+```bash Windows (WSL)
+curl -sSfL https://get.tur.so/install.sh | bash
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Signup to Turso">
+
+The next command will open your browser to sign up:
+
+<CodeGroup>
+
+```bash Signup
+turso auth signup
+```
+
+```bash Login
+turso auth login
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Create a Database">
+
+Now create your first database in a location closest to you with the name `my-db`:
+
+```bash
+turso db create my-db
+```
+
+The Turso CLI automatically detected your closest region to create a database. It used this location to create a `default` "group" for your database, which you can inspect using the following command:
+
+```bash
+turso db show my-db
+```
+
+</Step>
+
+<Step title="Connect to Database Shell">
+
+Congratulations, you created a database! Now connect to it with the `shell` command:
+
+```bash
+turso db shell my-db
+```
+
+<Info>
+
+Replace `my-db` with the name of your database if you named it differently.
+
+</Info>
+
+<AccordionGroup>
+  <Accordion title="Create table">
+    Now create a table for `users` using SQL:
+
+```sql
+CREATE TABLE users (
+  ID INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT
+);
+```
+
+  </Accordion>
+
+  <Accordion title="Insert into new table">
+
+Then insert a row into the `users` table:
+
+```sql
+INSERT INTO users (name) VALUES ("Iku");
+```
+
+  </Accordion>
+
+  <Accordion title="Select all rows from table">
+
+    Finally, query for all `users`:
+
+```sql
+SELECT * FROM users;
+```
+
+  </Accordion>
+</AccordionGroup>
+
+When you're ready to move onto the next step, you'll want to to quit the shell:
+
+```sql
+.quit
+```
+
+</Step>
+
+<Step title="Connect your application to your database">
+
+You're now ready to connect your application to your database. Pick from one of the SDKs below to continue:
+
+<Snippet file="all-sdks.mdx" />
+
+</Step>
+
+</Steps>

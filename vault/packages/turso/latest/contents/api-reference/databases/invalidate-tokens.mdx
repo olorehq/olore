@@ -1,0 +1,30 @@
+---
+sidebarTitle: Invalidate Tokens
+openapi: "POST /v1/organizations/{organizationSlug}/databases/{databaseName}/auth/rotate"
+---
+
+<Warning>
+
+A short downtime is required to complete the changes.
+
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases/{databaseName}/auth/rotate' \
+-H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const response = await turso.databases.rotateTokens("my-db");
+```
+
+</RequestExample>
