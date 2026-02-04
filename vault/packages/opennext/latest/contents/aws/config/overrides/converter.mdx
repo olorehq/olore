@@ -1,0 +1,40 @@
+This override is meant to convert request and response provided from your wrapper to the internal types that are used by OpenNext.
+
+If you want to better understand how to implement your own Converter, the easiest way would be to take a look at one of the existing [included Converter](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/converters)
+
+Couple of things to note :
+
+- If you use a `StreamCreator` in your wrapper, you probably don't need to do anything in the `convertTo` function.
+- If used for the default, the image optimization, or one of the splitted server the internal types will be `InternalEvent` and `InternalResult` respectively.
+- If used for the external middleware, the internal types will be `InternalEvent` and `InternalResult | MiddlewareResult` respectively.
+- For the other servers, look up their respective types in the codebase.
+
+## Included Converters
+
+### aws-apigw-v2
+
+The `aws-apigw-v2` Converter is the default convert for AWS. It is used by default if you don't provide any Converter in your configuration.
+
+### aws-apigw-v1
+
+The `aws-apigw-v1` Converter is a converter that allows you to convert request and response from Amazon API Gateway v1.
+
+### aws-cloudfront
+
+The `aws-cloudfront` Converter is a converter for Cloudfront (i.e. lambda@edge)
+
+### edge
+
+The `edge` Converter is the converter for everything that uses `Request` and `Response`. At the moment with the builtin one that's only Cloudflare.
+
+### converter
+
+The `node` Converter is a converter for classic Node.js server.
+
+### sqs-revalidate
+
+The `sqs-revalidate` Converter is a converter for the Revalidation server. It uses SQS Queue to handle the revalidation.
+
+### dummy
+
+The `dummy` Converter is a dummy implementation that will just forward the request and response as is.

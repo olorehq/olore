@@ -1,0 +1,99 @@
+import { SITE } from "../../config";
+import { Callout } from "nextra/components";
+
+# Next.js on Netlify
+
+<a href="https://runtime-e2e-report.netlify.app/" target="_blank">
+  <img
+    src="https://runtime-e2e-report.netlify.app/badge"
+    width="185"
+    height="25"
+    style={{ borderRadius: 0, marginTop: "1rem" }}
+    alt="Netlify Next.js adapter v5 test status"
+  />
+</a>
+
+Netlify's Next.js adapter automatically configures Netlify sites with key functionality, including cache control, on-demand revalidation, and image optimization.
+
+The adapter provisions Netlify Functions to handle your site’s server-side functionality (such as SSR, ISR and PPR pages, API endpoints, Server Actions, etc.), and Netlify Edge Functions for Edge Middleware, ensuring that functionality works out-of-the-box.
+
+We automatically verify compatibility with the latest stable version of Next.js, using the comprehensive end-to-end tests of the framework itself. To access up-to-date test results, use the badge above.
+
+## Get started
+
+The easiest way to get started is to deploy our Next.js platform starter template to your Netlify account. Use the button below to get started.
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify-templates/next-platform-starter)
+
+### Prerequisites
+
+- Next.js version 13.5 and later (up to the latest stable version)
+- [Node 18.x or later](https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript)
+- The latest version of [Netlify CLI](https://docs.netlify.com/cli/get-started/)
+
+## Key features
+
+- **App Router:** Netlify fully supports the Next.js App Router, which supports more powerful nested layouts and React’s latest features, such as Server Components and Streaming.
+
+- **Automatic fine-grained caching:** the adapter uses fine-grained caching on Netlify to support the Next.js Full Route Cache and Data Cache. This means that static page responses are automatically cached at the edge and can be revalidated by path or by tag.
+
+- **On-demand and time-based revalidation:** both the App Router and Pages Router support on-demand and time-based revalidation, allowing you to revalidate and regenerate content at any time after a deploy.
+
+- **Image optimization:** the `next/image` component uses [Netlify Image CDN](https://docs.netlify.com/image-cdn/overview/) by default to ensure your images are optimized and served in the most efficient format.
+
+Note that while we also generally support experimental features (for example, Partial Prerendering) from their early stages, such features are not considered stable yet at the framework level.
+
+## Automatic framework detection
+
+Netlify automatically detects that you're using Next.js and provisions your site with the most up-to-date adapter.
+
+### Pin a specific adapter version
+
+To pin the Netlify Next.js adapter to a specific version, read [the Netlify docs](https://docs.netlify.com/frameworks/next-js/overview/).
+
+### Suggested configuration values
+
+When you [link a repository](https://docs.netlify.com/welcome/add-new-site/#import-from-an-existing-repository) for a Next.js project, Netlify provides a suggested build command and publish directory: `next build` and `.next`.
+
+If you’re using the CLI to run [Netlify Dev](https://docs.netlify.com/cli/local-development/) for a local development environment, Netlify suggests a dev command and port: `next` and `3000`.
+
+You can override suggested values or set them in a configuration file instead, but suggested values from automatic framework detection may help simplify the process of setting up a Next.js site on Netlify.
+
+For manual configuration, check out the [typical build settings](https://docs.netlify.com/frameworks/#next-js) for Next.js.
+
+## Limitations
+
+Currently, Netlify's Next.js adapter has the following limitations:
+
+- **SSR pages set to the `edge` runtime will run in your [functions region](https://docs.netlify.com/functions/optional-configuration/#region).** If edge-level performance is critical, we advise that you use static pages with edge functions instead. They are rendered at the origin, but are then cached at the edge and can be revalidated on demand.
+
+- **Rewrites in your Next.js configuration can’t point to static files in the `public` directory.** If you create `beforeFiles` rewrites in your `next.config.js`, they can’t point to static files in your site’s `public` directory. You can use middleware rewrites as an alternative.
+
+- **Headers and Redirects are evaluated after middleware.** If you need to maintain the execution order specified in the Next.js [docs](https://nextjs.org/docs/app/building-your-application/routing/middleware#matching-paths) you will need to configure your [headers](https://docs.netlify.com/routing/headers/) and [redirects](https://docs.netlify.com/routing/redirects/) outside of Next.js using our platform primitives.
+
+- **Netlify Forms compatibility:** Using Netlify Forms with the current adapter [requires a workaround](/netlify/forms).
+
+### pnpm support
+
+If you’re planning to use pnpm with Next.js to manage dependencies, you must do one of the following:
+
+- Set a `PNPM_FLAGS` [environment variable](https://docs.netlify.com/environment-variables/get-started/#create-environment-variables) with a value of `--shamefully-hoist`. This appends a `--shamefully-hoist` argument to the `pnpm install` command that Netlify runs.
+- [Enable public hoisting](https://pnpm.io/npmrc#public-hoist-pattern) by adding an `.npmrc` file in the root of your project with this content:
+
+  ```bash
+  public-hoist-pattern[]=*
+  ```
+
+Learn more about using [pnpm on Netlify](https://docs.netlify.com/configure-builds/manage-dependencies/#pnpm).
+
+## Troubleshooting
+
+The OpenNext docs are specifically about using Netlify's Next.js adapter v5 and later. For older versions of the adapter, refer to the [Netlify docs](https://docs.netlify.com/frameworks/next-js/overview/).
+
+If you need help with any version of the adapter, visit [our support page](https://www.netlify.com/support) for various methods of finding answers and getting help.
+
+### More resources
+
+- [Typical Next.js build settings](https://docs.netlify.com/frameworks/#next-js)
+- [Next.js framework documentation](https://nextjs.org/docs/getting-started)
+- [Connect JavaScript client](https://docs.netlify.com/connect/access-data/#use-the-connect-client) - the recommended library for querying Connect data layer APIs in Next.js cached SSR sites.

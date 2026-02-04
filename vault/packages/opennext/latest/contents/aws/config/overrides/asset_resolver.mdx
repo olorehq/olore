@@ -1,0 +1,27 @@
+Available since `@opennextjs/aws` 3.7.0
+
+This override is used by OpenNext to serve [static assets](https://nextjs.org/docs/app/api-reference/file-conventions/public-folder) from the routing layer.
+
+It is not enabled by default as the assumption is that assets are served before reaching the Open Next server.
+
+When assets are not served before the Open Next server, you can create an Asset Resolver to serve them. It will be invoked [after the `beforeFiles` (`rewrites`) from `next.config.ts`](https://nextjs.org/docs/app/api-reference/file-conventions/middleware#execution-order).
+
+## Implementation
+
+An Asset Resolver should implement:
+
+```ts
+export interface AssetResolver {
+  name: string;
+
+  maybeGetAssetResult?: (event: InternalEvent) => Promise<InternalResult | undefined> | undefined;
+}
+```
+
+`maybeGetAssetResult` is invoked with the `InternalEvent` and should return a `Promise<InternalResult>` to serve an asset when the incoming event matches one. When it returns `Promise<undefined>` or `undefined`, the routing process keeps going to try and match Next routes.
+
+## Included Asset Resolver
+
+### dummy
+
+The dummy `AssetResolver` does nothing so it never serves assets. It is the default implementation.

@@ -1,0 +1,74 @@
+import { Callout } from "nextra/components";
+
+This override is used by the [`cache` adapter](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/adapters/cache.ts) that is provided by OpenNext to the NextServer. It is also used by OpenNext if `enableCacheInterception` is set to `true` in the configuration.
+
+It is used for retrieving and updating the ISR/SSG cache as well as the fetch cache used by Next.js. It does not handle anything related to cache tags (i.e. `revalidateTag` and `revalidatePath`)
+
+If you want to better understand how to implement your own IncrementalCache, the easiest way would be to take a look at the existing [included IncrementalCache](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/incrementalCache).
+
+One thing to note is that it is not used at build time, only at runtime. This means that you'll have to upload the cache yourself if you want to use the prebuilt routes/pages (And this is mandatory for ISR/SSG routes with `fallback:false`).
+All the cache files are present in the `.open-next/cache` folder. The one under `BUILD_ID` are for the ISR/SSG cache and the one under `__fetch/BUILD_ID` are for the fetch cache.
+
+## Included IncrementalCache
+
+### s3
+
+The S3 IncrementalCache will store fetch and ISR/SSG cache in an S3 bucket. It is used by default if you don't provide any IncrementalCache in your configuration.
+It uses the `@aws-sdk/client-s3` to interact with S3.
+
+##### Requirements
+
+- You need to provide the `CACHE_BUCKET_REGION`, `CACHE_BUCKET_KEY_PREFIX`, `CACHE_BUCKET_NAME` environment variables to your server.
+
+### s3-lite
+
+The S3Lite IncrementalCache will store fetch and ISR/SSG cache in an S3 bucket
+This implementation is a lighter version of the `s3` IncrementalCache as it uses `aws4fetch` to interact with S3.
+
+##### Requirements
+
+- You need to provide the `CACHE_BUCKET_REGION`, `CACHE_BUCKET_KEY_PREFIX`, `CACHE_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` environment variables to your server.
+
+### dummy
+
+The Dummy IncrementalCache is a dummy implementation that throws exceptions for every method. It should not be used unless you want to disable the cache.
+
+### fs-dev
+
+The FsDev IncrementalCache is a simple implementation that stores the cache in the `.open-next/cache` folder and interact with it using the filesystem. It is useful for development purposes only.
+
+##### Requirements
+
+It needs to run on the local filesystem, and expect to be run from the OpenNext output.
+
+### multi-tier-ddb-s3
+
+<Callout type='warning'>
+Because of how it works, this implementation is only eventually consistent and errors during update could cause inconsistencies between the local cache in some instances and the S3 cache.
+
+It could also end up being slower (and more expensive) than simpler implementations if used in a low traffic serverless environment.
+
+</Callout>
+
+The MultiTierDdbS3 IncrementalCache is a more complex implementation.
+Cache are stored in a local In Memory LRU cache as well as in S3. DynamoDB is used to keep local cache in sync between multiple instances of the server.
+It uses `aws4fetch` to interact with S3 and DynamoDB.
+
+##### How does it work
+
+On get :
+
+1. When a cache is requested, it first checks the local cache. If the cache is not found, it will fetch it from S3 and store it in the local cache.
+2. If the local cache exist for this key, it will check metadata in DynamoDB to see if the cache is still valid. If it is not, it will fetch the cache from S3 and store it in the local cache.
+3. If the local cache is valid, it will return it.
+
+On update :
+
+1. When a cache is updated, it will first try to update the cache in S3.
+2. If the update is successful, it will update the metadata in DynamoDB.
+3. Finally, it will update the local cache.
+
+##### Requirements
+
+- You need to provide the `CACHE_BUCKET_REGION`, `CACHE_BUCKET_KEY_PREFIX`, `CACHE_BUCKET_NAME`, `CACHE_DYNAMO_TABLE`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN`, `OPEN_NEXT_LOCAL_CACHE_TTL_MS` (optional), `OPEN_NEXT_LOCAL_CACHE_SIZE`(optional) environment variables to your server.
+- DynamoDB table should have a primary key `path` of type `String` and a sort key `tag` of type `String`. (It can reuse the same table as the one used by the default `tagCache`)

@@ -1,0 +1,257 @@
+import { Callout } from "nextra/components";
+
+<Callout type="warning">
+  This is an advanced feature and requires a good understanding of both OpenNext and Cloudflare Workers.
+  This advanced setup **cannot** be used with:
+    - Preview URLs (staging deployments)
+    - Skew protection features
+    - The standard `@opennextjs/cloudflare deploy` command
+
+Consider these limitations carefully before proceeding.
+
+</Callout>
+
+OpenNext lets you split your application into smaller, lighter parts in several workers. This can improve performance and reduce the memory footprint of your application.
+It's a more advanced feature that doesn't support deploying through the standard `@opennextjs/cloudflare deploy` command.
+
+As an example, we'll split the middleware into its own worker and the rest of the application into another worker. You could split the application further by creating additional workers for specific routes or features, but this won't be covered here.
+When referring to the middleware here, we talk about both the middleware you built, and the routing layer of OpenNext.
+
+You can find an example of such a deployment in the [GitBook repository](https://github.com/GitbookIO/gitbook).
+
+## When to use this setup
+
+This multi-worker approach is beneficial when you need:
+
+- Reduced memory footprint for individual workers
+- Improved cold start performance by splitting the light middleware into its own worker and serving ISR/SSG requests from there
+
+### `open-next.config.ts`
+
+Here we assume a configuration like that:
+
+```ts
+import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
+import { withRegionalCache } from "@opennextjs/cloudflare/overrides/incremental-cache/regional-cache";
+import doShardedTagCache from "@opennextjs/cloudflare/overrides/tag-cache/do-sharded-tag-cache";
+import doQueue from "@opennextjs/cloudflare/overrides/queue/do-queue";
+import { purgeCache } from "@opennextjs/cloudflare/overrides/cache-purge/index";
+
+export default defineCloudflareConfig({
+  incrementalCache: withRegionalCache(r2IncrementalCache, { mode: "long-lived" }),
+  queue: doQueue,
+  // This is only required if you use On-demand revalidation
+  tagCache: doShardedTagCache({
+    baseShardSize: 12,
+    regionalCache: true, // Enable regional cache to reduce the load on the DOs and improve speed
+    regionalCacheTtlSec: 3600, // The TTL for the regional cache of the tag cache
+    regionalCacheDangerouslyPersistMissingTags: true, // Enable this to persist missing tags in the regional cache
+    shardReplication: {
+      numberOfSoftReplicas: 4,
+      numberOfHardReplicas: 2,
+      regionalReplication: {
+        defaultRegion: "enam",
+      },
+    },
+  }),
+  enableCacheInterception: true,
+  // you can also use the `durableObject` option to use a durable object as a cache purge
+  cachePurge: purgeCache({ type: "direct" }),
+});
+```
+
+### Custom workers
+
+You'll need 2 custom workers in order for this to work:
+
+```js
+// middleware.js
+import { WorkerEntrypoint } from "cloudflare:workers";
+
+// ./.open-next/cloudflare/init.js
+import { runWithCloudflareRequestContext } from "./.open-next/cloudflare/init.js";
+
+import { handler as middlewareHandler } from "./.open-next/middleware/handler.mjs";
+
+export { DOQueueHandler } from "./.open-next/.build/durable-objects/queue.js";
+
+export { DOShardedTagCache } from "./.open-next/.build/durable-objects/sharded-tag-cache.js";
+
+export default class extends WorkerEntrypoint {
+  async fetch(request) {
+    return runWithCloudflareRequestContext(request, this.env, this.ctx, async () => {
+      // Process the request through Next.js middleware layer and OpenNext routing layer
+      const reqOrResp = await middlewareHandler(request, this.env, this.ctx);
+
+      // If middleware returns a Response, send it directly (e.g., redirects, blocks, ISR/SSG cache Hit)
+      if (reqOrResp instanceof Response) {
+        return reqOrResp;
+      }
+
+      // Forward the modified request to the server worker
+      // Version affinity ensures consistent worker versions
+      // https://developers.cloudflare.com/workers/configuration/versions-and-deployments/gradual-deployments/#version-affinity
+      reqOrResp.headers.set("Cloudflare-Workers-Version-Overrides", `server="${this.env.WORKER_VERSION_ID}"`);
+
+      // Proxy to the server worker with cache disabled for dynamic content
+      return this.env.DEFAULT_WORKER.fetch(reqOrResp, {
+        // We return redirects as is
+        redirect: "manual",
+        cf: {
+          cacheEverything: false,
+        },
+      });
+    });
+  }
+}
+```
+
+```js
+// server.js
+
+// Replace with your actual build output directory, typically:
+// ./.open-next/cloudflare/init.js
+import { runWithCloudflareRequestContext } from "./.open-next/cloudflare/init.js";
+
+import { handler } from "./.open-next/server-functions/default/handler.mjs";
+
+export default {
+  async fetch(request, env, ctx) {
+    return runWithCloudflareRequestContext(request, env, ctx, async () => {
+      // - `Request`s are handled by the Next server
+      return handler(request, env, ctx);
+    });
+  },
+};
+```
+
+### Wrangler configurations
+
+```jsonc
+// Middleware wrangler file
+{
+  "main": "middleware.js",
+  "name": "middleware",
+  "compatibility_date": "2025-04-14",
+  "compatibility_flags": ["nodejs_compat", "allow_importable_env", "global_fetch_strictly_public"],
+  // The middleware serves the assets
+  "assets": {
+    "directory": "../../.open-next/assets",
+    "binding": "ASSETS",
+  },
+  "vars": {
+    // This one will need to be replaced for every deployment
+    "WORKER_VERSION_ID": "TO_REPLACE",
+  },
+  "routes": [
+    // Define your routes here, not in server.js
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "<BUCKET_NAME>",
+    },
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "middleware",
+    },
+    {
+      "binding": "DEFAULT_WORKER",
+      "service": "main-server",
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_TAG_CACHE_DO_SHARDED",
+        "class_name": "DOShardedTagCache",
+      },
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache"],
+    },
+  ],
+}
+```
+
+```jsonc
+// Server wrangler file
+{
+  "main": "server.js",
+  "name": "main-server",
+  "compatibility_date": "2025-04-14",
+  "compatibility_flags": ["nodejs_compat", "allow_importable_env", "global_fetch_strictly_public"],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "<BUCKET_NAME>",
+    },
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      // Note: The middleware worker must be referenced here, *not* the server.
+      "service": "middleware",
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_TAG_CACHE_DO_SHARDED",
+        "class_name": "DOShardedTagCache",
+        "script_name": "middleware",
+      },
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler",
+        "script_name": "middleware",
+      },
+    ],
+  },
+}
+```
+
+### Actual deployment
+
+You cannot use `@opennextjs/cloudflare deploy` to deploy this setup, as it will not work with the multiple workers setup.
+
+1. **Server Upload** → Get version ID
+2. **Middleware Preparation** → Update version reference
+3. **Middleware Upload** → Get version ID
+4. **Gradual Rollout** → Server (0%) → Middleware (100%) → Server (100%)
+
+In order to make this work, you need to deploy each worker separately using the `wrangler` CLI and override the `WORKER_VERSION_ID` variable in the middleware wrangler configuration for **each deployment**.
+Note that we use gradual deployments as a solution for deploying new versions without affecting the currently running ones.
+
+The steps to deploy without causing downtime to the already deployed ones are as follows:
+
+1. First you'll need to upload a new version of the server worker `wrangler versions upload --config ./path-to/serverWrangler.jsonc`
+2. Then you'll need to extract the new version id of the server from the previous command's output. The value you need is displayed as `Worker Version ID: <ID>` in the console output. This value is referred to as `NEW_SERVER_VERSION_ID` in step 8.
+3. Before uploading the middleware, you'll need to replace the `WORKER_VERSION_ID` variable in the middleware wrangler configuration with the new server version id from the previous step.
+4. You then need to upload a new version of the middleware worker `wrangler versions upload --config ./path-to/middlewareWrangler.jsonc`. Retrieve the version id, you'll need it in step 9 (`NEW_MIDDLEWARE_ID`).
+5. And extract the new version id of the middleware from the previous command's output. The value you need is displayed as `Worker Version ID: <ID>` in the console output.
+6. Use `wrangler deployments status --config ./path-to/server-wrangler.jsonc` to get the currently deployed version id of the server
+7. Extract the version id of the server from the previous command's output. This value is referred to as `CURRENT_SERVER_ID` in step 8.
+8. You then use gradual deployment to deploy the server uploaded at step 1 to 0% `wrangler versions deploy <CURRENT_SERVER_ID>@100% <NEW_SERVER_VERSION_ID>@0% -y --config ./path-to/server-wrangler.jsonc`
+9. You then deploy the middleware at 100% `wrangler versions deploy <NEW_MIDDLEWARE_ID>@100% -y --config ./path-to/middlewareWrangler.jsonc`. At this stage you are already serving the new version of the website in production.
+10. To finish it off you deploy the server at 100% `wrangler versions deploy <NEW_SERVER_VERSION_ID>@100% -y --config ./path-to/server-wrangler.jsonc`.
+
+You can find actual implementations of such a deployment in the GitBook repo using Github actions [here](https://github.com/GitbookIO/gitbook/blob/main/.github/composite/deploy-cloudflare/action.yaml).
+
+#### Version Affinity Explained
+
+Version affinity ensures that requests are routed to workers running compatible versions:
+
+- The middleware sets `Cloudflare-Workers-Version-Overrides` header
+- This forces the request to go to the correct server worker version.
+- Prevents version mismatches during deployments

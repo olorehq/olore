@@ -1,0 +1,79 @@
+# Using Netlify Forms with Next.js
+
+Netlify Forms use [automatic detection of form tag attributes](https://docs.netlify.com/get-started/#set-up-netlify-forms) (example: `data-netlify`) at deploy time by scanning any static HTML files present or generated during the build.
+
+As a security and anti-spam measure, only form and field names that Netlify detects at deployment are recognized by Netlify. When submitting a form, the form target URL must also be a static file.
+
+However, modern Next.js versions do not generate fully-static HTML pages because any page can be revalidated at runtime. Instead, relevant pages are pre-rendered at build time, and then stored in Next.js’s cache for serving. This means that your Next.js pages, including any form tags and attributes, are not written to static HTML files at deployment, and therefore cannot be the form’s target page. Attributes related to Netlify Forms set in these pages have no effect.
+
+## Workaround for Netlify Forms
+
+Here's one way to work around this limitation:
+
+1. Create a new HTML file in the `public` directory of your site. This file would be used for deploy-time form detection only. It can have any name, for example `public/__forms.html`.
+2. In that file, add form tags for all your Netlify forms and fields. In the below example, note that only the bare minimum is needed, as users would not see this HTML page at all.
+
+   ```html
+   <html>
+     <head></head>
+     <body>
+       <form name="feedback" data-netlify="true" hidden>
+         <input type="hidden" name="form-name" value="feedback" />
+         <input name="name" type="text" />
+         <input name="email" type="text" />
+         <input name="message" type="text" />
+       </form>
+     </body>
+   </html>
+   ```
+
+3. In your dynamic page or form component, handle the submission by serving a `POST` request to the static HTML file you’ve created above (using the example above: `/__forms`).
+
+4. Once the request is completed, you should show a success notification or navigate to another page. Here’s a simplified example of the form component:
+
+   ```jsx
+   "use client";
+
+   export function FeedbackForm() {
+     const handleFormSubmit = async (event) => {
+       event.preventDefault();
+       const formData = new FormData(event.target);
+       await fetch("/__forms.html", {
+         method: "POST",
+         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+         body: new URLSearchParams(formData).toString(),
+       });
+       // Success and error handling ...
+     };
+
+     return (
+       <form name="feedback" onSubmit={handleFormSubmit}>
+         <input type="hidden" name="form-name" value="feedback" />
+         <input name="name" type="text" placeholder="Name" required />
+         <input name="email" type="text" placeholder="Email (optional)" />
+         <button type="submit">Submit</button>
+       </form>
+     );
+   }
+   ```
+
+## Live demo
+
+For a more complete example which includes handling of submission states (success, error or pending), visit the [live demo](https://nextjs-platform-starter.netlify.app/classics) or explore the code for the [form component](https://github.com/netlify-templates/next-platform-starter/blob/main/components/feedback-form.jsx) and the [required static file](https://github.com/netlify-templates/next-platform-starter/blob/main/public/__forms.html).
+
+## Prevent silent failures
+
+To prevent silent failures of form detection or submission, we now trigger an intentional build failure when suspecting your code is incompatible:
+
+```txt
+@netlify/plugin-nextjs@5 requires migration steps to support Netlify Forms. Refer to https://ntl.fyi/next-runtime-forms-migration for migration example.
+```
+
+This failure is triggered when both of the following conditions are met:
+
+- The adapter has found usage of `netlify` or `data-netlify` form attributes in your React code (which have no effect).
+- No static HTML file was found in your `public` directory having form attributes (thus marking that you’ve implemented the approach laid out above).
+
+### Skip the check
+
+If you believe that a check failure is incorrect or would like to defer handling the issue to a later time, you can skip this check by adding a `NETLIFY_NEXT_VERIFY_FORMS` environment variable to your site, with the value `false`.

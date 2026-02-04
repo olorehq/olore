@@ -1,0 +1,91 @@
+import { Callout } from "nextra/components";
+
+## Skew protection
+
+The Cloudflare adapter has _experimental support_ for skew protection based on [the preview URLs](https://developers.cloudflare.com/workers/configuration/previews/).
+
+<Callout type="info">
+  Preview URLs are disabled for [Workers that implement a Durable
+  Object](https://developers.cloudflare.com/workers/configuration/previews/#limitations). If your app uses
+  Durable Objects, they will need to be implemented in a separate Worker.
+</Callout>
+
+### How to enable the skew protection
+
+**OpenNext config**
+
+Set `cloudflare.skewProtection.enabled` to `true` to enable skew protection:
+
+```ts
+// open-next.config.ts
+export default {
+  // ...
+  cloudflare: {
+    skewProtection: {
+      enabled: true,
+      // Maximum number of previous versions to use.
+      // Optional, default to 20.
+      maxNumberOfVersions: 20,
+      // Age of the oldest version to use (from the last deplyment date)
+      // Optional, default to 7 days.
+      maxVersionAgeDays: 7,
+    },
+  },
+} satisfies OpenNextConfig;
+```
+
+**Wrangler configuration**
+
+The Worker needs to serve the correct version of the app assets. For that it need be be executed before incoming requests are matched against the assets. Set [`run_worker_first`](https://developers.cloudflare.com/workers/static-assets/binding/#run_worker_first) to `true` in your wrangler configuration to enable this behavior:
+
+```jsonc
+// wrangler.jsonc
+{
+  "name": "my-app",
+  // ...
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+  },
+  // ...
+}
+```
+
+**Environment variables**
+
+The following environment variables should be set when the skew protection is used:
+
+- `CF_WORKER_NAME` should be set to the name of the worker, i.e. `my-app` given the config above. If you're using environment, the name of the app should contain your env, i.e. `my-app-<env>`
+- `CF_PREVIEW_DOMAIN` is the the subdomain of `workers.dev` where the previews are deployed, i.e. `<version>-<worker_name>.<domain>.workers.dev`
+- `CF_WORKERS_SCRIPTS_API_TOKEN` is an API token with the `Workers Scripts:Read` permission
+- `CF_ACCOUNT_ID` is the Cloudflare account id where the app is deployed.
+
+Those variables are used to retrieve the past deployments of your application.
+
+Note that in this context, environment variables include both your local [Cloudflare environment variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
+and the process' environment variables. If a variable is set in both places, the process environment variable will take precedence.
+
+**Next config**
+
+You must set a different `deploymentId` in your next config each time your app is deployed. You will get an error if the `deployementId` has already been used by a previous deployment.
+
+The cloudflare adapter exports a `getDeploymentId()` function that can be used to generate a unique deployment id.
+
+```ts
+// next.config.ts
+import { getDeploymentId } from "@opennextjs/cloudflare";
+
+const nextConfig = {
+  // ...
+  deploymentId: getDeploymentId(),
+};
+```
+
+### What you should know
+
+- Because the Worker is configured to run in front of the assets Worker (`run_worker_first`), requesting an asset will count as a request to your Worker
+- Requesting an older deployment will generate 2 requests: the request to the latest version and the request to the older version
+- It is not currently possible to delete a deployment
+- Requests to an older deployment will be a few milli-seconds slower than requests to the latest version of the app
+- Request to a deployment older than the `maxNumberOfVersions` or older than `maxVersionAgeDays` will fallback to the current deployment

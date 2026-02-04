@@ -1,0 +1,322 @@
+Every option that you can use in `open-next.config.ts` will be listed here. This is the configuration file that you can use to customize the build.
+You can look at the [full example](full_example) to see how you can use these options.
+
+<br />
+
+import { Tabs } from "nextra/components";
+
+<Tabs items={['Server Options', 'General Build Options']}>
+<Tabs.Tab>
+  Servers here refers to all the different build outputs (Lambda, Node, Deno etc). Each server can have its own options. This also includes some server/function that only need to run at build time.
+
+Each server config will be under it's own key in the config object. Here are all the servers that you can configure:
+
+- Default Server - Key: `default` This is the default server, similar to the server-function in open-next v2
+- Splitted Server - Key: `functions` This is only used if you want to split the server into multiple servers. This is a special case, under this key you will define every splitted server.
+- External middleware - Key: `middleware` If you want to deploy your middleware separately from the default servers or functions, you can use this key.
+- Revalidate Function - Key: `revalidate` This is a special server that will handle the revalidation queue.
+- Image Optimization Server - Key: `imageOptimization` This server will handle `_next/image` optimization.
+- Warmer Function - Key: `warmer` This server is meant to be used as a warmer for the lambda function.
+- Initialization Function - Key: `initializationFunction` This is a special server that will run at build time to initialize the cache. By default it only initialize the tag cache.
+
+<Tabs items={['Common Options','Default Server', 'Splitted Server', 'External middleware','Image Optimization server', 'Revalidate function', 'Warmer function', 'Initialization Function']}>
+  <Tabs.Tab>
+      All these servers share some common options that you can use to customize them.
+
+      ### `minify`
+
+      This will try to minify the output of the server including `node_modules`. It is a boolean and by default, it is set to `false`.
+      It could lead to some issues with some packages, so it is recommended to test your app with this option before deploying it.
+
+      We will likely not fix issues related to this option, as it is usually library specific.
+
+      ### `override`
+
+      This is where you will be able to override some part of the server. For all of them you can provide what we call a `LazyLoadedOverride` which is a function that will return the override. For some example look at some [Custom overrides](custom_overrides).
+      All servers have some default override that you can override. You can look at the types [here](https://github.com/opennextjs/opennextjs-aws/blob/5b314b13b2907a4510e7f0cca6959f8da4eab310/packages/open-next/src/types/overrides.ts).
+
+      #### [`wrapper`](overrides/wrapper)
+
+      This is the entrypoint of the server.
+      Be aware that it might not be enough to change this to make it work on said platform. This is only the entrypoint, you might need to change other parts of the server to make it work on the platform.
+
+      Possible values are: `aws-lambda`, `aws-lambda-streaming`, `cloudflare-edge`, `cloudflare-node`, `node`, `express-dev`, `dummy` or a `LazyLoadedOverride` that will return the wrapper.
+
+      #### [`converter`](overrides/converter)
+
+      This is the converter that will be used to convert the input and output for the server.
+
+      Possible values are: `aws-apigw-v2`, `aws-apigw-v1`, `aws-cloudfront`, `edge`, `node`, `sqs-revalidate`, `dummy` or a `LazyLoadedOverride` that will return the converter.
+
+      #### `install`
+
+      Install options for the server. This is used to install additional packages. It is an object with the options below.
+
+      For image optimization, it will install sharp by default
+
+      ##### `packages` - Mandatory
+
+      This is an array of packages that will be installed in the server. It is an array of string.
+      Installing stuff on the default server (or one of the splitted one) might require some extra config on Next side to avoid duplicates
+
+      ##### `arch`
+
+      This is the architecture of the server. It is a string and by default, it is set to `x64`.
+
+      Possible values are: `x64`, `arm64`
+
+      ##### `nodeVersion`
+
+      This option will be passed to the postinstall script of sharp. It is used by `node-gyp`.
+
+      ##### `libc`
+
+      Override libc of native modules to install.
+
+      Possible values are: `glibc`, `musl`
+
+      ##### `additionalArgs`
+
+      Additional arguments to pass to the install command (npm install). It is a string that will get appended to the `npm install` command.
+
+      Here is an example of how to install sharp on your default server function with ARM64 architecture:
+
+      ```ts
+      import type { OpenNextConfig } from '@opennextjs/aws/types/open-next';
+      const config = {
+      default: {
+        install: {
+          packages: ['sharp@0.33.5'],
+          arch: 'arm64',
+        },
+      },
+      } satisfies OpenNextConfig;
+
+      export default config;
+      ```
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+      ### `runtime`
+
+      Runtime used for the server. The default server only support `node` or `deno`.
+
+      The `edge` runtime can only be used for splitted server and only support one route per server.
+      This also requires the route to be using the edge runtime from Next.js.
+
+      Possible values are: `node`, `deno`, `edge`
+
+      ### `placement`
+
+      Option to determine where the server will be deployed. On a single region or on multiple regions at the edge.
+
+      This options does not have any effect on the build output, but is just an indication for IAC tools to know where to deploy the server.
+
+      Possible values are: `regional`, `global`
+
+      ### `experimentalBundledNextServer`
+      Bundle Next server into a single file.
+      This results in a way smaller bundle but it might break for some cases.
+
+      This option is deprecated and doesn't work for Next 14.2+.
+
+      ### `override`
+
+      For both default and splitted server, in addition to `override` in the common options, you can also use the following options:
+
+      #### [`incrementalCache`](overrides/incremental_cache)
+
+      Add possibility to override the default s3 cache. Used for fetch cache and html/rsc/json cache.
+
+      Possible values are: `s3`, `s3-lite`, `multi-tier-ddb-s3`, `fs-dev`, `dummy` or a `LazyLoadedOverride` that will return the incremental cache.
+
+      #### [`tagCache`](overrides/tag_cache)
+
+      Add possibility to override the default tag cache. Used for revalidateTags and revalidatePath.
+
+      Possible values are: `dynamodb`, `dynamodb-lite`, `fs-dev`, `dummy` or a `LazyLoadedOverride` that will return the tag cache.
+
+      #### [`queue`](overrides/queue)
+
+      Add possibility to override the default queue. Used for ISR revalidation requests.
+
+      Possible values are: `sqs`, `sqs-lite`, `dummy` or a `LazyLoadedOverride` that will return the queue.
+
+      #### [`proxyExternalRequest`](overrides/proxy_external_request)
+
+      Add possibility to override the default proxy for external request (i.e. next config external rewrites or middleware rewrites). Used in the external middleware or one of the server function.
+
+      Possible values are: `node`, `fetch`, `dummy` or a `LazyLoadedOverride` that will return the proxy. Default is `node`
+
+      #### [`cdnInvalidation`](overrides/automatic_cdn_invalidation)
+
+      Add possibility to override the CDN invalidation override. Used for on-demand invalidation with `revalidatePath()`, `revalidateTag()` and `res.revalidate()`.
+
+      Possible values are: `cloudfront`, `dummy` or a `LazyLoadedOverride` that will return the invalidatePaths. This override is disabled by default.
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+      Every splitted server will have the same options as the default server. In addition to that, you can use the following options:
+
+      ### `routes` - Mandatory
+
+      Here you should specify all the routes you want to use.
+      For app routes, you should use the `app/${name}/route` format or `app/${name}/page` for pages.
+      For pages, you should use the `page/${name}` format.
+
+      For example:
+      ```ts
+      routes: ["app/api/test/route", "app/page", "pages/admin"]
+      ```
+
+      ### `patterns` - Mandatory
+
+      Specify the patterns that will be used to match the routes. It is an array of string.
+      It needs to be cloudfront compatible.
+
+      For example:
+      ```ts
+      patterns: [
+      // This one will match all the routes that start with /api/
+      "/api/*",
+      // For a single route, this one will only match /page
+      "/page",
+      ]
+      ```
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+      ### `external` - Mandatory
+      Only possible value is true. This is used to specify that this server is an external middleware.
+
+      ### `override`
+
+      It uses the same options as the default server. `incrementalCache`, `tagCache` and `queue` are only used when `enableCacheInterception` is set to true.
+
+      ### [`originResolver`](overrides/origin_resolver)
+
+      Origin resolver is used to resolve the origin for internal rewrite. By default, it uses the pattern-env origin resolver.
+
+      Possible values are: `pattern-env`, `dummy` or a `LazyLoadedOverride` that will return the origin resolver.
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+      Image optimization server is a special server that will handle the `_next/image` optimization. Besides the common options, you can use the following options:
+
+      ### [`loader`](overrides/image_loader)
+      The image loader is used to load the image from the source.
+
+      Possible values are: `s3`, `s3-lite`, `host`, `fs-dev`, `dummy` or a `LazyLoadedOverride` that will return the loader.
+
+  </Tabs.Tab>
+
+<Tabs.Tab>Revalidate doesn't have any specific options. It only uses the common options.</Tabs.Tab>
+
+  <Tabs.Tab>
+
+      Warmer is a special server that will be used to warm the lambda function. Besides the common options, you can use the following options:
+
+      ### [`invokeFunction`](overrides/invoke_function)
+
+      By default, works for lambda only.
+      If you override this, you'll need to handle the warmer event in the wrapper
+
+      Possible values are: `aws-lambda`, `dummy` or a `LazyLoadedOverride` that will return the invoke function.
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+
+      Initialization function is a special server that will run at build time to initialize the cache. By default, it only initializes the tag cache. Besides the common options, you can use the following options:
+
+      ### `tagCache`
+
+      Add possibility to override the default tag cache used for the initialization function.
+
+      Possible values are: `dynamodb`, `dynamodb-lite`, `fs-dev`, `dummy` or a `LazyLoadedOverride` that will return the tag cache.
+
+  </Tabs.Tab>
+
+</Tabs>
+
+</Tabs.Tab>
+<Tabs.Tab>
+These options are at the top level of your config object.
+
+### `buildCommand`
+
+This is the command that will be run to build your Next.js app. By default, it tries to find your package manager and will run `npm run build`. It supports npm, pnpm, yarn (not pnp) and bun.
+
+If you want to specify a different command, you can do so here.
+
+### `appPath`
+
+The path to the root of the Next.js app's source code. This path is relative from the current process.cwd().
+
+By default, it is set to `.`
+
+### `buildOutputPath`
+
+The path to the target folder of build output from the `buildCommand` option (the path which will contain the `.next` and `.open-next` folders). This path is relative from the current process.cwd()
+
+By default, it is set to `.`
+
+### `packageJsonPath`
+
+The path to the package.json file of the Next.js app. This path is relative from the current process.cwd().
+
+### `edgeExternals` - Advanced usage
+
+If you use the edge runtime somewhere (either in the middleware or in the functions), we compile 2 versions of the open-next.config.ts file. One for the node runtime and one for the edge runtime.
+
+This option allows you to specify the externals for the edge runtime used in esbuild for the compilation of open-next.config.ts
+It is especially useful if you use some custom overrides only in node
+
+### `dangerous`
+
+These are options that you should only use if you know what you are doing. It can break your app at runtime if not used correctly.
+It is also the place where you could find some experimental features.
+
+---
+
+#### `disableTagCache`
+
+This will disable the tag cache. You can disable it safely if you only use page router.
+It is used for `revalidateTag` and `revalidatePath`.
+It's a boolean and by default, it is set to `false`.
+
+#### `disableIncrementalCache`
+
+This will disable the incremental cache. It is generally not recommended, as this is necessary for ISR **AND** SSG routes as well as the fetch cache.
+It's a boolean and by default, it is set to `false`.
+
+#### `enableCacheInterception` - Experimental
+
+This will enable cache interception. It will allow you to intercept the cache system directly inside OpenNext routing layer and serve the page directly from the cache without going through `NextServer`.
+
+If the cache interception fail, the request will be forwarded to the `NextServer` as usual.
+
+#### `headersAndCookiesPriority`
+
+Function to determine which headers or cookies takes precedence.
+By default, the middleware headers and cookies will override the handler headers and cookies.
+
+This is executed for every request and after next config headers and middleware has executed.
+Here is a very simple example of how you can use it:
+
+```ts
+// In this case, if the request starts with /api, the middleware headers and cookies will take precedence otherwise the handler headers and cookies will take precedence
+headersAndCookiesPriority: (event) => {
+  if (event.rawPath.startsWith('/api')) {
+    return 'middleware';
+  }
+  return 'handler';
+},
+```
+
+</Tabs.Tab>
+</Tabs>

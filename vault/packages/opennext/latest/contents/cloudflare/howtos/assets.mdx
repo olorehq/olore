@@ -1,0 +1,56 @@
+## Static assets (public folder)
+
+The [static assets of Next located in the public folder](https://nextjs.org/docs/app/api-reference/file-conventions/public-folder) are served using [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/).
+
+Workers Static Assets can intercept requests to the application ([`run_worker_first=false`](https://developers.cloudflare.com/workers/static-assets/) which is the default). This is the most cost efficient option as asset requests will not be billed in that case.
+
+Another option is to run the Worker first (`run_worker_first=true`) to offer more flexibility at the expense of a higher cost.
+
+Note that `run_worker_first` could also be set to a list of patterns - this is a great option if you need more flexibility for only a subset of the static assets.
+
+### run_worker_first=false
+
+When `run_worker_first` is set to `false`, requests are intercepted before reaching the worker and are not billed:
+
+```jsonc
+// wrangler.jsonc
+{
+  "name": "my-app",
+  // ...
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    // Optional as false is the default value
+    "run_worker_first": false,
+  },
+  // ...
+}
+```
+
+This is the most cost efficient option to use when you do not need to serve assets behind the middleware or Next rewrites and headers from [the Next config](https://nextjs.org/docs/app/api-reference/config/next-config-js).
+
+When `run_worker_first=false` you can still configure [headers](https://developers.cloudflare.com/workers/static-assets/headers/) and [redirects](https://developers.cloudflare.com/workers/static-assets/redirects/) via Worker Static Assets.
+
+### run_worker_first=true
+
+When `run_worker_first` is set to `true`, all the requests will reach the Worker and be billed:
+
+```jsonc
+// wrangler.jsonc
+{
+  "name": "my-app",
+  // ...
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+  },
+  // ...
+}
+```
+
+The Open Next asset resolver will be used to retrieve the assets from the Worker.
+
+When `run_worker_first=true`, assets are served behind the middleware and Next rewrites and headers from [the Next config](https://nextjs.org/docs/app/api-reference/config/next-config-js). The [headers](https://developers.cloudflare.com/workers/static-assets/headers/) and [redirects](https://developers.cloudflare.com/workers/static-assets/redirects/) configured for the Worker Static Assets do not apply in this case.
+
+`run_worker_first=true` should be used if you plan to use skew protection.

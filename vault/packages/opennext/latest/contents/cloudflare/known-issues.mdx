@@ -1,0 +1,31 @@
+### Known issues
+
+#### Caching Durable Objects (`DOQueueHandler` and `DOShardedTagCache`)
+
+If your app uses [Durable Objects](https://developers.cloudflare.com/durable-objects/) for caching, you might see a warning while building your app:
+
+```text
+┌─────────────────────────────────┐
+│ OpenNext — Building Next.js app │
+└─────────────────────────────────┘
+
+
+> next build
+
+   ▲ Next.js 15.2.4
+
+▲ [WARNING] 				You have defined bindings to the following internal Durable Objects:
+
+  				- {"name":"NEXT_CACHE_DO_QUEUE","class_name":"DOQueueHandler"}
+  				These will not work in local development, but they should work in production.
+
+  				If you want to develop these locally, you can define your DO in a separate Worker, with a
+  separate configuration file.
+  				For detailed instructions, refer to the Durable Objects section here:
+  https://developers.cloudflare.com/workers/wrangler/api#supported-bindings
+
+   Creating an optimized production build ...
+workerd/server/server.c++:1951: warning: A DurableObjectNamespace in the config referenced the class "DOQueueHandler", but no such Durable Object class is exported from the worker. Please make sure the class name matches, it is exported, and the class extends 'DurableObject'. Attempts to call to this Durable Object class will fail at runtime, but historically this was not a startup-time error. Future versions of workerd may make this a startup-time error.
+```
+
+The warning can be safely ignored as the caching Durable Objects are not used during the build.

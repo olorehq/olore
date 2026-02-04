@@ -1,0 +1,193 @@
+#### Debug mode
+
+OpenNext can be executed in debug mode by setting the environment variable `OPEN_NEXT_DEBUG=true`.
+
+This will output **A LOT** of additional logs to the console.This also disable minifying in esbuild, and add source maps to the output. This can result in code that might be up to 2-3X larger than the production build. **Do not enable this in production**
+
+```bash
+OPEN_NEXT_DEBUG=true npx open-next@latest build
+```
+
+#### Cannot find module next
+
+You might stumble upon this error inside cloudwatch logs: `Cannot find module 'next'`. It is likely that you are in a monorepo and you have several lock files. **Just make sure that you have a single lock file in the root of your project.**
+
+#### Reducing bundle size
+
+Next might incorrectly include some dependencies in the bundle. To remove them you can use this configuration inside `next.config.js`:
+
+```javascript
+outputFileTracingExcludes: { // or experimental.outputFileTracingExcludes on Next < 15
+  "*": ["node_modules/the-unwanted-package"],
+},
+```
+
+You should also not add sharp as a dependency unless absolutely necessary, the image optimization already has it's own version of sharp. By default OpenNext excludes these packages:
+
+- `caniuse-lite`
+- `sharp`
+- `@img`
+- `typescript`
+- `next/dist/compiled/babel`
+- `next/dist/compiled/babel-packages`
+- `next/dist/compiled/amphtml-validator`
+
+##### Remove sourcemaps
+
+Source maps could add a lot to the bundle, excluding them from standalone output could be worth it.
+For example, Sentry does not remove server side sourcemaps, only client ones, even if "deleteSourcemapsAfterUpload" is true. [See the Sentry source code](https://github.com/getsentry/sentry-javascript/blob/develop/packages/nextjs/src/config/webpackPluginOptions.ts#L83).
+
+You could exclude sourcemaps similarly:
+
+```javascript
+outputFileTracingExcludes: {
+  "*": [
+    './**/*.js.map',
+    './**/*.mjs.map',
+    './**/*.cjs.map'
+  ],
+},
+```
+
+#### Patch fetch behaviour for ISR. Only for next@13.5.1+
+
+If you use ISR and fetch in your app, you may encounter a bug that makes your revalidate values inconsistent.
+The issue is that it revalidates using the lowest revalidate of all fetch calls in your page, regardless of their individual values. To fix this bug, you need to modify the fetch function in your root layout component with the following code snippet
+
+```ts
+export default function RootLayout() {
+  const asyncStorage = require('next/dist/client/components/static-generation-async-storage.external');
+  //@ts-ignore
+  const staticStore =
+    (fetch as any).__nextGetStaticStore?.() ||
+    asyncStorage.staticGenerationAsyncStorage;
+  const store = staticStore.getStore();
+  store.isOnDemandRevalidate =
+    store.isOnDemandRevalidate && !(process.env.OPEN_NEXT_ISR === 'true');
+  return <>...</>;
+}
+```
+
+#### Access Denied errors on routes during page refresh and direct URL access
+
+If you are refreshing a dynamic/static route or going to that route directly from an URL. Like this route f.ex:
+`/profile/[userId]/[id]`, and you are getting an `Access Denied` error in XML:
+
+```xml
+<Error>
+   <Code>AccessDenied</Code>
+   <Message>Access Denied</Message>
+   <RequestId>R4E6T9G2Q1S0Z5X8</RequestId>
+   <HostId>S7h9F3g2T0z5K8d6A2s1W4x3C7v8B9m2L0j3K4i7H8g9F0r3A5q8w9E8r7t6Y5h4U3i2O1p0</HostId>
+</Error>
+```
+
+This can also happen in app router when a client navigates via NextJS `<Link>` component.
+
+The issue might be that your having a folder or file in your `public` directory with an overlapping between the name and your route. In this case, you should rename that to something else.
+
+#### `cannot find module './chunks/xxxx.js'` error
+
+Dynamic imports in `instrumentation.ts` will cause this error at runtime. Remove dynamic imports to resolve.
+
+#### Sentry server side setup
+
+The config recommended by Sentry docs uses dynamic imports in `instrumentation.ts`, which causes the above error.
+
+Here's a working Sentry config which resolves the error:
+
+`instrumentation.ts`
+
+```typescript
+import * as Sentry from "@sentry/nextjs";
+import { initSentry } from "../sentry.server.config";
+
+export const onRequestError = Sentry.captureRequestError;
+
+export async function register() {
+  initSentry(process.env.NEXT_RUNTIME as "nodejs" | "edge");
+}
+```
+
+`sentry.server.config.ts`
+
+```typescript
+import * as Sentry from "@sentry/nextjs";
+
+export const initSentry = (runtime: "nodejs" | "edge") => {
+  Sentry.init({
+    dsn: "https://...",
+
+    //...rest of your config
+  });
+};
+```
+
+#### Empty body in response when streaming in AWS Lambda
+
+We have seen trouble in the past with streaming hanging in AWS Lambda when the response body is empty.
+We currently have a workaround in OpenNext for this by setting the environment variable `OPEN_NEXT_FORCE_NON_EMPTY_RESPONSE` to `true`.
+This will write something to the stream to make sure it is not empty.
+
+#### The Yarn Plug'n'Play manifest forbids importing "xxx" here because it's not listed as a dependency of this package
+
+This error is usually resolved by removing all yarn files in your repo. You should also look in your `package.json` and see if you have `yarn` set as `packageManager` there. Removing it will solve the issue.
+If you use `yarn` there is a workaround [here](https://stackoverflow.com/a/76902985).
+
+If you are not using `yarn` and you see `yarn` related errors it might be solved by running `corepack disable` or updating `nvm` to `0.40.2`.
+
+#### A file/dependency is missing from my bundle
+
+Sometimes there might be a file missing from your server functions bundle. An example could be `sentry.server.config.ts`. It can be any file or directory and it also accept globs. In Next there is an option to include files that were not picked up by tracing.
+Its called `outputFileTracingIncludes`. Here is an example on how to use it in `next.config.ts`:
+
+```ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  outputFileTracingIncludes: {
+    "*": ["sentry.server.config.ts"],
+    // can also be a glob pattern
+    "/api/*": ["node_modules/.prisma/client/**/*"],
+  },
+};
+
+export default nextConfig;
+```
+
+This will copy the file to `.open-next/server-functions/default/sentry.server.config.ts`, or every splitted function in this case.
+To read more about `outputFileTracingIncludes` you can refer to the [Next.js documentation](https://nextjs.org/docs/pages/api-reference/config/next-config-js/output#caveats).
+
+It works with function splitting in OpenNext aswell. If your key corresponds to a specific route (i.e: `api/test`), it will be included only in the function bundle for that route.
+Using `*` as a key, however, will include it in every function bundle. Here is an example with function splitting:
+
+```ts
+// open-next.config.ts
+import type { OpenNextConfig } from "@opennextjs/aws/types/open-next";
+const config = {
+  default: {},
+  functions: {
+    extraFunction: {
+      patterns: ["api/test"],
+      // this is the route that will be used in this function
+      routes: ["app/api/test/route"],
+      override: {
+        wrapper: "aws-lambda-streaming",
+      },
+    },
+  },
+} satisfies OpenNextConfig;
+
+// next.config.ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    // these files will be copied only to the extraFunction bundle
+    "/api/test": ["sentry.config.ts", "node_modules/.prisma/client/**/*"],
+  },
+};
+```
+
+It will also work in a monorepo. Lets say you have your Next app in `packages/web`, the files will be written to: `packages/web/.open-next/server-functions/default/packages/web/*`
