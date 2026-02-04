@@ -1,0 +1,198 @@
+export const metadata = {
+  title: "Customization",
+  description:
+    "Learn how to customize the library to suit your needs by overriding the default behaviors.",
+};
+
+# Customization
+
+Below are some examples of how you can customize the behavior of the library. The default values are shown in the snippets below.
+
+## Skipping validation
+
+<Callout type="warning">
+
+Skipping validation is not encouraged and will lead to your types and runtime values being out of sync. It is available to let you opt out of validation during linting (or similar), or if you're building with Docker and not all environment variables are present when building the image.
+
+</Callout>
+
+When enabled, validation will be skipped for both your environment variables and any [extended presets](#extending-presets).
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+
+export const env = createEnv({
+  // ...
+  // Tell the library to skip validation if condition is true.
+  skipValidation: false,
+});
+```
+
+## Overriding the default error handler
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+
+export const env = createEnv({
+  // ...
+  // Called when the schema validation fails.
+  onValidationError: (issues: StandardSchemaV1.Issue[]) => {
+    console.error(
+      "❌ Invalid environment variables:",
+      issues
+    );
+    throw new Error("Invalid environment variables");
+  },
+  // Called when server variables are accessed on the client.
+  onInvalidAccess: (variable: string) => {
+    throw new Error(
+      "❌ Attempted to access a server-side environment variable on the client"
+    );
+  },
+});
+```
+
+## Tell when we're in a server context
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+
+export const env = createEnv({
+  // ...
+  // Tell the library when we're in a server context.
+  isServer: typeof window === "undefined",
+});
+```
+
+## Treat empty strings as undefined
+
+By default, T3 Env will feed the environment variables directly to the Zod validator. This means that if you have an empty string for a value that is supposed to be a number (e.g. `PORT=` in a ".env" file), Zod will flag
+it as a type mismatch violation. Additionally, if you have an empty string for a value that is supposed to be a string with a default value (e.g. `DOMAIN=`in an ".env" file), the default value will never be applied. In order to solve these issues, you can set the`emptyStringAsUndefined`option to`true`.
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+
+export const env = createEnv({
+  // ...
+  // Treat empty strings as undefined.
+  emptyStringAsUndefined: false,
+});
+```
+
+## Extending presets
+
+Your env object may extend other presets by using the `extends` property. This can be used to include system environment variables for your deployment provider, or if you have a monorepo with multiple packages that share some environment variables.
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+import { vercel } from "@t3-oss/env-core/presets-zod";
+
+export const env = createEnv({
+  // ...
+  // Extend the Vercel preset.
+  extends: [vercel()],
+});
+
+env.VERCEL_URL; // string
+```
+
+### Available validators
+
+Presets are available for multiple [Standard Schema](/docs/standard-schema) compliant validators. Choose the import that matches your validator:
+
+- `@t3-oss/env-core/presets-zod` - Presets using [Zod](https://zod.dev)
+- `@t3-oss/env-core/presets-valibot` - Presets using [Valibot](https://valibot.dev)
+- `@t3-oss/env-core/presets-arktype` - Presets using [ArkType](https://arktype.io)
+
+```ts title="src/env.ts (using Valibot)"
+import { createEnv } from "@t3-oss/env-core";
+import { vercel } from "@t3-oss/env-core/presets-valibot";
+import * as v from "valibot";
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: v.pipe(v.string(), v.url()),
+  },
+  extends: [vercel()],
+  runtimeEnv: process.env,
+});
+```
+
+<Callout type="info">
+
+Using the preset import that matches your validator ensures you only bundle the validator you're actually using, optimizing your bundle size.
+
+</Callout>
+
+### Available presets
+
+T3 Env ships the following presets out of the box, all importable from the `/presets` entrypoint.
+
+- `vercel` - Vercel environment variables. See full list [here](https://vercel.com/docs/projects/environment-variables/system-environment-variables#system-environment-variables).
+- `neonVercel` - Neon provided system environment variables when using the Vercel integration. See full list [here](https://neon.tech/docs/guides/vercel-native-integration#environment-variables-set-by-the-integration).
+- `supabaseVercel` - Supabase provided system environment variables when using the Vercel integration. See full list [here](https://vercel.com/marketplace/supabase).
+- `uploadthing` - All environment variables required to use [UploadThing](https://uploadthing.com/). More info [here](https://docs.uploadthing.com/getting-started/appdir#add-env-variables).
+- `render` - Render environment variables. See full list [here](https://docs.render.com/environment-variables#all-runtimes).
+- `railway` - Railway provided system environment variables. See full list [here](https://docs.railway.app/reference/variables#railway-provided-variables).
+- `fly.io` - Fly.io provided machine runtime environment variables. See full list [here](https://fly.io/docs/machines/runtime-environment/#environment-variables).
+- `netlify` - Netlify provided system environment variables. See full list [here](https://docs.netlify.com/configure-builds/environment-variables).
+- `upstashRedis` - Upstash Redis environment variables. More info [here](https://upstash.com/docs/redis/howto/connectwithupstashredis).
+- `coolify` - Coolify environment variables. More info [here](https://coolify.io/docs/knowledge-base/environment-variables#predefined-variables).
+- `vite` - Vite environment variables. More info [here](https://vite.dev/guide/env-and-mode).
+- `wxt` - WXT environment variables. More info [here](https://wxt.dev/guide/essentials/config/environment-variables.html#built-in-environment-variables).
+
+<Callout type="info">
+  Feel free to open a PR with more presets!
+</Callout>
+
+A preset is just like any other env object, so you can easily create your own:
+
+```ts
+// packages/auth/env.ts
+import { createEnv } from "@t3-oss/env-core";
+export const env = createEnv({
+  // ...
+});
+
+// apps/web/env.ts
+import { createEnv } from "@t3-oss/env-nextjs";
+import { env as authEnv } from "@repo/auth/env";
+
+export const env = createEnv({
+  // ...
+  extends: [authEnv],
+});
+```
+
+## Further refinement or transformation
+
+You can use the `createFinalSchema` option to further refine or transform the environment variables.
+
+```ts title="src/env.ts"
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
+
+export const env = createEnv({
+  server: {
+    SKIP_AUTH: z.boolean().optional(),
+    EMAIL: z.string().email().optional(),
+    PASSWORD: z.string().min(1).optional(),
+  },
+  // ...
+  createFinalSchema: (shape, isServer) =>
+    z.object(shape).transform((env, ctx) => {
+      if (env.SKIP_AUTH || !isServer) return { SKIP_AUTH: true } as const;
+      if (!env.EMAIL || !env.PASSWORD) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "EMAIL and PASSWORD are required if SKIP_AUTH is false",
+        });
+        return z.NEVER;
+      }
+      return {
+        EMAIL: env.EMAIL,
+        PASSWORD: env.PASSWORD,
+      };
+    }),
+});
+```
