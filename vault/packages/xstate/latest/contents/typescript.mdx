@@ -1,0 +1,249 @@
+---
+title: TypeScript
+---
+
+XState v5 and its related libraries are written in [TypeScript](https://www.typescriptlang.org), and utilize complex types to provide the best type safety and inference possible for you.
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the **latest TypeScript version**.
+
+</Callout>
+
+Follow these guidelines to ensure that your TypeScript project is ready to use XState v5:
+
+## Use the latest version of TypeScript
+
+Use the latest version of TypeScript; version 5.0 or greater is required.
+
+```bash
+   npm install typescript@latest --save-dev
+```
+
+## Set up your `tsconfig.json` file
+
+- Set [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) to `true` in your `tsconfig.json` file. This will ensure that our types work correctly and help catch errors in your code. **(Strongly recommended)**.
+- Set [`skipLibCheck`](https://www.typescriptlang.org/tsconfig#skipLibCheck) to `true` in your `tsconfig.json` file. (Recommended).
+
+```json5
+// tsconfig.json
+{
+  compilerOptions: {
+    // ...
+    // [!code highlight:1]
+    strictNullChecks: true,
+    // or set `strict` to true, which includes `strictNullChecks`
+    // "strict": true,
+
+    // [!code highlight:1]
+    skipLibCheck: true,
+  },
+}
+```
+
+## Specifying types
+
+The recommended way to strongly type your machine is to use the `setup(...)` function:
+
+```ts
+import { setup } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as { feedback: string },
+    events: {} as { type: 'feedback.good' } | { type: 'feedback.bad' },
+  },
+  actions: {
+    logTelemetry: () => {
+      // TODO: implement
+    },
+  },
+}).createMachine({
+  // ...
+});
+```
+
+You can also specify TypeScript types inside the [machine config](machines) using the `.types` property:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  types: {} as {
+    context: { feedback: string };
+    events: { type: 'feedback.good' } | { type: 'feedback.bad' };
+    actions: { type: 'logTelemetry' };
+  },
+});
+```
+
+These types will be inferred throughout the machine config and in the created machine and actor so that methods such as `machine.transition(...)` and `actor.send(...)` will be type-safe.
+
+## Dynamic parameters
+
+It is recommended to use dynamic parameters in [actions](./actions) and [guards](./guards) as they allow you to make reusable functions that are not closely tied to the machine, and are strongly-typed.
+
+```ts
+import { setup } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as {
+      user: { name: string };
+    },
+  },
+  actions: {
+    greet: (_, params: { name: string }) => {
+      console.log(`Hello, ${params.name}!`);
+    },
+  },
+}).createMachine({
+  context: {
+    user: {
+      name: 'David',
+    },
+  },
+  // ...
+  entry: {
+    type: 'greet',
+    params: ({ context }) => ({
+      name: context.user.name,
+    }),
+  },
+});
+```
+
+## Asserting events
+
+### Actions and Guards
+
+<Callout>
+
+It is strongly recommended to use dynamic parameters instead of directly accessing the event object whenever possible for improved type safety and reusability.
+
+</Callout>
+
+If using dynamic parameters is infeasible and you must use the event in an action or guard implementation, you can assert the event type using the `assertEvent(...)` helper function:
+
+```ts
+import { createMachine, assertEvent } from 'xstate';
+
+const machine = createMachine({
+  types: {
+    events: {} as
+      | { type: 'greet'; message: string }
+      | { type: 'log'; message: string }
+      | { type: 'doSomethingElse' },
+  },
+  // ...
+  states: {
+    someState: {
+      entry: ({ event }) => {
+        // In the entry action, it is currently not possible to know
+        // which event this action was called with.
+
+        // Calling `assertEvent` will throw if
+        // the event is not the expected type.
+        // [!code highlight:1]
+        assertEvent(event, 'greet');
+
+        // Now we know the event is a `greet` event,
+        // and we can access its `message` property.
+        console.log(event.message.toUpperCase());
+      },
+      // ...
+      exit: ({ event }) => {
+        // You can also assert multiple possible event types.
+        // [!code highlight:1]
+        assertEvent(event, ['greet', 'log']);
+
+        // Now we know the event is a `greet` or `log` event,
+        // and we can access its `message` property.
+        console.log(event.message.toUpperCase());
+      },
+    },
+  },
+});
+```
+
+### Invoked Actor Input
+
+Another case where it helpful to use `assertEvent` is when specifying `input` for an invoked actor. The `event` received could be any one of the events received by that actor. In order for TypeScript to recognize the event type and its properties, you can use `assertEvent` to narrow down the event type.
+
+```ts
+import { createMachine, assertEvent } from 'xstate';
+
+const machine = createMachine({
+  types: {
+    events: {} as
+      | { type: 'messageSent'; message: string }
+      | { type: 'incremented'; count: number },
+  },
+  actors: {
+    someActor: fromPromise<void, { message: string }>(({ input }) => {
+      // actor implementation
+    }),
+  }
+  // ...
+  states: {
+    someState: {
+      invoke: {
+        src: 'someActor',
+        input: ({ event }) => {
+          // [!code highlight:1]
+          assertEvent(event, 'messageSent');
+
+          return { message: event.message };
+        },
+      },
+    },
+  },
+});
+```
+
+## Type helpers
+
+XState provides some type helpers to make it easier to work with types in TypeScript.
+
+### `ActorRefFrom<T>`
+
+Results in an `ActorRef` from the provided `T` actor logic parameter, which is useful for creating strongly-typed actors. The `T` parameter can be any `ActorLogic`, such as the return value of `createMachine(…)`, or any other actor logic, such as `fromPromise(…)` or `fromObservable(…)`.
+
+```ts
+import { type ActorRefFrom } from 'xstate';
+import { someMachine } from './someMachine';
+
+type SomeActorRef = ActorRefFrom<typeof someMachine>;
+```
+
+### `SnapshotFrom<T>`
+
+Results in a `Snapshot` from the provided `T` parameter, which is useful for creating strongly-typed snapshots. The `T` parameter can be any `ActorLogic` or `ActorRef`.
+
+```ts
+import { type SnapshotFrom } from 'xstate';
+import { someMachine } from './someMachine';
+
+type SomeSnapshot = SnapshotFrom<typeof someMachine>;
+```
+
+### `EventFromLogic<T>`
+
+Results in an union of all event types defined in the provided `T` actor logic parameter. Useful for type-safe event handling.
+
+```ts
+import { type EventFromLogic } from 'xstate';
+import { someMachine } from './someMachine';
+
+// SomeEvent would be a union of all event
+// types defined in `someMachine`.
+type SomeEvent = EventFromLogic<typeof someMachine>;
+```
+
+## Typegen
+
+[Typegen](/docs/developer-tools#xstate-typegen-files) is not supported in XState version 5. However, with the `setup(...)` function and/or the `.types` property explained above, you can provide strong typing for most (if not all) of your machine.
+
+If you were previously using typegen to narrow down events used in actions or guards, you can use [the `assertEvent(...)` helper function](#asserting-events) to narrow down the event type.

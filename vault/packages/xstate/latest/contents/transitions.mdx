@@ -1,0 +1,699 @@
+---
+title: Events and transitions
+---
+
+A **transition** is a change from one finite state to another, triggered by an event.
+
+An **event** is a signal, trigger, or message that causes a transition. When an actor receives an event, its machine will determine if there are any enabled transitions for that event in the current state. If enabled transitions exist, the machine will take them and execute their actions.
+
+<Callout>
+
+You can visualize your state machines and easily add transitions in our drag-and-drop Stately editor. [Read more about transitions in Stately's editor](/docs/editor-states-and-transitions/#transitions-and-events).
+
+</Callout>
+
+<EmbedMachine
+  name="Video player"
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=9630e3b7-9f8e-4dc9-8b55-661f854d28b7&mode=Simulate"
+/>
+
+Transitions are "deterministic"; each combination of state and event always points to the same next state. When a state machine receives an event, only the active finite states are checked to see if any of them have a transition for that event. Those transitions are called **enabled transitions**. If there is an enabled transition, the state machine will execute the transition's actions, and then transition to the target state.
+
+Transitions are represented by `on:` in a state:
+
+```ts
+import { createMachine } from 'xstate';
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'question',
+  states: {
+    question: {
+      on: {
+        'feedback.good': {
+          target: 'thanks',
+        },
+      },
+    },
+    thanks: {},
+  },
+});
+```
+
+## Event objects
+
+In XState, events are represented by event objects with a `type` property and optional payload:
+
+- The `type` property is a string that represents the event type.
+- The payload is an object that contains additional data about the event.
+
+```ts
+feedbackActor.send({
+  // The event type
+  type: 'feedback.update',
+  // Additional payload
+  feedback: 'This is great!',
+  rating: 5,
+});
+```
+
+## Selecting transitions
+
+Transitions are selected by checking the deepest child states first. If the transition is enabled (i.e. if its guard passes), it will be taken. If not, the parent state will be checked, and so on.
+
+1. Start on the deepest active state nodes (aka atomic state nodes)
+2. If the transition is enabled (no `guard` or its `guard` evaluates to `true`), select it.
+3. If no transition is enabled, go up to the parent state node and repeat step 1.
+4. Finally, if no transitions are enabled, no transitions will be taken, and the state will not change.
+
+## Self-transitions [#self-transitions]
+
+A state can transition to itself. This is known as a **self-transition**, and is useful for changing context and/or executing actions without changing the finite state. You can also use self-transitions to restart a state.
+
+**Root self-transitions:**
+
+```ts
+import { createMachine, assign } from 'xstate';
+
+const machine = createMachine({
+  context: { count: 0 },
+  // [!code highlight:8]
+  on: {
+    someEvent: {
+      // No target
+      actions: assign({
+        count: ({ context }) => context.count + 1,
+      }),
+    },
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=91da1d57-b146-48fd-82ce-a9dd28b7261a"
+  title="Root self-transition"
+/>
+
+**Self-transitions on states:**
+
+```ts
+import { createMachine, assign } from 'xstate';
+
+const machine = createMachine({
+  context: { count: 0 },
+  initial: 'inactive',
+  states: {
+    inactive: {
+      on: { activate: { target: 'active' } },
+    },
+    active: {
+      // [!code highlight:8]
+      on: {
+        someEvent: {
+          // No target
+          actions: assign({
+            count: ({ context }) => context.count + 1,
+          }),
+        },
+      },
+    },
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=8763e570-3535-42b3-a2a2-8edd82d1207a"
+  title="Self-transition on state"
+/>
+
+<Callout>
+
+You can easily visualize self-transitions in Stately's editor. [Read more about self-transitions in Stately's editor](/docs/editor-states-and-transitions/#self-transitions).
+
+</Callout>
+
+## Transitions between states
+
+Usually, transitions are between two sibling states. These transitions are defined by setting the `target` as the sibling state key.
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  states: {
+    form: {
+      on: {
+        submit: {
+          // [!code highlight:2]
+          // Target is the key of the sibling state
+          target: 'submitting',
+        },
+      },
+    },
+    // [!code highlight:1]
+    submitting: {
+      // ...
+    },
+  },
+});
+```
+
+## Parent to child transitions
+
+When a state machine actor receives an event, it will first check the deepest ([atomic](state-machines-and-statecharts.mdx#atomic-states)) state to see if there is any enabled transition. If not, the parent state is checked, and so on, until the state machine reaches the root state.
+
+When you want an event to transition to a state regardless of which sibling state is active, a useful pattern is to transition from the parent state to the child state.
+
+For example, the below state machine will transition to the `colorMode.system` state on the `mode.reset` event regardless of which state it is currently in.
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  id: 'colorMode',
+  initial: 'system',
+  states: {
+    system: {},
+    auto: {},
+    light: {
+      on: {
+        'mode.toggle': { target: 'dark' },
+      },
+    },
+    dark: {
+      on: {
+        'mode.toggle': { target: 'light' },
+      },
+    },
+  },
+  on: {
+    'mode.reset': {
+      // [!code highlight:1]
+      target: '.system',
+    },
+  },
+});
+```
+
+## Re-entering
+
+By default, when a state machine transitions from some state to the same state or from a parent state to a descendent (child, grandchild, etc.) of that parent state, it will not re-enter the state; that is, it will not execute the [`exit` and `entry` actions](actions) of the parent state. It will not stop existing invoked actors or start new invoked actors.
+
+This can be changed with the transition `reenter` property: if you want the parent state to be re-entered, you can set `reenter: true`. This will cause the state to re-enter when transitioning to itself or descendent states, executing the `exit` and `entry` actions of the state. It will stop existing invoked actors, and start new invoked actors.
+
+<Callout>
+
+In XState v4, re-entering transitions were known as **external transitions**, and the default transitions were known as **internal transitions**.
+
+</Callout>
+
+**Self-transitions with `reenter: true`:**
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine({
+  initial: 'someState',
+  states: {
+    someState: {
+      entry: () => console.log('someState entered'),
+      exit: () => console.log('someState exited'),
+      on: {
+        'event.normal': {
+          target: 'someState', // or no target
+        },
+        'event.thatReenters': {
+          target: 'someState', // or no target
+          reenter: true,
+        },
+      },
+    },
+  },
+});
+
+const actor = createActor(machine);
+actor.start();
+
+actor.send({ type: 'event.normal' });
+// Does not log anything
+
+actor.send({ type: 'event.thatReenters' });
+// Logs:
+// "someState exited"
+// "someState entered"
+```
+
+**Parent-child (or descendent) transitions with `reenter: true`:**
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine({
+  initial: 'parentState',
+  states: {
+    parentState: {
+      entry: () => console.log('parentState entered'),
+      exit: () => console.log('parentState exited'),
+      on: {
+        'event.normal': {
+          target: '.someChildState',
+        },
+        'event.thatReenters': {
+          target: '.otherChildState',
+          reenter: true,
+        },
+      },
+      initial: 'someChildState',
+      states: {
+        someChildState: {
+          entry: () => console.log('someChildState entered'),
+          exit: () => console.log('someChildState exited'),
+        },
+        otherChildState: {
+          entry: () => console.log('otherChildState entered'),
+          exit: () => console.log('otherChildState exited'),
+        },
+      },
+    },
+  },
+});
+
+const actor1 = createActor(machine);
+actor1.start();
+actor1.send({ type: 'event.normal' });
+// Logs:
+// "someChildState exited"
+// "someChildState entered"
+
+const actor2 = createActor(machine);
+actor2.start();
+console.log('---');
+actor2.send({ type: 'event.thatReenters' });
+// Logs:
+// "someChildState exited"
+// "parentState exited"
+// "parentState entered"
+// "otherChildState entered"
+```
+
+## Transitions to any state
+
+Sibling descendent states: `{ target: 'sibling.child.grandchild' }`
+
+Parent to descendent states: `{ target: '.child.grandchild' }`
+
+State to any state: `{ target: '#specificState' }`
+
+## Forbidden transitions
+
+- `{ on: { forbidden: {} } }`
+- Different than omitting the transition; transition selection algorithm will stop looking
+- Same as `{ on: { forbidden: { target: undefined } } }`
+
+## Wildcard transitions
+
+A wildcard transition is a transition that will match any event. The event descriptor (key of the `on: {...}` object) is defined using the `*` wildcard character as the event type:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'asleep',
+  states: {
+    asleep: {
+      on: {
+        // [!code highlight:2]
+        // This transition will match any event
+        '*': { target: 'awake' },
+      },
+    },
+    awake: {},
+  },
+});
+```
+
+Wildcard transitions are useful for:
+
+- handling events that are not handled by any other transition.
+- as a "catch-all" transition that handles any event in a state.
+
+A wildcard transition has the least priority; it will only be taken if no other transitions are enabled.
+
+## Partial wildcard transitions
+
+A partial wildcard transition is a transition that matches any event that starts with a specific prefix. The event descriptor is defined by using the wildcard character (`*`) after a dot (`.`) as the event type:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        // [!code highlight:4]
+        // This will match the 'feedback' event as well as
+        // any event that starts with 'feedback.', e.g.:
+        // 'feedback.good', 'feedback.bad', etc.
+        'feedback.*': { target: 'form' },
+      },
+    },
+    form: {},
+    // ...
+  },
+});
+```
+
+The wildcard character (`*`) can only be used in the suffix of an event descriptor, following a dot (`.`):
+
+### Valid wildcard examples
+
+- ✅ `mouse.*`: matches `mouse`, `mouse.click`, `mouse.move`, etc.
+- ✅ `mouse.click.*`: matches `mouse.click`, `mouse.click.left`, `mouse.click.right`, etc.
+
+### Invalid wildcard
+
+- 🚫 ~~`mouse*`~~: invalid; does not match any event.
+- 🚫 ~~`mouse.*.click`~~: invalid; `*` cannot be used in the middle of an event descriptor.
+- 🚫 ~~`*.click`~~: invalid; `*` cannot be used in the prefix of an event descriptor.
+- 🚫 ~~`mouse.click*`~~: invalid; does not match any event.
+- 🚫 ~~`mouse.*.*`~~: invalid; `*` cannot be used in the middle of an event descriptor.
+
+## Multiple transitions in parallel states
+
+Since parallel states have multiple regions that can be active at the same time, it is possible for multiple transitions to be enabled at the same time. In this case, all enabled transitions to these regions will be taken.
+
+Multiple targets are specified as an array of strings:
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  type: 'parallel',
+  states: {
+    mode: {
+      initial: 'light',
+      states: {
+        light: {
+          on: {
+            toggle: { target: 'dark' },
+          },
+        },
+        dark: {
+          on: {
+            toggle: { target: 'light' },
+          },
+        },
+      },
+    },
+    theme: {
+      initial: 'default',
+      states: {
+        default: {
+          on: {
+            change: { target: 'custom' },
+          },
+        },
+        custom: {
+          on: {
+            change: { target: 'default' },
+          },
+        },
+      },
+    },
+  },
+  on: {
+    // This event will transition both regions to specific states
+    'set.dark.custom': {
+      // [!code highlight:1]
+      target: ['.mode.dark', '.theme.custom'],
+    },
+    // This event will transition one region while leaving the other unchanged
+    'set.light': {
+      target: '.mode.light',
+    },
+  },
+});
+```
+
+In this example:
+
+- The `set.dark.custom` event will transition both regions simultaneously: the `mode` region to `dark` and the `theme` region to `custom`
+- The `set.light` event will only transition the `mode` region to `light` while leaving the `theme` region in its current state
+- Each region can still be controlled independently through their own events (`toggle` and `change`)
+
+## Other transitions
+
+- [**Eventless (always) transitions**](eventless-transitions) are transitions without events. These transitions are _always_ taken after any transition in their state is enabled.
+- [**Delayed (after) transitions**](delayed-transitions) are transitions that are enabled after a specified duration.
+
+## Transition descriptions
+
+You can add a `.description` string to a transition to describe the transition. This is useful for explaining the purpose of the transition in the visualized state machine.
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  on: {
+    exit: {
+      // [!code highlight:1]
+      description: 'Closes the feedback form',
+      target: '.closed',
+    },
+  },
+});
+```
+
+## Shorthands
+
+If the transition only specifies a `target`, then the string target can be used as a shorthand instead of the entire transition object:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        // [!code highlight:3]
+        // This is shorthand for:
+        // 'feedback': { target: 'form' }
+        'feedback.good': 'thanks',
+      },
+    },
+    thanks: {},
+    // ...
+  },
+});
+```
+
+Using the string target shorthand is useful for quickly prototyping state machines. Generally, we recommended using the full transition object syntax as it will be consistent with all other transition objects and will be easier to add actions, guards, and other properties to the transition in the future.
+
+## TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+Transitions mainly use the event type that they are enabled by.
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  types: {
+    // [!code highlight:1]
+    events: {} as { type: 'greet'; message: string } | { type: 'submit' },
+  },
+}).createMachine({
+  // ...
+  on: {
+    greet: {
+      actions: ({ event }) => {
+        event.type; // 'greet'
+        event.message; // string
+      },
+    },
+  },
+});
+```
+
+## Frequently asked questions [#faqs]
+
+<details>
+<summary>
+How can I listen for events sent to actors?
+</summary>
+
+You can use the [inspection API](./inspection) to listen for all inspection events in an actor system. The `@xstate.event` inspection event contains information about events sent from one actor to another (or itself):
+
+```ts
+import { createActor } from 'xstate';
+import { someMachine } from './someMachine';
+
+const actor = createActor(someMachine, {
+  inspect: (inspectionEvent) => {
+    if (inspectionEvent.type === '@xstate.event') {
+      // [!code highlight:2]
+      // The event object sent from one actor to another
+      console.log(inspectionEvent.event);
+    }
+  },
+});
+```
+
+</details>
+
+## Transitions cheatsheet
+
+Use our XState events and transitions cheatsheet below to get started quickly.
+
+### Cheatsheet: event objects
+
+```ts
+feedbackActor.send({
+  // Event type
+  type: 'feedback.update',
+  // Event payload
+  feedback: 'A+ would use state machines again',
+  rating: 5,
+});
+```
+
+### Cheatsheet: transition targets
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'a',
+  states: {
+    a: {
+      on: {
+        // Sibling target
+        event: {
+          target: 'b',
+        },
+        // Sibling child target
+        otherEvent: {
+          target: 'b.c',
+        },
+      },
+    },
+    b: {
+      on: {
+        // ID target
+        event: {
+          target: '#c',
+        },
+      },
+    },
+    c: {
+      id: 'c',
+      on: {
+        // Child target
+        event: {
+          target: '.child',
+        },
+      },
+      initial: 'child',
+      states: {
+        child: {},
+      },
+    },
+  },
+  on: {
+    // Child target
+    someEvent: {
+      target: '.b',
+    },
+  },
+});
+```
+
+## Transitioning state
+
+_Since XState version 5.19.0_
+
+When you create a state machine actor, the next state is determined by the machine's current state and the event that is sent to the actor. However, you can also determine the next **state** and **actions** from the current state and event by using the pure `transition(machine, state, event)` and `initialTransition(machine)` functions:
+
+```ts
+import { createMachine, initialTransition, transition } from 'xstate';
+
+const machine = createMachine({
+  initial: 'pending',
+  states: {
+    pending: {
+      on: {
+        start: { target: 'started' },
+      },
+    },
+    started: {
+      entry: 'doSomething',
+    },
+  },
+});
+
+const [initialState, initialActions] = initialTransition(machine);
+
+console.log(initialState.value);
+// logs 'pending'
+
+console.log(initialActions);
+// logs []
+
+const [nextState, actions] = transition(machine, initialState, {
+  type: 'start',
+});
+
+console.log(nextState.value);
+// logs 'started'
+
+console.log(actions);
+// logs [{ type: 'doSomething', … }]
+```
+
+## Determining the next state
+
+<Callout type="warning">
+It is recommended to use the `initialTransition(…)` and `transition(…)` functions instead of `getNextSnapshot(…)` and `getInitialSnapshot(…)`, which will be deprecated.
+</Callout>
+
+When you create a state machine actor, the next state is determined by the machine's current state and the event that is sent to the actor. If you want to determine the next state outside of the actor, you can use the `getNextSnapshot(…)` function:
+
+```ts
+import { getNextSnapshot } from 'xstate';
+import { feedbackMachine } from './feedbackMachine';
+
+const nextSnapshot = getNextSnapshot(
+  feedbackMachine,
+  feedbackMachine.resolveState({ value: 'question' }),
+  { type: 'feedback.good' },
+);
+
+console.log(nextSnapshot.value);
+// logs 'thanks'
+```
+
+You can also determine the initial state of a machine using the `getInitialSnapshot(…)` function:
+
+```ts
+import { getInitialSnapshot } from 'xstate';
+import { feedbackMachine } from './feedbackMachine';
+
+const initialSnapshot = getInitialSnapshot(
+  feedbackMachine,
+  // optional input
+  { defaultRating: 3 },
+);
+
+console.log(initialSnapshot.value);
+// logs 'question'
+```

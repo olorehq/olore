@@ -1,0 +1,105 @@
+---
+title: State machine actors
+---
+
+import { Info } from 'lucide-react';
+
+State machine actors are actors whose logic is represented by a finite state machine or statechart.
+
+<Callout>
+
+This page is just an overview on using state machines to represent actor logic. Read the documentation on [state machines](./machines) to learn about state machines in depth.
+
+</Callout>
+
+## State machine actor capabilities
+
+|     | Capability          | Notes                                                                                        |
+| --- | ------------------- | -------------------------------------------------------------------------------------------- |
+| ✅  | Receive&nbsp;events | State machine actors can receive events directly (`actor.send(event)`) or from other actors. |
+| ✅  | Send events         | State machine actors can send events to other actors it has reference to.                    |
+| ✅  | Spawn actors        | State machine actors can spawn/invoke actors and have child actors.                          |
+| ✅  | Input               | You can provide `input` to state machine actors.                                             |
+| ✅  | Output              | State machine actors can produce `output`.                                                   |
+
+## State machine actor logic
+
+You can define state machine actor logic using the `createMachine(...)` actor logic creator, which takes a finite state machine or statechart configuration object as its only argument.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const toggleMachine = createMachine({
+  initial: 'inactive',
+  states: {
+    inactive: {
+      on: {
+        toggle: {
+          target: 'active',
+        },
+      },
+    },
+    active: {
+      on: {
+        toggle: {
+          target: 'inactive',
+        },
+      },
+    },
+  },
+});
+
+const toggleActor = createActor(toggleMachine);
+toggleActor.subscribe((snapshot) => {
+  console.log(snapshot.value); // 'inactive' or 'active'
+});
+toggleActor.start();
+// logs 'inactive'
+
+toggleActor.send({ type: 'toggle' });
+// logs 'active'
+
+toggleActor.send({ type: 'toggle' });
+// logs 'inactive'
+```
+
+## State machine actor input
+
+You can pass in `input` to a state machine actor by passing it to the `createActor(...)` function as the `input` property of the second argument. In the state machine (`setup(…).createMachine(…)`), you read the `input` property of the first argument passed to the `context` function:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const feedbackMachine = setup({
+  // ...
+}).createMachine({
+  context: ({ input }) => ({
+    rating: input.defaultRating,
+  }),
+  initial: 'question',
+  states: {
+    question: {
+      /* ... */
+    },
+    // ...
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine, {
+  // [!code highlight:3]
+  input: {
+    defaultRating: 3,
+  },
+});
+
+feedbackActor.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+
+feedbackActor.start();
+// logs { rating: 3 }
+```
+
+## State machine actor output
+
+Read [state machine output](./output) for more information.

@@ -1,0 +1,231 @@
+---
+title: 'Systems'
+---
+
+An actor system is a collection of actors that can communicate with each other. Actors can invoke/spawn other actors, which forms a natural hierarchy of actors that belong to the same system.
+
+In XState, a system is implicitly created from the root actor, which is the actor that is returned from `createActor(machine).start()`. The system can be accessed from the `actor.system` property of actors, and from the destructured `{ system }` property from state machine actions:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine({
+  // [!code highlight:1]
+  entry: ({ system }) => {
+    // ...
+  },
+});
+
+const actor = createActor(machine).start();
+// [!code highlight:1]
+actor.system;
+```
+
+The root of a system can also be explicitly assigned a `systemId` in the `createActor(...)` function:
+
+```ts
+import { createActor } from 'xstate';
+
+const actor = createActor(machine, {
+  systemId: 'root-id',
+});
+
+actor.start();
+```
+
+This is useful for actors in the system to be able send events to the root actor.
+
+<Callout>
+
+Coming soon… systems in Stately Studio’s editor 🤫
+
+</Callout>
+
+## Actor registration
+
+Actors can be registered with the system so that any other actor in the system can obtain a reference to it.
+
+Invoked actors are registered with a system-wide `systemId` in the `invoke` object:
+
+```ts
+import { createMachine, createActor, sendTo } from 'xstate';
+
+const formMachine = createMachine({
+  // ...
+  on: {
+    submit: {
+      // [!code highlight:1]
+      actions: sendTo(({ system }) => system.get('notifier'), {
+        type: 'notify',
+        message: 'Form submitted!',
+      }),
+    },
+  },
+});
+
+const feedbackMachine = createMachine({
+  invoke: {
+    // [!code highlight:1]
+    systemId: 'formMachine',
+    src: formMachine,
+  },
+  // ...
+  states: {
+    // ...
+    form: {
+      invoke: formMachine,
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+```
+
+Spawned actors are registered with a system-wide `systemId` in the 2nd argument of the `spawn` function:
+
+```ts
+import { createMachine, createActor, assign } from 'xstate';
+
+const todoMachine = createMachine({
+  // ...
+});
+
+const todosMachine = createMachine({
+  // ...
+  on: {
+    'todo.add': {
+      actions: assign({
+        todos: ({ context, spawn }) => {
+          const newTodo = spawn(todoMachine, {
+            // [!code highlight:1]
+            systemId: `todo-${context.todos.length}`,
+          });
+
+          return context.todos.concat(newTodo);
+        },
+      }),
+    },
+  },
+});
+```
+
+## Actor communication
+
+You can also reference a specific actor from the system using `system.get('actorId')`:
+
+## Stopping a system
+
+- Stop from root actor: `actor.stop()`
+- Cannot stop from descendant actors
+  - Warning will be logged
+
+## Systems and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+- `invoke.systemId`
+- `spawn(thing, { systemId })`
+- `system.get('actorId')`
+- `rootActor.stop()`
+
+## System cheatsheet
+
+### Cheatsheet: actor system
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine({
+  // [!code highlight:1]
+  entry: ({ system }) => {
+    // ...
+  },
+});
+
+const actor = createActor(machine).start();
+// [!code highlight:1]
+actor.system;
+```
+
+### Cheatsheet: explicitly assign a `systemId`
+
+```ts
+import { createActor } from 'xstate';
+
+const actor = createActor(machine, {
+  // [!code highlight:1]
+  systemId: 'root-id',
+});
+
+actor.start();
+```
+
+### Cheatsheet: register an invoked actor with the system
+
+```ts
+import { createMachine, createActor, sendTo } from 'xstate';
+
+const formMachine = createMachine({
+  // ...
+  on: {
+    submit: {
+      // [!code highlight:1]
+      actions: sendTo(({ system }) => system.get('notifier'), {
+        type: 'notify',
+        message: 'Form submitted!',
+      }),
+    },
+  },
+});
+
+const feedbackMachine = createMachine({
+  invoke: {
+    // [!code highlight:1]
+    systemId: 'formMachine',
+    src: formMachine,
+  },
+  // ...
+  states: {
+    // ...
+    form: {
+      invoke: formMachine,
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+```
+
+### Cheatsheet: register a spawned actor with the system
+
+```ts
+import { createMachine, createActor, assign } from 'xstate';
+
+const todoMachine = createMachine({
+  // ...
+});
+
+const todosMachine = createMachine({
+  // ...
+  on: {
+    'todo.add': {
+      actions: assign({
+        todos: ({ context, spawn }) => {
+          const newTodo = spawn(todoMachine, {
+            // [!code highlight:1]
+            systemId: `todo-${context.todos.length}`,
+          });
+
+          return context.todos.concat(newTodo);
+        },
+      }),
+    },
+  },
+});
+```

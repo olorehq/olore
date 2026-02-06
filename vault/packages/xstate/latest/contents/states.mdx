@@ -1,0 +1,353 @@
+---
+title: State
+---
+
+A state describes the machine’s status or mode, which could be as simple as *Paused* and *Playing*. A state machine can only be in one state at a time.
+
+These states are “finite”; the machine can only move through the states you’ve pre-defined.
+
+<EmbedMachine
+  name="Video player"
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=741f69fd-7f01-4932-9407-6871e225bb6d"
+/>
+
+<Callout>
+
+You can visualize your state machines and easily add states in our drag-and-drop Stately editor. [Read more about states in Stately’s editor](editor-states-and-transitions).
+
+</Callout>
+
+<Callout>
+
+Watch our [“What are states?” video on YouTube](https://www.youtube.com/watch?v=z-6yhmSWUcc&list=PLvWgkXBB3dd4I_l-djWVU2UGPyBgKfnTQ&index=2) (53s).
+
+</Callout>
+
+## State object
+
+The state object represents the current state of a running machine ([actor](actor-model)) and contains the following properties:
+
+- **`value`**: the current state value, which is either:
+  - a string representing a simple state like `'playing'`, or:
+  - an object representing nested states like `{ paused: 'buffering' }`.
+- **`context`**: the current [context](context) (extended state.)
+- **`meta`**: an object containing state node meta data.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'question',
+  context: {
+    feedback: '',
+  },
+  states: {
+    question: {
+      meta: {
+        question: 'How was your experience?',
+      },
+    },
+  },
+});
+
+const actor = createActor(feedbackMachine);
+actor.start();
+
+console.log(actor.getSnapshot());
+// Logs an object containing:
+// {
+//   value: 'question',
+//   context: {
+//     feedback: ''
+//   },
+//   meta: {
+//     'feedback.question': {
+//       question: 'How was your experience?'
+//     }
+//   }
+// }
+```
+
+## Accessing state snapshots
+
+You can access an actor’s emitted state (or _snapshot_) by subscribing to or reading from the actor’s `.getSnapshot()` method.
+
+```ts
+import { createActor } from 'xstate';
+
+// ...
+
+const actor = createActor(feedbackMachine);
+
+actor.subscribe((snapshot) => {
+  console.log(snapshot);
+  // logs the current snapshot state, e.g.:
+  // { value: 'question', ... }
+  // { value: 'thanks', ... }
+});
+
+actor.start();
+
+console.log(actor.getSnapshot());
+// logs { value: 'question', ... }
+```
+
+## State value
+
+A state machine with nested states (or _[statechart](state-machines-and-statecharts.mdx#what-is-a-statechart)_) is a tree-like structure where each node is a _state node_. The root state node is the top-level state node that represents the entire machine. The root node may have child state nodes, which may have child state nodes, and so on.
+
+The **state value** is an object that represents all the active state nodes in a machine. For state machines that have state nodes without child state nodes, the state value is a string:
+
+Coming soon… a visual example.
+
+- `state.value === 'question'`
+- `state.value === 'thanks'`
+- `state.value === 'closed'`
+
+For state machines with parent state nodes, the state value is an object:
+
+Coming soon… a visual example.
+
+- `state.value === { form: 'invalid' }` - this represents a state machine with an active child node with key `form` that has an active child node with key `invalid`
+
+For state machines with [parallel state nodes](parallel-states), the state value contains object(s) with multiple keys for each state node region:
+
+```ts
+state.value ===
+  {
+    monitor: 'on',
+    mode: 'dark',
+  };
+```
+
+State machines may also have no state nodes other than the root state node. For these state machines, the state value is `null`.
+
+## State context
+
+State machines can have [context](context), which is an object that represents the extended state of the machine. The context is immutable, and can only be updated by [assigning](actions.mdx#assign-action) to it in an action. You can read the `state.context` property to get the current context.
+
+```ts
+const currentState = feedbackActor.getSnapshot();
+
+console.log(currentState.context);
+// logs { feedback: '' }
+```
+
+- Object is empty `{}` (default) if context is not specified in the machine config
+- Never mutate this object; should be treated as immutable/read-only
+
+## State children
+
+The `state.children` property represents all currently spawned/invoked actors in the current state. It is an object with keys representing the actor IDs and values representing the `ActorRef` instances.
+
+- This is where you access spawned/invoked actors by their ID
+- This is why you should give spawned/invoked actors IDs
+- Stopped actors will not appear here
+
+## `state.can(eventType)`
+
+The `state.can(event)` method determines whether an `event` object will cause a state change if sent to the machine actor. The method will return `true` if the state will change due to the `event` being sent; otherwise the method will return `false`:
+
+```js
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  states: {
+    form: {
+      // ...
+      on: {
+        'feedback.submit': {
+          guard: 'isValid',
+          target: 'thanks',
+        },
+      },
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+// ...
+
+const currentState = feedbackActor.getSnapshot();
+
+console.log(currentState.can({ type: 'feedback.submit' }));
+// logs `true` if the 'feedback.submit' event will cause a transition, which will occur if:
+// - the current state is 'form'
+// - the 'isValid' guard evaluates to `true`
+```
+
+A state is considered "changed" if a transition is enabled for the given `state` and `event` object.
+
+<Callout>
+The `state.can(...)` method will also check transition guards by executing them. Transition guards should be pure functions.
+</Callout>
+
+## `state.hasTag(tag)`
+
+The `state.hasTag(tag)` method determines whether any state nodes in the current state value have the given `tag`. This is useful for determining whether a state is a particular state, or whether a state is a member of a particular state group.
+
+```js
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  states: {
+    submitting: {
+      tags: ['loading'],
+      // ...
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+const currentState = feedbackActor.getSnapshot();
+
+const showLoadingSpinner = currentState.hasTag('loading');
+```
+
+Prefer using `state.hasTag(tag)` over `state.matches(stateValue)`, as `state.hasTag(tag)` is more resilient to changes in the machine.
+
+## `state.matches(stateValue)`
+
+The `state.matches(stateValue)` method determines whether the current `state.value` _matches_ the given `stateValue`. If the current `state.value` is a "subset" of the provided `stateValue`, then the method will return `true`.
+
+```ts
+// state.value === 'question'
+state.matches('question'); // true
+
+// state.value === { form: 'invalid' }
+state.matches('form'); // true
+state.matches('question'); // false
+state.matches({ form: 'invalid' }); // true
+state.matches({ form: 'valid' }); // false
+
+// state.value === { 'form submitting' : 'invalid value' }
+state.matches('form submitting'); // true
+state.matches('form'); // false
+state.matches({ 'form submitting': 'invalid value' }); // true
+state.matches({ 'form submitting': 'value' }); // false
+```
+
+## `state.output`
+
+The `state.output` property represents the output data of a state machine when it is in its top-level final state; i.e., `state.status === 'done'`.
+
+```ts
+const state = actor.getSnapshot();
+
+if (state.status === 'done') {
+  console.log(state.output);
+}
+```
+
+## `state.getMeta()`
+
+The `state.getMeta()` method represents the metadata of all the state nodes in the `state`. It is an object with keys that represent the state node IDs, and values that are the metadata of that state node.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  // ...
+  states: {
+    form: {
+      meta: {
+        view: 'shortForm',
+      },
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+// Assume the current state is 'form'
+const currentState = feedbackActor.getSnapshot();
+console.log(currentState.getMeta());
+// logs { 'feedback.form': { view:'shortForm' } }
+```
+
+## State descriptions
+
+You can add `.description` to states to describe their purpose and share related notes with your team. In Stately Studio’s editor, these descriptions are rendered in the machine and support markdown including links, images, and lists. [Read more about descriptions in Stately Studio](descriptions).
+
+```ts
+states: {
+  "Loading Move Destinations": {
+    // [!code highlight:2]
+    description:
+      "Load data from the server based on the entity's id and type (project or machine). Result includes the entity's current location, and the list or tree of valid destination options to which the user may move that entity.",
+    invoke: {
+      src: "loadMoveData",
+      id: "loadMoveData",
+      onDone: [
+        {
+          target: "Destination Menu",
+          actions: "setDestinations",
+        },
+      ],
+      onError: [
+        {
+          target: "Data Loading Error",
+        },
+      ],
+    },
+  },
+}
+```
+
+## States and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+_Coming soon_
+
+## States cheatsheet
+
+### Cheatsheet: read or match a state value
+
+```ts
+const state = actor.getSnapshot();
+
+const currentStateValue = state.value;
+
+const isLoading = state.matches('loading');
+```
+
+### Cheatsheet: read state context
+
+```ts
+console.log(state.context);
+```
+
+### Cheatsheet: read state output
+
+```ts
+if (state.status === 'done') {
+  // Output may exist
+  console.log(state.output);
+} else {
+  // Output does not exist
+  state.output === undefined;
+}
+```
+
+### Cheatsheet: read state meta data
+
+```ts
+console.log(state.getMeta());
+```
+
+## Further resources
+
+[Persisting state](persistence)

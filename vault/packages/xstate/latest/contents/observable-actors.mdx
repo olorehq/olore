@@ -1,0 +1,66 @@
+---
+title: Observable Actors
+---
+
+Observable actors are actors that represent an observable stream of values. This makes it easy to interop with observable libraries like RxJS.
+
+<Callout>
+
+All XState actors are observable.
+
+</Callout>
+
+## Observable actor capabilities
+
+|     | Capability          | Notes                                                                                                                                   |
+| --- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| ❌  | Receive&nbsp;events | Observable actors do not currently receive events.                                                                                      |
+| ✅  | Send events         | Observable actors can send events to other actors it has reference to, such as those provided in its `input`.                           |
+| ❌  | Spawn actors        | Observable actors currently cannot spawn new actors.                                                                                    |
+| ✅  | Input               | You can provide `input` to observable actors.                                                                                           |
+| ❌  | Output              | Observable actors currently do not produce output – they are active indefinitely until they are stopped, completed, or an error occurs. |
+
+## Observable actor logic
+
+You can define observable actor logic using the `fromObservable(...)` actor logic creator, which takes a function that returns an observable and returns actor logic that can be used to create observable actors.
+
+```ts
+import { fromObservable, createActor } from 'xstate';
+import { interval } from 'rxjs';
+
+// [!code highlight:1]
+const intervalLogic = fromObservable(() => interval(1000));
+
+const intervalActor = createActor(intervalLogic);
+intervalActor.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+
+intervalActor.start();
+// logs 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...
+// every second
+```
+
+## Observable actor input
+
+You can pass in `input` to an observable actor by passing it to the `createActor(...)` function as the `input` property of the second argument. In the observable logic (`fromObservable(observableFn)`), you read the `input` property of the first argument passed to the observable function:
+
+```ts
+import { fromObservable, createActor } from 'xstate';
+import { interval } from 'rxjs';
+
+// [!code highlight:1]
+const intervalLogic = fromObservable(({ input }) => interval(input.interval));
+
+const intervalActor = createActor(intervalLogic, {
+  // [!code highlight:1]
+  input: { interval: 10_000 },
+});
+intervalActor.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+
+intervalActor.start();
+// logs 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...
+// every 10 seconds
+```

@@ -1,0 +1,588 @@
+---
+title: 'Graph & Paths'
+description: 'Generate paths through state machines for testing and analysis'
+slug: graph
+---
+
+<Callout>
+
+The graph utilities are now included in the main `xstate` package. Import from `xstate/graph` instead of the deprecated `@xstate/graph` package.
+
+</Callout>
+
+State machines can be represented as directed graphs, where states are nodes and transitions are edges. XState provides utilities to traverse these graphs and generate **paths**: sequences of events that transition a machine from one state to another.
+
+## Why use path generation?
+
+Path generation is useful for:
+
+- **Model-based testing** - automatically generate test cases that cover all reachable states and transitions
+- **Visualization** - understand the structure and flow of complex machines
+- **Validation** - verify all states are reachable and all transitions are exercised
+- **Documentation** - generate human-readable sequences of user flows
+
+## Quick start
+
+```ts
+import { createMachine } from 'xstate';
+import { getShortestPaths, getSimplePaths } from 'xstate/graph';
+
+const machine = createMachine({
+  initial: 'a',
+  states: {
+    a: {
+      on: { NEXT: 'b', SKIP: 'c' }
+    },
+    b: {
+      on: { NEXT: 'c' }
+    },
+    c: { type: 'final' }
+  }
+});
+
+const shortestPaths = getShortestPaths(machine);
+// - a
+// - a -> b
+// - a -> c (via SKIP, not through b)
+
+const simplePaths = getSimplePaths(machine);
+// - a
+// - a -> b
+// - a -> b -> c
+// - a -> c (via SKIP)
+```
+
+## Core concepts
+
+### Paths and steps
+
+A **path** represents a sequence of transitions from one state to another. Each path contains:
+
+- `state` - the final state reached by this path
+- `steps` - array of steps taken to reach that state
+
+A **step** represents a single transition:
+
+- `state` - the state before this transition
+- `event` - the event that triggered the transition
+
+```ts
+// Example path structure
+{
+  // The final state reached by this path
+  state: { value: 'thanks', context: {} },
+  // The steps taken to reach this state
+  steps: [
+    { state: { value: 'question' }, event: { type: 'CLICK_BAD' } },
+    { state: { value: 'form' }, event: { type: 'SUBMIT' } }
+  ]
+}
+```
+
+### Shortest vs simple paths
+
+**Shortest paths** use Dijkstra's algorithm to find the minimum number of transitions to reach each state. Use shortest paths when you want:
+- One efficient path to each state
+- Minimal test cases for state coverage
+- Quick traversal verification
+
+**Simple paths** use depth-first search to find all possible non-cyclic paths. Use simple paths when you want:
+- Complete transition coverage
+- All possible user flows
+- Exhaustive testing
+
+## `getShortestPaths(logic, options?)`
+
+Returns the shortest path from the initial state to every reachable state.
+
+```ts
+import { createMachine } from 'xstate';
+import { getShortestPaths } from 'xstate/graph';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'question',
+  states: {
+    question: {
+      on: {
+        CLICK_GOOD: { target: 'thanks' },
+        CLICK_BAD: { target: 'form' },
+        CLOSE: { target: 'closed' }
+      }
+    },
+    form: {
+      on: {
+        SUBMIT: { target: 'thanks' },
+        CLOSE: { target: 'closed' }
+      }
+    },
+    thanks: {
+      on: {
+        CLOSE: { target: 'closed' }
+      }
+    },
+    closed: {
+      type: 'final'
+    }
+  }
+});
+
+const paths = getShortestPaths(feedbackMachine);
+
+// Returns array of paths:
+// [
+//   { state: 'question', steps: [] },
+//   { state: 'thanks', steps: [{ state: 'question', event: { type: 'CLICK_GOOD' } }] },
+//   { state: 'form', steps: [{ state: 'question', event: { type: 'CLICK_BAD' } }] },
+//   { state: 'closed', steps: [{ state: 'question', event: { type: 'CLOSE' } }] }
+// ]
+```
+
+Notice that reaching `closed` from `thanks` (2 steps) is not included because there's a shorter path directly from `question` (1 step).
+
+## `getSimplePaths(logic, options?)`
+
+Returns all simple (non-cyclic) paths from the initial state to every reachable state.
+
+```ts
+import { getSimplePaths } from 'xstate/graph';
+
+const paths = getSimplePaths(feedbackMachine);
+
+// Returns many more paths, including:
+// - question → thanks (via CLICK_GOOD)
+// - question → form → thanks (via CLICK_BAD, SUBMIT)
+// - question → thanks → closed (via CLICK_GOOD, CLOSE)
+// - question → form → thanks → closed (via CLICK_BAD, SUBMIT, CLOSE)
+// - question → form → closed (via CLICK_BAD, CLOSE)
+// - question → closed (via CLOSE)
+// ... and more
+```
+
+Simple paths provide complete transition coverage - every valid sequence through the machine.
+
+## `getPathsFromEvents(logic, events, options?)`
+
+Traces a specific sequence of events and returns the resulting path. Useful for validating that a specific user flow works as expected.
+
+```ts
+import { getPathsFromEvents } from 'xstate/graph';
+
+const path = getPathsFromEvents(feedbackMachine, [
+  { type: 'CLICK_BAD' },
+  { type: 'SUBMIT' },
+  { type: 'CLOSE' }
+]);
+
+// Returns:
+// {
+//   state: { value: 'closed' },
+// ,
+//   steps: [
+//     { state: { value: 'question' }, event: { type: 'CLICK_BAD' } },
+//     { state: { value: 'form' }, event: { type: 'SUBMIT' } },
+//     { state: { value: 'thanks' }, event: { type: 'CLOSE' } }
+//   ]
+// }
+```
+
+## Traversal options
+
+All path functions accept an options object to customize traversal:
+
+### `events`
+
+Specify event payloads for events that require data. By default, events are traversed with just their type.
+
+```ts
+import { setup, assign } from 'xstate';
+import { getShortestPaths } from 'xstate/graph';
+
+const counterMachine = setup({
+  types: {
+    events: {} as { type: 'INC'; value: number }
+  }
+}).createMachine({
+  id: 'counter',
+  initial: 'active',
+  context: { count: 0 },
+  states: {
+    active: {
+      on: {
+        INC: {
+          actions: assign({
+            count: ({ context, event }) => context.count + event.value
+          })
+        }
+      }
+    }
+  }
+});
+
+const paths = getShortestPaths(counterMachine, {
+  events: [
+    { type: 'INC', value: 1 },
+    { type: 'INC', value: 5 },
+    { type: 'INC', value: 10 }
+  ]
+});
+```
+
+You can also provide a function that returns events based on the current state:
+
+```ts
+const paths = getShortestPaths(counterMachine, {
+  events: (state) => {
+    // Generate different events based on context
+    if (state.context.count < 10) {
+      return [{ type: 'INC', value: 1 }];
+    }
+    return [{ type: 'INC', value: 10 }];
+  }
+});
+```
+
+### `toState`
+
+Filter paths to only those reaching states matching a condition:
+
+```ts
+const paths = getShortestPaths(feedbackMachine, {
+  toState: (state) => state.value === 'closed'
+});
+
+// Only returns paths ending in 'closed' state
+```
+
+### `fromState`
+
+Start traversal from a specific state instead of the initial state:
+
+```ts
+import { createActor } from 'xstate';
+
+const actor = createActor(feedbackMachine).start();
+actor.send({ type: 'CLICK_BAD' });
+
+const paths = getShortestPaths(feedbackMachine, {
+  fromState: actor.getSnapshot()
+});
+
+// Paths starting from 'form' state
+```
+
+### `stopWhen`
+
+Stop traversing when a condition is met:
+
+```ts
+const paths = getShortestPaths(counterMachine, {
+  events: [{ type: 'INC', value: 1 }],
+  stopWhen: (state) => state.context.count >= 5
+});
+
+// Stops exploring paths once count reaches 5
+```
+
+### `limit`
+
+Maximum number of states to traverse (prevents infinite loops with context):
+
+```ts
+const paths = getShortestPaths(counterMachine, {
+  events: [{ type: 'INC', value: 1 }],
+  limit: 100 // Stop after 100 unique states
+});
+```
+
+### `serializeState` and `serializeEvent`
+
+Customize how states and events are serialized for comparison. By default, states are serialized as JSON strings of their value and context.
+
+```ts
+const paths = getShortestPaths(machine, {
+  serializeState: (state) => {
+    // Only consider state value, ignore context
+    return JSON.stringify(state.value);
+  },
+  serializeEvent: (event) => {
+    // Custom event serialization
+    return event.type;
+  }
+});
+```
+
+## Working with context
+
+When machines have dynamic context, the state space can become infinite. Use `stopWhen` or `limit` to bound the traversal:
+
+```ts
+import { setup, assign } from 'xstate';
+import { getShortestPaths } from 'xstate/graph';
+
+const counterMachine = setup({
+  types: {
+    events: {} as { type: 'INC'; value: number } | { type: 'DEC'; value: number }
+  }
+}).createMachine({
+  id: 'counter',
+  initial: 'counting',
+  context: { count: 0 },
+  states: {
+    counting: {
+      always: {
+        target: 'done',
+        guard: ({ context }) => context.count >= 10
+      },
+      on: {
+        INC: {
+          actions: assign({
+            count: ({ context, event }) => context.count + event.value
+          })
+        },
+        DEC: {
+          actions: assign({
+            count: ({ context, event }) => context.count - event.value
+          })
+        }
+      }
+    },
+    done: {
+      type: 'final'
+    }
+  }
+});
+
+const paths = getShortestPaths(counterMachine, {
+  events: [
+    { type: 'INC', value: 1 },
+    { type: 'INC', value: 5 },
+    { type: 'DEC', value: 1 }
+  ],
+  // Bound the state space
+  stopWhen: (state) => state.context.count > 15 || state.context.count < -5
+});
+```
+
+## `getAdjacencyMap(logic, options?)`
+
+Returns a map representing the state machine as a graph, with states as keys and their transitions as values.
+
+```ts
+import { getAdjacencyMap } from 'xstate/graph';
+
+const adjacencyMap = getAdjacencyMap(feedbackMachine);
+
+// Structure:
+// {
+//   '"question"': {
+//     state: { value: 'question', ... },
+//     transitions: {
+//       '{"type":"CLICK_GOOD"}': { event: {...}, state: {...} },
+//       '{"type":"CLICK_BAD"}': { event: {...}, state: {...} },
+//       '{"type":"CLOSE"}': { event: {...}, state: {...} }
+//     }
+//   },
+//   '"form"': { ... },
+//   ...
+// }
+```
+
+## `toDirectedGraph(machine)`
+
+Converts a machine to a directed graph structure for visualization:
+
+```ts
+import { toDirectedGraph } from 'xstate/graph';
+
+const digraph = toDirectedGraph(feedbackMachine);
+
+// Structure:
+// {
+//   id: 'feedback',
+//   stateNode: StateNode,
+//   children: [
+//     { id: 'feedback.question', children: [], edges: [...] },
+//     { id: 'feedback.form', children: [], edges: [...] },
+//     ...
+//   ],
+//   edges: [
+//     { source: StateNode, target: StateNode, transition: {...} },
+//     ...
+//   ]
+// }
+```
+
+## Model-based testing
+
+Path generation enables model-based testing - generating test cases directly from your state machine. Use `createTestModel` to wrap your machine with testing utilities:
+
+```ts
+import { createMachine } from 'xstate';
+import { createTestModel } from 'xstate/graph';
+
+const toggleMachine = createMachine({
+  id: 'toggle',
+  initial: 'inactive',
+  states: {
+    inactive: {
+      on: { TOGGLE: 'active' }
+    },
+    active: {
+      on: { TOGGLE: 'inactive' }
+    }
+  }
+});
+
+const model = createTestModel(toggleMachine);
+
+// Get paths for testing
+const paths = model.getShortestPaths();
+
+// Use with your test framework
+describe('toggle', () => {
+  for (const path of paths) {
+    it(`reaches ${JSON.stringify(path.state.value)}`, async () => {
+      await path.test({
+        events: {
+          TOGGLE: async () => {
+            // Execute the toggle action in your app
+            await page.click('#toggle-button');
+          }
+        },
+        states: {
+          inactive: async (state) => {
+            // Assert the app is in inactive state
+            await expect(page.locator('#status')).toHaveText('Inactive');
+          },
+          active: async (state) => {
+            await expect(page.locator('#status')).toHaveText('Active');
+          }
+        }
+      });
+    });
+  }
+});
+```
+
+### TestModel methods
+
+- `model.getShortestPaths(options?)` - get shortest paths
+- `model.getSimplePaths(options?)` - get all simple paths
+- `model.getPaths(pathGenerator)` - use custom path generator
+
+### Path testing
+
+Each path returned by `TestModel` has a `test` method that:
+
+1. Starts from the initial state
+2. Executes each event in the path using your event handlers
+3. Verifies each state using your state assertions
+
+```ts
+path.test({
+  events: {
+    // Map event types to async functions that execute the event
+    CLICK_GOOD: async () => await page.click('.good-button'),
+    SUBMIT: async () => await page.click('button[type="submit"]')
+  },
+  states: {
+    // Map state values to async assertions
+    question: async () => await expect(page.locator('.question')).toBeVisible(),
+    form: async () => await expect(page.locator('form')).toBeVisible(),
+    thanks: async () => await expect(page.locator('.thanks')).toBeVisible()
+  }
+});
+```
+
+<Callout>
+
+You can [generate test paths from your state machines in Stately Studio](generate-test-paths.mdx), with support for Playwright, Vitest, and custom formats.
+
+</Callout>
+
+## Path deduplication
+
+When using simple paths, you may get many paths where shorter paths are prefixes of longer ones. The `deduplicatePaths` utility removes redundant paths:
+
+```ts
+import { getSimplePaths, deduplicatePaths } from 'xstate/graph';
+
+const allPaths = getSimplePaths(machine);
+const uniquePaths = deduplicatePaths(allPaths);
+
+// Removes paths that are prefixes of longer paths
+// e.g., [A→B] is removed if [A→B→C] exists
+```
+
+## Example: Complete test generation
+
+```ts
+import { createMachine } from 'xstate';
+import { createTestModel } from 'xstate/graph';
+import { test, expect } from 'vitest';
+
+const authMachine = createMachine({
+  id: 'auth',
+  initial: 'loggedOut',
+  states: {
+    loggedOut: {
+      on: {
+        LOGIN: 'loggingIn'
+      }
+    },
+    loggingIn: {
+      on: {
+        SUCCESS: 'loggedIn',
+        FAILURE: 'loggedOut'
+      }
+    },
+    loggedIn: {
+      on: {
+        LOGOUT: 'loggedOut'
+      }
+    }
+  }
+});
+
+const model = createTestModel(authMachine);
+
+describe('auth flows', () => {
+  const paths = model.getShortestPaths({
+    toState: (state) => state.matches('loggedIn')
+  });
+
+  for (const path of paths) {
+    test(path.description, async () => {
+      // Setup
+      const app = await setupApp();
+
+      await path.test({
+        events: {
+          LOGIN: async () => {
+            await app.fillLoginForm('user', 'pass');
+            await app.submit();
+          },
+          SUCCESS: async () => {
+            await app.mockAuthSuccess();
+          },
+          LOGOUT: async () => {
+            await app.clickLogout();
+          }
+        },
+        states: {
+          loggedOut: async () => {
+            expect(app.isLoggedIn()).toBe(false);
+          },
+          loggingIn: async () => {
+            expect(app.isLoading()).toBe(true);
+          },
+          loggedIn: async () => {
+            expect(app.isLoggedIn()).toBe(true);
+          }
+        }
+      });
+    });
+  }
+});
+```

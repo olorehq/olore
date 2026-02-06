@@ -1,0 +1,92 @@
+---
+title: Stately Studio API
+---
+
+You can use the Studio's REST API to access your projects and machines in any of your external projects. This allows you to automate your workflow, integrate your machines with other projects, and more.
+
+Some things you can do with the API include:
+
+- Exporting machines to your desired language/format (e.g: TypeScript, JavaScript, JSON, etc.)
+- Fetching information about your desired machines
+- Fetching information about your projects
+- Fetching a specific version of a machine
+
+<Callout>
+
+API access is a premium feature of Stately Studio. [Check out the features on our Pro plan](studio-pro-plan), [Team plan](studio-team-plan), [Enterprise plan](studio-enterprise-plan) or [upgrade your existing plan](https://stately.ai/registry/billing).
+
+</Callout>
+
+## Authentication: Generating an API key
+
+All requests to the Studio must be authenticated with an API key.
+You can generate an API key for one of two scopes:
+
+- **Project**: This key will have access to all the machines in a specific project.
+- **Account**: This key will have access to all the projects and machines in your account.
+
+<Callout>
+
+It's important to keep your API key secret. If you believe your API key has been compromised, you can regenerate it at any time.
+
+</Callout>
+
+### Generating a project-wide API key
+
+To generate an API key for a **project**, open any machine in the project you're interested in. Then, click on the "Deploy" button in the top right corner of the editor page. In the modal that appears, click "Create API Key", and make sure to copy it and store it in a safe place.
+
+{/* <p>
+  <ThemedImage
+    alt="A GIF of the Studio's deploy modal, with the 'Create API Key' button highlighted."
+    sources={{
+      light: '/generate-project-token-light.gif',
+      dark: '/generate-project-token-dark.gif',
+    }}
+  />
+
+</p> */}
+
+![A GIF of the Studio's deploy modal, with the 'Create API Key' button highlighted.](./assets/generate-project-token-light.gif)
+
+### Generating an account-wide API key
+
+Generating an API key for an **account** can be done from the user's settings. In Settings, select the API Key tab, and click "Create API Key". Make sure to copy it and store it in a safe place.
+
+{/* <p>
+  <ThemedImage
+    alt=" A GIF of the Studio's settings page, with the 'Create API Key' button highlighted."
+    sources={{
+      light: '/generate-account-token-light.gif',
+      dark: '/generate-account-token-dark.gif',
+    }}
+  />
+
+</p> */}
+
+![A GIF of the Studio's settings page, with the 'Create API Key' button highlighted.](./assets/generate-account-token-light.gif)
+
+## Making requests: Accessing the OpenAPI(Swagger) documentation
+
+The easiest way to get started with the Studio API is to use the [OpenAPI(Swagger) documentation](https://stately.ai/registry/openapi). This documentation provides a list of all the available endpoints, their parameters, and the expected responses.
+
+### Authorizing requests
+
+To test the API, you can must first authenticate with your API key, using the "Authorize" button in the top right corner of the page.
+
+{/* <p>
+  <ThemedImage
+    alt="A GIF of the Studio's OpenAPI documentation, with the 'Authorize' button highlighted."
+    sources={{
+      light: '/swagger-auth.gif',
+      dark: '/swagger-auth.gif',
+    }}
+  />
+
+</p> */}
+
+![A GIF of the Studio's OpenAPI documentation, with the 'Authorize' button highlighted.](./assets/swagger-auth.gif)
+
+### Testing endpoints
+
+Once authenticated, you can test any of the endpoints by clicking on them and filling in the required parameters. The parameters can all be easily accessed from the url of the machine, machineVersion, or project in question. Simply open a machine or project in the Studio, and copy the id's from the url in your browser's address bar.
+Then, use the "Try it out" button to make a request to the endpoint. The response will be displayed below the request parameters.

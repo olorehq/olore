@@ -1,0 +1,230 @@
+---
+title: Quick start
+description: 'Start here to jump straight into XState and Stately Studio.'
+---
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+
+This quick start guide will help you get started with XState and Stately Studio. You will learn how to create a state machine, create an actor from that state machine, send events to that actor, and observe the state changes.
+
+<Callout>
+
+The fastest way to start with Stately Studio is to go to [state.new](https://state.new). There, you’ll find a starter machine with all the statechart basics ready for you to edit. [Read more about Stately Studio](studio).
+
+</Callout>
+
+## Installing XState v5
+
+[XState](xstate) is a visual state management and orchestration library for JavaScript and TypeScript.
+
+Install the XState v5 using your preferred package manager:
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install xstate
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install xstate
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add xstate
+```
+
+</Tab>
+</Tabs>
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+## Create a machine
+
+In XState, a [machine](machines) is an object that contains all the logic for an [actor](actors). In this example, we will create a simple toggle machine that can be in one of two states: `Active` or `Inactive`. The `toggle` event will toggle the state between `Active` and `Inactive`.
+
+```ts
+import { createMachine } from 'xstate';
+
+const toggleMachine = createMachine({
+  id: 'toggle',
+  initial: 'Inactive',
+  states: {
+    Inactive: {
+      on: { toggle: 'Active' },
+    },
+    Active: {
+      on: { toggle: 'Inactive' },
+    },
+  },
+});
+```
+
+[Read our introduction to state machines and statecharts](state-machines-and-statecharts) to familiarize yourself with the concepts.
+
+## Create an actor and send events
+
+[Machine logic](/docs/actors#actor-logic) can be used to create an actor. An [actor](actors) is a running process that can receive messages (events), send messages and change its behavior based on the messages it receives.
+
+```js
+import { createMachine, createActor } from 'xstate';
+
+const toggleMachine = createMachine({
+  // Machine code from above
+});
+
+// Create an actor that you can send events to.
+// Note: the actor is not started yet!
+const actor = createActor(toggleMachine);
+
+// Subscribe to snapshots (emitted state changes) from the actor
+actor.subscribe((snapshot) => {
+  console.log('Value:', snapshot.value);
+});
+
+// Start the actor
+actor.start(); // logs 'Inactive'
+
+// Send events
+actor.send({ type: 'toggle' }); // logs 'Active'
+actor.send({ type: 'toggle' }); // logs 'Inactive'
+```
+
+## Use delayed transitions
+
+[Delayed transitions](delayed-transitions) are transitions that automatically happen after a specified interval of time.
+
+```js
+export const toggleMachine = createMachine({
+  id: 'toggle',
+  initial: 'Inactive',
+  states: {
+    Inactive: {
+      on: { toggle: 'Active' },
+    },
+    Active: {
+      on: { toggle: 'Inactive' },
+      after: { 2000: 'Inactive' },
+    },
+  },
+});
+```
+
+## Handle context data
+
+[Context](context) is how you store data in a state machine actor.
+
+```ts
+import { assign, createMachine } from 'xstate';
+
+export const toggleMachine = createMachine({
+  id: 'toggle',
+  // [!code highlight:1]
+  context: { count: 0 },
+  initial: 'Inactive',
+  states: {
+    Inactive: {
+      on: { toggle: 'Active' },
+    },
+    Active: {
+      entry: assign({
+        count: ({ context }) => context.count + 1,
+      }),
+      on: { toggle: 'Inactive' },
+      after: { 2000: 'Inactive' },
+    },
+  },
+});
+```
+
+## Add input
+
+[Input](input) is how initial data can be provided to a machine actor.
+
+[Guards](guards) are used to conditionally allow or disallow transitions.
+
+```ts
+import { assign, createMachine } from 'xstate';
+
+export const toggleMachine = createMachine({
+  id: 'toggle',
+  // [!code highlight:1]
+  context: ({ input }) => ({
+    count: 0,
+    // [!code highlight:1]
+    maxCount: input.maxCount,
+  }),
+  initial: 'Inactive',
+  states: {
+    Inactive: {
+      on: {
+        toggle: {
+          // Only trigger toggle transition if count is less than maxCount
+          // [!code highlight:1]
+          guard: ({ context }) => context.count < context.maxCount,
+          target: 'Active',
+        },
+      },
+    },
+    Active: {
+      entry: assign({
+        count: ({ context }) => context.count + 1,
+      }),
+      on: { toggle: 'Inactive' },
+      after: { 2000: 'Inactive' },
+    },
+  },
+});
+
+const actor = createActor(toggleMachine, {
+  // [!code highlight:1]
+  input: { maxCount: 10 },
+});
+
+actor.subscribe((snapshot) => {
+  console.log('State:', snapshot.value);
+});
+
+actor.start();
+
+actor.send({ type: 'toggle' });
+```
+
+## Use your machine with a framework
+
+- [Check out all our packages](/docs/category/xstate-packages)
+- [Find out more about the `@xstate/react` package](xstate-react)
+
+```jsx
+import { useMachine } from '@xstate/react';
+import { toggleMachine } from './toggleMachine';
+
+const App = () => {
+  const [state, send] = useMachine(toggleMachine);
+
+  return (
+    <div>
+      <div>Value: {state.value}</div>
+      <button onClick={() => send({ type: 'toggle' })}>Toggle</button>
+    </div>
+  );
+};
+```
+
+- [Use the XState v5 templates](https://github.com/statelyai/xstate/tree/main/templates)
+- [Find more examples](examples)
+- [Migrate from XState V4 to XState V5](migration)

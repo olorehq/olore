@@ -1,0 +1,22 @@
+# XState Documentation Index
+93 files | Paths relative to contents/
+@start:quickstart,installation,setup,getting-started=quick-start.mdx;install,npm,pnpm=installation.mdx;xstate,overview=xstate.mdx;intro,basics=state-machines-and-statecharts.mdx;home,docs=index.mdx
+@machines:createMachine,machine,states,initial,id=machines.mdx;setup,types,actions,guards,actors,delays=setup.mdx;state,value,matches=states.mdx;finite,fsm=finite-states.mdx;initial,initialState=initial-states.mdx;final,done=final-states.mdx;parent,nested,hierarchical=parent-states.mdx;parallel,regions=parallel-states.mdx;history,shallow,deep=history-states.mdx
+@transitions:on,transition,event,target=transitions.mdx;after,delay,delayed=delayed-transitions.mdx;always,eventless=eventless-transitions.mdx;pure,choose=pure-transitions.mdx;guard,cond,condition=guards.mdx
+@actions:actions,entry,exit,fire-and-forget=actions.mdx;assign,context,update=context.mdx;raise,sendTo,enqueueActions=actions.mdx;input,params=input.mdx;output,result=output.mdx;stop,stopChild=actions.mdx
+@actors:actor,createActor,start,stop,subscribe=actors.mdx;actor-model,mailbox,message-passing=actor-model.mdx;invoke,invoked,src=invoke.mdx;spawn,spawned,dynamic=spawn.mdx;system,systemId=system.mdx
+@actor-types:callback,fromCallback,sendBack,receive=callback-actors.mdx;promise,fromPromise,async,await=promise-actors.mdx;observable,fromObservable,rxjs=observable-actors.mdx;fromTransition,reducer=transition-actors.mdx;fromMachine,state-machine=state-machine-actors.mdx;fromEventObservable=function-actors.mdx
+@context:context,assign,event,snapshot=context.mdx;input,provide,withContext=input.mdx;output,done,result=output.mdx;tags,tag,hasTag=tags.mdx;description,meta=descriptions.mdx;annotations,@xstate,jsdoc=annotations.mdx
+@typescript:typescript,types,typegen,inference=typescript.mdx;typegen,codegen,generate=typegen.mdx;setup,types,context,events=setup.mdx
+@react:useActor,useMachine,useSelector,useActorRef=xstate-react.mdx;react,hooks,component=xstate-react.mdx;generate,useActorLogic=generate-react.mdx
+@vue:useActor,useMachine,useSelector,useInterpret=xstate-vue.mdx;vue,composition,options=xstate-vue.mdx
+@svelte:useMachine,useActor,useSelector,useInterpret=xstate-svelte.mdx;svelte,store,readable=xstate-svelte.mdx
+@store:store,createStore,useState,useSelector=xstate-store.mdx;store-v2,producer,immer=xstate-store-v2.mdx;react,useSelector=xstate-store/react.mdx;vue,useSelector=xstate-store/vue.mdx;svelte,useSelector=xstate-store/svelte.mdx;angular,inject=xstate-store/angular.mdx;solid,createStore=xstate-store/solid.mdx;preact,hooks=xstate-store/preact.mdx
+@testing:test,testing,model,paths=testing.mdx;@xstate/test,createModel,getShortestPaths=xstate-test.mdx;generate,test-paths,coverage=generate-test-paths.mdx
+@devtools:inspector,@xstate/inspector,inspect,dev=inspector.mdx;inspect,createInspector,browser=inspection.mdx;visualizer,@xstate/visualizer,graph=visualizer.mdx;developer-tools,debugging=developer-tools.mdx;vscode,extension,intellisense=xstate-vscode-extension.mdx
+@studio:stately,studio,editor,visual=studio.mdx;api,REST,export,import=studio-api.mdx;sky,cloud,sync=stately-sky-getting-started.mdx;import,code,typescript=import-from-code.mdx;import,github,repository=import-from-github.mdx;export,code,typescript,react=export-as-code.mdx;sources,sync,code=sources.mdx;embed,iframe,preview=embed.mdx;url,share,link=url.mdx
+@studio-editor:design,edit,canvas=design-mode.mdx;simulate,run,test=simulate-mode.mdx;live,simulation,events=live-simulation.mdx;states,transitions,editor=editor-states-and-transitions.mdx;actions,actors,invoke=editor-actions-and-actors.mdx;context,meta,data=editor-context-and-meta.mdx;tags,state-tags=editor-tags.mdx;flow,generate,diagram=generate-flow.mdx;figma,plugin,export=figma.mdx;image,export,png,svg=image.mdx;graph,layout,visualization=graph.mdx;restore,undo,history=machine-restore.mdx;assets,upload,media=assets.mdx
+@persistence:persistence,persist,restore,snapshot=persistence.mdx;done,onDone,onError=state-done-events.mdx
+@libraries:graph,@xstate/graph,paths,adjacency=xstate-graph.mdx;immer,@xstate/immer,produce=xstate-immer.mdx;immer,producer,immutable=immer.mdx;fsm,@xstate/fsm,lightweight=xstate-fsm.mdx;event-emitter,fromEventEmitter,node=event-emitter.mdx
+@reference:cheatsheet,quick-reference,api=cheatsheet.mdx;glossary,terms,definitions=glossary.mdx;migration,v4,v5,upgrade=migration.mdx;examples,demos,codesandbox=examples.mdx
+@agents:agents,ai,llm,openai=agents/agents.mdx

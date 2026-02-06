@@ -1,0 +1,111 @@
+---
+title: History states
+---
+
+A history state is a special type of state (a _pseudostate_) that remembers the last [child state](parent-states) that was active before its parent state is exited. When a transition from outside the parent state targets a history state, the remembered child state is entered.
+
+This allows machines to "remember" where they left off when exiting and reentering a parent state.
+
+- If no child state remembered, history goes to `.target` state, if it is specified
+- Otherwise, go to [initial state](initial-states)
+
+A history state returns the parent state to its most recently active child state. The box with an **H** inside represents the history state.
+
+The history state can be deep or shallow:
+
+- A shallow history state remembers the immediate child’s state.
+- A deep history state remembers the deepest active state or states inside its child states.
+
+```ts
+import { createMachine } from 'xstate';
+
+const checkoutMachine = createMachine({
+  // ...
+  states: {
+    payment: {
+      initial: 'card',
+      states: {
+        card: {},
+        paypal: {},
+        // [!code highlight:1]
+        hist: { type: 'history' },
+      },
+    },
+    address: {
+      on: {
+        back: {
+          target: 'payment.hist',
+        },
+      },
+    },
+  },
+});
+```
+
+## Shallow vs. deep history
+
+- Shallow history states only remember the last active direct child state.
+- Deep history states remember all active descendant states.
+
+## History target
+
+- Normally, history states target the most recent child state of its parent state
+- If the history state is entered but the parent state was never visited, the parent's initial state is entered.
+- However, you can add a `target: 'childKey'` to specify the default child state that should be entered
+
+## History states cheatsheet
+
+### Cheatsheet: create a history state (shallow by default)
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+  states: {
+    hist: { type: 'history' },
+    firstState: {},
+    someState: {},
+    anotherState: {},
+  },
+});
+```
+
+### Cheatsheet: create a deep history state
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+  states: {
+    hist: {
+      type: 'history',
+      history: 'deep',
+    },
+    firstState: {},
+    someState: {},
+    anotherState: {},
+  },
+});
+```
+
+### Cheatsheet: create a history state with a target
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+  initialState: 'firstState',
+  states: {
+    hist: {
+      type: 'history',
+      target: 'someState',
+    },
+    firstState: {},
+    someState: {},
+    anotherState: {},
+  },
+});
+```

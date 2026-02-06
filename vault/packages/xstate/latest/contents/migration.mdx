@@ -1,0 +1,2512 @@
+---
+title: 'Migrating from XState v4 to v5'
+---
+
+The guide below explains how to migrate from XState version 4 to version 5. Migrating from XState v4 to v5 should be a straightforward process. If you get stuck or have any questions, please reach out to the Stately team on [our Discord](https://discord.gg/xstate).
+
+<Callout>
+
+Read [David’s blog post on the launch of XState v5](../../blog/2023-12-01-xstate-v5).
+
+</Callout>
+
+This guide is for developers who want to update their codebase from v4 to v5 and should also be valuable for any developers wanting to know the differences between v4 and v5.
+
+<Callout>
+
+Prefer video? [Watch our XState v5 webinar on YouTube](https://www.youtube.com/live/TRVjeil-y74).
+
+</Callout>
+
+## XState v5 and TypeScript
+
+XState v5 and its related libraries are written in TypeScript, and utilize complex types to provide the best type safety and inference possible for you. **XState v5 requires TypeScript version 5.0 or greater.** For best results, use the latest TypeScript version.
+
+Follow these guidelines to ensure that your TypeScript project is ready to use XState v5:
+
+- Use the latest version of TypeScript, version 5.0 or greater (required)
+
+  ```bash
+  npm install typescript@latest --save-dev
+  ```
+
+- Set [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) to `true` in your `tsconfig.json` file. This will ensure that our types work correctly and will also help catch errors in your code (strongly recommended)
+
+  ```json5
+  // tsconfig.json
+  {
+    compilerOptions: {
+      // ...
+      // [!code highlight:1]
+      strictNullChecks: true,
+      // or set `strict` to true, which includes `strictNullChecks`
+      // "strict": true
+    },
+  }
+  ```
+
+- Set [`skipLibCheck`](https://www.typescriptlang.org/tsconfig#skipLibCheck) to `true` in your `tsconfig.json` file (recommended)
+
+## Creating machines and actors
+
+### Use `createMachine()`, not `Machine()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `Machine(config)` function is now called `createMachine(config)`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts twoslash
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { Machine } from 'xstate';
+
+const machine = Machine({
+  // ...
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `createActor()`, not `interpret()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `interpret()` function has been renamed to `createActor()`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine(/* ... */);
+
+// ✅
+const actor = createActor(machine, {
+  // actor options
+});
+```
+
+</Tab>
+<Tab value="v4" label="XState v4">
+
+```ts
+import { createMachine, interpret } from 'xstate';
+
+const machine = createMachine(/* ... */);
+
+// ❌ DEPRECATED
+const actor = interpret(machine, {
+  // actor options
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `machine.provide()`, not `machine.withConfig()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `machine.withConfig()` method has been renamed to `machine.provide()`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const specificMachine = machine.provide({
+  actions: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  actors: {
+    /* ... */
+  },
+  // ...
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const specificMachine = machine.withConfig({
+  actions: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  services: {
+    /* ... */
+  },
+  // ...
+});
+```
+
+</Tab>
+</Tabs>
+
+### Set context with `input`, not `machine.withContext()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `machine.withContext(...)` method can no longer be used, as `context` can no longer be overridden directly. Use [input](input) instead:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  context: ({ input }) => ({
+    actualMoney: Math.min(input.money, 42),
+  }),
+});
+
+const actor = createActor(machine, {
+  input: {
+    money: 1000,
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  context: {
+    actualMoney: 0,
+  },
+});
+
+const moneyMachine = machine.withContext({
+  actualMoney: 1000,
+});
+```
+
+</Tab>
+</Tabs>
+
+### Actions ordered by default, `predictableActionArguments` no longer needed
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Actions are now in predictable order by default, so the `predictableActionArguments` flag is no longer required. Assign actions will always run in the order they are defined.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  entry: [
+    ({ context }) => {
+      console.log(context.count); // 0
+    },
+    assign({ count: 1 }),
+    ({ context }) => {
+      console.log(context.count); // 1
+    },
+    assign({ count: 2 }),
+    ({ context }) => {
+      console.log(context.count); // 2
+    },
+  ],
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  predictableActionArguments: true,
+  entry: [
+    (context) => {
+      console.log(context.count); // 0
+    },
+    assign({ count: 1 }),
+    (context) => {
+      console.log(context.count); // 1
+    },
+    assign({ count: 2 }),
+    (context) => {
+      console.log(context.count); // 2
+    },
+  ],
+});
+```
+
+</Tab>
+</Tabs>
+
+### The `spawn()` function has been removed
+
+Instead of using the imported `spawn()` function to create actors inside `assign(...)` actions:
+
+- Use the `spawnChild(...)` action creator (preferred)
+- Or use the `spawn(...)` method from the first argument passed to the assigner function inside of `assign(...)` actions (useful if you need the actor ref in `context`)
+
+Read the documentation on [spawning actors](./spawn) for more information.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+// [!code highlight:1]
+import { spawnChild, assign } from 'xstate';
+
+// Spawning a direct child:
+const machine1 = createMachine({
+  // ...
+  // [!code highlight:3]
+  entry: spawnChild('someChildLogic', {
+    id: 'someChild',
+  }),
+});
+
+// Spawning a child with the actor ref in `context`:
+const machine2 = createMachine({
+  // ...
+  entry: assign({
+    // [!code highlight:1]
+    child: ({ spawn }) => spawn('someChildLogic'),
+  }),
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌
+import { assign, spawn } from 'xstate';
+
+const machine = createMachine({
+  // ...
+  entry: assign({
+    // [!code highlight:1]
+    child: () => spawn('someChildLogic'),
+  }),
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `getNextSnapshot(…)` instead of `machine.transition(…)`
+
+The `machine.transition(…)` method now requires an "actor scope" for the 3rd argument, which is internally created by `createActor(…)`. Instead, use `getNextSnapshot(…)` to get the next snapshot from some actor logic based on the current snapshot and event:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+import {
+  createMachine,
+  // [!code highlight:1]
+  getNextSnapshot,
+} from 'xstate';
+
+const machine = createMachine({
+  // ...
+});
+
+// [!code highlight:5]
+const nextState = getNextSnapshot(
+  machine,
+  machine.resolveState({ value: 'green' }),
+  { type: 'timer' },
+);
+
+nextState.value; // yellow
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+});
+
+const nextState = machine.transition('green', { type: 'timer' });
+
+nextState.value; // yellow
+```
+
+</Tab>
+</Tabs>
+
+### Send events explictly instead of using `autoForward`
+
+The `autoForward` property on invoke configs has been removed. Instead, send events explicitly.
+
+In general, it's _not_ recommended to forward all events to an actor. Instead, only forward the specific events that the actor needs.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someSource',
+    id: 'someId',
+  },
+  // [!code highlight:5]
+  always: {
+    // Forward events to the invoked actor
+    // This will not cause an infinite loop in XState v5
+    actions: sendTo('someId', ({ event }) => event),
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someSource',
+    id: 'someId'
+    // [!code highlight:1]
+    autoForward: true // deprecated
+  }
+});
+```
+
+</Tab>
+</Tabs>
+
+## States
+
+### Use `state.getMeta()` instead of `state.meta`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `state.meta` property has been renamed to `state.getMeta()`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+  
+```ts
+// ✅
+state.getMeta();
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+state.meta;
+```
+
+</Tab>
+</Tabs>
+
+### The `state.toStrings()` method has been removed
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+```ts
+import { type StateValue } from 'xstate';
+
+export function getStateValueStrings(stateValue: StateValue): string[] {
+  if (typeof stateValue === 'string') {
+    return [stateValue];
+  }
+  const valueKeys = Object.keys(stateValue);
+
+  return valueKeys.concat(
+    ...valueKeys.map((key) =>
+      getStateValueStrings(stateValue[key]!).map((s) => key + '.' + s),
+    ),
+  );
+}
+
+// ...
+
+const stateValueStrings = getStateValueStrings(stateValue);
+// e.g. ['green', 'yellow', 'red', 'red.walk', 'red.wait', …]
+```
+
+### Use `state._nodes` instead of `state.configuration`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `state.configuration` property has been renamed to `state._nodes`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+  
+```ts
+// ✅
+state._nodes;
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+state.configuration;
+```
+
+</Tab>
+</Tabs>
+
+### Read events from inspection API instead of `state.events`
+
+The `state.events` property has been removed, because events are not part of state, unless you explicitly add them to the state's `context`. Use the [inspection API](./inspection) to observe events instead, or add the event explicitly to the state's `context`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+  
+```ts
+// ✅
+import { createActor } from 'xstate';
+import { someMachine } from './someMachine';
+
+const actor = createActor(someMachine, {
+// [!code highlight:5]
+inspect: (inspEvent) => {
+if (inspEvent.type === '@xstate.event') {
+console.log(inspEvent.event);
+}
+}
+});
+
+````
+
+</Tab>
+
+<Tab value="v5-alt" label="XState v5 (context)">
+
+```ts
+// ✅
+import { setup, createActor } from 'xstate';
+
+const someMachine = setup({
+  // ...
+  actions: {
+    // [!code highlight:3]
+    recordEvent: assign({
+      event: ({ event }) => event
+    })
+  }
+}).createMachine({
+  context: { event: undefined },
+  on: {
+    someEvent: {
+      // ...
+      // [!code highlight:1]
+      actions: ['recordEvent']
+    }
+  }
+});
+
+const someActor = createActor(someMachine);
+someActor.subscribe(snapshot => {
+  // [!code highlight:1]
+  console.log(snapshot.context.event);
+});
+````
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { interpret } from 'xstate';
+import { someMachine } from './someMachine';
+
+const actor = interpret(someMachine);
+actor.subscribe((state) => {
+  // [!code highlight:1]
+  console.log(state.event); // Removed
+});
+```
+
+</Tab>
+</Tabs>
+
+## Events and transitions
+
+### Implementation functions receive a single argument
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Implementation functions now take in a single argument: an object with `context`, `event`, and other properties.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  entry: ({ context, event }) => {
+    // ...
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  entry: (context, event) => {
+    // ...
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### `send()` is removed; use `raise()` or `sendTo()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `send(...)` action creator is removed. Use `raise(...)` for sending events to self or `sendTo(...)` for sending events to other actors instead.
+
+Read the documentation on the [`sendTo` action](actions.mdx#send-to-action) and [`raise` action](actions.mdx#raise-action) for more information.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  entry: [
+    // Send an event to self
+    raise({ type: 'someEvent' }),
+
+    // Send an event to another actor
+    sendTo('someActor', { type: 'someEvent' }),
+  ],
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  entry: [
+    // Send an event to self
+    send({ type: 'someEvent' }),
+
+    // Send an event to another actor
+    send({ type: 'someEvent' }, { to: 'someActor' }),
+  ],
+});
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update v4 projects to use `sendTo` or `raise` instead of `send`.
+
+### Use `enqueueActions()` instead of `pure()` and `choose()`
+
+The `pure()` and `choose()` methods have been removed. Use `enqueueActions()` instead.
+
+For `pure()` actions:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+entry: [
+  enqueueActions(({ context, event, enqueue }) => {
+    enqueue('action1');
+    enqueue('action2');
+  }),
+];
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+entry: [
+  pure(() => {
+    return ['action1', 'action2'];
+  }),
+];
+```
+
+</Tab>
+</Tabs>
+
+For `choose()` actions:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+entry: [
+  enqueueActions(({ enqueue, check }) => {
+    if (check('someGuard')) {
+      enqueue('action1');
+      enqueue('action2');
+    }
+  }),
+];
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+entry: [
+  choose([
+    {
+      guard: 'someGuard',
+      actions: ['action1', 'action2'],
+    },
+  ]),
+];
+```
+
+</Tab>
+</Tabs>
+
+### `actor.send()` no longer accepts string types
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+String event types can no longer be sent to, e.g., `actor.send(event)`; you must send an event object instead:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+actor.send({ type: 'someEvent' });
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+actor.send('someEvent');
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update v4 projects to pass an object to `.send()`.
+
+### `state.can()` no longer accepts string types
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+String event types can no longer be sent to, e.g., `state.can(event)`; you must send an event object instead:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+state.can({ type: 'someEvent' });
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+state.can('someEvent');
+```
+
+</Tab>
+</Tabs>
+
+### Guarded transitions use `guard`, not `cond`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `cond` transition property for guarded transitions is now called `guard`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  on: {
+    someEvent: {
+      guard: 'someGuard',
+      target: 'someState',
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  on: {
+    someEvent: {
+      // renamed to `guard` in v5
+      cond: 'someGuard',
+      target: 'someState',
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `params` to pass params to actions & guards
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Properties other than `type` on action objects and guard objects should be nested under a `params` property; `{ type: 'someType', message: 'hello' }` becomes `{ type: 'someType', params: { message: 'hello' }}`. These `params` are then passed to the 2nd argument of the action or guard implementation:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  entry: {
+    type: 'greet',
+    params: {
+      message: 'Hello world',
+    },
+  },
+  on: {
+    someEvent: {
+      guard: { type: 'isGreaterThan', params: { value: 42 } },
+    },
+  },
+}).provide({
+  actions: {
+    greet: ({ context, event }, params) => {
+      console.log(params.message); // 'Hello world'
+    },
+  },
+  guards: {
+    isGreaterThan: ({ context, event }, params) => {
+      return event.value > params.value;
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine(
+  {
+    entry: {
+      type: 'greet',
+      message: 'Hello world',
+    },
+    on: {
+      someEvent: {
+        cond: { type: 'isGreaterThan', value: 42 },
+      },
+    },
+  },
+  {
+    actions: {
+      greet: (context, event, { action }) => {
+        console.log(action.message); // 'Hello world'
+      },
+    },
+    guards: {
+      isGreaterThan: (context, event, { guard }) => {
+        return event.value > guard.value;
+      },
+    },
+  },
+);
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update action and guard objects on v4 projects to move properties (other than `type`) to a `params` object.
+
+### Use wildcard `*` transitions, not strict mode
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Strict mode is removed. If you want to throw on unhandled events, you should use a wildcard transition:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  on: {
+    knownEvent: {
+      // ...
+    },
+    // [!code highlight:6]
+    '*': {
+      // unknown event
+      actions: ({ event }) => {
+        throw new Error(`Unknown event: ${event.type}`);
+      },
+    },
+  },
+});
+
+const actor = createActor(machine);
+
+actor.subscribe({
+  // [!code highlight:3]
+  error: (err) => {
+    console.error(err);
+  },
+});
+
+actor.start();
+
+actor.send({ type: 'unknownEvent' });
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  strict: true,
+  on: {
+    knownEvent: {
+      // ...
+    },
+  },
+});
+
+const service = interpret(machine);
+
+service.send({ type: 'unknownEvent' });
+```
+
+</Tab>
+</Tabs>
+
+### Use explicit eventless (`always`) transitions
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Eventless (“always”) transitions must now be defined through the `always: { ... }` property of a state node; they can no longer be defined via an empty string:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  states: {
+    someState: {
+      always: {
+        target: 'anotherState',
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  states: {
+    someState: {
+      on: {
+        '': {
+          target: 'anotherState',
+        },
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update v4 projects to use `always` for _eventless_ transitions.
+
+### Use `reenter: true`, not `internal: false`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+`internal: false` is now `reenter: true`
+
+External transitions previously specified with `internal: false` are now specified with `reenter: true`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  on: {
+    someEvent: {
+      target: 'sameState',
+      reenter: true,
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  on: {
+    someEvent: {
+      target: 'sameState',
+      internal: false,
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Transitions are internal by default, not external
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+All transitions are **internal by default**. This change is relevant for transitions defined on state nodes with `entry` or `exit` actions, invoked actors, or delayed transitions (`after`). If you relied on the previous XState v4 behavior where transitions implicitly re-entered a state node, use `reenter: true`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      entry: 'someAction',
+      on: {
+        // [!code highlight:10]
+        someEvent: {
+          target: 'compoundState.childState',
+          // Reenters the `compoundState` state,
+          // just like an external transition
+          reenter: true,
+        },
+        selfEvent: {
+          target: 'childState',
+          reenter: true,
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {},
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      entry: 'someAction',
+      on: {
+        // [!code highlight:7]
+        someEvent: {
+          // implicitly external
+          target: 'compoundState.childState', // non-relative target
+        },
+        selfEvent: {
+          target: 'compoundState',
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {},
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      after: {
+        1000: {
+          target: 'compoundState.childState',
+          reenter: true, // make it external explicitly!
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {},
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      after: {
+        1000: {
+          // implicitly external
+          target: 'compoundState.childState', // non-relative target
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {},
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Child state nodes are always re-entered
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Child state nodes are always re-entered when they are targeted by transitions (both external and internal) defined on compound state nodes. This change is relevant only if a child state node has `entry` or `exit` actions, invoked actors, or delayed transitions (`after`). Add a `stateIn` guard to prevent undesirable re-entry of the child state:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      on: {
+        someEvent: {
+          guard: not(stateIn({ compoundState: 'childState' })),
+          target: '.childState',
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {
+          entry: 'someAction',
+        },
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+
+const machine = createMachine({
+  // ...
+  states: {
+    compoundState: {
+      on: {
+        someEvent: {
+          // Implicitly internal; childState not re-entered
+          target: '.childState',
+        },
+      },
+      initial: 'childState',
+      states: {
+        childState: {
+          entry: 'someAction',
+        },
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+</Tabs>
+
+### Use `stateIn()` to validate state transitions, not `in`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `in: 'someState'` transition property is removed. Use `guard: stateIn(...)` instead:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  on: {
+    someEvent: {
+      guard: stateIn({ form: 'submitting' }),
+      target: 'someState',
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  on: {
+    someEvent: {
+      in: '#someMachine.form.submitting'
+      target: 'someState',
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `actor.subscribe()` instead of `state.history`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `state.history` property is removed. If you want the previous snapshot, you should maintain that via `actor.subscribe(...)` instead.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+let previousSnapshot = actor.getSnapshot();
+
+actor.subscribe((snapshot) => {
+  doSomeComparison(previousSnapshot, snapshot);
+  previousSnapshot = snapshot;
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+actor.subscribe((state) => {
+  doSomeComparison(state.history, state);
+});
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update v4 projects to track history using `actor.subscribe()`.
+
+### Actions can throw errors without `escalate`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `escalate` action creator is removed. In XState v5 actions can throw errors, and they will propagate as expected. Errors can be handled using an `onError` transition.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const childMachine = createMachine({
+  // This will be sent to the parent machine that invokes this child
+  // [!code highlight:3]
+  entry: () => {
+    throw new Error('This is some error');
+  },
+});
+
+const parentMachine = createMachine({
+  invoke: {
+    src: childMachine,
+    // [!code highlight:11]
+    onError: {
+      actions: ({ context, event }) => {
+        console.log(event.error);
+        //  {
+        //    type: ...,
+        //    error: {
+        //      message: 'This is some error'
+        //    }
+        //  }
+      },
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const childMachine = createMachine({
+  // [!code highlight:1]
+  entry: escalate('This is some error'),
+});
+
+/* ... */
+```
+
+</Tab>
+</Tabs>
+
+## Actors
+
+### Use actor logic creators for `invoke.src` instead of functions
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The available actor logic creators are:
+
+- `createMachine`
+- `fromPromise`
+- `fromObservable`
+- `fromEventObservable`
+- `fromTransition`
+- `fromCallback`
+
+See [Actors](actors) for more information.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+import { fromPromise, setup } from 'xstate';
+
+const machine = setup({
+  actors: {
+    getUser: fromPromise(async ({ input }: { input: { userId: string } }) => {
+      const data = await getData(input.userId);
+      // ...
+      return data;
+    }),
+  },
+}).createMachine({
+  invoke: {
+    src: 'getUser',
+    input: ({ context, event }) => ({
+      userId: context.userId,
+    }),
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  invoke: {
+    src: (context) => async () => {
+      const data = await getData(context.userId);
+
+      // ...
+      return data;
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+import { fromCallback, createMachine } from 'xstate';
+
+const machine = createMachine({
+  invoke: {
+    src: fromCallback(({ sendBack, receive, input }) => {
+      // ...
+    }),
+    input: ({ context, event }) => ({
+      userId: context.userId,
+    }),
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  invoke: {
+    src: (context, event) => (sendBack, receive) => {
+      // context.userId
+      // ...
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+import { fromEventObservable, createMachine } from 'xstate';
+import { interval, mapTo } from 'rxjs';
+
+const machine = createMachine({
+  invoke: {
+    src: fromEventObservable(() =>
+      interval(1000).pipe(mapTo({ type: 'tick' })),
+    ),
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { createMachine } from 'xstate';
+import { interval, mapTo } from 'rxjs';
+
+const machine = createMachine({
+  invoke: {
+    src: () => interval(1000).pipe(mapTo({ type: 'tick' })),
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `invoke.input` instead of `invoke.data`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `invoke.data` property is removed. If you want to provide context to invoked actors, use `invoke.input`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const someActor = createMachine({
+  // The input must be consumed by the invoked actor:
+  context: ({ input }) => input,
+  // ...
+});
+
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someActor',
+    input: {
+      value: 42,
+    },
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const someActor = createMachine({
+  // ...
+});
+
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someActor',
+    data: {
+      value: 42,
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `output` in final states instead of `data`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+To produce output data from a machine which reached its final state, use the top-level `output` property instead of `data`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+    },
+  },
+  output: {
+    answer: 42,
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+      data: {
+        answer: 42,
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+To provide a dynamically generated output, replace `invoke.data` with `invoke.output` and add a top-level `output` property:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+      output: ({ event }) => ({
+        answer: event.someValue,
+      }),
+    },
+  },
+  output: ({ event }) => event.output,
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+      data: (context, event) => {
+        answer: event.someValue,
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Don't use property mappers in `input` or `output`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+If you want to provide dynamic context to invoked actors, or produce dynamic output from final states, use a function instead of an object with property mappers.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someActor',
+    input: ({ context, event }) => ({
+      value: event.value,
+    }),
+  },
+});
+
+// The input must be consumed by the invoked actor:
+const someActor = createMachine({
+  // ...
+  context: ({ input }) => input,
+});
+
+// Producing machine output
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+    },
+  },
+  output: ({ context, event }) => ({
+    answer: context.value,
+  }),
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  // ...
+  invoke: {
+    src: 'someActor',
+    data: {
+      value: (context, event) => event.value, // a property mapper
+    },
+  },
+});
+
+// Producing machine output
+const machine = createMachine({
+  // ...
+  states: {
+    finished: {
+      type: 'final',
+      data: {
+        answer: (context, event) => context.value, // a property mapper
+      },
+    },
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `actors` property on `options` object instead of `services`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+`services` have been renamed to `actors`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const specificMachine = machine.provide({
+  actions: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  actors: {
+    /* ... */
+  },
+  // ...
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const specificMachine = machine.withConfig({
+  actions: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  services: {
+    /* ... */
+  },
+  // ...
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `subscribe()` for changes, not `onTransition()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `actor.onTransition(...)` method is removed. Use `actor.subscribe(...)` instead.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const actor = createActor(machine);
+actor.subscribe((state) => {
+  // ...
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const actor = interpret(machine);
+actor.onTransition((state) => {
+  // ...
+});
+```
+
+</Tab>
+</Tabs>
+
+### `createActor()` (formerly `interpret()`) accepts a second argument to restore state
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+`interpret(machine).start(state)` is now `createActor(machine, { snapshot }).start()`
+
+To restore an actor at a specific state, you should now pass the state as the `snapshot` property of the `options` argument of `createActor(logic, options)`. The `actor.start()` property no longer takes in a `state` argument.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const actor = createActor(machine, { snapshot: someState });
+actor.start();
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const actor = interpret(machine);
+actor.start(someState);
+```
+
+</Tab>
+</Tabs>
+
+### Use `actor.getSnapshot()` to get actor’s state
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+Subscribing to an actor (`actor.subscribe(...)`) after the actor has started will no longer emit the current snapshot immediately. Instead, read the current snapshot from `actor.getSnapshot()`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const actor = createActor(machine);
+actor.start();
+
+const initialState = actor.getSnapshot();
+
+actor.subscribe((state) => {
+  // Snapshots from when the subscription was created
+  // Will not emit the current snapshot until a transition happens
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const actor = interpret(machine);
+actor.start();
+
+actor.subscribe((state) => {
+  // Current snapshot immediately emitted
+});
+```
+
+</Tab>
+</Tabs>
+
+### Loop over events instead of using `actor.batch()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `actor.batch([...])` method for batching events is removed.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+for (const event of events) {
+  actor.send(event);
+}
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+actor.batch(events);
+```
+
+</Tab>
+</Tabs>
+
+**Pre-migration tip:** Update v4 projects to loop over events to send them as a batch.
+
+### Use `snapshot.status === 'done'` instead of `snapshot.done`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `snapshot.done` property, which was previously in the snapshot object of state machine actors, is removed. Use `snapshot.status === 'done'` instead, which is available to all actors:
+
+<Tabs>
+
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const actor = createActor(machine);
+actor.start();
+
+actor.subscribe((snapshot) => {
+  if (snapshot.status === 'done') {
+    // ...
+  }
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const actor = interpret(machine);
+actor.start();
+
+actor.subscribe((state) => {
+  if (state.done) {
+    // ...
+  }
+});
+```
+
+</Tab>
+</Tabs>
+
+### `state.nextEvents` has been removed
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `state.nextEvents` property is removed, since it is not a completely safe/reliable way of determining the next events that can be sent to the actor. If you want to get the next events according to the previous behavior, you can use this helper function:
+
+```ts
+import type { AnyMachineSnapshot } from 'xstate';
+
+function getNextEvents(snapshot: AnyMachineSnapshot) {
+  return [...new Set([...snapshot._nodes.flatMap((sn) => sn.ownEvents)])];
+}
+
+// Instead of `state.nextEvents`:
+const nextEvents = getNextEvents(state);
+```
+
+## TypeScript
+
+### Use `types` instead of `schema`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `machineConfig.schema` property is renamed to `machineConfig.types`:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  types: {} as {
+    context: {
+      /* ...*/
+    };
+    events: {
+      /* ...*/
+    };
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  schema: {} as {
+    context: {
+      /* ...*/
+    };
+    events: {
+      /* ...*/
+    };
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+### Use `types.typegen` instead of `tsTypes`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+<Callout>
+
+XState Typegen does not fully support XState v5 yet. However, strongly-typed machines can still be achieved without Typegen.
+
+</Callout>
+
+The `machineConfig.tsTypes` property has been renamed and is now at `machineConfig.types.typegen`.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+const machine = createMachine({
+  types: {} as {
+    typegen: {};
+    context: {
+      /* ...*/
+    };
+    events: {
+      /* ...*/
+    };
+  },
+});
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+const machine = createMachine({
+  tsTypes: {};
+  schema: {} as {
+    context: {
+      /* ...*/
+    };
+    events: {
+      /* ...*/
+    };
+  },
+});
+```
+
+</Tab>
+</Tabs>
+
+## `@xstate/react`
+
+### `useInterpret()` is now `useActorRef()`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `useInterpret()` hook, which is used to return an `actorRef` ("service" in XState v4), is renamed to `useActorRef()`.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```ts
+// ✅
+import { useActorRef } from '@xstate/react';
+
+const actorRef = useActorRef(machine); // or any other logic
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```ts
+// ❌ DEPRECATED
+import { useInterpret } from '@xstate/react';
+
+const service = useInterpret(machine);
+```
+
+</Tab>
+</Tabs>
+
+### `useActor(logic)` now accepts actor logic, not an actor
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+The `useActor(logic)` hook now accepts _actor logic_ (such as `fromPromise(...)`, `createMachine(...)`, etc.) instead of an existing `ActorRef`.
+
+To use an existing `ActorRef`, use `actor.send(...)` to send events and `useSelector(actor, ...)` to get the snapshot:
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```tsx
+// ✅
+import { useSelector } from '@xstate/react';
+
+function Component({ someActorRef }) {
+  const state = useSelector(someActorRef, (s) => s);
+
+  return <button onClick={() => someActorRef.send({ type: 'someEvent' })} />;
+}
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```tsx
+// ❌ DEPRECATED
+import { useActor } from '@xstate/react';
+
+function Component({ someActorRef }) {
+  const [state, send] = useActor(someActorRef);
+
+  return <button onClick={() => send({ type: 'someEvent' })} />;
+}
+```
+
+</Tab>
+</Tabs>
+
+## Use `machine.provide()` to provide implementations in hooks
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+For dynamically creating machines with provided implementations, the `useMachine(...)`, `useActor(...)`, and `useActorRef(...)` hooks no longer accept:
+
+- Lazy machine creators as the 1st argument
+- Implementations passed to the 2nd argument
+
+Instead, `machine.provide(...)` should be passed directly to the 1st argument.
+
+The `@xstate/react` package considers machines with the same configuration to be the same machine, so it will minimize rerenders but still keep the provided implementations up-to-date.
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```tsx
+// ✅
+import { useMachine } from '@xstate/react';
+import { someMachine } from './someMachine';
+
+function Component(props) {
+  const [state, send] = useMachine(
+    someMachine.provide({
+      actions: {
+        doSomething: () => {
+          props.onSomething?.(); // Kept up-to-date
+        },
+      },
+    }),
+  );
+
+  // ...
+}
+```
+
+</Tab>
+
+<Tab value="v4 arguments" label="XState v4">
+
+```tsx
+// ❌ DEPRECATED
+import { useMachine } from '@xstate/react';
+import { someMachine } from './someMachine';
+
+function Component(props) {
+  const [state, send] = useMachine(someMachine, {
+    actions: {
+      doSomething: () => {
+        props.onSomething?.();
+      },
+    },
+  });
+
+  // ...
+}
+```
+
+</Tab>
+
+<Tab value="v4 function" label="XState v4">
+
+```tsx
+// ❌ DEPRECATED
+import { useMachine } from '@xstate/react';
+import { someMachine } from './someMachine';
+
+function Component(props) {
+  const [state, send] = useMachine(() =>
+    someMachine.withConfig({
+      actions: {
+        doSomething: () => {
+          props.onSomething?.();
+        },
+      },
+    }),
+  );
+
+  // ...
+}
+```
+
+</Tab>
+</Tabs>
+
+## `@xstate/vue`
+
+### `useMachine()` now returns `snapshot` instead of `state`, and `actor` instead of `service`
+
+<Callout type="warning">
+
+Breaking change
+
+</Callout>
+
+To keep consistent naming with the rest of XState and related libraries:
+
+- `state` is now `snapshot`
+- `service` is now `actor`
+
+<Tabs items={['v5', 'v4']}>
+<Tab value="v5" label="XState v5">
+
+```tsx
+// ✅
+import { useMachine } from '@xstate/vue';
+
+// ...
+
+const {
+  // [!code highlight:1]
+  snapshot, // Renamed from `state`
+  send,
+  // [!code highlight:1]
+  actor, // Renamed from `service`
+} = useMachine(someMachine);
+```
+
+</Tab>
+
+<Tab value="v4" label="XState v4">
+
+```tsx
+// ❌ DEPRECATED
+import { useMachine } from '@xstate/vue';
+
+// ...
+
+const {
+  // [!code highlight:1]
+  state, // Renamed to `snapshot` in @xstate/vue 3.0.0
+  send,
+  // [!code highlight:1]
+  service, // Renamed to `actor` in @xstate/vue 3.0.0
+} = useMachine(someMachine);
+```
+
+</Tab>
+</Tabs>
+
+## New features
+
+- [Create actor systems](system)
+- [New actor logic creators](/docs/actors#actor-logic-creators)
+- [Deep persistence for invoked and spawned actors](persistence)
+- [Provide input data to state machines and actors](input)
+- [Specify output “done data” for actors](output)
+- [Partial event descriptors (partial wildcards)](/docs/transitions#partial-wildcard-transitions)
+- [Enqueue actions](/docs/actions#enqueue-actions)
+- [Higher-level guards](/docs/guards#higher-level-guards)
+- [Setup API for specifying types and strongly-typed state values](/docs/machines#providing-implementations)
+- [Inspect API](inspection)
+
+## Frequently asked questions
+
+### When will Stately Studio be compatible with XState v5?
+
+We are currently working on [Stately Studio](studio) compatibility with XState v5. Exporting to XState v5 (JavaScript or TypeScript) is already available. We are working on support for new XState v5 features, such as higher-order guards, partial event wildcards, and machine input/output.
+
+Upvote or comment on [Stately Studio + XState v5 compatibility in our roadmap](https://feedback.stately.ai/editor/p/stately-studio-xstate-v5-compatibility) to stay updated on our progress.
+
+### When will the XState VS Code extension be compatible with XState v5?
+
+The [XState VS Code extension](xstate-vscode-extension) is not yet compatible with XState v5. The extension is a priority for us, and work is already underway.
+
+Upvote or comment on [XState v5 compatibility for VS Code extension in our roadmap](https://feedback.stately.ai/devtools/p/xstate-v5-compatibility-for-vs-code-extension) to stay updated on our progress.
+
+### When will XState v5 have typegen?
+
+TypeScript inference has been greatly improved in XState v5. Especially with features like the `setup()` API and dynamic parameters, the main use-cases for typegen are no longer needed.
+
+However, we recognize that there may still be some specific use-cases for typegen. Upvote or comment on [Typegen for XState v5 in our roadmap](https://feedback.stately.ai/xstate/p/typegen-for-xstate-v5) to stay updated on our progress.
+
+### How can I use both XState v4 and v5?
+
+You can use both XState v4 and v5 in the same project, which is useful for incrementally migrating to XState v5. To use both, add `"xstate5": "npm:xstate@5"` to your `package.json` manually or through the CLI:
+
+```bash
+npm i xstate5@npm:xstate@5
+```
+
+Then, you can import the v5 version of XState in your code:
+
+```ts
+import { createMachine } from 'xstate5';
+// or { createMachine as createMachine5 } from 'xstate5';
+```
+
+If you need to use different versions of an integration package, such as `@xstate/react`, you can use a similar strategy as above, but you will need to link to the correct version of XState in the integration package. This can be done by using a script:
+
+```bash
+npm i xstate5@npm:xstate@5 @xstate5/react@npm:@xstate/react@4 --force
+```
+
+```js
+// scripts/xstate5-react-script.js
+const fs = require('fs-extra');
+const path = require('path');
+
+const rootNodeModules = path.join(__dirname, '..', 'node_modules');
+
+fs.ensureSymlinkSync(
+  path.join(rootNodeModules, 'xstate5'),
+  path.join(rootNodeModules, '@xstate5', 'react', 'node_modules', 'xstate'),
+);
+```
+
+```json5
+// package.json
+"scripts": {
+  "postinstall": "node scripts/xstate5-react-script.js"
+}
+```
+
+Then, you can use the XState v5 compatible version of `@xstate/react` in your code:
+
+```ts
+import { useMachine } from '@xstate5/react';
+// or { useMachine as useMachine5 } from '@xstate5/react';
+import { createMachine } from 'xstate5';
+// or { createMachine as createMachine5 } from 'xstate5';
+
+// ...
+```

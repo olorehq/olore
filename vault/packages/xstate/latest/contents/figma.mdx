@@ -1,0 +1,59 @@
+---
+title: Embed Figma
+---
+
+import { Plus, Paperclip, Star, Info, Settings } from 'lucide-react';
+
+You can embed Figma frames in your states to keep your design and code in sync. Embedded Figma frames will stay up to date with the latest changes in your Figma files. Figma frames are a special type of [asset](assets).
+
+[In Nick’s blog post, read about how you can improve your team workflows with Stately and Figma](../../blog/2024-01-24-embed-figma/).
+
+<Callout>
+
+Embedding Figma frames is a premium feature of Stately Studio. You can try Stately Studio’s premium plans with a free trial. [Check out the features on our Pro plan](studio-pro-plan), [Team plan](studio-team-plan), [Enterprise plan](studio-enterprise-plan) or [upgrade your existing plan](https://stately.ai/registry/billing).
+
+</Callout>
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=07a2b829-fc69-487c-af11-d6bb56c282a5"
+  title="States with Figma assets"
+/>
+
+## How to embed Figma frames
+
+1. [Generate a Figma personal access token and add it to your user Settings in Stately Studio](#figma-personal-access-token).
+2. In Figma, right-click the frame you want to embed and select **Copy/Paste as** > **Copy link**.
+3. Use the <Plus size={18} /> plus menu and <Paperclip size={18}/> **Embed Figma** on any selected state.
+4. Paste the Figma link into the **Figma URL** field and click **Add Figma Asset**.
+
+As Figma frames are a special type of [asset](assets), you can [change the display size of your Figma frame like any other asset](/docs/assets/#asset-sizes) and [change the order of your state’s assets](/docs/assets/#order-of-assets) to choose which asset is displayed on the state.
+
+### Syncing Figma frames
+
+Your embedded Figma frame will stay up to date with the latest changes in your Figma file unless:
+
+- [you lock your machine](#locked-machines-with-figma-frames)
+- [you revoke your Figma personal access token](#revoking-your-figma-personal-access-token)
+- [your Figma personal access token expires](#revoking-your-figma-personal-access-token)
+
+Refresh the page in the Stately Studio to see the latest changes from your embedded Figma frame.
+
+## Locked machines with Figma frames
+
+When your machine is [locked](lock-machines), updates to your Figma frames will not be synced to your machine. You can unlock your machine to sync your Figma frames again.
+
+## Figma personal access token
+
+You need a Figma [personal access token](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) to embed Figma frames. You can create a personal access token in [your Figma account settings](https://stately.ai/registry/user/my-settings?tab=Figma) under **Personal access tokens**.
+
+To ensure Embed Figma works correctly, you must grant the following permissions to your personal access token:
+
+- **File content**: Allow **Read-only** access so Stately Studio can sync your embedded Figma frames to your machines.
+
+You can update your Figma personal access token from your user <Settings size={18}/> **Settings** in Stately Studio anytime.
+
+### Revoking your Figma personal access token
+
+If you need to revoke your Figma personal access token, you can do so from your Figma account settings.
+
+When you revoke your Figma personal access token or your token expires, Stately Studio will no longer be able to sync your embedded Figma frames to your machines. The last synced version of your embedded Figma frames will remain in your machines for 14 days. After 14 days, Figma will entirely revoke access to the frame.

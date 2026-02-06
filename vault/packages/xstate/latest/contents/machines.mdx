@@ -1,0 +1,666 @@
+---
+title: 'State machines'
+---
+
+A [state machine](state-machines-and-statecharts) is a model that describes the behavior of something, for example an [actor](actors). [Finite state](finite-states) machines describe how the state of an actor transitions to another state when an [event](transitions) occurs.
+
+<Callout>
+
+Read our [introduction to state machines and statecharts](state-machines-and-statecharts) if you haven’t already!
+
+</Callout>
+
+## Benefits of state machines
+
+State machines help build reliable and robust software. [Read more about the benefits of state machines](state-machines-and-statecharts.mdx#benefits-of-state-machines).
+
+## Creating a state machine
+
+In [XState](xstate), a state machine (referred to as a “machine”) is created using the `createMachine(config)` function:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'question',
+  states: {
+    question: {
+      on: {
+        'feedback.good': {
+          target: 'thanks',
+        },
+      },
+    },
+    thanks: {
+      // ...
+    },
+    // ...
+  },
+});
+```
+
+In this example, the machine has two states: `question` and `thanks`. The `question` state has a transition to the `thanks` state when the `feedback.good` event is sent to the machine:
+
+```ts
+const feedbackActor = createActor(feedbackMachine);
+
+feedbackActor.subscribe((state) => {
+  console.log(state.value);
+});
+
+feedbackActor.start();
+// logs 'question'
+
+feedbackActor.send({ type: 'feedback.good' });
+// logs 'thanks'
+```
+
+## Creating actors from machines
+
+A machine contains the logic of an actor. An [actor](actors) is a running instance of the machine; in other words, it is the entity whose logic is described by the machine. Multiple actors can be created from the same machine, and each of those actors will exhibit the same behavior (reaction to received events), but they will be independent of each other and have their own states.
+
+To create an actor, use the `createActor(machine)` function:
+
+```ts
+import { createActor } from 'xstate';
+
+const feedbackActor = createActor(feedbackMachine);
+
+feedbackActor.subscribe((state) => {
+  console.log(state.value);
+});
+
+feedbackActor.start();
+// logs 'question'
+```
+
+You can also create an actor [from other types of logic](/docs/actors/#actor-logic), such as [functions](/docs/actors/#fromtransition), [promises](/docs/actors/#frompromise), and [observables](/docs/actors/#fromobservable).
+
+## Providing implementations
+
+Machine implementations are the language-specific code that is executed but is not directly related to the state machine’s logic (states and transitions). This includes:
+
+- [Actions](actions), which are fire-and-forget side-effects.
+- [Actors](actors), which are entities that can communicate with the machine actor.
+- [Guards](guards), which are conditions that determine whether a transition should be taken.
+- [Delays](delayed-transitions), which specify the time before a delayed transition is taken or a delayed event is sent.
+
+The default implementations can be provided in a `setup({...})` function when creating a machine, and then you can reference those implementations using JSON-serializable strings and/or objects, such as `{ type: 'doSomething' }`.
+
+```ts
+import { setup } from 'xstate';
+
+const feedbackMachine = setup({
+  // Default implementations
+  actions: {
+    doSomething: () => {
+      console.log('Doing something!');
+    },
+  },
+  actors: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  delays: {
+    /* ... */
+  },
+}).createMachine({
+  entry: { type: 'doSomething' },
+  // ... rest of machine config
+});
+
+const feedbackActor = createActor(feedbackMachine);
+
+feedbackActor.start();
+// logs 'Doing something!'
+```
+
+You can override default implementations by _providing_ implementations via `machine.provide(...)`. This function will create a new machine with the same config, but with the provided implementations:
+
+```ts
+const customFeedbackMachine = feedbackMachine.provide({
+  actions: {
+    doSomething: () => {
+      console.log('Doing something else!');
+    },
+  },
+});
+
+const feedbackActor = createActor(customFeedbackMachine);
+
+feedbackActor.start();
+// logs 'Doing something else!'
+```
+
+## Type-bound action helpers
+
+_Since XState version 5.22.0_
+
+The `setup()` function provides type-bound action helpers that are fully typed to the setup's context, events, actors, guards, delays, and emitted types. These helpers create actions that are bound to the specific `setup()` they were created from and can be used directly in machines produced by that setup.
+
+### Creating custom actions
+
+Use `createAction(fn)` to create type-safe custom actions:
+
+```ts
+import { setup } from 'xstate';
+
+const machineSetup = setup({
+  types: {
+    context: {} as { count: number; name: string },
+    events: {} as { type: 'increment'; value: number } | { type: 'reset' },
+  },
+});
+
+// Create a custom action with full type safety
+// Can be defined in any file that imports the machineSetup
+// [!code highlight:4]
+const logCount = machineSetup.createAction(({ context, event }) => {
+  // context and event are fully typed
+  console.log(`Count: ${context.count}, Event: ${event.type}`);
+});
+
+const machine = machineSetup.createMachine({
+  context: { count: 0, name: 'Counter' },
+  initial: 'counting',
+  states: {
+    counting: {
+      entry: logCount, // Fully typed action
+      on: {
+        increment: {
+          actions: logCount,
+        },
+      },
+    },
+  },
+});
+```
+
+The setup provides type-bound versions of all main built-in actions:
+
+- `setup(…).assign(…)`
+- `setup(…).raise(…)`
+- `setup(…).emit(…)`
+- `setup(…).sendTo(…)`
+- `setup(…).log(…)`
+- `setup(…).cancel(…)`
+- `setup(…).spawnChild(…)`
+- `setup(…).stopChild(…)`
+- `setup(…).enqueueActions(…)`
+
+These helpers are fully typed to your setup's types and don't require wrapper objects:
+
+```ts
+import { setup } from 'xstate';
+
+const machineSetup = setup({
+  types: {
+    context: {} as { count: number; items: string[] },
+    events: {} as { type: 'increment' } | { type: 'addItem'; item: string },
+    emitted: {} as { type: 'COUNT_CHANGED'; count: number },
+    // ...
+  },
+});
+
+// [!code highlight:49]
+// Type-bound assign - context is fully typed
+const incrementCount = machineSetup.assign({
+  count: ({ context }) => context.count + 1,
+});
+
+const addItem = machineSetup.assign({
+  items: ({ context, event }) => [...context.items, event.item],
+});
+
+// Type-bound raise - events are fully typed
+const raiseIncrement = machineSetup.raise({ type: 'increment' });
+
+// Type-bound emit - emitted types are fully typed
+const emitCountChanged = machineSetup.emit(({ context }) => ({
+  type: 'COUNT_CHANGED',
+  count: context.count,
+}));
+
+// Type-bound sendTo - actors are fully typed
+const sendToLogger = machineSetup.sendTo('logger', ({ context }) => ({
+  type: 'LOG',
+  message: `Count is ${context.count}`,
+}));
+
+// Type-bound log - context and events are fully typed
+const logContext = machineSetup.log(
+  ({ context }) => `Context: ${JSON.stringify(context)}`,
+);
+
+// Type-bound cancel - actors are fully typed
+const cancelLogger = machineSetup.cancel('logger');
+
+// Type-bound stopChild - actors are fully typed
+const stopLogger = machineSetup.stopChild('logger');
+
+// Type-bound spawnChild - actors are fully typed
+const spawnLogger = machineSetup.spawnChild('logger', {
+  input: ({ context }) => ({ initialCount: context.count }),
+});
+
+// Type-bound enqueueActions - all helpers are available with full typing
+const batchActions = machineSetup.enqueueActions(({ enqueue, check }) => {
+  enqueue(incrementCount);
+  enqueue(logContext);
+
+  if (check(() => true)) {
+    enqueue(emitCountChanged);
+  }
+});
+
+const machine = machineSetup.createMachine({
+  context: { count: 0, items: [] },
+  initial: 'active',
+  states: {
+    active: {
+      entry: [incrementCount, logContext, emitCountChanged],
+      on: {
+        increment: {
+          actions: [incrementCount, batchActions],
+        },
+        addItem: {
+          actions: addItem,
+        },
+      },
+    },
+  },
+});
+```
+
+## Transitioning state
+
+_Since XState version 5.19.0_
+
+When you create a state machine actor, the next state is determined by the machine's current state and the event that is sent to the actor. However, you can also determine the next **state** and **actions** from the current state and event by using the pure `transition(machine, state, event)` and `initialTransition(machine)` functions:
+
+```ts
+// [!code highlight:1]
+import { createMachine, initialTransition, transition } from 'xstate';
+
+const machine = createMachine({
+  initial: 'pending',
+  states: {
+    pending: {
+      on: {
+        start: { target: 'started' },
+      },
+    },
+    started: {
+      entry: 'doSomething',
+    },
+  },
+});
+
+// [!code highlight:1]
+const [initialState, initialActions] = initialTransition(machine);
+
+console.log(initialState.value);
+// logs 'pending'
+
+console.log(initialActions);
+// logs []
+
+// [!code highlight:1]
+const [nextState, actions] = transition(machine, initialState, {
+  type: 'start',
+});
+
+console.log(nextState.value);
+// logs 'started'
+
+console.log(actions);
+// logs [{ type: 'doSomething', … }]
+```
+
+## Determining the next state
+
+<Callout type="warning">
+  It is recommended to use the `initialTransition(…)` and `transition(…)`
+  functions instead of `getNextSnapshot(…)` and `getInitialSnapshot(…)`, which
+  will be deprecated.
+</Callout>
+
+When you create a state machine actor, the next state is determined by the machine's current state and the event that is sent to the actor. If you want to determine the next state outside of the actor, you can use the `getNextSnapshot(…)` function:
+
+```ts
+import { getNextSnapshot } from 'xstate';
+import { feedbackMachine } from './feedbackMachine';
+
+const nextSnapshot = getNextSnapshot(
+  feedbackMachine,
+  feedbackMachine.resolveState({ value: 'question' }),
+  { type: 'feedback.good' },
+);
+
+console.log(nextSnapshot.value);
+// logs 'thanks'
+```
+
+You can also determine the initial state of a machine using the `getInitialSnapshot(…)` function:
+
+```ts
+import { getInitialSnapshot } from 'xstate';
+import { feedbackMachine } from './feedbackMachine';
+
+const initialSnapshot = getInitialSnapshot(
+  feedbackMachine,
+  // optional input
+  { defaultRating: 3 },
+);
+
+console.log(initialSnapshot.value);
+// logs 'question'
+```
+
+## Next transitions
+
+_Since XState version 5.26.0_
+
+You can get all potential next transitions from a given state using the `getNextTransitions(state)` function. This is useful for introspecting what events a state machine actor can respond to in its current state.
+
+```ts
+import { createMachine, createActor, getNextTransitions } from 'xstate';
+
+const machine = createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        start: { target: 'running' },
+        reset: { target: 'idle' },
+      },
+    },
+    running: {
+      on: {
+        stop: { target: 'idle' },
+        pause: { target: 'paused' },
+      },
+    },
+    paused: {
+      on: {
+        resume: { target: 'running' },
+        stop: { target: 'idle' },
+      },
+    },
+  },
+});
+
+const actor = createActor(machine).start();
+
+const transitions = getNextTransitions(actor.getSnapshot());
+
+console.log(transitions.map((t) => t.eventType));
+// logs ['start', 'reset']
+```
+
+The function returns an array of transition definitions, each of which is an object with the following properties:
+
+- `eventType` - The event type of the transition
+- `target` - The state node that the transition targets
+- `source` - The state node where the transition originates from
+- `actions` - The actions that will be executed during the transition
+- `reenter` - Whether the transition is reentrant
+- `guard` - The guard that will be evaluated to determine if the transition is enabled
+
+This is particularly useful for:
+
+- Building UIs that show available actions
+- Debugging which transitions are possible
+- Testing state machine behavior
+- Generating documentation
+
+## Specifying types
+
+You can specify TypeScript types inside the machine setup using the `.types` property:
+
+```ts
+import { setup } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as { feedback: string },
+    events: {} as { type: 'feedback.good' } | { type: 'feedback.bad' },
+  },
+  actions: {
+    logTelemetry: () => {
+      // TODO: implement
+    },
+  },
+}).createMachine({
+  // ...
+});
+```
+
+These types will be inferred throughout the machine config and in the created machine and actor so that methods such as `machine.transition(...)` and `actor.send(...)` will be type-safe.
+
+## Modularizing states
+
+_Since XState version 5.21.0_
+
+You can use `.createStateConfig(...)` from the setup API to create modular, reusable state configurations. This approach provides several benefits, including modularity, strong typing, and better organization.
+
+### Basic usage
+
+```ts
+import { setup } from 'xstate';
+
+const lightMachineSetup = setup({
+  // ...
+});
+
+// [!code highlight:25]
+// Create individual state configurations
+const green = lightMachineSetup.createStateConfig({
+  entry: { type: 'startTimer' },
+  on: {
+    TIMER: { target: 'yellow' },
+    PEDESTRIAN: { target: 'yellow' },
+    EMERGENCY: { target: 'red' },
+  },
+});
+
+const yellow = lightMachineSetup.createStateConfig({
+  entry: { type: 'startTimer' },
+  on: {
+    TIMER: { target: 'red' },
+    EMERGENCY: { target: 'red' },
+  },
+});
+
+const red = lightMachineSetup.createStateConfig({
+  entry: { type: 'startTimer' },
+  on: {
+    TIMER: { target: 'green' },
+    EMERGENCY: { target: 'green' },
+  },
+});
+
+// Compose the machine using the modular state configs
+const trafficLightMachine = lightMachineSetup.createMachine({
+  initial: 'green',
+  states: {
+    green,
+    yellow,
+    red,
+  },
+});
+```
+
+All state configurations created with `.createStateConfig(...)` have the full types specified in the setup config. The `.createStateConfig(...)` method is particularly useful for very large, complex state machines where you want to break down the logic into manageable pieces while maintaining strong typing throughout.
+
+## Machines and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+The best way to provide strong typing for your machine is to use the `setup(...)` function and/or the `.types` property.
+
+```ts
+import { setup, fromPromise } from 'xstate';
+
+const someAction = () => {
+  /* ... */
+};
+
+const someGuard = ({ context }) => context.count <= 10;
+
+const someActor = fromPromise(async () => {
+  // ...
+  return 42;
+});
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as { count: number },
+    events: {} as { type: 'increment' } | { type: 'decrement' },
+  },
+  actions: {
+    someAction,
+  },
+  guards: {
+    someGuard,
+  },
+  actors: {
+    someActor,
+  },
+}).createMachine({
+  initial: 'counting',
+  states: {
+    counting: {
+      entry: { type: 'someAction' }, // strongly-typed
+      invoke: {
+        src: 'someActor', // strongly-typed
+        onDone: {
+          actions: ({ event }) => {
+            event.output; // strongly-typed as number
+          },
+        },
+      },
+      on: {
+        increment: {
+          guard: { type: 'someGuard' }, // strongly-typed
+          actions: assign({
+            count: ({ context }) => context.count + 1,
+          }),
+        },
+      },
+    },
+  },
+});
+```
+
+## Machine cheatsheet
+
+Use our XState machine cheatsheet below to get started quickly.
+
+### Cheatsheet: create a machine
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'start',
+  states: {
+    start: {},
+    // ...
+  },
+});
+```
+
+### Cheatsheet: setup a machine with implementations
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  actions: {
+    someAction: () => {
+      /* ... */
+    },
+  },
+  guards: {
+    someGuard: ({ context }) => context.count <= 10,
+  },
+  actors: {
+    someActor: fromPromise(async () => {
+      /* ... */
+    }),
+  },
+  delays: {
+    someDelay: () => 1000,
+  },
+}).createMachine({
+  // ... Rest of machine config
+});
+```
+
+### Cheatsheet: type-bound action helpers
+
+```ts
+import { setup } from 'xstate';
+
+const machineSetup = setup({
+  types: {
+    context: {} as { count: number },
+    events: {} as { type: 'increment' } | { type: 'reset' },
+    emitted: {} as { type: 'COUNT_CHANGED' },
+  },
+});
+
+// Custom action
+const customAction = machineSetup.createAction(({ context, event }) => {
+  console.log(context.count, event.type);
+});
+
+// Type-bound built-ins
+const increment = machineSetup.assign({
+  count: ({ context }) => context.count + 1,
+});
+const raiseReset = machineSetup.raise({ type: 'reset' });
+const emitEvent = machineSetup.emit({ type: 'COUNT_CHANGED' });
+const logCount = machineSetup.log(({ context }) => `Count: ${context.count}`);
+
+const machine = machineSetup.createMachine({
+  context: { count: 0 },
+  entry: [customAction, increment, emitEvent],
+  on: {
+    increment: { actions: increment },
+    reset: { actions: raiseReset },
+  },
+});
+```
+
+### Cheatsheet: provide implementations
+
+```ts
+import { createMachine } from 'xstate';
+import { someMachine } from './someMachine';
+
+const machineWithImpls = someMachine.provide({
+  actions: {
+    /* ... */
+  },
+  actors: {
+    /* ... */
+  },
+  guards: {
+    /* ... */
+  },
+  delays: {
+    /* ... */
+  },
+});
+```

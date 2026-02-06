@@ -1,0 +1,92 @@
+---
+title: 'Usage with Immer'
+---
+
+[Immer](https://immerjs.github.io/immer/) is a library that makes it more convenient to work with updating data immutably. It can be used with XState to immutably update `context` in assignments.
+
+<Callout>
+
+It is recommended to use Immer directly with XState instead of the `@xstate/immer` package, which is deprecated.
+
+</Callout>
+
+## Installation
+
+Install the latest versions of `xstate` and `immer` from npm:
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install xstate immer
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install xstate immer
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add xstate immer
+```
+
+</Tab>
+</Tabs>
+
+See [the Immer installation docs](https://immerjs.github.io/immer/installation) for more information.
+
+## Immer usage
+
+XState already allows you to immutably update `context` partially or completely in [assign actions](/docs/actions#assign-action). However, for more complex scenarios, you may want to use Immer to update `context` in a less verbose way.
+
+```ts
+import { createMachine, assign } from 'xstate';
+// [!code highlight:1]
+import { produce } from 'immer';
+
+const machine = createMachine({
+  id: 'todos',
+  context: {
+    todos: [],
+    filter: 'all',
+  },
+  // ...
+  on: {
+    'todo.complete': {
+      // [!code highlight:8]
+      // Using Immer to update a single context property
+      actions: assign({
+        todos: ({ context, event }) =>
+          produce(context.todos, (draftTodos) => {
+            const todo = draftTodos.find((t) => t.id === event.todo.id);
+            todo.completed = true;
+          }),
+      }),
+    },
+    'todos.add': {
+      // [!code highlight:14]
+      // Using Immer to update multiple context properties
+      actions: assign(({ context, event }) =>
+        produce(context, (draftContext) => {
+          draftContext.todos.push({
+            id: event.todo.id,
+            description: event.todo.description,
+            completed: false,
+          });
+
+          if (draftContext.filter === 'all') {
+            draftContext.filter = 'active';
+          }
+        }),
+      ),
+    },
+  },
+});
+```

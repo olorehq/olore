@@ -1,0 +1,88 @@
+---
+title: Initial states
+---
+
+When a state machine starts, it enters the **initial state** first. A machine can only have one top-level initial state; if there were multiple initial states, the machine wouldn’t know where to start!
+
+In XState, the initial state is defined by the `initial` property on the machine config:
+
+```ts
+const feedbackMachine = createMachine({
+  id: 'feedback',
+
+  // [!code highlight:2]
+  // Initial state
+  initial: 'prompt',
+
+  // Finite states
+  states: {
+    // [!code highlight:1]
+    prompt: {
+      /* ... */
+    },
+    // ...
+  },
+});
+```
+
+In our video player, paused is the initial state because the video player is paused by default and requires user interaction to start playing.
+
+<Callout>
+
+Watch our [“What are initial states?” video on YouTube](https://www.youtube.com/watch?v=goCpmgyrjL0&list=PLvWgkXBB3dd4I_l-djWVU2UGPyBgKfnTQ&index=3) (1m17s).
+
+</Callout>
+
+<EmbedMachine
+  name="Video player"
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=3ebc8874-2294-480b-a06e-74845337cd8d"
+/>
+
+## Specifying an initial state
+
+Typically, a state machine will have multiple [finite states](finite-states) that it can be in. The `initial` property on the machine config specifies the initial state that the machine should start in.
+
+[Parent states](parent-states) also must specify an initial state in their `initial` property. The following `trafficLightMachine` will start in the `'green'` state, as it is specified in the `initial` property of the machine config.
+
+When the machine reaches the `'red'` parent state, it will also be in the `'red.walk'` state, as it is specified in the `initial` property of the `'red'` state.
+
+```ts
+import { createMachine } from 'xstate';
+
+const trafficLightMachine = createMachine({
+  // [!code highlight:1]
+  initial: 'green',
+  states: {
+    green: {
+      /* ... */
+    },
+    yellow: {
+      /* ... */
+    },
+    red: {
+      // [!code highlight:1]
+      initial: 'walk',
+      states: {
+        walk: {
+          /* ... */
+        },
+        wait: {
+          /* ... */
+        },
+        stop: {
+          /* ... */
+        },
+      },
+    },
+  },
+});
+
+const trafficLightActor = createActor(trafficLightMachine);
+
+trafficLightActor.subscribe((state) => {
+  console.log(state.value);
+});
+
+trafficLightActor.start();
+// logs 'green'
+```

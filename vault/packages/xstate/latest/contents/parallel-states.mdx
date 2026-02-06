@@ -1,0 +1,199 @@
+---
+title: Parallel states
+---
+
+In statecharts, a parallel state is a state that has multiple child states (also known as **regions**) that are all active at the same time. This is different from a [parent state](parent-states), where only _one_ child state is active at a time.
+
+Parallel states have the following characteristics:
+
+- Entering a parallel state will also simultaneously enter all of its regions.
+- Exiting a parallel state will also simultaneously exit all of its regions.
+- An event received in a parallel state is simultaneously received & handled by all of its regions.
+
+<Callout>
+
+You can easily visualize and simulate parallel states in Stately's editor. [Read more about parallel states in Stately's editor](/docs/editor-states-and-transitions/#parallel-states).
+
+</Callout>
+
+Here is a music player example with a parallel state consisting of two regions, one for handling playing the track and one for handling the volume:
+
+```ts
+import { createMachine, assign } from 'xstate';
+
+const playerMachine = createMachine({
+  id: 'player',
+  // [!code highlight:1]
+  type: 'parallel',
+  states: {
+    track: {
+      initial: 'paused',
+      states: {
+        paused: {
+          on: { PLAY: 'playing' },
+        },
+        playing: {
+          on: { STOP: 'paused' },
+        },
+      },
+    },
+    volume: {
+      initial: 'normal',
+      states: {
+        normal: {
+          on: { MUTE: 'muted' },
+        },
+        muted: {
+          on: { UNMUTE: 'normal' },
+        },
+      },
+    },
+  },
+});
+```
+
+<EmbedMachine
+  name="Video player"
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=733de338-26cb-40a5-a0b5-b76bfc0405c3"
+/>
+
+## Parallel state value
+
+The [state value](states.mdx#state-value) of a parallel state is an object with the state values of each of its regions.
+
+```ts
+const playerActor = createActor(playerMachine);
+playerActor.start();
+
+console.log(playerActor.getSnapshot().value);
+// logs the object:
+// {
+//   track: 'paused',
+//   volume: 'normal'
+// }
+```
+
+## Parallel onDone transition
+
+When all regions of a parallel state have reached their final states, the `onDone` transition of the parallel state is taken.
+
+In this example, the `onDone` transition of the parallel state is taken when both regions have reached their final states; that is, when `'grindingBeans'` reaches the `'grindingBeans.beansGround'` state and `'boilingWater'` reaches the `'boilingWater.waterBoiled'` state.
+
+```ts
+import { createMachine } from 'xstate';
+
+export const machine = createMachine({
+  id: 'coffee',
+  initial: 'preparing',
+  states: {
+    preparing: {
+      states: {
+        grindBeans: {
+          initial: 'grindingBeans',
+          states: {
+            grindingBeans: {
+              on: {
+                BEANS_GROUND: {
+                  target: 'beansGround',
+                },
+              },
+            },
+            beansGround: {
+              // [!code highlight:1]
+              type: 'final',
+            },
+          },
+        },
+        boilWater: {
+          initial: 'boilingWater',
+          states: {
+            boilingWater: {
+              on: {
+                WATER_BOILED: {
+                  target: 'waterBoiled',
+                },
+              },
+            },
+            waterBoiled: {
+              // [!code highlight:1]
+              type: 'final',
+            },
+          },
+        },
+      },
+      type: 'parallel',
+      // [!code highlight:3]
+      onDone: {
+        target: 'makingCoffee',
+      },
+    },
+    makingCoffee: {},
+  },
+});
+```
+
+<EmbedMachine embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=187dcde8-efed-4106-bfa7-59afadb2297f&mode=Simulate" />
+
+## Modeling
+
+When modeling with parallel states, there are several important considerations to keep in mind:
+
+### Best Practices
+
+- **Avoid transitions between regions**: Each region in a parallel state should be independent and not directly transition to states in other regions. This maintains the separation of concerns and prevents complex interdependencies.
+
+- **Use for related concerns**: Parallel states are ideal for modeling aspects of a system that are related but operate independently. For example:
+
+  - A media player's playback state and volume control
+  - A form's validation state and submission state
+  - A game's player state and game state
+
+- **Consider synchronization**: While regions operate independently, they may need to coordinate. Use events that can be handled by multiple regions to achieve synchronization when needed.
+
+### When to Use Parallel States
+
+- When you have multiple independent aspects of your system that need to be tracked simultaneously
+- When these aspects may need to coordinate or affect each other
+- When the system needs to maintain multiple active states at once
+
+### When to Use Alternatives
+
+- **Use `invoke` instead** when the concerns are completely separate and don't need to coordinate
+- **Use nested states** when the states are hierarchical and only one should be active at a time
+- **Use a single state** with multiple properties when the aspects are tightly coupled
+
+### Example Use Cases
+
+- **User Interface**: Managing multiple independent UI states (e.g., sidebar, modal, and main content)
+- **Game Development**: Tracking player state, game state, and UI state simultaneously
+- **Form Handling**: Managing validation, submission, and error states in parallel
+- **Media Players**: Controlling playback, volume, and playlist states independently
+
+## Parallel states cheatsheet
+
+### Cheatsheet: create a parallel state
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  // ...
+  states: {
+    type: 'parallel',
+    states: {
+      one: {
+        /* ... */
+      },
+      two: {
+        /* ... */
+      },
+      three: {
+        /* ... */
+      },
+    },
+    onDone: {
+      // Taken when all regions have reached their final states
+    },
+  },
+});
+```
