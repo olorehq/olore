@@ -1,0 +1,12 @@
+---
+title: Fixation protection
+description: Session fixation is an attack that permits an attacker to hijack a valid user session. The attack explores a limitation in the way the web application manages the session ID, more specifically the vulnerable web application. When authenticating a user, it doesn’t assign a new session ID, making it possible to use an existent session ID.
+---
+
+Session fixation is a security vulnerability that allows an attacker to hijack a valid user session. This vulnerability arises when web applications reuse existing session IDs instead of generating new ones during the authentication process. By exploiting this flaw, attackers can potentially gain unauthorized access to a user's account and perform malicious actions on their behalf.
+
+See the [OWASP Session Fixation](https://owasp.org/www-community/attacks/Session_fixation) page for specific examples of how this attack works.
+
+## How does Clerk protect against session fixation?
+
+Clerk resets the session token each time a user signs in or out of a browser. When the session is reset, the old session token is invalidated and can no longer be used for authentication.
