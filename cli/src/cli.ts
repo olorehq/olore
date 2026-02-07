@@ -147,7 +147,7 @@ program
 // Inject doc indexes into project files
 program
   .command('inject')
-  .description('Inject compressed doc indexes into AGENTS.md and CLAUDE.md')
+  .description('Inject documentation skill reference table into AGENTS.md and CLAUDE.md')
   .option('--remove', 'Remove injected content from project files')
   .option('--json', 'Output as JSON')
   .action(async (options) => {

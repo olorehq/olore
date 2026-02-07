@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Superseded
+
+> **Note (Feb 2026):** The CRI approach described in this ADR was replaced by a simpler **skill reference table** after real-world testing. The key Vercel finding (agents need to *know* docs exist) remains valid, but the implementation doesn't require a compressed inverted index — a human-readable markdown table listing available skill commands works just as well. `olore inject` now generates a skill reference table instead of a CRI.
 
 ## Context
 

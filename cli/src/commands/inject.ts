@@ -21,66 +21,61 @@ interface InjectResult {
   removed: boolean;
 }
 
-const COMPACT_HEADER =
-  '[olore docs]|STOP. Read these docs before answering — your training data may be outdated.|Format: keywords=path. For dir paths (ending /), list dir then read files.';
-
 /**
- * Extract @section: lines from INDEX.md.
- * INDEX.md compact format: @shortname:kw,kw=path;kw=path (one line per section).
- * Returns the raw section lines (already in compact format).
+ * Format a package name for display (e.g., "nextjs" -> "Next.js", "prisma" -> "Prisma").
  */
-function extractSectionLines(content: string): string[] {
-  return content
-    .split('\n')
-    .filter((line) => line.startsWith('@'))
-    .filter((line) => line.length > 0);
+function formatLibraryName(name: string): string {
+  // Handle common special cases
+  const specialNames: Record<string, string> = {
+    nextjs: 'Next.js',
+    'nextjs-docs': 'Next.js',
+    't3-env': 'T3 Env',
+    rhf: 'React Hook Form',
+    'tanstack-query': 'TanStack Query',
+    'tanstack-form': 'TanStack Form',
+    'ms-agent-framework': 'MS Agent Framework',
+  };
+
+  if (specialNames[name]) return specialNames[name];
+
+  // Default: capitalize first letter of each word
+  return name
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**
- * Render one package as a compact single-line block.
- * Joins all @section lines into one line prefixed with the package header.
- * Format: [name@version root:/abs/path/contents]@section:kw=path;kw=path@section:...
- */
-function renderCompactBlock(
-  sectionLines: string[],
-  name: string,
-  version: string,
-  rootPath: string
-): string {
-  return `[${name}@${version} root:${rootPath}]${sectionLines.join('')}`;
-}
-
-/**
- * Build combined olore section from all installed packages with INDEX.md.
- * Produces a compact, machine-optimized format with one line per package.
+ * Build a skill reference table from all installed packages.
+ * Produces a human-readable markdown table pointing to skill commands.
  */
 async function buildInjectedContent(): Promise<{ content: string; count: number }> {
   const packages = await getInstalledPackages();
-  const packageLines: string[] = [];
-  let count = 0;
 
-  for (const pkg of packages) {
-    const indexPath = path.join(pkg.path, 'INDEX.md');
-    if (!fs.existsSync(indexPath)) continue;
-
-    const rawContent = fs.readFileSync(indexPath, 'utf-8');
-    const sectionLines = extractSectionLines(rawContent);
-    if (sectionLines.length === 0) continue;
-
-    const resolvedBase = fs.realpathSync(pkg.path);
-    const rootPath = path.join(resolvedBase, 'contents');
-
-    packageLines.push(renderCompactBlock(sectionLines, pkg.name, pkg.version, rootPath));
-    count++;
-  }
-
-  if (count === 0) {
+  if (packages.length === 0) {
     return { content: '', count: 0 };
   }
 
-  const combined = [MARKER_START, COMPACT_HEADER, ...packageLines, MARKER_END].join('\n');
+  const rows = packages.map((pkg) => {
+    const library = formatLibraryName(pkg.name);
+    const version = pkg.version !== 'latest' ? ` ${pkg.version}` : '';
+    const skillCommand = `/olore-${pkg.name}-${pkg.version}`;
+    return `| ${library}${version} | - | \`${skillCommand}\` |`;
+  });
 
-  return { content: combined, count };
+  const lines = [
+    MARKER_START,
+    '## Documentation Reference',
+    '',
+    'Use these skill commands to access up-to-date documentation. Your training data may be outdated.',
+    '',
+    '| Library | Used In | Skill Command |',
+    '|---------|---------|---------------|',
+    ...rows,
+    MARKER_END,
+  ];
+
+  return { content: lines.join('\n'), count: packages.length };
 }
 
 /**
@@ -186,8 +181,8 @@ export async function inject(options: InjectOptions): Promise<void> {
       return;
     }
 
-    console.log(pc.yellow('No installed packages have INDEX.md files.'));
-    console.log(pc.gray('Build packages with the latest templates to generate INDEX.md.'));
+    console.log(pc.yellow('No installed packages found.'));
+    console.log(pc.gray('Run olore install <package> to install documentation packages.'));
     return;
   }
 
