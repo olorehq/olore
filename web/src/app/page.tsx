@@ -150,13 +150,11 @@ export default function Home() {
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
                 <span className="text-cyan-500">02a</span> Use as skills
               </p>
-              <p className="text-zinc-300">
-                Done — start coding.
-              </p>
+              <p className="text-zinc-300">Done — start coding.</p>
               <p className="mt-2 text-xs text-zinc-600">
-                After install, every coding agent on your machine can see
-                the doc skill. Agent reads the full docs when it decides
-                it needs them.
+                After install, every coding agent on your machine can see the
+                doc skill. Agent reads the full docs when it decides it needs
+                them.
               </p>
             </div>
             {/* Option B: Inject into context */}
@@ -165,13 +163,12 @@ export default function Home() {
                 <span className="text-cyan-500">02b</span> Inject into context
               </p>
               <p className="text-zinc-300">
-                <span className="text-zinc-600">$</span> olore inject
+                <span className="text-zinc-600">$</span> olore inject zod
               </p>
               <p className="mt-2 text-xs text-zinc-600">
-                Additionally writes a skill reference table listing
-                available docs into your project&apos;s AGENTS.md &amp;
-                CLAUDE.md. Agents discover installed docs and invoke
-                skills when needed.
+                Writes a skill reference table for the specified packages into
+                your project&apos;s AGENTS.md &amp; CLAUDE.md. Agents discover
+                installed docs and invoke skills when needed.
               </p>
               <p className="mt-2 text-xs text-zinc-600">
                 Commit it — your whole team gets the docs.
@@ -186,9 +183,8 @@ export default function Home() {
                 <span className="text-cyan-500">03</span> Code
               </p>
               <p className="text-zinc-400">
-                Your agent has the right docs. No hallucinated APIs. No
-                outdated patterns. Use both approaches together for maximum
-                coverage.
+                Your agent has the right docs. No hallucinated APIs. No outdated
+                patterns. Use both approaches together for maximum coverage.
               </p>
             </div>
           </div>
@@ -198,8 +194,7 @@ export default function Home() {
         <section className="border-b border-zinc-800">
           <div className="border-b border-zinc-800 p-6">
             <h2 className="text-xl font-bold text-zinc-100 uppercase">
-              <span className="text-purple-500">&gt;&gt;</span>{" "}
-              Inject_vs_Skills
+              <span className="text-purple-500">&gt;&gt;</span> Inject_vs_Skills
             </h2>
           </div>
           <div className="p-6">
@@ -208,9 +203,9 @@ export default function Home() {
               <span className="text-zinc-300">Inject</span> writes a skill
               reference table into AGENTS.md — agents discover available docs
               and reliably invoke skills when needed.{" "}
-              <span className="text-zinc-300">Skills</span> generate full
-              doc packages — deeper access, but agents must decide to read them.
-              Use both together for maximum coverage.
+              <span className="text-zinc-300">Skills</span> generate full doc
+              packages — deeper access, but agents must decide to read them. Use
+              both together for maximum coverage.
             </p>
           </div>
         </section>
