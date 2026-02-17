@@ -1,0 +1,172 @@
+---
+title: 'parse_json'
+description: 'This page explains how to use the parse_json function in APL.'
+---
+
+The `parse_json` function interprets a string as JSON and returns the value as a dynamic object. Use this function to extract structured data from JSON-formatted log entries, API responses, or configuration values stored as JSON strings.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `spath` to parse JSON. APL's `parse_json` provides similar functionality with dynamic object support.
+
+<CodeGroup>
+```sql Splunk example
+| spath input=json_field
+| rename "field.name" as extracted_value
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_json(json_field)
+| extend extracted_value = parsed['field']['name']
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, JSON parsing varies by database with different functions. APL's `parse_json` provides standardized JSON parsing.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_EXTRACT(json_field, '$.field.name') AS extracted_value FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_json(json_field)
+| extend extracted_value = parsed.field.name
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_json(json_string)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| json_string | string | Yes | A string containing valid JSON to parse. |
+
+### Returns
+
+Returns a dynamic object representing the parsed JSON. If the JSON is invalid, returns the original string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Parse JSON-formatted log messages to extract specific fields for analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend json_data = parse_json('{"response_time": 145, "cache_hit": true, "endpoint": "/api/users"}')
+| extend response_time = toint(json_data.response_time)
+| extend cache_hit = tobool(json_data.cache_hit)
+| extend endpoint = tostring(json_data.endpoint)
+| project _time, response_time, cache_hit, endpoint, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20json_data%20%3D%20parse_json(%27%7B%5C%22response_time%5C%22%3A%20145%2C%20%5C%22cache_hit%5C%22%3A%20true%2C%20%5C%22endpoint%5C%22%3A%20%5C%22%2Fapi%2Fusers%5C%22%7D%27)%20%7C%20extend%20response_time%20%3D%20toint(json_data.response_time)%20%7C%20extend%20cache_hit%20%3D%20tobool(json_data.cache_hit)%20%7C%20extend%20endpoint%20%3D%20tostring(json_data.endpoint)%20%7C%20project%20_time%2C%20response_time%2C%20cache_hit%2C%20endpoint%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | response_time | cache_hit | endpoint | status |
+|-------|---------------|-----------|----------|--------|
+| 2024-11-06T10:00:00Z | 145 | true | /api/users | 200 |
+| 2024-11-06T10:01:00Z | 145 | true | /api/users | 200 |
+
+This query parses JSON-formatted metadata from logs to extract performance metrics like response time and cache hit status.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract structured attributes from JSON-formatted span data.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend attrs = parse_json('{"http.method": "GET", "http.status_code": 200, "user.id": "12345"}')
+| extend http_method = tostring(attrs['http.method'])
+| extend http_status = toint(attrs['http.status_code'])
+| extend user_id = tostring(attrs['user.id'])
+| summarize span_count = count() by http_method, http_status
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20attrs%20%3D%20parse_json(%27%7B%5C%22http.method%5C%22%3A%20%5C%22GET%5C%22%2C%20%5C%22http.status_code%5C%22%3A%20200%2C%20%5C%22user.id%5C%22%3A%20%5C%2212345%5C%22%7D%27)%20%7C%20extend%20http_method%20%3D%20tostring(attrs%5B%27http.method%27%5D)%20%7C%20extend%20http_status%20%3D%20toint(attrs%5B%27http.status_code%27%5D)%20%7C%20extend%20user_id%20%3D%20tostring(attrs%5B%27user.id%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20http_method%2C%20http_status%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| http_method | http_status | span_count |
+|-------------|-------------|------------|
+| GET | 200 | 8765 |
+
+This query parses JSON attributes from OpenTelemetry spans to analyze HTTP request patterns.
+
+</Tab>
+<Tab title="Security logs">
+
+Parse JSON-formatted security events to extract threat indicators.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend security_data = parse_json('{"threat_level": "high", "attack_type": "sql_injection", "blocked": true}')
+| extend threat_level = tostring(security_data.threat_level)
+| extend attack_type = tostring(security_data.attack_type)
+| extend blocked = tobool(security_data.blocked)
+| project _time, uri, threat_level, attack_type, blocked, id, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20security_data%20%3D%20parse_json(%27%7B%5C%22threat_level%5C%22%3A%20%5C%22high%5C%22%2C%20%5C%22attack_type%5C%22%3A%20%5C%22sql_injection%5C%22%2C%20%5C%22blocked%5C%22%3A%20true%7D%27)%20%7C%20extend%20threat_level%20%3D%20tostring(security_data.threat_level)%20%7C%20extend%20attack_type%20%3D%20tostring(security_data.attack_type)%20%7C%20extend%20blocked%20%3D%20tobool(security_data.blocked)%20%7C%20project%20_time%2C%20uri%2C%20threat_level%2C%20attack_type%2C%20blocked%2C%20id%2C%20%5B%27geo.country%27%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | threat_level | attack_type | blocked | id | geo.country |
+|-------|-----|--------------|-------------|---------|----|-------------|
+| 2024-11-06T10:00:00Z | /api/users | high | sql_injection | true | user123 | Unknown |
+| 2024-11-06T10:01:00Z | /admin | high | sql_injection | true | user456 | Russia |
+
+This query parses JSON-formatted security events to extract and analyze threat information from failed access attempts.
+
+</Tab>
+</Tabs>
+
+## Best practices
+
+When working with JSON data in Axiom, consider the following best practices:
+
+- **Prefer structured ingestion over runtime parsing:** If possible, structure your JSON data as separate fields during ingestion rather than storing it as a stringified JSON object. This provides better query performance and enables indexing on nested fields.
+- **Use map fields for nested data:** For nested or unpredictable JSON structures, consider using [map fields](/apl/data-types/map-fields) instead of stringified JSON. Map fields allow you to query nested properties directly without using `parse_json` at query time.
+- **Avoid mixed types:** When logging JSON data, ensure consistent field types across events. Mixed types (for example, sometimes a string, sometimes a number) can cause query issues. Use type conversion functions like `toint` or `tostring` when necessary.
+- **Performance considerations:** Using `parse_json` at query time adds CPU overhead. For frequently queried JSON data, consider parsing during ingestion or using map fields for better performance.
+
+## List of related functions
+
+- [parse_url](/apl/scalar-functions/string-functions/parse-url): Parses URLs into components. Use this specifically for URL parsing rather than general JSON.
+- [parse_csv](/apl/scalar-functions/string-functions/parse-csv): Parses CSV strings. Use this for comma-separated values rather than JSON.
+- [todynamic](/apl/scalar-functions/conversion-functions/todynamic): Alias for parse_json. Use either name based on your preference.
+- [gettype](/apl/scalar-functions/string-functions/gettype): Returns the type of a value. Use this to check the types of parsed JSON fields.
+

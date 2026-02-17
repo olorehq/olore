@@ -1,0 +1,409 @@
+---
+title: "Glossary of key Axiom terms"
+description: "The glossary explains the key concepts in Axiom."
+sidebarTitle: Glossary
+---
+
+{/* vale off */}
+
+[A](#a) [B](#b) [C](#c) [D](#d) [E](#e) [F](#f) [G](#g) H [I](#i) K [L](#l) [M](#m) [N](#n) [O](#o) [P](#p) [Q](#q) [R](#r) [S](#s) [T](#t) [U](#u) [V](#v) W X Y Z​
+
+{/* vale on */}
+
+## A
+
+### Annotation
+
+Annotations are visual elements that add context to the trends displayed in dashboard elements and make it easier to investigate issues. For more information, see [Annotate dashboard elements](/query-data/annotate-charts).
+
+### Anomaly monitor
+
+Anomaly monitors allow you to aggregate your event data and compare the results of this aggregation to what can be considered normal for the query. When the results are too much above or below the value that Axiom expects based on the event history, the monitor enters the alert state. The monitor remains in the alert state until the results no longer deviate from the expected value. This can happen without the results returning to their previous level if they stabilize around a new value. An anomaly monitor sends you a notification each time it enters or exits the alert state.
+
+For more information, see [Anomaly monitors](/monitor-data/anomaly-monitors).
+
+### API
+
+The Axiom API allows you to ingest structured data logs, handle queries, and manage your deployments.
+
+For more information, see [Introduction to Axiom API](/restapi/introduction).
+
+### API token
+
+See [Tokens](#token).
+
+### App
+
+Axiom's dedicated apps enrich your Axiom organization by integrating into popular external services and providing out-of-the-box features such as prebuilt dashboards.
+
+For more information, see [Introduction to apps](/apps/introduction).
+
+### Axiom
+
+Axiom represents the next generation of business intelligence. Designed and built for the cloud, Axiom is an event platform for logs, traces, and all technical data.
+Axiom efficiently ingests, stores, and queries vast amounts of event data from any source at a fraction of the cost. The Axiom platform is built for unmatched efficiency, scalability, and performance.
+
+### Axiom Cloud
+
+Axiom Cloud is a deployment option and pricing plan with a fully managed cloud service and usage-based pricing.
+
+### Axiom MCP Server
+
+Axiom MCP Server is a Model Context Protocol (MCP) server implementation that enables AI agents to query your data using Axiom Processing Language (APL). It supports MCP tools for executing queries, listing datasets, retrieving schemas, and accessing dashboards and monitors. Axiom MCP Server allows AI agents like Claude and Cursor to interact directly with your Axiom data.
+
+For more information, see [Axiom MCP Server](/console/intelligence/mcp-server).
+
+### Axiom Processing Language (APL)
+
+Axiom Processing Language (APL) is a query language that's perfect for getting deeper insights from your data. Whether logs, events, analytics, or similar, APL provides the flexibility to filter, manipulate, and summarize your data exactly the way you need it.
+
+For more information, see [Introduction to APL](/apl/introduction).
+
+## B
+
+### Backtesting
+
+Backtesting is a form of evaluation that runs a capability against historical production traces from a specified time period. Unlike online evaluation which runs in real-time as conversations happen, backtesting performs batch evaluation over many stored conversations at once. This allows you to compare how a new version of your capability performs on previous real-world conversations compared to the original version.
+
+Backtesting can always use reference-free scorers. It can also use reference-based scorers if domain experts have reviewed the historical traces and provided ground truth expected values, but this requires significant effort for large volumes of conversations.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+## C
+
+### Capability
+
+A generative AI capability is a system that uses large language models to perform a specific task by transforming inputs into desired outputs. Capabilities exist on a spectrum of complexity, ranging from single-turn model interactions, through multi-step workflows, to single-agent and multi-agent systems.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+### CLI
+
+Axiom's command line interface (CLI) is an Axiom tool that lets you test, manage, and build your Axiom organizations by typing commands on the command-line. You can use the command line to ingest data, manage authentication state, and configure multiple organizations.
+
+For more information, see [Introduction to CLI](/reference/cli).
+
+### Collection
+
+A collection is a curated set of reference records used for development, testing, and evaluation of a capability. Collections serve as the test cases for AI engineering and contain individual input-output pairs known as collection records.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Console
+
+Axiom Console is the web user interface for data management, querying, dashboarding, monitoring, and user administration. It provides tools for exploring data, building queries, creating dashboards, configuring monitors, and managing access controls.
+
+## D
+
+### Dashboard
+
+Dashboards allow you to visualize collections of queries across multiple datasets in one place. Dashboards are easy to share, benefit from collaboration, and bring separate datasets together in a single view.
+
+For more information, see [Create dashboards](/dashboards/create).
+
+### Dashboard element
+
+Dashboard elements are the different visual elements that you can include in your dashboard to display your data and other information. For example, you can track key metrics, logs, and traces, and monitor real-time data flow.
+
+For more information, see [Create dashboard elements](/dashboard-elements/create).
+
+### Dataset
+
+Axiom's datastore is tuned for the efficient collection, storage, and analysis of timestamped event data. An individual piece of data is an event, and a dataset is a collection of related events. Datasets contain incoming event data.
+
+For more information, see [Datasets](/reference/datasets).
+
+## E
+
+### Edge deployment
+
+An edge deployment is an infrastructure location where Axiom stores your event data at rest. When you create an organization, you choose a primary edge deployment. This determines the default location where your data is ingested, stored, and queried. Edge deployments will provide flexibility for data jurisdiction requirements while maintaining unified management through Axiom's Console.
+
+For more information, see [Edge deployments](/reference/edge-deployments).
+
+### Evaluation
+
+An evaluation, or eval, is the process of testing a capability's performance using one or more scorers. There are three ways to run evaluations: offline evaluation, online evaluation, and backtesting.
+
+|  | Offline evaluation | Online evaluation | Backtesting |
+|---|---|---|---|
+| **Data source** | Curated set of test cases (collection records) | Live production traffic (sample of traces) | Historical production traces from a specified time period |
+| **Timing** | Before deployment | Real-time, just after conversations happen | After collecting production data |
+| **Expected values** | Available because you curate what good looks like | Not available (no domain expert review on live data) | Available if historical traces have been reviewed by domain experts |
+| **Supported scorers** | Reference-based and reference-free | Reference-free only | Reference-free always; reference-based if traces have been reviewed |
+
+For more information, see [Offline evaluation](#offline-evaluation), [Online evaluation](#online-evaluation), [Backtesting](#backtesting), and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Event
+
+An event is a granular record capturing a specific action or interaction within a system, often represented as key-value pairs. It's the smallest unit of information detailing what occurred, who, or what was involved, and potentially when and where it took place. In Axiom's context, events are timestamped records, originating from human, machine, or sensor interactions, providing a foundational data point that informs a broader view of activities across different business units, from product, through security, to marketing, and more.
+
+For more information, see [Use cases](/getting-started-guide/use-cases).
+
+### EventDB
+
+EventDB is the foundation of Axiom's platform for ingesting, storing, and querying timestamped event data at scale. It features a multi-layered ingestion system, custom block-based storage format on object storage with extreme compression, and serverless ephemeral runtimes for query execution.
+
+For more information, see [Architecture](/platform-overview/architecture).
+
+### Experiment
+
+An experiment is an evaluation run with a specific set of flag values. By running multiple experiments with different flag configurations, you can compare performance across different models, prompts, or strategies to find the optimal setup for your capability.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+## F
+
+### Flag
+
+A flag is a configuration parameter that controls how your AI capability behaves. Flags let you parameterize aspects like model choice, tool availability, prompting strategies, or retrieval approaches. By defining flags, you can run experiments to compare different configurations and systematically determine which approach performs best.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+## G
+
+### Ground truth
+
+Ground truth is the validated, expert-approved correct output for a given input. It represents the gold standard that the AI capability should aspire to match. Ground truth data is stored in collections and used during evaluations to measure capability performance.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+## I
+
+### Intelligence
+
+Intelligence refers to Axiom's suite of AI-powered features that accelerate insights and automate data analysis. This includes Spotlight for automatic root cause analysis, natural language querying, AI-powered dashboard generation, and the Axiom MCP Server for AI agent integration.
+
+For more information, see [Intelligence](/console/intelligence).
+
+## L
+
+### Log
+
+A log is a structured or semi-structured data record typically used to document actions or system states over time, primarily for monitoring, debugging, and auditing. Traditionally formatted as text entries with timestamps and message content, logs have evolved to include standardized key-value structures, making them easier to search, interpret, and correlate across distributed systems. In Axiom, logs represent historical records designed for consistent capture, storage, and collaborative analysis, allowing for real-time visibility and troubleshooting across services.
+
+For more information, see [Axiom for observability](/getting-started-guide/observability).
+
+## M
+
+### Match monitor
+
+Match monitors allow you to continuously filter your log data and send you matching events. Axiom sends a notification for each matching event. By default, the notification message contains the entire matching event in JSON format. When you define your match monitor using APL, you can control which event attributes to include in the notification message.
+
+For more information, see [Match monitors](/monitor-data/match-monitors).
+
+### Metric
+
+A metric is a quantitative measurement collected at specific time intervals, reflecting the state or performance of a system or component. Metrics focus on numeric values, such as CPU usage or memory consumption, enabling aggregation, trend analysis, and alerting based on thresholds. Within Axiom, metrics are data points associated with timestamps, labels, and values, designed to monitor resource utilization or performance. Metrics enable predictive insights by identifying patterns over time, offering foresight into system health and potential issues before they escalate.
+
+For more information, see [Axiom for observability](/getting-started-guide/observability).
+
+### MetricsDB
+
+MetricsDB is Axiom's dedicated metrics datastore purpose-built for high-cardinality time-series data. Unlike traditional metrics datastores that struggle with dimensional complexity, MetricsDB is designed to handle high numbers of unique tag combinations efficiently without performance degradation or cost penalties.
+
+For more information, see [Architecture](/platform-overview/architecture).
+
+### Model Context Protocol (MCP)
+
+Model Context Protocol (MCP) is an open standard that enables AI agents to interact with external data sources and tools. Axiom implements MCP through the Axiom MCP Server, allowing AI agents to query datasets, list resources, and execute APL queries programmatically.
+
+For more information, see [Axiom MCP Server](/console/intelligence/mcp-server).
+
+### Monitor
+
+A monitor is a background task that periodically runs a query that you define. For example, it counts the number of error messages in your logs over the previous 5 minutes. A notifier defines how Axiom notifies you about the monitor output. For example, Axiom can send you an email.
+
+You can use the following types of monitor:
+
+- [Anomaly monitors](#anomaly-monitor) aggregate event data over time and look for values that are unexpected based on the event history. When the results of the aggregation are too high or low compared to the expected value, Axiom sends you an alert.
+- [Match monitors](#match-monitor) filter for key events and send them to you.
+- [Threshold monitors](#threshold-monitor) aggregate event data over time. When the results of the aggregation cross a threshold, Axiom sends you an alert.
+
+For more information, see [Introduction to monitors](/monitor-data/monitors).
+
+## N
+
+### Notifier
+
+A monitor is a background task that periodically runs a query that you define. For example, it counts the number of error messages in your logs over the previous 5 minutes. A notifier defines how Axiom notifies you about the monitor output. For example, Axiom can send you an email.
+
+For more information, see [Introduction to notifiers](/monitor-data/notifiers-overview).
+
+## O
+
+### Observability
+
+Observability is a principle in software engineering and systems monitoring that focuses on the ability to understand and diagnose the internal state of a system by examining the data it generates, such as logs, metrics, and traces. It goes beyond traditional monitoring by giving teams the power to pinpoint and resolve issues, optimize performance, and understand user behaviors across complex, interconnected services. Observability leverages various types of [event data](#event) to provide granular insights that span everything from simple log messages to multi-service transactions (traces) and performance metrics.
+
+Traditionally, observability has been associated with three pillars:
+
+- Logs capture individual events or errors.
+- Metrics provide quantitative data over time, like CPU usage.
+- Traces represent workflows across microservices.
+
+However, modern observability expands on this by aggregating diverse data types from engineering, product, marketing, and security functions, all of which contribute to understanding the deeper "why" behind user interactions and system behaviors. This holistic view, in turn, enables real-time diagnostics, predictive analyses, and proactive issue resolution.
+
+In essence, observability transforms raw event data into actionable insights, helping organizations not only to answer "what happened?" but also to delve into "why it happened" and "what might happen next."
+
+For more information, see [Axiom for observability](/getting-started-guide/observability).
+
+### Offline evaluation
+
+Offline evaluation is the process of testing a capability against a curated set of test cases (collection records) before deployment. You curate what good looks like with domain expert knowledge and provide expected values for your test cases.
+
+Offline evaluation can use both reference-based scorers (which compare output to expected values) and reference-free scorers (which assess output quality without needing expected values).
+
+For more information, see [Evaluation](#evaluation) and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Online evaluation
+
+Online evaluation is the process of applying scorers to a capability's live production traffic in real-time, just after conversations or interactions finish. Online evaluation runs on a sample of traces to provide feedback on performance degradation, cost, and quality drift.
+
+Because online evaluation happens on live data without domain expert review, it can only use reference-free scorers. Reference-based scorers require expected values that don't exist for live production traffic.
+
+For more information, see [Evaluation](#evaluation) and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### OpenTelemetry
+
+OpenTelemetry (OTel) is an open-source observability framework for cloud-native software. It provides a standardized way to collect and export telemetry data (logs, traces, and metrics) from applications. Axiom supports OpenTelemetry and allows you to send data from any existing OpenTelemetry shipper, library, or tool.
+
+For more information, see [Send OpenTelemetry data to Axiom](/send-data/opentelemetry).
+
+## P
+
+### Personal access token (PAT)
+
+See [Tokens](#token).
+
+### Playground
+
+Axiom Playground is an interactive sandbox environment where you can quickly try out Axiom's capabilities.
+
+To try out Axiom, go to the [Axiom Playground](https://play.axiom.co/).
+
+## Q
+
+### Query
+
+In Axiom, a query is a specific, structured request used to get deeper insights into your data. It typically involves looking for information based on defined parameters like keywords, date ranges, or specific fields. The intent of a query is precision: to locate, analyze, or manipulate specific subsets of data within vast data structures, enhancing insights into various operational aspects or user behaviors.
+
+Querying enables you to filter, manipulate, extend, and summarize your data.
+
+### Query-hours
+
+When you run queries, your usage of the Axiom platform is measured in query-hours. The unit of this measurement is GB-hours which reflects the duration (measured in milliseconds) serverless functions are running to execute your query multiplied by the amount of memory (GB) allocated to execution. This metric is important for monitoring and managing your usage against the monthly allowance included in your plan.
+
+For more information, see [Optimize usage](/reference/optimize-usage).
+
+## R
+
+### Reference-based scorer
+
+A reference-based scorer is a type of scorer that depends on an expected value (ground truth) to evaluate a capability's output. It compares the generated output against a domain expert knowledge to determine correctness or similarity.
+
+Examples include:
+- **Exact match scorer**: Checks if the output exactly matches the expected value. For example, if a user asks for their password and the expected response is "no" (a flat refusal), the scorer verifies the output is exactly "no" 100% of the time.
+- **Similarity scorer**: Measures how similar the output is to the expected value when an exact match isn't required.
+
+Reference-based scorers require domain expert knowledge and can be used in offline evaluation and backtesting (if historical traces have been reviewed by domain experts). They can't be used in online evaluation because live production data lacks expected values.
+
+For more information, see [Scorer](#scorer) and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Reference-free scorer
+
+A reference-free scorer is a type of scorer that evaluates a capability's output without needing an expected value. It uses an LLM or other criteria to assess output quality based on general standards rather than comparison to ground truth.
+
+Examples include:
+- **Toxicity scorer**: Uses an LLM to assess whether the output is offensive, harmful, or could upset the recipient.
+- **Coherence scorer**: Evaluates whether the output is logically consistent and well-structured.
+- **Relevance scorer**: Assesses whether the output appropriately addresses the input query.
+
+Reference-free scorers can be used in all evaluation contexts: offline evaluation, online evaluation, and backtesting. They're the only type of scorer available for online evaluation because production data doesn't have an expected value available as a point of comparison.
+
+For more information, see [Scorer](#scorer) and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Review
+
+Reviews are expert-provided observations, labels, or corrections added to production traces or evaluation results. Domain experts review AI capability runs and document what went wrong, what should have happened differently, or categorize failure modes. These reviews help identify patterns in capability failures, validate scorer accuracy, and create new test cases for collections.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Role-Based Access Control (RBAC)
+
+Role-Based Access Control (RBAC) allows you to manage and restrict access to your data and resources efficiently.
+
+For more information, see [Access](/reference/settings).
+
+## S
+
+### Scorer
+
+A scorer is a function that evaluates a capability's output, returning a score that indicates quality or correctness.
+
+There are two types of scorers: reference-based scorers and reference-free scorers.
+
+|  | Reference-based scorers | Reference-free scorers |
+|---|---|---|
+| **Expected value** | Depend on an expected value (ground truth) based on domain expert knowledge | Evaluate output without needing an expected value |
+| **Evaluation method** | Compare output to the expected value using methods like exact match or similarity scoring | Use an LLM or other criteria to assess qualities like toxicity, coherence, or relevance |
+| **Evaluation contexts** | Offline evaluation and backtesting (if historical traces have been reviewed by domain experts) | All evaluation contexts including online evaluation |
+
+For more information, see [Reference-based scorer](#reference-based-scorer), [Reference-free scorer](#reference-free-scorer), and [Concepts in AI engineering](/ai-engineering/concepts).
+
+### Span
+
+A span represents an individual action or operation within a trace. Spans capture the duration and metadata of specific operations as a request flows through a distributed system. Related spans are grouped together using trace IDs to form complete traces that show the full path of a request.
+
+For more information, see [Trace](#trace).
+
+### Spotlight
+
+Spotlight is an interactive analysis feature that helps you find the root cause of issues faster. It allows you to highlight a region of event data and automatically identifies how it deviates from baseline across different fields. Instead of manually crafting queries to investigate anomalies, Spotlight analyzes every field in your data and presents the most significant differences.
+
+For more information, see [Spotlight](/console/intelligence/spotlight).
+
+### Stream
+
+The Stream tab in Axiom Console allows you to inspect individual events and watch as they're ingested live. It provides real-time visibility into your data, enabling you to filter events, view event details, and investigate issues as they happen.
+
+For more information, see [Stream data](/query-data/stream).
+
+## T
+
+### Threshold monitor
+
+Threshold monitors allow you to periodically aggregate your event data and compare the results of this aggregation to a threshold that you define. When the results cross the threshold, the monitor enters the alert state. The monitor remains in the alert state until the results no longer cross the threshold. A threshold monitor sends you a notification each time it enters or exits the alert state.
+
+For more information, see [Threshold monitors](/monitor-data/threshold-monitors).
+
+### Token
+
+You can use the Axiom API and CLI to programmatically ingest and query data, and manage settings and resources. For example, you can create new API tokens and change existing datasets with API requests. To prove that these requests come from you, you must include forms of authentication called tokens in your API requests. Axiom offers two types of tokens:
+
+- API tokens let you control the actions that can be performed with the token. For example, you can specify that requests authenticated with a certain API token can only query data from a particular dataset.
+- Personal access tokens (PATs) provide full control over your Axiom account. Requests authenticated with a PAT can perform every action you can perform in Axiom.
+
+For more information, see [Tokens](/reference/tokens).
+
+### Trace
+
+A trace is a sequence of events that captures the path and flow of a single request as it navigates through multiple services or components within a distributed system. Utilizing trace IDs to group-related spans (individual actions or operations within a request), traces enable visibility into the lifecycle of a request, illustrating how it progresses, where delays or errors may occur, and how components interact. By connecting each event in the request journey, traces provide insights into system performance, pinpointing bottlenecks and latency.
+
+## U
+
+### User feedback
+
+User feedback is direct signal from end users about AI capability performance, typically collected through ratings (thumbs up/down, stars) or text comments. Feedback events are associated with traces to provide context about both system behavior and user perception. Aggregated feedback reveals quality trends, helps prioritize improvements, and surfaces issues that might not appear in evaluations.
+
+For more information, see [Concepts in AI engineering](/ai-engineering/concepts).
+
+## V
+
+### Virtual fields
+
+Virtual fields allow you to derive new values from your data in real time, eliminating the need for up-front data structuring. Instead of transforming data during ingestion, you can use virtual fields to manipulate data during queries using APL expressions. Virtual fields can be used for filtering, visualization, and segmentation.
+
+Virtual fields are query-time representations only. They don't create new data in storage.
+
+For more information, see [Virtual fields](/query-data/virtual-fields).

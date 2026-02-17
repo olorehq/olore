@@ -1,0 +1,163 @@
+---
+title: 'parse_csv'
+description: 'This page explains how to use the parse_csv function in APL.'
+---
+
+The `parse_csv` function splits a comma-separated values (CSV) string into an array of strings. Use this function to parse CSV-formatted log entries, configuration values, or any comma-delimited data into individual values for analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` or the `split` function to parse CSV. APL's `parse_csv` provides proper CSV parsing with quote handling.
+
+<CodeGroup>
+```sql Splunk example
+| makemv delim="," field_name
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend values = parse_csv(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, parsing CSV requires string splitting functions that vary by database. APL's `parse_csv` provides standardized CSV parsing.
+
+<CodeGroup>
+```sql SQL example
+SELECT STRING_TO_ARRAY(field_name, ',') AS values FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend values = parse_csv(field_name)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_csv(csv_text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| csv_text | string | Yes | A string containing comma-separated values to parse. |
+
+### Returns
+
+Returns a string array containing the individual values from the CSV string. Properly handles quoted values and escaped characters.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Parse comma-separated status codes or error types from log messages.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend status_list = parse_csv('200,201,204,304')
+| extend is_success = status in (status_list)
+| summarize request_count = count() by is_success, status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20status_list%20%3D%20parse_csv(%27200%2C201%2C204%2C304%27)%20%7C%20extend%20is_success%20%3D%20status%20in%20(status_list)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20is_success%2C%20status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| is_success | status | request_count |
+|------------|--------|---------------|
+| true | 200 | 8765 |
+| false | 404 | 2341 |
+| false | 500 | 1234 |
+| true | 304 | 987 |
+
+This query parses a CSV list of success status codes and categorizes requests accordingly.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Parse comma-separated service lists from trace attributes or configuration.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_list = parse_csv('frontend,checkout,cart')
+| extend is_monitored = ['service.name'] in (service_list)
+| summarize span_count = count() by ['service.name'], is_monitored
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_list%20%3D%20parse_csv(%27frontend%2Ccheckout%2Ccart%27)%20%7C%20extend%20is_monitored%20%3D%20%5B%27service.name%27%5D%20in%20(service_list)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20%5B%27service.name%27%5D%2C%20is_monitored%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | is_monitored | span_count |
+|--------------|--------------|------------|
+| frontend | true | 4532 |
+| checkout | true | 3421 |
+| cart | true | 2987 |
+| product-catalog | false | 2341 |
+
+This query parses a CSV list of monitored services and identifies which services are included in the monitoring scope.
+
+</Tab>
+<Tab title="Security logs">
+
+Parse comma-separated allowlists or blocklists for security rule evaluation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend blocked_ips = parse_csv('192.168.1.100,10.0.0.25,172.16.0.50')
+| extend simulated_ip = '192.168.1.100'
+| extend is_blocked = simulated_ip in (blocked_ips)
+| where is_blocked
+| summarize blocked_attempts = count() by status, ['geo.country']
+| sort by blocked_attempts desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20blocked_ips%20%3D%20parse_csv(%27192.168.1.100%2C10.0.0.25%2C172.16.0.50%27)%20%7C%20extend%20simulated_ip%20%3D%20%27192.168.1.100%27%20%7C%20extend%20is_blocked%20%3D%20simulated_ip%20in%20(blocked_ips)%20%7C%20where%20is_blocked%20%7C%20summarize%20blocked_attempts%20%3D%20count()%20by%20status%2C%20%5B%27geo.country%27%5D%20%7C%20sort%20by%20blocked_attempts%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | geo.country | blocked_attempts |
+|--------|-------------|------------------|
+| 403 | Unknown | 234 |
+| 401 | Russia | 123 |
+
+This query parses a CSV blocklist and identifies requests from blocked IP addresses for security monitoring.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by any delimiter. Use this when working with non-CSV delimiters or when quote handling is not needed.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses JSON strings into dynamic objects. Use this when working with JSON arrays rather than CSV.
+- [strcat_delim](/apl/scalar-functions/string-functions/strcat-delim): Concatenates strings with delimiters. Use this to create CSV strings from individual values.
+- [extract_all](/apl/scalar-functions/string-functions/extract-all): Extracts multiple regex matches. Use this for more complex parsing patterns beyond CSV.
+

@@ -1,0 +1,188 @@
+---
+title: project-reorder
+description: 'This page explains how to use the project-reorder operator in APL.'
+---
+
+The `project-reorder` operator in APL allows you to rearrange the fields of a dataset without modifying the underlying data. This operator is useful when you need to control the display order of fields in query results, making your data easier to read and analyze. It can be especially helpful when working with large datasets where field ordering impacts the clarity of the output.
+
+Use `project-reorder` when you want to emphasize specific fields by adjusting their order in the result set without changing their values or structure.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `table` command to reorder fields, which works similarly to how `project-reorder` functions in APL.
+
+<CodeGroup>
+```splunk Splunk example
+| table FieldA, FieldB, FieldC
+```
+
+```kusto APL equivalent
+['dataset.name']
+| project-reorder FieldA, FieldB, FieldC
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the order of fields in a `SELECT` statement determines their arrangement in the output. In APL, `project-reorder` provides more explicit control over the field order without requiring a full `SELECT` clause.
+
+<CodeGroup>
+```sql SQL example
+SELECT FieldA, FieldB, FieldC FROM dataset;
+```
+
+```kusto APL equivalent
+| project-reorder FieldA, FieldB, FieldC
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+| project-reorder Field1 [asc | desc | granny-asc | granny-desc], Field2 [asc | desc | granny-asc | granny-desc], ...
+```
+
+### Parameters
+
+- `Field1, Field2, ...`: The names of the fields in the order you want them to appear in the result set.
+- `[asc | desc | granny-asc | granny-desc]`: Optional: Specifies the sort order for the reordered fields. `asc` or `desc` order fields by field name in ascending or descending manner. `granny-asc` or `granny-desc` order by ascending or descending while secondarily sorting by the next numeric value. For example, `b50` comes before `b9` when you use `granny-asc`.
+
+### Returns
+
+A table with the specified fields reordered as requested followed by any unspecified fields in their original order. `project-reorder` doesn‘t rename or remove fields from the dataset. All fields that existed in the dataset appear in the results table.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this example, you reorder HTTP log fields to prioritize the most relevant ones for log analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-reorder _time, method, status, uri, req_duration_ms, ['geo.city'], ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20project-reorder%20_time%2C%20method%2C%20status%2C%20uri%2C%20req_duration_ms%2C%20%5B%27geo.city%27%5D%2C%20%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| _time               | method | status | uri               | req_duration_ms | geo.city   | geo.country |
+|---------------------|--------|--------|-------------------|-----------------|------------|-------------|
+| 2024-10-17 12:34:56 | GET    | 200    | /home              | 120             | New York   | USA         |
+| 2024-10-17 12:35:01 | POST   | 404    | /api/v1/resource   | 250             | Berlin     | Germany     |
+
+This query rearranges the fields for clarity, placing the most crucial fields (`_time`, `method`, `status`) at the front for easier analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Here’s an example where OpenTelemetry trace fields are reordered to prioritize service and status information.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| project-reorder _time, ['service.name'], kind, status_code, trace_id, span_id, duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20project-reorder%20_time%2C%20%5B%27service.name%27%5D%2C%20kind%2C%20status_code%2C%20trace_id%2C%20span_id%2C%20duration%22%7D)
+
+**Output**
+
+| _time               | service.name          | kind     | status_code | trace_id | span_id | duration |
+|---------------------|-----------------------|----------|-------------|----------|---------|----------|
+| 2024-10-17 12:34:56 | frontend              | client   | 200         | abc123   | span456 | 00:00:01 |
+| 2024-10-17 12:35:01 | productcatalogservice | server   | 500         | xyz789   | span012 | 00:00:05 |
+
+This query emphasizes service-related fields like `service.name` and `status_code` at the start of the output.
+
+</Tab>
+<Tab title="Security logs">
+
+In this example, fields in a security log are reordered to prioritize key fields for investigating HTTP request anomalies.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-reorder _time, status, method, uri, id, ['geo.city'], ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20project-reorder%20_time%2C%20status%2C%20method%2C%20uri%2C%20id%2C%20%5B%27geo.city%27%5D%2C%20%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| _time               | status | method | uri               | id     | geo.city | geo.country |
+|---------------------|--------|--------|-------------------|--------|----------|-------------|
+| 2024-10-17 12:34:56 | 200    | GET    | /home              | user01 | New York | USA         |
+| 2024-10-17 12:35:01 | 404    | POST   | /api/v1/resource   | user02 | Berlin   | Germany     |
+
+This query reorders the fields to focus on the HTTP status, request method, and URI, which are critical for security-related analyses.
+
+</Tab>
+</Tabs>
+
+## Wildcard
+
+Wildcard refers to a special character or a set of characters that can be used to substitute for any other character in a search pattern. Use wildcards to create more flexible queries and perform more powerful searches.
+
+The syntax for wildcard can either be `data*` or `['data.fo']*`.
+
+Here’s how you can use wildcards in `project-reorder`:
+
+Reorder all fields in ascending order:
+
+```kusto
+['sample-http-logs'] 
+| project-reorder * asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20project-reorder%20%2A%20asc%22%7D)
+
+Reorder specific fields to the beginning:
+
+```kusto
+['sample-http-logs'] 
+| project-reorder method, status, uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%5Cn%7C%20project-reorder%20method%2C%20status%2C%20uri%22%7D)
+
+Reorder fields using wildcards and sort in descending order:
+
+```kusto
+['github-push-event'] 
+| project-reorder repo*, num_commits, push_id, ref, size, ['id'], size_large desc 
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27github-push-event%27%5D%5Cn%7C%20project-reorder%20repo%2A%2C%20num_commits%2C%20push_id%2C%20ref%2C%20size%2C%20%5B%27id%27%5D%2C%20size_large%20desc%22%7D)
+
+Reorder specific fields and keep others in original order:
+
+```kusto
+['otel-demo-traces']
+| project-reorder trace_id, *, span_id // orders the trace_id then everything else, then span_id fields 
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27otel-demo-traces%27%5D%5Cn%7C%20project-reorder%20trace_id%2C%20%2A%2C%20span_id%22%7D)
+
+## List of related operators
+
+- [project](/apl/tabular-operators/project-operator): Use the `project` operator to select and rename fields without changing their order.
+- [extend](/apl/tabular-operators/extend-operator): `extend` adds new calculated fields while keeping the original ones in place.
+- [summarize](/apl/tabular-operators/summarize-operator): Use `summarize` to perform aggregations on fields, which can then be reordered using `project-reorder`.
+- [sort](/apl/tabular-operators/sort-operator): Sorts rows based on field values, and the results can then be reordered with `project-reorder`.

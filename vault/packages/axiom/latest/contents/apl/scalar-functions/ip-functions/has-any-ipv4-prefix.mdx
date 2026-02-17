@@ -1,0 +1,91 @@
+---
+title: has_any_ipv4_prefix
+description: 'This page explains how to use the has_any_ipv4_prefix function in APL.'
+---
+
+The `has_any_ipv4_prefix` function in APL lets you determine if an IPv4 address starts with any prefix in a list of specified prefixes. This function is particularly useful for filtering, segmenting, and analyzing data involving IP addresses, such as log data, network traffic, or security events. By efficiently checking prefixes, you can identify IP ranges of interest for purposes like geolocation, access control, or anomaly detection.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, checking if an IP address matches a prefix requires custom search logic with pattern matching or conditional expressions. In APL, `has_any_ipv4_prefix` provides a direct and optimized way to perform this check.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_in_range=if(match(ip, "10.*") OR match(ip, "192.168.*"), 1, 0)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where has_any_ipv4_prefix(uri, dynamic(['10.', '192.168.']))
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you need to use `LIKE` clauses combined with `OR` operators to check prefixes. In APL, the `has_any_ipv4_prefix` function simplifies this process by accepting a dynamic list of prefixes.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs
+WHERE ip LIKE '10.%' OR ip LIKE '192.168.%';
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where has_any_ipv4_prefix(uri, dynamic(['10.', '192.168.']))
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+has_any_ipv4_prefix(ip_column, prefixes)
+```
+
+### Parameters
+
+| Parameter   | Type          | Description                                      |
+|-------------|---------------|--------------------------------------------------|
+| `ip_column` | `string`      | The column containing the IPv4 address.          |
+| `prefixes`  | `dynamic`     | A list of IPv4 prefixes to check against.        |
+
+### Returns
+
+- `true` if the IPv4 address matches any of the specified prefixes.
+- `false` otherwise.
+
+## Use case example
+
+Detect requests from specific IP ranges.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_ip_prefix = has_any_ipv4_prefix('192.168.0.1', dynamic(['172.16.', '192.168.']))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20has_ip_prefix%20%3D%20has_any_ipv4_prefix('192.168.0.1'%2C%20dynamic(%5B'172.16.'%2C%20'192.168.'%5D))%22%7D)
+
+**Output**
+
+| _time               | has_ip_prefix       | status |
+|---------------------|----------------|---------------------|
+| 2024-11-14T10:00:00 | true    | 200    |
+
+## List of related functions
+
+- [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4): Matches any IP address in a string column with a list of IP addresses or ranges.
+- [has_ipv4_prefix](/apl/scalar-functions/ip-functions/has-ipv4-prefix): Checks if an IPv4 address matches a single prefix.
+- [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4): Checks if a single IP address is present in a string column.

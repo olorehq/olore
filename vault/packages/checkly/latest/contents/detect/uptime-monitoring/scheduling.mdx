@@ -1,0 +1,329 @@
+---
+title: 'Scheduling and Frequency'
+description: 'Configure optimal monitoring frequency and timing strategies for different types of uptime monitors.'
+sidebarTitle: 'Scheduling'
+---
+
+Proper scheduling ensures effective monitoring while balancing detection speed, resource usage, and costs. This guide covers scheduling strategies for all monitor types.
+
+## Monitoring Frequency Options
+
+Different monitor types support various frequency settings:
+
+### Standard Frequencies
+- **Every 10 seconds** - Ultra-high frequency for critical services
+- **Every 30 seconds** - High frequency monitoring
+- **Every minute** - Standard high-frequency monitoring
+- **Every 5 minutes** - Balanced monitoring (most common)
+- **Every 10 minutes** - Moderate frequency
+- **Every 15 minutes** - Lower frequency monitoring
+- **Every 30 minutes** - Infrequent monitoring
+- **Every hour** - Low frequency monitoring
+- **Custom intervals** - Up to 24 hours for specific needs
+
+## Frequency Selection Guidelines
+
+### By Service Criticality
+
+**Critical Production Services:**
+```yaml
+Frequency: Every 10 Seconds - 2 Minutes
+Examples: Payment processing, user authentication, core APIs
+Rationale: Immediate detection of issues affecting users
+```
+
+**Important Services:**
+```yaml
+Frequency: Every 5-10 minutes
+Examples: Secondary APIs, admin interfaces, reporting tools
+Rationale: Quick detection with reasonable resource usage
+```
+
+**Non-Critical Services:**
+```yaml
+Frequency: Every 15-30 minutes
+Examples: Documentation sites, internal tools, dev environments
+Rationale: Monitor availability without excessive overhead
+```
+
+### By Business Hours
+
+**Business-Critical Services:**
+```yaml
+Business Hours (9 AM - 6 PM): Every 1 minute
+After Hours: Every 5 minutes
+Weekends: Every 10 minutes
+```
+
+**Internal Services:**
+```yaml
+Business Hours: Every 5 minutes
+After Hours: Every 15 minutes
+Weekends: Every 30 minutes
+```
+
+## Scheduling Strategies
+
+### Parallel vs. Round-Robin Execution
+
+<Columns cols={2}>
+<Card title="Parallel Execution" icon="fast-forward">
+All locations run simultaneously for fastest detection
+</Card>
+
+<Card title="Round-Robin" icon="rotate">
+Locations run sequentially to reduce server load
+</Card>
+</Columns>
+
+**Parallel Execution:**
+- **Use for**: Critical services requiring immediate alerts
+- **Benefits**: Fastest issue detection, simultaneous global status
+- **Considerations**: Higher server load, increased monitoring costs
+
+**Round-Robin Execution:**
+- **Use for**: Cost-sensitive or non-critical monitoring
+- **Benefits**: Distributed server load, lower monitoring costs
+- **Considerations**: Slower issue detection, sequential location testing
+
+### Dynamic Scheduling
+
+Adjust frequency based on current conditions:
+
+**Deployment Monitoring:**
+```yaml
+During Deployment: Every 30 seconds
+Post-Deployment (1 hour): Every 2 minutes
+Normal Operations: Every 5 minutes
+```
+
+**Incident Response:**
+```yaml
+During Incident: Every 30 seconds
+Recovery Period (2 hours): Every 1 minute
+Stable State: Return to normal frequency
+```
+
+## Service-Specific Scheduling
+
+### Web Applications and APIs
+
+**E-commerce Sites:**
+```yaml
+Homepage: Every 1 minute (critical for revenue)
+Product Pages: Every 5 minutes
+Search API: Every 2 minutes
+Checkout Flow: Every 30 seconds
+```
+
+**SaaS Applications:**
+```yaml
+Login Endpoint: Every 1 minute
+Core Features: Every 5 minutes
+Admin Interfaces: Every 15 minutes
+Status Pages: Every 10 minutes
+```
+
+### Infrastructure Monitoring
+
+**Database Servers:**
+```yaml
+Primary Database: Every 2 minutes
+Read Replicas: Every 5 minutes
+Backup Systems: Every 15 minutes
+```
+
+**Load Balancers and Proxies:**
+```yaml
+Production Load Balancer: Every 1 minute
+Staging Environment: Every 10 minutes
+Development Proxies: Every 30 minutes
+```
+
+### Scheduled Jobs and Heartbeats
+
+**Daily Jobs:**
+```yaml
+Period: 24 hours
+Grace Period: 30-60 minutes
+Example: Nightly backups, daily reports
+```
+
+**Hourly Jobs:**
+```yaml
+Period: 1 hour
+Grace Period: 10-15 minutes
+Example: Data sync, cache refresh
+```
+
+**High-Frequency Jobs:**
+```yaml
+Period: 5-15 minutes
+Grace Period: 2-5 minutes
+Example: Real-time data processing, monitoring tasks
+```
+
+## Cost and Performance Optimization
+
+### Balancing Coverage and Cost
+
+**High-Value Optimization:**
+```yaml
+Strategy: Monitor critical paths frequently, everything else moderately
+Implementation:
+  - User-facing services: Every 1-2 minutes
+  - Internal APIs: Every 5-10 minutes
+  - Dev/staging: Every 15-30 minutes
+```
+
+**Cost-Conscious Approach:**
+```yaml
+Strategy: Focus on essential monitoring with smart frequency
+Implementation:
+  - Core services only: Every 5 minutes
+  - Reduce locations for non-critical services
+  - Use longer intervals during off-peak hours
+```
+
+### Resource Impact Considerations
+
+**Server Load Management:**
+- Higher frequency = more requests to your servers
+- Use round-robin scheduling to distribute load
+- Consider rate limiting and caching implications
+- Monitor your server metrics during frequency changes
+
+**Monitoring Budget:**
+- More frequent checks = higher monitoring costs
+- Balance detection speed with budget constraints
+- Review and adjust frequencies based on actual value
+
+## Advanced Scheduling Patterns
+
+### Time-Based Scheduling
+
+**Business Hours Focus:**
+```yaml
+Business Hours (9 AM - 6 PM, Mon-Fri):
+  - Frequency: Every 1 minute
+  - All locations enabled
+
+Off Hours:
+  - Frequency: Every 10 minutes
+  - Reduced location set
+```
+
+**Seasonal Adjustments:**
+```yaml
+High Traffic Periods (Black Friday, holidays):
+  - Increase frequency by 50%
+  - Add additional monitoring locations
+  - Enable all alert channels
+
+Normal Periods:
+  - Standard frequency settings
+  - Regular location coverage
+```
+
+### Geographic Scheduling
+
+**Follow-the-Sun Monitoring:**
+```yaml
+Active Business Region:
+  - Higher frequency during local business hours
+  - All alerting channels active
+
+Other Regions:
+  - Reduced frequency during local off-hours
+  - Essential alerting only
+```
+
+### Failure-Adaptive Scheduling
+
+**Automatic Frequency Adjustment:**
+```yaml
+Healthy State: Normal frequency (every 5 minutes)
+Warning State: Increased frequency (every 2 minutes)
+Critical State: Maximum frequency (every 30 seconds)
+Recovery: Gradual return to normal frequency
+```
+
+## Troubleshooting Scheduling Issues
+
+### Common Problems
+
+**Over-Monitoring:**
+- **Symptoms**: High monitoring costs, server load issues
+- **Solutions**: Reduce frequency for non-critical services, use round-robin scheduling
+
+**Under-Monitoring:**
+- **Symptoms**: Late issue detection, missed outages
+- **Solutions**: Increase frequency for critical paths, add more locations
+
+**Inconsistent Detection:**
+- **Symptoms**: Intermittent alerts, unclear failure patterns
+- **Solutions**: Adjust grace periods, review timeout settings
+
+### Performance Impact Analysis
+
+**Monitor Your Monitors:**
+```yaml
+Track Metrics:
+  - Server response time during monitoring
+  - Resource utilization patterns
+  - Alert frequency and false positives
+  - Mean time to detection vs. frequency
+```
+
+**Optimization Signals:**
+```yaml
+Increase Frequency When:
+  - High business impact of downtime
+  - Frequent but brief outages
+  - Service instability periods
+
+Decrease Frequency When:
+  - Stable service with rare issues
+  - High monitoring costs
+  - Server load concerns
+```
+
+## Best Practices
+
+### Initial Configuration
+1. **Start conservative** with 5-10 minute intervals
+2. **Monitor high-impact services more frequently**
+3. **Adjust based on actual failure patterns**
+4. **Consider business hours and user activity**
+
+### Ongoing Optimization
+- **Review frequency effectiveness** quarterly
+- **Adjust during high-risk periods** (deployments, traffic spikes)
+- **Balance detection speed with cost constraints**
+- **Use data-driven decisions** based on incident history
+
+### Documentation and Communication
+- **Document scheduling rationale** for different services
+- **Communicate frequency changes** to relevant teams
+- **Track scheduling effectiveness** over time
+- **Regular review with stakeholders**
+
+## Next Steps
+
+<Columns cols={2}>
+<Card title="Alerting Configuration" href="/detect/uptime-monitoring/alerting">
+Configure alerting rules that work with your scheduling strategy
+</Card>
+
+<Card title="Monitoring Locations" href="/detect/uptime-monitoring/locations">
+Select optimal locations to complement your scheduling approach
+</Card>
+
+<Card title="Retries" href="/communicate/alerts/configuration">
+Configure retry strategies to work with your monitoring frequency
+</Card>
+
+<Card title="CLI Configuration" href="/detect/uptime-monitoring/cli-configuration">
+Manage scheduling settings through code and automation
+</Card>
+</Columns>

@@ -1,0 +1,82 @@
+---
+title: 'Send data from Rust app to Axiom'
+description: 'This page explains how to send data from a Rust app to Axiom.'
+overview: 'Systems programming language focused on safety and performance'
+sidebarTitle: Rust
+github: "https://github.com/axiomhq/axiom-rs"
+keywords: ['rs', 'rust']
+logoId: 'rust'
+darkLogoId: 'rustDark'
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+
+To send data from a Rust app to Axiom, use the Axiom Rust SDK.
+
+<Note>
+The Axiom Rust SDK is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-rs).
+</Note>
+
+<Prerequisites />
+
+## Install SDK
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+axiom-rs = "VERSION"
+```
+
+Replace `VERSION` with the latest version number specified on the [GitHub Releases](https://github.com/axiomhq/axiom-rs/releases) page. For example, `0.11.0`.
+
+If you use the [Axiom CLI](/reference/cli), run `eval $(axiom config export -f)` to configure your environment variables. Otherwise, [create an API token](/reference/tokens) and export it as `AXIOM_TOKEN`.
+
+## Use client
+
+```rust
+use axiom_rs::Client;
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Build your client by providing a personal token and an org id:
+    let client = Client::builder()
+        .with_token("API_TOKEN")
+        .build()?;
+
+    // Alternatively, auto-configure the client from the environment variable AXIOM_TOKEN:
+    let client = Client::new()?;
+
+    client.datasets().create("DATASET_NAME", "").await?;
+
+    client
+        .ingest(
+            "DATASET_NAME",
+            vec![json!({
+                "foo": "bar",
+            })],
+        )
+        .await?;
+
+    let res = client
+        .query(r#"['DATASET_NAME'] | where foo == "bar" | limit 100"#, None)
+        .await?;
+    println!("{:?}", res);
+
+    client.datasets().delete("DATASET_NAME").await?;
+    Ok(())
+}
+```
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-rs/tree/main/examples).
+
+## Optional features
+
+You can use the [Cargo features](https://doc.rust-lang.org/stable/cargo/reference/features.html#the-features-section):
+
+- `default-tls`: Provides TLS support to connect over HTTPS. Enabled by default.
+- `native-tls`: Enables TLS functionality provided by `native-tls`.
+- `rustls-tls`: Enables TLS functionality provided by `rustls`.
+- `tokio`: Enables usage with the `tokio` runtime. Enabled by default.
+- `async-std`: Enables usage with the `async-std` runtime.

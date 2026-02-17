@@ -1,0 +1,191 @@
+---
+title: '@xstate/vue'
+---
+
+The [@xstate/vue package](https://github.com/statelyai/xstate/tree/main/packages/xstate-vue) contains utilities for using [XState](https://github.com/statelyai/xstate) with [Vue](https://github.com/vuejs/vue).
+
+{/* TODO: Vue 2? */}
+
+## Templates
+
+Use the following templates to get started quickly with XState and Vue:
+
+- [XState Vue template (CodeSandbox)](https://codesandbox.io/p/devbox/github/statelyai/xstate/tree/main/templates/vue-ts)
+- [XState Vue template (StackBlitz)](https://stackblitz.com/github/statelyai/xstate/tree/main/templates/vue-ts?file=%2Fsrc%2FfeedbackMachine.ts)
+
+## Installation
+
+Install the latest versions of both `xstate` and `@xstate/vue`. `xstate` is a peer dependency of `@xstate/vue`.
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install xstate @xstate/vue
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install xstate @xstate/vue
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add xstate @xstate/vue
+```
+
+</Tab>
+</Tabs>
+
+{/* TODO: CDN? */}
+
+## API
+
+### `useActor(actorLogic, options?)`
+
+A [Vue composition function](https://v3.vuejs.org/guide/composition-api-introduction.html) that creates an actor from the given `actorLogic` and starts an actor ref that runs for the lifetime of the component.
+
+#### Arguments
+
+- `actorLogic` - An [XState machine](machines)
+- `options` (optional) - Actor options
+
+**Returns** `{ snapshot, send, actorRef }`:
+
+- `snapshot` - Represents the current snapshot (state) of the machine as an XState `State` object.
+- `send` - A function that sends events to the running actor.
+- `actorRef` - The created actor ref.
+
+### `useMachine(machine, options?)`
+
+A [Vue composition function](https://v3.vuejs.org/guide/composition-api-introduction.html) that creates an actor from the given `machine` and starts an actor that runs for the lifetime of the component.
+
+#### Arguments
+
+- `machine` - An [XState machine](machines)
+- `options` (optional) - Actor options
+
+**Returns** `{ snapshot, send, actorRef }`:
+
+- `snapshot` - Represents the current snapshot (state) of the machine as an XState `State` object.
+- `send` - A function that sends events to the running actor.
+- `actorRef` - The created actor ref.
+
+### `useActorRef(actorLogic, options?, observer?)`
+
+A [Vue composition function](https://v3.vuejs.org/guide/composition-api-introduction.html) that returns the `actorRef` created from the `actorLogic` with the actor `options`, if specified. It also sets up a subscription to the `actorRef` with the `observer`, if provided.
+
+#### Arguments
+
+- `actorLogic` - Actor logic
+- `options` (optional) - Actor options
+- `observer` (optional) - an observer or listener that listens to snapshot updates:
+  - an observer (e.g., `{ next: (snapshot) => {/* ... */} }`)
+  - or a listener (e.g., `(snapshot) => {/* ... */}`)
+
+#### Examples
+
+```js
+import { useActorRef } from '@xstate/vue';
+import { someMachine } from '../path/to/someMachine';
+
+export default {
+  setup() {
+    const actorRef = useActorRef(someMachine);
+    return actorRef;
+  },
+};
+```
+
+With options + listener:
+
+```js
+import { useInterpret } from '@xstate/vue';
+import { someMachine } from '../path/to/someMachine';
+export default {
+  setup() {
+    const actor = useInterpret(
+      someMachine,
+      {
+        actions: {
+          /* ... */
+        },
+      },
+      (state) => {
+        // subscribes to state changes
+        console.log(state.value);
+      },
+    );
+    // ...
+  },
+};
+```
+
+### `useSelector(actor, selector, compare?, getSnapshot?)`
+
+A [Vue composition function](https://v3.vuejs.org/guide/composition-api-introduction.html) that returns the selected value from the snapshot of an `actorRef`, such as an actor. This hook will only cause a rerender if the selected value changes, as determined by the optional `compare` function.
+
+#### Arguments
+
+- `actorRef` - an actor or an actor-like object that contains `.send(...)` and `.subscribe(...)` methods.
+- `selector` - a function that takes in an actor’s "current state" (snapshot) as an argument and returns the desired selected value.
+- `compare` (optional) - a function that determines if the current selected value is the same as the previous selected value.
+- `getSnapshot` (optional) - a function that should return the latest emitted value from the `actorRef`.
+  - Defaults to attempting to get the `actor.state`, or returning `undefined` if that does not exist. Will automatically pull the state from actors.
+
+```js
+import { useSelector } from '@xstate/vue';
+
+const selectCount = (snapshot) => snapshot.context.count;
+
+export default {
+  props: ['actor'],
+  setup(props) {
+    const count = useSelector(props.actor, selectCount);
+    // ...
+    return { count };
+  },
+};
+```
+
+With `compare` function:
+
+```js
+import { useSelector } from '@xstate/vue';
+
+const selectUser = (state) => state.context.user;
+const compareUser = (prevUser, nextUser) => prevUser.id === nextUser.id;
+
+export default {
+  props: ['actor'],
+  setup(props) {
+    const user = useSelector(props.actor, selectUser, compareUser);
+    // ...
+    return { user };
+  },
+};
+```
+
+With `useActorRef(...)`:
+
+```js
+import { useActorRef, useSelector } from '@xstate/vue';
+import { someMachine } from '../path/to/someMachine';
+
+const selectCount = (snapshot) => snapshot.context.count;
+
+export default {
+  setup() {
+    const actorRef = useActorRef(someMachine);
+    const count = useSelector(actorRef, selectCount);
+    // ...
+    return { count, actorRef };
+  },
+};
+```

@@ -1,0 +1,52 @@
+---
+title: "Status Page Customization"
+description: "Add a custom domain and look & feel to your Status Page."
+sidebarTitle: "Customization"
+---
+
+## Custom domain
+
+<Note>
+  Custom domains are available on Communicate Starter, Team and Enterprise
+  plans. [View pricing](https://checklyhq.com/pricing)
+</Note>
+
+You can host your Status Page on your own domain. To set it up, add the domain in Checkly and create the required DNS records with your DNS provider.
+
+<Steps>
+<Step title="Add a custom domain to your Status Page">
+![Custom domain configuration](/images/docs/images/status-pages/status-pages-custom-domain-1.png)
+</Step>
+
+<Step title="Create a CNAME record that points to `custom-slug.checkly-status-page.com`">
+  Create a CNAME record with your DNS provider and point it to
+  `custom-domain.checkly-status-page.com` For example, in Cloudflare, the
+  configuration looks like this: ![Custom domain CNAME
+  configuration](/images/docs/images/status-pages/status-pages-custom-domain-2.png)
+  If your provider is Cloudflare, you must disable the proxy on the CNAME, it
+  should always be set to DNS only.
+</Step>
+
+<Step title="Add TXT record(s) to perform validation and prove domain ownership">
+After you've added your custom domain and saved the page, one or more TXT records will be displayed depending on the domain you're using. 
+![Example custom domain TXT configuration](/images/docs/images/status-pages/status-pages-custom-domain-3.png)
+
+Update your DNS settings to match the TXT record(s) displayed on your Status Page to prove the ownership of the domain.
+
+<Note>
+Search engines require this verification to index and list your Status Page.
+</Note>
+</Step>
+</Steps>
+
+## Customize your Status Page to match your brand identity
+
+- Upload your company logo and the link it should open
+- Upload a custom favicon
+- Choose the default theme: auto (system), light or dark
+- Customize the color theme to match your brand
+
+<Note>
+  Theme customization is available on Communicate Team and Enterprise plans.
+  [View pricing](https://checklyhq.com/pricing)
+</Note>

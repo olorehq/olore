@@ -1,0 +1,508 @@
+---
+title: React Native
+sidebarTitle: React Native
+sidebar: Docs
+showTitle: true
+github: 'https://github.com/PostHog/posthog-js/tree/main/packages/react-native'
+platformLogo: react
+features:
+  eventCapture: true
+  userIdentification: true
+  autoCapture: true
+  sessionRecording: true
+  featureFlags: true
+  groupAnalytics: true
+  surveys: true
+  llmAnalytics: false
+  errorTracking: true
+---
+
+import DetailSetUpReverseProxy from "../../integrate/_snippets/details/set-up-reverse-proxy.mdx"
+import DetailGroupProductsInOneProject from "../../integrate/_snippets/details/group-products-in-one-project.mdx"
+import DetailPostHogIPs from "../../integrate/_snippets/details/posthog-ips.mdx"
+
+## Installation
+
+import ReactNativeInstall from '../../integrate/_snippets/install-react-native.mdx'
+
+<ReactNativeInstall />
+
+<DetailSetUpReverseProxy />
+
+<DetailGroupProductsInOneProject />
+
+<DetailPostHogIPs />
+
+### Configuration options
+
+You can further customize how PostHog works through its configuration on initialization.
+
+| Attribute                                                                                               | Description                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`<br/><br/>**Type:** String<br/>**Default:** `https://us.i.posthog.com`                            | PostHog API host (usually `https://us.i.posthog.com` by default or `https://eu.i.posthog.com`). Host is optional if you use `https://us.i.posthog.com`.                                                                                                                                                    |
+| `flushAt`<br/><br/>**Type:** Number<br/>**Default:** `20`                                               | The number of events to queue before sending to PostHog (flushing).                                                                                                                                                                                                                                        |
+| `flushInterval`<br/><br/>**Type:** Number<br/>**Default:** `10000`                                      | The interval in milliseconds between periodic flushes.                                                                                                                                                                                                                                                     |
+| `maxBatchSize`<br/><br/>**Type:** Number<br/>**Default:** `100`                                         | The maximum number of queued messages to be flushed as part of a single batch (must be higher than `flushAt`).                                                                                                                                                                                             |
+| `maxQueueSize`<br/><br/>**Type:** Number<br/>**Default:** `1000`                                        | The maximum number of cached messages either in memory or on the local storage (must be higher than `flushAt`).                                                                                                                                                                                            |
+| `disabled`<br/><br/>**Type:** Boolean<br/>**Default:** `false`                                          | If set to true, the SDK is essentially disabled (useful for local environments where you don't want to track anything).                                                                                                                                                                                    |
+| `defaultOptIn`<br/><br/>**Type:** Boolean<br/>**Default:** `true`                                       | If set to false, the SDK will not track until the `optIn()` function is called.                                                                                                                                                                                                                            |
+| `sendFeatureFlagEvent`<br/><br/>**Type:** Boolean<br/>**Default:** `true`                               | Whether to track that `getFeatureFlag` was called (used by experiments).                                                                                                                                                                                                                                   |
+| `preloadFeatureFlags`<br/><br/>**Type:** Boolean<br/>**Default:** `true`                                | Whether to load feature flags when initialized or not.                                                                                                                                                                                                                                                     |
+| `bootstrap`<br/><br/>**Type:** Object<br/>**Default:** `{}`                                             | An object containing the `distinctId`, `isIdentifiedId`, `featureFlags`, and `featureFlagPayloads` keys. `distinctId` is a string, and `featureFlags` and `featureFlagPayloads` are objects of key-value pairs. Used to ensure data is available as soon as the SDK loads.                                 |
+| `fetchRetryCount`<br/><br/>**Type:** Number<br/>**Default:** `3`                                        | How many times HTTP requests will be retried.                                                                                                                                                                                                                                                              | 
+| `fetchRetryDelay`<br/><br/>**Type:** Number<br/>**Default:** `3000`                                     | The delay between HTTP request retries.                                                                                                                                                                                                                                                                    |
+| `requestTimeout`<br/><br/>**Type:** Number<br/>**Default:** `10000`                                     | Timeout in milliseconds for any calls.                                                                                                                                                                                                                                                                     |
+| `featureFlagsRequestTimeoutMs`<br/><br/>**Type:** Number<br/>**Default:** `10000`                       | Timeout in milliseconds for feature flag calls.                                                                                                                                                                                                                                                            |
+| `sessionExpirationTimeSeconds`<br/><br/>**Type:** Number<br/>**Default:** `1800`                        | For session analysis, how long before a session expires (defaults to 30 minutes).                                                                                                                                                                                                                          |
+| `persistence`<br/><br/>**Type:** String<br/>**Default:** `file`                                         | Allows you to provide the storage type. `file` will try to load the best available storage, the provided `customStorage`, `customAsyncStorage`, or in-memory storage.                                                                                                                                      |
+| `customAppProperties`<br/><br/>**Type:** Object or Function<br/>**Default:** `null`                     | Allows you to provide your own implementation of the common information about your App or a function to modify the default App properties generated.                                                                                                                                                       |
+| `customStorage`<br/><br/>**Type:** Object<br/>**Default:** `null`                                       | Allows you to provide a custom asynchronous storage such as `async-storage`, `expo-file-system`, or a synchronous storage such as `mmkv`. If not provided, PostHog will attempt to use the best available storage via optional peer dependencies. If `persistence` is set to `memory`, this option is ignored. |
+| `captureAppLifecycleEvents`<br/><br/>**Type:** Boolean<br/>**Default:** `false`                         | Captures app lifecycle events such as Application Installed, Application Updated, Application Opened, Application Became Active, and Application Backgrounded. By default, this is false.                                                                                                                  |
+| `disableGeoip`<br/><br/>**Type:** Boolean<br/>**Default:** `false`                                      | When true, disables automatic GeoIP resolution for events and feature flags.                                                                                                                                                                                                                               |
+| `enableSessionReplay`<br/><br/>**Type:** Boolean<br/>**Default:** `false`                               | Enable Recording of Session replay for Android and iOS.                                                                                                                                                                                                                                                    |
+| `sessionReplayConfig`<br/><br/>**Type:** Object<br/>**Default:** `null`                                 | Session replay configuration. See the [replay install docs](/docs/session-replay/installation) for more details.                                                                                                                                                                                                       |
+| `enablePersistSessionIdAcrossRestart`<br/><br/>**Type:** Boolean<br/>**Default:** `false`               | When true, persists the `$session_id` across app restarts. If false, `$session_id` always resets on app restart.                                                                                                                                                                                           |
+| `evaluationContexts`<br/><br/>**Type:** Array of Strings<br/>**Default:** `undefined`               | Evaluation context tags that constrain which feature flags are evaluated. When set, only flags with matching evaluation context tags (or no evaluation context tags) will be returned. This helps reduce unnecessary flag evaluations and improves performance. See [evaluation contexts documentation](/docs/feature-flags/evaluation-contexts) for more details. Available in version 4.8.0+. The legacy parameter `evaluationEnvironments` (version 4.7.2+) is also supported for backward compatibility. |
+| `before_send`<br/><br/>**Type:** Function<br/>**Default:** `undefined`                              | A callback function that is called before each event is sent to PostHog. You can use it to modify, filter, or suppress events. Return `null` to drop the event, or return the modified event to send it. See [customizing exception capture](#customizing-exception-capture-with-before_send) for details. |
+
+## Capturing events
+
+import RNSendEvents from '../../integrate/send-events/_snippets/send-events-react-native.mdx'
+
+<RNSendEvents />
+
+## Autocapture 
+
+PostHog autocapture can automatically track the following events for you:
+
+-   **Application Opened** - when the app is opened from a closed state
+-   **Application Became Active** - when the app comes to the foreground (e.g. from the app switcher)
+-   **Application Backgrounded** - when the app is sent to the background by the user
+-   **Application Installed** - when the app is installed.
+-   **Application Updated** - when the app is updated.
+-   **$screen** - when the user navigates (if using `@react-navigation/native` (v6 or lower) or `react-native-navigation`), check out the [capturing screen views](/docs/libraries/react-native#capturing-screen-views) section
+-   **$autocapture** - touch events when the user interacts with the screen
+-   **$exception** - when the app throws exceptions.
+
+> ⚠️ **React Navigation v7 users**
+>
+> React Navigation v7 restricts navigation hooks (such as `useNavigationState`) to components rendered inside a Screen that belongs to a Navigator.
+>
+> Because of this change, automatic screen tracking may throw errors if PostHog is initialized outside a screen context. This commonly affects apps upgrading from React Navigation v6 to v7.
+>
+> For React Navigation v7, we recommend disabling automatic screen capture for screens and manually calling `posthog.screen()` inside each screen component. See the [Capturing screen views](/docs/libraries/react-native#capturing-screen-views) section below.
+
+With autocapture, all touch events for children of `PosthogProvider` are tracked, capturing a snapshot of the view hierarchy at that point. This enables you to create [insights](/docs/product-analytics/insights) in PostHog without having to add custom events.
+
+PostHog will try to generate a sensible name for the touched element based on the React component `displayName` or `name`. If you prefer, you can set your own name using the `ph-label` prop:
+
+```react-native
+<View ph-label="my-special-label"></View>
+```
+
+### Autocapture configuration
+
+import AutocaptureConfigs from './_snippets/autocapture-config-rn.mdx'
+
+<AutocaptureConfigs/>
+
+### Preventing sensitive data capture
+
+If there are elements you don't want to be captured, you can add the `ph-no-capture` property. If this property is found anywhere in the view hierarchy, the entire touch event is ignored:
+
+```react-native
+<View ph-no-capture>Sensitive view here</View>
+```
+
+## Identifying users
+
+> We highly recommend reading our section on [Identifying users](/docs/integrate/identifying-users) to better understand how to correctly use this method.
+
+import ReactNativeIdentify from './_snippets/identify.mdx'
+
+<ReactNativeIdentify />
+
+## Get the current user's distinct ID
+
+You may find it helpful to get the current user's distinct ID. For example, to check whether you've already called `identify` for a user or not.
+
+To do this, call `posthog.get_distinct_id()`. This returns either the ID automatically generated by PostHog or the ID that has been passed by a call to `identify()`.
+
+## Alias
+
+Sometimes, you want to assign multiple distinct IDs to a single user. This is helpful when your primary distinct ID is inaccessible. For example, if a distinct ID used on the frontend is not available in your backend. 
+
+In this case, you can use `alias` to assign another distinct ID to the same user.
+
+```react-native
+// Sets alias for current user
+posthog.alias('distinct_id')
+```
+
+We strongly recommend reading our docs on [alias](/docs/data/identify#alias-assigning-multiple-distinct-ids-to-the-same-user) to best understand how to correctly use this method.
+
+## Setting person properties
+
+Person properties enable you to capture, manage, and analyze specific data about a user. You can use them to create [filters](/docs/product-analytics/trends#filtering-events-based-on-properties) or [cohorts](/docs/data/cohorts), which can then be used in [insights](/docs/product-analytics/insights), [feature flags](/docs/feature-flags), and more.
+
+To set a user's properties, include the `$set` or `$set_once` property when capturing any event:
+
+### $set
+
+```js
+posthog.capture('some_event', { $set: { userProperty: 'value' } })
+```
+
+### $set_once
+
+`$set_once` works just like `$set`, except it **only sets the property if the user doesn't already have that property set**.
+
+```js
+posthog.capture('some_event', { $set_once: { userProperty: 'value' } })
+```
+
+## Super properties
+
+Super properties are properties associated with events that are set once and then sent with every `capture` call, be it a `$screen`, an autocaptured touch, or anything else.
+
+They are set using `posthog.register`, which takes a properties object as a parameter, and they persist across sessions.
+
+For example:
+
+```js
+posthog.register({
+    'icecream pref': 'vanilla',
+    team_id: 22,
+})
+```
+
+The call above ensures that every event sent by the user will include `"icecream pref": "vanilla"` and `"team_id": 22`. This way, if you filtered events by property using `icecream_pref = vanilla`, it would display all events captured on that user after the `posthog.register` call, since they all include the specified Super Property.
+
+This does **not** set the user's properties. This only sets the properties for their events. To store person properties, see the [setting person properties section](#setting-user-properties).
+
+### Removing stored super properties
+
+Super Properties are persisted across sessions so you have to explicitly remove them if they are no longer relevant. In order to stop sending a Super Property with events, you can use `posthog.unregister`, like so:
+
+```js
+posthog.unregister('icecream pref'),
+```
+
+This will remove the super property and subsequent events will not include it.
+
+If you are doing this as part of a user logging out you can instead simply [`posthog.reset()`](#reset-after-logout) which takes care of clearing all stored Super Properties and more.
+
+## Opt out of data capture
+
+You can completely opt-out users from data capture. To do this, there are two options:
+
+1. Opt users out by default by setting `opt_out_capturing_by_default` to `true` in your PostHog config:
+
+```javascript
+posthog.init('<ph_project_api_key>', {
+    opt_out_capturing_by_default: true,
+});
+```
+
+2. Opt users out on a per-person basis by calling `opt_out_capturing()`:
+
+```javascript
+posthog.opt_out_capturing()
+```
+
+Similarly, you can opt users in:
+
+```javascript
+posthog.opt_in_capturing()
+```
+
+To check if a user is opted out:
+
+```javascript
+posthog.has_opted_out_capturing()
+```
+
+## Flush
+
+You can set the number of events in the configuration that should queue before flushing.
+Setting this to `1` will send events immediately and will use more battery. This is set to `20` by default.
+
+You can also configure the flush interval. By default we flush all events after `30` seconds,
+no matter how many events have gathered.
+
+You can also manually flush the queue. If a flush is already in progress it returns a promise for the existing flush.
+
+```javascript
+await posthog.flush()
+```
+
+## Reset after logout
+
+To reset the user's ID and anonymous ID, call `reset`. Usually you would do this right after the user logs out.
+
+```javascript
+posthog.reset()
+```
+
+## Offline behavior
+
+The PostHog React Native SDK will continue to capture events when the device is offline. When `persistence` is set to `file` (by default), the events are stored in a queue in the device's file storage. Even when the app is closed, the events are persisted and will be flushed when the app is opened again.
+
+- The queue has a maximum size defined by `maxQueueSize` in the configuration.
+- When the queue is full, the oldest event is deleted first.
+- The queue is flushed only when the device is online.
+
+## Opt in/out
+
+By default, PostHog has tracking enabled unless it is forcefully disabled by default using the option `{ defaultOptIn: false }`.
+
+You can give your users the option to opt in or out by calling the relevant methods. Once these have been called they are persisted and will be respected until optIn/Out is called again or the `reset` function is called.
+
+To opt in/out of tracking, use the following calls.
+
+```javascript
+posthog.optedOut // See if a user has opted out
+posthog.optIn() // opt in
+posthog.optOut() // opt out
+```
+
+If you still wish capture these events but want to create a distinction between users and team in PostHog, you should look into [Cohorts](/docs/user-guides/cohorts#differentiating-team-vs-users-traffic).
+
+## Feature Flags
+
+import FeatureFlagsLibsIntro from "../_snippets/feature-flags-libs-intro.mdx"
+
+<FeatureFlagsLibsIntro />
+
+import ReactNativeFeatureFlagsCode from "../../integrate/feature-flags-code/_snippets/feature-flags-code-react-native.mdx"
+
+<ReactNativeFeatureFlagsCode />
+
+### Bootstrapping Flags
+
+import BootstrappingIntro from "../../feature-flags/snippets/bootstrapping-intro.mdx"
+
+<BootstrappingIntro />
+
+For details on how to implement bootstrapping, see our [bootstrapping guide](/docs/feature-flags/bootstrapping).
+
+## Experiments (A/B tests)
+
+Since [experiments](/docs/experiments/manual) use feature flags, the code for running an experiment is very similar to the feature flags code:
+
+```react-native
+// With the useFeatureFlag hook
+import { useFeatureFlag } from 'posthog-react-native'
+
+const MyComponent = () => {
+    const variant = useFeatureFlag('experiment-feature-flag-key')
+
+    if (variant === undefined) {
+        // the response is undefined if the flags are being loaded
+        return null
+    }
+
+    if (variant == 'variant-name') {
+        // do something
+    }
+}           
+```
+
+It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags).
+
+## Group analytics
+
+Group analytics allows you to associate the events for that person's session with a group (e.g. teams, organizations, etc.). Read the [Group Analytics](/docs/user-guides/group-analytics) guide for more information.
+
+> **Note:**  This is a paid feature and is not available on the open-source or free cloud plan. Learn more on the [pricing page](/pricing).
+
+-   Associate the events for this session with a group
+
+```js
+posthog.group('company', 'company_id_in_your_db')
+
+posthog.capture('upgraded_plan') // this event is associated with company ID `company_id_in_your_db`
+```
+
+-   Associate the events for this session with a group AND update the properties of that group
+
+```js
+posthog.group('company', 'company_id_in_your_db', {
+    name: 'Awesome Inc.',
+    employees: 11,
+})
+```
+
+The `name` is a special property which is used in the PostHog UI for the name of the group. If you don't specify a `name` property, the group ID will be used instead.
+
+## Error tracking
+
+To set up error tracking in your project, follow the [React Native installation guide](/docs/error-tracking/installation/react-native).
+
+### Customizing exception capture with before_send
+
+You can use the `before_send` callback to modify, filter, or suppress exception events before they are sent to PostHog. This is useful for:
+
+- Adding custom properties to exceptions
+- Overriding exception fingerprints for custom grouping
+- Suppressing specific types of exceptions
+- Redacting sensitive information
+
+```react-native
+const posthog = new PostHog('<ph_project_api_key>', {
+  host: '<ph_client_api_host>',
+  before_send: (event) => {
+    if (event.event === '$exception') {
+      const exceptionList = event.properties?.['$exception_list'] || []
+      const exception = exceptionList.length > 0 ? exceptionList[0] : null
+
+      if (exception) {
+        // Add custom properties
+        event.properties['custom_property'] = 'custom_value'
+
+        // Override fingerprint for custom grouping
+        event.properties['$exception_fingerprint'] = 'MyCustomGroup'
+      }
+
+      // Suppress specific exception types
+      if (exception?.['$exception_type'] === 'IgnoredError') {
+        return null // Drop the event
+      }
+    }
+    return event
+  },
+})
+```
+
+You can also use `before_send` to sample or filter other event types. See the [JavaScript Web SDK documentation](/docs/libraries/js/usage#amending-or-sampling-events) for more examples.
+
+## Session replay
+
+To set up [session replay](/docs/session-replay/mobile) in your project, all you need to do is install the React Native SDK and the Session replay plugin, then follow the [instructions to enable Session Replay](/docs/session-replay/installation/react-native) for React Native.
+
+## Surveys
+
+To set up surveys, follow the [additional installation instructions for React Native](/docs/surveys/installation/react-native). Surveys launched with [popover presentation](/docs/surveys/creating-surveys#presentation) are automatically shown to users matching the [display conditions](/docs/surveys/creating-surveys#display-conditions) you set up.
+
+> Note: URL and CSS selector targeting are not supported in React Native. Surveys that rely on these conditions will not appear.
+
+## Debug mode 
+
+If you're not seeing the expected events being captured, the feature flags being evaluated, or the surveys being shown, you can enable debug mode to see what's happening. 
+
+You can enable debug mode by setting the `debug` option to `true` in the `PostHogProvider` options. This will enable verbose logs about the inner workings of the SDK.
+
+```react-native
+<PostHogProvider
+    debug: {true}
+    apiKey="<ph_project_api_key>"
+    options={{
+        host: "<ph_client_api_host>",
+    }}
+>
+```
+
+You can also call the `debug()` method in your code. 
+
+```react-native
+posthog.debug()
+```
+
+## Disabling for local development
+
+You may want to disable PostHog when working locally or in a test environment. You can do this by setting the `disable` option to `true` when initializing PostHog. Helpfully this allows you to continue using `usePostHog` and safely calling it without anything actually happening.
+
+```react-native
+// App.(js|ts)
+import { usePostHog, PostHogProvider } from 'posthog-react-native'
+...
+
+export function MyApp() {
+    return (
+        <PostHogProvider apiKey="<ph_project_api_key>" options={{
+            // Disable PostHog in development (or whatever other logic you choose)
+            disabled: __DEV__,
+        }}>
+            <MyComponent />
+        </PostHogProvider>
+    )
+}
+
+const MyComponent = () => {
+    const posthog = usePostHog()
+
+    useEffect(() => {
+        // Safe to call even when disabled!
+        posthog.capture("mycomponent_loaded", { foo: "bar" })
+    }, [])
+}
+```
+
+## Upgrading from V1, V2 to V3 or V3 to V4
+
+V1 of this library utilised the underlying `posthog-ios` and `posthog-android` SDKs to do most of the work. Since the new version is written entirely in JS, using only Expo supported libraries, there are some changes to the way PostHog is configured as well as actually calling PostHog.
+
+For iOS, the new React Native SDK will attempt to migrate the previously persisted data (such as `distinctId` and `anonymousId`) which should result in no unexpected changes to tracked data.
+
+For Android, it is unfortunately not possible for persisted Android data to be loaded which means stored information such as the randomly generated `anonymousId` or the `distinctId` set by `posthog.identify` will not be present. For identified users, the simple workaround is to ensure that `identify` is called at least once when the app loads. For anonymous users there is unfortunately no straightforward workaround they will show up as new anonymous users in PostHog.
+
+Events such as `Application Installed` and `Application Updated` that require previously persisted data were unable to be migrated, the side effect being that you may see much higher numbers for `Application Installed` events. This is due to the fact that there is no native way of detecting a real "install" and as such, we store a marker the first time the SDK loads and treat that as an install.
+
+```jsx
+// DEPRECATED V1 Setup
+
+import PostHog from 'posthog-react-native'
+
+await PostHog.setup('<ph_project_api_key>', {
+    // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
+    host: '<ph_client_api_host>',
+    captureApplicationLifecycleEvents: false, // Replaced by 'PostHogProvider'
+    captureDeepLinks: false, // No longer supported
+    recordScreenViews: false, // Replaced by 'PostHogProvider' supporting @react-navigation/native
+    flushInterval: 30, // Stays the same
+    flushAt: 20, // Stays the same
+    android: {...}, // No longer needed
+    iOS: {...}, // No longer needed
+})
+
+PostHog.capture("foo")
+
+
+// V2 Setup difference
+import PostHog from 'posthog-react-native'
+
+const posthog = await Posthog.initAsync('<ph_project_api_key>', {
+    // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
+    host: '<ph_client_api_host>', 
+    // Add any other options here.
+})
+
+// Use created instance rather than the PostHog class
+posthog.capture("foo")
+
+// V3 Setup difference
+import PostHog from 'posthog-react-native'
+
+const posthog = new PostHog('<ph_project_api_key>', {
+    // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
+    host: '<ph_client_api_host>',
+    // Add any other options here.
+})
+
+// Use created instance rather than the PostHog class
+posthog.capture("foo")
+
+// V4 Setup difference
+import PostHog from 'posthog-react-native'
+
+const posthog = new PostHog('<ph_project_api_key>', {
+    // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
+    host: '<ph_client_api_host>',
+    captureAppLifecycleEvents: true, // instead of `captureNativeAppLifecycleEvents` or `autocapture={{ captureLifecycleEvents: true }}`,
+    // captureMode: 'json', // No longer supported
+    // maskPhotoLibraryImages: true, // No longer supported
+})
+
+posthog.setPersonPropertiesForFlags(...) // instead of `personProperties`
+posthog.setGroupPropertiesForFlags(...) // instead of `groupProperties`
+```

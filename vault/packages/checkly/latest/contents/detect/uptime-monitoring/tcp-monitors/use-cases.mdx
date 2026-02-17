@@ -1,0 +1,382 @@
+---
+title: 'TCP Monitor Use Cases'
+description: 'Common use cases and real-world examples for TCP monitoring across different services and infrastructure components.'
+sidebarTitle: 'Use Cases'
+hidden: true
+---
+
+TCP monitors excel at validating network-level connectivity for various services and infrastructure components. Here are the most common and effective use cases for TCP monitoring.
+
+## Database Monitoring
+
+TCP monitors are perfect for checking database connectivity without exposing credentials or performing actual database operations.
+
+### MySQL/MariaDB
+Monitor database server availability:
+
+```yaml
+Host: db.production.com
+Port: 3306
+Protocol: TCP
+Timeout: 10s
+Expected Response: (leave empty for basic connectivity)
+```
+
+**Benefits**:
+- Verify database server is accepting connections
+- Check before application deployments
+- Monitor during maintenance windows
+- Validate load balancer configuration
+
+### PostgreSQL
+Monitor PostgreSQL instances:
+
+```yaml
+Host: postgres.internal.com
+Port: 5432
+Protocol: TCP
+Connection String: (leave empty)
+Expected Response: (leave empty)
+```
+
+### MongoDB
+Check MongoDB replica sets:
+
+```yaml
+Host: mongo-primary.cluster.com
+Port: 27017
+Protocol: TCP
+Timeout: 15s
+```
+
+### Redis Cache
+Monitor Redis instances with ping validation:
+
+```yaml
+Host: redis.cache.com
+Port: 6379
+Protocol: TCP
+Connection String: "PING\r\n"
+Expected Response: "+PONG"
+```
+
+## Mail Server Monitoring
+
+Ensure mail services are accepting connections and responding correctly.
+
+### SMTP Server
+Monitor outgoing mail servers:
+
+```yaml
+Host: smtp.company.com
+Port: 587
+Protocol: SSL/TLS
+Expected Response: "220"
+Timeout: 10s
+```
+
+**Use cases**:
+- Validate SMTP server before sending bulk emails
+- Monitor mail server during email campaigns
+- Check SSL certificate expiration for secure SMTP
+- Verify server response codes
+
+### IMAP Server
+Monitor incoming mail servers:
+
+```yaml
+Host: imap.company.com
+Port: 993
+Protocol: SSL/TLS
+Expected Response: "* OK"
+```
+
+### POP3 Server
+Check POP3 mail access:
+
+```yaml
+Host: pop3.company.com
+Port: 995
+Protocol: SSL/TLS
+Expected Response: "+OK"
+```
+
+## Custom TCP Services
+
+Monitor proprietary applications and custom network services.
+
+### Custom API Service
+Monitor internal TCP-based APIs:
+
+```yaml
+Host: api-internal.company.com
+Port: 8080
+Protocol: TCP
+Connection String: "HEALTH\n"
+Expected Response: "OK"
+```
+
+### Microservice Health Checks
+Monitor service-to-service communication:
+
+```yaml
+Host: user-service.internal
+Port: 9090
+Protocol: TCP
+Connection String: "STATUS\n"
+Expected Response: "READY"
+```
+
+### Game Servers
+Monitor multiplayer game servers:
+
+```yaml
+Host: game-server-1.company.com
+Port: 7777
+Protocol: TCP
+Connection String: "PING\n"
+Expected Response: "PONG"
+```
+
+## Infrastructure Services
+
+Monitor critical infrastructure components that don't expose HTTP endpoints.
+
+### SSH Servers
+Verify SSH server availability:
+
+```yaml
+Host: bastion.company.com
+Port: 22
+Protocol: TCP
+Expected Response: "SSH-2.0"
+```
+
+**Benefits**:
+- Ensure remote access is available
+- Monitor jump servers and bastion hosts
+- Check before scheduled maintenance
+- Verify firewall configurations
+
+### FTP/SFTP Servers
+Monitor file transfer services:
+
+```yaml
+# FTP Server
+Host: ftp.company.com
+Port: 21
+Protocol: TCP
+Expected Response: "220"
+
+# SFTP Server
+Host: sftp.company.com
+Port: 22
+Protocol: TCP
+Expected Response: "SSH-2.0"
+```
+
+### VPN Endpoints
+Monitor VPN server availability:
+
+```yaml
+Host: vpn.company.com
+Port: 1194
+Protocol: TCP
+Timeout: 15s
+```
+
+## Load Balancer and Proxy Monitoring
+
+Ensure traffic routing infrastructure is functioning correctly.
+
+### HAProxy Health Checks
+Monitor load balancer status:
+
+```yaml
+Host: lb-primary.company.com
+Port: 80
+Protocol: TCP
+Connection String: "GET /health HTTP/1.1\r\nHost: lb-primary.company.com\r\n\r\n"
+Expected Response: "200 OK"
+```
+
+### NGINX Proxy
+Check reverse proxy connectivity:
+
+```yaml
+Host: proxy.company.com
+Port: 8080
+Protocol: TCP
+```
+
+### Cloud Load Balancers
+Monitor AWS/Azure/GCP load balancers:
+
+```yaml
+Host: lb-abc123.us-west-2.elb.amazonaws.com
+Port: 443
+Protocol: SSL/TLS
+```
+
+## Message Queue Systems
+
+Monitor message broker connectivity and health.
+
+### RabbitMQ
+Monitor RabbitMQ message broker:
+
+```yaml
+Host: rabbitmq.company.com
+Port: 5672
+Protocol: TCP
+```
+
+For management interface:
+```yaml
+Host: rabbitmq.company.com
+Port: 15672
+Protocol: TCP
+```
+
+### Apache Kafka
+Monitor Kafka broker availability:
+
+```yaml
+Host: kafka-broker-1.company.com
+Port: 9092
+Protocol: TCP
+```
+
+### Apache ActiveMQ
+Monitor ActiveMQ message broker:
+
+```yaml
+Host: activemq.company.com
+Port: 61616
+Protocol: TCP
+```
+
+## Container and Orchestration Services
+
+Monitor containerized applications and orchestration platforms.
+
+### Docker Registry
+Monitor private Docker registries:
+
+```yaml
+Host: registry.company.com
+Port: 5000
+Protocol: TCP
+```
+
+### Kubernetes API Server
+Monitor Kubernetes cluster access:
+
+```yaml
+Host: k8s-master.company.com
+Port: 6443
+Protocol: SSL/TLS
+```
+
+### Consul Service Discovery
+Monitor HashiCorp Consul:
+
+```yaml
+Host: consul.company.com
+Port: 8500
+Protocol: TCP
+```
+
+## Monitoring Strategies by Environment
+
+### Production Environment
+- **Critical services**: Monitor every 1-2 minutes
+- **Supporting services**: Monitor every 5 minutes
+- **Multiple locations**: Use 5+ global monitoring points
+- **Alerting**: Immediate notifications for failures
+
+### Staging Environment
+- **Deployment validation**: Monitor during deployments
+- **Pre-production testing**: Verify service connectivity
+- **Integration testing**: Monitor service dependencies
+- **Frequency**: Every 5-10 minutes
+
+### Development Environment
+- **Service availability**: Basic connectivity checks
+- **Development workflow**: Monitor during active development
+- **Frequency**: Every 15-30 minutes
+- **Alerting**: Email notifications only
+
+## Industry-Specific Use Cases
+
+### E-commerce
+- **Payment processors**: Monitor payment gateway connections
+- **Inventory systems**: Check database connectivity
+- **Email services**: Monitor SMTP for order confirmations
+- **CDN services**: Verify content delivery networks
+
+### Financial Services
+- **Trading systems**: Monitor market data feeds
+- **Core banking**: Check database connections
+- **Security services**: Monitor authentication servers
+- **Compliance systems**: Verify audit log services
+
+### Healthcare
+- **EMR systems**: Monitor electronic medical records
+- **DICOM services**: Check medical imaging systems
+- **HL7 interfaces**: Monitor healthcare data exchange
+- **Backup systems**: Verify data protection services
+
+### SaaS Applications
+- **Multi-tenant databases**: Monitor tenant isolation
+- **Background services**: Check job processing systems
+- **API gateways**: Monitor service mesh connectivity
+- **Cache layers**: Verify distributed cache health
+
+## Integration with Monitoring Strategy
+
+### Combine with HTTP Checks
+Use TCP monitors alongside HTTP monitors for complete coverage:
+
+```yaml
+# TCP monitor for database connectivity
+TCP Monitor: db.company.com:3306
+
+# HTTP monitor for application health
+HTTP Monitor: https://app.company.com/health
+```
+
+### Cascade Monitoring
+Set up dependency-aware monitoring:
+
+1. **Infrastructure Layer**: TCP monitors for databases, message queues
+2. **Application Layer**: HTTP monitors for APIs and web services
+3. **User Experience**: Browser checks for complete user journeys
+
+### Alert Correlation
+Configure alerts to understand service dependencies:
+
+- Database TCP failure → Application HTTP failures
+- Message queue TCP failure → Background job delays
+- Load balancer TCP failure → All service unavailability
+
+<Note>
+TCP monitors provide network-level validation but cannot detect application-logic issues. Combine them with HTTP monitors and synthetic checks for comprehensive coverage.
+</Note>
+
+## Next Steps
+
+<Columns cols={2}>
+
+<Card title="Creating Your First TCP Monitor" href="/detect/uptime-monitoring/tcp-monitors/creating-your-first-tcp-monitor">
+Get started with step-by-step setup instructions
+</Card>
+
+<Card title="URL Monitors" href="/detect/uptime-monitoring/url-monitors/overview">
+Explore HTTP-based monitoring for web services
+</Card>
+
+<Card title="Alert Configuration" href="/communicate/alerts">
+Set up effective alerting for your TCP monitors
+</Card>
+</Columns>

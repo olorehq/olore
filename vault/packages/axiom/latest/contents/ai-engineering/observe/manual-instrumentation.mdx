@@ -1,0 +1,341 @@
+---
+title: "Manual instrumentation"
+description: "Learn how to manually instrument your generative AI apps using OpenTelemetry tooling."
+keywords: ["ai engineering", "opentelemetry", "semantic conventions", "telemetry", "traces", "spans"]
+---
+
+Manually instrumenting your generative AI apps using language-agnostic OpenTelemetry tooling gives you full control over your instrumentation while ensuring compatibility with Axiom’s AI engineering features.
+
+<Info>
+Alternatively, instrument your app with Axiom AI SDK. For more information on instrumentation approaches, see [Introduction to Observe](/ai-engineering/observe).
+</Info>
+
+For more information on sending OpenTelemetry data to Axiom, see [Send OpenTelemetry data to Axiom](/send-data/opentelemetry#send-opentelemetry-data-to-axiom) for examples in multiple languages.
+
+## Required attributes
+
+Axiom’s conventions for AI spans are based on version 1.37 of the [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/) for generative client AI spans.
+
+Axiom requires the following attributes in your data to properly recognize your spans:
+
+- `gen_ai.operation.name` identifies AI spans. It’s also a required attribute in the OpenTelemetry specification.
+- `gen_ai.capability.name` provides context about the specific capability being used within the AI operation.
+- `gen_ai.step.name` allows you to break down the AI operation into individual steps for more granular tracking.
+
+### `gen_ai.operation.name`
+
+Axiom currently provides custom UI for the following operations related to the `gen_ai.operation.name` attribute:
+
+- `chat`: Chat completion
+- `execute_tool`: Tool execution
+
+Other possible values include:
+
+- `generate_content`: Multimodal content generation
+- `embeddings`: Vector embeddings
+- `create_agent`: Create AI agents
+- `invoke_agent`: Invoke existing agents
+- `text_completion`: Text completion. This is a legacy value and has been deprecated by OpenAI and many other providers.
+
+For more information, see the OpenTelemetry documentation on [GenAI Attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/#gen-ai-operation-name).
+
+## Recommended attributes
+
+Axiom recommends the following attributes to get the most out of Axiom’s AI telemetry features:
+
+### `axiom.gen_ai` attributes
+
+- `axiom.gen_ai.schema_url`: Schema URL for the Axiom AI conventions. For example: `https://axiom.co/ai/schemas/0.0.2`
+- `axiom.gen_ai.sdk.name`: Name of the SDK. For example: `my-ai-instrumentation-sdk`
+- `axiom.gen_ai.sdk.version`: Version of the SDK. For example: `1.2.3`
+
+### Chat spans
+
+| Attribute | Type | Required | Description |
+|:--------- |:---- |:-------- |:----------- |
+| `gen_ai.provider.name` | string | Required | Provider (openai, anthropic, aws.bedrock, etc.) |
+| `gen_ai.request.model` | string | When available | Model requested (gpt-4, claude-3, etc.) |
+| `gen_ai.response.model` | string | When available | Model that fulfilled the request |
+| `gen_ai.input.messages` | Messages[] (stringified) | Recommended | Input conversation history |
+| `gen_ai.output.messages` | Messages[] (stringified) | Recommended | Model response messages |
+| `gen_ai.usage.input_tokens` | integer | Recommended | Input token count |
+| `gen_ai.usage.output_tokens` | integer | Recommended | Output token count |
+| `gen_ai.request.choice_count` | integer | When >1 | Number of completion choices requested |
+| `gen_ai.response.id` | string | Recommended | Unique response identifier |
+| `gen_ai.response.finish_reasons` | string[] | Recommended | Why generation stopped |
+| `gen_ai.conversation.id` | string | When available | Conversation/session identifier |
+
+### Tool spans
+
+For tool operations (`execute_tool`), include these additional attributes:
+
+| Attribute | Type | Required | Description |
+|:--------- |:---- |:-------- |:----------- |
+| `gen_ai.tool.name` | string | Required | Name of the executed tool |
+| `gen_ai.tool.call.id` | string | When available | Tool call identifier |
+| `gen_ai.tool.type` | string | When available | Tool type (function, extension, datastore) |
+| `gen_ai.tool.description` | string | When available | Tool description |
+| `gen_ai.tool.arguments` | string | When available | Tool arguments |
+| `gen_ai.tool.message` | string | When available | Tool message |
+
+For more information, see [GenAI Attributes](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/#genai-attributes).
+
+### Agent spans
+
+For agent operations (`create_agent`, `invoke_agent`), include these additional attributes:
+
+| Attribute | Type | Required | Description |
+|:--------- |:---- |:-------- |:----------- |
+| `gen_ai.agent.id` | string | When available | Unique agent identifier |
+| `gen_ai.agent.name` | string | When available | Human-readable agent name |
+| `gen_ai.agent.description` | string | When available | Agent description/purpose |
+| `gen_ai.conversation.id` | string | When available | Conversation/session identifier |
+
+## Span naming
+
+Ensure span names follow the OpenTelemetry conventions for generative AI spans. For example, the suggested span names for common values of `gen_ai.operation.name` are the following:
+
+- `chat {gen_ai.request.model}`
+- `execute_tool {gen_ai.tool.name}`
+- `embeddings {gen_ai.request.model}`
+- `generate_content {gen_ai.request.model}`
+- `text_completion {gen_ai.request.model}`
+- `create_agent {gen_ai.agent.name}`
+- `invoke_agent {gen_ai.agent.name}`
+
+For more information, see the OpenTelemetry documentation on span naming:
+- [AI spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#spans)
+- [Agent spans](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/)
+- [Tool span](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#execute-tool-span)
+
+## Messages
+
+Messages support four different roles, each with specific content formats. They follow OpenTelemetry’s structured format:
+
+### System messages
+
+System messages are messages that the system adds to set the behavior of the assistant. They typically contain instructions or context for the AI model.
+
+```json
+{
+  "role": "system",
+  "parts": [
+    {"type": "text", "content": "You are a helpful assistant"}
+  ]
+}
+```
+
+### User messages
+
+User messages are messages that users send to the AI model. They typically contain questions, commands, or other input from the user.
+
+```json
+{
+  "role": "user",
+  "parts": [
+    {"type": "text", "content": "Weather in Paris?"}
+  ]
+}
+```
+
+### Assistant messages
+
+Assistant messages are messages that the AI model sends back to the user. They typically contain responses, answers, or other output from the model.
+
+```json
+{
+  "role": "assistant", 
+  "parts": [
+    {"type": "text", "content": "Hi there!"},
+    {"type": "tool_call", "id": "call_123", "name": "get_weather", "arguments": {"location": "Paris"}}
+  ],
+  "finish_reason": "stop"
+}
+```
+
+### Tool messages
+
+Tool messages are messages that contain the results of tool calls made by the AI model. They typically contain the output or response from the tool.
+
+```json
+{
+  "role": "tool",
+  "parts": [
+    {"type": "tool_call_response", "id": "call_123", "response": "rainy, 57°F"}
+  ]
+}
+```
+
+### Content part types
+
+- `text`: Text content with `content` field
+- `tool_call`: Tool invocation with `id`, `name`, `arguments`
+- `tool_call_response`: Tool result with `id`, `response`
+
+For more information, see the OpenTelemetry documentation:
+
+- [Recording content on attributes](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/#recording-content-on-attributes)
+- JSON schema for [inputs](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-input-messages.json) and [outputs](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-output-messages.json)
+
+## Example trace structure
+
+### Chat completion
+
+Example of a properly structured chat completion trace:
+
+<CodeGroup>
+
+```typescript TypeScript expandable
+import { trace, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('my-app');
+
+// Create a span for the AI operation
+return tracer.startActiveSpan('chat gpt-4', {
+  kind: SpanKind.CLIENT
+}, (span) => {
+  try {
+    // (Your AI operation logic here...)
+
+    span.setAttributes({
+      // Set operation name
+      'gen_ai.operation.name': 'chat',
+      // Set capability and step
+      'gen_ai.capability.name': 'customer_support',
+      'gen_ai.step.name': 'respond_to_greeting',
+      // Set other attributes
+      'gen_ai.provider.name': 'openai',
+      'gen_ai.request.model': 'gpt-4',
+      'gen_ai.response.model': 'gpt-4',
+      'gen_ai.usage.input_tokens': 150,
+      'gen_ai.usage.output_tokens': 75,
+      'gen_ai.input.messages': JSON.stringify([
+        { role: 'user', parts: [{ type: 'text', content: 'Hello, how are you?' }] }
+      ]),
+      'gen_ai.output.messages': JSON.stringify([
+        { role: 'assistant', parts: [{ type: 'text', content: 'I\'m doing well, thank you!' }], finish_reason: 'stop' }
+      ])
+    });
+    
+    return /* your result */;
+  } catch (error) {
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+    throw error; // rethrow if you want upstream to see it
+  } finally {
+    span.end();
+  }
+});
+```
+
+```python Python expandable
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+import json
+
+tracer = trace.get_tracer("my-app")
+
+# Create a span for the AI operation
+with tracer.start_as_current_span("chat gpt-4", kind=SpanKind.CLIENT) as span:
+    # (Your AI operation logic here...)
+
+    span.set_attributes({
+        # Set operation name
+        "gen_ai.operation.name": "chat",
+        # Set capability and step
+        "gen_ai.capability.name": "customer_support",
+        "gen_ai.step.name": "respond_to_greeting",
+        # Set other attributes
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-4",
+        "gen_ai.response.model": "gpt-4",
+        "gen_ai.usage.input_tokens": 150,
+        "gen_ai.usage.output_tokens": 75,
+        "gen_ai.input.messages": json.dumps([
+            {"role": "user", "parts": [{"type": "text", "content": "Hello, how are you?"}]}
+        ]),
+        "gen_ai.output.messages": json.dumps([
+            {"role": "assistant", "parts": [{"type": "text", "content": "I'm doing well, thank you!"}], "finish_reason": "stop"}
+        ])
+    })
+    
+```
+
+</CodeGroup>
+
+### Tool execution
+
+Example of a tool execution within an agent:
+
+<CodeGroup>
+
+```typescript TypeScript expandable
+import { trace, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('my-agent-app');
+
+// Create a span for tool execution
+return tracer.startActiveSpan('execute_tool get_weather', {
+  kind: SpanKind.CLIENT
+}, (span) => {
+  try {
+    // (Your tool call logic here...)
+
+    span.setAttributes({
+      // Set operation name
+      'gen_ai.operation.name': 'execute_tool',
+      // Set capability and step
+      'gen_ai.capability.name': 'weather_assistance',
+      'gen_ai.step.name': 'fetch_current_weather',
+      // Set other attributes
+      'gen_ai.tool.name': 'get_weather',
+      'gen_ai.tool.type': 'function',
+      'gen_ai.tool.call.id': 'call_abc123',
+      'gen_ai.tool.arguments': JSON.stringify({ location: 'New York', units: 'celsius' }),
+      'gen_ai.tool.message': JSON.stringify({ temperature: 22, condition: 'sunny', humidity: 65 }),
+    });
+    
+    return /* your result */;
+  } catch (error) {
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+    throw error; // rethrow if you want upstream to see it
+  } finally {
+    span.end();
+  }
+});
+```
+
+```python Python expandable
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+import json
+
+tracer = trace.get_tracer("my-agent-app")
+
+# Create a span for tool execution  
+with tracer.start_as_current_span("execute_tool get_weather", kind=SpanKind.CLIENT) as span:
+    span.set_attributes({
+        # Set operation name
+        "gen_ai.operation.name": "execute_tool",
+        # Set capability and step
+        "gen_ai.step.name": "fetch_current_weather",
+        "gen_ai.capability.name": "weather_assistance",
+        # Set other attributes
+        "gen_ai.tool.name": "get_weather",
+        "gen_ai.tool.type": "function",
+        "gen_ai.tool.call.id": "call_abc123",
+        "gen_ai.tool.arguments": json.dumps({"location": "New York", "units": "celsius"}),
+        "gen_ai.tool.message": json.dumps({"temperature": 22, "condition": "sunny", "humidity": 65}),
+    })
+```
+
+</CodeGroup>
+
+## What’s next?
+
+After sending traces with the proper semantic conventions:
+
+- View your [traces](/query-data/traces) in Console
+- Set up [monitors and alerts](/monitor-data/monitors) based on your AI telemetry data
+- Learn about [developing AI features](/ai-engineering/create) with confidence using Axiom

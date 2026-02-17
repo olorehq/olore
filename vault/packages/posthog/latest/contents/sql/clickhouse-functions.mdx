@@ -1,0 +1,644 @@
+---
+title: Supported ClickHouse functions
+sidebar: Docs
+showTitle: true
+availability:
+    free: full
+    selfServe: full
+    enterprise: full
+---
+
+This is an [ever-expanding](https://github.com/posthog/posthog/blob/master/posthog/hogql/functions/mapping.py) list of enabled ClickHouse functions.
+
+You can find their full definitions in the [ClickHouse documentation](https://clickhouse.com/docs/en/sql-reference/functions). Additionally, we include a list of popular ones and their uses in the [HogQL expressions](/docs/hogql/expressions#functions-and-aggregations) and [SQL insight](/docs/product-analytics/sql#useful-functions) documentation.
+
+Most of the type conversion functions are safer versions of the equivalent ClickHouse functions to avoid NULL/zero mistakes.
+If the function's name includes a leading underscore, then it's not safe and simply calls the underlying ClickHouse function.
+
+## Arithmetic
+
+- `plus`
+- `minus`
+- `multiply`
+- `divide`
+- `intDiv`
+- `intDivOrZero`
+- `modulo`
+- `moduloOrZero`
+- `positiveModulo`
+- `negate`
+- `abs`
+- `gcd`
+- `lcm`
+- `max2`
+- `min2`
+- `multiplyDecimal`
+- `divideDecimal`
+
+## Arrays and strings in common
+
+- `empty`
+- `notEmpty`
+- `length`
+- `reverse`
+- `in`
+- `notIn`
+
+## Arrays
+
+- `array`
+- `range`
+- `arrayConcat`
+- `arrayElement`
+- `has`
+- `hasAll`
+- `hasAny`
+- `hasSubstr`
+- `indexOf`
+- `arrayCount`
+- `countEqual`
+- `arrayEnumerate`
+- `arrayEnumerateUniq`
+- `arrayPopBack`
+- `arrayPopFront`
+- `arrayPushBack`
+- `arrayPushFront`
+- `arrayResize`
+- `arraySlice`
+- `arraySort`
+- `arrayReverseSort`
+- `arrayUniq`
+- `arrayJoin`
+- `arrayDifference`
+- `arrayDistinct`
+- `arrayEnumerateDense`
+- `arrayIntersect`
+- `arrayReduce`
+- `arrayReverse`
+- `arrayFilter`
+- `arrayFlatten`
+- `arrayCompact`
+- `arrayZip`
+- `arrayAUC`
+- `arrayMap`
+- `arrayFill`
+- `arrayFold`
+- `arrayWithConstant`
+- `arraySplit`
+- `arrayReverseFill`
+- `arrayReverseSplit`
+- `arrayRotateLeft`
+- `arrayRotateRight`
+- `arrayExists`
+- `arrayAll`
+- `arrayFirst`
+- `arrayLast`
+- `arrayFirstIndex`
+- `arrayLastIndex`
+- `arrayMin`
+- `arrayMax`
+- `arraySum`
+- `arrayAvg`
+- `arrayCumSum`
+- `arrayCumSumNonNegative`
+- `arrayProduct`
+- `arrayStringConcat`
+- `generateSeries`
+
+## Comparison
+
+- `equals`
+- `notEquals`
+- `less`
+- `greater`
+- `lessOrEquals`
+- `greaterOrEquals`
+
+## Logical
+
+- `and`
+- `or`
+- `xor`
+- `not`
+
+## Type conversions
+
+
+
+- `hex`
+- `unhex`
+- `toInt`
+- `toIntOrZero`
+- `_toInt8`
+- `_toInt16`
+- `_toInt32`
+- `_toInt64`
+- `_toUInt64`
+- `_toUInt128`
+- `toFloat`
+- `toFloatOrZero`
+- `toFloatOrDefault`
+- `toDecimal`
+- `toUUID`
+- `toString`
+- `toBool`
+- `toJSONString`
+- `toTypeName`
+- `parseDateTime`
+- `parseDateTimeBestEffort`
+- `cityHash64`
+- `UUIDv7ToDateTime`
+
+## Dates and times
+
+- `toDate`
+- `toDateTime`
+- `toDateTime64`
+- `toDateTimeUS`
+- `_toDate`
+- `toTimeZone`
+- `timeZoneOf`
+- `timeZoneOffset`
+- `toYear`
+- `toQuarter`
+- `toMonth`
+- `toDayOfYear`
+- `toDayOfMonth`
+- `toDayOfWeek` 
+- `toHour`
+- `toMinute`
+- `toSecond`
+- `toUnixTimestamp`
+- `toUnixTimestamp64Milli`
+- `toStartOfInterval`
+- `toStartOfYear`
+- `toStartOfISOYear`
+- `toStartOfQuarter`
+- `toStartOfMonth`
+- `toLastDayOfMonth`
+- `toMonday`
+- `toStartOfWeek`
+- `toLastDayOfWeek`
+- `toStartOfDay`
+- `toStartOfHour`
+- `toStartOfMinute`
+- `toStartOfSecond`
+- `toStartOfFiveMinutes`
+- `toStartOfTenMinutes`
+- `toStartOfFifteenMinutes`
+- `toTime`
+- `toISOYear`
+- `toISOWeek`
+- `toWeek`
+- `toYearWeek`
+- `age`
+- `dateDiff`
+- `dateTrunc`
+- `dateAdd`
+- `dateSub`
+- `timeStampAdd`
+- `timeStampSub`
+- `now`
+- `NOW`
+- `nowInBlock`
+- `current_timestamp`
+- `current_date`
+- `today`
+- `yesterday`
+- `timeSlot`
+- `toYYYYMM`
+- `toYYYYMMDD`
+- `toYYYYMMDDhhmmss`
+- `addYears`
+- `addMonths`
+- `addWeeks`
+- `addDays`
+- `addHours`
+- `addMinutes`
+- `addSeconds`
+- `addQuarters`
+- `subtractYears`
+- `subtractMonths`
+- `subtractWeeks`
+- `subtractDays`
+- `subtractHours`
+- `subtractMinutes`
+- `subtractSeconds`
+- `subtractQuarters`
+- `timeSlots`
+- `formatDateTime`
+- `dateName`
+- `monthName`
+- `fromUnixTimestamp`
+- `toModifiedJulianDay`
+- `fromModifiedJulianDay`
+- `toIntervalSecond`
+- `toIntervalMinute`
+- `toIntervalHour`
+- `toIntervalDay`
+- `toIntervalWeek`
+- `toIntervalMonth`
+- `toIntervalQuarter`
+- `toIntervalYear`
+
+### Postgres-style date functions
+
+- `date_part`
+- `date_trunc`
+- `make_timestamp`
+- `date_bin`
+- `date_add`
+- `date_subtract`
+- `date_diff`
+- `make_interval`
+- `make_timestampz`
+
+
+## Strings
+
+- `left`
+- `right`
+- `lengthUTF8`
+- `leftPad` or `lpad`
+- `rightPad` or `rpad`
+- `leftPadUTF8`
+- `rightPadUTF8`
+- `lower`
+- `upper`
+- `lowerUTF8`
+- `upperUTF8`
+- `isValidUTF8`
+- `toValidUTF8`
+- `format`
+- `reverseUTF8`
+- `concat`
+- `substring`
+- `substringUTF8`
+- `appendTrailingCharIfAbsent`
+- `convertCharset`
+- `base58Encode`
+- `base58Decode`
+- `tryBase58Decode`
+- `base64Encode`
+- `base64Decode`
+- `tryBase64Decode`
+- `endsWith`
+- `startsWith`
+- `trim` or `btrim`
+- `trimLeft` or `ltrim`
+- `trimRight` or `rtrim`
+- `encodeXMLComponent`
+- `decodeXMLComponent`
+- `extractTextFromHTML`
+- `ascii`
+- `concatWithSeparator`
+- `repeat`
+- `initcap`
+
+## Searching in strings
+
+- `position`
+- `positionCaseInsensitive`
+- `positionUTF8`
+- `positionCaseInsensitiveUTF8`
+- `multiSearchAllPositions`
+- `multiSearchAllPositionsUTF8`
+- `multiSearchFirstPosition`
+- `multiSearchFirstIndex`
+- `multiSearchAny`
+- `match`
+- `multiMatchAny`
+- `multiMatchAnyIndex`
+- `multiMatchAllIndices`
+- `multiFuzzyMatchAny`
+- `multiFuzzyMatchAnyIndex`
+- `multiFuzzyMatchAllIndices`
+- `extract`
+- `extractAll`
+- `extractAllGroupsHorizontal`
+- `extractAllGroupsVertical`
+- `like`
+- `ilike`
+- `notLike`
+- `notILike`
+- `ngramDistance`
+- `ngramSearch`
+- `countSubstrings`
+- `countSubstringsCaseInsensitive`
+- `countSubstringsCaseInsensitiveUTF8`
+- `countMatches`
+- `regexpExtract`
+
+## Replacing in strings
+
+- `replace`
+- `replaceAll`
+- `replaceOne`
+- `replaceRegexpAll`
+- `replaceRegexpOne`
+- `regexpQuoteMeta`
+- `translate`
+- `translateUTF8`
+
+## Conditional
+
+- `if`
+- `multiIf`
+
+## Mathematical
+
+- `e`
+- `pi`
+- `exp`
+- `log`
+- `ln`
+- `exp2`
+- `log2`
+- `exp10`
+- `log10`
+- `sqrt`
+- `cbrt`
+- `erf`
+- `erfc`
+- `lgamma`
+- `tgamma`
+- `sin`
+- `cos`
+- `tan`
+- `asin`
+- `acos`
+- `atan`
+- `pow`
+- `power`
+- `intExp2`
+- `intExp10`
+- `cosh`
+- `acosh`
+- `sinh`
+- `asinh`
+- `atanh`
+- `atan2`
+- `hypot`
+- `log1p`
+- `sign`
+- `degrees`
+- `radians`
+- `factorial`
+- `width_bucket`
+
+## Rounding
+
+- `floor`
+- `ceil`
+- `trunc`
+- `round`
+- `roundBankers`
+- `roundToExp2`
+- `roundDuration`
+- `roundAge`
+- `roundDown`
+
+## Maps
+
+- `map`
+- `mapFromArrays`
+- `mapAdd`
+- `mapSubtract`
+- `mapPopulateSeries`
+- `mapContains`
+- `mapKeys`
+- `mapValues`
+- `mapContainsKeyLike`
+- `mapExtractKeyLike`
+- `mapApply`
+- `mapFilter`
+- `mapUpdate`
+
+## Splitting strings
+
+- `splitByChar`
+- `splitByString`
+- `splitByRegexp`
+- `splitByWhitespace`
+- `splitByNonAlpha`
+- `alphaTokens`
+- `extractAllGroups`
+- `ngrams`
+- `tokens`
+
+## Bit
+
+- `bitAnd`
+- `bitOr`
+- `bitXor`
+- `bitNot`
+- `bitShiftLeft`
+- `bitShiftRight`
+- `bitRotateLeft`
+- `bitRotateRight`
+- `bitSlice`
+- `bitTest`
+- `bitTestAll`
+- `bitTestAny`
+- `bitCount`
+- `bitHammingDistance`
+
+## Bitmap
+
+- `bitmapBuild`
+- `bitmapToArray`
+- `bitmapSubsetInRange`
+- `bitmapSubsetLimit`
+- `subBitmap`
+- `bitmapContains`
+- `bitmapHasAny`
+- `bitmapHasAll`
+- `bitmapCardinality`
+- `bitmapMin`
+- `bitmapMax`
+- `bitmapTransform`
+- `bitmapAnd`
+- `bitmapOr`
+- `bitmapXor`
+- `bitmapAndnot`
+- `bitmapAndCardinality`
+- `bitmapOrCardinality`
+- `bitmapXorCardinality`
+- `bitmapAndnotCardinality`
+
+## URLs
+
+- `protocol`
+- `domain`
+- `domainWithoutWWW`
+- `topLevelDomain`
+- `firstSignificantSubdomain`
+- `cutToFirstSignificantSubdomain`
+- `cutToFirstSignificantSubdomainWithWWW`
+- `port`
+- `path`
+- `pathFull`
+- `queryString`
+- `fragment`
+- `queryStringAndFragment`
+- `extractURLParameter`
+- `extractURLParameters`
+- `extractURLParameterNames`
+- `URLHierarchy`
+- `URLPathHierarchy`
+- `encodeURLComponent`
+- `decodeURLComponent`
+- `encodeURLFormComponent`
+- `decodeURLFormComponent`
+- `netloc`
+- `cutWWW`
+- `cutQueryString`
+- `cutFragment`
+- `cutQueryStringAndFragment`
+- `cutURLParameter`
+
+## JSON
+
+- `isValidJSON`
+- `JSONHas`
+- `JSONLength`
+- `JSONArrayLength`
+- `JSONType`
+- `JSONExtractUInt`
+- `JSONExtractInt`
+- `JSONExtractFloat`
+- `JSONExtractBool`
+- `JSONExtractString`
+- `JSONExtractKey`
+- `JSONExtractKeys`
+- `JSONExtractRaw`
+- `JSONExtractArrayRaw`
+- `JSONExtractKeysAndValuesRaw`
+- `JSON_VALUE`
+
+## Geo
+
+- `greatCircleDistance`
+- `geoDistance`
+- `greatCircleAngle`
+- `pointInEllipses`
+- `pointInPolygon`
+- `geohashDecode`
+- `geohashesInBox`
+- `h3IsValid`
+- `h3GetResolution`
+- `h3GetBaseCell`
+- `h3EdgeAngle`
+- `h3EdgeLengthM`
+- `h3EdgeLengthKm`
+- `geoToH3`
+- `h3ToGeo`
+- `h3ToGeoBoundary`
+- `h3kRing`
+- `h3HexAreaM2`
+- `h3HexAreaKm2`
+- `h3IndexesAreNeighbors`
+- `h3ToChildren`
+- `h3ToParent`
+- `h3ToString`
+- `stringToH3`
+- `h3IsResClassIII`
+- `h3IsPentagon`
+- `h3GetFaces`
+- `h3CellAreaM2`
+- `h3CellAreaRads2`
+- `h3ToCenterChild`
+- `h3ExactEdgeLengthM`
+- `h3ExactEdgeLengthKm`
+- `h3ExactEdgeLengthRads`
+- `h3NumHexagons`
+- `h3PointDistM`
+- `h3PointDistKm`
+- `h3PointDistRads`
+- `h3GetRes0Indexes`
+- `h3GetPentagonIndexes`
+- `h3Line`
+- `h3Distance`
+- `h3HexRing`
+- `h3GetUnidirectionalEdge`
+- `h3UnidirectionalEdgeIsValid`
+- `h3GetOriginIndexFromUnidirectionalEdge`
+- `h3GetDestinationIndexFromUnidirectionalEdge`
+- `h3GetIndexesFromUnidirectionalEdge`
+- `h3GetUnidirectionalEdgesFromHexagon`
+- `h3GetUnidirectionalEdgeBoundary`
+
+## Nullable
+
+- `isNull`
+- `isNotNull`
+- `coalesce`
+- `ifNull`
+- `nullIf`
+- `assumeNotNull`
+- `toNullable`
+
+## Tuples
+
+- `tuple`
+- `tupleElement`
+- `untuple`
+- `tupleHammingDistance`
+- `tupleToNameValuePairs`
+- `tuplePlus`
+- `tupleMinus`
+- `tupleMultiply`
+- `tupleDivide`
+- `tupleNegate`
+- `tupleMultiplyByNumber`
+- `tupleDivideByNumber`
+- `dotProduct`
+
+## Time window
+
+- `tumble`
+- `hop`
+- `tumbleStart`
+- `tumbleEnd`
+- `hopStart`
+- `hopEnd`
+
+## Distance window
+
+- `L1Norm`
+- `L2Norm`
+- `LinfNorm`
+- `LpNorm`
+- `L1Distance`
+- `L2Distance`
+- `LinfDistance`
+- `LpDistance`
+- `L1Normalize`
+- `L2Normalize`
+- `LinfNormalize`
+- `LpNormalize`
+- `cosineDistance`
+
+## Window functions
+
+- `lag` or `lagInFrame`
+- `lead` or `leadInFrame`
+- `rank`
+- `dense_rank`
+- `row_number`
+- `first_value`
+- `last_value`
+- `nth_value`
+
+## Other
+
+- `isFinite`
+- `isInfinite`
+- `ifNotFinite`
+- `isNaN`
+- `bar`
+- `transform`
+- `formatReadableDecimalSize`
+- `formatReadableSize`
+- `formatReadableQuantity`
+- `formatReadableTimeDelta`

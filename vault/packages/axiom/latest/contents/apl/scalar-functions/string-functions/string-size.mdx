@@ -1,0 +1,148 @@
+---
+title: string_size
+description: 'This page explains how to use the string_size function in APL.'
+---
+
+The `string_size` function returns the number of bytes in a string. You use it when you want to measure the length of text fields such as user IDs, URLs, or status codes. This function is useful for detecting anomalies, filtering out unusually long values, or analyzing patterns in textual data.
+
+For example, you can use `string_size` to detect requests with excessively long URIs, identify outlier user IDs, or monitor payload lengths in traces.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `len` function to calculate the number of characters in a string. In APL, you use `string_size` to calculate the number of bytes in a string.
+
+<CodeGroup>
+```sql Splunk example
+... | eval uri_length=len(uri)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uri_length = string_size(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use the `LENGTH` or `CHAR_LENGTH` function to calculate string length. In APL, the equivalent is `string_size` to calculate the number of bytes in a string.
+
+<CodeGroup>
+```sql SQL example
+SELECT LENGTH(uri) AS uri_length
+FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uri_length = string_size(uri)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+string_size(source)
+```
+
+### Parameters
+
+| Parameter | Type     | Description                  |
+| --------- | -------- | ---------------------------- |
+| `source`  | `string` | The input string expression. |
+
+### Returns
+
+An integer representing the number of bytes in the string. If the string is empty, the function returns `0`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use `string_size` to detect unusually long URIs that might indicate an attempted exploit or malformed request.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend uri_length = string_size(uri)
+| where uri_length > 100
+| project _time, method, uri, uri_length, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20uri_length%20%3D%20string_size%28uri%29%20%7C%20where%20uri_length%20%3E%2010%20%7C%20project%20_time%2C%20method%2C%20uri%2C%20uri_length%2C%20status%22%7D)
+
+**Output**
+
+| _time               | method | uri                               | uri_length | status |
+| -------------------- | ------ | --------------------------------- | ----------- | ------ |
+| 2025-09-11T10:01:45Z | GET    | /search/products?q=...            | 142         | 200    |
+| 2025-09-11T10:02:13Z | POST   | /checkout/submit/order/details... | 187         | 400    |
+
+This query finds all HTTP requests with URIs longer than 10 characters and lists their details.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can measure the length of trace IDs or span IDs to ensure data consistency and identify malformed identifiers.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_length = string_size(trace_id)
+| summarize avg_length = avg(trace_length) by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20trace_length%20%3D%20string_size%28trace_id%29%20%7C%20summarize%20avg_length%20%3D%20avg%28trace_length%29%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name    | avg_length |
+| --------------- | ----------- |
+| frontend        | 32          |
+| checkoutservice | 32          |
+| loadgenerator   | 31.8        |
+
+This query calculates the average trace ID length per service to verify identifier consistency across the system.
+
+</Tab>
+<Tab title="Security logs">
+
+You can check for anomalous user IDs by looking at the length of the `id` field. Very short or very long IDs may signal invalid or suspicious activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend id_length = string_size(id)
+| where id_length < 5 or id_length > 20
+| project _time, id, id_length, status, ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20id_length%20%3D%20string_size(id)%20%7C%20where%20id_length%20%3C%205%20or%20id_length%20%3E%2020%20%7C%20project%20_time%2C%20id%2C%20id_length%2C%20status%2C%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| _time               | id                            | id_length | status | geo.country |
+| -------------------- | ----------------------------- | ---------- | ------ | ----------- |
+| 2025-09-11T09:55:01Z | a12                           | 3          | 401    | US          |
+| 2025-09-11T09:58:42Z | user_long_id_example_test | 24         | 200    | DE          |
+
+This query detects requests with suspiciously short or long user IDs, which might indicate invalid credentials or malicious activity.
+
+</Tab>
+</Tabs>

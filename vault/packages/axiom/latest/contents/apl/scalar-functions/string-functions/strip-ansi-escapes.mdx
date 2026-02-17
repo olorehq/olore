@@ -1,0 +1,74 @@
+---
+title: strip_ansi_escapes
+description: 'This page explains how to use the strip_ansi_escapes function in APL.'
+---
+
+Use the `strip_ansi_escapes` function in APL to remove ANSI escape sequences from strings. ANSI escape codes are special character sequences used in terminal output to control text formatting, colors, and cursor positioning. When analyzing logs or terminal output, these codes can interfere with text processing, search operations, and data analysis.
+
+You use `strip_ansi_escapes` when you need to clean up terminal output, colorized logs, or any text that contains ANSI formatting codes. This is particularly useful when ingesting logs from command-line tools, CI/CD pipelines, container logs, or any system that outputs colored or formatted terminal text.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use regex-based replacements to remove ANSI escape sequences. APL's `strip_ansi_escapes` provides a dedicated function that handles all standard ANSI escape sequence patterns automatically.
+
+<CodeGroup>
+```sql Splunk example
+| rex mode=sed field=message 's/\x1b\[[0-9;]*m//g'
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend clean_message = strip_ansi_escapes(uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn't have a built-in function for removing ANSI escape sequences. You need to use regex replacement functions specific to your SQL dialect. APL's `strip_ansi_escapes` provides a cross-platform solution that handles various ANSI escape patterns.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_REPLACE(message, '\x1b\[[0-9;]*m', '', 'g')
+FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend clean_message = strip_ansi_escapes(message)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strip_ansi_escapes(text)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `text` | `string` | The string containing ANSI escape sequences that you want to remove. |
+
+### Returns
+
+A string with all ANSI escape sequences removed, leaving only the plain text content.
+
+## List of related functions
+
+- [trim](/apl/scalar-functions/string-functions/trim): Use `trim` to remove leading and trailing characters. Use `strip_ansi_escapes` specifically for removing ANSI escape sequences anywhere in the string.
+- [replace_regex](/apl/scalar-functions/string-functions#replace-regex): Use `replace_regex` for custom pattern-based replacements. Use `strip_ansi_escapes` as a specialized, optimized solution for ANSI codes.
+- [trim_space](/apl/scalar-functions/string-functions/trim-space): Use `trim_space` to remove whitespace. Use `strip_ansi_escapes` to clean formatting codes.
+- [extract](/apl/scalar-functions/string-functions#extract): Use `extract` to pull specific patterns from text. Use `strip_ansi_escapes` to clean the text before extraction for better pattern matching.
+

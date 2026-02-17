@@ -1,0 +1,154 @@
+---
+title: project-rename
+description: 'This page explains how to use the project-rename operator in APL.'
+---
+
+The `project-rename` operator in APL lets you rename columns in a dataset while keeping all existing rows intact. You can use it when you want to make column names clearer, align them with naming conventions, or prepare data for downstream processing. Unlike `project`, which also controls which columns appear in the result, `project-rename` only changes the names of selected columns and keeps the full set of columns in the dataset.
+
+You find this operator useful when:
+- You want to standardize field names across multiple queries.
+- You want to replace long or inconsistent column names with simpler ones.
+- You want to improve query readability without altering the underlying data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, renaming fields uses the `rename` command. The `project-rename` operator in APL works in a similar way. Both let you map existing fields to new names without altering the dataset content.
+
+<CodeGroup>
+```sql Splunk example
+... | rename uri AS url, status AS http_status
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| project-rename url = uri, http_status = status
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, renaming columns is done with `AS` in a `SELECT` statement. In APL, `project-rename` is the closest equivalent, but unlike SQL, it preserves all columns by default while renaming only the specified ones.
+
+<CodeGroup>
+```sql SQL example
+SELECT uri AS url, status AS http_status, method, id
+FROM sample_http_logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| project-rename url = uri, http_status = status
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+Table
+| project-rename NewName1 = OldName1, NewName2 = OldName2, ...
+```
+
+### Parameters
+
+| Name      | Type   | Description                             |
+| --------- | ------ | --------------------------------------- |
+| `NewName` | string | The new column name you want to assign. |
+| `OldName` | string | The existing column name to rename.     |
+
+### Returns
+
+A dataset with the same rows and columns as the input, except that the specified columns have new names.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+When analyzing HTTP logs, you might want to rename fields to shorter or more descriptive names before creating dashboards or reports.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-rename city = ['geo.city'], country = ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20project-rename%20city%20%3D%20%5B'geo.city'%5D%2C%20country%20%3D%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id    | status | uri    | method | city   | country |
+| -------------------- | ----------------- | ----- | ------ | ------ | ------ | ------ | ------- |
+| 2025-09-01T10:00:00Z | 120               | user1 | 200    | /home  | GET    | Paris  | FR      |
+| 2025-09-01T10:01:00Z | 85                | user2 | 404    | /about | GET    | Berlin | DE      |
+
+This query renames the `geo.city` and `geo.country` fields to `city` and `country` for easier use in queries.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+When inspecting distributed traces, you can rename service-related fields to match your internal naming conventions.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| project-rename service = ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20project-rename%20service%20%3D%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| _time               | duration     | span_id | trace_id | service         | kind   |
+| -------------------- | ------------ | -------- | --------- | --------------- | ------ |
+| 2025-09-01T09:55:00Z | 00:00:01.200 | abc123   | trace789  | frontend        | server |
+| 2025-09-01T09:56:00Z | 00:00:00.450 | def456   | trace790  | checkout        | client |
+
+This query renames `service.name` to `service`, making it shorter for downstream filtering.
+
+</Tab>
+<Tab title="Security logs">
+
+For security-related HTTP log analysis, you can rename status and URI fields to match existing security dashboards.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project-rename http_status = status, url = uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20project-rename%20http_status%20%3D%20status%2C%20url%20%3D%20uri%22%7D)
+
+**Output**
+
+| _time               | req_duration_ms | id    | http_status | url    | method | geo.city | geo.country |
+| -------------------- | ----------------- | ----- | ------------ | ------ | ------ | ------------- | ---------------- |
+| 2025-09-01T11:00:00Z | 150               | user5 | 403          | /admin | POST   | Madrid        | ES               |
+| 2025-09-01T11:02:00Z | 200               | user6 | 500          | /login | POST   | Rome          | IT               |
+
+This query renames `status` to `http_status` and `uri` to `url`, making the output align with security alerting systems.
+
+</Tab>
+</Tabs>
+
+## List of related operators
+
+- [extend](/apl/tabular-operators/extend-operator): Creates new calculated columns. Use it when you want to add columns rather than rename existing ones.
+- [project](/apl/tabular-operators/project-operator): Lets you select and rename columns at the same time. Use it when you want to control which columns appear in the result.
+- [project-away](/apl/tabular-operators/project-away-operator): Removes specific columns from the dataset. Use it when you want to drop columns rather than rename them.
+- [summarize](/apl/tabular-operators/summarize-operator): Aggregates data into groups. Use it when you want to compute metrics rather than adjust column names.

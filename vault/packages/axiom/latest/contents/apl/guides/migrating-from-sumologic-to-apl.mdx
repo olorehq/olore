@@ -1,0 +1,535 @@
+---
+title: 'Migrate from Sumo Logic Query Language to APL'
+description: 'This guide dives into why APL could be a superior choice for your data needs, and the differences between Sumo Logic and APL.'
+sidebarTitle: Sumo Logic
+keywords: ['axiom documentation', 'documentation', 'axiom', 'apl', 'sumo logic', 'scalability', 'performance', 'parse', 'extract']
+---
+
+## Introduction 
+
+In the sphere of data analytics and log management, being able to query data efficiently and effectively is of paramount importance.
+
+This guide dives into why APL could be a superior choice for your data needs, the differences between Sumo Logic and APL, and the potential benefits you could reap from migrating from Sumo Logic to APL. Let’s explore the compelling case for APL as a robust, powerful tool for handling your complex data querying requirements.
+
+APL is powerful and flexible and uses a pipe (`|`) operator for chaining commands, and it provides a richer set of functions and operators for more complex queries.
+
+## Benefits of Migrating from SumoLogic to APL 
+
+- **Scalability and Performance:** APL was built with scalability in mind. It handles very large volumes of data more efficiently and provides quicker query execution compared to Sumo Logic, making it a suitable choice for organizations with extensive data requirements. APL is designed for high-speed data ingestion, real-time analytics, and providing insights across structured, semi-structured data. It’s also optimized for time-series data analysis, making it highly efficient for log and telemetry data.
+
+- **Advanced Analytics Capabilities:** With APL’s support for aggregation and conversion functions and more advanced statistical visualization, organizations can derive more sophisticated insights from their data.
+
+## Query Examples
+
+Let’s see some examples of how to convert SumoLogic queries to APL.
+
+## Parse, and Extract Operators
+
+Extract `from` and `to` fields. For example, if a raw event contains `From: Jane To: John,` then `from=Jane and to=John.`
+
+**Sumo Logic:** 
+```bash
+* | parse "From: * To: *" as (from, to)
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend (method) == extract("From: (.*?) To: (.*)", 1, method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20(method)%20==%20extract(\%22From:%20(.*?)%20To:%20(.*)\%22,%201,%20method)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Extract Source IP with Regex
+
+In this section, we will utilize a regular expression to identify the four octets of an IP address. This will help us efficiently extract the source IP addresses from the data.
+
+**Sumo Logic:** 
+
+```bash 
+*| parse regex "(\<src_i\>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend ip = extract("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})", 1, "23.45.67.90")
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20ip%20=%20extract(\%22(\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3})\%22,%201,%20\%2223.45.67.90\%22)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Extract Visited URLs
+
+This section focuses on identifying all URL addresses visited and extracting them to populate the "url" field. This method provides an organized way to track user activity using APL.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=apache 
+| parse "GET * " as url
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| where method == "GET"
+| project url = extract(@"(\w+)", 1, method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20where%20method%20%3D%3D%20%5C%22GET%5C%22%5Cn%7C%20project%20url%20%3D%20extract(%40%5C%22(%5C%5Cw%2B)%5C%22%2C%201%2C%20method)%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+## Extract Data from Source Category Traffic
+
+This section aims to identify and analyze traffic originating from the Source Category. We will extract critical information including the source addresses, the sizes of messages transmitted, and the URLs visited, providing valuable insights into the nature of the traffic using APL.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=apache
+| parse "* " as src_IP
+| parse " 200 * " as size
+| parse "GET * " as url
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend src_IP = extract("^(\\S+)", 0, uri)
+| extend size = extract("^(\\S+)", 1, status)
+| extend url = extract("^(\\S+)", 1, method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%5Cn%7C%20extend%20src_IP%20%3D%20extract(%5C%22%5E(%40S%2B)%5C%22%2C%200%2C%20uri)%5Cn%7C%20extend%20size%20%3D%20extract(%5C%22%5E(%40S%2B)%5C%22%2C%201%2C%20status)%5Cn%7C%20extend%20url%20%3D%20extract(%5C%22%5E(%40S%2B)%5C%22%2C%201%2C%20method)%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+## Calculate Bytes Transferred per Source IP
+
+In this part, we will compute the total number of bytes transferred to each source IP address. This will allow us to gauge the data volume associated with each source using APL.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=apache 
+| parse "* " as src_IP 
+| parse " 200 * " as size 
+| count, sum(size) by src_IP
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend src_IP = extract("^(\\S+)", 1, uri)
+| extend size = toint(extract("200", 0, status))
+| summarize count(), sum(size) by src_IP
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20size%20=%20toint(extract(\%22200\%22,%200,%20status))\n|%20summarize%20count(),%20sum(size)%20by%20status%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Compute Average HTTP Response Size
+
+In this section, we will calculate the average size of all successful HTTP responses. This metric helps us to understand the typical data load associated with successful server responses.
+
+**Sumo Logic:** 
+```bash
+_sourceCategory=apache 
+| parse " 200 * " as size 
+| avg(size)
+```
+
+**APL:** 
+
+Get the average value from a string:
+
+```kusto
+['sample-http-logs']
+| extend number = todouble(extract("\\d+(\\.\\d+)?", 0, status))
+| summarize Average = avg(number)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20number%20=%20todouble(status)\n|%20summarize%20Average%20=%20avg(number)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Extract Data with Missing Size Field (NoDrop)
+
+This section focuses on extracting key parameters like `src`, `size`, and `URL`, even when the `size` field may be absent from the log message.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache 
+| parse "* " as src_IP 
+| parse " 200 * " as size nodrop 
+| parse "GET * " as url
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| where content_type == "text/css"
+| extend src_IP = extract("^(\\S+)", 1, ['id'])
+| extend size = toint(extract("(\\w+)", 1, status))
+| extend url = extract("GET", 0, method)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20where%20content_type%20%3D%3D%20%5C%22text%2Fcss%5C%22%20%7C%20extend%20src_IP%20%3D%20extract(%5C%22%5E(%5C%5CS%2B)%5C%22%2C%201%2C%20%5B%27id%27%5D)%20%7C%20extend%20size%20%3D%20toint(extract(%5C%22(%5C%5Cw%2B)%5C%22%2C%201%2C%20status))%20%7C%20extend%20url%20%3D%20extract(%5C%22GET%5C%22%2C%200%2C%20method)%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+## Count URL Visits
+
+This section is dedicated to identifying the frequency of visits to a specific URL. By counting these occurrences, we can gain insights into website popularity and user behavior.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache 
+| parse "GET * " as url 
+| count by url
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend url = extract("^(\\S+)", 1, method)
+| summarize Count = count() by url
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?qid=RsnK4jahgNC-rviz3s)
+
+## Page Count by Source IP
+
+In this section, we will identify the total number of pages associated with each source IP address. This analysis will allow us to understand the volume of content generated or hosted by each source.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache 
+| parse "* -" as src_ip 
+| count by src_ip
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend src_ip = extract(".*", 0,  ['id'])
+| summarize Count = count() by src_ip
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20src_ip%20=%20extract(\%22.*\%22,%200,%20%20[%27id%27])\n|%20summarize%20Count%20=%20count()%20by%20src_ip%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Reorder Pages by Load Frequency
+
+We aim to identify the total number of pages per source IP address in this section. Following this, the pages will be reordered based on the frequency of loads, which will provide insights into the most accessed content.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache 
+| parse "* " as src_ip 
+| parse "GET * " as url 
+| count by url 
+| sort by _count
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend src_ip = extract(".*", 0, ['id'])
+| extend url = extract("(GET)", 1, method)
+| where isnotnull(url)
+| summarize _count = count() by url, src_ip
+| order by _count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20src_ip%20=%20extract(\%22.*\%22,%200,%20[%27id%27])\n|%20extend%20url%20=%20extract(\%22(GET)\%22,%201,%20method)\n|%20where%20isnotnull(url)\n|%20summarize%20_count%20=%20count()%20by%20url,%20src_ip\n|%20order%20by%20_count%20desc%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Identify the top 10 requested pages.
+
+**Sumo Logic:**
+
+```bash 
+* | parse "GET * " as url 
+| count by url 
+| top 10 url by _count
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| where method == "GET"
+| top 10 by method desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20method%20==%20\%22GET\%22\n|%20top%2010%20by%20method%20desc%22,%22queryOptions%22:{%22quickRange%22:%2230d%22}})
+
+## Top 10 IPs by Bandwidth Usage
+
+In this section, we aim to identify the top 10 source IP addresses based on their bandwidth consumption.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=apache 
+| parse " 200 * " as size 
+| parse "* -" as src_ip 
+| sum(size) as total_bytes by src_ip 
+| top 10 src_ip by total_bytes
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend size = req_duration_ms
+| summarize total_bytes = sum(size) by ['id']
+| top 10 by total_bytes desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20size%20=%20req_duration_ms\n|%20summarize%20total_bytes%20=%20sum(size)%20by%20[%27id%27]\n|%20top%2010%20by%20total_bytes%20desc%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Top 6 IPs by Number of Hits
+
+This section focuses on identifying the top six source IP addresses according to the number of hits they generate. This will provide insight into the most frequently accessed or active sources in the network.
+
+**Sumo Logic**
+
+```bash
+_sourceCategory=apache 
+| parse "* -" as src_ip 
+| count by src_ip 
+| top 100 src_ip by _count
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend src_ip = extract("^(\\S+)", 1, user_agent)
+| summarize _count = count() by src_ip
+| top 6 by _count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20summarize%20_count%20=%20count()%20by%20user_agent\n|%20order%20by%20_count%20desc\n|%20limit%206%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Timeslice and Transpose
+
+For the Source Category "apache", count by status_code and timeslice of 1 hour.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache*
+| parse "HTTP/1.1\" * * \"" as (status_code, size)
+| timeslice 1h
+| count by _timeslice, status_code
+```
+
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend status_code = extract("^(\\S+)", 1, method)
+| where status_code == "POST"
+| summarize count() by status_code, bin(_time, 1h)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20method%20==%20\%22POST\%22\n|%20summarize%20count()%20by%20method,%20bin(_time,%201h)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Hourly Status Code Count for "Text" Source
+
+In this section, We aim to count instances by `status_code`, grouped into one-hour timeslices, and then transpose `status_code` to column format. This will help us understand the frequency and timing of different status codes.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=text*
+| parse "HTTP/1.1\" * * \"" as (status_code, size)
+| timeslice 1h
+| count by _timeslice, status_code
+| transpose row _timeslice column status_code
+```
+
+**APL:**
+
+```
+['sample-http-logs']
+| where content_type startswith 'text/css'
+| extend status_code= status
+| summarize count() by bin(_time, 1h), content_type, status_code
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20content_type%20startswith%20%27text/css%27\n|%20extend%20status_code%20=%20status\n|%20summarize%20count()%20by%20bin(_time,%201h),%20content_type,%20status_code%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Status Code Count in 5 Time Buckets
+
+In this example, we will perform a count by 'status_code', sliced into five time buckets across the search results. This will help analyze the distribution and frequency of status codes over specific time intervals.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=apache*
+| parse "HTTP/1.1\" * * \"" as (status_code, size)
+| timeslice 5 buckets
+| count by _timeslice, status_code
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| where content_type startswith 'text/css'
+| extend p=("HTTP/1.1\" * * \""), tostring( is_tls)
+| extend status_code= status
+| summarize count() by bin(_time, 12m), status_code
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20content_type%20startswith%20%27text/css%27\n|%20extend%20p=(\%22HTTP/1.1\\\%22%20*%20*%20\\\%22\%22),%20tostring(is_tls)\n|%20extend%20status_code%20=%20status\n|%20summarize%20count()%20by%20bin(_time,%2012m),%20status_code%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Grouped Status Code Count
+
+In this example, we will count messages by status code categories. We will group all messages with status codes in the `200s`, `300s`, `400s`, and `500s` together, we are also groupint the method requests with the `GET`, `POST`, `PUT`, `DELETE` attributes. This will provide an overview of the response status distribution.
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=Apache/Access
+| timeslice 15m
+| if (status_code matches "20*",1,0) as resp_200
+| if (status_code matches "30*",1,0) as resp_300
+| if (status_code matches "40*",1,0) as resp_400
+| if (status_code matches "50*",1,0) as resp_500
+| if (!(status_code matches "20*" or status_code matches "30*" or status_code matches "40*" or status_code matches "50*"),1,0) as resp_others
+| count(*), sum(resp_200) as tot_200, sum(resp_300) as tot_300, sum(resp_400) as tot_400, sum(resp_500) as tot_500, sum(resp_others) as tot_others by _timeslice
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend MethodCategory = case(
+   method == "GET", "GET Requests",
+   method == "POST", "POST Requests",
+   method == "PUT", "PUT Requests",
+   method == "DELETE", "DELETE Requests",
+   "Other Methods")
+| extend StatusCodeCategory = case(
+   status startswith "2", "Success",
+   status startswith "3", "Redirection",
+   status startswith "4", "Client Error",
+   status startswith "5", "Server Error",
+   "Unknown Status")
+| extend ContentTypeCategory = case(
+   content_type == "text/csv", "CSV",
+   content_type == "application/json", "JSON",
+   content_type == "text/html", "HTML",
+   "Other Types")
+| summarize Count=count() by bin_auto(_time), StatusCodeCategory, MethodCategory, ContentTypeCategory
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20MethodCategory%20=%20case(\n%20%20%20method%20==%20\%22GET\%22,%20\%22GET%20Requests\%22,\n%20%20%20method%20==%20\%22POST\%22,%20\%22POST%20Requests\%22,\n%20%20%20method%20==%20\%22PUT\%22,%20\%22PUT%20Requests\%22,\n%20%20%20method%20==%20\%22DELETE\%22,%20\%22DELETE%20Requests\%22,\n%20%20%20\%22Other%20Methods\%22)\n|%20extend%20StatusCodeCategory%20=%20case(\n%20%20%20status%20startswith%20\%222\%22,%20\%22Success\%22,\n%20%20%20status%20startswith%20\%223\%22,%20\%22Redirection\%22,\n%20%20%20status%20startswith%20\%224\%22,%20\%22Client%20Error\%22,\n%20%20%20status%20startswith%20\%225\%22,%20\%22Server%20Error\%22,\n%20%20%20\%22Unknown%20Status\%22)\n|%20extend%20ContentTypeCategory%20=%20case(\n%20%20%20content_type%20==%20\%22text/csv\%22,%20\%22CSV\%22,\n%20%20%20content_type%20==%20\%22application/json\%22,%20\%22JSON\%22,\n%20%20%20content_type%20==%20\%22text/html\%22,%20\%22HTML\%22,\n%20%20%20\%22Other%20Types\%22)\n|%20summarize%20Count=count()%20by%20bin_auto(_time),%20StatusCodeCategory,%20MethodCategory,%20ContentTypeCategory%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Conditional Operators 
+
+For the Source Category "apache", find all messages with a client error status code (40*):
+
+**Sumo Logic:**
+
+```bash
+_sourceCategory=apache*
+| parse "HTTP/1.1\" * * \"" as (status_code, size)
+| where status_code matches "40*"
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| where content_type startswith 'text/css'
+| extend p = ("HTTP/1.1\" * * \"")
+| where status == "200"
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20where%20content_type%20startswith%20%27text/css%27\n|%20extend%20p%20=%20(\%22HTTP/1.1\\\%22%20*%20*%20\\\%22\%22)\n|%20where%20status%20==%20\%22200\%22%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Browser-based Hit Count
+
+In this query example, we aim to count the number of hits by browser. This analysis will provide insights into the different browsers used to access the source and their respective frequencies.
+
+**Sumo Logic:** 
+
+```bash
+_sourceCategory=Apache/Access
+| extract "\"[A-Z]+ \S+ HTTP/[\d\.]+\" \S+ \S+ \S+ \"(?<agent>[^\"]+?)\""
+| if (agent matches "*MSIE*",1,0) as ie
+| if (agent matches "*Firefox*",1,0) as firefox
+| if (agent matches "*Safari*",1,0) as safari
+| if (agent matches "*Chrome*",1,0) as chrome
+| sum(ie) as ie, sum(firefox) as firefox, sum(safari) as safari, sum(chrome) as chrome
+```
+**APL:** 
+
+```kusto
+['sample-http-logs']
+| extend ie = case(tolower(user_agent) contains "msie", 1, 0)
+| extend firefox = case(tolower(user_agent) contains "firefox", 1, 0)
+| extend safari = case(tolower(user_agent) contains "safari", 1, 0)
+| extend chrome = case(tolower(user_agent) contains "chrome", 1, 0)
+| summarize data = sum(ie), lima = sum(firefox), lo = sum(safari), ce = sum(chrome)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20ie%20=%20case(tolower(user_agent)%20contains%20\%22msie\%22,%201,%200)\n|%20extend%20firefox%20=%20case(tolower(user_agent)%20contains%20\%22firefox\%22,%201,%200)\n|%20extend%20safari%20=%20case(tolower(user_agent)%20contains%20\%22safari\%22,%201,%200)\n|%20extend%20chrome%20=%20case(tolower(user_agent)%20contains%20\%22chrome\%22,%201,%200)\n|%20summarize%20data%20=%20sum(ie),%20lima%20=%20sum(firefox),%20lo%20=%20sum(safari),%20ce%20=%20sum(chrome)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Use the where operator to match only weekend days.
+
+**Sumo Logic:**
+
+```bash
+* | parse "day=*:" as day_of_week
+| where day_of_week in ("Saturday","Sunday")
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend day_of_week = dayofweek(_time)
+| where day_of_week == 1 or day_of_week == 0
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20day_of_week%20=%20dayofweek(_time)\n|%20where%20day_of_week%20==%201%20or%20day_of_week%20==%200%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Extract Numeric Version Numbers
+
+In this section, we will identify version numbers that match numeric values 2, 3, or 1. We will utilize the `num` operator to convert these strings into numerical format, facilitating easier analysis and comparison.
+
+**Sumo Logic:**
+
+```bash
+* | parse "Version=*." as number | num(number)
+| where number in (2,3,6)
+```
+
+**APL:**
+
+```kusto
+['sample-http-logs']
+| extend p= (req_duration_ms)
+| extend number=toint(p)
+| where number in (2,3,6)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm={%22apl%22:%22[%27sample-http-logs%27]\n|%20extend%20p=%20(req_duration_ms)\n|%20extend%20number=toint(p)\n|%20where%20number%20in%20(2,3,6)%22,%22queryOptions%22:{%22quickRange%22:%2290d%22}})
+
+## Making the Leap: Transform Your Data Analytics with APL
+
+As we’ve navigated through the process of migrating from Sumo Logic to APL, we hope you’ve found the insights valuable. The powerful capabilities of Axiom Processing Lnaguage are now within your reach, ready to empower your data analytics journey.
+
+Ready to take the next step in your data analytics journey? Dive deeper into APL and discover how it can unlock even more potential in your data. Check out our APL [learning resources](/apl/guides/migrating-from-sql-to-apl) and [tutorials](/apl/tutorial) to become proficient in APL, and join our [community forums](http://axiom.co/discord) to engage with other APL users. Together, we can redefine what’s possible in data analytics. Remember, the migration to APL isn’t just a change, it’s an upgrade. Embrace the change, because better data analytics await you.
+
+Begin your APL journey today!

@@ -1,0 +1,32 @@
+---
+title: 'Top list'
+description: 'This section explains how to create top list dashboard elements and add them to your dashboard.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'collaboration', 'queries', 'visualizations', 'filters', 'charts', 'simple query builder', 'advanced query builder']
+---
+
+import Prerequisites from "/snippets/dashboard-prerequisites.mdx"
+import CreateElement from "/snippets/create-dashboard-element.mdx"
+
+The top list dashboard element displays the top results from your query, showing the most significant items based on your aggregation and grouping. It can display results as either a table of totals or as time series charts, depending on the aggregation type used.
+
+<Prerequisites />
+
+<CreateElement elementName="top list" elementButtonLabel="Top list"/>
+
+## Example with Builder
+
+<Frame>
+  <img src="/doc-assets/shots/top-list-chart-builder.png" alt="Top list example with Builder" />
+</Frame>
+
+## Example with APL
+
+```kusto
+['sample-http-logs']
+| summarize count() by status
+| top 10 by count_ desc
+```
+
+<Frame>
+  <img src="/doc-assets/shots/top-list-chart-apl.png" alt="Top list example with APL" />
+</Frame>

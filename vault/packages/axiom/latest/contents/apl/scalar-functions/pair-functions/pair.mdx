@@ -1,0 +1,100 @@
+---
+title: pair
+description: 'This page explains how to use the pair function in APL.'
+---
+
+Use the `pair` function to create a dynamic object representing a key-value pair from separate key and value components. This function is useful for constructing structured pair objects that you can use with functions like `find_pair` to search arrays of pairs.
+
+Use `pair` when you need to programmatically build key-value pair objects for filtering or matching against pair arrays in your logs. The function returns a dynamic object with `key`, `value`, and `separator` properties.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically work with key-value pairs as strings. APL's `pair` function creates a structured object instead, which you can use for pattern matching with `find_pair`.
+
+<CodeGroup>
+```sql Splunk example
+| eval tag = host . ":" . value
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend tag = pair('host', 'server1')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `CONCAT` to build key-value strings or JSON functions to create objects. APL's `pair` function creates a structured dynamic object directly.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_OBJECT('key', key_col, 'value', value_col) AS tag FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend tag = pair('host', 'server1')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+pair(key, value, [separator])
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ---- | ---- | -------- | ----------- |
+| `key` | `string` | Required | The key component of the pair. |
+| `value` | `string` | Required | The value component of the pair. |
+| `separator` | `string` | Optional | The separator to store in the pair object. Defaults to `:`. |
+
+### Returns
+
+A dynamic object with the following properties:
+- `key`: The key component of the pair.
+- `value`: The value component of the pair.
+- `separator`: The separator used in the pair.
+
+## Example
+
+Create pair objects to represent request metadata.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend method_pair = pair('method', method)
+| project _time, uri, method_pair
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20method_pair%20%3D%20pair('method'%2C%20method)%20%7C%20project%20_time%2C%20uri%2C%20method_pair%20%7C%20take%203%22%7D)
+
+**Output**
+
+| _time               | uri                    | method_pair                                          |
+| ------------------- | ---------------------- | ---------------------------------------------------- |
+| 2025-01-29 10:48:08 | /api/v1/textdata/change | `{"key": "method", "separator": ":", "value": "GET"}`  |
+| 2025-01-29 10:48:07 | /api/v1/sell/bucket    | `{"key": "method", "separator": ":", "value": "PUT"}`  |
+| 2025-01-29 10:48:06 | /api/v1/user/notify    | `{"key": "method", "separator": ":", "value": "POST"}` |
+
+This query creates pair objects from request fields, storing both the key name and value in a structured format.
+
+## List of related functions
+
+- [parse_pair](/apl/scalar-functions/pair-functions/parse-pair): Parses a pair string into a dynamic object with key and value properties. Use `pair` to create pair objects directly from components.
+- [find_pair](/apl/scalar-functions/pair-functions/find-pair): Searches an array of pairs for a matching key-value pattern. Use `pair` to construct pair objects for comparison.
+- [bag_pack](/apl/scalar-functions/array-functions/bag-pack): Creates a dynamic property bag from key-value pairs. Use `pair` when you specifically need the pair object structure with separator.

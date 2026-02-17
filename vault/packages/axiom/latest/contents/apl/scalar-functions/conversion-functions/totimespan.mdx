@@ -1,0 +1,157 @@
+---
+title: totimespan
+description: 'This page explains how to use the totimespan function in APL.'
+---
+
+Use the `totimespan` function to convert various data types to a timespan value representing a duration. This is helpful when you need to normalize duration values from different sources into timespan format for time-based calculations, comparisons, or aggregations.
+
+You typically use `totimespan` when working with duration strings, numeric values representing time intervals, or other types that need to be converted to timespan format for duration calculations.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use time functions or duration calculations with numeric values. In APL, `totimespan` provides a direct way to convert values to timespan format for duration operations.
+
+<CodeGroup>
+```sql Splunk example
+... | eval duration = duration_field
+```
+
+```kusto APL equivalent
+... | extend duration = totimespan(duration_field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `INTERVAL` types or duration functions to work with time spans. In APL, `totimespan` provides a simpler way to convert values to timespan format.
+
+<CodeGroup>
+```sql SQL example
+SELECT INTERVAL '1' DAY AS duration FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend duration = totimespan('24h')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+totimespan(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to timespan. |
+
+### Returns
+
+If conversion is successful, the result is a timespan value. If conversion isn't successful, the result is `null`.
+
+### Conversion behavior
+
+The `totimespan` function converts values based on their type:
+
+- **Integer/Float**: Interpreted as nanoseconds. For example, `1000000000` represents one second.
+- **String**: Parsed as a duration string. A duration string is a possibly signed sequence of decimal numbers, each with optional fraction and a unit suffix, such as `"300ms"`, `"-1.5h"`, or `"2h45m"`. Valid time units are `"ns"`, `"us"` (or `"µs"`), `"ms"`, `"s"`, `"m"`, `"h"`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Convert numeric duration values to timespan format for duration-based analysis and filtering.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend duration_span = totimespan(['req_duration_ms'] * 1000000)
+| extend is_slow = duration_span > totimespan('1ms')
+| where is_slow == true
+| project _time, ['uri'], ['req_duration_ms'], duration_span, is_slow
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20duration_span%20%3D%20totimespan(%5B'req_duration_ms'%5D%20*%201000000)%20%7C%20extend%20is_slow%20%3D%20duration_span%20%3E%20totimespan('1ms')%20%7C%20where%20is_slow%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'req_duration_ms'%5D%2C%20duration_span%2C%20is_slow%22%7D)
+
+**Output**
+
+| _time | uri | req_duration_ms | duration_span | is_slow |
+| ----- | --- | --------------- | ------------ | ------- |
+| Jun 24, 09:28:10 | /api/users | 1500 | 00:00:01.5000000 | true |
+
+This example converts millisecond durations to timespan format and compares them to a threshold, enabling precise duration-based filtering and analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Convert trace duration values to timespan format for duration analysis and percentile calculations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend span_duration = totimespan(['duration'])
+| extend is_slow_span = span_duration > totimespan('100ms')
+| where is_slow_span == true
+| project _time, ['trace_id'], ['service.name'], ['duration'], span_duration, is_slow_span
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20span_duration%20%3D%20totimespan(%5B'duration'%5D)%20%7C%20extend%20is_slow_span%20%3D%20span_duration%20%3E%20totimespan('100ms')%20%7C%20where%20is_slow_span%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'trace_id'%5D%2C%20%5B'service.name'%5D%2C%20%5B'duration'%5D%2C%20span_duration%2C%20is_slow_span%22%7D)
+
+**Output**
+
+| _time | trace_id | service.name | duration | span_duration | is_slow_span |
+| ----- | -------- | ------------ | -------- | ------------- | ------------ |
+| Jun 24, 09:28:10 | abc123 | frontend | 150000000 | 00:00:00.1500000 | true |
+
+This example converts trace durations to timespan format and identifies slow spans, enabling duration-based performance analysis of trace data.
+
+</Tab>
+<Tab title="Security logs">
+
+Convert security event duration metrics to timespan format for time-based security analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend request_duration = totimespan(['req_duration_ms'] * 1000000)
+| extend is_suspicious_duration = request_duration > totimespan('5ms')
+| where is_suspicious_duration == true
+| project _time, ['uri'], ['status'], ['req_duration_ms'], request_duration, is_suspicious_duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20request_duration%20%3D%20totimespan(%5B'req_duration_ms'%5D%20*%201000000)%20%7C%20extend%20is_suspicious_duration%20%3D%20request_duration%20%3E%20totimespan('5ms')%20%7C%20where%20is_suspicious_duration%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'status'%5D%2C%20%5B'req_duration_ms'%5D%2C%20request_duration%2C%20is_suspicious_duration%22%7D)
+
+**Output**
+
+| _time | uri | status | req_duration_ms | request_duration | is_suspicious_duration |
+| ----- | --- | ------ | --------------- | ---------------- | ---------------------- |
+| Jun 24, 09:28:10 | /admin | 403 | 5500 | 00:00:05.5000000 | true |
+
+This example converts request durations to timespan format and identifies suspiciously long security events, enabling duration-based security analysis and alerting.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [todatetime](/apl/scalar-functions/conversion-functions/todatetime): Converts input to datetime. Use `todatetime` for absolute time points, and `totimespan` for duration values.

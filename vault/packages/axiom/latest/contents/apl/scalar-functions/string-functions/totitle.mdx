@@ -1,0 +1,130 @@
+---
+title: 'totitle'
+description: 'This page explains how to use the totitle function in APL.'
+---
+
+The `totitle` function converts a string to title case, capitalizing the first character. Use this function to format display strings, normalize names, or create human-readable output from log data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, title case conversion typically requires custom functions. APL's `totitle` provides this functionality natively.
+
+<CodeGroup>
+```sql Splunk example
+| eval titlecase=upper(substr(field,1,1)).lower(substr(field,2))
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend titlecase = totitle(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, title case conversion varies by database. APL's `totitle` provides standardized title case conversion.
+
+<CodeGroup>
+```sql SQL example
+SELECT INITCAP(field) AS titlecase FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend titlecase = totitle(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+totitle(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The input string to convert to title case. |
+
+### Returns
+
+Returns the input string with the first character capitalized.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Format HTTP methods and status codes for human-readable reports.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend formatted_method = totitle(tolower(method))
+| summarize request_count = count() by formatted_method, status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20formatted_method%20%3D%20totitle(tolower(method))%20%7C%20summarize%20request_count%20%3D%20count()%20by%20formatted_method%2C%20status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| formatted_method | status | request_count |
+|------------------|--------|---------------|
+| Get | 200 | 5432 |
+| Post | 201 | 2341 |
+| Get | 404 | 1987 |
+
+This query formats HTTP methods in title case, making reports and dashboards more professional and easier to read.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Format service names for display in monitoring dashboards.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend display_name = totitle(['service.name'])
+| summarize span_count = count(), avg_duration = avg(duration) by display_name
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20display_name%20%3D%20totitle(%5B%27service.name%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%2C%20avg_duration%20%3D%20avg(duration)%20by%20display_name%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| display_name | span_count | avg_duration |
+|--------------|------------|--------------|
+| Frontend | 4532 | 125ms |
+| Checkout | 3421 | 234ms |
+| Cart | 2987 | 89ms |
+
+This query formats service names in title case for cleaner presentation in monitoring dashboards and reports.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [tolower](/apl/scalar-functions/string-functions/tolower): Converts strings to lowercase. Use this before totitle for consistent formatting.
+- [toupper](/apl/scalar-functions/string-functions/toupper): Converts strings to uppercase. Use this for fully capitalized output.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces strings. Use this with case functions for text transformation.
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this with totitle to build formatted messages.
+

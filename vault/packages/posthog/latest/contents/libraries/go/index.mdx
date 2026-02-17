@@ -1,0 +1,150 @@
+---
+title: Go
+sidebarTitle: Go
+sidebar: Docs
+showTitle: true
+github: 'https://github.com/PostHog/posthog-go'
+platformLogo: go
+features:
+  eventCapture: true
+  userIdentification: true
+  featureFlags: true
+  groupAnalytics: true
+  surveys: false
+  llmAnalytics: false
+---
+
+This library uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your web app or other server-side application that needs performance.
+
+## Installation
+
+import GoInstall from '../../integrate/_snippets/install-go.mdx'
+
+<GoInstall />
+
+## Capturing events
+
+import GoSendEvents from '../../integrate/send-events/_snippets/send-events-go.mdx'
+
+<GoSendEvents />
+
+## Person profiles and properties
+
+For backward compatibility, the Go SDK captures identified events by default. These create [person profiles](/docs/data/persons). To set [person properties](/docs/data/user-properties) in these profiles, include them when capturing an event:
+
+```go
+client.Enqueue(posthog.Capture{
+    DistinctId: "distinct_id",
+    Event:      "event_name",
+    Properties: map[string]interface{}{
+        "$set": map[string]interface{}{
+            "name": "Max Hedgehog",
+        },
+        "$set_once": map[string]interface{}{
+            "initial_url": "/blog",
+        },
+    },
+})
+```
+
+For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/data/user-properties#what-is-the-difference-between-set-and-set_once).
+
+To capture [anonymous events](/docs/data/anonymous-vs-identified-events) without person profiles, set the event's `$process_person_profile` property to `false`:
+
+```go
+client.Enqueue(posthog.Capture{
+    DistinctId: "distinct_id",
+    Event:      "event_name",
+    Properties: map[string]interface{}{
+        "$process_person_profile": false,
+    },
+})
+```
+
+## Alias
+
+Sometimes, you want to assign multiple distinct IDs to a single user. This is helpful when your primary distinct ID is inaccessible. For example, if a distinct ID used on the frontend is not available in your backend. 
+
+In this case, you can use `alias` to assign another distinct ID to the same user.
+
+```go
+client.Enqueue(posthog.Alias{
+  DistinctId: "distinct_id",
+  Alias: "alias_id",
+})
+```
+
+We strongly recommend reading our docs on [alias](/docs/data/identify#alias-assigning-multiple-distinct-ids-to-the-same-user) to best understand how to correctly use this method.
+
+## Feature flags
+
+import FeatureFlagsLibsIntro from "../_snippets/feature-flags-libs-intro.mdx"
+
+<FeatureFlagsLibsIntro />
+
+import GoFeatureFlagsCode from '../../integrate/feature-flags-code/_snippets/feature-flags-code-go.mdx'
+
+<GoFeatureFlagsCode />
+
+import LocalEvaluationIntro from "../../feature-flags/snippets/local-evaluation-intro.mdx"
+
+### Local Evaluation
+
+<LocalEvaluationIntro />
+
+For details on how to implement local evaluation, see our [local evaluation guide](/docs/feature-flags/local-evaluation).
+
+## Experiments (A/B tests)
+
+Since [experiments](/docs/experiments/manual) use feature flags, the code for running an experiment is very similar to the feature flags code:
+
+
+```go
+variant, err := client.GetFeatureFlag(posthog.FeatureFlagPayload{
+    Key:        "experimentfeature-flag-name",
+    DistinctId: "user_distinct_id",
+})
+if err != nil {
+    // Handle error (e.g. capture error and fallback to default behaviour)
+}
+if variant == "variant-name" {
+    // Do something
+}
+```
+
+It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags).
+
+## Group analytics
+
+Group analytics allows you to associate an event with a group (e.g. teams, organizations, etc.). Read the [Group Analytics](/docs/user-guides/group-analytics) guide for more information.
+
+> **Note:**  This is a paid feature and is not available on the open-source or free cloud plan. Learn more on the [pricing page](/pricing).
+
+-   Send an event associated with a group
+
+```go
+client.Enqueue(posthog.Capture{
+    DistinctId: "user_distinct_id",
+    Event:      "some_event",
+    Groups: posthog.NewGroups().
+        Set("company", "company_id_in_your_db"),
+})
+```
+
+-   Update properties on a group
+
+```go
+client.Enqueue(posthog.GroupIdentify{
+    Type: "company",
+    Key:  "company_id_in_your_db",
+    Properties: posthog.NewProperties().
+        Set("name", "Awesome Inc.").
+        Set("employees", 11),
+})
+```
+
+The `name` is a special property which is used in the PostHog UI for the name of the group. If you don't specify a `name` property, the group ID will be used instead.
+
+## Thank you
+
+This library is largely based on the `analytics-go` package.

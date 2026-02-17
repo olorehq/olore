@@ -1,0 +1,164 @@
+---
+title: 'substring'
+description: 'This page explains how to use the substring function in APL.'
+---
+
+The `substring` function extracts a substring from a source string starting at a specified position. Use this function to parse fixed-format logs, extract specific segments from structured strings, or truncate text fields.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `substr` function. APL's `substring` provides similar functionality with zero-based indexing.
+
+<CodeGroup>
+```sql Splunk example
+| eval extracted=substr(field, 5, 10)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend extracted = substring(field, 4, 10)
+```
+</CodeGroup>
+
+Note: Splunk uses 1-based indexing while APL uses 0-based indexing.
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `SUBSTRING` with similar syntax. APL's `substring` provides the same functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUBSTRING(field, 5, 10) AS extracted FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend extracted = substring(field, 4, 10)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+substring(source, startingIndex, length)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| source | string | Yes | The source string to extract from. |
+| startingIndex | int | Yes | The zero-based starting position. |
+| length | int | No | The number of characters to extract. If omitted, extracts to the end. |
+
+### Returns
+
+Returns the extracted substring. Returns empty string if startingIndex is beyond the string length.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Extract specific segments from fixed-format URIs or identifiers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend api_version = substring(uri, 1, 4)
+| where api_version == 'api/'
+| extend endpoint = substring(uri, 5, 20)
+| summarize request_count = count() by endpoint, method
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20api_version%20%3D%20substring(uri%2C%201%2C%204)%20%7C%20where%20api_version%20%3D%3D%20%27api%2F%27%20%7C%20extend%20endpoint%20%3D%20substring(uri%2C%205%2C%2020)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20endpoint%2C%20method%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| endpoint | method | request_count |
+|----------|--------|---------------|
+| users | GET | 2341 |
+| orders | POST | 1987 |
+| products | GET | 1654 |
+
+This query extracts API endpoints from URIs by taking specific character ranges, enabling analysis of API usage patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract prefixes from trace IDs for partitioning or routing analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_prefix = substring(trace_id, 0, 4)
+| extend trace_suffix = substring(trace_id, strlen(trace_id) - 4, 4)
+| summarize span_count = count() by trace_prefix
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20trace_prefix%20%3D%20substring(trace_id%2C%200%2C%204)%20%7C%20extend%20trace_suffix%20%3D%20substring(trace_id%2C%20strlen(trace_id)%20-%204%2C%204)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20trace_prefix%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| trace_prefix | span_count |
+|--------------|------------|
+| abcd | 1234 |
+| ef12 | 1123 |
+| 89ab | 987 |
+
+This query extracts trace ID prefixes to analyze trace distribution patterns, which can help with load balancing and trace routing strategies.
+
+</Tab>
+<Tab title="Security logs">
+
+Extract and analyze specific segments of suspicious URIs or user identifiers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend uri_start = substring(uri, 0, 10)
+| extend uri_has_exploit = indexof(uri_start, '..') >= 0 or indexof(uri_start, '<script') >= 0
+| where uri_has_exploit
+| project _time, uri, uri_start, uri_has_exploit, id, status, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20uri_start%20%3D%20substring(uri%2C%200%2C%2010)%20%7C%20extend%20uri_has_exploit%20%3D%20indexof(uri_start%2C%20'..')%20%3E%3D%200%20or%20indexof(uri_start%2C%20'%3Cscript')%20%3E%3D%200%20%7C%20where%20uri_has_exploit%20%7C%20project%20_time%2C%20uri%2C%20uri_start%2C%20uri_has_exploit%2C%20id%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | uri_start | uri_has_exploit | id | status | geo.country |
+|-------|-----|-----------|-----------------|-------|--------|-------------|
+| 2024-11-06T10:00:00Z | `../../etc/passwd` | `../../etc/` | true | user123 | 403 | Unknown |
+| 2024-11-06T10:01:00Z | `&lt;script&gt;alert(1)` | `&lt;script&gt;al` | true | user456 | 403 | Russia |
+
+This query extracts the beginning of URIs to quickly identify common attack patterns like path traversal or XSS attempts.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts substrings using regex. Use this when you need pattern-based extraction rather than position-based.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by delimiters. Use this when you need to tokenize rather than extract by position.
+- [strlen](/apl/scalar-functions/string-functions/strlen): Returns string length. Use this to calculate positions relative to string length.
+- [indexof](/apl/scalar-functions/string-functions/indexof): Finds substring positions. Use this to find dynamic starting positions for substring extraction.
+

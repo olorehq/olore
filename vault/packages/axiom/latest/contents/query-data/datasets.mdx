@@ -1,0 +1,106 @@
+---
+title: 'Analyze data'
+description: 'This page explains how to use the Datasets tab in Axiom.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'analytics', 'dataset', 'queries', 'virtual fields', 'visualizations', 'filters', 'charts']
+---
+
+The Datasets tab allows you to gain a better understanding of the fields you have in your datasets.
+
+In Axiom, an individual piece of data is an event, and a dataset is a collection of related events. Datasets contain incoming event data. The Datasets tab provides you with information about each field within your datasets.
+
+## Datasets overview
+
+When you open the Datasets tab, you see the list of datasets.
+
+Right-click a dataset to access the following options:
+
+- **Open dataset:** Open the dataset in the Datasets tab.
+- **Open in Stream:** Open the dataset in the Stream tab.
+- **Open in Query:** Open the dataset in the Query tab.
+- **Edit dataset:** Change the dataset description or data retention period.
+- **Copy dataset name:** Copy the name of the dataset to your clipboard.
+- **Copy link to dataset:** Copy a link to the dataset to your clipboard.
+- **Open in new tab:** Open the dataset in a new browser tab.
+- **Delete dataset:** Delete the dataset.
+
+### Explore datasets
+
+To explore the fields in a dataset, select the dataset from the list.
+
+When you select a dataset, Axiom displays the list of fields within the dataset on the left. The field types are the following:
+
+- String
+- Number
+- Boolean
+- Array
+- [Virtual fields](#virtual-fields)
+
+This view flattens field names with dot notation. This means that the event `{"foo": { "bar": "baz" }}` appears as `foo.bar`. Field names containing periods (`.`) are folded.
+
+On the right, you see the following:
+
+- [Views](#views)
+- [Saved queries](#saved-queries)
+- [Query history](#query-history)
+
+### Edit field
+
+To edit a field:
+
+1. Go to the Datasets tab.
+1. Select the dataset that contains the field.
+1. Find the field in the list, and then click it.
+1. Edit the following:
+    - Field description.
+    - Field unit. This is only available for number field types.
+    - Hidden. This means that the field is still present in the underlying Axiom database, but it doesn’t appear in the Axiom UI. Use this option if you sent the field to Axiom by mistake or you don’t want to use it anymore in Axiom.
+
+## Quick charts
+
+Quick charts allow fast charting of fields depending on their field type. For example, for number fields, choose one of the following for easily visualizing the data:
+
+- <Icon icon="percent" iconType="regular"/> Percentiles
+- <Icon icon="stopwatch" iconType="light"/> Averages
+- <Icon icon="chart-scatter" iconType="light"/> Histograms
+
+## Virtual fields
+
+Virtual fields are powerful expressions that run on every event during a query to create new fields. The virtual fields are calculated from the events in the query using an APL expression. They’re similar to tools like derived columns in other products but super-charged with an expressive interpreter and with the flexibility to add, edit, or remove them at any time.
+
+To manage a dataset’s virtual fields, click <Icon icon="function" iconType="light"/> in the toolbar.
+
+For more information, see [Virtual fields](/query-data/virtual-fields).
+
+## Map fields
+
+Map fields are a special type of field that can hold a collection of nested key-value pairs within a single field. You can think of the content of a map field as a JSON object. The Dataset tab enables you to create map fields, and view unused and removed map fields. For more information, see [Map fields](/apl/data-types/map-fields#create-map-fields).
+
+## Views
+
+Views allow you to apply commonly used filters and transformations to your dataset. The result is a view that you can use similarly to how you use datasets. The concept of a view in Axiom is similar to the concept of a virtual table in a database.
+
+For more information, see [Views](/query-data/views).
+
+## Queries
+
+Every query has a unique ID that you can save and share with your team members. The Datasets tab allows you to do the following:
+- Star a query so that you and your team members can easily find it in the future.
+- Browse previous queries and find a past query.
+
+### Saved queries
+
+To find and run previously saved queries:
+
+1. Select a dataset.
+1. Optional: In the top right of the **Saved queries** section, select whether to display <Icon icon="user" iconType="light"/> your queries or <img src="/doc-assets/icons/many-users.svg" className="inline-icon" alt="Many users icon" /> all queries saved by members of your organization, including queries you saved.
+1. Find the query in the list, and then click it to run the query.
+
+Saved queries are automatically visible to all members of your Axiom organization.
+
+### Query history
+
+To find and run recent queries:
+
+1. Select a dataset.
+1. Optional: In the top right of the **Query history** section, select whether to display <Icon icon="user" iconType="light"/> your queries or <img src="/doc-assets/icons/many-users.svg" className="inline-icon" alt="Many users icon" /> your team’s queries.
+1. Find the query in the list, and then click it to run the query.

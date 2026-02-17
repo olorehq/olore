@@ -1,0 +1,316 @@
+---
+title: "Write evaluations"
+description: "Learn how to create evaluation functions with collections, tasks, and scorers."
+keywords: ["ai engineering", "evals", "evaluation", "scorers", "collections", "ground truth"]
+---
+
+import { definitions } from "/snippets/definitions.mdx"
+
+An evaluation is a test suite for your AI capability. It runs your capability against a <Tooltip tip={definitions.Collection}>collection</Tooltip> of test cases and scores the results using <Tooltip tip={definitions.Scorer}>scorers</Tooltip>. This page explains how to write evaluation functions using Axiom's `Eval` API.
+
+## Anatomy of an evaluation
+
+The `Eval` function defines a complete test suite for your capability. Here’s the basic structure:
+
+```ts
+import { Eval, Scorer } from 'axiom/ai/evals';
+
+Eval('evaluation-name', {
+  data: [/* test cases */],
+  task: async ({ input }) => {/* run capability */},
+  scorers: [/* scoring functions */],
+  metadata: {/* optional metadata */},
+});
+```
+
+### Key parameters
+
+- **`data`**: An array of test cases, or a function that returns an array of test cases. Each test case has an `input` (what you send to your capability) and an `expected` output (the ground truth).
+- **`task`**: An async function that executes your capability for a given input and returns the output.
+- **`scorers`**: An array of scorer functions that evaluate the output against the expected result.
+- **`metadata`**: Optional metadata like a description or tags.
+
+## Creating collections
+
+The `data` parameter defines your collection of test cases. Start with a small set of examples and grow it over time as you discover edge cases.
+
+### Inline collections
+
+For small collections, define test cases directly in the evaluation:
+
+```ts
+Eval('classify-sentiment', {
+  data: [
+    {
+      input: { text: 'I love this product!' },
+      expected: { sentiment: 'positive' },
+    },
+    {
+      input: { text: 'This is terrible.' },
+      expected: { sentiment: 'negative' },
+    },
+    {
+      input: { text: 'It works as expected.' },
+      expected: { sentiment: 'neutral' },
+    },
+  ],
+  // ... rest of eval
+});
+```
+
+### External collections
+
+For larger collections, load test cases from external files or databases:
+
+```ts
+import { readFile } from 'fs/promises';
+
+Eval('classify-sentiment', {
+  data: async () => {
+    const content = await readFile('./test-cases/sentiment.json', 'utf-8');
+    return JSON.parse(content);
+  },
+  // ... rest of eval
+});
+```
+
+<Tip>
+We recommend storing collections in version control alongside your code. This makes it easy to track how your test suite evolves and ensures evaluations are reproducible.
+</Tip>
+
+## Defining the task
+
+The `task` function executes your AI capability for each test case. It receives the `input` from the test case and should return the output your capability produces.
+
+```ts
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { wrapAISDKModel } from 'axiom/ai';
+
+async function classifySentiment(text: string) {
+  const result = await generateText({
+    model: wrapAISDKModel(openai('gpt-4o-mini')),
+    prompt: `Classify the sentiment of this text as positive, negative, or neutral: "${text}"`,
+  });
+  
+  return { sentiment: result.text };
+}
+
+Eval('classify-sentiment', {
+  data: [/* ... */],
+  task: async ({ input }) => {
+    return await classifySentiment(input.text);
+  },
+  scorers: [/* ... */],
+});
+```
+
+<Note>
+The task function should generally be the same code you use in your actual capability. This ensures your evaluations accurately reflect real-world behavior.
+</Note>
+
+## Creating scorers
+
+Scorers evaluate your capability's output. They receive the `input`, `output`, and `expected` values, and return a score (a number between 0-1, or boolean).
+
+### Custom scorers
+
+Create custom scorers using the `Scorer` wrapper:
+
+```ts
+import { Scorer } from 'axiom/ai/evals';
+
+const ExactMatchScorer = Scorer(
+  'exact-match',
+  ({ output, expected }) => {
+    return output.sentiment === expected.sentiment ? true : false;
+  }
+);
+```
+
+Scorers can return just a score, or an object with a score and metadata:
+
+```ts
+const DetailedScorer = Scorer(
+  'detailed-match',
+  ({ output, expected }) => {
+    const match = output.sentiment === expected.sentiment;
+    return {
+      score: match ? true : false,
+      metadata: {
+        outputValue: output.sentiment,
+        expectedValue: expected.sentiment,
+        matched: match,
+      },
+    };
+  }
+);
+```
+
+### Using autoevals
+
+The [`autoevals`](https://github.com/braintrustdata/autoevals) library provides prebuilt scorers for common tasks:
+
+```bash
+npm install autoevals
+```
+
+```ts
+import { Scorer } from 'axiom/ai/evals';
+import { Levenshtein, FactualityScorer } from 'autoevals';
+
+// Wrap autoevals scorers with Axiom's Scorer
+const LevenshteinScorer = Scorer(
+  'levenshtein',
+  ({ output, expected }) => {
+    return Levenshtein({ output: output.text, expected: expected.text });
+  }
+);
+
+const FactualityCheck = Scorer(
+  'factuality',
+  async ({ output, expected }) => {
+    return await FactualityScorer({
+      output: output.text,
+      expected: expected.text,
+    });
+  }
+);
+```
+
+<Tip>
+Use multiple scorers to evaluate different aspects of your capability. For example, check both exact accuracy and semantic similarity to get a complete picture of performance.
+</Tip>
+
+## Complete example
+
+Here's a complete evaluation for a support ticket classification system:
+
+```ts src/lib/capabilities/classify-ticket/evaluations/spam-classification.eval.ts expandable
+import { Eval, Scorer } from 'axiom/ai/evals';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { wrapAISDKModel } from 'axiom/ai';
+import { z } from 'zod';
+
+// The capability function
+async function classifyTicket({ 
+  subject, 
+  content 
+}: { 
+  subject?: string; 
+  content: string 
+}) {
+  const result = await generateObject({
+    model: wrapAISDKModel(openai('gpt-4o-mini')),
+    messages: [
+      {
+        role: 'system',
+        content: `You are a customer support engineer. Classify tickets as: 
+        spam, question, feature_request, or bug_report.`,
+      },
+      {
+        role: 'user',
+        content: subject ? `Subject: ${subject}\n\n${content}` : content,
+      },
+    ],
+    schema: z.object({
+      category: z.enum(['spam', 'question', 'feature_request', 'bug_report']),
+      confidence: z.number().min(0).max(1),
+    }),
+  });
+
+  return result.object;
+}
+
+// Custom scorer for category matching
+const CategoryScorer = Scorer(
+  'category-match',
+  ({ output, expected }) => {
+    return output.category === expected.category ? true : false;
+  }
+);
+
+// Custom scorer for high-confidence predictions
+const ConfidenceScorer = Scorer(
+  'high-confidence',
+  ({ output }) => {
+    return output.confidence >= 0.8 ? true : false;
+  }
+);
+
+// Define the evaluation
+Eval('spam-classification', {
+  data: [
+    {
+      input: {
+        subject: "Congratulations! You've Won!",
+        content: 'Claim your $500 gift card now!',
+      },
+      expected: {
+        category: 'spam',
+      },
+    },
+    {
+      input: {
+        subject: 'How do I reset my password?',
+        content: 'I forgot my password and need help resetting it.',
+      },
+      expected: {
+        category: 'question',
+      },
+    },
+    {
+      input: {
+        subject: 'Feature request: Dark mode',
+        content: 'Would love to see a dark mode option in the app.',
+      },
+      expected: {
+        category: 'feature_request',
+      },
+    },
+    {
+      input: {
+        subject: 'App crashes on startup',
+        content: 'The app crashes immediately when I try to open it.',
+      },
+      expected: {
+        category: 'bug_report',
+      },
+    },
+  ],
+  
+  task: async ({ input }) => {
+    return await classifyTicket(input);
+  },
+  
+  scorers: [CategoryScorer, ConfidenceScorer],
+  
+  metadata: {
+    description: 'Classify support tickets into categories',
+  },
+});
+```
+
+## File naming conventions
+
+Name your evaluation files with the `.eval.ts` extension so they're automatically discovered by the Axiom CLI:
+
+```
+src/
+└── lib/
+    └── capabilities/
+        └── classify-ticket/
+            └── evaluations/
+                ├── spam-classification.eval.ts
+                ├── category-accuracy.eval.ts
+                └── edge-cases.eval.ts
+```
+
+The CLI will find all files matching `**/*.eval.{ts,js,mts,mjs,cts,cjs}` based on your `axiom.config.ts` configuration.
+
+## What's next?
+
+- To parameterize your capabilities and run experiments, see [Flags and experiments](/ai-engineering/evaluate/flags-experiments).
+- To run evaluations using the CLI, see [Run evaluations](/ai-engineering/evaluate/run-evaluations).
+

@@ -1,0 +1,79 @@
+---
+title: 'Actions and actors in Stately’s editor'
+description: 'Learn how to use exit actions, entry actions, and transition actions, and invoke actors in Stately’s editor.'
+---
+
+import { Code, Info, Plus, Zap, Edit, Trash, Backspace, MoreHorizontal, PlayCircle } from 'lucide-react';
+
+# Actions and actors
+
+While the state machine is running, it can execute effects called actions. Actions are executed when a transition is triggered. Actions are “fire-and-forget effects”; once the machine has fired the action, it continues processing the transition and forgets the action. You can also fire actions when a state is entered or exited. [Read more about actions](/docs/actions).
+
+State machines can invoke actors as longer-running processes that can receive events, send events, and change their behavior based on the events they receive. You can invoke actors on entry to a state and stop on exit. [Read more about actors](actors).
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?code=834448b4-3b8b-4de9-8b2e-353fd2b342de&mode=design&machineId=000b2694-2267-413c-8477-988cc750d581"
+  title="Demo of actions and actors"
+/>
+
+## Add actions
+
+- Select a state or transition and use <Zap size={18} /> **Action**.
+- Select a state and use <Plus size={18} /> **Entry action** or **Exit action**.
+- Select a state or transition, open the <Info size={18} /> **Details** panel from the right tool menu, and use the <Plus size={18} /> **Effect** or <Plus size={18} /> **Action** button and choose **Add entry action**, **Add exit action**, or **Add action**.
+
+Use the <Edit size={18} /> edit icon button to open the <Code size={18} /> **Sources** panel and add custom implementation code. Actions are created as custom actions by default, but you can also use [XState built-in actions](#xstate-built-in-actions).
+
+To remove an action, use the <kbd>Backspace</kbd> key, _right-click_ and choose **Delete**, or use the <Trash size={18} /> delete icon button in the **Details** panel.
+
+### Add action parameters
+
+You can add action parameters by selecting the action and using add <Plus size={18} /> **parameter**.
+
+## Add invoked actors
+
+You can invoke multiple actors on a single state. Top-level final states cannot have invoked actors. [Read more about invoking actors](invoke).
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=66f77051-089e-4b0a-9fa9-42e1f7598135"
+  name="video player"
+/>
+
+In the video player above, the *startVideo* actor is invoked when the video player is in the *Opened* state.
+
+### Invoke actors on a state
+
+- Select a state and use <PlayCircle size={18} /> **Invoke**.
+- Select a state, open the state <Info size={18} /> **Details** panel from the right tool menu, and use the <Plus size={18} /> **Effect** button and choose **Add invoked actor**.
+
+Use the <Edit size={18} /> edit icon button to open the <Code size={18}/ > **Sources** panel and enter the actor’s source logic.
+
+Provide your actor with an ID so it can be used with the [`sendTo` or `stop` actions](#xstate-built-in-actions) to stop and send events to the actor. You can add actor input by selecting the actor and using add <Plus size={18} /> **input property**.
+
+To remove an actor, use the <kbd>Backspace</kbd> key, _right-click_ and choose **Delete**, or use the <Trash size={18} /> delete icon button in the **Details** panel.
+
+#### Invoke done and invoke error events
+
+**Invoke done events** and **invoke error events** transition from a state once its invocation has been completed or returns an error. The source state must have an invoked actor to create an invoke done or invoke error event.
+
+- Select the state with an invoked actor and create a new transition from that state. The first new transition will be created as an invoke done event.
+- Subsequent new transitions will be created as invoke error events.
+
+To change an invoke done or invoke error event back into a regular transition, Use the <MoreHorizontal size={18} /> triple dot menu or _right-click_ the transition, and from **Event type**, choose **Always**.
+
+### XState built-in actions
+
+You can use the following built-in XState actions from the logic templates in the <Code size={18}/> **[Sources](sources)** panel, which will be formatted in your [exported code](export-as-code). The options are:
+
+- [assign](/docs/actions/#assign-action): assigns data to the state context.
+- [raise](/docs/actions/#raise-action): raises an event that is received by the same machine.
+- [log](/docs/actions/#log-action): an easy way to log messages to the console.
+- [sendTo](/docs/actions/#send-to-action): sends an event to a specific actor.
+- [stop](/docs/actions/#stop-action): stops a child actor.
+
+- [Read more about actions in XState](actions).
+- [Read more about actors in XState](actors).
+
+### Spawning actors in Stately’s editor
+
+_Coming soon_

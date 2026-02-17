@@ -1,0 +1,23 @@
+import CommandHelmGetRepoSnippet from './command-helm-get-repo'
+import CommandHelmUpgradeSnippet from './command-helm-upgrade'
+
+To upgrade the [Helm](https://helm.sh/) release `posthog` in the `posthog` namespace:
+
+1. Get and update the Helm repo:
+
+  <CommandHelmGetRepoSnippet />
+
+2. **Verify if the operation is going to be a major version upgrade**:
+
+  ```shell
+  helm list -n posthog
+  helm search repo posthog
+  ```
+
+Compare the numbers of the **Helm chart version** (in the format `posthog-{major}.{minor}.{patch}` - for example, `posthog-19.15.1`) when running the commands above. If the upgrade is for a major version, **check the [upgrade notes](/docs/runbook/upgrade-notes) before moving forward**.
+
+3. Run the upgrade
+
+  <CommandHelmUpgradeSnippet />
+
+Check the Helm [documentation](https://helm.sh/docs/helm/helm_upgrade/) for more info about the `helm upgrade` command.

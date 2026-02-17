@@ -1,0 +1,158 @@
+---
+title: 'replace'
+description: 'This page explains how to use the replace function in APL.'
+---
+
+The `replace` function replaces all matches of a regular expression pattern with another string. Use this function to clean log data, redact sensitive information, normalize formats, or transform text patterns in your queries.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` with mode=sed for replacements. APL's `replace` provides regex replacement with capture group support.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message mode=sed "s/pattern/replacement/g"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = replace('pattern', 'replacement', uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `REGEXP_REPLACE` with varying syntax by database. APL's `replace` provides standardized regex replacement.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_REPLACE(field, 'pattern', 'replacement') AS cleaned FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = replace('pattern', 'replacement', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+replace(regex, rewrite, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| regex | string | Yes | The regular expression pattern to search for. Can include capture groups in parentheses. |
+| rewrite | string | Yes | The replacement string. Use $0 for the entire match, $1 for the first capture group, $2 for the second, etc. |
+| text | string | Yes | The source string to perform replacements on. |
+
+### Returns
+
+Returns the text with all regex matches replaced by the rewrite pattern. Matches do not overlap.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Redact sensitive information like email addresses or API keys from logs for privacy compliance.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = replace('[a-z0-9._%+-]+@[a-z0-9.-]+[.][a-z]{2,}', '[EMAIL_REDACTED]', uri)
+| extend cleaned_uri = replace('apikey=[^&]+', 'apikey=[REDACTED]', cleaned_uri)
+| project _time, uri, cleaned_uri, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20cleaned_uri%20%3D%20replace(%27%5Ba-z0-9._%25%2B-%5D%2B%40%5Ba-z0-9.-%5D%2B%5B.%5D%5Ba-z%5D%7B2%2C%7D%27%2C%20%27%5BEMAIL_REDACTED%5D%27%2C%20uri)%20%7C%20extend%20cleaned_uri%20%3D%20replace(%27apikey%3D%5B%5E%26%5D%2B%27%2C%20%27apikey%3D%5BREDACTED%5D%27%2C%20cleaned_uri)%20%7C%20project%20_time%2C%20uri%2C%20cleaned_uri%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | cleaned_uri | status |
+|-------|-----|-------------|--------|
+| 2024-11-06T10:00:00Z | /api?email=user@example.com | /api?email=[EMAIL_REDACTED] | 200 |
+| 2024-11-06T10:01:00Z | /api?apikey=abc123def456 | /api?apikey=[REDACTED] | 200 |
+
+This query redacts email addresses and API keys from URIs using regex patterns, ensuring sensitive data is not exposed in logs or reports.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Normalize service names by replacing version numbers or environment prefixes for consistent grouping.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend normalized_service = replace('-v[0-9]+[.][0-9]+', '', ['service.name'])
+| extend normalized_service = replace('-(dev|staging|prod)$', '', normalized_service)
+| summarize span_count = count() by normalized_service
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20normalized_service%20%3D%20replace(%27-v%5B0-9%5D%2B%5B.%5D%5B0-9%5D%2B%27%2C%20%27%27%2C%20%5B%27service.name%27%5D)%20%7C%20extend%20normalized_service%20%3D%20replace(%27-(dev%7Cstaging%7Cprod)%24%27%2C%20%27%27%2C%20normalized_service)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20normalized_service%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| normalized_service | span_count |
+|--------------------|------------|
+| frontend | 4532 |
+| checkout | 3421 |
+| cart | 2987 |
+
+This query removes version numbers and environment suffixes from service names to enable aggregation across versions and environments.
+
+</Tab>
+<Tab title="Security logs">
+
+Sanitize potentially malicious input by removing or replacing dangerous patterns in URIs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend sanitized_uri = replace('<[^>]*>', '[HTML_REMOVED]', uri)
+| extend sanitized_uri = replace('(union|select|drop|insert|delete) ', '[SQL_REMOVED] ', sanitized_uri)
+| project _time, uri, sanitized_uri, id, status, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20sanitized_uri%20%3D%20replace('%3C%5B%5E%3E%5D*%3E'%2C%20'%5BHTML_REMOVED%5D'%2C%20uri)%20%7C%20extend%20sanitized_uri%20%3D%20replace('(union%7Cselect%7Cdrop%7Cinsert%7Cdelete)%20'%2C%20'%5BSQL_REMOVED%5D%20'%2C%20sanitized_uri)%20%7C%20project%20_time%2C%20uri%2C%20sanitized_uri%2C%20id%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | sanitized_uri | id | status | geo.country |
+|-------|-----|---------------|-------|--------|-------------|
+| 2024-11-06T10:00:00Z | /search?q=<script>alert(1)</script> | /search?q=[HTML_REMOVED] | user123 | 403 | Unknown |
+| 2024-11-06T10:01:00Z | /api?id=1 union select * | /api?id=1 [SQL_REMOVED] * | user456 | 403 | Russia |
+
+This query sanitizes malicious HTML and SQL patterns, making them safe to display and analyze without risk of execution.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [replace_regex](/apl/scalar-functions/string-functions/replace-regex): Alias for replace with regex support. Use either name based on preference.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces plain string matches without regex. Use this for simpler, faster replacements when regex is not needed.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts regex matches without replacement. Use this when you need to capture text rather than modify it.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by delimiters. Use this when tokenizing rather than replacing.
+

@@ -1,0 +1,58 @@
+---
+title: Historical migrations overview
+sidebar: Docs
+showTitle: true
+---
+
+import MigrationWarning from "./_snippets/migration-warning.mdx"
+import SDKMigration from "./_snippets/sdk-migration.mdx"
+import ApiMigration from "./_snippets/api-migration.mdx"
+
+<MigrationWarning />
+
+Historical migrations refer to ingesting and importing past data into PostHog for analysis. This includes:
+
+- Using [managed migrations](/docs/migrate/managed-migrations) for automated data import from Mixpanel, Amplitude or S3 buckets.
+
+- Migrating from a different tool or platform like [Google Analytics](/docs/migrate/google-analytics), [Heap](/docs/migrate/migrate-from-amplitude), [Plausible](/docs/migrate/plausible), or [LaunchDarkly](/docs/migrate/launchdarkly).
+
+- Migrating from a [self-hosted PostHog instance to PostHog Cloud](/docs/migrate/migrate-to-cloud).
+
+- Migrating from [one PostHog Cloud instance to another](/docs/migrate/migrate-to-cloud#between-cloud-instances-eg-us-cloud-to-eu-cloud), for example US -> EU.
+
+- Adding past data from a third-party source into PostHog.
+
+> **What about exporting data from PostHog?** Use our [batch export feature](/docs/cdp/batch-exports) to export data from PostHog to external services like [S3](/docs/cdp/batch-exports/s3) or [BigQuery](/docs/cdp/batch-exports/bigquery).
+
+## The basics of migrating data into PostHog
+
+Start your migration by formatting your data correctly. There is no way to selectively delete event data in PostHog, so getting this right is critical. This means:
+
+- **Using the correct event names.** For example, to capture a pageview event in PostHog, you capture a `$pageview` event. This might be different than the "name" other services use.
+
+- **Including the `timestamp` field.** This ensures your events are ingested with the correct time in PostHog. It needs to be in the ISO 8601 format and dated at least 48 hours before the time of import.
+
+- **Use the correct `distinct_id`.** This is the unique identifier for your user in PostHog. Every event needs one. For example, `posthog-js` automatically generates a `uuidv7` value for anonymous users.
+
+To capture events, you must use the PostHog Python SDK or the PostHog API `batch` endpoint with the `historical_migration` set to `true`. This ensures we handle this data correctly and you aren't charged standard ingestion fees for it.
+
+
+Using our Python or Node SDKs, you can capture events like this:
+
+<SDKMigration />
+
+An example `cURL` implementation using the `batch` API endpoint looks like this:
+
+<ApiMigration />
+
+> Need someone to do the migration for you?  A PostHog [Forward Deployed Engineer](/professional-services) could help!
+
+## Best practices for migrations
+
+- We highly recommend testing at least a part of your migration on a test project before running it on your production project.
+
+- Separate exporting your data from your service from importing it into PostHog. Store it in a storage service like S3 or GCS in between to ensure exported data is complete.
+
+- Build resumability into your exports and imports, so you can just resume the process from the last successful point if any problems occur. For example, we use a cursor-based approach in our self-hosted migration tool.
+
+- To batch user updates, use the same request but with the `$identify` event. Same for groups and the `$group_identify` event.

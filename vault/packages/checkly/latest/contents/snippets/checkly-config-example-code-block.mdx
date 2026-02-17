@@ -1,0 +1,61 @@
+<CodeGroup dropdown>
+```ts checkly.config.ts
+import { defineConfig } from "checkly"
+import { Frequency } from "checkly/constructs"
+
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  repoUrl: "https://github.com/you/your-project",
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: "2025.04",
+    frequency: Frequency.EVERY_5M,
+    locations: ["us-east-1", "eu-west-1"],
+    tags: ["website", "api"],
+    checkMatch: "**/*.check.ts",
+    browserChecks: {
+      frequency: Frequency.EVERY_10M,
+      testMatch: "browsers/**/*.spec.ts",
+    },
+    multiStepChecks: {
+      testMatch: "multistep/**/*.spec.ts",
+    },
+  },
+  cli: {
+    runLocation: "eu-west-1",
+  },
+})
+```
+
+```js checkly.config.js
+const { defineConfig } = require("checkly")
+const { Frequency } = require("checkly/constructs")
+
+module.exports = defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  repoUrl: "https://github.com/you/your-project",
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: "2025.04",
+    frequency: Frequency.EVERY_5M,
+    locations: ["us-east-1", "eu-west-1"],
+    tags: ["website", "api"],
+    checkMatch: "**/*.check.js",
+    browserChecks: {
+      frequency: Frequency.EVERY_10M,
+      testMatch: "browsers/**/*.spec.js",
+    },
+    multiStepChecks: {
+      testMatch: "multistep/**/*.spec.js",
+    },
+  },
+  cli: {
+    runLocation: "eu-west-1",
+  },
+})
+```
+</CodeGroup>

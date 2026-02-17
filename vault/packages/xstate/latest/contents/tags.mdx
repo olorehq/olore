@@ -1,0 +1,71 @@
+---
+title: 'Tags'
+---
+
+State nodes can have **tags**, which are string terms that help group or categorize the state node. For example, you can signify which state nodes represent states in which data is being loaded by using a "loading" tag, and determine if a state contains those tagged state nodes with `state.hasTag(tag)`:
+
+```ts
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+  states: {
+    prompt: {
+      tags: ['visible'],
+      // ...
+    },
+    form: {
+      tags: ['visible'],
+      // ...
+    },
+    thanks: {
+      tags: ['visible', 'confetti'],
+      // ...
+    },
+    closed: {
+      tags: ['hidden'],
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+console.log(feedbackActor.getSnapshot().hasTag('visible'));
+// logs true
+```
+
+## Tags and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+You can strongly type the `tags` of your machine in the `types.tags` property of the machine setup.
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  types: {
+    // [!code highlight:1]
+    tags: {} as 'pending' | 'success' | 'error',
+  },
+}).createMachine({
+  // ...
+  states: {
+    loadingUser: {
+      tags: ['pending'], // Strongly-typed
+    },
+  },
+});
+
+const actor = createActor(machine).start();
+
+actor
+  .getSnapshot()
+  // Autocompleted
+  .hasTag('pending');
+```

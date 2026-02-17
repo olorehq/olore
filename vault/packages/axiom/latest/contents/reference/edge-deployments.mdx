@@ -1,0 +1,94 @@
+---
+title: Edge deployments
+description: 'This page explains Axiom’s edge deployment architecture and how to control where your event data is stored.'
+keywords: ['eu', 'regions', 'edge', 'deployment']
+---
+
+import BaseDomains from "/snippets/base-domains.mdx"
+import { Badge } from "/snippets/badge.jsx"
+
+Axiom is a unified data platform built on edge deployments.
+
+When you create an organization, you choose a primary edge deployment like `US East 1 (AWS)`, and your event data is stored at rest in that infrastructure. You manage everything through Axiom’s Console at `app.axiom.co` regardless of which edge deployment you select.
+
+This edge deployment model provides flexibility that isn’t possible with separate regional instances. As Axiom introduces additional edge deployments, you’ll be able to write event data to specific locations with ease while maintaining unified management and billing.
+
+## Available edge deployments
+
+Axiom currently supports the following edge deployments:
+
+<BaseDomains />
+
+<Note>
+The base domain of all other API endpoints is `api.axiom.co`.
+</Note>
+
+Axiom prioritizes new edge deployments based on interest. [Contact Axiom](https://www.axiom.co/contact) to discuss your requirements.
+
+## Current capabilities
+
+Your organization’s default edge deployment determines where Axiom stores event data at rest. Axiom currently routes query results and account operations through its centralized US-based infrastructure. In the future, Axiom will route query results in the same edge deployment where your data is stored.
+
+See the table below for current and planned behavior:
+
+| Operation | Current behavior | Planned behavior |
+| :--- | :--- | :--- |
+| **Data ingest** | Selected edge deployment | – |
+| **Data storage** | Selected edge deployment | – |
+| **Query execution** | Selected edge deployment | – |
+| **Query results** | US infrastructure | Selected edge deployment |
+| **Account data** | US infrastructure | - |
+
+Currently, if you select a non-US edge deployment, event data is ingested and stored in your selected edge deployment. When you run a query through Axiom’s Console, API, or monitors, that query executes in your selected edge deployment, but the query results are routed through the US infrastructure. Your event data remains stored in your chosen edge deployment, but query processing involves cross-edge access to that data.
+
+### Compliance considerations
+
+Some data-sovereignty frameworks may accommodate this architecture when supported by appropriate transfer mechanisms (for example, SCCs).
+
+Strict public-sector or regulated-industry frameworks might not permit cross-border processing. This is typically because these frameworks require that both storage and processing of personal data take place entirely within the designated edge. Evaluate based on your specific requirements. If your compliance obligations prohibit query results from crossing regional boundaries, wait for complete within-edge query processing.
+
+### Determine your organization’s edge deployment
+
+The default edge deployment of your organization determines where Axiom stores your event data. You can’t change your default edge deployment after creating your organization.
+
+To determine your organization’s default edge deployment:
+
+1. Click <Icon icon="gear" iconType="solid"/> **Settings > General**.
+1. Find your organization’s default edge deployment in the **Edge deployment** section.
+
+## Roadmap for edge deployments
+
+Axiom is evolving its edge deployment architecture to provide more flexibility and control.
+
+### Integration support
+
+<Badge>Jan 2026</Badge> [Integrations](/apps/introduction) will be available for edge deployments other than `US East 1 (AWS)`. The integrations will include edge deployment selection in their setup flows, automatically routing ingest to the correct edge endpoint based on your dataset configuration.
+
+### Complete within-edge query processing
+
+<Badge>Jan 2026</Badge> Query processing will move to edge deployments. For example, when you query data stored in an EU edge deployment, the entire operation, from query execution to results, will happen within EU infrastructure.
+
+### Multi-region organization
+
+<Badge>Q1 2026</Badge> You’ll be able to manage datasets across multiple edge deployments within a single organization. After selecting a default edge deployment, you can activate additional edge deployments and configure individual datasets to store data in any active edge deployment. This enables global operations without managing multiple Axiom organizations.
+
+### SDKs and edge deployments
+
+Axiom SDKs will support edge deployments through environment variables. The SDKs will default to `US East 1 (AWS)`. Until Axiom updates all SDKs, configure ingest endpoints manually.
+
+## Legacy EU instance
+
+Axiom had previously operated two completely separate infrastructures to support an EU region:
+
+| Instance | Console base domain | API endpoint base domain | 
+| :--- | :--- | :--- | 
+| US | `app.axiom.co` | `api.axiom.co` | 
+| EU | `app.eu.axiom.co` | `api.eu.axiom.co` | 
+
+These instances had independent user accounts, billing systems, and API endpoints. In time, this EU instance will be retired in favor of flexible edge deployments.
+
+### Migration to edge deployments
+
+If your organization currently uses the legacy EU instance, Axiom will contact you directly about migration after within-region query execution becomes available. The migration will move your data to the new unified model, keeping your data intact.
+
+Until migration, continue using your current EU instance endpoints. All API examples in Axiom’s documentation use the `api.axiom.co` base domain by default. If you’re on the legacy EU instance, replace this with the `api.eu.axiom.co` base domain in all API calls.

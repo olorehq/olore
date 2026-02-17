@@ -1,0 +1,384 @@
+---
+title: 'DNS Monitor Configuration'
+description: 'Configure your DNS monitor to verify record resolution.'
+sidebarTitle: 'Configuration'
+---
+
+{/* <Tip>
+To configure a DNS monitor using code, learn more about the [DNS Monitor Construct](/constructs/dns-monitor).
+</Tip> */}
+
+### Basic Setup
+
+Specify the domain and record type you want to check:
+
+<Frame>
+  <img className="block dark:hidden" src="/images/dns-monitors/request.png" alt="DNS monitor setup interface showing domain, record type, dns server and protocol" />
+  <img className="hidden dark:block" src="/images/dns-monitors/request-dark.png" alt="DNS monitor setup interface showing domain, record type, dns server and protocol" />
+</Frame>
+
+* **Domain:** The domain you want to monitor (e.g. `checklyhq.com`)
+* **Record type:** The DNS record to query. See [supported record types](/detect/uptime-monitoring/dns-monitors/overview#supported-dns-record-types) for the full list
+* **DNS server:** Queries use 8.8.8.8 (Google DNS) by default with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver on errors. You can specify a custom nameserver and port (e.g., `1.1.1.1:53` or `dns.google:53`) to test resolver-specific behavior
+* **Protocol:** You can pin DNS queries to UDP-only or TCP-only
+
+### Assertions
+
+Assertions let you define what the expected result of a DNS query should be.
+
+The raw and JSON responses are shown on the results page of a DNS monitor run and can be used as a reference when defining assertions.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/dns-monitors/assertions.png" alt="DNS monitor assertions and corresponding data fields" />
+  <img className="hidden dark:block" src="/images/dns-monitors/assertions-dark.png" alt="DNS monitor assertions and corresponding data fields" />
+</Frame>
+
+* **Response time:** The lookup time in milliseconds. Use this to set thresholds for failed lookups
+
+* **Response code:** By default, DNS monitors pass when the return code is NOERROR and fail on error codes (FORMERR, SERVFAIL, NXDOMAIN, etc.). You can override this behavior by defining a custom return code assertion
+
+* **Text answer:** The raw DNS response as plain text. Use this to check for specific strings in the response
+
+* **JSON answer:** The DNS response parsed as JSON. This allows you to target specific fields using JSON path assertions. The response structure varies by record type. See [JSON response schemas](#json-response-schemas) below for all supported record types
+
+With JSON path assertions, you can:
+
+* `$.Answer[0].TTL` → validate TTL values are within expected ranges
+* `$.Answer[0].data` → check specific IP addresses or record values
+* `$.Answer.length` → check how many records were returned
+* `$.Status` → verify the DNS response status code
+
+Learn more about JSON path assertions: [JSON responses with JSON path](/detect/assertions/#json-responses-with-json-path).
+
+### JSON Response Schemas
+
+The DNS response is parsed into a structured JSON format. All responses share a common structure:
+
+```json
+{
+  "Answer": [
+    // Array of answer records
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "A"
+    }
+  ],
+  "Status": "NOERROR",
+  "TC": false,
+  "RD": true,
+  "RA": true,
+  "AD": false,
+  "CD": false
+}
+```
+
+**Key fields**:
+- `Answer` - Array of DNS records returned
+- `Question` - The DNS query that was made
+- `Status` - Response status (NOERROR, NXDOMAIN, SERVFAIL, etc.)
+- `TC` - Truncated flag
+- `RD` - Recursion desired flag
+- `RA` - Recursion available flag
+- `AD` - Authenticated data flag
+- `CD` - Checking disabled flag
+
+<Accordion title="A Record (IPv4)">
+```json
+{
+  "Answer": [
+    {
+      "name": "checklyhq.com.",
+      "type": "A",
+      "TTL": 27,
+      "data": "18.66.102.85"
+    },
+    {
+      "name": "checklyhq.com.",
+      "type": "A",
+      "TTL": 27,
+      "data": "18.66.102.10"
+    }
+  ],
+  "Question": [
+    {
+      "name": "checklyhq.com.",
+      "type": "A"
+    }
+  ],
+  "Status": "NOERROR",
+  "TC": false,
+  "RD": true,
+  "RA": true,
+  "AD": false,
+  "CD": false
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Check specific IP address
+- `$.Answer[0].TTL` - Validate TTL value
+</Accordion>
+
+<Accordion title="AAAA Record (IPv6)">
+```json
+{
+  "Answer": [
+    {
+      "name": "example.com.",
+      "type": "AAAA",
+      "TTL": 300,
+      "data": "2606:2800:220:1:248:1893:25c8:1946"
+    }
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "AAAA"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Check IPv6 address
+- `$.Answer[0].TTL` - Validate TTL value
+</Accordion>
+
+<Accordion title="CNAME Record">
+```json
+{
+  "Answer": [
+    {
+      "name": "www.example.com.",
+      "type": "CNAME",
+      "TTL": 300,
+      "data": "example.com."
+    }
+  ],
+  "Question": [
+    {
+      "name": "www.example.com.",
+      "type": "CNAME"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Verify canonical name target
+</Accordion>
+
+<Accordion title="MX Record">
+```json
+{
+  "Answer": [
+    {
+      "name": "example.com.",
+      "type": "MX",
+      "TTL": 3600,
+      "data": "10 mail.example.com."
+    },
+    {
+      "name": "example.com.",
+      "type": "MX",
+      "TTL": 3600,
+      "data": "20 mail2.example.com."
+    }
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "MX"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Check MX priority and mail server (format: "priority hostname")
+</Accordion>
+
+<Accordion title="TXT Record">
+```json
+{
+  "Answer": [
+    {
+      "name": "example.com.",
+      "type": "TXT",
+      "TTL": 300,
+      "data": "v=spf1 include:_spf.example.com ~all"
+    }
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "TXT"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Verify SPF, DKIM, or other TXT records
+- Text response contains `v=spf1` - Check for SPF record
+</Accordion>
+
+<Accordion title="NS Record">
+```json
+{
+  "Answer": [
+    {
+      "name": "example.com.",
+      "type": "NS",
+      "TTL": 86400,
+      "data": "ns1.example.com."
+    },
+    {
+      "name": "example.com.",
+      "type": "NS",
+      "TTL": 86400,
+      "data": "ns2.example.com."
+    }
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "NS"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+Common assertions:
+- `$.Answer[0].data` - Check specific nameserver
+</Accordion>
+
+<Accordion title="SOA Record">
+```json
+{
+  "Answer": [
+    {
+      "name": "example.com.",
+      "type": "SOA",
+      "TTL": 3600,
+      "data": "ns1.example.com. admin.example.com. 2024010100 7200 3600 1209600 3600"
+    }
+  ],
+  "Question": [
+    {
+      "name": "example.com.",
+      "type": "SOA"
+    }
+  ],
+  "Status": "NOERROR"
+}
+```
+
+**SOA data format**: `primary-ns responsible-email serial refresh retry expire minimum`
+
+Common assertions:
+- `$.Answer[0].data` - Verify SOA record (contains serial number and nameserver)
+- Text response contains expected serial number
+</Accordion>
+
+<Note>
+**Record type support**: DNS monitors currently support A, AAAA, CNAME, MX, NS, SOA, and TXT record types. Additional record types (SRV, CAA, PTR, etc.) may be added in future updates.
+</Note>
+
+### Response Time Limits
+
+Define performance thresholds for degraded or failed states:
+
+<Frame>
+  <img className="block dark:hidden" src="/images/dns-monitors/response-time.png" alt="DNS monitor response time limits interface" />
+  <img className="hidden dark:block" src="/images/dns-monitors/response-time-dark.png" alt="DNS monitor response time limits interface" />
+</Frame>
+
+### Frequency
+
+Set how often the monitor runs (every 10 seconds to 24 hours):
+
+<Frame>
+  <img className="block dark:hidden" src="/images/dns-monitors/frequency.png" alt="DNS monitor frequency selection interface" />
+  <img className="hidden dark:block" src="/images/dns-monitors/frequency-dark.png" alt="DNS monitor frequency selection interface" />
+</Frame>
+
+### Scheduling & Locations
+
+<Frame>
+  <img className="block dark:hidden" src="/images/dns-monitors/scheduling.png" alt="DNS monitor scheduling strategy and location selection interface" />
+  <img className="hidden dark:block" src="/images/dns-monitors/scheduling-dark.png" alt="DNS monitor scheduling strategy and location selection interface" />
+</Frame>
+
+* **Strategy:** Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/monitoring/global-locations#scheduling-strategies)
+* **Locations:** Select one or more [public](/monitoring/global-locations/) locations to run the monitor from
+* **Private locations**: DNS monitors do not currently support private locations
+### Additional Settings
+
+* **Name:** Give your monitor a clear name to identify it in dashboards and alerts
+* **Tags:** Use tags to organize monitors across dashboards and [maintenance windows](/communicate/maintenance-windows/overview)
+* **Retries:** Define how failed runs should be retried. See [retry strategies](/communicate/alerts/retries)
+* **Alerting:** Configure your [alert settings](/communicate/alerts/configuration), [alert channels](/communicate/alerts/channels), or set up [webhooks](/integrations/alerts/webhooks) for custom integrations
+
+## Common Use Cases
+
+<Accordion title="Monitor CDN failover with multiple A records">
+**Scenario**: Your CDN provides multiple IP addresses for redundancy. You need to ensure all IPs are reachable.
+
+**Configuration**:
+- **Domain**: `cdn.example.com`
+- **Record type**: A
+- **Assertions**:
+  - `$.Answer[0].TTL` is less than `300` (ensure low TTL for quick failover)
+  - `$.Answer[0].data` equals expected IP address
+  - Text response contains expected IP range (check multiple IPs in raw response)
+</Accordion>
+
+<Accordion title="Verify email security records (SPF, DKIM, DMARC)">
+**Scenario**: Monitor SPF, DKIM, and DMARC records to prevent email spoofing.
+
+**Configuration**:
+- **Domain**: `example.com`
+- **Record type**: TXT
+- **Assertions**:
+  - Text response contains `v=spf1`
+  - `$.Answer[0].data` contains `v=spf1`
+
+For DMARC:
+- **Domain**: `_dmarc.example.com`
+- **Record type**: TXT
+- **Assertions**:
+  - Text response contains `v=DMARC1`
+  - `$.Answer[0].data` contains `p=reject` or `p=quarantine`
+</Accordion>
+
+<Accordion title="Monitor mail server configuration">
+**Scenario**: Ensure primary and backup mail servers are correctly configured.
+
+**Configuration**:
+- **Domain**: `example.com`
+- **Record type**: MX
+- **Assertions**:
+  - `$.Answer[0].data` contains `10 mail.example.com.` (priority 10 + hostname)
+  - Text response contains `mail.example.com`
+</Accordion>
+
+<Accordion title="Test DNS propagation after zone transfer">
+**Scenario**: After updating nameservers, verify all nameservers return consistent results.
+
+**Configuration**:
+- **Domain**: `example.com`
+- **Record type**: NS
+- Create separate monitors for each nameserver:
+  - Monitor 1: DNS server `ns1.example.com:53`
+  - Monitor 2: DNS server `ns2.example.com:53`
+- **Assertions**:
+  - `$.Answer[0].data` equals `ns1.example.com.` or `ns2.example.com.`
+</Accordion>

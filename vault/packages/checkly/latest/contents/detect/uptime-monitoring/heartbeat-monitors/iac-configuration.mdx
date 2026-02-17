@@ -1,0 +1,57 @@
+---
+title: 'Infrastructure as Code Configuration'
+description: 'Learn how to configure heartbeat monitors with Infrastructure as Code.'
+sidebarTitle: Infrastructure as Code
+---
+
+
+## Overview
+
+IaC is a common way to configure heartbeat monitors. They are a simple way to ensure that your heartbeat monitors are running at a specific time.
+
+## With Infrastructure as Code
+
+Many teams manage heartbeat monitors alongside their infrastructure using tools like Terraform, ensuring monitoring is created when new scheduled jobs are deployed.
+
+### Terraform Example
+
+```hcl
+resource "checkly_heartbeat" "daily_backup" {
+  name        = "Daily Database Backup"
+  period      = 24
+  period_unit = "hours"
+  grace       = 30
+  grace_unit  = "minutes"
+  tags        = ["backup", "database", "daily"]
+  
+  alert_channels = [
+    checkly_alert_channel.email.id,
+    checkly_alert_channel.slack.id
+  ]
+}
+
+resource "checkly_heartbeat" "weekly_reports" {
+  name        = "Weekly Analytics Reports"
+  period      = 168  # 7 days in hours
+  period_unit = "hours"
+  grace       = 240  # 4 hours in minutes
+  grace_unit  = "minutes"
+  tags        = ["reports", "analytics", "weekly"]
+}
+```
+
+### AWS CloudFormation Example
+
+```yaml
+Resources:
+  HeartbeatMonitor:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt HeartbeatFunction.Arn
+      Name: "Daily Backup Monitor"
+      Period: 24
+      PeriodUnit: "hours"
+      Grace: 30
+      GraceUnit: "minutes"
+      Tags: ["backup", "daily"]
+```

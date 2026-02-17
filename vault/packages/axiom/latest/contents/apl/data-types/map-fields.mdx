@@ -1,0 +1,144 @@
+---
+title: 'Map fields'
+description: 'This page explains what map fields are and how to query them.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'map fields', 'object fields', 'data types']
+---
+
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+
+Map fields are a special type of field that can hold a collection of nested key-value pairs within a single field. You can think of the content of a map field as a JSON object.
+
+Axiom automatically creates map fields in datasets that use [OpenTelemetry](/send-data/opentelemetry) and you can create map fields yourself in any dataset.
+
+## Benefits and drawbacks of map fields
+
+Map fields help you manage high-dimensionality data by storing multiple key-value pairs within a single field. One of the benefits of map fields is that you can store additional attributes without adding more fields. This is particularly useful when the shape of your data is unpredictable (for example, additional attributes added by OpenTelemetry instrumentation). Using map fields means that you can avoid reaching the field limit of a dataset.
+
+Use map fields in the following cases:
+- You approach the dataset field limit.
+- The shape of your data is unpredictable. For example, an OpenTelemetry instrumentation or another SDK creates objects with many keys.
+- You work with feature flags or custom attributes that generate many fields.
+
+Map fields reduce impact on field limits, but involve trade-offs in query efficiency and compression. The drawbacks of map fields are the following:
+- Querying map fields uses more query-hours than querying conventional fields.
+- In some cases, map fields don’t compress as well as conventional fields. For example, if there is little shared structure between map values. This means datasets with map fields can use more storage.
+- You don’t have visibility into map fields from the schema. For example, autocomplete doesn’t know the properties inside the map field.
+
+## Custom attributes in tracing datasets
+
+If you use [OpenTelemetry](/send-data/opentelemetry) to send data to Axiom, you find some attributes in the `attributes.custom` map field. The reason is that instrumentation libraries can add hundreds or even thousands of arbitrary attributes to spans. Storing each custom attribute in a separate field would significantly increase the number of fields in your dataset. To keep the number of fields in your dataset under control, Axiom places all custom attributes in the single `attributes.custom` map field.
+
+## Use map fields in queries
+
+Map fields are particularly useful for handling nested data structures, such as data from `logfmt` format or other key-value formats with unpredictable structure.
+
+The example query below uses the `http.protocol` property inside the `attributes.custom` map field to filter results:
+
+```kusto
+['otel-demo-traces']
+| where ['attributes.custom']['http.protocol'] == 'HTTP/1.1'
+```
+
+[Run in playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7b%22apl%22%3a%22%5b%27otel-demo-traces%27%5d%5cn%7c%20where%20%5b%27attributes.custom%27%5d%5b%27http.protocol%27%5d%20%3d%3d%20%27HTTP%2f1.1%27%22%2c%22queryOptions%22%3a%7b%22quickRange%22%3a%2230d%22%7d%7d)
+
+## Create map fields using UI
+
+To create a map field using the UI:
+
+1. Go to the Datasets tab.
+1. Select the dataset where you want to create the map field.
+1. In the top right of the fields list, click <Icon icon="ellipsis-vertical" iconType="solid"/> **More > Create map field**.
+1. In **Field name**, enter the full name of the field, including parent fields, if any. For example, `map_field_name`. For more information on syntax, see [Access properties of nested maps](#access-properties-of-nested-maps)
+1. Click **Create map field**.
+
+## Create map fields using API
+
+To create a map field using the Axiom API, send a request to the [Create map field](/restapi/endpoints/createMapField) endpoint. For example:
+
+```bash
+curl --request POST \
+  --url https://api.axiom.co/v2/datasets/DATASET_NAME/mapfields \
+  --header 'Authorization: Bearer API_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "name": "MAP_FIELD"
+}'
+```
+
+<Info>
+<ReplaceDatasetToken />
+Replace `MAP_FIELD` with the name of the field that you want to change to a map field.
+</Info>
+
+## View map fields
+
+To view map fields:
+1. Go to the Datasets tab.
+1. Select a dataset where you want to view map fields.
+1. Map fields are labelled in the following way:
+
+- **MAPPED** means that the field was previously an ordinary field but at some point its parent was changed to a map field. Axiom adds new events to the field as an attribute of the parent map field. Events you ingested before the change retain the ordinary structure.
+- **UNUSED** means that the field is configured as a map field but you haven’t yet ingested data into it. Once ingested, data within this field won’t count toward your field limit.
+- **REMOVED** means that the field was configured as a map field but at some point it was changed to an ordinary field. Axiom adds new events to the field as usual. Events you ingested before the change retain the map structure. To fully remove this field, first [trim your dataset](/reference/datasets#trim-dataset) to remove the time period when map data was ingested, and then [vacuum the fields](/reference/datasets#vacuum-fields).
+
+## Access properties of nested maps
+
+To access the properties of nested maps, use index notation, dot notation, or a mix of the two. If you use index notation for an entity, enclose the entity name in quotation marks (`'` or `"`) and square brackets (`[]`). For example:
+- `where ['map_field']['property1']['property2'] == 14`
+- `where map_field.property1.property2 == 14`
+- `where ['map_field'].property1.property2 == 14`
+
+If an entity name has spaces (` `), dots (`.`), or dashes (`-`), you can only use index notation for that entity. You can use dot notation for the other entities. For example:
+- `where ['map.field']['property.name1']['property.name2'] == 14`
+- `where ['map.field'].property1.property2 == 14`
+
+<Note>
+In OTel traces, custom attributes are located in the `attributes.custom` map field. You can access them as `['attributes.custom']['header.Accept']`, for example. In this case, you don’t access the `Accept` field nested within the `header` field. What actually happens is that you access the field named `header.Accept` within the `attributes.custom` map field.
+</Note>
+
+For more information on quoting field names, see [Entity names](/apl/entities/entity-names#quote-identifiers).
+
+## Map fields and flattened fields
+
+Within a dataset, the same fields can exist as flattened fields and as subfields of a map field.
+
+For example, consider the following:
+
+1. `geo` is initially not a map field.
+1. You ingest the following:
+
+    ```json
+    {
+      "geo": {
+        "city": "Paris",
+        "country": "France"
+      }
+    }
+    ```
+
+    This adds two flattened fields to the dataset that you can access as `['geo.city']` or `['geo.country']`.
+
+1. You change `geo` to a map field through the UI or the API.
+1. You ingest the following:
+
+    ```json
+    {
+      "geo": {
+        "city": "Paris",
+        "country": "France"
+      }
+    }
+    ```
+
+    You use the same ingest JSON as before, but this adds the new subfields to the `geo` parent map field. You can access the subfields as `['geo']['city']` and `['geo']['country']`.
+
+Axiom treats the flattened fields (`['geo.city']` and `['geo.country']`) and the subfields of the map field (`['geo']['city']` and `['geo']['country']`) as separate fields and doesn’t maintain a relationship between them.
+
+<Note>
+Queries using `['geo.city']` access a field literally named `geo.city`, while `['geo']['city']` accesses the `city` key inside a `geo` map. These references aren’t equivalent.
+</Note>
+
+To avoid confusion:
+
+- Choose either a flattened or map-based structure when designing your schema.
+- Be explicit in queries about which fields to include or exclude.

@@ -1,0 +1,169 @@
+---
+title: 'Dashboard Configuration'
+description: "Add checks to your dashboard, control who has access, and customize your dashboard's look and feel."
+sidebarTitle: 'Configuration'
+---
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/dashboard-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/dashboard-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+
+## Setting Up Your Dashboard
+
+<Steps>
+<Step title="Add tags to checks and monitors">
+Add relevant tags to all the checks and monitors that you'd like to display on your dashboard.
+
+</Step>
+
+<Step title="Create Dashboard">
+Create a new dashboard and configure basic settings.
+</Step>
+
+<Step title="Apply tag filters">
+Add tags to your dashboard to specify which checks to show.
+</Step>
+
+<Step title="Customize appearance (optional)">
+Customize your dashboard's look and feel using custom CSS rules.
+</Step>
+
+<Step title="Set up a custom domain (optional)">
+Optionally configure a custom domain for professional branding.
+</Step>
+
+<Step title="Share the URL">
+Once your dashboard is ready, you can share it with anyone using its URL.
+</Step>
+</Steps>
+
+## Basic Settings
+
+- **Title:** Add a title like "ACME status dash". This is separate from your Checkly URL or custom domain.
+- **Description:** Add a clarifying text to explain to visitors what they are looking at.
+- **Checks:** Specify the tags of the checks you want to show on the dashboard. By default we show all checks.
+  You can also choose to hide the tags from the dashboard.
+
+## Checkly URL
+
+Every dashboard comes with a configurable custom subdomain under the `checkly-dashboards.com` domain. By default,
+we generate a random ID. You can change this subdomain to anything you like as long as it is unique among all Checkly users.
+Typically, a company name works best, e.g. `acme.checkly-dashboards.com`
+
+<Frame>
+  <img 
+    className="block dark:hidden" 
+    src="/images/next/dashboard-url-light.png" 
+    alt="Light mode interface"
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/next/dashboard-url-dark.png" 
+    alt="Dark mode interface"
+  />
+</Frame>
+
+## Custom Domain
+
+You can host your dashboard under your own domain. To make this work, you need to do two things:
+
+1. Add a valid custom domain to your dashboard setting.
+
+<Frame>
+  <img 
+    className="block dark:hidden" 
+    src="/images/next/dashboard-domain-light.png" 
+    alt="Light mode interface"
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/next/dashboard-domain-dark.png" 
+    alt="Dark mode interface"
+  />
+</Frame>
+
+2. Create a CNAME record in your DNS that points to **checkly-dashboards.com**
+
+Any DNS provider will have the option to easily add CNAME records. For example, on AWS Route 53 this looks as follows.
+
+<Frame>
+  <img 
+    className="block dark:hidden" 
+    src="/images/docs/images/dashboards-v2/aws_cname.png" 
+    alt="Light mode interface"
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/docs/images/dashboards-v2/aws_cname.png" 
+    alt="Dark mode interface"
+  />
+</Frame>
+
+In some cases, our provider will ask you to verify you are the owner of the domain by adding another `TXT` record to
+your DNS. You will see a notice similar to the one below.
+
+<Frame>
+  <img 
+    className="block dark:hidden" 
+    src="/images/docs/images/dashboards-v2/dashboards_txt_record.png" 
+    alt="Light mode interface"
+  />
+  <img 
+    className="hidden dark:block" 
+    src="/images/docs/images/dashboards-v2/dashboards_txt_record.png" 
+    alt="Dark mode interface"
+  />
+</Frame>
+
+## Access Control
+
+By default, Checkly dashboards are public and visible to anyone who knows the URL. You can set a dashboard to private, limiting access to users with a password or Checkly account.
+
+### Enabling Authentication
+
+<Note>
+Private dashboards are only available on certain plans. For more details, see our [Pricing page](https://www.checklyhq.com/pricing).
+</Note>
+
+To enable authentication on a dashboard:
+
+1. Navigate to the settings of the dashboard you wish to modify. 
+2. Toggle on the "Password Protection" setting. 
+3. Click "Save" to apply the changes.
+4. Next, the "Generate Password" button will appear, click this. It will open a modal which shows you your new private dashboard password.
+
+<Warning>
+Be careful, **this is the only time you will see this password in plaintext**. We do not store the password in plaintext, so if it is ever lost, you will need to regenerate a new one and inform any users of the new credentials.
+</Warning>
+
+### Accessing Private Dashboards
+
+After enabling password protection for your dashboard, you can continue to visit it via any custom domain you may have enabled, as well as the default `https://[dashboardId].checkly-dashboards.com` domain. The password authentication will work via both channels. 
+
+<Note>
+Checkly account login is only available to Enterprise customers.
+</Note>
+
+If visiting via the `https://[dashboardId].checkly-dashboards.com` domain, you can also select "Login with Checkly" and sign in with your existing Checkly account via any of the supported methods (i.e. Google, Github, Username and Password). This is an Enterprise-only feature.
+
+## Look and Feel
+
+- **Logo:** Display your company logo (or any image) on the top left side of your dashboard.
+- **Logo link:** Add a clickable destination URL for your logo. When visitors click the logo, they’ll be redirected to your specified website (typically your company homepage).
+- **Favicon:** Set a custom favicon for browser tabs and bookmarks.
+- **Auto paginate:** Automatically switch between dashboard pages when you have multiple pages of checks.
+- **Auto refresh:** Set how often the dashboard refreshes—choose between 1, 5, or 10 minutes.
+- **Show header:** Toggle visibility of the dashboard’s title and description.
+- **Show check run links:** Adds a clickable link to each check result so team members can inspect them. Off by default.
+- **Show and hide P-stats:** Toggle the visibility of the performance stats for all checks on the dashboard.
+
+Next to the preset tweaks you can do to your dashboard, you can also apply [custom CSS styles](/communicate/dashboards/custom-css).

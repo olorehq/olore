@@ -1,0 +1,107 @@
+---
+title: 'genai_extract_user_prompt'
+description: 'This page explains how to use the genai_extract_user_prompt function in APL.'
+---
+
+The `genai_extract_user_prompt` function extracts the user’s prompt from a GenAI messages array. It returns the content of the last message with the 'user' role, which typically contains the user’s question or request to the AI.
+
+You can use this function to analyze user queries, understand common question patterns, perform sentiment analysis on user inputs, or track user behavior and needs.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would need to filter messages by user role and extract the last one.
+
+<CodeGroup>
+```sql Splunk example
+| eval user_msgs=mvfilter(match(role, "user"))
+| eval user_prompt=mvindex(user_msgs, -1)
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend user_prompt = genai_extract_user_prompt(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would unnest the array, filter by user role, and select the last message.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  content as user_prompt
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY msg_index DESC) as rn
+  FROM conversations
+  CROSS JOIN UNNEST(messages) WITH OFFSET AS msg_index
+  WHERE role = 'user'
+) WHERE rn = 1
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend user_prompt = genai_extract_user_prompt(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_extract_user_prompt(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+
+### Returns
+
+Returns a string containing the content of the last user message in the conversation, or an empty string if no user message is found.
+
+## Example
+
+Extract the user's prompt from a GenAI conversation to analyze common questions.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend user_query = genai_extract_user_prompt(['attributes.gen_ai.input.messages'])
+| where isnotempty(user_query)
+| summarize query_count = count() by user_query
+| top 5 by query_count
+```
+
+**Output**
+
+| user_query | query_count |
+|------------|-------------|
+| How do I reset my password? | 456 |
+| What are your business hours? | 342 |
+| How can I track my order? | 298 |
+
+This query identifies the most common user questions, helping you understand user needs and improve responses.
+
+## List of related functions
+
+- [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response): Extracts the assistant's response. Use this to analyze AI responses along with user prompts.
+- [genai_extract_system_prompt](/apl/scalar-functions/genai-functions/genai-extract-system-prompt): Extracts the system prompt. Use this to understand the AI's configuration when analyzing user queries.
+- [genai_get_content_by_role](/apl/scalar-functions/genai-functions/genai-get-content-by-role): Gets content by any role. Use this for more flexible extraction when you need other specific roles.
+- [genai_concat_contents](/apl/scalar-functions/genai-functions/genai-concat-contents): Concatenates all messages. Use this when you need the full conversation instead of just the user prompt.
+- [genai_estimate_tokens](/apl/scalar-functions/genai-functions/genai-estimate-tokens): Estimates token count. Combine with user prompt extraction to analyze prompt sizes.
+

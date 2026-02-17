@@ -1,0 +1,162 @@
+---
+title: Using Checkly CLI Constructs
+description: 'Build monitoring infrastructure using JavaScript/TypeScript and the Checkly CLI'
+sidebarTitle: 'Overview'
+---
+
+import JsTsNote from '/snippets/js-ts-note.mdx';
+import ChecklyConfigCodeBlock from '/snippets/checkly-config-example-code-block.mdx';
+
+
+Every resource you create using the [Checkly CLI](/cli/overview/) is represented by a "construct": it's a class you import from `checkly/constructs`,
+for instance an `ApiCheck` or `EmailAlertChannel`. A construct is the "as-code" representation of the eventual resource 
+created / deleted / updated on the Checkly cloud once you run `npx checkly deploy`.
+
+<Tip>
+  You must install the [Checkly CLI](/cli/overview) before you can use constructs.
+</Tip>
+
+Constructs are JavaScript/TypeScript classes that represent your all monitoring resources. Import them from `checkly/constructs` to create checks, alert channels, and other resources in code.
+
+<CodeGroup dropdown>
+
+```ts api.check.ts
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+
+new ApiCheck('api-health-check', {
+  name: 'API Health Check',
+  request: {
+    url: 'https://danube-web.shop/api/books',
+    method: 'GET',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+    ],
+  },
+})
+```
+
+```js api.check.js
+const { ApiCheck, AssertionBuilder } = require('checkly/constructs')
+
+new ApiCheck('api-health-check', {
+  name: 'API Health Check',
+  request: {
+    url: 'https://danube-web.shop/api/books',
+    method: 'GET',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+    ],
+  },
+})
+```
+</CodeGroup>
+
+<JsTsNote />
+
+Test this API check with `npx checkly test` and transform it to production monitoring with `npx checkly deploy`.
+
+## Project Structure
+
+- `checkly.config.ts` - Mandatory global project and CLI configuration. We recommend using TypeScript.
+- `src/__checks__/*` - TS/JS files defining your checks and other resources.
+- `package.json` - Standard NPM project manifest.
+
+Here is an example directory tree of what that would look like:
+
+```
+.
+|-- checkly.config.ts
+|-- package.json
+`-- src
+    `-- __checks__
+      |-- alert-channels.ts
+      |-- api-check.check.ts
+      `-- homepage.spec.ts
+
+```
+
+The `checkly.config.ts` at the root of your project defines a range of defaults for all your checks.
+
+## Project Configuration
+
+As your project grows, you will want to override these defaults for specific checks or check groups. The recommended way to tackle this is using a mix of **global** and **local** configuration.
+
+### Global Configuration
+As mentioned, your global `checkly.config.ts` holds a set of defaults for your project, checks, and some CLI commands. Use `defineConfig` to configure your Checkly project.
+
+<ChecklyConfigCodeBlock />
+
+Find a full reference of all project properties in [the `Project` construct section](/constructs/project).
+
+### Local Configuration
+Override any of the `checks` global configuration settings at the individual check level.
+
+<CodeGroup dropdown>
+
+```ts __checks__/api.check.ts
+import { ApiCheck, AssertionBuilder, Frequency } from 'checkly/constructs'
+
+new ApiCheck('books-api', {
+  name: 'Books API',
+  locations: ['ap-south-1'], // overrides the locations property
+  frequency: Frequency.EVERY_30M, // overrides the frequency property
+  request: {
+    method: 'GET',
+    url: 'https://danube-web.shop/api/books',
+    assertions: [AssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+```js __checks__/api.check.js
+const { ApiCheck, AssertionBuilder, Frequency } = require('checkly/constructs')
+
+new ApiCheck('books-api', {
+  name: 'Books API',
+  locations: ['ap-south-1'], // overrides the locations property
+  frequency: Frequency.EVERY_30M, // overrides the frequency property
+  request: {
+    method: 'GET',
+    url: 'https://danube-web.shop/api/books',
+    assertions: [AssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+</CodeGroup>
+
+Find a full reference of all check properties in [the `ApiCheck` construct](/constructs/api-check) or [`BrowserCheck` construct section](/constructs/browser-check).
+
+## Logical IDs
+
+Assigning a `logicalId` is crucial when creating a construct. Remember the following rules when creating and updating constructs:
+
+1. Every construct needs to have a `logicalId`. This is the first argument when instantiating a class, i.e.
+```ts
+const check  = new ApiCheck('my-logical-id', { name: 'My API check' })
+```
+2. Every `logicalId` needs to be unique within the scope of a `Project`.
+3. A `Project` also has a `logicalId`. This needs to be unique within the scope of the Checkly account.
+4. A `logicalId` can be any string up to 255 characters in length.
+5. There is no hard limit on the amount of `Project`s you can have in your Checkly account.
+
+Behind the scenes, we use the `logicalId` to create a graph of your resources so we know what to persist, update and remove
+from our database. Changing the `logicalId` on an existing resource in your code base will tell the Checkly backend that
+a resource was removed and a new resource was created.
+
+When using the Checkly CLI to manage multiple projects and repositories, each project's `logicalId` should be unique within the Checkly account.
+The project's `logicalId` is used during the Checkly CLI commands to detect exactly which project is being used.
+If multiple projects are using the same project `logicalId`, deploying one project will delete the checks that were deployed by another project.
+The project `logicalId` can be configured in the project's [global configuration](/constructs/project).
+
+<Note>
+When changing the logical ID of a project you will keep all resources on your Checkly account, unless you run [`npx checkly destroy`](/cli/checkly-destroy/) to remove the old project.
+</Note>
+
+## Programming with Constructs
+
+All resources you can create and manage using the Checkly CLI are derived from "constructs". These constructs are just
+[TypeScript classes](https://github.com/checkly/checkly-cli/tree/main/packages/cli/src/constructs).
+
+You can use standard JS/TS programming to use these constructs to create the monitoring setup of your
+choice. Loops, variables, if-statements, file imports, extensions etc. [Here are some examples.](/constructs/dynamic-monitor-creation)

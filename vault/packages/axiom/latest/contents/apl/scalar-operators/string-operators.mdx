@@ -1,0 +1,179 @@
+---
+title: 'String operators'
+description: 'Learn how to use and combine different query operators for searching string data types.'
+sidebarTitle: String
+keywords: ['axiom documentation', 'documentation', 'axiom', 'string operators', 'contains', '!contains', 'contains_cs', 'endswith', 'has', 'has_any', 'startswith', 'matches regex']
+---
+
+The table summarizes the string operators available in APL. For set membership operators (`in`, `!in`, `in~`, `!in~`), see [Set membership operators](/apl/scalar-operators/in-operators/overview).
+
+| Operator       | Description                             | Case sensitive     | Example                                |
+| -------------- | --------------------------------------- | ------------------ | -------------------------------------- |
+| ==             | Equals                                  | Yes                | `"aBc" == "aBc"`                       |
+| !=             | Not equals                              | Yes                | `"abc" != "ABC"`                       |
+| =~             | Equals                                  | No                 | `"abc" =~ "ABC"`                       |
+| !~             | Not equals                              | No                 | `"aBc" !~ "xyz"`                       |
+| contains       | RHS occurs as a subsequence of LHS      | No                 | `"parentSpanId" contains "Span"`         |
+| !contains      | RHS doesn’t occur in LHS                | No                 | `"parentSpanId" !contains "abc"`         |
+| contains_cs    | RHS occurs as a subsequence of LHS      | Yes                | `"parentSpanId" contains_cs "Id"`        |
+| !contains_cs   | RHS doesn’t occur in LHS                | Yes                | `"parentSpanId" !contains_cs "Id"`       |
+| startswith     | RHS is an initial subsequence of LHS    | No                 | `"parentSpanId" startswith "parent"`     |
+| !startswith    | RHS isn’t an initial subsequence of LHS | No                 | `"parentSpanId" !startswith "Id"`        |
+| startswith_cs  | RHS is an initial subsequence of LHS    | Yes                | `"parentSpanId" startswith_cs "parent"`  |
+| !startswith_cs | RHS isn’t an initial subsequence of LHS | Yes                | `"parentSpanId" !startswith_cs "parent"` |
+| endswith       | RHS is a closing subsequence of LHS     | No                 | `"parentSpanId" endswith "Id"`           |
+| !endswith      | RHS isn’t a closing subsequence of LHS  | No                 | `"parentSpanId" !endswith "Span"`        |
+| endswith_cs    | RHS is a closing subsequence of LHS     | Yes                | `"parentSpanId" endswith_cs "Id"`        |
+| !endswith_cs   | RHS isn’t a closing subsequence of LHS  | Yes                | `"parentSpanId" !endswith_cs "Span"`     |
+| matches regex  | LHS contains a match for RHS            | Yes                | `"parentSpanId" matches regex "g.*r"`    |
+| !matches regex | LHS doesn’t contain a match for RHS     | Yes                | `"parentSpanId" !matches regex "g.*r"`   |
+| has            | RHS is a whole term in LHS              | No                 | `"North America" has "america"`             |
+| !has            | RHS isn’t a whole term in LHS          | No                 | `"North America" !has "america"`             |
+| has_cs         | RHS is a whole term in LHS              | Yes                | `"North America" has_cs "America"`          |
+| !has_cs         | RHS isn’t a whole term in LHS          | Yes                | `"North America" !has_cs "America"`          |
+| has_any        | RHS has any whole term in LHS           | No                 | `"North America" has_any ("America", "Europe")` |
+| has_any_cs     | RHS has any whole term in LHS           | Yes                | `"North America" has_any_cs ("America", "Europe")` |
+| hasprefix      | LHS string starts with the RHS string   | No                 | `"Admin_User" hasprefix "Admin"`            |
+| !hasprefix      | LHS string doesn’t start with the RHS string   | No                 | `"Admin_User" !hasprefix "Admin"`            |
+| hasprefix_cs   | LHS string starts with the RHS string   | Yes                | `"DOCS_file" hasprefix_cs "DOCS"`           |
+| !hasprefix_cs   | LHS string doesn’t start with the RHS string   | Yes                | `"DOCS_file" !hasprefix_cs "DOCS"`           |
+| hassuffix      | LHS string ends with the RHS string     | No                 | `"documentation.docx" hassuffix ".docx"`    |
+| !hassuffix      | LHS string doesn’t end with the RHS string     | No                 | `"documentation.docx" !hassuffix ".docx"`    |
+| hassuffix_cs   | LHS string ends with the RHS string     | Yes                | `"Document.HTML" hassuffix_cs ".HTML"`      |
+| !hassuffix_cs   | LHS string doesn’t end with the RHS string     | Yes                | `"Document.HTML" !hassuffix_cs ".HTML"`      |
+
+RHS = right-hand side of the expression
+LHS = left-hand side of the expression
+
+## Case-sensitivity
+
+Operators with `_cs` suffix are case-sensitive.
+
+When two operators do the same task, use the case-sensitive one for better performance.
+
+For example:
+
+- Instead of `=~`, use `==`
+- Instead of `has_any`, use `has_any_cs`
+- Instead of `contains`, use `contains_cs`
+
+## Best practices
+
+- Use case-sensitive operators when you know the case to improve performance.
+- Avoid complex regular expressions for basic matching tasks. Use basic string operators instead.
+- When matching against a set of values, ensure the set is as small as possible to improve performance.
+- For matching substrings, use prefix or suffix matching instead of general substring matching for better performance.
+
+## Equality and inequality operators
+
+Operators:
+
+- `==`
+- `!=`
+- `=~`
+- `!~`
+- `in`
+- `!in`
+- `in~`
+- `!in~`
+
+Query examples: 
+
+```kusto
+"get" == "get"
+"get" != "GET"
+"get" =~ "GET"
+"get" !~ "put"
+```
+
+- Use `==` or `!=` for exact match comparisons when case sensitivity is important.
+- Use `=~` or `!~` for case-insensitive comparisons or when you don't know the exact case.
+
+## Subsequence-matching operators
+
+Operators:
+
+- `contains`
+- `!contains`
+- `contains_cs`
+- `!contains_cs`
+- `startswith`
+- `!startswith`
+- `startswith_cs`
+- `!startswith_cs`
+- `endswith`
+- `!endswith`
+- `endswith_cs`
+- `!endswith_cs`
+
+Query examples:
+
+```kusto
+"parentSpanId" contains "Span" // True
+"parentSpanId" !contains "xyz" // True
+"parentSpanId" startswith "parent" // True
+"parentSpanId" endswith "Id" // True
+"parentSpanId" contains_cs "Span" // True if parentSpanId is "parentSpanId", False if parentSpanId is "parentspanid" or "PARENTSPANID"
+"parentSpanId" startswith_cs "parent" // True if parentSpanId is "parentSpanId", False if parentSpanId is "ParentSpanId" or "PARENTSPANID"
+"parentSpanId" endswith_cs "Id" // True if parentSpanId is "parentSpanId", False if parentSpanId is "parentspanid" or "PARENTSPANID"
+```
+
+Use case-sensitive operators (`contains_cs`, `startswith_cs`, `endswith_cs`) when you know the case to improve performance.
+
+## Regular-expression-matching operators
+
+Operators:
+- `matches regex`
+- `!matches regex`
+
+Query examples:
+
+```kusto
+"parentSpanId" matches regex "p.*Id" // True
+"parentSpanId" !matches regex "x.*z" // True
+```
+
+Avoid complex regular expressions or use string operators for simple substring, prefix, or suffix matching.
+
+## Term-matching operators
+
+Operators:
+
+- `has`
+- `!has`
+- `has_cs`
+- `!has_cs`
+- `has_any`
+- `has_any_cs`
+- `hasprefix`
+- `!hasprefix`
+- `hasprefix_cs`
+- `!hasprefix_cs`
+- `hassuffix`
+- `!hassuffix`
+- `hassuffix_cs`
+- `!hassuffix_cs`
+
+Query examples:
+
+```kusto
+"North America" has "america" // True
+"North America" !has "america" // False
+"North America" has_cs "America" // True
+"North America" !has_cs "America" // False
+"North America" has_any ("america", "asia") // True
+"North America" has_any_cs ("America", "Asia") // True
+"Admin_User" hasprefix "Admin" // True
+"Admin_User" !hasprefix "Admin" // False
+"DOCS_file" hasprefix_cs "DOCS" // True
+"DOCS_file" !hasprefix_cs "DOCS" // False
+"documentation.docx" hassuffix ".docx" // True
+"documentation.docx" !hassuffix ".docx" // False
+"Document.HTML" hassuffix_cs ".HTML" // True
+"Document.HTML" !hassuffix_cs ".HTML" // False
+```
+
+- Use `has` or `has_cs` for term matching which can be more efficient than regular expression matching for simple term searches.
+- Use `has_any` or `has_any_cs` for matching against multiple possible terms.
+- Use `has_cs` or `has_any_cs` when you know the case to improve performance.
+- Unlike the `contains` operator, which matches any substring, the `has` operator looks for exact terms, ensuring more precise results.

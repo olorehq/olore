@@ -1,0 +1,151 @@
+---
+title: column_ifexists
+description: 'This page explains how to use the column_ifexists function in APL.'
+---
+
+Use `column_ifexists()` to make your queries resilient to schema changes. The function checks if a field with a given name exists in the dataset. If it does, the function returns it. If not, it returns a fallback field or expression that you provide.
+
+This is especially useful when working with datasets that evolve over time or come from multiple sources with different schemas. Instead of failing when a field is missing, your query continues running by using a default. Use this function to safely handle queries where the presence of a field isn’t guaranteed.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, field selection is strict—missing fields typically return `null` in results, but conditional logic for fallback fields requires using `eval` or `coalesce`. In APL, `column_ifexists()` directly substitutes the fallback field at query-time based on schema.
+
+<CodeGroup>
+```sql Splunk example
+... | eval field=if(isnull(Capital), State, Capital)
+```
+
+```kusto APL equivalent
+StormEvents | project column_ifexists('Capital', State)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you need to check for the existence of a field using system views or error handling. `column_ifexists()` in APL simplifies this by allowing fallback behavior inline without needing procedural code.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE 
+  WHEN EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+              WHERE TABLE_NAME = 'StormEvents' AND COLUMN_NAME = 'Capital') 
+  THEN Capital ELSE State END AS Result
+FROM StormEvents
+```
+
+```kusto APL equivalent
+StormEvents | project column_ifexists('Capital', State)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+column_ifexists(FieldName, DefaultValue)
+```
+
+### Parameters
+
+- `FieldName`: The name of the field to return as a string.
+- `DefaultValue`: The fallback value to return if `FieldName` doesn’t exist. This can be another field or a literal.
+
+### Returns
+
+Returns the field specified by `FieldName` if it exists in the table schema. Otherwise, returns the result of `DefaultValue`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to examine HTTP logs, and your schema might have a `geo.region` field in some environments and not in others. You fall back to `geo.country` when `geo.region` is missing.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project _time, location = column_ifexists('geo.region', ['geo.country'])
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20project%20_time%2C%20location%20%3D%20column_ifexists('geo.region'%2C%20%5B'geo.country'%5D)%22%7D)
+
+**Output**
+
+| _time                | location       |
+|----------------------|----------------|
+| 2025-04-28T12:04:10Z | United States  |
+| 2025-04-28T12:04:12Z | Canada         |
+| 2025-04-28T12:04:15Z | United Kingdom |
+
+The query returns `geo.region` if it exists; otherwise, it falls back to `geo.country`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You analyze OpenTelemetry traces and you’re not sure if your data contains `status_code` and `status` fields. You fall back to `100` when it’s missing.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend status_code_field = column_ifexists('status_code', '100')
+| extend status_field = column_ifexists('status', 100)
+| project _time, trace_id, span_id, status_code_field, status_field
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20status_code_field%20%3D%20column_ifexists('status_code'%2C%20'100')%20%7C%20extend%20status_field%20%3D%20column_ifexists('status'%2C%20100)%20%7C%20project%20_time%2C%20trace_id%2C%20span_id%2C%20status_code_field%2C%20status_field%22%7D)
+
+**Output**
+
+| _time                | trace_id     | span_id     | status_code_field | status_field |
+|---------------------|--------------|-------------|--------|---|
+| 2025-04-28T10:30:12Z | abc123       | span567     | nil  | 100 |
+| 2025-04-28T10:30:15Z | def456       | span890     | 200    | 100 |
+
+The query returns the `status_code` field if it exists. Otherwise, it falls back to `100`.
+
+</Tab>
+<Tab title="Security logs">
+
+You inspect logs for suspicious activity. In some datasets, a `threat_level` field exists, but not in all. You use the `status` field as a fallback.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project _time, id, threat = column_ifexists('threat_level', status)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20project%20_time%2C%20id%2C%20threat%20%3D%20column_ifexists('threat_level'%2C%20status)%22%7D)
+
+**Output**
+
+| _time                | id     | threat |
+|---------------------|--------|--------|
+| 2025-04-28T13:22:11Z | u123   | 200    |
+| 2025-04-28T13:22:13Z | u456   | 403    |
+
+The function avoids breaking the query if `threat_level` doesn’t exist by defaulting to `status`.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [coalesce](/apl/scalar-functions/string-functions#coalesce): Returns the first non-null value from a list of expressions. Use when you want to handle null values, not missing fields.
+- [iff](/apl/scalar-functions/conditional-function#iff): Performs conditional logic based on a boolean expression. Use when you want explicit control over evaluation.
+- [isnull](/apl/scalar-functions/string-functions#isnull): Checks if a value is null. Useful when combined with other functions for fine-grained control.
+- [case](/apl/scalar-functions/conditional-function#case): Allows multiple conditional branches. Use when fallback logic depends on multiple conditions.
+- [project](/apl/tabular-operators/project-operator): Selects and transforms fields. Use with `column_ifexists()` to build resilient field projections.

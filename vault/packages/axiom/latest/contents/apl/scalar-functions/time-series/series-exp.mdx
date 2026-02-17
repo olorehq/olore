@@ -1,0 +1,159 @@
+---
+title: series_exp
+description: 'This page explains how to use the series_exp function in APL.'
+---
+
+The `series_exp` function calculates the exponential (e^x) of each element in a numeric dynamic array (series). This function applies the mathematical exponential transformation element-wise across the entire array, which is useful for mathematical modeling, growth analysis, and data transformation in time series data.
+
+You can use `series_exp` when you want to apply exponential transformations to your data, such as modeling exponential growth patterns, converting logarithmic data back to linear scale, or applying mathematical transformations for machine learning preprocessing. Typical applications include financial modeling, population growth analysis, and signal processing.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, exponential calculations are typically done with the `eval` function and the `exp()` expression. To compute exponentials across multiple values, you usually need to expand arrays and apply the transformation row by row. In APL, `series_exp` works directly on dynamic arrays, making it efficient for series-wide exponential transformations.
+
+<CodeGroup>
+```sql Splunk example
+... | eval exp_val=exp(log_value)
+````
+
+```kusto APL equivalent
+datatable(log_values: dynamic)
+[
+  dynamic([0, 1, 2, 3])
+]
+| extend exp_values = series_exp(log_values)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, exponential calculations use the `EXP()` function, but this only works on single values, not arrays. To compute exponentials for array elements, you typically need to unnest arrays and apply `EXP()` row by row. In APL, `series_exp` eliminates this complexity by directly applying exponential transformation to each element in an array.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXP(log_value) AS exp_val
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(log_values: dynamic)
+[
+  dynamic([0, 1, 2, 3])
+]
+| extend exp_values = series_exp(log_values)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_exp(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the exponential (e^x) of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_exp` to transform logarithmic request durations back to linear scale or model exponential growth patterns in user activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize log_durations = make_list(log(req_duration_ms)) by id
+| extend exp_durations = series_exp(log_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20log_durations%20%3D%20make_list(log(req_duration_ms))%20by%20id%20%7C%20extend%20exp_durations%20%3D%20series_exp(log_durations)%22%7D)
+
+**Output**
+
+| id   | log_durations           | exp_durations        |
+| ---- | ----------------------- | -------------------- |
+| u123 | [4.6, 5.0, 5.3]        | [99.5, 148.4, 200.3] |
+| u456 | [4.2, 4.8, 5.1]        | [66.7, 121.5, 164.0] |
+
+This query transforms logarithmic request durations back to their original linear scale, useful for analyzing actual performance metrics.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_exp` to model exponential growth patterns in span durations or transform logarithmic latency data for analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize log_durations = make_list(log(toint(duration))) by ['service.name']
+| extend exp_durations = series_exp(log_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20log_durations%20%3D%20make_list(log(toint(duration)))%20by%20%5B'service.name'%5D%20%7C%20extend%20exp_durations%20%3D%20series_exp(log_durations)%22%7D)
+
+**Output**
+
+| service.name          | log_durations           | exp_durations        |
+| --------------------- | ----------------------- | -------------------- |
+| frontend              | [6.2, 6.5, 6.8]        | [492.7, 665.1, 897.9] |
+| productcatalogservice | [5.8, 6.1, 6.4]        | [330.3, 445.9, 601.8] |
+
+This query transforms logarithmic span durations back to linear scale, useful for analyzing actual latency patterns across services.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_exp` to analyze exponential patterns in request frequencies or transform logarithmic attack intensity data.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize log_durations = make_list(log(req_duration_ms)) by status
+| extend exp_durations = series_exp(log_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20log_durations%20%3D%20make_list(log(req_duration_ms))%20by%20status%20%7C%20extend%20exp_durations%20%3D%20series_exp(log_durations)%22%7D)
+
+**Output**
+
+| status | log_durations           | exp_durations        |
+| ------ | ----------------------- | -------------------- |
+| 200    | [4.5, 5.0, 5.5]        | [90.0, 148.4, 245.0] |
+| 500    | [5.2, 5.7, 6.2]        | [181.3, 298.9, 492.7] |
+
+This query transforms logarithmic request durations back to linear scale grouped by status code, useful for analyzing actual performance patterns in different response types.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to normalize values before applying exponential transformations.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use for trigonometric transformations instead of exponential.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use for periodic transformations instead of exponential growth.
+- [series_tan](/apl/scalar-functions/time-series/series-tan): Returns the tangent of each element in an array. Use for trigonometric transformations with different periodicity.
+- [series_floor](/apl/scalar-functions/time-series/series-floor): Returns the floor of each element in an array. Use for rounding down instead of exponential transformation.

@@ -54,7 +54,7 @@ The `olore` CLI provides these commands:
 | `olore list` | List installed packages (shows type: installed/linked/copied) |
 | `olore remove <name>` | Remove an installed package |
 | `olore init` | Initialize a new documentation package |
-| `olore inject` | Inject compressed doc indexes into AGENTS.md and CLAUDE.md |
+| `olore inject` | Inject documentation skill reference table into AGENTS.md and CLAUDE.md |
 
 ## Install Sources
 

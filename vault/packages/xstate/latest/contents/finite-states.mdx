@@ -1,0 +1,864 @@
+---
+title: 'Finite states'
+---
+
+A finite state is one of the possible states that a state machine can be in at any given time. It's called "finite" because state machines have a known limited number of possible states. A state represents how a machine "behaves" when in that state; its status or mode.
+
+For example in a feedback form, you can be in a state where you are filling out the form, or a state where the form is being submitted. You cannot be filling out the form and submitting it at the same time; this is an "impossible state."
+
+State machines always start at an [initial state](initial-states), and may end at a [final state](final-states). The state machine is always in a finite state.
+
+<Callout>
+
+You can easily visualize and simulate intial and final states in Stately's editor. [Read more about states in Stately's editor](/docs/editor-states-and-transitions).
+
+</Callout>
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+
+  // Initial state
+  initial: 'prompt',
+
+  // Finite states
+  states: {
+    prompt: {
+      /* ... */
+    },
+    form: {
+      /* ... */
+    },
+    thanks: {
+      /* ... */
+    },
+    closed: {
+      /* ... */
+    },
+  },
+});
+```
+
+You can combine finite states with [context](context), which make up the overall state of a machine:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  context: {
+    name: '',
+    email: '',
+    feedback: '',
+  },
+
+  initial: 'prompt',
+  states: {
+    prompt: {
+      /* ... */
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+// Finite state
+console.log(feedbackActor.getSnapshot().value);
+// logs 'prompt'
+
+// Context ("extended state")
+console.log(feedbackActor.getSnapshot().context);
+// logs { name: '', email: '', feedback: '' }
+```
+
+## Initial state
+
+The initial state is the state that the machine starts in. It is defined by the `initial` property on the machine config:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+
+  // [!code highlight:2]
+  // Initial state
+  initial: 'prompt',
+
+  // Finite states
+  states: {
+    // [!code highlight:1]
+    prompt: {
+      /* ... */
+    },
+    // ...
+  },
+});
+```
+
+[Read more about initial states](initial-states).
+
+## State nodes
+
+In XState, a **state node** is a finite state "nodes" that comprise the entire statechart tree. State nodes are defined on the `states` property of other state nodes, including the root machine config (which itself is a state node):
+
+```ts
+import { createMachine } from 'xstate';
+
+// The machine is the root state node
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+
+  // State nodes
+  states: {
+    // State node
+    prompt: {
+      /* ... */
+    },
+    // State node
+    form: {
+      /* ... */
+    },
+    // State node
+    thanks: {
+      /* ... */
+    },
+    // State node
+    closed: {
+      /* ... */
+    },
+  },
+});
+```
+
+## Tags
+
+State nodes can have **tags**, which are string terms that help group or categorize the state node. For example, you can signify which state nodes represent states in which data is being loaded by using a "loading" tag, and determine if a state contains those tagged state nodes with `state.hasTag(tag)`:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+  states: {
+    prompt: {
+      tags: ['visible'],
+      // ...
+    },
+    form: {
+      tags: ['visible'],
+      // ...
+    },
+    thanks: {
+      tags: ['visible', 'confetti'],
+      // ...
+    },
+    closed: {
+      tags: ['hidden'],
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+console.log(feedbackActor.getSnapshot().hasTag('visible'));
+// logs true
+```
+
+Read more about [tags](tags).
+
+## Meta
+
+Meta data is static data that describes relevant properties of a state node. You can specify meta data on the `.meta` property of any state node. This can be useful for displaying information about a state node in a UI, or for generating documentation.
+
+The `state.meta` property collects the `.meta` data from all active state nodes and places them in an object with the state node's ID as the key and the `.meta` data as the value:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+  meta: {
+    title: 'Feedback',
+  },
+  states: {
+    prompt: {
+      meta: {
+        content: 'How was your experience?',
+      },
+    },
+    form: {
+      meta: {
+        content: 'Please fill out the form below.',
+      },
+    },
+    thanks: {
+      meta: {
+        content: 'Thank you for your feedback!',
+      },
+    },
+    closed: {},
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+console.log(feedbackActor.getSnapshot().meta);
+// logs the object:
+// {
+//   feedback: {
+//     title: 'Feedback',
+//   },
+//   'feedback.prompt': {
+//     content: 'How was your experience?',
+//   }
+// }
+```
+
+## Transitions
+
+Transitions are how you move from one finite state to another. They are defined by the `on` property on a state node:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        'feedback.good': {
+          target: 'thanks',
+        },
+      },
+    },
+    thanks: {
+      /* ... */
+    },
+    // ...
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+console.log(feedbackActor.getSnapshot().value);
+// logs 'prompt'
+
+feedbackActor.send({ type: 'feedback.good' });
+
+console.log(feedbackActor.getSnapshot().value);
+// logs 'thanks'
+```
+
+Read more about [events and transitions](transitions).
+
+## Targets
+
+A transition's `target` property defines where the machine should go when the transition is taken. Normally, it targets a sibling state node:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        'feedback.good': {
+          // [!code highlight:2]
+          // Targets the sibling `thanks` state node
+          target: 'thanks',
+        },
+      },
+    },
+    thanks: {
+      /* ... */
+    },
+    // ...
+  },
+});
+```
+
+The `target` can also target a descendant of a sibling state node:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        'feedback.good': {
+          // [!code highlight:2]
+          // Targets the sibling `thanks.happy` state node
+          target: 'thanks.happy',
+        },
+      },
+    },
+    thanks: {
+      initial: 'normal',
+      states: {
+        normal: {},
+        // [!code highlight:1]
+        happy: {},
+      },
+    },
+    // ...
+  },
+});
+```
+
+When the target state node is a descendant of the source state node, the source state node key can be omitted:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  states: {
+    closed: {
+      initial: 'normal',
+      states: {
+        normal: {},
+        keypress: {},
+      },
+    },
+  },
+  on: {
+    'feedback.close': {
+      // [!code highlight:2]
+      // Targets the descendant `closed` state node
+      target: '.closed',
+    },
+    'key.escape': {
+      // [!code highlight:2]
+      // Targets the descendant `closed.keypress` state node
+      target: '.closed.keypress',
+    },
+  },
+});
+```
+
+When the state node doesn't change; i.e., the source and target state nodes are the same, the `target` property can be omitted:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // ...
+  states: {
+    form: {
+      on: {
+        'feedback.update': {
+          // [!code highlight:2]
+          // No target defined – stay on the `form` state node
+          // Equivalent to `target: '.form'` or `target: undefined`
+          actions: 'updateForm',
+        },
+      },
+    },
+  },
+});
+```
+
+State nodes can also be targeted by their `id` by prefixing the `target` with a `#` followed by the state node's `id`:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    // [!code highlight:3]
+    closed: {
+      id: 'finished',
+    },
+    // ...
+  },
+  on: {
+    'feedback.close': {
+      // [!code highlight:1]
+      target: '#finished',
+    },
+  },
+});
+```
+
+## Identifying state nodes
+
+States can be identified with a unique ID: `id: 'myState'`. This is useful for targeting a state from any other state, even if they have different parent states:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    // ...
+    closed: {
+      // [!code highlight:1]
+      id: 'finished',
+      type: 'final',
+    },
+    // ...
+  },
+  on: {
+    'feedback.close': {
+      // [!code highlight:2]
+      // Target the `.closed` state by its ID
+      target: '#finished',
+    },
+  },
+});
+```
+
+State IDs do not affect the `state.value`. In the above example, the `state.value` would still be `closed` even though the state node is identified as `#finished`.
+
+## Other state types
+
+In statecharts, there are other types of states:
+
+- [Parent states (also known as compound states)](parent-states)
+- [Parallel states](parallel-states)
+- [History states](history-states)
+- [Final states](final-states)
+
+## Modeling states
+
+When designing finite states for your state machine, follow these guidelines to create maintainable and effective state machines:
+
+### Start simple and shallow
+
+- **Begin with minimal states**: Don't create multiple finite states until it becomes apparent that the behavior of your logic differs depending on some finite state it can be in.
+- **Avoid premature optimization**: Start with basic states and add complexity only when necessary.
+- **Prefer flat structures initially**: Deep nesting can be added later when patterns emerge.
+
+### Identify distinct behaviors
+
+- **Different behavior = different state**: Create separate states when the application behaves differently in response to the same event.
+- **Same behavior = same state**: If multiple "states" handle events identically, they should probably be a single state.
+- **Question impossible states**: Ask "can this combination of conditions exist?" If not, model them as separate states.
+
+### Name states clearly
+
+- **Use descriptive names**: State names should clearly describe what the machine is doing or what mode it's in.
+- **Avoid technical jargon**: Use domain-specific language that stakeholders understand.
+- **Be consistent**: Use consistent naming conventions across your state machines.
+
+```ts
+import { createMachine } from 'xstate';
+
+// ❌ Poor naming
+const machine = createMachine({
+  initial: 'state1',
+  states: {
+    state1: {}, // What does this represent?
+    state2: {}, // What does this represent?
+    error: {}, // Too generic
+  },
+});
+
+// ✅ Good naming
+const authMachine = createMachine({
+  initial: 'signedOut',
+  states: {
+    signedOut: {},
+    signingIn: {},
+    signedIn: {},
+    authenticationFailed: {}, // Specific error state
+  },
+});
+```
+
+### Model user workflows
+
+- **Follow the user journey**: States should reflect the natural progression of user actions.
+- **Consider all paths**: Include happy paths, error states, and edge cases.
+- **Account for loading states**: Async operations often need intermediate states.
+
+```ts
+import { createMachine } from 'xstate';
+
+const checkoutMachine = createMachine({
+  initial: 'cart',
+  states: {
+    cart: {
+      on: {
+        PROCEED: { target: 'shippingInfo' },
+      },
+    },
+    shippingInfo: {
+      on: {
+        CONTINUE: { target: 'paymentInfo' },
+        BACK: { target: 'cart' },
+      },
+    },
+    paymentInfo: {
+      on: {
+        SUBMIT: { target: 'processing' },
+        BACK: { target: 'shippingInfo' },
+      },
+    },
+    processing: {
+      on: {
+        SUCCESS: { target: 'confirmed' },
+        FAILURE: { target: 'paymentFailed' },
+      },
+    },
+    paymentFailed: {
+      on: {
+        RETRY: { target: 'paymentInfo' },
+      },
+    },
+    confirmed: {
+      type: 'final',
+    },
+  },
+});
+```
+
+### Consider temporal aspects
+
+- **Time-sensitive states**: Model states that exist for specific durations.
+- **Expiration handling**: Include states for handling timeouts and expirations.
+- **Scheduled transitions**: Use delayed transitions for time-based state changes.
+
+### Group related functionality
+
+- **Use tags for categorization**: Group states by common characteristics.
+- **Consider parent states**: When multiple states share common transitions, consider grouping them under a parent state.
+- **Separate concerns**: Keep different domains or features in separate states.
+
+```ts
+import { createMachine } from 'xstate';
+
+const appMachine = createMachine({
+  initial: 'loading',
+  states: {
+    loading: {
+      tags: ['busy'],
+      on: {
+        LOADED: { target: 'idle' },
+        ERROR: { target: 'error' },
+      },
+    },
+    idle: {
+      tags: ['interactive'],
+      on: {
+        START_WORK: { target: 'working' },
+      },
+    },
+    working: {
+      tags: ['busy', 'interactive'],
+      on: {
+        COMPLETE: { target: 'idle' },
+        CANCEL: { target: 'idle' },
+      },
+    },
+    error: {
+      tags: ['error'],
+      on: {
+        RETRY: { target: 'loading' },
+      },
+    },
+  },
+});
+```
+
+### Handle edge cases
+
+- **Invalid states**: Model states for handling invalid or unexpected conditions.
+- **Recovery states**: Provide ways to recover from error states.
+- **Fallback behavior**: Include default states for unhandled scenarios.
+
+### Validate state transitions
+
+- **Ensure all transitions make sense**: Every state transition should represent a valid business logic change.
+- **Avoid circular dependencies**: Be careful of states that can endlessly transition between each other without purpose.
+- **Consider guards**: Use guards to prevent invalid transitions even when events are received.
+
+### Document state purpose
+
+- **Use descriptions**: Add `.description` properties to explain complex states.
+- **Include meta data**: Store relevant information about what each state represents.
+- **Comment complex logic**: Explain why certain states exist and what they accomplish.
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      description: 'Waiting for user to indicate their satisfaction level',
+      meta: {
+        analytics: 'feedback_prompt_shown',
+      },
+    },
+    collectingDetails: {
+      description:
+        'User provided negative feedback, collecting detailed information',
+      meta: {
+        analytics: 'detailed_feedback_form_shown',
+      },
+    },
+  },
+});
+```
+
+## Finite states and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+You can strongly type the finite states of your machine using the `setup(...)` function, which provides excellent TypeScript inference and autocompletion:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as { feedback: string; rating: number },
+    events: {} as
+      | { type: 'feedback.good' }
+      | { type: 'feedback.bad' }
+      | { type: 'feedback.submit' },
+  },
+}).createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+  context: {
+    feedback: '',
+    rating: 0,
+  },
+  states: {
+    prompt: {
+      on: {
+        'feedback.good': { target: 'thanks' },
+        'feedback.bad': { target: 'form' },
+      },
+    },
+    form: {
+      on: {
+        'feedback.submit': { target: 'thanks' },
+      },
+    },
+    thanks: {
+      type: 'final',
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+// ✅ Type-safe and autocompletes
+const currentState = feedbackActor.getSnapshot();
+
+// ✅ `state.matches(...)` is type-safe with autocompletion
+if (currentState.matches('prompt')) {
+  // TypeScript knows we're in the 'prompt' state
+}
+
+// ✅ All state values have autocompletion
+const isFormState = currentState.matches('form');
+const isThanksState = currentState.matches('thanks');
+
+// ✅ `state.value` is also strongly typed
+const stateValue = currentState.value; // 'prompt' | 'form' | 'thanks'
+```
+
+When using `setup(...).createMachine(...)`, TypeScript provides:
+
+- **Type-safe state matching**: `state.matches(...)` with autocompletion for all possible state values
+- **Strongly-typed state values**: `state.value` is typed as a union of all possible state names
+- **Type-safe context**: Full type inference for `state.context`
+- **Type-safe events**: `actor.send(...)` only accepts defined event types
+
+## Finite states cheatsheet
+
+### Cheatsheet: create finite states
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  id: 'feedback',
+  initial: 'prompt',
+  states: {
+    prompt: {},
+    form: {},
+    thanks: {},
+    closed: {},
+  },
+});
+```
+
+### Cheatsheet: finite states with transitions
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      on: {
+        'feedback.good': { target: 'thanks' },
+        'feedback.bad': { target: 'form' },
+      },
+    },
+    form: {
+      on: {
+        'feedback.submit': { target: 'thanks' },
+      },
+    },
+    thanks: {},
+  },
+});
+```
+
+### Cheatsheet: read current state
+
+```ts
+import { createActor } from 'xstate';
+
+const actor = createActor(machine).start();
+const state = actor.getSnapshot();
+
+// Read state value
+console.log(state.value); // e.g., 'prompt'
+
+// Check if in specific state
+const isPromptState = state.matches('prompt');
+
+// Check multiple states
+const isFormOrThanks = state.matches('form') || state.matches('thanks');
+```
+
+### Cheatsheet: states with tags
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      tags: ['visible', 'interactive'],
+    },
+    form: {
+      tags: ['visible', 'interactive'],
+    },
+    thanks: {
+      tags: ['visible', 'success'],
+    },
+    closed: {
+      tags: ['hidden'],
+    },
+  },
+});
+
+// Check tags
+const state = actor.getSnapshot();
+const isVisible = state.hasTag('visible');
+const isInteractive = state.hasTag('interactive');
+```
+
+### Cheatsheet: states with meta data
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      meta: {
+        title: 'How was your experience?',
+        component: 'PromptView',
+      },
+    },
+    form: {
+      meta: {
+        title: 'Tell us more',
+        component: 'FormView',
+      },
+    },
+  },
+});
+
+// Read meta data
+const state = actor.getSnapshot();
+console.log(state.getMeta());
+```
+
+### Cheatsheet: target states by ID
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'start',
+  states: {
+    start: {
+      on: {
+        FINISH: { target: '#completed' },
+      },
+    },
+    process: {
+      states: {
+        step1: {},
+        step2: {},
+      },
+    },
+    done: {
+      id: 'completed',
+      type: 'final',
+    },
+  },
+});
+```
+
+### Cheatsheet: strongly-typed finite states
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  types: {
+    context: {} as { count: number },
+    events: {} as { type: 'increment' } | { type: 'decrement' },
+  },
+}).createMachine({
+  initial: 'idle',
+  context: { count: 0 },
+  states: {
+    idle: {
+      on: {
+        increment: { target: 'active' },
+      },
+    },
+    active: {
+      on: {
+        decrement: { target: 'idle' },
+      },
+    },
+  },
+});
+
+// Type-safe state matching
+const state = actor.getSnapshot();
+const isIdle = state.matches('idle'); // ✅ Autocompletes
+const stateValue = state.value; // ✅ 'idle' | 'active'
+```

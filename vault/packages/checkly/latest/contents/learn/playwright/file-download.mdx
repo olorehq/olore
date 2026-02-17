@@ -1,0 +1,131 @@
+---
+title: How to Download Files with Playwright
+subTitle: Different ways of handling downloads
+date: 2020-09-09
+author: Giovanni Rago
+githubUser: ragog
+tags:
+  - e2e
+  - file download
+sidebarTitle: Downloading files
+weight: 4
+learn_playwright:
+  parent: "E2E examples"
+---
+
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Websites might expose files for users to download and then access from their local machine. Common cases are downloading tickets, receipts and itineraries.
+
+## Steps
+
+This example runs against our [test webshop](https://danube-web.shop/) and proceeds to download a receipt for a previous purchase. It includes the following steps:
+
+1. Logging in to the website
+2. Navigating to the account page
+3. Downloading a linked file
+
+We will check that the downloaded file is as expected by comparing it to a [fixture file](/learn/playwright/handling-test-data/) in our final assertion.
+
+We can approach this scenario in different ways. One possibility is to perform the first two steps, then [extract](/learn/playwright/web-scraping/)
+the `href` value and use it to retrieve the file with a `GET` request (performed with [axios](https://github.com/axios/axios), for example).
+
+```ts title="file-download.spec.ts"
+// Example code for file download using HTTP request
+import { test, expect } from '@playwright/test';
+import axios from 'axios';
+import fs from 'fs';
+
+test('download file with HTTP request', async ({ page }) => {
+  // Login to the website
+  await page.goto('https://danube-web.shop/login');
+  await page.fill('#email', process.env.USER_EMAIL!);
+  await page.fill('#password', process.env.USER_PASSWORD!);
+  await page.click('#login-button');
+
+  // Navigate to account page
+  await page.goto('https://danube-web.shop/account');
+
+  // Extract download link
+  const downloadLink = await page.getAttribute('a[href*="receipt"]', 'href');
+
+  // Download file using HTTP request
+  const response = await axios.get(downloadLink, { responseType: 'stream' });
+  const downloadPath = './downloaded-receipt.pdf';
+  const writer = fs.createWriteStream(downloadPath);
+  response.data.pipe(writer);
+
+  await new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+
+  // Compare with fixture file
+  const downloadedFile = fs.readFileSync(downloadPath);
+  const fixtureFile = fs.readFileSync('./fixtures/expected-receipt.pdf');
+  expect(downloadedFile).toEqual(fixtureFile);
+});
+```
+
+We could also click the link directly and wait for the download event, then proceed with the comparison.
+Note that in this case, we need to enable downloads in the browser context before proceeding.
+
+```ts title="file-download-alt.spec.ts"
+// Example code for file download using Playwright's download event
+import { test, expect } from '@playwright/test';
+import fs from 'fs';
+
+test('download file with download event', async ({ page }) => {
+  // Login to the website
+  await page.goto('https://danube-web.shop/login');
+  await page.fill('#email', process.env.USER_EMAIL!);
+  await page.fill('#password', process.env.USER_PASSWORD!);
+  await page.click('#login-button');
+
+  // Navigate to account page
+  await page.goto('https://danube-web.shop/account');
+
+  // Wait for download event when clicking the link
+  const downloadPromise = page.waitForEvent('download');
+  await page.click('a[href*="receipt"]');
+  const download = await downloadPromise;
+
+  // Save the downloaded file
+  const downloadPath = './downloaded-receipt.pdf';
+  await download.saveAs(downloadPath);
+
+  // Compare with fixture file
+  const downloadedFile = fs.readFileSync(downloadPath);
+  const fixtureFile = fs.readFileSync('./fixtures/expected-receipt.pdf');
+  expect(downloadedFile).toEqual(fixtureFile);
+});
+```
+
+Both examples can be run as follows:
+
+**macOS/Linux:**
+```bash
+USER_EMAIL=user@email.com USER_PASSWORD=supersecure1 npx playwright test file-download.spec.ts
+```
+
+**Windows:**
+```bash
+SET USER_EMAIL=user@email.com
+SET USER_PASSWORD=supersecure1
+npx playwright test file-download.spec.ts
+```
+
+## Takeaways
+
+1. Use environment variables to inject secrets.
+2. Compare the expected file with the newly downloaded one.
+3. There is more than one way to download a file within our script.
+
+## Further reading
+
+1. [Playwright's](https://playwright.dev/#version=v1.3.0&path=docs%2Fapi.md&q=class-download) documentation on downloading files.
+
+<SignUpCta />

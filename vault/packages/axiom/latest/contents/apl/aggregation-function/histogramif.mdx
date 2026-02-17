@@ -1,0 +1,137 @@
+---
+title: histogramif
+description: 'This page explains how to use the histogramif aggregation function in APL.'
+---
+
+The `histogramif` aggregation in APL creates a histogram that groups numeric values into intervals (bins) for rows where a specified condition evaluates to true. This is useful when you want to visualize the distribution of data conditionally—for example, analyzing response times only for successful requests or examining span durations only for specific services.
+
+You use `histogramif` when you need to combine filtering and distribution analysis in a single operation, making your queries more efficient and expressive.
+
+<Note>
+Like the `histogram` aggregation, `histogramif` returns estimated results. The estimation provides speed benefits at the expense of precision, making it fast and resource-efficient even on large or high-cardinality datasets.
+</Note>
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically combine filtering with histogram operations using separate commands. APL's `histogramif` consolidates this into a single aggregation, simplifying your query logic.
+
+<CodeGroup>
+```sql Splunk example
+| where status='200'
+| timechart span=10 count by duration
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize histogramif(req_duration_ms, 10, status == '200')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you combine `WHERE` clauses with `CASE` statements and `GROUP BY` to achieve conditional histograms. APL's `histogramif` provides a more concise syntax for this pattern.
+
+<CodeGroup>
+```sql SQL example
+SELECT FLOOR(req_duration_ms/10)*10 as duration_bin, COUNT(*)
+FROM sample_http_logs
+WHERE status = '200'
+GROUP BY duration_bin
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize histogramif(req_duration_ms, 10, status == '200')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+histogramif(numeric_field, number_of_bins, condition)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `numeric_field` | `real` | The numeric field to create a histogram for, such as request duration or response size. |
+| `number_of_bins` | `long` | The number of intervals (bins) to use for grouping the numeric values. |
+| `condition` | `bool` | A boolean expression that determines which rows to include in the histogram. |
+
+### Returns
+
+A table where each row represents a bin, along with the number of occurrences (counts) that fall within each bin for rows where the condition evaluates to true.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `histogramif` to analyze the distribution of request durations only for successful HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize histogramif(req_duration_ms, 100, status == '200') by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20histogramif(req_duration_ms%2C%20100%2C%20status%20%3D%3D%20'200')%20by%20bin_auto(_time)%22%7D)
+
+This query creates a histogram of request durations grouped into 100ms bins, but only includes requests with a `200` HTTP status code. This helps you understand the performance characteristics of successful requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `histogramif` to analyze span duration distributions for specific services in your OpenTelemetry traces.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize histogramif(duration, 50, ['service.name'] == 'frontend') by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20histogramif(duration%2C%2050%2C%20%5B'service.name'%5D%20%3D%3D%20'frontend')%20by%20bin_auto(_time)%22%7D)
+
+This query groups span durations into 50ms intervals, focusing only on the frontend service. This helps you identify performance patterns specific to that service.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `histogramif` to examine the distribution of request durations for specific geographic regions, helping you identify regional performance issues or anomalies.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize histogramif(req_duration_ms, 50, ['geo.country'] == 'United States') by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20histogramif(req_duration_ms%2C%2050%2C%20%5B'geo.country'%5D%20%3D%3D%20'United%20States')%20by%20bin_auto(_time)%22%7D)
+
+This query analyzes request duration patterns for traffic originating from the US, helping you identify geographic performance variations or security patterns.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [histogram](/apl/aggregation-function/histogram): Use `histogram` when you want to create a distribution without a condition. Use `histogramif` when you need to filter rows first.
+- [countif](/apl/aggregation-function/countif): Use `countif` for simple conditional counting. Use `histogramif` when you need distribution analysis with a condition.
+- [avgif](/apl/aggregation-function/avgif): Use `avgif` when you need the average of values matching a condition. Use `histogramif` for full distribution analysis.
+- [percentileif](/apl/aggregation-function/percentileif): Use `percentileif` to find specific percentile values conditionally. Use `histogramif` for a complete distribution overview.
+- [sumif](/apl/aggregation-function/sumif): Use `sumif` for conditional sums. Use `histogramif` when you need to understand the distribution of conditional values.
+

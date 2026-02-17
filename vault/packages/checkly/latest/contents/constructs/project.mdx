@@ -1,0 +1,715 @@
+---
+title: 'Project Construct'
+description: 'Learn how to configure projects with the Checkly CLI.'
+sidebarTitle: 'Project'
+---
+
+Use the `defineConfig` to define core settings for your entire Checkly CLI project. This is typically configured in your `checkly.config.ts` file and provides global defaults for all CLI-powered checks and monitors.
+
+<CodeGroup>
+
+```ts Basic Example
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+
+export default defineConfig({
+  projectName: 'Website Monitoring',
+  logicalId: 'website-monitoring-1',
+  repoUrl: 'https://github.com/acme/website',
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: '2025.04',
+    frequency: Frequency.EVERY_5M,
+    locations: ['us-east-1', 'eu-west-1'],
+    tags: ['website', 'api']
+  }
+})
+```
+
+```ts Advanced Example
+import { defineConfig } from "checkly"
+import { Frequency } from "checkly/constructs"
+
+export default defineConfig({
+  projectName: "Production Monitoring Suite",
+  logicalId: "prod-monitoring-2025",
+  repoUrl: "https://github.com/acme/monitoring",
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: "2025.04",
+    frequency: Frequency.EVERY_10M,
+    locations: ["us-east-1", "eu-west-1", "ap-southeast-1"],
+    tags: ["production", "critical"],
+    checkMatch: "**/__checks__/*.check.ts",
+    ignoreDirectoriesMatch: ["node_modules/**", "dist/**"],
+    playwrightConfig: {
+      use: {
+        baseURL: "https://app.example.com",
+      },
+    },
+    browserChecks: {
+      frequency: Frequency.EVERY_30M,
+      testMatch: "**/__tests__/*.spec.ts",
+    },
+  },
+  cli: {
+    runLocation: "eu-west-1",
+    privateRunLocation: "private-dc1",
+    retries: 2,
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `projectName` | `string` | ✅ | - | Friendly name for your project |
+| `logicalId` | `string` | ✅ | - | Unique identifier for this project (should be stable) |
+| `repoUrl` | `string` | ❌ | - | Optional URL to a Git repository |
+| `checks` | `object` | ❌ | - | Top-level defaults for all checks in this project |
+| `cli` | `object` | ❌ | - | Defaults for CLI commands |
+
+### Core Project Options
+
+<ResponseField name="projectName" type="string" required>
+Friendly name for your project that will be displayed in the Checkly dashboard and used for identification.
+
+**Usage:**
+
+```ts highlight={2}
+export default defineConfig({
+  projectName: 'Website Monitoring',
+  /* More options... */
+})
+```
+
+**Use cases**: Dashboard identification, project organization, team coordination.
+</ResponseField>
+
+<ResponseField name="logicalId" type="string" required>
+
+Unique identifier for this project that should remain stable across deployments. Changing this will cause Checkly to treat it as a new project.
+
+**Usage:**
+
+```ts highlight={2}
+export default defineConfig({
+  logicalId: 'website-monitoring-prod',
+  /* More options... */
+})
+```
+
+<Warning>
+The `logicalId` should remain stable across deployments. Changing it will cause Checkly to treat it as a new project, losing historical data and configurations.
+</Warning>
+
+**Use cases**: Project identification, deployment tracking, configuration persistence.
+</ResponseField>
+
+<ResponseField name="repoUrl" type="string">
+
+Optional URL to a Git repository for documentation and team collaboration purposes in Checkly UI.
+
+**Usage:**
+
+```ts highlight={2}
+export default defineConfig({
+  repoUrl: 'https://github.com/acme/website',
+  /* More options... */
+})
+```
+
+**Use cases**: Documentation linking, team collaboration, source code reference.
+</ResponseField>
+
+<ResponseField name="cli" type="object">
+
+Defaults for CLI commands like `checkly test` and `checkly trigger`.
+
+**Usage:**
+
+```ts highlight={4-7}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  cli: {
+    runLocation: "us-east-1",
+    retries: 2,
+  },
+})
+```
+
+**Properties:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `runLocation` | `string` | ❌ | - | Default location for `checkly test` and `checkly trigger` |
+| `privateRunLocation` | `string` | ❌ | - | Default private location for CLI commands |
+| `retries` | `number` | ❌ | `0` | Default retry count for failing checks (max 3) |
+
+**Use cases**: Local testing defaults, CI/CD configuration, development workflow.
+</ResponseField>
+
+### Check and Monitor Configuration
+
+The `checks` property allows you to set global defaults for all checks and monitors in your project. Individual checks and groups can override these settings.
+
+<ResponseField name="checks" type="object">
+Top-level defaults for all checks in this project. Individual checks and groups can override these settings.
+
+**Usage:**
+
+```ts highlight={5-13}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  repoUrl: "https://github.com/acme/website",
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: "2025.04",
+    frequency: Frequency.EVERY_5M,
+    locations: ["us-east-1", "eu-west-1"],
+    tags: ["website", "api"],
+    /* More options... */
+  },
+})
+```
+
+**Properties:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `activated` | `boolean` | ❌ | `true` | Whether checks are enabled by default |
+| `alertChannels` | `Array<AlertChannel \| AlertChannelRef>` | ❌ | `[]` | Default alert channels for all checks |
+| `checkMatch` | `string` | ❌ | - | Glob pattern to find check construct files |
+| `environmentVariables` | `EnvironmentVariable[]` | ❌ | `[]` | Default environment variables for all checks |
+| `frequency` | `Frequency` | ❌ | - | Default frequency for all checks |
+| `ignoreDirectoriesMatch` | `string[]` | - | - | Glob patterns for directories to ignore |
+| `locations` | `string[]` | ❌ | `[]` | Default public locations for all checks |
+| `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted by default |
+| `playwrightConfig` | `object` | ❌ | - | Subset of Playwright configuration options |
+| `playwrightConfigPath` | `string` | ❌ | - | Path to the Playwright configuration file |
+| `privateLocations` | `string[]` | ❌ | `[]` | Default private locations for all checks |
+| `retryStrategy` | `object` | ❌ | - | Control the retry behavior for failed checks |
+| `runtimeId` | `string` | ❌ | - | Default runtime ID for all checks |
+| `shouldFail` | `boolean` | ❌ | `false` | Whether the behavior of when a check/alert is considered to fail is inverted. |
+| `tags` | `string[]` | ❌ | `[]` | Default tags applied to all checks |
+| `browserChecks` | `object` | ❌ | - | Default settings for browser checks |
+| `multiStepChecks` | `object` | ❌ | - | Default settings for multi-step checks |
+| `playwrightChecks` | `object` | ❌ | - | Default settings for Playwright Check Suites |
+
+</ResponseField>
+
+### General Settings for All Check and Monitor Types
+
+Define global defaults for all checks and monitors in this project. Individual checks and groups can override these settings.
+
+<ResponseField name="checks.activated" type="boolean" default="true">
+
+Whether the checks and monitors are enabled and will run according to its schedule.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    activated: true,
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.alertChannels" type="AlertChannel[]">
+
+Default alert channels for all checks and monitors.
+
+**Usage:**
+
+```ts highlight={9}
+const smsAlertChannel = new SmsAlertChannel("sms-alert-channel", {
+  phoneNumber: "+1234567890",
+})
+
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    alertChannels: [smsAlertChannel],
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.checkMatch" type="string">
+
+Glob pattern where the CLI looks for files containing Check constructs, i.e. all `.check.ts` files.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    checkMatch: ["**/*.check.ts"],
+  },
+})
+```
+
+<Tip>We recommend to establish a clear file convention like `*.check.ts` to easily identify files containing Checkly constructs.</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.environmentVariables" type="object[]">
+
+Environment variables available to the check script and monitors.
+
+**Usage:**
+
+```ts highlight={5-10}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    environmentVariables: [
+      {
+        key: "BASE_URL",
+        value: "https://example.com",
+      },
+    ],
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.frequency" type="Frequency">
+
+Default frequency at which the checks and monitors are executed.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    frequency: Frequency.EVERY_5M,
+  },
+})
+```
+
+**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+
+<Tip>Use [`UrlMonitor`](/constructs/url-monitor) or [`TcpMonitor`](/constructs/tcp-monitor) construct for high-frequency checks running up to every ten seconds.</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.ignoreDirectoriesMatch" type="string[]">
+
+Directories to ignore when looking for check files.
+
+**Usage:**
+
+```ts highlight={6}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    checkMatch: ["**/**/*.check.ts"],
+    ignoreDirectoriesMatch: ["api/**"],
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.locations" type="string[]" default="[]">
+Array of public location codes where the URL monitor should run from. Multiple locations provide geographic coverage.
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    locations: ["us-east-1", "eu-west-1"],
+  },
+})
+```
+
+<Tip>Find a list of [all public locations in the general documentation](/concepts/locations).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.muted" type="boolean" default="false">
+
+Determine if any notifications will be sent out when a check fails and/or recovers. Muting checks is useful for temporarily silencing alerts during maintenance.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    muted: true,
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.playwrightConfig" type="object">
+
+Global configuration options for the Playwright Test Runner use in [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview) and [MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview). This allows you to configure your Playwright-powered checks in a single place, instead of having to repeat the same configuration for each test file.
+
+**Usage:**
+
+```ts highlight={5-16}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    playwrightConfig: {
+      timeout: 1234,
+      use: {
+        baseURL: 'https://www.checklyhq.com',
+        isMobile: true,
+      },
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixels: 10,
+        }
+      }
+    },
+  },
+})
+```
+
+<Tip>Learn more about the supported Playwright configuration options in [the Browser Check Playwright documentation](/detect/synthetic-monitoring/browser-checks/playwright-support).</Tip>
+
+<Warning>Browser Checks don't support the `projects`, `globalSetup`, `globalTeardown` and `storageState` options. Check [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) for full Playwright support.</Warning>
+
+</ResponseField>
+
+<ResponseField name="checks.playwrightConfigPath" type="string">
+
+Playwright config path to be used during [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) bundling and config parsing.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    playwrightConfigPath: "./playwright.config.ts",
+  },
+})
+```
+
+</ResponseField>
+
+<ResponseField name="checks.privateLocations" type="PrivateLocation">
+
+Private Locations to run your monitors and checks from.
+
+**Usage:**
+
+```ts highlight={12}
+const datacenterLocation = new PrivateLocation("datacenter-east-1", {
+  name: "East Coast Datacenter",
+  icon: "building",
+  slugName: "datacenter-east-1",
+  proxyUrl: "http://proxy.datacenter.local:8080",
+})
+
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    privateLocations: [datacenterLocation],
+  },
+})
+```
+
+<Tip>Learn more about [Private Locations in the general documentation](/platform/private-locations/overview).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.retryStrategy">
+
+Set a retry policy for your checks and monitors. [Use `RetryStrategyBuilder`](/constructs/retry-strategy) to create a retry policy.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    retryStrategy: RetryStrategyBuilder.linearStrategy({
+      baseBackoffSeconds: 30,
+      maxRetries: 4,
+      sameRegion: false,
+    }),
+  },
+})
+```
+
+<Tip>Learn more about [alerting and retries in the general documentation](/communicate/alerts/retries).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.runtimeId" type="string">
+
+The runtime version used to execute checks and monitors.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    runtimeId: '2025.04',
+  },
+})
+```
+
+<Tip>Learn more about [Checkly runtimes in the general documentation](/platform/runtimes/overview).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.tags" type="string[]">
+
+The tags assigned to the checks and monitors.
+
+**Usage:**
+
+```ts highlight={5}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    tags: ["website", "frontend"],
+  },
+})
+```
+
+</ResponseField>
+
+### Default Settings for Complex Check Types
+
+<ResponseField name="checks.browserChecks" type="object">
+
+If your project doesn't require specific configuration and you want to quickly transform your Playwright end-to-end tests into Browser Checks, use the `browserChecks.testMatch` property.
+
+**Properties:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `testMatch` | `string` | `string[]` | ❌ | - | Glob pattern for Playwright tests uses as Browser Checks |
+
+**Example:**
+
+```ts highlight={6}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    browserChecks: {
+      testMatch: ["**/*.spec.ts"],
+    },
+  },
+})
+```
+
+<Tip>The `checks.browserChecks` property gives your monitoring setup a head start by turning your existing end-to-end tests into monitors. For more advanced use cases and individual configuration use [the `BrowserCheck` construct](/constructs/browser-check).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.multiStepChecks" type="object">
+
+If your project doesn't require specific configuration and you want to quickly transform your Playwright API tests into Multistep Checks, use the `multiStepChecks.testMatch` property.
+
+**Properties:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `testMatch` | `string` | `string[]` | ❌ | - | Glob pattern for Playwright tests uses as Browser Checks |
+
+**Example:**
+
+```ts highlight={6}
+export default defineConfig({
+  projectName: "API Monitoring",
+  logicalId: "api-monitoring-1",
+  checks: {
+    multiStepChecks: {
+      testMatch: ["**/*.spec.ts"],
+    },
+  },
+})
+```
+
+<Tip>The `checks.multiStepChecks` property gives your monitoring setup a head start by turning your existing API tests into monitors. For more advanced use cases and individual configuration use [the `MultistepCheck` construct](/constructs/multistep-check).</Tip>
+
+</ResponseField>
+
+<ResponseField name="checks.playwrightChecks" type="object[]">
+
+**Usage:**
+
+```ts highlight={5-14}
+export default defineConfig({
+  projectName: "Website Monitoring",
+  logicalId: "website-monitoring-1",
+  checks: {
+    playwrightChecks: [
+      {
+        name: "critical-tagged",
+        logicalId: "critical-tagged",
+        pwTags: "critical",
+        pwProjects: "chromium",
+        frequency: Frequency.EVERY_1M,
+        locations: ["us-east-1", "eu-west-1"],
+      },
+    ],
+  },
+})
+```
+
+**Parameters:**
+
+<Tabs>
+<Tab title="Playwright Check Suite">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `playwrightConfigPath` | `string` | ✅ | - | Path to the Playwright configuration file |
+| `installCommand` | `string` | ❌ | - | Command to install dependencies before running tests |
+| `testCommand` | `string`  | ❌ | - | Command to execute Playwright tests |
+| `pwProjects` | `string` \| `string[]` | ❌ | - | Projects to run from your configuration |
+| `pwTags` | `string` \| `string[]` | ❌ | - | Tags to filter tests using Playwright's grep functionality |
+| `include` | `string` \| `string[]` | ❌ | - | File patterns to include when bundling the test project |
+| `groupName` | `string` | ❌ | - | Name of the check group to assign this check to |
+
+</Tab>
+<Tab title="General Options">
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Friendly name for your check |
+| `logicalId` | `string` | ✅ | - | Unique identifier for your check suite |
+| `activated` | `boolean` | ❌ | `true` | Whether the check suite is enabled |
+| `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
+| `environmentVariables` | `object[]` | ❌ | `[]` | Check-level environment variables |
+| `frequency` | `Frequency` | ❌ | - | How often to run your check suite |
+| `locations` | `string[]` | ❌ | `[]` | Array of public location codes |
+| `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
+| `privateLocations` | `string[]` | ❌ | `[]` | Array of Private Location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configuring retries |
+| `runParallel` | `boolean` | ❌ | `false` | Run check suites in parallel or round-robin |
+| `tags` | `string[]` | ❌ | `[]` | Array of tags to organize check suites |
+
+</Tab>
+</Tabs>
+
+<Tip>The `checks.playwrightChecks` property gives your monitoring setup a head start by turning your existing Playwright test suite into synthetic monitoring. For more advanced use cases and individual configuration use [the `PlaywrightCheck` construct](/constructs/playwright-check).</Tip>
+
+</ResponseField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Simple Website Monitoring">
+    ```ts
+    export default defineConfig({
+      projectName: "Acme Website",
+      logicalId: "acme-website-prod",
+      repoUrl: "https://github.com/acme/website",
+      checks: {
+        activated: true,
+        frequency: Frequency.EVERY_5M,
+        locations: ["us-east-1", "eu-west-1"],
+        tags: ["website"],
+        checkMatch: "monitoring/**/*.check.ts",
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="Complex Application">
+    ```ts
+    import { defineConfig } from 'checkly'
+    import { Frequency } from 'checkly/constructs'
+
+    export default defineConfig({
+      projectName: "E-commerce Platform Monitoring",
+      logicalId: "ecommerce-platform-2025",
+      repoUrl: "https://github.com/acme/ecommerce",
+      checks: {
+        activated: true,
+        muted: false,
+        runtimeId: "2025.04",
+        frequency: Frequency.EVERY_10M,
+        locations: ["us-east-1", "eu-west-1"],
+        tags: ["ecommerce", "critical"],
+        checkMatch: "**/*.check.ts",
+        ignoreDirectoriesMatch: ["dist/**", "coverage/**"],
+        playwrightConfig: {
+          use: {
+            baseURL: "https://shop.acme.com",
+          },
+        },
+        browserChecks: {
+          frequency: Frequency.EVERY_30M,
+          testMatch: "e2e/**/*.spec.ts",
+        },
+      },
+      cli: {
+        runLocation: "us-east-1",
+        retries: 2,
+      },
+    })
+    ```
+  </Tab>
+
+  <Tab title="API-First Project">
+    ```ts
+    import { defineConfig } from 'checkly'
+    import { Frequency } from 'checkly/constructs'
+
+    export default defineConfig({
+      projectName: "API Monitoring Suite",
+      logicalId: "api-monitoring-v2",
+      repoUrl: "https://github.com/acme/api-monitoring",
+      checks: {
+        activated: true,
+        muted: false,
+        runtimeId: "2025.04",
+        frequency: Frequency.EVERY_2M,
+        locations: ["us-east-1", "eu-west-1", "ap-southeast-1"],
+        tags: ["api", "microservices"],
+        checkMatch: "checks/**/*.api.check.ts",
+        ignoreDirectoriesMatch: ["tests/**", "docs/**"],
+      },
+      cli: {
+        runLocation: "us-east-1",
+        retries: 3,
+      },
+    })
+    ```
+  </Tab>
+</Tabs>

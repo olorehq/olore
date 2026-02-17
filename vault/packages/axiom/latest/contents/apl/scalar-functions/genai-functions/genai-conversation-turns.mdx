@@ -1,0 +1,98 @@
+---
+title: 'genai_conversation_turns'
+description: 'This page explains how to use the genai_conversation_turns function in APL.'
+---
+
+The `genai_conversation_turns` function counts the number of conversation turns in a GenAI messages array. A turn typically represents a user message followed by an assistant response. This metric helps you understand conversation length and engagement patterns in AI applications.
+
+You can use this function to analyze conversation complexity, monitor user engagement, identify outlier conversations, or track conversation metrics for billing and usage analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would typically use `eval` with `mvcount` to count array elements, but there’s no built-in function specifically for counting conversation turns.
+
+<CodeGroup>
+```sql Splunk example
+| eval turn_count=mvcount(messages)/2
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend turn_count = genai_conversation_turns(messages)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would need to unnest the array and count rows, then divide by the number of roles, which is more complex.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  COUNT(*) / 2 as turn_count
+FROM conversations
+CROSS JOIN UNNEST(messages)
+GROUP BY conversation_id
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend turn_count = genai_conversation_turns(messages)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_conversation_turns(messages)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains a `role` and `content` field. |
+
+### Returns
+
+Returns a long integer representing the number of conversation turns. A turn is typically counted as a user-assistant exchange pair.
+
+## Example
+
+Count the number of conversation turns in a GenAI chat operation.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend turns = genai_conversation_turns(['attributes.gen_ai.input.messages'])
+| summarize avg_turns = avg(turns), max_turns = max(turns)
+```
+
+**Output**
+
+| avg_turns | max_turns |
+|-----------|-----------|
+| 4.2 | 12 |
+
+This query calculates the average and maximum number of conversation turns, helping you understand conversation complexity and engagement patterns.
+
+## List of related functions
+
+- [genai_message_roles](/apl/scalar-functions/genai-functions/genai-message-roles): Extracts all message roles to understand conversation structure. Use this when you need to analyze the role distribution in conversations.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the total number of messages (not turns). Use this when you need the raw message count instead of turn count.
+- [genai_cost](/apl/scalar-functions/genai-functions/genai-cost): Calculates the cost of a conversation. Use this in combination with turn count to understand cost per turn.
+- [genai_estimate_tokens](/apl/scalar-functions/genai-functions/genai-estimate-tokens): Estimates token usage. Use this with turn count to analyze tokens per turn.
+

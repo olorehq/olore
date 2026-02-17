@@ -1,0 +1,146 @@
+---
+title: array_concat
+description: 'This page explains how to use the array_concat function in APL.'
+---
+
+The `array_concat` function in APL (Axiom Processing Language) concatenates two or more arrays into a single array. Use this function when you need to merge multiple arrays into a single array structure. It’s particularly useful for situations where you need to handle and combine collections of elements across different fields or sources, such as log entries, OpenTelemetry trace data, or security logs.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In SPL, you typically use the `mvappend` function to concatenate multiple fields or arrays into a single array. In APL, the equivalent is `array_concat`, which also combines arrays but requires you to specify each array as a parameter.
+
+<CodeGroup>
+```sql Splunk example
+| eval combined_array = mvappend(array1, array2, array3)
+```
+
+```kusto APL equivalent
+| extend combined_array = array_concat(array1, array2, array3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t natively support an array concatenation function across different arrays. Instead, you typically use `UNION` to combine results from multiple arrays or collections. In APL, `array_concat` allows you to directly concatenate multiple arrays, providing a more straightforward approach.
+
+<CodeGroup>
+```sql SQL example
+SELECT array1 UNION ALL array2 UNION ALL array3
+```
+
+```kusto APL equivalent
+| extend combined_array = array_concat(array1, array2, array3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+array_concat(array1, array2, ...)
+```
+
+### Parameters
+
+- `array1`: The first array to concatenate.
+- `array2`: The second array to concatenate.
+- `...`: Additional arrays to concatenate.
+
+### Returns
+
+An array containing all elements from the input arrays in the order they are provided.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `array_concat` to merge collections of user requests into a single array to analyze request patterns across different endpoints.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| summarize combined_requests = array_concat(pack_array(uri), pack_array(method))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20summarize%20combined_requests%20%3D%20array_concat(pack_array(uri)%2C%20pack_array(method))%22%7D)
+
+**Output**
+
+| _time               | uri      | method       | combined_requests       |
+|---------------------|---------------|---------------|--------------------|
+| 2024-10-28T12:30:00 | /api/v1/textdata/cnfigs  | POST   | ["/api/v1/textdata/cnfigs", "POST"] |
+
+This example concatenates the `uri` and `method` values into a single array for each log entry, allowing for combined analysis of access patterns and request methods in log data.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, use `array_concat` to join span IDs and trace IDs for a comprehensive view of trace behavior across services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| take 50
+| summarize combined_ids = array_concat(pack_array(span_id), pack_array(trace_id))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20take%2050%20%7C%20summarize%20combined_ids%20%3D%20array_concat(pack_array(span_id)%2C%20pack_array(trace_id))%22%7D)
+
+**Output**
+
+| combined_ids                            |
+|-----------------------------------------|
+| ["span1", "trace1", "span2", ...]       |
+
+| _time               | trace_id      | span_id       | combined_ids       |
+|---------------------|---------------|---------------|--------------------|
+| 2024-10-28T12:30:00 | trace_abc123  | span_001      | ["trace_abc123", "span_001"]           |
+
+This example creates an array containing both `span_id` and `trace_id` values, offering a unified view of the trace journey across services.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, `array_concat` can consolidate multiple IP addresses or user IDs to detect potential attack patterns involving different locations or users.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '500'
+| take 50
+| summarize failed_attempts = array_concat(pack_array(id), pack_array(['geo.city']))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'500'%20%7C%20take%2050%20%7C%20summarize%20failed_attempts%20%3D%20array_concat(pack_array(id)%2C%20pack_array(%5B'geo.city'%5D))%22%7D)
+
+**Output**
+
+| _time               | id      | geo.city       | combined_ids       |
+|---------------------|---------------|---------------|--------------------|
+| 2024-10-28T12:30:00 | fc1407f5-04ca-4f4e-ad01-f72063736e08  | Avenal      | ["fc1407f5-04ca-4f4e-ad01-f72063736e08", "Avenal"]  |
+
+This query combines failed user IDs and cities where the request originated, allowing security analysts to detect suspicious patterns or brute force attempts from different regions.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array.
+- [array_index_of](/apl/scalar-functions/array-functions/array-index-of): Finds the index of an element in an array.
+- [array_slice](/apl/scalar-functions/array-functions/array-slice): Extracts a subset of elements from an array.

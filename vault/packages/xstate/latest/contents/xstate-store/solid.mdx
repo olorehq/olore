@@ -1,0 +1,108 @@
+---
+title: '@xstate/store-solid'
+---
+
+The `@xstate/store-solid` package provides Solid bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Solid signals.
+
+<Callout>
+
+This package re-exports all of `@xstate/store`, so you only need to install `@xstate/store-solid`.
+
+</Callout>
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install @xstate/store-solid
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install @xstate/store-solid
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add @xstate/store-solid
+```
+
+</Tab>
+</Tabs>
+
+## Quick start
+
+```tsx
+import { createStore, useSelector } from '@xstate/store-solid';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context, event: { by?: number }) => ({
+      count: context.count + (event.by ?? 1),
+    }),
+  },
+});
+
+function Counter() {
+  const count = useSelector(store, (state) => state.context.count);
+
+  return (
+    <div>
+      <p>Count: {count()}</p>
+      <button onClick={() => store.trigger.inc()}>+1</button>
+      <button onClick={() => store.trigger.inc({ by: 5 })}>+5</button>
+    </div>
+  );
+}
+```
+
+## API
+
+### `useSelector(store, selector?, compare?)`
+
+Creates a Solid signal that subscribes to a store and returns a selected value.
+
+```tsx
+import { useSelector } from '@xstate/store-solid';
+
+function Counter() {
+  // Select specific value
+  const count = useSelector(store, (state) => state.context.count);
+
+  // With custom comparison function
+  const user = useSelector(
+    store,
+    (state) => state.context.user,
+    (prev, next) => prev.id === next.id
+  );
+
+  // Call the signal to get the value (Solid's reactivity model)
+  return <div>Count: {count()}</div>;
+}
+```
+
+**Parameters:**
+- `store` - The store to subscribe to
+- `selector` - Optional function to select a value from the store snapshot
+- `compare` - Optional comparison function (defaults to strict equality `===`)
+
+**Returns:** A read-only Solid signal containing the selected value
+
+<Callout>
+
+Remember to call the signal as a function (e.g., `count()`) to access its value. This is how Solid's reactivity system tracks dependencies.
+
+</Callout>
+
+## Full documentation
+
+For complete XState Store documentation including context, transitions, effects, atoms, and more, see the [XState Store docs](/docs/xstate-store).

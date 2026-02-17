@@ -1,0 +1,996 @@
+---
+title: 'Heartbeat Examples'
+description: 'Implementation examples for sending heartbeat pings to monitor your scheduled jobs.'
+sidebarTitle: Examples
+---
+
+Before diving into specific examples, remember these key principles:
+
+1. **Ping only on success** - Only send pings when your task completes successfully
+2. **Include timeouts** - Prevent hanging requests that could block your job
+3. **Add retries** - Handle temporary network issues gracefully
+4. **Position correctly** - Place pings at the very end of your success path
+5. **Use source headers** - Help identify which system sent the ping
+
+## Shell Scripts and Command Line
+
+### Basic cURL Examples
+
+The most common way to ping heartbeat monitors from shell scripts:
+
+<CodeGroup>
+```bash GET Request
+# Basic GET request with timeout and retry
+curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+
+# With source identification
+curl -m 5 --retry 3 \
+  -H "Origin: backup-server-prod" \
+  https://ping.checklyhq.com/your-heartbeat-id
+
+# Silent operation (no output)
+curl -m 5 --retry 3 -s \
+  https://ping.checklyhq.com/your-heartbeat-id
+```
+
+```bash POST Request
+# POST request (useful for sending job metadata)
+curl -X POST -m 5 --retry 3 \
+  -H "Content-Type: application/json" \
+  -d '{"job":"backup", "duration": 120, "files": 1500}' \
+  https://ping.checklyhq.com/your-heartbeat-id
+```
+
+```bash Error Handling
+# Only ping if previous command succeeded
+run_backup.sh && curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+
+# More robust error handling
+if run_backup.sh; then
+  echo "Backup successful, sending heartbeat ping"
+  curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+else
+  echo "Backup failed, no ping sent"
+  exit 1
+fi
+```
+</CodeGroup>
+
+### wget Alternative
+
+If cURL isn't available, use wget instead:
+
+```bash
+# Basic wget with timeout and retry
+wget -T 5 -t 3 -q -O /dev/null \
+  https://ping.checklyhq.com/your-heartbeat-id
+
+# In a complete backup script
+#!/bin/bash
+set -e  # Exit on any error
+
+echo "Starting database backup..."
+pg_dump production_db > /tmp/backup.sql
+
+echo "Uploading to S3..."
+aws s3 cp /tmp/backup.sql s3://backups/$(date +%Y%m%d).sql
+
+echo "Cleaning up..."
+rm /tmp/backup.sql
+
+echo "Sending success ping..."
+wget -T 5 -t 3 -q -O /dev/null \
+  https://ping.checklyhq.com/your-heartbeat-id
+
+echo "Backup completed successfully!"
+```
+
+## Platform-Specific Integrations
+
+### Heroku Scheduler
+
+Monitor Heroku scheduled tasks:
+
+```bash
+# In your Heroku Scheduler command
+run_task.sh && curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+```
+
+### Render Cron Jobs
+
+For Render cron job services:
+
+```bash
+#!/bin/bash
+# Render cron job script
+
+# Run your task
+python process_data.py
+
+# Only ping if successful (exit code 0)
+if [ $? -eq 0 ]; then
+  curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+fi
+```
+
+### Railway Cron Jobs
+
+Similar pattern for Railway scheduled deployments:
+
+```bash
+# In your railway cron script
+npm run data-sync && \
+curl -m 5 --retry 3 https://ping.checklyhq.com/your-heartbeat-id
+```
+
+## Kubernetes Cron Jobs
+
+### Basic CronJob with Heartbeat
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-backup
+  namespace: production
+spec:
+  schedule: "0 2 * * *"  # 2 AM daily
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup-job
+            image: your-registry/backup-job:latest
+            command:
+            - /bin/sh
+            - -c
+            args:
+            - |
+              echo "Running backup job..."
+              
+              # Run your actual backup logic
+              /scripts/run-backup.sh
+              
+              # Only ping if backup succeeded
+              if [ $? -eq 0 ]; then
+                echo "Backup successful, sending heartbeat..."
+                curl -m 5 --retry 3 \
+                  -H "Origin: k8s-cluster-prod" \
+                  https://ping.checklyhq.com/your-heartbeat-id
+              else
+                echo "Backup failed, no heartbeat sent"
+                exit 1
+              fi
+            env:
+            - name: HEARTBEAT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: heartbeat-secrets
+                  key: backup-heartbeat-url
+          restartPolicy: OnFailure
+          backoffLimit: 2
+```
+
+### Advanced CronJob with Sidecar
+
+For more complex scenarios, use a sidecar pattern:
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: data-processing
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          # Main job container
+          - name: processor
+            image: your-app/data-processor:latest
+            command: ["/app/process-data"]
+            volumeMounts:
+            - name: shared-status
+              mountPath: /shared
+              
+          # Heartbeat sidecar
+          - name: heartbeat
+            image: curlimages/curl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Wait for main container to finish
+              while [ ! -f /shared/status ]; do
+                sleep 5
+              done
+              
+              # Check if job succeeded
+              if [ "$(cat /shared/status)" = "success" ]; then
+                curl -m 5 --retry 3 \
+                  https://ping.checklyhq.com/your-heartbeat-id
+              fi
+            volumeMounts:
+            - name: shared-status
+              mountPath: /shared
+              
+          volumes:
+          - name: shared-status
+            emptyDir: {}
+          restartPolicy: OnFailure
+```
+
+## Node.js and JavaScript
+
+### Built-in HTTPS Module
+
+<CodeGroup>
+```typescript TypeScript
+import https from 'https';
+
+async function pingHeartbeat(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const options = {
+      timeout: 5000,
+    };
+
+    const req = https.get(url, options, (res) => {
+      console.log(`Heartbeat ping status: ${res.statusCode}`);
+      resolve();
+    });
+
+    req.on('error', (error) => {
+      console.error(`Heartbeat ping failed: ${error.message}`);
+      reject(error);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Heartbeat ping timeout'));
+    });
+  });
+}
+
+// Usage in your job
+async function runScheduledJob() {
+  try {
+    // Your job logic here
+    await processData();
+    await generateReports();
+    
+    // Only ping on success
+    await pingHeartbeat('https://ping.checklyhq.com/your-heartbeat-id');
+    console.log('Job completed successfully');
+  } catch (error) {
+    console.error('Job failed:', error);
+    // Don't ping on failure - let heartbeat monitor alert
+    process.exit(1);
+  }
+}
+```
+
+```javascript JavaScript
+const https = require('https');
+
+function pingHeartbeat(url) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      timeout: 5000,
+    };
+
+    const req = https.get(url, options, (res) => {
+      console.log(`Heartbeat ping status: ${res.statusCode}`);
+      resolve();
+    });
+
+    req.on('error', (error) => {
+      console.error(`Heartbeat ping failed: ${error.message}`);
+      reject(error);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Heartbeat ping timeout'));
+    });
+  });
+}
+
+// Usage example
+async function runJob() {
+  try {
+    await performBackup();
+    await pingHeartbeat('https://ping.checklyhq.com/your-heartbeat-id');
+  } catch (error) {
+    console.error('Job failed:', error);
+    process.exit(1);
+  }
+}
+```
+</CodeGroup>
+
+### Using Axios
+
+<CodeGroup>
+```typescript TypeScript
+import axios from 'axios';
+
+const HEARTBEAT_URL = 'https://ping.checklyhq.com/your-heartbeat-id';
+
+async function pingHeartbeat(source?: string): Promise<void> {
+  try {
+    const headers: Record<string, string> = {};
+    if (source) {
+      headers['Origin'] = source;
+    }
+
+    const response = await axios.get(HEARTBEAT_URL, {
+      timeout: 5000,
+      headers,
+      // Axios retry configuration
+      validateStatus: (status) => status < 500, // Don't throw on 4xx
+    });
+    
+    console.log(`Heartbeat sent successfully: ${response.status}`);
+  } catch (error) {
+    console.error('Failed to send heartbeat:', error.message);
+    throw error;
+  }
+}
+
+// In your scheduled job
+async function scheduledTask() {
+  try {
+    console.log('Starting scheduled task...');
+    
+    // Your job logic
+    await syncDatabase();
+    await updateCache();
+    await sendReports();
+    
+    // Send success ping
+    await pingHeartbeat('newsletter-service');
+    console.log('Scheduled task completed successfully');
+    
+  } catch (error) {
+    console.error('Scheduled task failed:', error);
+    // Exit with error code - don't send heartbeat
+    process.exit(1);
+  }
+}
+```
+
+```javascript JavaScript
+const axios = require('axios');
+
+async function pingHeartbeat(source) {
+  try {
+    const headers = {};
+    if (source) {
+      headers['Origin'] = source;
+    }
+
+    await axios.get('https://ping.checklyhq.com/your-heartbeat-id', {
+      timeout: 5000,
+      headers
+    });
+    
+    console.log('Heartbeat sent successfully');
+  } catch (error) {
+    console.error('Failed to send heartbeat:', error.message);
+    throw error;
+  }
+}
+```
+</CodeGroup>
+
+### Fetch API (Modern Browsers/Node.js 18+)
+
+```javascript
+async function pingHeartbeat(url, source = null) {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (source) {
+    headers['Origin'] = source;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Heartbeat failed: ${response.status}`);
+    }
+
+    console.log('Heartbeat sent successfully');
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('Heartbeat request timed out');
+    } else {
+      console.error('Heartbeat request failed:', error);
+    }
+    throw error;
+  }
+}
+```
+
+## Vercel Cron Jobs
+
+Monitor your Vercel cron jobs across different routing patterns:
+
+<CodeGroup>
+```javascript App Router
+// app/api/cron/newsletter/route.js
+export async function GET(request) {
+  try {
+    console.log('Starting newsletter job...');
+    
+    // Your cron job logic
+    const subscribers = await getSubscribers();
+    await sendNewsletter(subscribers);
+    await updateMetrics();
+    
+    // Send success heartbeat
+    const heartbeatUrl = 'https://ping.checklyhq.com/your-heartbeat-id';
+    const response = await fetch(heartbeatUrl, {
+      method: 'GET',
+      headers: {
+        'Origin': 'vercel-newsletter'
+      }
+    });
+    
+    console.log(`Heartbeat sent: ${response.status}`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      processed: subscribers.length 
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Newsletter job failed:', error);
+    
+    // Don't send heartbeat on failure
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+```javascript Pages Router
+// pages/api/cron/backup.js
+export default async function handler(req, res) {
+  // Verify this is actually a cron request
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    console.log('Starting backup job...');
+    
+    // Run backup process
+    await backupDatabase();
+    await uploadToStorage();
+    await cleanupOldBackups();
+    
+    // Send heartbeat on success
+    const heartbeatResponse = await fetch(
+      'https://ping.checklyhq.com/your-heartbeat-id',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'vercel-backup'
+        },
+        body: JSON.stringify({
+          job: 'database-backup',
+          timestamp: new Date().toISOString()
+        })
+      }
+    );
+    
+    console.log(`Heartbeat status: ${heartbeatResponse.status}`);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Backup completed successfully' 
+    });
+    
+  } catch (error) {
+    console.error('Backup failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+}
+```
+
+```javascript SvelteKit/Other
+// src/routes/api/cron/reports/+server.js
+export async function GET({ request }) {
+  try {
+    // Generate reports
+    const reports = await generateMonthlyReports();
+    await emailReports(reports);
+    
+    // Ping heartbeat
+    await fetch('https://ping.checklyhq.com/your-heartbeat-id', {
+      headers: { 'Origin': 'sveltekit-reports' }
+    });
+    
+    return new Response(JSON.stringify({ success: true, reports: reports.length }));
+    
+  } catch (error) {
+    console.error('Report generation failed:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }), 
+      { status: 500 }
+    );
+  }
+}
+```
+</CodeGroup>
+
+## Python Examples
+
+### Using Requests Library
+
+<CodeGroup>
+```python Basic Example
+import requests
+import sys
+import time
+
+def ping_heartbeat(url, source=None, timeout=5, retries=3):
+    """Send heartbeat ping with retry logic."""
+    headers = {}
+    if source:
+        headers['Origin'] = source
+    
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=timeout)
+            response.raise_for_status()
+            print(f"Heartbeat sent successfully: {response.status_code}")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Heartbeat attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(1)  # Wait before retry
+            
+    print("All heartbeat attempts failed")
+    return False
+
+def run_scheduled_job():
+    """Example scheduled job with heartbeat monitoring."""
+    heartbeat_url = "https://ping.checklyhq.com/your-heartbeat-id"
+    
+    try:
+        print("Starting data processing job...")
+        
+        # Your job logic here
+        process_data()
+        generate_reports()
+        cleanup_temp_files()
+        
+        print("Job completed successfully")
+        
+        # Send success heartbeat
+        if not ping_heartbeat(heartbeat_url, source="data-processor"):
+            print("Warning: Failed to send heartbeat ping")
+            
+    except Exception as e:
+        print(f"Job failed: {e}")
+        # Don't send heartbeat on failure
+        sys.exit(1)
+
+if __name__ == "__main__":
+    run_scheduled_job()
+```
+
+```python Advanced Example
+import requests
+import logging
+import json
+from datetime import datetime
+from typing import Optional, Dict, Any
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class HeartbeatClient:
+    def __init__(self, url: str, source: Optional[str] = None):
+        self.url = url
+        self.source = source
+        
+    def ping(self, 
+             metadata: Optional[Dict[str, Any]] = None,
+             timeout: int = 5,
+             retries: int = 3) -> bool:
+        """Send heartbeat ping with optional metadata."""
+        
+        headers = {'Content-Type': 'application/json'}
+        if self.source:
+            headers['Origin'] = self.source
+            
+        # Prepare payload
+        payload = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'source': self.source
+        }
+        if metadata:
+            payload.update(metadata)
+            
+        for attempt in range(retries):
+            try:
+                response = requests.post(
+                    self.url,
+                    json=payload,
+                    headers=headers,
+                    timeout=timeout
+                )
+                response.raise_for_status()
+                
+                logger.info(f"Heartbeat sent successfully: {response.status_code}")
+                return True
+                
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Heartbeat attempt {attempt + 1}/{retries} failed: {e}")
+                if attempt < retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                    
+        logger.error("All heartbeat attempts failed")
+        return False
+
+# Usage example
+def backup_database():
+    """Example database backup job."""
+    heartbeat = HeartbeatClient(
+        url="https://ping.checklyhq.com/your-heartbeat-id",
+        source="backup-service-prod"
+    )
+    
+    start_time = datetime.utcnow()
+    
+    try:
+        logger.info("Starting database backup...")
+        
+        # Backup logic
+        backup_size = perform_backup()
+        upload_to_cloud(backup_size)
+        
+        # Calculate job metrics
+        duration = (datetime.utcnow() - start_time).total_seconds()
+        
+        # Send heartbeat with job metadata
+        heartbeat.ping(metadata={
+            'job_type': 'database_backup',
+            'duration_seconds': duration,
+            'backup_size_mb': backup_size,
+            'status': 'completed'
+        })
+        
+        logger.info(f"Backup completed in {duration:.1f} seconds")
+        
+    except Exception as e:
+        logger.error(f"Backup failed: {e}")
+        # Don't send heartbeat on failure
+        raise
+```
+</CodeGroup>
+
+### Django Management Commands
+
+```python
+# management/commands/send_newsletter.py
+from django.core.management.base import BaseCommand
+from django.conf import settings
+import requests
+
+class Command(BaseCommand):
+    help = 'Send weekly newsletter'
+    
+    def handle(self, *args, **options):
+        try:
+            self.stdout.write('Starting newsletter job...')
+            
+            # Newsletter logic
+            subscribers = self.get_subscribers()
+            sent_count = self.send_newsletters(subscribers)
+            
+            self.stdout.write(f'Newsletter sent to {sent_count} subscribers')
+            
+            # Send heartbeat
+            heartbeat_url = settings.NEWSLETTER_HEARTBEAT_URL
+            response = requests.get(heartbeat_url, timeout=5)
+            response.raise_for_status()
+            
+            self.stdout.write(
+                self.style.SUCCESS('Newsletter job completed successfully')
+            )
+            
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Newsletter job failed: {e}')
+            )
+            raise
+```
+
+## PowerShell Examples
+
+For Windows environments and Azure functions:
+
+<CodeGroup>
+```powershell Basic PowerShell
+# Basic heartbeat ping with error handling
+function Send-HeartbeatPing {
+    param(
+        [string]$Url,
+        [string]$Source = $null,
+        [int]$TimeoutSec = 5,
+        [int]$MaxRetries = 3
+    )
+    
+    $headers = @{}
+    if ($Source) {
+        $headers["Origin"] = $Source
+    }
+    
+    for ($i = 0; $i -lt $MaxRetries; $i++) {
+        try {
+            $response = Invoke-RestMethod -Uri $Url -Headers $headers -TimeoutSec $TimeoutSec -MaximumRetryCount 0
+            Write-Host "Heartbeat sent successfully"
+            return $true
+        }
+        catch {
+            Write-Warning "Heartbeat attempt $($i + 1) failed: $($_.Exception.Message)"
+            if ($i -lt ($MaxRetries - 1)) {
+                Start-Sleep -Seconds (2 * ($i + 1))
+            }
+        }
+    }
+    
+    Write-Error "All heartbeat attempts failed"
+    return $false
+}
+
+# Example backup script
+try {
+    Write-Host "Starting backup process..."
+    
+    # Your backup logic
+    & "C:\Scripts\DatabaseBackup.exe"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Database backup failed with exit code $LASTEXITCODE"
+    }
+    
+    & "C:\Scripts\UploadToCloud.exe"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cloud upload failed with exit code $LASTEXITCODE"
+    }
+    
+    Write-Host "Backup completed successfully"
+    
+    # Send heartbeat
+    $heartbeatUrl = "https://ping.checklyhq.com/your-heartbeat-id"
+    Send-HeartbeatPing -Url $heartbeatUrl -Source "windows-backup-server"
+    
+} catch {
+    Write-Error "Backup process failed: $($_.Exception.Message)"
+    exit 1
+}
+```
+
+```powershell Azure Functions
+# Azure PowerShell Function
+param($Timer)
+
+try {
+    Write-Host "Starting scheduled data processing..."
+    
+    # Your Azure Function logic
+    $results = Invoke-DataProcessing
+    $metrics = Update-Analytics -Results $results
+    
+    Write-Host "Data processing completed. Processed $($results.Count) items"
+    
+    # Send heartbeat with metadata
+    $heartbeatUrl = $env:HEARTBEAT_URL
+    $body = @{
+        timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        source = "azure-function"
+        processed_items = $results.Count
+        duration_ms = $metrics.DurationMs
+    } | ConvertTo-Json
+    
+    Invoke-RestMethod -Uri $heartbeatUrl -Method POST -Body $body -ContentType "application/json" -TimeoutSec 5
+    
+    Write-Host "Heartbeat sent successfully"
+    
+} catch {
+    Write-Error "Azure Function failed: $($_.Exception.Message)"
+    throw
+}
+```
+</CodeGroup>
+
+## Advanced Patterns
+
+### Conditional Heartbeats
+
+Sometimes you only want to ping under certain conditions:
+
+```python
+def conditional_heartbeat_example():
+    """Only ping heartbeat if certain conditions are met."""
+    
+    # Run your job
+    results = process_data()
+    
+    # Only ping if we processed a significant amount of data
+    if results['processed_count'] > 100:
+        ping_heartbeat(
+            url="https://ping.checklyhq.com/your-heartbeat-id",
+            metadata={'processed': results['processed_count']}
+        )
+        print(f"Heartbeat sent - processed {results['processed_count']} items")
+    else:
+        print(f"Skipped heartbeat - only processed {results['processed_count']} items")
+```
+
+### Multi-Step Job Monitoring
+
+For complex jobs with multiple phases:
+
+```bash
+#!/bin/bash
+set -e
+
+HEARTBEAT_URL="https://ping.checklyhq.com/your-heartbeat-id"
+JOB_FAILED=false
+
+# Function to send heartbeat on success
+send_success_heartbeat() {
+    if [ "$JOB_FAILED" = false ]; then
+        curl -m 5 --retry 3 -H "Origin: multi-step-job" "$HEARTBEAT_URL"
+        echo "Success heartbeat sent"
+    fi
+}
+
+# Trap to ensure heartbeat is sent on successful completion
+trap send_success_heartbeat EXIT
+
+# Step 1: Download data
+echo "Step 1: Downloading data..."
+if ! download_data.sh; then
+    echo "Data download failed"
+    JOB_FAILED=true
+    exit 1
+fi
+
+# Step 2: Process data  
+echo "Step 2: Processing data..."
+if ! process_data.sh; then
+    echo "Data processing failed"
+    JOB_FAILED=true
+    exit 1
+fi
+
+# Step 3: Upload results
+echo "Step 3: Uploading results..."
+if ! upload_results.sh; then
+    echo "Results upload failed" 
+    JOB_FAILED=true
+    exit 1
+fi
+
+echo "All steps completed successfully"
+# Heartbeat will be sent by the EXIT trap
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+<Accordion title="Network Timeouts">
+**Problem**: Pings fail due to network timeouts or slow connections.
+
+**Solution**: Always configure timeouts and retries:
+```bash
+# Good: With timeout and retry
+curl -m 5 --retry 3 --retry-delay 2 https://ping.checklyhq.com/your-id
+
+# Add connection timeout too
+curl --connect-timeout 10 -m 30 --retry 3 https://ping.checklyhq.com/your-id
+```
+</Accordion>
+
+<Accordion title="Blocked User Agents">
+**Problem**: Pings are ignored due to blocked user agents.
+
+**Blocked user agents**: Twitterbot, Slackbot, Googlebot, Discordbot, Facebot, TelegramBot, WhatsApp, LinkedInBot
+
+**Solution**: Use custom user agents:
+```bash
+curl -A "MyApp/1.0" https://ping.checklyhq.com/your-id
+```
+</Accordion>
+
+<Accordion title="Wrong HTTP Methods">
+**Problem**: Using unsupported HTTP methods.
+
+**Supported**: GET, POST  
+**Not supported**: PUT, DELETE, PATCH
+
+**Solution**: Stick to GET or POST:
+```python
+# Good
+requests.get(heartbeat_url)
+requests.post(heartbeat_url, json=metadata)
+
+# Bad - will return error
+requests.put(heartbeat_url)
+```
+</Accordion>
+
+<Accordion title="Timing in Error Handling">
+**Problem**: Pings sent even when job fails.
+
+**Solution**: Structure your code correctly:
+```python
+# Good: Ping only on success
+try:
+    run_job()
+    ping_heartbeat()  # Only reached if run_job() succeeds
+except Exception:
+    # Don't ping on failure
+    logging.error("Job failed")
+    
+# Bad: Always pings
+try:
+    run_job()
+except Exception:
+    logging.error("Job failed")
+finally:
+    ping_heartbeat()  # Always runs!
+```
+</Accordion>
+</AccordionGroup>
+
+### Testing Your Implementation
+
+Before deploying, test your heartbeat integration:
+
+1. **Manual ping test**: Use the Checkly UI to send manual pings
+2. **Timeout test**: Temporarily block network access to verify timeout behavior
+3. **Failure test**: Force your job to fail and confirm no ping is sent
+4. **Retry test**: Add temporary network delays to test retry logic
+
+<Tip>
+Start with a short grace period (like 5 minutes) while testing, then increase it to your production requirements once you're confident in the timing.
+</Tip>

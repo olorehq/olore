@@ -1,0 +1,160 @@
+---
+title: series_fill_const
+description: 'This page explains how to use the series_fill_const function in APL.'
+---
+
+The `series_fill_const` function fills missing values (nulls) in a numeric dynamic array (series) with a specified constant value. This function is useful for handling gaps in time series data where you want to replace missing data points with a known default value.
+
+You can use `series_fill_const` when you have time series data with missing values and want to fill gaps with a specific constant value, such as zero, a default threshold, or a neutral value. This is particularly useful when missing values represent a specific state (like no activity, default configuration, or baseline values). Typical applications include financial data analysis, sensor data processing, and performance monitoring where a specific default value is meaningful.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, filling missing values with constants is typically done with the `fillnull` command or `eval` expressions using conditional logic. To fill arrays with constants, you usually need to expand arrays and apply the transformation row by row. In APL, `series_fill_const` works directly on dynamic arrays, making it efficient for series-wide constant filling.
+
+<CodeGroup>
+```sql Splunk example
+... | fillnull value=0 field_name
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([null, 100, null, 200])
+]
+| extend filled_values = series_fill_const(values, 0)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, filling missing values with constants is typically done with `COALESCE()` or `ISNULL()` functions, but these only work on single values, not arrays. To fill array elements with constants, you usually need to unnest arrays and apply the function row by row. In APL, `series_fill_const` eliminates this complexity by directly replacing null values with a constant in arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT COALESCE(value, 0) AS filled_value
+FROM measurements;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([null, 100, null, 200])
+]
+| extend filled_values = series_fill_const(values, 0)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_fill_const(array, constant_value)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values that may contain null values. |
+| `constant_value` | numeric | The constant value to use for filling null values. |
+
+### Returns
+
+A dynamic array where null values are replaced with the specified constant value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_fill_const` to fill missing request duration data with a default value like 0, which might represent no activity or baseline performance.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend filled_durations = series_fill_const(durations, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20filled_durations%20%3D%20series_fill_const(durations%2C%200)%22%7D)
+
+**Output**
+
+| id   | durations           | filled_durations    |
+| ---- | ------------------- | ------------------- |
+| u123 | [null, 150, null, 200] | [0, 150, 0, 200] |
+| u456 | [100, null, null, 300] | [100, 0, 0, 300] |
+
+This query fills missing request durations with 0, useful for representing periods of no activity or baseline performance.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_fill_const` to fill missing span duration data with a default value, such as 0 for spans that didn't execute or a baseline latency value.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend filled_durations = series_fill_const(durations, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20filled_durations%20%3D%20series_fill_const(durations%2C%200)%22%7D)
+
+**Output**
+
+| service.name          | durations                | filled_durations         |
+| --------------------- | ------------------------ | ------------------------ |
+| frontend              | [null, 100ms, null, 200ms] | [0ms, 100ms, 0ms, 200ms] |
+| productcatalogservice | [50ms, null, null, 150ms]  | [50ms, 0ms, 0ms, 150ms] |
+
+This query fills missing span durations with 0ms, useful for representing spans that didn't execute or had no measurable duration.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_fill_const` to fill missing request duration data with a default value, such as 0 for blocked requests or a baseline value for analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend filled_durations = series_fill_const(durations, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20filled_durations%20%3D%20series_fill_const(durations%2C%200)%22%7D)
+
+**Output**
+
+| status | durations           | filled_durations    |
+| ------ | ------------------- | ------------------- |
+| 200    | [null, 150, null, 250] | [0, 150, 0, 250] |
+| 500    | [100, null, null, 400] | [100, 0, 0, 400] |
+
+This query fills missing request durations with 0 grouped by status code, useful for representing blocked or failed requests with no measurable duration.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_fill_forward](/apl/scalar-functions/time-series/series-fill-forward): Fills missing values by propagating the first known value forward. Use when you want to use the earliest available value to fill gaps.
+- [series_fill_backward](/apl/scalar-functions/time-series/series-fill-backward): Fills missing values by propagating the last known value backward. Use when you want to use the most recent available value to fill gaps.
+- [series_fill_linear](/apl/scalar-functions/time-series/series-fill-linear): Fills missing values using linear interpolation. Use when you want smooth transitions between known values.
+- [series_equals](/apl/scalar-functions/time-series/series-equals): Compares each element to a specified value. Use for identifying specific values after filling operations.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Returns elements greater than a specified value. Use for threshold analysis after filling missing data.

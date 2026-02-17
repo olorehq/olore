@@ -1,0 +1,98 @@
+---
+title: 'Send Alerts to PagerDuty'
+description: 'Learn how Checkly integrates seamlessly with PagerDuty, delivering real-time failure and recovery alerts to your PagerDuty account'
+sidebarTitle: 'PagerDuty'
+---
+
+Checkly integrates with [Pagerduty](https://pagerduty.com) and can deliver all failure and recovery events
+to your Pagerduty account. After setting up the integration, Checkly will:
+
+1. Trigger alerts in Pagerduty when a check fails.
+2. Resolve alerts when a check recovers.
+
+Setup is as simple as following the three-step Pagerduty connect process. You can add as many Pagerduty channels as
+you wish.
+
+1. Navigate to the **alert settings** tab on the account screen and click the 'Add channels' button.
+![setup checkly pagerduty integration step 1](/images/docs/images/integrations/pagerduty_step1.png)
+
+2. Clicking the **Alert with Pagerduty** button will take you to a Pagerduty Connect screen. Provide your credentials and click
+**Sign In** to allow Checkly to connect with Pagerduty.
+![set up checkly pagerduty integration step 2](/images/docs/images/integrations/pagerduty_step2.png)
+
+3. On the next screen you can hook up Checkly to one or more existing services. If you select multiple services, we will
+create multiple dedicated channels so you have more flexibility of muting, editing and managing the channels. 
+Click **Connect** to save your settings and redirect you back to Checkly.
+![set up checkly pagerduty integration step 3](/images/docs/images/integrations/pagerduty_step3.png)
+
+4. Back in Checkly, you should see your Pagerduty **integration credentials** reflected in the alert settings. Don't forget
+to hit **Save Pagerduty channel**.
+
+![set up checkly pagerduty integration step 4](/images/docs/images/integrations/pagerduty_step4.png)
+
+5. Checkly will trigger an incident in Pagerduty when checks fail and also mark them as resolved when the checks are passing again.
+![set up checkly pagerduty integration step 5](/images/docs/images/integrations/pagerduty_step5.png)
+
+## Advanced PagerDuty Configuration
+
+### PagerDuty Alert Mapping
+
+Configure how Checkly alerts map to PagerDuty incidents:
+
+```yaml
+PagerDuty Configuration:
+  Service: Production Monitoring
+  Integration Type: Events API v2
+  
+Alert Mapping:
+  ALERT_FAILURE → Critical Incident
+  ALERT_DEGRADED → Warning Incident  
+  ALERT_RECOVERY → Resolve Incident
+  
+Incident Details:
+  Title: "{{ALERT_TITLE}}"
+  Description: "Check {{CHECK_NAME}} from {{RUN_LOCATION}}"
+  Severity: Based on check tags and alert type
+  Component: Derived from check name or group
+  Custom Fields:
+    - Response Time: {{RESPONSE_TIME}}ms
+    - Check ID: {{CHECK_ID}}
+    - Location: {{RUN_LOCATION}}
+```
+
+### Advanced PagerDuty Features
+
+Leverage PagerDuty's advanced incident management capabilities:
+
+```json
+{
+  "incident": {
+    "type": "incident", 
+    "title": "{{ALERT_TITLE}}",
+    "service": {
+      "id": "P123ABC",
+      "type": "service_reference"
+    },
+    "priority": {
+      "id": "{{#contains TAGS 'critical'}}P1{{else}}P2{{/contains}}",
+      "type": "priority_reference"
+    },
+    "body": {
+      "type": "incident_body",
+      "details": "Check {{CHECK_NAME}} failed from {{RUN_LOCATION}}.\n\nResponse Time: {{RESPONSE_TIME}}ms\nError: {{CHECK_ERROR_MESSAGE}}\n\nView details: {{RESULT_LINK}}"
+    },
+    "escalation_policy": {
+      "id": "{{#contains CHECK_NAME 'payment'}}P456DEF{{else}}P789GHI{{/contains}}",
+      "type": "escalation_policy_reference"
+    }
+  }
+}
+```
+
+### PagerDuty Best Practices
+
+- **Service Organization**: Create separate PagerDuty services for different applications or teams
+- **Escalation Policies**: Set up appropriate escalation chains based on check criticality
+- **Priority Mapping**: Use check tags to automatically assign appropriate incident priorities
+- **Integration Keys**: Use different integration keys for different environments (production, staging)
+- **Custom Fields**: Include relevant context like response times, error messages, and check locations

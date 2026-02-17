@@ -1,0 +1,491 @@
+---
+title: 'OpenTelemetry using Nuxt.js'
+description: 'This page explains how to configure OpenTelemetry in a Nuxt.js app to send telemetry data to Axiom.'
+sidebarTitle: Nuxt.js
+keywords: ['guides', 'nuxtjs', 'opentelemetry', 'otel']
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "/snippets/replace-domain.mdx"
+
+OpenTelemetry provides a [unified approach to collecting telemetry data](https://opentelemetry.io/docs/languages/js/instrumentation/) from your Nuxt.js and TypeScript apps. This page demonstrates how to configure OpenTelemetry in a Nuxt.js app to send telemetry data to Axiom using OpenTelemetry SDK.
+
+<Prerequisites />
+- [Install Node.js](https://nodejs.org/en/download/package-manager) version 18 or newer.
+- Use your own app written in Nuxt.js, or follow this guide to create a new one.
+
+## Create new Nuxt.js app
+
+Run the following command to create a new Nuxt.js app. Accept the default options during the initialization.
+
+```bash
+npx nuxi@latest init my-nuxt-app
+cd my-nuxt-app
+```
+
+## Install dependencies
+
+Install the required OpenTelemetry packages:
+
+```bash
+npm install @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node @opentelemetry/exporter-trace-otlp-proto @opentelemetry/sdk-trace-base @opentelemetry/resources @opentelemetry/semantic-conventions
+```
+
+## Configure environment variables
+
+Create a `.env` file in the root of your project to store your Axiom credentials:
+
+```env
+AXIOM_TOKEN=API_TOKEN
+AXIOM_DATASET=DATASET_NAME
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+## Configure Nuxt.js app
+
+Configure your Nuxt app in `nuxt.config.ts` to expose the environment variables to the runtime:
+
+```typescript nuxt.config.ts
+export default defineNuxtConfig({
+  compatibilityDate: '2026-01-05',
+  devtools: { enabled: true },
+
+  runtimeConfig: {
+    axiomToken: process.env.AXIOM_TOKEN,
+    axiomDataset: process.env.AXIOM_DATASET,
+  },
+
+  nitro: {
+    experimental: {
+      openAPI: true
+    }
+  }
+});
+```
+
+## Server setup
+
+### Create server directories
+
+Create the necessary directories for your server-side code:
+
+```bash
+mkdir -p server/api
+
+mkdir -p server/plugins
+```
+
+### Instrumentation plugin
+
+Create the OpenTelemetry instrumentation plugin in `server/plugins/instrumentation.ts`. This file sets up the OpenTelemetry SDK and configures it to send traces to Axiom.
+
+<Info>
+In Nuxt.js, you must initialize OpenTelemetry in a Nitro plugin, not in the `nuxt.config.ts` hooks, because API endpoints run in the Nitro server runtime.
+
+This example uses the `ATTR_SERVICE_NAME` constant instead of the deprecated `SemanticResourceAttributes.SERVICE_NAME`, and `resourceFromAttributes()` instead of `new Resource()` for compatibility with newer OpenTelemetry versions.
+</Info>
+
+```ts server/plugins/instrumentation.ts expandable
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+
+export default defineNitroPlugin((nitroApp) => {
+  console.log('Initializing OpenTelemetry in Nitro server...');
+  console.log('- AXIOM_TOKEN:', process.env.AXIOM_TOKEN ? `${process.env.AXIOM_TOKEN.substring(0, 10)}...` : 'NOT SET');
+  console.log('- AXIOM_DATASET:', process.env.AXIOM_DATASET || 'NOT SET');
+
+  const traceExporter = new OTLPTraceExporter({
+    url: 'https://api.axiom.co/v1/traces',
+    headers: {
+      'Authorization': `Bearer ${process.env.AXIOM_TOKEN}`,
+      'X-Axiom-Dataset': process.env.AXIOM_DATASET || ''
+    },
+  });
+
+  // Add export success/error logging for debugging
+  const originalExport = traceExporter.export.bind(traceExporter);
+  traceExporter.export = (spans, resultCallback) => {
+    console.log(`Exporting ${spans.length} span(s) to Axiom...`);
+    originalExport(spans, (result) => {
+      if (result.code === 0) {
+        console.log(' Spans exported successfully to Axiom');
+      } else {
+        console.error(' Export failed:', result.error);
+      }
+      resultCallback(result);
+    });
+  };
+
+  const resource = resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: 'my-nuxt-app',
+  });
+
+  const sdk = new NodeSDK({
+    spanProcessor: new BatchSpanProcessor(traceExporter),
+    resource: resource,
+    instrumentations: [getNodeAutoInstrumentations()],
+  });
+
+  sdk.start();
+
+  console.log('OpenTelemetry started in Nitro server');
+});
+```
+
+### Example API endpoint
+
+Create an example API endpoint in `server/api/hello.ts` to test your OpenTelemetry setup.
+
+The example endpoint below demonstrates manual span creation. Each request to `/api/hello` creates a trace span and sends it to Axiom.
+
+```ts server/api/hello.ts
+import { trace } from '@opentelemetry/api';
+
+export default defineEventHandler((event) => {
+  console.log('API endpoint hit: /api/hello');
+
+  // Get the tracer from the global tracer provider
+  const tracer = trace.getTracer('my-nuxt-app');
+
+  // Create a manual span for this API request
+  const span = tracer.startSpan('api.hello');
+  span.setAttribute('http.method', 'GET');
+  span.setAttribute('http.path', '/api/hello');
+
+  const response = {
+    message: 'Hello from Nuxt API!',
+    timestamp: new Date().toISOString(),
+    path: event.path
+  };
+
+  span.end();
+
+  console.log('Manual span created and ended');
+
+  return response;
+});
+```
+
+## Run instrumented app
+
+### In development mode
+
+To run your Nuxt app with OpenTelemetry instrumentation in development mode:
+
+```bash
+npm run dev
+```
+
+You see the following output in the console:
+
+```
+Nuxt 4.2.2 (with Nitro 2.12.9, Vite 7.3.0 and Vue 3.5.26)
+
+  ➜ Local:    http://localhost:3000/
+
+Initializing OpenTelemetry in Nitro server...
+- AXIOM_TOKEN: xaat-xxxxx...
+- AXIOM_DATASET: nuxt-traces
+OpenTelemetry started in Nitro server
+```
+
+### Test setup
+
+Test your API endpoint to generate traces:
+
+```bash
+curl http://localhost:3000/api/hello
+```
+
+You get the following response from the API endpoint:
+
+```json
+{
+  "message": "Hello from Nuxt API!",
+  "timestamp": "2026-01-05T22:30:00.000Z",
+  "path": "/api/hello"
+}
+```
+
+After making 5-10 requests, you see the following output in the console:
+
+```
+Exporting 5 span(s) to Axiom...
+Spans exported successfully to Axiom
+```
+
+### In production mode
+
+To build and run in production:
+
+```bash
+# Build the application
+npm run build
+
+# Start the production server
+npm run preview
+```
+
+After generating some traces by visiting your API endpoints, go to the **Stream** tab in Axiom, and then click your dataset. You see the traces appearing in the stream.
+
+## Project directory structure
+
+Your Nuxt.js project has the following structure:
+
+```
+my-nuxt-app/
+├── server/
+│   ├── api/
+│   │   └── hello.ts          # Example API endpoint
+│   └── plugins/
+│       └── instrumentation.ts # OpenTelemetry configuration
+├── .env                       # Environment variables
+├── nuxt.config.ts            # Nuxt configuration
+├── package.json              # Dependencies and scripts
+└── tsconfig.json             # TypeScript configuration (auto-generated)
+```
+
+### Root-level files
+
+- **`.env`**: Stores environment variables (API token, dataset name)
+- **`nuxt.config.ts`**: Nuxt configuration file that exposes environment variables to the runtime
+- **`package.json`**: Lists dependencies and npm scripts
+- **`tsconfig.json`**: TypeScript configuration (auto-generated by Nuxt)
+
+### Server directory
+
+The `server/` directory contains all server-side code that runs in Nitro, Nuxt's server engine.
+
+- `server/api/` directory contains API route handlers. Each file becomes an API endpoint:
+
+    - `server/api/hello.ts` → `/api/hello`
+    - `server/api/users.ts` → `/api/users`
+    - `server/api/posts/[id].ts` → `/api/posts/:id`
+
+- `server/plugins/` directory contains Nitro plugins that run when the server starts:
+    - `server/plugins/instrumentation.ts`: Initializes OpenTelemetry SDK
+
+## Manual instrumentation
+
+Manual instrumentation in Nuxt.js allows you to create custom spans for specific operations.
+
+### Initialize tracer
+
+Import the OpenTelemetry API in any server file, such as `server/api/hello.ts`:
+
+```ts server/api/hello.ts
+import { trace } from '@opentelemetry/api';
+
+const tracer = trace.getTracer('my-nuxt-app');
+```
+
+### Create spans
+
+Wrap operations you want to trace:
+
+```ts
+export default defineEventHandler(async (event) => {
+  const span = tracer.startSpan('database.query');
+
+  try {
+    // Your code here
+    const data = await fetchDataFromDatabase();
+
+    span.setStatus({ code: 0 }); // Success
+    span.end();
+
+    return data;
+  } catch (error) {
+    span.recordException(error);
+    span.setStatus({ code: 2, message: error.message }); // Error
+    span.end();
+
+    throw error;
+  }
+});
+```
+
+### Annotate spans
+
+Add metadata to your spans, such as `order.id`, `user.id`, and `order.amount`:
+
+```typescript
+const span = tracer.startSpan('process.order');
+
+span.setAttribute('order.id', orderId);
+span.setAttribute('user.id', userId);
+span.setAttribute('order.amount', amount);
+
+span.addEvent('payment_processed', {
+  paymentMethod: 'credit_card',
+  processorResponse: 'approved'
+});
+
+span.end();
+```
+
+### Create nested spans
+
+Create parent-child relationships between spans:
+
+```ts
+import { trace, context } from '@opentelemetry/api';
+
+export default defineEventHandler(async (event) => {
+  const tracer = trace.getTracer('my-nuxt-app');
+
+  const parentSpan = tracer.startSpan('process.checkout');
+
+  // Make parentSpan the active span
+  await context.with(trace.setSpan(context.active(), parentSpan), async () => {
+    // This span will be a child of parentSpan
+    const childSpan = tracer.startSpan('validate.payment');
+    await validatePayment();
+    childSpan.end();
+
+    // Another child span
+    const childSpan2 = tracer.startSpan('create.order');
+    await createOrder();
+    childSpan2.end();
+  });
+
+  parentSpan.end();
+});
+```
+
+## Automatic instrumentation
+
+Automatic instrumentation is already set up in the `server/plugins/instrumentation.ts` file:
+
+```ts server/plugins/instrumentation.ts
+instrumentations: [getNodeAutoInstrumentations()]
+```
+
+This automatically traces:
+- HTTP requests and responses
+- Database queries (MySQL, PostgreSQL, MongoDB, etc.)
+- Redis operations
+- File system operations
+- DNS lookups
+- And many more Node.js operations
+
+## Reference
+
+### List of OpenTelemetry Trace Fields
+
+| Field Category                  | Field Name                              | Description                                                  |
+| ------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| **Unique Identifiers**          |                                         |                                                              |
+|                                 | _rowid                                  | Unique identifier for each row in the trace data.            |
+|                                 | span_id                                 | Unique identifier for the span within the trace.             |
+|                                 | trace_id                                | Unique identifier for the entire trace.                      |
+| **Timestamps**                  |                                         |                                                              |
+|                                 | _systime                                | System timestamp when the trace data was recorded.           |
+|                                 | _time                                   | Timestamp when the actual event being traced occurred.       |
+| **HTTP Attributes**             |                                         |                                                              |
+|                                 | attributes.http.method                  | HTTP method used for the request.                            |
+|                                 | attributes.http.path                    | The API path accessed during the request.                    |
+|                                 | attributes.http.status_code             | HTTP response status code.                                   |
+|                                 | attributes.http.route                   | Route pattern (e.g., /api/:id).                              |
+|                                 | attributes.http.scheme                  | Protocol scheme (HTTP/HTTPS).                                |
+|                                 | attributes.http.user_agent              | User agent string of the client.                             |
+| **Network Attributes**          |                                         |                                                              |
+|                                 | attributes.net.host.port                | Port number on the host receiving the request.               |
+|                                 | attributes.net.peer.ip                  | IP address of the peer in the network interaction.           |
+| **Operational Details**         |                                         |                                                              |
+|                                 | duration                                | Time taken for the operation in nanoseconds.                 |
+|                                 | kind                                    | Type of span (server, client, internal, producer, consumer). |
+|                                 | name                                    | Name of the span (e.g., 'api.hello').                        |
+|                                 | scope                                   | Instrumentation scope.                                       |
+|                                 | service.name                            | Name of the service generating the trace.                    |
+| **Resource Attributes**         |                                         |                                                              |
+|                                 | resource.process.pid                    | Process ID of the Nitro server.                              |
+|                                 | resource.process.runtime.name           | Runtime name (e.g., 'nodejs').                               |
+|                                 | resource.process.runtime.version        | Node.js version.                                             |
+| **Telemetry SDK Attributes**    |                                         |                                                              |
+|                                 | telemetry.sdk.language                  | Language of the telemetry SDK (javascript).                  |
+|                                 | telemetry.sdk.name                      | Name of the telemetry SDK (opentelemetry).                   |
+|                                 | telemetry.sdk.version                   | Version of the telemetry SDK.                                |
+
+### List of Imported Libraries
+
+#### `@opentelemetry/sdk-node`
+
+The core SDK for OpenTelemetry in Node.js. Provides the primary interface for configuring and initializing OpenTelemetry in a Node.js/Nuxt app. It includes functionalities for managing traces, metrics, and context propagation.
+
+#### `@opentelemetry/auto-instrumentations-node`
+
+Offers automatic instrumentation for Node.js apps. Automatically collects telemetry data from common Node.js libraries and frameworks without manual instrumentation. Essential for Nuxt/Nitro server operations.
+
+#### `@opentelemetry/exporter-trace-otlp-proto`
+
+Provides an exporter that sends trace data using the OpenTelemetry Protocol (OTLP). Allows Nuxt apps to send collected traces to Axiom or any OTLP-compatible backend.
+
+#### `@opentelemetry/sdk-trace-base`
+
+Contains the `BatchSpanProcessor` and other foundational elements for tracing. The `BatchSpanProcessor` batches spans before sending them to the exporter, improving performance and reducing network overhead.
+
+#### `@opentelemetry/resources`
+
+Provides the `resourceFromAttributes()` function to create resource objects that identify your service in traces. Resources contain service metadata like service name, version, and environment.
+
+#### `@opentelemetry/semantic-conventions`
+
+Provides standard attribute names like `ATTR_SERVICE_NAME` for consistent telemetry data. Ensures your traces follow OpenTelemetry semantic conventions for better interoperability.
+
+#### `@opentelemetry/api`
+
+The OpenTelemetry API package that provides the `trace` and `context` APIs for manual instrumentation. This is a peer dependency that other OpenTelemetry packages rely on.
+
+## Advanced configurations
+
+### Custom span processor
+
+For more control over span processing, use the `SimpleSpanProcessor` instead of the `BatchSpanProcessor`:
+
+```typescript
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+
+const sdk = new NodeSDK({
+  spanProcessor: new SimpleSpanProcessor(traceExporter), // Exports immediately
+  resource: resource,
+  instrumentations: [getNodeAutoInstrumentations()],
+});
+```
+
+### Sampling
+
+To reduce the volume of traces, use the `TraceIdRatioBasedSampler` to sample a percentage of traces:
+
+```typescript
+import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
+
+const sdk = new NodeSDK({
+  spanProcessor: new BatchSpanProcessor(traceExporter),
+  sampler: new TraceIdRatioBasedSampler(0.5), // Sample 50% of traces
+  resource: resource,
+  instrumentations: [getNodeAutoInstrumentations()],
+});
+```
+
+### Custom resource attributes
+
+Add custom attributes to all traces, such as `service.version` and `deployment.environment`:
+
+```typescript
+const resource = resourceFromAttributes({
+  [ATTR_SERVICE_NAME]: 'my-nuxt-app',
+  [ATTR_SERVICE_VERSION]: '1.0.0',
+  'deployment.environment': process.env.NODE_ENV || 'development',
+  'service.namespace': 'production',
+});
+```

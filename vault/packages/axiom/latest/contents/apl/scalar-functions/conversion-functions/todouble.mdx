@@ -1,0 +1,162 @@
+---
+title: todouble, toreal
+description: 'This page explains how to use the todouble function in APL.'
+---
+
+Use the `todouble` function (or its synonym `toreal`) to convert various data types to a real (floating-point) number. This is helpful when you need to normalize numeric values from different sources into decimal format for mathematical operations, comparisons, or aggregations.
+
+You typically use `todouble` when working with numeric strings, integers, or other types that need to be converted to floating-point numbers for precise calculations or when decimal precision is required.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `tonumber` to convert values to numbers, which handles both integers and decimals. In APL, `todouble` specifically converts to floating-point numbers, while `toint` or `tolong` handle integers.
+
+<CodeGroup>
+```sql Splunk example
+... | eval price = tonumber(price_string)
+```
+
+```kusto APL equivalent
+... | extend price = todouble(price_string)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CAST(... AS DOUBLE)` or `CAST(... AS REAL)` to convert values to floating-point numbers. In APL, `todouble` and `toreal` are synonyms that provide a simpler way to convert to real numbers.
+
+<CodeGroup>
+```sql SQL example
+SELECT CAST('1567.89' AS DOUBLE) AS price FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend price = todouble('1567.89')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+todouble(value)
+toreal(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to real. |
+
+### Returns
+
+If conversion is successful, the result is a value of type `real`. If conversion isn't successful, the result is `null`.
+
+### Conversion behavior
+
+The `todouble` function converts values based on their type:
+
+- **Integer**: Converted to float. For example, `1` becomes `1.0`, `-1` becomes `-1.0`.
+- **String**: Parsed as a 64-bit float using [Go floating-point literal syntax](https://go.dev/ref/spec#Floating-point_literals), which supports scientific notation. For example, `"1e3"` becomes `1000.0`.
+- **Boolean**: `true` becomes `1.0`, `false` becomes `0.0`
+- **Datetime**: Converted to nanoseconds since epoch as a float
+- **Duration**: Converted to float nanoseconds
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Convert string representations of numeric values to real numbers for mathematical calculations and aggregations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend duration_seconds = todouble(['req_duration_ms']) / 1000.0
+| extend is_slow = duration_seconds > 0.001
+| where is_slow == true
+| project _time, ['uri'], ['req_duration_ms'], duration_seconds, is_slow
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20duration_seconds%20%3D%20todouble(%5B'req_duration_ms'%5D)%20/%201000.0%20%7C%20extend%20is_slow%20%3D%20duration_seconds%20%3E%201.0%20%7C%20where%20is_slow%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'req_duration_ms'%5D%2C%20duration_seconds%2C%20is_slow%22%7D)
+
+**Output**
+
+| _time | uri | req_duration_ms | duration_seconds | is_slow |
+| ----- | --- | --------------- | ---------------- | ------- |
+| Jun 24, 09:28:10 | /api/users | 1500 | 1.5 | true |
+
+This example converts milliseconds to seconds using `todouble` to ensure decimal precision in the calculation, enabling accurate time-based analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Convert trace duration values to real numbers for precise duration calculations and percentile analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = todouble(['duration']) / 1000000.0
+| extend is_slow_span = duration_ms > 100.0
+| where is_slow_span == true
+| project _time, ['trace_id'], ['service.name'], ['duration'], duration_ms, is_slow_span
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20todouble(%5B'duration'%5D)%20/%201000000.0%20%7C%20extend%20is_slow_span%20%3D%20duration_ms%20%3E%20100.0%20%7C%20where%20is_slow_span%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'trace_id'%5D%2C%20%5B'service.name'%5D%2C%20%5B'duration'%5D%2C%20duration_ms%2C%20is_slow_span%22%7D)
+
+**Output**
+
+| _time | trace_id | service.name | duration | duration_ms | is_slow_span |
+| ----- | -------- | ------------ | -------- | ----------- | ------------- |
+| Jun 24, 09:28:10 | abc123 | frontend | 150000000 | 150.0 | true |
+
+This example converts nanosecond durations to milliseconds using `todouble` to maintain decimal precision, enabling accurate performance analysis of trace spans.
+
+</Tab>
+<Tab title="Security logs">
+
+Convert numeric security metrics to real numbers for threshold-based security analysis and alerting.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend risk_score = todouble(['req_duration_ms']) / 100.0
+| extend is_high_risk = risk_score > 0.01
+| where is_high_risk == true
+| project _time, ['uri'], ['status'], ['req_duration_ms'], risk_score, is_high_risk
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20risk_score%20%3D%20todouble(%5B'req_duration_ms'%5D)%20/%20100.0%20%7C%20extend%20is_high_risk%20%3D%20risk_score%20%3E%2050.0%20%7C%20where%20(%5B'status'%5D%20%3D%3D%20'403'%20or%20%5B'status'%5D%20%3D%3D%20'401')%20and%20is_high_risk%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'status'%5D%2C%20%5B'req_duration_ms'%5D%2C%20risk_score%2C%20is_high_risk%22%7D)
+
+**Output**
+
+| _time | uri | status | req_duration_ms | risk_score | is_high_risk |
+| ----- | --- | ------ | --------------- | ---------- | ------------ |
+| Jun 24, 09:28:10 | /admin | 403 | 5500 | 55.0 | true |
+
+This example converts request duration to a risk score using `todouble` to enable precise threshold-based security analysis with decimal precision.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [toreal](/apl/scalar-functions/conversion-functions/todouble): Synonym for `todouble`. Both functions convert values to real numbers.
+- [toint](/apl/scalar-functions/conversion-functions/toint): Converts input to integer. Use `toint` when you need whole numbers, and `todouble` when you need decimal precision.

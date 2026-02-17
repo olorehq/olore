@@ -1,0 +1,166 @@
+---
+title: bag_zip
+description: 'This page explains how to use the bag_zip function in APL.'
+---
+
+Use the `bag_zip` function in APL to combine two arrays—one containing keys and another containing values—into a single dynamic property bag (dictionary). This is useful when you have parallel arrays that you want to merge into a structured key-value object for easier manipulation or output.
+
+You typically use `bag_zip` when parsing data that arrives as separate lists of keys and values, or when transforming array-based structures into more readable dictionary formats. This function is especially helpful in log analysis, data transformation pipelines, and when preparing data for downstream systems that expect key-value pairs.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `mvzip` to combine two multi-value fields into paired elements. APL's `bag_zip` goes further by creating a true dictionary object from separate key and value arrays.
+
+<CodeGroup>
+```sql Splunk example
+| eval zipped=mvzip(keys, values, '=')
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend keys = dynamic(['status', 'method', 'city'])
+| extend values = dynamic(['200', 'GET', 'Seattle'])
+| extend result = bag_zip(keys, values)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn't have native support for combining arrays into key-value dictionaries. You typically need to use JSON functions or complex `CASE` statements to achieve similar results. APL's `bag_zip` provides a direct and type-safe way to perform this operation.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_OBJECT('key1', value1, 'key2', value2)
+FROM table_name
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend keys = dynamic(['key1', 'key2'])
+| extend values = dynamic([value1, value2])
+| extend result = bag_zip(keys, values)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+bag_zip(keys, values)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `keys` | `dynamic` | An array of strings representing the keys for the resulting property bag. |
+| `values` | `dynamic` | An array of values corresponding to the keys. Can contain any data type. |
+
+### Returns
+
+A `dynamic` property bag (dictionary) where each key from the `keys` array is paired with the corresponding value from the `values` array. If the arrays have different lengths, the function pairs elements up to the length of the shorter array and ignores any extra elements.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `bag_zip` to combine metadata keys and values extracted from HTTP logs into structured objects for easier analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend metadata_keys = dynamic(['status_code', 'request_method', 'city'])
+| extend metadata_values = pack_array(status, method, ['geo.city'])
+| extend request_metadata = bag_zip(metadata_keys, metadata_values)
+| project _time, uri, request_metadata
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20metadata_keys%20%3D%20dynamic(%5B'status_code'%2C%20'request_method'%2C%20'city'%5D)%20%7C%20extend%20metadata_values%20%3D%20pack_array(status%2C%20method%2C%20%5B'geo.city'%5D)%20%7C%20extend%20request_metadata%20%3D%20bag_zip(metadata_keys%2C%20metadata_values)%20%7C%20project%20_time%2C%20uri%2C%20request_metadata%20%7C%20take%205%22%7D)
+
+**Output**
+
+| _time              | uri      | request_metadata                                           |
+| ------------------ | -------- | ---------------------------------------------------------- |
+| 2025-05-26 10:15:30 | /api/user | \{status_code: 200, request_method: GET, city: Seattle\}     |
+| 2025-05-26 10:16:45 | /api/data | \{status_code: 404, request_method: POST, city: Portland\}   |
+
+This query creates structured metadata objects by zipping together field names and their corresponding values, making the data easier to export or process downstream.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `bag_zip` to construct custom span attributes from separate attribute name and value arrays in OpenTelemetry traces.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend attr_keys = dynamic(['service', 'span_kind', 'status'])
+| extend attr_values = pack_array(['service.name'], kind, status_code)
+| extend span_attributes = bag_zip(attr_keys, attr_values)
+| project _time, span_id, trace_id, span_attributes
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20attr_keys%20%3D%20dynamic(%5B'service'%2C%20'span_kind'%2C%20'status'%5D)%20%7C%20extend%20attr_values%20%3D%20pack_array(%5B'service.name'%5D%2C%20kind%2C%20status_code)%20%7C%20extend%20span_attributes%20%3D%20bag_zip(attr_keys%2C%20attr_values)%20%7C%20project%20_time%2C%20span_id%2C%20trace_id%2C%20span_attributes%20%7C%20take%205%22%7D)
+
+**Output**
+
+| _time              | span_id          | trace_id         | span_attributes                                    |
+| ------------------ | ---------------- | ---------------- | -------------------------------------------------- |
+| 2025-05-26 11:20:15 | a1b2c3d4e5f6     | xyz123abc456     | \{service: frontend, span_kind: server, status: OK\} |
+| 2025-05-26 11:21:30 | f6e5d4c3b2a1     | def789ghi012     | \{service: cart, span_kind: client, status: OK\}     |
+
+This query consolidates span-level metadata into structured attribute dictionaries, simplifying trace analysis and visualization.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `bag_zip` to create structured security context objects from arrays of security-related field names and values.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend security_keys = dynamic(['client_ip', 'country', 'http_status'])
+| extend security_values = pack_array(id, ['geo.country'], status)
+| extend security_context = bag_zip(security_keys, security_values)
+| where status != '200'
+| project _time, uri, method, security_context
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20security_keys%20%3D%20dynamic(%5B'client_ip'%2C%20'country'%2C%20'http_status'%5D)%20%7C%20extend%20security_values%20%3D%20pack_array(id%2C%20%5B'geo.country'%5D%2C%20status)%20%7C%20extend%20security_context%20%3D%20bag_zip(security_keys%2C%20security_values)%20%7C%20where%20status%20!%3D%20'200'%20%7C%20project%20_time%2C%20uri%2C%20method%2C%20security_context%20%7C%20take%205%22%7D)
+
+**Output**
+
+| _time              | uri          | method | security_context                                   |
+| ------------------ | ------------ | ------ | -------------------------------------------------- |
+| 2025-05-26 12:30:00 | /admin/panel | POST   | \{client_ip: user123, country: CN, http_status: 403\} |
+| 2025-05-26 12:31:15 | /api/delete  | DELETE | \{client_ip: user456, country: RU, http_status: 401\} |
+
+This query creates structured security context for failed requests, making it easier to analyze security incidents and audit access patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [bag_pack](/apl/scalar-functions/array-functions/bag-pack): Use `bag_pack` when you have key-value pairs as separate arguments rather than arrays. Use `bag_zip` when working with parallel arrays.
+- [bag_keys](/apl/scalar-functions/array-functions/bag-keys): Use `bag_keys` to extract all keys from an existing property bag. Use `bag_zip` to create a new property bag from separate key and value arrays.
+- [pack_dictionary](/apl/scalar-functions/array-functions/pack-dictionary): Similar to `bag_zip`, but `pack_dictionary` takes alternating key-value arguments. Use `bag_zip` for array-based inputs.
+- [todynamic](/apl/scalar-functions/conversion-functions/todynamic): Use `todynamic` to parse JSON strings into dynamic objects. Use `bag_zip` to construct dynamic objects programmatically from arrays.
+

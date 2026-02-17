@@ -1,0 +1,294 @@
+---
+title: "Instrumentation with Axiom AI SDK"
+description: "Learn how to instrument your TypeScript app with Axiom AI SDK for AI telemetry capture."
+sidebarTitle: Use Axiom AI SDK
+keywords: ["ai engineering", "typescript", "axiom ai sdk", "telemetry", "withspan", "opentelemetry"]
+---
+
+import { Badge } from "/snippets/badge.jsx"
+
+This page explains how to set up instrumentation in your TypeScript generative AI app using Axiom AI SDK.
+
+<Info>
+Axiom AI SDK is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/ai).
+</Info>
+
+Alternatively, [instrument your app manually](/ai-engineering/observe/manual-instrumentation). For more information on instrumentation approaches, see [Introduction to Observe](/ai-engineering/observe).
+
+## Prerequisite
+
+Follow the procedure in [Quickstart](/ai-engineering/quickstart) to set up Axiom AI SDK in your TypeScript project.
+
+## Instrument AI SDK calls
+
+Axiom AI SDK provides helper functions for [Vercel AI SDK](https://ai-sdk.dev/docs) to wrap your existing AI model client. The `wrapAISDKModel` function takes an existing AI model object and returns an instrumented version that automatically generates trace data for every call.
+
+Choose one of the following common Vercel AI SDK providers. For the full list of providers, see the [Vercel documentation](https://ai-sdk.dev/providers/ai-sdk-providers).
+
+<Tabs>
+<Tab title="OpenAI">
+
+1. Run the following in your terminal to install the Vercel AI SDK and the OpenAI provider.
+
+    ```sh
+    npm i ai @ai-sdk/openai
+    ```
+
+1. Create the file `src/shared/openai.ts` with the following content:
+
+    ```ts /src/shared/openai.ts
+    import { createOpenAI } from '@ai-sdk/openai';
+    import { wrapAISDKModel } from 'axiom/ai';
+
+    const openaiProvider = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Wrap the model to enable automatic tracing
+    export const gpt4o = wrapAISDKModel(openaiProvider('gpt-4o'));
+    export const gpt4oMini = wrapAISDKModel(openaiProvider('gpt-4o-mini'));
+    ```
+
+</Tab>
+<Tab title="Anthropic">
+
+1. Run the following in your terminal to install the Vercel AI SDK and the Anthropic provider.
+
+    ```sh
+    npm i ai @ai-sdk/anthropic
+    ```
+
+1. Create the file `src/shared/anthropic.ts` with the following content:
+
+    ```ts /src/shared/anthropic.ts
+    import { createAnthropic } from '@ai-sdk/anthropic';
+    import { wrapAISDKModel } from 'axiom/ai';
+
+    const anthropicProvider = createAnthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
+    // Wrap the model to enable automatic tracing
+    export const claude35Sonnet = wrapAISDKModel(anthropicProvider('claude-3-5-sonnet-20241022'));
+    export const claude35Haiku = wrapAISDKModel(anthropicProvider('claude-3-5-haiku-20241022'));
+    ```
+
+</Tab>
+<Tab title="Gemini">
+
+1. Run the following in your terminal to install the Vercel AI SDK and the Gemini provider.
+
+    ```sh
+    npm i ai @ai-sdk/google
+    ```
+
+1. Create the file `src/shared/gemini.ts` with the following content:
+
+    ```ts /src/shared/gemini.ts
+    import { createGoogleGenerativeAI } from '@ai-sdk/google';
+    import { wrapAISDKModel } from 'axiom/ai';
+
+    const geminiProvider = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+
+    // Wrap the model to enable automatic tracing
+    export const gemini20Flash = wrapAISDKModel(geminiProvider('gemini-2.0-flash-exp'));
+    export const gemini15Pro = wrapAISDKModel(geminiProvider('gemini-1.5-pro'));
+    ```
+
+</Tab>
+<Tab title="Grok">
+
+1. Run the following in your terminal to install the Vercel AI SDK and the Grok provider.
+
+    ```sh
+    npm i ai @ai-sdk/xai
+    ```
+
+1. Create the file `src/shared/grok.ts` with the following content:
+
+    ```ts /src/shared/grok.ts
+    import { createXai } from '@ai-sdk/xai';
+    import { wrapAISDKModel } from 'axiom/ai';
+
+    const grokProvider = createXai({
+      apiKey: process.env.XAI_API_KEY,
+    });
+
+    // Wrap the model to enable automatic tracing
+    export const grokBeta = wrapAISDKModel(grokProvider('grok-beta'));
+    export const grok2Mini = wrapAISDKModel(grokProvider('grok-2-mini'));
+    ```
+
+</Tab>
+</Tabs>
+
+To instrument calls without a Vercel AI SDK provider, use the generic Vercel AI Gateway provider.
+
+<Accordion title="Gateway provider">
+
+To instrument calls without a Vercel AI SDK provider, use the generic Vercel AI Gateway provider. For more information, see the [Vercel documentation](https://ai-sdk.dev/providers/ai-sdk-providers/ai-gateway).
+
+1. Run the following in your terminal to install the Vercel AI SDK:
+
+    ```sh
+    npm i ai
+    ```
+
+1. Create the file `src/shared/openai.ts` with the following content:
+
+    ```ts /src/shared/openai.ts
+    import { createGateway } from 'ai';
+    import { wrapAISDKModel } from 'axiom';
+
+    const gateway = createGateway({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Wrap the model to enable automatic tracing
+    export const gpt4o = wrapAISDKModel(gateway('openai/gpt-4o'));
+    ```
+
+</Accordion>
+
+The rest of the page explains how to work with OpenAI. The process is similar for other LLMs.
+
+## Add context
+
+The `withSpan` function allows you to add crucial business context to your traces. It creates a parent span around your LLM call and attaches metadata about the `capability` and `step` that you execute.
+
+```ts /src/app/page.tsx
+import { withSpan } from 'axiom/ai';
+import { generateText } from 'ai';
+import { gpt4o } from '@/shared/openai';
+
+export default async function Page() {
+  const userId = 123;
+
+  // Use withSpan to define the capability and step
+  const res = await withSpan({ capability: 'get_capital', step: 'generate_answer' }, (span) => {
+    // You have access to the OTel span to add custom attributes
+    span.setAttribute('user_id', userId);
+
+    return generateText({
+      model: gpt4o, // Use the wrapped model
+      messages: [
+        {
+          role: 'user',
+          content: 'What is the capital of Spain?',
+        },
+      ],
+    });
+  });
+
+  return <p>{res.text}</p>;
+}
+```
+
+## Instrument tool calls
+
+For many AI capabilities, the LLM call is only part of the story. If your capability uses tools to interact with external data or services, observing the performance and outcome of those tools is critical. Axiom AI SDK provides the `wrapTool` and `wrapTools` functions to automatically instrument your Vercel AI SDK tool definitions.
+
+The `wrapTool` helper takes your tool’s name and its definition and returns an instrumented version. This wrapper creates a dedicated child span for every tool execution, capturing its arguments, output, and any errors.
+
+```ts /src/app/generate-text/page.tsx
+import { tool } from 'ai';
+import { z } from 'zod';
+import { wrapTool } from 'axiom/ai';
+import { generateText } from 'ai';
+import { gpt4o } from '@/shared/openai';
+
+// In your generateText call, provide wrapped tools
+const { text, toolResults } = await generateText({
+  model: gpt4o,
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'How do I get from Paris to Berlin?' },
+  ],
+  tools: {
+    // Wrap each tool with its name
+    findDirections: wrapTool(
+      'findDirections', // The name of the tool
+      tool({
+        description: 'Find directions to a location',
+        inputSchema: z.object({
+          from: z.string(),
+          to: z.string(),
+        }),
+        execute: async (params) => {
+          // Your tool logic here...
+          return { directions: `To get from ${params.from} to ${params.to}, use a teleporter.` };
+        },
+      })
+    )
+  }
+});
+```
+
+## Complete example
+
+Example of how all three instrumentation functions work together in a single, real-world example:
+
+```ts /src/app/page.tsx expandable
+import { withSpan, wrapAISDKModel, wrapTool } from 'axiom/ai';
+import { generateText, tool } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// 1. Create and wrap the AI model client
+const openaiProvider = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const gpt4o = wrapAISDKModel(openaiProvider('gpt-4o'));
+
+// 2. Define and wrap your tool(s)
+const findDirectionsTool = wrapTool(
+  'findDirections', // The tool name must be passed to the wrapper
+  tool({
+    description: 'Find directions to a location',
+    inputSchema: z.object({ from: z.string(), to: z.string() }),
+    execute: async ({ from, to }) => ({
+      directions: `To get from ${from} to ${to}, use a teleporter.`,
+    }),
+  })
+);
+
+// 3. In your application logic, use `withSpan` to add context
+//    and call the AI model with your wrapped tools.
+export default async function Page() {
+  const userId = 123;
+
+  const { text } = await withSpan({ capability: 'get_directions', step: 'generate_ai_response' }, async (span) => {
+    // You have access to the OTel span to add custom attributes
+    span.setAttribute('user_id', userId);
+
+    return generateText({
+      model: gpt4o, // Use the wrapped model
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'How do I get from Paris to Berlin?' },
+      ],
+      tools: {
+        findDirections: findDirectionsTool, // Use the wrapped tool
+      },
+    });
+  });
+
+  return <p>{text}</p>;
+}
+```
+
+This demonstrates the three key steps to rich observability:
+
+1. **`wrapAISDKModel`**: Automatically captures telemetry for the LLM provider call
+1. **`wrapTool`**: Instruments the tool execution with detailed spans
+1. **`withSpan`**: Creates a parent span that ties everything together under a business capability
+
+## What’s next?
+
+After sending traces to Axiom:
+
+- View your [traces](/query-data/traces) in Console
+- Set up [monitors and alerts](/monitor-data/monitors) based on your AI telemetry data
+- Learn about [developing AI features](/ai-engineering/create) with confidence using Axiom

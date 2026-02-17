@@ -1,0 +1,298 @@
+---
+title: 'Spawn'
+description: 'You can use spawn to run actors. Actors created with spawn are spawning actors, and actors created with invoke are invoking actors.'
+---
+
+Sometimes invoking [actors](actors) may not be flexible enough for your needs. For example, you might want to:
+
+- Invoke child machines that last across _several_ states
+- Invoke a _dynamic number_ of actors
+
+You can do this by **spawning** an actor instead of invoking. Actors created by spawning are **spawning actors**, and actors created with invoke are **invoking actors**.
+
+<Callout>
+[Read about the difference between spawning and invoking actors](actors.mdx#invoking-and-spawning-actors).
+</Callout>
+
+There are two ways to spawn: the `spawnChild` action creator, or the `spawn` helper function for `assign`.
+
+In most cases, prefer `spawnChild`, which causes an actor to be spawned, and can accept a configurable ID for the actor to reference it later:
+
+```ts
+createMachine({
+  entry: spawnChild(childMachine, {
+    id: 'child',
+  }),
+});
+```
+
+You can use `spawnChild` for multiple spawned actors:
+
+```ts
+createMachine({
+  entry: [
+    spawnChild(childMachine, { id: 'child-1' }),
+    spawnChild(childMachine, { id: 'child-2' }),
+    spawnChild(childMachine, { id: 'child-3' }),
+  ],
+});
+```
+
+You can also use the `spawn` helper function provided by the `assign` action creator, which allows you to store a reference to the spawned actor (an `ActorRef`) in the machine's `context`:
+
+```ts
+const parentMachine = createMachine({
+  entry: [
+    assign({
+      childMachineRef: ({ spawn }) => spawn(childMachine, { id: 'child' }),
+    }),
+  ],
+});
+```
+
+However, if you use `spawn`, **make sure you remove the ActorRef from `context` to prevent memory leaks** when the spawned actor is no longer needed:
+
+```ts
+actions: [stopChild('child'), assign({ childMachineRef: undefined })];
+```
+
+You can `spawn` as many actors as you need:
+
+```ts
+const childMachine = createMachine({
+  /* ... */
+});
+
+const parentMachine = createMachine({
+  entry: [
+    assign({
+      childMachineRefs: ({ spawn }) => [
+        // [!code highlight:3]
+        spawn(childMachine),
+        spawn(childMachine),
+        spawn(childMachine),
+      ],
+    }),
+  ],
+});
+```
+
+If you don't need to keep track of a reference to the spawned actor (e.g.: for anonymous spawned actors), you can use the `spawnChild` action creator. It does _not_ return a reference, but indicates to the XState interpreter that a new actor should be spawned:
+
+```ts
+createMachine({
+  entry: spawnChild('workflow', {
+    id: 'workflow',
+  }),
+});
+```
+
+## API
+
+```ts
+actions: assign({
+  ref: ({ spawn }) => spawn(fromPromise(...), {
+    id: 'some-id',
+  })
+})
+```
+
+- `spawn(actorBehavior, options?)`
+  - `actorBehavior` - The behavior of the actor to spawn. This can be a function, promise, observable, or callback.
+  - `options` - Options for spawning the actor.
+    - `id` (optional) - The ID of the actor. This is used to reference the actor in the state machine.
+    - `input` (optional) - The input to pass to the actor.
+    - `systemId` (optional) - A string identifing the actor, unique system-wide.
+
+## Source
+
+- Inline: `spawn(fromPromise(...))`
+- Referenced: `spawn('getUser')`
+  - `.provide({ actors })`
+
+## Lifecycle
+
+- Created & started when spawned
+- Stopped when the machine is stopped
+- Can be manually stopped
+
+## Stopping an actor
+
+You can stop a child actor via the "stop child" action. This action is created from the `stopChild(id)` action creator.
+
+```ts
+import { setup, stopChild, fromPromise } from 'xstate';
+
+const machine = setup({
+  actors: {
+    something: fromPromise(async () => {
+      // Some actor logic
+      return 'Some response';
+    }),
+  },
+}).createMachine({
+  context: ({ spawn }) => ({
+    something: spawn('something', { id: 'thing' }),
+  }),
+  // ...
+  on: {
+    'thing.stop': {
+      // [!code highlight:1]
+      actions: stopChild('thing'),
+    },
+    'thing.stopFromContext': {
+      // [!code highlight:1]
+      actions: stopChild(({ context }) => context.something),
+    },
+  },
+});
+```
+
+Stopping a child actor does _not_ remove it from `context`. To remove it from context, use the [`assign(...)` action creator](./context):
+
+```ts
+import { setup, stopChild } from 'xstate';
+
+const machine = setup({
+  // ...
+}).createMachine({
+  context: ({ spawn }) => ({
+    something: spawn('something', { id: 'thing' }),
+  }),
+  // ...
+  on: {
+    'thing.stop': {
+      actions: [stopChild('thing'), assign({ something: undefined })],
+    },
+  },
+});
+```
+
+## Spawn and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+_Coming soon_
+
+## Spawn cheatsheet
+
+### Basic Spawning
+
+```ts
+// Spawn a child machine
+createMachine({
+  entry: spawnChild(childMachine, {
+    id: 'child',
+  }),
+});
+
+// Spawn multiple children
+createMachine({
+  entry: [
+    spawnChild(childMachine, { id: 'child-1' }),
+    spawnChild(childMachine, { id: 'child-2' }),
+  ],
+});
+```
+
+### Spawning with Context
+
+```ts
+// Store actor reference in context
+createMachine({
+  entry: assign({
+    childRef: ({ spawn }) => spawn(childMachine, { id: 'child' }),
+  }),
+});
+
+// Spawn multiple actors in context
+createMachine({
+  entry: assign({
+    childRefs: ({ spawn }) => [spawn(childMachine), spawn(childMachine)],
+  }),
+});
+```
+
+### Spawning Different Actor Types
+
+```ts
+// Spawn from promise
+spawnChild(
+  fromPromise(() => Promise.resolve(42)),
+  {
+    id: 'promiseActor',
+  },
+);
+
+// Spawn from observable
+spawnChild(
+  fromObservable(() => interval(1000)),
+  {
+    id: 'observableActor',
+  },
+);
+
+// Spawn from named actor
+setup({
+  actors: {
+    fetchData: fromPromise(({ input }) => Promise.resolve(input)),
+  },
+}).createMachine({
+  entry: spawnChild('fetchData', {
+    id: 'fetchActor',
+    input: 42,
+  }),
+});
+```
+
+### Spawning Options
+
+```ts
+spawnChild(actor, {
+  id: 'actorId', // Required for referencing
+  input: { data: 42 }, // Optional input data
+  systemId: 'systemId', // Optional system-wide unique ID
+});
+```
+
+### Stopping Spawned Actors
+
+```ts
+// Stop by ID
+actions: stopChild('actorId');
+
+// Stop from context reference
+actions: stopChild(({ context }) => context.actorRef);
+
+// Stop and clean up context
+actions: [stopChild('actorId'), assign({ actorRef: undefined })];
+```
+
+### Dynamic Spawning
+
+```ts
+// Dynamic ID based on context
+spawnChild(childMachine, {
+  id: ({ context }) => context.childId,
+});
+
+// Spawn with dynamic input
+spawnChild(childMachine, {
+  id: 'child',
+  input: ({ context }) => context.inputData,
+});
+```
+
+### Best Practices
+
+1. Always provide an `id` when you need to reference the actor later
+2. Clean up actor references from context when stopping them
+3. Use `spawnChild` for one-off actors that don't need context references
+4. Use `spawn` with `assign` when you need to track actor references
+5. Consider using `systemId` for actors that need to be globally unique

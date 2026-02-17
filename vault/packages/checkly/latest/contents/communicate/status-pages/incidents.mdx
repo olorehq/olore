@@ -1,0 +1,97 @@
+---
+title: 'Incident Management'
+description: 'Guide to creating, managing, and automating incidents on Checkly status pages including subscriber notifications and incident backfilling capabilities.'
+sidebarTitle: 'Incidents'
+---
+
+Incidents are used to communicate downtime on one or more services. You can open incidents manually as part of your incident management process, or automatically by connecting a check to a service using incident automation. 
+
+When an incident is posted, a notification will be sent to all users subscribed to the Status Page, unless you opt out of notifications when creating the incident update.
+
+## Creating an incident
+
+Create an incident when you want to communicate downtime or known issues of your services to users via your Status Page.
+
+1. Click ‘Status pages’ in the sidebar and open your Status Page.
+2. Click ‘Add incident’ at the top right, or click the fire icon at the bottom of the card that most relates to the incident you're about to create
+3. Enter the name of the incident
+4. Choose the severity of the incident
+5. Select which services are impacted in the dropdown list.
+
+> Note that incidents will be posted on all status pages where a service is present. [See Services for more details](/communicate/status-pages/overview#services).
+
+6. Write the initial incident update message, and update the status of the incident.
+8. If you want to backfill the incident, select `Use custom date`. See [Backfilling incidents for more information](/communicate/status-pages/incidents#backfilling-an-incident).
+9. Select if you want to notify subscribers of your Status Page about the incident.
+10. Click ‘Create incident’
+
+Your incident will now appear on all status pages that show the selected service(s). If you selected the option to notify subscribers, they will receive the update message by email.
+
+> All times on status pages are displayed in UTC.
+
+
+## Updating an incident
+
+To update an ongoing incident go to the ‘Incidents’ tab on your Status Page and select the incident to update.
+
+![Incidents view](/images/docs/images/status-pages/status-pages-incidents-1.png)
+
+From there, you can:
+ * Post a new status update for the incident
+ * Edit existing updates
+ * Change the impacted services
+ * Change the incident severity
+ * Delete the incident entirely
+
+## Incident notifications
+
+Whenever you post an incident update, Checkly can automatically send email notifications to users subscribed to your Status Page.
+
+Emails are sent out only when an update is first posted. Notifications are not sent again if the incident update is edited.
+
+If you want to post an incident update without notifying your subscribers you can uncheck the ‘Notifications’ checkbox when updating the incident.
+![Incident notification settings](/images/docs/images/status-pages/status-pages-notifications-2.png)
+
+
+Incident notifications contain information about the incident name, the severity and status as well as which services are impacted.
+![Example notification](/images/docs/images/status-pages/status-pages-notifications-1.png)
+
+
+## Subscribing to incident notifications
+
+Subscribing to incident notifications is done on your Status Page. To subscribe, a user needs to enter a valid email address. A verification email will be sent to the registered email, and the user will be ready to receive incident notifications after confirming the subscription.
+
+## Incident automation
+
+<Note>
+Incident automation is available on Communicate Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
+</Note>
+
+Incident automation opens incidents automatically whenever a check fails. It works by connecting a check to a service. Multiple checks can be connected to the same service through incident automation. After connecting:
+* When the check fails and triggers an alert, it will also open an incident on the connected service.
+* The incident will be automatically resolved when the check recovers.
+
+To associate a Check to a Service:
+
+1. Open your check from the home dashboard.
+2. Click ‘Edit’ in the check overview page.
+3. For API checks, URL monitors and TCP monitors, click the ‘Incident triggers’ tab. For Browser and Multistep checks, first click ‘Settings’ then ‘Incident automation’.
+4. Check the ‘Enable incident automation’ checkbox.
+5. Fill in the incident name, a first status update and the severity of the incident which will be created upon the check failing.
+6. Select which service the incident should be opened on.
+7. Select if the Status Page subscribers should be notified when the incident updates are automatically posted.
+8. Save your check.
+
+![Incident automation](/images/docs/images/status-pages/status-pages-incident-automation-1.png)
+
+## Backfilling an incident
+
+Backfilling allows you to add incidents for downtime that happened in the past. Use backfilling to provide accurate uptime information to your users.
+
+To backfill an incident, follow the steps 1 - 7 in the [Creating an incident](/communicate/status-pages/incidents#creating-an-incident) process. Next, select ‘Use custom date to backfill incident’ and pick the date and time when the incident started.
+
+![Incident backfilling](/images/docs/images/status-pages/status-pages-backfilling-1.png)
+
+We recommend to uncheck notifications when backfilling incidents to avoid notifying customers about resolved incidents.
+
+If you only want to provide the history of the incident, you can set the first incident update to resolved. This will correctly show the incident as having occurred, but without a duration. If you want to have correct uptime on your service you should post two incident updates, with the timestamps for when the incident started and resolved respectively.

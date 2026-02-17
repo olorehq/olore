@@ -1,0 +1,319 @@
+---
+title: 'Other Configurations'
+description: 'Learn how to configure heartbeat monitors with other tools and platforms.'
+sidebarTitle: Other Configurations
+---
+
+
+## With Cloud Platforms
+
+Integrate heartbeat monitoring with cloud platform services for comprehensive monitoring coverage.
+
+### AWS Lambda Example
+
+```python
+import boto3
+import requests
+import os
+
+def lambda_handler(event, context):
+    try:
+        # Your scheduled task logic
+        process_data()
+        
+        # Ping heartbeat on success
+        heartbeat_url = os.environ['HEARTBEAT_URL']
+        requests.get(heartbeat_url, timeout=5)
+        
+        return {
+            'statusCode': 200,
+            'body': 'Task completed successfully'
+        }
+    except Exception as e:
+        # Don't ping on failure - let heartbeat alert
+        raise e
+
+def process_data():
+    # Your actual task logic here
+    pass
+```
+
+### Google Cloud Functions Example
+
+```python
+import requests
+import os
+
+def process_scheduled_task(event, context):
+    try:
+        # Your scheduled task logic
+        generate_reports()
+        
+        # Ping heartbeat on success
+        heartbeat_url = os.environ.get('HEARTBEAT_URL')
+        if heartbeat_url:
+            requests.get(heartbeat_url, timeout=5)
+            
+    except Exception as e:
+        # Log error but don't ping - let heartbeat alert
+        print(f"Task failed: {e}")
+        raise e
+
+def generate_reports():
+    # Your actual task logic here
+    pass
+```
+
+### Azure Functions Example
+
+```csharp
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Logging;
+
+public class ScheduledTask
+{
+    [FunctionName("ScheduledTask")]
+    public async Task Run(
+        [TimerTrigger("0 0 2 * * *")] TimerInfo myTimer,
+        ILogger log)
+    {
+        try
+        {
+            // Your scheduled task logic
+            await ProcessData();
+            
+            // Ping heartbeat on success
+            var heartbeatUrl = Environment.GetEnvironmentVariable("HEARTBEAT_URL");
+            if (!string.IsNullOrEmpty(heartbeatUrl))
+            {
+                using (var client = new HttpClient())
+                {
+                    await client.GetAsync(heartbeatUrl);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't ping on failure - let heartbeat alert
+            log.LogError(ex, "Task failed");
+            throw;
+        }
+    }
+    
+    private async Task ProcessData()
+    {
+        // Your actual task logic here
+    }
+}
+```
+
+## With Container Orchestration
+
+Monitor containerized applications and batch jobs in Kubernetes and Docker environments.
+
+### Kubernetes CronJob Example
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-backup
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: postgres:13
+            command:
+            - /bin/bash
+            - -c
+            - |
+              # Run backup
+              pg_dump $DB_URL > /backups/backup.sql
+              aws s3 cp /backups/backup.sql s3://my-backup-bucket/
+              
+              # Ping heartbeat on success
+              curl -m 5 --retry 3 $HEARTBEAT_URL
+            env:
+            - name: HEARTBEAT_URL
+              value: "https://ping.checklyhq.com/your-backup-id"
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: url
+          restartPolicy: OnFailure
+```
+
+### Docker Compose Example
+
+```yaml
+version: '3.8'
+services:
+  backup:
+    image: postgres:13
+    command: |
+      bash -c "
+        # Run backup
+        pg_dump $$DB_URL > /backups/backup.sql
+        aws s3 cp /backups/backup.sql s3://my-backup-bucket/
+        
+        # Ping heartbeat on success
+        curl -m 5 --retry 3 $$HEARTBEAT_URL
+      "
+    environment:
+      - HEARTBEAT_URL=https://ping.checklyhq.com/your-backup-id
+      - DB_URL=${DB_URL}
+    volumes:
+      - ./backups:/backups
+```
+
+## With Monitoring and Observability Tools
+
+Integrate heartbeat monitoring with your existing monitoring stack for unified observability.
+
+### Prometheus Integration
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'heartbeat-monitors'
+    static_configs:
+      - targets: ['checkly-exporter:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+```
+
+### Grafana Dashboard
+
+Create custom dashboards to visualize heartbeat monitor status alongside other metrics:
+
+```json
+{
+  "dashboard": {
+    "title": "Heartbeat Monitors Overview",
+    "panels": [
+      {
+        "title": "Heartbeat Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "heartbeat_monitor_status",
+            "legendFormat": "{{monitor_name}}"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## With Development Tools
+
+Integrate heartbeat monitoring into your development workflow and testing processes.
+
+### Local Development
+
+```bash
+#!/bin/bash
+# dev-heartbeat.sh
+# Use during development to test heartbeat integration
+
+HEARTBEAT_URL="https://ping.checklyhq.com/your-dev-heartbeat-id"
+
+echo "Running development task..."
+# Your development task here
+
+# Simulate successful completion
+echo "Task completed successfully"
+curl -m 5 --retry 3 $HEARTBEAT_URL
+```
+
+### Testing Framework Integration
+
+```python
+# test_heartbeat_integration.py
+import pytest
+import requests
+from unittest.mock import patch
+
+def test_backup_with_heartbeat():
+    """Test that backup process pings heartbeat on success"""
+    with patch('requests.get') as mock_get:
+        # Run backup process
+        result = run_backup()
+        
+        # Verify backup succeeded
+        assert result.success
+        
+        # Verify heartbeat was pinged
+        mock_get.assert_called_once_with(
+            'https://ping.checklyhq.com/your-backup-id',
+            timeout=5
+        )
+
+def test_backup_failure_no_heartbeat():
+    """Test that heartbeat is not pinged on failure"""
+    with patch('requests.get') as mock_get:
+        # Simulate backup failure
+        with pytest.raises(Exception):
+            run_backup_with_failure()
+        
+        # Verify heartbeat was not pinged
+        mock_get.assert_not_called()
+```
+
+## Best Practices for Integration
+
+### Environment Management
+
+```bash
+# Use environment variables for different environments
+export HEARTBEAT_URL_PROD="https://ping.checklyhq.com/prod-backup-id"
+export HEARTBEAT_URL_STAGING="https://ping.checklyhq.com/staging-backup-id"
+export HEARTBEAT_URL_DEV="https://ping.checklyhq.com/dev-backup-id"
+
+# Use appropriate URL based on environment
+HEARTBEAT_URL="${HEARTBEAT_URL_${ENVIRONMENT^^}}"
+```
+
+### Error Handling
+
+```python
+import requests
+import logging
+
+def ping_heartbeat(url, timeout=5, max_retries=3):
+    """Safely ping heartbeat with proper error handling"""
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            logging.info(f"Heartbeat pinged successfully")
+            return True
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"Heartbeat ping attempt {attempt + 1} failed: {e}")
+            if attempt == max_retries - 1:
+                logging.error("All heartbeat ping attempts failed")
+                return False
+    return False
+```
+
+### Security Considerations
+
+```bash
+# Use secrets management for heartbeat URLs
+# Don't hardcode URLs in scripts or config files
+
+# Example with AWS Secrets Manager
+HEARTBEAT_URL=$(aws secretsmanager get-secret-value \
+  --secret-id heartbeat-urls \
+  --query SecretString \
+  --output text | jq -r .backup_heartbeat_url)
+```

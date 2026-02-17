@@ -1,0 +1,281 @@
+---
+title: Final states
+---
+
+A final state is a state that represents the completion or successful termination of a machine. It is defined by the `type: 'final'` property on a state node:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      /* ... */
+    },
+    thanks: {
+      /* ... */
+    },
+    // [!code highlight:3]
+    closed: {
+      type: 'final',
+    },
+    // ...
+  },
+  on: {
+    'feedback.close': {
+      target: '.closed',
+    },
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=7d3feeca-1017-4d94-87b3-cd5128682440"
+  title="Feedback machine with final state"
+/>
+
+When a machine reaches the final state, it can no longer receive any events, and anything running inside it is canceled and cleaned up. The box with a surrounding border icon represents the final state.
+
+A machine can have multiple final states or no final states.
+
+- A state machine can have zero or more final states. Some machines may run indefinitely and not need to terminate.
+- Final states can have `output` data, which is sent to the parent machine when the machine terminates.
+- When a machine reaches a top-level final state, it terminates.
+- Final states cannot have transitions
+
+## Top-level final states
+
+A top-level final state is a final state that is a direct child state of the machine. When the machine reaches a top-level final state, the machine will terminate. When a machine terminates, it can no longer receive events nor transition.
+
+## Child final states
+
+When a child final state of a [parent (compound) state](./parent-states) is reached, that parent state is considered "done". The `onDone` transition of that parent state is automatically taken.
+
+```ts
+import { createMachine } from 'xstate';
+
+const coffeeMachine = createMachine({
+  initial: 'preparation',
+  states: {
+    preparation: {
+      initial: 'weighing',
+      states: {
+        weighing: {
+          on: {
+            weighed: {
+              target: 'grinding',
+            },
+          },
+        },
+        grinding: {
+          on: {
+            ground: 'ready',
+          },
+        },
+        // [!code highlight:4]
+        ready: {
+          // Child final state of parent state 'preparation'
+          type: 'final',
+        },
+      },
+      // [!code highlight:4]
+      // Transition will be taken when child final state is reached
+      onDone: {
+        target: 'brewing',
+      },
+    },
+    brewing: {
+      // ...
+    },
+  },
+});
+```
+
+## Final states in parallel states
+
+When all regions of a parallel state are "done", the parallel state is considered "done". The `onDone` transition of the parallel state is taken.
+
+In this example, the `preparation` state is a parallel state with two regions: `beans` and `water`. When both regions are done, the `preparation` state is done, and the `brewing` state is entered.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const coffeeMachine = createMachine({
+  initial: 'preparation',
+  states: {
+    preparation: {
+      type: 'parallel',
+      states: {
+        beans: {
+          initial: 'grinding',
+          states: {
+            grinding: {
+              on: {
+                grindingComplete: 'ground',
+              },
+            },
+            // [!code highlight:3]
+            ground: {
+              type: 'final',
+            },
+          },
+        },
+        water: {
+          initial: 'heating',
+          states: {
+            heating: {
+              always: {
+                guard: 'waterBoiling',
+                target: 'heated',
+              },
+            },
+            // [!code highlight:3]
+            heated: {
+              type: 'final',
+            },
+          },
+        },
+      },
+      // [!code highlight:1]
+      onDone: 'brewing',
+    },
+    brewing: {},
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=95504ba2-3da2-4d70-a3b5-59bbcd31bf2d"
+  title="Coffee machine with final states"
+/>
+
+## Output
+
+When a machine reaches its top-level final state, it can produce output data. You can specify this output data in the `.output` property of the machine config:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const currencyMachine = createMachine({
+  // ...
+  states: {
+    converting: {
+      // ...
+    },
+    converted: {
+      type: 'final',
+    },
+  },
+  // [!code highlight:4]
+  output: ({ context }) => ({
+    amount: context.amount,
+    currency: context.currency,
+  }),
+});
+
+const currencyActor = createActor(currencyMachine, {
+  input: {
+    amount: 10,
+    fromCurrency: 'USD',
+    toCurrency: 'EUR',
+  },
+});
+
+currencyActor.subscribe({
+  complete() {
+    console.log(currencyActor.getSnapshot().output);
+    // logs e.g. { amount: 12, currency: 'EUR' }
+  },
+});
+```
+
+The `.output` property can also be a static value:
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const processMachine = createMachine({
+  // ...
+  output: {
+    message: 'Process completed.',
+  },
+});
+```
+
+## Final states cheatsheet
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  initial: 'prompt',
+  states: {
+    prompt: {
+      /* ... */
+    },
+    thanks: {
+      /* ... */
+    },
+    // [!code highlight:3]
+    closed: {
+      type: 'final',
+    },
+    // ...
+  },
+  on: {
+    'feedback.close': {
+      target: '.closed',
+    },
+  },
+});
+```
+
+## Cheatsheet: final states in parallel states
+
+```ts
+import { createMachine } from 'xstate';
+
+const coffeeMachine = createMachine({
+  initial: 'preparation',
+  states: {
+    preparation: {
+      type: 'parallel',
+      states: {
+        beans: {
+          initial: 'grinding',
+          states: {
+            grinding: {
+              on: {
+                grindingComplete: 'ground',
+              },
+            },
+            // [!code highlight:3]
+            ground: {
+              type: 'final',
+            },
+          },
+        },
+        water: {
+          initial: 'heating',
+          states: {
+            heating: {
+              always: {
+                guard: 'waterBoiling',
+                target: 'heated',
+              },
+            },
+            // [!code highlight:3]
+            heated: {
+              type: 'final',
+            },
+          },
+        },
+      },
+      // [!code highlight:1]
+      onDone: 'brewing',
+    },
+    brewing: {},
+  },
+});
+```

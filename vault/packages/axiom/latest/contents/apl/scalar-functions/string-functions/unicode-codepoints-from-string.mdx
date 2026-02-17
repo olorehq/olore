@@ -1,0 +1,155 @@
+---
+title: unicode_codepoints_from_string
+description: 'This page explains how to use the unicode_codepoints_from_string function in APL.'
+---
+
+Use the `unicode_codepoints_from_string` function in APL to convert a UTF-8 string into an array of Unicode code points. This function is useful when you want to analyze or transform strings at the character encoding level, especially in multilingual datasets, log inspection, or byte-level debugging.
+
+You can use this function to detect non-printable or non-ASCII characters, analyze internationalized content, or perform detailed comparisons between strings that look visually similar but differ in underlying code points.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, working with Unicode code points requires using `eval` expressions with `ord` or custom logic, which can be verbose. APL offers a built-in function for this, making it concise and efficient.
+
+<CodeGroup>
+```sql Splunk example
+| eval codepoints=split(mvjoin(map(split("abc", ""), ord('<<FIELD>>')), ","), ",")
+````
+
+```kusto APL equivalent
+print codepoints = unicode_codepoints_from_string('abc')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not have a native function to extract Unicode code points. You typically need to use platform-specific functions or procedural logic. In APL, this is a single-function call.
+
+<CodeGroup>
+```sql SQL example
+-- Requires procedural logic or platform-specific functions like ASCII(), UNICODE(), etc.
+```
+
+```kusto APL equivalent
+print codepoints = unicode_codepoints_from_string('abc')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+unicode_codepoints_from_string(source)
+```
+
+### Parameters
+
+| Name   | Type   | Description                        |
+| ------ | ------ | ---------------------------------- |
+| source | string | The input UTF-8 string to convert. |
+
+### Returns
+
+An array of integers, where each integer is the Unicode code point of the corresponding character in the input string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use this function to identify unusual characters in request URLs that might indicate obfuscated attacks or encoding issues.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| limit 100
+| extend codepoints = unicode_codepoints_from_string(uri)
+| mv-expand codepoints
+| where codepoints < 32 or codepoints > 126
+| project _time, uri, codepoints
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20limit%20100%20%7C%20extend%20codepoints%20%3D%20unicode_codepoints_from_string(uri)%20%7C%20mv-expand%20codepoints%20%7C%20where%20codepoints%20%3C%2032%20or%20codepoints%20%3E%20126%20%7C%20project%20_time%2C%20uri%2C%20codepoints%22%7D)
+
+**Output**
+
+| _time               | uri                | codepoints                      |
+| -------------------- | ------------------ | ------------------------------- |
+| 2025-07-27T12:00:00Z | /api/v1/textdata/background/change£ | 163 |
+
+This query flags URIs with non-standard characters, helping you identify suspicious or malformed requests.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use this function to inspect `trace_id` values for structural anomalies or non-standard characters that can disrupt downstream systems.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| limit 100
+| extend codepoints = unicode_codepoints_from_string(trace_id)
+| mv-expand codepoints
+| where codepoints < 32 or codepoints > 126
+| project _time, trace_id, codepoints
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20limit%20100%20%7C%20extend%20codepoints%20%3D%20unicode_codepoints_from_string(trace_id)%20%7C%20mv-expand%20codepoints%20%7C%20where%20codepoints%20%3C%2032%20or%20codepoints%20%3E%20126%20%7C%20project%20_time%2C%20trace_id%2C%20codepoints%22%7D)
+
+**Output**
+
+| _time               | trace_id     | codepoints                        |
+| -------------------- | ------------- | --------------------------------- |
+| 2025-07-27T13:30:00Z | aa3898b1c5bd7da25e6704b1bf59d6b§ | 167 |
+
+This query detects trace IDs with non-standard characters, which might signal improper instrumentation or encoding errors.
+
+</Tab>
+<Tab title="Security logs">
+
+Use this function to investigate potential obfuscation in user IDs by extracting and analyzing Unicode code points.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| limit 100
+| extend codepoints = unicode_codepoints_from_string(id)
+| mv-expand codepoints
+| where codepoints < 32 or codepoints > 126
+| project _time, id, codepoints
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20limit%20100%20%7C%20extend%20codepoints%20%3D%20unicode_codepoints_from_string(id)%20%7C%20mv-expand%20codepoints%20%7C%20where%20codepoints%20%3C%2032%20or%20codepoints%20%3E%20126%20%7C%20project%20_time%2C%20id%2C%20codepoints%22%7D)
+
+**Output**
+
+| _time               | id        | codepoints                             |
+| -------------------- | --------- | -------------------------------------- |
+| 2025-07-27T15:15:00Z | user☠️999 | [117,115,101,114,9760,65039,57,57,57] |
+
+This query helps detect tampered user IDs that use emojis or hidden characters to evade filters.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Combines multiple arrays. Useful when merging code point arrays from different strings.
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array. Use it to check how many code points a string contains.
+- [parse_path](apl/scalar-functions/string-functions/parse-path): Parses a path into components. Use it with `unicode_codepoints_from_string` when decoding or inspecting URL paths.
+- [unicode_codepoints_to_string](/apl/scalar-functions/string-functions/unicode-codepoints-to-string): TODO

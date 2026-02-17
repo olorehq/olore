@@ -1,0 +1,810 @@
+---
+title: 'CI/CD Integration'
+description: 'Integrate Pulumi with CI/CD pipelines for automated monitoring infrastructure deployments'
+sidebarTitle: 'CI/CD Integration'
+---
+
+
+This guide shows you how to integrate the Checkly Pulumi provider with various CI/CD platforms to automate your monitoring infrastructure deployments.
+
+## Overview
+
+<Callout type="info" emoji="🚀">
+CI/CD integration enables you to automatically deploy monitoring changes when code is pushed, ensuring your monitoring infrastructure stays in sync with your application deployments.
+</Callout>
+
+<Columns cols={2}>
+<Card title="Automated Deployments" icon="rocket">
+**Continuous Deployment**
+- Deploy monitoring changes automatically
+- Reduce manual configuration errors
+- Ensure infrastructure consistency
+- Enable rapid iteration
+</Card>
+
+<Card title="Environment Management" icon="layers">
+**Multi-Environment Support**
+- Separate stacks for each environment
+- Environment-specific configurations
+- Controlled promotion between environments
+- Consistent monitoring across environments
+</Card>
+
+<Card title="Security & Compliance" icon="shield">
+**Secure Deployments**
+- Secure secret management
+- Role-based access control
+- Audit trails for changes
+- Compliance with security policies
+</Card>
+
+<Card title="Team Collaboration" icon="users">
+**Team Workflows**
+- Code review for monitoring changes
+- Pull request-based deployments
+- Collaborative infrastructure management
+- Standardized deployment processes
+</Card>
+</Columns>
+
+## GitHub Actions
+
+### Basic Workflow
+
+<Tabs>
+<Tab title="Deploy on Push">
+```yaml .github/workflows/deploy.yml
+name: Deploy Monitoring Infrastructure
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to production
+        run: pulumi up --yes --stack prod
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+```
+</Tab>
+<Tab title="Preview on PR">
+```yaml .github/workflows/preview.yml
+name: Preview Monitoring Changes
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Preview changes
+        run: pulumi preview --stack prod
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+```
+</Tab>
+</Tabs>
+
+### Multi-Environment Workflow
+
+```yaml .github/workflows/multi-env.yml
+name: Deploy Monitoring Infrastructure
+
+on:
+  push:
+    branches: [main, staging]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [staging, prod]
+        include:
+          - environment: staging
+            branch: staging
+            stack: staging
+          - environment: prod
+            branch: main
+            stack: prod
+
+    if: github.ref == "refs/heads/${{ matrix.branch }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to ${{ matrix.environment }}
+        run: pulumi up --yes --stack ${{ matrix.stack }}
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+```
+
+### Advanced Workflow with Testing
+
+```yaml .github/workflows/pipeline.yml
+name: Monitoring Infrastructure Pipeline
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Lint code
+        run: npm run lint
+
+  preview:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Preview changes
+        run: pulumi preview --stack staging
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+  deploy-staging:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to staging
+        run: pulumi up --yes --stack staging
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+  deploy-production:
+    needs: [test, deploy-staging]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Pulumi
+        uses: pulumi/setup-pulumi@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to production
+        run: pulumi up --yes --stack prod
+        env:
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+```
+
+## GitLab CI/CD
+
+### Basic Pipeline
+
+```yaml .gitlab-ci.yml
+stages:
+  - test
+  - preview
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+
+test:
+  stage: test
+  image: node:${NODE_VERSION}
+  script:
+    - npm ci
+    - npm test
+    - npm run lint
+  only:
+    - merge_requests
+    - main
+    - staging
+
+preview:
+  stage: preview
+  image: node:${NODE_VERSION}
+  before_script:
+    - curl -fsSL https://get.pulumi.com | sh
+    - export PATH=$PATH:$HOME/.pulumi/bin
+    - npm ci
+  script:
+    - pulumi preview --stack staging
+  only:
+    - merge_requests
+  environment:
+    name: staging
+    url: https://app.checklyhq.com
+
+deploy-staging:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  before_script:
+    - curl -fsSL https://get.pulumi.com | sh
+    - export PATH=$PATH:$HOME/.pulumi/bin
+    - npm ci
+  script:
+    - pulumi up --yes --stack staging
+  only:
+    - staging
+  environment:
+    name: staging
+    url: https://app.checklyhq.com
+  variables:
+    CHECKLY_ACCOUNT_ID: $CHECKLY_ACCOUNT_ID
+    CHECKLY_API_KEY: $CHECKLY_API_KEY
+    PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+
+deploy-production:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  before_script:
+    - curl -fsSL https://get.pulumi.com | sh
+    - export PATH=$PATH:$HOME/.pulumi/bin
+    - npm ci
+  script:
+    - pulumi up --yes --stack prod
+  only:
+    - main
+  environment:
+    name: production
+    url: https://app.checklyhq.com
+  variables:
+    CHECKLY_ACCOUNT_ID: $CHECKLY_ACCOUNT_ID
+    CHECKLY_API_KEY: $CHECKLY_API_KEY
+    PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+```
+
+## Jenkins
+
+### Jenkinsfile
+
+```groovy Jenkinsfile
+pipeline {
+    agent any
+
+    environment {
+        NODE_VERSION = '18'
+        PULUMI_VERSION = '3.100.0'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Setup') {
+            steps {
+                sh '''
+                    # Install Node.js
+                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+                    sudo apt-get install -y nodejs
+
+                    # Install Pulumi
+                    curl -fsSL https://get.pulumi.com | sh
+                    export PATH=$PATH:$HOME/.pulumi/bin
+
+                    # Install dependencies
+                    npm ci
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh '''
+                    npm test
+                    npm run lint
+                '''
+            }
+        }
+
+        stage('Preview') {
+            when {
+                changeRequest()
+            }
+            steps {
+                sh '''
+                    export PATH=$PATH:$HOME/.pulumi/bin
+                    pulumi preview --stack staging
+                '''
+            }
+        }
+
+        stage('Deploy Staging') {
+            when {
+                branch 'staging'
+            }
+            steps {
+                sh '''
+                    export PATH=$PATH:$HOME/.pulumi/bin
+                    pulumi up --yes --stack staging
+                '''
+            }
+        }
+
+        stage('Deploy Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '''
+                    export PATH=$PATH:$HOME/.pulumi/bin
+                    pulumi up --yes --stack prod
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+```
+
+## Azure DevOps
+
+### azure-pipelines.yml
+
+```yaml azure-pipelines.yml
+trigger:
+  branches:
+    include:
+    - main
+    - staging
+
+pr:
+  branches:
+    include:
+    - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '18.x'
+  pulumiVersion: '3.100.0'
+
+stages:
+- stage: Test
+  displayName: 'Test and Validate'
+  jobs:
+  - job: Test
+    displayName: 'Run Tests'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(nodeVersion)
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm ci
+      displayName: 'Install dependencies'
+
+    - script: |
+        npm test
+      displayName: 'Run tests'
+
+    - script: |
+        npm run lint
+      displayName: 'Run linting'
+
+- stage: Preview
+  displayName: 'Preview Changes'
+  dependsOn: Test
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  jobs:
+  - job: Preview
+    displayName: 'Preview Infrastructure Changes'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(nodeVersion)
+      displayName: 'Install Node.js'
+
+    - script: |
+        curl -fsSL https://get.pulumi.com | sh
+        export PATH=$PATH:$HOME/.pulumi/bin
+        npm ci
+      displayName: 'Setup Pulumi and install dependencies'
+
+    - script: |
+        export PATH=$PATH:$HOME/.pulumi/bin
+        pulumi preview --stack staging
+      displayName: 'Preview changes'
+      env:
+        CHECKLY_ACCOUNT_ID: $(CHECKLY_ACCOUNT_ID)
+        CHECKLY_API_KEY: $(CHECKLY_API_KEY)
+        PULUMI_ACCESS_TOKEN: $(PULUMI_ACCESS_TOKEN)
+
+- stage: DeployStaging
+  displayName: 'Deploy to Staging'
+  dependsOn: Test
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
+  jobs:
+  - deployment: DeployStaging
+    displayName: 'Deploy to Staging'
+    environment: staging
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js'
+
+          - script: |
+              curl -fsSL https://get.pulumi.com | sh
+              export PATH=$PATH:$HOME/.pulumi/bin
+              npm ci
+            displayName: 'Setup Pulumi and install dependencies'
+
+          - script: |
+              export PATH=$PATH:$HOME/.pulumi/bin
+              pulumi up --yes --stack staging
+            displayName: 'Deploy to staging'
+            env:
+              CHECKLY_ACCOUNT_ID: $(CHECKLY_ACCOUNT_ID)
+              CHECKLY_API_KEY: $(CHECKLY_API_KEY)
+              PULUMI_ACCESS_TOKEN: $(PULUMI_ACCESS_TOKEN)
+
+- stage: DeployProduction
+  displayName: 'Deploy to Production'
+  dependsOn: DeployStaging
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployProduction
+    displayName: 'Deploy to Production'
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js'
+
+          - script: |
+              curl -fsSL https://get.pulumi.com | sh
+              export PATH=$PATH:$HOME/.pulumi/bin
+              npm ci
+            displayName: 'Setup Pulumi and install dependencies'
+
+          - script: |
+              export PATH=$PATH:$HOME/.pulumi/bin
+              pulumi up --yes --stack prod
+            displayName: 'Deploy to production'
+            env:
+              CHECKLY_ACCOUNT_ID: $(CHECKLY_ACCOUNT_ID)
+              CHECKLY_API_KEY: $(CHECKLY_API_KEY)
+              PULUMI_ACCESS_TOKEN: $(PULUMI_ACCESS_TOKEN)
+```
+
+## CircleCI
+
+### .circleci/config.yml
+
+```yaml .circleci/config.yml
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/node:18.17
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Run tests
+          command: npm test
+      - run:
+          name: Run linting
+          command: npm run lint
+
+  preview:
+    docker:
+      - image: cimg/node:18.17
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Install Pulumi
+          command: |
+            curl -fsSL https://get.pulumi.com | sh
+            echo 'export PATH=$PATH:$HOME/.pulumi/bin' >> $BASH_ENV
+      - run:
+          name: Preview changes
+          command: |
+            source $BASH_ENV
+            pulumi preview --stack staging
+          environment:
+            CHECKLY_ACCOUNT_ID: $CHECKLY_ACCOUNT_ID
+            CHECKLY_API_KEY: $CHECKLY_API_KEY
+            PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+
+  deploy-staging:
+    docker:
+      - image: cimg/node:18.17
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Install Pulumi
+          command: |
+            curl -fsSL https://get.pulumi.com | sh
+            echo 'export PATH=$PATH:$HOME/.pulumi/bin' >> $BASH_ENV
+      - run:
+          name: Deploy to staging
+          command: |
+            source $BASH_ENV
+            pulumi up --yes --stack staging
+          environment:
+            CHECKLY_ACCOUNT_ID: $CHECKLY_ACCOUNT_ID
+            CHECKLY_API_KEY: $CHECKLY_API_KEY
+            PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+
+  deploy-production:
+    docker:
+      - image: cimg/node:18.17
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Install Pulumi
+          command: |
+            curl -fsSL https://get.pulumi.com | sh
+            echo 'export PATH=$PATH:$HOME/.pulumi/bin' >> $BASH_ENV
+      - run:
+          name: Deploy to production
+          command: |
+            source $BASH_ENV
+            pulumi up --yes --stack prod
+          environment:
+            CHECKLY_ACCOUNT_ID: $CHECKLY_ACCOUNT_ID
+            CHECKLY_API_KEY: $CHECKLY_API_KEY
+            PULUMI_ACCESS_TOKEN: $PULUMI_ACCESS_TOKEN
+
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - test
+      - preview:
+          requires:
+            - test
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /.*/
+      - deploy-staging:
+          requires:
+            - test
+          filters:
+            branches:
+              only: staging
+      - deploy-production:
+          requires:
+            - test
+          filters:
+            branches:
+              only: main
+```
+
+## Security Best Practices
+
+### Secret Management
+
+<Columns cols={2}>
+<Card title="Environment Variables" icon="key">
+**Secure Storage**
+- Use CI/CD platform secret management
+- Never hardcode secrets in pipeline files
+- Rotate secrets regularly
+- Use least-privilege access
+</Card>
+
+<Card title="Access Control" icon="shield">
+**Role-Based Access**
+- Limit deployment permissions
+- Use separate accounts for different environments
+- Implement approval gates for production
+- Audit access regularly
+</Card>
+</Columns>
+
+### Security Checklist
+
+<AccordionGroup>
+<Accordion title="Secret Management">
+- [ ] Store secrets in CI/CD platform's secret management
+- [ ] Use environment-specific secrets
+- [ ] Rotate API keys regularly
+- [ ] Use least-privilege API keys
+- [ ] Never log or expose secrets
+</Accordion>
+
+<Accordion title="Access Control">
+- [ ] Implement approval gates for production
+- [ ] Use separate accounts for environments
+- [ ] Limit who can trigger deployments
+- [ ] Audit deployment permissions
+- [ ] Use branch protection rules
+</Accordion>
+
+<Accordion title="Pipeline Security">
+- [ ] Validate code before deployment
+- [ ] Use trusted base images
+- [ ] Scan for vulnerabilities
+- [ ] Implement rollback procedures
+- [ ] Monitor deployment logs
+</Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+<Accordion title="Authentication Errors">
+**Problem**: Pulumi or Checkly authentication fails
+**Solutions**:
+- Verify API keys are correctly set in secrets
+- Check Pulumi access token permissions
+- Ensure environment variables are properly configured
+- Test authentication locally first
+</Accordion>
+
+<Accordion title="Permission Denied">
+**Problem**: Pipeline lacks permissions to deploy
+**Solutions**:
+- Check CI/CD platform permissions
+- Verify Pulumi organization access
+- Ensure Checkly API key has required permissions
+- Review branch protection rules
+</Accordion>
+
+<Accordion title="Resource Conflicts">
+**Problem**: Resources already exist or conflict
+**Solutions**:
+- Use `pulumi refresh` to sync state
+- Check for manual changes in Checkly UI
+- Review resource naming conflicts
+- Use `pulumi import` for existing resources
+</Accordion>
+</AccordionGroup>
+
+<Tip>
+Always test your CI/CD pipeline in a development environment before deploying to production. Use feature branches and staging environments to validate changes.
+</Tip>
+
+<Warning>
+Never commit secrets or sensitive information to your repository. Always use your CI/CD platform's secret management features.
+</Warning>

@@ -1,0 +1,501 @@
+---
+title: Control and Configure your Monitoring Infrastructure with AI
+sidebarTitle: Agentic Workflows
+description: >-
+  Thanks to Checkly's Monitoring as Code approach, LLMs and AI agents can set up, configure and control your entire monitoring setup.
+---
+
+import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
+
+Checkly is built on [Monitoring as Code](/concepts/monitoring-as-code). Every monitor, dashboard, alert channel, and status page lives in your codebase and can be updated and deployed via [the Checkly CLI](/cli/overview). This code-first approach is a natural fit for AI agents and coding assistants because LLMs shine at reading source code, generating configuration files, and running CLI commands.
+
+**Monitoring as Code was and is by definition AI-ready.**
+
+Learn in this guide how to **create, configure and update your application monitoring** through conversational prompts.
+
+<YoutubeEmbed id="WqTXa7GCk-k" title="No Coding! Just Prompting! Getting the most out of AI for Application Reliability." />
+
+This guide is the written version of a webinar that walks through configuring uptime monitoring, API monitoring, and browser-based synthetic monitoring using AI agents. All the examples were tested using Claude Code, but the same approach works with other AI coding tools like Cursor, GitHub Copilot, or any LLM-powered agent.
+
+The monitored application was built using Next.js connected to a Shopify ecommerce API and deployed to Vercel.
+
+<Note>
+  Be aware that LLMs responses are non-deterministic and the results vary in quality. Take this guide as a starting point to understand how to use Checkly with AI agents.
+</Note>
+
+## Getting started with Checkly using AI agents
+
+Context management is one of the most important concepts when using LLMs because the AI models usually have a cut-off date and without providing documentation and guidance your results will suffer from hallucinations. The same applies if you want to use your agent to configure your Checkly monitoring.
+
+Before your AI assistant can effectively configure Checkly monitoring, it needs context about your project, your monitoring goals, and Checkly documentation and conventions. This context is critical and without it, the LLM will rely on potentially outdated training data and most likely produce unreliable results.
+
+### Add the Checkly rules file
+
+Download [the official Checkly rules file](/integrations/ai/overview) and add it to your project. This file contains instructions on project structure, CLI commands, links to documentation and code examples for all the different Checkly check types.
+
+```md checkly.rules.md
+# Checkly
+
+- Refer to docs for Checkly CLI v6.0.0 and above.
+- Check the Checkly CLI output to figure out into which folder the setup was generated.
+- Use the [Checkly CLI reference documentation](https://www.checklyhq.com/docs/cli/overview/).
+- Use the [Checkly construct reference documentation](https://www.checklyhq.com/docs/constructs/overview/).
+- Import and / or require any constructs you need in your code, such as `ApiCheck`, `BrowserCheck` from the `checkly/constructs` package.
+- Always ground generated code and CLI commands against the official documentation and examples in this file.
+
+...
+```
+
+Place this file anywhere in your project. The specific location is unimportant as long as it follows your agent's conventions. In this guide it will be placed in the `.claude/` directory because the guide uses Claude Code.
+
+## Configure your AI agent to read this file
+
+Generally, you don't want to fill your conversation context with unwanted tokens. To avoid including all this Checkly information in every conversation, update your AI assistant's configuration file (e.g., `CLAUDE.md`) to reference the Checkly rules if needed.
+
+Add an instruction like:
+
+```md claude.md
+Whenever you're tasked with anything about monitoring or Checkly, read the `@checkly-rules.md file` first.
+```
+
+### Initialize Checkly in your project (optional)
+
+If your project doesn't include a valid `checkly.config.ts` yet, ask your AI assistant to set up Checkly:
+
+```md AI Prompt
+I want to monitor this site with Checkly. Can you create a new base setup using the CLI?
+```
+
+The agent will then run `npm create checkly`, which generates a `checkly.config.ts` file and a `__checks__` directory. This base configuration file defines your project meta information, default check frequencies, and monitoring locations.
+
+```ts checkly.config.ts
+import { defineConfig } from 'checkly'
+
+const config = defineConfig({
+  projectName: 'AI Agent Example',
+  logicalId: 'ai-agent-example',
+  checks: {
+    frequency: 10,
+    locations: ['us-east-1', 'eu-west-1'],
+    tags: [],
+    runtimeId: '2025.04',
+    checkMatch: '**/__checks__/**/*.check.ts',
+    browserChecks: {
+      testMatch: '**/__checks__/**/*.spec.ts',
+    },
+  },
+  cli: {
+    runLocation: 'eu-west-1',
+    reporters: ['list'],
+    retries: 0,
+  },
+})
+
+export default config
+```
+
+As long as you have a generated `checkly.config.ts` and [the `checkly` CLI dependency](https://www.npmjs.com/package/checkly) installed things will be fine.
+
+## Set up uptime monitoring
+
+[Uptime monitoring](/detect/uptime-monitoring/overview) verifies that your endpoints are accessible and responding correctly.
+
+To target your production or preview site, add additional context to your `claude.md` (recommended).
+
+```md claude.md
+This project is deployed at [ENTER YOUR URL HERE]. Please use this base URL for uptime and synthetic monitoring and Playwright end-to-end tests.
+```
+
+<Tip>
+  Of course, you could also specify the base URL in every prompt. But adding it to your agent configuration file ensures consistency and adds valuable context to the conversation.
+</Tip>
+
+To create a basic uptime monitor, prompt your AI assistant:
+
+```md AI Prompt
+Set up a URL monitor for the project base URL.
+
+I want to ensure that the infrastructure is up and the server responds with a 200 status code.
+Monitor every five minutes.
+```
+
+The AI will then create a new check file (e.g., `base-url.check.ts`) that initializes [a new `UrlMonitor`](/constructs/url-monitor) containing the URL, expected status code, check frequency, and monitoring locations.
+
+```typescript base-url.check.ts
+import { Frequency, UrlAssertionBuilder, UrlMonitor } from "checkly/constructs";
+
+new UrlMonitor("base-url-monitor", {
+  name: "Base URL Monitor",
+  request: {
+    url: "YOUR_BASE_URL",
+    ipFamily: "IPv4",
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+  degradedResponseTime: 5000,
+  maxResponseTime: 20000,
+  activated: true,
+  muted: false,
+  shouldFail: false,
+  locations: ["us-east-1", "eu-west-1"],
+  frequency: Frequency.EVERY_5M,
+  runParallel: true,
+});
+```
+
+To verify the new monitoring configuration, continue talking to your AI agent:
+
+```md AI Prompt
+Can you check if this new monitor actually works?
+```
+
+Thanks to the additional context provided via the `checkly.rules.md`, the AI knows how to handle the Checkly CLI and runs `npx checkly test`, which executes your monitoring configuration in Checkly's infrastructure.
+
+```sh
+$ npx checkly test
+Parsing your project... ✅
+Validating project resources... ✅
+Bundling project resources... ✅
+
+Running 1 check in eu-west-1.
+
+__checks__/base-url.check.ts
+  ✔ Base URL Monitor (197ms)
+
+1 passed, 1 total
+```
+
+<Warning>
+  AI agents can easily call the Checkly CLI to update your entire monitoring configuration thanks to Monitoring as Code. If you don't properly review the configuration changes, this can lead to broken monitoring, unnecessary alerts and angry teammates.
+
+  We recommend to include safeguards against accidental deployments by instructing the AI to always request confirmation before running `npx checkly deploy`.
+</Warning>
+
+### Setting up alert channels
+
+Monitors need alert channels to notify you when something breaks. Luckily, alert channels can also be defined in code. Request and set up [an `EmailAlert` construct](/constructs/email-alert-channel):
+
+```md AI Prompt
+Can you create a new email alert channel to all monitors sending to `team@example.com`?
+```
+
+The AI then creates an alert channel configuration and connects it to your existing monitors.
+
+<Tabs>
+  <Tab title="alert-channels.ts">
+```ts
+import { EmailAlertChannel } from 'checkly/constructs'
+
+export const teamEmailAlert = new EmailAlertChannel('team-email-alert', {
+  address: 'team@example.com',
+  sslExpiry: true,
+})
+```
+  </Tab>
+  <Tab title="base-url.check.ts">
+```ts highlight={2,18}
+import { Frequency, UrlAssertionBuilder, UrlMonitor } from "checkly/constructs";
+import { teamEmailAlert } from "./alert-channels";
+
+new UrlMonitor("base-url-monitor", {
+  name: "Base URL Monitor",
+  request: {
+    url: "YOUR_BASE_URL",
+    ipFamily: "IPv4",
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+  degradedResponseTime: 5000,
+  maxResponseTime: 20000,
+  activated: true,
+  muted: false,
+  shouldFail: false,
+  locations: ["us-east-1", "eu-west-1"],
+  frequency: Frequency.EVERY_5M,
+  alertChannels: [teamEmailAlert],
+  runParallel: true,
+});
+```
+  </Tab>
+</Tabs>
+
+### Modifying monitoring locations
+
+Now that your project includes a `checkly.config` and defines an uptime monitor in code, additional monitoring adjustments are only one prompt away:
+
+```md AI Prompt
+Can you add Germany to the monitoring locations?
+```
+
+Your AI agent will then update your individual monitors to include `eu-central-1` as a monitoring location.
+
+```ts base-url.check.ts highlight={16}
+import { Frequency, UrlAssertionBuilder, UrlMonitor } from "checkly/constructs";
+import { teamEmailAlert } from "./alert-channels";
+
+new UrlMonitor("base-url-monitor", {
+  name: "Base URL Monitor",
+  request: {
+    url: "YOUR_BASE_URL",
+    ipFamily: "IPv4",
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+  degradedResponseTime: 5000,
+  maxResponseTime: 20000,
+  activated: true,
+  muted: false,
+  shouldFail: false,
+  locations: ["us-east-1", "eu-west-1", "eu-central-1"],
+  frequency: Frequency.EVERY_5M,
+  alertChannels: [teamEmailAlert],
+  runParallel: true,
+});
+```
+
+## Set up API monitoring
+
+For a solid monitoring strategy uptime monitoring is only the first step. [API Checks](/detect/synthetic-monitoring/api-checks/overview) go beyond uptime monitoring by validating response payloads with assertions.
+
+To create complex assertions, target AI to analyze your source code to generate meaningful assertions automatically.
+
+```md AI Prompt
+Can you set up an API check for /api/products?
+
+Please analyze the code and endpoint to create valuable assertions.
+```
+
+In this example, the AI can parse your route handler source code, evaluate the response structure, and create assertions that check for required properties, data types, and expected values.
+
+```ts product-api.check.ts
+import { ApiCheck, AssertionBuilder, Frequency } from "checkly/constructs";
+import { teamEmailAlert } from "./alert-channels";
+
+new ApiCheck("products-api-check", {
+  name: "Products API Check",
+  request: {
+    url: "YOUR BASE URL",
+    method: "GET",
+    ipFamily: "IPv4",
+    assertions: [
+      // Status code validation
+      AssertionBuilder.statusCode().equals(200),
+
+      // Response time validation (allowing for Shopify API latency)
+      AssertionBuilder.responseTime().lessThan(5000),
+
+      // Content type validation
+      AssertionBuilder.headers("content-type").contains("application/json"),
+
+      // Validate array has products
+      AssertionBuilder.jsonBody("$.length").greaterThan(0),
+
+      // Validate first product has required fields
+      AssertionBuilder.jsonBody("$[0].id").isNotNull(),
+      AssertionBuilder.jsonBody("$[0].handle").isNotNull(),
+      AssertionBuilder.jsonBody("$[0].title").isNotNull(),
+      AssertionBuilder.jsonBody("$[0].title").notEmpty(),
+      AssertionBuilder.jsonBody("$[0].description").isNotNull(),
+      AssertionBuilder.jsonBody("$[0].availableForSale").isNotNull(),
+      // ...
+    ],
+  },
+  degradedResponseTime: 3000,
+  maxResponseTime: 5000,
+  activated: true,
+  muted: false,
+  shouldFail: false,
+  locations: ["us-east-1", "eu-west-1"],
+  frequency: Frequency.EVERY_10M,
+  alertChannels: [teamEmailAlert],
+  runParallel: true,
+});
+```
+
+The AI may iterate on the configuration—running tests, spotting issues, and refining assertions until the check passes. This self-correction is typical of agentic AI workflows.
+
+<Note>
+  Review generated assertions carefully. AI can hallucinate properties or use incorrect assertion syntax. **Always verify against your actual API response.**
+</Note>
+
+## Use Playwright for synthetic monitoring
+
+Checkly provides [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview), which let you reuse existing Playwright tests as synthetic monitors. Monitor critical user flows like login, checkout, or search in production using your existing Playwright Test code base.
+
+### Organizing tests for monitoring
+
+Full Playwright Test suites often run for more than ten minutes; this execution time is too slow for production monitoring because you don't want to wait for a slow Playwright test suite to finish before getting alerted about failures.
+
+To guarantee timely alerts, it's recommended to use [Playwright's Projects](https://playwright.dev/docs/test-projects) to tag tests entering your monitoring setup:
+
+```ts playwright.config.ts highlight={10-14}
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests",
+  projects: [
+    {
+      name: "Chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "Critical",
+      use: { ...devices["Desktop Chrome"] },
+      grep: /@critical/,
+    },
+  ],
+});
+```
+
+The `Critical` Playwright project will only include tests tagged with `@critical` to run independently as fast, focused synthetic monitors.
+
+### Creating a Playwright Check Suite
+
+If you have this basic Playwright configuration in place, prompt your AI assistant to reuse the critical tests as production monitors.
+
+Prompt your AI assistant:
+
+```md AI Prompt
+The `playwright.config` defines a "Critical" project.
+
+Can you create a Playwright Check Suite to reuse this project for Checkly monitoring?
+Run it every 10 minutes from Europe, the US, and Australia.
+```
+
+The AI then creates a `check.ts` file using [the `PlaywrightCheck` construct](/constructs/playwright-check) that references your Playwright project:
+
+```ts critical-suite.check.ts
+import { Frequency, PlaywrightCheck } from "checkly/constructs";
+
+new PlaywrightCheck("critical-suite", {
+  name: "Critical User Flows Suite",
+  playwrightConfigPath: "../playwright.config.ts",
+  pwProjects: ["Critical"],
+  activated: true,
+  muted: false,
+  shouldFail: false,
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-2"],
+  frequency: Frequency.EVERY_10M,
+  runParallel: true,
+});
+```
+
+After deployment with `npx checkly deploy`, Checkly runs your Playwright tests on schedule from the defined global locations. Results include full Playwright traces for debugging in case of an alert.
+
+
+## Playwright test generation
+
+At this stage, you control your entire Checkly monitoring by talking to your favorite AI agent. But could you generate Playwright tests as well?
+
+To generate Playwright tests via an LLM, use MCP (Model Context Protocol) and [the official Playwright MCP server](https://github.com/microsoft/playwright-mcp).
+
+The Playwright MCP server lets AI assistants control browsers directly, capturing page snapshots and context needed to generate accurate tests. This alone doesn't enable AI test generation, though.
+
+The key to successful test generation is, as with many things in AI, to provide valuable context. Luckily, the Playwright MCP server doesn't only allow you to control browsers via an LLM, but also reports back with extensive page context.
+
+If the controlled browser navigates to a page, page snapshots, DOM structures, the network waterfall and JavaScript exceptions will enter your agent conversation. With this information being included in the conversation context, you can turn your agent into a Playwright Test generator with some context engineering.
+
+```md generate-playwright-test.md
+## Instructions
+
+You are a Playwright test generator and an expert in TypeScript, Frontend development, and Playwright end-to-end testing.
+
+- You are given a scenario, and you need to generate a Playwright test for it.
+- If you're asked to generate or create a Playwright test, use the tools provided by the Playwright MCP server to navigate the site and generate tests based on the current state and page snapshots.
+- Do not generate tests based on assumptions. Use the Playwright MCP server to navigate and interact with sites.
+- Access a new page snapshot before interacting with the page.
+- Only after all steps are completed, emit a Playwright TypeScript test that uses @playwright/test based on the message history.
+- When you generate the test code in the 'tests' directory, ALWAYS follow Playwright best practices.
+- When you generate the test code always use role-based locators (`getByRole`, `getByPlaceholder`, etc.) and web-first assertions (`toBeVisible()`, `toBeHidden()`).
+- When the test is generated, always test and verify the generated code using `npx playwright test` and fix it if there are any issues.
+
+## Your task
+
+Generate a valid Playwright test based on these instructions:
+
+- navigate to the base URL
+- search for "liquid"
+- verify the product shows up in the product listing
+```
+
+<Tip>
+  If you watch the webinar recording, you'll see that this prompt was included in a Claude Command. The result is the same but it's recommended to create helper prompts or skills whenever you plan to reuse the same instructions multiple times.
+</Tip>
+
+With this prompt, the AI launches a browser, performs the actions, captures page state, and generates a Playwright test based on actual DOM elements—not assumptions.
+
+```typescript search-liquid.spec.ts
+import { expect, test } from "@playwright/test";
+
+test.describe("Product Search", () => {
+  test("should search for Liquid and verify product appears in listing", async ({
+    page,
+  }) => {
+    // Navigate to the base URL
+    await page.goto("https://next-example-store-stefan-judis.vercel.app");
+
+    // Search for "Liquid" product
+    const searchBox = page.getByRole("textbox", {
+      name: "Search for products...",
+    });
+    await searchBox.fill("Liquid");
+    await searchBox.press("Enter");
+
+    // Verify URL contains search query
+    await expect(page).toHaveURL(/.*\/search\/\?q=Liquid/);
+
+    // Verify search results heading
+    await expect(
+      page.getByRole("heading", { name: "Products", level: 1 }),
+    ).toBeVisible();
+
+    // Verify result count message
+    await expect(page.getByText("Showing 1 result for")).toBeVisible();
+    await expect(page.getByText('"Liquid"')).toBeVisible();
+
+    // Verify the product appears in the listing
+    const productLink = page.getByRole("link", {
+      name: /The Collection Snowboard: Liquid/,
+    });
+    await expect(productLink).toBeVisible();
+
+    // Verify product heading within the listing
+    await expect(
+      page.getByRole("heading", {
+        name: "The Collection Snowboard: Liquid",
+        level: 3,
+      }),
+    ).toBeVisible();
+  });
+});
+```
+
+To include this new test in your Checkly monitoring, add the `@critical` tag to include the new test in your monitoring suite. Of course, you can perform this action in plain English, too.
+
+```md AI Prompt
+Can you add the `critical` tag to the generated Playwright test?
+```
+
+```typescript search-liquid.spec.ts highlight={4}
+import { expect, test } from "@playwright/test";
+
+test.describe("Product Search", () => {
+  test("should search for Liquid and verify product appears in listing @critical", async ({
+    page,
+  }) => {
+    // ...
+  })
+})
+```
+
+---
+
+Set up, control and configure your entire monitoring infrastructure through conversational prompts thanks to Monitoring as Code and Checkly's code-first approach.
+
+As mentioned in the beginning: **Checkly is by definition AI-ready** without complex setups or additional MCP servers.
+
+## Key takeaways
+
+- Regardless of what you want to achieve: context is everything. Update your `checkly-rules.md` and AI configuration files to fit your project's requirements. When the AI produces unwanted output, refine your instructions. A `claude.md` or `agents.md` is never done!
+- Always review generated code. AI assistants are useful but not perfect. **You're still responsible for what you deploy.**
+- Test your monitoring configuration before deploying. Use `npx checkly test` to validate checks locally before pushing to production.
+- Your AI agent might deploy your monitoring when running in YOLO or `--skip-permissions` mode. Be aware of this risk and implement guard rails.
+
+For complete documentation on AI integrations, see [the AI overview](/integrations/ai/overview).

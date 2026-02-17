@@ -1,0 +1,92 @@
+---
+title: tohex
+description: 'This page explains how to use the tohex function in APL.'
+---
+
+Use the `tohex` function to convert integer or long values to hexadecimal string representation. This is helpful when you need to display numeric values in hexadecimal format, work with memory addresses, or convert identifiers to hex format for compatibility with other systems.
+
+You typically use `tohex` when working with numeric identifiers, memory addresses, or when you need hexadecimal representation for debugging, logging, or system integration purposes.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `printf` with format specifiers like `%x` or `%X` to convert numbers to hexadecimal. In APL, `tohex` provides a direct function for this conversion.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hex_value = printf("%x", numeric_field)
+```
+
+```kusto APL equivalent
+... | extend hex_value = tohex(numeric_field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `TO_HEX` or `HEX` functions in some databases, or `FORMAT` functions with hex specifiers. In APL, `tohex` provides a straightforward way to convert integers to hexadecimal strings.
+
+<CodeGroup>
+```sql SQL example
+SELECT TO_HEX(546) AS hex_value FROM dual;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hex_value = tohex(546)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+tohex(value [, minLength])
+```
+
+### Parameters
+
+| Name      | Type    | Description                                                      |
+| --------- | ------- | ---------------------------------------------------------------- |
+| value     | int     | The integer or long value to convert to hexadecimal string.      |
+| minLength | int     | Optional. Minimum length of the resulting hex string. Default is 0. |
+
+### Returns
+
+If conversion is successful, the result is a string value representing the hexadecimal representation. If conversion isn't successful, the result is `null`.
+
+## Example
+
+Convert numeric identifiers to hexadecimal format for display or integration with systems that use hex identifiers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend id_hex = tohex(id, 8)
+| project _time, uri, id, id_hex
+```
+
+**Output**
+
+| _time | uri | id | id_hex |
+| ----- | --- | -- | ------ |
+| Jun 24, 09:28:10 | /api/users | 12345 | 00003039 |
+
+This example converts numeric identifiers to hexadecimal format, making them more readable and compatible with systems that use hex identifiers.
+
+## List of related functions
+
+- [toint](/apl/scalar-functions/conversion-functions/toint): Converts input to integer. Use `toint` for smaller integers before converting to hex.
+- [tostring](/apl/scalar-functions/conversion-functions/tostring): Converts input to string. Use `tostring` for general string conversion, and `tohex` specifically for hexadecimal representation.

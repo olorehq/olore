@@ -1,0 +1,159 @@
+---
+title: series_dot_product
+description: 'This page explains how to use the series_dot_product function in APL.'
+---
+
+The `series_dot_product` function calculates the dot product between two dynamic arrays (series) of numeric values. The dot product is computed by multiplying corresponding elements from both arrays and then summing all the products. This mathematical operation is fundamental in linear algebra and is useful for measuring similarity, calculating projections, and performing various analytical computations on time-series data.
+
+You can use `series_dot_product` when you need to measure the similarity between two datasets, calculate weighted sums, perform correlation analysis, or compute projections in multidimensional analysis. Common applications include recommendation systems, signal processing, pattern recognition, and statistical analysis of performance metrics.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, calculating dot products requires complex operations using `eval` commands with array manipulation and mathematical functions. In APL, `series_dot_product` provides this calculation directly for dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval products = mvzip(array1, array2, "*") | eval dot_product = mvsum(products)
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([1, 2, 3]), dynamic([4, 5, 6])
+]
+| extend dot_product = series_dot_product(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, calculating dot products requires joining arrays, multiplying corresponding elements, and summing the results. This typically involves complex window functions and mathematical operations. In APL, `series_dot_product` handles this calculation directly on dynamic arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUM(a.value * b.value) AS dot_product
+FROM array_a a
+JOIN array_b b ON a.index = b.index;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([1, 2, 3]), dynamic([4, 5, 6])
+]
+| extend dot_product = series_dot_product(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_dot_product(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| `array1`  | dynamic | The first dynamic array of numeric values.    |
+| `array2`  | dynamic | The second dynamic array of numeric values.   |
+
+### Returns
+
+A `real` value representing the dot product of the two arrays. If the arrays have different lengths, only elements up to the length of the shorter array are used in the calculation.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_dot_product` to calculate weighted similarity scores between user request patterns, where weights represent the importance of different time periods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_counts = make_list(1), importance_weights = make_list(req_duration_ms / 100.0) by id
+| extend weighted_score = series_dot_product(request_counts, importance_weights)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_counts%20%3D%20make_list(1)%2C%20importance_weights%20%3D%20make_list(req_duration_ms%20%2F%20100.0)%20by%20id%20%7C%20extend%20weighted_score%20%3D%20series_dot_product(request_counts%2C%20importance_weights)%22%7D)
+
+**Output**
+
+| id   | request_counts | importance_weights | weighted_score |
+| ---- | -------------- | ------------------ | -------------- |
+| u123 | [1, 1, 1]     | [1.2, 3.4, 0.8]   | 5.4            |
+| u456 | [1, 1]        | [2.1, 1.5]        | 3.6            |
+
+This query calculates weighted activity scores by computing the dot product of request counts and duration-based importance weights.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_dot_product` to calculate correlation scores between span durations and error rates across different services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration / 1ms), error_indicators = make_list(iff(status_code != '200', 1.0, 0.0)) by ['service.name']
+| extend correlation_score = series_dot_product(durations, error_indicators)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration%20%2F%201ms)%2C%20error_indicators%20%3D%20make_list(iff(status_code%20!%3D%20'200'%2C%201.0%2C%200.0))%20by%20%5B'service.name'%5D%20%7C%20extend%20correlation_score%20%3D%20series_dot_product(durations%2C%20error_indicators)%22%7D)
+
+**Output**
+
+| service.name          | durations     | error_indicators | correlation_score |
+| --------------------- | ------------- | ---------------- | ----------------- |
+| frontend              | [200, 150, 300] | [0, 1, 0]      | 150               |
+| productcatalogservice | [80, 120]     | [1, 0]          | 80                |
+
+This query calculates correlation scores between span durations and error occurrences to identify performance-error relationships.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_dot_product` to calculate risk scores by combining request frequencies with security threat levels.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_frequencies = make_list(1), threat_levels = make_list(iff(status == '401', 3.0, iff(status == '403', 2.0, 1.0))) by ['geo.country']
+| extend risk_score = series_dot_product(request_frequencies, threat_levels)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_frequencies%20%3D%20make_list(1)%2C%20threat_levels%20%3D%20make_list(iff(status%20%3D%3D%20'401'%2C%203.0%2C%20iff(status%20%3D%3D%20'403'%2C%202.0%2C%201.0)))%20by%20%5B'geo.country'%5D%20%7C%20extend%20risk_score%20%3D%20series_dot_product(request_frequencies%2C%20threat_levels)%22%7D)
+
+**Output**
+
+| geo.country | request_frequencies | threat_levels | risk_score |
+| ----------- | ------------------- | ------------- | ---------- |
+| US          | [1, 1, 1]          | [1, 3, 1]     | 5          |
+| UK          | [1, 1]             | [2, 1]        | 3          |
+
+This query calculates security risk scores by computing the dot product of request frequencies and threat levels by country.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to remove negative signs without rounding.
+- [series_add](/apl/scalar-functions/time-series/series-add): Performs element-wise addition between two arrays. Use when you need to combine values instead of calculating ratios.
+- [series_cosine_similarity](/apl/scalar-functions/time-series/series-cosine-similarity): Calculates cosine similarity between two arrays. Use when you need normalized similarity measures rather than raw dot products.
+- [series_divide](/apl/scalar-functions/time-series/series-divide): Performs element-wise division between two arrays. Use when you need to calculate ratios or normalize values.
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Calculates the sum of all elements in a single array. Use when you need to sum elements within one array rather than computing dot products.

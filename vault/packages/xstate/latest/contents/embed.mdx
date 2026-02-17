@@ -1,0 +1,70 @@
+---
+title: Embed machines using their embed URL
+description: You can embed your machines anywhere that supports iframes. Embed mode is a focused non-editable view of your machine in Stately Studio’s editor, which can be zoomed and panned.
+---
+
+You can embed your machines anywhere that supports [`<iframe>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe). Embed mode is a focused non-editable view of your machine in Stately Studio’s editor, which can be zoomed and panned.
+
+We love to use embedded machines in our docs! Below is an example of an embedded machine:
+
+<EmbedMachine
+  name="Embed feature machine"
+  embedURL="https://stately.ai/registry/editor/embed/9e7f6b1e-416a-491f-a4a0-bba386a02d8d?mode=Design&machineId=e94d5674-7ab7-4a4e-b7a8-781609bfe523"
+/>
+
+Your machine will only be embeddable if:
+
+- the project visibility is **public**
+- the project visibility is **unlisted**
+
+Embed URLs are not available for private machines.
+
+Read [how to change a project’s visibility settings](/docs/projects/#change-a-projects-visibility).
+
+<Callout>
+
+You can also [get your machine as an image](image) for platforms where `<iframe>` is not supported.
+
+</Callout>
+
+## Copy the embed URL
+
+1. Use the **Share** button in Stately Studio’s top bar to open the Share dialog.
+2. Use the **Copy embed URL** button to copy the machine’s embed URL to your clipboard.
+3. Use the embed URL in an `<iframe>` to embed the machine anywhere that supports iframes. [Find some example code below](#example-iframe-code).
+
+## Example `<iframe>` code
+
+The following HTML embeds the same machine at the top of this page in dark mode:
+
+```html
+<iframe
+  loading="lazy"
+  src="https://stately.ai/registry/editor/embed/9e7f6b1e-416a-491f-a4a0-bba386a02d8d?mode=Design&machineId=e94d5674-7ab7-4a4e-b7a8-781609bfe523&colorMode=dark"
+  style="display: block; width: 100%; aspect-ratio: 6 / 4;"
+>
+  <a
+    href="https://stately.ai/registry/editor/embed/9e7f6b1e-416a-491f-a4a0-bba386a02d8d?mode=Design&machineId=e94d5674-7ab7-4a4e-b7a8-781609bfe523"
+  >
+    View the <em>Embed feature machine</em> machine in Stately Studio </a
+  >.
+</iframe>
+```
+
+<Callout>
+
+In the future, we plan to provide configurable embeds with copy-and-paste code.
+
+If you want us to prioritize improving embed mode, please [upvote it on our feedback page](https://github.com/statelyai/feedback/issues/94).
+
+</Callout>
+
+## URL parameters, including color mode
+
+The embed URL has some of the same parameters as the [machine URL](url).
+
+- **machineId**: the unique ID for the machine. For example, `machineId=491a4c60-5300-4e22-92cf-8a32a8ffffca`
+- **mode**: the current machine mode. For example, `mode=Design` or `mode=Simulate`
+- **colorMode**: the color mode for the embedded machine. For example, `colorMode=light` or `colorMode=dark`
+
+By default, the color mode will be the same as your chosen Stately Studio color mode. Add `&colorMode=light` or `&colorMode=dark` to the URL to force that color mode.

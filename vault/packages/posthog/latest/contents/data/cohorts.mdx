@@ -1,0 +1,266 @@
+---
+title: Cohorts
+sidebar: Docs
+showTitle: true
+availability:
+  free: partial
+  selfServe: full
+  enterprise: full
+  features:
+    sequenceOfEvents:
+      free: false
+      selfServe: true
+      enterprise: true
+    cohortMembership:
+      free: false
+      selfServe: true
+      enterprise: true
+    lifecycle:
+      free: false
+      selfServe: true
+      enterprise: true
+---
+
+import {ProductScreenshot} from 'components/ProductScreenshot'
+export const cohortsPageLight = "https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/features/cohorts/cohorts-page-light-mode.png"
+export const cohortsPageDark = "https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/features/cohorts/cohorts-page-dark-mode.png"
+
+import {ProductVideo} from 'components/ProductVideo'
+export const createCohortLight = "https://res.cloudinary.com/dmukukwp6/video/upload/v1710055416/posthog.com/contents/images/features/cohorts/create-cohort-from-trend-light-mode.mp4"
+export const createCohortDark = "https://res.cloudinary.com/dmukukwp6/video/upload/v1710055416/posthog.com/contents/images/features/cohorts/create-cohort-from-trend-dark-mode.mp4"
+
+## What are cohorts?
+
+<iframe
+    src="https://www.youtube-nocookie.com/embed/2jQco8hEvTI?start=375"
+    className="rounded shadow-xl"
+/>
+
+Cohorts enable you to easily create a list of users who have something in common, such as completing an [action](/docs/data/actions) or having the same [property](/docs/product-analytics/person-properties).
+
+Here are a few examples of the cohorts you can create:
+
+- Users who work at the same company.
+- Users who used your app in the last week.
+- Users who churned from your product.
+- Users who signed up recently.
+- Users who viewed the signup page, but didn't convert.
+
+Your cohorts are available in the [People](https://us.posthog.com/persons) page under the [Cohorts](https://us.posthog.com/cohorts) tab.
+
+> **Note:** Cohorts rely on [person properties](/docs/product-analytics/person-properties), so you need to capture identified events to create them. 
+
+## Where can you use cohorts?
+
+You can use cohorts in many different ways, such as:
+
+- In [trends](/docs/product-analytics/trends), funnels, retention, user paths, stickiness, and lifecycle insights
+- As a filter on any product analytics dashboard
+- To target feature flags, experiments, and user surveys
+- To filter the session replay list and create playlists
+- Filter live events on the [activity page](/docs/activity)
+- Filter users on the People page
+
+You can use cohorts to answer questions like:
+
+- "Are people at company X using our app frequently?"
+- "What percentage of the users who signed up last week are still using our app?"
+- "Which features are power users using the most?"
+
+## How are cohorts different from groups?
+
+Cohorts are sometimes confused with [groups](/docs/product-analytics/group-analytics), but they each serve different purposes:
+
+- **Cohorts** represent a specific set of users – e.g., a list of users whose email contains a certain string (like a company's domain).
+
+- **Groups** aggregate events based on entities, such as organizations or companies, but do not necessarily connect to a user. They enable you to analyze trends, insights, and dashboards at an entity-level (like a company or organization), as opposed to a user-level.
+ 
+ If your only goal is to create a **list of users** with something in common, we recommend cohorts instead of groups.
+
+Groups require additional code in your app to set up, while cohorts are created in PostHog and don't require additional code. This makes cohorts easier to use and quicker to get started. 
+
+
+## How to create a cohort
+
+Once you've captured identified events, there are two ways to create a new cohort:
+
+### Method 1: Create a new cohort directly from an insight
+
+You can create cohorts using data from insights such as trends, [funnels](/docs/product-analytics/funnels), [user paths](/docs/product-analytics/paths) and [lifecycles](/docs/product-analytics/lifecycle).
+
+1. Go to [insights](https://us.posthog.com/insights) and open any insight that's aggregated at a user-level, like `unique users` or `weekly active user`. 
+
+2. Click a data point in the visualization to view the [persons](/docs/data/persons) represented in the underlying data.
+
+3. In the modal popup, click **Save as cohort** at the bottom.
+
+The video below shows how to create a new cohort from a trend, although you can similarly create a cohort from a funnel, user path, or any other insight.
+
+<ProductVideo
+    videoLight={createCohortLight} 
+    videoDark={createCohortDark}
+    alt="How to create a cohort from a trend" 
+    classes="rounded"
+/>
+
+### Method 2: Create a new cohort from the cohorts page
+
+1. Navigate to the [People](https://us.posthog.com/persons) page within the sidebar, then click on the [Cohorts tab](https://us.posthog.com/cohorts).
+
+2. Click **+ New Cohort** on the top right.
+
+<ProductScreenshot
+    imageLight={cohortsPageLight} 
+    imageDark={cohortsPageDark}
+    alt="left hand navigation for cohorts" 
+    classes="rounded"
+/>
+
+## Static and dynamic cohorts
+
+You have two options when creating a cohort:
+
+1. **Static cohorts**, lists of users that don't change over time (unless you update them manually). For example, all the users who signed up to your app in January 2024.
+
+2. **Dynamic cohorts**, which are automatically updated based on a specific condition – e.g. all users who have performed a specific event or action in your app.
+
+### Static cohorts
+
+Static cohorts are created from insights, by uploading a CSV of users, or by duplicating a dynamic cohort.
+
+When creating cohorts from CSVs, the [person profile](/docs/data/persons) associated with each row must already exist in PostHog. 
+
+You can identify users using either:
+
+- **Distinct IDs**: The identifiers you send to PostHog (e.g., email addresses, user IDs from your system)
+- **Person IDs**: PostHog's internal unique identifiers for persons (useful when exporting data from PostHog or other analytics tools)
+- **Emails**: Email address of the person
+
+You can upload CSV files in two formats:
+
+**Single-column CSV**: Include one identifier per row. For distinct IDs, no header is necessary (for backwards compatibility):
+
+```csv
+user123
+user456
+test@example.com
+```
+
+If you identify users with Person IDs, include a header (`person_id`, `person-id`, or `Person .id`):
+
+```csv
+person_id
+01234567-89ab-cdef-0123-456789abcdef
+fedcba98-7654-3210-fedc-ba9876543210
+11111111-2222-3333-4444-555555555555
+```
+
+And, if you identify users with Emails, include a header (`email`, or `e-mail`)
+
+```csv
+email
+john@example.com
+jane@example.com
+```
+
+**Multi-column CSV**: Include a header row with a column containing the user identifiers. Supported column headers are:
+
+- `distinct_id` or `distinct-id` for distinct IDs
+- `person_id`, `person-id`, or `Person .id` for person IDs
+- `email`, or `e-mail` for emails
+
+```csv
+email,distinct_id,name,segment
+user1@team.com,user123,Alice Johnson,premium
+user2@team.com,user456,Bob Smith,standard
+user3@team.com,test@example.com,Carol Davis,premium
+```
+
+Using person UUIDs:
+
+```csv
+email,person_id,name,segment
+user1@team.com,01234567-89ab-cdef-0123-456789abcdef,Alice Johnson,premium
+user2@team.com,fedcba98-7654-3210-fedc-ba9876543210,Bob Smith,standard
+user3@team.com,11111111-2222-3333-4444-555555555555,Carol Davis,premium
+```
+
+Or using emails:
+
+```csv
+email,name,segment
+user1@team.com,Alice Johnson,premium
+user2@team.com,Bob Smith,standard
+user3@team.com,Carol Davis,premium
+```
+
+For multi-column files, PostHog will extract the user identifiers from the specified column and ignore all other columns, making it easy to upload exported cohort data without modification.
+
+**Column precedence rules:**
+
+- If both `distinct_id` and `person_id` columns exist, the `person_id` column takes precedence
+- For single-column uploads without matching headers, PostHog assumes distinct IDs (backwards compatibility)
+
+To update the list, you can upload another CSV to add more users. You can also remove users by deleting their [person profile](/docs/data/persons) from the list, noting that this will completely remove the person from PostHog.
+
+### Dynamic cohorts
+
+Dynamic cohorts can be based on existing cohorts, and support the following criteria:
+
+#### Behavioral
+
+| **Event or action** | **Example** |
+| --- | --- |
+| Completed event or action | Completed `user signed up` in the last 30 days |
+| Did not complete event or action | Did not complete `user signed up` in the last 2 months |
+| Completed event or action multiple times | Completed `watched video` 5 times in the last 2 weeks |
+| Completed a sequence of events or actions | Completed `user signed up` in the last 5 days followed by `watched video` within 1 day of the initial event |
+| Did not complete a sequence of events or actions | Did not complete `user signed up` in the last 5 days followed by `watched video` within 1 day of the initial event |
+
+You can select `days`, `weeks`, `months` or `years` time ranges here.
+
+#### Person properties
+
+Has or doesn't have a person property with the following operators:
+
+| **Operator** | **Example** |
+| --- | --- |
+| `equals` or `does not equal` | `Pineapple on pizza` property `does not equal` "true" |
+| `contains` or `does not contain` | `email` property `does not contain` "gmail" |
+| `matches regex` or `does not match regex` | `Country code` property `matches regex` "us\|uk\|aus" |
+| `greater than` or `greater than or equal to` | `Age` property `greater than` "21" |
+| `less than` or `less than or equal to` | `Age` property `less than or equal to` "21" |
+| `is set` or `is not set` | `UTM Source` property `is not set` |
+| `between` or `not between` | `Age` property is between "18" and "30" |
+| `minimum` or `maximum` value | `Organization size` property has a `minimum` of "5" |
+
+#### Lifecycle
+
+| **Criteria** | **Example** |
+| --- | --- |
+| Completed an event for first time | Completed `shared insight` event for the first time in the "last 30 days" |
+| Completed an event regularly | Completed `shared insight` at least "3 times per week" for at least "3 of the last 5 periods" |
+| Stopped doing an event | Stopped doing `shared insight` event in the "last 5 days" but had done it in the "5 days prior" |
+| Started doing event again | Started doing `shared insight` event in the "last 5 days" but had not done it in the "5 days prior" |
+
+You can select `days`, `weeks`, `months` or `years` time ranges here.
+
+## FAQ
+
+### How often are dynamic cohorts updated?
+
+Dynamic cohorts are updated once every 24 hours.
+
+### Can you use a dynamic cohort as a feature flag target?
+
+You cannot use dynamic cohorts that include behavioral or lifecycle criteria as a feature flag target. To target these dynamic cohorts for a feature flag, A/B test, or survey, you must first duplicate them into a static cohort. Dynamic cohorts with only person property criteria can be used.
+ 
+ ### Can you use groups in cohorts?
+ 
+ Not yet, but we are working on [rewriting cohort calculations in SQL](/teams/product-analytics#goals) which will unlock your ability to do this. 
+ 
+### Further reading
+
+- [How to track new and returning users in PostHog](/tutorials/track-new-returning-users)
+- [How to identify and analyze power users](/tutorials/power-users)
+- [How to filter out internal users](/tutorials/filter-internal-users)

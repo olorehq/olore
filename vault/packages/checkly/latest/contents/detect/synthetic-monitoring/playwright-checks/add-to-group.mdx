@@ -1,0 +1,112 @@
+---
+title: 'Adding Playwright Check Suites to Groups'
+description: 'Organize your Playwright Check Suites with groups for better management and shared configuration.'
+sidebarTitle: 'Add to Group'
+---
+
+<Accordion title="Prerequisites">
+You need:
+
+- A repository using the Checkly CLI
+- At least one Playwright Check Suite defined in your repository.
+
+</Accordion>
+
+Groups organize checks and share configuration across them. See the [Groups overview](/platform/groups) for details on benefits and how groups work.
+
+## 1. Create a group
+
+Create a new file to define your group.
+
+```typescript website-group.check.ts
+import { CheckGroupV2 } from 'checkly/constructs'
+
+export const myGroup = new CheckGroupV2('production-group', {
+  name: 'Production group',
+  activated: true,
+  muted: false,
+  locations: ['us-east-1', 'eu-west-1'],
+  tags: ['production', 'playwright'],
+  environmentVariables: [],
+})
+```
+
+<Tip>
+Learn more about [using groups](/constructs/check-group-v2).
+</Tip>
+
+## 2. Add a Playwright Check Suite to the group
+
+Import the group and reference it in your Playwright Check Suite configuration:
+
+```typescript checkly.config.ts highlight={2,14}
+import { defineConfig } from 'checkly'
+import { myGroup } from './website-group.check'
+
+export default defineConfig({
+  logicalId: 'checkly-website',
+  projectName: 'checkly-website',
+  checks: {
+    playwrightConfigPath: './playwright.config.ts',
+    playwrightChecks: [
+      {
+        name: 'Critical Tests',
+        logicalId: 'critical-tests',
+        pwTags:'critical',
+        frequency: 10,
+        locations: ['us-east-1',],
+        group: myGroup,
+      },
+    ],
+  },
+})
+```
+
+## 3. Deploy your changes
+
+```bash
+npx checkly deploy --preview # preview what will be deployed
+npx checkly deploy           # deploy the new scheduled Playwright Check Suites into the group
+```
+
+Your Playwright Check Suite now appears in the group in your [Checkly Home Dashboard](https://app.checklyhq.com/).
+
+## Add multiple check suites to one group
+
+Add multiple Playwright Check Suites to the same group while keeping individual test selection and frequency settings. Reference the group in each suite:
+
+```typescript checkly.config.ts highlight={2,13,20,27}
+import { defineConfig } from 'checkly'
+import { myGroup } from './website-group.check'
+
+export default defineConfig({
+  logicalId: 'checkly-website',
+  projectName: 'checkly-website',
+  checks: {
+    playwrightConfigPath: './playwright.config.ts',
+    playwrightChecks: [
+      {
+        name: 'Critical User Flows',
+        logicalId: 'critical-flows',
+        pwTags: 'critical',
+        frequency: 5,
+        group: myGroup,
+      },
+      {
+        name: 'Authentication Tests',
+        logicalId: 'auth-tests',
+        pwTags: 'auth',
+        frequency: 10,
+        group: myGroup,
+      },
+      {
+        name: 'Checkout Flow',
+        logicalId: 'checkout-flow',
+        pwTags: 'checkout',
+        frequency: 5,
+        group: myGroup,
+      },
+    ],
+  },
+})
+```

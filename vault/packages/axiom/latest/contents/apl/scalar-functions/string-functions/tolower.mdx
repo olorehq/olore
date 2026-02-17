@@ -1,0 +1,130 @@
+---
+title: 'tolower'
+description: 'This page explains how to use the tolower function in APL.'
+---
+
+The `tolower` function converts all characters in a string to lowercase. Use this function to normalize text for case-insensitive comparisons, standardize log data, or prepare strings for consistent analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `lower` function. APL's `tolower` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval lowercase=lower(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend lowercase = tolower(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `LOWER` for lowercase conversion. APL's `tolower` provides the same functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT LOWER(field) AS lowercase FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend lowercase = tolower(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+tolower(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The input string to convert to lowercase. |
+
+### Returns
+
+Returns the input string with all characters converted to lowercase.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Normalize HTTP methods for case-insensitive aggregation and analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend normalized_method = tolower(method)
+| summarize request_count = count() by normalized_method, status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20normalized_method%20%3D%20tolower(method)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20normalized_method%2C%20status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| normalized_method | status | request_count |
+|-------------------|--------|---------------|
+| get | 200 | 5432 |
+| post | 201 | 2341 |
+| get | 404 | 1987 |
+
+This query normalizes HTTP methods to lowercase, ensuring that 'GET', 'Get', and 'get' are all counted together for accurate request analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Standardize service names for consistent cross-service analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend normalized_service = tolower(['service.name'])
+| summarize span_count = count(), avg_duration = avg(duration) by normalized_service
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20normalized_service%20%3D%20tolower(%5B%27service.name%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%2C%20avg_duration%20%3D%20avg(duration)%20by%20normalized_service%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| normalized_service | span_count | avg_duration |
+|--------------------|------------|--------------|
+| frontend | 4532 | 125ms |
+| checkout | 3421 | 234ms |
+| cart | 2987 | 89ms |
+
+This query normalizes service names to lowercase, ensuring consistent grouping regardless of naming convention variations.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [toupper](/apl/scalar-functions/string-functions/toupper): Converts strings to uppercase. Use this for the opposite transformation.
+- [totitle](/apl/scalar-functions/string-functions/totitle): Converts strings to title case. Use this for capitalized word formatting.
+- [strcmp](/apl/scalar-functions/string-functions/strcmp): Compares strings. Use tolower before strcmp for case-insensitive comparisons.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces strings. Use tolower to normalize before replacements.
+

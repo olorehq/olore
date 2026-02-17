@@ -1,0 +1,128 @@
+---
+title: ensure_field
+description: 'This page explains how to use the ensure_field function in APL.'
+---
+
+Use the `ensure_field` function to safely access a field that may or may not exist in your data. The function returns the field’s value if it exists, or a typed nil if it doesn’t. This helps you write queries that work even when fields are missing, making your queries more robust and future-proof.
+
+You typically use `ensure_field` when working with schemaless or evolving data where fields might be absent, or when you want to write queries that handle missing fields gracefully without errors.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you can use `if` expressions with `isnull` or check field existence with `isnull(field)`. In APL, `ensure_field` provides a more type-safe way to handle missing fields by returning a typed nil that matches the expected field type.
+
+<CodeGroup>
+```sql Splunk example
+... | eval status = if(isnull(status_code), null(), status_code)
+```
+
+```kusto APL equivalent
+... | extend status = ensure_field('status_code', typeof(string))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `COALESCE` or `ISNULL` functions to handle missing values, but these don't check for field existence. In APL, `ensure_field` checks if a field exists and returns a typed nil if it doesn't, allowing you to write queries that work with optional fields.
+
+<CodeGroup>
+```sql SQL example
+SELECT COALESCE(optional_field, NULL) AS field_value FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend field_value = ensure_field('optional_field', typeof(string))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+ensure_field(field_name, field_type)
+```
+
+### Parameters
+
+| Name       | Type   | Description                                                                                    |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------- |
+| field_name | string | The name of the field to ensure exists.                                                       |
+| field_type | type   | The type of the field. See [scalar data types](/apl/data-types/scalar-data-types) for supported types. |
+
+### Returns
+
+This function returns the value of the specified field if it exists, otherwise it returns a typed nil that matches the specified type.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Handle missing fields gracefully when analyzing HTTP logs where some fields might not be present in all records.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend user_agent = ensure_field('user_agent', typeof(string))
+| extend referer = ensure_field('referer', typeof(string))
+| where isnotnull(user_agent) or isnotnull(referer)
+| project _time, ['uri'], user_agent, referer
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20user_agent%20%3D%20ensure_field('user_agent'%2C%20typeof(string))%20%7C%20extend%20referer%20%3D%20ensure_field('referer'%2C%20typeof(string))%20%7C%20where%20isnotnull(user_agent)%20or%20isnotnull(referer)%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20user_agent%2C%20referer%22%7D)
+
+**Output**
+
+| _time | uri | user_agent | referer |
+| ----- | --- | ---------- | ------- |
+| Jun 24, 09:28:10 | /api/users | Mozilla/5.0 | https://example.com |
+
+This example safely accesses optional fields that may not exist in all log records, allowing the query to run successfully even when some fields are missing.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Access optional trace attributes that might not be present in all spans.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend http_method = ensure_field('http.method', typeof(string))
+| extend http_path = ensure_field('http.path', typeof(string))
+| where ['kind'] == 'server'
+| project _time, ['trace_id'], ['service.name'], http_method, http_path
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20http_method%20%3D%20ensure_field('http.method'%2C%20typeof(string))%20%7C%20extend%20http_path%20%3D%20ensure_field('http.path'%2C%20typeof(string))%20%7C%20where%20%5B'kind'%5D%20%3D%3D%20'server'%20%7C%20project%20_time%2C%20%5B'trace_id'%5D%2C%20%5B'service.name'%5D%2C%20http_method%2C%20http_path%22%7D)
+
+**Output**
+
+| _time | trace_id | service.name | http_method | http_path |
+| ----- | -------- | ------------ | ----------- | --------- |
+| Jun 24, 09:28:10 | abc123 | frontend | GET | /api/users |
+
+This example safely accesses optional HTTP attributes in trace data, ensuring the query works even when these attributes are not present in all spans.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnull](/apl/scalar-functions/string-functions/isnull): Checks if a value is null. Use `isnull` to test the result of `ensure_field` to determine if a field exists.
+- [isnotnull](/apl/scalar-functions/string-functions/isnotnull): Checks if a value is not null. Use `isnotnull` to verify that `ensure_field` successfully retrieved a field value.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null value from a list. Use `coalesce` with `ensure_field` to provide default values when fields are missing.

@@ -1,0 +1,97 @@
+---
+title: 'Axiom transport for Winston logger'
+description: 'This page explains how to send data from a Node.js app to Axiom through Winston.'
+overview: 'A logger for just about everything'
+sidebarTitle: Winston
+keywords: ['js', 'pino', 'winston', 'node', 'javascript', 'typescript', 'ts']
+logoId: 'winston'
+---
+
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+
+<Prerequisites />
+
+## Install SDK
+
+To install the SDK, run the following:
+
+```shell
+npm install @axiomhq/winston
+```
+
+## Import the Axiom transport for Winston
+
+```js
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+```
+
+## Create a Winston logger instance
+
+```js
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+        // You can pass an option here. If you don’t, the transport is configured automatically
+        // using environment variables like `AXIOM_DATASET` and `AXIOM_TOKEN`
+        new AxiomTransport({
+            dataset: 'DATASET_NAME',
+            token: 'API_TOKEN',
+        }),
+    ],
+});
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+After setting up the Axiom transport for Winston, use the logger as usual:
+
+```js
+logger.log({
+    level: 'info',
+    message: 'Logger successfully setup',
+});
+```
+
+### Error, exception, and rejection handling
+
+To log errors, use the [`winston.format.errors`](https://github.com/winstonjs/logform#errors) formatter. For example:
+
+```ts
+import winston from 'winston';
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+const { combine, errors, stack } = winston.format;
+const axiomTransport = new AxiomTransport({ ... });
+const logger = winston.createLogger({
+  // 8<----snip----
+  format: combine(errors({ stack: true }), json()),
+  // 8<----snip----
+});
+```
+
+To automatically log exceptions and rejections, add the Axiom transport to the [`exceptionHandlers`](https://github.com/winstonjs/winston#exceptions) and [`rejectionHandlers`](https://github.com/winstonjs/winston#rejections). For example:
+
+```ts
+import winston from 'winston';
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+const axiomTransport = new AxiomTransport({ ... });
+const logger = winston.createLogger({
+  // 8<----snip----
+  transports: [axiomTransport],
+  exceptionHandlers: [axiomTransport],
+  rejectionHandlers: [axiomTransport],
+  // 8<----snip----
+});
+```
+
+<Warning>
+Running on Edge runtime isn’t supported.
+</Warning>
+
+## Examples
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-js/tree/main/examples/winston).

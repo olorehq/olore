@@ -1,0 +1,95 @@
+---
+title: "Architecture"
+keywords: ["architecture", "storage", "query", "ingestion", "compression"]
+description: "Technical deep-dive into Axiom’s distributed architecture."
+---
+
+<Tip>
+You don’t need to understand any of the following material to get massive value from Axiom. As a fully managed data platform, Axiom just works. This technical deep-dive is intended for curious minds wondering: Why is Axiom different?
+</Tip>
+
+Axiom routes ingestion requests through a distributed edge layer to a cluster of specialized services that process and store data in proprietary columnar formats optimized for different data types. EventDB handles high-volume event data, while MetricsDB is purpose-built for time-series metrics with high-cardinality dimensions. Query requests are executed by ephemeral, serverless workers that operate directly on compressed data stored in object storage.
+
+## Ingestion architecture
+
+Data flows through a multi-layered ingestion system designed for high throughput and reliability:
+
+- **Regional Edge Layer:** HTTPS ingestion requests are received by regional edge proxies positioned to meet data jurisdiction requirements. These proxies handle protocol translation, authentication, and initial data validation. The edge layer supports multiple input formats (JSON, CSV, compressed streams) and can buffer data during downstream issues.
+- **High-availability routing:** The system provides intelligent routing to healthy database nodes using real-time health monitoring. When primary ingestion paths fail, requests are automatically routed to available nodes or queued in a backlog system that processes data when systems recover.
+- **Streaming Pipeline:** Raw events are parsed, validated, and transformed in streaming fashion. Field limits and schema validation occur during this phase.
+- **Write-Ahead Logging:** All ingested data is durably written to a distributed write-ahead log before being processed. This ensures zero data loss even during system failures and supports concurrent writes across multiple ingestion nodes.
+
+## Storage architecture
+
+Axiom’s storage layer uses specialized columnar formats optimized for different workload types:
+
+### EventDB storage
+
+EventDB’s storage is built around a custom columnar format that achieves extreme compression ratios:
+
+- **Columnar organization:** Events are decomposed into columns and stored using specialized encodings optimized for each data type. String columns use dictionary encoding, numeric columns use various compression schemes, and boolean columns use bitmap compression.
+- **Block-based storage:** Data is organized into immutable blocks that are written once and read many times. Each block contains:
+
+    - Column metadata and statistics  
+    - Compressed column data in a proprietary format
+    - Separate time indexes for temporal queries  
+    - Field schemas and type information
+
+- **Compression pipeline:** Data flows through multiple compression stages:
+
+    1. **Ingestion compression:** Real-time compression during ingestion (25-50% reduction)  
+    1. **Block compression:** Columnar compression within storage blocks (10-20x additional compression)  
+    1. **Compaction compression:** Background compaction further optimizes storage (additional 2-5x compression)
+
+- **Object storage integration:** Blocks are stored in object storage (S3) with intelligent partitioning strategies that distribute load and avoid hot-spotting. The system supports multiple storage tiers and automatic lifecycle management.
+
+### MetricsDB storage
+
+MetricsDB uses a specialized columnar format engineered for time-series metrics with high-cardinality tags:
+
+- **High-cardinality optimization:** Unlike traditional metrics datastores that struggle with dimensional complexity, MetricsDB is designed from the ground up to handle high numbers of unique tag combinations efficiently.
+- **Intentional design constraints:** MetricsDB makes deliberate trade-offs to optimize for the most common metrics use cases. These constraints are purposeful architectural choices that enable MetricsDB to deliver exceptional performance and cost-efficiency for real-world metrics workloads. Where other systems penalize you for high cardinality or force you to pre-aggregate data, MetricsDB lets you store and query metrics with full dimensional flexibility.
+- **Unified observability:** Query metrics alongside logs and traces, enabling powerful correlations across all your telemetry data without switching tools or learning multiple query languages.
+
+## Query architecture
+
+Axiom executes queries using a serverless architecture that spins up compute resources on-demand:
+
+- **Query compilation:** The APL (Axiom Processing Language) query is parsed, optimized, and compiled into an execution plan. The compiler performs predicate pushdown, projection optimization, and identifies which blocks need to be read.
+- **Serverless Workers:** Query execution occurs in ephemeral workers optimized through "Fusion queries"—a system that runs parallel queries inside a single worker to reduce costs and leave more resources for large queries. Workers download only the necessary column data from object storage, enabling efficient resource utilization. Multiple workers can process different blocks in parallel.
+- **Block-level parallelism:** Each query spawns multiple workers that process different blocks concurrently. Workers read compressed column data directly from object storage, decompress it in memory, and execute the query.
+- **Result aggregation:** Worker results are streamed back and aggregated by a coordinator process. Large result sets are automatically spilled to object storage and streamed to clients via signed URLs.
+- **Intelligent caching:** Query results are cached in object storage with intelligent cache keys that account for time ranges and query patterns. Cache hits dramatically reduce query latency for repeated queries.
+
+## Compaction system
+
+A background compaction system continuously optimizes storage efficiency:
+
+- **Automatic compaction:** The compaction scheduler identifies blocks that can be merged based on size, age, and access patterns. Small blocks are combined into larger "superblocks" that provide better compression ratios and query performance.
+- **Multiple strategies:** The system supports several compaction algorithms:
+
+    - **Default:** General-purpose compaction with optimal compression  
+    - **Clustered:** Groups data by common field values for better locality  
+    - **Fieldspace:** Optimizes for specific field access patterns  
+    - **Concat:** Simple concatenation for append-heavy workloads
+
+- **Compression optimization:** During compaction, data is recompressed using more aggressive algorithms and column-specific optimizations that aren’t feasible during real-time ingestion.
+
+## System architecture
+
+The overall system is composed of specialized microservices:
+
+- **Core services:** Handle authentication, billing, dataset management, and API routing. These services are stateless and horizontally scalable.
+- **Database layer:** The core database engine processes ingestion, manages storage, and coordinates query execution. It supports multiple deployment modes and automatic failover.
+- **Orchestration layer:** Manages distributed operations, monitors system health, and coordinates background processes like compaction and maintenance.
+- **Edge services:** Handle real-time data ingestion, protocol translation, and provide regional data collection points.
+
+## Why this architecture wins
+
+- **Cost efficiency:** Serverless query execution means you only pay for compute during active queries. Extreme compression (25-50x) dramatically reduces storage costs compared to traditional row-based systems.
+- **Operational simplicity:** The system is designed to be self-managing. Automatic compaction, intelligent caching, and distributed coordination eliminate operational overhead.
+- **Elastic scale:** Each component scales independently. Ingestion scales with edge capacity, storage scales with object storage, and query capacity scales with serverless workers.
+- **Fault tolerance:** Write-ahead logging, distributed routing, and automatic failover ensure high availability. The system gracefully handles node failures and storage outages.
+- **Real-time performance:** Despite the distributed architecture, the system maintains sub-second query performance through intelligent caching, predicate pushdown, and columnar storage optimizations.
+
+This architecture enables Axiom to ingest millions of events per second while maintaining sub-second query latency at a fraction of the cost of traditional logging and observability solutions.  

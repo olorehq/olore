@@ -1,0 +1,163 @@
+---
+title: 'isnull'
+description: 'This page explains how to use the isnull function in APL.'
+---
+
+The `isnull` function evaluates its argument and returns true if the argument is null. Use this function to identify missing data, filter out incomplete records, or validate that optional fields are absent.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you check for null values using `isnull()` function. APL's `isnull` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+| where isnull(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnull(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you check for null values using `IS NULL`. APL's `isnull` provides the same functionality with function syntax.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE field IS NULL;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnull(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isnull(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | scalar | Yes | The value to check for null. |
+
+### Returns
+
+Returns `true` if the value is null, otherwise returns `false`. Note that empty strings return `false` because they are not null.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Identify HTTP requests with missing duration information to assess data quality and completeness.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend missing_duration = isnull(req_duration_ms)
+| summarize total_requests = count(),
+            missing_duration_count = countif(missing_duration),
+            missing_percentage = round(100.0 * countif(missing_duration) / count(), 2) by status
+| sort by missing_duration_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20missing_duration%20%3D%20isnull(req_duration_ms)%20%7C%20summarize%20total_requests%20%3D%20count()%2C%20missing_duration_count%20%3D%20countif(missing_duration)%2C%20missing_percentage%20%3D%20round(100.0%20*%20countif(missing_duration)%20%2F%20count()%2C%202)%20by%20status%20%7C%20sort%20by%20missing_duration_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | total_requests | missing_duration_count | missing_percentage |
+|--------|----------------|------------------------|-------------------|
+| 500 | 1234 | 123 | 9.97 |
+| 200 | 8765 | 87 | 0.99 |
+| 404 | 2341 | 23 | 0.98 |
+
+This query identifies the percentage of requests missing duration data by status code, helping assess logging infrastructure reliability and identify potential issues.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Find traces with missing duration information to identify instrumentation problems.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend null_duration = isnull(duration)
+| where null_duration
+| summarize incomplete_spans = count() by ['service.name'], kind
+| sort by incomplete_spans desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20null_duration%20%3D%20isnull(duration)%20%7C%20where%20null_duration%20%7C%20summarize%20incomplete_spans%20%3D%20count()%20by%20%5B%27service.name%27%5D%2C%20kind%20%7C%20sort%20by%20incomplete_spans%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | kind | incomplete_spans |
+|--------------|------|------------------|
+| product-catalog | server | 234 |
+| cart | internal | 123 |
+| checkout | client | 89 |
+
+This query identifies services with incomplete trace data, helping pinpoint instrumentation issues where duration information is not being captured properly.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify anonymous access attempts by finding requests without user identification.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend anonymous = isnull(id)
+| summarize total_failures = count(),
+            anonymous_failures = countif(anonymous) by status, ['geo.country']
+| extend anonymous_rate = round(100.0 * anonymous_failures / total_failures, 2)
+| where anonymous_failures > 10
+| sort by anonymous_failures desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20anonymous%20%3D%20isnull(id)%20%7C%20summarize%20total_failures%20%3D%20count()%2C%20anonymous_failures%20%3D%20countif(anonymous)%20by%20status%2C%20%5B'geo.country'%5D%20%7C%20extend%20anonymous_rate%20%3D%20round(100.0%20*%20anonymous_failures%20%2F%20total_failures%2C%202)%20%7C%20where%20anonymous_failures%20%3E%2010%20%7C%20sort%20by%20anonymous_failures%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | geo.country | total_failures | anonymous_failures | anonymous_rate |
+|--------|-------------|----------------|-------------------|----------------|
+| 401 | Unknown | 567 | 345 | 60.85 |
+| 403 | Russia | 234 | 189 | 80.77 |
+| 401 | China | 198 | 156 | 78.79 |
+
+This query identifies patterns of anonymous failed access attempts by country, helping security teams detect automated attacks or scanning activity.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnotnull](/apl/scalar-functions/string-functions/isnotnull): Returns true if a value is not null. Use this for the inverse check of isnull.
+- [isempty](/apl/scalar-functions/string-functions/isempty): Checks if a value is empty or null. Use this when you need to check for both null and empty strings.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null value from a list. Use this to provide default values for null fields.
+- [gettype](/apl/scalar-functions/string-functions/gettype): Returns the type of a value. Use this to distinguish between null and other types.
+

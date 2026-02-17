@@ -1,0 +1,340 @@
+---
+title: 'Query data via Axiom API'
+description: 'Learn how to use the Axiom API to query data.'
+sidebarTitle: Query data
+keywords: ['axiom documentation', 'documentation', 'axiom', 'axiom api', 'rest api', 'rest', 'authorization', 'query', 'querying', 'node js', 'headers', 'send data', 'ingesting', 'json', 'arrays', 'nested arrays', 'objects', 'strings', 'csv', 'response']
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import ReplaceToken from "/snippets/replace-token.mdx"
+import ReplaceDomain from "/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "/snippets/replace-dataset-token.mdx"
+import ReplaceDataset from "/snippets/replace-dataset.mdx"
+
+This page explains how to query data via the Axiom API using the following:
+
+- [cURL](#query-data-with-curl)
+- [Axiom Node.js library](#query-data-with-axiom-nodejs)
+
+For an introduction to the basics of the Axiom API and to the authentication options, see [Introduction to Axiom API](/restapi/introduction).
+
+The API requests on this page use the query data endpoint. For more information, see the [API reference](/restapi/endpoints/queryApl).
+
+<Prerequisites />
+
+## Query data with cURL
+
+To query data with cURL:
+
+1. Build the APL query. For more information, see [Introduction to APL](/apl/introduction).
+1. Encode the APL query as a JSON object and enter it into the body of the API request.
+1. Optional: In the body of the request, set optional parameters such as `startTime` and `endTime`. For more information, see the [query data API reference](/restapi/endpoints/queryApl).
+1. Set the `Content-Type` header to `application/json`.
+1. Set the `Authorization` header to `Bearer API_TOKEN`.
+1. Send the POST request to one of the following:
+    - For tabular output, use `https://AXIOM_DOMAIN/v1/datasets/_apl?format=tabular`.
+    - For legacy output, use `https://AXIOM_DOMAIN/v1/datasets/_apl?format=legacy`.
+
+### Example
+
+```bash
+curl --request POST \
+  --url 'https://AXIOM_DOMAIN/v1/datasets/_apl?format=tabular' \
+  --header 'Authorization: Bearer API_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "apl": "DATASET_NAME | limit 10",
+  "startTime": "string",
+  "endTime": "string"
+}'
+```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+</Info>
+
+**Example response**
+
+```json [expandable]
+{
+  "format": "tabular",
+  "status": {
+    "elapsedTime": 260650,
+    "minCursor": "0d8q6stroluyo-07c3957e7400015c-0000c875",
+    "maxCursor": "0d8q6stroluyo-07c3957e7400015c-0000c877",
+    "blocksExamined": 4,
+    "blocksCached": 0,
+    "blocksMatched": 0,
+    "rowsExamined": 197604,
+    "rowsMatched": 197604,
+    "numGroups": 0,
+    "isPartial": false,
+    "cacheStatus": 1,
+    "minBlockTime": "2025-03-26T12:03:14Z",
+    "maxBlockTime": "2025-03-26T12:12:42Z"
+  },
+  "tables": [
+    {
+      "name": "0",
+      "sources": [
+        {
+          "name": "DATASET_NAME"
+        }
+      ],
+      "fields": [
+        {
+          "name": "_sysTime",
+          "type": "datetime"
+        },
+        {
+          "name": "_time",
+          "type": "datetime"
+        },
+        {
+          "name": "content_type",
+          "type": "string"
+        },
+        {
+          "name": "geo.city",
+          "type": "string"
+        },
+        {
+          "name": "geo.country",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "is_tls",
+          "type": "boolean"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "name": "method",
+          "type": "string"
+        },
+        {
+          "name": "req_duration_ms",
+          "type": "float"
+        },
+        {
+          "name": "resp_body_size_bytes",
+          "type": "integer"
+        },
+        {
+          "name": "resp_header_size_bytes",
+          "type": "integer"
+        },
+        {
+          "name": "server_datacenter",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "uri",
+          "type": "string"
+        },
+        {
+          "name": "user_agent",
+          "type": "string"
+        },
+        {
+          "name": "is_ok_2    ",
+          "type": "boolean"
+        },
+        {
+          "name": "city_str_len",
+          "type": "integer"
+        }
+      ],
+      "order": [
+        {
+          "field": "_time",
+          "desc": true
+        }
+      ],
+      "groups": [],
+      "range": {
+        "field": "_time",
+        "start": "1970-01-01T00:00:00Z",
+        "end": "2025-03-26T12:12:43Z"
+      },
+      "columns": [
+        [
+          "2025-03-26T12:12:42.68112905Z",
+          "2025-03-26T12:12:42.68112905Z",
+          "2025-03-26T12:12:42.68112905Z"
+        ],
+        [
+          "2025-03-26T12:12:42Z",
+          "2025-03-26T12:12:42Z",
+          "2025-03-26T12:12:42Z"
+        ],
+        [
+          "text/html",
+          "text/plain-charset=utf-8",
+          "image/jpeg"
+        ],
+        [
+          "Ojinaga",
+          "Humboldt",
+          "Nevers"
+        ],
+        [
+          "Mexico",
+          "United States",
+          "France"
+        ],
+        [
+          "8af366cf-6f25-42e6-bbb4-d860ab535a60",
+          "032e7f68-b0ab-47c0-a24a-35af566359e5",
+          "4d2c7baa-ff28-4b1f-9db9-8e6c0ed5a9c9"
+        ],
+        [
+          false,
+          false,
+          true
+        ],
+        [
+          "QCD permutations were not solvable in linear time, expected compressed time",
+          "QCD permutations were not solvable in linear time, expected compressed time",
+          "Expected a new layer of particle physics but got a Higgs Boson"
+        ],
+        [
+          "GET",
+          "GET",
+          "GET"
+        ],
+        [
+          1.396373193863436,
+          0.16252390534308514,
+          0.4093416175186162
+        ],
+        [
+          3448,
+          2533,
+          1906
+        ],
+        [
+          84,
+          31,
+          29
+        ],
+        [
+          "DCA",
+          "GRU",
+          "FRA"
+        ],
+        [
+          "201",
+          "200",
+          "200"
+        ],
+        [
+          "/api/v1/buy/commit/id/go",
+          "/api/v1/textdata/cnfigs",
+          "/api/v1/bank/warn"
+        ],
+        [
+          "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko",
+          "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.24 (KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24",
+          "Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))"
+        ],
+        [
+          true,
+          true,
+          true
+        ],
+        [
+          7,
+          8,
+          6
+        ]
+      ]
+    }
+  ],
+  "datasetNames": [
+    "DATASET_NAME"
+  ],
+  "fieldsMetaMap": {
+    "DATASET_NAME": [
+      {
+        "name": "status",
+        "type": "",
+        "unit": "",
+        "hidden": false,
+        "description": "HTTP status code"
+      },
+      {
+        "name": "resp_header_size_bytes",
+        "type": "integer",
+        "unit": "none",
+        "hidden": false,
+        "description": ""
+      },
+      {
+        "name": "geo.city",
+        "type": "string",
+        "unit": "",
+        "hidden": false,
+        "description": "the city"
+      },
+      {
+        "name": "resp_body_size_bytes",
+        "type": "integer",
+        "unit": "decbytes",
+        "hidden": false,
+        "description": ""
+      },
+      {
+        "name": "content_type",
+        "type": "string",
+        "unit": "",
+        "hidden": false,
+        "description": ""
+      },
+      {
+        "name": "geo.country",
+        "type": "string",
+        "unit": "",
+        "hidden": false,
+        "description": ""
+      },
+      {
+        "name": "req_duration_ms",
+        "type": "float",
+        "unit": "ms",
+        "hidden": false,
+        "description": "Request duration"
+      }
+    ]
+  }
+}
+```
+
+## Query data with Axiom Node.js
+
+1. [Install and configure](/guides/javascript#use-axiomhq-js) the Axiom Node.js library.
+1. Build the APL query. For more information, see [Introduction to APL](/apl/introduction).
+1. Pass the APL query as a string to the `axiom.query` function.
+
+    ```ts
+    const res = await axiom.query(`['DATASET_NAME'] | where foo == 'bar' | limit 100`);
+    console.log(res);
+    ```
+    <Info>
+    <ReplaceDataset />
+    </Info>
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-js/tree/main/examples).
+
+For more information on other libraries you can use to query data, see [Send data](send-data/methods).

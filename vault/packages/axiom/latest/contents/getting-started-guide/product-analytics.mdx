@@ -1,0 +1,118 @@
+---
+title: "Axiom for product analytics"
+description: "This page explains how Axiom helps you leverage timestamped event data for product analytics purposes."
+sidebarTitle: Product analytics
+---
+
+Axiom helps you leverage the power of timestamped event data. Axiom believes that event data reflects a broad range of interactions, crossing boundaries from engineering to product management, security, and beyond. For a more general explanation of event data in Axiom, see [Events](/getting-started-guide/event-data).
+
+This page explains how you can leverage the power of event data for the product analytics use case.
+
+In product analytics, the ability to harness and interpret data effectively can determine the success of a product. Axiom allows product analytics to leverage the power of timestamped event data and easily read every single event. Your organization can gain actionable insights, optimize user experiences, and drive product innovation.
+
+## Why event data matters in product analytics
+
+Event data captures the actions and interactions users have with a product over time. From button clicks and page views to error events and feature usage, every timestamped event tells a story about user behavior. Axiom’s platform is specifically designed to process and analyze these granular datasets, making it an indispensable tool for product teams aiming to do the following:
+
+- **Understand user behavior:** By tracking and analyzing event streams, Axiom provides a clear picture of how users engage with your product.
+- **Identify trends and patterns:** Time-series analysis reveals emerging trends, helping teams anticipate user needs and adjust strategies proactively.
+- **Optimize product features:** Pinpoint which features drive the most value and identify friction points that need improvement.
+
+## Key features of Axiom for product analytics
+
+The following key features make Axiom perfect for product analytics:
+
+- **Real-time event monitoring:** Axiom’s ability to ingest and process data in real-time means you can monitor user activity as it happens. This empowers product managers to act quickly in response to anomalies or unexpected usage patterns, reducing downtime and improving user satisfaction. For example:
+
+    - Track whether feature flags are toggling as expected.
+    - Watch for broken signup flows or onboarding drop-offs immediately after a deploy.
+    - Monitor if newly launched features are generating engagement.
+
+- **Unified data platform:** Axiom eliminates data silos by integrating event data from diverse sources into a single, cohesive platform. Axiom stores system telemetry alongside product analytics data. This eliminates the traditional separation between “user behavior” tools and “engineering” tools, and this convergence unlocks powerful debugging and insight scenarios:
+
+    - Correlate frontend feature usage with backend latency.
+    - View conversion funnel stages alongside HTTP error logs.
+    - Link user drop-off to infrastructure anomalies.
+
+- **Advanced query capabilities:** With a robust query language, Axiom enables product teams to dive deep into data analysis. Perform detailed segmentation, drill down into specific user journeys, and uncover insights that would otherwise remain hidden.
+- **Custom dashboards and visualizations:** Intuitive dashboards and customizable visualizations make it easy for product managers to communicate insights to stakeholders. Axiom’s visual tools enhance collaboration and decision-making.
+- **Scalable infrastructure:** As your product grows, so does the volume of event data. Axiom’s architecture is built to scale effortlessly, ensuring that your analytics remain robust and reliable, even with massive datasets.
+
+## Standard patterns for product data: Segment compatibility
+
+Axiom supports event ingestion via widely adopted patterns such as the [Segment specification](https://segment.com/docs/connections/spec/):
+
+- **`identify`** associates events with known users.
+- **`track`** records user interactions like button clicks or page views.
+- **`group`** associates users with organizations or accounts.
+
+These event types are foundational to many analytics workflows and are supported by tools like Mixpanel, Amplitude, June, and RudderStack. Axiom’s compatibility with this ecosystem enables product teams to reuse existing instrumentation patterns and schemas with minimal changes.
+
+### How Axiom receives Segment events
+
+To send Segment data to Axiom:
+
+1. Create an [HTTP destionation](/process-data/destinations/http) in Axiom.
+1. Add a webhook destination in Segment. For more information, see the [Segment documentation](https://segment.com/docs/connections/destinations/catalog/webhooks/).
+
+Segment sends event payloads to Axiom in JSON format. Axiom stores each incoming payload as a structured event, preserving keys such as `event`, `userId`, `traits`, `properties`, and `_time` (automatically inferred or provided). No custom transformation is required. Segment’s default schema maps naturally into Axiom’s JSON ingestion pipeline.
+
+After sending events to Axiom, query them using APL. For example, to count “Button Clicked” events per user by hour:
+
+```kusto
+['segment-frontend-prod']
+| where event == "Button Clicked"
+| summarize count() by userId, bin(_time, 1h)
+```
+
+## Use cases: from funnels to retention
+
+Here are some ways product teams use Axiom:
+
+### Feature adoption tracking
+
+Measure which users are engaging with newly released features.
+
+```kusto
+['segment-frontend-prod']
+| where event == "AI Chat Created" and properties.featureName == "AI Chat"
+| summarize count() by userId, bin(_time, 1h)
+```
+
+### Retention and churn analysis
+
+Analyze returning users over time:
+
+```kusto
+['segment-frontend-prod']
+| where event == "Logged In"
+| summarize sessions = count(), users = dcount(userId) by bin(_time, 1w)
+```
+
+### Data for funnel diagnostics
+
+Trace where users drop off between signup, onboarding, and first value.
+
+```kusto
+['segment-frontend-prod']
+| where event in ("Signed Up", "Completed Onboarding", "Created Project")
+| project userId, event, _time
+| sort by userId, _time
+```
+
+### A/B test measurement
+
+Compare experiment cohorts based on downstream engagement:
+
+```kusto
+['segment-frontend-prod']
+| where properties.experimentGroup == "variant_a"
+| where event == "Clicked Upgrade"
+| summarize conversions = dcount(userId)
+```
+
+## Why choose Axiom for product analytics
+
+Axiom’s focus on timestamped event data makes it perfect for product analytics. By crossing boundaries from engineering to product management and security, Axiom empowers cross-functional teams to collaborate effectively. Its comprehensive feature set ensures that organizations can unlock the full potential of their data, driving smarter decisions and fostering innovation.
+
+In competitive markets, understanding your users is paramount. With Axiom, you gain a trusted partner in turning event data into actionable insights that propel your product to new heights. Experience the future of product analytics with Axiom and transform how you build, analyze, and optimize your product.

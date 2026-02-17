@@ -1,0 +1,125 @@
+---
+title: 'Usage and billing'
+description: 'This section explains how to manage usage and billing within your Axiom organization.'
+---
+
+## Billing
+
+To view details about your next and last bill, go to <Icon icon="gear" iconType="solid"/> **Settings > Billing**.
+
+The Current breakdown section explains what you paid for in your last bill and what you can expect to pay for in your next bill.
+
+### View billing history
+
+To view details about your billing history:
+
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Billing**.
+1. In the Current breakdown section, click **Billing history**.
+
+### Compute credits
+
+You can save on compute spending by pre-purchasing compute credits. This means that you purchase credits in advance at a discount. The more credits you purchase, the higher the discount rate. For more information, see [Pricing](https://axiom.co/pricing).
+
+Your compute credits can cover the following costs:
+- Data loading
+- Query compute
+
+Your compute credits can’t cover the following costs:
+- Your pricing plan
+- Add-ons
+- Storage
+
+To purchase compute credits:
+
+1. Ensure you have permissions to modify billing. For more information, see [Role-Based Access Control](/reference/settings).
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Billing**.
+1. In the Compute credits section, click **Add credits**.
+1. Enter the amount of credits you want to purchase.
+1. Review the total cost.
+1. Click **Buy credits**.
+1. Complete the purchase.
+
+### Spending limit
+
+Setting a monthly spending limit allows you to control costs.
+
+<Warning>
+Axiom continuously tracks your current billing cycle’s projected costs. To determine your accumulated charges, Axiom considers all costs, including the base cost of your plan, usage costs, and the costs of any add-ons you have purchased. When your accumulated charges reach your spending limit, Axiom automatically pauses actions that generate further costs. This can cause interruptions to your service.
+
+For example, if you have used up the query compute allowance included in your pricing plan, you can’t run queries and your monitors can’t query your data. At the same time, if you haven’t yet used up the data loading allowance, you can still ingest data.
+</Warning>
+
+Even if you reach your spending limit, you can still initiate purchases manually such as buying add-ons and credits.
+
+To set a monthly spending limit:
+
+1. Ensure you have permissions to modify billing. For more information, see [Role-Based Access Control](/reference/settings).
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Billing**.
+1. In the Limit section, click **Manage limit**.
+1. Turn on **Set monthly spending limit**.
+1. Enter the maximum monthly spending.
+1. Click **Save changes**.
+
+<Info>
+If your organization reaches the spend limit, Axiom sends an email to the owner of your organization. To avoid further interruptions to your service, increase the spend limit. Your service resumes until usage-related costs reach the amount by which you increased the limit. The spend limit resets in the next billable period as usual.
+</Info>
+
+## Pricing plan
+
+### View plan details
+
+To view details about your current plan:
+
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Plan**.
+1. Click **License**.
+
+This page gives you an overview of the allowances included in your plan and your current monthly usage.
+
+### Upgrade or downgrade plan
+
+To upgrade or downgrade your plan:
+
+1. Ensure you have permissions to modify billing. For more information, see [Role-Based Access Control](/reference/settings).
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Plan**.
+1. Click <Icon icon="ellipsis-vertical" iconType="solid"/> **More > Upgrade** or <Icon icon="ellipsis-vertical" iconType="solid"/> **More > Downgrade**.
+
+### Manage add-ons
+
+You can manage the following add-ons:
+
+- Additional edge deployments
+- Audit log
+- Directory Sync
+- Role-Based Access Control (RBAC)
+- SAML SSO
+
+To manage add-ons:
+
+1. Ensure you have permissions to modify billing. For more information, see [Role-Based Access Control](/reference/settings).
+1. Go to <Icon icon="gear" iconType="solid"/> **Settings > Plan**.
+1. Click the add-on area.
+1. Select or deselect add-ons.
+1. Review the updated base monthly cost.
+1. Click **Update add-ons**.
+
+## Usage
+
+To view details about your organization’s total usage of Axiom:
+
+1. Click <Icon icon="gear" iconType="solid"/> **Settings > Usage**.
+1. To select the period for which you want to display usage, click <Icon icon="clock" iconType="regular"/> **Time range**.
+
+The Usage page displays:
+
+- **Ingest**: The total amount of data ingested to Axiom.
+- **Query**: The total amount of query compute resources used to run queries.
+- **Fields**: The number of fields in each of your datasets.
+
+### Monitor usage in detail
+
+For more granular usage monitoring, query the [audit log](/reference/audit-log). The audit log captures hourly usage data and allows you to:
+
+- Track ingestion by dataset over time.
+- Identify high-cost queries.
+- Monitor which monitors consume the most query resources.
+- Detect ingestion spikes.

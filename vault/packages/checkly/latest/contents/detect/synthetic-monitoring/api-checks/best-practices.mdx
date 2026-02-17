@@ -1,0 +1,583 @@
+---
+title: 'API Check Best Practices'
+description: 'Proven strategies, optimization techniques, and reliability patterns for implementing effective API monitoring with Checkly.'
+sidebarTitle: 'Best Practices'
+---
+
+Effective API monitoring requires thoughtful design, proper configuration, and ongoing optimization. These best practices ensure reliable, efficient, and maintainable API checks that provide actionable insights.
+
+## API Check Design Principles
+
+### 1. Monitor Business-Critical Paths
+Focus on APIs that directly impact user experience and business operations:
+
+```typescript
+// High-priority API checks
+Priority 1: User authentication, payment processing, core features
+Priority 2: Data retrieval, search, user management
+Priority 3: Analytics, reporting, background processes
+
+// Example: Critical payment API
+{
+  "name": "Payment Gateway - Process Transaction",
+  "frequency": "Every 1 minute",
+  "locations": ["us-east-1", "eu-west-1", "ap-southeast-1"],
+  "method": "POST",
+  "url": "https://api.payments.com/v1/transactions",
+  "thresholds": {
+    "degraded": 1000,
+    "failed": 3000
+  }
+}
+```
+
+### 2. Use Realistic Test Data
+Ensure your API checks simulate real user scenarios:
+
+```typescript
+// Good: Realistic test data
+{
+  "body": {
+    "email": "test.user@example.com",
+    "amount": 99.99,
+    "currency": "USD",
+    "payment_method": "card",
+    "metadata": {
+      "order_id": "ORD-12345",
+      "source": "web_checkout"
+    }
+  }
+}
+
+// Avoid: Unrealistic or minimal data
+{
+  "body": {
+    "email": "test",
+    "amount": 1
+  }
+}
+```
+
+### 3. Implement Comprehensive Validation
+Validate both successful responses and error conditions:
+
+```typescript
+// Comprehensive assertion strategy
+const assertions = [
+  // Status validation
+  "expect(response.status).to.equal(200)",
+  
+  // Performance validation
+  "expect(response.responseTime).to.be.below(2000)",
+  
+  // Content structure validation
+  "const data = JSON.parse(response.body)",
+  "expect(data).to.have.property('id')",
+  "expect(data).to.have.property('status')",
+  
+  // Business logic validation
+  "expect(data.status).to.be.oneOf(['success', 'pending'])",
+  "expect(data.timestamp).to.be.a('string')",
+  
+  // Security validation
+  "expect(response.headers['content-type']).to.include('application/json')",
+  "expect(response.headers).to.not.have.property('x-debug-info')"
+]
+```
+
+## Performance Optimization
+
+### 1. Set Appropriate Timeouts
+Configure timeouts based on API characteristics and SLA requirements:
+
+```yaml
+# Fast APIs (authentication, simple queries)
+Request Timeout: 10 seconds
+Degraded Threshold: 500ms
+Failed Threshold: 2000ms
+
+# Standard APIs (data retrieval, processing)
+Request Timeout: 30 seconds
+Degraded Threshold: 1000ms
+Failed Threshold: 5000ms
+
+# Complex APIs (reports, analytics, file processing)
+Request Timeout: 60 seconds
+Degraded Threshold: 5000ms
+Failed Threshold: 15000ms
+```
+
+### 2. Optimize Check Frequency
+Balance monitoring coverage with resource usage:
+
+```typescript
+// Frequency guidelines by API criticality
+const frequencyMatrix = {
+  critical: {
+    production: "Every 1 minute",
+    staging: "Every 5 minutes",
+    development: "Every 15 minutes"
+  },
+  important: {
+    production: "Every 5 minutes",
+    staging: "Every 10 minutes", 
+    development: "Every 30 minutes"
+  },
+  standard: {
+    production: "Every 15 minutes",
+    staging: "Every 30 minutes",
+    development: "Every 60 minutes"
+  }
+}
+```
+
+### 3. Minimize Response Processing
+Efficient assertion writing for better performance:
+
+```typescript
+// Efficient: Direct property access
+"expect(JSON.parse(response.body).status).to.equal('active')"
+
+// Less efficient: Multiple parsing
+"const data = JSON.parse(response.body)",
+"const user = data.user",
+"const profile = user.profile",
+"expect(profile.status).to.equal('active')"
+
+// Optimized approach
+"const data = JSON.parse(response.body)",
+"expect(data.user?.profile?.status).to.equal('active')"
+```
+
+## Security and Authentication
+
+### 1. Secure Credential Management
+Always use environment variables for sensitive data:
+
+```typescript
+// Good: Environment variables
+{
+  "headers": {
+    "Authorization": "Bearer {{API_TOKEN}}",
+    "X-API-Key": "{{API_KEY}}",
+    "X-Client-ID": "{{CLIENT_ID}}"
+  }
+}
+
+// Security checklist for credentials:
+// ✓ Store in environment variables
+// ✓ Use least-privilege API keys
+// ✓ Rotate credentials regularly
+// ✓ Monitor for credential exposure
+// ✓ Use different keys per environment
+```
+
+### 2. Authentication Flow Monitoring
+Monitor authentication mechanisms separately from business logic:
+
+```typescript
+// Separate authentication check
+{
+  "name": "OAuth Token Generation",
+  "method": "POST",
+  "url": "https://api.example.com/oauth/token",
+  "body": {
+    "grant_type": "client_credentials",
+    "client_id": "{{CLIENT_ID}}",
+    "client_secret": "{{CLIENT_SECRET}}"
+  },
+  "assertions": [
+    "expect(response.status).to.equal(200)",
+    "const auth = JSON.parse(response.body)",
+    "expect(auth.access_token).to.be.a('string')",
+    "expect(auth.expires_in).to.be.above(3600)"
+  ]
+}
+```
+
+### 3. Rate Limiting Awareness
+Design checks that respect API rate limits:
+
+```typescript
+// Rate limit monitoring
+{
+  "assertions": [
+    "expect(response.status).to.not.equal(429)", // No rate limiting
+    "expect(response.headers['x-rate-limit-remaining']).to.exist",
+    "const remaining = parseInt(response.headers['x-rate-limit-remaining'])",
+    "expect(remaining).to.be.above(10)" // Ensure buffer
+  ]
+}
+
+// Setup script to handle rate limits
+const setupScript = `
+if (response.status === 429) {
+  const retryAfter = response.headers['retry-after'] || '60'
+  console.log('Rate limited, retry after: ' + retryAfter + ' seconds')
+  throw new Error('Rate limit exceeded')
+}
+`
+```
+
+## Error Handling and Reliability
+
+### 1. Robust Error Detection
+Validate expected error responses and handle edge cases:
+
+```typescript
+// Test error handling
+{
+  "name": "API Error Response Validation",
+  "method": "GET",
+  "url": "https://api.example.com/invalid-endpoint",
+  "assertions": [
+    "expect(response.status).to.equal(404)",
+    "const error = JSON.parse(response.body)",
+    "expect(error.error).to.be.a('string')",
+    "expect(error.error_code).to.match(/^[A-Z_]+$/)",
+    "expect(error.message).to.be.a('string')",
+    "expect(error.request_id).to.match(/^req_[a-zA-Z0-9]+$/)"
+  ]
+}
+```
+
+### 2. Graceful Degradation Testing
+Monitor API behavior under various conditions:
+
+```typescript
+// Network and performance edge cases
+const edgeCaseChecks = [
+  {
+    name: "API Response with Large Payload",
+    params: { limit: 1000 },
+    maxResponseTime: 10000
+  },
+  {
+    name: "API Response with Invalid Parameters",
+    params: { invalid_param: "test" },
+    expectedStatus: 400
+  },
+  {
+    name: "API Response with Missing Authentication",
+    headers: {}, // No auth headers
+    expectedStatus: 401
+  }
+]
+```
+
+### 3. Retry and Recovery Patterns
+Configure appropriate retry strategies:
+
+```yaml
+# Retry configuration by API type
+Critical APIs:
+  Retry Strategy: Immediate retry once
+  Retry Delay: 5 seconds
+  Max Retries: 1
+
+Standard APIs:
+  Retry Strategy: Exponential backoff
+  Initial Delay: 10 seconds
+  Max Retries: 2
+
+Background APIs:
+  Retry Strategy: Linear backoff
+  Retry Delay: 30 seconds
+  Max Retries: 3
+```
+
+## Data Validation Strategies
+
+### 1. Schema Validation
+Validate response structure and data types:
+
+```typescript
+// Comprehensive schema validation
+const userResponseValidation = [
+  // Type validation
+  "const user = JSON.parse(response.body)",
+  "expect(user.id).to.be.a('number')",
+  "expect(user.email).to.be.a('string')",
+  "expect(user.created_at).to.be.a('string')",
+  
+  // Format validation
+  "expect(user.email).to.match(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)",
+  "expect(user.created_at).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/)",
+  
+  // Business logic validation
+  "expect(user.status).to.be.oneOf(['active', 'pending', 'suspended'])",
+  "expect(user.role).to.be.oneOf(['user', 'admin', 'moderator'])",
+  
+  // Relationship validation
+  "if (user.profile) {",
+  "  expect(user.profile.user_id).to.equal(user.id)",
+  "}"
+]
+```
+
+### 2. Range and Boundary Validation
+Test data boundaries and edge cases:
+
+```typescript
+// Boundary testing assertions
+const boundaryValidation = [
+  // Numeric ranges
+  "expect(data.age).to.be.within(0, 120)",
+  "expect(data.price).to.be.above(0)",
+  "expect(data.discount).to.be.within(0, 100)",
+  
+  // String lengths
+  "expect(data.name.length).to.be.at.most(255)",
+  "expect(data.description.length).to.be.at.most(1000)",
+  
+  // Array sizes
+  "expect(data.items.length).to.be.at.most(100)",
+  "expect(data.tags.length).to.be.within(1, 10)",
+  
+  // Date ranges
+  "const createdDate = new Date(data.created_at)",
+  "const now = new Date()",
+  "expect(createdDate).to.be.below(now)"
+]
+```
+
+### 3. Cross-Field Validation
+Validate relationships between data fields:
+
+```typescript
+// Relational data validation
+const crossFieldValidation = [
+  "const order = JSON.parse(response.body)",
+  
+  // Total calculation validation
+  "const expectedTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)",
+  "expect(order.total).to.be.closeTo(expectedTotal, 0.01)",
+  
+  // Status consistency
+  "if (order.status === 'completed') {",
+  "  expect(order.payment_status).to.equal('paid')",
+  "  expect(order.fulfillment_status).to.be.oneOf(['shipped', 'delivered'])",
+  "}",
+  
+  // Date logical ordering
+  "const created = new Date(order.created_at)",
+  "const updated = new Date(order.updated_at)",
+  "expect(updated).to.be.at.least(created)"
+]
+```
+
+## Monitoring Strategy Optimization
+
+### 1. Geographic Distribution
+Optimize monitoring locations based on user distribution:
+
+```typescript
+// Location strategy by user base
+const locationStrategy = {
+  global: ["us-east-1", "eu-west-1", "ap-southeast-1", "ap-northeast-1"],
+  americas: ["us-east-1", "us-west-2", "ca-central-1", "sa-east-1"],
+  europe: ["eu-west-1", "eu-central-1", "eu-north-1"],
+  asia: ["ap-southeast-1", "ap-northeast-1", "ap-south-1"],
+  oceania: ["ap-southeast-2"]
+}
+
+// Performance expectations by region
+const regionalThresholds = {
+  primary: { degraded: 500, failed: 2000 },
+  secondary: { degraded: 1000, failed: 3000 },
+  distant: { degraded: 2000, failed: 5000 }
+}
+```
+
+### 2. Alert Optimization
+Configure intelligent alerting to reduce noise:
+
+```yaml
+# Alert escalation strategy
+Immediate Alerts:
+  - API completely down (5xx errors)
+  - Authentication failures
+  - Payment processing failures
+  - Security-related errors
+
+Warning Alerts:
+  - Performance degradation (> 2x baseline)
+  - Increased error rates (> 5%)
+  - Rate limiting encountered
+
+Informational:
+  - Successful recovery after failure
+  - Performance improvements
+  - Configuration changes
+```
+
+### 3. Maintenance Windows
+Handle planned maintenance and deployments:
+
+```typescript
+// Maintenance window configuration
+const maintenanceConfig = {
+  schedule: {
+    weekly: "Sunday 02:00-04:00 UTC",
+    monthly: "First Sunday 00:00-06:00 UTC"
+  },
+  alerting: {
+    disable: true,
+    notification: "Maintenance window active"
+  },
+  monitoring: {
+    continue: true,
+    reduced_frequency: true
+  }
+}
+```
+
+## Advanced Configuration Patterns
+
+### 1. Dynamic Test Data
+Generate unique test data to avoid conflicts:
+
+```javascript
+// Setup script for dynamic data
+const generateTestData = () => {
+  const timestamp = Date.now()
+  const randomId = Math.random().toString(36).substr(2, 9)
+  
+  process.env.TEST_EMAIL = `test-${timestamp}@example.com`
+  process.env.TEST_ORDER_ID = `ORD-${timestamp}-${randomId}`
+  process.env.TEST_CUSTOMER_ID = `CUST-${randomId}`
+}
+
+generateTestData()
+```
+
+### 2. Conditional Logic
+Implement smart checks that adapt to API responses:
+
+```javascript
+// Conditional assertion based on response data
+const conditionalAssertions = `
+const data = JSON.parse(response.body)
+
+if (data.type === 'premium_user') {
+  expect(data.features).to.include('advanced_analytics')
+  expect(data.limits.api_calls).to.be.above(10000)
+} else if (data.type === 'basic_user') {
+  expect(data.limits.api_calls).to.be.below(1000)
+}
+
+if (data.subscription && data.subscription.status === 'active') {
+  expect(data.access_level).to.be.oneOf(['standard', 'premium'])
+} else {
+  expect(data.access_level).to.equal('limited')
+}
+`
+```
+
+### 3. Multi-Environment Testing
+Coordinate testing across different environments:
+
+```typescript
+// Environment-specific configuration
+const environmentConfig = {
+  development: {
+    baseUrl: "https://api-dev.example.com",
+    frequency: "Every 30 minutes",
+    alerting: false,
+    timeout: 60000
+  },
+  staging: {
+    baseUrl: "https://api-staging.example.com", 
+    frequency: "Every 10 minutes",
+    alerting: "team-only",
+    timeout: 30000
+  },
+  production: {
+    baseUrl: "https://api.example.com",
+    frequency: "Every 2 minutes",
+    alerting: "full",
+    timeout: 15000
+  }
+}
+```
+
+## Maintenance and Optimization
+
+### 1. Regular Review Process
+Establish processes for ongoing optimization:
+
+```yaml
+Weekly Review:
+  - Check failure rates and response times
+  - Review alert noise and false positives
+  - Validate test data currency
+  - Update environment variables
+
+Monthly Review:
+  - Analyze performance trends
+  - Review and update thresholds
+  - Assess coverage gaps
+  - Update documentation
+
+Quarterly Review:
+  - Strategic monitoring alignment
+  - Technology stack updates
+  - Security credential rotation
+  - Monitoring cost optimization
+```
+
+### 2. Performance Baseline Management
+Track and update performance expectations:
+
+```typescript
+// Baseline tracking approach
+const performanceBaselines = {
+  updateFrequency: "weekly",
+  calculation: "95th percentile over 7 days",
+  thresholds: {
+    degraded: "baseline * 2",
+    failed: "baseline * 5"
+  },
+  triggers: {
+    recalculate: "significant_change > 20%",
+    alert: "degradation > 48_hours"
+  }
+}
+```
+
+### 3. Documentation and Knowledge Sharing
+Maintain comprehensive monitoring documentation:
+
+```markdown
+# API Check Documentation Template
+
+## Check Purpose
+- Business criticality: [High/Medium/Low]
+- User impact: [Description]
+- Dependencies: [List of dependencies]
+
+## Technical Details
+- Endpoint: [URL]
+- Method: [HTTP method]
+- Authentication: [Type and requirements]
+- Expected response: [Format and content]
+
+## Monitoring Configuration
+- Frequency: [Schedule]
+- Locations: [Geographic distribution]
+- Thresholds: [Performance expectations]
+- Alerting: [Notification strategy]
+
+## Troubleshooting
+- Common failures: [Known issues and solutions]
+- Escalation path: [Contact information]
+- Related documentation: [Links to relevant docs]
+```
+
+<Note>
+Effective API monitoring is an iterative process. Start with basic checks and gradually add sophistication based on your specific needs and operational experience.
+</Note>
+
+<Tip>
+Use Checkly's CLI to manage API checks as code, enabling version control, peer review, and automated deployment of monitoring configurations.
+</Tip>

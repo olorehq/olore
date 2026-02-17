@@ -1,0 +1,108 @@
+---
+title: 'Send data from Python app to Axiom'
+description: 'This page explains how to send data from a Python app to Axiom.'
+overview: 'Interpreted, high-level, general-purpose programming language'
+sidebarTitle: Python
+github: "https://github.com/axiomhq/axiom-py"
+keywords: ['py', 'python']
+logoId: 'python'
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+
+To send data from a Python app to Axiom, use the Axiom Python SDK.
+
+<Note>
+The Axiom Python SDK is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-py).
+</Note>
+
+<Prerequisites />
+
+## Install SDK
+
+<CodeGroup>
+
+```shell Linux / MacOS
+python3 -m pip install axiom-py
+```
+
+```shell Windows
+py -m pip install axiom-py
+```
+
+```shell pip
+pip3 install axiom-py
+```
+
+</CodeGroup>
+
+If you use the [Axiom CLI](/reference/cli), run `eval $(axiom config export -f)` to configure your environment variables. Otherwise, [create an API token](/reference/tokens) and export it as `AXIOM_TOKEN`.
+
+You can also configure the client using options passed to the client constructor:
+
+```py
+import axiom_py
+
+client = axiom_py.Client("API_TOKEN")
+```
+
+## Use client
+
+```py
+import axiom_py
+import rfc3339
+from datetime import datetime,timedelta
+
+client = axiom_py.Client()
+
+client.ingest_events(
+    dataset="DATASET_NAME",
+    events=[
+        {"foo": "bar"},
+        {"bar": "baz"},
+    ])
+client.query(r"['DATASET_NAME'] | where foo == 'bar' | limit 100")
+```
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-py/tree/main/examples/client_example.py).
+
+## Example with `AxiomHandler`
+
+The example below uses `AxiomHandler` to send logs from the `logging` module to Axiom:
+
+```python
+import axiom_py
+from axiom_py.logging import AxiomHandler
+import logging
+
+def setup_logger():
+    client = axiom_py.Client()
+    handler = AxiomHandler(client, "DATASET_NAME")
+    logging.getLogger().addHandler(handler)
+```
+
+For a full example, see [GitHub](https://github.com/axiomhq/axiom-py/tree/main/examples/logger_example.py).
+
+## Example with `structlog`
+
+The example below uses [structlog](https://github.com/hynek/structlog) to send logs to Axiom:
+
+```python
+from axiom_py import Client
+from axiom_py.structlog import AxiomProcessor
+
+def setup_logger():
+    client = Client()
+
+    structlog.configure(
+        processors=[
+            # ...
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso", key="_time"),
+            AxiomProcessor(client, "DATASET_NAME"),
+            # ...
+        ]
+    )
+```
+
+For a full example, see [GitHub](https://github.com/axiomhq/axiom-py/tree/main/examples/structlog_example.py).

@@ -1,0 +1,536 @@
+---
+title: '@xstate/react'
+---
+
+The [@xstate/react package](https://github.com/statelyai/xstate/tree/main/packages/xstate-react) contains hooks and helper functions for using [XState](https://github.com/statelyai/xstate) with [React](https://github.com/facebook/react/).
+
+## Templates
+
+Use the following templates to get started quickly with XState and React:
+
+- [XState React template (CodeSandbox)](https://codesandbox.io/p/devbox/github/statelyai/xstate/tree/main/templates/react-ts)
+- [XState React template (StackBlitz)](https://stackblitz.com/github/statelyai/xstate/tree/main/templates/react-ts?file=%2Fsrc%2FfeedbackMachine.ts)
+
+## Installation
+
+Install the latest versions of both `xstate` and `@xstate/react`. `xstate` is a peer dependency of `@xstate/react`.
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install xstate @xstate/react
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install xstate @xstate/react
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add xstate @xstate/react
+```
+
+</Tab>
+
+<Tab value="bun" label="bun">
+
+```bash
+bun add xstate @xstate/react
+```
+
+</Tab>
+</Tabs>
+
+<Callout>
+
+Want to get started with React extra fast? Try the [generate React app feature in Stately Studio](generate-react).
+
+</Callout>
+
+## Examples
+
+See the React examples in the [XState GitHub repo](https://github.com/statelyai/xstate/tree/main/examples).
+
+## API
+
+### `useActor(actorLogic, options?)`
+
+A [React hook](https://reactjs.org/hooks) that creates an actor from the the given `actorLogic` and starts an actor that runs for the lifetime of the component.
+
+#### Arguments
+
+- `actorLogic` - The actor logic to create an actor from; e.g. `createMachine(...)`, `fromPromise(...)`, etc.
+- `options?` (optional) - Actor options.
+
+**Returns** a tuple of `[snapshot, send, actorRef]`:
+
+- `snapshot` - Represents the current state of the actor.
+- `send` - A function that sends events to the running actor.
+- `actorRef` - The started actor.
+
+#### Examples
+
+```tsx
+import { fromPromise } from 'xstate';
+import { useActor } from '@xstate/react';
+
+const promiseLogic = fromPromise(async () => {
+  const data = await getData(/* ... */);
+
+  return data;
+});
+
+function Component() {
+  // [!code highlight:1]
+  const [state, send] = useActor(promiseLogic);
+
+  if (state.status === 'done') {
+    return <div>{state.output}</div>;
+  }
+
+  if (state.status === 'active') {
+    return <div>Loading...</div>;
+  }
+
+  return null;
+}
+```
+
+### `useMachine(machine, options?)`
+
+A [React hook](https://reactjs.org/hooks) that creates an actor from the given `machine` and starts an actor that runs for the lifetime of the component.
+
+<Callout>
+
+The `useMachine(...)` hook is an alias for the `useActor(...)` hook.
+
+</Callout>
+
+#### Arguments
+
+- `machine` - An [XState machine](machines)
+- `options?` (optional) - Actor options.
+
+**Returns** a tuple of `[snapshot, send, actorRef]`:
+
+- `snapshot` - Represents the current state of the machine.
+- `send` - A function that sends events to the running actor.
+- `actorRef` - The started actor.
+
+#### Examples
+
+```tsx
+import { useMachine } from '@xstate/react';
+
+function Component() {
+  const [snapshot, send] = useMachine(machine);
+
+  // Machine with provided implementations
+  // Will keep provided implementations up-to-date
+  const [snapshot, send] = useMachine(
+    machine.provide({
+      actions: {
+        doSomething: ({ context }) => {
+          // ...
+        },
+      },
+    }),
+  );
+}
+```
+
+### `useActorRef(machine, options?)`
+
+A React hook that returns the `actorRef` created from the `machine` with actor `options` that are passed to `createActor(logic, options)`, if specified. It starts the actor ref and runs it for the lifetime of the component.
+
+The `useActorRef(...)` hook is useful when you want fine-grained control, e.g. to add logging, or minimize re-renders. In contrast to `useActor(...)` that would flush each update from the machine to the React component, `useActorRef(...)` instead returns a static reference (to just the machine actor) which will not rerender when its state changes.
+
+You can use the `useSelector(...)` hook to select part of the snapshot from the `actorRef` whenever it updates.
+
+#### Arguments
+
+- `actorLogic`- The actor logic to create an actor from; e.g. `createMachine(...)`, `fromPromise(...)`, etc.
+- `options?` (optional) - Actor options.
+
+```js
+import { useActorRef } from '@xstate/react';
+import { someMachine } from '../path/to/someMachine';
+
+const App = () => {
+  const actorRef = useActorRef(someMachine);
+
+  // ...
+};
+```
+
+Providing machine implementations:
+
+```js
+// ...
+
+const App = () => {
+  const actorRef = useActorRef(
+    someMachine.provide({
+      actions: {
+        // ...
+      },
+    }),
+  );
+
+  // ...
+};
+```
+
+### `useSelector(actorRef, selector, compare?, getSnapshot?)`
+
+A React hook that returns the selected value from the snapshot of an `actorRef`, such as a actor ref. This hook will only cause a rerender if the selected value changes, as determined by the optional `compare` function.
+
+#### Arguments
+
+- `actorRef` - an actor ref
+- `selector` - a function that takes in an actor’s snapshot as an argument and returns the desired selected value.
+- `compare` (optional) - a function that determines if the current selected value is the same as the previous selected value.
+- `getSnapshot` (optional) - a function that should return the latest emitted value from the `actor`.
+  - Defaults to attempting to get the `actor.state`, or returning `undefined` if that does not exist. Will automatically pull the state from actor refs.
+
+#### Examples
+
+```js
+import { useSelector } from '@xstate/react';
+
+// tip: optimize selectors by defining them externally when possible
+const selectCount = (snapshot) => snapshot.context.count;
+
+const App = ({ actorRef }) => {
+  const count = useSelector(actorRef, selectCount);
+
+  // ...
+};
+```
+
+With `compare` function:
+
+```js
+// ...
+
+const selectUser = (snapshot) => snapshot.context.user;
+const compareUser = (prevUser, nextUser) => prevUser.id === nextUser.id;
+
+const App = ({ actorRef }) => {
+  const user = useSelector(actorRef, selectUser, compareUser);
+
+  // ...
+};
+```
+
+### `createActorContext(logic)`
+
+Returns a [React Context object](https://beta.reactjs.org/learn/passing-data-deeply-with-context) that creates an actor from the provided actor `logic` and makes the actor available through React Context. There are helper methods for accessing state and the actor ref.
+
+#### Arguments
+
+- `logic` - Actor logic, like an [XState machine](machines)
+
+Returns a React Context object that contains the following properties:
+
+- `Provider` - a React Context Provider component with the following props:
+  - `logic` - Actor logic, such as an [XState machine](machines) ,that must be of the same type as the actor logic passed to `createActorContext(...)`
+- `useSelector(selector, compare?)` - a React hook that takes in a `selector` function and optional `compare` function and returns the selected value from the actor snapshot
+- `useActorRef()` - a React hook that returns the actor ref of the actor created from the actor `logic`
+
+Creating a React Context for the actor and providing it in app scope:
+
+```js
+import { createActorContext } from '@xstate/react';
+import { someMachine } from '../path/to/someMachine';
+
+const SomeMachineContext = createActorContext(someMachine);
+
+function App() {
+  return (
+    <SomeMachineContext.Provider>
+      <SomeComponent />
+    </SomeMachineContext.Provider>
+  );
+}
+```
+
+Consuming the actor in a component:
+
+```js
+import { SomeMachineContext } from '../path/to/SomeMachineContext';
+
+function SomeComponent() {
+  const count = SomeMachineContext.useSelector((state) => state.context.count);
+  const someActorRef = SomeMachineContext.useActorRef();
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => someActorRef.send({ type: 'inc' })}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+Providing a similar machine:
+
+```js
+import { SomeMachineContext } from '../path/to/SomeMachineContext';
+import { someMachine } from '../path/to/someMachine';
+
+function SomeComponent() {
+  return (
+    <SomeMachineContext.Provider
+      logic={someMachine.provide({
+        actions: {
+          someAction: differentImplementation,
+        },
+        // ... More implementations
+      })}
+    >
+      <SomeOtherComponent />
+    </SomeMachineContext.Provider>
+  );
+}
+```
+
+### Shallow comparison
+
+The default comparison is a strict reference comparison (`===`). If your selector returns non-primitive values, such as objects or arrays, you should keep this in mind and either return the same reference, or provide a shallow or deep comparator.
+
+The `shallowEqual(...)` comparator function is available for shallow comparison:
+
+```js
+import { useSelector, shallowEqual } from '@xstate/react';
+
+// ...
+
+const selectUser = (state) => state.context.user;
+
+const App = ({ actorRef }) => {
+  // shallowEqual comparator is needed to compare the object, whose
+  // reference might change despite the shallow object values being equal
+  const user = useSelector(actorRef, selectUser, shallowEqual);
+
+  // ...
+};
+```
+
+With `useActorRef(...)`:
+
+```js
+import { useActorRef, useSelector } from '@xstate/react';
+import { someMachine } from '../path/to/someMachine';
+
+const selectCount = (state) => state.context.count;
+
+const App = () => {
+  const actorRef = useActorRef(someMachine);
+  const count = useSelector(actorRef, selectCount);
+
+  // ...
+};
+```
+
+## Configuring machines
+
+Existing machines can be customized by providing different implementations in `machine.provide(implementations)`.
+
+Example: the `'fetchData'` actor ref and `'notifySuccess'` action are both configurable:
+
+```js
+const fetchMachine = createMachine({
+  id: 'fetch',
+  initial: 'idle',
+  context: {
+    data: undefined,
+    error: undefined,
+  },
+  states: {
+    idle: {
+      on: { FETCH: 'loading' },
+    },
+    loading: {
+      invoke: {
+        src: 'fetchData',
+        onDone: {
+          target: 'success',
+          actions: assign({
+            data: ({ event }) => event.output,
+          }),
+        },
+        onError: {
+          target: 'failure',
+          actions: assign({
+            error: ({ event }) => event.error,
+          }),
+        },
+      },
+    },
+    success: {
+      entry: 'notifySuccess',
+      type: 'final',
+    },
+    failure: {
+      on: {
+        RETRY: 'loading',
+      },
+    },
+  },
+});
+
+const Fetcher = ({ onResolve }) => {
+  const [state, send] = useMachine(
+    fetchMachine.provide({
+      actions: {
+        notifySuccess: ({ context }) => onResolve(context.data),
+      },
+      actors: {
+        fetchData: fromPromise(() =>
+          fetch(`some/api/${e.query}`).then((res) => res.json()),
+        ),
+      },
+    }),
+  );
+
+  switch (state.value) {
+    case 'idle':
+      return (
+        <button onClick={() => send({ type: 'FETCH', query: 'something' })}>
+          Search for something
+        </button>
+      );
+    case 'loading':
+      return <div>Searching...</div>;
+    case 'success':
+      return <div>Success! Data: {state.context.data}</div>;
+    case 'failure':
+      return (
+        <>
+          <p>{state.context.error.message}</p>
+          <button onClick={() => send({ type: 'RETRY' })}>Retry</button>
+        </>
+      );
+    default:
+      return null;
+  }
+};
+```
+
+## Input
+
+You can provide input to actors
+
+## Matching states
+
+When using [hierarchical](parent-states) and [parallel](parallel-states) machines, the state values will be objects, not strings. In this case, it is best to use [`state.matches(...)`](states.mdx#statematchesstatevalue).
+
+We can do this with `if/else if/else` blocks:
+
+```js
+// ...
+if (state.matches('idle')) {
+  return /* ... */;
+} else if (state.matches({ loading: 'user' })) {
+  return /* ... */;
+} else if (state.matches({ loading: 'friends' })) {
+  return /* ... */;
+} else {
+  return null;
+}
+```
+
+We can also continue to use `switch`, but we must make an adjustment to our approach. By setting the expression of the `switch` to `true`, we can use [`state.matches(...)`](states.mdx#statematchesstatevalue) as a predicate in each `case`:
+
+```js
+switch (true) {
+  case state.matches('idle'):
+    return /* ... */;
+  case state.matches({ loading: 'user' }):
+    return /* ... */;
+  case state.matches({ loading: 'friends' }):
+    return /* ... */;
+  default:
+    return null;
+}
+```
+
+A ternary statement can also be considered, especially within rendered JSX:
+
+```jsx
+const Loader = () => {
+  const [state, send] = useMachine(/* ... */);
+
+  return (
+    <div>
+      {state.matches('idle') ? (
+        <Loader.Idle />
+      ) : state.matches({ loading: 'user' }) ? (
+        <Loader.LoadingUser />
+      ) : state.matches({ loading: 'friends' }) ? (
+        <Loader.LoadingFriends />
+      ) : null}
+    </div>
+  );
+};
+```
+
+## Persisted and rehydrated State
+
+You can persist and rehydrate state with `useMachine(...)` via `options.snapshot` in the 2nd argument:
+
+```js
+// ...
+
+// Get the persisted state config object from somewhere, e.g. localStorage
+const persistedState = JSON.parse(localStorage.getItem('some-persisted-state-key'));
+
+const App = () => {
+  const [state, send] = useMachine(someMachine, {
+    snapshot: persistedState // provide persisted state config object here
+  });
+
+  // state will initially be that persisted state, not the machine’s initialState
+
+  return (/* ... */)
+}
+```
+
+## Actor refs
+
+The `actorRef` created in `useMachine(machine)` can be referenced as the third returned value:
+
+```js
+//                  vvvvvvvv
+const [state, send, actorRef] = useMachine(someMachine);
+```
+
+You can subscribe to that actor ref's state changes with the [`useEffect` hook](https://reactjs.org/docs/hooks-effect.html):
+
+```js
+// ...
+
+useEffect(() => {
+  const subscription = actorRef.subscribe((snapshot) => {
+    // simple logging
+    console.log(snapshot);
+  });
+
+  return subscription.unsubscribe;
+}, [actorRef]); // note: actor ref should never change
+```
+
+## Resources
+
+_Coming soon_

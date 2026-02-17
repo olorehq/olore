@@ -1,0 +1,75 @@
+---
+title: AI agents
+description: "Learn how to integrate AI agents with Axiom using Axiom MCP Server or Axiom Skills, and understand when to use each approach."
+sidebarTitle: Overview
+keywords: ["ai agents", "mcp", "skills", "axiom-sre", "integration", "token hygiene"]
+---
+
+Axiom provides two complementary approaches for integrating AI agents with your data: Axiom MCP Server and Axiom Skills. Both enable AI agents to query and analyze your Axiom data, but they differ in how they handle credentials, context, and capabilities.
+
+## Choose between Axiom MCP Server and Axiom Skills
+
+| Aspect | Axiom MCP Server | Axiom Skills |
+|--------|------------|--------|
+| **Credential handling** | OAuth-based isolation—agents never see tokens | Requires configured API tokens |
+| **Context usage** | Tool definitions loaded upfront | On-demand loading, lower context overhead |
+| **Capabilities** | Curated, read-only operations | Flexible, extensible beyond curated tools |
+| **Methodology** | Query execution only | Includes investigation methodology and memory |
+| **Setup complexity** | Browser-based OAuth flow | Manual token configuration |
+
+### When to use Axiom MCP Server
+
+Consider [Axiom MCP Server](/console/intelligence/mcp-server) when:
+
+- You want curated, read-only operations with no risk of destructive actions.
+- You prefer OAuth-based credential isolation where agents never see tokens.
+- You're comfortable with the context overhead MCP introduces when tool definitions are loaded upfront.
+
+### When to use Axiom Skills
+
+Consider [Axiom Skills](/console/intelligence/skills) when:
+
+- You want lower context usage and on-demand loading of capabilities.
+- You need flexibility beyond the curated Axiom MCP Server tool set.
+- You want structured investigation methodology alongside data access.
+- You're comfortable configuring properly scoped tokens.
+
+### Use both Axiom MCP Server and Axiom Skills
+
+Axiom Skills can complement Axiom MCP Server by providing investigation methodology, memory systems, and APL guidance without duplicating the query interface. Configure your agent to:
+
+1. Use Axiom MCP Server for executing Axiom queries.
+2. Use Axiom Skills for structured investigation methodology and learning from past incidents.
+
+This approach gives you the security benefits of Axiom MCP Server's credential isolation while gaining the systematic debugging capabilities of Axiom Skills.
+
+## Token hygiene for AI agents
+
+<Warning>
+Proper token scoping is essential for secure AI agent integration.
+
+The guidance below applies when you use Axiom Skills with direct API access or Axiom MCP Server with local setup.
+
+You don't need to follow the guidance below for remote Axiom MCP Server. It uses OAuth for authentication and handles credential isolation automatically. The OAuth process creates appropriately scoped sessions that you can revoke at any time, and agents never see your tokens.
+</Warning>
+
+- [Create a new API token](/reference/tokens#api-tokens) specifically for the AI agent. This limits the blast radius if the token is compromised.
+- Never use personal access tokens for AI agent use. Personal access tokens have full control over your Axiom account.
+- Select only the minimum permissions needed for the agent to perform its tasks:
+    - Grant query permission on specific datasets the agent needs to access.
+    - Avoid ingest permissions unless explicitly required. If the agent needs to ingest data, scope the token to the specific datasets.
+    - Never grant delete, admin, or organization-level permissions.
+- Set a short expiry for the token (hours or days rather than months).
+- Rotate tokens regularly as part of your security practices.
+
+## Get started
+
+<CardGroup cols={2}>
+<Card title="Axiom MCP Server" icon="server" href="/console/intelligence/mcp-server">
+Connect AI agents to Axiom using the Model Context Protocol with OAuth-based credential isolation.
+</Card>
+
+<Card title="Axiom Skills" icon="brain" href="/console/intelligence/skills">
+Give AI agents structured investigation capabilities with axiom-sre for hypothesis-driven debugging.
+</Card>
+</CardGroup>

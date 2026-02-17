@@ -1,0 +1,93 @@
+---
+title: Transition Actors
+---
+
+Transition actors are actors whose logic is represented by a **state-transition function**, which is a function that returns the **next state** of an actor given:
+
+- The **current state** of the actor
+- The **event** that triggered the transition
+
+This is very similar to a _reducer function_ in libraries like Redux.
+
+## Transition actor capabilities
+
+|     | Capability          | Notes                                                                                                                                                 |
+| --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅  | Receive&nbsp;events | Transition actors receive events to modify its state.                                                                                                 |
+| ✅  | Send events         | Transition actors can send events to other actors it has reference to, such as those provided in its `input`. Note that doing this would be _impure_. |
+| ❌  | Spawn actors        | Transition actors currently cannot spawn new actors.                                                                                                  |
+| ✅  | Input               | You can provide `input` to transition actors.                                                                                                         |
+| ❌  | Output              | Transition actors currently do not produce output – they are active indefinitely until they are stopped or an error occurs.                           |
+
+## Transition actor logic
+
+You can define transition actor logic using the `fromTransition(...)` actor logic creator, which takes two arguments:
+
+- A **state-transition function** that returns the next state of the actor
+- An **initial state** for the actor
+
+The actor logic creator returns actor logic that can be used to create transition actors.
+
+```ts
+import { fromTransition, createActor } from 'xstate';
+
+const countLogic = fromTransition(
+  (state, event) => {
+    switch (event.type) {
+      case 'increment': {
+        return { count: state.count + 1 };
+      }
+      case 'decrement': {
+        return { count: state.count - 1 };
+      }
+      default: {
+        return state;
+      }
+    }
+  },
+  { count: 0 },
+); // Initial state
+
+const countActor = createActor(countLogic);
+countActor.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+countActor.start();
+// logs { count: 0 }
+
+countActor.send({ type: 'increment' });
+// logs { count: 1 }
+
+countActor.send({ type: 'decrement' });
+// logs { count: 0 }
+```
+
+## Transition actor input
+
+You can pass in `input` to a transition actor, which will be passed to the function that resolves the initial state.
+
+```ts
+import { fromTransition, createActor } from 'xstate';
+
+const countLogic = fromTransition(
+  (state, event) => {
+    // ...
+    // [!code highlight:5]
+  },
+  ({ input }: { input: number }) => ({
+    count: input, // Initial state
+  }),
+);
+
+const countActor = createActor(countLogic, {
+  // [!code highlight:1]
+  input: 42,
+});
+
+countActor.subscribe((snapshot) => {
+  console.log(snapshot.context);
+  // logs { count: 42 }
+});
+
+countActor.start();
+```

@@ -1,0 +1,62 @@
+---
+title: "Overview of Observe stage"
+description: "Learn how to observe your deployed AI capabilities in production using Axiom AI SDK to capture telemetry."
+sidebarTitle: Overview
+keywords: ["ai engineering", "observe", "telemetry", "withspan", "opentelemetry"]
+---
+
+import { Badge } from "/snippets/badge.jsx"
+import AIInstrumentationApproaches from "/snippets/ai-instrumentation-approaches.mdx"
+
+In the Observe stage of the AI engineering lifecycle, the focus is on understanding how your deployed generative AI capabilities perform in the real world. After creating and evaluating a capability, observing its production behavior is crucial for identifying unexpected issues, tracking costs, and gathering the data needed for future improvements.
+
+## Instrument your app
+
+<AIInstrumentationApproaches />
+
+## Visualize traces in Console
+
+Visualizing and making sense of this telemetry data is a core part of the Axiom Console experience:
+
+- A dedicated **AI traces waterfall view** visualizes single and multi-step LLM workflows, with clear input/output inspection at each stage.
+- A pre-built **GenAI OTel dashboard** automatically appears for any dataset receiving AI telemetry. It features elements for tracking cost per invocation, time-to-first-token, call counts by model, and error rates.
+
+### Access AI traces waterfall view
+
+1. Click the Query tab.
+1. Create an APL query about your GenAI dataset. For example:
+
+    ```kusto
+    ['gen-ai-traces']
+    | where ['attributes.gen_ai.operation.name'] == "chat"
+    ```
+
+1. In the list of trace IDs, click the trace you want to explore.
+1. Explore how spans within the trace are related to each other in the waterfall view. To only display AI spans, click **AI spans** in the top left.
+
+<Frame>
+  <img src="/doc-assets/shots/gen-ai-waterfall-view.png" alt="AI traces waterfall view" />
+</Frame>
+
+### Access GenAI dashboard
+
+Axiom automatically creates the GenAI dashboard if the field `attributes.gen_ai.operation.name` is present in your data.
+
+To access the GenAI dashboard:
+
+1. Click the Dashboards tab.
+1. Click the dashboard **Generative AI Overview (DATASET_NAME)** where `DATASET_NAME` is the name of your GenAI dataset.
+
+The GenAI dashboard provides you with important insights about your GenAI app such as:
+- Vitals about requests, broken down by operation, capability, and step.
+- Token usage and cost analysis
+- Error analysis
+- Comparison of performance and reliability of different AI models
+
+<Frame>
+  <img src="/doc-assets/shots/gen-ai-dashboard.png" alt="AI traces waterfall view" />
+</Frame>
+
+## What’s next?
+
+After capturing and analyzing production telemetry, use these insights to improve your capability. Learn more in [Iterate](/ai-engineering/iterate).

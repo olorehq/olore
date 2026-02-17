@@ -1,0 +1,189 @@
+---
+title: Promise actors
+---
+
+Promise actors are actors that represent a promise that performs some asynchronous task. They may resolve with some output, or reject with an error.
+
+## Promise actor capabilities
+
+|     | Capability          | Notes                                                                                                      |
+| --- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| ❌  | Receive&nbsp;events | Promise actors currently do not receive events.                                                            |
+| ✅  | Send events         | Promise actors can send events to other actors it has reference to, such as those provided in its `input`. |
+| ❌  | Spawn actors        | Promise actors currently cannot spawn new actors.                                                          |
+| ✅  | Input               | You can provide `input` to promise actors.                                                                 |
+| ✅  | Output              | Promise actors can produce `output`, which is the resolved value of the promise.                           |
+
+## Promise actor logic
+
+You can define promise actor logic using the `fromPromise(...)` actor logic creator, which takes a function that returns a promise and returns actor logic that can be used to create promise actors.
+
+```ts
+import { fromPromise, createActor } from 'xstate';
+
+async function getUser(id: string) {
+  // ...
+  return { id /* other user data */ };
+}
+
+// [!code highlight:5]
+const promiseLogic = fromPromise(async () => {
+  const user = await getUser('123');
+
+  return user;
+});
+
+const promiseActor = createActor(promiseLogic);
+
+promiseActor.subscribe((snapshot) => {
+  console.log(snapshot.status, snapshot.output);
+});
+
+promiseActor.start();
+
+// logs 'active', undefined
+// ... (after some time)
+// logs 'done', { id: '123', /* other user data */ }
+```
+
+## Promise actor input
+
+You can pass in `input` to a promise actor by passing it to the `createActor(...)` function as the `input` property of the second argument. In the promise logic (`fromPromise(promiseFn)`), you read the `input` property of the first argument passed to the promise function:
+
+```ts
+import { fromPromise, createActor } from 'xstate';
+
+const promiseLogic = fromPromise(async ({ input }) => {
+  const user = await getUser(input.id);
+
+  return user;
+});
+
+const promiseActor = createActor(promiseLogic, {
+  // [!code highlight:1]
+  input: { id: '123' },
+});
+```
+
+The `input` type is inferred from the promise function's first argument type. You can also provide an explicit `input` type in the second generic parameter:
+
+```ts
+import { fromPromise } from 'xstate';
+
+interface User {
+  name: string;
+  id: string;
+}
+
+const secondLogic = fromPromise(
+  async ({ input }: { input: { id: string } }) => {
+    const user = await getUser(input.id); // User is inferred
+
+    return user;
+  },
+);
+
+const firstLogic = fromPromise<User, { id: string }>(
+  async ({ input, self /* ... */ }) => {
+    const user = await getUser(input.id);
+
+    return user;
+  },
+);
+```
+
+## Promise actor output
+
+To get the eventual resolved `output` of a promise actor, you can subscribe to the promise actor and check the `status` property of the snapshot. If the `status` is `'done'`, you can access the `output` property of the snapshot to get the resolved value. Otherwise, the `output` will be `undefined`.
+
+```ts
+import { fromPromise } from 'xstate';
+
+const promiseLogic = fromPromise(async () => {
+  const user = await getUser('123');
+
+  return user;
+});
+
+const promiseActor = createActor(promiseLogic);
+
+promiseActor.subscribe((snapshot) => {
+  if (snapshot.status === 'done') {
+    console.log(snapshot.output);
+    // logs { id: '123', /* other user data */ }
+  }
+});
+```
+
+You can also use `toPromise(...)` to convert any actor, including promise actors, to a promise. This is useful if you want to `await` the `output` of an actor:
+
+```ts
+import { toPromise, createActor } from 'xstate';
+import { somePromiseLogic } from './somePromiseLogic';
+
+const promiseActor = createActor(somePromiseLogic);
+promiseActor.start();
+
+// [!code highlight:1]
+const output = await toPromise(promiseActor);
+
+console.log(output);
+// logs the resolved output of the promise actor
+```
+
+## Promise actor error handling
+
+If an error occurs in the promise logic, the promise actor will reject with the error. You can subscribe to the promise actor and check the `status` property of the snapshot in an **error observer** (the `error` property of the observer object).
+
+```ts
+import { fromPromise } from 'xstate';
+
+const promiseLogic = fromPromise(async () => {
+  // ...
+  throw new Error('Something went wrong');
+});
+
+const promiseActor = createActor(promiseLogic);
+promiseActor.subscribe({
+  // [!code highlight:4]
+  error: (error) => {
+    console.error(error);
+    // logs 'Error: Something went wrong'
+  },
+});
+
+promiseActor.start();
+```
+
+## Stopping promise actors
+
+You can stop a promise actor created using `createActor(promiseLogic)` by calling `.stop()` on the actor instance. This will discard the resolved or rejected value of the promise and dispose of any subscriptions to the promise actor.
+
+You can also **abort** a promise actor by passing the `signal` to it:
+
+```ts
+import { fromPromise, createActor } from 'xstate';
+
+const promiseLogic = fromPromise(
+  async ({
+    input,
+    // [!code highlight:1]
+    signal,
+  }) => {
+    // [!code highlight:2]
+    // Pass the signal to abort fetching if signaled
+    const data = await fetch('/some/url', { signal });
+
+    return data;
+  },
+);
+
+const promiseActor = createActor(promiseLogic);
+promiseActor.start();
+
+// ...
+
+// [!code highlight:2]
+// Abort the promise actor
+promiseActor.stop();
+```

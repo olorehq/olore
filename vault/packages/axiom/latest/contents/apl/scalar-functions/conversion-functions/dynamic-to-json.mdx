@@ -1,0 +1,155 @@
+---
+title: dynamic_to_json
+description: 'This page explains how to use the dynamic_to_json function in APL.'
+---
+
+Use the `dynamic_to_json` function to convert a dynamic-typed value—such as a property bag, array, or nested JSON structure—into a canonical JSON string representation. This is helpful when you want to serialize dynamic data for storage, transmission, or further string manipulation.
+
+You typically use `dynamic_to_json` when working with semi-structured data that you need to convert to a string format, especially when exporting data or passing dynamic values to functions that expect string input.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you typically use `tojson` or `mvjoin` with JSON formatting to convert structured data to JSON strings. In APL, `dynamic_to_json` provides a similar conversion from dynamic values to canonical JSON strings.
+
+<CodeGroup>
+```sql Splunk example
+... | eval json_output = tojson({"key": "value"})
+```
+
+```kusto APL equivalent
+print dynamic_value = bag_pack("key", "value")
+| extend json_output = dynamic_to_json(dynamic_value)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `JSON_OBJECT` or `JSON_ARRAY` functions to create JSON strings, or `CAST(... AS JSON)` to convert values. In APL, `dynamic_to_json` converts dynamic values (which can be created from JSON strings using `todynamic`) back into canonical JSON string representations.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_OBJECT('key' VALUE 'value') AS json_output FROM dual;
+```
+
+```kusto APL equivalent
+print dynamic_value = bag_pack("key", "value")
+| extend json_output = dynamic_to_json(dynamic_value)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+dynamic_to_json(dynamic)
+```
+
+### Parameters
+
+| Name    | Type    | Description                                    |
+| ------- | ------- | ---------------------------------------------- |
+| dynamic | dynamic | The dynamic value to convert to a JSON string. |
+
+### Returns
+
+Returns a canonical JSON string representation of the input according to the following rules:
+
+- If the input is a scalar value of type other than `dynamic`, the output is the result of applying `tostring()` to that value.
+- If the input is an array of values, the output is composed of the characters `[`, `,`, and `]` interspersed with the canonical representation of each array element.
+- If the input is a property bag, the output is composed of the characters `{`, `,`, and `}` interspersed with colon (`:`)-delimited name/value pairs of the properties. The pairs are sorted by the names, and the values are in the canonical representation described here.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Convert a dynamic object containing request metadata to a JSON string for logging or export purposes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend metadata = bag_pack('method', method, 'status', status, 'duration', req_duration_ms)
+| extend json_metadata = dynamic_to_json(metadata)
+| project _time, ['uri'], json_metadata
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20metadata%20%3D%20bag_pack('method'%2C%20method%2C%20'status'%2C%20status%2C%20'duration'%2C%20req_duration_ms)%20%7C%20extend%20json_metadata%20%3D%20dynamic_to_json(metadata)%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20json_metadata%22%7D)
+
+**Output**
+
+| _time | uri | json_metadata |
+| ----- | --- | ------------- |
+| Jun 24, 09:28:10 | /api/users | \{"duration":150,"method":"GET","status":"200"\} |
+
+This example creates a dynamic object from log fields and converts it to a JSON string, which you can use for exporting structured data or passing to string manipulation functions.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Serialize trace attributes stored as dynamic values into JSON strings for analysis or export.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_attributes = bag_pack('service', ['service.name'], 'kind', ['kind'], 'status', ['status_code'])
+| extend json_attributes = dynamic_to_json(trace_attributes)
+| project _time, ['trace_id'], json_attributes
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20trace_attributes%20%3D%20bag_pack('service'%2C%20%5B'service.name'%5D%2C%20'kind'%2C%20%5B'kind'%5D%2C%20'status'%2C%20%5B'status_code'%5D)%20%7C%20extend%20json_attributes%20%3D%20dynamic_to_json(trace_attributes)%20%7C%20project%20_time%2C%20%5B'trace_id'%5D%2C%20json_attributes%22%7D)
+
+**Output**
+
+| _time | trace_id | json_attributes |
+| ----- | -------- | --------------- |
+| Jun 24, 09:28:10 | abc123 | \{"kind":"server","service":"frontend","status":"200"\} |
+
+This example converts trace attributes from dynamic format to JSON strings, making it easier to export or analyze trace metadata as structured text.
+
+</Tab>
+<Tab title="Security logs">
+
+Convert dynamic security event data to JSON strings for reporting or integration with external systems.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend security_event = bag_pack('timestamp', _time, 'status', ['status'], 'uri', ['uri'], 'location', strcat(['geo.city'], ', ', ['geo.country']))
+| extend event_json = dynamic_to_json(security_event)
+| project _time, event_json
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20security_event%20%3D%20bag_pack('timestamp'%2C%20_time%2C%20'status'%2C%20%5B'status'%5D%2C%20'uri'%2C%20%5B'uri'%5D%2C%20'location'%2C%20strcat(%5B'geo.city'%5D%2C%20'%2C%20'%2C%20%5B'geo.country'%5D))%20%7C%20extend%20event_json%20%3D%20dynamic_to_json(security_event)%20%7C%20project%20_time%2C%20event_json%22%7D)
+
+**Output**
+
+| _time | event_json |
+| ----- | ---------- |
+| Jun 24, 09:28:10 | \{"location":"New York, US","status":"403","timestamp":"2024-06-24T09:28:10Z","uri":"/admin"\} |
+
+This example creates a structured security event as a dynamic object and converts it to JSON, which you can use for alerting systems or security information and event management (SIEM) integrations.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [todynamic](/apl/scalar-functions/conversion-functions/todynamic): Converts a JSON string to a dynamic value. Use `todynamic` to parse JSON strings, and `dynamic_to_json` to serialize dynamic values back to strings.
+- [tostring](/apl/scalar-functions/conversion-functions/tostring): Converts any scalar value to a string. Use `tostring` for simple scalar conversions, and `dynamic_to_json` when you need canonical JSON formatting for dynamic values.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses a JSON string into a dynamic value. Use `parse_json` to create dynamic values from JSON strings, and `dynamic_to_json` to convert them back.
+- [toarray](/apl/scalar-functions/conversion-functions/toarray): Converts a dynamic value to an array. Use `toarray` when you need array operations, and `dynamic_to_json` when you need string output.

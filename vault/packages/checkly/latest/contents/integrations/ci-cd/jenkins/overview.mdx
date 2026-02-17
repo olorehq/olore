@@ -1,0 +1,99 @@
+---
+title: Integrating Checkly in Jenkins
+sidebarTitle: Jenkins
+---
+
+import CliEnvVars from "/snippets/cli-env-vars.mdx"
+
+We've optimized the [Checkly CLI](/cli/overview/) to work in any CI/CD workflow. Here are the basics you need to know that will come in handy when adapting the examples we give you to your own, specific setup.
+
+1. For **authentication**, make sure to set the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` parameters as environment variables
+in your CI/CD platform.
+2. Set the **reporter** you want to use for the `test` command using the `--reporter` flag, i.e. `--reporter=dot`.
+3. To store a **test session** with full logging, traces and vides, set the `--record` flag for the `test` command.
+4. Use the `--force` flag on the `deploy` and / or `destroy` commands to skip the normal confirmation steps.
+
+When using the `--record` flag, the CLI will attempt to parse `git` specific information from
+the environment to display in the recorded test session as metadata. However, you can also set these data items specifically by using environment variables.
+
+<CliEnvVars />
+
+## A Basic pipeline example
+
+Create a new Jenkinsfile in your repo, or add the steps and stages from the example below to your existing file.
+This pipeline is "branch aware" and treats the `main` branch as the production branch. This means checks are only deployed
+to Checkly after they are ran against production (after merging to `main`) and the checks passed.
+
+## Configuring Jenkins to run the Checkly CLI
+
+As the Checkly CLI is a Node.js project, the main step you need to take is install the NodeJS plugin.
+
+1. In Jenkins, go to **Manage Jenkins → Plugins → Available plugins** and look for the NodeJS plugin and install it.
+2. After installing the NodeJS plugin, we need to configure it. Head over to **Manage Jenkins → Tools** and click "Add NodeJS"
+
+![Jenkins Nodejs  config](/images/docs/images/cicd/cicd_jenkins_node.png)
+
+
+We recommend using any Node.js stable version higher than 16.x.
+
+## Set your Checkly credentials
+
+Navigate to **Manage Jenkins → Manage Credentials** to add your Checkly account ID and API key to your preferred scope.
+Store them as "secret text" and assign and ID to the credential.
+
+![Jenkins Nodejs  config](/images/docs/images/cicd/cicd_jenkins_credentials.png)
+
+## Configuring the Jenkins Pipeline
+
+Add the `Jenkinsfile` to your repo that defines the basic stages and steps. Make sure to set up your SCM settings
+correctly so Jenkins can fetch your git repo and look for the `Jenkinsfile` in the root of your project.
+
+![Jenkins Nodejs  config](/images/docs/images/cicd/cicd_jenkins_scm_setup.png)
+
+
+
+The actual contents of your `Jenkinsfile` will differ based on your code and how you deploy. But in general, your pipeline
+should look as follows:
+
+1. You deploy your application first.
+2. You install the required dependencies for the Checkly CLI.
+3. You run the `checkly test` command.
+
+```groovy Jenkinsfile
+pipeline {
+    agent any
+
+    tools {nodejs "Node 18"}
+    environment {
+        CHECKLY_API_KEY = credentials('checkly-api-key')
+        CHECKLY_ACCOUNT_ID = credentials('checkly-account-id')
+        CHECKLY_TEST_ENVIRONMENT='production'
+    }
+
+    stages {
+        stage('Deploy') {
+            steps {
+                echo 'Deploying....'
+            }
+        }
+        stage('Dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+        stage('checkly test') {
+            steps {
+                sh 'npx checkly test --record'
+            }
+        }
+        stage('checkly deploy') {
+            when {
+                branch "main"
+            }
+            steps {
+                sh 'npx checkly deploy --force'
+            }
+        }
+    }
+}
+```

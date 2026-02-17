@@ -1,0 +1,62 @@
+---
+title: Console logs recording
+availability:
+    free: full
+    selfServe: full
+    enterprise: full
+---
+
+import Tab from "components/Tab"
+import WebLogging from "./_snippets/web-logging.mdx"
+import AndroidLogging from "./_snippets/android-logging.mdx"
+import ReactNativeLogging from "./_snippets/react-native-logging.mdx"
+import IOSLogging from "./_snippets/ios-logging.mdx"
+
+PostHog can capture console logs, info, warnings, and errors from your application. This is useful for debugging and providing extra context on what is happening in your user's browser or mobile device environment.
+
+<Tab.Group tabs={['Web', 'Android', 'React Native', 'iOS']}>
+    <Tab.List>
+        <Tab>Web</Tab>
+        <Tab>Android</Tab>
+        <Tab>React Native</Tab>
+        <Tab>iOS</Tab>
+    </Tab.List>
+    <Tab.Panels>
+        <Tab.Panel>
+            <WebLogging />
+        </Tab.Panel>
+        <Tab.Panel>
+            <AndroidLogging />
+        </Tab.Panel>
+        <Tab.Panel>
+            <ReactNativeLogging />
+        </Tab.Panel>
+        <Tab.Panel>
+            <IOSLogging />
+        </Tab.Panel>
+    </Tab.Panels>
+</Tab.Group>
+
+## Viewing and searching console logs
+
+Once enabled, you can then view captured console logs by clicking the "Inspector" button and choosing the console tab. 
+
+<ProductScreenshot
+    imageLight='https://res.cloudinary.com/dmukukwp6/image/upload/v1715340828/posthog.com/contents/images/docs/session-replay/log-light.png'
+    imageDark='https://res.cloudinary.com/dmukukwp6/image/upload/v1715340827/posthog.com/contents/images/docs/session-replay/log-dark.png'
+    alt="Logs in session replay" 
+    classes="rounded"
+/>
+
+In that tab, you can search for specific logs with the following patterns:
+
+| Token       | Match Type                    | Description                                      |
+|-------------|-------------------------------|--------------------------------------------------|
+| `jscript`   | `fuzzy-match`                 | Items that fuzzy match `jscript`                 |
+| `=scheme`   | `exact-match`                 | Items that are `scheme`                          |
+| `'python`   | `include-match`               | Items that include `python`                      |
+| `!ruby`     | `inverse-exact-match`         | Items that do not include `ruby`                 |
+| `^java`     | `prefix-exact-match`          | Items that start with `java`                     |
+| `!^earlang` | `inverse-prefix-exact-match`  | Items that do not start with `earlang`           |
+| `.js$`      | `suffix-exact-match`          | Items that end with `.js`                        |
+| `!.go$`     | `inverse-suffix-exact-match`  | Items that do not end with `.go`                 |

@@ -1,0 +1,45 @@
+---
+title: Skills for AI agents
+description: "This page explains how to use Axiom Skills to give AI coding agents structured investigation capabilities for Axiom."
+sidebarTitle: Overview
+keywords: ["skills", "ai agents", "axiom-sre", "amp", "claude code", "cursor", "sre", "incident response", "dashboards", "cost control", "spl", "apl", "splunk migration"]
+---
+
+Axiom Skills are instruction files that give AI coding agents specialized capabilities. Unlike Axiom MCP Server, which provides a standardized protocol for tool discovery and execution, Axiom Skills work by embedding methodology and context directly into the agent's prompt.
+
+For guidance on when to use Axiom Skills and Axiom MCP Server, see [AI agents](/console/intelligence/ai-agents-overview).
+
+<Info>
+Axiom Skills are open-source and welcome your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/skills).
+</Info>
+
+## Available skills
+
+Axiom provides the following skills:
+
+<CardGroup cols={2}>
+  <Card title="System Reliability Engineering (SRE)" icon="magnifying-glass-chart" href="/console/intelligence/skills/sre">
+    Expert SRE investigator for incidents and debugging with hypothesis-driven methodology
+  </Card>
+  <Card title="Build dashboards" icon="chart-mixed" href="/console/intelligence/skills/build-dashboards">
+    Design and build Axiom dashboards via API with chart types, APL patterns, and layouts
+  </Card>
+  <Card title="Control costs" icon="coins" href="/console/intelligence/skills/control-costs">
+    Analyze query patterns, find unused data, and build cost optimization dashboards
+  </Card>
+  <Card title="Translate SPL to APL" icon="language" href="/console/intelligence/skills/translate-spl-to-apl">
+    Translate Splunk SPL queries to Axiom APL for migrations
+  </Card>
+</CardGroup>
+
+## Install all skills
+
+Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
+
+```bash
+npx skills add axiomhq/skills
+```
+
+This command automatically detects your agent and installs all available skills to the appropriate location.
+
+To install skills for a specific agent or install individual skills, see the installation instructions on each skill page.

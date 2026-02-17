@@ -1,0 +1,163 @@
+---
+title: 'parse_urlquery'
+description: 'This page explains how to use the parse_urlquery function in APL.'
+---
+
+The `parse_urlquery` function parses a URL query string and returns a dynamic object containing the query parameters as key-value pairs. Use this function to extract and analyze query parameters from URLs in logs, API requests, or web traffic data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` or URL parsing to extract query parameters. APL's `parse_urlquery` provides structured query string parsing.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=url "\\?(?<query_string>.*)"
+| eval params=split(query_string, "&")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend params = parse_urlquery(uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, query string parsing requires complex string manipulation. APL's `parse_urlquery` provides native parsing.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUBSTRING(url, POSITION('?' IN url) + 1) AS query_string FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend params = parse_urlquery(uri)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_urlquery(query_string)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| query_string | string | Yes | A URL query string (with or without the leading '?') to parse. |
+
+### Returns
+
+Returns a dynamic object containing the query parameters as key-value pairs.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Extract and analyze query parameters from API requests to understand search patterns and filter usage.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend parameters = parse_urlquery('page=1&limitation=50&sort=date')
+| extend page = toint(parameters.page)
+| extend limitation = toint(parameters.limitation)
+| extend sort = tostring(parameters.sort)
+| summarize request_count = count() by page, limitation, sort
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20parameters%20%3D%20parse_urlquery('page%3D1%26limitation%3D50%26sort%3Ddate')%20%7C%20extend%20page%20%3D%20toint(parameters.page)%20%7C%20extend%20limitation%20%3D%20toint(parameters.limitation)%20%7C%20extend%20sort%20%3D%20tostring(parameters.sort)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20page%2C%20limitation%2C%20sort%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| page | limit | sort | request_count |
+|------|-------|------|---------------|
+| 1 | 50 | date | 8765 |
+
+This query parses query parameters from API requests to analyze pagination and sorting preferences.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract query parameters from HTTP spans to analyze API query patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend query_string = '?user_id=12345&action=checkout&currency=USD'
+| extend params = parse_urlquery(query_string)
+| extend user_id = tostring(params.user_id)
+| extend action = tostring(params.action)
+| extend currency = tostring(params.currency)
+| summarize span_count = count() by action, currency
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20query_string%20%3D%20%27%3Fuser_id%3D12345%26action%3Dcheckout%26currency%3DUSD%27%20%7C%20extend%20params%20%3D%20parse_urlquery(query_string)%20%7C%20extend%20user_id%20%3D%20tostring(params.user_id)%20%7C%20extend%20action%20%3D%20tostring(params.action)%20%7C%20extend%20currency%20%3D%20tostring(params.currency)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20action%2C%20currency%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| action | currency | span_count |
+|--------|----------|------------|
+| checkout | USD | 8765 |
+
+This query extracts query parameters from span data to analyze user actions and currency usage patterns in a distributed system.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect potential SQL injection or XSS attacks by analyzing suspicious query parameters.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend query_params = parse_urlquery('search=<script>&id=1 OR 1=1')
+| extend search_param = tostring(query_params.search)
+| extend id_param = tostring(query_params.id)
+| extend has_script = indexof(search_param, '<script>') >= 0
+| extend has_sql = indexof(id_param, 'OR') >= 0
+| where has_script or has_sql
+| project _time, uri, search_param, id_param, has_script, has_sql, id, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20query_params%20%3D%20parse_urlquery('search%3D%3Cscript%3E%26id%3D1%20OR%201%3D1')%20%7C%20extend%20search_param%20%3D%20tostring(query_params.search)%20%7C%20extend%20id_param%20%3D%20tostring(query_params.id)%20%7C%20extend%20has_script%20%3D%20indexof(search_param%2C%20'%3Cscript%3E')%20%3E%3D%200%20%7C%20extend%20has_sql%20%3D%20indexof(id_param%2C%20'OR')%20%3E%3D%200%20%7C%20where%20has_script%20or%20has_sql%20%7C%20project%20_time%2C%20uri%2C%20search_param%2C%20id_param%2C%20has_script%2C%20has_sql%2C%20id%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | search_param | id_param | has_script | has_sql | id | geo.country |
+|-------|-----|--------------|----------|------------|---------|-------|-------------|
+| 2024-11-06T10:00:00Z | /search | &lt;script&gt; | 1 OR 1=1 | true | true | user123 | Unknown |
+
+This query parses query parameters from failed requests and checks for injection attack patterns, helping identify potential security threats.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [parse_url](/apl/scalar-functions/string-functions/parse-url): Parses complete URLs into all components. Use this when you need more than just query parameters.
+- [url_decode](/apl/scalar-functions/string-functions/url-decode): Decodes URL-encoded strings. Use this to decode individual query parameter values.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by delimiters. Use this for simpler query string tokenization without key-value parsing.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses JSON strings. Use this when working with JSON data rather than URL query strings.
+

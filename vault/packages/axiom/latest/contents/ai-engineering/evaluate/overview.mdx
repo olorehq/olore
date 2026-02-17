@@ -1,0 +1,51 @@
+---
+title: "Evaluation overview"
+description: "Systematically measure and improve your AI capabilities through offline evaluation."
+sidebarTitle: Overview
+keywords: ["ai engineering", "evaluation", "evals", "testing", "quality"]
+---
+
+import { definitions } from '/snippets/definitions.mdx'
+
+Evaluation is the systematic process of measuring how well your AI <Tooltip tip={definitions.Capability}>capability</Tooltip> performs against known correct examples. Instead of relying on manual spot-checks or subjective assessments, evaluations provide quantitative, repeatable benchmarks that let you confidently improve your AI systems over time.
+
+## Why systematic evaluation matters
+
+AI systems fail in non-deterministic ways. The same prompt can produce different results. Edge cases emerge unpredictably. As capabilities grow from simple single-turn interactions to complex multi-agent systems, manual testing becomes impossible to scale.
+
+Systematic evaluation solves this by:
+
+- **Establishing baselines**: Measure current performance before making changes
+- **Preventing regressions**: Catch quality degradation before it reaches production
+- **Enabling experimentation**: Compare different models, prompts, or architectures
+- **Building confidence**: Deploy changes knowing they improve aggregate performance
+
+## The evaluation workflow
+
+Axiom's evaluation framework follows a simple pattern:
+
+<Steps>
+<Step title="Create a collection">
+Build a set of test cases with inputs and expected outputs (ground truth). Start small with 10-20 examples and grow over time.
+</Step>
+
+<Step title="Define scorers">
+Write functions that compare your capability’s output against the expected result. Use custom logic or prebuilt scorers from libraries like `autoevals`.
+</Step>
+
+<Step title="Run evaluations">
+Execute your capability against the collection and score the results. Track metrics like accuracy, pass rate, and cost.
+</Step>
+
+<Step title="Compare and iterate">
+Review results in the Axiom Console. Compare against baselines. Identify failures. Make improvements and re-evaluate.
+</Step>
+</Steps>
+
+## What’s next?
+
+- To set up your environment and authenticate, see [Setup and authentication](/ai-engineering/evaluate/setup).
+- To learn how to write evaluation functions, see [Write evaluations](/ai-engineering/evaluate/write-evaluations).
+- To understand flags and experiments, see [Flags and experiments](/ai-engineering/evaluate/flags-experiments).
+- To view results in the Console, see [Analyze results](/ai-engineering/evaluate/analyze-results).
+

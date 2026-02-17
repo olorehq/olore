@@ -1,0 +1,41 @@
+---
+title: How to Handle iFrames in Playwright
+subTitle: Accessing and interacting with iframes
+date: 2022-08-25
+author: Stefan Judis
+githubUser: stefanjudis
+tags:
+  - iframes
+weight: 100
+sidebarTitle: Interacting with iframes
+learn_playwright:
+  parent: "Interaction"
+---
+
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Playwright enables us to access and interact with iframes.
+
+## Locate an iframe and its elements
+
+To access iframe elements, locate the iframe and query the DOM elements as if you're in the page context.
+
+```ts iframe-access.spec.ts
+import { test } from '@playwright/test'
+
+test('access iframe content', async ({ page }) => {
+  await page.goto('https://your-page-with-an-iframe.com')
+  const header = await page.frameLocator('iframe').locator('h1')
+  console.log(await header.innerText())
+})
+
+```
+
+<SignUpCta />
+
+## Further reading
+
+1. [Playwright's "Frames documentation"](https://playwright.dev/docs/frames)

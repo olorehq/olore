@@ -1,0 +1,145 @@
+---
+title: regex_quote
+description: 'This page explains how to use the regex_quote function in APL.'
+---
+
+Use the `regex_quote` function in APL when you need to safely insert arbitrary string values into regular expression patterns. This function escapes all special characters in the input string so that it’s interpreted as a literal sequence, rather than as part of a regular expression syntax.
+
+`regex_quote` is especially useful when your APL query constructs regular expressions dynamically using user input or field values. Without escaping, strings like `.*` or `[a-z]` would behave like regex wildcards or character classes, potentially leading to incorrect results or vulnerabilities. With `regex_quote`, you can ensure the string is treated exactly as-is.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the `re.escape()` function isn’t available natively in SPL, so you often handle escaping in external scripts or manually. In APL, `regex_quote` provides built-in support for quoting regular expression metacharacters.
+
+<CodeGroup>
+```sql Splunk example
+| eval pattern="hello.*world"
+| eval safe_pattern=replace(pattern, "\.", "\\.")
+````
+
+```kusto APL equivalent
+let pattern = 'hello.*world';
+print safe_pattern = regex_quote(pattern)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL lacks a standard function to escape regular expression strings. Escaping is typically handled manually or with vendor-specific features. In APL, `regex_quote` handles all necessary escaping for you, making regex construction safer and more convenient.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_LIKE(col, 'hello\\.*world') FROM table;
+```
+
+```kusto APL equivalent
+let pattern = 'hello.*world';
+print is_match = tostring('hello.*world') matches regex regex_quote(pattern)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+regex_quote(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                                      |
+| ----- | ------ | ------------------------------------------------ |
+| value | string | The input string to be escaped for regex safety. |
+
+### Returns
+
+A string where all regular expression metacharacters are escaped so that the result can be used safely in regex patterns.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to find requests where the `uri` contains an exact match of a user-provided pattern, such as `/api/v1/users[1]`, which includes regex metacharacters. Use `regex_quote` to safely escape the pattern before matching.
+
+**Query**
+
+```kusto
+let pattern = '/api/v1/users[1]';
+['sample-http-logs']
+| where uri matches regex regex_quote(pattern)
+| project _time, id, uri, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22let%20pattern%20%3D%20'/api/v1/users[1]'%3B%20['sample-http-logs']%20%7C%20where%20uri%20matches%20regex%20regex_quote%28pattern%29%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20status%22%7D)
+
+**Output**
+
+| _time               | id       | uri               | status |
+| -------------------- | -------- | ----------------- | ------ |
+| 2025-06-10T15:42:00Z | user-293 | /api/v1/users[1] | 200    |
+
+This query searches for logs where the `uri` exactly matches the string `/api/v1/users[1]`, without interpreting `[1]` as a character class.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You want to isolate spans whose `trace_id` includes a literal substring that happens to resemble a regex pattern, such as `abc.def[0]`. Using `regex_quote` ensures the pattern is treated literally.
+
+**Query**
+
+```kusto
+let search_id = 'abc.def[0]';
+['otel-demo-traces']
+| where trace_id matches regex regex_quote(search_id)
+| project _time, trace_id, span_id, ['service.name'], duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22let%20search_id%20%3D%20'abc.def[0]'%3B%20['otel-demo-traces']%20%7C%20where%20trace_id%20matches%20regex%20regex_quote%28search_id%29%20%7C%20project%20_time%2C%20trace_id%2C%20span_id%2C%20['service.name']%2C%20duration%22%7D)
+
+**Output**
+
+| _time               | trace_id   | span_id | ['service.name'] | duration |
+| -------------------- | ----------- | -------- | ----------------- | -------- |
+| 2025-06-10T13:20:00Z | abc.def[0] | span-91  | frontend          | 00:00:01 |
+
+This query avoids misinterpretation of `[0]` as a regex character class and treats the whole `trace_id` literally.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to scan for potential path traversal attempts where a user’s input includes strings like `..\..\windows\system32`. To search this string safely, you use `regex_quote`.
+
+**Query**
+
+```kusto
+let attack_pattern = '../../windows/system32';
+['sample-http-logs']
+| where uri matches regex regex_quote(attack_pattern)
+| project _time, id, uri, status, ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22let%20attack_pattern%20%3D%20'..%2F..%2Fwindows%2Fsystem32'%3B%20%5B'sample-http-logs'%5D%20%7C%20where%20uri%20matches%20regex%20regex_quote(attack_pattern)%20%7C%20project%20_time%2C%20id%2C%20uri%2C%20status%2C%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| _time               | id       | uri                   | status | ['geo.country'] |
+| -------------------- | -------- | --------------------- | ------ | ---------------- |
+| 2025-06-11T10:15:00Z | user-103 | ....\windows\system32 | 403    | DE               |
+
+This query detects malicious-looking strings literally, without treating `.` as a wildcard.
+
+</Tab>
+</Tabs>

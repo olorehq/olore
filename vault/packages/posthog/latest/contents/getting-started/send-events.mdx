@@ -1,0 +1,151 @@
+---
+title: Send events
+nextPage: ./identify-users.mdx
+featuredImage: >-
+  https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/docs/getting-started/images/docs-send-events.png
+---
+
+import SendEventBackend from "./_snippets/send-event-backend.mdx"
+
+Once your PostHog instance is up and running, the next step is to start sending events.
+
+We recommend starting with autocapture for your web app as it's the quickest way to get set up, gives you full coverage, and avoids manually adding custom events. 
+
+You can [add custom events](#2-capture-custom-events-client) to track the most important events, too. 
+
+We recommend using a combination of autocapture and custom events, and [tuning autocapture](/docs/product-analytics/autocapture#configuring-autocapture) to your needs if you find you're sending too many events.
+
+## 1. Set up autocapture
+
+When you call `posthog.init`, the PostHog browser JS library begins automatically capturing user events:
+
+- **Pageviews and pageleaves**, including the URL, referrer, UTMs, scroll depth, and more
+- **Autocaptured events**, such as any click, change of input, or submission associated with `a`, `button`, `form`, `input`, `select`, `textarea`, and `label` tags
+
+<details>
+  <summary>Hiding sensitive elements</summary>
+
+  PostHog puts significant effort into ensuring it doesn't capture sensitive data from your website, such as passwords.
+
+  If, however, there are specific elements you want to ensure aren't captured, you can add the `ph-no-capture` class name.
+
+  Including the `ph-no-capture` class will also exclude elements from being shown in session recordings.
+</details>
+
+## 2. Capture custom events
+
+Setting up autocapture is a great way to get started, but typically when integrating tracking into your product, you'll want to send additional events for when specific things occur.
+
+On the client-side, we can use the `capture` method, with the first argument being the name of the event you want to track.
+
+<MultiLanguage selector="tabs">
+
+```js-web
+posthog.capture('user_signed_up')
+```
+
+</MultiLanguage>
+
+At first, it may seem somewhat unnecessary to send these custom events when we already have autocapture setup, but these custom events are important for two main reasons:
+
+1. Sending custom properties on an event
+2. Keeping events consistent over time
+
+### Sending custom properties on an event
+
+Suppose you're building a SaaS app and want to track when a user purchases a plan. 
+
+With autocapture, you'll already see `Clicked button with text 'Purchase'` events, but these won't have any information on which plan the user purchased.
+
+We include extra information on events by adding a second parameter in our capture call, which contains a map of custom property names and values.
+
+<MultiLanguage selector="tabs">
+
+```js-web
+posthog.capture('plan_purchased', {
+    price: 1599,
+    plan_id: 'XYZ12345',
+    frequency: 'monthly',
+    features: {
+        'SSO': true,
+        'Custom branding': true,
+        'Custom domains': false,
+    }
+})
+```
+
+</MultiLanguage>
+
+Later, we can use these properties to filter events based on a particular plan, or to calculate the aggregate values of a property over time.
+
+We recommend always including more properties than you might need at first.
+
+There's no limit to the number of properties an event can have, and your future self will thank you when you need to access a property that initially seemed unecessary.
+
+### Keeping events consistent and reliable
+
+Using custom events also helps keep your tracking consistent and reliable.
+
+When elements of your frontend change, this can affect how autocapture events show up in PostHog.
+
+If you changed the text for your 'Add to cart' button to just 'Add', our autocapure events would begin showing up as `Clicked button with text 'Add'` instead of what they had previously been.
+
+While combining these two events using [actions](/docs/data/actions) to fix this drift is possible, manually tracking these high-value actions with custom events is far more reliable.
+
+### Naming your custom events
+
+We recommend adding custom events for the most important actions in your product that are unlikely to change, such as user sign-ups, purchases, and when features are used. 
+
+While you can name your events however you'd like, we typically recommend using a `[object][verb]` format, where `[object]` is whatever entity the action relates to, and the `[verb]` is the action itself. 
+
+Some examples of this include `project created`, `user signed up`, and `invite sent`.
+
+## 3. Capture backend events
+
+If you're building a web or mobile app with a backend, we also highly recommend setting up tracking from your server in addition to your frontend.
+
+There are two main benefits to sending certain events from the server-side:
+
+1. **More reliable delivery**: As these events originate from your server, there's no way for them to get accidentally blocked by client-side ad-blockers
+
+2. **More reliable data**: You can fetch up-to-date information directly from your database or other services, which may not be readily available on the frontend
+
+Our [SDK pages](/docs/integrate?tab=sdks) contain information on installing PostHog on your specific platform. Once you have the library installed, you can send a capture event using the same `capture` method as in `posthog-js`.
+
+<SendEventBackend />
+
+The only major difference on the server-side is that we must include a `distinct_id` with every event.
+
+Often, this will come in the form of a unique user ID and can be pulled from a session cookie when requests arrive from the client.
+
+## When should I send events from the server vs. the client?
+
+In general, our guidance is to track events on both the frontend and backend whenever possible. This ensures maximum reliability, and the most flexibility when analyzing your data.
+
+That said, we strongly recommend tracking the following events from the server-side:
+
+1. **Sign-up events**: Given how high value these events are, you should also send server-side events whenever possible
+
+2. **CRUD events**: This is a broad class of events, but generally speaking, whenever you receive an API request to create or update a specific resource within your app, it's useful to forward these to PostHog. We also recommend including context about the request itself in the event (latency, errors, properties passed in the request payload, etc.)
+
+3. **Backend jobs**: PostHog is for more than just optimizing your frontend. It can often be useful to send events whenever backend jobs or workflows are kicked off, which allows you to analyze them within PostHog.
+
+<details>
+  <summary>Use different names for frontend and backend events (recommended)</summary>
+
+  We recommend using different event names for your backend and frontend events to avoid the chance of duplicate counting. 
+  
+  Often these should be the CRUD events themselves e.g. `user created` for the backend and `user signed up` for the frontend. Additionally, you can use the `source` property to filter for events from a specific source.
+</details>
+
+## Can I migrate events from another tool?
+
+Yup, we even [wrote some guides](/docs/migrate) to help you out for tools like [Google Analytics](/docs/migrate/google-analytics), [Mixpanel](/docs/migrate/mixpanel), [Heap](/docs/migrate/heap), [Amplitude](/docs/migrate/migrate-from-amplitude), and [Pendo](/docs/migrate/pendo).
+
+## Event ingestion nuances
+
+It's a priority for us that events are fully processed and saved as soon as possible. 
+
+Typically, events will be usable in queries within a few minutes. 
+
+For more on how we do this, read [how event ingestion works](/docs/how-posthog-works/ingestion-pipeline).

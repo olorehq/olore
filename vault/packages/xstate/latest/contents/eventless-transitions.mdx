@@ -1,0 +1,171 @@
+---
+title: Eventless (always) transitions
+---
+
+**Eventless transitions** are transitions that happen without an explicit event. These transitions are *always* taken when the transition is enabled.
+
+Eventless transitions are specified on the `always` state property and often referred to as “always” transitions.
+
+<Callout>
+
+You can easily visualize and simulated eventless transitions in Stately’s editor. [Read more about eventless transitions in Stately’s editor](/docs/editor-states-and-transitions/#eventless-always-transitions).
+
+</Callout>
+
+```ts
+import { createMachine } from 'xstate';
+const machine = createMachine({
+  states: {
+    form: {
+      initial: 'valid',
+      states: {
+        valid: {},
+        invalid: {},
+      },
+      // [!code highlight:4]
+      always: {
+        guard: 'isValid',
+        target: 'valid',
+      },
+    },
+  },
+});
+```
+
+## Eventless transitions and guards
+
+Eventless transitions are taken immediately after normal transitions are taken. They are only taken if enabled, for example, if their [guards](guards) are true. This makes eventless transitions helpful in doing things when some condition is true.
+
+## Avoid infinite loops
+
+<Callout>
+
+Since unguarded “always” transitions always run, you should be careful not to create an infinite loop. XState will help guard against most infinite loop scenarios.
+
+</Callout>
+
+Eventless transitions with no `target` nor `guard` will cause an infinite loop. Transitions using `guard` and `actions` may run into an infinite loop if its `guard` keeps returning true.
+
+You should define eventless transitions either with:
+
+- `target`
+- `guard` + `target`
+- `guard` + `actions`
+- `guard` + `target` + `actions`
+
+If `target` is declared, the value should differ from the current state node.
+
+## When to use
+
+Eventless transitions can be helpful when a state change is necessary, but there is no specific trigger for that change.
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  id: 'kettle',
+  initial: 'lukewarm',
+  context: {
+    temperature: 80,
+  },
+  states: {
+    lukewarm: {
+      on: {
+        boil: { target: 'heating' },
+      },
+    },
+    heating: {
+      always: {
+        guard: ({ context }) => context.temperature > 100,
+        target: 'boiling',
+      },
+    },
+    boiling: {
+      entry: ['turnOffLight'],
+      always: {
+        guard: ({ context }) => context.temperature <= 100,
+        target: 'heating',
+      },
+    },
+  },
+  on: {
+    'temp.update': {
+      actions: ['updateTemperature'],
+    },
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=b2a299ef-efb8-4049-a242-2d197d27c931"
+  title="Kettle with eventless transitions"
+/>
+
+## Eventless transitions and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+Eventless transitions can potentially be enabled by any event, so the `event` type is the union of all possible events.
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  types: {} as {
+    events: { type: 'greet'; message: string } | { type: 'submit' };
+  },
+  // ...
+  always: {
+    actions: ({ event }) => {
+      event.type; // 'greet' | 'submit'
+    },
+    guard: ({ event }) => {
+      event.type; // 'greet' | 'submit'
+      return true;
+    },
+  },
+});
+```
+
+## Eventless transitions cheatsheet
+
+### Cheatsheet: root eventless (always) transition
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  always: {
+    guard: 'isValid',
+    actions: ['doSomething'],
+  },
+  // ...
+});
+```
+
+### Cheatsheet: state eventless (always) transition
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'start',
+  states: {
+    start: {
+      always: {
+        guard: 'isValid',
+        target: 'otherState',
+      },
+    },
+    otherState: {
+      /* ... */
+    },
+  },
+});
+```

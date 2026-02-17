@@ -1,0 +1,153 @@
+---
+title: series_cos
+description: 'This page explains how to use the series_cos function in APL.'
+---
+
+The `series_cos` function returns the cosine of each element in a numeric array. You can use it to apply trigonometric transformations across entire time series or vectorized data in one step. This function is useful when you want to analyze periodic patterns, normalize angles, or apply mathematical transformations to series data such as request durations, response times, or trace latencies.
+
+You often use `series_cos` together with other series functions like `series_sin` and `series_tan` to perform mathematical modeling, anomaly detection, or seasonality analysis in logs and telemetry data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, trigonometric functions like `cos` operate on single field values, not on arrays. To compute cosine across multiple values, you typically expand the values into events and then apply the `eval cos(field)` transformation. In APL, `series_cos` works natively on dynamic arrays, so you can directly transform an entire series in one call.
+
+<CodeGroup>
+```sql Splunk example
+... | eval cos_val=cos(angle)
+````
+
+```kusto APL equivalent
+print arr=dynamic([0, 1.57, 3.14])
+| extend cos_arr=series_cos(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not provide direct support for array-wide trigonometric functions. The `COS()` function only works on single numeric values. To achieve array-like functionality, you usually need to unnest arrays and apply `COS()` row by row. In APL, `series_cos` eliminates this need by directly accepting an array and returning a transformed array.
+
+<CodeGroup>
+```sql SQL example
+SELECT COS(angle) AS cos_val
+FROM Angles;
+```
+
+```kusto APL equivalent
+print arr=dynamic([0, 1.57, 3.14])
+| extend cos_arr=series_cos(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_cos(array)
+```
+
+### Parameters
+
+| Parameter | Type                       | Description                 |
+| --------- | -------------------------- | --------------------------- |
+| `array`   | dynamic (array of numbers) | An array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the cosine of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to model periodic patterns in request durations by applying the cosine function to the values. This is useful if you want to normalize cyclical metrics for further analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations=make_list(req_duration_ms) by id
+| extend cos_durations=series_cos(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%3Dmake_list(req_duration_ms)%20by%20id%20%7C%20extend%20cos_durations%3Dseries_cos(durations)%22%7D)
+
+**Output**
+
+| id | durations        | cos_durations           |
+| -- | ---------------- | ------------------------ |
+| u1 | [120, 300, 450] | [0.814, -0.990, -0.737] |
+| u2 | [50, 250, 400]  | [0.965, -0.801, -0.966] |
+
+This query collects request durations per user ID and applies the cosine transformation to the entire array.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You want to apply trigonometric transformations to span durations to explore cyclical behavior in distributed traces.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans=make_list(duration) by ['service.name']
+| extend cos_spans=series_cos(spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%3Dmake_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20cos_spans%3Dseries_cos(spans)%22%7D)
+
+**Output**
+
+| service.name    | spans                 | cos_spans        |
+| --------------- | --------------------- | ----------------- |
+| frontend        | [00:00:01, 00:00:03] | [0.540, -0.990]  |
+| checkoutservice | [00:00:02, 00:00:04] | [-0.416, -0.653] |
+
+This query groups spans by service and computes the cosine for each span duration, which can be used in advanced mathematical modeling of latency patterns.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to explore whether cosine transformations reveal patterns in request durations for suspicious traffic sources.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations=make_list(req_duration_ms) by ['geo.country']
+| extend cos_blocked=series_cos(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%3Dmake_list(req_duration_ms)%20by%20%5B'geo.country'%5D%20%7C%20extend%20cos_blocked%3Dseries_cos(durations)%22%7D)
+
+**Output**
+
+| geo.country | blocked_durations | cos_blocked             |
+| ----------- | ------------------ | ------------------------ |
+| US          | [200, 400, 600]   | [-0.416, -0.653, 0.960] |
+| DE          | [100, 250, 500]   | [0.540, -0.801, 0.284]  |
+
+This query applies the cosine function to blocked request durations grouped by country, which can help highlight periodic access attempts from malicious sources.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use it to normalize negative values in arrays.
+- [series_acos](/apl/scalar-functions/time-series/series-acos): Computes the arccosine of each element in an array. Use when you want the inverse cosine.
+- [series_atan](/apl/scalar-functions/time-series/series-atan): Computes the arctangent of each element in an array. Use when you want the inverse tangent.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use it when analyzing cyclical data with a phase shift.
+- [series_tan](/apl/scalar-functions/time-series/series-tan): Returns the tangent of each element in an array. Use it when you want to transform arrays with tangent-based periodicity.

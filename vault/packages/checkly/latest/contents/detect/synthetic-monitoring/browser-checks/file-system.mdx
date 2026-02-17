@@ -1,0 +1,212 @@
+---
+title: File uploads, downloads and the file system
+sidebarTitle: File system
+
+---
+
+You might want to use (binary) files in your browser checks. For example, you might want to upload a file to an upload 
+form in your webapp. Or, you might want to validate some aspect of a file that is available for download on your
+app.
+
+## Testing downloads with the `download` event and `Download` object
+
+Playwright has a `download` event that you can use to intercept downloads. You can also use the `Download` object to retrieve
+the contents and metadata of the downloaded file(s). 
+
+In some cases, you immediately want to also test a related upload functionality using the downloaded file. In that case, 
+you can for instance spawn a new page, and use the `.setInputFiles()` method to upload the downloaded file.
+
+<CodeGroup dropdown>
+
+```ts download.spec.ts
+import { test } from '@playwright/test'
+
+test('Downloads a PDF file', async ({ page, context }) => {
+  // Download a file.
+  await page.goto('https://demo.borland.com/testsite/download_testpage.php')
+  await page.getByText('attachment + filename').click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download' }).click()
+  const download = await downloadPromise
+  await download.saveAs(download.suggestedFilename())
+  
+  //  Upload a file.
+  const uploadPage = await context.newPage()
+  await uploadPage.goto('https://www.file.io/')
+  const inputFile = await uploadPage.$('input[type=file]')
+  await inputFile!.setInputFiles(download.suggestedFilename())
+})
+```
+
+```js download.spec.js
+const { test } = require('@playwright/test')
+
+test('Downloads a PDF file', async ({ page, context }) => {
+  // Download a file.
+  await page.goto('https://demo.borland.com/testsite/download_testpage.php')
+  await page.getByText('attachment + filename').click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download' }).click()
+  const download = await downloadPromise
+  await download.saveAs(download.suggestedFilename())
+
+  //  Upload a file.
+  const uploadPage = await context.newPage()
+  await uploadPage.goto('https://www.file.io/')
+  const inputFile = await uploadPage.$('input[type=file]')
+  await inputFile.setInputFiles(download.suggestedFilename())  
+})
+```
+
+</CodeGroup>
+
+[Check the official docs right here](https://playwright.dev/docs/downloads)
+
+## Testing uploads with the browser's File API
+
+To test any upload features with Playwright's `.setInputFiles()` method, you need to provide a file object. Currently,
+Checkly does not have a dedicated storage layer where you could upload that file, so you need to host it yourself at a (publicly)
+accessible location like an AWS S3 bucket, Dropbox or any other file hosting service.
+
+In the example below, we do not need to interact with the file system. We can just:
+
+1. Fetch a file from a public URL using the `request` object.
+2. Pass the resulting `Buffer` into the `.setInputFiles()` method.
+3. Wait for the upload to finish.
+
+<CodeGroup dropdown>
+
+```ts upload.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('upload a file', async ({ page, request }) => {
+  // fetch the file to upload  
+  const fileUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  const fileBuffer  = await request.get(fileUrl)
+    
+  // upload the file  
+  await page.goto('https://filebin.net/')
+  await page.getByLabel('Select files to upload').setInputFiles({
+    name: 'file.pdf',
+    mimeType: 'application/pdf',
+    buffer: await fileBuffer.body()
+  })
+    
+  // validate the upload was successful  
+  await expect(page.getByRole('link', { name: 'Download file' })).toBeVisible()
+  await page.screenshot({ path: 'filebin.png' })
+})
+```
+
+```js upload.spec.js
+const { test, expect } = require('@playwright/test')
+
+test('upload a file', async ({ page, request }) => {
+  // fetch the file to upload
+  const fileUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  const fileBuffer  = await request.get(fileUrl)
+
+  // upload the file  
+  await page.goto('https://filebin.net/')
+  await page.getByLabel('Select files to upload').setInputFiles({
+    name: 'file.pdf',
+    mimeType: 'application/pdf',
+    buffer: await fileBuffer.body()
+  })
+  
+  // validate the upload was successful
+  await expect(page.getByRole('link', { name: 'Download file' })).toBeVisible()
+  await page.screenshot({ path: 'filebin.png' })
+})
+```
+
+</CodeGroup>
+
+Notice we don't need to interact with the file system, we can just pass buffers around.
+
+## Testing uploads using HTTP POST requests
+
+You can also "upload" files using a simple HTTP POST request with a (binary) body using Playwright's built-in `request` object.
+You would use this when you want to test a file upload feature that is not using the browser's File API, but just an HTTP/REST endpoint
+that accepts a file upload.
+
+<CodeGroup dropdown>
+
+```ts http-upload.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('Upload a file using a POST request', async ({ request }) => {
+  const fileUrl  = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  const fileBuffer  = await request.get(fileUrl)
+  const response = await request.post('https://filebin.net/pp9on3zvwv7zq6lm/dummy.pdf', {
+    data: await fileBuffer.body(),
+  })
+  await expect(response).toBeOK()
+})
+```
+
+```js http-upload.spec.js
+const { test, expect } = require('@playwright/test')
+
+test('Upload a file using a POST request', async ({ request }) => {
+  const fileUrl  = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  const fileBuffer  = await request.get(fileUrl)
+  const response = await request.post('https://filebin.net/pp9on3zvwv7zq6lm/dummy.pdf', {
+    data: await fileBuffer.body(),
+  })
+  await expect(response).toBeOK()
+})
+```
+
+</CodeGroup>
+  
+## Using the file system
+Sometimes, you do want to explicitly save a file to disk. This is what you need to know.
+
+Checkly creates a sandboxed directory for each check run. During the run you can use this directory to save or upload
+artifacts. This directory is destroyed after a check is finished.
+
+<CodeGroup dropdown>
+
+```ts
+import path from 'path'
+import fs from 'fs'
+import { test } from '@playwright/test'
+
+test('Save file in directory', async ({ page }) => {
+  const image = await page.goto('https://picsum.photos/200/300')
+  const imagePath = path.join('example.jpg')
+  const buffer = await image.body()
+  fs.writeFileSync(imagePath, buffer)
+  const readFileFromDisk = fs.readFileSync(imagePath)
+})
+```
+
+```js
+const path = require('path')
+const fs = require('fs')
+const { test } = require('@playwright/test')
+
+test('Save file in directory', async ({ page }) => {
+  const image = await page.goto('https://picsum.photos/200/300')
+  const imagePath = path.join('example.jpg')
+  const buffer = await image.body()
+  fs.writeFileSync(imagePath, buffer)
+  const readFileFromDisk = fs.readFileSync(imagePath)
+})
+```
+
+</CodeGroup>
+
+Due to this sandbox, certain Node.js variables are adapted to our platform and have values we set for them. The behaviour
+is slightly different when creating a browser check in the Web UI or using the Checkly CLI.
+
+When creating a browser check in the Web UI, the variables are:
+
+* `__dirname` will have the value of `/`
+* `__filename` will have the value of `/script.js`
+
+When creating a browser check using the Checkly CLI the variables are:
+
+* `__dirname` will have the value of `/`
+* `__filename` will have the value of the actual file in your code base, relative to the project root.

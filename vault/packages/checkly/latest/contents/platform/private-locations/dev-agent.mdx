@@ -1,0 +1,82 @@
+---
+title: 'Dev Image'
+description: 'Use the dev agent for npm packages that require compilation.'
+sidebarTitle: 'Dev Image'
+---
+
+If any of the checks you run on Private Locations rely on npm packages with native code, those packages need to be compiled during installation.
+
+The standard agent is optimized for size and doesn’t ship with build tools. In those cases, you’ll need to use the **dev** image instead.
+
+## When to Use the Dev Image
+
+Use the **dev image** (`checkly/agent-dev:X.Y.Z`) when your checks require npm packages with **native dependencies** that need compilation. Common examples include:
+
+- `sqlite3` - SQLite database
+- `zookeeper` - Apache ZooKeeper client
+
+If your checks only use pure JavaScript packages, the standard runtime image is recommended for its smaller size and faster startup.
+
+## Available Tags
+
+### Versioned Tags (Recommended)
+
+```bash
+# Runtime (production)
+docker pull checkly/agent:1.2.3
+
+# Dev (with build tools)
+docker pull checkly/agent-dev:1.2.3
+```
+
+### Floating Tags
+
+```bash
+# Latest runtime release
+docker pull checkly/agent:latest
+
+# Latest dev release
+docker pull checkly/agent-dev:latest
+```
+
+<Note>  Use versioned tags for reproducible deployments. Floating tags (like `:latest`) may change between pulls.</Note>
+
+## What's Included in the Dev Image
+
+The dev image adds the following to the standard image:
+
+| Tool | Purpose |
+|------|---------|
+| `gcc`, `g++`, `make` | Compile native extensions |
+| `python3` | Required by node-gyp |
+
+These tools enable compilation of native Node.js modules during `npm install`.
+
+## How to use it
+
+The dev agent works exactly like the standard agent, but includes the build tools required to compile native modules.
+
+To use the dev variant, simply change the image tag:
+
+```bash Dev agent (with build tools)
+docker run \
+  -e API_KEY="your_api_key_here" \
+  --name checkly-agent-dev \
+  -d checkly/agent-dev:latest
+```
+
+All other setup and configuration remains the same. For more information, see the [Private Locations documentation](/platform/private-locations/overview/).
+
+## FAQ
+
+### Can I use the dev image in production?
+
+Yes, the dev image is production-ready. It contains the same runtime as the standard image, plus build tools. The only tradeoff is a larger image size.
+
+### Do I need the dev image for Playwright checks?
+
+No. Playwright and its dependencies are pre-installed in both variants. You only need the dev image if your check code imports npm packages with native dependencies.
+
+### How do I know if a package needs the dev image?
+
+If `npm install` fails with errors about `node-gyp`, `python`, `gcc`, or "compilation failed", you likely need the dev image.

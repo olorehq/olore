@@ -1,0 +1,162 @@
+---
+title: 'extract_all'
+description: 'This page explains how to use the extract_all function in APL.'
+---
+
+The `extract_all` function retrieves all substrings that match a regular expression from a source string. Use this function when you need to capture multiple matches of a pattern, such as extracting all email addresses, URLs, or repeated patterns from log entries.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` with `max_match=0` to extract all matches. APL's `extract_all` provides a more direct approach.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message max_match=0 "error_(?<code>\d+)"
+| mvexpand code
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend codes = extract_all('error_(\\d+)', dynamic([1]), uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, extracting all regex matches typically requires recursive queries or database-specific functions. APL's `extract_all` simplifies this operation.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_EXTRACT_ALL(field, 'pattern') AS matches FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend matches = extract_all('pattern', dynamic([1]), field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+extract_all(regex, captureGroups, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| regex | string | Yes | A regular expression with one or more capture groups. |
+| captureGroups | dynamic array | Yes | An array of capture group numbers to extract (e.g., `dynamic([1])` or `dynamic([1,2])`). |
+| text | string | Yes | The source string to search. |
+
+### Returns
+
+Returns a dynamic array containing all matches. For single capture groups, returns a one-dimensional array. For multiple capture groups, returns a two-dimensional array.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Extract all numeric values from URIs to analyze parameter patterns in API requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend numbers = extract_all('([0-9]+)', dynamic([1]), uri)
+| where array_length(numbers) > 0
+| project _time, uri, numbers, method
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20numbers%20%3D%20extract_all(%27(%5B0-9%5D%2B)%27%2C%20dynamic(%5B1%5D)%2C%20uri)%20%7C%20where%20array_length(numbers)%20%3E%200%20%7C%20project%20_time%2C%20uri%2C%20numbers%2C%20method%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | numbers | method |
+|-------|-----|---------|--------|
+| 2024-11-06T10:00:00Z | /api/users/123/posts/456 | ["123", "456"] | GET |
+| 2024-11-06T10:01:00Z | /products/789 | ["789"] | GET |
+| 2024-11-06T10:02:00Z | /orders/111/items/222/details/333 | ["111", "222", "333"] | POST |
+
+This query extracts all numeric values from URIs, helping analyze how many IDs are typically passed in API requests and their patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Extract all service names mentioned in span attributes to understand service dependencies.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_mentions = extract_all('(frontend|checkout|cart|product-catalog)', dynamic([1]), ['service.name'])
+| where array_length(service_mentions) > 0
+| summarize mention_count = count() by service_mention = tostring(service_mentions)
+| sort by mention_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_mentions%20%3D%20extract_all(%27(frontend%7Ccheckout%7Ccart%7Cproduct-catalog)%27%2C%20dynamic(%5B1%5D)%2C%20%5B%27service.name%27%5D)%20%7C%20where%20array_length(service_mentions)%20%3E%200%20%7C%20summarize%20mention_count%20%3D%20count()%20by%20service_mention%20%3D%20tostring(service_mentions)%20%7C%20sort%20by%20mention_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service_mention | mention_count |
+|-----------------|---------------|
+| ["frontend"] | 4532 |
+| ["checkout"] | 3421 |
+| ["cart"] | 2987 |
+| ["product-catalog"] | 2341 |
+
+This query extracts all service name patterns from span data, helping understand which services are most frequently referenced in traces.
+
+</Tab>
+<Tab title="Security logs">
+
+Extract all suspicious keywords from URIs to detect potential SQL injection or XSS attempts.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend threats = extract_all('(union|select|script|alert|drop|insert|delete)', dynamic([1]), uri)
+| where array_length(threats) > 0
+| project _time, uri, threats, id, status, ['geo.country']
+| sort by array_length(threats) desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20threats%20%3D%20extract_all(%27(union%7Cselect%7Cscript%7Calert%7Cdrop%7Cinsert%7Cdelete)%27%2C%20dynamic(%5B1%5D)%2C%20uri)%20%7C%20where%20array_length(threats)%20%3E%200%20%7C%20project%20_time%2C%20uri%2C%20threats%2C%20id%2C%20status%2C%20%5B%27geo.country%27%5D%20%7C%20sort%20by%20array_length(threats)%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | threats | id | status | geo.country |
+|-------|-----|---------|-------|--------|-------------|
+| 2024-11-06T10:00:00Z | /search?q=<script>alert('xss')</script> | ["script", "alert"] | user123 | 403 | Unknown |
+| 2024-11-06T10:01:00Z | /api?id=1'union select * | ["union", "select"] | user456 | 403 | Russia |
+
+This query extracts all SQL and XSS-related keywords from URIs, helping identify potential injection attacks by counting how many threat indicators appear in each request.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts only the first match of a regex pattern. Use this when you only need the first occurrence rather than all matches.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings by a delimiter into an array. Use this for simpler tokenization without regex complexity.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses JSON strings into dynamic objects. Use this when working with structured JSON data rather than regex patterns.
+- [countof_regex](/apl/scalar-functions/string-functions/countof-regex): Counts regex pattern occurrences. Use this when you only need the count of matches, not the actual matched text.
+

@@ -1,0 +1,1005 @@
+---
+title: 'Invoke'
+---
+
+[State machines](machines) can “invoke” one or many [actors](actors) within a given state. The invoked actor will start when the state is entered, and stop when the state is exited. Any XState actor can be invoked, including simple Promise-based actors, or even complex machine-based actors.
+
+Invoking an actor is useful for managing synchronous or asynchronous work that the state machine needs to orchestrate and communicate with at a high level, but doesn't need to know about in detail.
+
+<Callout>
+
+[Read about the difference between invoking and spawning actors](actors.mdx#invoking-and-spawning-actors).
+
+</Callout>
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=7f8f7dfb-f9a0-4e37-9c2a-bbca9f093d21&mode=design"
+  title="User"
+/>
+
+<Callout>
+
+You can visualize your state machines and easily invoke actors in our drag-and-drop Stately editor. [Read more about actors in Stately’s editor](editor-actions-and-actors).
+
+</Callout>
+
+Actors can be invoked within any state _except_ for the [top-level final state](final-states). In the following example, the `loading` state invokes a Promise-based actor:
+
+```ts
+import { setup, createActor, fromPromise, assign } from 'xstate';
+
+const fetchUser = (userId: string) =>
+  fetch(`https://example.com/${userId}`).then((response) => response.text());
+
+const userMachine = setup({
+  types: {
+    context: {} as {
+      userId: string;
+      user: object | undefined;
+      error: unknown;
+    },
+  },
+  actors: {
+    fetchUser: fromPromise(async ({ input }: { input: { userId: string } }) => {
+      const user = await fetchUser(input.userId);
+
+      return user;
+    }),
+  },
+}).createMachine({
+  id: 'user',
+  initial: 'idle',
+  context: {
+    userId: '42',
+    user: undefined,
+    error: undefined,
+  },
+  states: {
+    idle: {
+      on: {
+        FETCH: { target: 'loading' },
+      },
+    },
+    loading: {
+      // [!code highlight:13]
+      invoke: {
+        id: 'getUser',
+        src: 'fetchUser',
+        input: ({ context: { userId } }) => ({ userId }),
+        onDone: {
+          target: 'success',
+          actions: assign({ user: ({ event }) => event.output }),
+        },
+        onError: {
+          target: 'failure',
+          actions: assign({ error: ({ event }) => event.error }),
+        },
+      },
+    },
+    success: {},
+    failure: {
+      on: {
+        RETRY: { target: 'loading' },
+      },
+    },
+  },
+});
+```
+
+Actors can also be invoked on the _root_ of the machine, and they will be active for the lifetime of their parent machine actor:
+
+```ts
+import { fromEvent } from 'rxjs';
+import { fromEventObservable } from 'xstate';
+const interactiveMachine = createMachine({
+  // [!code highlight:5]
+  invoke: {
+    src: fromEventObservable(
+      () => fromEvent(document.body, 'click') as Subscribable<EventObject>,
+    ),
+  },
+  on: {
+    click: {
+      actions: ({ event }) => console.log(event),
+    },
+  },
+});
+```
+
+And `invoke` can be an array, to invoke [multiple actors](#multiple-actors):
+
+```ts
+const vitalsWorkflow = createMachine({
+  states: {
+    CheckVitals: {
+      // [!code highlight:6]
+      invoke: [
+        { src: 'checkTirePressure' },
+        { src: 'checkOilPressure' },
+        { src: 'checkCoolantLevel' },
+        { src: 'checkBattery' },
+      ],
+    },
+  },
+});
+```
+
+For further examples, see:
+
+- [Reusing function and event definitions workflow](https://github.com/statelyai/xstate/tree/main/examples/workflow-reusing-functions/main.ts)
+- [Check inbox periodically (cron-based workflow)](https://github.com/statelyai/xstate/tree/main/examples/workflow-check-inbox/main.ts)
+- [Car vitals checks (SubFlow Repeat) workflow](https://github.com/statelyai/xstate/tree/main/examples/workflow-car-vitals)
+
+## How are actors different from actions?
+
+Actions are “fire-and-forget”; as soon as their execution starts, the state machine running the actions forgets about them. If you specify an action as `async`, **the action won’t be awaited before moving to the next state**. Remember: transitions are always _zero-time_ (states transition synchronously).
+
+Invoked actors can do asynchronous work _and_ communicate with their parent machine actor. They can send and receive events. Invoked machine actors can even invoke or spawn their own child actors.
+
+Unlike actions, errors thrown by invoked actors can be handled directly:
+
+```ts
+invoke: {
+  src: 'fetchUser',
+  // [!code highlight:4]
+  onError: {
+    target: 'failure',
+    actions: assign({ error: ({ event }) => event.error })
+  }
+}
+```
+
+Whereas errors thrown by actions can only be handled globally by a subscriber of their parent state machine:
+
+```ts
+actor.subscribe({
+  error: (err) => {
+    console.error(err);
+  },
+});
+```
+
+## Lifecycle
+
+Invoked actors have a lifecycle that is managed by the state they are invoked in. They are created and started when the state is entered, and stopped when the state is exited.
+
+If a state is entered and then immediately exited, e.g. due to an eventless ("always") transition, then no actors will be invoked on that state.
+
+### Re-entering
+
+By default, when a state machine transitions from a parent state to the same parent state or a descendent (child or deeper), it will _not_ re-enter the parent state. Because the transition is not re-entering, the parent state's existing invoked actors will _not_ be stopped and new invoked actors will _not_ be started.
+
+However, if you want a transition to re-enter the parent state, set the transition's `reenter` property to `true`. Transitions that re-enter the state _will_ stop existing invoked actors and start new invoked actors.
+
+[Read more about re-entering states](/docs/transitions#re-entering).
+
+## The `invoke` property API [#api]
+
+An invocation is defined in a state node's configuration with the `invoke` property, whose value is an object that contains:
+
+- `src` - The source of the [actor logic](actors.mdx#actor-logic) to invoke when creating the actor, or a string referring to actor logic defined in the machine's [provided implementation](machines.mdx#providing-implementations).
+- `id` - A string identifying the actor, unique within its parent machine.
+- `input` - The input to pass to the actor.
+- `onDone` - Transition that occurs when the actor is complete.
+- `onError` - Transition that occurs when the actor throws an error.
+- `onSnapshot` - Transition that occurs when the actor emits a new value.
+- `systemId` - A string identifing the actor, unique system-wide.
+
+### Source [#src]
+
+The `src` represents the [actor logic](actors.mdx#actor-logic-creators) the machine should use when creating the actor. There are several actor logic creators available in XState:
+
+- [State machine logic (`createMachine`)](/docs/actors/#createmachine)
+- [Promise logic (`fromPromise`)](/docs/actors/#frompromise), where invoke will take the `onDone` transition on `resolve`, or the `onError` transition on `reject`
+- [Transition function logic (`fromTransition`)](/docs/actors/#fromtransition), which follows the reducer pattern
+- [Observable logic (`fromObservable`)](/docs/actors/#fromobservable), which can send events to the parent machine, and where invoke will take an `onDone` transition when completed
+- [Event observable logic (`fromEventObservable`)](/docs/actors/#fromeventobservable), like Observable logic but for streams of event objects
+- [Callback logic (`fromCallback`)](/docs/actors/#fromcallback), which can send events to and receive events from the parent machine
+
+The invoke `src` can be _inline_ or _provided_.
+
+#### Inline `src`
+
+Either directly inline:
+
+```ts
+invoke: {
+  src: fromPromise(…)
+}
+```
+
+Or from some logic in the same scope as the machine:
+
+```ts
+const logic = fromPromise(…)
+const machine = createMachine({
+  // …
+  invoke: {
+    src: logic
+  }
+});
+```
+
+#### Provided `src`
+
+The `src` can be [provided in the machine implementation](machines.mdx#providing-implementations) and referenced using a string or an object.
+
+```ts
+const machine = createMachine({
+  // …
+  invoke: {
+    src: 'workflow', // string reference
+  },
+});
+
+const actor = createActor(
+  machine.provide({
+    actors: {
+      workflow: fromPromise(/* ... */), // provided
+    },
+  }),
+);
+```
+
+### `onDone`
+
+- Transitions when invoked actor is complete
+- Event object `output` property is provided with actor's output data
+- Not available for callback actors
+
+<Callout type="warning">
+Don't get the `onDone` property on a state confused with `invoke.onDone` - they are similar transitions, but refer to different things.
+
+- The `onDone` property on a [state](states) node refers to the compound state node reaching a [final state](final-states).
+- The `invoke.onDone` property refers to the invocation (`invoke.src`) being done.
+
+```js
+// ...
+loading: {
+  invoke: {
+    src: someSrc,
+    // refers to `someSrc` being done
+    // [!code highlight:1]
+    onDone: {/* ... */}
+  },
+  initial: 'loadFoo',
+  states: {
+    loadFoo: {/* ... */},
+    loadBar: {/* ... */},
+    loadingComplete: { type: 'final' }
+  },
+  // refers to 'loading.loadingComplete' being reached
+  // [!code highlight:1]
+  onDone: { target: 'loaded' }
+}
+// ...
+```
+
+</Callout>
+
+The `onDone` transition can be an object:
+
+```ts
+{
+  invoke: {
+    src: 'fetchItem',
+    // [!code highlight:6]
+    onDone: {
+      target: 'success',
+      actions: ({ event }) => {
+        console.log(event.output);
+      }
+    }
+  }
+}
+```
+
+Or, for simplicity, target-only transitions can be strings:
+
+```ts
+{
+  invoke: {
+    src: 'fetchItem',
+    // [!code highlight:1]
+    onDone: 'success',
+  }
+}
+```
+
+### `onError`
+
+- Transitions when invoked actor throws an error, or (for Promise-based actors) when the promise rejects
+- Event object `error` property is provided with actor’s error data
+
+The `onError` transition can be an object:
+
+```ts
+invoke: {
+  src: 'getUser',
+  // [!code highlight:6]
+  onError: {
+    target: 'failure',
+    actions: ({ event }) => {
+      console.error(event.error);
+    }
+  }
+}
+```
+
+Or, for simplicity, target-only transitions can be strings:
+
+```ts
+{
+  invoke: {
+    src: 'getUser',
+    // [!code highlight:1]
+    onError: 'failure'
+  }
+}
+```
+
+### `onSnapshot`
+
+- Transitions when invoked actor emits a new snapshot
+- Event gets `snapshot` with actor's snapshot
+- Not available for callback actors
+
+```ts
+invoke: {
+  src: 'getUser',
+  // [!code highlight:3]
+  onSnapshot: {
+    actions: ({ event }) => console.log(event.snapshot)
+  }
+}
+```
+
+[Read more about actor snapshots](actors.mdx#actor-snapshots).
+
+### Input
+
+To define input to an invoked actor, use `input`.
+
+The `input` property can be a static input value, or a function that returns the input value. The function will be passed an object that contains the current `context` and `event`.
+
+<Callout>
+Behind the scenes, input is conveyed to the actor by an event:  
+`{ type: 'xstate.init', input: ... }`.
+</Callout>
+
+#### Input from a static value
+
+```ts
+invoke: {
+  src: 'liveFeedback',
+  // [!code highlight:3]
+  input: {
+    domain: 'stately.ai'
+  }
+}
+```
+
+#### Input from a function
+
+```ts
+invoke: {
+  src: fromPromise(({ input: { endpoint, userId } }) => {
+    return fetch(`${endpoint}/${userId}`).then((res) => res.json());
+  }),
+  // [!code highlight:4]
+  input: ({ context, event }) => ({
+    endpoint: context.endpoint,
+    userId: event.userId
+  })
+}
+```
+
+See [Input](input) for more.
+
+## Invoking Promises
+
+The most common type of actors you’ll invoke are promise actors. Promise actors allow you to await the result of a promise before deciding what to do next.
+
+XState can invoke Promises as actors using the `fromPromise` actor logic creator. Promises can:
+
+- `resolve()`, which will take the `onDone` transition
+- `reject()` (or throw an error), which will take the `onError` transition
+
+If the state where the invoked promise is active is exited before the promise settles, the result of the promise is discarded.
+
+```ts
+import { setup, createActor, fromPromise, assign } from 'xstate';
+
+// Function that returns a Promise
+// which resolves with some useful value
+// e.g.: { name: 'David', location: 'Florida' }
+const fetchUser = (userId: string) =>
+  fetch(`/api/users/${userId}`).then((response) => response.json());
+
+const userMachine = setup({
+  types: {
+    context: {} as {
+      userId: string;
+      user: object | undefined;
+      error: unknown;
+    },
+  },
+}).createMachine({
+  id: 'user',
+  initial: 'idle',
+  context: {
+    userId: '42',
+    user: undefined,
+    error: undefined,
+  },
+  states: {
+    idle: {
+      on: {
+        FETCH: { target: 'loading' },
+      },
+    },
+    loading: {
+      // [!code highlight:13]
+      invoke: {
+        id: 'getUser',
+        src: fromPromise(({ input }) => fetchUser(input.userId)),
+        input: ({ context: { userId } }) => ({ userId }),
+        onDone: {
+          target: 'success',
+          actions: assign({ user: ({ event }) => event.output }),
+        },
+        onError: {
+          target: 'failure',
+          actions: assign({ error: ({ event }) => event.error }),
+        },
+      },
+    },
+    success: {},
+    failure: {
+      on: {
+        RETRY: { target: 'loading' },
+      },
+    },
+  },
+});
+```
+
+The resolved output is placed into a `'xstate.done.actor.<id>'` event, under the `output` property, e.g.:
+
+```js
+{
+  type: 'xstate.done.actor.getUser',
+  output: {
+    name: 'David',
+    location: 'Florida'
+  }
+}
+```
+
+### Promise Rejection
+
+If a Promise rejects, the `onError` transition will be taken with a `{ type: 'xstate.error.actor.<id>' }` event. The error data is available on the event's `error` property:
+
+```ts
+import { setup, createActor, fromPromise, assign } from 'xstate';
+
+const search = (query: string) =>
+  new Promise((resolve, reject) => {
+    if (!query.length) {
+      return reject('No query specified');
+      // or:
+      // throw new Error('No query specified');
+    }
+
+    return resolve(getSearchResults(query));
+  });
+
+// ...
+const searchMachine = setup({
+  types: {
+    context: {} as {
+      results: object | undefined;
+      errorMessage: unknown;
+    },
+  },
+}).createMachine({
+  id: 'search',
+  initial: 'idle',
+  context: {
+    results: undefined,
+    errorMessage: undefined,
+  },
+  states: {
+    idle: {
+      on: {
+        SEARCH: { target: 'searching' },
+      },
+    },
+    searching: {
+      // [!code highlight:19]
+      invoke: {
+        id: 'search',
+        src: fromPromise(({ input: { query } }) => search(query)),
+        input: ({ event }) => ({ query: event.query }),
+        onError: {
+          target: 'failure',
+          actions: assign({
+            errorMessage: ({ context, event }) => {
+              // event is:
+              // { type: 'xstate.error.actor.<id>', error: 'No query specified' }
+              return event.error;
+            },
+          }),
+        },
+        onDone: {
+          target: 'success',
+          actions: assign({ results: ({ event }) => event.output }),
+        },
+      },
+    },
+    success: {},
+    failure: {},
+  },
+});
+```
+
+If the `onError` transition is missing, and the Promise is rejected, the error will throw. However, you can handle all thrown errors for an actor by subscribing an observer object with an `error` function:
+
+```ts
+actor.subscribe({
+  error: (err) => { ... }
+})
+```
+
+## Invoking Callbacks
+
+You can invoke [callback actor logic](./callback-actors) by:
+
+1. Setting up the callback actor logic in the `actors` object of the `setup({ actors: { ... } })` call
+2. Invoking the callback actor logic by its source name (`src`) in the `invoke` property of a state
+
+```ts
+import { setup, fromCallback } from 'xstate';
+
+const machine = setup({
+  actors: {
+    // [!code highlight:3]
+    someCallback: fromCallback(({ input, sendBack, receive }) => {
+      // ...
+    }),
+  },
+}).createMachine({
+  // ...
+  // [!code highlight:6]
+  invoke: {
+    src: 'someCallback',
+    input: {
+      /* ... */
+    },
+  },
+});
+```
+
+Read [callback actor logic](./callback-actors) for more information on callback actors.
+
+## Invoking Observables
+
+You can invoke [observable logic](./observable-actors) by:
+
+1. Setting up the observable logic in the `actors` object of the `setup({ actors: { ... } })` call
+2. Invoking the observable logic by its source name (`src`) in the `invoke` property of a state
+
+```ts
+import { setup, fromObservable } from 'xstate';
+import { interval } from 'rxjs';
+
+const machine = setup({
+  actors: {
+    // [!code highlight:3]
+    someObservable: fromObservable(({ input }: { input: number }) => {
+      return interval(input.ms);
+    }),
+  },
+}).createMachine({
+  // ...
+  // [!code highlight:9]
+  invoke: {
+    src: 'someObservable',
+    input: { ms: 1000 },
+    onSnapshot: {
+      actions: ({ event }) => {
+        console.log(event.snapshot.context); // 1, 2, 3, ...
+      },
+    },
+  },
+});
+```
+
+Read [observable actor logic](./observable-actors) for more information on observable actors.
+
+## Invoking Event Observables
+
+You can invoke [event observables](TODO) by using the `fromEventObservable(...)` actor logic creator. Event observable logic is similar to observable logic in that the parent actor subscribes to the event observable; however, the emitted values of an event observable are expected to be events that are _sent_ to the invoking (parent) actor directly.
+
+```ts
+import { setup, fromEventObservable } from 'xstate';
+
+const mouseClicks = fromEventObservable(/* ... */);
+
+const machine = setup({
+  actors: {
+    mouseClicks,
+  },
+}).createMachine({
+  // ...
+  invoke: {
+    src: 'mouseClicks',
+    // No `onSnapshot` or `onDone` needed; events are sent directly to
+    // the machine actor
+  },
+  on: {
+    // Sent by the event observable actor
+    click: {
+      // ...
+    },
+  },
+});
+```
+
+## Invoking Transitions
+
+You can invoke [transition actor logic](./transition-actors) by:
+
+1. Setting up the transition actor logic in the `actors` object of the `setup({ actors: { ... } })` call
+2. Invoking the transition actor logic by its source name (`src`) in the `invoke` property of a state
+
+```ts
+import { setup, fromTransition } from 'xstate';
+
+const machine = setup({
+  actors: {
+    // [!code highlight:4]
+    someTransition: fromTransition((state, event, { input }) => {
+      // ...
+      return state;
+    }),
+  },
+}).createMachine({
+  // ...
+  // [!code highlight:11]
+  invoke: {
+    src: 'someTransition',
+    input: {
+      /* ... */
+    },
+    onSnapshot: {
+      actions: ({ event }) => {
+        console.log(event.context);
+      },
+    },
+  },
+});
+```
+
+Read [transition actor logic](./transition-actors) for more information on transition actors.
+
+## Invoking Machines
+
+You can invoke [state machine actor logic](./state-machine-actors) by:
+
+1. Setting up the state machine actor logic in the `actors` object of the `setup({ actors: { ... } })` call
+2. Invoking the state machine actor logic by its source name (`src`) in the `invoke` property of a state
+
+```ts
+import { setup } from 'xstate';
+
+const childMachine = setup({
+  /* ... */
+}).createMachine({
+  context: ({ input }) => ({
+    // ...
+  }),
+  // ...
+});
+
+const machine = setup({
+  actors: {
+    // [!code highlight:1]
+    someMachine: childMachine,
+  },
+}).createMachine({
+  // ...
+  // [!code highlight:6]
+  invoke: {
+    src: 'someMachine',
+    input: {
+      /* ... */
+    },
+  },
+});
+```
+
+Read [state machine actor logic](./state-machine-actors) for more information on state machine actors.
+
+## Sending Responses
+
+An invoked actor (or [spawned actor](./spawn)) can _respond_ to another actor; i.e., it can send an event _in response to_ an event sent by another actor. To do so, provide a reference to the sending actor as a custom property on the event object being sent. In the following example, we use `event.sender`, but any name works.
+
+```js
+// Parent
+actions: sendTo('childActor', ({ self }) => ({
+  type: 'ping',
+  // [!code highlight:1]
+  sender: self,
+}));
+
+// Child
+actions: sendTo(
+  // [!code highlight:1]
+  ({ event }) => event.sender,
+  { type: 'pong' },
+);
+```
+
+In the following example, the `'client'` machine below sends the `'CODE'` event to the invoked `'auth-server'` actor, which then responds with a `'TOKEN'` event after 1 second.
+
+```js
+import { createActor, createMachine, sendTo } from 'xstate';
+
+const authServerMachine = createMachine({
+  id: 'server',
+  initial: 'waitingForCode',
+  states: {
+    waitingForCode: {
+      on: {
+        CODE: {
+          // [!code highlight:5]
+          actions: sendTo(
+            ({ event }) => event.sender,
+            { type: 'TOKEN' },
+            { delay: 1000 },
+          ),
+        },
+      },
+    },
+  },
+});
+
+const authClientMachine = createMachine({
+  id: 'client',
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        AUTH: { target: 'authorizing' },
+      },
+    },
+    authorizing: {
+      invoke: {
+        id: 'auth-server',
+        src: authServerMachine,
+      },
+      // [!code highlight:4]
+      entry: sendTo('auth-server', ({ self }) => ({
+        type: 'CODE',
+        sender: self,
+      })),
+      on: {
+        TOKEN: { target: 'authorized' },
+      },
+    },
+    authorized: {
+      type: 'final',
+    },
+  },
+});
+```
+
+Note that by default `sendTo` will send events anonymously, in which case the receiver will not know the source of the event.
+
+<Callout>
+In XState v4, the `respond(...)` action creator was used for this purpose. In XState v5, use `sendTo(...)` instead.
+</Callout>
+
+## Multiple Actors
+
+You can invoke multiple actors by specifying each in an array:
+
+```ts
+invoke: [
+  { id: 'actor1', src: 'someActor' },
+  { id: 'actor2', src: 'someActor' },
+  { id: 'logActor', src: 'logActor' },
+];
+```
+
+Each invocation will create a new instance of that actor, so even if the `src` of multiple actors are the same (e.g., `someActor` above), multiple instances of `someActor` will be invoked.
+
+## Testing
+
+You can test invoked actors by asserting that the parent actor receives expected events from the invoked actor.
+
+```ts
+const machine = setup({
+  actors: {
+    countLogic,
+  },
+}).createMachine({
+  invoke: {
+    src: 'countLogic',
+  },
+});
+```
+
+## Referencing Invoked Actors
+
+Actors can be read on `snapshot.children.<actorId>`. The returned value is an `ActorRef` object, with properties like:
+
+- `id` - the ID of the actor
+- `send()`
+- `getSnapshot()`
+
+```ts
+actor.subscribe({
+  next(snapshot) {
+    console.log(Object.keys(snapshot.children));
+  },
+});
+```
+
+`snapshot.children` is a key-value object where the keys are the actor ID and the value is the `ActorRef`.
+
+## Invoke and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+You should use the `setup({ ... })` API to properly infer types for invoked actor logic.
+
+```ts
+import { setup, fromPromise, assign } from 'xstate';
+
+interface User {
+  id: string;
+  name: string;
+}
+
+const machine = setup({
+  actors: {
+    // [!code highlight:5]
+    fetchUser: fromPromise<User, { userId: string }>(async ({ input }) => {
+      const response = await fetch(`https://example.com/${input.userId}`);
+
+      return response.json();
+    }),
+  },
+}).createMachine({
+  // ...
+  context: {
+    user: null,
+    userId: 42,
+  },
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        editUserDetails: { target: 'loadingUser' },
+      },
+    },
+    loadingUser: {
+      invoke: {
+        // [!code highlight:9]
+        src: 'fetchUser',
+        input: ({ context }) => ({
+          userId: context.userId, // Type enforced to be string
+        }),
+        onDone: {
+          actions: assign({
+            user: ({ event }) => event.output, // Strongly typed as User
+          }),
+        },
+      },
+    },
+  },
+});
+```
+
+Read the documentation on [setting up state machines](./setup) for more information.
+
+## Invoke cheatsheet
+
+### Cheatsheet: invoke an actor
+
+```ts
+import { setup, createActor, fromPromise, assign } from 'xstate';
+
+const fetchUser = (userId: string) =>
+  fetch(`https://example.com/${userId}`).then((response) => response.text());
+
+const userMachine = setup({
+  actors: {
+    getUser: fromPromise(async ({ input }: { input: { userId: string } }) => {
+      const data = await fetchUser(input.userId);
+
+      return data;
+    }),
+  },
+}).createMachine({
+  // …
+  states: {
+    idle: {
+      on: {
+        FETCH: { target: 'loading' },
+      },
+    },
+    loading: {
+      // [!code highlight:13]
+      invoke: {
+        id: 'getUser',
+        src: 'getUser',
+        input: ({ context: { userId } }) => ({ userId }),
+        onDone: {
+          target: 'success',
+          actions: assign({ user: ({ event }) => event.output }),
+        },
+        onError: {
+          target: 'failure',
+          actions: assign({ error: ({ event }) => event.error }),
+        },
+      },
+    },
+    success: {},
+    failure: {
+      on: {
+        RETRY: { target: 'loading' },
+      },
+    },
+  },
+});
+```
+
+### Cheatsheet: invoke an actor on the root of the machine
+
+```ts
+import { createMachine } from 'xstate';
+import { fromEventObservable, fromEvent } from 'rxjs';
+
+const interactiveMachine = createMachine({
+  // [!code highlight:5]
+  invoke: {
+    src: fromEventObservable(
+      () => fromEvent(document.body, 'click') as Subscribable<EventObject>,
+    ),
+  },
+  on: {
+    click: {
+      actions: ({ event }) => console.log(event),
+    },
+  },
+});
+```
+
+### Cheatsheet: invoke multiple actors as an array
+
+```ts
+import { createMachine } from 'xstate';
+
+const vitalsWorkflow = createMachine({
+  states: {
+    CheckVitals: {
+      // [!code highlight:6]
+      invoke: [
+        { src: 'checkTirePressure' /* ... */ },
+        { src: 'checkOilPressure' /* ... */ },
+        { src: 'checkCoolantLevel' /* ... */ },
+        { src: 'checkBattery' /* ... */ },
+      ],
+    },
+  },
+});
+```

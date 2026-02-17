@@ -1,0 +1,245 @@
+---
+title: 'Monitoring Locations'
+description: 'Choose optimal monitoring locations for global coverage and accurate performance insights across all monitor types.'
+sidebarTitle: 'Locations'
+---
+
+Selecting the right monitoring locations ensures accurate uptime monitoring and provides insights into your service's global performance. This guide applies to URL, TCP, and Heartbeat monitors.
+
+## Types of Monitoring Locations
+
+<Columns cols={2}>
+<Card title="Global Locations" icon="globe">
+Pre-configured monitoring points across 20+ locations worldwide
+</Card>
+
+<Card title="Private Locations" icon="shield">
+Your own monitoring infrastructure for internal services
+</Card>
+</Columns>
+
+## Available Global Locations
+
+### North America
+- **US East** (N. Virginia)
+- **US West** (Oregon)
+- **US Central** (Dallas)
+- **Canada Central** (Toronto)
+
+### Europe
+- **EU West** (Ireland)
+- **EU Central** (Frankfurt)
+- **EU North** (Stockholm)
+- **UK South** (London)
+
+### Asia Pacific
+- **Asia Pacific Southeast** (Singapore)
+- **Asia Pacific Northeast** (Tokyo)
+- **Asia Pacific South** (Mumbai)
+- **Asia Pacific East** (Sydney)
+
+### Other Regions
+- **South America** (São Paulo)
+- **Middle East** (Bahrain)
+- **Africa** (Cape Town)
+
+## Location Selection Strategies
+
+### Match Your User Base
+Select locations where your actual users are located to get realistic performance data and user experience insights.
+
+**Global Services:**
+```
+Primary: US East, EU West, Asia Pacific Southeast
+Secondary: US West, EU Central, Asia Pacific Northeast
+```
+
+**Regional Services:**
+```
+North America: US East, US West, Canada Central
+Europe: EU West, EU Central, UK South
+Asia Pacific: AP Southeast, AP Northeast, AP South
+```
+
+### Coverage vs. Cost Balance
+
+<Columns cols={2}>
+<Card title="Essential Coverage" icon="target">
+2-3 strategic locations covering your primary markets
+</Card>
+
+<Card title="Comprehensive Coverage" icon="network-wired">
+5-7 locations providing global reach and redundancy
+</Card>
+</Columns>
+
+**Recommended Starting Points:**
+- **Startup/SMB**: 2-3 locations in primary regions
+- **Growing Business**: 4-5 locations including international
+- **Enterprise**: 6+ locations with private location supplements
+
+## Private Locations
+
+Private locations enable monitoring of internal services and compliance-restricted environments.
+
+### Use Cases
+- **Internal APIs** and microservices
+- **Database servers** and infrastructure components
+- **Services behind firewalls** or VPNs
+- **Compliance environments** with data sovereignty requirements
+- **Development and staging** environments
+
+### Setup Requirements
+1. Deploy Checkly agent in your infrastructure
+2. Configure network access and firewall rules
+3. Register location in Checkly dashboard
+4. Assign monitors to private location
+
+<Note>
+Private locations are available on Team and Enterprise plans. See [Private Locations documentation](/detect/private-locations/overview) for setup details.
+</Note>
+
+## Location-Specific Considerations
+
+### Network Performance Factors
+- **Geographic distance** from your servers
+- **Internet infrastructure quality** in each region
+- **CDN and edge server** distribution
+- **Network routing paths** and peering relationships
+
+### Monitor Type Implications
+
+**URL Monitors:**
+- Test from locations matching your web traffic
+- Consider CDN performance variations
+- Account for regional DNS resolution differences
+
+**TCP Monitors:**
+- Focus on locations with direct network connectivity
+- Consider firewall and security policies
+- Test from regions accessing your infrastructure
+
+**Heartbeat Monitors:**
+- Location affects ping delivery reliability
+- Consider network connectivity from job execution environments
+- Private locations ideal for internal scheduled tasks
+
+## Understanding Multi-Location Results
+
+### Status Aggregation
+- Monitor shows **DOWN** if failing from any location
+- **Partial outages** indicate regional issues
+- **Location-specific failures** help isolate problems
+
+### Performance Analysis
+Different response times across locations are normal and provide valuable insights:
+
+```
+Normal Patterns:
+- Nearby locations: < 200ms
+- Continental: 200-500ms
+- Intercontinental: 500ms+
+
+Investigation Triggers:
+- Single location consistently 2x slower
+- Sudden performance degradation in specific region
+- New locations showing unexpected patterns
+```
+
+## Best Practices
+
+### Initial Setup
+1. **Start with 2-3 strategic locations** in your primary markets
+2. **Include one location near your infrastructure** for baseline performance
+3. **Add international locations** based on user distribution
+4. **Monitor and adjust** based on actual usage patterns
+
+### Ongoing Optimization
+- **Review location performance** monthly
+- **Adjust based on business expansion** into new regions
+- **Consider seasonal traffic patterns** and user behavior
+- **Remove underutilized locations** to optimize costs
+
+### Troubleshooting Location Issues
+
+**Single Location Problems:**
+```yaml
+Symptoms: One location failing while others pass
+Diagnosis:
+  - Check regional network issues
+  - Verify CDN configuration
+  - Test manual connectivity from region
+Resolution: May require infrastructure or routing changes
+```
+
+**Multiple Location Problems:**
+```yaml
+Symptoms: Failures across multiple regions
+Diagnosis:
+  - Check overall service health
+  - Review recent deployments
+  - Verify DNS and CDN status
+Resolution: Likely requires service-level fixes
+```
+
+## Scheduling Strategies by Location
+
+### Parallel Execution
+All locations test simultaneously for fastest issue detection:
+- **Pros**: Immediate global status, fastest alerting
+- **Cons**: Higher server load, increased monitoring costs
+- **Best for**: Critical services requiring immediate detection
+
+### Round-Robin Execution
+Locations test in sequence to distribute load:
+- **Pros**: Reduced server impact, lower costs
+- **Cons**: Slower detection, sequential failure discovery
+- **Best for**: Non-critical services, high-frequency monitoring
+
+## Advanced Location Configuration
+
+### Region-Based Alerting
+Configure different alert behaviors by location:
+
+```yaml
+Critical Regions (US East, EU West):
+  - Immediate alerts on any failure
+  - SMS escalation after 5 minutes
+
+Secondary Regions (Other locations):
+  - Email alerts after 2 consecutive failures
+  - Slack notification after 10 minutes
+```
+
+### Location-Specific Thresholds
+Adjust expectations based on regional characteristics:
+
+```yaml
+US East (Primary datacenter):
+  - Response time threshold: 500ms
+  - Immediate alerting
+
+Asia Pacific (Distant region):
+  - Response time threshold: 1500ms
+  - Allow for higher latency
+```
+
+## Next Steps
+
+<Columns cols={2}>
+<Card title="Alerting Configuration" href="/detect/uptime-monitoring/alerting">
+Set up location-aware alerting and escalation rules
+</Card>
+
+<Card title="Scheduling" href="/detect/uptime-monitoring/scheduling">
+Configure monitoring frequency and timing strategies
+</Card>
+
+<Card title="Private Locations" href="/detect/private-locations/overview">
+Deploy monitoring agents in your own infrastructure
+</Card>
+
+<Card title="Global Locations" href="/detect/uptime-monitoring/locations">
+Complete reference of all available monitoring locations
+</Card>
+</Columns>

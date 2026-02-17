@@ -1,0 +1,21 @@
+--- 
+title: Using Environment Variables
+sidebarTitle: Environment Variables
+---
+
+Use environment variables to test different environments:
+
+```ts Homepage.test.ts
+// In your test file
+test('Homepage loads', async ({ page }) => {
+  const baseUrl = process.env.ENVIRONMENT_URL || 'https://example.com'
+  await page.goto(baseUrl)
+  // ... rest of your test
+})
+```
+
+Run with environment variables:
+
+```bash Terminal
+npx checkly test --env ENVIRONMENT_URL="https://staging.example.com"
+```

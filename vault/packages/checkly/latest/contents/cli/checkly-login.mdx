@@ -1,0 +1,99 @@
+---
+title: checkly login
+description: 'Sign up for a new Checkly account or log in to your existing account.'
+sidebarTitle: 'checkly login'
+---
+
+The `checkly login` command authenticates with Checkly by signing up for a new account or logging in to your existing account.
+
+This command opens a browser window or provides a URL for secure OAuth authentication.
+
+<Accordion title="Prerequisites">
+Before using `checkly login`, ensure you have:
+
+- Checkly CLI installed
+- A web browser available (for OAuth authentication)
+- Internet connection for authentication flow
+
+No existing Checkly account is required - you can sign up during the login process.
+</Accordion>
+
+## Usage
+
+The basic command initiates the login process and authenticates with your Checkly account.
+
+```bash Terminal
+npx checkly login
+```
+
+<Tip>Use environment variables in environments without interactive prompts. See the [Authentication section](/cli/authentication#other-authentication-options) for more info.</Tip>
+
+## Examples
+
+```bash Terminal
+npx checkly login
+
+✔ Do you want to log in or sign up to Checkly? › I want to sign up for a new Checkly account
+✔ Do you want to open a browser window to continue with sign up? … yes
+✔ Which account do you want to use? › Monitoring as Code
+
+Successfully logged in as raccoon@checklyhq.com.
+Welcome to the Checkly CLI.
+```
+
+## Authentication Flow
+
+The login process is interactive and will:
+
+1. **Open your default browser** to the Checkly authentication page
+2. **Prompt for account selection** if you have multiple accounts
+3. **Store authentication tokens** locally for future CLI usage
+4. **Display confirmation** with your account information
+
+### New Users
+
+If you don't have a Checkly account:
+
+1. Click "Sign up" on the authentication page
+2. Complete account registration
+3. Return to the CLI - you'll be automatically logged in
+
+### Existing Users
+
+If you already have an account:
+
+1. Enter your credentials on the authentication page
+2. Complete any two-factor authentication if enabled
+3. Return to the CLI - authentication will complete automatically
+
+## Authentication Storage
+
+After successful login, the CLI stores authentication tokens locally in:
+
+- **macOS**: `~/Library/Preferences/@checkly/cli-nodejs/auth.json`
+- **Linux**: ` ~/.config/@checkly/cli-nodejs/auth.json`
+- **Windows**: `%APPDATA%\@checkly\cli-nodejs\auth.json`
+
+These tokens are encrypted and used for subsequent CLI operations without requiring re-authentication.
+
+## Troubleshooting
+
+### Browser doesn't open automatically
+
+If the authentication browser window doesn't open:
+
+1. Decline to open a new browser window in the CLI dialog
+2. Manually open the displayed URL in your preferred browser
+3. Complete authentication and return to the CLI
+
+### Multiple accounts
+
+If you have access to multiple Checkly accounts, you'll be prompted to select which account to use as the active account for CLI operations.
+
+You can also switch accounts later using [`checkly switch`](/cli/checkly-switch).
+
+## Related Commands
+
+- [`checkly logout`](/cli/checkly-logout) - Sign out of your Checkly account
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information
+- [`checkly switch`](/cli/checkly-switch) - Switch between multiple accounts

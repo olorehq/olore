@@ -1,0 +1,128 @@
+---
+title: bin
+description: 'This page explains how to use the bin function in APL.'
+---
+
+Use the `bin` function to round values down to the nearest multiple of a specified bin size. This function is essential for grouping continuous data into discrete intervals, making it invaluable for time-based aggregations, histogram creation, and data bucketing.
+
+The `bin` function works with numbers, dates, and timespans. When combined with the [summarize operator](/apl/tabular-operators/summarize-operator), it enables powerful time-series analysis by grouping events into fixed intervals.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `bin` command (formerly `bucket`) to group continuous values. APL's `bin` function works similarly but is used as a scalar function within expressions.
+
+<CodeGroup>
+```sql Splunk example
+| bin span=5m _time
+| stats count by _time
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by bin(_time, 5m)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `FLOOR` with division and multiplication to achieve binning. APL's `bin` function provides this capability directly.
+
+<CodeGroup>
+```sql SQL example
+SELECT FLOOR(UNIX_TIMESTAMP(timestamp) / 300) * 300 AS time_bucket, COUNT(*)
+FROM logs
+GROUP BY time_bucket
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by bin(_time, 5m)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+bin(value, bin_size)
+```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `value` | `real`, `datetime`, or `timespan` | The value to round down to the nearest bin boundary. |
+| `bin_size` | `real`, `datetime`, or `timespan` | The size of each bin. Must be a positive value. |
+
+### Returns
+
+The nearest multiple of `bin_size` that is less than or equal to `value`. The return type matches the input type.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Aggregate HTTP requests into 5-minute intervals to analyze traffic patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_count = count(), avg_duration = avg(req_duration_ms) by bin(_time, 5m)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_count%20%3D%20count()%2C%20avg_duration%20%3D%20avg(req_duration_ms)%20by%20bin(_time%2C%205m)%22%7D)
+
+**Output**
+
+| request_count | avg_duration |
+| ------------- | ------------ |
+| 581,330       | 0.8631ms        |
+
+This query groups all HTTP requests into 5-minute windows, providing a time-series view of traffic volume and average response times.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Analyze trace durations by grouping them into 1-minute intervals per service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize span_count = count(), p95_duration = percentile(duration, 95) by bin(_time, 1m), ['service.name']
+| order by span_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20span_count%20%3D%20count()%2C%20p95_duration%20%3D%20percentile(duration%2C%2095)%20by%20bin(_time%2C%201m)%2C%20%5B'service.name'%5D%20%7C%20order%20by%20span_count%20desc%22%7D)
+
+**Output**
+
+| service.name | span_count | p95_duration |
+| ------------------- | ------------ | ---------- |
+| frontend     | 520        | 24.2ms |
+| cart         | 230        | 12.4ms |
+| checkout     | 85         | 10.2ms |
+
+This query creates a per-minute breakdown of span counts and 95th percentile durations for each service.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [bin_auto](/apl/scalar-functions/rounding-functions/bin-auto): Automatically determines bin size based on the query time range. Use `bin` when you need explicit control over the bin size.
+- [floor](/apl/scalar-functions/rounding-functions/floor): Rounds down to the largest integer less than or equal to the input. Use `bin` for rounding to arbitrary multiples.
+- [ceiling](/apl/scalar-functions/rounding-functions/ceiling): Rounds up to the smallest integer greater than or equal to the input. Use `bin` when you need to round down to specific intervals.
+- [summarize](/apl/tabular-operators/summarize-operator): The `bin` function is commonly used within `summarize` for time-based aggregations.

@@ -1,0 +1,153 @@
+---
+title: 'strcat'
+description: 'This page explains how to use the strcat function in APL.'
+---
+
+The `strcat` function concatenates between 1 and 64 string arguments into a single string. Use this function to combine multiple fields, build composite identifiers, or construct formatted messages from log data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you concatenate strings using the `.` operator or the `concat` function. APL's `strcat` provides similar functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval combined=field1."-".field2."-".field3
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend combined = strcat(field1, '-', field2, '-', field3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `CONCAT` to join strings. APL's `strcat` provides the same functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT CONCAT(field1, '-', field2, '-', field3) AS combined FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend combined = strcat(field1, '-', field2, '-', field3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+strcat(arg1, arg2, ..., argN)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| arg1, arg2, ..., argN | any | Yes | Between 1 and 64 expressions to concatenate. Non-string values are converted to strings. |
+
+### Returns
+
+Returns all arguments concatenated into a single string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Build composite keys from multiple fields for unique request identification.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend request_key = strcat(method, '-', status, '-', ['geo.country'])
+| summarize request_count = count() by request_key
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20request_key%20%3D%20strcat(method%2C%20%27-%27%2C%20status%2C%20%27-%27%2C%20%5B%27geo.country%27%5D)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20request_key%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| request_key | request_count |
+|-------------|---------------|
+| GET-200-United States | 3456 |
+| POST-201-United States | 2341 |
+| GET-404-Unknown | 1987 |
+
+This query concatenates HTTP method, status, and country to create composite keys for analyzing request patterns by multiple dimensions.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Build formatted trace identifiers combining service and span information.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend trace_identifier = strcat(['service.name'], ':', kind, ':', trace_id)
+| project _time, trace_identifier, duration
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20trace_identifier%20%3D%20strcat(%5B%27service.name%27%5D%2C%20%27%3A%27%2C%20kind%2C%20%27%3A%27%2C%20trace_id)%20%7C%20project%20_time%2C%20trace_identifier%2C%20duration%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | trace_identifier | duration |
+|-------|------------------|----------|
+| 2024-11-06T10:00:00Z | frontend:server:abc123 | 125ms |
+| 2024-11-06T10:01:00Z | checkout:client:def456 | 234ms |
+
+This query creates formatted trace identifiers by concatenating service name, span kind, and trace ID for comprehensive trace referencing.
+
+</Tab>
+<Tab title="Security logs">
+
+Build security event descriptions combining multiple threat indicators.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend event_description = strcat('Failed ', method, ' request to ', uri, ' from ', id, ' (', ['geo.country'], ')')
+| project _time, event_description, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20event_description%20%3D%20strcat('Failed%20'%2C%20method%2C%20'%20request%20to%20'%2C%20uri%2C%20'%20from%20'%2C%20id%2C%20'%20('%2C%20%5B'geo.country'%5D%2C%20')')%20%7C%20project%20_time%2C%20event_description%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | event_description | status |
+|-------|-------------------|--------|
+| 2024-11-06T10:00:00Z | Failed GET request to /admin from user123 (United States) | 403 |
+| 2024-11-06T10:01:00Z | Failed POST request to /api from user456 (Unknown) | 401 |
+
+This query builds human-readable security event descriptions by concatenating multiple fields into informative alert messages.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [strcat_delim](/apl/scalar-functions/string-functions/strcat-delim): Concatenates strings with a delimiter. Use this when you want consistent separators between all arguments.
+- [split](/apl/scalar-functions/string-functions/split): Splits strings into arrays. Use this to reverse concatenation operations.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces parts of strings. Use this when you need to modify concatenated strings.
+- [format_url](/apl/scalar-functions/string-functions/format-url): Formats URL components. Use this specifically for URL construction rather than general concatenation.
+

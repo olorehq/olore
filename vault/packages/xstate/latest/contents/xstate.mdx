@@ -1,0 +1,182 @@
+---
+title: XState
+slug: '/xstate'
+---
+
+XState is a state management and orchestration solution for JavaScript and TypeScript apps.
+
+It uses [event-driven](transitions) programming, [state machines, statecharts](state-machines-and-statecharts), and the [actor model](actor-model) to handle complex logic in predictable, robust, and visual ways. XState provides a powerful and flexible way to manage application and workflow state by allowing developers to model logic as actors and state machines. It integrates well with React, Vue, Svelte, and other frameworks and can be used in the frontend, backend, or wherever JavaScript runs.
+
+<Callout>
+
+Want to find out more about state machines? [Read our introduction](state-machines-and-statecharts).
+
+</Callout>
+
+## Installation
+
+XState is available on [npm](https://www.npmjs.com/package/xstate):
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install xstate
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install xstate
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add xstate
+```
+
+</Tab>
+</Tabs>
+
+## Create a simple machine
+
+```js
+import { createMachine, assign, createActor } from 'xstate';
+
+const countMachine = createMachine({
+  context: {
+    count: 0,
+  },
+  on: {
+    INC: {
+      actions: assign({
+        count: ({ context }) => context.count + 1,
+      }),
+    },
+    DEC: {
+      actions: assign({
+        count: ({ context }) => context.count - 1,
+      }),
+    },
+    SET: {
+      actions: assign({
+        count: ({ event }) => event.value,
+      }),
+    },
+  },
+});
+
+const countActor = createActor(countMachine).start();
+
+countActor.subscribe((state) => {
+  console.log(state.context.count);
+});
+
+countActor.send({ type: 'INC' });
+// logs 1
+countActor.send({ type: 'DEC' });
+// logs 0
+countActor.send({ type: 'SET', value: 10 });
+// logs 10
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?machineId=89e9d8f1-73d6-4dee-92bc-1796270e2f50&mode=design"
+  title="Simple machine"
+/>
+
+[Check out more cheatsheet examples](cheatsheet).
+
+## Create a more complex machine
+
+```js
+import { createMachine, assign, createActor } from 'xstate';
+
+const textMachine = createMachine({
+  context: {
+    committedValue: '',
+    value: '',
+  },
+  initial: 'reading',
+  states: {
+    reading: {
+      on: {
+        'text.edit': { target: 'editing' },
+      },
+    },
+    editing: {
+      on: {
+        'text.change': {
+          actions: assign({
+            value: ({ event }) => event.value,
+          }),
+        },
+        'text.commit': {
+          actions: assign({
+            committedValue: ({ context }) => context.value,
+          }),
+          target: 'reading',
+        },
+        'text.cancel': {
+          actions: assign({
+            value: ({ context }) => context.committedValue,
+          }),
+          target: 'reading',
+        },
+      },
+    },
+  },
+});
+
+const textActor = createActor(textMachine).start();
+
+textActor.subscribe((state) => {
+  console.log(state.context.value);
+});
+
+textActor.send({ type: 'text.edit' });
+// logs ''
+textActor.send({ type: 'text.change', value: 'Hello' });
+// logs 'Hello'
+textActor.send({ type: 'text.commit' });
+// logs 'Hello'
+textActor.send({ type: 'text.edit' });
+// logs 'Hello'
+textActor.send({ type: 'text.change', value: 'Hello world' });
+// logs 'Hello world'
+textActor.send({ type: 'text.cancel' });
+// logs 'Hello'
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=fa84c2d4-7c42-4f67-8bde-66f972133703"
+  title="more complex machine"
+/>
+
+## Download the XState VS Code extension
+
+<Callout>
+
+The XState VS Code extension does not fully support XState v5 yet.
+
+</Callout>
+
+- [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=statelyai.stately-vscode)
+- [Open VSX Registry](https://open-vsx.org/extension/statelyai/stately-vscode)
+
+[Read more about our developer tools](developer-tools).
+
+## Packages
+
+- 🤖 [xstate](https://github.com/statelyai/xstate/): Core finite state machine and statecharts library + interpreter, including graph traversal and model-based testing utilities
+- ⚛️ [@xstate/react](https://github.com/statelyai/xstate/tree/main/packages/xstate-react): React hooks and utilities for using XState in React applications
+- 💚 [@xstate/vue](https://github.com/statelyai/xstate/tree/main/packages/xstate-vue): Vue composition functions and utilities for using XState in Vue applications
+- 🎷 [@xstate/svelte](https://github.com/statelyai/xstate/tree/main/packages/xstate-svelte): Svelte utilities for using XState in Svelte applications
+- 🥏 [@xstate/solid](https://github.com/statelyai/xstate/tree/main/packages/xstate-solid)	Solid hooks and utilities for using XState in Solid applications
+- 🔍 [@statelyai/inspect](https://github.com/statelyai/inspect)	Inspection utilities for XState
+- 🏪 [@xstate/store](https://github.com/statelyai/xstate/tree/main/packages/xstate-store)	Small library for simple state management

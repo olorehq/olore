@@ -1,0 +1,164 @@
+---
+title: series_stats_dynamic
+description: 'This page explains how to use the series_stats_dynamic function in APL.'
+---
+
+The `series_stats_dynamic` function computes comprehensive statistical measures for a numeric dynamic array (series), returning results in a dynamic object format with named properties. This provides the same statistics as `series_stats` but with more convenient access through property names instead of array indices.
+
+You can use `series_stats_dynamic` when you need statistical summaries with easier property-based access, better code readability, or when integrating with other dynamic data structures. This is particularly useful in complex analytical workflows where referring to statistics by name (`stats.min`, `stats.avg`) is clearer than using array indices.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use multiple `stats` functions and store results as separate fields. In APL, `series_stats_dynamic` provides all statistics in a dynamic object that you can access by property names.
+
+<CodeGroup>
+```sql Splunk example
+... | stats min(value) as min_val, max(value) as max_val, 
+    avg(value) as avg_val, stdev(value) as stdev_val by user
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize values = make_list(req_duration_ms) by id
+| extend stats = series_stats_dynamic(values)
+| extend min_val = stats.min, max_val = stats.max, avg_val = stats.avg
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you calculate statistics separately and work with individual columns. In APL, `series_stats_dynamic` provides all statistics in a single dynamic object with named properties that you can query and transform.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+    user_id,
+    MIN(value) as min_val,
+    MAX(value) as max_val,
+    AVG(value) as avg_val,
+    STDDEV(value) as std_val
+FROM measurements
+GROUP BY user_id;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize values = make_list(req_duration_ms) by id
+| extend stats = series_stats_dynamic(values)
+| extend min_val = stats.min, max_val = stats.max
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_stats_dynamic(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic object containing the following statistical properties:
+
+| Property   | Description                                               |
+| ---------- | --------------------------------------------------------- |
+| `min`      | The minimum value in the input array.                     |
+| `min_idx`  | The first position of the minimum value in the array.     |
+| `max`      | The maximum value in the input array.                     |
+| `max_idx`  | The first position of the maximum value in the array.     |
+| `avg`      | The average value of the input array.                     |
+| `variance` | The sample variance of the input array.                   |
+| `stdev`    | The sample standard deviation of the input array.         |
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_stats_dynamic` to generate comprehensive statistical reports with readable property names.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend stats = series_stats_dynamic(durations)
+| extend performance_score = 100 - (stats.stdev / stats.avg * 100)
+| project id, 
+    min = stats.min,
+    max = stats.max,
+    avg = stats.avg,
+    performance_score
+| take 5
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20stats%20%3D%20series_stats_dynamic(durations)%20%7C%20extend%20performance_score%20%3D%20100%20-%20(stats.stdev%20%2F%20stats.avg%20*%20100)%20%7C%20project%20id%2C%20min%20%3D%20stats.min%2C%20max%20%3D%20stats.max%2C%20avg%20%3D%20stats.avg%2C%20performance_score%20%7C%20take%205%22%7D)
+
+**Output**
+
+| id   | min | max | avg | performance_score |
+| ---- | --- | --- | --- | ----------------- |
+| u123 | 15  | 245 | 95  | 52.4              |
+| u456 | 8   | 189 | 78  | 50.4              |
+
+This query uses property names to access statistics and calculate a custom performance score based on the coefficient of variation.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_stats_dynamic` to build adaptive anomaly detection thresholds with clear, self-documenting property access.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend stats = series_stats_dynamic(durations)
+| extend lower_bound = stats.avg - (2 * stats.stdev)
+| extend upper_bound = stats.avg + (2 * stats.stdev)
+| extend range_ratio = (stats.max - stats.min) / stats.avg
+| project status, 
+    avg_duration = stats.avg,
+    stdev = stats.stdev,
+    lower_bound, 
+    upper_bound, 
+    range_ratio
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20stats%20%3D%20series_stats_dynamic(durations)%20%7C%20extend%20lower_bound%20%3D%20stats.avg%20-%20(2%20*%20stats.stdev)%20%7C%20extend%20upper_bound%20%3D%20stats.avg%20%2B%20(2%20*%20stats.stdev)%20%7C%20extend%20range_ratio%20%3D%20(stats.max%20-%20stats.min)%20%2F%20stats.avg%20%7C%20project%20status%2C%20avg_duration%20%3D%20stats.avg%2C%20stdev%20%3D%20stats.stdev%2C%20lower_bound%2C%20upper_bound%2C%20range_ratio%22%7D)
+
+**Output**
+
+| status | avg_duration | stdev | lower_bound | upper_bound | range_ratio |
+| ------ | ------------ | ----- | ----------- | ----------- | ----------- |
+| 200    | 52           | 12.5  | 27          | 77          | 6.44        |
+| 401    | 450          | 850.2 | -1250.4     | 2150.4      | 19.68       |
+| 500    | 125          | 95.3  | -65.6       | 315.6       | 4.36        |
+
+This query uses named properties to calculate confidence intervals and assess the relative range of values for adaptive security monitoring.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_stats](/apl/scalar-functions/time-series/series-stats): Returns the same statistics as a 7-element array instead of a dynamic object with named properties.
+- [series_max](/apl/scalar-functions/time-series/series-max): Compares two arrays element-wise and returns the maximum values.
+- [series_min](/apl/scalar-functions/time-series/series-min): Compares two arrays element-wise and returns the minimum values.
+- [todynamic](/apl/scalar-functions/conversion-functions/todynamic): Converts values to dynamic type for custom object construction.

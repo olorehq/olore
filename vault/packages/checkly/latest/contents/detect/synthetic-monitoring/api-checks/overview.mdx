@@ -1,0 +1,84 @@
+---
+title: 'API Checks Overview'
+description: 'Monitor API endpoints with comprehensive HTTP request validation, performance testing, and detailed response analysis.'
+sidebarTitle: 'Overview'
+---
+<Tip>
+**Monitoring as Code**: Learn more about the [API Check Construct](/constructs/api-check).
+</Tip>  
+
+<Frame>
+<img 
+  className="block dark:hidden" 
+  src="/images/api-check-light.png" 
+  alt="Light mode interface"
+/>
+<img 
+  className="hidden dark:block" 
+  src="/images/api-check-dark.png" 
+  alt="Dark mode interface"
+/>
+</Frame>
+
+## What are API Checks?
+
+API checks are automated HTTP requests that validate API endpoint functionality by checking status codes, response content, headers, and performance metrics. They simulate real API usage patterns and help catch issues before they impact your users. You can create API checks in the UI, via the [API Check Construct](/constructs/api-check) or by importing your existing Swagger/OpenAPI spec.
+
+**API checks are perfect for:**
+- REST API endpoint monitoring
+- GraphQL API validation
+- Authentication system testing
+- Third-party API dependency monitoring
+- Payment and transaction APIs
+
+<Accordion title="Key capabilities" icon="api">
+- HTTP method support (GET, POST, PUT, DELETE, etc.)
+- Request/response validation
+- JSON schema validation
+- Authentication handling
+- Performance measurement
+- Global monitoring locations
+</Accordion>
+
+<Note>
+If you are looking to monitor complex API flows or data processing, you might want to consider using [Multistep Checks](/detect/synthetic-monitoring/multistep-checks/overview).
+</Note>
+
+
+## How API Checks Work
+
+API checks perform comprehensive endpoint validation:
+
+1. **HTTP Request** - Sends configured requests with headers, body, and authentication
+2. **Response Analysis** - Captures status codes, headers, body content, and timing
+3. **Validation** - Runs assertions against response data and performance metrics
+4. **Performance Tracking** - Measures response times and identifies trends
+5. **Alert Generation** - Notifies teams when endpoints fail or degrade
+
+<Tip>
+API checks are ideal for testing both internal services and external API dependencies your application relies on.
+</Tip>
+
+## API Check Results
+
+API check results will expose key performance and correctness data about the HTTP response received from the target endpoint.
+
+![api check results detail page](/images/docs/images/monitoring/check-results-api.png)
+
+These include:
+
+* The request performed
+* Any assertions that were included in the check
+* All data related to the request and its response, such as:
+  * Response body
+  * Request & response headers
+  * Query params
+  * Check job log
+
+* Timings phases: 
+  * `dns`: Duration of DNS lookup
+  * `tcp`: Duration of TCP connection
+  * `firstByte`: Duration of HTTP server response
+  * `download`: Duration of HTTP download
+
+Learn more in our documentation on [Results](/concepts/results).

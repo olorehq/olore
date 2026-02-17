@@ -1,0 +1,299 @@
+---
+title: 'Pulumi Setup Guide'
+description: 'Detailed setup instructions for Pulumi CLI and Checkly integration'
+sidebarTitle: 'Setup Guide'
+---
+
+
+This guide walks you through the complete setup process for using Pulumi with Checkly, from initial installation to your first deployment.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- **Node.js** (version 14 or higher)
+- **Git** for version control
+- **Checkly account** with API access
+- **Pulumi account** (free tier available)
+
+## Step 1: Install Pulumi CLI
+
+<Steps>
+<Step title="Choose Installation Method">
+Select your preferred installation method based on your operating system and package manager
+</Step>
+
+<Step title="Install Pulumi">
+Run the appropriate installation command for your system
+</Step>
+
+<Step title="Verify Installation">
+Confirm Pulumi CLI is working correctly
+</Step>
+</Steps>
+
+### Installation Options
+
+<CodeGroup>
+```bash install-pulumi-npm
+npm install -g @pulumi/pulumi
+```
+
+```bash install-pulumi-yarn
+yarn global add @pulumi/pulumi
+```
+
+```bash install-pulumi-brew
+brew install pulumi/tap/pulumi
+```
+
+```bash install-pulumi-curl
+curl -fsSL https://get.pulumi.com | sh
+```
+</CodeGroup>
+
+### Verify Installation
+
+```bash verify-installation
+pulumi version
+```
+
+You should see output similar to:
+```
+v3.100.0
+```
+
+## Step 2: Pulumi Account Setup
+
+### Create Account
+
+1. Visit [app.pulumi.com/signup](https://app.pulumi.com/signup)
+2. Sign up with your preferred method (GitHub, GitLab, etc.)
+3. Complete the account verification process
+
+### Generate Access Token
+
+1. Navigate to [app.pulumi.com/account/tokens](https://app.pulumi.com/account/tokens)
+2. Click "Create token"
+3. Give your token a descriptive name (e.g., "Checkly Integration")
+4. Copy the generated token (you won't be able to see it again)
+
+<Tip>
+Store your access token securely. You can use environment variables or a password manager to keep it safe.
+</Tip>
+
+### Login to Pulumi
+
+```bash login-pulumi
+pulumi login
+```
+
+When prompted, paste your access token or press Enter to use browser-based authentication.
+
+Verify your login:
+
+```bash verify-login
+pulumi whoami
+```
+
+## Step 3: Checkly API Configuration
+
+### Get Your Account ID
+
+1. Log into [app.checklyhq.com](https://app.checklyhq.com)
+2. Navigate to **Settings** → **Account** → **General**
+3. Copy your **Account ID**
+
+### Create API Key
+
+1. Go to **Settings** → **User** → **API Keys**
+2. Click "Create API Key"
+3. Give it a descriptive name (e.g., "Pulumi Integration")
+4. Copy the generated API key (starts with `cu_`)
+
+<Warning>
+API keys have full access to your Checkly account. Keep them secure and never commit them to version control.
+</Warning>
+
+## Step 4: Project Setup
+
+### Create Project Directory
+
+```bash create-project
+mkdir my-checkly-monitoring && cd my-checkly-monitoring
+```
+
+### Initialize Pulumi Project
+
+```bash init-pulumi-project
+pulumi new javascript
+```
+
+Follow the prompts:
+- **Project name**: `my-checkly-monitoring` (or your preferred name)
+- **Project description**: `Checkly monitoring infrastructure as code`
+- **Stack name**: `dev` (or your preferred environment name)
+
+### Install Checkly Provider
+
+<CodeGroup>
+```bash install-checkly-npm
+npm install @checkly/pulumi
+```
+
+```bash install-checkly-yarn
+yarn add @checkly/pulumi
+```
+</CodeGroup>
+
+## Step 5: Configure Authentication
+
+### Option 1: Environment Variables (Recommended for Development)
+
+Add to your shell profile (`.bashrc`, `.zshrc`, etc.):
+
+```bash setup-env-vars
+export CHECKLY_ACCOUNT_ID=your_account_id
+export CHECKLY_API_KEY=your_api_key
+```
+
+Reload your shell or source the profile:
+
+```bash reload-shell
+source ~/.bashrc  # or ~/.zshrc
+```
+
+### Option 2: Pulumi Configuration (Recommended for Teams)
+
+```bash setup-pulumi-config
+pulumi config set checkly:apiKey your_api_key --secret
+pulumi config set checkly:accountId your_account_id
+```
+
+<Tip>
+Using Pulumi configuration is better for team environments as it stores settings with your stack and can be shared across team members.
+</Tip>
+
+### Verify Configuration
+
+Test that your credentials are accessible:
+
+```bash verify-env-vars
+echo $CHECKLY_ACCOUNT_ID
+echo $CHECKLY_API_KEY
+```
+
+Or check Pulumi config:
+
+```bash check-pulumi-config
+pulumi config
+```
+
+## Step 6: Create Your First Check
+
+### Update index.js
+
+Replace the contents of `index.js` with:
+
+```javascript index.js
+const checkly = require('@checkly/pulumi')
+
+// Create a simple API check
+new checkly.Check('hello-world-api', {
+  name: 'Hello World API',
+  activated: true,
+  frequency: 10,
+  type: 'API',
+  locations: ['eu-west-1'],
+  tags: ['pulumi', 'example'],
+  request: {
+    method: 'GET',
+    url: 'https://httpbin.org/status/200',
+    assertions: [
+      {
+        source: 'STATUS_CODE',
+        comparison: 'EQUALS',
+        target: '200',
+      },
+    ],
+  },
+  useGlobalAlertSettings: true,
+})
+```
+
+## Step 7: Deploy Your Infrastructure
+
+### Preview Changes
+
+```bash preview-changes
+pulumi preview
+```
+
+This shows you what resources will be created without making changes.
+
+### Deploy
+
+```bash deploy-infrastructure
+pulumi up
+```
+
+When prompted, type `yes` to confirm the deployment.
+
+<Callout type="success" emoji="✅">
+Congratulations! You've successfully set up Pulumi with Checkly and deployed your first monitoring check.
+</Callout>
+
+## Step 8: Verify Deployment
+
+1. Visit your [Checkly dashboard](https://app.checklyhq.com)
+2. Navigate to **Checks**
+3. You should see your new "Hello World API" check
+4. The check should be running and showing as "Passing"
+
+## Next Steps
+
+<Columns cols={2}>
+<Card title="Examples" icon="code" href="/integrations/pulumi/examples">
+Explore more complex examples and configurations
+</Card>
+
+<Card title="Best Practices" icon="shield-check" href="/integrations/pulumi/best-practices">
+Learn best practices for managing monitoring as code
+</Card>
+
+<Card title="CI/CD Integration" icon="git-merge" href="/integrations/pulumi/ci-cd">
+Set up automated deployments in your CI/CD pipeline
+</Card>
+
+<Card title="Troubleshooting" icon="bug" href="/integrations/pulumi/troubleshooting">
+Common issues and solutions
+</Card>
+</Columns>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+<Accordion title="Authentication Errors">
+If you see authentication errors, verify:
+- Your Checkly API key is correct and active
+- Your account ID is correct
+- Environment variables are properly set
+- You're logged into Pulumi (`pulumi whoami`)
+</Accordion>
+
+<Accordion title="Provider Not Found">
+If the Checkly provider isn't found:
+- Ensure you've installed `@checkly/pulumi`
+- Check your `package.json` for the dependency
+- Run `npm install` or `yarn install`
+</Accordion>
+
+<Accordion title="Permission Denied">
+If you get permission errors:
+- Verify your API key has the necessary permissions
+- Check that your account ID is correct
+- Ensure you're using the right Checkly account
+</Accordion>
+</AccordionGroup>

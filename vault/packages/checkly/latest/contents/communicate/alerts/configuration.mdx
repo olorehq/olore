@@ -1,0 +1,286 @@
+---
+title: 'Alert Configuration'
+description: 'Complete guide to configuring alert settings, escalation strategies, retry mechanisms, and threshold alerting in Checkly for optimal incident response.'
+sidebarTitle: 'Configuration'
+---
+
+
+
+Alert configuration controls **when** and **how often** you receive notifications when checks fail, degrade, or recover. Proper configuration minimizes alert fatigue while ensuring critical issues receive immediate attention.
+
+## Configuration Hierarchy
+
+Checkly provides a three-tier configuration system that allows for flexible alert management across your organization:
+<Accordion title="Account Level">
+- Applied to all checks unless overridden
+- Organization-wide defaults
+- Simplifies management at scale
+- Consistent baseline behavior
+</Accordion>
+
+<Accordion title="Group Level">
+- Override account defaults for checks within Groups
+- Team-based alert preferences
+- Service-specific requirements
+- Departmental escalation policies
+</Accordion>
+
+<Accordion title="Check Level">
+- Fine-tune specific check behavior
+- Handle special requirements
+- Debug and testing scenarios
+- Legacy system accommodations
+</Accordion>
+
+<Note>
+
+### Configuration Inheritance
+Understanding how settings cascade through the hierarchy:
+
+1. **Check-level settings** always take highest precedence
+2. **Group-level settings** override account defaults for member checks
+3. **Account-level settings** provide the baseline for all other configurations
+4. **Explicit overrides** can be enabled/disabled at group level
+
+</Note>
+
+## Alert Configuration
+
+### Account-Level
+
+Configure organization-wide defaults that apply to all checks:
+
+<Frame>
+![Account-level alert settings](/images/docs/images/alerting/alert-settings.png)
+</Frame>
+
+
+**Account Settings Benefits:**
+
+- Consistency: Uniform alerting behavior across all monitoring
+- Efficiency: Configure once, apply everywhere
+- Compliance: Meet organizational alerting requirements
+- Scalability: Easy to manage large numbers of checks
+
+
+### Group-Level
+
+Configure alerts for teams and service categories:
+
+![Group-level alert settings](/images/docs/images/alerting/alert-settings-group.png)
+
+<Note>
+#### Group Override
+Configure how group settings interact with individual checks:
+
+**If checked, Group settings override individual check settings**
+- Group settings take precedence
+- Ensures consistency within teams
+- Prevents individual check drift
+- Simplifies management
+
+**If unchecked, individual check settings take precedence**
+- Check-level customization allowed
+- Handle special cases easily
+- Legacy system accommodation
+- Granular control when needed
+
+</Note>
+
+### Check-Level
+
+Fine-tune alerting for specific checks with unique requirements:
+
+<Frame>
+![Check-level alert settings](/images/docs/images/alerting/alert-settings-check.png)
+</Frame>
+
+<Note>
+Start with conservative alert settings and gradually tune based on your team's response patterns and service reliability characteristics. Too many alerts can be worse than too few.
+
+</Note>
+## Escalation Configuration
+
+<Tip>
+**Monitoring as Code**: Learn more about [configuring escalation strategies for your Checkly constructs](/constructs/alert-escalation-policy).
+</Tip>
+
+The escalation box allows you to decide when an alert should be triggered. We give you three options that are applied to all checks:
+
+
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-escalation-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-escalation-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+
+### Run-Based Escalation
+Get alerted when a check has failed a number of times consecutively. We call this a *Run Based* escalation. Note that failed checks retried
+from a different region are not considered "consecutive".
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-run-escalation-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-run-escalation-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+
+**How it works:**
+- Consecutive Failure Counting
+- Counts failed check runs in sequence
+- Resets counter on successful run
+- Cross-location failures count as one run
+- Retries don't count as separate runs
+
+**Best for: Stable Systems**
+- Predictable failure patterns
+- Clear success/failure states
+- Services with known reliability
+- APIs with consistent behavior
+
+
+
+### Time-Based Escalation
+We alert you when a check is still failing after a period of time, regardless of the amount of check runs that are failing.
+This option should mostly be used when checks are run very regularly, i.e. once every minute or five minutes.
+
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-duration-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-duration-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+**How it works:**
+- Monitors failure duration, not count
+- Ideal for high-frequency checks
+- Ignores individual run results
+- Focuses on sustained problems
+
+**Best for: High-Frequency Monitoring**
+- Checks running every 1-5 minutes
+- Services with intermittent issues
+- Rate-limited APIs
+- Network-dependent services
+
+
+### Location-Based Escalation
+This option can be selected in addition to the run or time-based escalation settings and only affect checks running in [parallel](/monitoring/global-locations/#parallel) with two or more locations selected. 
+
+When enabled, alerts will only be sent when the specified percentage of locations are failing. Use this setting to reduce alert noise and fatigue for services that can handle being unavailable from some locations before action is required. 
+
+
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-location-escalation-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-location-escalation-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+**Benefits:**
+  - Reduces false positives from regional issues
+  - Focuses on global service problems
+  - Accommodates CDN and geo-distributed services
+  - Filters out single-location network problems
+
+## Reminder Configuration
+
+Configure follow-up notifications for unresolved incidents.
+
+
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-reminder-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-reminder-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+Checkly automatically manages reminder lifecycle:
+
+<Steps>
+<Step title="Initial Alert Sent">
+Primary alert sent to configured channels when escalation threshold is met
+</Step>
+
+<Step title="Reminder Timer Starts">
+Reminder countdown begins based on configuration
+</Step>
+
+<Step title="Reminder Notifications">
+Follow-up alerts sent at configured intervals
+</Step>
+
+<Step title="Automatic Cancellation">
+All pending reminders cancelled when check recovers
+</Step>
+
+<Step title="Escalation Handling">
+Optional escalation to different teams/channels after maximum reminders
+</Step>
+</Steps>
+
+<Note>
+When a check failure is resolved, we cancel any outstanding reminders so you don't get mixed signals.
+</Note>
+
+## Muting and Temporary Controls
+
+Toggling the "mute" checkbox on a check stops the sending of all alerts but keeps the check running. This is useful when
+your check might be flapping or showing other unpredictable behavior. Just mute the alerts but keep the check going while
+you troubleshoot.
+
+<Frame>
+      <img 
+        className="block dark:hidden" 
+        src="/images/next/alerts-muted-light.png" 
+        alt="Light mode interface"
+      />
+      <img 
+        className="hidden dark:block" 
+        src="/images/next/alerts-muted-dark.png" 
+        alt="Dark mode interface"
+      />
+    </Frame>
+
+
+
+
+<Warning>
+Always test your alert configuration changes in non-production environments first. Failed alert delivery during an actual incident can significantly impact response time.
+</Warning>
+
+<Tip>
+Use Checkly's alert notification log to analyze delivery patterns and identify optimization opportunities. Look for channels with high failure rates or excessive alert volume.
+</Tip>

@@ -1,0 +1,153 @@
+---
+title: 'url_decode'
+description: 'This page explains how to use the url_decode function in APL.'
+---
+
+The `url_decode` function converts a URL-encoded string back to its original format. Use this function to decode query parameters, analyze encoded URIs, or extract readable text from URL-encoded log data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `urldecode`. APL's `url_decode` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval decoded=urldecode(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend decoded = url_decode(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, URL decoding varies by database. APL's `url_decode` provides standardized URL decoding.
+
+<CodeGroup>
+```sql SQL example
+SELECT URL_DECODE(field) AS decoded FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend decoded = url_decode(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+url_decode(encoded_url)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| encoded_url | string | Yes | The URL-encoded string to decode. |
+
+### Returns
+
+Returns the decoded string in regular representation.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Decode URL-encoded query parameters to analyze user search terms and inputs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend decoded_uri = url_decode(uri)
+| where decoded_uri != uri
+| project _time, uri, decoded_uri, method, status
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20decoded_uri%20%3D%20url_decode(uri)%20%7C%20where%20decoded_uri%20!%3D%20uri%20%7C%20project%20_time%2C%20uri%2C%20decoded_uri%2C%20method%2C%20status%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | decoded_uri | method | status |
+|-------|-----|-------------|--------|--------|
+| 2024-11-06T10:00:00Z | /search?q=hello%20world | /search?q=hello world | GET | 200 |
+| 2024-11-06T10:01:00Z | /api?name=John%20Doe | /api?name=John Doe | GET | 200 |
+
+This query decodes URL-encoded URIs to reveal the actual search terms and parameters used by users.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Decode URL-encoded span attributes or metadata.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend encoded_attr = 'service%3Dfrontend%26version%3D1.0'
+| extend decoded_attr = url_decode(encoded_attr)
+| project _time, ['service.name'], encoded_attr, decoded_attr
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20encoded_attr%20%3D%20%27service%253Dfrontend%2526version%253D1.0%27%20%7C%20extend%20decoded_attr%20%3D%20url_decode(encoded_attr)%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20encoded_attr%2C%20decoded_attr%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | service.name | encoded_attr | decoded_attr |
+|-------|--------------|--------------|--------------|
+| 2024-11-06T10:00:00Z | frontend | service%3Dfrontend%26version%3D1.0 | service=frontend&version=1.0 |
+
+This query decodes URL-encoded attributes in traces, making them readable for analysis.
+
+</Tab>
+<Tab title="Security logs">
+
+Decode potentially malicious URL-encoded payloads to identify attack patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend decoded_uri = url_decode(uri)
+| extend has_injection = indexof(decoded_uri, 'select') >= 0 or indexof(decoded_uri, '<script>') >= 0
+| where has_injection
+| project _time, uri, decoded_uri, has_injection, id, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20decoded_uri%20%3D%20url_decode(uri)%20%7C%20extend%20has_injection%20%3D%20indexof(decoded_uri%2C%20'select')%20%3E%3D%200%20or%20indexof(decoded_uri%2C%20'%3Cscript%3E')%20%3E%3D%200%20%7C%20where%20has_injection%20%7C%20project%20_time%2C%20uri%2C%20decoded_uri%2C%20has_injection%2C%20id%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | decoded_uri | has_injection | id | geo.country |
+|-------|-----|-------------|---------------|-------|-------------|
+| 2024-11-06T10:00:00Z | /api?id=1%20union%20select | /api?id=1 union select | true | user123 | Unknown |
+
+This query decodes URL-encoded injection attempts, revealing obfuscated SQL injection or XSS attacks for security analysis.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [url_encode](/apl/scalar-functions/string-functions/url-encode): Encodes strings for URL transmission. Use this to reverse the decoding operation.
+- [parse_url](/apl/scalar-functions/string-functions/parse-url): Parses URLs into components. Use this after url_decode for full URL analysis.
+- [parse_urlquery](/apl/scalar-functions/string-functions/parse-urlquery): Parses URL query strings. Use this with url_decode to extract query parameters.
+- [base64_decode_tostring](/apl/scalar-functions/string-functions/base64-decode-tostring): Decodes Base64 strings. Use this for Base64 encoding rather than URL encoding.
+

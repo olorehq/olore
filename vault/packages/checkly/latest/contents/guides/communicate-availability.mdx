@@ -1,0 +1,165 @@
+---
+title: Communicate User Feature Availability with Status Pages
+description: Learn how Checkly status pages reflect actual user experience through synthetic monitoring, not arbitrary status indicators.
+sidebarTitle: Communicate Feature Availability with Status Pages
+---
+
+Most status pages are disconnected from reality. They show green uptime bars based on server pings and health checks - metrics that tell you nothing about whether users can actually complete a purchase or log in. When infrastructure looks healthy but the checkout flow is broken, those green bars become meaningless.
+
+Checkly status pages go beyond reactive manual updates and infrastructure telemetry. They're powered by synthetic monitoring that simulates real user behavior, so when your status page shows "operational," it means users can actually complete their workflows.
+
+## Where traditional status page setups fall short
+
+Traditional status pages suffer from a fundamental problem: **they communicate infrastructure health, not user experience**. Your servers might report healthy CPU usage while users can't log in because of [an incorrectly used React feature](https://blog.cloudflare.com/deep-dive-into-cloudflares-sept-12-dashboard-and-api-outage/). Your database might show normal query times while users can't search for products. Infrastructure monitoring matters but only tells part of the story.
+
+The disconnect of green status bars and broken user experience erodes trust. Users learn to ignore status pages because they've been burned before by "all systems operational" banners during outages they're actively experiencing.
+
+Outages and bugs are unavoidable. Being transparent and honest about them is what matters and builds trust in your service.
+
+## How Checkly status pages work
+
+[Checkly status pages](/communicate/status-pages/overview) offer everything your current status page provider offers, plus integration with synthetic monitors that validate real user behavior.
+
+When you connect a [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) or [Browser Check](/detect/synthetic-monitoring/browser-checks/overview) that simulates a user logging in, adding items to cart, and completing checkout, your status page reflects whether that entire flow actually works.
+
+Following this approach, **your status page reflects what matters to your users.**
+
+Here's how the pieces fit together:
+
+1. **Synthetic monitors validate behavior** - Playwright Check Suites and Browser Checks use Playwright to simulate user actions. These aren't simple ping tests or infrastructure checks; they're validations of your service's critical user flows in a real browser.
+
+2. **Services represent user-facing capabilities** - You can define services like "Checkout" or "Login" that map to how users think about your application, not your internal architecture.
+
+3. **Incident automation connects the dots** - When a check fails, it can automatically open an incident on the connected service. When the check recovers, the incident resolves.
+
+This means your status page shows what matters: **can users actually use your application?**
+
+## Set up a status page backed by real synthetic monitoring
+
+### Create services that match user expectations
+
+Services should reflect how users perceive your application. Users care about "Login" working, not whether your auth microservice cluster is healthy.
+
+Good service examples:
+- Website
+- User Login
+- Payments
+- Search
+
+Avoid internal naming like `Auth Service v2` or `Primary Database Cluster`.
+
+To create a service:
+
+1. Navigate to **Services** under **Communicate** in the sidebar
+2. Create a new service with a user-friendly name
+
+![Services route showing multiple created services](/images/guides/images/status-pages-user-behavior-1.png)
+
+### Connect synthetic monitors to services
+
+This is where the real behavior validation happens. Each service can be connected to one or more monitors that validate its functionality.
+
+<Note>
+  Incident automation is available on Communicate Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
+</Note>
+
+1. Open your Playwright Check Suite or Browser Check from the home dashboard
+2. Click **Edit** in the check overview page
+3. Click **Settings** and enable **Incident automation**
+4. Fill in the incident name and initial status update
+5. Select which service the incident should be opened on
+6. Save your check
+
+![Incident automation configuration of a Playwright Check Suite](/images/guides/images/status-pages-user-behavior-2.png)
+
+### Create the status page
+
+1. Go to **Status pages** under **Communicate** in the sidebar
+2. Create a new status page
+3. Enter a name for your page
+4. Add cards and assign services to them. Group related services on the same card to show average uptime
+5. Configure domain settings and your status page's appearance
+6. Click **Create status page**
+
+![Status page connecting to user experience services](/images/guides/images/status-pages-user-behavior-3.png)
+
+Your status page now displays real-time availability based on actual user behavior validation.
+
+![Created Checkly Status Page](/images/guides/images/status-pages-user-behavior-4.png)
+
+### Automate everything with Monitoring as Code
+
+Checkly's [Monitoring as Code](/guides/getting-started-with-monitoring-as-code) approach enables you to automate the entire flow of creating status pages, connecting services, and configuring checks.
+
+<Accordion title="View code example">
+
+```ts highlight={10-13,15-25,27-35,44}
+import {
+  Frequency,
+  IncidentTrigger,
+  PlaywrightCheck,
+  StatusPage,
+  StatusPageService,
+} from "checkly/constructs";
+
+// 1. Create a new service to group checks and trigger incidents
+const searchService = new StatusPageService("search-service", {
+  name: "Search Service",
+})
+
+// 2. Create a new status page and connect the service
+new StatusPage("company-status", {
+  name: "User Experience Status",
+  url: "ux-status",
+  cards: [
+    {
+      name: "User Experience",
+      services: [searchService],
+    },
+  ],
+})
+
+// 3. Configure your incident automation
+const searchIncidentTrigger: IncidentTrigger = {
+  service: searchService,
+  severity: "MINOR",
+  name: "Search is down",
+  description:
+    "Some users experience issues with the product search. We're investigating.",
+  notifySubscribers: true,
+}
+
+// 4. Assign your incident automations to checks and monitors
+new PlaywrightCheck("playwright-check-suite", {
+  name: "Search Monitoring",
+  playwrightConfigPath: "../playwright.config.ts",
+  activated: true,
+  pwProjects: ["Search Monitoring"],
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-2"],
+  frequency: Frequency.EVERY_10M,
+  triggerIncident: searchIncidentTrigger,
+})
+```
+
+</Accordion>
+
+## Why this approach works
+
+**A status page backed by synthetic monitoring builds trust because it tells the truth.** When users see "operational," they can trust that the application actually works. When there's an incident, they know about it immediately.
+
+This transparency has practical benefits:
+
+- **Reduced support load** - Users check the status page instead of contacting support
+- **Faster incident response** - Automated incident creation means faster communication
+- **Accurate SLA reporting** - Uptime calculations reflect real user experience
+
+<Tip>[Learn how service uptime is calculated](/communicate/status-pages/overview#service-uptime) with automated incidents.</Tip>
+
+When your status page answers "can I use this?" instead of "are the servers up?", users pay attention.
+
+## Further reading
+
+- [Status Pages Overview](/communicate/status-pages/overview) - Complete reference for status page features
+- [Incident Management](/communicate/status-pages/incidents) - Detailed guide to creating and managing incidents
+- [Subscriber Notifications](/communicate/status-pages/subscriber-notifications) - Set up email notifications for status changes
+- [Anatomy of a Status Page](/learn/incidents/anatomy-of-a-status-page) - What users expect from status pages

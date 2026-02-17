@@ -1,0 +1,268 @@
+---
+title: 'Context'
+---
+
+In XState, `context` is how you store data in a state machine [actor](actors).
+
+The `context` property is available in all states and used to store data relevant to an actor. The `context` object is immutable, so you cannot directly modify it. Instead, for state machine logic, you can use the `assign(...)` action to update `context`.
+
+The `context` property is _optional_; if the state machine only specifies [finite states](finite-states) and no external contextual data, it may not need `context`.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // Initialize the state machine with context
+  context: {
+    feedback: 'Some feedback',
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine);
+
+feedbackActor.subscribe((state) => {
+  console.log(state.context.feedback);
+});
+
+feedbackActor.start();
+// logs 'Some feedback'
+```
+
+## Initial context
+
+Set the initial context of a machine in the `context` property of the machine config:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  context: {
+    feedback: 'Some feedback',
+    rating: 5,
+    // other properties
+  },
+});
+```
+
+The object you pass to `context` will be the initial `context` value for any actor created from this machine.
+
+<Callout>
+
+Do not mutate the `context` object. Instead, you should use the `assign(...)` action to update `context` immutably. If you mutate the `context` object, you may get unexpected behavior, such as mutating the `context` of other actors.
+
+</Callout>
+
+### Lazy initial context
+
+Context can be initialized lazily by passing a function that returns the initial `context` value:
+
+```ts
+const feedbackMachine = createMachine({
+  context: () => ({
+    feedback: 'Some feedback',
+    createdAt: Date.now(),
+  }),
+});
+
+const feedbackActor = createActor(feedbackMachine).start();
+
+console.log(feedbackActor.getSnapshot().context.createdAt);
+// logs the current timestamp
+```
+
+Lazy initial context is evaluated per actor, so each actor will have its own `context` object.
+
+### Input
+
+You can provide input data to a machine’s initial `context` by passing an `input` property to the `createActor(machine, { input })` function and using the `input` property from the first argument in the `context` function:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as {
+      feedback: string;
+      rating: number;
+    },
+    // [!code highlight:3]
+    input: {} as {
+      defaultRating: number;
+    },
+  },
+}).createMachine({
+  // [!code highlight:1]
+  context: ({ input }) => ({
+    feedback: '',
+    // [!code highlight:1]
+    rating: input.defaultRating,
+  }),
+});
+
+const feedbackActor = createActor(feedbackMachine, {
+  // [!code highlight:3]
+  input: {
+    defaultRating: 5,
+  },
+}).start();
+
+console.log(feedbackActor.getSnapshot().context.rating);
+// logs 5
+```
+
+Learn more about [input](input).
+
+## Updating context with `assign(...)`
+
+Use the `assign(...)` action in a transition to update context:
+
+```ts
+import { createMachine, assign, createActor } from 'xstate';
+
+const feedbackMachine = createMachine({
+  context: {
+    feedback: 'Some feedback',
+  },
+  on: {
+    'feedback.update': {
+      actions: assign({
+        feedback: ({ event }) => event.feedback,
+      }),
+    },
+  },
+});
+
+const feedbackActor = createActor(feedbackMachine);
+
+feedbackActor.subscribe((state) => {
+  console.log(state.context.feedback);
+});
+
+feedbackActor.start();
+
+// logs 'Some feedback'
+
+feedbackActor.send({
+  type: 'feedback.update',
+  feedback: 'Some other feedback',
+});
+
+// logs 'Some other feedback'
+```
+
+## Context and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+You can strongly type the `context` of your machine in the `types.context` property of the actor setup..
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  types: {} as {
+    // [!code highlight:4]
+    context: {
+      feedback: string;
+      rating: number;
+    };
+  },
+}).createMachine({
+  // Initial context
+  context: {
+    feedback: '',
+    rating: 5,
+  },
+  entry: ({ context }) => {
+    context.feedback; // string
+    context.rating; // number
+  },
+});
+```
+
+## Context cheatsheet
+
+Use our XState context cheatsheet below to get started quickly.
+
+### Cheatsheet: initial context
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  context: {
+    feedback: '',
+  },
+});
+```
+
+### Cheatsheet: lazy initial context
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  context: () => ({
+    feedback: '',
+    createdAt: Date.now(),
+  }),
+});
+```
+
+### Cheatsheet: updating context with `assign(...)`
+
+```ts
+import { createMachine, assign } from 'xstate';
+
+const machine = createMachine({
+  context: {
+    feedback: '',
+  },
+  on: {
+    'feedback.update': {
+      actions: assign({
+        feedback: ({ event }) => event.feedback,
+      }),
+    },
+  },
+});
+```
+
+### Cheatsheet: input
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const feedbackMachine = setup({
+  types: {
+    context: {} as {
+      feedback: string;
+      rating: number;
+    },
+    // [!code highlight:3]
+    input: {} as {
+      defaultRating: number;
+    },
+  },
+}).createMachine({
+  // [!code highlight:1]
+  context: ({ input }) => ({
+    feedback: '',
+    // [!code highlight:1]
+    rating: input.defaultRating,
+  }),
+});
+
+const feedbackActor = createActor(feedbackMachine, {
+  // [!code highlight:3]
+  input: {
+    defaultRating: 5,
+  },
+}).start();
+```

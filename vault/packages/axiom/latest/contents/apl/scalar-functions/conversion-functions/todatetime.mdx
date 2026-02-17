@@ -1,0 +1,101 @@
+---
+title: todatetime
+description: 'This page explains how to use the todatetime function in APL.'
+---
+
+Use the `todatetime` function to convert various data types to a datetime value. This is helpful when you need to normalize date and time values from different formats or sources into a standard datetime format for comparison, filtering, or time-based analysis.
+
+You typically use `todatetime` when working with date strings, timestamps, or other time representations that need to be converted to datetime format for time-based operations.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `strptime` or `strftime` functions to parse date strings, or `eval` with time functions. In APL, `todatetime` provides a direct conversion function that handles various date and time formats.
+
+<CodeGroup>
+```sql Splunk example
+... | eval timestamp = strptime(date_field, "%Y-%m-%d %H:%M:%S")
+```
+
+```kusto APL equivalent
+... | extend timestamp = todatetime(date_field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CAST(... AS DATETIME)` or `TO_DATE` functions to convert strings to datetime. In APL, `todatetime` provides a simpler way to convert various types to datetime values.
+
+<CodeGroup>
+```sql SQL example
+SELECT CAST('2022-11-13' AS DATETIME) AS date_value FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend date_value = todatetime('2022-11-13')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+todatetime(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to datetime. |
+
+### Returns
+
+If the conversion is successful, the result is a datetime value. If the conversion isn't successful, the result is `null`.
+
+### Conversion behavior
+
+The `todatetime` function converts values based on their type:
+
+- **Integer/Float**: Assumed to be nanoseconds since epoch.
+- **String**: Parsed using the [`dateparse` package](https://github.com/araddon/dateparse), which accepts many common date and time formats. See the [upstream examples](https://raw.githubusercontent.com/araddon/dateparse/master/example/main.go) for supported formats.
+
+## Use case example
+
+Convert date strings from log fields to datetime values for time-based filtering and analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend log_date = todatetime('2024-06-24')
+| extend is_recent = _time >= log_date
+| where is_recent == true
+| project _time, ['uri'], ['status'], log_date
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20log_date%20%3D%20todatetime('2024-06-24')%20%7C%20extend%20is_recent%20%3D%20_time%20%3E%3D%20log_date%20%7C%20where%20is_recent%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'status'%5D%2C%20log_date%22%7D)
+
+**Output**
+
+| _time | uri | status | log_date |
+| ----- | --- | ------ | -------- |
+| Jun 24, 09:28:10 | /api/users | 200 | 2024-06-24T00:00:00Z |
+
+This example converts a date string to a datetime value and uses it for time-based comparisons, enabling precise date filtering in your queries.
+
+## List of related functions
+
+- [totimespan](/apl/scalar-functions/conversion-functions/totimespan): Converts input to timespan. Use `totimespan` for duration values, and `todatetime` for absolute time points.å

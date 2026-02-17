@@ -1,0 +1,157 @@
+---
+title: 'trim_start'
+description: 'This page explains how to use the trim_start function in APL.'
+---
+
+The `trim_start` function removes all leading occurrences of specified characters from a string. Use this function to clean log data, remove leading whitespace or special characters, or standardize string formats by removing unwanted prefixes.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `ltrim` for leading whitespace. APL's `trim_start` provides more flexibility with custom character sets.
+
+<CodeGroup>
+```sql Splunk example
+| eval cleaned=ltrim(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_start(' ', field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `LTRIM` for leading characters. APL's `trim_start` provides similar functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT LTRIM(field) AS cleaned FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cleaned = trim_start(' ', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+trim_start(cutset, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| cutset | string | Yes | A string containing characters to remove from the beginning. |
+| text | string | Yes | The source string to trim. |
+
+### Returns
+
+Returns the source string with all leading characters in the cutset removed.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Remove leading slashes from URIs for consistent path analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = trim_start('/', uri)
+| summarize request_count = count() by cleaned_uri, method
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20cleaned_uri%20%3D%20trim_start(%27%2F%27%2C%20uri)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20cleaned_uri%2C%20method%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_uri | method | request_count |
+|-------------|--------|---------------|
+| api/users | GET | 2341 |
+| api/orders | POST | 1987 |
+| api/products | GET | 1654 |
+
+This query removes leading slashes from URIs, standardizing path formats for consistent grouping and analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Remove environment prefixes from service names for cross-environment analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend cleaned_service = trim_start('prod-dev-staging-', ['service.name'])
+| summarize span_count = count() by cleaned_service
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20cleaned_service%20%3D%20trim_start(%27prod-dev-staging-%27%2C%20%5B%27service.name%27%5D)%20%7C%20summarize%20span_count%20%3D%20count()%20by%20cleaned_service%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| cleaned_service | span_count |
+|-----------------|------------|
+| frontend | 4532 |
+| checkout | 3421 |
+| cart | 2987 |
+
+This query removes common environment prefix characters from service names, enabling aggregation across different deployment environments.
+
+</Tab>
+<Tab title="Security logs">
+
+Remove leading special characters from URIs to detect obfuscated attack patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend cleaned_uri = trim_start('./', uri)
+| extend is_traversal = indexof(cleaned_uri, '..') >= 0
+| where is_traversal
+| project _time, uri, cleaned_uri, is_traversal, id, ['geo.country']
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20cleaned_uri%20%3D%20trim_start('.%2F'%2C%20uri)%20%7C%20extend%20is_traversal%20%3D%20indexof(cleaned_uri%2C%20'..')%20%3E%3D%200%20%7C%20where%20is_traversal%20%7C%20project%20_time%2C%20uri%2C%20cleaned_uri%2C%20is_traversal%2C%20id%2C%20%5B'geo.country'%5D%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | cleaned_uri | is_traversal | id | geo.country |
+|-------|-----|-------------|--------------|-------|-------------|
+| 2024-11-06T10:00:00Z | `./../../etc/passwd` | `../../etc/passwd` | true | user123 | Unknown |
+
+This query cleans leading dot and slash characters to reveal path traversal patterns that might be obfuscated with leading characters.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [trim_end](/apl/scalar-functions/string-functions/trim-end): Removes trailing characters. Use this to trim from the end instead of the beginning.
+- [trim](/apl/scalar-functions/string-functions/trim): Removes both leading and trailing characters. Use this when you need to clean both ends.
+- [trim_start_regex](/apl/scalar-functions/string-functions/trim-start-regex): Removes leading matches using regex. Use this for pattern-based trimming.
+- [replace_string](/apl/scalar-functions/string-functions/replace-string): Replaces strings. Use this when you need to remove characters from anywhere, not just the start.
+

@@ -1,0 +1,157 @@
+---
+title: isascii
+description: 'This page explains how to use the isascii function in APL.'
+---
+
+Use the `isascii` function to check whether a string contains only ASCII characters. It returns `true` if every character in the input string belongs to the ASCII character set (for example, character codes 0–127) and `false` otherwise.
+
+The function is useful in scenarios where you want to detect non-ASCII text in logs, validate inputs for encoding compliance, or identify potential anomalies introduced by copy-pasted foreign characters or malformed input in user-submitted data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t have a direct equivalent to `isascii`. To achieve similar functionality, you typically need to use `match()` or custom regular expressions. In contrast, APL provides `isascii` as a simple built-in function, making the check much more concise and performant.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_ascii=if(match(field, "^[\x00-\x7F]+$"), "true", "false")
+````
+
+```kusto APL equivalent
+datatable(input:string)
+[
+  'hello',
+  'こんにちは'
+]
+| extend is_ascii = isascii(input)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t provide a built-in `isascii` function. You often need to simulate it using regular expressions or character code checks. APL simplifies this with the dedicated `isascii` function.
+
+<CodeGroup>
+```sql SQL example
+SELECT input,
+       CASE WHEN input ~ '^[\x00-\x7F]+$' THEN true ELSE false END AS is_ascii
+FROM my_table;
+```
+
+```kusto APL equivalent
+datatable(input:string)
+[
+  'hello',
+  'こんにちは'
+]
+| extend is_ascii = isascii(input)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isascii(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                                 |
+| ----- | ------ | ------------------------------------------- |
+| value | string | The input string to check for ASCII content |
+
+### Returns
+
+A `bool` value:
+
+- `true` if all characters in `value` are ASCII characters.
+- `false` if any character is outside the ASCII range.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Identify non-ASCII characters in request URIs to detect unusual or malformed traffic.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_ascii_uri = isascii(uri)
+| summarize count() by is_ascii_uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_ascii_uri%20%3D%20isascii(uri)%20%7C%20summarize%20count()%20by%20is_ascii_uri%22%7D)
+
+**Output**
+
+| is_ascii_uri | count_ |
+| -------------- | ----- |
+| true           | 14250 |
+| false          | 130   |
+
+This query flags requests with non-ASCII characters in the `uri` field. These entries can indicate abnormal requests or encoding issues in log data.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Detect non-ASCII span IDs, which could indicate instrumentation bugs or encoding anomalies.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend is_ascii_span_id = isascii(span_id)
+| summarize count() by is_ascii_span_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20is_ascii_span_id%20%3D%20isascii(span_id)%20%7C%20summarize%20count()%20by%20is_ascii_span_id%22%7D)
+
+**Output**
+
+| is_ascii_span_id | count_ |
+| ------------------- | ----- |
+| true                | 28700 |
+| false               | 2     |
+
+This query validates that span IDs in your telemetry traces contain only ASCII characters. Non-ASCII values may hint at bugs or corrupted trace headers.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify requests where user IDs contain non-ASCII characters, which can help detect suspicious or malformed entries.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_ascii_id = isascii(id)
+| summarize count() by is_ascii_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_ascii_id%20%3D%20isascii(id)%20%7C%20summarize%20count()%20by%20is_ascii_id%22%7D)
+
+**Output**
+
+| is_ascii_id | count |
+| ------------- | ----- |
+| true          | 11900 |
+| false         | 350   |
+
+This query detects potentially malicious or malformed user IDs by filtering for non-ASCII values in the `id` field.
+
+</Tab>
+</Tabs>

@@ -1,0 +1,110 @@
+---
+title: "Analyze results"
+description: "Understand how changes to your AI capabilities impact performance, cost, and quality."
+keywords: ["ai engineering", "console", "results", "analysis", "comparison", "baseline"]
+---
+
+After running an evaluation, the CLI provides a link to view results in the Axiom Console:
+
+```
+your-eval-name (your-eval.eval.ts)
+
+  • scorer-one 95.00%
+  • scorer-two 87.50%
+  • scorer-three 100.00%
+
+View full report:
+https://app.axiom.co/:org-id/ai-engineering/evaluations?runId=:run-id
+
+Test Files 1 passed (1)
+Tests 4 passed (4)
+Duration 5.2 s
+```
+
+The evaluation interface helps you answer three core questions:
+1. How well does this configuration perform?
+2. How does it compare to previous versions?
+3. Which tradeoffs are acceptable?
+
+## Compare configurations
+
+To understand the impact of changes, compare evaluation runs to see deltas in accuracy, latency, and cost.
+
+### Using the Console
+
+Run your evaluation before and after making changes, then compare both runs in the Axiom Console:
+
+```bash
+# Run baseline
+axiom eval your-eval-name
+
+# Make changes to your capability (update prompt, switch models, etc.)
+
+# Run again
+axiom eval your-eval-name
+```
+
+The Console shows both runs where you can analyze differences side-by-side.
+
+### Using the baseline flag
+
+For direct CLI comparison, specify a baseline evaluation ID:
+
+```bash
+# Run baseline and note the trace ID from the output
+axiom eval your-eval-name
+
+# Make changes, then run with baseline
+axiom eval your-eval-name --baseline <trace-id>
+```
+
+The CLI output will show deltas for each metric.
+
+<Note>
+The `--baseline` flag expects a trace ID. After running an evaluation, copy the trace ID from the CLI output or Console URL to use as a baseline for comparison.
+</Note>
+
+Example: Switching from `gpt-4o-mini` to `gpt-4o` might show:
+- Accuracy: 85% → 95% (+10%)
+- Latency: 800 ms → 1.6 s (+100%)
+- Cost per run: $0.002 → $0.020 (+900%)
+
+This data helps you decide whether the quality improvement justifies the cost and latency increase for your use case.
+
+## Investigate failures
+
+When test cases fail, click into them to see:
+- The exact input that triggered the failure
+- What your capability output vs what was expected
+- The full trace of LLM calls and tool executions
+
+Look for patterns:
+- Do failures cluster around specific input types?
+- Are certain scorers failing consistently?
+- Is high token usage correlated with failures?
+
+Use these insights to add targeted test cases or refine your capability.
+
+## Experiment with flags
+
+Flags let you test multiple configurations systematically. Run several experiments:
+
+```bash
+# Compare model and retrieval configurations
+axiom eval --flag.model=gpt-4o-mini --flag.retrieval.topK=3
+axiom eval --flag.model=gpt-4o-mini --flag.retrieval.topK=10
+axiom eval --flag.model=gpt-4o --flag.retrieval.topK=3
+axiom eval --flag.model=gpt-4o --flag.retrieval.topK=10
+```
+
+Compare all four runs in the Console to find the configuration that best balances quality, cost, and latency for your requirements.
+
+## Track progress over time
+
+For teams running evaluations regularly (nightly or in CI), the Console shows whether your capability is improving or regressing across iterations.
+
+Compare your latest run against your initial baseline to verify that accumulated changes are moving in the right direction.
+
+## What's next?
+
+To learn how to use flags for experimentation, see [Flags and experiments](/ai-engineering/evaluate/flags-experiments).

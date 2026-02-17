@@ -1,0 +1,302 @@
+---
+title: 'MaintenanceWindow Construct'
+description: 'Learn how to configure maintenance windows with the Checkly CLI.'
+sidebarTitle: 'Maintenance Window'
+---
+
+<Tip>
+Learn more about Maintenance Windows in [the Maintenance Windows documentation](/communicate/maintenance-windows/overview).
+</Tip>
+
+Use Maintenance Windows to schedule planned maintenance periods that prevent your checks from running and triggering alerts during expected downtime.
+
+<CodeGroup>
+
+```ts One-Time Maintenance
+import { MaintenanceWindow } from "checkly/constructs"
+
+new MaintenanceWindow("server-upgrade", {
+  name: "Server Upgrade Maintenance",
+  tags: ["production", "api"],
+  startsAt: new Date("2025-02-15T02:00:00.000Z"),
+  endsAt: new Date("2025-02-15T06:00:00.000Z"),
+})
+```
+
+```ts Recurring Maintenance
+import { MaintenanceWindow } from "checkly/constructs"
+
+new MaintenanceWindow("weekly-backup", {
+  name: "Weekly Database Backup",
+  tags: ["database", "backup"],
+  startsAt: new Date("2025-02-01T03:00:00.000Z"),
+  endsAt: new Date("2025-02-01T04:00:00.000Z"),
+  repeatInterval: 1,
+  repeatUnit: "WEEK",
+  repeatEndsAt: new Date("2025-12-31T23:59:59.000Z"),
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Name of the maintenance window |
+| `startsAt` | `Date` | ✅ | - | Start date and time (ISO 8601 timestamp) |
+| `endsAt` | `Date` | ✅ | - | End date and time (ISO 8601 timestamp) |
+| `tags` | `string[]` | ✅ | - | Tags that filter which checks are affected |
+| `repeatInterval` | `number` | ❌ | - | Repeat interval from the first occurrence |
+| `repeatUnit` | `string` | ❌ | - | Repeat strategy: `'WEEK'` \| `'MONTH'` \| `'YEAR'` |
+| `repeatEndsAt` | `Date` | ❌ | - | When to stop repeating (ISO 8601 timestamp) |
+
+### `MaintenanceWindow` Options
+
+<ResponseField name="name" type="string" required>
+A name for the maintenance window that will be displayed in the Checkly dashboard and used for identification.
+
+Usage:
+
+```ts highlight={2}
+new MaintenanceWindow("my-maintenance", {
+  name: "Weekly Database Backup",
+  /* More options... */
+})
+```
+
+**Use cases**: Window identification, dashboard display, maintenance tracking.
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" required>
+
+Tags that filter which checks are affected by this maintenance window. Checks with ANY of these tags will be paused during the maintenance period to avoid unnecessary alerts.
+
+**Usage:**
+
+```ts highlight={3}
+new MaintenanceWindow("my-maintenance", {
+  name: "API Maintenance",
+  tags: ["api", "backend"],
+  /* More options... */
+})
+```
+
+<Warning>
+Maintenance windows affect ALL checks that have ANY of the specified tags. Be specific with your tags to avoid affecting unintended checks.
+</Warning>
+
+**Use cases**: Service targeting, environment isolation, maintenance scope control.
+</ResponseField>
+
+<ResponseField name="startsAt" type="Date" required>
+Start date and time for the maintenance window in UTC (ISO 8601 timestamp).
+
+**Usage:**
+
+```ts highlight={3}
+new MaintenanceWindow("my-maintenance", {
+  name: "Database Maintenance",
+  startsAt: new Date("2025-02-15T02:00:00.000Z"), // 2 AM UTC
+  /* More options... */
+})
+```
+
+**Use cases**: Scheduled downtime, emergency maintenance, recurring maintenance timing.
+</ResponseField>
+
+<ResponseField name="endsAt" type="Date" required>
+
+End date and time for the maintenance window in UTC (ISO 8601 timestamp).
+
+**Usage:**
+
+```ts highlight={4}
+new MaintenanceWindow("my-maintenance", {
+  name: "Database Maintenance",
+  startsAt: new Date("2025-02-15T02:00:00.000Z"),
+  endsAt: new Date("2025-02-15T06:00:00.000Z"), // 4-hour window
+  /* More options... */
+})
+```
+
+**Use cases**: Maintenance duration control, downtime limitation, schedule coordination.
+</ResponseField>
+
+<ResponseField name="repeatInterval" type="number">
+Repeat interval from the first occurrence. Used with `repeatUnit` to create recurring maintenance windows.
+
+**Usage:**
+
+```ts highlight={3}
+new MaintenanceWindow("recurring-maintenance", {
+  name: "Weekly Maintenance",
+  repeatInterval: 1, // Every 1 week
+  repeatUnit: "WEEK",
+  /* More options... */
+})
+```
+
+**Use cases**: Regular maintenance scheduling, automated recurring downtime, consistent maintenance intervals.
+</ResponseField>
+
+<ResponseField name="repeatUnit" type="string">
+
+Repeat strategy that defines the time unit for recurring maintenance windows (`DAY` | `WEEK` | `MONTH`).
+
+**Usage:**
+
+```ts highlight={4}
+new MaintenanceWindow('recurring-maintenance', {
+  name: "Bi-weekly Maintenance",
+  repeatInterval: 2,
+  repeatUnit: 'WEEK' // Every 2 weeks
+  /* More options... */
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Daily Maintenance
+new MaintenanceWindow("daily-updates", {
+  name: "Daily Database Sync",
+  repeatInterval: 1,
+  repeatUnit: "DAY",
+  startsAt: new Date("2025-02-02T01:00:00.000Z"), // Every Sunday
+  endsAt: new Date("2025-02-02T01:30:00.000Z"),
+  tags: ["db-sync"],
+})
+```
+
+```ts Weekly Maintenance
+new MaintenanceWindow("weekly-updates", {
+  name: "Weekly System Updates",
+  repeatInterval: 1,
+  repeatUnit: "WEEK",
+  startsAt: new Date("2025-02-02T01:00:00.000Z"), // Every Sunday
+  endsAt: new Date("2025-02-02T02:30:00.000Z"),
+  tags: ["updates"],
+})
+```
+
+```ts Monthly Maintenance
+new MaintenanceWindow("monthly-db", {
+  name: "Monthly Database Maintenance",
+  repeatInterval: 1,
+  repeatUnit: "MONTH",
+  startsAt: new Date("2025-02-01T02:00:00.000Z"), // First of each month
+  endsAt: new Date("2025-02-01T05:00:00.000Z"),
+  tags: ["database"],
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Time-based recurrence patterns, maintenance scheduling consistency, automated repetition.
+</ResponseField>
+
+<ResponseField name="repeatEndsAt" type="Date">
+When to stop repeating the maintenance window (ISO 8601 timestamp in UTC). If not specified, the maintenance window will repeat indefinitely.
+
+**Usage:**
+
+```ts highlight={5}
+new MaintenanceWindow("limited-recurring", {
+  name: "Limited Time Maintenance",
+  repeatInterval: 1,
+  repeatUnit: "WEEK",
+  repeatEndsAt: new Date("2025-12-31T23:59:59.000Z"), // Stop at end of year
+  /* More options... */
+})
+```
+
+**Use cases**: Limited-time maintenance periods, project-based scheduling, planned end dates.
+</ResponseField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Database Maintenance">
+    ```ts
+    new MaintenanceWindow("database-maintenance", {
+      name: "Monthly Database Maintenance",
+      tags: ["database", "production"],
+      startsAt: new Date("2025-02-01T02:00:00.000Z"), // First Saturday of month at 2 AM UTC
+      endsAt: new Date("2025-02-01T05:00:00.000Z"), // Ends at 5 AM UTC
+      repeatInterval: 1,
+      repeatUnit: "MONTH",
+      repeatEndsAt: new Date("2025-12-31T23:59:59.000Z"), // Repeat for a year
+    })
+    ```
+  </Tab>
+
+  <Tab title="Weekly System Updates">
+    ```ts
+    new MaintenanceWindow("system-updates", {
+      name: "Weekly System Updates",
+      tags: ["infrastructure", "updates"],
+      startsAt: new Date("2025-02-02T01:00:00.000Z"), // Every Sunday at 1 AM UTC
+      endsAt: new Date("2025-02-02T02:30:00.000Z"), // 1.5 hour window
+      repeatInterval: 1,
+      repeatUnit: "WEEK",
+      repeatEndsAt: new Date("2025-06-01T00:00:00.000Z"), // Repeat until June
+    })
+    ```
+  </Tab>
+
+  <Tab title="Emergency Maintenance">
+    ```ts
+    // For immediate one-time maintenance
+    const now = new Date()
+    const inOneHour = new Date(now.getTime() + 60 * 60 * 1000)
+    const inFourHours = new Date(now.getTime() + 4 * 60 * 60 * 1000)
+
+    new MaintenanceWindow("emergency-fix", {
+      name: "Emergency Security Patch",
+      tags: ["security", "critical"],
+      startsAt: inOneHour, // Start in 1 hour
+      endsAt: inFourHours, // End in 4 hours (no repeat)
+    })
+    ```
+  </Tab>
+
+  <Tab title="Service-Specific Maintenance">
+    ```ts
+    // API service maintenance
+    new MaintenanceWindow("api-maintenance", {
+      name: "API Service Upgrade",
+      tags: ["api", "backend"],
+      startsAt: new Date("2025-02-20T03:00:00.000Z"),
+      endsAt: new Date("2025-02-20T04:00:00.000Z"),
+    })
+
+    // Frontend deployment
+    new MaintenanceWindow("frontend-deployment", {
+      name: "Frontend Deployment",
+      tags: ["frontend", "web"],
+      startsAt: new Date("2025-02-20T04:30:00.000Z"),
+      endsAt: new Date("2025-02-20T05:00:00.000Z"),
+    })
+
+    // Database migration (longer window)
+    new MaintenanceWindow("database-migration", {
+      name: "Database Schema Migration",
+      tags: ["database", "migration"],
+      startsAt: new Date("2025-02-22T01:00:00.000Z"),
+      endsAt: new Date("2025-02-22T07:00:00.000Z"), // 6-hour window
+    })
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<Warning>
+**Tag Matching**: Maintenance windows affect ALL checks that have ANY of the specified tags. Be specific with your tags to avoid affecting unintended checks.
+</Warning>
+
+<Info>
+**Time Zones**: Always use UTC timestamps for consistency across different time zones. Convert your local maintenance times to UTC.
+</Info>

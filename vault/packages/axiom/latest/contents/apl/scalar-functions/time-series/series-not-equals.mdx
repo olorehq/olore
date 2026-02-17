@@ -1,0 +1,167 @@
+---
+title: series_not_equals
+description: 'This page explains how to use the series_not_equals function in APL.'
+---
+
+The `series_not_equals` function compares two numeric arrays element by element and returns a new array of Boolean values. Each element in the output array indicates whether the corresponding elements in the input arrays aren’t equal.
+
+You use this function when you want to detect differences between two time series or arrays of values. It’s particularly useful when analyzing request patterns, response times, or service traces, where identifying mismatches across parallel series matters.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically compare fields directly with the `!=` operator. In APL, `series_not_equals` applies this logic to arrays, returning an array of Boolean values instead of a single Boolean.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_different = if(fieldA != fieldB, 1, 0)
+````
+
+```kusto APL equivalent
+print result = series_not_equals(dynamic([1,2,3]), dynamic([1,5,3]))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, comparisons with `<>` return a single Boolean for each row. APL’s `series_not_equals` function extends this idea to arrays, producing a series of Boolean values instead of a single Boolean.
+
+<CodeGroup>
+```sql SQL example
+SELECT fieldA <> fieldB AS is_different
+FROM my_table
+```
+
+```kusto APL equivalent
+print result = series_not_equals(dynamic([10,20,30]), dynamic([10,25,30]))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_not_equals(series1, series2)
+```
+
+### Parameters
+
+| Parameter | Type            | Description                                                                  |
+| --------- | --------------- | ---------------------------------------------------------------------------- |
+| `series1` | dynamic (array) | The first numeric array to compare.                                          |
+| `series2` | dynamic (array) | The second numeric array to compare. Must have the same length as `series1`. |
+
+### Returns
+
+A dynamic array of Boolean values. Each element is `true` if the corresponding elements in the input arrays aren’t equal, and `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use `series_not_equals` to identify differences in request durations across two groups of HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations1 = make_list(req_duration_ms) by method
+| join (
+    ['sample-http-logs']
+    | summarize durations2 = make_list(req_duration_ms) by method
+) on method
+| extend diff_flags = series_not_equals(durations1, durations2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations1%20%3D%20make_list(req_duration_ms)%20by%20method%20%7C%20join%20(%20%5B'sample-http-logs'%5D%20%7C%20summarize%20durations2%20%3D%20make_list(req_duration_ms)%20by%20method%20)%20on%20method%20%7C%20extend%20diff_flags%20%3D%20series_not_equals(durations1%2C%20durations2)%22%7D)
+
+**Output**
+
+| method | diff_flags         |
+| ------ | ------------------- |
+| GET    | [false,true,false] |
+| POST   | [true,false,true]  |
+
+This query builds two lists of request durations grouped by method, compares them element by element, and returns an array showing where values differ.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can use `series_not_equals` to compare the duration of spans between two services in the same trace.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'frontend'
+| summarize frontend_durations = make_list(duration) by trace_id
+| join (
+    ['otel-demo-traces']
+    | where ['service.name'] == 'checkout'
+    | summarize checkout_durations = make_list(duration) by trace_id
+) on trace_id
+| extend diff_flags = series_not_equals(frontend_durations, checkout_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'frontend'%20%7C%20summarize%20frontend_durations%20%3D%20make_list(duration)%20by%20trace_id%20%7C%20join%20(%20%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'checkout'%20%7C%20summarize%20checkout_durations%20%3D%20make_list(duration)%20by%20trace_id%20)%20on%20trace_id%20%7C%20extend%20diff_flags%20%3D%20series_not_equals(frontend_durations%2C%20checkout_durations)%22%7D)
+
+**Output**
+
+| trace_id | diff_flags   |
+| --------- | ------------- |
+| abc123    | [false,true] |
+| def456    | [true,false] |
+
+This query compares span durations between `frontend` and `checkoutservice` for the same trace and shows where durations differ.
+
+</Tab>
+<Tab title="Security logs">
+
+You can use `series_not_equals` to check if HTTP status codes differ between requests from different countries.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where ['geo.country'] == 'United States'
+| summarize us_statuses = make_list(status) by uri
+| join (
+    ['sample-http-logs']
+    | where ['geo.country'] == 'Germany'
+    | summarize de_statuses = make_list(status) by uri
+) on uri
+| extend diff_flags = series_not_equals(us_statuses, de_statuses)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20%5B'geo.country'%5D%20%3D%3D%20'United%20States'%20%7C%20summarize%20us_statuses%20%3D%20make_list(status)%20by%20uri%20%7C%20join%20(%20%5B'sample-http-logs'%5D%20%7C%20where%20%5B'geo.country'%5D%20%3D%3D%20'Germany'%20%7C%20summarize%20de_statuses%20%3D%20make_list(status)%20by%20uri%20)%20on%20uri%20%7C%20extend%20diff_flags%20%3D%20series_not_equals(us_statuses%2C%20de_statuses)%22%7D)
+
+**Output**
+
+| uri           | diff_flags         |
+| ------------- | ------------------- |
+| /api/login    | [false,true,false] |
+| /api/products | [true,false]       |
+
+This query identifies differences in status codes returned by the same URI when accessed from the US and Germany.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_greater_equals](/apl/scalar-functions/time-series/series-greater-equals): Compares two arrays and returns `true` when elements in the first array are greater than or equal to the second array.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Compares two arrays and returns `true` where the first array element is greater than the second.
+- [series_less](/apl/scalar-functions/time-series/series-less): Compares two arrays and returns `true` where the first array element is less than the second.
+- [series_less_equals](/apl/scalar-functions/time-series/series-less-equals): Compares two arrays and returns `true` where the first array element is less than or equal to the second.

@@ -1,0 +1,140 @@
+---
+title: Android Native Development Kit (NDK)
+sidebar_order: 2
+description: "Learn how to configure the NDK integration."
+---
+
+The Android Native Development Kit (NDK) allows you to implement parts of your app in native code, using languages such as C and C++.
+
+NDK integration is packed with the SDK. The package `sentry-android-ndk` works by bundling Sentry's native SDK, [`sentry-native`](/platforms/native/). As a result, even if a native library in your app causes the crash, Sentry is able to capture it.
+
+You can [disable the NDK integration](#disable-ndk-integration), or use our Sentry Android SDK [without the NDK](#using-the-sdk-without-the-ndk).
+
+## Symbolicate Stack Traces
+
+To symbolicate the stack trace from native code, we need to have access to the debug symbols of your application.
+
+Use the [Sentry Android Gradle Plugin](/platforms/android/configuration/gradle/) to upload the debug symbols and sources automatically.
+
+Alternatively, in case you're not using Gradle, you can upload your `.so` files manually via `sentry-cli`.
+Please check the full documentation on [uploading files](/platforms/android/data-management/debug-files/upload/) to learn more about the upload of the debug symbols.
+
+## Allowing the Compiler to Link Libraries
+
+To use the Android NDK in your native code, include the `sentry-native` NDK libraries so the compiler can link them during the build. Use Android prefab to consume Sentry's prebuilt packages and link them in your `CMakeLists.txt`.
+
+<Alert>
+
+Android prefab support can only be used with Sentry Android SDK version 8.0.0 and above.
+
+</Alert>
+
+Enable prefab and add the sentry-native ndk dependency directly to your module:
+
+```kotlin {filename:app/build.gradle}
+android {
+    buildFeatures {
+        prefab = true
+    }
+}
+
+dependencies {
+    // The version MUST match with the version the Sentry Android SDK is using.
+    // See https://github.com/getsentry/sentry-java/blob/{{@inject packages.version('sentry.java.android', '8.21.1') }}/gradle/libs.versions.toml
+    implementation("io.sentry:sentry-native-ndk:<version>")
+}
+```
+
+Link the pre-built packages with your native code
+
+```text {filename:app/CMakeLists.txt}
+find_package(sentry-native-ndk REQUIRED CONFIG)
+
+target_link_libraries(<app> PRIVATE
+    sentry-native-ndk::sentry-android
+    sentry-native-ndk::sentry
+)
+```
+
+Now you can use the Sentry NDK API just by including the `sentry.h` in your code:
+
+```c
+#include <jni.h>
+#include <android/log.h>
+#include <sentry.h>
+
+#define TAG "sentry-android-demo"
+extern "C" JNIEXPORT jstring JNICALL
+
+Java_io_sentry_demo_NativeDemo_crash(JNIEnv *env, jclass cls) {
+    __android_log_print(ANDROID_LOG_WARN, "", "Capture a message.");
+    sentry_value_t event = sentry_value_new_message_event(
+            /*   level */ SENTRY_LEVEL_INFO,
+            /*  logger */ "custom",
+            /* message */ "Sample message!"
+    );
+    sentry_capture_event(event);
+}
+```
+
+## Disable NDK Integration
+
+You can disable the NDK integration by adding the following to your `AndroidManifest.xml`:
+
+```xml {filename:AndroidManifest.xml}
+<application>
+    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />
+</application>
+```
+
+## Using the SDK without the NDK
+
+You can use Sentry's Android SDK without the Android Native Development Kit (NDK) by either:
+
+- [Disabling the NDK](#disable-ndk-integration)
+- Using `sentry-android-core`, which doesn't contain the NDK and can be used separately instead of `sentry-android`, when adding the dependency. The minimal required API level for `sentry-android-core` is 14.
+
+If you're using our [Gradle plugin](/platforms/android/configuration/gradle/), it'll still pull the NDK integration in as part of the auto-installation feature. To disable it, remove the `sentry-android-ndk` dependency from the app configurations in `app/build.gradle`:
+
+```groovy
+configurations.configureEach {
+  exclude group: "io.sentry", module: "sentry-android-ndk"
+}
+```
+
+```kotlin
+configurations.configureEach {
+  exclude(group = "io.sentry", module = "sentry-android-ndk")
+}
+```
+
+## Troubleshooting
+
+### Missing Debug Images or Unsymbolicated Stack Traces
+
+Unsymbolicated stack traces may be caused by module-caching on the SDK side. Be sure to clear any existing module cache if your modules are loaded dynamically:
+
+```cpp
+// 1. Load a new module
+load_my_module();
+
+// 2. Clear the module cache
+sentry_clear_modulecache();
+```
+
+```kotlin
+// 1. Manually initialize the SDK, 
+// in order to keep a reference to the SDK options
+var optionsRef: SentryAndroidOptions? = null
+SentryAndroid.init(this) { options ->
+    options.dsn = "___PUBLIC_DSN___"
+    // ...
+    optionsRef = options
+}
+
+// 2. Load a new module
+System.loadLibrary("<library>")
+
+// 3. Clear the cache
+optionsRef?.debugImagesLoader?.clearDebugImages()
+```

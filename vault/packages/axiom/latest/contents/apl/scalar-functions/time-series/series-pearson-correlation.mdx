@@ -1,0 +1,170 @@
+---
+title: series_pearson_correlation
+description: 'This page explains how to use the series_pearson_correlation function in APL.'
+---
+
+The `series_pearson_correlation` function calculates the Pearson correlation coefficient between two numeric dynamic arrays (series). This measures the linear relationship between the two series, returning a value between -1 and 1, where 1 indicates perfect positive correlation, -1 indicates perfect negative correlation, and 0 indicates no linear correlation.
+
+You can use `series_pearson_correlation` when you need to measure the strength and direction of linear relationships between time-series datasets. This is particularly useful for identifying related metrics, detecting causal relationships, validating hypotheses about system behavior, or finding leading indicators of performance issues.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would typically need to export data and use external statistical tools to calculate correlation. In APL, `series_pearson_correlation` provides built-in correlation analysis for array data.
+
+<CodeGroup>
+```sql Splunk example
+... | stats list(metric1) as m1, list(metric2) as m2 by group
+... (manual correlation calculation or external tool)
+```
+
+```kusto APL equivalent
+datatable(series1: dynamic, series2: dynamic)
+[
+  dynamic([1, 2, 3, 4, 5]), dynamic([2, 4, 6, 8, 10])
+]
+| extend correlation = series_pearson_correlation(series1, series2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, correlation functions exist but typically operate on row-based data. In APL, `series_pearson_correlation` works directly on array columns, making time-series correlation analysis more straightforward.
+
+<CodeGroup>
+```sql SQL example
+SELECT CORR(metric1, metric2) AS correlation
+FROM measurements
+GROUP BY group_id;
+```
+
+```kusto APL equivalent
+datatable(series1: dynamic, series2: dynamic)
+[
+  dynamic([1, 2, 3, 4, 5]), dynamic([2, 4, 6, 8, 10])
+]
+| extend correlation = series_pearson_correlation(series1, series2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_pearson_correlation(series1, series2)
+```
+
+### Parameters
+
+| Parameter  | Type    | Description                                          |
+| ---------- | ------- | ---------------------------------------------------- |
+| `series1`  | dynamic | A dynamic array of numeric values.                   |
+| `series2`  | dynamic | A dynamic array of numeric values.                   |
+
+### Returns
+
+A numeric value between -1 and 1 representing the Pearson correlation coefficient:
+- `1`: Perfect positive linear correlation
+- `0`: No linear correlation
+- `-1`: Perfect negative linear correlation
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_pearson_correlation` to identify relationships between request durations across different geographic regions, helping understand if performance issues are correlated.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend city1 = iff(['geo.city'] == 'Tokyo', req_duration_ms, 0)
+| extend city2 = iff(['geo.city'] == 'Nagasaki', req_duration_ms, 0)
+| summarize tokyo_times = make_list(city1), nagasaki_times = make_list(city2)
+| extend correlation = series_pearson_correlation(tokyo_times, nagasaki_times)
+| project correlation
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20city1%20%3D%20iff(%5B'geo.city'%5D%20%3D%3D%20'Tokyo'%2C%20req_duration_ms%2C%200)%20%7C%20extend%20city2%20%3D%20iff(%5B'geo.city'%5D%20%3D%3D%20'Nagasaki'%2C%20req_duration_ms%2C%200)%20%7C%20summarize%20tokyo_times%20%3D%20make_list(city1)%2C%20nagasaki_times%20%3D%20make_list(city2)%20%7C%20extend%20correlation%20%3D%20series_pearson_correlation(tokyo_times%2C%20nagasaki_times)%20%7C%20project%20correlation%22%7D)
+
+**Output**
+
+| correlation |
+| ----------- |
+| 0.87        |
+
+This query calculates the correlation between request durations in Tokyo and Nagasaki, revealing if performance issues in one region tend to coincide with issues in another.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_pearson_correlation` to analyze relationships between service latencies, identifying dependencies and bottlenecks.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| extend frontend_dur = iff(['service.name'] == 'frontend', duration_ms, 0)
+| extend checkout_dur = iff(['service.name'] == 'checkout', duration_ms, 0)
+| summarize frontend = make_list(frontend_dur), checkout = make_list(checkout_dur)
+| extend correlation = series_pearson_correlation(frontend, checkout)
+| project correlation
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20extend%20frontend_dur%20%3D%20iff(%5B'service.name'%5D%20%3D%3D%20'frontend'%2C%20duration_ms%2C%200)%20%7C%20extend%20checkout_dur%20%3D%20iff(%5B'service.name'%5D%20%3D%3D%20'checkout'%2C%20duration_ms%2C%200)%20%7C%20summarize%20frontend%20%3D%20make_list(frontend_dur)%2C%20checkout%20%3D%20make_list(checkout_dur)%20%7C%20extend%20correlation%20%3D%20series_pearson_correlation(frontend%2C%20checkout)%20%7C%20project%20correlation%22%7D)
+
+**Output**
+
+| correlation |
+| ----------- |
+| 0.65        |
+
+This query measures the correlation between frontend and checkout service latencies, helping understand if performance of one service affects the other.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_pearson_correlation` to identify relationships between failed authentication attempts and successful requests, detecting potential attack patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend success_count = iff(status == '200', 1, 0)
+| extend failure_count = iff(status == '500', 1, 0)
+| summarize successes = make_list(success_count), failures = make_list(failure_count) by bin(_time, 1h)
+| extend correlation = series_pearson_correlation(successes, failures)
+| project correlation
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20success_count%20%3D%20iff(status%20%3D%3D%20'200'%2C%201%2C%200)%20%7C%20extend%20failure_count%20%3D%20iff(status%20%3D%3D%20'500'%2C%201%2C%200)%20%7C%20summarize%20successes%20%3D%20make_list(success_count)%2C%20failures%20%3D%20make_list(failure_count)%20by%20bin(_time%2C%201h)%20%7C%20extend%20correlation%20%3D%20series_pearson_correlation(successes%2C%20failures)%20%7C%20project%20correlation%22%7D)
+
+**Output**
+
+| correlation |
+| ----------- |
+| -0.45       |
+
+This query analyzes the correlation between successful and failed requests, where a negative correlation might indicate that high failure rates suppress successful requests, potentially signaling an attack.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_magnitude](/apl/scalar-functions/time-series/series-magnitude): Calculates the magnitude of a series. Use when you need vector length instead of correlation.
+- [series_stats](/apl/scalar-functions/time-series/series-stats): Returns comprehensive statistics. Use when you need variance and covariance components separately.
+- [series_subtract](/apl/scalar-functions/time-series/series-subtract): Performs element-wise subtraction. Often used to compute deviations before correlation analysis.
+- [series_multiply](/apl/scalar-functions/time-series/series-multiply): Performs element-wise multiplication. Use for weighted combinations instead of correlation.
+

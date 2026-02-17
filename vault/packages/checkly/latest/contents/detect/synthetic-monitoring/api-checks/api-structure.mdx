@@ -1,0 +1,172 @@
+---
+
+title: 'API Check Structure'
+description: 'Learn how to structure your API checks with Playwright.'
+sidebarTitle: MaC Structure
+---
+<Tip>
+**Monitoring as Code**: Learn more about the [API Check Construct](/constructs/api-check).
+</Tip>
+
+## API Check Test Structure
+
+```typescript
+import { ApiCheck, AssertionBuilder, Frequency } from 'checkly/constructs'
+
+new ApiCheck('user-api-health', {
+  name: 'User API Health Check',
+  frequency: Frequency.EVERY_5M,
+  request: {
+    method: 'GET',
+    url: 'https://api.example.com/v1/users/health',
+    headers: {
+      'Authorization': 'Bearer {{API_TOKEN}}'
+    },
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.responseTime().lessThan(2000),
+      AssertionBuilder.jsonBody('$.status').equals('healthy')
+    ]
+  }
+})
+```
+
+## Request Configuration
+
+### HTTP Methods
+Support for all standard HTTP methods:
+- **GET**: Retrieve data from endpoints
+- **POST**: Create resources or submit data
+- **PUT**: Update existing resources
+- **PATCH**: Partial resource updates
+- **DELETE**: Remove resources
+- **HEAD**: Check resource existence without body
+- **OPTIONS**: Discover allowed methods
+
+### Request Components
+```yaml
+# Example API check configuration
+Method: POST
+URL: https://api.example.com/v1/users
+Headers:
+  Content-Type: "application/json"
+  Authorization: "Bearer {{api_token}}"
+Body: |
+  {
+    "name": "John Doe",
+    "email": "john@example.com"
+  }
+```
+
+### Authentication Support
+- **Bearer Token**: JWT and OAuth token authentication
+- **Basic Auth**: Username/password authentication
+- **API Keys**: Custom header or query parameter authentication
+- **Custom Headers**: Flexible authentication patterns
+
+## Response Validation
+
+### Status Code Assertions
+Validate HTTP response codes:
+```javascript
+// Status code validation
+expect(response.status).to.equal(200)
+expect(response.status).to.be.oneOf([200, 201, 202])
+expect(response.status).to.be.below(400)
+```
+
+### Content Validation
+Validate response content and structure:
+```javascript
+// JSON response validation
+const data = JSON.parse(response.body)
+expect(data.success).to.be.true
+expect(data.user.id).to.be.a('number')
+expect(data.user.email).to.include('@')
+
+// Text content validation
+expect(response.body).to.include('success')
+expect(response.body).to.not.include('error')
+```
+
+### Header Validation
+Check response headers:
+```javascript
+// Header validation
+expect(response.headers['content-type']).to.include('application/json')
+expect(response.headers['cache-control']).to.exist
+expect(response.headers['x-rate-limit-remaining']).to.be.above(0)
+```
+
+### JSON Schema Validation
+Validate complex response structures:
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "name": {"type": "string"},
+    "email": {"type": "string", "format": "email"},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "required": ["id", "name", "email"]
+}
+```
+
+## Advanced Features
+
+### Environment Variables
+Use variables for dynamic content:
+```javascript
+// Reference environment variables
+const baseUrl = process.env.API_BASE_URL
+const apiKey = process.env.API_KEY
+
+// Dynamic request configuration
+const userId = Math.floor(Math.random() * 1000)
+```
+
+### Request Chaining
+Use previous responses in subsequent requests:
+```javascript
+// Setup script - create test user
+const userResponse = await fetch('https://api.example.com/users', {
+  method: 'POST',
+  body: JSON.stringify({
+    name: 'Test User',
+    email: `test+${Date.now()}@example.com`
+  })
+})
+const userData = await userResponse.json()
+process.env.TEST_USER_ID = userData.id
+
+// Main request uses created user ID
+// URL: https://api.example.com/users/{{TEST_USER_ID}}/profile
+```
+
+### GraphQL Support
+Monitor GraphQL APIs:
+```javascript
+// GraphQL query example
+const query = `
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      email
+      profile {
+        avatar
+        bio
+      }
+    }
+  }
+`
+
+// Request body
+{
+  "query": query,
+  "variables": {
+    "id": "123"
+  }
+}
+```

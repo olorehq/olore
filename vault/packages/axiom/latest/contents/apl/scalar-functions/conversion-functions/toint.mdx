@@ -1,0 +1,106 @@
+---
+title: toint, tolong
+description: 'This page explains how to use the toint function in APL.'
+---
+
+Use the `toint` function (or its synonym `tolong`) to convert various data types to an integer (signed 64-bit) value. This is helpful when you need to normalize numeric values from different sources into integer format for mathematical operations, comparisons, or when decimal precision isn’t required.
+
+You typically use `toint` when working with numeric strings, floating-point numbers, or other types that need to be converted to integers for whole-number calculations or when working with integer-based identifiers.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `tonumber` to convert values to numbers, which can be integers or decimals. In APL, `toint` specifically converts to integers, truncating decimal values.
+
+<CodeGroup>
+```sql Splunk example
+... | eval status_code = tonumber(status_string)
+```
+
+```kusto APL equivalent
+... | extend status_code = toint(status_string)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CAST(... AS INT)` or `CAST(... AS INTEGER)` to convert values to integers. In APL, `toint` provides a simpler way to convert to integer values.
+
+<CodeGroup>
+```sql SQL example
+SELECT CAST('456' AS INT) AS status_code FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend status_code = toint('456')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+toint(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to integer. |
+
+### Returns
+
+If the conversion is successful, the result is an integer. If the conversion isn't successful, the result is `null`.
+
+### Conversion behavior
+
+The `toint` function converts values based on their type:
+
+- **Integer**: Returns the value unchanged.
+- **Float**: Truncates to integer.
+- **Boolean**: `true` becomes `1`, `false` becomes `0`.
+- **Datetime**: Converts to nanoseconds since epoch as an integer.
+- **Duration**: Converts to integer nanoseconds.
+- **String**: Parses as a strict integer format (`"+<integer>"` or `"-<integer>"`). Hex values and other formats aren’t supported.
+
+## Use case example
+
+Convert string representations of HTTP status codes to integers for numeric comparisons and filtering.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend status_int = toint(status)
+| extend is_error = status_int >= 400
+| where is_error == true
+| project _time, uri, status, status_int, is_error
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20status_int%20%3D%20toint(status)%20%7C%20extend%20is_error%20%3D%20status_int%20%3E%3D%20400%20%7C%20where%20is_error%20%3D%3D%20true%20%7C%20project%20_time%2C%20uri%2C%20status%2C%20status_int%2C%20is_error%22%7D)
+
+**Output**
+
+| _time | uri | status | status_int | is_error |
+| ----- | --- | ------ | ---------- | -------- |
+| Jun 24, 09:28:10 | /api/users | 404 | 404 | true |
+
+This example converts string status codes to integers, enabling numeric range comparisons to identify error responses.
+
+## List of related functions
+
+- [todouble](/apl/scalar-functions/conversion-functions/todouble): Converts input to real number. Use `todouble` when you need decimal precision, and `toint` when you need whole numbers.
+- [tostring](/apl/scalar-functions/conversion-functions/tostring): Converts input to string. Use `tostring` to convert integers back to strings when needed.

@@ -1,0 +1,235 @@
+---
+title: Event emitter
+---
+
+_Since XState version 5.9.0_
+
+State machines and other types of actor logic in XState have the ability to emit events. This allows external event handlers to be notified of specific events.
+
+With state machines, you can emit events using the `emit(event)` action creator.
+
+```ts
+import { setup, emit } from 'xstate';
+
+const machine = setup({
+  actions: {
+    // [!code highlight:1]
+    emitEvent: emit({ type: 'notification' }),
+  },
+}).createMachine({
+  // ...
+  on: {
+    someEvent: {
+      // [!code highlight:1]
+      actions: { type: 'emitEvent' },
+    },
+  },
+});
+
+const actor = createActor(machine);
+
+// [!code highlight:3]
+actor.on('notification', (event) => {
+  console.log('Notification received!', event);
+});
+
+actor.start();
+
+actor.send({ type: 'someEvent' });
+// Logs:
+// "Notification received!"
+// { type: "notification" }
+```
+
+## Emitting events from actor logic
+
+For promise actors, transition actors, observable actors, and callback actors, you can use the `emit` method from the arguments to emit events.
+
+**Promise actors**
+
+```ts
+import { fromPromise } from 'xstate';
+
+// [!code highlight:1]
+const logic = fromPromise(async ({ emit }) => {
+  // ...
+  // [!code highlight:4]
+  emit({
+    type: 'emitted',
+    msg: 'hello',
+  });
+  // ...
+});
+```
+
+**Transition actors**
+
+```ts
+import { fromTransition } from 'xstate';
+
+// [!code highlight:1]
+const logic = fromTransition((state, event, { emit }) => {
+  // ...
+  // [!code highlight:4]
+  emit({
+    type: 'emitted',
+    msg: 'hello',
+  });
+  // ...
+  return state;
+}, {});
+```
+
+**Observable actors**
+
+```ts
+import { fromObservable } from 'xstate';
+
+// [!code highlight:1]
+const logic = fromObservable(({ emit }) => {
+  // ...
+  // [!code highlight:4]
+  emit({
+    type: 'emitted',
+    msg: 'hello',
+  });
+  // ...
+});
+```
+
+**Callback actors**
+
+```ts
+import { fromCallback } from 'xstate';
+
+// [!code highlight:1]
+const logic = fromCallback(({ emit }) => {
+  // ...
+  // [!code highlight:4]
+  emit({
+    type: 'emitted',
+    msg: 'hello',
+  });
+  // ...
+});
+```
+
+## Emit action creator
+
+The emit action is a special action that _emits_ an event to any external event handlers from state machine logic. The emitted event can be statically or dynamically defined:
+
+```ts
+import { setup, emit } from 'xstate';
+
+const machine = setup({
+  actions: {
+    // [!code highlight:5]
+    // Emitting a statically-defined event
+    emitStaticEvent: emit({
+      type: 'someStaticEvent',
+      data: 42,
+    }),
+
+    // [!code highlight:5]
+    // Emitting a dynamically-defined event based on context
+    emitDynamicEvent: emit(({ context }) => ({
+      type: 'someDynamicEvent',
+      data: context.someData,
+    })),
+  },
+}).createMachine({
+  // ...
+  on: {
+    someEvent: {
+      actions: [{ type: 'emitStaticEvent' }, { type: 'emitDynamicEvent' }],
+    },
+  },
+});
+```
+
+## Event handlers
+
+You can attach event handlers to the actor to listen for emitted events by using `actor.on(event, handler)`:
+
+```ts
+const someActor = createActor(someMachine);
+
+// [!code highlight:4]
+someActor.on('someEvent', (emittedEvent) => {
+  // Handle the emitted event
+  console.log(emittedEvent);
+});
+
+someActor.start();
+```
+
+The `actor.on(…)` method returns a subscription object. You can call `.unsubscribe()` on it to remove the handler:
+
+```ts
+const someActor = createActor(someMachine);
+
+// [!code highlight:4]
+const subscription = someActor.on('someEvent', (emittedEvent) => {
+  // Handle the emitted event
+  console.log(emittedEvent);
+});
+
+someActor.start();
+
+// ...
+
+// [!code highlight:2]
+// Stop listening for events
+subscription.unsubscribe();
+```
+
+## Wildcard event handlers
+
+You can listen for _any_ emitted event by listening for the wildcard `'*'`:
+
+```ts
+const someActor = createActor(someMachine);
+
+actor.on('*', (emitted) => {
+  console.log(emitted); // Any emitted event
+});
+```
+
+The `emitted` event will be typed as the union of all possible events that can be emitted from the machine.
+
+## TypeScript
+
+You can strongly type emitted events by defining the emitted event types in the `types.emitted` property of the `setup(…)` function:
+
+```ts
+import { setup, emit, createActor } from 'xstate';
+
+const machine = setup({
+  types: {
+    // [!code highlight:3]
+    emitted: {} as
+      | { type: 'notification'; message: string }
+      | { type: 'error'; error: Error },
+    // ...
+  },
+}).createMachine({
+  // ...
+  on: {
+    someEvent: {
+      actions: [
+        // [!code highlight:2]
+        // Strongly typed emitted event
+        emit({ type: 'notification', message: 'Hello' }),
+      ],
+    },
+  },
+});
+
+const actor = createActor(machine);
+
+// [!code highlight:4]
+// Strongly typed event handler
+actor.on('notification', (event) => {
+  console.log(event.message); // string
+});
+```

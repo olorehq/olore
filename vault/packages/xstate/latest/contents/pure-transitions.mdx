@@ -1,0 +1,203 @@
+---
+title: Pure transition functions
+---
+
+Pure transition functions allow you to compute the next state and actions of a state machine without creating a live actor or executing any side effects. This is useful for server-side applications, testing, and scenarios where you need to compute state transitions without side effects.
+
+There are two main functions you can use to compute state transitions:
+
+- `initialTransition(machine, input?)`: Returns a tuple of `[initialState, initialActions]` that represents the initial state and any entry actions for a state machine.
+- `transition(machine, state, event)`: Returns a tuple of `[nextState, actions]` that represents the next state and any actions that would be executed during the transition.
+
+```ts
+import { createMachine, initialTransition, transition } from 'xstate';
+
+const machine = createMachine({
+  initial: 'pending',
+  states: {
+    pending: {
+      on: {
+        start: { target: 'started' },
+      },
+    },
+    started: {
+      entry: { type: 'doSomething' },
+    },
+  },
+});
+
+// [!code highlight:5]
+// Get initial state and actions
+const [initialState, initialActions] = initialTransition(machine);
+
+console.log(initialState.value); // 'pending'
+console.log(initialActions); // [{ type: 'doSomething', ... }]
+
+// [!code highlight:7]
+// Get next state and actions
+const [nextState, actions] = transition(machine, initialState, {
+  type: 'start', // The event to send
+});
+
+console.log(nextState.value); // 'started'
+console.log(actions); // [{ type: 'doSomething', ... }]
+```
+
+This pure functional approach offers several benefits:
+
+- **Deterministic**: Same input always produces the same output
+- **Testable**: Easy to test state logic without managing actor lifecycles
+- **Server-friendly**: Perfect for server-side workflows and API endpoints
+- **Debuggable**: Can inspect state changes and actions without side effects
+
+## `initialTransition(machine, input?)`
+
+Returns the initial state and any entry actions for a state machine. If the machine requires `input`, you should pass it as the second argument to `initialTransition`.
+
+```ts
+import { createMachine, initialTransition, transition } from 'xstate';
+
+const machine = createMachine({
+  initial: 'pending',
+  context: ({ input }) => ({
+    count: input.initialCount,
+  }),
+  states: {
+    pending: {
+      on: {
+        start: { target: 'started' },
+      },
+    },
+    started: {
+      entry: { type: 'doSomething' },
+    },
+  },
+});
+
+// [!code highlight:8]
+// Get initial state and actions
+const [initialState, initialActions] = initialTransition(machine, {
+  initialCount: 0,
+});
+
+console.log(initialState.value); // 'pending'
+console.log(initialState.context); // { count: 0 }
+console.log(initialActions); // [{ type: 'doSomething', ... }]
+```
+
+### `transition(machine, state, event)`
+
+Computes the next state and actions given a current state and event.
+
+```ts
+import { createMachine, initialTransition, transition } from 'xstate';
+
+const machine = createMachine({
+  initial: 'pending',
+  states: {
+    pending: {
+      on: {
+        start: { target: 'started' },
+      },
+    },
+    started: {
+      entry: { type: 'doSomething' },
+    },
+  },
+});
+
+// Get initial state and actions
+const [initialState, initialActions] = initialTransition(machine);
+
+// [!code highlight:7]
+// Get next state and actions
+const [nextState, actions] = transition(machine, initialState, {
+  type: 'start', // The event to send
+});
+
+console.log(nextState.value); // 'started'
+console.log(actions); // [{ type: 'doSomething', ... }]
+```
+
+## Actions
+
+Actions represent side effects that would be executed during a transition. The pure functions capture these actions but don't execute them, giving you full control over when and how to handle them.
+
+The primary focus should be on **custom actions** - actions you define in your state machine. These are captured as action objects with `type` and `params`:
+
+```ts
+import { createMachine, setup, transition } from 'xstate';
+
+const machine = setup({
+  actions: {
+    sendEmail: (_, params: { to: string; subject: string }) => {
+      // This won't execute in pure functions
+      console.log(`Sending email to ${params.to}: ${params.subject}`);
+    },
+    updateDatabase: (_, params: { userId: string; data: any }) => {
+      // This won't execute in pure functions
+      console.log(`Updating user ${params.userId}`, params.data);
+    },
+  },
+}).createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        processUser: {
+          target: 'processing',
+          actions: [
+            {
+              type: 'sendEmail',
+              params: ({ event }) => ({
+                to: event.email,
+                subject: 'Processing started',
+              }),
+            },
+            {
+              type: 'updateDatabase',
+              params: ({ event }) => ({
+                userId: event.userId,
+                data: { status: 'processing' },
+              }),
+            },
+          ],
+        },
+      },
+    },
+    processing: {},
+  },
+});
+
+const [initialState] = initialTransition(machine);
+const [nextState, actions] = transition(machine, initialState, {
+  type: 'processUser',
+  userId: '123',
+  email: 'user@example.com',
+});
+
+console.log(actions);
+// [
+//   {
+//     type: 'sendEmail',
+//     params: { to: 'user@example.com', subject: 'Processing started' }
+//   },
+//   {
+//     type: 'updateDatabase',
+//     params: { userId: '123', data: { status: 'processing' } }
+//   }
+// ]
+```
+
+## Resolving Persisted State
+
+When working with persisted state, use `machine.resolveState()` to restore snapshots:
+
+```ts
+// Persist state
+const stateToPersist = JSON.stringify(currentState);
+
+// Later, restore state
+const restoredState = machine.resolveState(JSON.parse(stateToPersist));
+const [nextState, actions] = transition(machine, restoredState, event);
+```

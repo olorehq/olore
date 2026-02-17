@@ -1,0 +1,87 @@
+---
+title: Glossary
+---
+
+This glossary is an alphabetical guide to the most common terms in statecharts and state machines.
+
+<Callout>
+
+Looking for more detailed information on these concepts? [Read the introduction to state machines and statecharts](state-machines-and-statecharts).
+
+</Callout>
+
+## Actions
+
+An [action](actions) is an effect that is executed during a state transition. Actions are “fire-and-forget effects”; once the machine has fired the action, it moves on and forgets the action.
+
+## Actors
+
+When you run a state machine, it becomes an [actor](actors), which is a running process that can receive events, send events, and change its behavior based on the events it receives, which can cause effects outside of the actor.
+
+## After transitions
+
+See [delayed transitions](#delayed-transitions).
+
+## Always transitions
+
+See [eventless transitions](#eventless-transitions).
+
+## Compound states
+
+See [parent and child states](#parent-and-child-states).
+
+## Context
+
+[Context](context) is the place that contextual data is stored in a state machine actor.
+
+## Delayed transitions
+
+[Delayed transitions](delayed-transitions) are transitions that only happen after a specified interval of time. If another event happens before the end of the timer, the transition doesn’t complete. Delayed transitions are labeled “after” and often referred to as “after” transitions.
+
+## Eventless transitions
+
+[Eventless transitions](eventless-transitions) are transitions without events. These transitions are *always* taken after any transition in their state is enabled. No event is necessary to trigger the transition. Eventless transitions are labeled “always” and often referred to as “always” transitions.
+
+## Final state
+
+When a machine reaches the [final state](final-states), it can no longer receive any events, and anything running inside it is canceled and cleaned up. A machine can have multiple final states or no final states.
+
+## Guards
+
+A [guard](guards) is a condition that the machine checks when it goes through an event. If the condition is true, the machine follows the transition to the next state. If the condition is false, the machine follows the rest of the conditions to the next state. Any transition can be a guarded transition.
+
+## History state
+
+A [history state](history-states) returns the parent state to its most recently active child state.
+
+## Initial state
+
+When a state machine starts, it enters the [**initial state**](initial-states) first. A machine can only have one top-level initial state.
+
+## Invoked actors
+
+An [invoked actor](actors) is an actor that can execute its own actions and communicate with the machine. These invoked actors are started in a state and stopped when the state is exited.
+
+## Parallel states
+
+A [parallel state](parallel-states) is a state separated into multiple regions of child states, where each region is active simultaneously.
+
+## Parent and child states
+
+States can contain more states, also known as [child states](parent-states). These child states are only active when the parent state is active. Child states are nested inside their parent states. Parent states are also known as compound states.
+
+## States
+
+A [state](states) describes the status of the machine. A state can be as simple as _active_ and _inactive_. These states are finite; the machine can only move through the pre-defined states. A state machine can only be in one state at a time.
+
+## Statecharts
+
+[Statecharts](state-machines-and-statecharts) are a visual extension to state machines enabling you to model more complex logic, including hierarchy, concurrency, and communication.
+
+## State machines
+
+A [state machine](state-machines-and-statecharts) is a model that describes how the state of a process transitions to another state when an event occurs. State machines make building reliable software easier because they prevent impossible states and undesired transitions. When you run a state machine, it becomes an [actor](actors).
+
+## Transitions and events
+
+A machine moves from state to state through [transitions](transitions). Transitions are caused by events; when an event happens, the machine transitions to the next state. Transitions are “deterministic”; each combination of state and event always points to the same next state.

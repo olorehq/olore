@@ -1,0 +1,257 @@
+---
+title: Parent states
+---
+
+States can contain more states, also known as **child states**. These child states are only active when the parent state is active.
+
+Child states are nested inside their parent states. Parent states are also known as **compound states**.
+
+<Callout>
+
+You can easily visualize and simulate parent and child states in Stately's editor. [Read more about parent states in Stately's editor](/docs/editor-states-and-transitions/#parent-and-child-states).
+
+</Callout>
+
+<Callout>
+
+Watch our ["Parent and child states" video on YouTube](https://www.youtube.com/watch?v=aUhEdeIf_mQ&list=PLvWgkXBB3dd4I_l-djWVU2UGPyBgKfnTQ&index=5) (1m6s).
+
+</Callout>
+
+<EmbedMachine
+  name="Video player"
+  embedURL="https://stately.ai/registry/editor/embed/e13bef2b-bb13-4465-96ac-0bc25340688e?machineId=9ba5377c-aab3-4465-8909-4eea499622fa"
+/>
+
+In the video player above, the _Opened_ state is a parent state to the _Playing_, _Paused_, and _Stopped_ states. These states, their transitions, and their events are nested inside the _Opened_ state.
+
+## Root state
+
+The state machine itself is a parent state! It's the root state, and it's always active.
+
+It's normal to have a state machine that has no other states. This is useful for modeling a simple state machine that only handles events by executing actions in transitions.
+
+Here is an example of a simple counting machine with `increment`, `decrement`, and `reset` events, and no states, other than the implicit top-level root state:
+
+```ts
+import { createMachine, assign } from 'xstate';
+
+const countingMachine = createMachine({
+  id: 'counting',
+  on: {
+    increment: {
+      actions: assign({ count: ({ context }) => context.count + 1 }),
+    },
+    decrement: {
+      actions: assign({ count: ({ context }) => context.count - 1 }),
+    },
+    reset: {
+      actions: assign({ count: 0 }),
+    },
+  },
+  // No child states!
+});
+```
+
+## Initial state
+
+The [initial state](initial-states) of a parent state is the state that is entered when the parent state is entered. Parent states _must_ have an initial states.
+
+You specify the initial state via the `initial` property of the parent state, which is the key of the initial state in the `states` object:
+
+```ts
+import { createMachine } from 'xstate';
+
+const feedbackMachine = createMachine({
+  // [!code highlight:1]
+  initial: 'question',
+  states: {
+    // [!code highlight:3]
+    question: {
+      // ...
+    },
+    form: {
+      // ...
+    },
+    thanks: {
+      // ...
+    },
+  },
+});
+```
+
+Even if the parent state is never directly targeted and its child states are instead targeted, specifying the initial state in the `.initial` property is required. In this case, the `.initial` property can be any of the child states.
+
+## Transitions on parent states
+
+A transition that targets a parent state will enter the parent state and its initial state. If that initial state is a parent state, then that state's initial state will be entered, and so on.
+
+When an event is received, transitions on the deepest child nodes are checked first to see if any of them are enabled by that event. If no transitions are enabled, then transitions on the parent state are checked. If no transitions on the parent state are enabled, then transitions on the parent's parent state is checked, and so on.
+
+Transitions on a parent state can target child (or descendent) states. This is useful for modeling a transition that should go to a specific child state regardless of which child state is currently active.
+
+Transitions on a child state can target the parent state, though this is not common. A transition from a child state to its parent (or ancestor) state will also enter the parent state's initial state.
+
+## Child final states
+
+When a child final state of a parent state is reached, that parent state is considered "done". The `onDone` transition of that parent state is automatically taken.
+
+```ts
+import { createMachine } from 'xstate';
+
+const coffeeMachine = createMachine({
+  initial: 'preparation',
+  states: {
+    preparation: {
+      initial: 'weighing',
+      states: {
+        weighing: {
+          on: {
+            weighed: {
+              target: 'grinding',
+            },
+          },
+        },
+        grinding: {
+          on: {
+            ground: 'ready',
+          },
+        },
+        // [!code highlight:4]
+        ready: {
+          // Child final state of parent state 'preparation'
+          type: 'final',
+        },
+      },
+      // [!code highlight:4]
+      // Transition will be taken when child final state is reached
+      onDone: {
+        target: 'brewing',
+      },
+    },
+    brewing: {
+      // ...
+    },
+  },
+});
+```
+
+## Modeling
+
+When designing state machines with parent states, follow these best practices:
+
+### Start Flat, Then Nest
+
+- Begin with a flat state structure and only introduce parent states when patterns emerge
+- Avoid premature abstraction - let the state machine's behavior guide the structure
+- Refactor to parent states when you notice repeated patterns or common behaviors
+
+### Common Patterns for Parent States
+
+- **Shared Transitions**: When multiple states share the same outgoing transitions, consider grouping them under a parent state
+- **Sub-processes**: Use parent states to model distinct sub-processes or phases of your application
+- **Common Entry/Exit**: If multiple states share entry or exit actions, they might belong in the same parent state
+- **State Groups**: Group related states that represent different aspects of the same feature or component
+
+### Parent State Design Tips
+
+- Keep the hierarchy as shallow as possible - deep nesting can make the state machine harder to understand
+- Each parent state should have a clear, single responsibility
+- Use descriptive names that reflect the parent state's purpose
+- Consider using parallel states for truly independent sub-processes
+- Document the purpose of each parent state with comments
+
+### When to Avoid Parent States
+
+- When states don't share any common behavior or transitions
+- When the hierarchy would make the state machine more complex without adding value
+- When the states represent completely independent features
+
+### Example: Form Validation
+
+```ts
+import { createMachine } from 'xstate';
+
+const formMachine = createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        start: { target: 'validating' },
+      },
+    },
+    validating: {
+      initial: 'checking',
+      states: {
+        checking: {
+          on: {
+            valid: { target: 'success' },
+            invalid: { target: 'error' },
+          },
+        },
+        success: {
+          type: 'final',
+        },
+        error: {
+          on: {
+            retry: { target: 'checking' },
+          },
+        },
+      },
+      onDone: { target: 'submitted' },
+    },
+    submitted: {
+      type: 'final',
+    },
+  },
+});
+```
+
+In this example, the `validating` parent state groups related states that handle the validation process, sharing common transitions and representing a clear sub-process.
+
+## Parent states cheatsheet
+
+### Cheatsheet: creating parent states
+
+```ts
+import { createMachine } from 'xstate';
+
+// The machine is the root-level parent state
+const machine = createMachine({
+  // Initial child state of the machine
+  initial: 'parent',
+  states: {
+    parent: {
+      // Initial child state of the parent state
+      initial: 'child1',
+      states: {
+        child1: {
+          on: {
+            // Targeting a sibling
+            toSibling: {
+              target: 'child2',
+            },
+          },
+        },
+        child2: {
+          initial: 'grandchild1',
+          states: {
+            grandchild1: {},
+            grandchild2: {},
+          },
+        },
+      },
+      on: {
+        // Targeting a child
+        toChild: {
+          target: '.child1',
+        },
+        // Targeting a grandchild
+        toGrandchild: {
+          target: '.child2.grandchild2',
+        },
+      },
+    },
+  },
+});
+```

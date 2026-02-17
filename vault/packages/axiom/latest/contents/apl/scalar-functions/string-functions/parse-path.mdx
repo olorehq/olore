@@ -1,0 +1,103 @@
+---
+title: parse_path
+description: 'This page explains how to use the parse_path function in APL.'
+---
+
+Use the `parse_path` function to extract structured components from file paths, URIs, or URLs in your log and trace data. This function is useful when you want to decompose a full path into individual segments such as the directory, filename, extension, or query parameters for easier filtering, aggregation, or analysis.
+
+You typically use `parse_path` in log analysis, OpenTelemetry traces, and security investigations to understand which resources are being accessed, identify routing patterns, or isolate endpoints with high error rates. It simplifies complex string parsing tasks and helps you normalize paths for comparisons and reporting.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, path or URL parsing often involves a combination of `spath`, `rex`, and `spath` field access logic. You typically write regular expressions or JSONPath selectors manually.
+
+In APL, `parse_path` handles common URL and path structures for you automatically. It returns a dynamic object with fields like `directory`, `basename`, `extension`, `query`, and others.
+
+<CodeGroup>
+```sql Splunk example
+... | rex field=uri "(?<endpoint>\/api\/v1\/[^\?]+)"
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend path_parts = parse_path(uri)
+| extend endpoint = path_parts.directory
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a built-in function for parsing structured paths. You often use a combination of `SUBSTRING`, `CHARINDEX`, or user-defined functions.
+
+APL simplifies this task with `parse_path`, which returns a structured object from a URI or file path, removing the need for manual string manipulation.
+
+<CodeGroup>
+```sql SQL example
+SELECT SUBSTRING(uri, 1, CHARINDEX('/', uri)) AS directory FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend directory = parse_path(uri).directory
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_path(source)
+```
+
+### Parameters
+
+| Name   | Type   | Description                                          |
+| ------ | ------ | ---------------------------------------------------- |
+| source | string | A string representing a path, file URI, or full URL. |
+
+### Returns
+
+Returns a dynamic object with the following fields:
+
+- Scheme
+- RootPath
+- DirectoryPath
+- DirectoryName
+- Filename
+- Extension
+- AlternateDataStreamName
+
+## Use case example
+
+Extract endpoint directories and file extensions from HTTP request URIs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend path_parts = parse_path(uri)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20path_parts%20%3D%20parse_path(uri)%20%7C%20project%20_time%2C%20path_parts%22%7D)
+
+**Output**
+
+| _time            | path_parts                                                                                                                                                                                             |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Jun 11, 10:39:16 | \{   "Filename": "users",   "RootPath": "",   "Scheme": "",   "AlternateDataStream": "",   "DirectoryName": "messages",   "DirectoryPath": "/api/v1/messages",   "Extension": "" \}                |
+| Jun 11, 10:39:16 | \{   "Scheme": "",   "AlternateDataStream": "",   "DirectoryName": "background",   "DirectoryPath": "/api/v1/textdata/background",   "Extension": "",   "Filename": "change",   "RootPath": "" \}   |
+| Jun 11, 10:39:16 | \{   "Filename": "users",   "RootPath": "",   "Scheme": "",   "AlternateDataStream": "",   "DirectoryName": "textdata",   "DirectoryPath": "/api/v1/textdata",   "Extension": "" \}                      |
+
+This query helps you identify which directories and file types receive the most traffic.

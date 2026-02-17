@@ -1,0 +1,44 @@
+---
+title: 'Discord notifier'
+description: 'This page explains how to create and configure a Discord notifier.'
+sidebarTitle: Discord
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+Use a Discord notifier to notify specific channels in your Discord server.
+
+To create a Discord notifier, choose one of the following methods:
+
+- [Create Discord notifier with a token](#create-discord-notifier-with-token)
+- [Create Discord notifier with a webhook URL](#create-discord-notifier-with-webhook)
+
+## Create Discord notifier with token
+
+In Discord, create a token and get the channel ID:
+
+1. Go to [Discord .dev](https://discord.com/developers/applications) and create a new app.
+1. Click **Bot > Add Bot > Reset Token** to get your Discord token.
+1. Click **OAuth2 > URL Generator**, check the Bot scope and the Send Messages permission.
+1. Open the generated URL to add the bot to your server.
+1. Click **User Settings > Advanced**, and then enable developer mode.
+1. Right-click a channel, and then click **Copy ID**.
+1. Ensure the **Discord Bot** has the proper allow channel access permissions.
+
+In Axiom:
+
+1. Click the **Monitors** tab, and then click **Manage notifiers** on the right.
+1. Click **New notifier** on the top right.
+1. Name your notifier.
+1. Click **Discord**.
+1. Enter the token you have previously generated and the channel ID.
+1. Click **Create**.
+
+### Create Discord notifier with webhook
+
+1. In Discord, generate a webhook. For more information, see the [Discord documentation](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
+1. In Axiom, click the **Monitors** tab, and then click **Manage notifiers** on the right.
+1. Click **New notifier** on the top right.
+1. Name your notifier.
+1. Click **Discord Webhook**.
+1. Enter the webhook URL you have previously generated.
+1. Click **Create**.

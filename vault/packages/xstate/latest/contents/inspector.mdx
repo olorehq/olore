@@ -1,0 +1,133 @@
+---
+title: Inspector
+---
+
+# Stately Inspector
+
+Stately Inspector is a tool that allows you to inspect your application’s state visually. It primarily works with frontend applications using XState but can also work with backend code and code that uses any state management solution.
+
+<Callout>
+
+[Read about our recent release of Stately Inspector on our blog](../blog/2024-01-15-introducing-stately-inspector/).
+
+</Callout>
+
+## Install Stately Inspector
+
+To inspect applications with Stately Inspector, install [Stately Inspect](https://github.com/statelyai/inspect) from npm via `@statelyai/inspect`:
+
+```bash
+npm install @statelyai/inspect
+```
+
+Then import the relevant inspector creator into your app. The creator is used to create an inspector (e.g., a browser or WebSocket inspector) that you can use to either connect to XState actors and/or manually send inspection events to Stately Inspector:
+
+```ts
+import { createActor } from 'xstate';
+// [!code highlight:1]
+import { createBrowserInspector } from '@statelyai/inspect';
+import { machine } from './machine';
+
+// [!code highlight:1]
+const { inspect } = createBrowserInspector();
+
+// ...
+
+const actor = createActor(machine, {
+  // [!code highlight:1]
+  inspect,
+  // ... other actor options
+});
+
+actor.start();
+```
+
+When you run your app, a new tab or popup window will open with the Inspector.
+
+<Callout>
+
+When using the browser inspector, ensure that the popup window is not blocked by your browser’s popup blocker.
+
+</Callout>
+
+## Inspector options
+
+You can pass the following options to the browser inspector:
+
+- `filter` - a function that takes an inspection event and returns `true` if the event should be sent to the Stately Inspector.
+- `serialize` - a function that takes an inspection event and allows you to serialize it before sending it to the Stately Inspector.
+- `autoStart` - whether to automatically start the inspector. Defaults to `true`.
+  - If `autoStart: false`, you can start the inspector by calling `inspector.start()`.
+- `url` - the URL of the Stately Inspector to open. Defaults to `https://stately.ai/inspector`.
+- `iframe` - the `<iframe>` element to use for the inspector. Defaults to `null`.
+
+**Example usage:**
+
+```ts
+import { createBrowserInspector } from '@statelyai/inspect';
+
+const inspector = createBrowserInspector({
+  filter: (inspEvent) => {
+    if (inspEvent.type === '@xstate.event') {
+      // Skip mouse drag events
+      return inspEvent.event.type !== 'mouse.drag';
+    }
+    return true;
+  },
+  iframe: document.getElementById('inspector-iframe'),
+});
+```
+
+## Sending inspection events
+
+The `@statelyai/inspect` package will send inspection events to the connected Stately Inspector. There are currently three kinds of events sent:
+
+- Actor creation events
+- Actor-to-actor communication events
+- Actor snapshot changes
+
+When you pass in the `inspect` option to the actor options in XState’s `createActor(machine, options)` function, it will automatically send all of these inspection events.
+
+For usage with other state management solutions, you can manually send inspection events using the following methods:
+
+- `inspector.actor(actor, snapshot, info)` - send actor creation events
+- `inspector.event(actor, event, info)` - send actor-to-actor communication events
+- `inspector.snapshot(actor, snapshot, info)` - send actor snapshot changes
+
+```ts
+import { createBrowserInspector } from '@statelyai/inspect';
+
+const inspector = createBrowserInspector();
+
+// Imagine a todo app...
+inspector.actor('todos');
+
+// When a todo is created
+inspector.actor('todo-1', {
+  context: { status: 'active' },
+});
+
+// When a user completes a todo
+inspector.event('todo-1', { type: 'todo.complete' });
+
+// When a todo changes
+inspector.snapshot('todo-1', {
+  context: { status: 'completed' },
+});
+
+// When the todos actor (not the user) sends an event to a todo
+inspector.event(
+  'todo-1',
+  { type: 'todo.update' },
+  {
+    source: 'todos',
+  },
+);
+
+// ... etc.
+```
+
+The three types of inspection events contain everything that Stately Inspector needs to generate two kinds of real-time diagrams automatically:
+
+- **State machine diagrams** (if a state machine definition is provided)
+- **Sequence diagrams**

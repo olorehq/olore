@@ -1,0 +1,107 @@
+---
+title: isimei
+description: 'This page explains how to use the isimei function in APL.'
+---
+
+Use the `isimei` function to check whether a given string is a valid International Mobile Equipment Identity (IMEI) number. IMEIs are unique identifiers assigned to mobile devices, often used in mobile network logs, telecom datasets, and security investigations to distinguish devices.
+
+You can use this function to:
+- Validate whether a string field contains a proper IMEI format.
+- Filter out malformed or suspicious entries in datasets containing device identifiers.
+- Improve data quality when analyzing logs with user agent or device metadata.
+
+`isimei` is especially useful when dealing with telemetry or audit data where IMEI values are passed through APIs, headers, or form fields, and you want to ensure they conform to a valid format.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t include a built-in function for validating IMEI numbers. To replicate this logic, you typically use regular expressions and custom validation logic in `eval` or `where` clauses.
+
+In APL, you can use `isimei` directly to check if a string is a valid IMEI number, simplifying your query.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_imei=if(match(imei_field, "^[0-9]{15}$"), "true", "false") | where is_imei="true"
+````
+
+```kusto APL equivalent
+| where isimei(imei_field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t include native IMEI validation functions. You typically rely on pattern matching with `LIKE` or regular expressions, if supported.
+
+APL provides a dedicated `isimei` function to simplify this task.
+
+<CodeGroup>
+```sql SQL example
+SELECT *
+FROM device_logs
+WHERE imei_field LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isimei(id)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isimei(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                                 |
+| ----- | ------ | ------------------------------------------- |
+| value | string | The value to test for valid IMEI formatting. |
+
+### Returns
+
+A `bool` value:
+
+- `true` if the input string is a valid IMEI number.
+- `false` otherwise.
+
+A valid IMEI is a 15-digit string that passes the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm) checksum.
+
+## Example
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_imei = isimei('356938035643809')
+| project _time, has_imei
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20has_imei%20%3D%20isimei('356938035643809')%20%7C%20project%20_time%2C%20has_imei%22%7D)
+
+**Output**
+
+| _time               | has_imei              |
+| -------------------- | --------------- |
+| 2025-07-10T08:21:00Z | true |
+
+## List of related functions
+
+- [isreal](/apl/scalar-functions/type-functions/ismap): Checks whether a value is a real number.
+- [iscc](/apl/scalar-functions/type-functions/iscc): Checks whether a value is a valid credit card (CC) number.
+- [isstring](/apl/scalar-functions/type-functions/isstring): Checks whether a value is a string. Use this for scalar string validation.
+- [isutf8](/apl/scalar-functions/type-functions/isutf8): Checks whether a value is a valid UTF-8 encoded sequence.

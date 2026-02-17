@@ -1,0 +1,84 @@
+---
+title: Handling Multiple Tabs with Playwright
+subTitle: Controlling multiple tabs
+date: 2021-08-29
+author: Giovanni Rago
+githubUser: ragog
+tags:
+  - multi-tab
+  - testing
+weight: 135
+sidebarTitle: Multiple tabs
+learn_playwright:
+  parent: "Basics"
+---
+
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+Playwright enables us to control multiple browser tabs, albeit in different ways.
+
+## Opening tabs directly
+
+If we are looking to open brand new tabs with which to interact, the setup is rather straightforward.
+
+```ts multitab-open.spec.ts
+import { test } from '@playwright/test'
+
+test('open multiple tabs', async ({ browser }) => {
+  const context = await browser.newContext()
+
+  const pageOne = await context.newPage()
+  const pageTwo = await context.newPage()
+
+  await pageOne.goto('https://www.checklyhq.com/')
+  await pageTwo.goto('https://playwright.dev/')
+
+  await pageOne.screenshot({ path: 'screenshot-tab-one.png' })
+  await pageTwo.screenshot({ path: 'screenshot-tab-two.png' })
+
+  await browser.close()
+})
+
+```
+
+
+## Handling links that open a new tab
+
+Controlling tabs that are opened after a click on an element on the page can be trickier. Let's explore this through an example:
+
+- Navigating to `https://checklyhq.com/docs`.
+- Opening a new tab by clicking the link to the Checkly YouTube channel which opens in a new tab.
+
+By allowing us to wait for the creation of a child tab with `page.waitForEvent`, Playwright enables us to "catch" it following a click on an element with `target="_blank"`, and then seamlessly interact with any of the currently open tabs.
+
+```ts multitab-flows.spec.ts
+import { test } from '@playwright/test'
+
+test('open multiple tabs', async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  await page.goto('https://www.checklyhq.com/docs/')
+
+  const [newPage] = await Promise.all([
+    context.waitForEvent('page'),
+    await page.getByRole('link', { name: 'Checkly on Youtube' }).click()
+  ])
+
+  await page.screenshot({ path: 'screenshot-tab-old.png' })
+  await newPage.screenshot({ path: 'screenshot-tab-new.png' })
+
+  await browser.close()
+})
+
+```
+
+
+## Further reading
+
+1. Official documentation on [Playwright's multi-tab scenarios](https://playwright.dev/docs/multi-pages)
+
+<SignUpCta />

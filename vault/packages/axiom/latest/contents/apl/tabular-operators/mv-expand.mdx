@@ -1,0 +1,104 @@
+---
+title: mv-expand
+description: 'This page explains how to use the mv-expand operator in APL.'
+---
+
+The `mv-expand` operator expands dynamic arrays and property bags into multiple rows. Each element of the array or each property of the bag becomes its own row, while other columns are duplicated.  
+
+You use `mv-expand` when you want to analyze or filter individual values inside arrays or objects. This is especially useful when working with logs that include lists of values, OpenTelemetry traces that contain arrays of spans, or security events that group multiple attributes into one field.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `mvexpand` command expands multi-value fields into separate events. The APL `mv-expand` operator works in a very similar way, splitting array values into individual rows. The main difference is that APL explicitly works with dynamic arrays or property bags, while Splunk handles multi-value fields implicitly.
+
+<CodeGroup>
+```sql Splunk example
+... | mvexpand request_uri
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| mv-expand uri
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `CROSS JOIN UNNEST` or `CROSS APPLY` to flatten arrays into rows. In APL, `mv-expand` provides a simpler and more direct way to achieve the same result.
+
+<CodeGroup>
+```sql SQL example
+SELECT id, value
+FROM logs
+CROSS JOIN UNNEST(request_uris) AS t(value)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| mv-expand uri
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+mv-expand [kind=(bag|array)] [with_itemindex=IndexFieldName] FieldName [to typeof(Typename)] [limit Rowlimit]
+```
+
+### Parameters
+
+| Parameter                        | Description                                                                            |
+| -------------------------------- | -------------------------------------------------------------------------------------- |
+| `kind`             | Optional. Specifies whether the column is a bag (object) or an array. Defaults to `array`. |
+| `with_itemindex=IndexFieldName` | Optional. Outputs an additional column with the zero-based index of the expanded item. |
+| `FieldName`                     | Required. The name of the column that contains an array or object to expand.           |
+| `to typeof(Typename)`            | Optional. Converts each expanded element to the specified type.                        |
+| `limit Rowlimit`                 | Optional. Limits the number of expanded rows per record.                               |
+
+### Returns
+
+The operator returns a table where each element of the expanded array or each property of the expanded object is placed in its own row. Other columns are duplicated for each expanded row.
+
+## Use case example
+
+When analyzing logs, some values can be stored as arrays. You can use `mv-expand` to expand them into individual rows for easier filtering.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| limit 100
+| mv-expand territories
+| summarize count = count() by territory_name = tostring(territories)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20limit%20100%20%7C%20mv-expand%20territories%20%7C%20summarize%20count%20%3D%20count()%20by%20territory_name%20%3D%20tostring(territories)%22%7D)
+
+**Output**
+
+| territory_name      | count |
+| ---------------- | ------- |
+| United States | 67     |
+| India         | 22     |
+| Japan         | 12     |
+
+This query expands the `territories` array into rows and counts the most frequent territories.
+
+## List of related operators
+
+- [project](/apl/tabular-operators/project-operator): Selects or computes columns. Use it when you want to reshape data, not expand arrays.
+- [summarize](/apl/tabular-operators/summarize-operator): Aggregates data across rows. Use it after expanding arrays to compute statistics.
+- [top](/apl/tabular-operators/top-operator): Returns the top N rows by expression. Use it after expansion to find the most frequent values.

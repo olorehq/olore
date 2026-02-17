@@ -1,0 +1,84 @@
+---
+title: 'Output'
+---
+
+Output refers to the final data that an [actor](actors) produces. When an actor is responsible for performing some task, such as making a network request or running complex calculations, it will return output once it finishes that task. The output represents the result of the actor’s work. Actors only produce output when their status is “done”; i.e. when they are in their [final state](final-states).
+
+Some actors may run indefinitely and not produce any output.
+
+## Output in machine actors
+
+Read [final states](final-states) for more information on how to specify output in machine actors.
+
+## Output in promise actors
+
+When a promise actor resolves, it can produce output data. You can specify this output data in the `.output` property of the machine:
+
+```ts
+import { fromPromise, createActor } from 'xstate';
+
+const promiseLogic = fromPromise(async () => {
+  const response = await fetch('https://example.com');
+
+  return response.json() as { message: string };
+});
+
+const actor = createActor(promiseLogic);
+
+actor.subscribe((snapshot) => {
+  if (snapshot.status === 'done') {
+    console.log(snapshot.output.message);
+  }
+});
+
+actor.start();
+```
+
+## Output and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+The `output` property can be typed in the `.types` property of the machine setup:
+
+```ts
+import { setup, createActor } from 'xstate';
+
+const machine = setup({
+  // [!code highlight:3]
+  types: {
+    output: {} as { total: number },
+  },
+}).createMachine({
+  // ...
+  output: ({ context }) => ({
+    total: context.items.reduce((total, item) => total + item.price, 0),
+  }),
+});
+
+const actor = createActor(machine);
+
+actor.subscribe((snapshot) => {
+  if (snapshot.status === 'done') {
+    console.log(snapshot.output.total);
+  }
+});
+```
+
+You can read the output type from any actor using `OutputFrom<typeof actor>`:
+
+```ts
+import type { OutputFrom } from 'xstate';
+import { machine } from './machine';
+
+const actor = createActor(machine);
+
+function acceptOutput<T>(output: OutputFrom<typeof actor>) {
+  console.log(output.total);
+}
+```

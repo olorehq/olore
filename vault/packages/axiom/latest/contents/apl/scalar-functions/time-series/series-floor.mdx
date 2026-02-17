@@ -1,0 +1,159 @@
+---
+title: series_floor
+description: 'This page explains how to use the series_floor function in APL.'
+---
+
+The `series_floor` function rounds down each element in a numeric dynamic array (series) to the nearest integer that’s less than or equal to the original value. This function applies the mathematical floor operation element-wise across the entire array, which is useful for data discretization, quantization, and integer conversion in time series data.
+
+You can use `series_floor` when you want to convert floating-point values to integers by rounding down, discretize continuous data into bins, or prepare data for categorical analysis. This is particularly useful for creating integer-based categories, implementing quantization schemes, or when you need to ensure values don’t exceed certain thresholds. Typical applications include data binning, performance categorization, and mathematical modeling where integer values are required.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, floor operations are typically done with the `eval` function and the `floor()` expression. To compute floor across multiple values, you usually need to expand arrays and apply the transformation row by row. In APL, `series_floor` works directly on dynamic arrays, making it efficient for series-wide floor operations.
+
+<CodeGroup>
+```sql Splunk example
+... | eval floor_val=floor(duration)
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([3.7, 4.2, 5.9, 2.1])
+]
+| extend floor_values = series_floor(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, floor operations use the `FLOOR()` function, but this only works on single values, not arrays. To compute floor for array elements, you typically need to unnest arrays and apply `FLOOR()` row by row. In APL, `series_floor` eliminates this complexity by directly applying floor transformation to each element in an array.
+
+<CodeGroup>
+```sql SQL example
+SELECT FLOOR(duration) AS floor_duration
+FROM requests;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([3.7, 4.2, 5.9, 2.1])
+]
+| extend floor_values = series_floor(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_floor(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the floor (largest integer less than or equal to) the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_floor` to discretize request durations into integer bins for categorical analysis or performance categorization.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend floor_durations = series_floor(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20floor_durations%20%3D%20series_floor(durations)%22%7D)
+
+**Output**
+
+| id   | durations           | floor_durations    |
+| ---- | ------------------- | ------------------ |
+| u123 | [150.7, 200.3, 250.9] | [150, 200, 250] |
+| u456 | [100.2, 300.8, 400.1] | [100, 300, 400] |
+
+This query converts floating-point request durations to integers by rounding down, useful for creating discrete performance categories.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_floor` to discretize span durations into integer milliseconds for consistent latency analysis.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize durations = make_list(duration) by ['service.name']
+| extend floor_durations = series_floor(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20durations%20%3D%20make_list(duration)%20by%20%5B'service.name'%5D%20%7C%20extend%20floor_durations%20%3D%20series_floor(durations)%22%7D)
+
+**Output**
+
+| service.name          | durations                | floor_durations         |
+| --------------------- | ------------------------ | ----------------------- |
+| frontend              | [100.7ms, 200.3ms, 300.9ms] | [100ms, 200ms, 300ms] |
+| product-catalog | [50.2ms, 150.8ms, 250.1ms]  | [50ms, 150ms, 250ms]  |
+
+This query converts floating-point span durations to integer milliseconds by rounding down, useful for consistent latency categorization across services.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_floor` to discretize request durations into integer bins for security analysis and attack pattern detection.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by status
+| extend floor_durations = series_floor(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20floor_durations%20%3D%20series_floor(durations)%22%7D)
+
+**Output**
+
+| status | durations           | floor_durations    |
+| ------ | ------------------- | ------------------ |
+| 200    | [150.7, 200.3, 250.9] | [150, 200, 250] |
+| 500    | [100.2, 300.8, 400.1] | [100, 300, 400] |
+
+This query converts floating-point request durations to integers by rounding down grouped by status code, useful for creating discrete performance categories in security analysis.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to normalize values before applying floor operations.
+- [series_exp](/apl/scalar-functions/time-series/series-exp): Calculates the exponential of each element in an array. Use for exponential transformations instead of floor operations.
+- [series_cos](/apl/scalar-functions/time-series/series-cos): Returns the cosine of each element in an array. Use for trigonometric transformations instead of floor operations.
+- [series_sin](/apl/scalar-functions/time-series/series-sin): Returns the sine of each element in an array. Use for periodic transformations instead of floor operations.
+- [series_tan](/apl/scalar-functions/time-series/series-tan): Returns the tangent of each element in an array. Use for trigonometric transformations with different periodicity.

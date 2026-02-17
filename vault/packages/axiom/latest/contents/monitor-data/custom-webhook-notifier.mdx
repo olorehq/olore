@@ -1,0 +1,91 @@
+---
+title: 'Custom webhook notifier'
+description: 'This page explains how to create and configure a custom webhook notifier.'
+sidebarTitle: Custom Webhook
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'email', 'pagerduty', 'webhook', 'opsgenie', 'discord', 'discord webhook']
+---
+
+Use a custom webhook notifier to connect your monitors to internal or external services. The webhook URL receives a POST request with a content type of `application/json` together with any other headers you specify.
+
+To create a custom webhook notifier, follow these steps:
+
+1. Click the **Monitors** tab, and then click **Manage notifiers** on the right.
+1. Click **New notifier** on the top right.
+1. Name your notifier.
+1. Click **Custom webhook**.
+1. In **Webhook URL**, enter the URL where you want to send the POST request.
+1. Optional: To customize the content of your webhook, use the [Go template syntax](https://pkg.go.dev/text/template) to interact with these variables:
+    - `.Action` has value `Open` when the notification corresponds to a match monitor matching or a threshold monitor triggering, and has value `Closed` when the notification corresponds to a threshold monitor resolving.
+    - `.MonitorID` is the unique identifier for the monitor associated with the notification.
+    - `.Body` is the message body associated with the notification. When the notification corresponds to a match monitor, this is the matching event data. When the notification corresponds to a threshold monitor, this provides information about the value that gave rise to the monitor triggering or resolving.
+    - `.Description` is the description of the monitor associated with the notification.
+    - `.QueryEndTime` is the end time applied in the monitor query that gave rise to the notification.
+    - `.QueryStartTime` is the start time applied in the monitor query that gave rise to the notification.
+    - `.Timestamp` is the time the notification was generated.
+    - `.Title` is the name of the monitor associated with the notification.
+    - `.Value` is the value that gave rise to the monitor triggering or resolving. It’s only applicable if the notification corresponds to a threshold monitor.
+    - `.MatchedEvent` is a JSON object that represents the event that matched the criteria of the monitor. It’s only applicable if the notification corresponds to a match monitor.
+    - `.GroupKeys` and `.GroupValues` are JSON arrays that contain the keys and the values returned by the group-by attributes of your query. They’re only applicable if the APL query of the monitor groups by a non-time field.
+    You can fully customize the content of the webhook to match the requirements of your environment.
+1. Optional: Add headers to the POST request sent to the webhook URL.
+1. Click **Create**.
+
+## Examples
+
+The example below is the default template for a custom webhook notification:
+
+```json
+{
+  "action": "{{.Action}}",
+  "event": {
+    "monitorID": "{{.MonitorID}}",
+    "body": "{{.Body}}",
+    "description": "{{.Description}}",
+    "queryEndTime": "{{.QueryEndTime}}",
+    "queryStartTime": "{{.QueryStartTime}}",
+    "timestamp": "{{.Timestamp}}",
+    "title": "{{.Title}}",
+    "value": {{.Value}},
+    "matchedEvent": {{jsonObject .MatchedEvent}},
+    "groupKeys": {{jsonArray .GroupKeys}},
+    "groupValues": {{jsonArray .GroupValues}}
+  }
+}
+```
+
+Using the template above, the body of a POST request sent to the webhook URL for a threshold monitor triggering:
+
+```json
+{
+  "action": "Open",
+  "event": {
+    "monitorID": "CabI3w142069etTgd0",
+    "body": "Current value of 57347 is above or equal to the threshold value of 0",
+    "description": "",
+    "queryEndTime": "2024-06-28 14:55:57.631364493 +0000 UTC",
+    "queryStartTime": "2024-06-28 14:45:57.631364493 +0000 UTC",
+    "timestamp": "2024-06-28 14:55:57 +0000 UTC",
+    "title": "Axiom Monitor Test Triggered",
+    "value": 57347,
+    "matchedEvent": null,
+    "groupKeys": null,
+    "groupValues": null
+  }
+}
+```
+
+The example template below formats the webhook message to match the [expectations of incident.io](https://api-docs.incident.io/tag/Alert-Events-V2/) using the monitor ID as the `deduplication_key`.
+
+```json
+{
+  "title": "{{.Title}}",
+  "description": "{{.Body}}",
+  "deduplication_key": "{{.MonitorID}}",
+  "status": "{{ if eq .Action "Open" }}firing{{ else }}resolved{{ end }}",
+  "metadata": {
+    "description": "{{.Description}}",
+    "value": {{.Value}}
+  },
+  "source_url": "https://app.axiom.co/{your-org-id-here}/monitors/{{.MonitorID}}"
+}
+```

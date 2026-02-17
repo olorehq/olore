@@ -1,0 +1,29 @@
+---
+title: "Generative AI attributes"
+description: "Understand the key attributes that your generative AI app sends to Axiom."
+sidebarTitle: GenAI attributes
+keywords: ["ai engineering", "observe", "telemetry", "opentelemetry"]
+---
+
+After you instrument your app, every LLM call sends a detailed span to your Axiom dataset. The spans are enriched with standardized `gen_ai.*` attributes that make your AI interactions easy to query and analyze.
+
+Key attributes include the following:
+
+- `gen_ai.capability.name`: The high-level capability name you defined in `withSpan`.
+- `gen_ai.step.name`: The specific step within the capability.
+- `gen_ai.request.model`: The model requested for the completion.
+- `gen_ai.response.model`: The model that actually fulfilled the request.
+- `gen_ai.usage.input_tokens`: The number of tokens in the prompt.
+- `gen_ai.usage.output_tokens`: The number of tokens in the generated response.
+- `gen_ai.prompt`: The full, rendered prompt or message history sent to the model (as a JSON string).
+- `gen_ai.completion`: The full response from the model, including tool calls (as a JSON string).
+- `gen_ai.response.finish_reasons`: The reason the model stopped generating tokens. For example: `stop`, `tool-calls`.
+- `gen_ai.tool.name`: The name of the executed tool.
+- `gen_ai.tool.arguments`: The arguments passed to the tool (as a JSON string).
+- `gen_ai.tool.message`: The result returned by the tool (as a JSON string).
+
+## What’s next?
+
+After capturing and analyzing production telemetry:
+- [Visualize traces](/query-data/traces) in Console.
+- Use the new insights to [iterate](/ai-engineering/iterate) on your capability.

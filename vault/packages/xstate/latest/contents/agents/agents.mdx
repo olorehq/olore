@@ -1,0 +1,457 @@
+---
+title: 'AI Agents'
+---
+
+<Callout type="warning">
+
+Stately Agent is still under development.
+
+</Callout>
+
+An AI agent is an autonomous entity that observes an environment, decides what to do (based on its internal policy), and performs actions towards achieving its goals. In terms of the actor model, an agent can be considered an actor that can:
+
+- **Receive events**, such as an instruction on what to do next, which goal to accomplish, or an observation of the environment
+- **Send events**, which would cause actions to be performed on the environment
+- **Store state**, which can be used to remember contextual information about the environment
+- **Spawn other agents**, which can be used to create a hierarchy of agents that can work together and coordinate their actions to achieve a goal
+
+The [Stately Agent (`@statelyai/agent`)](https://github.com/statelyai/agent) package makes it simple to create agents and agent behavior based on the actor model and state machines. These agents can do much more than generate text and execute function calls; Stately Agent is a framework for:
+
+- **Storing message history** between the user and assistant when using the generative text features
+- **Making observations** of an environment, recording the transitions (previous state, event, next state) so it can understand the environment
+- **Receiving feedback** on decisions it makes, so it can retrieve and corrolate feedback so that it can make more informed decisions
+- **Making plans** in its decision-making progress, so that it not only predicts the very next decision to make, but a sequence of decisions that ideally reaches the goal
+- **Short-term and long-term memory** for remembering message history, observations, feedback, and plans that it makes.
+
+## Installation
+
+Install the following dependencies:
+
+- `@statelyai/agent@beta` – Stately.ai Agent, currently in beta
+- `@ai-sdk/openai` – The Vercel AI SDK for OpenAI, which provides access to the OpenAI API
+- `xstate` – Library for managing state machines and statecharts
+- `zod` – Library for type-safe schema validation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install @statelyai/agent @ai-sdk/openai xstate zod
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install @statelyai/agent @ai-sdk/openai xstate zod
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add @statelyai/agent @ai-sdk/openai xstate zod
+```
+
+</Tab>
+</Tabs>
+
+## Quick start
+
+1. Add your provider's API key to your `.env` file.
+
+```bash
+OPENAI_API_KEY="sk-abCDE..."
+```
+
+2. Create an agent.
+
+```ts
+import { openai } from '@ai-sdk/openai';
+import { createAgent } from '@statelyai/agent';
+
+const agent = createAgent({
+  name: 'todo',
+  model: openai('gpt-4-turbo'),
+  events: {},
+});
+```
+
+3. Add event schemas using Zod. These are the events that the agent is allowed to "cause" (i.e. send to the actor)
+
+```ts
+import { openai } from '@ai-sdk/openai';
+import { createAgent } from '@statelyai/agent';
+import { z } from 'zod';
+
+const agent = createAgent({
+  model: openai('gpt-4-turbo'),
+  name: 'todo',
+  // [!code highlight:18]
+  events: {
+    'todo.add': z.object({
+      todo: z
+        .object({
+          title: z.string().describe('The title of the todo'),
+          content: z.string().describe('The content of the todo'),
+          completed: z
+            .boolean()
+            .describe('The completed value of the todo')
+            .optional(),
+        })
+        .describe('Adds a new todo'),
+    }),
+    'todo.toggle': z.object({
+      todoId: z.string().describe('The ID of the todo to toggle'),
+      completed: z.boolean().describe('The new completed value').optional(),
+    }),
+  },
+});
+```
+
+3. Interact with a [state machine actor](./state-machine-actors) that accepts those events.
+
+```ts
+import { setup, createActor } from 'xstate';
+// [!code highlight:1]
+import { agent } from './agent';
+
+const todoMachine = setup({
+  types: {
+    // [!code highlight:2]
+    // Add the event types that the agent understands
+    events: agent.types.events,
+  },
+  // ...
+}).createMachine({
+  // ...
+});
+
+const todoActor = createActor(todoMachine);
+
+// [!code highlight:1]
+agent.interact(todoMachine);
+
+todoActor.start();
+```
+
+## Creating an agent
+
+You can create an agent using the `createAgent(settings)` function. There are required settings:
+
+- `name` - The name of the agent, used for logging and agent learning purposes
+- `model` - The [AI SDK language model](https://sdk.vercel.ai/docs/foundations/providers-and-models) to use for generating text and making tool calls
+- `events` - A mapping of event types to [Zod](https://zod.dev/) event schemas that the agent can trigger (i.e. events it can send to some live environment that it is interacting with)
+
+```ts
+import { createAgent } from '@statelyai/agent';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  name: 'barista',
+  model: openai('gpt-4-turbo'),
+  events: {
+    'barista.makeDrink': z
+      .object({
+        drink: z.enum(['espresso', 'latte', 'cappuccino']),
+      })
+      .describe('Makes a drink'),
+    // ...
+  },
+});
+```
+
+You can specify additional settings to customize the agent's behavior:
+
+- `description` - A description of the agent, used for logging and agent learning purposes, as well as for agents that call other agents (multi-agent systems)
+- `planner` - An async function that takes the `agent` and planner `input` and resolves with an `AgentPlan` that potentially includes the `steps` and the `nextEvent` to execute to achieve the `input.goal`. This function is used to determine what the agent should do next when making a decision based on the current state (`input.state`) and goal (`input.goal`).
+- `logic` - The agent logic function that is used to determine what an agent does when it receives an agent event, such as `"agent.feedback"`, `"agent.observe"`, `"agent.message"`, or `"agent.plan"`.
+
+## Making decisions
+
+The most important feature of a Stately agent is the ability to make decisions based on the current state and goal. This is done using the `agent.decide(input)` async function, which takes an `input` object that contains the current state, state machine, and goal, and resolves with an `AgentPlan`.
+
+For example, suppose you have the following `baristaMachine` state machine:
+
+```ts
+import { createMachine } from 'xstate';
+
+export const baristaMachine = createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        'barista.makeDrink': 'makingDrink',
+      },
+    },
+    makingDrink: {
+      on: {
+        'barista.drinkMade': 'idle',
+      },
+    },
+  },
+});
+```
+
+You can then use the `agent.decide(input)` function to determine what the agent should do next:
+
+```ts
+import { createAgent } from '@statelyai/agent';
+import { baristaMachine } from './baristaMachine';
+
+const agent = createAgent({
+  name: 'barista',
+  model: openai('gpt-4-turbo'),
+  events: {
+    'barista.makeDrink': z
+      .object({
+        drink: z.enum(['espresso', 'latte', 'cappuccino']),
+      })
+      .describe('Makes a drink'),
+  },
+});
+
+async function handleOrder(order, state) {
+  const resolvedState = baristaMachine.resolveState(state);
+  // [!code highlight:5]
+  const plan = await agent.decide({
+    state: resolvedState,
+    machine: baristaMachine,
+    goal: `A customer made this order: ${order}`,
+  });
+
+  return plan;
+}
+
+handleOrder('I want a latte please', { value: 'idle' });
+// Resolves with an `AgentPlan` that includes:
+// {
+//   // ...
+//   nextEvent: { type: 'barista.makeDrink', drink: 'latte' },
+// }
+```
+
+## Agent memory
+
+Stately agents can have two types of memory: **short-term (local) memory** and **long-term memory**.
+
+- **Short-term (local) memory** is memory that can be synchronously retrieved, but might not be persisted.
+- **Long-term memory** is memory that is asynchronously retrieved from persistent storage, such as a database.
+
+Agents remember four kinds of things in their memory:
+
+- **Messages** between the user and the assistant
+- **Observations** of state transitions (previous state, event, current state) that occur in the environment that the agent is observing
+- **Feedback**
+- **Plans**
+
+## Messages
+
+### `agent.getMessages()`
+
+Returns chat messages that occur between the user and the assistant from short-term memory.
+
+### `agent.addMessage(message)`
+
+If you want to manually add a message between the assistant and user to agent memory, you can call `agent.addMessage(message)` to do so. This is automatically called when calling `agent.generateText(…)`, `agent.streamText(…)`, or the `fromText(…)` and `fromTextStream(…)` actor logic creators. You should avoid calling this manually.
+
+## Observations
+
+### `agent.getObservations()`
+
+Returns observations that the agent observes from short-term memory.
+
+### `agent.addObservation(observation)`
+
+You can add an observation (`{ prevState, event, state, … }`) to an agent's memory by calling `agent.addObservation(observation)`. This function returns an `AgentObservation` object that includes the provided observation details as well as an observation `id` so that the observation can be referenced in feedback, if applicable.
+
+```ts
+const observation = agent.addObservation({
+  prevState: { value: 'idle', context: {} },
+  event: { type: 'grindBeans' },
+  state: { value: 'grindingBeans', context: {} },
+});
+```
+
+## Feedback
+
+### `agent.getFeedback()`
+
+Returns feedback that is given to the agent from short-term memory.
+
+### `agent.addFeedback(feedback)`
+
+```ts
+const observation = agent.addObservation({
+  // ...
+});
+
+const feedback = agent.addFeedback({
+  observationId: observation.id,
+  goal: 'Make an iced coffee',
+  attributes: {
+    feedback: 'Water should not be boiled for an iced coffee',
+    score: -10,
+  },
+});
+```
+
+## Plans
+
+### `agent.getPlans()`
+
+Returns plans that the agent has made from short-term memory.
+
+### `agent.addPlan(plan)`
+
+TODO
+
+## Interacting with state machines
+
+An agent can interact with existing state machine actors to determine what to do next. While the state machine actor is running, the agent will do the following cycle:
+
+1. The agent **observes state changes**
+
+- The observation is remembered in the agent's state
+
+2. The agent **determines** if it needs to make a decision based on the current state
+3. If it does, the agent **makes a decision** in the form of an `AgentPlan`.
+4. If an `AgentPlan` is formed, the agent triggers the next event (`plan.nextEvent`) on the state machine actor.
+
+- The plan is remembered in the agent's state.
+
+4. The agent goes back to step 1, and the cycle continues.
+
+```ts
+import { createAgent } from '@statelyai/agent';
+import { createActor } from 'xstate';
+import { jokeMachine } from './jokeMachine';
+
+const agent = createAgent({
+  name: 'joke-teller',
+  model: openai('gpt-4'),
+  events: {
+    'agent.tellJoke': z.object({
+      joke: z.string().describe('The joke text'),
+    }),
+    'agent.rateJoke': z.object({
+      rating: z.number().min(1).max(10),
+      explanation: z.string(),
+    }),
+    // ...
+  },
+});
+
+const jokeActor = createActor(jokeMachine).start();
+
+agent.interact(jokeActor, (observed) => {
+  if (observed.state.matches('tellingJoke')) {
+    return { goal: `Tell a joke about ${observed.state.context.topic}` };
+  }
+  if (observed.state.matches('ratingJoke')) {
+    return { goal: `Rate this joke: ${observed.state.context.joke}` };
+  }
+});
+```
+
+## State machine agents
+
+You can invoke Stately agents as part of a state machine, ensuring that it will follow the state machine's transitions as specified and trigger the appropriate events. This is done by using any of the following [actor logic creators](./actors):
+
+### `fromDecision(agent)`
+
+Returns [promise actor logic](TODO) that resolves with the **agent plan** that should accomplish the goal (`input.goal`), if it is able to create one.
+
+When invoked/spawned, this actor will also add the user and assistant messages to agent memory, as well as the plan that it created.
+
+### `fromText(agent)`
+
+Returns [promise actor logic](TODO) that resolves with the generated text result from the [Vercel AI SDK](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-text#generatetext).
+
+When invoked/spawned, this actor will also add the user and assistant messages to agent memory.
+
+```ts
+import { createAgent, fromText } from '@statelyai/agent';
+import { setup } from 'xstate';
+
+const agent = createAgent(/* ... */);
+
+const machine = setup({
+  actors: {
+    assistant: fromText(agent),
+  },
+}).createMachine({
+  initial: 'greeting',
+  context: (x) => ({
+    time: x.input.time,
+  }),
+  states: {
+    greeting: {
+      invoke: {
+        src: 'assistant',
+        input: ({ context }) => ({
+          context: {
+            time: context.time,
+          },
+          goal: 'Produce a greeting depending on the time of day.',
+        }),
+        onDone: {
+          target: 'greeted',
+          actions: ({ event }) => {
+            console.log(event.output.text);
+          },
+        },
+      },
+    },
+    greeted: {
+      type: 'final',
+    },
+  },
+});
+
+const actor = createActor(machine, {
+  input: { time: Date.now() },
+});
+
+actor.start();
+```
+
+### `fromTextStream(agent)`
+
+Returns [observable actor logic](TODO) that streams the text from the [Vercel AI SDK](https://sdk.vercel.ai/docs/reference/ai-sdk-core/stream-text).
+
+When invoked/spawned, this actor will also add the user and assistant messages to agent memory.
+
+TODO: example
+
+## Observability
+
+- Can observe observations, plans, messages, and feedback via `agent.on('message', (message) => {})`
+- Can manually add feedback observations via `agent.addFeedback(…)`
+
+## Generating text
+
+You can use the `agent.generateText(input)` method to generate text from an input. This extends the `generateText(…)` function from the [Vercel AI SDK](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-text#generatetext) by:
+
+- Adding the user and assistant messages to agent memory
+- Providing the ability to retrieve previous observations, feedback, plans and messages from agent memory
+
+## Streaming text
+
+You can use the `agent.streamText(input)` method to stream text from an input. This extends the `streamText(…)` function from the [Vercel AI SDK](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-text#generatetext) by:
+
+- Adding the user and assistant messages to agent memory
+- Providing the ability to retrieve previous observations, feedback, plans and messages from agent memory
+
+## Agent logic
+
+Agent logic is [actor logic](TODO) that has the specific purpose of performing LLM tasks for the agent. Agent logic goes beyond just being a wrapper and provides the ability to use the agent's state machine to intelligently determine which action to take next.
+
+Agent logic is most powerful when used with a state-machine-powered agent, but you can also create standalone actors from agent logic, which is useful for testing and simple tasks.
+
+## Examples
+
+See the current examples in the [examples directory](https://github.com/statelyai/agent/tree/main/examples).

@@ -1,0 +1,201 @@
+---
+title: Delayed (after) transitions
+---
+
+
+**Delayed transitions** are transitions that are triggered after a set amount of time. Delayed transitions are useful for building timeouts and intervals into your application logic. If another event occurs before the end of the timer, the transition doesn’t complete.
+
+Delayed transitions are defined on the `after` property of a state node, either as a number (measured in milliseconds) or as a string that references a delay defined in the `delays` setup object.
+
+<Callout>
+
+You can easily visualize and simulate delayed transitions in Stately’s editor. [Read more about delayed transitions in Stately’s editor](/docs/editor-states-and-transitions/#delayed-after-transitions).
+
+</Callout>
+
+```ts
+import { createMachine } from 'xstate';
+
+const pushTheButtonGame = createMachine({
+  initial: 'waitingForButtonPush',
+  states: {
+    waitingForButtonPush: {
+      // [!code highlight:6]
+      after: {
+        5000: {
+          target: 'timedOut',
+          actions: 'logThatYouGotTimedOut',
+        },
+      },
+      on: {
+        PUSH_BUTTON: {
+          actions: 'logSuccess',
+          target: 'success',
+        },
+      },
+    },
+    success: {},
+    timedOut: {},
+  },
+});
+```
+
+<EmbedMachine
+  embedURL="https://stately.ai/registry/editor/embed/c447d996-cef1-421d-a422-8be695668764?mode=design&machineId=78c59862-fc40-4b1e-8f9c-42f1b2ddc410"
+  title="Push the button game"
+/>
+
+<Callout>
+
+Watch our [“Delayed (after) transitions” video on YouTube](https://www.youtube.com/watch?v=5RE_eazRhrw&list=PLvWgkXBB3dd4I_l-djWVU2UGPyBgKfnTQ&index=12) (1m17s).
+
+</Callout>
+
+## Delays
+
+You can define delays in a few ways: [inlined](#inlined-delays), [referenced](#referenced-delays), and as an expression.
+
+## Inlined delays
+
+You can define an inlined delay by specifying the delay time (in milliseconds) directly:
+
+```ts
+import { createMachine } from 'xstate';
+
+const machine = createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      after: {
+        1000: { target: 'nextState' },
+      },
+    },
+    nextState: {},
+  },
+});
+```
+
+This will transition to the `nextState` state after 1000ms.
+
+## Referenced delays
+
+You can also define referenced delays by specifying a string delay key, and providing the actual delay time separately.
+
+For example:
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  // [!code highlight:3]
+  delays: {
+    timeout: 1000,
+  },
+}).createMachine({
+  initial: 'idle',
+  states: {
+    idle: {
+      after: {
+        // [!code highlight:1]
+        timeout: { target: 'nextState' },
+      },
+    },
+    nextState: {},
+  },
+});
+```
+
+## Dynamic delays
+
+Delays can also be dynamically defined as a function that returns the delay time in milliseconds:
+
+```ts
+import { setup, assign } from 'xstate';
+
+const machine = setup({
+  types: {
+    context: {} as {
+      attempts: number;
+    },
+  },
+  // [!code highlight:5]
+  delays: {
+    timeout: ({ context }) => {
+      return context.attempts * 1000;
+    },
+  },
+}).createMachine({
+  initial: 'attempting',
+  states: {
+    attempting: {
+      after: {
+        // [!code highlight:4]
+        timeout: {
+          actions: assign({ attempts: ({ context }) => context.attempts + 1 }),
+          target: 'attempting',
+        },
+      },
+    },
+    // ...
+  },
+});
+```
+
+## Lifecycle
+
+Delayed transition timers are canceled when the state is exited.
+
+## Testing
+
+- Simulated clock
+
+## Delayed transitions and TypeScript
+
+<Callout>
+
+**XState v5 requires TypeScript version 5.0 or greater.**
+
+For best results, use the latest TypeScript version. [Read more about XState and TypeScript](typescript)
+
+</Callout>
+
+You can strongly type the `delays` of your machine by setting up the the delays in the `setup()` function:
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  // [!code highlight:5]
+  delays: {
+    shortTimeout: 1000,
+    longTimeout: 5000,
+    eventually: 10_000,
+  },
+}).createMachine({
+  after: {
+    shortTimeout: {
+      /* ... */
+    },
+  },
+});
+```
+
+## Delayed transitions cheatsheet
+
+Use our XState delayed transitions cheatsheet below to get started quickly.
+
+```ts
+import { createMachine } from 'xstate';
+
+createMachine({
+  after: {
+    DELAY: {
+      /* ... */
+    },
+  },
+}).provide({
+  delays: {
+    DELAY: 1000, // or expression
+  },
+});
+```

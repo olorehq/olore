@@ -1,0 +1,192 @@
+---
+title: 'Custom Dependencies in Playwright Check Suites'
+description: 'Use private packages, custom registries, and additional dependencies in your Playwright Check Suites.'
+sidebarTitle: 'Custom Dependencies'
+---
+
+Use the [Checkly CLI](/cli/) to turn your Playwright tests into globally distributed monitors. Checkly uses your existing `package.json` dependencies and Playwright configuration.
+
+<Info>
+**Runtime Environment**: Playwright Check Suites run in a Node.js runtime containing your custom dependencies. See the [runtime specification](/platform/runtimes/runtime-specification) for further details.
+</Info>
+
+## Using JavaScript/Node.js dependencies
+
+Checkly installs dependencies from your `package.json` and lock files. It works with [npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/), and [pnpm](https://pnpm.io/).
+
+By default, Checkly installs all dependencies (both `dependencies` and `devDependencies`). You can change this setting to install only `devDependencies` in your [account settings](https://app.checklyhq.com/accounts/settings/account/playwright).
+
+
+```json package.json
+{
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.7.0",
+    "@playwright/test": "^1.40.0"
+  }
+}
+```
+
+Checkly detects your package manager from your lock file:
+
+| Available lock file | Package manager |
+|---------------------|-----------------|
+| `package-lock.json` | npm             |
+| `pnpm-lock.json`    | pnpm            |
+| `yarn.lock`         | yarn            |
+
+To override the [playwright account setting](https://app.checklyhq.com/accounts/settings/account/playwright) for a specific check suite, use the `installCommand` property in your `checkly.config.ts`:
+
+```typescript checkly.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  checks: {
+    playwrightChecks: [
+      {
+        name: 'My Check Suite',
+        logicalId: 'my-check-suite',
+        installCommand: 'npm install --dev',
+      }
+    ]
+  }
+})
+```
+
+Learn more about [customizing install commands](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands).
+
+## Using private dependencies
+
+Checkly supports private packages. To authenticate with your private registry, configure your credentials in Checkly.
+
+```json package.json
+{
+  "devDependencies": {
+    "@your-org/private-package": "^2.3.0"
+  }
+}
+```
+
+You need to:
+
+1. Add authentication configuration to your `.npmrc` file
+2. Include the `.npmrc` file in your `checkly.config.ts`
+3. Store authentication tokens as [environment variables](/platform/variables) in Checkly
+
+### Configure authentication to private dependencies
+
+All package managers (npm, yarn, pnpm) use `.npmrc` files to authenticate with private registries.
+
+<Note>
+Store authentication tokens as Checkly [environment variables](/platform/variables). Reference them in your `.npmrc` file using `${VARIABLE_NAME}` syntax.
+</Note>
+
+#### Using private npm packages
+
+```txt
+# Using an environment variable (recommended)
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+
+# Hard-coded token (not recommended)
+//registry.npmjs.org/:_authToken=npm_abc...
+```
+
+#### Using JFrog Artifactory
+
+```txt
+# Using an environment variable (recommended)
+registry=https://yourcompany.jfrog.io/artifactory/api/npm/npm-local/:_authToken=${ARTIFACTORY_TOKEN}
+
+# Hard-coded token (not recommended)
+registry=https://yourcompany.jfrog.io/artifactory/api/npm/npm-local/:_authToken=abc...
+```
+
+#### Using GitHub Packages
+
+```txt
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+@your-org:registry=https://npm.pkg.github.com
+```
+
+### Using yarn or pnpm with private packages
+
+**yarn** and **pnpm** also use `.npmrc` for authentication (same format as npm examples above).
+
+### Include authentication files
+
+Add your `.npmrc` file to the `checks.include` property in your `checkly.config.ts`.
+
+When you run `npx checkly test` or `npx checkly deploy`, the CLI bundles and uploads these files. This makes them available when Checkly runs `installCommand` to install your dependencies.
+
+```typescript checkly.config.ts highlight={6}
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  checks: {
+    playwrightConfigPath: './playwright.config.ts',
+    // Include .npmrc for authentication with private registries
+    // Works with npm, yarn, and pnpm
+    include: ['.npmrc'],
+    playwrightChecks: [
+      // ...
+    ]
+  }
+})
+```
+
+## Dependency Caching
+
+Checkly caches installed packages between check runs to speed up execution and reduce installation time. Dependencies are installed once and reused for subsequent runs until your lock files (`package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`) change.
+
+### How caching works
+
+When dependency caching is enabled:
+
+1. On the first run, Checkly installs all packages from your lock file and stores them in cache
+2. On subsequent runs, Checkly checks if your lock file has changed
+3. If unchanged, Checkly uses the cached packages, skipping the installation step
+4. If changed, Checkly installs packages again and updates the cache
+
+This significantly reduces check execution time, especially for projects with many or large dependencies.
+
+### Cache behavior by location type
+
+**Public Locations**: Dependency caching is **Always ON**.
+
+**Private Locations**: Dependency caching is **OFF by default**. To enable caching and speed up check runs, set `DEPENDENCY_CACHE=CHECKLY_S3` in your [agent configuration](/platform/private-locations/agent-configuration).
+
+
+## Troubleshooting
+
+### Package not found
+
+If you see errors like `404 Not Found` or `Package '@your-org/package' not found`:
+
+- Verify your `.npmrc` file is included in `checks.include`
+- Check that the registry URL is correct
+- Ensure your package name matches exactly (including scope)
+
+### Authentication failed
+
+If you see `401 Unauthorized` or `403 Forbidden` errors:
+
+- Verify the environment secret is set in Checkly (see [environment variables](/platform/variables))
+- Ensure the variable name in your `.npmrc` file matches exactly (e.g., `${NPM_TOKEN}`)
+- Confirm that your token has the necessary permissions to access the package
+
+### Wrong package manager detected
+
+If Checkly uses the wrong package manager:
+
+- Verify the correct lock file is present (`package-lock.json`, `yarn.lock`, or `pnpm-lock.json`)
+- Remove any conflicting lock files
+- Override with a custom `installCommand` if needed (see [customize install commands](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands))
+
+### Installation timeout
+
+If package installation exceeds time limits:
+
+- Check for large dependencies that can be optimized
+- Consider using a custom `installCommand` to install only required packages

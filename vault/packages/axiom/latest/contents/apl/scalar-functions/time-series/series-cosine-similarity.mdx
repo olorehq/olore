@@ -1,0 +1,159 @@
+---
+title: series_cosine_similarity
+description: 'This page explains how to use the series_cosine_similarity function in APL.'
+---
+
+The `series_cosine_similarity` function calculates the cosine similarity between two dynamic arrays (series) of numeric values. Cosine similarity measures the cosine of the angle between two vectors, providing a metric of similarity that ranges from -1 to 1. A value of 1 indicates identical direction, 0 indicates orthogonality (no similarity), and -1 indicates opposite directions. This function is particularly useful for comparing patterns, trends, and behaviors in time-series data.
+
+You can use `series_cosine_similarity` when you need to identify similar patterns in different datasets, compare user behaviors, detect anomalies by measuring deviation from normal patterns, or find correlations between different metrics. Common applications include recommendation systems, anomaly detection, pattern matching in performance metrics, and behavioral analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, calculating cosine similarity requires complex mathematical operations using `eval` commands with square roots and dot products. In APL, `series_cosine_similarity` provides this calculation directly for dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval dot_product = mvzip(array1, array2) | eval similarity = dot_product / (sqrt(sum1) * sqrt(sum2))
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([0.5*pi(), 1.0*pi(), 1.5*pi()]),
+  dynamic([2.0*pi(), 2.5*pi(), 3.0*pi()])
+]
+| extend similarity = series_cosine_similarity(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, calculating cosine similarity requires complex operations involving dot products, magnitudes, and square roots across multiple rows. You would typically need window functions and mathematical operations. In APL, `series_cosine_similarity` handles this calculation directly on dynamic arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  SUM(a.value * b.value) / 
+  (SQRT(SUM(a.value * a.value)) * SQRT(SUM(b.value * b.value))) AS similarity
+FROM array_a a, array_b b
+WHERE a.index = b.index;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([0.5*pi(), 1.0*pi(), 1.5*pi()]),
+  dynamic([2.0*pi(), 2.5*pi(), 3.0*pi()])
+]
+| extend similarity = series_cosine_similarity(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_cosine_similarity(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| `array1`  | dynamic | The first dynamic array of numeric values.    |
+| `array2`  | dynamic | The second dynamic array of numeric values.   |
+
+### Returns
+
+A `real` value between -1 and 1 representing the cosine similarity between the two arrays. Returns `null` if either array is empty or contains only zeros.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_cosine_similarity` to compare request duration patterns between different users to identify similar usage behaviors.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize user1_durations = make_list(iff(id == 'user1', req_duration_ms, 0)), user2_durations = make_list(iff(id == 'user2', req_duration_ms, 0))
+| extend similarity = series_cosine_similarity(user1_durations, user2_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20user1_durations%20%3D%20make_list(iff(id%20%3D%3D%20'user1'%2C%20req_duration_ms%2C%200))%2C%20user2_durations%20%3D%20make_list(iff(id%20%3D%3D%20'user2'%2C%20req_duration_ms%2C%200))%20%7C%20extend%20similarity%20%3D%20series_cosine_similarity(user1_durations%2C%20user2_durations)%22%7D)
+
+**Output**
+
+| user1_durations     | user2_durations     | similarity |
+| ------------------- | ------------------- | ---------- |
+| [120, 0, 300, 0]   | [0, 150, 0, 280]   | 0.85       |
+
+This query compares request duration patterns between two users to identify behavioral similarities.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_cosine_similarity` to compare span duration patterns between different services to identify similar performance characteristics.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize frontend_durations = make_list(iff(['service.name'] == 'frontend', duration / 1ms, 0)), cart_durations = make_list(iff(['service.name'] == 'cart', duration / 1ms, 0))
+| extend pattern_similarity = series_cosine_similarity(frontend_durations, cart_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20frontend_durations%20%3D%20make_list(iff(%5B'service.name'%5D%20%3D%3D%20'frontend'%2C%20duration%20%2F%201ms%2C%200))%2C%20cart_durations%20%3D%20make_list(iff(%5B'service.name'%5D%20%3D%3D%20'cart'%2C%20duration%20%2F%201ms%2C%200))%20%7C%20extend%20pattern_similarity%20%3D%20series_cosine_similarity(frontend_durations%2C%20cart_durations)%22%7D)
+
+**Output**
+
+| frontend_durations  | cart_durations      | pattern_similarity |
+| ------------------- | ------------------- | ------------------ |
+| [200, 0, 150, 0]   | [0, 80, 0, 120]    | 0.72               |
+
+This query compares performance patterns between frontend and cart services to identify correlated behaviors.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_cosine_similarity` to compare request patterns between different HTTP status codes to detect anomalous behavior.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize success_durations = make_list(iff(status == '200', req_duration_ms, 0)), error_durations = make_list(iff(status == '500', req_duration_ms, 0))
+| extend behavior_similarity = series_cosine_similarity(success_durations, error_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20success_durations%20%3D%20make_list(iff(status%20%3D%3D%20'200'%2C%20req_duration_ms%2C%200))%2C%20error_durations%20%3D%20make_list(iff(status%20%3D%3D%20'500'%2C%20req_duration_ms%2C%200))%20%7C%20extend%20behavior_similarity%20%3D%20series_cosine_similarity(success_durations%2C%20error_durations)%22%7D)
+
+**Output**
+
+| success_durations   | error_durations     | behavior_similarity |
+| ------------------- | ------------------- | ------------------- |
+| [100, 0, 150, 0]   | [0, 250, 0, 300]   | 0.23                |
+
+This query compares request duration patterns between successful and error responses to identify potential security anomalies.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_add](/apl/scalar-functions/time-series/series-add): Performs element-wise addition between two arrays. Use when you need to combine values instead of calculating ratios.
+- [series_divide](/apl/scalar-functions/time-series/series-divide): Performs element-wise division between two arrays. Use when you need to calculate ratios or normalize values.
+- [series_dot_product](/apl/scalar-functions/time-series/series-dot-product): Calculates the dot product between two arrays. Use when you need the raw dot product value rather than normalized similarity.
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Calculates the sum of all elements in a single array. Use when you need to sum elements within one array rather than computing dot products.

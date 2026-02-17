@@ -1,0 +1,122 @@
+<ResponseField name="sendRecovery" type="boolean">
+Whether to send notifications when checks recover from failure or degraded state.
+
+**Usage:**
+
+```ts
+new EmailAlertChannel("recovery-email", {
+  address: "ops@acme.com",
+  sendRecovery: true, // Send recovery notifications
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Recovery Notifications
+const opsEmail = new EmailAlertChannel("ops-email", {
+  address: "ops@acme.com",
+  sendRecovery: true, // Get notified when issues are resolved
+  sendFailure: true,
+})
+```
+
+```ts Failure Only
+const alertsEmail = new EmailAlertChannel("alerts-only", {
+  address: "alerts@acme.com",
+  sendRecovery: false, // Only failures, no recovery notifications
+  sendFailure: true,
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Recovery confirmation, operational awareness, noise reduction.
+</ResponseField>
+
+<ResponseField name="sendFailure" type="boolean">
+Whether to send notifications when checks fail.
+
+**Usage:**
+
+```ts
+new EmailAlertChannel("failure-email", {
+  address: "oncall@acme.com",
+  sendFailure: true, // Send failure notifications
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Failures Only
+const criticalEmail = new EmailAlertChannel("critical-email", {
+  address: "oncall@acme.com",
+  sendFailure: true,
+  sendRecovery: false,
+  sendDegraded: false,
+})
+```
+
+```ts All Notifications
+const comprehensiveEmail = new EmailAlertChannel("all-notifications", {
+  address: "monitoring@acme.com",
+  sendFailure: true,
+  sendRecovery: true,
+  sendDegraded: true,
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Incident response, failure monitoring, operational alerting.
+</ResponseField>
+
+<ResponseField name="sendDegraded" type="boolean">
+
+Whether to send notifications when API checks degrade (performance thresholds exceeded but not failed).
+
+**Usage:**
+
+```ts
+new EmailAlertChannel("performance-email", {
+  address: "performance-team@acme.com",
+  sendDegraded: true, // Send degraded performance notifications
+})
+```
+
+**Use cases**: Performance monitoring, early warning systems, SLA tracking.
+</ResponseField>
+
+<ResponseField name="sslExpiry" type="boolean">
+Whether to send notifications for SSL certificate expiry warnings.
+
+**Usage:**
+
+```ts
+new EmailAlertChannel("security-email", {
+  address: "security@acme.com",
+  sslExpiry: true,
+  sslExpiryThreshold: 30, // Alert 30 days before expiry
+})
+```
+
+**Use cases**: Certificate management, security compliance, proactive maintenance.
+</ResponseField>
+
+<ResponseField name="sslExpiryThreshold" type="number">
+Number of days before SSL certificate expiry to send notifications. Only relevant when `sslExpiry` is enabled.
+
+Usage:
+```ts
+new EmailAlertChannel("ssl-monitoring", {
+  address: "devops@acme.com",
+  sslExpiry: true,
+  sslExpiryThreshold: 30, // Alert 30 days before expiry
+})
+```
+
+**Use cases**: Certificate renewal planning, compliance management, operational scheduling.
+</ResponseField>

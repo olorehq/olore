@@ -1,0 +1,33 @@
+---
+title: Generate test paths
+---
+
+import { ClipboardCheck } from 'lucide-react';
+
+You can generate test path code for your state machines from the <ClipboardCheck size={18}/> **Tests** panel, which you can use to implement tests in your code. Both setup code and test code for each path are generated.
+
+This feature is in beta and [we’d love your feedback](https://feedback.stately.ai).
+
+<Callout>
+
+**Generate test paths** is a premium feature of Stately Studio. You can try Stately Studio’s premium plans with a free trial. [Check out the features on our Pro plan](studio-pro-plan), [Team plan](studio-team-plan), [Enterprise plan](studio-enterprise-plan) or [upgrade your existing plan](https://stately.ai/registry/billing).
+
+</Callout>
+
+## Path generation strategy
+
+You can choose between two path generation strategies:
+
+- **Shortest path**: Generate paths that cover the shortest possible paths through your state machine and minimize the number of actions required to test functionality.
+- **Simplest path**: Generate paths that cover the simple paths, without repeated states, through your state machine and help verify that basic functionality is working as expected.
+
+## Testing frameworks
+
+Generate test paths currently supports [Playwright](https://playwright.dev/) and custom testing framework formats. We plan to add more testing frameworks (including Puppeteer, Cypress, and even other languages) in the future.
+
+## Options
+
+- **Reduce duplicate paths** generates fewer paths that also cover other paths.
+- **Prefer transition coverage** generates paths that cover all transitions in your state machine.
+- **Highlight paths** enables highlighting the paths on the canvas when you hover over its test path description.
+- **AI-generated test titles** (experimental) generates more readable test titles based on your state machine. AI-generated test titles send your state machine to OpenAI to generate the titles.

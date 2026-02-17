@@ -1,0 +1,357 @@
+---
+title: "Flags and experiments"
+description: "Use flags to parameterize AI capabilities and run experiments comparing different configurations."
+keywords: ["ai engineering", "flags", "experiments", "configuration", "parameters", "testing"]
+---
+
+import { definitions } from "/snippets/definitions.mdx"
+
+<Tooltip tip={definitions.Flag}>Flags</Tooltip> are configuration parameters that control how your AI capability behaves. By defining flags, you can run <Tooltip tip={definitions.Experiment}>experiments</Tooltip> that systematically compare different models, prompts, retrieval strategies, or architectural approaches - all without changing your code.
+
+This is one of Axiom’s key differentiators: type-safe, version-controlled configuration that integrates seamlessly with your evaluation workflow.
+
+## Why flags matter
+
+AI capabilities have many tunable parameters: which model to use, which tools to enable, which prompting strategy, how to structure retrieval, and more. Without flags, you’d need to:
+
+- Hard-code values and manually change them between tests
+- Maintain multiple versions of the same code
+- Lose track of which configuration produced which results
+- Struggle to reproduce experiments
+
+Flags solve this by:
+
+- **Parameterizing behavior**: Define what can vary in your capability
+- **Enabling experimentation**: Test multiple configurations systematically
+- **Tracking results**: Axiom records which flag values produced which scores
+- **Automating optimization**: Run experiments in CI/CD to find the best configuration
+
+## Setting up flags
+
+Flags are defined using [Zod](https://zod.dev/) schemas in an "app scope" file. This provides type safety and ensures flag values are validated at runtime.
+
+### Create the app scope
+
+Create a file to define your flags (typically `src/lib/app-scope.ts`):
+
+```ts src/lib/app-scope.ts
+import { createAppScope } from 'axiom/ai';
+import { z } from 'zod';
+
+export const flagSchema = z.object({
+  // Flags for ticket classification capability
+  ticketClassification: z.object({
+    model: z.string().default('gpt-4o-mini'),
+    systemPrompt: z.enum(['concise', 'detailed']).default('concise'),
+    useStructuredOutput: z.boolean().default(true),
+  }),
+  
+  // Flags for document summarization capability
+  summarization: z.object({
+    model: z.string().default('gpt-4o'),
+    maxTokens: z.number().default(500),
+    style: z.enum(['bullet-points', 'paragraph']).default('bullet-points'),
+  }),
+});
+
+const { flag, pickFlags } = createAppScope({ flagSchema });
+
+export { flag, pickFlags };
+```
+
+### Use flags in your capability
+
+Reference flags in your capability code using the `flag()` function:
+
+```ts src/lib/capabilities/classify-ticket/prompts.ts
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { wrapAISDKModel } from 'axiom/ai';
+import { flag } from '../../app-scope';
+import { z } from 'zod';
+
+const systemPrompts = {
+  concise: 'Classify tickets briefly as: spam, question, feature_request, or bug_report.',
+  detailed: `You are an expert customer support engineer. Carefully analyze each ticket
+  and classify it as spam, question, feature_request, or bug_report. Consider context and intent.`,
+};
+
+export async function classifyTicket(input: { subject?: string; content: string }) {
+  // Get flag values
+  const model = flag('ticketClassification.model');
+  const promptStyle = flag('ticketClassification.systemPrompt');
+  const useStructured = flag('ticketClassification.useStructuredOutput');
+  
+  const result = await generateObject({
+    model: wrapAISDKModel(openai(model)),
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompts[promptStyle],
+      },
+      {
+        role: 'user',
+        content: input.subject 
+          ? `Subject: ${input.subject}\n\n${input.content}` 
+          : input.content,
+      },
+    ],
+    schema: z.object({
+      category: z.enum(['spam', 'question', 'feature_request', 'bug_report']),
+    }),
+  });
+
+  return result.object;
+}
+```
+
+### Declare flags in evaluations
+
+Tell your evaluation which flags it depends on using `pickFlags()`. This provides two key benefits:
+
+- **Documentation**: Makes flag dependencies explicit and visible
+- **Validation**: Warns about undeclared flag usage, catching configuration drift early
+
+```ts src/lib/capabilities/classify-ticket/evaluations/spam-classification.eval.ts
+import { Eval, Scorer } from 'axiom/ai/evals';
+import { pickFlags } from '../../../app-scope';
+import { classifyTicket } from '../prompts';
+
+Eval('spam-classification', {
+  // Declare which flags this eval uses
+  configFlags: pickFlags('ticketClassification'),
+  
+  capability: 'classify-ticket',
+  data: [/* test cases */],
+  task: async ({ input }) => await classifyTicket(input),
+  scorers: [/* scorering functions */],
+});
+```
+
+## Running experiments
+
+With flags defined, you can run experiments by overriding flag values at runtime.
+
+### CLI flag overrides
+
+Override individual flags directly in the command:
+
+```bash
+# Test with GPT-4o instead of the default
+axiom eval --flag.ticketClassification.model=gpt-4o
+
+# Test with different prompt style
+axiom eval --flag.ticketClassification.systemPrompt=detailed
+
+# Test multiple flags
+axiom eval \
+  --flag.ticketClassification.model=gpt-4o \
+  --flag.ticketClassification.systemPrompt=detailed \
+  --flag.ticketClassification.useStructuredOutput=false
+```
+
+### JSON configuration files
+
+For complex experiments, define flag overrides in JSON files:
+
+```json experiments/gpt4-detailed.json
+{
+  "ticketClassification": {
+    "model": "gpt-4o",
+    "systemPrompt": "detailed",
+    "useStructuredOutput": true
+  }
+}
+```
+
+```json experiments/gpt4-mini-concise.json
+{
+  "ticketClassification": {
+    "model": "gpt-4o-mini",
+    "systemPrompt": "concise",
+    "useStructuredOutput": false
+  }
+}
+```
+
+Run evaluations with these configurations:
+
+```bash
+# Run with first configuration
+axiom eval --flags-config=experiments/gpt4-detailed.json
+
+# Run with second configuration
+axiom eval --flags-config=experiments/gpt4-mini-concise.json
+```
+
+<Tip>
+Store experiment configurations in version control. This makes it easy to reproduce results and track which experiments you've tried.
+</Tip>
+
+### Comparing experiments
+
+Run the same evaluation with different flag values to compare approaches:
+
+```bash
+# Baseline: default flags (gpt-4o-mini, concise, structured output)
+axiom eval spam-classification
+
+# Experiment 1: Try GPT-4o
+axiom eval spam-classification --flag.ticketClassification.model=gpt-4o
+
+# Experiment 2: Use detailed prompting
+axiom eval spam-classification --flag.ticketClassification.systemPrompt=detailed
+
+# Experiment 3: Test without structured output
+axiom eval spam-classification --flag.ticketClassification.useStructuredOutput=false
+```
+
+Axiom tracks all these runs in the Console, making it easy to compare scores and identify the best configuration.
+
+## Best practices
+
+### Organize flags by capability
+
+Group related flags together to make them easier to manage:
+
+```ts
+export const flagSchema = z.object({
+  // One group per capability
+  ticketClassification: z.object({
+    model: z.string().default('gpt-4o-mini'),
+    temperature: z.number().default(0.7),
+  }),
+  
+  emailGeneration: z.object({
+    model: z.string().default('gpt-4o'),
+    tone: z.enum(['formal', 'casual']).default('formal'),
+  }),
+  
+  documentRetrieval: z.object({
+    topK: z.number().default(5),
+    similarityThreshold: z.number().default(0.7),
+  }),
+});
+```
+
+### Set sensible defaults
+
+Choose defaults that work well for most cases. Experiments then test variations:
+
+```ts
+ticketClassification: z.object({
+  model: z.enum(['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']).default('gpt-4o-mini'),
+  systemPrompt: z.enum(['concise', 'detailed']).default('concise'),
+  useStructuredOutput: z.boolean().default(true),
+}),
+```
+
+<Note>
+For evaluations that test your application code, it’s best to use the same defaults as your production configuration.
+</Note>
+
+### Use enums for discrete choices
+
+When flags have a fixed set of valid values, use enums for type safety:
+
+```ts
+// Good: type-safe, prevents invalid values
+model: z.enum(['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']).default('gpt-4o-mini'),
+tone: z.enum(['formal', 'casual', 'friendly']).default('formal'),
+
+// Avoid: any string is valid, causes runtime errors with AI SDK
+model: z.string().default('gpt-4o-mini'),
+tone: z.string().default('formal'),
+```
+
+## Advanced patterns
+
+### Model comparison matrix
+
+Test your capability across multiple models systematically:
+
+```bash
+# Create experiment configs for each model
+echo '{"ticketClassification":{"model":"gpt-4o-mini"}}' > exp-mini.json
+echo '{"ticketClassification":{"model":"gpt-4o"}}' > exp-4o.json
+echo '{"ticketClassification":{"model":"gpt-4-turbo"}}' > exp-turbo.json
+
+# Run all experiments
+axiom eval --flags-config=exp-mini.json
+axiom eval --flags-config=exp-4o.json
+axiom eval --flags-config=exp-turbo.json
+```
+
+### Prompt strategy testing
+
+Compare different prompting approaches:
+
+```ts
+export const flagSchema = z.object({
+  summarization: z.object({
+    strategy: z.enum([
+      'chain-of-thought',
+      'few-shot',
+      'zero-shot',
+      'structured-output',
+    ]).default('zero-shot'),
+  }),
+});
+```
+
+```bash
+# Test each strategy
+for strategy in chain-of-thought few-shot zero-shot structured-output; do
+  axiom eval --flag.summarization.strategy=$strategy
+done
+```
+
+### Cost vs quality optimization
+
+Find the sweet spot between performance and cost:
+
+```json experiments/cost-quality-matrix.json
+[
+  { "model": "gpt-4o-mini", "temperature": 0.7 },
+  { "model": "gpt-4o-mini", "temperature": 0.3 },
+  { "model": "gpt-4o", "temperature": 0.7 },
+  { "model": "gpt-4o", "temperature": 0.3 }
+]
+```
+
+Run experiments and compare cost (from telemetry) against accuracy scores to find the optimal configuration.
+
+### CI/CD integration
+
+Run experiments automatically in your CI pipeline:
+
+```yaml .github/workflows/eval.yml
+name: Run Evaluations
+
+on: [pull_request]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        model: [gpt-4o-mini, gpt-4o]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm install
+      - run: |
+          npx axiom eval \
+            --flag.ticketClassification.model=${{ matrix.model }}
+        env:
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ secrets.AXIOM_DATASET }}
+```
+
+This automatically tests your capability with different configurations on every pull request.
+
+## What's next?
+
+- To learn all CLI commands for running evaluations, see [Run evaluations](/ai-engineering/evaluate/run-evaluations).
+- To view results in the Console and compare experiments, see [Analyze results](/ai-engineering/evaluate/analyze-results).
+

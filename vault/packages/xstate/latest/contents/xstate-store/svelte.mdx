@@ -1,0 +1,103 @@
+---
+title: '@xstate/store-svelte'
+---
+
+The `@xstate/store-svelte` package provides Svelte bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Svelte readable stores.
+
+<Callout>
+
+This package re-exports all of `@xstate/store`, so you only need to install `@xstate/store-svelte`.
+
+</Callout>
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install @xstate/store-svelte
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install @xstate/store-svelte
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add @xstate/store-svelte
+```
+
+</Tab>
+</Tabs>
+
+## Quick start
+
+```svelte
+<script lang="ts">
+  import { createStore, useSelector } from '@xstate/store-svelte';
+
+  const store = createStore({
+    context: { count: 0 },
+    on: {
+      inc: (context, event: { by?: number }) => ({
+        count: context.count + (event.by ?? 1),
+      }),
+    },
+  });
+
+  const count = useSelector(store, (state) => state.context.count);
+</script>
+
+<div>
+  <p>Count: {$count}</p>
+  <button on:click={() => store.trigger.inc()}>+1</button>
+  <button on:click={() => store.trigger.inc({ by: 5 })}>+5</button>
+</div>
+```
+
+## API
+
+### `useSelector(store, selector?, compare?)`
+
+Creates a Svelte readable store that subscribes to an XState store and returns a selected value.
+
+```svelte
+<script>
+  import { useSelector } from '@xstate/store-svelte';
+
+  // Select specific value
+  const count = useSelector(store, (state) => state.context.count);
+
+  // With custom comparison function
+  const user = useSelector(
+    store,
+    (state) => state.context.user,
+    (prev, next) => prev.id === next.id
+  );
+
+  // Without selector (returns full snapshot)
+  const snapshot = useSelector(store);
+</script>
+
+<!-- Use the $ prefix to access store value -->
+<div>Count: {$count}</div>
+```
+
+**Parameters:**
+- `store` - The store to subscribe to
+- `selector` - Optional function to select a value from the store snapshot. If not provided, returns the full snapshot.
+- `compare` - Optional comparison function (defaults to strict equality `===`)
+
+**Returns:** A Svelte readable store containing the selected value
+
+## Full documentation
+
+For complete XState Store documentation including context, transitions, effects, atoms, and more, see the [XState Store docs](/docs/xstate-store).

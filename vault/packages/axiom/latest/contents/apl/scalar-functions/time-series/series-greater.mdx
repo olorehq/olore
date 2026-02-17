@@ -1,0 +1,132 @@
+---
+title: series_greater
+description: 'This page explains how to use the series_greater function in APL.'
+---
+
+The `series_greater` function compares two numeric arrays (series) element by element and returns a new array of Boolean values. Each element in the result is `true` if the corresponding element in the first array is greater than the corresponding element in the second array, and `false` otherwise.  
+
+You use this function when you want to evaluate pairwise comparisons across time series or numeric arrays. It’s especially useful in scenarios such as anomaly detection, trend analysis, or validating thresholds against observed metrics.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, comparisons are usually done across fields or using the `eval` command with conditional expressions. There is no direct equivalent to element-by-element array comparisons. In APL, `series_greater` performs this comparison across arrays in a single function call.
+
+<CodeGroup>
+```sql Splunk example
+... | eval comparison = if(fieldA > fieldB, true(), false())
+````
+
+```kusto APL equivalent
+print result = series_greater(dynamic([1,2,3]), dynamic([2,2,2]))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, comparisons are scalar and operate on single values at a time. You usually need to use `CASE` statements for conditionals. SQL lacks a built-in function for element-wise array comparison. In APL, `series_greater` directly compares two arrays and returns an array of Boolean values.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN a > b THEN TRUE ELSE FALSE END as comparison
+FROM numbers
+```
+
+```kusto APL equivalent
+print result = series_greater(dynamic([10,20,30]), dynamic([15,10,30]))
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_greater(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type            | Description                                                       |
+| --------- | --------------- | ----------------------------------------------------------------- |
+| `array1`  | dynamic (array) | The first array to compare.                                       |
+| `array2`  | dynamic (array) | The second array to compare. Must be the same length as `array1`. |
+
+### Returns
+
+A dynamic array of Boolean values, where each element is `true` if the corresponding element in `array1` is greater than the corresponding element in `array2`, and `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+When analyzing HTTP request durations, you can compare them against a fixed threshold to identify requests that exceed performance expectations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by id
+| extend threshold = dynamic([200,200,200,200])
+| extend above_threshold = series_greater(durations, threshold)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20id%20%7C%20extend%20threshold%20%3D%20dynamic(%5B200%2C200%2C200%2C200%5D)%20%7C%20extend%20above_threshold%20%3D%20series_greater(durations%2C%20threshold)%22%7D)
+
+**Output**
+
+| id   | durations          | threshold          | above_threshold         |
+| ---- | ------------------ | ------------------ | ------------------------ |
+| u123 | [180,220,150,300] | [200,200,200,200] | [false,true,false,true] |
+
+This query shows which requests for a given user exceed a threshold of 200 ms.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can compare span durations across services to see where certain spans take longer than others.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'frontend'
+| summarize frontend_spans = make_list(duration) by trace_id
+| join kind=inner (
+    ['otel-demo-traces']
+    | where ['service.name'] == 'checkout'
+    | summarize checkout_spans = make_list(duration) by trace_id
+) on trace_id
+| extend longer_in_frontend = series_greater(frontend_spans, checkout_spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'frontend'%20%7C%20summarize%20frontend_spans%20%3D%20make_list(duration)%20by%20trace_id%20%7C%20join%20kind%3Dinner%20(%20%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'checkout'%20%7C%20summarize%20checkout_spans%20%3D%20make_list(duration)%20by%20trace_id%20)%20on%20trace_id%20%7C%20extend%20longer_in_frontend%20%3D%20series_greater(frontend_spans%2C%20checkout_spans)%22%7D)
+
+**Output**
+
+| trace_id | frontend_spans   | checkout_spans   | longer_in_frontend |
+| --------- | ----------------- | ----------------- | -------------------- |
+| t1        | [30ms,50ms,10ms] | [20ms,40ms,15ms] | [true,true,false]   |
+
+This query compares span durations between `frontend` and `checkoutservice` services.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_greater_equals](/apl/scalar-functions/time-series/series-greater-equals): Compares two arrays and returns `true` when elements in the first array are greater than or equal to the second array.
+- [series_less](/apl/scalar-functions/time-series/series-less): Compares two arrays and returns `true` where the first array element is less than the second.
+- [series_less_equals](/apl/scalar-functions/time-series/series-less-equals): Compares two arrays and returns `true` where the first array element is less than or equal to the second.
+- [series_not_equals](/apl/scalar-functions/time-series/series-not-equals): Compares two arrays and returns `true` where elements aren’t equal.

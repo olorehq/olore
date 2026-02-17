@@ -1,0 +1,13 @@
+Using `identify`, you can capture identified events associated with specific users. This enables you to understand how they're using your product across different sessions, devices, and platforms.
+
+```js-web
+posthog.identify(
+    'distinct_id', // Required. Replace 'distinct_id' with your user's unique identifier
+    { email: 'max@hedgehogmail.com', name: 'Max Hedgehog' },  // $set, optional
+    { first_visited_url: '/blog' } // $set_once, optional
+);
+```
+
+Calling `identify` creates a person profile if one doesn't exist already. This means all events for that distinct ID count as identified events.
+
+You can get the distinct ID of the current user by calling `posthog.get_distinct_id()`.

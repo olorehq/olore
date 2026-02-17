@@ -1,0 +1,502 @@
+---
+title: 'Browser Check Construct'
+description: 'Learn how to configure browser checks with the Checkly CLI.'
+sidebarTitle: 'Browser Check'
+---
+
+<Tip>
+Learn more about Browser Checks in [the Browser Checks overview](/detect/synthetic-monitoring/browser-checks/overview).
+</Tip>
+
+Use Browser Checks to run end-to-end tests with Playwright. The examples below show how to configure browser checks for different testing scenarios.
+
+<Accordion title="Prerequisites">
+Before creating Browser Checks, ensure you have:
+
+- An initialized Checkly CLI project
+- A public website you want to monitor
+- Understanding of [Playwright test syntax and structure](/learn/playwright/overview)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { BrowserCheck, Frequency } from "checkly/constructs"
+import * as path from "path"
+
+new BrowserCheck("browser-check-1", {
+  name: "Browser check #1",
+  frequency: Frequency.EVERY_10M,
+  locations: ["us-east-1", "eu-west-1"],
+  code: {
+    entrypoint: path.join(__dirname, "home.spec.ts"),
+  },
+})
+```
+
+```ts Advanced Example
+import { BrowserCheck, Frequency } from "checkly/constructs"
+import * as path from "path"
+
+new BrowserCheck("advanced-browser-check", {
+  name: "Advanced Browser Check",
+  activated: true,
+  frequency: Frequency.EVERY_5M,
+  locations: ["us-east-1", "eu-west-1"],
+  tags: ["e2e", "critical-path"],
+  runtimeId: "2025.04",
+  environmentVariables: [
+    { key: "TEST_USERNAME", value: "testuser" },
+    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+  code: {
+    entrypoint: path.join(__dirname, "advanced-flow.spec.ts"),
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+The Browser Check configuration consists of specific Browser Check options and inherited general check options.
+
+<Tabs>
+<Tab title="Browser Check">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `code` | `object` | ✅ | - | The Playwright test code |
+
+</Tab>
+<Tab title="General Options">
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Friendly name for your check |
+| `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
+| `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
+| `environmentVariables` | `object[]` | ❌ | `[]` | Check-level environment variables |
+| `frequency` | `Frequency` | ❌ | - | How often to run your check |
+| `group` | `CheckGroup` | ❌ | - | The CheckGroup this check belongs to |
+| `locations` | `string[]` | ❌ | `[]` | Public locations for this monitor/check |
+| `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
+| `privateLocations` | `string[]` | ❌ | `[]` | Private Location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configured retries |
+| `runtimeId` | `string` | ❌ | - | The ID of the runtime to use |
+| `runParallel` | `boolean` | ❌ | `false` | Whether to run checks in parallel across locations |
+| `tags` | `string[]` | ❌ | `[]` | Tags to organize checks/monitors |
+| `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+
+</Tab>
+</Tabs>
+
+### Browser Check Options
+
+<ResponseField name="code" type="object" required>
+The Playwright test code that defines how to execute your end-to-end browser monitor. This is the core component of any browser check.
+
+**Usage:**
+
+```ts
+// Using file reference
+code: {
+  entrypoint: path.join(__dirname, "login-flow.spec.ts")
+}
+
+// Using inline content
+code: {
+  content: `
+    import { test, expect } from '@playwright/test'
+
+    test("homepage loads", async ({ page }) => {
+      await page.goto("https://example.com");
+      await expect(page).toHaveTitle(/Example/);
+    });
+  `
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entrypoint` | `string` | ❌ | Path to a `.spec.js` or `.spec.ts` file containing the Playwright test |
+| `content` | `string` | ❌ | Inline JavaScript/TypeScript code as a string |
+
+<Info>
+You must provide either `entrypoint` or `content`, but not both.
+</Info>
+
+**Examples:**
+
+<CodeGroup>
+
+```ts File Reference
+new BrowserCheck("login-flow-check", {
+  name: "User Login Flow",
+  code: {
+    entrypoint: path.join(__dirname, "tests/login.spec.ts"),
+  },
+})
+```
+
+```ts Inline Content
+new BrowserCheck("quick-test", {
+  name: "Quick Homepage Test",
+  code: {
+    content: `
+      import { test, expect } from '@playwright/test'
+
+      test('homepage loads correctly', async ({ page }) => {
+        await page.goto('https://example.com')
+        await expect(page).toHaveTitle(/Example/)
+        await expect(page.locator('h1')).toContainText('Welcome')
+      })
+    `,
+  },
+})
+```
+
+```ts Complex Test File
+new BrowserCheck("e2e-purchase", {
+  name: "E-commerce Purchase Flow",
+  code: {
+    entrypoint: path.join(__dirname, "tests/purchase-flow.spec.ts"),
+  },
+  environmentVariables: [
+    { key: "TEST_USER_EMAIL", value: "test@example.com" },
+    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+})
+```
+
+</CodeGroup>
+
+**Use cases**: E2E testing, user journey validation, performance testing, visual regression testing.
+</ResponseField>
+
+### General Check Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your Browser Check that will be displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+```ts highlight={2}
+new BrowserCheck("my-check", {
+  name: "User Login Flow Test",
+  /* More options... */
+})
+```
+
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the Browser Check should run. Use the `Frequency` enum to set the check interval.
+
+**Usage:**
+
+```ts highlight={5}
+import { Frequency } from 'checkly/constructs'
+
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  frequency: Frequency.EVERY_5M,
+  /* More options... */
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts High Frequency
+// For critical user journeys
+new BrowserCheck("critical-login", {
+  name: "Critical Login Flow",
+  frequency: Frequency.EVERY_1M, // Every minute
+  tags: ["critical", "high-priority"],
+  /* More options... */
+})
+```
+
+```ts Standard Frequency
+// For regular monitoring
+new BrowserCheck("standard-check", {
+  name: "Standard User Flow",
+  frequency: Frequency.EVERY_10M, // Every 10 minutes
+  tags: ["monitoring"],
+  /* More options... */
+})
+```
+
+</CodeGroup>
+
+**Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of public location codes where the Browser Check should run. Multiple locations provide geographic coverage and redundancy.
+
+**Usage:**
+
+```ts highlight={3}
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  locations: ["us-east-1", "eu-west-1", "ap-southeast-1"],
+  /* More options... */
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Global Coverage
+// Comprehensive global monitoring
+new BrowserCheck("global-check", {
+  name: "Global User Experience",
+  locations: [
+    "us-east-1", // N. Virginia
+    "us-west-1", // N. California
+    "eu-west-1", // Ireland
+    "ap-southeast-1", // Singapore
+    "ap-northeast-1", // Tokyo
+  ],
+  /* More options... */
+})
+```
+
+```ts Regional Focus
+// Focus on specific regions
+new BrowserCheck("europe-check", {
+  name: "European User Flow",
+  locations: ["eu-west-1", "eu-central-1"],
+  /* More options... */
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Global user experience monitoring, regional performance testing, compliance requirements.
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+Whether the browser check is enabled and will run according to its schedule.
+
+**Usage:**
+
+```ts highlight={3}
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  activated: false, // Disabled check
+  /* More options... */
+})
+```
+
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" default="[]">
+
+Array of tags to organize and categorize your Browser Checks in the Checkly infrastructure.
+
+**Usage:**
+
+```ts highlight={3}
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  tags: ["e2e", "critical-path", "user-journey"],
+  /* More options... */
+})
+```
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Functional Tags
+new BrowserCheck("login-test", {
+  name: "User Authentication",
+  tags: ["authentication", "login", "security"],
+  code: { entrypoint: path.join(__dirname, "auth.spec.ts") },
+  /* More options... */
+})
+```
+
+```ts Priority Tags
+new BrowserCheck("checkout-flow", {
+  name: "Checkout Process",
+  tags: ["critical", "revenue", "high-priority"],
+  code: { entrypoint: path.join(__dirname, "checkout.spec.ts") },
+  /* More options... */
+})
+```
+
+```ts Environment Tags
+new BrowserCheck("staging-test", {
+  name: "Staging Environment Test",
+  tags: ["staging", "pre-production", "validation"],
+  /* More options... */
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Organization, filtering, alerting rules, reporting.
+</ResponseField>
+
+<ResponseField name="environmentVariables" type="object[]" default="[]">
+Check-level environment variables that will be available during test execution. Useful for test configuration and sensitive data.
+
+**Usage:**
+
+```ts highlight={3-6}
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  environmentVariables: [
+    { key: "TEST_USERNAME", value: "testuser@example.com" },
+    { key: "TEST_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+  ],
+  /* More options... */
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key` | `string` | ✅ | Environment variable name |
+| `value` | `string` | ✅ | Environment variable value |
+| `secret` | `boolean` | ❌ | Whether the value should be encrypted and hidden |
+
+**Examples:**
+
+<CodeGroup>
+
+```ts Test Credentials
+new BrowserCheck("user-flow", {
+  name: "User Account Flow",
+  environmentVariables: [
+    { key: "TEST_EMAIL", value: "test@example.com" },
+    { key: "TEST_PASSWORD", value: "{{TEST_USER_PASSWORD}}", secret: true },
+    { key: "BASE_URL", value: "https://staging.example.com" },
+  ],
+  code: { entrypoint: path.join(__dirname, "user-flow.spec.ts") },
+})
+```
+
+```ts Feature Flags
+new BrowserCheck("feature-test", {
+  name: "Feature Flag Test",
+  environmentVariables: [
+    { key: "FEATURE_ENABLED", value: "true" },
+    { key: "TEST_VARIANT", value: "A" },
+  ],
+  code: { entrypoint: path.join(__dirname, "feature-flags.spec.ts") },
+})
+```
+
+</CodeGroup>
+
+**Use cases**: Test configuration, authentication, API keys, feature flags, environment-specific settings.
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```ts Login Flow
+new BrowserCheck("login-flow-check", {
+  name: "User Login Flow",
+  frequency: Frequency.EVERY_15M,
+  locations: ["us-east-1", "eu-west-1"],
+  code: {
+    entrypoint: path.join(__dirname, "login.spec.ts"),
+  },
+})
+
+// login.spec.ts
+import { expect, test } from "@playwright/test"
+
+test("user can login successfully", async ({ page }) => {
+  await page.goto("https://app.example.com/login")
+
+  await page.getByLabel('email', { name: /email/i }).fill(process.env.TEST_USERNAME)
+  await page.getByLabel('password', { name: /password/i }).fill(process.env.TEST_PASSWORD)
+  await page.getByRole('button', { name: /login/i }).click()
+
+  await expect(page).toHaveURL(/dashboard/)
+  await expect(page.getByTestId('user-menu')).toBeVisible()
+})
+```
+
+```ts E-commerce Purchase
+new BrowserCheck("purchase-flow-check", {
+  name: "Purchase Flow",
+  frequency: Frequency.EVERY_30M,
+  locations: ["us-east-1", "eu-west-1"],
+  tags: ["e2e", "critical", "revenue"],
+  code: {
+    entrypoint: path.join(__dirname, "purchase.spec.ts"),
+  },
+})
+
+// purchase.spec.ts
+import { test, expect } from "@playwright/test"
+
+test("user can complete purchase", async ({ page }) => {
+  await page.goto("https://shop.example.com")
+
+  // Add item to cart
+  await page.getByTestId("product-1").click()
+  await page.getByTestId("add-to-cart").click()
+
+  // Go to checkout
+  await page.getByTestId("cart-button").click()
+  await page.getByTestId("checkout-button").click()
+
+  // Fill checkout form
+  await page.getByLabel("email").fill("test@example.com")
+  await page.getByLabel("card-number").fill("4242424242424242")
+
+  // Complete purchase
+  await page.getByTestId("complete-purchase").click()
+
+  await expect(page.getByTestId("success-message")).toBeVisible()
+})
+```
+
+```ts Form Submission
+new BrowserCheck("contact-form-check", {
+  name: "Contact Form Submission",
+  frequency: Frequency.EVERY_10M,
+  code: {
+    entrypoint: path.join(__dirname, "contact-form.spec.ts"),
+  },
+})
+
+// contact-form.spec.ts
+import { test, expect } from "@playwright/test"
+
+test("contact form works correctly", async ({ page }) => {
+  await page.goto("https://example.com/contact")
+
+  await page.getByLabel('name').fill("John Doe")
+  await page.getByLabel('email').fill("john@example.com")
+  await page.getByLabel('message').fill("This is a test message")
+
+  await page.getByLabel('submit').click()
+
+  await expect(page.getByText("Thank you")).toBeVisible()
+})
+```
+
+</CodeGroup>
+
+<Warning>
+Browser checks require Playwright test files. Make sure your test files use the `@playwright/test` framework and follow Playwright's testing conventions.
+</Warning>

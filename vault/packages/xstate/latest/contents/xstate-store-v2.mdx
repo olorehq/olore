@@ -1,0 +1,621 @@
+---
+title: '@xstate/store'
+---
+
+**Version 2.x** ([Version 3.x docs](./xstate-store))
+
+XState Store is a small library for simple state management in JavaScript/TypeScript applications. It is meant for updating store data using **events** for vanilla JavaScript/TypeScript apps, React apps, and more. It is comparable to libraries like Zustand, Redux, and Pinia. For more complex state management, you should use [XState](./xstate) instead, or you can [use XState Store with XState](#using-xstate-store-with-xstate).
+
+<Callout>
+
+The `@xstate/store` library requires TypeScript version 5.4 or above.
+
+</Callout>
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install @xstate/store
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install @xstate/store
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add @xstate/store
+```
+
+</Tab>
+</Tabs>
+
+## Quick start
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  // Initial context
+  context: { count: 0, name: 'David' },
+  // Transitions
+  on: {
+    inc: (context) => ({
+      count: context.count + 1,
+    }),
+    add: (context, event: { num: number }) => ({
+      count: context.count + event.num,
+    }),
+    changeName: (context, event: { newName: string }) => ({
+      name: event.newName,
+    }),
+  },
+});
+
+// Get the current state (snapshot)
+console.log(store.getSnapshot());
+// => {
+//   status: 'active',
+//   context: { count: 0, name: 'David' }
+// }
+
+// Subscribe to snapshot changes
+store.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+
+// Send an event
+store.send({ type: 'inc' });
+// logs { count: 1, name: 'David' }
+
+store.send({ type: 'add', num: 10 });
+// logs { count: 11, name: 'David' }
+
+store.send({ type: 'changeName', newName: 'Jenny' });
+// logs { count: 11, name: 'Jenny' }
+```
+
+## Creating a store
+
+To create a store, you need to pass an object to the `createStore(…)` function with the following properties:
+
+1. The initial `context`
+2. An `on` object for transitions (event handlers) where:
+
+- The keys are the event types (e.g. `"inc"`, `"add"`, `"changeName"`)
+- The values are the `context` updates to apply when the event is sent to the store, as either an object or a function.
+
+Updating `context` in transitions is similar to using the [`assign` action](./context) in XState. You can update specific `context` properties by using an object:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0, incremented: false /* ... */ },
+  on: {
+    // [!code highlight:5]
+    inc: {
+      count: (context, event: { by: number }) => context.count + event.by,
+      // Static values do not need to be wrapped in a function
+      incremented: true,
+    },
+  },
+});
+```
+
+Or you can update the entire `context` by using a function:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0, incremented: false /* ... */ },
+  on: {
+    // [!code highlight:8]
+    inc: (context, event: { by: number }) => {
+      // ...
+
+      return {
+        count: context.count + event.by,
+        incremented: true,
+      };
+    },
+  },
+});
+```
+
+You can spread the `...context` when updating the entire `context` with a function. This is useful when you want to preserve other properties in the `context`:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0, incremented: false /* ... */ },
+  on: {
+    reset: (context, event) => {
+      // [!code highlight:5]
+      // You can use `...context` to preserve other properties
+      return {
+        ...context,
+        count: 0,
+      };
+    },
+  },
+});
+```
+
+<details>
+<summary>
+
+Note: Deprecated <code>createStore(context, transitions)</code> API
+
+</summary>
+
+The previous version of `createStore` took two arguments: an initial context and an object of event handlers. This API is still supported but deprecated. Here's an example of the old usage:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const donutStore = createStore(
+  {
+    donuts: 0,
+    favoriteFlavor: 'chocolate',
+  },
+  {
+    addDonut: (context) => ({ ...context, donuts: context.donuts + 1 }),
+    changeFlavor: (context, event: { flavor: string }) => ({
+      ...context,
+      favoriteFlavor: event.flavor,
+    }),
+    eatAllDonuts: (context) => ({ ...context, donuts: 0 }),
+  },
+);
+```
+
+We recommend using the new API for better type inference and more explicit configuration.
+
+</details>
+
+## Transition functions
+
+A transition function is a function that takes the current `context` and an `event` object, and returns:
+
+- The partial or entire `context` object to update (if using a function assigner)
+- The context property value to update (if using an object assigner).
+
+For strong typing, you should specify the payload type of the `event` object in the transition function.
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { name: 'David', count: 0 },
+  on: {
+    // [!code highlight:10]
+    updateName: (context, event: { name: string }) => {
+      return {
+        name: event.name,
+      };
+    },
+    inc: {
+      count: (context, event: { by: number }) => {
+        return context.count + event.by;
+      },
+    },
+  },
+});
+
+store.send({
+  type: 'updateName',
+  name: 'Jenny', // Strongly-typed as `string`
+});
+
+store.send({
+  type: 'inc',
+  by: 10, // Strongly-typed as `number`
+});
+```
+
+## Emitting events
+
+You can emit events from transitions by using the `emit` method from the 3rd argument of the transition function:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  types: {
+    // [!code highlight:1]
+    emitted: {} as { type: 'incremented'; by: number },
+  },
+  context: { count: 0 },
+  on: {
+    // [!code highlight:1]
+    inc: (context, event: { by: number }, { emit }) => {
+      if (event.by > 0) {
+        // [!code highlight:1]
+        emit({ type: 'incremented', by: event.by });
+      }
+
+      return {
+        count: context.count + event.by,
+      };
+    },
+  },
+});
+
+// [!code highlight:4]
+const sub = store.on('incremented', (event) => {
+  console.log(`Emitted by ${event.by}`);
+  // => logs "Emitted by 10"
+});
+
+store.send({ type: 'inc', by: 10 });
+
+// Stop listening for emitted events
+// [!code highlight:1]
+sub.unsubscribe();
+```
+
+You can listen for emitted events using the `store.on(...)` method, which creates a subscription that you can later unsubscribe from. This method is type-safe, ensuring that you receive the correct event object for the emitted event type you're listening for.
+
+Note that you can strongly type emitted events in the `types.emitted` property of the store config object, just like in XState. This ensures type safety when emitting and listening for events.
+
+## Inspection
+
+Just like with XState, you can use the [Inspect API](./inspection) to inspect events sent to the store and state transitions within the store by using the .inspect method:
+
+```ts
+const store = createStore({
+  // ...
+});
+
+// [!code highlight:5]
+store.inspect((inspectionEvent) => {
+  // type: '@xstate.snapshot' or
+  // type: '@xstate.event'
+  console.log(inspectionEvent);
+});
+```
+
+<Callout>
+
+Since the store is automatically started, inspectors will immediately receive the initial state snapshot.
+
+</Callout>
+
+The `.inspect(…)` method returns a subscription object:
+
+```ts
+const sub = store.inspect((inspectionEvent) => {
+  console.log(inspectionEvent);
+});
+
+// Stop listening for inspection events
+sub.unsubscribe();
+```
+
+You can use the [Stately Inspector](./inspector) to inspect and visualize the state of the store.
+
+```ts
+// [!code highlight:1]
+import { createBrowserInspector } from '@statelyai/inspect';
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  // ...
+});
+
+// [!code highlight:3]
+const inspector = createBrowserInspector({
+  // ...
+});
+
+// [!code highlight:1]
+store.inspect(inspector);
+```
+
+## Using Immer
+
+If you want to use [Immer](https://immerjs.github.io/immer/) to update the `context`, you can do so by passing in the `produce` function as the first argument to `createStoreWithProducer(producer, …)`.
+
+```ts
+import { createStoreWithProducer } from '@xstate/store';
+// [!code highlight:1]
+import { produce } from 'immer';
+
+const store = createStoreWithProducer(
+  // [!code highlight:2]
+  // Producer
+  produce,
+  {
+    context: { count: 0, todos: [] },
+    on: {
+      inc: (context, event: { by: number }) => {
+        // [!code highlight:2]
+        // No return; handled by Immer
+        context.count += event.by;
+      },
+      addTodo: (context, event: { todo: string }) => {
+        // [!code highlight:2]
+        // No return; handled by Immer
+        context.todos.push(event.todo);
+      },
+    },
+  },
+);
+
+// ...
+```
+
+Note that you cannot use the object assigner syntax when using `createStoreFromProducer(…)`, nor is it even necessary.
+
+## Usage with React
+
+If you are using React, you can use the `useSelector(store, selector)` hook to subscribe to the store and get the current state.
+
+```tsx
+import { createStore } from '@xstate/store';
+// [!code highlight:1]
+import { useSelector } from '@xstate/store/react';
+
+// Create a store
+const store = createStore({
+  context: { count: 0, name: 'David' },
+  on: {
+    inc: {
+      count: (context) => context.count + 1,
+    },
+  },
+});
+
+// Use the `useSelector` hook to subscribe to the store
+function Component(props) {
+  // [!code highlight:1]
+  const count = useSelector(store, (state) => state.context.count);
+
+  // This component displays the count and has a button to increment it
+  return (
+    <div>
+      // [!code highlight:1]
+      <button onClick={() => store.send({ type: 'inc' })}>Increment</button>
+    </div>
+  );
+}
+```
+
+A store can be shared with multiple components, which will all receive the same snapshot from the store instance. Stores are useful for global state management.
+
+## Usage with Solid
+
+_Documentation coming soon!_
+
+## Using XState Store with XState
+
+You may notice that stores are very similar to [actors in XState](./actors). This is very much by design. XState's actors are very powerful, but may also be too complex for simple use cases, which is why `@xstate/store` exists.
+
+However, if you have existing XState code, and you enjoy the simplicity of creating store logic with `@xstate/store`, you can use the `fromStore(context, transitions)` actor logic creator to create XState-compatible store logic that can be passed to the `createActor(storeLogic)` function:
+
+```ts
+// [!code highlight:2]
+import { fromStore } from '@xstate/store';
+import { createActor } from 'xstate';
+
+// Instead of:
+// const store = createStore( ... };
+const storeLogic = fromStore({
+  context: { count: 0, incremented: false /* ... */ },
+  on: {
+    // [!code highlight:5]
+    inc: {
+      count: (context, event) => context.count + 1,
+      // Static values do not need to be wrapped in a function
+      incremented: true,
+    },
+  },
+});
+
+const store = createActor(storeLogic);
+store.subscribe((snapshot) => {
+  console.log(snapshot);
+});
+store.start();
+
+store.send({
+  type: 'inc',
+});
+```
+
+In short, you can convert `createStore(…)` to `fromStore(…)` just by changing one line of code. Note that `fromStore(…)` returns _store logic_, and not a store actor instance. Store logic is passed to `createActor(storeLogic)` to create a store actor instance:
+
+```ts
+// Instead of:
+// const store = createStore({
+const storeLogic = fromStore({
+  context: {
+    // ...
+  },
+  on: {
+    // ...
+  },
+});
+
+// Create the store (actor)
+const storeActor = createActor(storeLogic);
+```
+
+Using `fromStore(…)` to create store actor logic also has the advantage of allowing you to provide `input` by using a context function that takes in the `input` and _returns_ the initial `context`:
+
+```ts
+import { fromStore } from '@xstate/store';
+
+// [!code highlight:5]
+const storeLogic = fromStore({
+  context: (initialCount: number) => ({
+    count: initialCount,
+  }),
+  on: {
+    // ...
+  },
+});
+
+const actor = createActor(storeLogic, {
+  // [!code highlight:1]
+  input: 42,
+});
+```
+
+## Converting stores to state machines
+
+If you have a store that you want to convert to a state machine in XState, you can convert it in a straightforward way:
+
+1. Use `createMachine(…)` (imported from `xstate`) instead of `createStore(…)` (imported from `@xstate/store`) to create a state machine.
+1. Wrap the assignments in an `assign(…)` action creator (imported from `xstate`) and move that to the `actions` property of the transition.
+1. Destructure `context` and `event` from the first argument instead of them being separate arguments.
+
+For example, here is our store before conversion:
+
+```ts
+import { createMachine } from 'xstate';
+
+// 1. Use `createMachine(…)` instead of `createStore(…)`
+const store = createStore({
+  context: { count: 0, name: 'David' },
+  on: {
+    inc: {
+      // 2. Wrap the assignments in `assign(…)`
+      // 3. Destructure `context` and `event` from the first argument
+      count: (context, event: { by: number }) => context.count + event.by,
+    },
+  },
+});
+
+const machine = createMachine({
+  // ...
+});
+```
+
+And here is the store as a state machine after conversion:
+
+```ts
+import { createMachine } from 'xstate';
+
+// const store = createStore(
+//   { count: 0, name: 'David' },
+//   {
+//     inc: {
+//       count: (context, event: { by: number }) => context.count + event.by
+//     }
+//   });
+
+// 1. Use `createMachine(…)` instead of `createStore(…)`
+const machine = createMachine({
+  context: {
+    count: 0,
+    name: 'David',
+  },
+  on: {
+    inc: {
+      // 2. Wrap the assignments in `assign(…)`
+      actions: assign({
+        // 3. Destructure `context` and `event` from the first argument
+        count: ({ context, event }) => context.count + event.by,
+      }),
+    },
+  },
+});
+```
+
+For stronger typing, use the [`setup(…)` function](./setup) to strongly type the `context` and `events`:
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  // [!code highlight:4]
+  types: {
+    context: {} as { count: number; name: string },
+    events: {} as { type: 'inc'; by: number },
+  },
+}).createMachine({
+  // Same as the previous example
+});
+```
+
+## Comparison
+
+This section compares XState Store to other popular state management libraries in TypeScript. It is meant for reference purposes only, and not intended to favor one approach over the other. The examples are copied from [Zustand's comparison docs](https://docs.pmnd.rs/zustand/getting-started/comparison).
+
+### Compare to Zustand
+
+**Zustand**
+
+```ts
+import { create } from 'zustand';
+
+type State = {
+  count: number;
+};
+
+type Actions = {
+  increment: (qty: number) => void;
+  decrement: (qty: number) => void;
+};
+
+const useCountStore = create<State & Actions>((set) => ({
+  count: 0,
+  increment: (qty: number) =>
+    set((state) => ({
+      count: state.count + qty,
+    })),
+  decrement: (qty: number) =>
+    set((state) => ({
+      count: state.count - qty,
+    })),
+}));
+
+const Component = () => {
+  const count = useCountStore((state) => state.count);
+  const increment = useCountStore((state) => state.increment);
+  const decrement = useCountStore((state) => state.decrement);
+  // ...
+};
+```
+
+**XState Store**
+
+```ts
+import { createStore } from '@xstate/store';
+import { useSelector } from '@xstate/store/react';
+
+const store = createStore({
+  context: {
+    count: 0,
+  },
+  on: {
+    increment: (context, { qty }: { qty: number }) => ({
+      count: context.count + qty,
+    }),
+    decrement: (context, { qty }: { qty: number }) => ({
+      count: context.count - qty,
+    }),
+  },
+});
+
+const Component = () => {
+  const count = useSelector(store, (state) => state.context.count);
+  const increment = (qty) => store.send({ type: 'increment', qty });
+  const decrement = (qty) => store.send({ type: 'decrement', qty });
+  // ...
+};
+```

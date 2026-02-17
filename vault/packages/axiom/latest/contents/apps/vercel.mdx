@@ -1,0 +1,271 @@
+---
+title: 'Connect Axiom with Vercel'
+description: 'Easily monitor data from requests, functions, and web vitals in one place to get the deepest observability experience for your Vercel projects.'
+overview: 'Platform for frontend frameworks and static sites'
+sidebarTitle: Vercel
+keywords: ['axiom documentation', 'documentation', 'axiom', 'vercel', 'request logs', 'function logs', 'web vitals', 'vercel app', 'vercel app']
+logoId: 'vercel'
+darkLogoId: 'vercelDark'
+---
+
+Connect Axiom with Vercel to get the deepest observability experience for your Vercel projects.
+
+Easily monitor data from requests, functions, and web vitals in one place. 100% live and 100% of your data, no sampling.
+
+Axiom’s Vercel app ships with a pre-built dashboard and pre-installed monitors so you can be in complete control of your projects with minimal effort.
+
+If you use Axiom Vercel integration, [annotations](/query-data/annotate-charts) are automatically created for deployments.
+
+## What’s Vercel?
+
+Vercel is a platform for frontend frameworks and static sites, built to integrate with your headless content, commerce, or database.
+
+Vercel provides a frictionless developer experience to take care of the hard things: deploying instantly, scaling automatically, and serving personalized content around the globe.
+
+Vercel makes it easy for frontend teams to develop, preview, and ship delightful user experiences, where performance is the default.
+
+## Send logs to Axiom
+
+Simply install the [Axiom Vercel app from here](https://vercel.com/integrations/axiom) and be streaming logs and web vitals within minutes.
+
+## App Overview
+
+### Request and function logs
+
+For both requests and serverless functions, Axiom automatically installs a [drain](https://vercel.com/docs/drains/using-drains) in your Vercel account to capture data live.
+
+As users interact with your website, various logs are produced. Axiom captures all these logs and ingests them into the `vercel` dataset. You can stream and analyze these logs live, or use the pre-built Vercel Dashboard to get an overview of all the important metrics. When you’re ready, you can fork the dashboard and start building your own.
+
+For function logs, if you call `console.log`, `console.warn` or `console.error` in your function, the output is also captured and made available as part of the log. You can use APL to easily search these logs.
+
+## Web vitals
+
+Axiom supports capturing and analyzing Web Vital data directly from your user’s browser without any sampling and with more data than is available elsewhere. It’s perfect to pair with Vercel’s in-built analytics when you want to get really deep into a specific problem or debug issues with a specific audience (user-agent, location, region, etc).
+
+<Note>
+Web Vitals are only currently supported for Next.js websites. Expanded support is coming soon.
+</Note>
+
+### Installation
+
+Perform the following steps to install Web Vitals:
+
+1. In your Vercel project, run `npm install --save next-axiom`.
+2. In `next.config.js`, wrap your NextJS config in `withAxiom` as follows:
+
+```js
+const { withAxiom } = require('next-axiom');
+
+module.exports = withAxiom({
+  // ... your existing config
+})
+```
+This proxies the Axiom ingest call to improve deliverability.
+
+3. For Web Vitals, navigate to `app/layout.tsx` and add the `AxiomWebVitals` component:
+
+```js
+import { AxiomWebVitals } from 'next-axiom';
+
+export default function RootLayout() {
+  return (
+    <html>
+      ...
+      <AxiomWebVitals />
+      <div>...</div>
+    </html>
+  );
+}
+```
+
+<Note>
+WebVitals are sent only from production deployments.
+</Note>
+
+4. Deploy your site and watch data coming into your Axiom dashboard.
+
+- To send logs from different parts of your app, make use of the provided logging functions. For example:
+
+```js
+log.info('Payment completed', { userID: '123', amount: '25USD' });
+```
+
+### Client Components
+
+For Client Components, replace the `log` prop usage with the `useLogger` hook:
+
+```js
+'use client';
+import { useLogger } from 'next-axiom';
+
+export default function ClientComponent() {
+  const log = useLogger();
+  log.debug('User logged in', { userId: 42 });
+  return <h1>Logged in</h1>;
+}
+```
+
+### Server Components
+
+For Server Components, create a logger and make sure to call flush before returning:
+
+```js
+import { Logger } from 'next-axiom';
+
+export default async function ServerComponent() {
+  const log = new Logger();
+  log.info('User logged in', { userId: 42 });
+
+  // ... other operations ...
+
+  await log.flush();
+  return <h1>Logged in</h1>;
+}
+```
+
+### Route Handlers
+
+For Route Handlers, wrapping your Route Handlers in `withAxiom` adds a logger to your request and automatically log exceptions:
+
+```js
+import { withAxiom, AxiomRequest } from 'next-axiom';
+
+export const GET = withAxiom((req: AxiomRequest) => {
+  req.log.info('Login function called');
+
+  // You can create intermediate loggers
+  const log = req.log.with({ scope: 'user' });
+  log.info('User logged in', { userId: 42 });
+
+  return NextResponse.json({ hello: 'world' });
+});
+```
+
+## Use Next.js 12 for Web Vitals
+
+If you’re using Next.js version 12, follow the instructions below to integrate Axiom for logging and capturing Web Vitals data.
+
+In your `pages/_app.js` or `pages/_app.ts` and add the following line:
+
+```js
+export { reportWebVitals } from 'next-axiom';
+```
+
+## Upgrade to Next.js 13 from Next.js 12
+
+If you plan on upgrading to Next.js 13, you’ll need to make specific changes to ensure compatibility:
+
+- Upgrade the next-axiom package to version `1.0.0` or higher:
+- Make sure any exported variables have the `NEXT_PUBLIC_ prefix`, for example,, `NEXT_PUBLIC_AXIOM_TOKEN`.
+- In client components, use the `useLogger` hook instead of the `log` prop.
+- For server-side components, you need to create an instance of the `Logger` and flush the logs before the component returns.
+- For Web Vitals tracking, you’ll replace the previous method of capturing data. Remove the `reportWebVitals()` line and instead integrate the `AxiomWebVitals` component into your layout.
+
+## Vercel Function logs 4KB limit
+
+The Vercel 4KB log limit refers to a restriction placed by Vercel on the size of log output generated by serverless functions running on their platform. The 4KB log limit means that each log entry produced by your function should be at most 4 Kilobytes in size.
+
+If your log output is larger than 4KB, you might experience truncation or missing logs. To log above this limit, you can send your function logs using [next-axiom](https://github.com/axiomhq/next-axiom).
+
+## Parse JSON on the message field
+
+If you use a logging library in your Vercel project that prints JSON, your **message** field contains a stringified and therefore escaped JSON object.
+
+- If your Vercel logs are encoded as JSON, they look like this:
+
+```json
+{
+  "level": "error",
+  "message": "{ \"message\": \"user signed in\", \"metadata\": { \"userId\": 2234, \"signInType\": \"sso-google\" }}",
+  "request": {
+    "host": "www.axiom.co",
+    "id": "iad1:iad1::sgh2r-1655985890301-f7025aa764a9",
+    "ip": "199.16.157.13",
+    "method": "GET",
+    "path": "/sign-in/google",
+    "scheme": "https",
+    "statusCode": 500,
+    "teamName": "AxiomHQ",
+  },
+  "vercel": {
+    "deploymentId": "dpl_7UcdgdgNsdgbcPY3Lg6RoXPfA6xbo8",
+    "deploymentURL": "axiom-bdsgvweie6au-axiomhq.vercel.app",
+    "projectId": "prj_TxvF2SOZdgdgwJ2OBLnZH2QVw7f1Ih7",
+    "projectName": "axiom-co",
+    "region": "iad1",
+    "route": "/signin/[id]",
+    "source": "lambda-log"
+  }
+}
+```
+
+- The **JSON** data in your **message** would be:
+
+```json
+{
+  "message": "user signed in",
+  "metadata": {
+    "userId": 2234,
+    "signInType": "sso-google"
+   }
+}
+```
+
+You can **parse** the JSON using the [parse_json function](/apl/scalar-functions/string-functions#parse-json()) and run queries against the **values** in the **message** field.
+
+### Example
+
+```kusto
+['vercel']
+| extend parsed = parse_json(message)
+```
+
+- You can select the field to **insert** into new columns using the [project operator](/apl/tabular-operators/project-operator)
+
+```kusto
+['vercel']
+| extend parsed = parse_json('{"message":"user signed in", "metadata": { "userId": 2234, "SignInType": "sso-google" }}')
+| project parsed["message"]
+```
+
+### More Examples
+
+- If you have **null values** in your data you can use the **isnotnull()** function
+
+```kusto
+['vercel']
+| extend parsed = parse_json(message)
+| where isnotnull(parsed)
+| summarize count() by parsed["message"], parsed["metadata"]["userId"]
+```
+
+- Check out the [APL Documentation on how to use more functions](/apl/scalar-functions/string-functions) and run your own queries against your Vercel logs.
+
+## Migrate from Vercel app to next-axiom
+
+In May 2024, Vercel [introduced higher costs](https://axiom.co/blog/changes-to-vercel-log-drains) for using Vercel Drains. Because the Axiom Vercel app depends on Drains, using the next-axiom library can be the cheaper option to analyze telemetry data for higher volume projects.
+
+To migrate from the Axiom Vercel app to the next-axiom library, follow these steps:
+
+1. Delete the existing log drain from your Vercel project.
+2. Delete `NEXT_PUBLIC_AXIOM_INGEST_ENDPOINT` from the environment variables of your Vercel project. For more information, see the [Vercel documentation](https://vercel.com/projects/environment-variables).
+3. [Create a new dataset in Axiom](/reference/datasets), and [create a new advanced API token](/reference/tokens) with ingest permissions for that dataset.
+4. Add the following environment variables to your Vercel project:
+    - `NEXT_PUBLIC_AXIOM_DATASET` is the name of the Axiom dataset where you want to send data.
+    - `NEXT_PUBLIC_AXIOM_TOKEN` is the Axiom API token you have generated.
+5. In your terminal, go to the root folder of your Next.js app, and then run `npm install --save next-axiom` to install the latest version of next-axiom.
+6. In the `next.config.ts` file, wrap your Next.js configuration in `withAxiom`:
+
+```js
+const { withAxiom } = require('next-axiom');
+
+module.exports = withAxiom({
+  // Your existing configuration
+});
+```
+
+For more configuration options, see the [documentation in the next-axiom GitHub repository](https://github.com/axiomhq/next-axiom).
+
+## Send logs from Vercel preview deployments
+
+To send logs from Vercel preview deployments to Axiom, enable preview deployments for the environment variable `NEXT_PUBLIC_AXIOM_INGEST_ENDPOINT`. For more information, see the [Vercel documentation](https://vercel.com/docs/projects/environment-variables/managing-environment-variables).

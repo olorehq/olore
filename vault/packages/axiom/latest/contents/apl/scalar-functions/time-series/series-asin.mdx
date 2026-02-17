@@ -1,0 +1,157 @@
+---
+title: series_asin
+description: 'This page explains how to use the series_asin function in APL.'
+---
+
+The `series_asin` function computes the arc sine (inverse sine) of each numeric element in a dynamic array. It returns a new array of the same length, where each element is the arc sine of the corresponding input element. The function is useful when you want to transform time series data or arrays of numeric values into angular measurements. This can help in advanced mathematical modeling, anomaly detection, and when working with normalized data that represents sine values.
+
+You use `series_asin` when you need to invert sine transformations stored in array form, for example, to reconstruct angular information from periodic signals or normalize log and trace metrics for statistical or geometric analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t provide a direct equivalent of `series_asin` that operates over arrays. Instead, SPL typically requires you to apply `asin()` to individual fields or use `mvmap` to apply the function to multivalue fields. In APL, `series_asin` simplifies this by applying the operation to each element of a dynamic array in one step.
+
+<CodeGroup>
+```sql Splunk example
+... | eval angle=mvmap(values, asin(x))
+````
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+    dynamic([0.0, 0.5, 1.0])
+]
+| extend angle = series_asin(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL databases generally provide `ASIN()` for scalar values but do not include native array-processing functions. You would need to unnest an array into rows, apply `ASIN()`, and then aggregate the results back into an array. APL’s `series_asin` eliminates this boilerplate by letting you compute the arc sine across the entire array at once.
+
+<CodeGroup>
+```sql SQL example
+SELECT array_agg(ASIN(x))
+FROM UNNEST(ARRAY[0.0, 0.5, 1.0]) AS t(x);
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+    dynamic([0.0, 0.5, 1.0])
+]
+| extend angle = series_asin(values)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_asin(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                                                                                                |
+| --------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. Each element should be between `-1` and `1`, the valid domain of the arc sine function. |
+
+### Returns
+
+A dynamic array of the same length as the input, where each element is the arc sine (in radians) of the corresponding input element.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+When analyzing HTTP logs, you can normalize request durations to the range [-1, 1] and then apply `series_asin` to transform them into angular values for further statistical analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms, 5) by id
+| extend normalized = series_divide(durations, 1000.0)
+| extend angles = series_asin(normalized)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms%2C%205)%20by%20id%20%7C%20extend%20normalized%20%3D%20series_divide(durations%2C%201000.0)%20%7C%20extend%20angles%20%3D%20series_asin(normalized)%22%7D)
+
+**Output**
+
+| id  | durations                  | normalized                 | angles                               |
+| --- | -------------------------- | -------------------------- | ------------------------------------ |
+| A12 | [100, 200, 300, 400, 500] | [0.1, 0.2, 0.3, 0.4, 0.5] | [0.100, 0.201, 0.305, 0.412, 0.524] |
+
+The query collects request durations per user ID, normalizes them, and applies `series_asin` to transform values into angles.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+For traces, you can normalize span durations and use `series_asin` to derive angular representations, which can be helpful in detecting periodic workload patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans = make_list(duration, 5) by ['service.name']
+| extend normalized = series_divide(spans, 10000000.0)
+| extend angles = series_asin(normalized)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%20%3D%20make_list(duration%2C%205)%20by%20%5B'service.name'%5D%20%7C%20extend%20normalized%20%3D%20series_divide(spans%2C%2010000000.0)%20%7C%20extend%20angles%20%3D%20series_asin(normalized)%22%7D)
+
+**Output**
+
+| service.name | spans                           | normalized       | angles                 |
+| ------------ | ------------------------------- | ---------------- | ---------------------- |
+| frontend     | [12000000, 15000000, 20000000] | [1.2, 1.5, 2.0] | [null, null, null]    |
+| cartservice  | [5000000, 8000000, 10000000]   | [0.5, 0.8, 1.0] | [0.524, 0.927, 1.571] |
+
+This query collects spans per service, normalizes their durations, and computes arc sine values. Values outside [-1, 1] result in `null`.
+
+</Tab>
+<Tab title="Security logs">
+
+When examining security logs, you can normalize request durations for suspicious requests and use `series_asin` to highlight anomalous access patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize requests = make_list(req_duration_ms, 5) by ['geo.country']
+| extend normalized = series_divide(requests, 1000.0)
+| extend angles = series_asin(normalized)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20requests%20%3D%20make_list(req_duration_ms%2C%205)%20by%20%5B'geo.country'%5D%20%7C%20extend%20normalized%20%3D%20series_divide(requests%2C%201000.0)%20%7C%20extend%20angles%20%3D%20series_asin(normalized)%22%7D)
+
+**Output**
+
+| geo.country | requests                  | normalized             | angles                        |
+| ----------- | -------------------- | ---------------------- | ----------------------------- |
+| US          | [50, 200, 400, 600] | [0.05, 0.2, 0.4, 0.6] | [0.050, 0.201, 0.412, 0.644] |
+
+The query groups requests by country and converts normalized durations into angular values for anomaly detection.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_acos](/apl/scalar-functions/time-series/series-acos): Returns the arc cosine of each element in an array. Use when you need to invert cosine transformations instead of sine.
+- [series_atan](/apl/scalar-functions/time-series/series-atan): Returns the arc tangent of each element in an array. Useful for handling tangent-derived data.

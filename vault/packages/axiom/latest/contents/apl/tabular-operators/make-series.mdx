@@ -1,0 +1,178 @@
+---
+title: make-series
+description: 'This page explains how to use the make-series operator in APL.'
+---
+
+## Introduction
+
+The `make-series` operator transforms event data into array-based time series. Instead of producing one row per time bucket, `make-series` encodes the values and corresponding timestamps into arrays stored in table fields. This makes it possible to apply `series_*` functions for advanced manipulations such as moving averages, smoothing, anomaly detection, or other time-series computations.
+
+You find this operator useful when you want to:
+
+- Turn event data into array-encoded time series for further analysis.
+- Apply `series_*` functions (for example, `series_fir`, `series_stats`) to aggregated data.
+- Postprocess and then expand arrays back into rows with `mv-expand` for visualization or downstream queries.
+
+Unlike `summarize`, which produces row-based aggregations, `make-series` is designed specifically for creating and manipulating array-based time series.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `timechart` command creates row-based time series, with one row per time bucket. In APL, the `make-series` operator instead encodes the series into arrays, which you can later manipulate or expand. This is a key difference from SPL’s row-based approach.
+
+<CodeGroup>
+```sql Splunk example
+index=sample-http-logs
+| timechart span=1m avg(req_duration_ms)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series avg(req_duration_ms) default=0 on _time from ago(1h) to now() step 1m
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `GROUP BY` with a generated series or calendar table to create row-based time buckets. In APL, `make-series` creates arrays of values and timestamps in a single row. This lets you perform array-based computations on the time series before optionally expanding back into rows.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  time_bucket('1 minute', _time) AS minute,
+  AVG(req_duration_ms) AS avg_duration
+FROM sample_http_logs
+WHERE _time > NOW() - interval '1 hour'
+GROUP BY minute
+ORDER BY minute
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series avg(req_duration_ms) default=0 on _time from ago(1h) to now() step 1m
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+make-series [Aggregation [, ...]]
+    [default = DefaultValue]
+    on TimeField
+    [in Range]
+    step StepSize
+    [by GroupingField [, ...]]
+```
+
+### Parameters
+
+| Parameter        | Description                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Aggregation`    | One or more aggregation functions (for example, `avg()`, `count()`, `sum()`) applied to each time bin, producing arrays of values.       |
+| `default`        | A value to use when no records exist in a time bin.                                                             |
+| `TimeField`     | The field containing timestamps used for binning.                                                              |
+| `Range`          | An optional range expression specifying the start and end of the series (for example, `from ago(1h) to now()`). |
+| `StepSize`       | The size of each time bin (for example, `1m`, `5m`, `1h`).                                                      |
+| `GroupingField` | Optional fields to split the series by, producing parallel arrays for each group.                                 |
+
+### Returns
+
+The operator returns a table where each aggregation produces an array of values aligned with an array of time bins. Each row represents a group (if specified), with arrays that encode the entire time series.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to create an array-based time series of request counts, then compute a rolling average using a `series_*` function, and finally expand back into rows for visualization.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| make-series count() on _time from now()-24h to now() step 5m
+| extend moving_avg_count=series_fir(count_, dynamic([1, 1, 1, 1, 1]))
+| mv-expand moving_avg_count to typeof(long), count_ to typeof(long), time to typeof(datetime)
+| project-rename _time=time
+| summarize avg(moving_avg_count), avg(count_) by bin(_time, 5m)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20make-series%20count()%20on%20_time%20from%20now()-24h%20to%20now()%20step%205m%20%7C%20extend%20moving_avg_count%3Dseries_fir(count_%2C%20dynamic(%5B1%2C%201%2C%201%2C%201%2C%201%5D))%20%7C%20mv-expand%20moving_avg_count%20to%20typeof(long)%2C%20count_%20to%20typeof(long)%2C%20time%20to%20typeof(datetime)%20%7C%20project-rename%20_time%3Dtime%20%7C%20summarize%20avg(moving_avg_count)%2C%20avg(count_)%20by%20bin(_time%2C%205m)%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%221d%22%7D%7D)
+
+**Output**
+
+| _time               | count_ | moving_avg_count |
+| ------------------- | ------ | ---------------- |
+| 2025-09-29T10:00:00 | 120    | 118              |
+| 2025-09-29T10:05:00 | 130    | 122              |
+| 2025-09-29T10:10:00 | 110    | 121              |
+
+The query turns request counts into arrays, applies a smoothing function, and then expands the arrays back into rows for analysis.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You want to analyze span durations per service, storing them as arrays for later manipulation.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| make-series avg(duration) on _time from ago(2h) to now() step 10m by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20make-series%20avg(duration)%20on%20_time%20from%20ago(2h)%20to%20now()%20step%2010m%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name    | avg_duration                  | time                    |
+| --------------- | ----------------------------- | ----------------------- |
+| frontend        | [20ms, 18ms, 22ms, 19ms, ...] | [2025-09-29T08:00, ...] |
+| checkout        | [35ms, 40ms, 33ms, 37ms, ...] | [2025-09-29T08:00, ...] |
+
+The query produces array-encoded time series per service, which you can further process with `series_*` functions.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to analyze the rate of HTTP 500 errors in your logs per minute.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '500'
+| make-series count() default=0 on _time from ago(30m) to now() step 1m
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'500'%20%7C%20make-series%20count()%20default%3D0%20on%20_time%20from%20ago(30m)%20to%20now()%20step%201m%22%7D)
+
+**Output**
+
+| count_       | _time                  |
+| ------------------------ | ---------------------- |
+| [1489, 1428, 1517, 1462, 1509, ...] | ["2025-09-30T09:08:14.921301725Z", "2025-09-30T09:09:14.921301725Z", ...] |
+
+The query generates a time series of HTTP 500 error counts as an array-based time series for further analysis with `series_*` functions.
+
+</Tab>
+</Tabs>
+
+## List of related operators
+
+- [extend](/apl/tabular-operators/extend-operator): Creates new calculated fields, often as preparation before `make-series`. Use `extend` when you want to preprocess data for time series analysis.
+- [mv-expand](/apl/tabular-operators/mv-expand): Expands arrays into multiple rows. Use `mv-expand` to work with the arrays returned by `make-series`.
+- [summarize](/apl/tabular-operators/summarize-operator): Aggregates rows into groups but does not generate continuous time bins. Use `summarize` when you want flexible grouping without forcing evenly spaced intervals.
+- [top](/apl/tabular-operators/top-operator): Returns the top rows by a specified expression, not time series. Use `top` when you want to focus on the most significant values instead of trends over time.

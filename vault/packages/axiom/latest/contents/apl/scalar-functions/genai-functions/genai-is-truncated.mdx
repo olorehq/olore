@@ -1,0 +1,101 @@
+---
+title: 'genai_is_truncated'
+description: 'This page explains how to use the genai_is_truncated function in APL.'
+---
+
+The `genai_is_truncated` function checks whether an AI model response was truncated due to reaching token limits or other constraints. It analyzes the finish reason returned by the API to determine if the response was cut short.
+
+You can use this function to identify incomplete responses, monitor quality issues, detect token limit problems, or track when conversations need continuation.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would check the finish_reason field manually.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_truncated=if(finish_reason="length", "true", "false")
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend is_truncated = genai_is_truncated(messages, finish_reason)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would check the finish_reason field value.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  conversation_id,
+  CASE WHEN finish_reason = 'length' THEN true ELSE false END as is_truncated
+FROM ai_logs
+```
+
+```kusto APL equivalent
+['ai-logs']
+| extend is_truncated = genai_is_truncated(messages, finish_reason)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+genai_is_truncated(messages, finish_reason)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| messages | dynamic | Yes | An array of message objects from a GenAI conversation. Each message typically contains `role` and `content` fields. |
+| finish_reason | string | Yes | The finish reason returned by the AI API (such as 'stop', 'length', 'content_filter', 'tool_calls'). |
+
+### Returns
+
+Returns a boolean value: `true` if the response was truncated (typically when finish_reason is 'length'), `false` otherwise.
+
+## Example
+
+Check if a GenAI response was truncated due to token limits.
+
+**Query**
+
+```kusto
+['genai-traces']
+| extend finish_reason = ['attributes.gen_ai.response.finish_reasons']
+| extend is_truncated = genai_is_truncated(['attributes.gen_ai.input.messages'], finish_reason)
+| summarize 
+    truncated_count = countif(is_truncated),
+    total_count = count(),
+    truncation_rate = round(100.0 * countif(is_truncated) / count(), 2)
+```
+
+**Output**
+
+| truncated_count | total_count | truncation_rate |
+|-----------------|-------------|-----------------|
+| 45 | 1450 | 3.10 |
+
+This query tracks the rate of truncated responses, helping you identify when token limits are causing quality issues.
+
+## List of related functions
+
+- [genai_estimate_tokens](/apl/scalar-functions/genai-functions/genai-estimate-tokens): Estimates token count. Use this to predict if responses might be truncated before making API calls.
+- [genai_conversation_turns](/apl/scalar-functions/genai-functions/genai-conversation-turns): Counts conversation turns. Analyze this alongside truncation to understand context length issues.
+- [genai_extract_assistant_response](/apl/scalar-functions/genai-functions/genai-extract-assistant-response): Extracts assistant responses. Use this to examine truncated responses.
+- [strlen](/apl/scalar-functions/string-functions#strlen): Returns string length. Use this to analyze the length of truncated responses.
+

@@ -1,0 +1,169 @@
+---
+title: series_magnitude
+description: 'This page explains how to use the series_magnitude function in APL.'
+---
+
+The `series_magnitude` function calculates the Euclidean norm (magnitude) of a numeric dynamic array (series). This computes the square root of the sum of squared elements, representing the length or magnitude of the vector.
+
+You can use `series_magnitude` when you need to measure the overall magnitude of a series, compare vector lengths, normalize data, or calculate distances in multi-dimensional space. This is particularly useful in signal processing, similarity analysis, and feature scaling for machine learning applications.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you would typically implement magnitude calculation manually using `eval` with square root and sum operations. In APL, `series_magnitude` provides this calculation as a built-in function.
+
+<CodeGroup>
+```sql Splunk example
+... | eval squared_sum=pow(val1,2)+pow(val2,2)+pow(val3,2)
+| eval magnitude=sqrt(squared_sum)
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([3, 4, 5])
+]
+| extend magnitude = series_magnitude(values)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you would need to manually compute the magnitude using square root and sum of squares. In APL, `series_magnitude` provides this calculation in a single function for array data.
+
+<CodeGroup>
+```sql SQL example
+SELECT SQRT(SUM(value * value)) AS magnitude
+FROM measurements
+GROUP BY group_id;
+```
+
+```kusto APL equivalent
+datatable(values: dynamic)
+[
+  dynamic([3, 4, 5])
+]
+| extend magnitude = series_magnitude(values)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_magnitude(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                        |
+| --------- | ------- | ---------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values. |
+
+### Returns
+
+A numeric scalar representing the Euclidean norm (magnitude) of the series, calculated as the square root of the sum of squared elements.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_magnitude` to calculate the overall load magnitude from multiple request duration measurements, creating a single metric representing total system stress.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms) by ['geo.city']
+| extend load_magnitude = series_magnitude(durations)
+| project ['geo.city'], load_magnitude
+| order by load_magnitude desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms)%20by%20%5B'geo.city'%5D%20%7C%20extend%20load_magnitude%20%3D%20series_magnitude(durations)%20%7C%20project%20%5B'geo.city'%5D%2C%20load_magnitude%20%7C%20order%20by%20load_magnitude%20desc%22%7D)
+
+**Output**
+
+| geo.city   | load_magnitude |
+| ---------- | -------------- |
+| Seattle    | 325.5 ms          |
+| Portland   | 285.2 ms          |
+| Denver     | 245.8 ms          |
+
+This query calculates the magnitude of request duration vectors for each city, providing a single metric that represents the overall load intensity.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_magnitude` to compute a composite performance metric that captures the overall latency footprint of each service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend duration_ms = duration / 1ms
+| summarize durations = make_list(duration_ms) by ['service.name']
+| extend performance_magnitude = series_magnitude(durations)
+| project ['service.name'], performance_magnitude
+| order by performance_magnitude desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20duration_ms%20%3D%20duration%20%2F%201ms%20%7C%20summarize%20durations%20%3D%20make_list(duration_ms)%20by%20%5B'service.name'%5D%20%7C%20extend%20performance_magnitude%20%3D%20series_magnitude(durations)%20%7C%20project%20%5B'service.name'%5D%2C%20performance_magnitude%20%7C%20order%20by%20performance_magnitude%20desc%22%7D)
+
+**Output**
+
+| service.name | performance_magnitude |
+| ------------ | --------------------- |
+| checkout     | 1250.5                |
+| frontend     | 895.3                 |
+| cart         | 650.2                 |
+
+This query computes a magnitude metric for each service's latency profile, helping prioritize optimization efforts for services with the highest overall latency impact.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_magnitude` to calculate an overall threat intensity score based on multiple security metrics, creating a composite risk indicator.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize request_metrics = make_list(req_duration_ms) by status
+| extend threat_magnitude = series_magnitude(request_metrics)
+| project status, threat_magnitude
+| order by threat_magnitude desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20request_metrics%20%3D%20make_list(req_duration_ms)%20by%20status%20%7C%20extend%20threat_magnitude%20%3D%20series_magnitude(request_metrics)%20%7C%20project%20status%2C%20threat_magnitude%20%7C%20order%20by%20threat_magnitude%20desc%22%7D)
+
+**Output**
+
+| status | threat_magnitude |
+| ------ | ---------------- |
+| 401    | 2850.5 ms           |
+| 500    | 1250.3 ms           |
+| 200    | 425.8 ms            |
+
+This query calculates the magnitude of request patterns for each HTTP status code, providing a single metric that represents the overall intensity of potentially concerning traffic.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Returns the sum of all values. Use when you need simple addition instead of Euclidean norm.
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns absolute values of elements. Often used before magnitude calculation to handle negative values.
+- [series_pearson_correlation](/apl/scalar-functions/time-series/series-pearson-correlation): Computes correlation between series. Use when measuring similarity instead of magnitude.
+- [series_stats](/apl/scalar-functions/time-series/series-stats): Returns comprehensive statistics. Use when you need multiple measures instead of just magnitude.
+

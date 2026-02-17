@@ -1,0 +1,320 @@
+---
+title: 'Dashboard Construct'
+description: 'Learn how to configure dashboards with the Checkly CLI.'
+sidebarTitle: 'Dashboard'
+---
+
+<Tip>
+Learn more about Dashboards in [the Dashboards overview](/communicate/dashboards/overview).
+</Tip>
+
+Use Dashboard to create public or private dashboards that display checks and their related metrics on a single page. Dashboards provide a centralized view of your monitoring data.
+
+<CodeGroup>
+
+```ts Basic Example
+import { Dashboard } from "checkly/constructs"
+
+new Dashboard("basic-dashboard", {
+  header: "Service Status",
+  description: "Real-time monitoring dashboard",
+  tags: ["production", "api"],
+  customUrl: "service-status",
+})
+```
+
+```ts Advanced Example
+import { Dashboard } from "checkly/constructs"
+import * as path from "path"
+
+new Dashboard("advanced-dashboard", {
+  header: "ACME Production Status",
+  description: "Comprehensive monitoring for all ACME services",
+  tags: ["prod", "api", "web"],
+  logo: "https://assets.acme.com/images/acme-logo.png",
+  customUrl: "acme-production-status",
+  customDomain: "status.acme.com",
+  favicon: "https://assets.acme.com/favicon.ico",
+  link: "https://acme.com",
+  width: "FULL",
+  refreshRate: 60,
+  paginate: true,
+  paginationRate: 30,
+  checksPerPage: 20,
+  useTagsAndOperator: true,
+  hideTags: false,
+  enableIncidents: true,
+  expandChecks: false,
+  showHeader: true,
+  showP95: true,
+  showP99: true,
+  isPrivate: false,
+  customCSS: {
+    entrypoint: path.join(__dirname, "dashboard.css"),
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `checksPerPage` | `number` | ❌ | `15` | Number of checks per page (1-20) |
+| `customCSS` | `object` | ❌ | - | Custom CSS styling (Team/Enterprise plans only) |
+| `customDomain` | `string` | ❌ | - | Custom domain (e.g., "status.example.com") |
+| `customUrl` | `string` | ❌ | - | Subdomain under "checklyhq.com" (required if customDomain not specified) |
+| `description` | `string` | ❌ | - | Text displayed below the header |
+| `enableIncidents` | `boolean` | ❌ | `false` | Enable incidents |
+| `expandChecks` | `boolean` | ❌ | `false` | Expand checks by default |
+| `favicon` | `string` | ❌ | - | URL to favicon image |
+| `header` | `string` | ❌ | - | Text displayed at the top of your dashboard |
+| `hideTags` | `boolean` | ❌ | `false` | Hide tags on the dashboard |
+| `isPrivate` | `boolean` | ❌ | `false` | Make dashboard private (Team/Enterprise plans only) |
+| `link` | `string` | ❌ | - | URL to redirect when dashboard logo is clicked |
+| `logo` | `string` | ❌ | - | URL to logo image for the dashboard header |
+| `paginate` | `boolean` | ❌ | `true` | Enable pagination for checks |
+| `paginationRate` | `number` | ❌ | `60` | Pagination interval: `30` \| `60` \| `300` seconds |
+| `refreshRate` | `number` | ❌ | `60` | Auto-refresh interval: `60` \| `300` \| `600` seconds |
+| `showHeader` | `boolean` | ❌ | `true` | Show header and description |
+| `showP95` | `boolean` | ❌ | `true` | Show P95 statistics |
+| `showP99` | `boolean` | ❌ | `true` | Show P99 statistics |
+| `tags` | `string[]` | ❌ | `[]` | Tags that filter which checks appear on the dashboard |
+| `useTagsAndOperator` | `boolean` | ❌ | `false` | Use AND instead of OR for tag filtering |
+| `width` | `string` | ❌ | `'FULL'` | Dashboard width: `'FULL'` \| `'960PX'` |
+
+### Essential `Dashboard` Options
+
+<ResponseField name="header" type="string">
+
+Text displayed at the top of your dashboard as the main title.
+
+**Usage:**
+
+```ts highlight={2}
+new Dashboard('my-dashboard', {
+  header: 'Production Services Status'
+})
+```
+
+**Use cases**: Brand identity, service identification, user clarity.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+
+Text displayed below the header providing additional context about the dashboard.
+
+**Usage:**
+
+```ts highlight={3}
+new Dashboard('my-dashboard', {
+  header: 'Production Services',
+  description: 'Real-time monitoring of all production services'
+})
+```
+
+**Use cases**: Context provision, scope clarification, user guidance.
+</ResponseField>
+
+<ResponseField name="tags" type="string[]" default="[]">
+Tags that filter which checks appear on the dashboard. Empty array shows all checks.
+
+**Usage:**
+
+```ts highlight={2}
+new Dashboard('my-dashboard', {
+  tags: ['production', 'api']
+})
+```
+
+**Examples:**
+
+```ts
+// Service-specific tags
+new Dashboard('api-dashboard', {
+  header: 'API Services',
+  tags: ['api-dashboard'],
+})
+
+// Environment and service tags
+new Dashboard('prod-web-dashboard', {
+  header: 'Production Web Services',
+  tags: ['production', 'web'],
+  useTagsAndOperator: true // Must have BOTH tags
+})
+
+// All checks (empty array)
+new Dashboard('all-services', {
+  header: 'All Services',
+  tags: [] // Shows all checks
+})
+```
+
+**Use cases**: Service filtering, environment separation, team organization.
+</ResponseField>
+
+<ResponseField name="customUrl" type="string">
+
+Subdomain under "checklyhq.com" for your dashboard (e.g., "my-status" becomes "my-status.checklyhq.com").
+
+**Usage:**
+
+```ts highlight={2}
+new Dashboard('my-dashboard', {
+  customUrl: 'service-status'
+})
+// Creates: service-status.checklyhq.com
+```
+
+<Info>
+Required if `customDomain` is not specified. Use lowercase letters, numbers, and hyphens only.
+</Info>
+
+**Use cases**: Public access, branded URLs, easy sharing.
+</ResponseField>
+
+<ResponseField name="customDomain" type="string">
+
+Custom domain for your dashboard (e.g., "status.example.com"). Must be verified through the Checkly UI.
+
+**Usage:**
+
+```ts highlight={2}
+new Dashboard('my-dashboard', {
+  customDomain: 'status.example.com'
+})
+```
+
+**Use cases**: Brand consistency, professional appearance, domain control.
+</ResponseField>
+
+<ResponseField name="customCSS" type="object">
+Custom CSS styling for your dashboard. Only available on Team and Enterprise plans.
+
+**Usage:**
+
+```ts highlight={3-5,10-20}
+// Using file reference
+new Dashboard("styled-dashboard", {
+  customCSS: {
+    entrypoint: path.join(__dirname, "dashboard.css"),
+  },
+})
+
+// Using inline content
+new Dashboard("styled-dashboard", {
+  customCSS: {
+    content: `
+      .header {
+        background: #080808;
+        border-bottom-color: #313035;
+      }
+      .header .logo a {
+        color: #f7f8f8;
+      }
+    `,
+  },
+})
+```
+
+**Properties:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entrypoint` | `string` | ❌ | Path to a CSS file containing custom styles |
+| `content` | `string` | ❌ | Inline CSS content as a string |
+
+<Info>
+You must provide either `entrypoint` or `content`, but not both.
+</Info>
+
+**Use cases**: Brand consistency, custom themes, visual identity, enhanced UX.
+</ResponseField>
+
+## Examples
+
+<Tabs>
+  <Tab title="Production Monitoring">
+    ```ts
+    new Dashboard("production-monitoring", {
+      header: "Production Services",
+      description: "Real-time monitoring of all production services",
+      tags: ["production", "critical"],
+      customUrl: "production-monitoring",
+      logo: "https://company.com/logo.png",
+      refreshRate: 60,
+      width: "FULL",
+      showP95: true,
+      showP99: true,
+      enableIncidents: true,
+    })
+    ```
+  </Tab>
+
+  <Tab title="API Dashboard">
+    ```ts
+    new Dashboard("api-dashboard", {
+      header: "API Endpoints Status",
+      description: "Monitor all API endpoints and their performance",
+      tags: ["api"],
+      customUrl: "api-status",
+      customDomain: "api-status.company.com",
+      width: "960PX",
+      refreshRate: 60,
+      checksPerPage: 25,
+      expandChecks: true,
+    })
+    ```
+  </Tab>
+
+  <Tab title="Regional Dashboard">
+    ```ts
+    new Dashboard("us-east-dashboard", {
+      header: "US East Region Status",
+      description: "Monitoring for US East infrastructure",
+      tags: ["us-east", "production"],
+      customUrl: "us-east-status",
+      logo: "https://assets.company.com/regional-logo.png",
+      refreshRate: 300,
+      paginate: false,
+      showHeader: true,
+      hideTags: true,
+    })
+    ```
+  </Tab>
+
+  <Tab title="Team Dashboard">
+    ```ts
+    new Dashboard("platform-team-dashboard", {
+      header: "Platform Team Services",
+      description: "Services owned and maintained by the Platform team",
+      tags: ["platform-team"],
+      customUrl: "platform-team-status",
+      width: "960PX",
+      refreshRate: 300,
+      checksPerPage: 10,
+      useTagsAndOperator: true,
+      expandChecks: true,
+      isPrivate: true, // Only accessible with authentication
+    })
+    ```
+  </Tab>
+
+  <Tab title="Custom Styled Dashboard">
+    ```ts
+    new Dashboard("branded-dashboard", {
+      header: "ACME Corporation Status",
+      description: "Service availability dashboard",
+      tags: ["production"],
+      customUrl: "acme-status",
+      logo: "https://acme.com/logo.svg",
+      customCSS: {
+        entrypoint: path.join(__dirname, "acme-dashboard.css"),
+      },
+      width: "FULL",
+      refreshRate: 60,
+    })
+    ```
+  </Tab>
+</Tabs>

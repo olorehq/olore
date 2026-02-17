@@ -1,0 +1,103 @@
+---
+title: 'URL Monitors Overview'
+description: 'Monitor websites and apps to verify their availability and performance.'
+sidebarTitle: Overview
+---
+<Tip>
+**Monitoring as Code**: Learn more about the [URL Monitor Construct](/constructs/url-monitor).
+</Tip>
+
+## What are URL Monitors?
+
+URL monitors track the availability of your HTTP-based services by sending requests to specified URLs and validating avaliability and performance.
+
+<Frame>
+<img 
+  className="block dark:hidden" 
+  src="/images/next/url-monitor-overview-light.png" 
+  alt="URL monitor overview" 
+/>
+<img 
+  className="hidden dark:block" 
+  src="/images/next/url-monitor-overview-dark.png" 
+  alt="URL monitor overview" 
+/>
+</Frame>
+
+**Typical Use Cases Include:**
+
+* Ensuring your marketing site returns a 200 OK
+* Verifying your documentation site loads quickly
+* Checking that your SSL certificate is still valid
+* Confirming that a public pricing endpoint is reachable for customers
+
+## How URL Monitors Work
+
+URL monitors send HTTP requests to specified URLs and validate availability and performance. They can be configured to check for specific status codes and response times while running from multiple global locations.
+
+<Steps>
+<Step title="Enter your URL">
+Enter the URL you want to monitor.
+</Step>
+
+<Step title="Configure Response Times and Status Codes">
+Configure the response times and status codes you want to check for.
+</Step>
+
+<Step title="Select your locations">
+Select the locations you want to run the monitor from.
+</Step>
+
+<Step title="Configure your alerting">
+Configure your alerting to send you an alert when the monitor fails.
+</Step>
+
+<Step title="Schedule your monitor">
+Schedule your monitor to run at the frequency you want.
+</Step>
+
+</Steps>
+
+## URL Monitor Results
+
+URL monitor results show details about each request and help you understand if your endpoint was available and performing as expected at the time of the check.
+
+![http check results detail page](/images/docs/images/monitoring/check-results-url.png)
+
+Each result includes:
+
+* The HTTP request that was made
+* The response time
+* The result of any status code assertions configured in the monitor
+* For each request, we capture the following timing metrics:
+	* **dns**: DNS lookup time
+	* **tcp**: time to establish the TCP connection
+	* **firstByte**: time until the first byte of the response is received
+	* **download**: duration of the HTTP download
+
+Learn more in our documentation on [Results](/concepts/results).
+
+## Best Practices
+
+<Accordion title="Choosing Frequencies">
+- **Critical services**: Every 1-2 minutes
+- **Important services**: Every 5 minutes
+- **Standard services**: Every 10-15 minutes
+- **Background services**: Every 30 minutes to 1 hour
+</Accordion>
+
+<Accordion title="Location Selection">
+- Choose 2-3 locations covering your user base
+- Include at least one location near your infrastructure
+- Consider regulatory requirements for data residency
+</Accordion>
+
+<Accordion title="Assertion Strategy">
+- Always check status codes
+- Set appropriate response time thresholds
+- Test assertions thoroughly before deployment
+</Accordion>
+
+<Accordion title="Implement as a Construct">
+For monitoring as code workflows, use the URL Monitor construct to version control your monitoring configuration and deploy alongside your application code. [Learn about URL Monitor Construct →](/constructs/url-monitor)
+</Accordion>

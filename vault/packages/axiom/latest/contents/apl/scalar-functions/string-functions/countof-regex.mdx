@@ -1,0 +1,161 @@
+---
+title: 'countof_regex'
+description: 'This page explains how to use the countof_regex function in APL.'
+---
+
+The `countof_regex` function counts occurrences of a regular expression pattern within a string. Use this function when you need to count complex patterns or character classes in log messages, requiring more flexibility than simple substring matching.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `rex` with `max_match` to count regex matches. APL's `countof_regex` provides a more straightforward approach.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=message max_match=0 "error|warning"
+| eval pattern_count=mvcount(rex)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend pattern_count = countof_regex('error|warning', uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, counting regex matches typically requires database-specific functions. APL's `countof_regex` provides a standard approach.
+
+<CodeGroup>
+```sql SQL example
+SELECT REGEXP_COUNT(field, 'pattern') AS count FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend count = countof_regex('pattern', field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+countof_regex(regex, text)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| regex | string | Yes | The regular expression pattern to search for within the text. |
+| text | string | Yes | The source string where pattern occurrences are counted. |
+
+### Returns
+
+Returns the number of times the regex pattern matches in the text.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count numeric patterns in URIs to identify parameterized endpoint usage.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend numeric_params = countof_regex('[0-9]+', uri)
+| where numeric_params > 0
+| summarize avg_params = avg(numeric_params), request_count = count() by method
+| sort by request_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20numeric_params%20%3D%20countof_regex(%27%5B0-9%5D%2B%27%2C%20uri)%20%7C%20where%20numeric_params%20%3E%200%20%7C%20summarize%20avg_params%20%3D%20avg(numeric_params)%2C%20request_count%20%3D%20count()%20by%20method%20%7C%20sort%20by%20request_count%20desc%22%7D)
+
+**Output**
+
+| method | avg_params | request_count |
+|--------|------------|---------------|
+| GET | 1.8 | 3421 |
+| POST | 1.2 | 1876 |
+| PUT | 2.1 | 654 |
+| DELETE | 1.5 | 234 |
+
+This query counts numeric parameters in request URIs using regex, helping identify how frequently parameterized endpoints are accessed by different HTTP methods.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Count specific character patterns in trace IDs to analyze ID generation patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hex_chars = countof_regex('[a-f]', trace_id)
+| summarize avg_hex_chars = avg(hex_chars), trace_count = count() by ['service.name']
+| sort by trace_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20hex_chars%20%3D%20countof_regex(%27%5Ba-f%5D%27%2C%20trace_id)%20%7C%20summarize%20avg_hex_chars%20%3D%20avg(hex_chars)%2C%20trace_count%20%3D%20count()%20by%20%5B%27service.name%27%5D%20%7C%20sort%20by%20trace_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | avg_hex_chars | trace_count |
+|--------------|---------------|-------------|
+| frontend | 8.3 | 2345 |
+| checkout | 8.1 | 1987 |
+| cart | 8.5 | 1654 |
+| product-catalog | 7.9 | 1234 |
+
+This query counts hexadecimal characters (a-f) in trace IDs to analyze the distribution of characters, which can help identify issues with trace ID generation.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify requests with multiple special characters that might indicate injection attacks.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend special_chars = countof_regex('[<>%;()&+]', uri)
+| where special_chars >= 3
+| project _time, uri, special_chars, id, status, method
+| sort by special_chars desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20special_chars%20%3D%20countof_regex('%5B%3C%3E%25%3B()%26%2B%5D'%2C%20uri)%20%7C%20where%20special_chars%20%3E%3D%203%20%7C%20project%20_time%2C%20uri%2C%20special_chars%2C%20id%2C%20status%2C%20method%20%7C%20sort%20by%20special_chars%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| _time | uri | special_chars | id | status | method |
+|-------|-----|---------------|-------|--------|--------|
+| 2024-11-06T10:00:00Z | /search?q=<script>alert('xss')</script> | 8 | user123 | 403 | GET |
+| 2024-11-06T10:01:00Z | /api?param='OR'1'='1 | 6 | user456 | 403 | POST |
+
+This query counts special characters commonly used in injection attacks, helping identify potentially malicious requests that warrant further investigation.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [countof](/apl/scalar-functions/string-functions/countof): Counts plain substring occurrences. Use this when you need exact string matching without regex complexity.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts the first substring matching a regex. Use this when you need to capture the matched text, not just count occurrences.
+- [extract_all](/apl/scalar-functions/string-functions/extract-all): Extracts all substrings matching a regex. Use this when you need both the count and the actual matched values.
+- [replace_regex](/apl/scalar-functions/string-functions/replace-regex): Replaces all regex matches with another string. Use this when you need to modify matched patterns rather than count them.
+

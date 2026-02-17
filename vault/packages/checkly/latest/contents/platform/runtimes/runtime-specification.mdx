@@ -1,0 +1,406 @@
+---
+title: 'Runtime Specification'
+description: 'Detailed information on specific Checkly runtimes.'
+sidebarTitle: 'Runtime Specification'
+---
+
+
+By default, all Checkly runners (the isolated environments where checks execute) run with their time zone set to UTC, regardless of the locations used in your checks.
+
+## Resource limitations
+
+### Browser and Multistep Checks
+
+Browser and Multistep checks can use up to `2.7 GiB` of memory and `1678m` [milli-CPU units](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu). This limit applies to all processes spawned by the check, including the browser, the test framework, and the test code itself. The limit is enforced by the runner and is not configurable.
+
+> When the memory limit is exceeded, the check will automatically fail with a relevant error message, for example:
+> `Your check has reached the maximum memory usage of 2.7 GiB`.
+
+### Playwright Check Suites
+
+Playwright Check Suites run in a custom dependencies environment. Playwright Check Suites can use up to `6.8 GiB` of memory and `33000m` milli-CPU units.
+
+- **Node.js version**: v22
+- **Execution limit**: 30 minutes per check run
+
+Playwright Check Suites install dependencies from your `package.json` to create the runtime environment. Learn more about [using custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies).
+
+<Tip>
+To take advantage of the available CPU cores, configure workers in your `playwright.config.ts`:
+
+```typescript
+workers: process.env.CHECKLY ? 4 : undefined,
+```
+</Tip>
+
+## Built-in Node.js modules
+The following standard Node modules are included and can be used as normal, e.g.
+
+```ts
+import * as path from 'path'
+```
+
+- assert
+- buffer
+- crypto
+- dns
+- fs (partial, we have restricted some file system operations for security reasons)
+- path
+- querystring
+- readline
+- stream
+- string_decoder
+- timers
+- tls
+- url
+- util
+- zlib
+
+See the built-in module documentation on the official Node.js site (please see below which runtime includes what NodeJS version):
+
+- [18.x](https://nodejs.org/dist/latest-v18.x/docs/api/)
+- [16.x](https://nodejs.org/dist/latest-v16.x/docs/api/)
+
+## NPM packages
+
+These are the currently available runtimes and the included external NPM dependencies.
+
+> The packages below are included for **setup and teardown scripts** as well, with the exclusion of `fs`, Playwright
+> and `mocha`.
+
+
+### `2025.04`
+
+Node.js Version: `v22.11.0`
+
+The main update is Playwright 1.51.1. The Node.js version is v22.11.0.
+
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.51.1) 1.51.1
+- [@axe-core/playwright](https://npmjs.com/package/@axe-core/playwright/v/4.10.1) 4.10.1
+- [@azure/identity](https://npmjs.com/package/@azure/identity/v/4.9.1) 4.9.1
+- [@azure/keyvault-secrets](https://npmjs.com/package/@azure/keyvault-secrets/v/4.9.0) 4.9.0
+- [@checkly/playwright-helpers](https://npmjs.com/package/@checkly/playwright-helpers/v/1.0.3) 1.0.3
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/9.7.0) 9.7.0
+- [@google-cloud/local-auth](https://npmjs.com/package/@google-cloud/local-auth/v/3.0.1) 3.0.1
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.9.0) 1.9.0
+- [@opentelemetry/exporter-metrics-otlp-grpc](https://npmjs.com/package/@opentelemetry/exporter-metrics-otlp-grpc/v/0.53.0) 0.53.0
+- [@opentelemetry/sdk-metrics](https://npmjs.com/package/@opentelemetry/sdk-metrics/v/1.26.0) 1.26.0
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.26.0) 1.26.0
+- [@t3-oss/env-nextjs](https://npmjs.com/package/@t3-oss/env-nextjs/v/0.11.1) 0.11.1
+- [@xmldom/xmldom](https://npmjs.com/package/@xmldom/xmldom/v/0.9.2) 0.9.2
+- [aws4](https://npmjs.com/package/aws4/v/1.13.2) 1.13.2
+- [axios](https://npmjs.com/package/axios/v/0.28.0) 0.28.0
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/22.11.0) 22.11.0
+- [https](https://npmjs.com/package/https/v/22.11.0) 22.11.0
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.2.0) 4.2.0
+- [date-fns](https://npmjs.com/package/date-fns/v/3.3.1) 3.3.1
+- [date-fns-tz](https://npmjs.com/package/date-fns-tz/v/3.1.3) 3.1.3
+- [dotenv](https://npmjs.com/package/dotenv/v/16.4.5) 16.4.5
+- [ethers](https://npmjs.com/package/ethers/v/6.13.2) 6.13.2
+- [expect](https://npmjs.com/package/expect/v/29.7.0) 29.7.0
+- [form-data](https://npmjs.com/package/form-data/v/4.0.4) 4.0.4
+- [gmail-api-parse-message-ts](https://npmjs.com/package/gmail-api-parse-message-ts/v/2.2.33) 2.2.33
+- [google-auth-library](https://npmjs.com/package/google-auth-library/v/9.14.1) 9.14.1
+- [googleapis](https://npmjs.com/package/googleapis/v/144.0.0) 144.0.0
+- [graphql](https://npmjs.com/package/graphql/v/16.9.0) 16.9.0
+- [graphql-tag](https://npmjs.com/package/graphql-tag/v/2.12.6) 2.12.6
+- [jose](https://npmjs.com/package/jose/v/5.9.2) 5.9.2
+- [jsdom](https://npmjs.com/package/jsdom/v/25.0.0) 25.0.0
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/9.0.2) 9.0.2
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [long](https://npmjs.com/package/long/v/5.2.3) 5.2.3
+- [moment](https://npmjs.com/package/moment/v/2.30.1) 2.30.1
+- [nice-grpc](https://npmjs.com/package/nice-grpc/v/2.1.12) 2.1.12
+- [nice-grpc-client-middleware-deadline](https://npmjs.com/package/nice-grpc-client-middleware-deadline/v/2.0.15) 2.0.15
+- [nice-grpc-client-middleware-devtools](https://npmjs.com/package/nice-grpc-client-middleware-devtools/v/1.0.7) 1.0.7
+- [nice-grpc-client-middleware-retry](https://npmjs.com/package/nice-grpc-client-middleware-retry/v/3.1.11) 3.1.11
+- [nice-grpc-common](https://npmjs.com/package/nice-grpc-common/v/2.0.2) 2.0.2
+- [nice-grpc-error-details](https://npmjs.com/package/nice-grpc-error-details/v/0.2.9) 0.2.9
+- [nice-grpc-opentelemetry](https://npmjs.com/package/nice-grpc-opentelemetry/v/0.1.18) 0.1.18
+- [nice-grpc-prometheus](https://npmjs.com/package/nice-grpc-prometheus/v/0.2.7) 0.2.7
+- [nice-grpc-server-health](https://npmjs.com/package/nice-grpc-server-health/v/2.0.14) 2.0.14
+- [nice-grpc-server-middleware-terminator](https://npmjs.com/package/nice-grpc-server-middleware-terminator/v/2.0.14) 2.0.14
+- [nice-grpc-server-reflection](https://npmjs.com/package/nice-grpc-server-reflection/v/2.0.14) 2.0.14
+- [nice-grpc-web](https://npmjs.com/package/nice-grpc-web/v/3.3.7) 3.3.7
+- [node-pop3](https://npmjs.com/package/node-pop3/v/0.9.1) 0.9.1
+- [otpauth](https://npmjs.com/package/otpauth/v/9.4.0) 9.4.0
+- [playwright](https://npmjs.com/package/playwright/v/1.51.1) 1.51.1
+- [pdf2json](https://npmjs.com/package/pdf2json/v/3.1.4) 3.1.4
+- [prisma](https://npmjs.com/package/prisma/v/6.6.0) 6.6.0
+- [protobufjs](https://npmjs.com/package/protobufjs/v/7.5.0) 7.5.0
+- [tedious](https://npmjs.com/package/tedious/v/18.6.1) 18.6.1
+- [twilio](https://npmjs.com/package/twilio/v/5.3.0) 5.3.0
+- [uuid](https://npmjs.com/package/uuid/v/11.1.0) 11.1.0
+- [ws](https://npmjs.com/package/ws/v/8.18.1) 8.18.1
+- [xml-crypto](https://npmjs.com/package/xml-crypto/v/6.1.1) 6.1.1
+- [xml-encryption](https://npmjs.com/package/xml-encryption/v/3.1.0) 3.1.0
+- [zod](https://npmjs.com/package/zod/v/3.24.3) 3.24.3
+- [@clerk/testing](https://npmjs.com/package/@clerk/testing/v/1.5.1) 1.5.1
+- [mailosaur](https://npmjs.com/package/mailosaur/v/8.6.1) 8.6.1
+- [gaxios](https://npmjs.com/package/gaxios/v/6.7.1) 6.7.1
+- [@kubernetes/client-node](https://npmjs.com/package/@kubernetes/client-node/v/1.1.2) 1.1.2
+- [mysql](https://npmjs.com/package/mysql/v/2.18.1) 2.18.1
+
+### `2024.09`
+
+Node.js Version: `v18.20.3`
+
+The main update is Playwright 1.48.2. The Node.js version is v18.20.3. New dependencies are `@clerk/testing`, `mailosaur`, `gaxios`, `@kubernetes/client-node` and `mysql`.
+
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.48.2) 1.48.2
+- [@axe-core/playwright](https://npmjs.com/package/@axe-core/playwright/v/4.10.0) 4.10.0
+- [@azure/identity](https://npmjs.com/package/@azure/identity/v/4.4.1) 4.4.1
+- [@azure/keyvault-secrets](https://npmjs.com/package/@azure/keyvault-secrets/v/4.8.0) 4.8.0
+- [@checkly/playwright-helpers](https://npmjs.com/package/@checkly/playwright-helpers/v/1.0.3) 1.0.3
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/9.0.1) 9.0.1
+- [@google-cloud/local-auth](https://npmjs.com/package/@google-cloud/local-auth/v/3.0.1) 3.0.1
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.9.0) 1.9.0
+- [@opentelemetry/exporter-metrics-otlp-grpc](https://npmjs.com/package/@opentelemetry/exporter-metrics-otlp-grpc/v/0.53.0) 0.53.0
+- [@opentelemetry/sdk-metrics](https://npmjs.com/package/@opentelemetry/sdk-metrics/v/1.26.0) 1.26.0
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.26.0) 1.26.0
+- [@t3-oss/env-nextjs](https://npmjs.com/package/@t3-oss/env-nextjs/v/0.11.1) 0.11.1
+- [@xmldom/xmldom](https://npmjs.com/package/@xmldom/xmldom/v/0.9.2) 0.9.2
+- [aws4](https://npmjs.com/package/aws4/v/1.13.2) 1.13.2
+- [axios](https://npmjs.com/package/axios/v/0.28.0) 0.28.0
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/18.20.3) 18.20.3
+- [https](https://npmjs.com/package/https/v/18.20.3) 18.20.3
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.2.0) 4.2.0
+- [date-fns](https://npmjs.com/package/date-fns/v/3.3.1) 3.3.1
+- [date-fns-tz](https://npmjs.com/package/date-fns-tz/v/3.1.3) 3.1.3
+- [dotenv](https://npmjs.com/package/dotenv/v/16.4.5) 16.4.5
+- [ethers](https://npmjs.com/package/ethers/v/6.13.2) 6.13.2
+- [expect](https://npmjs.com/package/expect/v/29.7.0) 29.7.0
+- [form-data](https://npmjs.com/package/form-data/v/4.0.4) 4.0.4
+- [gmail-api-parse-message-ts](https://npmjs.com/package/gmail-api-parse-message-ts/v/2.2.33) 2.2.33
+- [google-auth-library](https://npmjs.com/package/google-auth-library/v/9.14.1) 9.14.1
+- [googleapis](https://npmjs.com/package/googleapis/v/144.0.0) 144.0.0
+- [graphql](https://npmjs.com/package/graphql/v/16.9.0) 16.9.0
+- [graphql-tag](https://npmjs.com/package/graphql-tag/v/2.12.6) 2.12.6
+- [jose](https://npmjs.com/package/jose/v/5.9.2) 5.9.2
+- [jsdom](https://npmjs.com/package/jsdom/v/25.0.0) 25.0.0
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/9.0.2) 9.0.2
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [long](https://npmjs.com/package/long/v/5.2.3) 5.2.3
+- [moment](https://npmjs.com/package/moment/v/2.30.1) 2.30.1
+- [nice-grpc](https://npmjs.com/package/nice-grpc/v/2.1.9) 2.1.9
+- [nice-grpc-client-middleware-deadline](https://npmjs.com/package/nice-grpc-client-middleware-deadline/v/2.0.12) 2.0.12
+- [nice-grpc-client-middleware-devtools](https://npmjs.com/package/nice-grpc-client-middleware-devtools/v/1.0.4) 1.0.4
+- [nice-grpc-client-middleware-retry](https://npmjs.com/package/nice-grpc-client-middleware-retry/v/3.1.8) 3.1.8
+- [nice-grpc-common](https://npmjs.com/package/nice-grpc-common/v/2.0.2) 2.0.2
+- [nice-grpc-error-details](https://npmjs.com/package/nice-grpc-error-details/v/0.2.6) 0.2.6
+- [nice-grpc-opentelemetry](https://npmjs.com/package/nice-grpc-opentelemetry/v/0.1.15) 0.1.15
+- [nice-grpc-prometheus](https://npmjs.com/package/nice-grpc-prometheus/v/0.2.4) 0.2.4
+- [nice-grpc-server-health](https://npmjs.com/package/nice-grpc-server-health/v/2.0.11) 2.0.11
+- [nice-grpc-server-middleware-terminator](https://npmjs.com/package/nice-grpc-server-middleware-terminator/v/2.0.11) 2.0.11
+- [nice-grpc-server-reflection](https://npmjs.com/package/nice-grpc-server-reflection/v/2.0.11) 2.0.11
+- [nice-grpc-web](https://npmjs.com/package/nice-grpc-web/v/3.3.4) 3.3.4
+- [otpauth](https://npmjs.com/package/otpauth/v/9.3.2) 9.3.2
+- [playwright](https://npmjs.com/package/playwright/v/1.48.2) 1.48.2
+- [pdf2json](https://npmjs.com/package/pdf2json/v/3.1.4) 3.1.4
+- [prisma](https://npmjs.com/package/prisma/v/5.19.1) 5.19.1
+- [protobufjs](https://npmjs.com/package/protobufjs/v/7.4.0) 7.4.0
+- [tedious](https://npmjs.com/package/tedious/v/18.6.1) 18.6.1
+- [twilio](https://npmjs.com/package/twilio/v/5.3.0) 5.3.0
+- [uuid](https://npmjs.com/package/uuid/v/10.0.0) 10.0.0
+- [ws](https://npmjs.com/package/ws/v/8.18.0) 8.18.0
+- [xml-crypto](https://npmjs.com/package/xml-crypto/v/4.0.1) 4.0.1
+- [xml-encryption](https://npmjs.com/package/xml-encryption/v/3.0.2) 3.0.2
+- [zod](https://npmjs.com/package/zod/v/3.23.8) 3.23.8
+- [@clerk/testing](https://npmjs.com/package/@clerk/testing/v/1.3.0) 1.3.0
+- [mailosaur](https://npmjs.com/package/mailosaur/v/8.6.1) 8.6.1
+- [gaxios](https://npmjs.com/package/gaxios/v/6.7.1) 6.7.1
+- [@kubernetes/client-node](https://npmjs.com/package/@kubernetes/client-node/v/0.22.3) 0.22.3
+- [mysql](https://npmjs.com/package/mysql/v/2.18.1) 2.18.1
+
+### `2024.02`
+
+Node.js Version: `v18.20.3`
+
+The main update is Playwright 1.42.1. The Node.js version is v18.20.3. New dependencies are `@opentelemetry/exporter-metrics-otlp-grpc`, `@opentelemetry/sdk-metrics`, `chai-json-schema`, `pdf2json`, `protobufjs`, `long` and the `nice-grpc` family.
+
+- [@axe-core/playwright](https://npmjs.com/package/@axe-core/playwright/v/4.8.5) 4.8.5
+- [@checkly/playwright-helpers](https://npmjs.com/package/@checkly/playwright-helpers/v/1.0.2) 1.0.2
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/8.4.1) 8.4.1
+- [@google-cloud/local-auth](https://npmjs.com/package/@google-cloud/local-auth/v/3.0.1) 3.0.1
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.7.0) 1.7.0
+- [@opentelemetry/exporter-metrics-otlp-grpc](https://npmjs.com/package/@opentelemetry/exporter-metrics-otlp-grpc/v/0.48.0) 0.48.0
+- [@opentelemetry/sdk-metrics](https://npmjs.com/package/@opentelemetry/sdk-metrics/v/1.22.0) 1.22.0
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.22.0) 1.22.0
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.42.1) 1.42.1
+- [@t3-oss/env-nextjs](https://npmjs.com/package/@t3-oss/env-nextjs/v/0.9.2) 0.9.2
+- [@xmldom/xmldom](https://npmjs.com/package/@xmldom/xmldom/v/0.8.10) 0.8.10
+- [aws4](https://npmjs.com/package/aws4/v/1.12.0) 1.12.0
+- [axios](https://npmjs.com/package/axios/v/0.28.0) 0.28.0
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/18.20.3) 18.20.3
+- [https](https://npmjs.com/package/https/v/18.20.3) 18.20.3
+- [chai](https://npmjs.com/package/chai/v/4.4.1) 4.4.1
+- [chai-json-schema](https://npmjs.com/package/chai-json-schema/v/1.5.1) 1.5.1
+- [chai-string](https://npmjs.com/package/chai-string/v/1.5.0) 1.5.0
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.2.0) 4.2.0
+- [date-fns](https://npmjs.com/package/date-fns/v/3.3.1) 3.3.1
+- [date-fns-tz](https://npmjs.com/package/date-fns-tz/v/3.1.3) 3.1.3
+- [dotenv](https://npmjs.com/package/dotenv/v/16.4.5) 16.4.5
+- [ethers](https://npmjs.com/package/ethers/v/6.11.1) 6.11.1
+- [expect](https://npmjs.com/package/expect/v/29.7.0) 29.7.0
+- [form-data](https://npmjs.com/package/form-data/v/4.0.0) 4.0.0
+- [gmail-api-parse-message-ts](https://npmjs.com/package/gmail-api-parse-message-ts/v/2.2.32) 2.2.32
+- [google-auth-library](https://npmjs.com/package/google-auth-library/v/9.6.3) 9.6.3
+- [googleapis](https://npmjs.com/package/googleapis/v/133.0.0) 133.0.0
+- [graphql](https://npmjs.com/package/graphql/v/16.9.0) 16.9.0
+- [graphql-tag](https://npmjs.com/package/graphql-tag/v/2.12.6) 2.12.6
+- [jose](https://npmjs.com/package/jose/v/5.2.2) 5.2.2
+- [jsdom](https://npmjs.com/package/jsdom/v/24.0.0) 24.0.0
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/9.0.2) 9.0.2
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [long](https://npmjs.com/package/long/v/5.2.3) 5.2.3
+- [moment](https://npmjs.com/package/moment/v/2.30.1) 2.30.1
+- [nice-grpc](https://npmjs.com/package/nice-grpc/v/2.1.8) 2.1.8
+- [nice-grpc-client-middleware-deadline](https://npmjs.com/package/nice-grpc-client-middleware-deadline/v/2.0.11) 2.0.11
+- [nice-grpc-client-middleware-devtools](https://npmjs.com/package/nice-grpc-client-middleware-devtools/v/1.0.3) 1.0.3
+- [nice-grpc-client-middleware-retry](https://npmjs.com/package/nice-grpc-client-middleware-retry/v/3.1.7) 3.1.7
+- [nice-grpc-common](https://npmjs.com/package/nice-grpc-common/v/2.0.2) 2.0.2
+- [nice-grpc-error-details](https://npmjs.com/package/nice-grpc-error-details/v/0.2.5) 0.2.5
+- [nice-grpc-opentelemetry](https://npmjs.com/package/nice-grpc-opentelemetry/v/0.1.14) 0.1.14
+- [nice-grpc-prometheus](https://npmjs.com/package/nice-grpc-prometheus/v/0.2.3) 0.2.3
+- [nice-grpc-server-health](https://npmjs.com/package/nice-grpc-server-health/v/2.0.10) 2.0.10
+- [nice-grpc-server-middleware-terminator](https://npmjs.com/package/nice-grpc-server-middleware-terminator/v/2.0.10) 2.0.10
+- [nice-grpc-server-reflection](https://npmjs.com/package/nice-grpc-server-reflection/v/2.0.10) 2.0.10
+- [nice-grpc-web](https://npmjs.com/package/nice-grpc-web/v/3.3.3) 3.3.3
+- [otpauth](https://npmjs.com/package/otpauth/v/9.2.2) 9.2.2
+- [pdf2json](https://npmjs.com/package/pdf2json/v/3.0.5) 3.0.5
+- [playwright](https://npmjs.com/package/playwright/v/1.42.1) 1.42.1
+- [prisma](https://npmjs.com/package/prisma/v/5.10.2) 5.10.2
+- [protobufjs](https://npmjs.com/package/protobufjs/v/7.2.6) 7.2.6
+- [protobufjs/minimal](https://npmjs.com/package/protobufjs/minimal/v/7.2.6) 7.2.6
+- [protobufjs/light](https://npmjs.com/package/protobufjs/light/v/7.2.6) 7.2.6
+- [twilio](https://npmjs.com/package/twilio/v/4.23.0) 4.23.0
+- [uuid](https://npmjs.com/package/uuid/v/9.0.1) 9.0.1
+- [ws](https://npmjs.com/package/ws/v/8.16.0) 8.16.0
+- [xml-crypto](https://npmjs.com/package/xml-crypto/v/4.0.1) 4.0.1
+- [xml-encryption](https://npmjs.com/package/xml-encryption/v/3.0.2) 3.0.2
+- [zod](https://npmjs.com/package/zod/v/3.22.4) 3.22.4
+- [@azure/identity](https://npmjs.com/package/@azure/identity/v/4.3.0) 4.3.0
+- [@azure/keyvault-secrets](https://npmjs.com/package/@azure/keyvault-secrets/v/4.8.0) 4.8.0
+- [tedious](https://npmjs.com/package/tedious/v/18.2.0) 18.2.0
+- [allure-playwright](https://npmjs.com/package/allure-playwright/v/latest) latest
+- [@dvag/playwright-utils](https://npmjs.com/package/@dvag/playwright-utils/v/latest) latest
+
+### `2023.09`
+
+Node.js Version: `v18.20.3`
+
+The main updates are Playwright 1.38.1 and the addition of ethers 6.7.1, prisma 5.1.1, zod 3.22.2, @t3-oss/env-nextjs 0.6.1 and @xmldom/xmldom 0.8.10. The Node.js version is v18.20.3.
+
+- [@checkly/playwright-helpers](https://npmjs.com/package/@checkly/playwright-helpers/v/1.0.2) 1.0.2
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/8.0.2) 8.0.2
+- [@google-cloud/local-auth](https://npmjs.com/package/@google-cloud/local-auth/v/3.0.0) 3.0.0
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.4.1) 1.4.1
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.15.2) 1.15.2
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.38.1) 1.38.1
+- [@t3-oss/env-nextjs](https://npmjs.com/package/@t3-oss/env-nextjs/v/0.6.1) 0.6.1
+- [@xmldom/xmldom](https://npmjs.com/package/@xmldom/xmldom/v/0.8.10) 0.8.10
+- [aws4](https://npmjs.com/package/aws4/v/1.12.0) 1.12.0
+- [axios](https://npmjs.com/package/axios/v/0.27.2) 0.27.2
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/18.20.3) 18.20.3
+- [https](https://npmjs.com/package/https/v/18.20.3) 18.20.3
+- [chai](https://npmjs.com/package/chai/v/4.3.7) 4.3.7
+- [chai-string](https://npmjs.com/package/chai-string/v/1.5.0) 1.5.0
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.1.1) 4.1.1
+- [date-fns](https://npmjs.com/package/date-fns/v/2.30.0) 2.30.0
+- [date-fns-tz](https://npmjs.com/package/date-fns-tz/v/2.0.0) 2.0.0
+- [dotenv](https://npmjs.com/package/dotenv/v/16.3.1) 16.3.1
+- [ethers](https://npmjs.com/package/ethers/v/6.7.1) 6.7.1
+- [expect](https://npmjs.com/package/expect/v/29.6.2) 29.6.2
+- [form-data](https://npmjs.com/package/form-data/v/4.0.0) 4.0.0
+- [gmail-api-parse-message-ts](https://npmjs.com/package/gmail-api-parse-message-ts/v/2.2.32) 2.2.32
+- [google-auth-library](https://npmjs.com/package/google-auth-library/v/9.0.0) 9.0.0
+- [googleapis](https://npmjs.com/package/googleapis/v/126.0.0) 126.0.0
+- [jose](https://npmjs.com/package/jose/v/4.14.4) 4.14.4
+- [jsdom](https://npmjs.com/package/jsdom/v/22.1.0) 22.1.0
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/9.0.1) 9.0.1
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [moment](https://npmjs.com/package/moment/v/2.29.4) 2.29.4
+- [otpauth](https://npmjs.com/package/otpauth/v/9.1.4) 9.1.4
+- [playwright](https://npmjs.com/package/playwright/v/1.38.1) 1.38.1
+- [prisma](https://npmjs.com/package/prisma/v/5.1.1) 5.1.1
+- [twilio](https://npmjs.com/package/twilio/v/4.15.0) 4.15.0
+- [uuid](https://npmjs.com/package/uuid/v/9.0.0) 9.0.0
+- [ws](https://npmjs.com/package/ws/v/8.13.0) 8.13.0
+- [xml-crypto](https://npmjs.com/package/xml-crypto/v/4.1.0) 4.1.0
+- [xml-encryption](https://npmjs.com/package/xml-encryption/v/3.0.2) 3.0.2
+- [zod](https://npmjs.com/package/zod/v/3.22.2) 3.22.2
+
+### `2023.02`
+
+Node.js Version: `v16.20.2`
+
+The main updates are Playwright 1.32.1, faker 7.6.0 and the addition of date-fns 2.29.3 and ws 8.13.0. We are dropping support for Mocha.
+
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/7.6.0) 7.6.0
+- [@google-cloud/local-auth](https://npmjs.com/package/@google-cloud/local-auth/v/2.1.1) 2.1.1
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.0.4) 1.0.4
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.0.1) 1.0.1
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.32.3) 1.32.3
+- [@xmldom/xmldom](https://npmjs.com/package/@xmldom/xmldom/v/0.8.10) 0.8.10
+- [aws4](https://npmjs.com/package/aws4/v/1.11.0) 1.11.0
+- [axios](https://npmjs.com/package/axios/v/0.27.2) 0.27.2
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/16.20.2) 16.20.2
+- [https](https://npmjs.com/package/https/v/16.20.2) 16.20.2
+- [chai](https://npmjs.com/package/chai/v/4.3.7) 4.3.7
+- [chai-string](https://npmjs.com/package/chai-string/v/1.5.0) 1.5.0
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.1.1) 4.1.1
+- [date-fns](https://npmjs.com/package/date-fns/v/2.29.3) 2.29.3
+- [date-fns-tz](https://npmjs.com/package/date-fns-tz/v/2.0.0) 2.0.0
+- [expect](https://npmjs.com/package/expect/v/29.3.1) 29.3.1
+- [form-data](https://npmjs.com/package/form-data/v/4.0.0) 4.0.0
+- [gmail-api-parse-message-ts](https://npmjs.com/package/gmail-api-parse-message-ts/v/2.2.32) 2.2.32
+- [google-auth-library](https://npmjs.com/package/google-auth-library/v/8.8.0) 8.8.0
+- [googleapis](https://npmjs.com/package/googleapis/v/118.0.0) 118.0.0
+- [jose](https://npmjs.com/package/jose/v/4.14.1) 4.14.1
+- [jsdom](https://npmjs.com/package/jsdom/v/21.1.2) 21.1.2
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/9.0.0) 9.0.0
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [moment](https://npmjs.com/package/moment/v/2.29.2) 2.29.2
+- [otpauth](https://npmjs.com/package/otpauth/v/9.0.2) 9.0.2
+- [twilio](https://npmjs.com/package/twilio/v/4.11.1) 4.11.1
+- [playwright](https://npmjs.com/package/playwright/v/1.32.3) 1.32.3
+- [typescript](https://npmjs.com/package/typescript/v/4.8.4) 4.8.4
+- [uuid](https://npmjs.com/package/uuid/v/9.0.0) 9.0.0
+- [ws](https://npmjs.com/package/ws/v/8.13.0) 8.13.0
+- [xml-crypto](https://npmjs.com/package/xml-crypto/v/4.0.1) 4.0.1
+- [xml-encryption](https://npmjs.com/package/xml-encryption/v/3.0.2) 3.0.2
+
+### `2022.10`
+
+Node.js Version: `v16.20.2`
+
+The main updates are Playwright 1.28.0, Node.js v16.20.2 and Typescript support. We are dropping support for Puppeteer.
+
+- [@faker-js/faker](https://npmjs.com/package/@faker-js/faker/v/5.5.3) 5.5.3
+- [@opentelemetry/api](https://npmjs.com/package/@opentelemetry/api/v/1.0.4) 1.0.4
+- [@opentelemetry/sdk-trace-base](https://npmjs.com/package/@opentelemetry/sdk-trace-base/v/1.0.1) 1.0.1
+- [@playwright/test](https://npmjs.com/package/@playwright/test/v/1.28.0) 1.28.0
+- [aws4](https://npmjs.com/package/aws4/v/1.11.0) 1.11.0
+- [axios](https://npmjs.com/package/axios/v/0.27.2) 0.27.2
+- [btoa](https://npmjs.com/package/btoa/v/1.2.1) 1.2.1
+- [http](https://npmjs.com/package/http/v/16.20.2) 16.20.2
+- [https](https://npmjs.com/package/https/v/16.20.2) 16.20.2
+- [chai](https://npmjs.com/package/chai/v/4.3.7) 4.3.7
+- [chai-string](https://npmjs.com/package/chai-string/v/1.5.0) 1.5.0
+- [crypto-js](https://npmjs.com/package/crypto-js/v/4.1.1) 4.1.1
+- [expect](https://npmjs.com/package/expect/v/29.3.1) 29.3.1
+- [form-data](https://npmjs.com/package/form-data/v/4.0.0) 4.0.0
+- [jsonwebtoken](https://npmjs.com/package/jsonwebtoken/v/8.5.1) 8.5.1
+- [lodash](https://npmjs.com/package/lodash/v/4.17.21) 4.17.21
+- [mocha](https://npmjs.com/package/mocha/v/10.1.0) 10.1.0
+- [moment](https://npmjs.com/package/moment/v/2.29.2) 2.29.2
+- [otpauth](https://npmjs.com/package/otpauth/v/9.0.2) 9.0.2
+- [playwright](https://npmjs.com/package/playwright/v/1.28.0) 1.28.0
+- [typescript](https://npmjs.com/package/typescript/v/4.8.4) 4.8.4
+- [uuid](https://npmjs.com/package/uuid/v/9.0.0) 9.0.0
+

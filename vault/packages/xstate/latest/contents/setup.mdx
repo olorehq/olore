@@ -1,0 +1,81 @@
+---
+title: 'Setup'
+---
+
+In XState version 5, you can now use the `setup({ ... })` function to setup types and sources for your machines. This has many benefits:
+
+- Reduced boilerplate for strongly typing and providing named sources
+- More robust machine logic, as named sources are guaranteed to exist
+- Better type inference for actions, actors, guards, delays, context, events, etc.
+- Strongly-typed snapshot and done events for actors
+- Strongly-typed state values
+- Reusability of source logic
+
+Example usage:
+
+```ts
+import { setup, assign } from 'xstate';
+
+const machine = setup({
+  types: {
+    context: {} as { count: number },
+    events: {} as { type: 'inc' } | { type: 'dec' },
+  },
+  actions: {
+    increment: assign({
+      count: ({ context }) => context.count + 1,
+    }),
+    decrement: assign({
+      count: ({ context }) => context.count - 1,
+    }),
+  },
+}).createMachine({
+  context: { count: 0 },
+  on: {
+    inc: { actions: 'increment' },
+    dec: { actions: 'decrement' },
+  },
+});
+```
+
+<Callout type="warning">
+
+Ensure you are using the latest version of TypeScript (version 5.0 or higher). See the docs on [TypeScript usage with XState](./typescript) for more information.
+
+</Callout>
+
+## Setting up types
+
+Machine types should be setup in the `types` property of `setup({ types })`. This is where you can setup the types for your machine, including:
+
+- Types for `context`
+- Types for `events`, including event payloads
+- Types for `input`
+- Types for `actions`, including action `params`
+- Types for `guards`, including guard `params`
+- Types for `actors`
+
+## Migrating from `createMachine`
+
+Migrating from bare `createMachine({ ... })` to `setup({ ... }).createMachine({ ... })` to create a machine is simple.
+
+1. Import `setup` instead of `createMachine` from `'xstate'`
+1. Move `types` from `createMachine(...)` to `setup(...)`
+1. Move action, actor, guard, etc. sources from the 2nd argument of `createMachine(config, sources)` to `setup({ ... })`
+
+```ts
+import {
+// createMachine
+  setup
+} from 'xstate';
+
+const machine =
+  setup({
+    types: { ... },
+    actions: { ... },
+    guards: { ... }
+  })
+  .createMachine({
+    // types: { ... }
+  }, /* { actions, guards, ... } */);
+```

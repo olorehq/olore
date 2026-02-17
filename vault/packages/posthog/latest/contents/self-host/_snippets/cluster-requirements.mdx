@@ -1,0 +1,35 @@
+import ExpandableVolumeSnippet from './expandable-volume'
+
+#### Cluster requirements
+* Kubernetes version >=1.23 <= 1.25
+* Kubernetes nodes:
+    - ensure you have enough resources available (we suggest a total **minimum** of 4 vcpu & 8GB of memory)
+    - ensure you can run `x86-64`/`amd64` workloads. `arm64` architecture is currently not supported
+* Suggestion: ensure `allowVolumeExpansion` is set to `True` in the storage class definition (this setting enables `PVC` resize)
+
+  <ExpandableVolumeSnippet/>
+
+* Suggestion: ensure `reclaimPolicy` is set to `Retain` in the storage class definition (this setting allows for manual reclamation of the resource)
+    <details>
+
+    The `Retain` reclaim policy allows for manual reclamation of the resource. When the PersistentVolumeClaim is deleted, the PersistentVolume still exists and the volume is considered "released".
+    But it is not yet available for another claim because the previous claimant's data remains on the volume (see the [official documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#reclaiming)).
+
+    This can become useful in case your need to reprovision a pod/statefulset but you don't want to lose the underlying data
+
+    To verify which `reclaimPolicy` your default storage class is using you can run:
+
+    ```shell
+    kubectl get storageclass -o json | jq '.items[].reclaimPolicy'
+    "Retain"
+    ```
+
+    If your storage class allows it, you can modify the `reclaimPolicy` by running:
+
+    ```shell
+    DEFAULT_STORAGE_CLASS=$(kubectl get storageclass -o=jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}')
+    kubectl patch storageclass "$DEFAULT_STORAGE_CLASS" -p '{"reclaimPolicy": "Retain"}'
+    storageclass.storage.k8s.io/gp2 patched
+    ```
+
+    </details>

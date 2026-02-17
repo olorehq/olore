@@ -1,0 +1,96 @@
+---
+title: "Axiom Processing Language (APL)"
+description: "This section explains how to use the Axiom Processing Language to get deeper insights from your data."
+sidebarTitle: Introduction
+keywords: ['axiom documentation', 'documentation', 'axiom', 'APL', 'axiom processing language', 'data explorer', 'getiing started guide', 'summarize', 'filter']
+---
+
+import Prerequisites from "/snippets/minimal-prerequisites.mdx"
+
+The Axiom Processing Language (APL) is a query language that’s perfect for getting deeper insights from your data. Whether logs, events, analytics, or similar, APL provides the flexibility to filter, manipulate, and summarize your data exactly the way you need it.
+
+<Prerequisites />
+
+## Build an APL query
+
+APL queries consist of the following:
+
+- **Data source:** The most common data source is one of your Axiom datasets.
+- **Operators:** Operators filter, manipulate, and summarize your data.
+
+Delimit operators with the pipe character (`|`).
+
+A typical APL query has the following structure:
+
+```kusto
+DatasetName
+| Operator ...
+| Operator ...
+```
+
+- `DatasetName` is the name of the dataset you want to query.
+- `Operator` is an operation you apply to the data.
+
+<Note>
+Apart from Axiom datasets, you can use other data sources:
+- External data sources using the [externaldata](/apl/tabular-operators/externaldata-operator) operator.
+- Specify a data table in the APL query itself using the `let` statement.
+</Note>
+
+## Example query
+
+```kusto
+['github-issue-comment-event']
+| extend isBot = actor contains '-bot' or actor contains '[bot]'
+| where isBot == true
+| summarize count() by bin_auto(_time), actor
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'github-issue-comment-event'%5D%20%7C%20extend%20isBot%20%3D%20actor%20contains%20'-bot'%20or%20actor%20contains%20'%5Bbot%5D'%20%7C%20where%20isBot%20%3D%3D%20true%20%7C%20summarize%20count()%20by%20bin_auto(_time)%2C%20actor%22%7D)
+
+The query above uses a dataset called `github-issue-comment-event` as its data source. It uses the following operators:
+
+- [extend](/apl/tabular-operators/extend-operator) adds a new field `isBot` to the query results. It sets the values of the new field to true if the values of the `actor` field in the original dataset contain `-bot` or `[bot]`.
+- [where](/apl/tabular-operators/where-operator) filters for the values of the `isBot` field. It only returns rows where the value is true.
+- [summarize](/apl/tabular-operators/summarize-operator) aggregates the data and produces a chart.
+
+Each operator is separated using the pipe character (`|`).
+
+## Example result
+
+As a result, the query returns a chart and a table. The table counts the different values of the `actor` field where `isBot` is true, and the chart displays the distribution of these counts over time.
+
+| actor               | count_ |
+|---------------------|--------|
+| github-actions[bot] |    487 |
+| sonarqubecloud[bot] |    208 |
+|   dependabot[bot]   |    148 |
+|     vercel[bot]     |     91 |
+|     codecov[bot]    |     63 |
+|  openshift-ci[bot]  |     52 |
+|  coderabbitai[bot]  |     43 |
+|     netlify[bot]    |     37 |
+
+<Note>
+The query results are a representation of your data based on your request. The query doesn’t change the original dataset.
+</Note>
+
+## Quote dataset and field names
+
+If the name of a dataset or field contains at least one of the following special characters, quote the name in your APL query:
+    - Space (` `)
+    - Dot (`.`)
+    - Dash (`-`)
+
+To quote the dataset or field in your APL query, enclose its name with quotation marks (`'` or `"`) and square brackets (`[]`). For example, `['my-field']`.
+
+For more information on rules about naming and quoting entities, see [Entity names](/apl/entities/entity-names).
+
+## What’s next
+
+Check out the [list of example queries](/apl/tutorial) or explore the supported operators and functions:
+
+- [Scalar functions](/apl/scalar-functions/)
+- [Aggregation functions](/apl/aggregation-function/)
+- [Tabular operators](/apl/tabular-operators/)
+- [Scalar operators](/apl/scalar-operators/)

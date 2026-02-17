@@ -1,0 +1,154 @@
+---
+title: series_acos
+description: 'This page explains how to use the series_acos function in APL.'
+---
+
+The `series_acos` function computes the arc cosine (inverse cosine) for each numeric element in a dynamic array. The output is another dynamic array where each value is transformed by the arc cosine function.  
+
+You use `series_acos` when you want to apply trigonometric analysis over time series or other numeric array data. This is useful in cases where your data is stored as arrays, such as time-binned metrics, periodic request patterns, or wave-like behaviors in telemetry data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t provide a direct `acos` function for array values. You typically need to expand multivalue fields into individual events, apply the `acos()` function to each event, and then optionally collect the results back into an array. In APL, `series_acos` applies the function element-wise to a dynamic array in one step.
+
+<CodeGroup>
+```sql Splunk example
+... | eval acos_value = mvmap(my_array, acos(x))
+````
+
+```kusto APL equivalent
+datatable(arr: dynamic)
+[
+  dynamic([0.1, 0.5, 1.0])
+]
+| extend acos_arr = series_acos(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL provides the `ACOS()` scalar function for individual numeric values but does not support arrays as a native type. To work with multiple values, you usually normalize data into rows and apply `ACOS()` row by row. In APL, `series_acos` lets you apply the function directly to arrays without unnesting them.
+
+<CodeGroup>
+```sql SQL example
+SELECT ACOS(value)
+FROM numbers;
+```
+
+```kusto APL equivalent
+datatable(arr: dynamic)
+[
+  dynamic([0.1, 0.5, 1.0])
+]
+| extend acos_arr = series_acos(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_acos(array)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                                               |
+| --------- | ------- | ------------------------------------------------------------------------- |
+| `array`   | dynamic | A dynamic array of numeric values where each element is between -1 and 1. |
+
+### Returns
+
+A dynamic array of the same length as the input where each element is the arc cosine of the corresponding input element. The result values are in radians, in the range `[0, π]`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can analyze the periodicity of request durations. By applying `series_acos` to normalized values, you reveal inverse cosine transformations that are useful in signal-style analysis of request patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize durations = make_list(req_duration_ms, 100) by id
+| extend normalized = series_acos(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms%2C%20100)%20by%20id%20%7C%20extend%20normalized%20%3D%20series_acos(durations)%22%7D)
+
+**Output**
+
+| id   | durations             | normalized                |
+| ---- | --------------------- | ------------------------- |
+| U123 | [100, 200, 300, 400] | [1.47, 1.37, 1.27, 1.16] |
+
+The query computes request duration arrays for each user, normalizes them, and applies the inverse cosine function element-wise.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can transform span durations into the arc cosine space to analyze relationships between services in a trigonometric context, for example for anomaly detection.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans = make_list(duration, 50) by ['service.name']
+| extend acos_spans = series_acos(spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%20%3D%20make_list(duration%2C%2050)%20by%20%5B'service.name'%5D%20%7C%20extend%20acos_spans%20%3D%20series_acos(spans)%22%7D)
+
+**Output**
+
+| service.name | spans               | acos_spans         |
+| ------------ | ------------------- | ------------------- |
+| frontend     | [20ms, 40ms, 60ms] | [1.55, 1.52, 1.50] |
+
+The query groups spans by service and applies the arc cosine transformation to each duration.
+
+</Tab>
+<Tab title="Security logs">
+
+You can analyze request patterns by status code. By transforming request durations into arc cosine values, you can highlight cyclical or anomalous activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '200'
+| summarize durations = make_list(req_duration_ms, 100) by ['geo.country']
+| extend acos_durations = series_acos(durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'200'%20%7C%20summarize%20durations%20%3D%20make_list(req_duration_ms%2C%20100)%20by%20%5B'geo.country'%5D%20%7C%20extend%20acos_durations%20%3D%20series_acos(durations)%22%7D)
+
+**Output**
+
+| geo.country | durations             | acos_durations           |
+| ----------- | --------------------- | ------------------------- |
+| US          | [120, 180, 240, 300] | [1.47, 1.38, 1.29, 1.21] |
+
+The query focuses on successful requests, aggregates their durations by country, and applies the arc cosine function to detect unusual duration distributions.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_asin](/apl/scalar-functions/time-series/series-asin): Applies the arc sine function element-wise to array values. Use this when you need the inverse sine instead of the inverse cosine.
+- [series_atan](/apl/scalar-functions/time-series/series-atan): Applies the arc tangent function element-wise to array values. Use this when analyzing angular relationships that use tangent ratios.

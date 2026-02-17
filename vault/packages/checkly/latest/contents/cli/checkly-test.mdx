@@ -1,0 +1,363 @@
+---
+title: checkly test
+description: 'Run checks in your project using the Checkly CLI.'
+sidebarTitle: 'checkly test'
+---
+
+import CliCommandPrerequisites from '/snippets/cli-command-prerequisites.mdx';
+
+The `checkly test` command executes all checks in your project on the Checkly cloud infrastructure. This command provides a dry-run capability for testing your monitoring setup before deployment, with support for different environments and configurations.
+
+<CliCommandPrerequisites command="checkly test" />
+
+## Basic Usage
+
+The basic command runs all checks in your project as a test run without deploying them to your account as monitors.
+
+```bash Terminal
+npx checkly test [arguments] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
+| `--env, -e` | Env vars to be passed to the test run. Can be used multiple times. |
+| `--env-file` | dotenv file path to be passed. For example `--env-file="./.env"` |
+| `--grep, -g` | Only run checks where the check name matches a regular expression. Default: `.*` |
+| `--list` | List all checks but don't run them. |
+| `--location, -l` | The location to run the checks at. |
+| `--private-location` | The private location to run checks at. |
+| `--record` | Record test results in Checkly as a test session with full logs, traces and videos. |
+| `--reporter, -r` | A list of custom reporters for the test output. |
+| `--retries` | How many times to retry a failing test run. |
+| `--tags, -t` | Filter the checks to be run using a comma separated list of tags. |
+| `--test-session-name, -n` | A name to use when storing results in Checkly with `--record`. |
+| `--timeout` | A timeout (in seconds) to wait for checks to complete. |
+| `--update-snapshots, -u` | Update any snapshots using the actual result of this test run. |
+| `--verbose, -v` | Always show the full logs of the checks. |
+| `--[no-]verify-runtime-dependencies` | Return an error if checks import dependencies that are not supported by the selected runtime. |
+
+## Command Options
+
+<ResponseField name="--config" type="string">
+
+The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts|js` file in the current directory.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --config="./checkly.staging.config.ts"
+npx checkly test -c="./checkly.staging.config.ts"
+```
+
+</ResponseField>
+
+<ResponseField name="--env" type="string[]">
+
+[Environment variables](/cli/environment-variables) to be passed to the test run. Can be used multiple times.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --env KEY=value
+npx checkly test -e KEY=value
+```
+**Examples:**
+
+```bash Terminal
+# Single environment variable
+npx checkly test --env "API_KEY=123456"
+
+# Multiple environment variables
+npx checkly test --env "API_KEY=123456" --env "BASE_URL=https://api.example.com"
+```
+
+</ResponseField>
+
+<ResponseField name="--env-file" type="string">
+
+Path to a dotenv file containing environment variables.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --env-file="./.env"
+npx checkly test --env-file="./config/.env.production"
+```
+
+</ResponseField>
+
+<ResponseField name="--grep" type="string">
+
+Only run checks where the check name matches a regular expression. Default: `.*`
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --grep="api-.*"
+npx checkly test -g="^production-.*"
+```
+
+</ResponseField>
+
+<ResponseField name="--location" type="string">
+
+The location to run the checks at.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --location="us-east-1"
+npx checkly test -l="eu-west-1"
+```
+
+</ResponseField>
+
+<ResponseField name="--private-location" type="string">
+
+The private location to run checks at.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --private-location="my-private-location"
+```
+
+**Examples:**
+
+```bash Terminal
+# Use private location
+npx checkly test --private-location="datacenter-1"
+
+# Combine with tags
+npx checkly test --private-location="office-network" --tags="internal"
+
+# With custom config
+npx checkly test --private-location="office-network" --config="./checkly.office.config.ts"
+```
+
+</ResponseField>
+
+<ResponseField name="--tags" type="string[]">
+
+Filter the checks to be run using a comma separated list of tags. Checks will only be run if they contain all of the specified tags. Multiple `--tags` flags can be passed, in which case checks will be run if they match any of the `--tags` filters.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --tags="tag1,tag2"
+npx checkly test -t="tag1,tag2"
+```
+
+**Examples:**
+
+```bash Terminal
+# Single tag
+npx checkly test --tags="production"
+
+# Multiple tags (AND condition)
+npx checkly test --tags="production,webapp"
+
+# Multiple tag groups (OR condition)
+npx checkly test --tags="critical,api" --tags="critical,ui"
+# Runs checks with (critical AND api) OR (critical AND ui)
+```
+
+</ResponseField>
+
+<ResponseField name="--list" type="boolean">
+
+List all checks to be run but don't run them.
+
+**Usage:**
+
+```bash Terminal
+# List checks
+npx checkly test --list
+
+# List checks with `api-` in the name
+npx checkly test --list --grep="api-.*"
+
+# List checks with the `production` tag
+npx checkly test --list --tags="production"
+```
+
+</ResponseField>
+
+<ResponseField name="--reporter" type="string">
+
+A list of custom reporters for the test output. Options: `list|dot|ci|github|json`
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --reporter=list
+npx checkly test -r=list
+```
+
+**Examples:**
+
+```bash Terminal
+# List reporter (default)
+npx checkly test --reporter list
+
+# Dot reporter for minimal output
+npx checkly test --reporter dot
+
+# CI-optimized reporter
+npx checkly test --reporter ci
+
+# GitHub Actions reporter
+npx checkly test --reporter github
+
+# JSON output for programmatic use
+npx checkly test --reporter json > results.json
+```
+
+</ResponseField>
+
+<ResponseField name="--record" type="boolean">
+
+Record test results in Checkly as [a test session](/detect/testing/overview) with full logs, traces and videos.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --record
+npx checkly test --record --test-session-name="CI Build #123"
+```
+
+</ResponseField>
+
+<ResponseField name="--retries" type="number">
+
+How many times to retry a failing test run. Default: 0, max: 3
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --retries=2
+```
+
+**Examples:**
+
+```bash Terminal
+# No retries (default)
+npx checkly test --retries 0
+
+# Retry twice on failure
+npx checkly test --retries 2
+
+# Maximum retries
+npx checkly test --retries 3
+```
+
+</ResponseField>
+
+<ResponseField name="--test-session-name" type="string">
+
+A name to use when storing results in Checkly with `--record`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --record --test-session-name="Release v1.2.3"
+npx checkly test --record -n="Nightly Test Run"
+```
+
+</ResponseField>
+
+<ResponseField name="--timeout" type="number" default="600">
+
+A timeout (in seconds) to wait for checks to complete.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --timeout=300
+```
+
+</ResponseField>
+
+<ResponseField name="--update-snapshots" type="boolean">
+
+Update any snapshots using the actual result of this test run.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --update-snapshots
+npx checkly test -u
+```
+
+<Note>Snapshots are essential for [visual regression testing in Browser Checks](/detect/synthetic-monitoring/browser-checks/visual-regressions).</Note>
+
+</ResponseField>
+
+<ResponseField name="--verbose" type="boolean">
+
+Always show the full logs of the checks.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --verbose
+npx checkly test -v
+```
+
+</ResponseField>
+
+<ResponseField name="--verify-runtime-dependencies" type="boolean">
+
+Return an error if checks import dependencies that are not supported by the selected runtime. Default: true
+
+**Usage:**
+
+```bash Terminal
+npx checkly test --verify-runtime-dependencies
+npx checkly test --no-verify-runtime-dependencies
+```
+
+Runtime-dependent checks run in a specific runtime with a pre-defined set of dependencies. If you're using private locations and want to provide your own dependencies, disable the built-in dependency validation.
+
+<Tip>You can provide custom dependencies in [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) because they don't rely on a specific runtime.</Tip>
+
+</ResponseField>
+
+## Examples
+
+Dry run all your project checks and monitors:
+
+```bash Terminal
+npx checkly test
+```
+
+Dry run checks that have `product` and `api` in the file name:
+
+```bash Terminal
+npx checkly test product api
+```
+
+Record a test session in Checkly with git branch info, full logging, videos and traces:
+
+```bash Terminal
+npx checkly test --record
+```
+
+Dry run all checks against a specific location:
+
+```bash Terminal
+npx checkly test --location eu-west-1
+```
+
+Specify [environment variables](/cli/environment-variables) to dry run checks with a specific URL and a password. These variables are available on `process.env`:
+
+```bash Terminal
+npx checkly test --env ENVIRONMENT_URL="https://preview.acme.com" --env PASSWORD=doremiabc123
+```
+
+## Related Commands
+
+- [`checkly pw-test`](/cli/checkly-pw-test) - Run Playwright tests in the Checkly cloud
+- [`checkly trigger`](/cli/checkly-trigger) - Run deployed checks on-demand
+- [`checkly deploy`](/cli/checkly-deploy) - Deploy your application

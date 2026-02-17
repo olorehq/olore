@@ -1,0 +1,153 @@
+---
+title: 'Special field attributes'
+description: 'This page explains how to implement special fields within APL queries to enhance the functionality and interactivity of datasets. Use these fields in APL queries to add unique behaviors to the Axiom user interface.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'APL', 'tutorial', 'apl overview', 'row attributes hints', 'column attributes hints', 'fieldname unit', 'row url', 'row status', 'row description', 'col tooltip', 'col heatmap', 'data visualization', 'user interface']
+---
+
+## Add link to table
+
+- Name: `_row_url`
+- Type: string
+- Description: Define the URL to which the entire table links.
+- APL query example: `extend _row_url = 'https://axiom.co/'`
+- Expected behavior: Make rows clickable. When clicked, go to the specified URL.
+
+If you specify a static string as the URL, all rows link to that page. To specify a different URL for each row, use an dynamic expression like `extend _row_url = strcat('https://axiom.co/', uri)` where `uri` is a field in your data.
+
+## Add link to values in a field
+
+- Name: `_FIELDNAME_url`
+- Type: string
+- Description: Define a URL to which values in a field link.
+- APL query example: `extend _website_url = 'https://axiom.co/'`
+- Expected behavior: Make values in the `website` field clickable. When clicked, go to the specified URL.
+
+Replace `FIELDNAME` with the actual name of the field.
+
+## Add tooltip to values in a field
+
+- Name: `_FIELDNAME_tooltip`
+- Type: string
+- Description: Define text to be displayed when hovering over values in a field.
+- Example Usage: `extend _errors_tooltip = 'Number of errors'`
+- Expected behavior: Display a tooltip with the specified text when the user hovers over values in a field.
+
+Replace `FIELDNAME` with the actual name of the field.
+
+## Add description to values in a field
+
+- Name: `_FIELDNAME_description`
+- Type: string
+- Description: Define additional information to be displayed under the values in a field.
+- Example Usage: `extend _diskusage_description = 'Current disk usage'`
+- Expected behavior: Display additional text under the values in a field for more context.
+
+Replace `FIELDNAME` with the actual name of the field.
+
+## Add unit of measurement
+
+- Name: `_FIELDNAME_unit`
+- Type: string
+- Description: Specify the unit of measurement for another field’s value allowing for proper formatting and display.
+- APL query example: `extend _size_unit = "gbytes"`
+- Expected behavior: Format the value in the `size` field according to the unit specified in the `_size_unit` field.
+
+Replace `FIELDNAME` with the actual name of the field you want to format. For example, for a field named `size`, use `_size_unit = "gbytes"` to display its values in gigabytes in the query results.
+
+The supported units are the following:
+
+**Percentage**
+| Unit name | APL sytax |
+| --- | --- |
+| percent (0-100) | percent100 |
+| percent (0.0-1.0) | percent |
+
+**Currency**
+| Unit name | APL sytax |
+| --- | --- |
+| Dollars ($) | curusd |
+| Pounds (£) | curgbp |
+| Euro (€) | cureur |
+| Bitcoin (฿) | curbtc |
+
+**Data (IEC)**
+| Unit name | APL sytax |
+| --- | --- |
+| bits(IEC) | bits |
+| bytes(IEC) | bytes |
+| kibibytes | kbytes |
+| mebibytes | mbytes |
+| gibibytes | gbytes |
+| tebibytes | tbytes |
+| pebibytes | pbytes |
+
+**Data (metric)**
+| Unit name | APL sytax |
+| --- | --- |
+| bits(Metric) | decbits |
+| bytes(Metric) | decbytes |
+| kilobytes | deckbytes |
+| megabytes | decmbytes |
+| gigabytes | decgbytes |
+| terabytes | dectbytes |
+| petabytes | decpbytes |
+
+**Data rate**
+| Unit name | APL sytax |
+| --- | --- |
+| packets/sec | pps |
+| bits/sec | bps |
+| bytes/sec | Bps |
+| kilobytes/sec | KBs |
+| kilobits/sec | Kbits |
+| megabytes/sec | MBs |
+| megabits/sec | Mbits |
+| gigabytes/sec | GBs |
+| gigabits/sec | Gbits |
+| terabytes/sec | TBs |
+| terabits/sec | Tbits |
+| petabytes/sec | PBs |
+| petabits/sec | Pbits |
+
+**Datetime**
+| Unit name | APL sytax |
+| --- | --- |
+| Hertz (1/s) | hertz |
+| nanoseconds (ns) | ns |
+| microseconds (µs) | µs |
+| milliseconds (ms) | ms |
+| seconds (s) | secs |
+| minutes (m) | mins |
+| hours (h) | hours |
+| days (d) | days |
+| ago | ago |
+
+**Throughput**
+| Unit name | APL sytax |
+| --- | --- |
+| counts/sec (cps) | cps |
+| ops/sec (ops) | ops |
+| requests/sec (rps) | reqps |
+| reads/sec (rps) | rps |
+| writes/sec (wps) | wps |
+| I/O ops/sec (iops) | iops |
+| counts/min (cpm) | cpm |
+| ops/min (opm) | opm |
+| requests/min (rps) | reqpm |
+| reads/min (rpm) | rpm |
+| writes/min (wpm) | wpm |
+
+## Example
+
+The example APL query below adds a tooltip and a description to the values of the `status` field. Clicking one of the values in this field leads to a page about status codes. The query adds the new field `resp_body_size_bits` that displays the size of the response body in the unit of bits.
+
+```apl
+['sample-http-logs']
+| extend _status_tooltip = 'The status of the HTTP request is the response code from the server. It shows if an HTTP request has been successfully completed.'
+| extend _status_description = 'This is the status of the HTTP request.'
+| extend _status_url = 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status'
+| extend resp_body_size_bits = resp_body_size_bytes * 8
+| extend _resp_body_size_bits_unit = 'bits'
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20_status_tooltip%20%3D%20'The%20status%20of%20the%20HTTP%20request%20is%20the%20response%20code%20from%20the%20server.%20It%20shows%20if%20an%20HTTP%20request%20has%20been%20successfully%20completed.'%20%7C%20extend%20_status_description%20%3D%20'This%20is%20the%20status%20of%20the%20HTTP%20request.'%20%7C%20extend%20_status_url%20%3D%20'https%3A%2F%2Fdeveloper.mozilla.org%2Fen-US%2Fdocs%2FWeb%2FHTTP%2FStatus'%20%7C%20extend%20resp_body_size_bits%20%3D%20resp_body_size_bytes%20*%208%20%7C%20extend%20_resp_body_size_bits_unit%20%3D%20'bits'%22%7D)

@@ -1,0 +1,181 @@
+---
+title: 'Optimize usage'
+description: "This page explains how to calculate and manage resources to optimize usage within Axiom."
+keywords: ['query', 'gb hours']
+---
+
+## Optimize data loading
+
+When you send data via the [Ingest data](/restapi/endpoints/ingestToDataset) API endpoint, ingest volume is based on the uncompressed size of the HTTP request. In this case, body size dominates and metadata overhead is usually negligible.
+
+If you ingest data via API, using the CSV format comes with the following trade-offs:
+
+- **Pro:** CSV doesn’t repeat field names. This means lower ingest volume and lower ingest costs.
+- **Con:** Every value is a string. You need to do type casting at query time. This means higher cost and latency.
+- **Con:** Numbers as strings don’t compress well. This means higher storage and query costs.
+
+For higher volume, using a [dedicated ingestion method](/send-data/methods) is a better choice than sending data via API.
+
+## Optimize storage
+
+The amount of storage you use depends on the following:
+- The amount of data you ingest to Axiom.
+- The data retention period you specify.
+
+The data retention period defines how long Axiom stores your data. After this period, Axiom trims the data and it doesn’t count towards your storage costs. You can define a custom data retention period for each dataset. For more information, see [Specify data retention period](/reference/datasets#specify-data-retention-period).
+
+## Optimize queries
+
+Axiom measures the resources used to execute queries in terms of GB-hours.
+
+### What GB-hours are
+
+When you run queries, your usage of the Axiom platform is measured in query-hours. The unit of this measurement is GB-hours which reflects the duration (measured in milliseconds) serverless functions are running to execute your query multiplied by the amount of memory (GB) allocated to execution. This metric is important for monitoring and managing your usage against the monthly allowance included in your plan.
+
+### How Axiom measures query-hours
+
+Axiom uses serverless computing to execute queries efficiently. The consumption of serverless compute resources is measured along two dimensions:
+
+- Time: The duration (in milliseconds) for which the serverless function is running to execute your query.
+- Memory allocation: The amount of memory (in GB) allocated to the serverless function during execution.
+
+### What counts as a query
+
+In calculating query costs, Axiom considers any request that queries your data as a query. For example, the following all count as queries:
+
+- You initiate a query in the Axiom user interface.
+- You query your data with an API token or a personal access token.
+- Your match monitor runs a query to determine if any new events match your criteria.
+
+Each query is charged at the same rate, irrespective of its origin.
+
+Each monitor run counts towards your query costs. For this reason, the frequency (how often the monitor runs) can have a slight effect on query costs.
+
+### Run queries and understand costs
+
+When you run queries on Axiom, the cost in GB-hours is determined by the shape and size of the events in your dataset and the volume of events scanned to return a query result. After executing a query, you can find the associated query cost in the response header labeled as `X-Axiom-Query-Cost-Gbms`.
+
+### Determine query cost
+
+Send a `POST` request to the [Run query](/restapi/endpoints/queryApl) endpoint with the following configuration:
+
+- `Content-Type` header with the value `application/json`.
+- `Authorization` header with the value `Bearer API_TOKEN`. Replace `API_TOKEN` with your Axiom API token.
+- In the body of your request, enter your query in JSON format. For example:
+
+    ```json
+    {
+      "apl": "telegraf | count",
+      "startTime": "2024-01-11T19:25:00Z",
+      "endTime": "2024-02-13T19:25:00Z"
+    }
+    ```
+
+    `apl` specifies the Axiom Processing Language (APL) query to run. In this case, `"telegraf | count"` indicates that you query the `telegraf` dataset and use the `count` operator to aggregate the data.
+
+    `startTime` and `endTime` define the time range of your query. In this case, `"2024-01-11T19:25:00Z"` is the start time, and `"2024-02-13T19:25:00Z"` is the end time, both in ISO 8601 format. This time range limits the query to events recorded within these specific dates and times.
+
+In the response to your request, the information about the query cost in GB-milliseconds is in the `X-Axiom-Query-Cost-Gbms` header.
+
+### Example of GB-hour calculation
+
+As an example, a typical query analyzing 1 million events might consume approximately 1 GB-second. There are 3,600 seconds in an hour which means that an organization can run 3,600 of these queries before reaching 1 GB-hour of query usage. This is an example and the actual usage depends on the complexity of the query and the input data.
+
+### Plan and GB-hours allowance
+
+Your GB-hours allowance depends on your pricing plan. To learn more about the plan offerings and find the one that best suits your needs, see [Axiom Pricing](https://axiom.co/pricing).
+
+### Optimize queries to lower costs
+
+This section explains ways you can optimize your queries to save on query costs. For more information optimizing your queries for performance, see [Optimize performance](/reference/performance).
+
+#### Optimize the order of field-specific filters
+
+Field-specific filters narrow your query results to events where a field has a given value. For example, the APL query `where ["my-field"] == "axiom"` filters for events where the `my-field` field takes the value `axiom`.
+
+Include field-specific filters near the beginning of your query for modest savings in query costs. For more information, see [Poor filter order in queries](/reference/performance#poor-filter-order-in-queries)
+
+#### Optimize `search` operator and non-field-specific filters
+
+Non-field-specific filters narrow your query results by searching across multiple datasets and fields for a given value. Examples of non-field-specific filters are the `search` operator and equivalent expressions such as `where * contains` or `where * has`.
+
+Using non-field-specific filters can have a significant impact on query costs. For more information, see [Use the `search` operator efficiently](/apl/tabular-operators/search-operator#use-the-search-operator-efficiently) and [Regular expressions when simple filters suffice](/reference/performance#regular-expressions-when-simple-filters-suffice).
+
+### Optimize dashboard refresh rates
+
+Each time your dashboard refreshes, it runs a query on your data which results in query costs. Selecting a short refresh rate (such as 15 seconds) for a long time range (such as 90 days) means that your dashboard frequently runs large queries in the background.
+
+To optimize query costs, choose a refresh rate that's appropriate for the time range of your dashboard. For more information, see [Select refresh rate](/dashboards/configure#select-refresh-rate).
+
+## Monitor costs proactively
+
+Proactive cost monitoring helps you identify unexpected cost increases before they impact your budget. Use the following strategies to stay on top of your usage.
+
+### Use Axiom Skills
+
+Use the [Control costs skill](/console/intelligence/skills/control-costs) to automate cost control tasks. The skill helps you:
+
+- Create a cost monitoring dashboard.
+- Set up cost alert monitors.
+- Analyze your datasets to identify data that isn't queried and is a good candidate for dropping at the collector level.
+
+### Track data ingest
+
+The [audit log](/reference/audit-log) captures hourly ingestion data for each dataset.
+
+Identify which datasets contribute most to your ingestion costs:
+
+```kusto
+['axiom-audit']
+| where action == "usageCalculated"
+| extend ingest_gb = tolong(['properties.hourlyIngestBytes']) / pow(1024, 3)
+| summarize IngestGB = sum(ingest_gb) by bin_auto(_time), tostring(['properties.dataset'])
+| sort by IngestGB desc
+```
+
+Determine total data ingest across all datasets over time:
+
+```kusto
+['axiom-audit']
+| where action == "usageCalculated"
+| extend ingest_gb = tolong(['properties.hourlyIngestBytes']) / pow(1024, 3)
+| summarize TotalIngestGB = sum(ingest_gb) by bin_auto(_time)
+```
+
+### Create a cost monitoring dashboard
+
+Build a dashboard that displays your key cost metrics at a glance:
+
+1. **Ingest over time**: Track daily or hourly ingestion trends per dataset.
+1. **Query costs**: Monitor which queries and monitors consume the most resources.
+1. **High-cost queries**: List queries that exceed a cost threshold.
+
+For dashboard creation, see [Create a dashboard](/dashboards/create).
+
+### Set up cost alerts
+
+Create monitors to alert you when costs exceed expected thresholds:
+
+- **Ingest spike alert**: Notify when hourly ingestion exceeds a threshold.
+- **Query cost alert**: Notify when a single query exceeds a cost threshold.
+- **Daily cost summary**: Send a daily digest of total costs.
+
+Example monitor query for ingestion spikes:
+
+```kusto
+['axiom-audit']
+| where action == "usageCalculated"
+| extend ingest_gb = tolong(['properties.hourlyIngestBytes']) / pow(1024, 3)
+| summarize HourlyIngestGB = sum(ingest_gb) by bin(_time, 1h)
+| where HourlyIngestGB > 10
+```
+
+Adjust the threshold for `HourlyIngestGB` based on your expected ingestion patterns. For more information, see [Threshold monitors](/monitor-data/threshold-monitors).
+
+### Set a spending limit
+
+Set a monthly spending limit to automatically pause cost-generating actions when you reach a specified amount. For more information, see [Spending limit](/reference/usage-billing#spending-limit).
+
+### Set refresh rate for dashboards
+
+To optimize query costs, choose a refresh rate that’s appropriate for the time range of your dashboard. For more information, see [Select refresh rate](/dashboards/configure#select-refresh-rate).

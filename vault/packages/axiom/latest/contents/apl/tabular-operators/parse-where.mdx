@@ -1,0 +1,112 @@
+---
+title: parse-where
+description: 'This page explains how to use the parse-where operator in APL.'
+---
+
+The `parse-where` operator lets you extract values from a string expression based on a pattern and at the same time filter out rows that don’t match the pattern. This operator is useful when you want to ensure that your results contain only rows where the parsing succeeds, reducing the need for an additional filtering step.
+
+You can use `parse-where` when working with logs or event data that follow a known structure but may contain noise or irrelevant lines. For example, you can parse request logs to extract structured information like HTTP method, status code, or error messages, and automatically discard any rows that don’t match the format.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `rex` command with the `max_match=1` option to extract fields and filter out non-matching events. In APL, `parse-where` provides the same functionality in a more direct way. Rows that do not match the pattern are automatically excluded.
+
+<CodeGroup>
+```sql Splunk example
+... | rex field=log_line "\[(?<level>\w+)\] (?<message>.+)"
+````
+
+```kusto APL equivalent
+datatable(log_line:string)
+[
+    '[INFO] Service started',
+    'invalid line'
+]
+| parse-where log_line with '[', level:string, '] ', message:string
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not have a direct equivalent to `parse-where`. You often use `LIKE` or `REGEXP` functions to test string patterns and then combine them with `CASE` expressions to extract substrings. In APL, `parse-where` simplifies this by combining extraction and filtering into one operator.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  REGEXP_SUBSTR(log_line, '\\[(\\w+)\\]', 1, 1) AS level,
+  REGEXP_SUBSTR(log_line, '\\] (.+)', 1, 1) AS message
+FROM logs
+WHERE log_line REGEXP '\\[(\\w+)\\] (.+)';
+```
+
+```kusto APL equivalent
+datatable(log_line:string)
+[
+    '[INFO] Service started',
+    'invalid line'
+]
+| parse-where log_line with '[', level:string, '] ', message:string
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse-where [kind=kind [flags=regexFlags]] expression with [*] stringConstant columnName [:columnType] [*]
+```
+
+### Parameters
+
+| Parameter        | Description                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `kind`           | (Optional) Specifies the parsing method. The default is `simple`. You can also specify `regex` for regular expression parsing. |
+| `flags`          | (Optional) Regex flags to control the behavior of pattern matching. Used only with `kind=regex`.                               |
+| `expression`     | The string expression to parse.                                                                                                |
+| `stringConstant` | The constant parts of the pattern that must match exactly.                                                                     |
+| `columnName`     | The name of the column where the extracted value is stored.                                                                    |
+| `columnType`     | (Optional) The type of the extracted value (for example, `string`, `int`, `real`).                                             |
+
+### Returns
+
+The operator returns a table with the original columns and the newly extracted columns. Rows that do not match the parsing pattern are removed.
+
+## Use case example
+
+You want to extract the HTTP method and status code from request logs while ignoring rows that don’t follow the expected format.
+
+**Query**
+
+```kusto
+['http-logs']
+| parse-where uri with '/' method:string '/' * 'status=' status:string
+| project _time, method, status, uri
+```
+
+**Output**
+
+| _time               | method | status | uri                         |
+| -------------------- | ------ | ------ | --------------------------- |
+| 2025-09-01T12:00:00Z | GET    | 200    | /GET/api/items?status=200   |
+| 2025-09-01T12:00:05Z | POST   | 500    | /POST/api/orders?status=500 |
+
+This query extracts the method and status from the `uri` field and discards rows where the `uri` does not match the pattern.
+
+## List of related operators
+
+- [extend](/apl/tabular-operators/extend-operator): Adds calculated columns. Use when parsing is not required but you want to create new derived columns.
+- [parse](/apl/tabular-operators/parse-operator): Extracts values from a string expression without filtering out non-matching rows. Use when you want to keep all rows, including those that fail to parse.
+- [project](/apl/tabular-operators/project-operator): Selects and computes columns without parsing. Use when you want to transform data rather than extract values.
+- [where](/apl/tabular-operators/where-operator): Filters rows based on conditions. Use alongside parsing functions if you want more control over filtering logic.

@@ -1,0 +1,103 @@
+---
+title: tobool
+description: 'This page explains how to use the tobool function in APL.'
+---
+
+Use the `tobool` function to convert various data types to a boolean value. This is helpful when you need to normalize values from different sources into boolean format for conditional logic, filtering, or boolean operations.
+
+You typically use `tobool` when working with data that represents boolean values as strings (like "true"/"false" or "1"/"0"), numbers, or other types that need to be converted to proper boolean values.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you use `if` expressions or `tonumber` with comparisons to convert values to boolean-like results. In APL, `tobool` provides a direct conversion function that handles various input types.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_active = if(field == "true" OR field == 1, 1, 0)
+```
+
+```kusto APL equivalent
+... | extend is_active = tobool(field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CASE` statements or `CAST` to convert values to boolean. In APL, `tobool` provides a simpler way to convert various types to boolean values.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN status = 'active' THEN TRUE ELSE FALSE END AS is_active FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_active = tobool(is_active)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+tobool(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                        |
+| ----- | ------- | ---------------------------------- |
+| value | dynamic | The value to convert to boolean. |
+
+### Returns
+
+If conversion is successful, the result is a boolean. If conversion isn’t successful, the result is `false`.
+
+### Conversion behavior
+
+The `tobool` function converts values based on their type:
+
+- **Boolean**: Returns the value unchanged.
+- **Integer/Float/Duration**: Returns `true` if the value is not equal to 0, otherwise `false`.
+- **Datetime**: Returns `true` if the value is anything other than epoch (zero time), otherwise `false`.
+- **String**: Returns `true` if the value equals `"1"`, `"t"`, `"T"`, `"TRUE"`, `"true"`, or `"True"`. Returns `false` if the value equals `"0"`, `"f"`, `"F"`, `"FALSE"`, `"false"`, or `"False"`. Returns `null` for any other string value.
+
+## Example
+
+Convert string representations of Boolean values to actual Boolean types for filtering and analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_active = tobool(is_active)
+| extend is_enabled = tobool(enabled)
+| where is_active == true or is_enabled == true
+| project _time, uri, status, is_active, enabled, is_active, is_enabled
+```
+
+**Output**
+
+| _time | uri | status | is_active | enabled | is_active | is_enabled |
+| ----- | --- | ------ | --------- | ------- | --------- | ---------- |
+| Jun 24, 09:28:10 | /api/users | 200 | "true" | "1" | true | true |
+
+This example converts string representations of boolean values (like `"true"` and `"1"`) to actual boolean types, enabling proper boolean logic and filtering.
+
+## List of related functions
+
+- [isbool](/apl/scalar-functions/conversion-functions/isbool): Checks if a value is a boolean. Use `isbool` to validate types, and `tobool` to convert values to boolean.
+- [case](/apl/scalar-functions/conditional-function#case): Evaluates conditions and returns values. Use `case` for complex conditional logic, and `tobool` for simple conversions.
+- [iff](/apl/scalar-functions/conditional-function#iff): Returns one of two values based on a predicate. Use `iff` for conditional assignment, and `tobool` for type conversion.

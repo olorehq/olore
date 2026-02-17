@@ -1,0 +1,108 @@
+---
+title: parse_pair
+description: 'This page explains how to use the parse_pair function in APL.'
+---
+
+Use the `parse_pair` function to parse a string containing a key-value pair into its constituent key and value components. This function is useful when you need to extract structured data from strings that follow a key-value format, such as tags, labels, or configuration entries.
+
+Use `parse_pair` when you have strings like `host:server1` or `env=production` and need to access the key or value individually for filtering, grouping, or analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `rex` or `split` commands to extract key-value components from strings. APL's `parse_pair` provides a dedicated function for this common operation.
+
+<CodeGroup>
+```sql Splunk example
+| rex field=tag "(?<key>[^:]+):(?<value>.*)"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_pair('host:server1')
+| extend key = parsed.key, value = parsed.value
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `SUBSTRING` with `POSITION` or `SPLIT_PART` to extract key-value components. APL's `parse_pair` simplifies this with a dedicated function.
+
+<CodeGroup>
+```sql SQL example
+SELECT 
+  SPLIT_PART(tag, ':', 1) AS key,
+  SPLIT_PART(tag, ':', 2) AS value
+FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend parsed = parse_pair('host:server1')
+| extend key = parsed.key, value = parsed.value
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_pair(pair_string, [separator])
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ---- | ---- | -------- | ----------- |
+| `pair_string` | `string` | Required | The string containing the key-value pair to parse. |
+| `separator` | `string` | Optional | The separator between the key and value. Defaults to `:`. |
+
+### Returns
+
+A dynamic object with the following properties:
+- `key`: The extracted key portion of the pair.
+- `value`: The extracted value portion of the pair.
+- `separator`: The separator used in the pair.
+
+If the separator is not found in the input string, the function returns a pair with the entire input as the `value` and an empty `key`.
+
+## Example
+
+Extract and analyze tag components from HTTP request metadata.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend tag_string = strcat('method:', method)
+| extend parsed = parse_pair(tag_string)
+| project _time, uri, tag_string, parsed
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20tag_string%20%3D%20strcat('method%3A'%2C%20method)%20%7C%20extend%20parsed%20%3D%20parse_pair(tag_string)%20%7C%20project%20_time%2C%20uri%2C%20tag_string%2C%20parsed%20%7C%20take%205%22%7D)
+
+**Output**
+
+| _time               | uri        | tag_string  | parsed |
+| ------------------- | ---------- | ----------- | -------- |
+| 2025-01-29 08:15:30 | /api/user  | method:GET  | `{"key": "method", "separator": ":", "value": "GET"}` |
+| 2025-01-29 08:16:45 | /api/data  | method:POST | `{"key": "method", "separator": ":", "value": "POST"}` |
+| 2025-01-29 08:17:20 | /api/login | method:POST | `{"key": "method", "separator": ":", "value": "POST"}` |
+
+This query constructs tag strings and then parses them to extract individual key and value components for analysis.
+
+## List of related functions
+
+- [pair](/apl/scalar-functions/pair-functions/pair): Creates a pair string from key and value components. Use `parse_pair` to decompose existing pairs.
+- [find_pair](/apl/scalar-functions/pair-functions/find-pair): Searches an array of pairs for a matching pattern. Use `parse_pair` when you need to extract components from a single pair string.
+- [split](/apl/scalar-functions/string-functions/split): Splits a string by a delimiter into an array. Use `parse_pair` when you specifically need key-value extraction with structured output.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts substrings using regex. Use `parse_pair` for simpler key-value parsing without regex.

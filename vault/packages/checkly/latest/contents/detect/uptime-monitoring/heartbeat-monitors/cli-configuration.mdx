@@ -1,0 +1,74 @@
+---
+title: 'CLI Configuration'
+description: 'Learn how to configure heartbeat monitors with the Checkly CLI.'
+sidebarTitle: CLI
+---
+
+
+## Overview
+
+The Checkly CLI is a powerful tool for managing your heartbeat monitors. It allows you to define your heartbeat monitors as code alongside your other monitoring, providing version control, code review, and consistent deployment across environments.
+
+
+
+## With the Checkly CLI
+
+Define heartbeat monitors as code alongside your other monitoring using the Checkly CLI. This approach provides version control, code review, and consistent deployment across environments.
+
+### TypeScript Example
+
+```typescript
+import { HeartbeatCheck } from 'checkly/constructs'
+
+new HeartbeatCheck('weekly-newsletter', {
+  name: 'Weekly Newsletter Campaign',
+  period: 7,
+  periodUnit: 'days',
+  grace: 4,
+  graceUnit: 'hours',
+  tags: ['newsletter', 'marketing', 'weekly']
+})
+
+new HeartbeatCheck('database-backup', {
+  name: 'Nightly Database Backup',
+  period: 1,
+  periodUnit: 'days', 
+  grace: 30,
+  graceUnit: 'minutes',
+  tags: ['backup', 'database', 'critical']
+})
+```
+
+### JavaScript Example
+
+```javascript
+const { HeartbeatCheck } = require('checkly/constructs')
+
+new HeartbeatCheck('data-sync', {
+  name: 'Hourly Data Sync',
+  period: 1,
+  periodUnit: 'hours',
+  grace: 10,
+  graceUnit: 'minutes',
+  tags: ['sync', 'data', 'hourly']
+})
+```
+
+### Advanced CLI Configuration
+
+```typescript
+import { HeartbeatCheck } from 'checkly/constructs'
+
+new HeartbeatCheck('production-backup', {
+  name: 'Production Database Backup',
+  period: 24,
+  periodUnit: 'hours',
+  grace: 60,
+  graceUnit: 'minutes',
+  tags: ['production', 'backup', 'critical'],
+  alertChannels: ['email', 'slack-critical'],
+  activated: true,
+  muted: false
+})
+```
+

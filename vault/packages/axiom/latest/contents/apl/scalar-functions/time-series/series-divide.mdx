@@ -1,0 +1,158 @@
+---
+title: series_divide
+description: 'This page explains how to use the series_divide function in APL.'
+---
+
+The `series_divide` function performs element-wise division between two dynamic arrays (series) of numeric values. It divides corresponding elements from the first array by the corresponding elements in the second array and returns a new array containing the results. This function is useful when you need to calculate ratios, normalize data, or perform proportional analysis across time-series datasets.
+
+You can use `series_divide` when you want to calculate rates, percentages, or ratios between different metrics. Common applications include calculating success rates, determining resource utilization ratios, computing performance improvements, and normalizing metrics for comparison across different scales.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `eval` command with the division operator to divide values. However, dividing arrays element-wise requires more complex operations. In APL, `series_divide` directly performs element-wise division on dynamic arrays.
+
+<CodeGroup>
+```sql Splunk example
+... | eval ratio = field1 / field2
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([10, 20, 30]), dynamic([2, 4, 5])
+]
+| extend ratio_series = series_divide(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL, you divide individual values using the `/` operator, but there's no built-in function for element-wise array division. You would need to unnest arrays and perform complex operations. In APL, `series_divide` handles this operation directly on dynamic arrays.
+
+<CodeGroup>
+```sql SQL example
+SELECT value1 / value2 AS ratio
+FROM my_table;
+```
+
+```kusto APL equivalent
+datatable(x: dynamic, y: dynamic)
+[
+  dynamic([10, 20, 30]), dynamic([2, 4, 5])
+]
+| extend ratio_series = series_divide(x, y)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+series_divide(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| `array1`  | dynamic | The numerator dynamic array of numeric values. |
+| `array2`  | dynamic | The denominator dynamic array of numeric values. |
+
+### Returns
+
+A dynamic array where each element is the result of dividing the corresponding element from `array1` by the corresponding element from `array2`. If the arrays have different lengths, the result array has the length of the shorter array. Division by zero returns infinity or negative infinity.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `series_divide` to calculate success rates by dividing successful requests by total requests for each time period.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize successful_requests = make_list(iff(status == '200', 1, 0)), total_requests = make_list(1) by id
+| extend success_rates = series_divide(successful_requests, total_requests)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20successful_requests%20%3D%20make_list(iff(status%20%3D%3D%20'200'%2C%201%2C%200))%2C%20total_requests%20%3D%20make_list(1)%20by%20id%20%7C%20extend%20success_rates%20%3D%20series_divide(successful_requests%2C%20total_requests)%22%7D)
+
+**Output**
+
+| id   | successful_requests | total_requests | success_rates |
+| ---- | ------------------- | -------------- | ------------- |
+| u123 | [1, 0, 1]          | [1, 1, 1]      | [1, 0, 1]     |
+| u456 | [1, 1]             | [1, 1]         | [1, 1]        |
+
+This query calculates success rates by dividing successful requests by total requests for each user.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use `series_divide` to calculate performance improvement ratios by comparing current span durations to baseline durations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize current_durations = make_list(duration / 1ms), baseline_durations = make_list(100.0) by ['service.name']
+| extend performance_ratios = series_divide(current_durations, baseline_durations)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20current_durations%20%3D%20make_list(duration%20%2F%201ms)%2C%20baseline_durations%20%3D%20make_list(100.0)%20by%20%5B'service.name'%5D%20%7C%20extend%20performance_ratios%20%3D%20series_divide(current_durations%2C%20baseline_durations)%22%7D)
+
+**Output**
+
+| service.name          | current_durations | baseline_durations | performance_ratios |
+| --------------------- | ----------------- | ------------------ | ------------------ |
+| frontend              | [80, 120, 90]    | [100, 100, 100]   | [0.8, 1.2, 0.9]   |
+| productcatalogservice | [50, 150]        | [100, 100]        | [0.5, 1.5]        |
+
+This query calculates performance ratios by dividing current span durations by baseline values for each service.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `series_divide` to calculate error rates by dividing error responses by total responses for different request types.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize error_requests = make_list(iff(status != '200', 1, 0)), total_requests = make_list(1) by method
+| extend error_rates = series_divide(error_requests, total_requests)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20error_requests%20%3D%20make_list(iff(status%20!%3D%20'200'%2C%201%2C%200))%2C%20total_requests%20%3D%20make_list(1)%20by%20method%20%7C%20extend%20error_rates%20%3D%20series_divide(error_requests%2C%20total_requests)%22%7D)
+
+**Output**
+
+| method | error_requests | total_requests | error_rates   |
+| ------ | -------------- | -------------- | ------------- |
+| GET    | [0, 1, 0]     | [1, 1, 1]      | [0, 1, 0]     |
+| POST   | [1, 0]        | [1, 1]         | [1, 0]        |
+
+This query calculates error rates by dividing error requests by total requests for each HTTP method.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_abs](/apl/scalar-functions/time-series/series-abs): Returns the absolute value of each element in an array. Use when you need to remove negative signs without rounding.
+- [series_add](/apl/scalar-functions/time-series/series-add): Performs element-wise addition between two arrays. Use when you need to combine values instead of calculating ratios.
+- [series_cosine_similarity](/apl/scalar-functions/time-series/series-cosine-similarity): Calculates cosine similarity between two arrays. Use when you need normalized similarity measures rather than raw dot products.
+- [series_dot_product](/apl/scalar-functions/time-series/series-dot-product): Calculates the dot product between two arrays. Use when you need the raw dot product value rather than normalized similarity.
+- [series_sum](/apl/scalar-functions/time-series/series-sum): Calculates the sum of all elements in a single array. Use when you need to sum elements within one array rather than computing dot products.

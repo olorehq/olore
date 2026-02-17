@@ -1,0 +1,142 @@
+---
+title: make_list_if
+description: 'This page explains how to use the make_list_if aggregation function in APL.'
+---
+
+The `make_list_if` aggregation function in APL creates a list of values from a given field, conditioned on a Boolean expression. This function is useful when you need to gather values from a column that meet specific criteria into a single array. By using `make_list_if`, you can aggregate data based on dynamic conditions, making it easier to perform detailed analysis.
+
+This aggregation is ideal in scenarios where filtering at the aggregation level is required, such as gathering only the successful requests or collecting trace spans of a specific service in OpenTelemetry data. It’s particularly useful when analyzing logs, tracing information, or security events, where conditional aggregation is essential for understanding trends or identifying issues.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you would typically use the `eval` and `stats` commands to create conditional lists. In APL, the `make_list_if` function serves a similar purpose by allowing you to aggregate data into a list based on a condition.
+
+<CodeGroup>
+```sql Splunk example
+| stats list(field) as field_list by condition
+```
+
+```kusto APL equivalent
+summarize make_list_if(field, condition)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, conditional aggregation often involves the use of `CASE` statements combined with aggregation functions such as `ARRAY_AGG`. In APL, `make_list_if` directly applies a condition to the aggregation.
+
+<CodeGroup>
+```sql SQL example
+SELECT ARRAY_AGG(CASE WHEN condition THEN field END) FROM table
+```
+
+```kusto APL equivalent
+summarize make_list_if(field, condition)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize make_list_if(expression, condition)
+```
+
+### Parameters
+
+- `expression`: The field or expression whose values will be included in the list.
+- `condition`: A Boolean condition that determines which values from `expression` are included in the result.
+
+### Returns
+
+The function returns an array containing all values from `expression` that meet the specified `condition`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this example, we will gather a list of request durations for successful HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_list_if(req_duration_ms, status == '200') by id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D+%7C+summarize+make_list_if%28req_duration_ms%2C+status+%3D%3D+%27200%27%29+by+id%22%7D)
+
+**Output**
+
+| id  | req_duration_ms_list          |
+|-----|-------------------------------|
+| 123 | [100, 150, 200]               |
+| 456 | [300, 350, 400]               |
+
+This query aggregates request durations for HTTP requests that returned a status of ‘200’ for each user ID.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Here, we will aggregate the span durations for `cartservice` where the status code indicates success.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize make_list_if(duration, status_code == '200' and ['service.name'] == 'cartservice') by trace_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D+%7C+summarize+make_list_if%28duration%2C+status_code+%3D%3D+%27200%27+and+%5B%27service.name%27%5D+%3D%3D+%27cartservice%27%29+by+trace_id%22%7D)
+
+**Output**
+
+| trace_id | duration_list             |
+|----------|---------------------------|
+| abc123   | [00:01:23, 00:01:45]      |
+| def456   | [00:02:12, 00:03:15]      |
+
+This query collects span durations for successful requests to the `cartservice` by `trace_id`.
+
+</Tab>
+<Tab title="Security logs">
+
+In this case, we gather a list of IP addresses from security logs where the HTTP status is `403` (Forbidden) and group them by the country of origin.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_list_if(uri, status == '403') by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D+%7C+summarize+make_list_if%28uri%2C+status+%3D%3D+%27403%27%29+by+%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| geo.country | uri_list                 |
+|-------------|--------------------------|
+| USA         | ['/login', '/admin']     |
+| Canada      | ['/admin', '/secure']    |
+
+This query collects a list of URIs that resulted in a `403` error, grouped by the country where the request originated.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**make_list**](/apl/aggregation-function/make-list): Aggregates all values into a list without any conditions. Use `make_list` when you don’t need to filter the values based on a condition.
+- [**countif**](/apl/aggregation-function/countif): Counts the number of records that satisfy a specific condition. Use `countif` when you need a count of occurrences rather than a list of values.
+- [**avgif**](/apl/aggregation-function/avgif): Calculates the average of values that meet a specified condition. Use `avgif` for numerical aggregations where you want a conditional average instead of a list.

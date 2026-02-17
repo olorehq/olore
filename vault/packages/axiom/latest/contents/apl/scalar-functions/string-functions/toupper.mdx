@@ -1,0 +1,131 @@
+---
+title: 'toupper'
+description: 'This page explains how to use the toupper function in APL.'
+---
+
+The `toupper` function converts all characters in a string to uppercase. Use this function to normalize text for case-insensitive operations, standardize identifiers, or format strings for emphasis in output.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use the `upper` function. APL's `toupper` provides the same functionality.
+
+<CodeGroup>
+```sql Splunk example
+| eval uppercase=upper(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uppercase = toupper(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `UPPER` for uppercase conversion. APL's `toupper` provides the same functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT UPPER(field) AS uppercase FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend uppercase = toupper(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+toupper(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | string | Yes | The input string to convert to uppercase. |
+
+### Returns
+
+Returns the input string with all characters converted to uppercase.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Standardize HTTP status codes and methods for consistent alerting and reporting.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend normalized_method = toupper(method)
+| extend alert_status = iff(status startswith '5', toupper(strcat('ERROR_', status)), status)
+| summarize request_count = count() by normalized_method, alert_status
+| sort by request_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20normalized_method%20%3D%20toupper(method)%20%7C%20extend%20alert_status%20%3D%20iff(status%20startswith%20%275%27%2C%20toupper(strcat(%27ERROR_%27%2C%20status))%2C%20status)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20normalized_method%2C%20alert_status%20%7C%20sort%20by%20request_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| normalized_method | alert_status | request_count |
+|-------------------|--------------|---------------|
+| GET | 200 | 5432 |
+| POST | 201 | 2341 |
+| GET | ERROR_500 | 234 |
+
+This query normalizes HTTP methods to uppercase and creates emphasized error status codes for critical alerts.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Create uppercase service identifiers for system monitoring and alerting.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_code = toupper(substring(['service.name'], 0, 3))
+| summarize span_count = count(), avg_duration = avg(duration) by service_code
+| sort by span_count desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_code%20%3D%20toupper(substring(%5B%27service.name%27%5D%2C%200%2C%203))%20%7C%20summarize%20span_count%20%3D%20count()%2C%20avg_duration%20%3D%20avg(duration)%20by%20service_code%20%7C%20sort%20by%20span_count%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service_code | span_count | avg_duration |
+|--------------|------------|--------------|
+| FRO | 4532 | 125ms |
+| CHE | 3421 | 234ms |
+| CAR | 2987 | 89ms |
+
+This query creates three-letter uppercase service codes for compact monitoring displays and alerts.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [tolower](/apl/scalar-functions/string-functions/tolower): Converts strings to lowercase. Use this for the opposite transformation.
+- [totitle](/apl/scalar-functions/string-functions/totitle): Converts strings to title case. Use this for capitalized formatting.
+- [strcmp](/apl/scalar-functions/string-functions/strcmp): Compares strings. Use toupper before strcmp for case-insensitive comparisons.
+- [strcat](/apl/scalar-functions/string-functions/strcat): Concatenates strings. Use this with toupper to build emphasized messages.
+

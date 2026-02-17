@@ -1,0 +1,98 @@
+---
+title: parse_ipv4_mask
+description: 'This page explains how to use the parse_ipv4_mask function in APL.'
+---
+
+## Introduction
+
+The `parse_ipv4_mask` function in APL converts an IPv4 address and its associated netmask into a signed 64-bit wide, long number representation in big-endian order. Use this function when you need to process or compare IPv4 addresses efficiently as numerical values, such as for IP range filtering, subnet calculations, or network analysis.
+
+This function is particularly useful in scenarios where you need a compact and precise way to represent IP addresses and their masks for further aggregation or filtering.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use functions like `cidrmatch` for subnet operations. In APL, `parse_ipv4_mask` focuses on converting an IP and mask into a numerical representation for low-level processing.
+
+<CodeGroup>
+```sql Splunk example
+| eval converted_ip = cidrmatch("192.168.1.0/24", ip)
+```
+
+```kusto APL equivalent
+print converted_ip = parse_ipv4_mask("192.168.1.0", 24)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use custom expressions or stored procedures to perform similar IP address transformations. In APL, `parse_ipv4_mask` offers a built-in, optimized function for this task.
+
+<CodeGroup>
+```sql SQL example
+SELECT inet_aton('192.168.1.0') & (0xFFFFFFFF << (32 - 24)) AS converted_ip
+```
+
+```kusto APL equivalent
+print converted_ip = parse_ipv4_mask("192.168.1.0", 24)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_ipv4_mask(ip, prefix)
+```
+
+### Parameters
+
+| Name    | Type   | Description                                                                 |
+|---------|--------|-----------------------------------------------------------------------------|
+| `ip`    | string | The IPv4 address to convert to a long number.                              |
+| `prefix`| int    | An integer from 0 to 32 representing the number of most-significant bits.  |
+
+### Returns
+
+- A signed, 64-bit long number in big-endian order if the conversion is successful.
+- `null` if the conversion is unsuccessful.
+
+### Example
+
+```kusto
+print parse_ipv4_mask("127.0.0.1", 24)
+```
+
+## Use case example
+
+Use `parse_ipv4_mask` to analyze logs and filter entries based on IP ranges.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend masked_ip = parse_ipv4_mask('192.168.0.1', 24)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20masked_ip%20%3D%20parse_ipv4_mask('192.168.0.1'%2C%2024)%22%7D)
+
+**Output**
+
+| _time              | uri                 | method | masked_ip       |
+|---------------------|---------------------|--------|-----------------|
+| 2024-11-14T10:00:00 | /index.html         | GET    | 3,232,235,520 |
+
+## List of related functions
+
+- [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare): Compares two IPv4 addresses lexicographically. Use for sorting or range evaluations.
+- [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range): Checks if an IP address is within a specified range.
+- [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4): Converts a dotted-decimal IP address into a numeric representation.

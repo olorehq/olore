@@ -1,0 +1,155 @@
+---
+title: PostHog's architecture
+---
+
+This section covers PostHog's [data model](/docs/how-posthog-works/data-model), [ingestion pipeline](/docs/how-posthog-works/ingestion-pipeline), [ClickHouse setup](/docs/how-posthog-works/clickhouse) and [data querying](/docs/how-posthog-works/queries). This page provides an overview of how PostHog is structured.
+
+> For PostHog staff, you can see the very detailed diagram at https://runbooks.posthog.com/architecture
+
+## Broad overview
+
+There are only a few systems to consider. 
+
+- A website and API for users
+- An API for client apps
+- A plugin service for processing events on ingestion
+- A worker service for processing events in response to triggers
+
+```mermaid
+graph LR
+    u[User]
+    sdk[Client Apps/SDKs]
+    ex[Export Sink]
+    dj[Web/API]
+    p[plugin/worker service]
+    c[Celery]
+    ds[(Data stores)]
+    u-->dj
+    sdk --> dj
+    p --> ex
+    dj --> p
+    p <--> ds
+    dj-->c
+    c <--> ds
+    dj <--> ds
+```
+
+## Zooming closer
+
+Adding detail reveals the flow between parts of the system.
+
+```mermaid
+graph LR
+    u[User]
+    sdk[Client Apps/SDKs]
+    ex[Export Sink]
+    ds[(Data stores)]
+
+    subgraph Web/API
+        w[Web]
+        c[Capture API]
+        d[Flags API]
+        cr[cron]
+        ce[Celery]
+    end
+
+    subgraph "plugin/worker service"
+        i[Ingestion]
+        a[Async]
+        t[timer]
+    end
+
+    u-->|views insights and more|w
+    sdk-->|send events|c
+    sdk-->|read|d
+    w-->ds
+    c-->|write events|i
+    i-->|onEvent|a
+    i-->|save events|ds
+    t-->|onTimer|a
+    a-->|export events|ex
+    d-->|e.g. read flags|ds
+    ds-->|read events|a
+    w-->|start task|ce
+    cr-->|on schedule|ce
+    ce-->ds
+```
+
+## Zoomed right in
+
+```mermaid
+flowchart TD
+    subgraph K8s ["K8s PostHog namespace"]
+        Ingress(Ingress)
+        PG[(Postgres Stateful service)]
+        Kafka[(Kafka Stateful Service)]
+
+        KafkaEvents[(Kafka Stateful Service)]
+        Redis[(Redis SS)]
+
+        ServiceLB([Service Load Balancer])
+        ServiceLBReads([Service Load Balancer])
+
+        subgraph ServicesDB [K8s Services]
+            PGBouncer
+        end
+
+        subgraph CH ["ClickHouse Cluster (Operator Managed)"]
+            CH1[(Replica 1 Shard 1)]
+            CH2[(Replica 1 Shard 2)]
+            CH3[(Replica 2 Shard 1)]
+            CH4[(Replica 2 Shard 2)]
+        end
+
+        subgraph ZK [K8s ZooKeeper cluster]
+            ZK1
+            ZK2
+            ZK3
+        end
+
+        subgraph AppServices [K8s Services]
+            Events(Events Service)
+            App(Web Service)
+
+            na
+        end
+
+
+        subgraph WorkerServices [K8s Services]
+            Plugins[Plugin Service]
+            Worker[Worker Service]
+        end
+    end
+
+    AppServices --> ServiceLB --> ServicesDB --> PG
+
+    Events --> KafkaEvents --> Plugins --> Kafka --Write path--> CH
+    WorkerServices --> ServiceLBReads
+    WorkerServices --> ServiceLB
+    ServiceLBReads --Read path--> CH
+
+
+    AppServices --> ServiceLBReads
+
+    CH --> ZK
+
+    CH1 <--> CH2
+    CH3 <--> CH4
+
+    ClientApps(Client Apps)--- Ingress
+
+    %% KLUDGE: Use invisible nodes for styling purposes
+    Ingress --- na[ ]
+    na --Other traffic--> App
+    na --Events endpoint --> Events
+    style na height:0px,width:0px
+
+    Redis -.- WorkerServices
+    AppServices -.- Redis
+
+    AppServices-.Optional Utilization telemetry.->Telemetry(Posthog License Telemetry service)
+
+    class K8s,ServicesDB,CH,ZK,AppServices,WorkerServices sgraph;
+```
+
+No communication is needed into or out of this namespace other than the ingress controller for the app and collecting data.

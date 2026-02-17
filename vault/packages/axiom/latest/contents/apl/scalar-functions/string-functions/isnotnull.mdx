@@ -1,0 +1,162 @@
+---
+title: 'isnotnull'
+description: 'This page explains how to use the isnotnull function in APL.'
+---
+
+The `isnotnull` function returns true if the argument isn’t null. Use this function to filter for records with defined values, validate data presence, or distinguish between null and other values including empty strings.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you check for non-null values using `isnotnull()` function. APL's `isnotnull` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+| where isnotnull(field)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnotnull(field)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you check for non-null values using `IS NOT NULL`. APL's `isnotnull` provides the same functionality with function syntax.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE field IS NOT NULL;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where isnotnull(field)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isnotnull(value)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| value | scalar | Yes | The value to check for non-null. |
+
+### Returns
+
+Returns `true` if the value is not null, otherwise returns `false`. Note that empty strings return `true` because they are not null.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Filter HTTP logs to only include requests where duration information is available for performance analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where isnotnull(req_duration_ms)
+| summarize avg_duration = avg(req_duration_ms), 
+            max_duration = max(req_duration_ms),
+            request_count = count() by status
+| sort by avg_duration desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20where%20isnotnull(req_duration_ms)%20%7C%20summarize%20avg_duration%20%3D%20avg(req_duration_ms)%2C%20max_duration%20%3D%20max(req_duration_ms)%2C%20request_count%20%3D%20count()%20by%20status%20%7C%20sort%20by%20avg_duration%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| status | avg_duration | max_duration | request_count |
+|--------|--------------|--------------|---------------|
+| 500 | 987.5 | 5432 | 234 |
+| 200 | 145.3 | 3421 | 8765 |
+| 404 | 89.7 | 987 | 1234 |
+
+This query filters to only include requests with duration data, ensuring accurate performance metrics without skewing calculations with null values.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Analyze traces with recorded durations to calculate accurate service performance metrics.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where isnotnull(duration)
+| summarize p50_duration = percentile(duration, 50),
+            p95_duration = percentile(duration, 95),
+            trace_count = count() by ['service.name']
+| sort by p95_duration desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20where%20isnotnull(duration)%20%7C%20summarize%20p50_duration%20%3D%20percentile(duration%2C%2050)%2C%20p95_duration%20%3D%20percentile(duration%2C%2095)%2C%20trace_count%20%3D%20count()%20by%20%5B%27service.name%27%5D%20%7C%20sort%20by%20p95_duration%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| service.name | p50_duration | p95_duration | trace_count |
+|--------------|--------------|--------------|-------------|
+| checkout | 234ms | 987ms | 3421 |
+| frontend | 145ms | 654ms | 4532 |
+| cart | 89ms | 456ms | 2987 |
+
+This query ensures duration calculations are based only on spans with recorded timing data, preventing null values from affecting percentile calculations.
+
+</Tab>
+<Tab title="Security logs">
+
+Track requests with identified users to analyze authenticated access patterns versus anonymous attempts.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_user_id = isnotnull(id)
+| summarize requests_by_type = count() by has_user_id, status, ['geo.country']
+| sort by requests_by_type desc
+| limit 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20has_user_id%20%3D%20isnotnull(id)%20%7C%20summarize%20requests_by_type%20%3D%20count()%20by%20has_user_id%2C%20status%2C%20%5B'geo.country'%5D%20%7C%20sort%20by%20requests_by_type%20desc%20%7C%20limit%2010%22%7D)
+
+**Output**
+
+| has_user_id | status | geo.country | requests_by_type |
+|-------------|--------|-------------|------------------|
+| true | 401 | United States | 456 |
+| true | 403 | Unknown | 345 |
+| false | 401 | Russia | 234 |
+| false | 403 | China | 123 |
+
+This query distinguishes between authenticated and truly anonymous access attempts by checking for user ID presence, helping identify different attack patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [isnull](/apl/scalar-functions/string-functions/isnull): Returns true if a value is null. Use this for the inverse check of isnotnull.
+- [isnotempty](/apl/scalar-functions/string-functions/isnotempty): Checks if a value is not empty and not null. Use this when you need to ensure both conditions.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null value from a list. Use this to provide default values for null fields.
+- [gettype](/apl/scalar-functions/string-functions/gettype): Returns the type of a value. Use this to distinguish between null and other types.
+

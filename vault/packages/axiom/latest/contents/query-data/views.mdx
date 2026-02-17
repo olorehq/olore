@@ -1,0 +1,44 @@
+---
+title: 'Views'
+description: 'This page explains how to use views in Axiom.'
+---
+
+Views allow you to apply commonly used filters and transformations to your dataset. The result is a view that you can use like you use datasets:
+
+- You can reference views in queries, dashboards, and monitors in the same way you reference datasets. For example, you can create queries that look for data in a view and you can use this query to [visualize data](/query-data/explore) in the Query tab, create a [dashboard element](/dashboard-elements/create), or set up a [monitor](/monitor-data/monitors).
+- You can share and control access to views in the same way you do with datasets using role-based access control (RBAC). For example, views allow you to grant other users scoped access to your datasets. This means that instead of sharing the whole dataset with other users, you have the option to share only a filtered and transformed representation of the data. You define a view using a query that applies filters and transformations to your dataset, and then you only share the results of this query with another user.
+
+Contrary to datasets:
+
+- You can’t ingest directly to a view.
+- You can’t trim or delete data from a view.
+- You can’t create a view from another view.
+
+The concept of a view in Axiom is similar to the concept of a virtual table in a database.
+
+### Create view
+
+1. Select a dataset.
+1. In the top right of the **Views** section, click **+ Create view**.
+1. Create the query using the [visual query builder](/query-data/explore#create-a-query-using-the-visual-query-builder) or the [Axiom Processing Language (APL)](/query-data/explore#create-a-query-using-apl).
+1. Below the query, check the preview of the events and the fields that your query returns.
+1. Name the view and optionally add a description.
+1. Click **Create view**.
+
+### Display view
+
+1. Select a dataset.
+1. In the **Views** section on the right, click the view you want to display.
+
+### Grant access to view
+
+All views are available to users with organization-level read access to views. You can allow users without these permissions to access an individual view in the same way you grant access to individual datasets:
+
+1. Click <Icon icon="gear" iconType="solid"/> **Settings > Roles**.
+1. Click the role with which you want to share the view or create a new role.
+1. In the **Individual datasets** section, click **Add dataset**.
+1. Start typing the name of the view. In the list, find the view that you want to share, and then click **Add**.
+    <Note>
+        It’s enough to grant access to the view. You don’t need to grant access to the underlying dataset.
+    </Note>
+1. Click **Save**.

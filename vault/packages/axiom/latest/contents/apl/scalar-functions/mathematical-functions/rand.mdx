@@ -1,0 +1,82 @@
+---
+title: rand
+description: 'This page explains how to use the rand function in APL.'
+---
+
+Use the `rand` function in APL to generate pseudo-random numbers. This function is useful when you want to introduce randomness into your queries. For example, to sample a subset of data, generate test data, or simulate probabilistic scenarios.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `random()` function returns a pseudo-random integer between 0 and 2^31-1. You often divide this value to produce a float between 0 and 1. In APL, the `rand()` function directly returns a float in the range `[0, 1)`, so there’s no need to divide or scale.
+
+<CodeGroup>
+```sql Splunk example
+| eval r=random()/2147483647
+````
+
+```kusto APL equivalent
+print r = rand()
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL uses the `RAND()` function to generate a float between 0 and 1. However, SQL typically doesn’t generate a new random value for every row unless you call `RAND()` inside a subquery or use it with a specific expression. In APL, `rand()` behaves like a row-level function and produces a new value for each row automatically.
+
+<CodeGroup>
+```sql SQL example
+SELECT RAND() as r;
+```
+
+```kusto APL equivalent
+print r = rand()
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+rand()
+rand(range)
+```
+
+### Parameters
+
+| Name   | Type            | Description                                                                                       |
+| ------ | --------------- | ------------------------------------------------------------------------------------------------- |
+| `range` | integer | Optional: A positive integer that specifies the upper exclusive limit of the range where you want to generate pseudo-random integers. The lower inclusive limit is 0. |
+
+### Returns
+
+Without `range`: A real number in the range between 0 (inclusive) and 1 (exclusive). Each call returns a pseudo-random float.
+With `range`: An integer in the range between 0 (inclusive) and `range` (exclusive).
+
+## Example
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend random = rand()
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20random%20%3D%20rand()%22%7D)
+
+**Output**
+
+| _time               | random     |
+| -------------------- | ------ |
+| 2024-07-10T14:32:00Z | 0.6324890121902683 |

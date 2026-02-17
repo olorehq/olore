@@ -1,0 +1,109 @@
+---
+title: parse-kv
+description: 'This page explains how to use the parse-kv operator in APL.'
+---
+
+The `parse-kv` operator parses key-value pairs from a string field into individual columns. You use it when your data is stored in a single string that contains structured information, such as `key=value` pairs. With `parse-kv`, you can extract the values into separate columns to make them easier to query, filter, and analyze.
+
+This operator is useful in scenarios where logs, traces, or security events contain metadata encoded as key-value pairs. Instead of manually splitting strings, you can use `parse-kv` to transform the data into a structured format.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you often use the `kv` or `extract` commands to parse key-value pairs from raw log data. In APL, you achieve similar functionality with the `parse-kv` operator. The difference is that `parse-kv` explicitly lets you define which keys to extract and what delimiters to use.
+
+<CodeGroup>
+```sql Splunk example
+... | kv pairdelim=";" kvdelim="=" keys="key1,key2,key3"
+````
+
+```kusto APL equivalent
+datatable(data:string)
+[
+  'key1=a;key2=b;key3=c'
+]
+| parse-kv data as (key1, key2, key3) with (pair_delimiter=';', kv_delimiter='=')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not have a direct equivalent of `parse-kv`. Typically, you would use string functions such as `SUBSTRING` or `SPLIT_PART` to manually extract key-value pairs. In APL, `parse-kv` simplifies this process by automatically extracting multiple keys in one step.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  SUBSTRING_INDEX(SUBSTRING_INDEX(data, ';', 1), '=', -1) as key1,
+  SUBSTRING_INDEX(SUBSTRING_INDEX(data, ';', 2), '=', -1) as key2,
+  SUBSTRING_INDEX(SUBSTRING_INDEX(data, ';', 3), '=', -1) as key3
+FROM logs;
+```
+
+```kusto APL equivalent
+datatable(data:string)
+[
+  'key1=a;key2=b;key3=c'
+]
+| parse-kv data as (key1, key2, key3) with (pair_delimiter=';', kv_delimiter='=')
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse-kv Expression as (KeysList) with (pair_delimiter = PairDelimiter, kv_delimiter = KvDelimiter [, Options...])
+```
+
+### Parameters
+
+| Parameter        | Description                                                                     |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `Expression`     | The string expression that contains the key-value pairs.                        |
+| `KeysList`       | A list of keys to extract into separate columns.                                |
+| `PairDelimiter` | A character or string that separates key-value pairs (for example, `;` or `,`). |
+| `KvDelimiter`   | A character or string that separates keys and values (for example, `=` or `:`). |
+| `Options`        | Additional parsing options, such as case sensitivity.                           |
+
+### Returns
+
+A dataset where each specified key is extracted into its own column with the corresponding value. If a key is missing in the original string, the column is empty for that row.
+
+## Use case example
+
+When analyzing HTTP logs, you might encounter a field where request metadata is encoded as key-value pairs. You can extract values like status and duration for easier analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| parse-kv kvdata as (status, req_duration_ms) with (pair_delimiter=';', kv_delimiter='=')
+| project _time, status, req_duration_ms, method, uri
+```
+
+**Output**
+
+| _time               | status | req_duration_ms | method | uri      |
+| -------------------- | ------ | ----------------- | ------ | -------- |
+| 2024-05-01T10:00:00Z | 200    | 120               | GET    | /home    |
+| 2024-05-01T10:01:00Z | 404    | 35                | GET    | /missing |
+
+This query extracts status and request duration from a concatenated field and projects them alongside other useful fields.
+
+## List of related operators
+
+- [extend](/apl/tabular-operators/extend-operator): Adds calculated columns. Use when parsing is not required but you want to create new derived columns.
+- [parse](/apl/tabular-operators/parse-operator): Extracts values from a string expression without filtering out non-matching rows. Use when you want to keep all rows, including those that fail to parse.
+- [project](/apl/tabular-operators/project-operator): Selects and computes columns without parsing. Use when you want to transform data rather than extract values.
+- [where](/apl/tabular-operators/where-operator): Filters rows based on conditions. Use alongside parsing functions if you want more control over filtering logic.

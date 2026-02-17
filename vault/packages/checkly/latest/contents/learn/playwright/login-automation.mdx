@@ -1,0 +1,69 @@
+---
+title: How to Automate Login with Playwright
+subTitle: Automating one of the most common scenarios
+date: 2020-06-25
+author: Giovanni Rago
+githubUser: ragog
+tags:
+  - e2e
+  - login
+sidebarTitle: Standard authentication
+weight: 7
+learn_playwright:
+  parent: "E2E examples"
+---
+
+import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import SignUpCta from "/snippets/sign-up-cta.mdx"
+
+<PlaywrightCheckSuiteTryOut />
+
+When automating key site transactions, we inevitably stumble into login scenarios. In most cases, users need to be able to access accounts on a platform to get any value out of it. If they suddenly become unable to do so, we need to be informed as quickly as possible.
+
+## Steps
+
+In its simplest form, a login procedure requires the user to:
+
+1. Navigate to the login form
+2. Fill in a username/email field
+3. Fill in a password field
+4. Click a button to finalise the login
+
+At the end of our test, we need to check if our login procedure has been successful. For example, we could verify that an element is shown that we know only appears for logged-in users.
+
+On our [test site](https://danube-web.shop/) this could look like the following:
+
+```ts login.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('Login', async ({ page }) => {
+  await page.goto('https://danube-web.shop/')
+
+  await page.getByRole('button', { name: 'Log in' }).click()
+  await page.getByPlaceholder('Email').fill(process.env.USER_EMAIL)
+  await page.getByPlaceholder('Password').fill(process.env.USER_PASSWORD)
+  await page.getByRole('button', { name: 'Sign In' }).click()
+
+  await expect(page.getByText('Welcome back, user@email.com')).toBeVisible()
+})
+```
+
+Run this example as follows. Replace the username and password placeholder with your own credentials.
+
+**macOS/Linux:**
+```bash
+USER_EMAIL=user@email.com USER_PASSWORD=supersecure1 npx playwright test login.spec.ts
+```
+
+**Windows:**
+```bash
+SET USER_EMAIL=user@email.com
+SET USER_PASSWORD=supersecure1
+npx playwright test login.spec.ts
+```
+
+## Takeaways
+1. Use environment variables to inject secrets.
+2. You might need to wait for the navigation as you are redirected to the login screen/modal.
+
+<SignUpCta />

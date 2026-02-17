@@ -1,0 +1,105 @@
+---
+title: iscc
+description: 'This page explains how to use the iscc function in APL to check if a string is a valid credit card number.'
+---
+
+Use the `iscc` function to determine whether a given string is a valid credit card number. This function checks the string against known credit card number patterns and applies a checksum verification (typically the Luhn algorithm) to validate the structure and integrity of the input.
+
+You can use `iscc` when analyzing logs that may contain sensitive data to detect accidental leakage of credit card information. It’s also useful when filtering or sanitizing input data, monitoring suspicious behavior, or validating form submissions in telemetry data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t provide a built-in function for validating credit card numbers. To perform similar validation, you typically rely on regular expressions and manual checksum implementations using `eval` or custom search commands.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_cc=if(match(field, "^[0-9]{13,19}$") AND luhn_check(field), "true", "false")
+````
+
+```kusto APL equivalent
+datatable(card:string)
+[
+  '4111111111111111',
+  '1234567890123456'
+]
+| extend is_cc = iscc(card)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not define a standard function for credit card validation. You must use a combination of pattern matching with `LIKE` or `REGEXP`, plus a user-defined function to implement checksum validation.
+
+<CodeGroup>
+```sql SQL example
+SELECT card,
+       CASE WHEN is_valid_card(card) THEN 'true' ELSE 'false' END AS is_cc
+FROM transactions
+```
+
+```kusto APL equivalent
+datatable(card:string)
+[
+  '4111111111111111',
+  '1234567890123456'
+]
+| extend is_cc = iscc(card)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+iscc(value)
+```
+
+### Parameters
+
+| Name  | Type   | Description                          |
+| ----- | ------ | ------------------------------------ |
+| value | string | The string to evaluate for validity. |
+
+### Returns
+
+A `bool` value:
+
+- `true` if the input string is a valid credit card number.
+- `false` otherwise.
+
+## Example
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend has_credit_card = iscc('4111111111111111')
+| project _time, has_credit_card
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20has_credit_card%20%3D%20iscc('4111111111111111')%20%7C%20project%20_time%2C%20has_credit_card%22%7D)
+
+**Output**
+
+| _time              | has_credit_card                        |
+| ------------------- | -------------------------- |
+| 2025-07-10T10:42:00 | true |
+
+## List of related functions
+
+- [isimei](/apl/scalar-functions/type-functions/isimei): Checks whether a value is a valid International Mobile Equipment Identity (IMEI) number.
+- [isreal](/apl/scalar-functions/type-functions/ismap): Checks whether a value is a real number.
+- [isstring](/apl/scalar-functions/type-functions/isstring): Checks whether a value is a string. Use this for scalar string validation.
+- [isutf8](/apl/scalar-functions/type-functions/isutf8): Checks whether a value is a valid UTF-8 encoded sequence.

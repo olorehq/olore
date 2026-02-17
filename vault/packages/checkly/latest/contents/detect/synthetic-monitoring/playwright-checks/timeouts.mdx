@@ -1,0 +1,122 @@
+---
+title: 'Playwright Check Suite Timeouts'
+description: 'Configure and troubleshoot timeouts in Playwright Check Suites.'
+sidebarTitle: 'Timeouts'
+---
+
+Playwright Check Suites have multiple timeout stages during execution.
+Use this guide to configure your checks and troubleshoot timeout failures.
+
+## Timeout overview
+
+| Timeout stage | Default timeout | Configurable |
+|---------------|-----------------|--------------|
+| Global Playwright Check Suite timeout | 30 minutes | No |
+| Dependency installation | 5 minutes | No |
+| Playwright test timeout | Inherits from your config | Yes |
+| Playwright navigation timeout | Inherits from your config | Yes |
+| Playwright action timeout | Inherits from your config | Yes |
+| Artifact upload and secret scrubbing | No timeout | No |
+
+## Playwright Check Suite execution stages
+
+When Checkly runs your Playwright Check Suite, it has a global timeout of 30 minutes, while going through these stages:
+
+### 1. Pre-processing
+
+Checkly prepares your execution environment:
+
+1. **Playwright and browsers**: Load the right playwright version with its corresponding browsers
+2. **Dependencies cache download**: Downloads the dependencies cache if it exists
+3. **Dependency installation**: If the dependencies cache doesn't exist, Checkly runs the install command (default: `npm install`, `pnpm install` or `yarn install`)
+   - This stage has a **5-minute timeout**
+   - Use `installCommand` in your [check suite configuration](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands) to run a custom dependency installation command. This can help prevent timeouts during installation. For example `installCommand: 'npm install --ignore-scripts'` to skip running postinstall and other lifecycle scripts
+4. **Creates and uploads new dependencies cache**: This cache will be used in consecutive runs in your account with the same dependencies
+
+### 2. Test execution
+
+Checkly runs your tests using `npx playwright test`:
+
+- The timeouts of this stage are set through the timeouts in your Playwright tests and configuration.
+- To set a global playwright test timeout in Checkly, use a custom test command, `testCommand` , in your [check suite configuration](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands)
+  - Use `testCommand: npx playwright test --global-timeout=<timeout_in_ms>` to customize the timeout of this step
+
+### 3. Post-processing
+
+After tests complete, Checkly:
+
+1. **Uploads artifacts**: Screenshots, videos, traces
+2. **Scrubs secrets**: Removes secrets declared in your Checkly Environment Secrets from logs and artifacts
+
+
+## Playwright-specific timeouts
+
+Checkly runs your tests with the timeout configuration from your `playwright.config.ts` and test files. Configure test timeout, navigation timeout, and action timeout according to your needs. See [Playwright's timeout documentation](https://playwright.dev/docs/test-timeouts) for detailed configuration options.
+
+## Troubleshooting timeout-related errors
+
+### Dependency installation timeout exceeded
+
+```
+Running <npm/yarn/pnpm install command>
+Command timed out
+Failed to run install command
+```
+
+**Cause**: Dependencies take longer than 5 minutes to install.
+
+**Solutions**:
+- Reduce dependencies in your `package.json`
+- Remove large or unnecessary packages
+- Check if your registry is slow or has issues
+- Update and commit your lock file
+
+### Global timeout exceeded
+
+```
+Your check took too long to complete and was automatically stopped. If this issue persists, please contact support at ...
+```
+
+**Cause**: The entire check suite execution (installation + tests + post-processing) exceeded 30 minutes.
+
+
+**Solution**:
+- Split tests into multiple check suites using `pwTags`, `pwProjects` or a custom `testCommand`. 
+
+
+### Playwright test timeout exceeded
+
+```
+Error: Test timeout of 30000ms exceeded
+```
+
+**Cause**: A single test exceeded the configured test timeout.
+
+**Solution**: Increase the test timeout in your Playwright configuration or for specific tests. See [Playwright's test timeout documentation](https://playwright.dev/docs/test-timeouts#test-timeout) for configuration options.
+
+### Playwright navigation timeout exceeded
+
+```
+Error: page.goto: Timeout 30000ms exceeded
+```
+
+**Cause**: A navigation action (like `page.goto()`) took longer than the navigation timeout.
+
+**Solution**: Increase the navigation timeout in your Playwright configuration or for specific navigation actions. See [Playwright's timeout documentation](https://playwright.dev/docs/test-timeouts) for configuration options.
+
+### Playwright action timeout exceeded
+
+```
+Error: locator.click: Timeout 10000ms exceeded
+```
+
+**Cause**: An action (click, fill, etc.) took longer than the configured action timeout.
+
+**Solution**: Increase the action timeout in your Playwright configuration or for specific actions. See [Playwright's timeout documentation](https://playwright.dev/docs/test-timeouts) for configuration options.
+
+
+## Related documentation
+
+- [Playwright Check Suite configuration](/detect/synthetic-monitoring/playwright-checks/configuration)
+- [Using custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies)
+- [Splitting and organizing your tests](/detect/synthetic-monitoring/playwright-checks/test-organization)

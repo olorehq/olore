@@ -1,0 +1,63 @@
+---
+title: 'API limits'
+description: 'Learn how to limit the number of calls a user can make over a certain period of time.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'axiom api', 'rest api', 'rest', 'rate limits', 'user', 'organization', 'query limits', 'ingest limits', 'requests', 'reset', 'scope', 'message']
+---
+
+Axiom limits the number of calls a user (and their organization) can make over a certain period
+of time to ensure fair usage and to maintain the quality of service for everyone.
+Axiom systems closely monitor API usage and if a user exceeds any thresholds, Axiom
+temporarily halts further processing of requests from that user (and/or organization).
+This is to prevent any single user or app from overloading the system,
+which could potentially impact other users' experience.
+
+## Rate Limits
+
+Rate limits vary and are specified by the following header in all responses:
+
+| Header                  | Description                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `X-RateLimit-Scope`     | Indicates if the limits counts against the organisation or personal rate limit.                                         |
+| `X-RateLimit-Limit`     | The maximum number of requests a user is permitted to make per minute.                                                     |
+| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window.                                                      |
+| `X-RateLimit-Reset`     | The time at which the current rate limit window resets in UTC [epoch seconds](https://en.wikipedia.org/wiki/Unix_time). |
+
+**Possible values for X-RateLimit-Scope :**
+
+- `user`
+- `organization`
+
+**When the rate limit is exceeded, an error is returned with the status "429 Too Many Requests"**:
+
+```json
+{
+    "message": "rate limit exceeded",
+}
+```
+
+## Query Limits
+
+| Header                   | Description                                                                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `X-QueryLimit-Limit`     | The query cost limit of your plan in Gigabyte Milliseconds (GB*ms).                                                     |
+| `X-QueryLimit-Remaining` | The remaining query Gigabyte Milliseconds.                                                                              |
+| `X-QueryLimit-Reset`     | The time at which the current rate limit window resets in UTC [epoch seconds](https://en.wikipedia.org/wiki/Unix_time). |
+
+## Ingest Limits
+
+| Header                    | Description                                                                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `X-IngestLimit-Limit`     | The maximum bytes ingested a user is permitted to make per month.                                                       |
+| `X-IngestLimit-Remaining` | The bytes ingested remaining in the current rate limit window.                                                          |
+| `X-IngestLimit-Reset`     | The time at which the current rate limit window resets in UTC [epoch seconds](https://en.wikipedia.org/wiki/Unix_time). |
+
+Alongside data volume limits, we also monitor the rate of ingest requests.
+If an organization consistently sends an excessive number of requests per second,
+far exceeding normal usage patterns, we reserve the right to suspend their ingest
+to maintain system stability and ensure fair resource allocation for all users.
+To prevent exceeding these rate limits, it’s highly recommended to use batching clients,
+which can efficiently manage the number of requests by aggregating data before sending.
+
+## Limits on ingested data
+
+For more information on limits and requirements imposed by Axiom, see [Limits](/reference/limits).

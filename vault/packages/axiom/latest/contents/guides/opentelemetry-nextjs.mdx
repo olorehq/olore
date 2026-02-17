@@ -1,0 +1,276 @@
+---
+title: 'OpenTelemetry using Next.js'
+description: 'This guide demonstrates how to configure OpenTelemetry in a Next.js app to send telemetry data to Axiom.'
+overview: 'Next.js with OpenTelemetry for full-stack tracing'
+sidebarTitle: Next.js
+keywords: ['guides', 'nextjs', 'opentelemetry', 'otel']
+logoId: 'openTelemetry'
+---
+
+OpenTelemetry provides a standardized way to collect and export telemetry data from your Next.js apps. This guide walks you through the process of configuring OpenTelemetry in a Next.js app to send traces to Axiom using the OpenTelemetry SDK.
+
+## Prerequisites
+
+- [Create an Axiom account](https://app.axiom.co/).
+- [Create a dataset in Axiom](/reference/datasets) where you send your data.
+- [Create an API token in Axiom](/reference/tokens) with permissions to create, read, update, and delete datasets.
+- [Install Node.js version 14](https://nodejs.org/en/download/package-manager) or newer.
+- An existing Next.js app. Alternatively, create a new app with the default settings using the [Next.js documentation](https://nextjs.org/learn/pages-router/create-nextjs-app-setup).
+
+## Send data from new project
+
+### Initial setup
+
+1. Create a new app with the default settings using the [Next.js documentation](https://nextjs.org/learn/pages-router/create-nextjs-app-setup).
+1. Run the following command to install the dependencies:
+
+    ```bash
+    npm install @opentelemetry/exporter-trace-otlp-http @opentelemetry/sdk-trace-node @opentelemetry/resources
+    ```
+
+1. Create an `instrumentation.ts` file in the `src` folder of your project with the following content:
+
+    ```ts /src/instrumentation.ts
+    import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+    import { resourceFromAttributes } from "@opentelemetry/resources";
+    import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+    import { SimpleSpanProcessor } from "@opentelemetry/sdk-trace-node";
+    import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+
+    export function register() {
+      const provider = new NodeTracerProvider({
+        resource: resourceFromAttributes({
+          [ATTR_SERVICE_NAME]: "nextjs-otel-example",
+        }, {
+          // Use the latest schema version
+          // Info: https://opentelemetry.io/docs/specs/semconv/
+          schemaUrl: 'https://opentelemetry.io/schemas/1.37.0',
+        }),
+        spanProcessors: [new SimpleSpanProcessor(
+          new OTLPTraceExporter({
+            url: `https://${process.env.AXIOM_DOMAIN}/v1/traces`,
+            headers: {
+              Authorization: `Bearer ${process.env.API_TOKEN}`,
+              "X-Axiom-Dataset": `${process.env.DATASET_NAME}`,
+            },
+          })
+        )],
+      });
+
+      provider.register();
+    }
+    ```
+
+1. Add the `AXIOM_DOMAIN`, `API_TOKEN`, and `DATASET_NAME` environment variables to your `.env` file. For example:
+
+    ```bash
+    AXIOM_DOMAIN=api.axiom.co
+    API_TOKEN=xaat-123
+    DATASET_NAME=my-dataset
+    ```
+
+### Update root layout
+
+In the `/src/app/layout.tsx` file, import and call the `register` function from the `instrumentation` module:
+
+```tsx /src/app/layout.tsx
+import { register } from '../instrumentation';
+
+register();
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+This file sets up the root layout for your Next.js app and initializes the OpenTelemetry instrumentation by calling the `register` function.
+
+### Update compiler options
+
+Add the following options to your `tsconfig.json` file to ensure compatibility with OpenTelemetry and Next.js:
+
+```json /tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+This file configures the TypeScript compiler options for your Next.js app.
+
+### Observe traces in Axiom
+
+Use the following command to run your Next.js app with OpenTelemetry instrumentation in development mode:
+
+```bash
+npm run dev
+```
+
+This command starts the Next.js development server, and the OpenTelemetry instrumentation automatically collects traces. As you interact with your app, traces are sent to Axiom where you can monitor and analyze your app’s performance and behavior.
+
+In Axiom, go to the **Stream** tab and click your dataset. This page displays the traces sent to Axiom and lets you monitor and analyze your app’s performance and behavior.
+
+Go to the **Dashboards** tab and click **OpenTelemetry Traces**. This pre-built traces dashboard provides further insights into the performance and behavior of your app.
+
+## Send data from existing project
+
+### Manual instrumentation
+
+Manual instrumentation allows you to create, configure, and manage spans and traces, providing detailed control over telemetry data collection at specific points within the app.
+
+1. Set up and retrieve a tracer from the OpenTelemetry API. This tracer starts and manages spans within your app components or API routes.
+
+```js
+import { trace } from '@opentelemetry/api';
+const tracer = trace.getTracer('nextjs-app');
+```
+
+2. Manually start a span at the beginning of significant operations or transactions within your Next.js app and ensure you end it appropriately. This approach is for tracing specific custom events or operations not automatically captured by instrumentations.
+
+```js
+const span = tracer.startSpan('operationName');
+try {
+  // Perform your operation here
+} finally {
+  span.end();
+}
+```
+
+3. Enhance the span with additional information such as user details or operation outcomes, which can provide deeper insights when analyzing telemetry data.
+
+```js
+span.setAttribute('user_id', userId);
+span.setAttribute('operation_status', 'success');
+```
+
+### Automatic instrumentation
+
+Automatic instrumentation uses the capabilities of OpenTelemetry to automatically capture telemetry data for standard operations such as HTTP requests and responses.
+
+1. Use the OpenTelemetry Node SDK to configure your app to automatically instrument supported libraries and frameworks. Set up `NodeSDK` in an `instrumentation.ts` file in your project.
+
+```ts /src/instrumentation.ts
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+
+export function register() {
+  const sdk = new NodeSDK({
+    resource: new Resource({ [SEM_RESOURCE_ATTRIBUTES.SERVICE_NAME]: 'nextjs-app' }),
+    spanProcessor: new BatchSpanProcessor(
+      new OTLPTraceExporter({
+        url: `https://${process.env.AXIOM_DOMAIN}/v1/traces`,
+        headers: {
+          Authorization: `Bearer ${process.env.API_TOKEN}`,
+          'X-Axiom-Dataset': `${process.env.DATASET_NAME}`,
+        },
+      })
+    ),
+  });
+
+  sdk.start();
+}
+```
+
+2. Include necessary OpenTelemetry instrumentation packages to automatically capture telemetry from Node.js libraries like HTTP and any other middlewares used by Next.js.
+
+3. Call the `register` function from the `instrumentation.ts` within your app startup file or before your app starts handling traffic to initialize the OpenTelemetry instrumentation.
+
+```js
+// In pages/_app.js or an equivalent entry point
+import { register } from '../instrumentation';
+register();
+```
+
+## Reference
+
+### List of OpenTelemetry trace fields
+
+| Field Category              | Field Name                           | Description                                                        |
+| --------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| General Trace Information   |                                      |                                                                    |
+|                             | \_rowId                              | Unique identifier for each row in the trace data.                  |
+|                             | \_sysTime                            | System timestamp when the trace data was recorded.                 |
+|                             | \_time                               | Timestamp when the actual event being traced occurred.             |
+|                             | trace_id                             | Unique identifier for the entire trace.                            |
+|                             | span_id                              | Unique identifier for the span within the trace.                   |
+|                             | parent_span_id                       | Unique identifier for the parent span within the trace.            |
+| HTTP Attributes             |                                      |                                                                    |
+|                             | attributes.http.method               | HTTP method used for the request.                                  |
+|                             | attributes.http.status_code          | HTTP status code returned in response.                             |
+|                             | attributes.http.route                | Route accessed during the HTTP request.                            |
+|                             | attributes.http.target               | Specific target of the HTTP request.                               |
+| Custom Attributes           |                                      |                                                                    |
+|                             | attributes.custom["next.route"]      | Custom attribute defining the Next.js route.                       |
+|                             | attributes.custom["next.rsc"]        | Indicates if React Server Components are used.                     |
+|                             | attributes.custom["next.span_name"]  | Custom name of the span within Next.js context.                    |
+|                             | attributes.custom["next.span_type"]  | Type of the Next.js span, describing the operation context.        |
+| Resource Process Attributes |                                      |                                                                    |
+|                             | resource.process.pid                 | Process ID of the Node.js app.                                     |
+|                             | resource.process.runtime.description | Description of the runtime environment. For example, Node.js.      |
+|                             | resource.process.runtime.name        | Name of the runtime environment. For example, nodejs.              |
+|                             | resource.process.runtime.version     | Version of the runtime environment For example, 18.17.0.           |
+|                             | resource.process.executable.name     | Executable name running the process. For example, next-server.     |
+| Resource Host Attributes    |                                      |                                                                    |
+|                             | resource.host.arch                   | Architecture of the host machine. For example, arm64.              |
+|                             | resource.host.name                   | Name of the host machine. For example, MacBook-Pro.local.          |
+| Operational Details         |                                      |                                                                    |
+|                             | duration                             | Time taken for the operation.                                      |
+|                             | kind                                 | Type of span (for example, server, internal).                      |
+|                             | name                                 | Name of the span, often a high-level title for the operation.      |
+| Scope Attributes            |                                      |                                                                    |
+|                             | scope.name                           | Name of the scope for the operation. For example, next.js.         |
+|                             | scope.version                        | Version of the scope. For example, 0.0.1.                          |
+| Service Attributes          |                                      |                                                                    |
+|                             | service.name                         | Name of the service generating the trace. For example, nextjs-app. |
+| Telemetry SDK Attributes    |                                      |                                                                    |
+|                             | telemetry.sdk.language               | Language of the telemetry SDK. For example, nodejs.                |
+|                             | telemetry.sdk.name                   | Name of the telemetry SDK. For example, opentelemetry.             |
+|                             | telemetry.sdk.version                | Version of the telemetry SDK. For example, 1.23.0.                 |
+
+### List of imported libraries
+
+`@opentelemetry/api`
+The core API for OpenTelemetry in JavaScript, providing the necessary interfaces and utilities for tracing, metrics, and context propagation. In the context of Next.js, it allows developers to manually instrument custom spans, manipulate context, and access the active span if needed.
+
+`@opentelemetry/exporter-trace-otlp-http`
+This exporter enables your Next.js app to send trace data over HTTP to any backend that supports the OTLP (OpenTelemetry Protocol), such as Axiom. Using OTLP ensures compatibility with a wide range of observability tools and standardizes the data export process.
+
+`@opentelemetry/resources`
+This defines the Resource which represents the entity producing telemetry. In Next.js, Resources can be used to describe the app (for example, service name, version) and are attached to all exported telemetry, aiding in identifying data in backend systems.
+
+`@opentelemetry/sdk-node`
+
+The OpenTelemetry SDK for Node.js which provides a comprehensive set of tools for instrumenting Node.js apps. It includes automatic instrumentation for popular libraries and frameworks, as well as APIs for manual instrumentation. In the Next.js setup, it’s used to configure and initialize the OpenTelemetry SDK.
+
+`@opentelemetry/sdk-trace-node`
+This package provides the Node.js-specific implementation of the OpenTelemetry Tracing SDK. It includes the core components needed to create and manage spans, as well as utilities for automatic and manual instrumentation in Node.js environments. In a Next.js app, it works alongside `@opentelemetry/sdk-node` to give finer control over the tracing pipeline. For example, configuring span processors, sampling strategies, or custom span exporters directly for trace data. It’s useful when you need more granular control over tracing behavior beyond the default SDK configuration.
+
+`@opentelemetry/semantic-conventions`
+A set of standard attributes and conventions for describing resources, spans, and metrics in OpenTelemetry. By adhering to these conventions, your Next.js app’s telemetry data becomes more consistent and interoperable with other OpenTelemetry-compatible tools and systems.

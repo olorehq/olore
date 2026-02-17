@@ -1,0 +1,58 @@
+---
+title: 'Sources'
+description: 'You can add source code for actors, actions, and guards from the Sources panel. Your source code will be included in your live actors, synced projects, and exported code.'
+---
+
+import { Code, PenSquare, TextQuote } from 'lucide-react';
+
+You can add source code for [actors](actors), [actions](actions), and [guards](guards) from the <Code size={18} /> **Sources** panel. Your source code will be included in your [live actors](stately-sky-getting-started), [synced projects](import-from-github), and [exported code](export-as-code) found in the <Code size={18} /> **Code** panel.
+
+<Callout>
+
+Sources for [delayed (after) transitions](delayed-transitions) are not yet supported. You can still use delayed transitions in your machines, but the delay implementation will need to be handled in your exported code rather than defined in the Sources panel.
+
+</Callout>
+
+## Adding sources
+
+You can add sources from the <Code size={18}/> **Sources** panel. Use the <PenSquare size={18} /> edit button alongside the action, actor, or guard on the canvas to open its source.
+
+You can also open the **Sources** panel without selecting an action, actor, or guard. By default, the **Sources** panel shows all the sources in the machine, and you can also add new sources without referencing them with an action, actor, or guard. Sources currently referenced in the machine are highlighted in the **Sources** panel. Unused sources are dimmed.
+
+Each source requires a name (ID) and source code. The ID is used to reference the source code. The source code for the actor, action, or guard will be included in the generated code. Sources have distinct names, so multiple actors, actions, or guards can reference them.
+
+### Unnamed actions, actors, and guards
+
+When importing a machine from your codebase, unnamed actions, actors, and guards are assigned a default name based on its position in your machine config. For example, the following action:
+
+```js
+createMachine({
+  states: {
+    a: {
+      states: {
+        b: { entry: [assign({ name: 'laura' })] },
+      },
+    },
+  },
+});
+```
+
+Would be given a default name of `inline:(machine).a.b#entry[0]`. These default names are not visible in the editor but will be used in the synced or exported code unless you give your action, actor, or guard a name. `inline:` is prepended to the name to make them more readable and easier to find in your code. After first importing your machine, we recommend you give all your actions, actors, and guards a name. Naming is a one-time step, and you can always rename them later.
+
+## Deleting sources
+
+You can only delete unused sources that any actors, actions, or guards do not reference. This prevents you from accidentally deleting a currently used source in your machine.
+
+<Callout>
+
+You can **delete all unused sources** from the **...** menu in the top right corner of the **Sources** panel.
+
+</Callout>
+
+## Source templates
+
+Each source type has optional logic templates. You can use the template buttons to quickly add the implementation code for XState’s [logic creators](/docs/actors#actor-logic-creators), [higher-level guards](/docs/guards#higher-level-guards), and [built-in actions](/docs/actions), and the correct XState imports will be added to your code for sync or export.
+
+## Formatting
+
+You can format your source code with [Prettier](https://prettier.io/) by using the <TextQuote size={18} /> format button.

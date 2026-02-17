@@ -1,0 +1,42 @@
+---
+title: Network performance recording
+availability:
+  free: full
+  selfServe: full
+  enterprise: full
+---
+
+import Tab from "components/Tab"
+import WebNetwork from "./_snippets/web-network.mdx"
+import AndroidNetwork from "./_snippets/android-network.mdx"
+import IOSNetwork from "./_snippets/ios-network.mdx"
+import ReactNativeNetwork from "./_snippets/react-native-network.mdx"
+
+Session replay allows you to capture network requests and responses, providing insights into network performance and potential issues. This feature can be particularly useful for debugging and optimizing your application's network interactions.
+
+<Tab.Group tabs={['Web', 'Android', 'iOS', 'React Native']}>
+    <Tab.List>
+        <Tab>Web</Tab>
+        <Tab>Android</Tab>
+        <Tab>iOS</Tab>
+        <Tab>React Native</Tab>
+    </Tab.List>
+    <Tab.Panels>
+        <Tab.Panel>
+            <WebNetwork />
+        </Tab.Panel>
+        <Tab.Panel>
+            <AndroidNetwork />
+        </Tab.Panel>
+        <Tab.Panel>
+            <IOSNetwork />
+        </Tab.Panel>
+        <Tab.Panel>
+            <ReactNativeNetwork />
+        </Tab.Panel>
+    </Tab.Panels>
+</Tab.Group>
+
+## Performance considerations
+
+Capturing network performance data can have an impact on your application's performance. Be mindful of the amount of data you're capturing and consider implementing sampling or other optimization techniques if you're dealing with high-volume network traffic.

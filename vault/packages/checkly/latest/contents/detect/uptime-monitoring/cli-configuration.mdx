@@ -1,0 +1,674 @@
+---
+title: 'CLI Configuration'
+description: 'Define and manage uptime monitors as code using the Checkly CLI with TypeScript and JavaScript examples.'
+sidebarTitle: 'CLI Configuration'
+---
+
+The Checkly CLI enables you to define, version control, and deploy uptime monitors as code. This approach provides better maintainability, team collaboration, and integration with your development workflow.
+
+## Getting Started with CLI
+
+### Installation
+
+Install the Checkly CLI in your project:
+
+```bash
+npm install --save-dev checkly
+```
+
+### Project Setup
+
+Initialize a new Checkly project:
+
+```bash
+npx checkly init
+```
+
+This creates the basic project structure with configuration files and example monitors.
+
+## URL Monitor Configuration
+
+### Basic URL Monitor
+
+<CodeGroup dropdown>
+
+```ts url-monitor.check.ts
+import { UrlMonitor, UrlAssertionBuilder } from 'checkly/constructs'
+
+new UrlMonitor('homepage-check', {
+  name: 'Homepage Availability',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  frequency: 5, // minutes
+  request: {
+    method: 'GET',
+    url: 'https://www.myapp.com',
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.responseTime().lessThan(2000),
+      UrlAssertionBuilder.body().contains('Welcome to MyApp'),
+    ]
+  },
+  tags: ['production', 'frontend', 'critical']
+})
+```
+
+```js url-monitor.check.js
+const { UrlMonitor, UrlAssertionBuilder } = require('checkly/constructs')
+
+new UrlMonitor('homepage-check', {
+  name: 'Homepage Availability',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  frequency: 5, // minutes
+  request: {
+    method: 'GET',
+    url: 'https://www.myapp.com',
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.responseTime().lessThan(2000),
+      UrlAssertionBuilder.body().contains('Welcome to MyApp'),
+    ]
+  },
+  tags: ['production', 'frontend', 'critical']
+})
+```
+
+</CodeGroup>
+
+### Advanced URL Monitor with Authentication
+
+<CodeGroup dropdown>
+
+```ts api-monitor.check.ts
+import { UrlMonitor, UrlAssertionBuilder } from 'checkly/constructs'
+
+new UrlMonitor('api-health-check', {
+  name: 'API Health Check',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 2, // minutes
+  request: {
+    method: 'GET',
+    url: 'https://api.myapp.com/health',
+    headers: {
+      'Authorization': 'Bearer {{API_TOKEN}}',
+      'Content-Type': 'application/json',
+      'User-Agent': 'Checkly Monitor'
+    },
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.responseTime().lessThan(1000),
+      UrlAssertionBuilder.jsonBody('$.status').equals('healthy'),
+      UrlAssertionBuilder.jsonBody('$.version').exists(),
+    ]
+  },
+  alertChannels: ['email-alerts', 'slack-alerts'],
+  tags: ['production', 'api', 'critical']
+})
+```
+
+```js api-monitor.check.js
+const { UrlMonitor, UrlAssertionBuilder } = require('checkly/constructs')
+
+new UrlMonitor('api-health-check', {
+  name: 'API Health Check',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 2, // minutes
+  request: {
+    method: 'GET',
+    url: 'https://api.myapp.com/health',
+    headers: {
+      'Authorization': 'Bearer {{API_TOKEN}}',
+      'Content-Type': 'application/json',
+      'User-Agent': 'Checkly Monitor'
+    },
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.responseTime().lessThan(1000),
+      UrlAssertionBuilder.jsonBody('$.status').equals('healthy'),
+      UrlAssertionBuilder.jsonBody('$.version').exists(),
+    ]
+  },
+  alertChannels: ['email-alerts', 'slack-alerts'],
+  tags: ['production', 'api', 'critical']
+})
+```
+
+</CodeGroup>
+
+## TCP Monitor Configuration
+
+### Basic TCP Monitor
+
+<CodeGroup dropdown>
+
+```ts database-monitor.check.ts
+import { TcpMonitor } from 'checkly/constructs'
+
+new TcpMonitor('database-tcp-check', {
+  name: 'Production Database Connection',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 5, // minutes
+  target: {
+    host: 'db.myapp.com',
+    port: 5432
+  },
+  timeout: 10, // seconds
+  tags: ['production', 'database', 'infrastructure']
+})
+```
+
+```js database-monitor.check.js
+const { TcpMonitor } = require('checkly/constructs')
+
+new TcpMonitor('database-tcp-check', {
+  name: 'Production Database Connection',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 5, // minutes
+  target: {
+    host: 'db.myapp.com',
+    port: 5432
+  },
+  timeout: 10, // seconds
+  tags: ['production', 'database', 'infrastructure']
+})
+```
+
+</CodeGroup>
+
+### TCP Monitor with SSL and Response Validation
+
+<CodeGroup dropdown>
+
+```ts mail-server-monitor.check.ts
+import { TcpMonitor } from 'checkly/constructs'
+
+new TcpMonitor('mail-server-check', {
+  name: 'SMTP Server Monitoring',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 10, // minutes
+  target: {
+    host: 'mail.myapp.com',
+    port: 587,
+    ssl: true
+  },
+  timeout: 15, // seconds
+  responseValidation: {
+    expectedResponse: '220',
+    timeout: 5
+  },
+  tags: ['production', 'mail', 'infrastructure']
+})
+```
+
+```js mail-server-monitor.check.js
+const { TcpMonitor } = require('checkly/constructs')
+
+new TcpMonitor('mail-server-check', {
+  name: 'SMTP Server Monitoring',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  frequency: 10, // minutes
+  target: {
+    host: 'mail.myapp.com',
+    port: 587,
+    ssl: true
+  },
+  timeout: 15, // seconds
+  responseValidation: {
+    expectedResponse: '220',
+    timeout: 5
+  },
+  tags: ['production', 'mail', 'infrastructure']
+})
+```
+
+</CodeGroup>
+
+## Heartbeat Monitor Configuration
+
+### Basic Heartbeat Monitor
+
+<CodeGroup dropdown>
+
+```ts backup-heartbeat.check.ts
+import { HeartbeatMonitor } from 'checkly/constructs'
+
+new HeartbeatMonitor('daily-backup-heartbeat', {
+  name: 'Daily Database Backup',
+  activated: true,
+  period: 24 * 60, // 24 hours in minutes
+  grace: 30, // 30 minutes grace period
+  tags: ['backup', 'database', 'daily']
+})
+```
+
+```js backup-heartbeat.check.js
+const { HeartbeatMonitor } = require('checkly/constructs')
+
+new HeartbeatMonitor('daily-backup-heartbeat', {
+  name: 'Daily Database Backup',
+  activated: true,
+  period: 24 * 60, // 24 hours in minutes
+  grace: 30, // 30 minutes grace period
+  tags: ['backup', 'database', 'daily']
+})
+```
+
+</CodeGroup>
+
+### Heartbeat Monitor with Custom Configuration
+
+<CodeGroup dropdown>
+
+```ts sync-job-heartbeat.check.ts
+import { HeartbeatMonitor } from 'checkly/constructs'
+
+new HeartbeatMonitor('hourly-sync-heartbeat', {
+  name: 'Hourly Data Sync Job',
+  activated: true,
+  period: 60, // 1 hour in minutes
+  grace: 10, // 10 minutes grace period
+  alertChannels: ['pagerduty-critical', 'slack-ops'],
+  tags: ['sync', 'data', 'hourly', 'critical']
+})
+```
+
+```js sync-job-heartbeat.check.js
+const { HeartbeatMonitor } = require('checkly/constructs')
+
+new HeartbeatMonitor('hourly-sync-heartbeat', {
+  name: 'Hourly Data Sync Job',
+  activated: true,
+  period: 60, // 1 hour in minutes
+  grace: 10, // 10 minutes grace period
+  alertChannels: ['pagerduty-critical', 'slack-ops'],
+  tags: ['sync', 'data', 'hourly', 'critical']
+})
+```
+
+</CodeGroup>
+
+## Shared Configuration and Groups
+
+### Monitor Groups
+
+Organize related monitors using groups:
+
+<CodeGroup dropdown>
+
+```ts api-monitoring-group.ts
+import { MonitorGroup } from 'checkly/constructs'
+
+const apiGroup = new MonitorGroup('api-monitoring', {
+  name: 'API Monitoring',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  frequency: 5,
+  alertChannels: ['email-alerts', 'slack-api-alerts'],
+  tags: ['api', 'production']
+})
+
+// Monitors inherit group settings
+new UrlMonitor('users-api', {
+  name: 'Users API',
+  group: apiGroup,
+  request: {
+    url: 'https://api.myapp.com/users',
+    method: 'GET'
+  }
+})
+
+new UrlMonitor('orders-api', {
+  name: 'Orders API',
+  group: apiGroup,
+  request: {
+    url: 'https://api.myapp.com/orders',
+    method: 'GET'
+  }
+})
+```
+
+```js api-monitoring-group.js
+const { MonitorGroup, UrlMonitor } = require('checkly/constructs')
+
+const apiGroup = new MonitorGroup('api-monitoring', {
+  name: 'API Monitoring',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  frequency: 5,
+  alertChannels: ['email-alerts', 'slack-api-alerts'],
+  tags: ['api', 'production']
+})
+
+// Monitors inherit group settings
+new UrlMonitor('users-api', {
+  name: 'Users API',
+  group: apiGroup,
+  request: {
+    url: 'https://api.myapp.com/users',
+    method: 'GET'
+  }
+})
+
+new UrlMonitor('orders-api', {
+  name: 'Orders API',
+  group: apiGroup,
+  request: {
+    url: 'https://api.myapp.com/orders',
+    method: 'GET'
+  }
+})
+```
+
+</CodeGroup>
+
+### Environment Variables and Secrets
+
+Use environment variables for configuration:
+
+<CodeGroup dropdown>
+
+```ts environment-config.ts
+import { UrlMonitor, UrlAssertionBuilder } from 'checkly/constructs'
+
+// Environment-specific configuration
+const baseUrl = process.env.BASE_URL || 'https://api.myapp.com'
+const environment = process.env.ENVIRONMENT || 'production'
+
+new UrlMonitor(`${environment}-api-check`, {
+  name: `${environment.toUpperCase()} API Health`,
+  activated: environment === 'production',
+  locations: environment === 'production'
+    ? ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+    : ['us-east-1'],
+  frequency: environment === 'production' ? 2 : 10,
+  request: {
+    method: 'GET',
+    url: `${baseUrl}/health`,
+    headers: {
+      'Authorization': 'Bearer {{API_TOKEN}}',
+      'X-Environment': environment
+    },
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.jsonBody('$.environment').equals(environment),
+    ]
+  },
+  tags: [environment, 'api', 'health']
+})
+```
+
+```js environment-config.js
+const { UrlMonitor, UrlAssertionBuilder } = require('checkly/constructs')
+
+// Environment-specific configuration
+const baseUrl = process.env.BASE_URL || 'https://api.myapp.com'
+const environment = process.env.ENVIRONMENT || 'production'
+
+new UrlMonitor(`${environment}-api-check`, {
+  name: `${environment.toUpperCase()} API Health`,
+  activated: environment === 'production',
+  locations: environment === 'production'
+    ? ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+    : ['us-east-1'],
+  frequency: environment === 'production' ? 2 : 10,
+  request: {
+    method: 'GET',
+    url: `${baseUrl}/health`,
+    headers: {
+      'Authorization': 'Bearer {{API_TOKEN}}',
+      'X-Environment': environment
+    },
+    assertions: [
+      UrlAssertionBuilder.statusCode().equals(200),
+      UrlAssertionBuilder.jsonBody('$.environment').equals(environment),
+    ]
+  },
+  tags: [environment, 'api', 'health']
+})
+```
+
+</CodeGroup>
+
+## Deployment and CI/CD Integration
+
+### Deploying Monitors
+
+Deploy your monitors to Checkly:
+
+```bash
+# Deploy all monitors
+npx checkly deploy
+
+# Deploy with environment variables
+ENVIRONMENT=production BASE_URL=https://api.myapp.com npx checkly deploy
+
+# Test before deploying
+npx checkly test
+
+# Preview changes
+npx checkly deploy --preview
+```
+
+### GitHub Actions Integration
+
+Example GitHub Actions workflow:
+
+```yaml .github/workflows/checkly.yml
+name: Deploy Checkly Monitors
+
+on:
+  push:
+    branches: [main]
+    paths: ['monitoring/**']
+
+jobs:
+  deploy-monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test monitors
+        run: npx checkly test
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+
+      - name: Deploy monitors
+        run: npx checkly deploy
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          ENVIRONMENT: production
+          BASE_URL: https://api.myapp.com
+```
+
+## Advanced Patterns
+
+### Dynamic Monitor Generation
+
+Generate monitors programmatically:
+
+<CodeGroup dropdown>
+
+```ts dynamic-monitors.ts
+import { UrlMonitor, UrlAssertionBuilder } from 'checkly/constructs'
+
+// Monitor multiple API endpoints
+const endpoints = [
+  { path: '/users', name: 'Users API' },
+  { path: '/orders', name: 'Orders API' },
+  { path: '/products', name: 'Products API' },
+  { path: '/payments', name: 'Payments API' }
+]
+
+endpoints.forEach((endpoint, index) => {
+  new UrlMonitor(`api-${endpoint.path.replace('/', '')}-check`, {
+    name: endpoint.name,
+    activated: true,
+    locations: ['us-east-1', 'eu-west-1'],
+    frequency: endpoint.path === '/payments' ? 1 : 5, // More frequent for critical endpoints
+    request: {
+      method: 'GET',
+      url: `https://api.myapp.com${endpoint.path}`,
+      assertions: [
+        UrlAssertionBuilder.statusCode().equals(200),
+        UrlAssertionBuilder.responseTime().lessThan(
+          endpoint.path === '/payments' ? 500 : 1000
+        ),
+      ]
+    },
+    tags: ['api', 'production', endpoint.path.replace('/', '')]
+  })
+})
+```
+
+```js dynamic-monitors.js
+const { UrlMonitor, UrlAssertionBuilder } = require('checkly/constructs')
+
+// Monitor multiple API endpoints
+const endpoints = [
+  { path: '/users', name: 'Users API' },
+  { path: '/orders', name: 'Orders API' },
+  { path: '/products', name: 'Products API' },
+  { path: '/payments', name: 'Payments API' }
+]
+
+endpoints.forEach((endpoint, index) => {
+  new UrlMonitor(`api-${endpoint.path.replace('/', '')}-check`, {
+    name: endpoint.name,
+    activated: true,
+    locations: ['us-east-1', 'eu-west-1'],
+    frequency: endpoint.path === '/payments' ? 1 : 5, // More frequent for critical endpoints
+    request: {
+      method: 'GET',
+      url: `https://api.myapp.com${endpoint.path}`,
+      assertions: [
+        UrlAssertionBuilder.statusCode().equals(200),
+        UrlAssertionBuilder.responseTime().lessThan(
+          endpoint.path === '/payments' ? 500 : 1000
+        ),
+      ]
+    },
+    tags: ['api', 'production', endpoint.path.replace('/', '')]
+  })
+})
+```
+
+</CodeGroup>
+
+### Configuration Management
+
+Centralized configuration management:
+
+<CodeGroup dropdown>
+
+```ts config/monitoring.ts
+interface MonitoringConfig {
+  baseUrl: string
+  locations: string[]
+  alertChannels: string[]
+  defaultFrequency: number
+  environment: string
+}
+
+export const config: MonitoringConfig = {
+  baseUrl: process.env.BASE_URL || 'https://api.myapp.com',
+  locations: process.env.ENVIRONMENT === 'production'
+    ? ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+    : ['us-east-1'],
+  alertChannels: process.env.ENVIRONMENT === 'production'
+    ? ['email-alerts', 'slack-alerts', 'pagerduty']
+    : ['email-alerts'],
+  defaultFrequency: process.env.ENVIRONMENT === 'production' ? 5 : 15,
+  environment: process.env.ENVIRONMENT || 'development'
+}
+```
+
+```js config/monitoring.js
+const config = {
+  baseUrl: process.env.BASE_URL || 'https://api.myapp.com',
+  locations: process.env.ENVIRONMENT === 'production'
+    ? ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+    : ['us-east-1'],
+  alertChannels: process.env.ENVIRONMENT === 'production'
+    ? ['email-alerts', 'slack-alerts', 'pagerduty']
+    : ['email-alerts'],
+  defaultFrequency: process.env.ENVIRONMENT === 'production' ? 5 : 15,
+  environment: process.env.ENVIRONMENT || 'development'
+}
+
+module.exports = { config }
+```
+
+</CodeGroup>
+
+## Best Practices
+
+### Project Organization
+```
+monitoring/
+├── config/
+│   └── monitoring.ts
+├── monitors/
+│   ├── api/
+│   │   ├── users-api.check.ts
+│   │   └── orders-api.check.ts
+│   ├── infrastructure/
+│   │   ├── database.check.ts
+│   │   └── redis.check.ts
+│   └── heartbeats/
+│       ├── backup-jobs.check.ts
+│       └── sync-jobs.check.ts
+├── groups/
+│   ├── api-group.ts
+│   └── infrastructure-group.ts
+└── checkly.config.ts
+```
+
+### Version Control
+- **Commit monitor changes** with descriptive messages
+- **Use branch protection** for production monitor deployments
+- **Review monitor changes** before merging to main branch
+- **Tag releases** for monitor configuration versions
+
+### Testing and Validation
+- **Test monitors locally** before deployment
+- **Use preview deployments** to validate changes
+- **Monitor the monitors** - track deployment success
+- **Rollback capabilities** for failed deployments
+
+## Next Steps
+
+<Columns cols={2}>
+<Card title="Alerting Configuration" href="/detect/uptime-monitoring/alerting">
+Configure alert channels and notification rules for your CLI-managed monitors
+</Card>
+
+<Card title="Scheduling" href="/detect/uptime-monitoring/scheduling">
+Understand frequency and timing options for different monitor types
+</Card>
+
+<Card title="CLI Reference" href="/constructs/overview">
+Complete API reference for all monitor types and configuration options
+</Card>
+
+<Card title="CI/CD Integration" href="/cli/ci-cd">
+Advanced CI/CD patterns and deployment strategies
+</Card>
+</Columns>

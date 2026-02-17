@@ -1,0 +1,121 @@
+---
+title: array_rotate_right
+description: 'This page explains how to use the array_rotate_right function in APL.'
+---
+
+The `array_rotate_right` function in APL allows you to rotate the elements of an array to the right by a specified number of positions. This function is useful when you need to reorder data within arrays, either to shift recent events to the beginning, reorder log entries, or realign elements based on specific processing logic.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In APL, the `array_rotate_right` function provides functionality similar to the use of `mvindex` or specific SPL commands for reordering arrays. The rotation here shifts all elements by a set count to the right, maintaining their original order within the new positions.
+
+<CodeGroup>
+```sql Splunk example
+| eval rotated_array=mvindex(array, -3)
+```
+
+```kusto APL equivalent
+| extend rotated_array = array_rotate_right(array, 3)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL lacks a direct function for rotating elements within arrays. In APL, the `array_rotate_right` function offers a straightforward way to accomplish this by specifying a rotation count, while SQL users typically require a more complex use of `CASE` statements or custom functions to achieve the same.
+
+<CodeGroup>
+```sql SQL example
+-- No direct ANSI SQL equivalent for array rotation
+```
+
+```kusto APL equivalent
+| extend rotated_array = array_rotate_right(array_column, 3)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+array_rotate_right(array, count)
+```
+
+### Parameters
+
+- `array`: An array to rotate.
+- `count`: An integer specifying the number of positions to rotate the array to the right.
+
+### Returns
+
+An array where the elements are rotated to the right by the specified `count`.
+
+## Use case example
+
+In OpenTelemetry traces, rotating an array of span details can help you reorder trace information for performance tracking or troubleshooting.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend rotated_sequence = array_rotate_right(events, 1)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20rotated_sequence%20%3D%20array_rotate_right(events%2C%201)%22%7D)
+
+**Output**
+
+```json events
+[
+  {
+    "attributes": null,
+    "name": "Enqueued",
+    "timestamp": 1733997421220380700
+  },
+  {
+    "name": "Sent",
+    "timestamp": 1733997421220390400,
+    "attributes": null
+  },
+  {
+    "attributes": null,
+    "name": "ResponseReceived",
+    "timestamp": 1733997421221118500
+  }
+]
+```
+
+```json rotated_sequence
+[
+  {
+    "attributes": null,
+    "name": "ResponseReceived",
+    "timestamp": 1733997421221118500
+  },
+  {
+    "attributes": null,
+    "name": "Enqueued",
+    "timestamp": 1733997421220380700
+  },
+  {
+    "name": "Sent",
+    "timestamp": 1733997421220390400,
+    "attributes": null
+  }
+]
+```
+
+## List of related functions
+
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array.
+- [array_index_of](/apl/scalar-functions/array-functions/array-index-of): Finds the index of an element in an array.
+- [array_rotate_left](/apl/scalar-functions/array-functions/array-rotate-left): Rotates elements of an array to the left.

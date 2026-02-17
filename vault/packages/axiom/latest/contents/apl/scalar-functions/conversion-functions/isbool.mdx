@@ -1,0 +1,157 @@
+---
+title: isbool
+description: 'This page explains how to use the isbool function in APL.'
+---
+
+Use the `isbool` function to check whether an expression evaluates to a boolean value. This is helpful when you need to validate data types, filter boolean values, or handle type checking in conditional logic.
+
+You typically use `isbool` when working with dynamic or mixed-type data where you need to verify that a value is actually a boolean before performing boolean operations or conversions.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you can use `isbool()` function or check if a field contains boolean values. In APL, `isbool` provides a direct way to check if an expression is a boolean type.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_boolean = if(isbool(field), 1, 0)
+```
+
+```kusto APL equivalent
+... | extend is_boolean = isbool(field)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In standard SQL, you use `CASE` statements with type checking or `IS NULL` checks, but there's no direct boolean type checker. In APL, `isbool` provides a straightforward way to check if a value is a boolean.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN field IN (0, 1, TRUE, FALSE) THEN 1 ELSE 0 END AS is_boolean FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_boolean = isbool(field)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isbool(expression)
+```
+
+### Parameters
+
+| Name       | Type    | Description                                    |
+| ---------- | ------- | ---------------------------------------------- |
+| expression | dynamic | The expression to check for boolean type. |
+
+### Returns
+
+Returns `true` if the expression value is a boolean, `false` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Validate that a field contains boolean values before using it in boolean operations or filters.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_cached = case(
+    ['status'] == '200', true,
+    ['status'] == '304', true,
+    1 == 1, false
+)
+| where isbool(is_cached)
+| extend cache_hit = is_cached == true
+| project _time, ['uri'], ['status'], is_cached, cache_hit
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_cached%20%3D%20case(%5B'status'%5D%20%3D%3D%20'200'%2C%20true%2C%20%5B'status'%5D%20%3D%3D%20'304'%2C%20true%2C%201%20%3D%3D%201%2C%20false)%20%7C%20where%20isbool(is_cached)%20%7C%20extend%20cache_hit%20%3D%20is_cached%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'status'%5D%2C%20is_cached%2C%20cache_hit%22%7D)
+
+**Output**
+
+| _time | uri | status | is_cached | cache_hit |
+| ----- | --- | ------ | --------- | --------- |
+| Jun 24, 09:28:10 | /api/users | 200 | true | true |
+
+This example creates a boolean field and validates it using `isbool` before using it in further boolean operations, ensuring type safety in your queries.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Check if trace attributes contain boolean values before performing boolean logic on them.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend is_error = ['status_code'] >= '400'
+| where isbool(is_error)
+| extend error_occurred = is_error == true
+| project _time, ['trace_id'], ['service.name'], is_error, error_occurred
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20is_error%20%3D%20%5B'status_code'%5D%20%3E%3D%20'400'%20%7C%20where%20isbool(is_error)%20%7C%20extend%20error_occurred%20%3D%20is_error%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'trace_id'%5D%2C%20%5B'service.name'%5D%2C%20is_error%2C%20error_occurred%22%7D)
+
+**Output**
+
+| _time | trace_id | service.name | is_error | error_occurred |
+| ----- | -------- | ------------ | -------- | -------------- |
+| Jun 24, 09:28:10 | abc123 | frontend | false | false |
+
+This example validates that a computed boolean value is actually a boolean type before using it in conditional logic, preventing type-related errors.
+
+</Tab>
+<Tab title="Security logs">
+
+Validate boolean flags in security events to ensure they contain proper boolean values before filtering or alerting.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_suspicious = ['status'] == '403' or ['status'] == '401'
+| extend is_high_risk = ['req_duration_ms'] > 5000
+| where isbool(is_suspicious) and isbool(is_high_risk)
+| extend security_alert = is_suspicious == true and is_high_risk == true
+| project _time, ['uri'], ['status'], is_suspicious, is_high_risk, security_alert
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_suspicious%20%3D%20%5B'status'%5D%20%3D%3D%20'403'%20or%20%5B'status'%5D%20%3D%3D%20'401'%20%7C%20extend%20is_high_risk%20%3D%20%5B'req_duration_ms'%5D%20%3E%205000%20%7C%20where%20isbool(is_suspicious)%20and%20isbool(is_high_risk)%20%7C%20extend%20security_alert%20%3D%20is_suspicious%20%3D%3D%20true%20and%20is_high_risk%20%3D%3D%20true%20%7C%20project%20_time%2C%20%5B'uri'%5D%2C%20%5B'status'%5D%2C%20is_suspicious%2C%20is_high_risk%2C%20security_alert%22%7D)
+
+**Output**
+
+| _time | uri | status | is_suspicious | is_high_risk | security_alert |
+| ----- | --- | ------ | ------------- | ------------ | -------------- |
+| Jun 24, 09:28:10 | /admin | 403 | true | false | false |
+
+This example validates multiple boolean flags before combining them in security logic, ensuring that only properly typed boolean values are used in alert conditions.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [tobool](/apl/scalar-functions/conversion-functions/tobool): Converts a value to boolean. Use `tobool` to convert values to boolean, and `isbool` to check if a value is already a boolean.
+- [gettype](/apl/scalar-functions/string-functions/gettype): Returns the type of a value as a string. Use `gettype` when you need to check for multiple types, and `isbool` when you only need to check for boolean.
+- [isnull](/apl/scalar-functions/string-functions/isnull): Checks if a value is null. Use `isnull` to check for null values, and `isbool` to check for boolean type.

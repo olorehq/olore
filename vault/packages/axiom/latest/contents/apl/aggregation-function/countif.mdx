@@ -1,0 +1,148 @@
+---
+title: countif
+description: 'This page explains how to use the countif aggregation function in APL.'
+---
+
+The `countif` aggregation function in Axiom Processing Language (APL) counts the number of records that meet a specified condition. You can use this aggregation to filter records based on a specific condition and return a count of matching records. This is particularly useful for log analysis, security audits, and tracing events when you need to isolate and count specific data subsets.
+
+Use `countif` when you want to count occurrences of certain conditions, such as HTTP status codes, errors, or actions in telemetry traces.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, conditional counting is typically done using the `eval` function combined with `stats`. APL provides a more streamlined approach with the `countif` function, which performs conditional counting directly.
+
+<CodeGroup>
+```sql Splunk example
+| stats count(eval(status="500")) AS error_count
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize countif(status == '500')
+```
+</CodeGroup>
+
+</Accordion>
+
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, conditional counting is achieved by using the `COUNT` function with a `CASE` statement. In APL, `countif` simplifies this process by offering a direct approach to conditional counting.
+
+<CodeGroup>
+```sql SQL example
+SELECT COUNT(CASE WHEN status = '500' THEN 1 END) AS error_count
+FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize countif(status == '500')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+countif(condition)
+```
+
+### Parameters
+
+- **condition**: A boolean expression that filters the records based on a condition. Only records where the condition evaluates to `true` are counted.
+
+### Returns
+
+The function returns the number of records that match the specified condition.
+
+## Use case examples
+
+<Tabs>
+
+<Tab title="Log analysis">
+
+In log analysis, you might want to count how many HTTP requests returned a 500 status code to detect server errors.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize countif(status == '500')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20countif(status%20%3D%3D%20'500')%22%7D)
+
+**Output**
+
+| count_errors |
+|--------------|
+| 72           |
+
+This query counts the number of HTTP requests with a `500` status, helping you identify how many server errors occurred.
+
+</Tab>
+
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you might want to count how many requests were initiated by the client service kind.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize countif(kind == 'client')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20countif(kind%20%3D%3D%20'client')%22%7D)
+
+**Output**
+
+| count_client_kind |
+|-------------------|
+| 345               |
+
+This query counts how many requests were initiated by the `client` service kind, providing insight into the volume of client-side traffic.
+
+</Tab>
+
+<Tab title="Security logs">
+
+In security logs, you might want to count how many HTTP requests originated from a specific city, such as New York.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize countif(['geo.city'] == 'New York')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20countif(%5B'geo.city'%5D%20%3D%3D%20'New%20York')%22%7D)
+
+**Output**
+
+| count_nyc_requests |
+|--------------------|
+| 87                 |
+
+This query counts how many HTTP requests originated from New York, which can help detect traffic from a particular location for security analysis.
+
+</Tab>
+
+</Tabs>
+
+## List of related aggregations
+
+- [**count**](/apl/aggregation-function/count): Counts all records in a dataset without applying a condition. Use this when you need the total count of records, regardless of any specific condition.
+- [**sumif**](/apl/aggregation-function/sumif): Adds up the values of a field for records that meet a specific condition. Use `sumif` when you want to sum values based on a filter.
+- [**dcountif**](/apl/aggregation-function/dcountif): Counts distinct values of a field for records that meet a condition. This is helpful when you need to count unique occurrences.
+- [**avgif**](/apl/aggregation-function/avgif): Calculates the average value of a field for records that match a condition, useful for performance monitoring.
+- [**maxif**](/apl/aggregation-function/maxif): Returns the maximum value of a field for records that meet a condition. Use this when you want to find the highest value in filtered data.

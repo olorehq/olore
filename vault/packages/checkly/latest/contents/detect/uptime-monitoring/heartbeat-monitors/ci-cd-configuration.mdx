@@ -1,0 +1,87 @@
+---
+title: 'CI/CD Configuration'
+description: 'Learn how to configure heartbeat monitors with CI/CD.'
+sidebarTitle: CI/CD
+---
+
+
+## With CI/CD Pipelines
+
+Integrate heartbeat monitoring into your CI/CD pipelines to monitor deployment processes and post-deployment verification.
+
+### GitHub Actions Example
+
+```yaml
+name: Deploy and Monitor
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to production
+        run: |
+          # Your deployment steps
+          echo "Deploying to production..."
+          
+      - name: Ping heartbeat after deployment
+        run: |
+          curl -m 5 --retry 3 ${{ secrets.HEARTBEAT_URL }}
+        env:
+          HEARTBEAT_URL: ${{ secrets.DEPLOYMENT_HEARTBEAT_URL }}
+```
+
+### GitLab CI Example
+
+```yaml
+stages:
+  - deploy
+  - verify
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - # Your deployment commands
+  after_script:
+    - curl -m 5 --retry 3 $DEPLOYMENT_HEARTBEAT_URL
+
+verify:
+  stage: verify
+  script:
+    - echo "Running post-deployment checks..."
+    - # Your verification steps
+  after_script:
+    - curl -m 5 --retry 3 $VERIFICATION_HEARTBEAT_URL
+```
+
+### Jenkins Pipeline Example
+
+```groovy
+pipeline {
+    agent any
+    
+    environment {
+        HEARTBEAT_URL = 'https://ping.checklyhq.com/your-deployment-id'
+    }
+    
+    stages {
+        stage('Deploy') {
+            steps {
+                echo 'Deploying to production...'
+                // Your deployment steps
+            }
+            post {
+                success {
+                    sh 'curl -m 5 --retry 3 $HEARTBEAT_URL'
+                }
+            }
+        }
+    }
+}
+```
+

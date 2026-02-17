@@ -1,0 +1,66 @@
+---
+title: 'How It Works'
+description: 'Understand how Checkly traces work with OpenTelemetry to provide comprehensive observability.'
+---
+
+Checkly Traces use OpenTelemetry to correlate synthetic check results with your application's backend traces. The diagram below shows how the dataflows connect to Checkly's monitoring and alerting pipeline.
+
+![Checkly OpenTelemetry diagram](/images/docs/images/otel/checkly_otel_diagram.png)
+
+## The Flow
+
+<Steps>
+<Step title="Automatic Instrumentation">
+When enabling the integration, Checkly automatically instruments all HTTP requests made by your checks with `traceparent` and `tracestate` headers. These HTTP requests hit your web application and/or API when running checks.
+
+All synthetic check types, including API, Browser and Multistep checks, include these headers:
+
+- **traceparent**: W3C compliant trace ID generated for each HTTP request that is part of a check. For Browser checks and Multistep checks, there can be multiple requests instrumented.
+- **tracestate**: Set to `checkly=true` to identify Checkly as the vendor that generated the trace
+
+Together, these headers propagate the trace context along the request chain. This is the most basic way of tying a synthetic check to your backend traces, though it won't provide much context about the check run itself, like the check name or location.
+</Step>
+
+<Step title="Check Result Export">
+You can configure your 3rd party backend in the Checkly UI so we can export every check result as a span to your backend. This correlates all backend spans with the check run that triggered them, together with full context of the check run.
+
+Check details are stored in the `checkly` namespace as attributes on the span:
+
+```yaml
+checkly.check.name: "ACME homepage"
+checkly.check.id: "438481ea-0eab-43d6-8932-ab51bd0d49d6"
+checkly.check.type: "browser"
+checkly.check.location: "eu-west-1"
+```
+
+This provides rich context about the run location, check name, check type, and more.
+</Step>
+
+<Step title="Direct Trace Ingestion">
+**No 3rd party backend needed.** This is what kicks Checkly's OpenTelemetry integration into high gear, and it works even if you don't have a 3rd party OTel backend already set up.
+
+By adding the correct OTel libraries and simple filter statements, you can send ONLY the traces related to your Checkly checks back to Checkly:
+
+- **Endpoint**: `otel.eu-west-1.checklyhq.com/v1/traces`
+- **Filter**: Only traces marked `tracestate: checkly=true`
+- **Result**: Traces appear in Checkly UI alongside check results
+
+Checkly's trace ingestion endpoint is a standard OTel backend endpoint that only accepts traces related to synthetic checks. This keeps your OpenTelemetry setup lean while providing full trace correlation benefits.
+</Step>
+
+<Step title="Alert Integration">
+When your check breaks, you get an alert that points to a check result containing a full trace of the check run, including all backend spans:
+
+- Complete trace of the check run
+- All backend spans included
+- Quick root cause identification
+- No need to jump between tools or dashboards
+
+This allows you to quickly identify issues without switching between different monitoring tools.
+</Step>
+</Steps>
+
+
+<Note>
+Steps 3 and 4 provide the most value - complete trace visibility without requiring a 3rd party OpenTelemetry backend.
+</Note>
