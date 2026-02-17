@@ -63,7 +63,7 @@ export function SupportedAgents() {
         {activeAgent ? (
           <>
             <p className="text-zinc-400">
-              <span className="text-cyan-500/70">inject →</span>{" "}
+              <span className="text-cyan-500/70">reference →</span>{" "}
               {activeAgent.primary}
             </p>
             <p className="text-zinc-600">

@@ -89,8 +89,8 @@ export default function Home() {
               <span className="text-purple-500">&gt;</span> Version-pinned docs
               for AI coding agents.
               <br />
-              <span className="text-purple-500">&gt;</span> Inject into context
-              or use as skills.
+              <span className="text-purple-500">&gt;</span> Inject a reference
+              table so agents find them.
               <br />
               <span className="text-purple-500">&gt;</span> For Claude Code,
               Codex, OpenCode.
@@ -163,17 +163,15 @@ export default function Home() {
             <div className="bg-zinc-950 p-6">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
                 <span className="text-cyan-500">02b</span> Inject into context
-                <span className="ml-2 border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] text-cyan-400">
-                  RECOMMENDED
-                </span>
               </p>
               <p className="text-zinc-300">
                 <span className="text-zinc-600">$</span> olore inject
               </p>
               <p className="mt-2 text-xs text-zinc-600">
-                Additionally writes a compact doc index into your
-                project&apos;s AGENTS.md &amp; CLAUDE.md. Docs are always
-                in context — no agent decision needed.
+                Additionally writes a skill reference table listing
+                available docs into your project&apos;s AGENTS.md &amp;
+                CLAUDE.md. Agents discover installed docs and invoke
+                skills when needed.
               </p>
               <p className="mt-2 text-xs text-zinc-600">
                 Commit it — your whole team gets the docs.
@@ -207,61 +205,12 @@ export default function Home() {
           <div className="p-6">
             <p className="mb-6 max-w-2xl text-sm leading-relaxed text-zinc-400">
               olore supports two approaches.{" "}
-              <span className="text-zinc-300">Inject</span> writes a compact
-              doc index into AGENTS.md — always in context, zero agent
-              decisions.{" "}
+              <span className="text-zinc-300">Inject</span> writes a skill
+              reference table into AGENTS.md — agents discover available docs
+              and reliably invoke skills when needed.{" "}
               <span className="text-zinc-300">Skills</span> generate full
               doc packages — deeper access, but agents must decide to read them.
-              Vercel&apos;s evals show the difference:
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-sm uppercase">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-500">
-                    <th className="border-r border-zinc-800 px-6 py-4 font-bold">
-                      Configuration
-                    </th>
-                    <th className="w-48 px-6 py-4 font-bold">Pass Rate</th>
-                  </tr>
-                </thead>
-                <tbody className="text-zinc-400">
-                  <tr className="border-b border-zinc-800">
-                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
-                      Baseline (no docs)
-                    </td>
-                    <td className="px-6 py-4">53%</td>
-                  </tr>
-                  <tr className="border-b border-zinc-800">
-                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
-                      Skills (default)
-                    </td>
-                    <td className="px-6 py-4">53%</td>
-                  </tr>
-                  <tr className="border-b border-zinc-800">
-                    <td className="border-r border-zinc-800 px-6 py-4 text-zinc-500">
-                      Skills (explicit instructions)
-                    </td>
-                    <td className="px-6 py-4">79%</td>
-                  </tr>
-                  <tr>
-                    <td className="border-r border-zinc-800 px-6 py-4 font-bold text-zinc-200">
-                      AGENTS.md docs index
-                    </td>
-                    <td className="px-6 py-4 font-bold text-cyan-400">100%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-4 text-xs text-zinc-600">
-              Source:{" "}
-              <a
-                href="https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-zinc-500 underline transition-colors hover:text-cyan-400"
-              >
-                Vercel — AGENTS.md outperforms skills in our agent evals
-              </a>
+              Use both together for maximum coverage.
             </p>
           </div>
         </section>
@@ -310,7 +259,7 @@ export default function Home() {
             <div className="text-zinc-300 opacity-75">
               <span className="text-zinc-600">&gt;</span>{" "}
               <span className="text-zinc-500">
-                {"// Docs available — injected or as skills"}
+                {"// Docs available via skills"}
               </span>
               <br />
               <span className="text-zinc-600">&gt;</span>{" "}
@@ -367,7 +316,7 @@ export default function Home() {
                     AGENT MUST INVOKE
                   </td>
                   <td className="bg-zinc-900/30 px-6 py-4 font-bold text-zinc-200">
-                    ALWAYS IN CONTEXT
+                    SKILL REFERENCE TABLE
                   </td>
                 </tr>
                 <tr className="border-b border-zinc-800">
@@ -467,7 +416,7 @@ export default function Home() {
           <div className="grid divide-y divide-zinc-800 md:grid-cols-3 md:divide-x md:divide-y-0">
             <FeatureItem
               title="Passive Context"
-              desc="Docs injected into AGENTS.md / CLAUDE.md. Agents read them automatically — no invocation decision needed."
+              desc="Skill reference table injected into AGENTS.md / CLAUDE.md. Agents discover available docs and invoke skills reliably."
             />
             <FeatureItem
               title="Offline-First"
@@ -483,11 +432,11 @@ export default function Home() {
             />
             <FeatureItem
               title="Compact Index"
-              desc="438 Prisma docs compressed to ~4KB. Keyword-based retrieval guides the agent to the right file."
+              desc="A simple markdown table lists your installed doc packages. Agents see what's available and invoke the right skill."
             />
             <FeatureItem
               title="Dual Mode"
-              desc="Two approaches: inject a compact index into AGENTS.md for passive context, or generate full skill packages for on-demand deep dives. Use both together."
+              desc="Two approaches: inject a skill reference table into AGENTS.md so agents discover available docs, plus full skill packages for deep dives. Use both together."
             />
           </div>
         </section>
