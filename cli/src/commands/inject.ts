@@ -3,7 +3,7 @@ import path from 'path';
 
 import pc from 'picocolors';
 
-import { getInstalledPackages } from '../core/paths.js';
+import { getInstalledPackages, type InstalledPackageInfo } from '../core/paths.js';
 
 const MARKER_START = '<!-- olore:start -->';
 const MARKER_END = '<!-- olore:end -->';
@@ -46,16 +46,52 @@ function formatLibraryName(name: string): string {
 }
 
 /**
- * Build a skill reference table from all installed packages.
- * Produces a human-readable markdown table pointing to skill commands.
+ * Resolve requested package names to installed packages.
+ * Accepts names with or without the "olore-" prefix, and with or without version suffix.
+ * e.g., "nextjs", "olore-nextjs", "nextjs@16.1.5", "olore-nextjs-16.1.5"
  */
-async function buildInjectedContent(): Promise<{ content: string; count: number }> {
-  const packages = await getInstalledPackages();
+function resolvePackages(
+  requested: string[],
+  installed: InstalledPackageInfo[]
+): { matched: InstalledPackageInfo[]; notFound: string[] } {
+  const matched: InstalledPackageInfo[] = [];
+  const notFound: string[] = [];
 
-  if (packages.length === 0) {
-    return { content: '', count: 0 };
+  for (const req of requested) {
+    // Strip olore- prefix if present
+    const normalized = req.replace(/^olore-/, '');
+
+    // Try exact name match (e.g., "nextjs" matches name "nextjs")
+    let found = installed.find((pkg) => pkg.name === normalized);
+
+    // Try name@version match (e.g., "nextjs@16.1.5")
+    if (!found && normalized.includes('@')) {
+      const [name, version] = normalized.split('@');
+      found = installed.find((pkg) => pkg.name === name && pkg.version === version);
+    }
+
+    // Try name-version match (e.g., "nextjs-16.1.5")
+    if (!found) {
+      found = installed.find((pkg) => `${pkg.name}-${pkg.version}` === normalized);
+    }
+
+    if (found) {
+      // Avoid duplicates
+      if (!matched.includes(found)) {
+        matched.push(found);
+      }
+    } else {
+      notFound.push(req);
+    }
   }
 
+  return { matched, notFound };
+}
+
+/**
+ * Build a skill reference table from the given packages.
+ */
+function buildInjectedContent(packages: InstalledPackageInfo[]): string {
   const rows = packages.map((pkg) => {
     const library = formatLibraryName(pkg.name);
     const version = pkg.version !== 'latest' ? ` ${pkg.version}` : '';
@@ -75,7 +111,7 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     MARKER_END,
   ];
 
-  return { content: lines.join('\n'), count: packages.length };
+  return lines.join('\n');
 }
 
 /**
@@ -134,7 +170,7 @@ function removeSection(filePath: string): boolean {
   return true;
 }
 
-export async function inject(options: InjectOptions): Promise<void> {
+export async function inject(packages: string[], options: InjectOptions): Promise<void> {
   const cwd = process.cwd();
 
   if (options.remove) {
@@ -166,10 +202,8 @@ export async function inject(options: InjectOptions): Promise<void> {
     return;
   }
 
-  // Build injected content
-  const { content, count } = await buildInjectedContent();
-
-  if (count === 0) {
+  // Require explicit package names
+  if (packages.length === 0) {
     if (options.json) {
       const result: InjectResult = {
         packagesFound: 0,
@@ -181,12 +215,37 @@ export async function inject(options: InjectOptions): Promise<void> {
       return;
     }
 
-    console.log(pc.yellow('No installed packages found.'));
-    console.log(pc.gray('Run olore install <package> to install documentation packages.'));
+    console.log(pc.yellow('No packages specified.'));
+    console.log(pc.gray('Usage: olore inject <package1> <package2> ...'));
+    console.log(pc.gray('Example: olore inject nextjs prisma zod'));
     return;
   }
 
-  // Write to target files
+  // Resolve requested packages against installed ones
+  const installed = await getInstalledPackages();
+  const { matched, notFound } = resolvePackages(packages, installed);
+
+  if (notFound.length > 0) {
+    console.log(pc.yellow(`Not installed: ${notFound.join(', ')}`));
+    console.log(pc.gray('Run olore install <package> first.'));
+    if (matched.length === 0) return;
+  }
+
+  if (matched.length === 0) {
+    if (options.json) {
+      const result: InjectResult = {
+        packagesFound: 0,
+        packagesInjected: 0,
+        filesWritten: [],
+        removed: false,
+      };
+      console.log(JSON.stringify(result, null, 2));
+    }
+    return;
+  }
+
+  // Build and write injected content
+  const content = buildInjectedContent(matched);
   const filesWritten: string[] = [];
   for (const fileName of TARGET_FILES) {
     const filePath = path.join(cwd, fileName);
@@ -196,8 +255,8 @@ export async function inject(options: InjectOptions): Promise<void> {
 
   if (options.json) {
     const result: InjectResult = {
-      packagesFound: count,
-      packagesInjected: count,
+      packagesFound: installed.length,
+      packagesInjected: matched.length,
       filesWritten,
       removed: false,
     };
@@ -207,7 +266,7 @@ export async function inject(options: InjectOptions): Promise<void> {
 
   console.log(
     pc.green(
-      `Injected ${count} package${count === 1 ? '' : 's'} into: ${filesWritten.join(', ')}`
+      `Injected ${matched.length} package${matched.length === 1 ? '' : 's'} into: ${filesWritten.join(', ')}`
     )
   );
   console.log(pc.gray('Run olore inject --remove to clean up.'));

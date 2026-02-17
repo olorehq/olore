@@ -146,13 +146,13 @@ program
 
 // Inject doc indexes into project files
 program
-  .command('inject')
-  .description('Inject documentation skill reference table into AGENTS.md and CLAUDE.md')
+  .command('inject [packages...]')
+  .description('Inject documentation reference into AGENTS.md and CLAUDE.md')
   .option('--remove', 'Remove injected content from project files')
   .option('--json', 'Output as JSON')
-  .action(async (options) => {
+  .action(async (packages, options) => {
     try {
-      await inject(options);
+      await inject(packages, options);
     } catch (error) {
       console.error(pc.red(`Error: ${(error as Error).message}`));
       process.exit(1);
