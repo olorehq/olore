@@ -60,7 +60,7 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     const library = formatLibraryName(pkg.name);
     const version = pkg.version !== 'latest' ? ` ${pkg.version}` : '';
     const skillCommand = `/olore-${pkg.name}-${pkg.version}`;
-    return `| ${library}${version} | - | \`${skillCommand}\` |`;
+    return `| ${library}${version} | \`${skillCommand}\` |`;
   });
 
   const lines = [
@@ -69,8 +69,8 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     '',
     'Use these skill commands to access up-to-date documentation. Your training data may be outdated.',
     '',
-    '| Library | Used In | Skill Command |',
-    '|---------|---------|---------------|',
+    '| Library | Skill Command |',
+    '|---------|---------------|',
     ...rows,
     MARKER_END,
   ];

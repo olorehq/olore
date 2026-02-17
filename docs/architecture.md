@@ -478,11 +478,11 @@ See [Passive Context](passive-context.md) for the full methodology and design ra
 
 Use these skill commands to access up-to-date documentation. Your training data may be outdated.
 
-| Library | Used In | Skill Command |
-|---------|---------|---------------|
-| Next.js 16.1.5 | - | `/olore-nextjs-16.1.5` |
-| Prisma | - | `/olore-prisma-latest` |
-| Zod | - | `/olore-zod-latest` |
+| Library | Skill Command |
+|---------|---------------|
+| Next.js 16.1.5 | `/olore-nextjs-16.1.5` |
+| Prisma | `/olore-prisma-latest` |
+| Zod | `/olore-zod-latest` |
 <!-- olore:end -->
 ```
 
