@@ -6,12 +6,12 @@ const agents = [
   {
     name: "CLAUDE CODE",
     primary: "Reads CLAUDE.md automatically",
-    fallback: "/olore-zod-latest",
+    fallback: "olore-zod-latest",
   },
   {
     name: "CODEX",
     primary: "Reads AGENTS.md automatically",
-    fallback: "$olore-zod-latest",
+    fallback: "olore-zod-latest",
   },
   {
     name: "OPENCODE",
