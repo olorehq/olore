@@ -3,7 +3,7 @@ import path from 'path';
 
 import pc from 'picocolors';
 
-import { getInstalledPackages } from '../core/paths.js';
+import { getInstalledPackages, InstalledPackageInfo } from '../core/paths.js';
 
 const MARKER_START = '<!-- olore:start -->';
 const MARKER_END = '<!-- olore:end -->';
@@ -12,6 +12,7 @@ const TARGET_FILES = ['AGENTS.md', 'CLAUDE.md'];
 interface InjectOptions {
   remove?: boolean;
   json?: boolean;
+  all?: boolean; // New flag to inject all packages (old behavior)
 }
 
 interface InjectResult {
@@ -19,6 +20,122 @@ interface InjectResult {
   packagesInjected: number;
   filesWritten: string[];
   removed: boolean;
+}
+
+/**
+ * Mapping from npm package names to olore package names.
+ * Handles cases where the npm name differs from the olore package name.
+ */
+const NPM_TO_OLORE: Record<string, string> = {
+  // Prisma
+  '@prisma/client': 'prisma',
+  prisma: 'prisma',
+  // Next.js
+  next: 'nextjs',
+  // Drizzle
+  'drizzle-orm': 'drizzle',
+  'drizzle-kit': 'drizzle',
+  // tRPC
+  '@trpc/server': 'trpc',
+  '@trpc/client': 'trpc',
+  '@trpc/react-query': 'trpc',
+  // Hono
+  hono: 'hono',
+  // Zod
+  zod: 'zod',
+  // TanStack Query
+  '@tanstack/react-query': 'tanstack-query',
+  '@tanstack/vue-query': 'tanstack-query',
+  '@tanstack/solid-query': 'tanstack-query',
+  // React Hook Form
+  'react-hook-form': 'rhf',
+  // Sentry
+  '@sentry/node': 'sentry',
+  '@sentry/react': 'sentry',
+  '@sentry/nextjs': 'sentry',
+  '@sentry/browser': 'sentry',
+  // Supabase
+  '@supabase/supabase-js': 'supabase',
+  // Cloudflare
+  wrangler: 'cloudflare',
+  '@cloudflare/workers-types': 'cloudflare',
+  // LangChain
+  langchain: 'langchain',
+  '@langchain/core': 'langchain',
+  // Lucia
+  lucia: 'lucia',
+  // Vitest
+  vitest: 'vitest',
+  // Astro
+  astro: 'astro',
+  // OpenNext
+  'open-next': 'opennext',
+  // PartyKit / PartyServer
+  partykit: 'partykit',
+  partysocket: 'partykit',
+  partyserver: 'partyserver',
+  // T3 Env
+  '@t3-oss/env-core': 't3-env',
+  '@t3-oss/env-nextjs': 't3-env',
+  // XState
+  xstate: 'xstate',
+  '@xstate/react': 'xstate',
+  // Convex
+  convex: 'convex',
+  // Clerk
+  '@clerk/nextjs': 'clerk',
+  '@clerk/clerk-react': 'clerk',
+  // Neon
+  '@neondatabase/serverless': 'neon',
+  // Neverthrow
+  neverthrow: 'neverthrow',
+  // Axiom
+  '@axiomhq/js': 'axiom',
+  '@axiomhq/nextjs': 'axiom',
+  // PostHog
+  'posthog-js': 'posthog',
+  'posthog-node': 'posthog',
+  // Checkly
+  checkly: 'checkly',
+  // Turso
+  '@libsql/client': 'turso',
+};
+
+/**
+ * Detect project dependencies from package.json.
+ * Returns a Set of olore package names that match project dependencies.
+ */
+function detectProjectDependencies(cwd: string): Set<string> {
+  const olorePackages = new Set<string>();
+  const packageJsonPath = path.join(cwd, 'package.json');
+
+  if (!fs.existsSync(packageJsonPath)) {
+    return olorePackages;
+  }
+
+  try {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    const allDeps = {
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    };
+
+    for (const npmPackage of Object.keys(allDeps)) {
+      // Check direct mapping
+      if (NPM_TO_OLORE[npmPackage]) {
+        olorePackages.add(NPM_TO_OLORE[npmPackage]);
+      }
+      // Also check if the npm package name matches an olore package directly
+      // (e.g., "hono" → "hono", "zod" → "zod")
+      else if (npmPackage === npmPackage.toLowerCase().replace(/[^a-z0-9-]/g, '')) {
+        olorePackages.add(npmPackage);
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+
+  return olorePackages;
 }
 
 /**
@@ -46,14 +163,30 @@ function formatLibraryName(name: string): string {
 }
 
 /**
- * Build a skill reference table from all installed packages.
- * Produces a human-readable markdown table pointing to skill commands.
+ * Build a skill reference table from installed packages.
+ * If projectDeps is provided, only includes packages that match project dependencies.
  */
-async function buildInjectedContent(): Promise<{ content: string; count: number }> {
-  const packages = await getInstalledPackages();
+async function buildInjectedContent(
+  projectDeps?: Set<string>
+): Promise<{ content: string; count: number; filtered: number }> {
+  const allPackages = await getInstalledPackages();
+
+  if (allPackages.length === 0) {
+    return { content: '', count: 0, filtered: 0 };
+  }
+
+  // Filter packages if projectDeps is provided
+  let packages: InstalledPackageInfo[];
+  if (projectDeps && projectDeps.size > 0) {
+    packages = allPackages.filter((pkg) => projectDeps.has(pkg.name));
+  } else {
+    packages = allPackages;
+  }
+
+  const filtered = allPackages.length - packages.length;
 
   if (packages.length === 0) {
-    return { content: '', count: 0 };
+    return { content: '', count: 0, filtered };
   }
 
   const rows = packages.map((pkg) => {
@@ -75,7 +208,7 @@ async function buildInjectedContent(): Promise<{ content: string; count: number 
     MARKER_END,
   ];
 
-  return { content: lines.join('\n'), count: packages.length };
+  return { content: lines.join('\n'), count: packages.length, filtered };
 }
 
 /**
@@ -166,13 +299,23 @@ export async function inject(options: InjectOptions): Promise<void> {
     return;
   }
 
+  // Detect project dependencies unless --all flag is used
+  let projectDeps: Set<string> | undefined;
+  if (!options.all) {
+    projectDeps = detectProjectDependencies(cwd);
+    if (projectDeps.size === 0) {
+      // No package.json found or no dependencies - fall back to all packages
+      projectDeps = undefined;
+    }
+  }
+
   // Build injected content
-  const { content, count } = await buildInjectedContent();
+  const { content, count, filtered } = await buildInjectedContent(projectDeps);
 
   if (count === 0) {
     if (options.json) {
       const result: InjectResult = {
-        packagesFound: 0,
+        packagesFound: filtered,
         packagesInjected: 0,
         filesWritten: [],
         removed: false,
@@ -181,8 +324,18 @@ export async function inject(options: InjectOptions): Promise<void> {
       return;
     }
 
-    console.log(pc.yellow('No installed packages found.'));
-    console.log(pc.gray('Run olore install <package> to install documentation packages.'));
+    if (filtered > 0) {
+      console.log(
+        pc.yellow(`No installed packages match your project dependencies.`)
+      );
+      console.log(
+        pc.gray(`${filtered} package${filtered === 1 ? '' : 's'} installed but not used in this project.`)
+      );
+      console.log(pc.gray('Run olore inject --all to inject all installed packages.'));
+    } else {
+      console.log(pc.yellow('No installed packages found.'));
+      console.log(pc.gray('Run olore install <package> to install documentation packages.'));
+    }
     return;
   }
 
@@ -196,7 +349,7 @@ export async function inject(options: InjectOptions): Promise<void> {
 
   if (options.json) {
     const result: InjectResult = {
-      packagesFound: count,
+      packagesFound: count + filtered,
       packagesInjected: count,
       filesWritten,
       removed: false,
@@ -210,5 +363,10 @@ export async function inject(options: InjectOptions): Promise<void> {
       `Injected ${count} package${count === 1 ? '' : 's'} into: ${filesWritten.join(', ')}`
     )
   );
+  if (filtered > 0) {
+    console.log(
+      pc.gray(`Filtered ${filtered} package${filtered === 1 ? '' : 's'} not in project dependencies.`)
+    );
+  }
   console.log(pc.gray('Run olore inject --remove to clean up.'));
 }

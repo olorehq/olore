@@ -149,6 +149,7 @@ program
   .command('inject')
   .description('Inject documentation skill reference table into AGENTS.md and CLAUDE.md')
   .option('--remove', 'Remove injected content from project files')
+  .option('--all', 'Inject all installed packages (ignore project dependencies)')
   .option('--json', 'Output as JSON')
   .action(async (options) => {
     try {
