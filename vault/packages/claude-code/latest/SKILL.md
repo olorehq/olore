@@ -1,69 +1,63 @@
 ---
 name: olore-claude-code-latest
-description: Local Claude Code documentation reference (latest). Use when asked about Claude Code features, CLI commands, agent skills, plugins, subagents, MCP, deployment, configuration, hooks, or troubleshooting.
+description: Local claude-code documentation reference (latest). Claude Code CLI documentation. Use for skills, subagents, hooks, MCP, plugins, deployment, and configuration.
 ---
 
-# Claude Code Documentation
+# claude-code Documentation
 
-Claude Code is Anthropic's agentic coding tool that lives in your terminal and helps you turn ideas into code. It works in your existing environment with your preferred tools, can directly edit files and run commands, and is composable and scriptable following Unix philosophy.
+Claude Code CLI documentation. Use for skills, subagents, hooks, MCP, plugins, deployment, and configuration.
 
 ## Documentation Structure
 
 ```
-docs/
-├── getting-started/         # Installation, quickstart, common workflows (3 files)
-├── build-with-claude-code/  # Skills, plugins, subagents, MCP, hooks (9 files)
-├── deployment/              # Enterprise deployment options (8 files)
-├── configuration/           # Settings, models, memory (4 files)
-└── reference/               # CLI, slash commands, API reference (6 files)
+contents/
+├── getting-started/       # Overview, quickstart, setup, workflows, best practices (8 files)
+├── surfaces/              # IDE integrations, desktop, web, Chrome, Slack, remote control (8 files)
+├── build-with-claude-code/ # Skills, subagents, plugins, hooks, MCP, agent teams (11 files)
+├── ci-cd/                 # GitHub Actions and GitLab CI/CD integration (2 files)
+├── deployment/            # Cloud providers, network config, sandboxing (8 files)
+├── configuration/         # Settings, permissions, memory, model, keybindings (8 files)
+├── reference/             # CLI reference, hooks reference, interactive mode (6 files)
+└── account/               # Authentication, costs, monitoring, security (7 files)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Installation and setup | `contents/getting-started/overview.md`, `contents/getting-started/quick-start.md` |
-| Basic workflows | `contents/getting-started/common-workflows.md` |
-| Agent Skills | `contents/build-with-claude-code/agent-skills.md` |
-| Custom subagents | `contents/build-with-claude-code/create-custom-subagents.md` |
-| Plugins | `contents/build-with-claude-code/create-plugins.md`, `contents/build-with-claude-code/discover-plugins.md` |
-| MCP integration | `contents/build-with-claude-code/mcp.md` |
-| Hooks system | `contents/build-with-claude-code/hooks.md`, `contents/reference/hooks-reference.md` |
-| Headless usage | `contents/build-with-claude-code/programmatic-usage.md` |
-| CLI commands | `contents/reference/cli-reference.md` |
-| Slash commands | `contents/reference/slash-commands.md` |
+| Getting started & install | `contents/getting-started/overview.md`, `contents/getting-started/quick-start.md`, `contents/getting-started/setup.md` |
+| Skills (slash commands) | `contents/build-with-claude-code/skills.md` |
+| Subagents | `contents/build-with-claude-code/sub-agents.md`, `contents/build-with-claude-code/agent-teams.md` |
+| Hooks | `contents/reference/hooks.md`, `contents/build-with-claude-code/hooks-guide.md` |
+| MCP servers | `contents/build-with-claude-code/mcp.md` |
+| Plugins | `contents/build-with-claude-code/plugins.md`, `contents/reference/plugins-reference.md` |
+| CLI commands & flags | `contents/reference/cli-reference.md` |
+| Settings & configuration | `contents/configuration/settings.md`, `contents/configuration/permissions.md` |
+| Memory & CLAUDE.md | `contents/configuration/memory.md` |
+| Programmatic/headless use | `contents/build-with-claude-code/programmatic-usage.md` |
+| GitHub Actions / GitLab CI | `contents/ci-cd/github-actions.md`, `contents/ci-cd/gitlab-ci-cd.md` |
+| Cloud deployment | `contents/deployment/aws-bedrock.md`, `contents/deployment/google-vertex-ai.md`, `contents/deployment/microsoft-foundry.md` |
+| IDE integrations | `contents/surfaces/vs-code.md`, `contents/surfaces/jetbrains.md` |
 | Interactive mode | `contents/reference/interactive-mode.md` |
-| Configuration | `contents/configuration/settings.md` |
-| Model selection | `contents/configuration/model-configuration.md` |
-| Memory management | `contents/configuration/memory-management.md` |
-| Enterprise deployment | `contents/deployment/overview.md` |
-| AWS Bedrock | `contents/deployment/aws-bedrock.md` |
-| Google Vertex AI | `contents/deployment/google-vertex-ai.md` |
-| Azure deployment | `contents/deployment/microsoft-foundry.md` |
-| Network configuration | `contents/deployment/network-configuration.md` |
-| Troubleshooting | `contents/build-with-claude-code/trouble-shooting.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Claude Code installation, setup, or getting started
-- CLI commands, flags, or usage patterns
-- Creating or managing Agent Skills
-- Building custom subagents or using built-in agents
-- Creating or installing plugins
-- Model Context Protocol (MCP) integration
-- Hooks for tool execution events
-- Programmatic usage or headless mode
-- Slash commands and interactive features
-- Configuration settings and customization
-- Model selection and configuration
-- Memory and context management
-- Enterprise deployment (AWS, GCP, Azure)
-- Network configuration or proxies
-- Troubleshooting issues with Claude Code
+- Creating or using Claude Code skills (custom slash commands)
+- Configuring subagents or agent teams
+- Setting up hooks (PreToolUse, PostToolUse, SessionStart, etc.)
+- Connecting MCP servers
+- Creating or distributing plugins
+- CLI flags and commands
+- Settings, permissions, and configuration scopes
+- Deploying Claude Code with AWS Bedrock, Vertex AI, or Azure
+- GitHub Actions or GitLab CI/CD integration
+- Programmatic/headless usage of Claude Code
+- Memory management and CLAUDE.md hierarchy
+- Authentication, costs, and account management
 
 ## How to find information
 
-1. Use the Topic Guide above to identify relevant files
-2. Read `TOC.md` for complete file listing by category
-3. Read specific files from `contents/{path}` for detailed information
+1. Use Topic Guide above to identify relevant files
+2. Read `TOC.md` for complete file listing by directory
+3. Read specific files from `contents/{path}`

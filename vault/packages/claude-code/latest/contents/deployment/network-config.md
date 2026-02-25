@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Enterprise network configuration
 
 > Configure Claude Code for enterprise environments with proxy servers, custom Certificate Authorities (CA), and mutual Transport Layer Security (mTLS) authentication.
@@ -76,10 +80,9 @@ export CLAUDE_CODE_CLIENT_KEY_PASSPHRASE="your-passphrase"
 
 Claude Code requires access to the following URLs:
 
-* `api.anthropic.com` - Claude API endpoints
-* `claude.ai` - WebFetch safeguards
-* `statsig.anthropic.com` - Telemetry and metrics
-* `sentry.io` - Error reporting
+* `api.anthropic.com`: Claude API endpoints
+* `claude.ai`: authentication for claude.ai accounts
+* `platform.claude.com`: authentication for Anthropic Console accounts
 
 Ensure these URLs are allowlisted in your proxy configuration and firewall rules. This is especially important when using Claude Code in containerized or restricted network environments.
 
@@ -88,8 +91,3 @@ Ensure these URLs are allowlisted in your proxy configuration and firewall rules
 * [Claude Code settings](/en/settings)
 * [Environment variables reference](/en/settings#environment-variables)
 * [Troubleshooting guide](/en/troubleshooting)
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

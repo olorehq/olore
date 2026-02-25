@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Enterprise deployment overview
 
 > Learn how Claude Code can integrate with various third-party services and infrastructure to meet enterprise deployment requirements.
@@ -105,8 +109,8 @@ If your organization has specific infrastructure requirements, compare the optio
 
 Select a deployment option to view setup instructions:
 
-* [Claude for Teams or Enterprise](/en/iam#claude-for-teams-or-enterprise-recommended)
-* [Anthropic Console](/en/iam#claude-console-authentication)
+* [Claude for Teams or Enterprise](/en/authentication#claude-for-teams-or-enterprise)
+* [Anthropic Console](/en/authentication#claude-console-authentication)
 * [Amazon Bedrock](/en/amazon-bedrock)
 * [Google Vertex AI](/en/google-vertex-ai)
 * [Microsoft Foundry](/en/microsoft-foundry)
@@ -235,6 +239,10 @@ If you have a custom development environment, we find that creating a "one click
 
 Encourage new users to try Claude Code for codebase Q\&A, or on smaller bug fixes or feature requests. Ask Claude Code to make a plan. Check Claude's suggestions and give feedback if it's off-track. Over time, as users understand this new paradigm better, then they'll be more effective at letting Claude Code run more agentically.
 
+### Pin model versions for cloud providers
+
+If you deploy through [Bedrock](/en/amazon-bedrock), [Vertex AI](/en/google-vertex-ai), or [Foundry](/en/microsoft-foundry), pin specific model versions using `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`. Without pinning, Claude Code aliases resolve to the latest version, which can break users when Anthropic releases a new model that isn't yet enabled in your account. See [Model configuration](/en/model-config#pin-models-for-third-party-deployments) for details.
+
 ### Configure security policies
 
 Security teams can configure managed permissions for what Claude Code is and is not allowed to do, which cannot be overwritten by local configuration. [Learn more](/en/security).
@@ -252,8 +260,3 @@ Once you've chosen a deployment option and configured access for your team:
 1. **Roll out to your team**: Share installation instructions and have team members [install Claude Code](/en/setup) and authenticate with their credentials.
 2. **Set up shared configuration**: Create a [CLAUDE.md file](/en/memory) in your repositories to help Claude Code understand your codebase and coding standards.
 3. **Configure permissions**: Review [security settings](/en/security) to define what Claude Code can and cannot do in your environment.
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

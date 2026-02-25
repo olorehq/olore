@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Sandboxing
 
 > Learn how Claude Code's sandboxed bash tool provides filesystem and network isolation for safer, more autonomous agent execution.
@@ -51,22 +55,45 @@ Network access is controlled through a proxy server running outside the sandbox:
 
 The sandboxed bash tool leverages operating system security primitives:
 
-* **Linux**: Uses [bubblewrap](https://github.com/containers/bubblewrap) for isolation
 * **macOS**: Uses Seatbelt for sandbox enforcement
+* **Linux**: Uses [bubblewrap](https://github.com/containers/bubblewrap) for isolation
+* **WSL2**: Uses bubblewrap, same as Linux
+
+WSL1 is not supported because bubblewrap requires kernel features only available in WSL2.
 
 These OS-level restrictions ensure that all child processes spawned by Claude Code's commands inherit the same security boundaries.
 
 ## Getting started
 
+### Prerequisites
+
+On **macOS**, sandboxing works out of the box using the built-in Seatbelt framework.
+
+On **Linux and WSL2**, install the required packages first:
+
+<Tabs>
+  <Tab title="Ubuntu/Debian">
+    ```bash  theme={null}
+    sudo apt-get install bubblewrap socat
+    ```
+  </Tab>
+
+  <Tab title="Fedora">
+    ```bash  theme={null}
+    sudo dnf install bubblewrap socat
+    ```
+  </Tab>
+</Tabs>
+
 ### Enable sandboxing
 
-You can enable sandboxing by running the `/sandbox` slash command:
+You can enable sandboxing by running the `/sandbox` command:
 
 ```
 > /sandbox
 ```
 
-This opens a menu where you can choose between sandbox modes.
+This opens a menu where you can choose between sandbox modes. If required dependencies are missing (such as `bubblewrap` or `socat` on Linux), the menu displays installation instructions for your platform.
 
 ### Sandbox modes
 
@@ -110,7 +137,7 @@ Even if an attacker successfully manipulates Claude Code's behavior through prom
 
 * Cannot modify critical config files such as `~/.bashrc`
 * Cannot modify system-level files in `/bin/`
-* Cannot read files that are denied in your [Claude permission settings](/en/iam#configuring-permissions)
+* Cannot read files that are denied in your [Claude permission settings](/en/permissions#manage-permissions)
 
 **Network protection:**
 
@@ -157,6 +184,21 @@ When Claude Code attempts to access network resources outside the sandbox:
 * Filesystem Permission Escalation: Overly broad filesystem write permissions can enable privilege escalation attacks. Allowing writes to directories containing executables in `$PATH`, system configuration directories, or user shell configuration files (`.bashrc`, `.zshrc`) can lead to code execution in different security contexts when other users or system processes access these files.
 * Linux Sandbox Strength: The Linux implementation provides strong filesystem and network isolation but includes an `enableWeakerNestedSandbox` mode that enables it to work inside of Docker environments without privileged namespaces. This option considerably weakens security and should only be used in cases where additional isolation is otherwise enforced.
 
+## How sandboxing relates to permissions
+
+Sandboxing and [permissions](/en/permissions) are complementary security layers that work together:
+
+* **Permissions** control which tools Claude Code can use and are evaluated before any tool runs. They apply to all tools: Bash, Read, Edit, WebFetch, MCP, and others.
+* **Sandboxing** provides OS-level enforcement that restricts what Bash commands can access at the filesystem and network level. It applies only to Bash commands and their child processes.
+
+Filesystem and network restrictions are configured through permission rules, not sandbox settings:
+
+* Use `Read` and `Edit` deny rules to block access to specific files or directories
+* Use `WebFetch` allow/deny rules to control domain access
+* Use sandbox `allowedDomains` to control which domains Bash commands can reach
+
+This [repository](https://github.com/anthropics/claude-code/tree/main/examples/settings) includes starter settings configurations for common deployment scenarios, including sandbox-specific examples. Use these as starting points and adjust them to fit your needs.
+
 ## Advanced usage
 
 ### Custom proxy configuration
@@ -183,7 +225,7 @@ For organizations requiring advanced network security, you can implement a custo
 
 The sandboxed bash tool works alongside:
 
-* **IAM policies**: Combine with [permission settings](/en/iam) for defense-in-depth
+* **Permission rules**: Combine with [permission settings](/en/permissions) for defense-in-depth
 * **Development containers**: Use with [devcontainers](/en/devcontainer) for additional isolation
 * **Enterprise policies**: Enforce sandbox configurations through [managed settings](/en/settings#settings-precedence)
 
@@ -209,16 +251,11 @@ For implementation details and source code, visit the [GitHub repository](https:
 
 * **Performance overhead**: Minimal, but some filesystem operations may be slightly slower
 * **Compatibility**: Some tools that require specific system access patterns may need configuration adjustments, or may even need to be run outside of the sandbox
-* **Platform support**: Currently supports Linux and macOS; Windows support planned
+* **Platform support**: Supports macOS, Linux, and WSL2. WSL1 is not supported. Native Windows support is planned.
 
 ## See also
 
 * [Security](/en/security) - Comprehensive security features and best practices
-* [IAM](/en/iam) - Permission configuration and access control
+* [Permissions](/en/permissions) - Permission configuration and access control
 * [Settings](/en/settings) - Complete configuration reference
 * [CLI reference](/en/cli-reference) - Command-line options
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt
