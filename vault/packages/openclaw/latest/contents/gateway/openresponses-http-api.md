@@ -3,7 +3,9 @@ summary: "Expose an OpenResponses-compatible /v1/responses HTTP endpoint from th
 read_when:
   - Integrating clients that speak the OpenResponses API
   - You want item-based inputs, client tool calls, or SSE events
+title: "OpenResponses API"
 ---
+
 # OpenResponses API (HTTP)
 
 OpenClaw’s Gateway can serve an OpenResponses-compatible `POST /v1/responses` endpoint.
@@ -23,8 +25,10 @@ Uses the Gateway auth configuration. Send a bearer token:
 - `Authorization: Bearer <token>`
 
 Notes:
+
 - When `gateway.auth.mode="token"`, use `gateway.auth.token` (or `OPENCLAW_GATEWAY_TOKEN`).
 - When `gateway.auth.mode="password"`, use `gateway.auth.password` (or `OPENCLAW_GATEWAY_PASSWORD`).
+- If `gateway.auth.rateLimit` is configured and too many auth failures occur, the endpoint returns `429` with `Retry-After`.
 
 ## Choosing an agent
 
@@ -38,6 +42,7 @@ Or target a specific OpenClaw agent by header:
 - `x-openclaw-agent-id: <agentId>` (default: `main`)
 
 Advanced:
+
 - `x-openclaw-session-key: <sessionKey>` to fully control session routing.
 
 ## Enabling the endpoint
@@ -49,10 +54,10 @@ Set `gateway.http.endpoints.responses.enabled` to `true`:
   gateway: {
     http: {
       endpoints: {
-        responses: { enabled: true }
-      }
-    }
-  }
+        responses: { enabled: true },
+      },
+    },
+  },
 }
 ```
 
@@ -65,10 +70,10 @@ Set `gateway.http.endpoints.responses.enabled` to `false`:
   gateway: {
     http: {
       endpoints: {
-        responses: { enabled: false }
-      }
-    }
-  }
+        responses: { enabled: false },
+      },
+    },
+  },
 }
 ```
 
@@ -103,6 +108,7 @@ Accepted but **currently ignored**:
 ## Items (input)
 
 ### `message`
+
 Roles: `system`, `developer`, `user`, `assistant`.
 
 - `system` and `developer` are appended to the system prompt.
@@ -168,6 +174,7 @@ Allowed MIME types (current): `text/plain`, `text/markdown`, `text/html`, `text/
 Max size (current): 5MB.
 
 Current behavior:
+
 - File content is decoded and added to the **system prompt**, not the user message,
   so it stays ephemeral (not persisted in session history).
 - PDFs are parsed for text. If little text is found, the first pages are rasterized
@@ -177,9 +184,14 @@ PDF parsing uses the Node-friendly `pdfjs-dist` legacy build (no worker). The mo
 PDF.js build expects browser workers/DOM globals, so it is not used in the Gateway.
 
 URL fetch defaults:
+
 - `files.allowUrl`: `true`
 - `images.allowUrl`: `true`
+- `maxUrlParts`: `8` (total URL-based `input_file` + `input_image` parts per request)
 - Requests are guarded (DNS resolution, private IP blocking, redirect caps, timeouts).
+- Optional hostname allowlists are supported per input type (`files.urlAllowlist`, `images.urlAllowlist`).
+  - Exact host: `"cdn.example.com"`
+  - Wildcard subdomains: `"*.assets.example.com"` (does not match apex)
 
 ## File + image limits (config)
 
@@ -193,9 +205,18 @@ Defaults can be tuned under `gateway.http.endpoints.responses`:
         responses: {
           enabled: true,
           maxBodyBytes: 20000000,
+          maxUrlParts: 8,
           files: {
             allowUrl: true,
-            allowedMimes: ["text/plain", "text/markdown", "text/html", "text/csv", "application/json", "application/pdf"],
+            urlAllowlist: ["cdn.example.com", "*.assets.example.com"],
+            allowedMimes: [
+              "text/plain",
+              "text/markdown",
+              "text/html",
+              "text/csv",
+              "application/json",
+              "application/pdf",
+            ],
             maxBytes: 5242880,
             maxChars: 200000,
             maxRedirects: 3,
@@ -203,25 +224,28 @@ Defaults can be tuned under `gateway.http.endpoints.responses`:
             pdf: {
               maxPages: 4,
               maxPixels: 4000000,
-              minTextChars: 200
-            }
+              minTextChars: 200,
+            },
           },
           images: {
             allowUrl: true,
+            urlAllowlist: ["images.example.com"],
             allowedMimes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
             maxBytes: 10485760,
             maxRedirects: 3,
-            timeoutMs: 10000
-          }
-        }
-      }
-    }
-  }
+            timeoutMs: 10000,
+          },
+        },
+      },
+    },
+  },
 }
 ```
 
 Defaults when omitted:
+
 - `maxBodyBytes`: 20MB
+- `maxUrlParts`: 8
 - `files.maxBytes`: 5MB
 - `files.maxChars`: 200k
 - `files.maxRedirects`: 3
@@ -233,6 +257,13 @@ Defaults when omitted:
 - `images.maxRedirects`: 3
 - `images.timeoutMs`: 10s
 
+Security note:
+
+- URL allowlists are enforced before fetch and on redirect hops.
+- Allowlisting a hostname does not bypass private/internal IP blocking.
+- For internet-exposed gateways, apply network egress controls in addition to app-level guards.
+  See [Security](/gateway/security).
+
 ## Streaming (SSE)
 
 Set `stream: true` to receive Server-Sent Events (SSE):
@@ -242,6 +273,7 @@ Set `stream: true` to receive Server-Sent Events (SSE):
 - Stream ends with `data: [DONE]`
 
 Event types currently emitted:
+
 - `response.created`
 - `response.in_progress`
 - `response.output_item.added`
@@ -266,6 +298,7 @@ Errors use a JSON object like:
 ```
 
 Common cases:
+
 - `401` missing/invalid auth
 - `400` invalid request body
 - `405` wrong method
@@ -273,6 +306,7 @@ Common cases:
 ## Examples
 
 Non-streaming:
+
 ```bash
 curl -sS http://127.0.0.1:18789/v1/responses \
   -H 'Authorization: Bearer YOUR_TOKEN' \
@@ -285,6 +319,7 @@ curl -sS http://127.0.0.1:18789/v1/responses \
 ```
 
 Streaming:
+
 ```bash
 curl -N http://127.0.0.1:18789/v1/responses \
   -H 'Authorization: Bearer YOUR_TOKEN' \
