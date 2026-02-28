@@ -7,6 +7,7 @@ import pc from 'picocolors';
 // Import version from package.json at build time via tsup
 // The version is injected by the build process
 import pkg from '../../package.json';
+
 const currentVersion = pkg.version;
 
 const NPM_REGISTRY = 'https://registry.npmjs.org/@olorehq/olore';
