@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Quickstart
 
 > Welcome to Claude Code!
@@ -9,8 +13,13 @@ This quickstart guide will have you using AI-powered coding assistance in just a
 Make sure you have:
 
 * A terminal or command prompt open
+  * If you've never used the terminal before, check out the [terminal guide](/en/terminal-guide)
 * A code project to work with
-* A [Claude subscription](https://claude.com/pricing) (Pro, Max, Teams, or Enterprise) or [Claude Console](https://console.anthropic.com/) account
+* A [Claude subscription](https://claude.com/pricing) (Pro, Max, Teams, or Enterprise), [Claude Console](https://console.anthropic.com/) account, or access through a [supported cloud provider](/en/third-party-integrations)
+
+<Note>
+  This guide covers the terminal CLI. Claude Code is also available on the [web](https://claude.ai/code), as a [desktop app](/en/desktop), in [VS Code](/en/vs-code) and [JetBrains IDEs](/en/jetbrains), in [Slack](/en/slack), and in CI/CD with [GitHub Actions](/en/github-actions) and [GitLab](/en/gitlab-ci-cd). See [all interfaces](/en/overview#use-claude-code-everywhere).
+</Note>
 
 ## Step 1: Install Claude Code
 
@@ -36,13 +45,15 @@ To install Claude Code, use one of the following methods:
     curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
     ```
 
+    **Windows requires [Git for Windows](https://git-scm.com/downloads/win).** Install it first if you don't have it.
+
     <Info>
       Native installations automatically update in the background to keep you on the latest version.
     </Info>
   </Tab>
 
   <Tab title="Homebrew">
-    ```sh  theme={null}
+    ```bash  theme={null}
     brew install --cask claude-code
     ```
 
@@ -79,17 +90,10 @@ claude
 You can log in using any of these account types:
 
 * [Claude Pro, Max, Teams, or Enterprise](https://claude.com/pricing) (recommended)
-* [Claude Console](https://console.anthropic.com/) (API access with pre-paid credits)
+* [Claude Console](https://console.anthropic.com/) (API access with pre-paid credits). On first login, a "Claude Code" workspace is automatically created in the Console for centralized cost tracking.
+* [Amazon Bedrock, Google Vertex AI, or Microsoft Foundry](/en/third-party-integrations) (enterprise cloud providers)
 
-Once logged in, your credentials are stored and you won't need to log in again.
-
-<Note>
-  When you first authenticate Claude Code with your Claude Console account, a workspace called "Claude Code" is automatically created for you. This workspace provides centralized cost tracking and management for all Claude Code usage in your organization.
-</Note>
-
-<Note>
-  You can have both account types under the same email address. If you need to log in again or switch accounts, use the `/login` command within Claude Code.
-</Note>
+Once logged in, your credentials are stored and you won't need to log in again. To switch accounts later, use the `/login` command.
 
 ## Step 3: Start your first session
 
@@ -103,7 +107,7 @@ claude
 You'll see the Claude Code welcome screen with your session information, recent conversations, and latest updates. Type `/help` for available commands or `/resume` to continue a previous conversation.
 
 <Tip>
-  After logging in (Step 2), your credentials are stored on your system. Learn more in [Credential Management](/en/iam#credential-management).
+  After logging in (Step 2), your credentials are stored on your system. Learn more in [Credential Management](/en/authentication#credential-management).
 </Tip>
 
 ## Step 4: Ask your first question
@@ -111,35 +115,35 @@ You'll see the Claude Code welcome screen with your session information, recent 
 Let's start with understanding your codebase. Try one of these commands:
 
 ```
-> what does this project do?
+what does this project do?
 ```
 
 Claude will analyze your files and provide a summary. You can also ask more specific questions:
 
 ```
-> what technologies does this project use?
+what technologies does this project use?
 ```
 
 ```
-> where is the main entry point?
+where is the main entry point?
 ```
 
 ```
-> explain the folder structure
+explain the folder structure
 ```
 
 You can also ask Claude about its own capabilities:
 
 ```
-> what can Claude Code do?
+what can Claude Code do?
 ```
 
 ```
-> how do I use slash commands in Claude Code?
+how do I create custom skills in Claude Code?
 ```
 
 ```
-> can Claude Code work with Docker?
+can Claude Code work with Docker?
 ```
 
 <Note>
@@ -151,7 +155,7 @@ You can also ask Claude about its own capabilities:
 Now let's make Claude Code do some actual coding. Try a simple task:
 
 ```
-> add a hello world function to the main file
+add a hello world function to the main file
 ```
 
 Claude Code will:
@@ -170,25 +174,25 @@ Claude Code will:
 Claude Code makes Git operations conversational:
 
 ```
-> what files have I changed?
+what files have I changed?
 ```
 
 ```
-> commit my changes with a descriptive message
+commit my changes with a descriptive message
 ```
 
 You can also prompt for more complex Git operations:
 
 ```
-> create a new branch called feature/quickstart
+create a new branch called feature/quickstart
 ```
 
 ```
-> show me the last 5 commits
+show me the last 5 commits
 ```
 
 ```
-> help me resolve merge conflicts
+help me resolve merge conflicts
 ```
 
 ## Step 7: Fix a bug or add a feature
@@ -198,13 +202,13 @@ Claude is proficient at debugging and feature implementation.
 Describe what you want in natural language:
 
 ```
-> add input validation to the user registration form
+add input validation to the user registration form
 ```
 
 Or fix existing issues:
 
 ```
-> there's a bug where users can submit empty forms - fix it
+there's a bug where users can submit empty forms - fix it
 ```
 
 Claude Code will:
@@ -221,25 +225,25 @@ There are a number of ways to work with Claude:
 **Refactor code**
 
 ```
-> refactor the authentication module to use async/await instead of callbacks
+refactor the authentication module to use async/await instead of callbacks
 ```
 
 **Write tests**
 
 ```
-> write unit tests for the calculator functions
+write unit tests for the calculator functions
 ```
 
 **Update documentation**
 
 ```
-> update the README with installation instructions
+update the README with installation instructions
 ```
 
 **Code review**
 
 ```
-> review my changes and suggest improvements
+review my changes and suggest improvements
 ```
 
 <Tip>
@@ -258,13 +262,15 @@ Here are the most important commands for daily use:
 | `claude -c`         | Continue most recent conversation in current directory | `claude -c`                         |
 | `claude -r`         | Resume a previous conversation                         | `claude -r`                         |
 | `claude commit`     | Create a Git commit                                    | `claude commit`                     |
-| `/clear`            | Clear conversation history                             | `> /clear`                          |
-| `/help`             | Show available commands                                | `> /help`                           |
-| `exit` or Ctrl+C    | Exit Claude Code                                       | `> exit`                            |
+| `/clear`            | Clear conversation history                             | `/clear`                            |
+| `/help`             | Show available commands                                | `/help`                             |
+| `exit` or Ctrl+C    | Exit Claude Code                                       | `exit`                              |
 
 See the [CLI reference](/en/cli-reference) for a complete list of commands.
 
 ## Pro tips for beginners
+
+For more, see [best practices](/en/best-practices) and [common workflows](/en/common-workflows).
 
 <AccordionGroup>
   <Accordion title="Be specific with your requests">
@@ -277,15 +283,9 @@ See the [CLI reference](/en/cli-reference) for a complete list of commands.
     Break complex tasks into steps:
 
     ```
-    > 1. create a new database table for user profiles
-    ```
-
-    ```
-    > 2. create an API endpoint to get and update user profiles
-    ```
-
-    ```
-    > 3. build a webpage that allows users to see and edit their information
+    1. create a new database table for user profiles
+    2. create an API endpoint to get and update user profiles
+    3. build a webpage that allows users to see and edit their information
     ```
   </Accordion>
 
@@ -293,11 +293,11 @@ See the [CLI reference](/en/cli-reference) for a complete list of commands.
     Before making changes, let Claude understand your code:
 
     ```
-    > analyze the database schema
+    analyze the database schema
     ```
 
     ```
-    > build a dashboard showing products that are most frequently returned by our UK customers
+    build a dashboard showing products that are most frequently returned by our UK customers
     ```
   </Accordion>
 
@@ -305,7 +305,7 @@ See the [CLI reference](/en/cli-reference) for a complete list of commands.
     * Press `?` to see all available keyboard shortcuts
     * Use Tab for command completion
     * Press ↑ for command history
-    * Type `/` to see all slash commands
+    * Type `/` to see all commands and skills
   </Accordion>
 </AccordionGroup>
 
@@ -313,25 +313,21 @@ See the [CLI reference](/en/cli-reference) for a complete list of commands.
 
 Now that you've learned the basics, explore more advanced features:
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
+  <Card title="How Claude Code works" icon="microchip" href="/en/how-claude-code-works">
+    Understand the agentic loop, built-in tools, and how Claude Code interacts with your project
+  </Card>
+
+  <Card title="Best practices" icon="star" href="/en/best-practices">
+    Get better results with effective prompting and project setup
+  </Card>
+
   <Card title="Common workflows" icon="graduation-cap" href="/en/common-workflows">
     Step-by-step guides for common tasks
   </Card>
 
-  <Card title="CLI reference" icon="terminal" href="/en/cli-reference">
-    Master all commands and options
-  </Card>
-
-  <Card title="Configuration" icon="gear" href="/en/settings">
-    Customize Claude Code for your workflow
-  </Card>
-
-  <Card title="Claude Code on the web" icon="cloud" href="/en/claude-code-on-the-web">
-    Run tasks asynchronously in the cloud
-  </Card>
-
-  <Card title="About Claude Code" icon="sparkles" href="https://claude.com/product/claude-code">
-    Learn more on claude.com
+  <Card title="Extend Claude Code" icon="puzzle-piece" href="/en/features-overview">
+    Customize with CLAUDE.md, skills, hooks, MCP, and more
   </Card>
 </CardGroup>
 
@@ -340,8 +336,3 @@ Now that you've learned the basics, explore more advanced features:
 * **In Claude Code**: Type `/help` or ask "how do I..."
 * **Documentation**: You're here! Browse other guides
 * **Community**: Join our [Discord](https://www.anthropic.com/discord) for tips and support
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

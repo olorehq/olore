@@ -1,8 +1,12 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Discover and install prebuilt plugins through marketplaces
 
 > Find and install plugins from marketplaces to extend Claude Code with new commands, agents, and capabilities.
 
-Plugins extend Claude Code with custom commands, agents, hooks, and MCP servers. Plugin marketplaces are catalogs that help you discover and install these extensions without building them yourself.
+Plugins extend Claude Code with skills, agents, hooks, and MCP servers. Plugin marketplaces are catalogs that help you discover and install these extensions without building them yourself.
 
 Looking to create and distribute your own marketplace? See [Create and distribute a plugin marketplace](/en/plugin-marketplaces).
 
@@ -40,7 +44,7 @@ The official marketplace includes several categories of plugins:
 
 ### Code intelligence
 
-Code intelligence plugins help Claude understand your codebase more deeply. With these plugins installed, Claude can jump to definitions, find references, and see type errors immediately after edits. These plugins use the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) (LSP), the same technology that powers VS Code's code intelligence.
+Code intelligence plugins enable Claude Code's built-in LSP tool, giving Claude the ability to jump to definitions, find references, and see type errors immediately after edits. These plugins configure [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) connections, the same technology that powers VS Code's code intelligence.
 
 These plugins require the language server binary to be installed on your system. If you already have a language server installed, Claude may prompt you to install the corresponding plugin when you open a project.
 
@@ -50,6 +54,7 @@ These plugins require the language server binary to be installed on your system.
 | C#         | `csharp-lsp`        | `csharp-ls`                  |
 | Go         | `gopls-lsp`         | `gopls`                      |
 | Java       | `jdtls-lsp`         | `jdtls`                      |
+| Kotlin     | `kotlin-lsp`        | `kotlin-language-server`     |
 | Lua        | `lua-lsp`           | `lua-language-server`        |
 | PHP        | `php-lsp`           | `intelephense`               |
 | Python     | `pyright-lsp`       | `pyright-langserver`         |
@@ -62,6 +67,15 @@ You can also [create your own LSP plugin](/en/plugins-reference#lsp-servers) for
 <Note>
   If you see `Executable not found in $PATH` in the `/plugin` Errors tab after installing a plugin, install the required binary from the table above.
 </Note>
+
+#### What Claude gains from code intelligence plugins
+
+Once a code intelligence plugin is installed and its language server binary is available, Claude gains two capabilities:
+
+* **Automatic diagnostics**: after every file edit Claude makes, the language server analyzes the changes and reports errors and warnings back automatically. Claude sees type errors, missing imports, and syntax issues without needing to run a compiler or linter. If Claude introduces an error, it notices and fixes the issue in the same turn. This requires no configuration beyond installing the plugin. You can see diagnostics inline by pressing **Ctrl+O** when the "diagnostics found" indicator appears.
+* **Code navigation**: Claude can use the language server to jump to definitions, find references, get type info on hover, list symbols, find implementations, and trace call hierarchies. These operations give Claude more precise navigation than grep-based search, though availability may vary by language and environment.
+
+If you run into issues, see [Code intelligence troubleshooting](#code-intelligence-issues).
 
 ### External integrations
 
@@ -246,7 +260,7 @@ Run `/plugin` and go to the **Installed** tab to see your plugins grouped by sco
 
 ## Manage installed plugins
 
-Run `/plugin` and go to the **Installed** tab to view, enable, disable, or uninstall your plugins.
+Run `/plugin` and go to the **Installed** tab to view, enable, disable, or uninstall your plugins. Type to filter the list by plugin name or description.
 
 You can also manage plugins with direct commands.
 
@@ -362,17 +376,18 @@ If you see "unknown command" or the `/plugin` command doesn't appear:
 * **Marketplace not loading**: Verify the URL is accessible and that `.claude-plugin/marketplace.json` exists at the path
 * **Plugin installation failures**: Check that plugin source URLs are accessible and repositories are public (or you have access)
 * **Files not found after installation**: Plugins are copied to a cache, so paths referencing files outside the plugin directory won't work
-* **Plugin Skills not appearing**: Clear the cache with `rm -rf ~/.claude/plugins/cache`, restart Claude Code, and reinstall the plugin. See [Plugin Skills not appearing](/en/skills#plugin-skills-not-appearing-after-installation) for details.
+* **Plugin skills not appearing**: Clear the cache with `rm -rf ~/.claude/plugins/cache`, restart Claude Code, and reinstall the plugin.
 
 For detailed troubleshooting with solutions, see [Troubleshooting](/en/plugin-marketplaces#troubleshooting) in the marketplace guide. For debugging tools, see [Debugging and development tools](/en/plugins-reference#debugging-and-development-tools).
 
+### Code intelligence issues
+
+* **Language server not starting**: verify the binary is installed and available in your `$PATH`. Check the `/plugin` Errors tab for details.
+* **High memory usage**: language servers like `rust-analyzer` and `pyright` can consume significant memory on large projects. If you experience memory issues, disable the plugin with `/plugin disable <plugin-name>` and rely on Claude's built-in search tools instead.
+* **False positive diagnostics in monorepos**: language servers may report unresolved import errors for internal packages if the workspace isn't configured correctly. These don't affect Claude's ability to edit code.
+
 ## Next steps
 
-* **Build your own plugins**: See [Plugins](/en/plugins) to create custom commands, agents, and hooks
+* **Build your own plugins**: See [Plugins](/en/plugins) to create skills, agents, and hooks
 * **Create a marketplace**: See [Create a plugin marketplace](/en/plugin-marketplaces) to distribute plugins to your team or community
 * **Technical reference**: See [Plugins reference](/en/plugins-reference) for complete specifications
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

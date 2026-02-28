@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Connect Claude Code to tools via MCP
 
 > Learn how to connect Claude Code to your tools with the Model Context Protocol.
@@ -16,6 +20,7 @@ export const MCPServersTable = ({platform = "all"}) => {
         do {
           const url = new URL('https://api.anthropic.com/mcp-registry/v0/servers');
           url.searchParams.set('version', 'latest');
+          url.searchParams.set('visibility', 'commercial');
           url.searchParams.set('limit', '100');
           if (cursor) {
             url.searchParams.set('cursor', cursor);
@@ -420,6 +425,10 @@ MCP servers can be configured at three different scope levels, each serving dist
 
 Local-scoped servers represent the default configuration level and are stored in `~/.claude.json` under your project's path. These servers remain private to you and are only accessible when working within the current project directory. This scope is ideal for personal development servers, experimental configurations, or servers containing sensitive credentials that shouldn't be shared.
 
+<Note>
+  The term "local scope" for MCP servers differs from general local settings. MCP local-scoped servers are stored in `~/.claude.json` (your home directory), while general local settings use `.claude/settings.local.json` (in the project directory). See [Settings](/en/settings#settings-files) for details on settings file locations.
+</Note>
+
 ```bash  theme={null}
 # Add a local-scoped server (default)
 claude mcp add --transport http stripe https://mcp.stripe.com
@@ -609,6 +618,67 @@ Many cloud-based MCP servers require authentication. Claude Code supports OAuth 
   * OAuth authentication works with HTTP servers
 </Tip>
 
+### Use pre-configured OAuth credentials
+
+Some MCP servers don't support automatic OAuth setup. If you see an error like "Incompatible auth server: does not support dynamic client registration," the server requires pre-configured credentials. Register an OAuth app through the server's developer portal first, then provide the credentials when adding the server.
+
+<Steps>
+  <Step title="Register an OAuth app with the server">
+    Create an app through the server's developer portal and note your client ID and client secret.
+
+    Many servers also require a redirect URI. If so, choose a port and register a redirect URI in the format `http://localhost:PORT/callback`. Use that same port with `--callback-port` in the next step.
+  </Step>
+
+  <Step title="Add the server with your credentials">
+    Choose one of the following methods. The port used for `--callback-port` can be any available port. It just needs to match the redirect URI you registered in the previous step.
+
+    <Tabs>
+      <Tab title="claude mcp add">
+        Use `--client-id` to pass your app's client ID. The `--client-secret` flag prompts for the secret with masked input:
+
+        ```bash  theme={null}
+        claude mcp add --transport http \
+          --client-id your-client-id --client-secret --callback-port 8080 \
+          my-server https://mcp.example.com/mcp
+        ```
+      </Tab>
+
+      <Tab title="claude mcp add-json">
+        Include the `oauth` object in the JSON config and pass `--client-secret` as a separate flag:
+
+        ```bash  theme={null}
+        claude mcp add-json my-server \
+          '{"type":"http","url":"https://mcp.example.com/mcp","oauth":{"clientId":"your-client-id","callbackPort":8080}}' \
+          --client-secret
+        ```
+      </Tab>
+
+      <Tab title="CI / env var">
+        Set the secret via environment variable to skip the interactive prompt:
+
+        ```bash  theme={null}
+        MCP_CLIENT_SECRET=your-secret claude mcp add --transport http \
+          --client-id your-client-id --client-secret --callback-port 8080 \
+          my-server https://mcp.example.com/mcp
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Authenticate in Claude Code">
+    Run `/mcp` in Claude Code and follow the browser login flow.
+  </Step>
+</Steps>
+
+<Tip>
+  Tips:
+
+  * The client secret is stored securely in your system keychain (macOS) or a credentials file, not in your config
+  * If the server uses a public OAuth client with no secret, use only `--client-id` without `--client-secret`
+  * These flags only apply to HTTP and SSE transports. They have no effect on stdio servers
+  * Use `claude mcp get <name>` to verify that OAuth credentials are configured for a server
+</Tip>
+
 ## Add MCP servers from JSON configuration
 
 If you have a JSON configuration for an MCP server, you can add it directly:
@@ -624,6 +694,9 @@ If you have a JSON configuration for an MCP server, you can add it directly:
 
     # Example: Adding a stdio server with JSON configuration
     claude mcp add-json local-weather '{"type":"stdio","command":"/path/to/weather-cli","args":["--api-key","abc123"],"env":{"CACHE_DIR":"/tmp"}}'
+
+    # Example: Adding an HTTP server with pre-configured OAuth credentials
+    claude mcp add-json my-server '{"type":"http","url":"https://mcp.example.com/mcp","oauth":{"clientId":"your-client-id","callbackPort":8080}}' --client-secret
     ```
   </Step>
 
@@ -674,6 +747,31 @@ If you've already configured MCP servers in Claude Desktop, you can import them:
   * Imported servers will have the same names as in Claude Desktop
   * If servers with the same names already exist, they will get a numerical suffix (for example, `server_1`)
 </Tip>
+
+## Use MCP servers from Claude.ai
+
+If you've logged into Claude Code with a [Claude.ai](https://claude.ai) account, MCP servers you've added in Claude.ai are automatically available in Claude Code:
+
+<Steps>
+  <Step title="Configure MCP servers in Claude.ai">
+    Add servers at [claude.ai/settings/connectors](https://claude.ai/settings/connectors). On Team and Enterprise plans, only admins can add servers.
+  </Step>
+
+  <Step title="Authenticate the MCP server">
+    Complete any required authentication steps in Claude.ai.
+  </Step>
+
+  <Step title="View and manage servers in Claude Code">
+    In Claude Code, use the command:
+
+    ```
+    # Within Claude Code, see all MCP servers including Claude.ai ones
+    > /mcp
+    ```
+
+    Claude.ai servers appear in the list with indicators showing they come from Claude.ai.
+  </Step>
+</Steps>
 
 ## Use Claude Code as an MCP server
 
@@ -857,9 +955,9 @@ You can also disable the MCPSearch tool specifically using the `disallowedTools`
 }
 ```
 
-## Use MCP prompts as slash commands
+## Use MCP prompts as commands
 
-MCP servers can expose prompts that become available as slash commands in Claude Code.
+MCP servers can expose prompts that become available as commands in Claude Code.
 
 ### Execute MCP prompts
 
@@ -1123,8 +1221,3 @@ URL patterns support wildcards using `*` to match any sequence of characters. Th
 <Note>
   **When using `managed-mcp.json`**: Users cannot add MCP servers through `claude mcp add` or configuration files. The `allowedMcpServers` and `deniedMcpServers` settings still apply to filter which managed servers are actually loaded.
 </Note>
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

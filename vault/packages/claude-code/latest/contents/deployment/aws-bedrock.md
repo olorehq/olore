@@ -1,3 +1,7 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Claude Code on Amazon Bedrock
 
 > Learn about configuring Claude Code through Amazon Bedrock, including setup, IAM configuration, and troubleshooting.
@@ -7,9 +11,13 @@
 Before configuring Claude Code with Bedrock, ensure you have:
 
 * An AWS account with Bedrock access enabled
-* Access to desired Claude models (for example, Claude Sonnet 4.5) in Bedrock
+* Access to desired Claude models (for example, Claude Sonnet 4.6) in Bedrock
 * AWS CLI installed and configured (optional - only needed if you don't have another mechanism for getting credentials)
 * Appropriate IAM permissions
+
+<Note>
+  If you are deploying Claude Code to multiple users, [pin your model versions](#4-pin-model-versions) to prevent breakage when Anthropic releases new models.
+</Note>
 
 ## Setup
 
@@ -116,24 +124,34 @@ When enabling Bedrock for Claude Code, keep the following in mind:
 * When using Bedrock, the `/login` and `/logout` commands are disabled since authentication is handled through AWS credentials.
 * You can use settings files for environment variables like `AWS_PROFILE` that you don't want to leak to other processes. See [Settings](/en/settings) for more information.
 
-### 4. Model configuration
+### 4. Pin model versions
 
-Claude Code uses these default models for Bedrock:
+<Warning>
+  Pin specific model versions for every deployment. If you use model aliases (`sonnet`, `opus`, `haiku`) without pinning, Claude Code may attempt to use a newer model version that isn't available in your Bedrock account, breaking existing users when Anthropic releases updates.
+</Warning>
 
-| Model type       | Default value                                      |
-| :--------------- | :------------------------------------------------- |
-| Primary model    | `global.anthropic.claude-sonnet-4-5-20250929-v1:0` |
-| Small/fast model | `us.anthropic.claude-haiku-4-5-20251001-v1:0`      |
+Set these environment variables to specific Bedrock model IDs:
 
-<Note>
-  For Bedrock users, Claude Code won't automatically upgrade from Haiku 3.5 to Haiku 4.5. To manually switch to a newer Haiku model, set the `ANTHROPIC_DEFAULT_HAIKU_MODEL` environment variable to the full model name (for example, `us.anthropic.claude-haiku-4-5-20251001-v1:0`).
-</Note>
+```bash  theme={null}
+export ANTHROPIC_DEFAULT_OPUS_MODEL='us.anthropic.claude-opus-4-6-v1'
+export ANTHROPIC_DEFAULT_SONNET_MODEL='us.anthropic.claude-sonnet-4-6'
+export ANTHROPIC_DEFAULT_HAIKU_MODEL='us.anthropic.claude-haiku-4-5-20251001-v1:0'
+```
 
-To customize models, use one of these methods:
+These variables use cross-region inference profile IDs (with the `us.` prefix). If you use a different region prefix or application inference profiles, adjust accordingly. For current and legacy model IDs, see [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview). See [Model configuration](/en/model-config#pin-models-for-third-party-deployments) for the full list of environment variables.
+
+Claude Code uses these default models when no pinning variables are set:
+
+| Model type       | Default value                                 |
+| :--------------- | :-------------------------------------------- |
+| Primary model    | `global.anthropic.claude-sonnet-4-6`          |
+| Small/fast model | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
+
+To customize models further, use one of these methods:
 
 ```bash  theme={null}
 # Using inference profile ID
-export ANTHROPIC_MODEL='global.anthropic.claude-sonnet-4-5-20250929-v1:0'
+export ANTHROPIC_MODEL='global.anthropic.claude-sonnet-4-6'
 export ANTHROPIC_SMALL_FAST_MODEL='us.anthropic.claude-haiku-4-5-20251001-v1:0'
 
 # Using application inference profile ARN
@@ -143,23 +161,7 @@ export ANTHROPIC_MODEL='arn:aws:bedrock:us-east-2:your-account-id:application-in
 export DISABLE_PROMPT_CACHING=1
 ```
 
-<Note>[Prompt caching](https://docs.claude.com/en/docs/build-with-claude/prompt-caching) may not be available in all regions.</Note>
-
-### 5. Output token configuration
-
-These are the recommended token settings for Claude Code with Amazon Bedrock:
-
-```bash  theme={null}
-# Recommended output token settings for Bedrock
-export CLAUDE_CODE_MAX_OUTPUT_TOKENS=4096
-export MAX_THINKING_TOKENS=1024
-```
-
-**Why these values:**
-
-* **`CLAUDE_CODE_MAX_OUTPUT_TOKENS=4096`**: Bedrock's burndown throttling logic sets a minimum of 4096 tokens as the `max_token` penalty. Setting this lower won't reduce costs but may cut off long tool uses, causing the Claude Code agent loop to fail persistently. Claude Code typically uses less than 4096 output tokens without extended thinking, but may need this headroom for tasks involving significant file creation or Write tool usage.
-
-* **`MAX_THINKING_TOKENS=1024`**: This provides space for extended thinking without cutting off tool use responses, while still maintaining focused reasoning chains. This balance helps prevent trajectory changes that aren't always helpful for coding tasks specifically.
+<Note>[Prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) may not be available in all regions.</Note>
 
 ## IAM configuration
 
@@ -206,8 +208,22 @@ For more restrictive permissions, you can limit the Resource to specific inferen
 For details, see [Bedrock IAM documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html).
 
 <Note>
-  We recommend creating a dedicated AWS account for Claude Code to simplify cost tracking and access control.
+  Create a dedicated AWS account for Claude Code to simplify cost tracking and access control.
 </Note>
+
+## AWS Guardrails
+
+[Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) let you implement content filtering for Claude Code. Create a Guardrail in the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/), publish a version, then add the Guardrail headers to your [settings file](/en/settings). Enable Cross-Region inference on your Guardrail if you're using cross-region inference profiles.
+
+Example configuration:
+
+```json  theme={null}
+{
+  "env": {
+    "ANTHROPIC_CUSTOM_HEADERS": "X-Amzn-Bedrock-GuardrailIdentifier: your-guardrail-id\nX-Amzn-Bedrock-GuardrailVersion: 1"
+  }
+}
+```
 
 ## Troubleshooting
 
@@ -229,8 +245,3 @@ Claude Code uses the Bedrock [Invoke API](https://docs.aws.amazon.com/bedrock/la
 * [Bedrock pricing](https://aws.amazon.com/bedrock/pricing/)
 * [Bedrock inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html)
 * [Claude Code on Amazon Bedrock: Quick Setup Guide](https://community.aws/content/2tXkZKrZzlrlu0KfH8gST5Dkppq/claude-code-on-amazon-bedrock-quick-setup-guide)- [Claude Code Monitoring Implementation (Bedrock)](https://github.com/aws-solutions-library-samples/guidance-for-claude-code-with-amazon-bedrock/blob/main/assets/docs/MONITORING.md)
-
-
----
-
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt

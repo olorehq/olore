@@ -1,8 +1,12 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://code.claude.com/docs/llms.txt
+> Use this file to discover all available pages before exploring further.
+
 # Common workflows
 
-> Learn about common workflows with Claude Code.
+> Step-by-step guides for exploring codebases, fixing bugs, refactoring, testing, and other everyday tasks with Claude Code.
 
-Each task in this document includes clear instructions, example commands, and best practices to help you get the most from Claude Code.
+This page covers practical workflows for everyday development: exploring unfamiliar code, debugging, refactoring, writing tests, creating PRs, and managing sessions. Each section includes example prompts you can adapt to your own projects. For higher-level patterns and tips, see [Best practices](/en/best-practices).
 
 ## Understand new codebases
 
@@ -81,6 +85,7 @@ Suppose you need to locate code related to a specific feature or functionality.
 
   * Be specific about what you're looking for
   * Use domain language from the project
+  * Install a [code intelligence plugin](/en/discover-plugins#code-intelligence) for your language to give Claude precise "go to definition" and "find references" navigation
 </Tip>
 
 ***
@@ -270,6 +275,8 @@ Claude analyzes the current implementation and create a comprehensive plan. Refi
 > How should we handle database migration?
 ```
 
+<Tip>Press `Ctrl+G` to open the plan in your default text editor, where you can edit it directly before Claude proceeds.</Tip>
+
 ### Configure Plan Mode as default
 
 ```json  theme={null}
@@ -282,38 +289,6 @@ Claude analyzes the current implementation and create a comprehensive plan. Refi
 ```
 
 See [settings documentation](/en/settings#available-settings) for more configuration options.
-
-## Let Claude interview you
-
-For large features, start with a minimal spec and let Claude interview you to fill in the details:
-
-```
-> Interview me about this feature before you start: user notification system
-```
-
-```
-> Help me think through the requirements for authentication by asking questions
-```
-
-```
-> Ask me clarifying questions to build out this spec: payment processing
-```
-
-Claude uses the [`AskUserQuestion`](/en/settings#tools-available-to-claude) tool to ask you multiple-choice questions for gathering requirements, clarifying ambiguity, and understanding your preferences before writing any code. This collaborative approach produces better specs than trying to anticipate every requirement upfront.
-
-<Tip>
-  When you select "Type something" to provide a custom answer, press **Ctrl+G** to open your default text editor for longer responses.
-</Tip>
-
-This behavior is most active in Plan Mode. To encourage it in other modes, add guidance to your `CLAUDE.md` file:
-
-```markdown  theme={null}
-Always ask clarifying questions when there are multiple valid approaches to a task.
-```
-
-<Note>
-  If you're building applications with the Agent SDK and want to surface clarifying questions to your users programmatically, see [Handle approvals and user input](https://platform.claude.com/docs/en/agent-sdk/user-input#handle-clarifying-questions).
-</Note>
 
 ***
 
@@ -355,40 +330,40 @@ For comprehensive coverage, ask Claude to identify edge cases you might have mis
 
 ## Create pull requests
 
-Suppose you need to create a well-documented pull request for your changes.
+You can create pull requests by asking Claude directly ("create a pr for my changes") or by using the `/commit-push-pr` skill, which commits, pushes, and opens a PR in one step.
+
+```
+> /commit-push-pr
+```
+
+If you have a Slack MCP server configured and specify channels in your CLAUDE.md (for example, "post PR URLs to #team-prs"), the skill automatically posts the PR URL to those channels.
+
+For more control over the process, guide Claude through it step-by-step or [create your own skill](/en/skills):
 
 <Steps>
   <Step title="Summarize your changes">
     ```
-    > summarize the changes I've made to the authentication module 
+    > summarize the changes I've made to the authentication module
     ```
   </Step>
 
-  <Step title="Generate a pull request with Claude">
+  <Step title="Generate a pull request">
     ```
-    > create a pr 
+    > create a pr
     ```
   </Step>
 
   <Step title="Review and refine">
     ```
-    > enhance the PR description with more context about the security improvements 
-    ```
-  </Step>
-
-  <Step title="Add testing details">
-    ```
-    > add information about how these changes were tested 
+    > enhance the PR description with more context about the security improvements
     ```
   </Step>
 </Steps>
 
-<Tip>
-  Tips:
+When you create a PR using `gh pr create`, the session is automatically linked to that PR. You can resume it later with `claude --from-pr <number>`.
 
-  * Ask Claude directly to make a PR for you
-  * Review Claude's generated PR before submitting
-  * Ask Claude to highlight potential risks or considerations
+<Tip>
+  Review Claude's generated PR before submitting and ask Claude to highlight potential risks or considerations.
 </Tip>
 
 ## Handle documentation
@@ -534,9 +509,11 @@ Use @ to quickly include files or directories without waiting for Claude to read
 
 ## Use extended thinking (thinking mode)
 
-[Extended thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking) is enabled by default, reserving a portion of the output token budget (up to 31,999 tokens) for Claude to reason through complex problems step-by-step. This reasoning is visible in verbose mode, which you can toggle on with `Ctrl+O`.
+[Extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking) is enabled by default, giving Claude space to reason through complex problems step-by-step before responding. This reasoning is visible in verbose mode, which you can toggle on with `Ctrl+O`.
 
-Extended thinking is particularly valuable for complex architectural decisions, challenging bugs, multi-step implementation planning, and evaluating tradeoffs between different approaches. It provides more space for exploring multiple solutions, analyzing edge cases, and self-correcting mistakes.
+Additionally, Opus 4.6 introduces adaptive reasoning: instead of a fixed thinking token budget, the model dynamically allocates thinking based on your [effort level](/en/model-config#adjust-effort-level) setting. Extended thinking and adaptive reasoning work together to give you control over how deeply Claude reasons before responding.
+
+Extended thinking is particularly valuable for complex architectural decisions, challenging bugs, multi-step implementation planning, and evaluating tradeoffs between different approaches.
 
 <Note>
   Phrases like "think", "think hard", "ultrathink", and "think more" are interpreted as regular prompt instructions and don't allocate thinking tokens.
@@ -546,34 +523,24 @@ Extended thinking is particularly valuable for complex architectural decisions, 
 
 Thinking is enabled by default, but you can adjust or disable it.
 
-| Scope                  | How to configure                                                                     | Details                                                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Toggle shortcut**    | Press `Option+T` (macOS) or `Alt+T` (Windows/Linux)                                  | Toggle thinking on/off for the current session. May require [terminal configuration](/en/terminal-config) to enable Option key shortcuts |
-| **Global default**     | Use `/config` to toggle thinking mode                                                | Sets your default across all projects.<br />Saved as `alwaysThinkingEnabled` in `~/.claude/settings.json`                                |
-| **Limit token budget** | Set [`MAX_THINKING_TOKENS`](/en/settings#environment-variables) environment variable | Limit the thinking budget to a specific number of tokens. Example: `export MAX_THINKING_TOKENS=10000`                                    |
+| Scope                  | How to configure                                                                           | Details                                                                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Effort level**       | Adjust in `/model` or set [`CLAUDE_CODE_EFFORT_LEVEL`](/en/settings#environment-variables) | Control thinking depth for Opus 4.6: low, medium, high (default). See [Adjust effort level](/en/model-config#adjust-effort-level)                     |
+| **Toggle shortcut**    | Press `Option+T` (macOS) or `Alt+T` (Windows/Linux)                                        | Toggle thinking on/off for the current session (all models). May require [terminal configuration](/en/terminal-config) to enable Option key shortcuts |
+| **Global default**     | Use `/config` to toggle thinking mode                                                      | Sets your default across all projects (all models).<br />Saved as `alwaysThinkingEnabled` in `~/.claude/settings.json`                                |
+| **Limit token budget** | Set [`MAX_THINKING_TOKENS`](/en/settings#environment-variables) environment variable       | Limit the thinking budget to a specific number of tokens (ignored on Opus 4.6 unless set to 0). Example: `export MAX_THINKING_TOKENS=10000`           |
 
 To view Claude's thinking process, press `Ctrl+O` to toggle verbose mode and see the internal reasoning displayed as gray italic text.
 
-### How extended thinking token budgets work
+### How extended thinking works
 
-Extended thinking uses a **token budget** that controls how much internal reasoning Claude can perform before responding.
+Extended thinking controls how much internal reasoning Claude performs before responding. More thinking provides more space to explore solutions, analyze edge cases, and self-correct mistakes.
 
-A larger thinking token budget provides:
+**With Opus 4.6**, thinking uses adaptive reasoning: the model dynamically allocates thinking tokens based on the [effort level](/en/model-config#adjust-effort-level) you select (low, medium, high). This is the recommended way to tune the tradeoff between speed and reasoning depth.
 
-* More space to explore multiple solution approaches step-by-step
-* Room to analyze edge cases and evaluate tradeoffs thoroughly
-* Ability to revise reasoning and self-correct mistakes
+**With other models**, thinking uses a fixed budget of up to 31,999 tokens from your output budget. You can limit this with the [`MAX_THINKING_TOKENS`](/en/settings#environment-variables) environment variable, or disable thinking entirely via `/config` or the `Option+T`/`Alt+T` toggle.
 
-Token budgets for thinking mode:
-
-* When thinking is **enabled**, Claude can use up to **31,999 tokens** from your output budget for internal reasoning
-* When thinking is **disabled** (via toggle or `/config`), Claude uses **0 tokens** for thinking
-
-**Limit the thinking budget:**
-
-* Use the [`MAX_THINKING_TOKENS` environment variable](/en/settings#environment-variables) to cap the thinking budget
-* When set, this value limits the maximum tokens Claude can use for thinking
-* See the [extended thinking documentation](https://docs.claude.com/en/docs/build-with-claude/extended-thinking) for valid token ranges
+`MAX_THINKING_TOKENS` is ignored when using Opus 4.6, since adaptive reasoning controls thinking depth instead. The one exception: setting `MAX_THINKING_TOKENS=0` still disables thinking entirely on any model.
 
 <Warning>
   You're charged for all thinking tokens used, even though Claude 4 models show summarized thinking
@@ -587,6 +554,7 @@ When starting Claude Code, you can resume a previous session:
 
 * `claude --continue` continues the most recent conversation in the current directory
 * `claude --resume` opens a conversation picker or resumes by name
+* `claude --from-pr 123` resumes sessions linked to a specific pull request
 
 From inside an active session, use `/resume` to switch to a different conversation.
 
@@ -674,70 +642,136 @@ Forked sessions (created with `/rewind` or `--fork-session`) are grouped togethe
 
 ## Run parallel Claude Code sessions with Git worktrees
 
-Suppose you need to work on multiple tasks simultaneously with complete code isolation between Claude Code instances.
+When working on multiple tasks at once, you need each Claude session to have its own copy of the codebase so changes don't collide. Git worktrees solve this by creating separate working directories that each have their own files and branch, while sharing the same repository history and remote connections. This means you can have Claude working on a feature in one worktree while fixing a bug in another, without either session interfering with the other.
+
+Use the `--worktree` (`-w`) flag to create an isolated worktree and start Claude in it. The value you pass becomes the worktree directory name and branch name:
+
+```bash  theme={null}
+# Start Claude in a worktree named "feature-auth"
+# Creates .claude/worktrees/feature-auth/ with a new branch
+claude --worktree feature-auth
+
+# Start another session in a separate worktree
+claude --worktree bugfix-123
+```
+
+If you omit the name, Claude generates a random one automatically:
+
+```bash  theme={null}
+# Auto-generates a name like "bright-running-fox"
+claude --worktree
+```
+
+Worktrees are created at `<repo>/.claude/worktrees/<name>` and branch from the default remote branch. The worktree branch is named `worktree-<name>`.
+
+You can also ask Claude to "work in a worktree" or "start a worktree" during a session, and it will create one automatically.
+
+### Subagent worktrees
+
+Subagents can also use worktree isolation to work in parallel without conflicts. Ask Claude to "use worktrees for your agents" or configure it in a [custom subagent](/en/sub-agents#supported-frontmatter-fields) by adding `isolation: worktree` to the agent's frontmatter. Each subagent gets its own worktree that is automatically cleaned up when the subagent finishes without changes.
+
+### Worktree cleanup
+
+When you exit a worktree session, Claude handles cleanup based on whether you made changes:
+
+* **No changes**: the worktree and its branch are removed automatically
+* **Changes or commits exist**: Claude prompts you to keep or remove the worktree. Keeping preserves the directory and branch so you can return later. Removing deletes the worktree directory and its branch, discarding all uncommitted changes and commits
+
+To clean up worktrees outside of a Claude session, use [manual worktree management](#manage-worktrees-manually).
+
+<Tip>
+  Add `.claude/worktrees/` to your `.gitignore` to prevent worktree contents from appearing as untracked files in your main repository.
+</Tip>
+
+### Manage worktrees manually
+
+For more control over worktree location and branch configuration, create worktrees with Git directly. This is useful when you need to check out a specific existing branch or place the worktree outside the repository.
+
+```bash  theme={null}
+# Create a worktree with a new branch
+git worktree add ../project-feature-a -b feature-a
+
+# Create a worktree with an existing branch
+git worktree add ../project-bugfix bugfix-123
+
+# Start Claude in the worktree
+cd ../project-feature-a && claude
+
+# Clean up when done
+git worktree list
+git worktree remove ../project-feature-a
+```
+
+Learn more in the [official Git worktree documentation](https://git-scm.com/docs/git-worktree).
+
+<Tip>
+  Remember to initialize your development environment in each new worktree according to your project's setup. Depending on your stack, this might include running dependency installation (`npm install`, `yarn`), setting up virtual environments, or following your project's standard setup process.
+</Tip>
+
+### Non-git version control
+
+Worktree isolation works with git by default. For other version control systems like SVN, Perforce, or Mercurial, configure [WorktreeCreate and WorktreeRemove hooks](/en/hooks#worktreecreate) to provide custom worktree creation and cleanup logic. When configured, these hooks replace the default git behavior when you use `--worktree`.
+
+For automated coordination of parallel sessions with shared tasks and messaging, see [agent teams](/en/agent-teams).
+
+***
+
+## Get notified when Claude needs your attention
+
+When you kick off a long-running task and switch to another window, you can set up desktop notifications so you know when Claude finishes or needs your input. This uses the `Notification` [hook event](/en/hooks-guide#get-notified-when-claude-needs-input), which fires whenever Claude is waiting for permission, idle and ready for a new prompt, or completing authentication.
 
 <Steps>
-  <Step title="Understand Git worktrees">
-    Git worktrees allow you to check out multiple branches from the same
-    repository into separate directories. Each worktree has its own working
-    directory with isolated files, while sharing the same Git history. Learn
-    more in the [official Git worktree
-    documentation](https://git-scm.com/docs/git-worktree).
+  <Step title="Open the hooks menu">
+    Type `/hooks` and select `Notification` from the list of events.
   </Step>
 
-  <Step title="Create a new worktree">
-    ```bash  theme={null}
-    # Create a new worktree with a new branch 
-    git worktree add ../project-feature-a -b feature-a
+  <Step title="Configure the matcher">
+    Select `+ Match all (no filter)` to fire on all notification types. To notify only for specific events, select `+ Add new matcher…` and enter one of these values:
 
-    # Or create a worktree with an existing branch
-    git worktree add ../project-bugfix bugfix-123
-    ```
-
-    This creates a new directory with a separate working copy of your repository.
+    | Matcher              | Fires when                                      |
+    | :------------------- | :---------------------------------------------- |
+    | `permission_prompt`  | Claude needs you to approve a tool use          |
+    | `idle_prompt`        | Claude is done and waiting for your next prompt |
+    | `auth_success`       | Authentication completes                        |
+    | `elicitation_dialog` | Claude is asking you a question                 |
   </Step>
 
-  <Step title="Run Claude Code in each worktree">
-    ```bash  theme={null}
-    # Navigate to your worktree 
-    cd ../project-feature-a
+  <Step title="Add your notification command">
+    Select `+ Add new hook…` and enter the command for your OS:
 
-    # Run Claude Code in this isolated environment
-    claude
-    ```
+    <Tabs>
+      <Tab title="macOS">
+        Uses [`osascript`](https://ss64.com/mac/osascript.html) to trigger a native macOS notification through AppleScript:
+
+        ```
+        osascript -e 'display notification "Claude Code needs your attention" with title "Claude Code"'
+        ```
+      </Tab>
+
+      <Tab title="Linux">
+        Uses `notify-send`, which is pre-installed on most Linux desktops with a notification daemon:
+
+        ```
+        notify-send 'Claude Code' 'Claude Code needs your attention'
+        ```
+      </Tab>
+
+      <Tab title="Windows (PowerShell)">
+        Uses PowerShell to show a native message box through .NET's Windows Forms:
+
+        ```
+        powershell.exe -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('Claude Code needs your attention', 'Claude Code')"
+        ```
+      </Tab>
+    </Tabs>
   </Step>
 
-  <Step title="Run Claude in another worktree">
-    ```bash  theme={null}
-    cd ../project-bugfix
-    claude
-    ```
-  </Step>
-
-  <Step title="Manage your worktrees">
-    ```bash  theme={null}
-    # List all worktrees
-    git worktree list
-
-    # Remove a worktree when done
-    git worktree remove ../project-feature-a
-    ```
+  <Step title="Save to user settings">
+    Select `User settings` to apply the notification across all your projects.
   </Step>
 </Steps>
 
-<Tip>
-  Tips:
-
-  * Each worktree has its own independent file state, making it perfect for parallel Claude Code sessions
-  * Changes made in one worktree won't affect others, preventing Claude instances from interfering with each other
-  * All worktrees share the same Git history and remote connections
-  * For long-running tasks, you can have Claude working in one worktree while you continue development in another
-  * Use descriptive directory names to easily identify which task each worktree is for
-  * Remember to initialize your development environment in each new worktree according to your project's setup. Depending on your stack, this might include:
-    * JavaScript projects: Running dependency installation (`npm install`, `yarn`)
-    * Python projects: Setting up virtual environments or installing with package managers
-    * Other languages: Following your project's standard setup process
-</Tip>
+For the full walkthrough with JSON configuration examples, see [Automate workflows with hooks](/en/hooks-guide#get-notified-when-claude-needs-input). For the complete event schema and notification types, see the [Notification reference](/en/hooks#notification).
 
 ***
 
@@ -826,115 +860,6 @@ Suppose you need Claude's output in a specific format, especially when integrati
 
 ***
 
-## Create custom slash commands
-
-Claude Code supports custom slash commands that you can create to quickly execute specific prompts or tasks.
-
-For more details, see the [Slash commands](/en/slash-commands) reference page.
-
-### Create project-specific commands
-
-Suppose you want to create reusable slash commands for your project that all team members can use.
-
-<Steps>
-  <Step title="Create a commands directory in your project">
-    ```bash  theme={null}
-    mkdir -p .claude/commands
-    ```
-  </Step>
-
-  <Step title="Create a Markdown file for each command">
-    ```bash  theme={null}
-    echo "Analyze the performance of this code and suggest three specific optimizations:" > .claude/commands/optimize.md 
-    ```
-  </Step>
-
-  <Step title="Use your custom command in Claude Code">
-    ```
-    > /optimize 
-    ```
-  </Step>
-</Steps>
-
-<Tip>
-  Tips:
-
-  * Command names are derived from the filename (for example, `optimize.md` becomes `/optimize`)
-  * You can organize commands in subdirectories (for example, `.claude/commands/frontend/component.md` creates `/component` with "(project:frontend)" shown in the description)
-  * Project commands are available to everyone who clones the repository
-  * The Markdown file content becomes the prompt sent to Claude when the command is invoked
-</Tip>
-
-### Add command arguments with \$ARGUMENTS
-
-Suppose you want to create flexible slash commands that can accept additional input from users.
-
-<Steps>
-  <Step title="Create a command file with the $ARGUMENTS placeholder">
-    ```bash  theme={null}
-    echo 'Find and fix issue #$ARGUMENTS. Follow these steps: 1.
-    Understand the issue described in the ticket 2. Locate the relevant code in
-    our codebase 3. Implement a solution that addresses the root cause 4. Add
-    appropriate tests 5. Prepare a concise PR description' >
-    .claude/commands/fix-issue.md 
-    ```
-  </Step>
-
-  <Step title="Use the command with an issue number">
-    In your Claude session, use the command with arguments.
-
-    ```
-    > /fix-issue 123 
-    ```
-
-    This replaces \$ARGUMENTS with "123" in the prompt.
-  </Step>
-</Steps>
-
-<Tip>
-  Tips:
-
-  * The \$ARGUMENTS placeholder is replaced with any text that follows the command
-  * You can position \$ARGUMENTS anywhere in your command template
-  * Other useful applications: generating test cases for specific functions, creating documentation for components, reviewing code in particular files, or translating content to specified languages
-</Tip>
-
-### Create personal slash commands
-
-Suppose you want to create personal slash commands that work across all your projects.
-
-<Steps>
-  <Step title="Create a commands directory in your home folder">
-    ```bash  theme={null}
-    mkdir -p ~/.claude/commands 
-    ```
-  </Step>
-
-  <Step title="Create a Markdown file for each command">
-    ```bash  theme={null}
-    echo "Review this code for security vulnerabilities, focusing on:" >
-    ~/.claude/commands/security-review.md 
-    ```
-  </Step>
-
-  <Step title="Use your personal custom command">
-    ```
-    > /security-review 
-    ```
-  </Step>
-</Steps>
-
-<Tip>
-  Tips:
-
-  * Personal commands show "(user)" in their description when listed with `/help`
-  * Personal commands are only available to you and not shared with your team
-  * Personal commands work across all your projects
-  * You can use these for consistent workflows across different codebases
-</Tip>
-
-***
-
 ## Ask Claude about its capabilities
 
 Claude has built-in access to its documentation and can answer questions about its own features and limitations.
@@ -950,7 +875,7 @@ Claude has built-in access to its documentation and can answer questions about i
 ```
 
 ```
-> what slash commands are available?
+> what skills are available?
 ```
 
 ```
@@ -981,11 +906,20 @@ Claude has built-in access to its documentation and can answer questions about i
 
 ## Next steps
 
-<Card title="Claude Code reference implementation" icon="code" href="https://github.com/anthropics/claude-code/tree/main/.devcontainer">
-  Clone our development container reference implementation.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Best practices" icon="lightbulb" href="/en/best-practices">
+    Patterns for getting the most out of Claude Code
+  </Card>
 
+  <Card title="How Claude Code works" icon="gear" href="/en/how-claude-code-works">
+    Understand the agentic loop and context management
+  </Card>
 
----
+  <Card title="Extend Claude Code" icon="puzzle-piece" href="/en/features-overview">
+    Add skills, hooks, MCP, subagents, and plugins
+  </Card>
 
-> To find navigation and other pages in this documentation, fetch the llms.txt file at: https://code.claude.com/docs/llms.txt
+  <Card title="Reference implementation" icon="code" href="https://github.com/anthropics/claude-code/tree/main/.devcontainer">
+    Clone our development container reference implementation
+  </Card>
+</CardGroup>
