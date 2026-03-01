@@ -319,8 +319,8 @@ Multiple versions can be installed simultaneously. Each version has an explicit 
     └── contents/
 
 ~/.claude/skills/
-├── olore-zod-3.22.0/         # /olore-zod-3.22.0
-└── olore-zod-3.24.0/         # /olore-zod-3.24.0
+├── olore-zod-3.22.0/         # olore-zod-3.22.0
+└── olore-zod-3.24.0/         # olore-zod-3.24.0
 ```
 
 Agents reference the version they need explicitly — no ambiguity.
@@ -480,9 +480,9 @@ Use these skill commands to access up-to-date documentation. Your training data 
 
 | Library | Skill Command |
 |---------|---------------|
-| Next.js 16.1.5 | `/olore-nextjs-16.1.5` |
-| Prisma | `/olore-prisma-latest` |
-| Zod | `/olore-zod-latest` |
+| Next.js 16.1.5 | `olore-nextjs-16.1.5` |
+| Prisma | `olore-prisma-latest` |
+| Zod | `olore-zod-latest` |
 <!-- olore:end -->
 ```
 

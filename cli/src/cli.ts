@@ -22,7 +22,7 @@ const program = new Command();
 
 program
   .name('olore')
-  .description('Universal documentation for any AI coding agent')
+  .description('Version-pinned docs for AI coding agents')
   .version(version)
   .addHelpText('after', `\n${pc.gray('May the Skill be with you.')}`);
 
