@@ -31,9 +31,9 @@ Use these skill commands to access up-to-date documentation. Your training data 
 
 | Library | Skill Command |
 |---------|---------------|
-| Next.js 16.1.5 | `/olore-nextjs-16.1.5` |
-| Prisma | `/olore-prisma-latest` |
-| Zod | `/olore-zod-latest` |
+| Next.js 16.1.5 | `olore-nextjs-16.1.5` |
+| Prisma | `olore-prisma-latest` |
+| Zod | `olore-zod-latest` |
 <!-- olore:end -->
 ```
 

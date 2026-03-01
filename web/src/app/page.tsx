@@ -311,7 +311,7 @@ export default function Home() {
                     AGENT MUST INVOKE
                   </td>
                   <td className="bg-zinc-900/30 px-6 py-4 font-bold text-zinc-200">
-                    SKILL REFERENCE TABLE
+                    PASSIVE DISCOVERY
                   </td>
                 </tr>
                 <tr className="border-b border-zinc-800">
@@ -454,8 +454,8 @@ export default function Home() {
               desc="Pin your documentation to your exact version. No more hallucinating future features."
             />
             <FeatureItem
-              title="Compact Index"
-              desc="A simple markdown table lists your installed doc packages. Agents see what's available and invoke the right skill."
+              title="Skill Reference Table"
+              desc="A markdown table injected into CLAUDE.md lists your installed doc packages. Agents see what's available and invoke the right skill."
             />
             <FeatureItem
               title="Dual Mode"

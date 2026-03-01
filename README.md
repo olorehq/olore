@@ -98,11 +98,10 @@ olore-prisma-latest
 
 Invoke the skill and your agent loads the full documentation as context. No copy-paste, no hallucinations.
 
-**Pro tip:** Add skill references to your project's `CLAUDE.md` or `AGENTS.md` so agents automatically know which docs to use:
+**Pro tip:** Use `olore inject` to write a skill reference table into your project's `CLAUDE.md` and `AGENTS.md` so agents automatically discover available docs:
 
-```markdown
-# CLAUDE.md
-When working with Zod schemas, use `/olore-zod-latest` for reference.
+```bash
+olore inject prisma zod
 ```
 
 ## Create Your Own Docs
@@ -152,15 +151,9 @@ The `/olore-docs-packager-1.0.0` skill reads your config, copies docs, and gener
 
 ## Available Packages
 
-| Package | Description |
-|---------|-------------|
-| `prisma` | Prisma ORM, Schema, migrations |
-| `nextjs` | Next.js App Router, Server Components |
-| `langchain` | LangChain, LangGraph, agents |
-| `zod` | Zod schema validation |
-| `docs-packager` | Tool: Package local docs into olore skills |
+`a2a` · `agentskills` · `astro` · `axiom` · `azure-sdk-js` · `cargo` · `checkly` · `claude-code` · `clerk` · `cloudflare` · `codex` · `convex` · `drizzle` · `github-actions` · `hono` · `langchain` · `lucia` · `neon` · `neverthrow` · `nextjs` · `openclaw` · `opencode` · `opennext` · `partykit` · `partyserver` · `posthog` · `prettier` · `prisma` · `rhf` · `sentry` · `supabase` · `t3-env` · `tanstack-query` · `trpc` · `tsf` · `turso` · `vitest` · `xstate` · `zod`
 
-*More packages in `vault/configs/`. Registry coming soon.*
+Browse all with `olore search`. See the full [registry](https://www.olore.dev).
 
 ## How It Works
 
