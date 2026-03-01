@@ -7,10 +7,10 @@
 ██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
 ╚██████╔╝███████╗╚██████╔╝██║  ██║███████╗
  ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
-        Stop the hallucinations.
+        O(pen) Lore for AI Agents
 ```
 
-Version-pinned docs for AI coding agents. Offline. Local-first.
+Version-pinned docs for AI coding agents. Local-first. Offline-ready.
 
 ## Quick Start
 
@@ -24,32 +24,16 @@ That's it. Your agent now has Prisma docs. No hallucinations.
 
 ## Why olore?
 
-AI coding agents hallucinate APIs. They generate code for library versions that don't exist yet, or mix up v3 and v4 syntax. The fix: give them the right docs.
+Your AI coding agent makes decisions about which tools to invoke. Sometimes it decides wrong — it skips the tool, hallucinates an API, or calls it with bad arguments.
 
-**Passive discovery beats hoping the agent looks it up.** Vercel's agentic coding eval showed agents with passive documentation context scored **100%** vs **53%** with tool-based retrieval. The difference: passive context is always there. The agent doesn't have to decide to look it up.
+**Passive context beats skills.** Vercel's agentic coding eval showed agents with passive documentation context scored **100%** vs **53%** with tool-based retrieval. The difference: passive context is always there. The agent doesn't have to decide to look it up.
 
 `olore inject` writes a skill reference table into your `AGENTS.md` / `CLAUDE.md`. Agents see which docs are available and invoke skills when needed — no guessing, no network calls.
 
 - **Version-pinned** — same docs, every run, every machine
 - **Offline** — works on planes, in CI, behind firewalls
-- **Local-first** — docs live on your machine, not on someone's server
+- **Local-first** — docs live in your project, not on someone's server
 - **Any agent** — Claude Code, Codex, OpenCode, anything that reads markdown
-
-## How It Works
-
-**1. Install** — downloads version-pinned docs to `~/.olore/` and sets up skills for all detected agents.
-
-```bash
-olore install zod
-```
-
-**2. Inject** (optional) — writes a skill reference table into your project's AGENTS.md and CLAUDE.md so agents discover docs automatically.
-
-```bash
-olore inject zod
-```
-
-Use both together for maximum coverage: skills for full doc access, inject for passive discovery.
 
 ## Available Packages
 
@@ -59,13 +43,9 @@ Browse all with `olore search`. Contributions welcome on [GitHub](https://github
 
 ## Supported Agents
 
-| Agent | Skill directory |
-|-------|----------------|
-| **Claude Code** | `~/.claude/skills/` |
-| **Codex** | `~/.codex/skills/` |
-| **OpenCode** | `~/.config/opencode/skills/` |
-
-One install sets up all detected agents.
+- **Claude Code** — skills in `~/.claude/skills/`
+- **Codex** — skills in `~/.codex/skills/`
+- **OpenCode** — skills in `~/.config/opencode/skills/`
 
 ## Commands
 

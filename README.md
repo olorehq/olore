@@ -83,12 +83,12 @@ After installing, skills are automatically available in your AI agent:
 
 **Claude Code:**
 ```
-/olore-prisma-latest
+olore-prisma-latest
 ```
 
 **Codex:**
 ```
-$olore-prisma-latest
+olore-prisma-latest
 ```
 
 **OpenCode:**
@@ -98,11 +98,10 @@ olore-prisma-latest
 
 Invoke the skill and your agent loads the full documentation as context. No copy-paste, no hallucinations.
 
-**Pro tip:** Add skill references to your project's `CLAUDE.md` or `AGENTS.md` so agents automatically know which docs to use:
+**Pro tip:** Use `olore inject` to write a skill reference table into your project's `CLAUDE.md` and `AGENTS.md` so agents automatically discover available docs:
 
-```markdown
-# CLAUDE.md
-When working with Zod schemas, use `/olore-zod-latest` for reference.
+```bash
+olore inject prisma zod
 ```
 
 ## Create Your Own Docs
@@ -119,14 +118,14 @@ olore init
 
 # Write your documentation in the docs/ folder
 # Then in Claude Code, run:
-/olore-docs-packager-1.0.0
+olore-docs-packager-1.0.0
 
 # Review the generated TOC.md and SKILL.md for accuracy
 # Then install the built package
 olore install ./olore-package
 ```
 
-Your docs are now available as `/olore-my-api-docs-1.0.0` in Claude Code.
+Your docs are now available as `olore-my-api-docs-1.0.0` in Claude Code.
 
 **Options:**
 ```bash
@@ -148,19 +147,13 @@ olore init -n my-lib -v 2.0.0     # Custom name and version
 }
 ```
 
-The `/olore-docs-packager-1.0.0` skill reads your config, copies docs, and generates SKILL.md and TOC.md automatically.
+The `olore-docs-packager-1.0.0` skill reads your config, copies docs, and generates SKILL.md and TOC.md automatically.
 
 ## Available Packages
 
-| Package | Description |
-|---------|-------------|
-| `prisma` | Prisma ORM, Schema, migrations |
-| `nextjs` | Next.js App Router, Server Components |
-| `langchain` | LangChain, LangGraph, agents |
-| `zod` | Zod schema validation |
-| `docs-packager` | Tool: Package local docs into olore skills |
+`a2a` · `agentskills` · `astro` · `axiom` · `azure-sdk-js` · `cargo` · `checkly` · `claude-code` · `clerk` · `cloudflare` · `codex` · `convex` · `drizzle` · `github-actions` · `hono` · `langchain` · `lucia` · `neon` · `neverthrow` · `nextjs` · `openclaw` · `opencode` · `opennext` · `partykit` · `partyserver` · `posthog` · `prettier` · `prisma` · `rhf` · `sentry` · `supabase` · `t3-env` · `tanstack-query` · `trpc` · `tsf` · `turso` · `vitest` · `xstate` · `zod`
 
-*More packages in `vault/configs/`. Registry coming soon.*
+Browse all with `olore search`. See the full [registry](https://www.olore.dev).
 
 ## How It Works
 
