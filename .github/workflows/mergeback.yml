@@ -1,0 +1,47 @@
+name: Merge main back to dev
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  mergeback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge main into dev
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout dev
+          git merge origin/main --no-edit || CONFLICT=true
+
+          if [ "$CONFLICT" = "true" ]; then
+            echo "CONFLICT=true" >> "$GITHUB_ENV"
+            git merge --abort
+          else
+            git push origin dev
+          fi
+
+      - name: Create PR on conflict
+        if: env.CONFLICT == 'true'
+        run: |
+          existing=$(gh pr list --base dev --head main --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            echo "PR #$existing already exists"
+          else
+            gh pr create \
+              --base dev \
+              --head main \
+              --title "chore: merge main back into dev (conflicts)" \
+              --body "Automatic mergeback failed due to conflicts. Please resolve manually."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
