@@ -83,12 +83,12 @@ After installing, skills are automatically available in your AI agent:
 
 **Claude Code:**
 ```
-olore-prisma-latest
+/olore-prisma-latest
 ```
 
 **Codex:**
 ```
-olore-prisma-latest
+$olore-prisma-latest
 ```
 
 **OpenCode:**
@@ -118,14 +118,14 @@ olore init
 
 # Write your documentation in the docs/ folder
 # Then in Claude Code, run:
-olore-docs-packager-1.0.0
+/olore-docs-packager-1.0.0
 
 # Review the generated TOC.md and SKILL.md for accuracy
 # Then install the built package
 olore install ./olore-package
 ```
 
-Your docs are now available as `olore-my-api-docs-1.0.0` in Claude Code.
+Your docs are now available as `/olore-my-api-docs-1.0.0` in Claude Code.
 
 **Options:**
 ```bash
@@ -147,7 +147,7 @@ olore init -n my-lib -v 2.0.0     # Custom name and version
 }
 ```
 
-The `olore-docs-packager-1.0.0` skill reads your config, copies docs, and generates SKILL.md and TOC.md automatically.
+The `/olore-docs-packager-1.0.0` skill reads your config, copies docs, and generates SKILL.md and TOC.md automatically.
 
 ## Available Packages
 

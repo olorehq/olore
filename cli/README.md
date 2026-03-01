@@ -7,7 +7,7 @@
 ██║   ██║██║     ██║   ██║██╔══██╗██╔══╝
 ╚██████╔╝███████╗╚██████╔╝██║  ██║███████╗
  ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
-        O(pen) Lore for AI Agents
+         Stop the hallucinations.
 ```
 
 Version-pinned docs for AI coding agents. Local-first. Offline-ready.
