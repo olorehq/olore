@@ -1,0 +1,284 @@
+***
+
+title: GPT-5.4 Migration Guide
+subtitle: 'Support the phase field for GPT-5.3 Codex, GPT-5.4, and GPT-5.4 Pro'
+headline: GPT-5.4 Migration Guide | OpenRouter
+canonical-url: '[https://openrouter.ai/docs/guides/guides/model-migrations/gpt-5-4](https://openrouter.ai/docs/guides/guides/model-migrations/gpt-5-4)'
+'og:site\_name': OpenRouter Documentation
+'og:title': GPT-5.4 Migration Guide
+'og:description': >-
+Learn how to use the phase field for GPT-5.3 Codex, GPT-5.4, and GPT-5.4 Pro
+on OpenRouter.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=GPT-5.4%20Migration%20Guide\&description=Phase%20field%20support%20for%20GPT-5.3%20Codex%2C%20GPT-5.4%2C%20and%20GPT-5.4%20Pro](https://openrouter.ai/dynamic-og?title=GPT-5.4%20Migration%20Guide\&description=Phase%20field%20support%20for%20GPT-5.3%20Codex%2C%20GPT-5.4%2C%20and%20GPT-5.4%20Pro)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+## What's New
+
+GPT-5.4, GPT-5.4 Pro, and GPT-5.3 Codex introduce the
+`phase` field on
+assistant messages. This field is critical for multi-turn
+agentic workflows — it tells the model whether an assistant
+message is intermediate commentary or the final answer.
+
+OpenRouter supports `phase` in both the
+[Responses API](/docs/api/api-reference/responses/create-responses)
+and the
+[Chat Completions API](/docs/api/api-reference/chat/send-chat-completion-request).
+
+## The `phase` Field
+
+`phase` appears on assistant output messages and has three
+possible values:
+
+| Value            | Meaning                        |
+| ---------------- | ------------------------------ |
+| `null`           | No phase specified (default)   |
+| `"commentary"`   | Intermediate assistant message |
+| `"final_answer"` | The final closeout message     |
+
+<Note>
+  `phase` is only valid on **assistant** messages.
+  Do not add `phase` to user or system messages.
+</Note>
+
+## Why It Matters
+
+For models like `gpt-5.3-codex`, `gpt-5.4`, and
+`gpt-5.4-pro`, correctly
+preserving `phase` on assistant messages is **required**
+for optimal performance. If `phase` metadata is dropped
+when reconstructing conversation history, significant
+performance degradation can occur — including early
+stopping on longer-running tasks.
+
+## Usage
+
+### Responses API
+
+When using the Responses API, assistant output items
+include `phase`. You must persist these items verbatim
+and pass them back in subsequent requests.
+
+```json
+{
+  "model": "openai/gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Refactor the auth module"
+        }
+      ]
+    }
+  ]
+}
+```
+
+The response will include `phase` on assistant output
+messages:
+
+```json
+{
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "I'll start by analyzing..."
+        }
+      ],
+      "phase": "commentary"
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Here's the refactored code..."
+        }
+      ],
+      "phase": "final_answer"
+    }
+  ]
+}
+```
+
+For follow-up requests, include the assistant output
+items with their `phase` intact:
+
+```json
+{
+  "model": "openai/gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Refactor the auth module"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "I'll start by analyzing..."
+        }
+      ],
+      "phase": "commentary"
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Here's the refactored code..."
+        }
+      ],
+      "phase": "final_answer"
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Now add unit tests"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Chat Completions API
+
+`phase` is also supported in the Chat Completions API.
+It appears in assistant messages in both request and
+response:
+
+```json
+{
+  "model": "openai/gpt-5.4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Refactor the auth module"
+    },
+    {
+      "role": "assistant",
+      "content": "I'll start by analyzing...",
+      "phase": "commentary"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's the refactored code...",
+      "phase": "final_answer"
+    },
+    {
+      "role": "user",
+      "content": "Now add unit tests"
+    }
+  ]
+}
+```
+
+In streaming responses, `phase` appears on each delta
+chunk:
+
+```json
+{
+  "choices": [
+    {
+      "delta": {
+        "role": "assistant",
+        "content": "Let me write...",
+        "phase": "final_answer"
+      }
+    }
+  ]
+}
+```
+
+## Implementation Pattern
+
+When building an integration, persist your conversation
+transcript verbatim, including `phase` on assistant
+items:
+
+```typescript
+type Phase = null | "commentary" | "final_answer";
+
+interface StoredMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  phase?: Phase; // Only present on assistant messages
+}
+```
+
+### Key Rules
+
+1. **Preserve phase on assistant messages** — When you
+   receive a response with `phase`, store it and send
+   it back on subsequent requests.
+2. **Do not add phase to user messages** — `phase` is
+   only valid on assistant messages. The Responses API
+   will reject requests with `phase` on user messages.
+3. **Do not drop phase** — Omitting `phase` from
+   assistant messages in multi-turn conversations will
+   degrade model performance.
+
+## Supported Models
+
+| Model                  | `phase` Support                 |
+| ---------------------- | ------------------------------- |
+| `openai/gpt-5.4`       | Supported                       |
+| `openai/gpt-5.4-pro`   | Supported                       |
+| `openai/gpt-5.3-codex` | Supported                       |
+| Other OpenAI models    | Silently ignored (safe to pass) |
+| Non-OpenAI models      | Not applicable                  |
+
+<Note>
+  Passing `phase` to OpenAI models that don't support it
+  (like `gpt-4o`) is safe — OpenAI silently ignores the
+  field. You do not need to filter `phase` based on the
+  model.
+</Note>
+
+## Breaking Changes
+
+None. The `phase` field is additive:
+
+* Existing requests without `phase` continue to work
+  on all models
+* Models that don't support `phase` silently ignore it
+* No changes are required unless you want to take
+  advantage of improved multi-turn performance with
+  GPT-5.3 Codex, GPT-5.4, and GPT-5.4 Pro
+
+## Resources
+
+* [OpenAI Responses API Reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
+* [Codex CLI Integration Guide](/docs/guides/guides/codex-cli)
+* [OpenRouter API Documentation](/docs/api/reference/overview)
+* [OpenRouter Codex Models](https://openrouter.ai/models?q=codex)

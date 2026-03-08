@@ -1,0 +1,122 @@
+***
+
+title: Multimodal Capabilities
+subtitle: 'Send images, PDFs, audio, and video to OpenRouter models'
+headline: OpenRouter Multimodal | Complete Documentation
+canonical-url: '[https://openrouter.ai/docs/guides/overview/multimodal/overview](https://openrouter.ai/docs/guides/overview/multimodal/overview)'
+'og:site\_name': OpenRouter Documentation
+'og:title': OpenRouter Multimodal Capabilities - Complete Documentation
+'og:description': >-
+Send images, PDFs, audio, and video to OpenRouter models through our unified
+API.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=OpenRouter%20Multimodal\&description=Send%20images%2C%20PDFs%2C%20audio%2C%20and%20video%20to%20OpenRouter%20models](https://openrouter.ai/dynamic-og?title=OpenRouter%20Multimodal\&description=Send%20images%2C%20PDFs%2C%20audio%2C%20and%20video%20to%20OpenRouter%20models).
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+OpenRouter supports multiple input modalities beyond text, allowing you to send images, PDFs, audio, and video files to compatible models through our unified API. This enables rich multimodal interactions for a wide variety of use cases.
+
+## Supported Modalities
+
+### Images
+
+Send images to vision-capable models for analysis, description, OCR, and more. OpenRouter supports multiple image formats and both URL-based and base64-encoded images.
+
+[Learn more about image inputs →](/docs/features/multimodal/images)
+
+### Image Generation
+
+Generate images from text prompts using AI models with image output capabilities. OpenRouter supports various image generation models that can create high-quality images based on your descriptions.
+
+[Learn more about image generation →](/docs/features/multimodal/image-generation)
+
+### PDFs
+
+Process PDF documents with any model on OpenRouter. Our intelligent PDF parsing system extracts text and handles both text-based and scanned documents.
+
+[Learn more about PDF processing →](/docs/features/multimodal/pdfs)
+
+### Audio
+
+Send audio files to speech-capable models for transcription, analysis, and processing, or receive audio responses from models with audio output capabilities. OpenRouter supports common audio formats for both input and output.
+
+[Learn more about audio →](/docs/features/multimodal/audio)
+
+### Video
+
+Send video files to video-capable models for analysis, description, object detection, and action recognition. OpenRouter supports multiple video formats for comprehensive video understanding tasks.
+
+[Learn more about video inputs →](/docs/features/multimodal/videos)
+
+## Getting Started
+
+All multimodal inputs use the same `/api/v1/chat/completions` endpoint with the `messages` parameter. Different content types are specified in the message content array:
+
+* **Images**: Use `image_url` content type
+* **PDFs**: Use `file` content type with PDF data
+* **Audio**: Use `input_audio` content type
+* **Video**: Use `video_url` content type
+
+You can combine multiple modalities in a single request, and the number of files you can send varies by provider and model.
+
+## Model Compatibility
+
+Not all models support every modality. OpenRouter automatically filters available models based on your request content:
+
+* **Vision models**: Required for image processing
+* **File-compatible models**: Can process PDFs natively or through our parsing system
+* **Audio-capable models**: Required for audio input processing
+* **Video-capable models**: Required for video input processing
+
+Use our [Models page](https://openrouter.ai/models) to find models that support your desired input modalities.
+
+## Input Format Support
+
+OpenRouter supports both **direct URLs** and **base64-encoded data** for multimodal inputs:
+
+### URLs (Recommended for public content)
+
+* **Images**: `https://example.com/image.jpg`
+* **PDFs**: `https://example.com/document.pdf`
+* **Audio**: Not supported via URL (base64 only)
+* **Video**: Provider-specific (e.g., YouTube links for Gemini on AI Studio)
+
+### Base64 Encoding (Required for local files)
+
+* **Images**: `data:image/jpeg;base64,{base64_data}`
+* **PDFs**: `data:application/pdf;base64,{base64_data}`
+* **Audio**: Raw base64 string with format specification
+* **Video**: `data:video/mp4;base64,{base64_data}`
+
+<Info>
+  URLs are more efficient for large files as they don't require local encoding and reduce request payload size. Base64 encoding is required for local files or when the content is not publicly accessible.
+
+  **Note for video URLs**: Video URL support varies by provider. For example, Google Gemini on AI Studio only supports YouTube links. See the [video inputs documentation](/docs/features/multimodal/videos) for provider-specific details.
+</Info>
+
+## Frequently Asked Questions
+
+<AccordionGroup>
+  <Accordion title="Can I mix different modalities in one request?">
+    Yes! You can send text, images, PDFs, audio, and video in the same request. The model will process all inputs together.
+  </Accordion>
+
+  <Accordion title="How is multimodal content priced?">
+    * **Images**: Typically priced per image or as input tokens
+    * **PDFs**: Free text extraction, paid OCR processing, or native model pricing
+    * **Audio input**: Priced as input tokens based on duration
+    * **Audio output**: Priced as completion tokens
+    * **Video**: Priced as input tokens based on duration and resolution
+  </Accordion>
+
+  <Accordion title="Which models support video input?">
+    Video support varies by model. Use the [Models page](/models?fmt=cards\&input_modalities=video) to filter for video-capable models. Check each model's documentation for specific video format and duration limits.
+  </Accordion>
+</AccordionGroup>

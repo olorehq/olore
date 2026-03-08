@@ -1,0 +1,175 @@
+***
+
+title: Provider Integration
+headline: Provider Integration | Add Your AI Models to OpenRouter
+canonical-url: '[https://openrouter.ai/docs/guides/guides/for-providers](https://openrouter.ai/docs/guides/guides/for-providers)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Provider Integration - Add Your Models to OpenRouter
+'og:description': >-
+Learn how to integrate your AI models with OpenRouter. Complete guide for
+providers to make their models available through OpenRouter's unified API.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Provider%20Integration\&description=Add%20Your%20Models%20to%20OpenRouter](https://openrouter.ai/dynamic-og?title=Provider%20Integration\&description=Add%20Your%20Models%20to%20OpenRouter)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+## For Providers
+
+If you'd like to be a model provider and sell inference on OpenRouter, [fill out our form](https://openrouter.ai/how-to-list) to get started.
+
+To be eligible to provide inference on OpenRouter you must have the following:
+
+### 1. List Models Endpoint
+
+You must implement an endpoint that returns all models that should be served by OpenRouter. At this endpoint, please return a list of all available models on your platform. Below is an example of the response format:
+
+```json
+{
+  "data": [
+    {
+      // Required
+      "id": "anthropic/claude-sonnet-4",
+      "hugging_face_id": "", // required if the model is on Hugging Face
+      "name": "Anthropic: Claude Sonnet 4",
+      "created": 1690502400,
+      "input_modalities": ["text", "image", "file"],
+      "output_modalities": ["text", "image", "file"],
+      "quantization": "fp8",
+      "context_length": 1000000,
+      "max_output_length": 128000,
+      "pricing": {
+        "prompt": "0.000008", // pricing per 1 token
+        "completion": "0.000024", // pricing per 1 token
+        "image": "0", // pricing per 1 image
+        "request": "0", // pricing per 1 request
+        "input_cache_read": "0" // pricing per 1 token
+      },
+      "supported_sampling_parameters": ["temperature", "stop"],
+      "supported_features": [
+        "tools",
+        "json_mode",
+        "structured_outputs",
+        "web_search",
+        "reasoning"
+      ],
+      // Optional
+      "description": "Anthropic's flagship model...",
+      "deprecation_date": "2025-06-01", // ISO 8601 date (YYYY-MM-DD)
+      "openrouter": {
+        "slug": "anthropic/claude-sonnet-4"
+      },
+      "datacenters": [
+        {
+          "country_code": "US" // `Iso3166Alpha2Code`
+        }
+      ]
+    }
+  ]
+}
+```
+
+The `id` field should be the exact model identifier that OpenRouter will use when calling your API.
+
+The `pricing` fields are in string format to avoid floating point precision issues, and must be in USD.
+
+Valid quantization values are: `int4`, `int8`, `fp4`, `fp6`, `fp8`, `fp16`, `bf16`, `fp32`.
+
+Valid sampling parameters are: `temperature`, `top_p`, `top_k`, `min_p`, `top_a`, `frequency_penalty`, `presence_penalty`, `repetition_penalty`, `stop`, `seed`, `max_tokens`, `logit_bias`, `logprobs`, `top_logprobs`.
+
+Valid features are: `tools`, `json_mode`, `structured_outputs`, `logprobs`, `web_search`, `reasoning`.
+
+#### Tiered Pricing
+
+For models with different pricing based on context length (e.g., long context pricing), you can provide `pricing` as an array of tiers instead of a single object:
+
+```json
+{
+  "pricing": [
+    {
+      "prompt": "0.000002", // base tier pricing per 1 token
+      "completion": "0.000012", // base tier pricing per 1 token
+      "image": "0.01", // pricing per 1 image (base tier only)
+      "request": "0", // pricing per 1 request (base tier only)
+      "input_cache_read": "0.000001" // base tier pricing per 1 token
+    },
+    {
+      "prompt": "0.000004", // long context tier pricing per 1 token
+      "completion": "0.000018", // long context tier pricing per 1 token
+      "input_cache_read": "0.000002", // long context tier pricing per 1 token
+      "min_context": 200000 // minimum input tokens for this tier to apply
+    }
+  ]
+}
+```
+
+When using tiered pricing, the first tier (index 0) is the base pricing that applies when input tokens are below the `min_context` threshold. The second tier applies when input tokens meet or exceed the `min_context` value.
+
+Limitations:
+
+* Currently, OpenRouter supports up to 2 pricing tiers.
+* The `image` and `request` fields are only supported in the base tier (index 0) and will be ignored if included in other tiers.
+
+#### Deprecation Date
+
+If a model is scheduled for deprecation, include the `deprecation_date` field in ISO 8601 format (YYYY-MM-DD):
+
+```json
+{
+  "id": "anthropic/claude-2.1",
+  "deprecation_date": "2025-06-01"
+}
+```
+
+When OpenRouter's provider monitor detects a deprecation date, it will automatically update the endpoint to display deprecation warnings to users. Models past their deprecation date may be automatically hidden from the marketplace.
+
+### 2. Auto Top Up or Invoicing
+
+For OpenRouter to use the provider we must be able to pay for inference automatically. This can be done via auto top up or invoicing.
+
+### 3. Uptime Monitoring & Traffic Routing
+
+OpenRouter automatically monitors provider reliability and adjusts traffic routing based on uptime metrics. Your endpoint's uptime is calculated as: **successful requests ÷ total requests** (excluding user errors).
+
+**Errors that affect your uptime:**
+
+* Authentication issues (401)
+* Payment failures (402)
+* Model not found (404)
+* All server errors (500+)
+* Mid-stream errors
+* Successful requests with error finish reasons
+
+**Errors that DON'T affect uptime:**
+
+* Bad requests (400) - user input errors
+* Oversized payloads (413) - user input errors
+* Rate limiting (429) - tracked separately
+* Geographic restrictions (403) - tracked separately
+
+**Traffic routing thresholds:**
+
+* **Minimum data**: 100+ requests required before uptime calculation begins
+* **Normal routing**: 95%+ uptime
+* **Degraded status**: 80-94% uptime → receives lower priority
+* **Down status**: \<80% uptime → only used as fallback
+
+This system ensures traffic automatically flows to the most reliable providers while giving temporary issues time to resolve.
+
+### 4. Performance Metrics
+
+OpenRouter publicly tracks TTFT (time to first token) and throughput (tokens/second) for all providers on each model page.
+
+Throughput is calculated as: **output tokens ÷ generation time**, where generation time includes fetch latency (time from request to first server response), TTFT, and streaming time. This means any queueing on your end will show up in your throughput metrics.
+
+To keep your metrics competitive:
+
+* Return early 429s if under load, rather than queueing requests
+* Stream tokens as soon as they're available
+* If processing takes time (e.g. reasoning models), send SSE comments as keep-alives so we know you're still working on the request. Otherwise we may cancel with a fetch timeout and fallback to another provider

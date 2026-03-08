@@ -1,0 +1,149 @@
+***
+
+title: Codex CLI
+subtitle: Use Codex CLI with OpenRouter
+headline: Integration with Codex CLI | OpenRouter
+canonical-url: '[https://openrouter.ai/docs/guides/codex-cli](https://openrouter.ai/docs/guides/codex-cli)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Codex CLI Integration - OpenRouter
+'og:description': >-
+Learn how to configure Codex CLI to use OpenRouter for agentic coding with
+GPT-5-Codex and other models.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Codex%20CLI\&description=Use%20Codex%20CLI%20with%20OpenRouter](https://openrouter.ai/dynamic-og?title=Codex%20CLI\&description=Use%20Codex%20CLI%20with%20OpenRouter)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+## What is Codex CLI?
+
+[Codex CLI](https://github.com/openai/codex) is OpenAI's open-source local coding agent that runs in your terminal. It supports multiple model providers, including OpenRouter, so you can use OpenRouter's unified API, provider failover, and organizational controls with Codex's agentic coding workflows.
+
+## Quick Start
+
+### Step 1: Install Codex CLI
+
+Follow the [Codex CLI installation instructions](https://github.com/openai/codex) to install the CLI on your system.
+
+### Step 2: Get Your OpenRouter API Key
+
+1. Sign up or log in at [OpenRouter](https://openrouter.ai)
+2. Navigate to your [API Keys page](https://openrouter.ai/keys)
+3. Create a new API key
+4. Copy your key (starts with `sk-or-...`)
+
+### Step 3: Configure Codex for OpenRouter
+
+Codex uses a `config.toml` file, typically located at `~/.codex/config.toml`. Create or edit this file with the following configuration:
+
+```toml
+model_provider = "openrouter"
+model_reasoning_effort = "high"
+model="openai/gpt-5.3-codex"
+
+[model_providers.openrouter]
+name = "openrouter"
+
+base_url="https://openrouter.ai/api/v1"
+env_key="OPENROUTER_API_KEY"
+```
+
+### Step 4: Set Your API Key
+
+Export your OpenRouter API key in your shell profile:
+
+```bash
+# Add to ~/.zshrc, ~/.bashrc, or ~/.config/fish/config.fish
+export OPENROUTER_API_KEY="sk-or-..."
+```
+
+<Note>
+  Codex reads the API key from the environment variable specified in `env_key` (default: `OPENROUTER_API_KEY`). Ensure this is set before starting Codex.
+</Note>
+
+### Step 5: Start Codex
+
+Navigate to your project directory and run:
+
+```bash
+cd /path/to/your/project
+codex
+```
+
+Your requests will now be routed through OpenRouter.
+
+## Configuration Reference
+
+### Core Settings
+
+| Setting                    | Description                                   | Example                                  |
+| -------------------------- | --------------------------------------------- | ---------------------------------------- |
+| `model_provider`           | Provider to use for model requests            | `"openrouter"`                           |
+| `model`                    | OpenRouter model ID                           | `"openai/gpt-5.3-codex"`                 |
+| `model_reasoning_effort`   | Reasoning effort level for Codex models       | `"low"`, `"medium"`, `"high"`, `"xhigh"` |
+| `show_raw_agent_reasoning` | Whether to display reasoning tokens in the UI | `true` or `false`                        |
+| `personality`              | Agent personality preset                      | `"pragmatic"`, `"helpful"`, etc.         |
+
+### OpenRouter Provider Block
+
+```toml
+[model_providers.openrouter]
+name = "openrouter"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+```
+
+* **`base_url`**: OpenRouter API endpoint. Use `https://openrouter.ai/api/v1` for production.
+* **`env_key`**: Environment variable name for your API key.
+
+### Project Trust Levels
+
+Codex supports per-project trust levels. Add project paths to control what the agent can access:
+
+```toml
+[projects."/path/to/trusted/project"]
+trust_level = "trusted"
+
+[projects."/path/to/untrusted/project"]
+trust_level = "untrusted"
+```
+
+* **`trusted`**: Agent has full access (e.g., run commands, edit files).
+* **`untrusted`**: Agent has restricted access for safety.
+
+## Why Use OpenRouter with Codex CLI?
+
+### Provider Failover
+
+OpenRouter routes requests across multiple providers. If one provider is unavailable or rate-limited, OpenRouter can fail over to another, keeping your coding sessions uninterrupted.
+
+### Organizational Controls
+
+For teams, OpenRouter provides centralized budget management. Set spending limits, allocate credits, and prevent unexpected cost overruns across developers using Codex.
+
+### Usage Visibility
+
+Track Codex usage in real-time via the [OpenRouter Activity Dashboard](https://openrouter.ai/activity). Monitor costs, token usage, and request patterns.
+
+### Model Flexibility
+
+Switch between Codex models (e.g., `gpt-5.2-codex`, `gpt-5.3-codex`) or try other OpenRouter models without changing your Codex installation—just update `config.toml`.
+
+## Troubleshooting
+
+* **Auth Errors:** Ensure `OPENROUTER_API_KEY` is set and valid. Check at [openrouter.ai/keys](https://openrouter.ai/keys).
+* **Model Not Found:** Verify the model ID on [openrouter.ai/models](https://openrouter.ai/models). Use the exact format (e.g., `openai/gpt-5.3-codex`).
+* **Privacy:** OpenRouter does not log your source code prompts unless you opt-in to prompt logging. See our [Privacy Policy](/privacy) for details.
+
+## Resources
+
+* [Codex CLI on GitHub](https://github.com/openai/codex)
+* [OpenRouter Codex Models](https://openrouter.ai/models?q=codex)
+* [OpenRouter Activity Dashboard](https://openrouter.ai/activity)
+* [OpenRouter API Documentation](https://openrouter.ai/docs/api)

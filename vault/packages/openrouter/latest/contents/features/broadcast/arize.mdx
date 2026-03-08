@@ -1,0 +1,102 @@
+***
+
+title: Arize AI
+subtitle: Send traces to Arize AI
+headline: Broadcast to Arize AI | OpenRouter Observability
+canonical-url: '[https://openrouter.ai/docs/guides/features/broadcast/arize](https://openrouter.ai/docs/guides/features/broadcast/arize)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Broadcast to Arize AI - Send Traces to Arize
+'og:description': >-
+Connect Arize AI to automatically receive traces from your OpenRouter
+requests. Step-by-step setup guide for Arize integration.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Arize%20AI%20Broadcast\&description=Send%20traces%20to%20Arize%20AI](https://openrouter.ai/dynamic-og?title=Arize%20AI%20Broadcast\&description=Send%20traces%20to%20Arize%20AI)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+[Arize AX](https://arize.com) is an evaluation and observability platform developed by Arize AI; it offers tools for agent tracing, evals, prompt optimization, and more.
+
+## Step 1: Get your Arize credentials
+
+In Arize, navigate to your space settings to find your API key and space key:
+
+1. Log in to your Arize account
+2. Go to **Space Settings** to find your Space Key
+3. Go to **API Keys** to create or copy your API key
+4. Note the Model ID you want to use for organizing traces
+
+## Step 2: Enable Broadcast in OpenRouter
+
+Go to [Settings > Observability](https://openrouter.ai/settings/observability) and toggle **Enable Broadcast**.
+
+![Enable Broadcast](https://files.buildwithfern.com/openrouter.docs.buildwithfern.com/docs/3e095d95758bab05594f468011be81b7d5a2fb19293fa91d5b3923d9f09b81d8/content/pages/features/broadcast/broadcast-enable.png)
+
+## Step 3: Configure Arize AI
+
+Click the edit icon next to **Arize AI** and enter:
+
+* **Api Key**: Your Arize API key
+* **Space Key**: Your Arize space key
+* **Model Id**: The model identifier for organizing your traces in Arize
+* **Base Url** (optional): Default is `https://otlp.arize.com`
+
+## Step 4: Test and save
+
+Click **Test Connection** to verify the setup. The configuration only saves if the test passes.
+
+## Step 5: Send a test trace
+
+Make an API request through OpenRouter and view the trace in your Arize
+dashboard under the specified model.
+
+![Arize Trace View](https://files.buildwithfern.com/openrouter.docs.buildwithfern.com/docs/a917bd16b2036c129bd72451d4650953812a85f8c7585dd39804fceef83857d9/content/pages/features/broadcast/broadcast-arize-trace.png)
+
+## Custom Metadata
+
+Arize uses the [OpenInference](https://github.com/Arize-ai/openinference) semantic convention for tracing. Custom metadata from the `trace` field is sent as span attributes in the OTLP payload.
+
+### Supported Metadata Keys
+
+| Key               | Arize Mapping  | Description                                      |
+| ----------------- | -------------- | ------------------------------------------------ |
+| `trace_id`        | Trace ID       | Group multiple requests into a single trace      |
+| `trace_name`      | Span Name      | Custom name for the root trace                   |
+| `span_name`       | Span Name      | Name for intermediate spans in the hierarchy     |
+| `generation_name` | Span Name      | Name for the LLM generation span                 |
+| `parent_span_id`  | Parent Span ID | Link to an existing span in your trace hierarchy |
+
+### Example
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [{ "role": "user", "content": "Classify this text..." }],
+  "user": "user_12345",
+  "session_id": "session_abc",
+  "trace": {
+    "trace_id": "classification_pipeline_001",
+    "trace_name": "Text Classification",
+    "generation_name": "Classify Sentiment",
+    "dataset": "customer_feedback",
+    "experiment_id": "exp_v3"
+  }
+}
+```
+
+### Additional Context
+
+* Custom metadata keys from `trace` are included as span attributes under the `metadata.*` namespace
+* The `user` field maps to user identification in span attributes
+* The `session_id` field maps to session tracking in span attributes
+* Token usage, costs, and model parameters are automatically included as OpenInference-compatible attributes
+
+## Privacy Mode
+
+When [Privacy Mode](/docs/guides/features/broadcast#privacy-mode) is enabled for this destination, prompt and completion content is excluded from traces. All other trace data — token usage, costs, timing, model information, and custom metadata — is still sent normally. See [Privacy Mode](/docs/guides/features/broadcast#privacy-mode) for details.

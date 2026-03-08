@@ -1,0 +1,298 @@
+***
+
+title: Broadcast
+subtitle: Send traces to external observability platforms
+headline: Broadcast | OpenRouter Observability
+canonical-url: '[https://openrouter.ai/docs/guides/features/broadcast](https://openrouter.ai/docs/guides/features/broadcast)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Broadcast - Send Traces to Observability Platforms
+'og:description': >-
+Connect your LLM observability platforms to automatically receive traces from
+your OpenRouter requests. Supports Langfuse, Datadog, Braintrust, and more.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Broadcast\&description=Send%20traces%20to%20observability%20platforms](https://openrouter.ai/dynamic-og?title=Broadcast\&description=Send%20traces%20to%20observability%20platforms)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+Broadcast allows you to automatically send traces from your OpenRouter requests to external observability and analytics platforms. This feature enables you to monitor, debug, and analyze your LLM usage across your preferred tools without any additional instrumentation in your application code.
+
+## Enabling Broadcast
+
+To enable broadcast for your account or organization:
+
+1. Navigate to [Settings > Observability](https://openrouter.ai/settings/observability) in your OpenRouter dashboard
+2. Toggle the "Enable Broadcast" switch to turn on the feature
+3. Add one or more destinations where you want to send your traces
+
+<Tip>
+  If you're using an organization account, you must be an organization admin to edit broadcast settings.
+</Tip>
+
+Once enabled, OpenRouter will automatically send trace data for all your API requests to your configured destinations.
+
+## Supported Destinations
+
+{/* When updating this list, sync with getPublicDestinationMetadata() in packages/broadcast/registry.ts
+    which filters by isActive && releaseStatus === 'stable'. See destination metadata in packages/broadcast/destinations/*.ts */}
+
+The following destinations are currently available:
+
+* [Arize AI](/docs/guides/features/broadcast/arize)
+* [Braintrust](/docs/guides/features/broadcast/braintrust)
+* [ClickHouse](/docs/guides/features/broadcast/clickhouse)
+* [Comet Opik](/docs/guides/features/broadcast/opik)
+* [Datadog](/docs/guides/features/broadcast/datadog)
+* [Grafana Cloud](/docs/guides/features/broadcast/grafana)
+* [Langfuse](/docs/guides/features/broadcast/langfuse)
+* [LangSmith](/docs/guides/features/broadcast/langsmith)
+* [New Relic](/docs/guides/features/broadcast/newrelic)
+* [OpenTelemetry Collector](/docs/guides/features/broadcast/otel-collector)
+* [PostHog](/docs/guides/features/broadcast/posthog)
+* [S3 / S3-Compatible](/docs/guides/features/broadcast/s3)
+* [Sentry](/docs/guides/features/broadcast/sentry)
+* [Snowflake](/docs/guides/features/broadcast/snowflake)
+* [W\&B Weave](/docs/guides/features/broadcast/weave)
+* [Webhook](/docs/guides/features/broadcast/webhook)
+
+Each destination has its own configuration requirements, such as API keys, endpoints, or project identifiers. When adding a destination, you'll be prompted to provide the necessary credentials which are encrypted and stored securely.
+
+For the most up-to-date list of available destinations, visit the [Broadcast settings page](https://openrouter.ai/settings/observability) in your dashboard.
+
+### Coming Soon
+
+The following destinations are in development and will be available soon:
+
+* AWS Firehose
+* Dynatrace
+* Evidently
+* Fiddler
+* Galileo
+* Helicone
+* HoneyHive
+* Keywords AI
+* Middleware
+* Mona
+* OpenInference
+* Phoenix
+* Portkey
+* Supabase
+* WhyLabs
+
+## Trace Data
+
+Each broadcast trace includes comprehensive information about your API request:
+
+* **Request & Response Data**: The input messages and model output (with multimodal content stripped for efficiency)
+* **Token Usage**: Prompt tokens, completion tokens, and total tokens consumed
+* **Cost Information**: The total cost of the request
+* **Timing**: Request start time, end time, and latency metrics
+* **Model Information**: The model slug and provider name used for the request
+* **Tool Usage**: Whether tools were included in the request and if tool calls were made
+
+### Optional Trace Data
+
+You can enrich your traces with additional context by including these optional fields in your API requests:
+
+* **User ID**: Associate traces with specific end-users by including the `user` field (up to 128 characters). This helps you track usage patterns and debug issues for individual users.
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, world!"
+    }
+  ],
+  "user": "user_12345"
+}
+```
+
+* **Session ID**: Group related requests together (such as a conversation or agent workflow) by including the `session_id` field (up to 128 characters). You can also pass this via the `x-session-id` HTTP header.
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, world!"
+    }
+  ],
+  "session_id": "session_abc123"
+}
+```
+
+### Custom Metadata
+
+For advanced observability workflows, you can pass arbitrary metadata to your traces using the `trace` field. This field accepts any JSON object and is passed through to all your configured broadcast destinations.
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Summarize this document..."
+    }
+  ],
+  "trace": {
+    "trace_id": "workflow_12345",
+    "trace_name": "Document Processing",
+    "span_name": "Summarization Step",
+    "generation_name": "Generate Summary",
+    "environment": "production",
+    "feature": "customer-support",
+    "version": "1.2.3"
+  }
+}
+```
+
+<Tip>
+  The `trace` field is flexible and accepts any key-value pairs. Certain keys have special meaning depending on your observability destination. See the destination-specific documentation for details on which keys each platform recognizes.
+</Tip>
+
+#### Common Metadata Keys
+
+These metadata keys are commonly used across observability platforms:
+
+| Key               | Description                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `trace_id`        | Group multiple API requests into a single trace. Use the same ID across requests to track multi-step workflows.         |
+| `trace_name`      | Custom name for the root trace in your observability platform. Defaults to the model name if not set.                   |
+| `span_name`       | Create a parent span that groups LLM operations. Creates hierarchical structure where the span contains the generation. |
+| `generation_name` | Custom name for the specific LLM generation/call. Defaults to the model name if not set.                                |
+| `parent_span_id`  | Link your OpenRouter trace to an existing span from your own tracing system (e.g., OpenTelemetry).                      |
+
+When using these fields, your traces will appear with a hierarchical structure in platforms like Langfuse:
+
+```
+Document Processing (trace_id: workflow_12345)
+└── Summarization Step (span)
+    └── Generate Summary (generation)
+```
+
+#### Linking to External Traces
+
+If you have your own tracing instrumentation (e.g., OpenTelemetry), you can use `parent_span_id` to nest OpenRouter calls under your existing spans:
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [{ "role": "user", "content": "Hello!" }],
+  "trace": {
+    "trace_id": "your-existing-trace-id",
+    "parent_span_id": "your-existing-span-id"
+  }
+}
+```
+
+This will create a trace structure like:
+
+```
+Your Application Trace
+└── Your Application Span (parent_span_id)
+    └── openai/gpt-4o (generation from OpenRouter)
+```
+
+This enables you to:
+
+* Track end-to-end workflows spanning multiple LLM calls
+* Organize traces by business logic rather than individual API calls
+* Build rich observability dashboards with meaningful trace names
+* Integrate OpenRouter traces with your existing application traces
+* Pass any custom data you need to your observability platforms
+
+#### Destination-Specific Metadata
+
+Each observability platform may recognize different metadata keys. See the destination-specific guides for details:
+
+* [Langfuse](/docs/guides/features/broadcast/langfuse#custom-metadata) - Supports trace naming, user/session IDs, and arbitrary metadata
+* [LangSmith](/docs/guides/features/broadcast/langsmith#custom-metadata) - Supports tags, session tracking, and metadata
+* [Datadog](/docs/guides/features/broadcast/datadog#custom-metadata) - Supports tags, user IDs, and session IDs
+* [Braintrust](/docs/guides/features/broadcast/braintrust#custom-metadata) - Supports tags and custom metadata fields
+* [W\&B Weave](/docs/guides/features/broadcast/weave#custom-metadata) - Supports custom attributes in trace data
+* [Arize AI](/docs/guides/features/broadcast/arize#custom-metadata) - Supports OpenInference span attributes and metadata
+* [Comet Opik](/docs/guides/features/broadcast/opik#custom-metadata) - Supports trace/span metadata and cost tracking
+* [Grafana Cloud](/docs/guides/features/broadcast/grafana#custom-metadata) - Supports TraceQL-queryable span attributes
+* [New Relic](/docs/guides/features/broadcast/newrelic#custom-metadata) - Supports NRQL-queryable span attributes
+* [Sentry](/docs/guides/features/broadcast/sentry#custom-metadata) - Supports span attributes for performance monitoring
+* [OpenTelemetry Collector](/docs/guides/features/broadcast/otel-collector#custom-metadata) - Supports OTLP span attributes for any backend
+* [Webhook](/docs/guides/features/broadcast/webhook#custom-metadata) - Custom metadata in OTLP JSON payload
+* [PostHog](/docs/guides/features/broadcast/posthog#custom-metadata) - Supports event properties for LLM analytics
+* [Snowflake](/docs/guides/features/broadcast/snowflake#custom-metadata) - Queryable via VARIANT column functions
+* [ClickHouse](/docs/guides/features/broadcast/clickhouse#custom-metadata) - Queryable via JSONExtract functions
+* [S3](/docs/guides/features/broadcast/s3#custom-metadata) - Stored in trace JSON files
+
+## API Key Filtering
+
+Each destination can be configured to only receive traces from specific API keys. This is useful when you want to:
+
+* route traces from different parts of your application to different observability platforms
+* isolate monitoring for specific use cases
+* or send production API key traces at a lower sampling rate than development keys
+
+When adding or editing a destination, you can select one or more API keys from your account. Only requests made with those selected API keys will have their traces sent to that destination. If no API keys are selected, the destination will receive traces from all your API keys or chatroom requests.
+
+## Sampling Rate
+
+Each destination can be configured with a sampling rate to control what percentage of traces are sent. This is useful for high-volume applications where you want to reduce costs or data volume while still maintaining visibility into your LLM usage. A sampling rate of 1.0 sends all traces, while 0.5 would send approximately 50% of traces.
+
+<Tip>
+  Sampling is deterministic: when you provide a `session_id`, all traces within that session will be consistently included or excluded together. This ensures you always see complete sessions in your observability platform rather than fragmented data.
+
+  You’ll see full sessions per destination, but not necessarily the same sessions across all destinations.
+</Tip>
+
+## Privacy Mode
+
+Each destination can optionally enable **Privacy Mode** to exclude prompt and completion content from traces. When Privacy Mode is enabled, the following data is stripped before sending traces:
+
+* **Input messages** (prompts sent to the model)
+* **Output choices** (completions returned by the model)
+
+All other trace data — including token counts, costs, timing, model information, and custom metadata — is still sent normally.
+
+This is useful when you want to monitor LLM usage metrics and costs without exposing the actual content of conversations, for example to comply with data privacy regulations or internal policies.
+
+To enable Privacy Mode, toggle the **Privacy Mode** checkbox in the **Privacy** section when configuring a destination.
+
+<Tip>
+  Privacy Mode is configured per destination. You can send full traces to one destination for debugging while sending privacy-redacted traces to another for cost monitoring.
+</Tip>
+
+## Security
+
+Your destination credentials are encrypted before being stored and are only decrypted when sending traces. Traces are sent asynchronously after requests complete, so enabling broadcast does not add latency to your API responses.
+
+## Organization Support
+
+Broadcast can be configured at both the individual user level and the organization level. Organization admins can set up shared destinations that apply to all API keys within the organization, ensuring consistent observability across your team.
+
+## Walkthroughs
+
+Step-by-step guides for configuring specific broadcast destinations:
+
+* [Arize AI](/docs/guides/features/broadcast/arize) - ML observability and monitoring
+* [Braintrust](/docs/guides/features/broadcast/braintrust) - LLM evaluation and monitoring
+* [ClickHouse](/docs/guides/features/broadcast/clickhouse) - Real-time analytics database
+* [Comet Opik](/docs/guides/features/broadcast/opik) - LLM evaluation and testing
+* [Datadog](/docs/guides/features/broadcast/datadog) - Full-stack monitoring and analytics
+* [Grafana Cloud](/docs/guides/features/broadcast/grafana) - Observability and monitoring platform
+* [Langfuse](/docs/guides/features/broadcast/langfuse) - Open-source LLM engineering platform
+* [LangSmith](/docs/guides/features/broadcast/langsmith) - LangChain observability and debugging
+* [New Relic](/docs/guides/features/broadcast/newrelic) - Full-stack observability platform
+* [OpenTelemetry Collector](/docs/guides/features/broadcast/otel-collector) - Send traces to any OTLP-compatible backend
+* [PostHog](/docs/guides/features/broadcast/posthog) - Product analytics with LLM tracking
+* [S3 / S3-Compatible](/docs/guides/features/broadcast/s3) - Store traces in S3, R2, or compatible storage
+* [Sentry](/docs/guides/features/broadcast/sentry) - Application monitoring and error tracking
+* [Snowflake](/docs/guides/features/broadcast/snowflake) - Cloud data warehouse for analytics
+* [W\&B Weave](/docs/guides/features/broadcast/weave) - LLM observability and tracking
+* [Webhook](/docs/guides/features/broadcast/webhook) - Send traces to any HTTP endpoint

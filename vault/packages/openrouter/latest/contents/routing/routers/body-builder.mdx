@@ -1,0 +1,263 @@
+***
+
+title: Body Builder
+subtitle: Generate multiple parallel API requests from natural language
+headline: Body Builder | Multi-Model Request Generation
+canonical-url: '[https://openrouter.ai/docs/guides/routing/routers/body-builder](https://openrouter.ai/docs/guides/routing/routers/body-builder)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Body Builder - Generate Parallel API Requests
+'og:description': >-
+Use natural language to generate multiple OpenRouter API requests for parallel
+model execution.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Body%20Builder\&description=Multi-model%20request%20generation](https://openrouter.ai/dynamic-og?title=Body%20Builder\&description=Multi-model%20request%20generation)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+-----------------------------
+
+The [Body Builder](https://openrouter.ai/openrouter/bodybuilder) (`openrouter/bodybuilder`) transforms natural language prompts into structured OpenRouter API requests, enabling you to easily run the same task across multiple models in parallel.
+
+## Overview
+
+Body Builder uses AI to understand your intent and generate valid OpenRouter API request bodies. Simply describe what you want to accomplish and which models you want to use, and Body Builder returns ready-to-execute JSON requests.
+
+<Callout intent="info">
+  Body Builder is **free to use**. There is no charge for generating the request bodies.
+</Callout>
+
+## Usage
+
+<CodeGroup>
+  ```typescript title="TypeScript SDK"
+  import { OpenRouter } from '@openrouter/sdk';
+
+  const openRouter = new OpenRouter({
+    apiKey: '<OPENROUTER_API_KEY>',
+  });
+
+  const completion = await openRouter.chat.send({
+    model: 'openrouter/bodybuilder',
+    messages: [
+      {
+        role: 'user',
+        content: 'Count to 10 using Claude Sonnet and GPT-5',
+      },
+    ],
+  });
+
+  // Parse the generated requests
+  const generatedRequests = JSON.parse(completion.choices[0].message.content);
+  console.log(generatedRequests);
+  ```
+
+  ```typescript title="TypeScript (fetch)"
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer <OPENROUTER_API_KEY>',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'openrouter/bodybuilder',
+      messages: [
+        {
+          role: 'user',
+          content: 'Count to 10 using Claude Sonnet and GPT-5',
+        },
+      ],
+    }),
+  });
+
+  const data = await response.json();
+  const generatedRequests = JSON.parse(data.choices[0].message.content);
+  console.log(generatedRequests);
+  ```
+
+  ```python title="Python"
+  import requests
+  import json
+
+  response = requests.post(
+    url="https://openrouter.ai/api/v1/chat/completions",
+    headers={
+      "Authorization": "Bearer <OPENROUTER_API_KEY>",
+      "Content-Type": "application/json",
+    },
+    data=json.dumps({
+      "model": "openrouter/bodybuilder",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Count to 10 using Claude Sonnet and GPT-5"
+        }
+      ]
+    })
+  )
+
+  data = response.json()
+  generated_requests = json.loads(data['choices'][0]['message']['content'])
+  print(json.dumps(generated_requests, indent=2))
+  ```
+</CodeGroup>
+
+## Response Format
+
+Body Builder returns a JSON object containing an array of OpenRouter-compatible request bodies:
+
+```json
+{
+  "requests": [
+    {
+      "model": "anthropic/claude-sonnet-4.5",
+      "messages": [
+        {"role": "user", "content": "Count to 10"}
+      ]
+    },
+    {
+      "model": "openai/gpt-5.1",
+      "messages": [
+        {"role": "user", "content": "Count to 10"}
+      ]
+    }
+  ]
+}
+```
+
+## Executing Generated Requests
+
+After generating the request bodies, execute them in parallel:
+
+<CodeGroup>
+  ```typescript title="TypeScript"
+  // Generate the requests
+  const builderResponse = await openRouter.chat.send({
+    model: 'openrouter/bodybuilder',
+    messages: [{ role: 'user', content: 'Explain gravity using Gemini and Claude' }],
+  });
+
+  const { requests } = JSON.parse(builderResponse.choices[0].message.content);
+
+  // Execute all requests in parallel
+  const results = await Promise.all(
+    requests.map((req) => openRouter.chat.send(req))
+  );
+
+  // Process results
+  results.forEach((result, i) => {
+    console.log(`Model: ${requests[i].model}`);
+    console.log(`Response: ${result.choices[0].message.content}\n`);
+  });
+  ```
+
+  ```python title="Python"
+  import asyncio
+  import aiohttp
+  import json
+
+  async def execute_request(session, request):
+      async with session.post(
+          "https://openrouter.ai/api/v1/chat/completions",
+          headers={
+              "Authorization": "Bearer <OPENROUTER_API_KEY>",
+              "Content-Type": "application/json"
+          },
+          data=json.dumps(request)
+      ) as response:
+          return await response.json()
+
+  async def main():
+      # First, generate the requests
+      async with aiohttp.ClientSession() as session:
+          builder_response = await execute_request(session, {
+              "model": "openrouter/bodybuilder",
+              "messages": [{"role": "user", "content": "Explain gravity using Gemini and Claude"}]
+          })
+
+          generated = json.loads(builder_response['choices'][0]['message']['content'])
+
+          # Execute all requests in parallel
+          tasks = [execute_request(session, req) for req in generated['requests']]
+          results = await asyncio.gather(*tasks)
+
+          for req, result in zip(generated['requests'], results):
+              print(f"Model: {req['model']}")
+              print(f"Response: {result['choices'][0]['message']['content']}\n")
+
+  asyncio.run(main())
+  ```
+</CodeGroup>
+
+## Use Cases
+
+### Model Benchmarking
+
+Compare how different models handle the same task:
+
+```
+"Write a haiku about programming using Claude Sonnet, GPT-5, and Gemini"
+```
+
+### Redundancy and Reliability
+
+Get responses from multiple providers for critical applications:
+
+```
+"Answer 'What is 2+2?' using three different models for verification"
+```
+
+### A/B Testing
+
+Test prompts across models to find the best fit:
+
+```
+"Summarize this article using the top 5 coding models: [article text]"
+```
+
+### Exploration
+
+Discover which models excel at specific tasks:
+
+```
+"Generate a creative story opening using various creative writing models"
+```
+
+## Model Selection
+
+Body Builder has access to all available OpenRouter models and will:
+
+* Use the latest model versions by default
+* Select appropriate models based on your description
+* Understand model aliases and common names
+
+<Callout intent="warning">
+  Model slugs change as new versions are released. The examples below are current as of December 4, 2025. Check the [models page](https://openrouter.ai/models) for the latest available models.
+</Callout>
+
+Example model references that work:
+
+* "Claude Sonnet" → `anthropic/claude-sonnet-4.5`
+* "Claude Opus" → `anthropic/claude-opus-4.5`
+* "GPT-5" → `openai/gpt-5.1`
+* "Gemini" → `google/gemini-3-pro-preview`
+* "DeepSeek" → `deepseek/deepseek-v3.2`
+
+## Pricing
+
+* **Body Builder requests**: Free (no charge for generating request bodies)
+* **Executing generated requests**: Standard model pricing applies
+
+## Limitations
+
+* Requires `messages` format input
+* Generated requests use minimal required fields by default
+* System messages in your input are preserved and forwarded
+
+## Related
+
+* [Auto Router](/docs/guides/routing/routers/auto-router) - Automatic single-model selection
+* [Model Fallbacks](/docs/guides/routing/model-fallbacks) - Configure fallback models
+* [Structured Outputs](/docs/guides/features/structured-outputs) - Get structured JSON responses

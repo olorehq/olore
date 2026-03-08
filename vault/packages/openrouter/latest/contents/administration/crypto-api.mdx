@@ -1,0 +1,1023 @@
+***
+
+title: Crypto API
+subtitle: Purchase credits with crypto
+headline: Crypto API | Purchase Credits with Cryptocurrency
+canonical-url: '[https://openrouter.ai/docs/guides/guides/crypto-api](https://openrouter.ai/docs/guides/guides/crypto-api)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Crypto API - Cryptocurrency Payments for OpenRouter Credits
+'og:description': >-
+Learn how to purchase OpenRouter credits using cryptocurrency. Complete guide
+to Coinbase integration, supported chains, and automated credit purchases.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Crypto%20API\&description=Automated%20Cryptocurrency%20Payments](https://openrouter.ai/dynamic-og?title=Crypto%20API\&description=Automated%20Cryptocurrency%20Payments)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+You can purchase credits using cryptocurrency through our Coinbase integration. This can either happen through the UI, on your [credits page](https://openrouter.ai/settings/credits), or through our API as described below. While other forms of payment are possible, this guide specifically shows how to pay with the chain's native token.
+
+Headless credit purchases involve three steps:
+
+1. Getting the calldata for a new credit purchase
+2. Sending a transaction on-chain using that data
+3. Detecting low account balance, and purchasing more
+
+## Getting Credit Purchase Calldata
+
+Make a POST request to `/api/v1/credits/coinbase` to create a new charge. You'll include the amount of credits you want to purchase (in USD, up to \${maxCryptoDollarPurchase}), the address you'll be sending the transaction from, and the EVM chain ID of the network you'll be sending on.
+
+Currently, we only support the following chains (mainnet only):
+
+* Ethereum ({SupportedChainIDs.Ethereum})
+* Polygon ({SupportedChainIDs.Polygon})
+* Base ({SupportedChainIDs.Base}) ***recommended***
+
+```typescript
+const response = await fetch('https://openrouter.ai/api/v1/credits/coinbase', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer <OPENROUTER_API_KEY>',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    amount: 10, // Target credit amount in USD
+    sender: '0x9a85CB3bfd494Ea3a8C9E50aA6a3c1a7E8BACE11',
+    chain_id: 8453,
+  }),
+});
+const responseJSON = await response.json();
+```
+
+The response includes the charge details and transaction data needed to execute the on-chain payment:
+
+```json
+{
+  "data": {
+    "id": "...",
+    "created_at": "2024-01-01T00:00:00Z",
+    "expires_at": "2024-01-01T01:00:00Z",
+    "web3_data": {
+      "transfer_intent": {
+        "metadata": {
+          "chain_id": 8453,
+          "contract_address": "0x03059433bcdb6144624cc2443159d9445c32b7a8",
+          "sender": "0x9a85CB3bfd494Ea3a8C9E50aA6a3c1a7E8BACE11"
+        },
+        "call_data": {
+          "recipient_amount": "...",
+          "deadline": "...",
+          "recipient": "...",
+          "recipient_currency": "...",
+          "refund_destination": "...",
+          "fee_amount": "...",
+          "id": "...",
+          "operator": "...",
+          "signature": "...",
+          "prefix": "..."
+        }
+      }
+    }
+  }
+}
+```
+
+## Sending the Transaction
+
+You can use [viem](https://viem.sh) (or another similar evm client) to execute the transaction on-chain.
+
+In this example, we'll be fulfilling the charge using the [swapAndTransferUniswapV3Native()](https://github.com/coinbase/commerce-onchain-payment-protocol/blob/d891289bd1f41bb95f749af537f2b6a36b17f889/contracts/interfaces/ITransfers.sol#L168-L171) function. Other methods of swapping are also available, and you can learn more by checking out Coinbase's [onchain payment protocol here](https://github.com/coinbase/commerce-onchain-payment-protocol/tree/master). Note, if you are trying to pay in a less common ERC-20, there is added complexity in needing to make sure that there is sufficient liquidity in the pool to swap the tokens.
+
+```typescript
+import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { base } from 'viem/chains';
+
+// The ABI for Coinbase's onchain payment protocol
+const abi = [
+  {
+    inputs: [
+      {
+        internalType: 'contract IUniversalRouter',
+        name: '_uniswap',
+        type: 'address',
+      },
+      { internalType: 'contract Permit2', name: '_permit2', type: 'address' },
+      { internalType: 'address', name: '_initialOperator', type: 'address' },
+      {
+        internalType: 'address',
+        name: '_initialFeeDestination',
+        type: 'address',
+      },
+      {
+        internalType: 'contract IWrappedNativeCurrency',
+        name: '_wrappedNativeCurrency',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  { inputs: [], name: 'AlreadyProcessed', type: 'error' },
+  { inputs: [], name: 'ExpiredIntent', type: 'error' },
+  {
+    inputs: [
+      { internalType: 'address', name: 'attemptedCurrency', type: 'address' },
+    ],
+    name: 'IncorrectCurrency',
+    type: 'error',
+  },
+  { inputs: [], name: 'InexactTransfer', type: 'error' },
+  {
+    inputs: [{ internalType: 'uint256', name: 'difference', type: 'uint256' }],
+    name: 'InsufficientAllowance',
+    type: 'error',
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'difference', type: 'uint256' }],
+    name: 'InsufficientBalance',
+    type: 'error',
+  },
+  {
+    inputs: [{ internalType: 'int256', name: 'difference', type: 'int256' }],
+    name: 'InvalidNativeAmount',
+    type: 'error',
+  },
+  { inputs: [], name: 'InvalidSignature', type: 'error' },
+  { inputs: [], name: 'InvalidTransferDetails', type: 'error' },
+  {
+    inputs: [
+      { internalType: 'address', name: 'recipient', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'bool', name: 'isRefund', type: 'bool' },
+      { internalType: 'bytes', name: 'data', type: 'bytes' },
+    ],
+    name: 'NativeTransferFailed',
+    type: 'error',
+  },
+  { inputs: [], name: 'NullRecipient', type: 'error' },
+  { inputs: [], name: 'OperatorNotRegistered', type: 'error' },
+  { inputs: [], name: 'PermitCallFailed', type: 'error' },
+  {
+    inputs: [{ internalType: 'bytes', name: 'reason', type: 'bytes' }],
+    name: 'SwapFailedBytes',
+    type: 'error',
+  },
+  {
+    inputs: [{ internalType: 'string', name: 'reason', type: 'string' }],
+    name: 'SwapFailedString',
+    type: 'error',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'operator',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'feeDestination',
+        type: 'address',
+      },
+    ],
+    name: 'OperatorRegistered',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'operator',
+        type: 'address',
+      },
+    ],
+    name: 'OperatorUnregistered',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'previousOwner',
+        type: 'address',
+      },
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
+      },
+    ],
+    name: 'OwnershipTransferred',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'account',
+        type: 'address',
+      },
+    ],
+    name: 'Paused',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'operator',
+        type: 'address',
+      },
+      { indexed: false, internalType: 'bytes16', name: 'id', type: 'bytes16' },
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'recipient',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'sender',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'spentAmount',
+        type: 'uint256',
+      },
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'spentCurrency',
+        type: 'address',
+      },
+    ],
+    name: 'Transferred',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: 'address',
+        name: 'account',
+        type: 'address',
+      },
+    ],
+    name: 'Unpaused',
+    type: 'event',
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'pause',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'paused',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'permit2',
+    outputs: [{ internalType: 'contract Permit2', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'registerOperator',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '_feeDestination', type: 'address' },
+    ],
+    name: 'registerOperatorWithFeeDestination',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: 'newSweeper', type: 'address' }],
+    name: 'setSweeper',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      {
+        components: [
+          { internalType: 'address', name: 'owner', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct EIP2612SignatureTransferData',
+        name: '_signatureTransferData',
+        type: 'tuple',
+      },
+    ],
+    name: 'subsidizedTransferToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      { internalType: 'uint24', name: 'poolFeesTier', type: 'uint24' },
+    ],
+    name: 'swapAndTransferUniswapV3Native',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      {
+        components: [
+          {
+            components: [
+              {
+                components: [
+                  { internalType: 'address', name: 'token', type: 'address' },
+                  { internalType: 'uint256', name: 'amount', type: 'uint256' },
+                ],
+                internalType: 'struct ISignatureTransfer.TokenPermissions',
+                name: 'permitted',
+                type: 'tuple',
+              },
+              { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+              { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+            ],
+            internalType: 'struct ISignatureTransfer.PermitTransferFrom',
+            name: 'permit',
+            type: 'tuple',
+          },
+          {
+            components: [
+              { internalType: 'address', name: 'to', type: 'address' },
+              {
+                internalType: 'uint256',
+                name: 'requestedAmount',
+                type: 'uint256',
+              },
+            ],
+            internalType: 'struct ISignatureTransfer.SignatureTransferDetails',
+            name: 'transferDetails',
+            type: 'tuple',
+          },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct Permit2SignatureTransferData',
+        name: '_signatureTransferData',
+        type: 'tuple',
+      },
+      { internalType: 'uint24', name: 'poolFeesTier', type: 'uint24' },
+    ],
+    name: 'swapAndTransferUniswapV3Token',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      { internalType: 'address', name: '_tokenIn', type: 'address' },
+      { internalType: 'uint256', name: 'maxWillingToPay', type: 'uint256' },
+      { internalType: 'uint24', name: 'poolFeesTier', type: 'uint24' },
+    ],
+    name: 'swapAndTransferUniswapV3TokenPreApproved',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address payable', name: 'destination', type: 'address' },
+    ],
+    name: 'sweepETH',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address payable', name: 'destination', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'sweepETHAmount',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '_token', type: 'address' },
+      { internalType: 'address', name: 'destination', type: 'address' },
+    ],
+    name: 'sweepToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '_token', type: 'address' },
+      { internalType: 'address', name: 'destination', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'sweepTokenAmount',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'sweeper',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+    ],
+    name: 'transferNative',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: 'newOwner', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      {
+        components: [
+          {
+            components: [
+              {
+                components: [
+                  { internalType: 'address', name: 'token', type: 'address' },
+                  { internalType: 'uint256', name: 'amount', type: 'uint256' },
+                ],
+                internalType: 'struct ISignatureTransfer.TokenPermissions',
+                name: 'permitted',
+                type: 'tuple',
+              },
+              { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+              { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+            ],
+            internalType: 'struct ISignatureTransfer.PermitTransferFrom',
+            name: 'permit',
+            type: 'tuple',
+          },
+          {
+            components: [
+              { internalType: 'address', name: 'to', type: 'address' },
+              {
+                internalType: 'uint256',
+                name: 'requestedAmount',
+                type: 'uint256',
+              },
+            ],
+            internalType: 'struct ISignatureTransfer.SignatureTransferDetails',
+            name: 'transferDetails',
+            type: 'tuple',
+          },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct Permit2SignatureTransferData',
+        name: '_signatureTransferData',
+        type: 'tuple',
+      },
+    ],
+    name: 'transferToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+    ],
+    name: 'transferTokenPreApproved',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'unpause',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'unregisterOperator',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+      {
+        components: [
+          {
+            components: [
+              {
+                components: [
+                  { internalType: 'address', name: 'token', type: 'address' },
+                  { internalType: 'uint256', name: 'amount', type: 'uint256' },
+                ],
+                internalType: 'struct ISignatureTransfer.TokenPermissions',
+                name: 'permitted',
+                type: 'tuple',
+              },
+              { internalType: 'uint256', name: 'nonce', type: 'uint256' },
+              { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+            ],
+            internalType: 'struct ISignatureTransfer.PermitTransferFrom',
+            name: 'permit',
+            type: 'tuple',
+          },
+          {
+            components: [
+              { internalType: 'address', name: 'to', type: 'address' },
+              {
+                internalType: 'uint256',
+                name: 'requestedAmount',
+                type: 'uint256',
+              },
+            ],
+            internalType: 'struct ISignatureTransfer.SignatureTransferDetails',
+            name: 'transferDetails',
+            type: 'tuple',
+          },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+        ],
+        internalType: 'struct Permit2SignatureTransferData',
+        name: '_signatureTransferData',
+        type: 'tuple',
+      },
+    ],
+    name: 'unwrapAndTransfer',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+    ],
+    name: 'unwrapAndTransferPreApproved',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'uint256', name: 'recipientAmount', type: 'uint256' },
+          { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+          {
+            internalType: 'address payable',
+            name: 'recipient',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'recipientCurrency',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'refundDestination',
+            type: 'address',
+          },
+          { internalType: 'uint256', name: 'feeAmount', type: 'uint256' },
+          { internalType: 'bytes16', name: 'id', type: 'bytes16' },
+          { internalType: 'address', name: 'operator', type: 'address' },
+          { internalType: 'bytes', name: 'signature', type: 'bytes' },
+          { internalType: 'bytes', name: 'prefix', type: 'bytes' },
+        ],
+        internalType: 'struct TransferIntent',
+        name: '_intent',
+        type: 'tuple',
+      },
+    ],
+    name: 'wrapAndTransfer',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  { stateMutability: 'payable', type: 'receive' },
+];
+
+// Set up viem clients
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http(),
+});
+const account = privateKeyToAccount('0x...');
+const walletClient = createWalletClient({
+  chain: base,
+  transport: http(),
+  account,
+});
+
+// Use the calldata included in the charge response
+const { contract_address } =
+  responseJSON.data.web3_data.transfer_intent.metadata;
+const call_data = responseJSON.data.web3_data.transfer_intent.call_data;
+
+// When transacting in ETH, a pool fees tier of 500 (the lowest) is very
+// likely to be sufficient. However, if you plan to swap with a different
+// contract method, using less-common ERC-20 tokens, it is recommended to
+// call that chain's Uniswap QuoterV2 contract to check its liquidity.
+// Depending on the results, choose the lowest fee tier which has enough
+// liquidity in the pool.
+const poolFeesTier = 500;
+
+// Simulate the transaction first to prevent most common revert reasons
+const { request } = await publicClient.simulateContract({
+  abi,
+  account,
+  address: contract_address,
+  functionName: 'swapAndTransferUniswapV3Native',
+  args: [
+    {
+      recipientAmount: BigInt(call_data.recipient_amount),
+      deadline: BigInt(
+        Math.floor(new Date(call_data.deadline).getTime() / 1000),
+      ),
+      recipient: call_data.recipient,
+      recipientCurrency: call_data.recipient_currency,
+      refundDestination: call_data.refund_destination,
+      feeAmount: BigInt(call_data.fee_amount),
+      id: call_data.id,
+      operator: call_data.operator,
+      signature: call_data.signature,
+      prefix: call_data.prefix,
+    },
+    poolFeesTier,
+  ],
+  // Transaction value in ETH. You'll want to include a little extra to
+  // ensure the transaction & swap is successful. All excess funds return
+  // back to your sender address afterwards.
+  value: parseEther('0.004'),
+});
+
+// Send the transaction on chain
+const txHash = await walletClient.writeContract(request);
+console.log('Transaction hash:', txHash);
+```
+
+Once the transaction succeeds on chain, we'll add credits to your account. You can track the transaction status using the returned transaction hash.
+
+Credit purchases lower than \$500 will be immediately credited once the transaction is on chain. Above \$500, there is a \~15 minute confirmation delay, ensuring the chain does not re-org your purchase.
+
+## Detecting Low Balance
+
+While it is possible to simply run down the balance until your app starts receiving 402 error codes for insufficient credits, this gap in service while topping up might not be desirable.
+
+To avoid this, you can periodically call the `GET /api/v1/credits` endpoint to check your available credits.
+
+<CodeGroup>
+  ```typescript title="TypeScript SDK"
+  import { OpenRouter } from '@openrouter/sdk';
+
+  const openRouter = new OpenRouter({
+    apiKey: '<OPENROUTER_API_KEY>',
+  });
+
+  const credits = await openRouter.credits.get();
+  console.log('Available credits:', credits.totalCredits - credits.totalUsage);
+  ```
+
+  ```typescript title="TypeScript (fetch)"
+  const response = await fetch('https://openrouter.ai/api/v1/credits', {
+    method: 'GET',
+    headers: { Authorization: 'Bearer <OPENROUTER_API_KEY>' },
+  });
+  const { data } = await response.json();
+  ```
+</CodeGroup>
+
+The response includes your total credits purchased and usage, where your current balance is the difference between the two:
+
+```json
+{
+  "data": {
+    "total_credits": 50.0,
+    "total_usage": 42.0
+  }
+}
+```
+
+Note that these values are cached, and may be up to 60 seconds stale.
