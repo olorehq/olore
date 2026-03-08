@@ -1,0 +1,78 @@
+***
+
+title: Zero Data Retention
+subtitle: How OpenRouter gives you control over your data
+headline: Zero Data Retention | How OpenRouter gives you control over your data
+canonical-url: '[https://openrouter.ai/docs/guides/features/zdr](https://openrouter.ai/docs/guides/features/zdr)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Zero Data Retention - How OpenRouter gives you control over your data
+'og:description': Learn how OpenRouter gives you control over your data
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Zero%20Data%20Retention\&description=How%20OpenRouter%20gives%20you%20control%20over%20your%20data](https://openrouter.ai/dynamic-og?title=Zero%20Data%20Retention\&description=How%20OpenRouter%20gives%20you%20control%20over%20your%20data)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+Zero Data Retention (ZDR) means that a provider will not store your data for any period of time.
+
+OpenRouter has a [setting](/settings/privacy) that, when enabled, only allows you to route to endpoints that have a Zero Data Retention policy.
+
+Providers that do not retain your data are also unable to train on your data. However we do have some endpoints & providers who do not train on your data but *do* retain it (e.g. to scan for abuse or for legal reasons). OpenRouter gives you controls over both of these policies.
+
+## How OpenRouter Manages Data Policies
+
+OpenRouter works with providers to understand each of their data policies and structures the policy data in a way that gives you control over which providers you want to route to.
+
+Note that a provider's general policy may differ from the specific policy for a given endpoint. OpenRouter keeps track of the specific policy for each endpoint, works with providers to keep these policies up to date, and in some cases creates special agreements with providers to ensure data retention or training policies that are more privacy-focused than their default policies.
+
+<Note>
+  If OpenRouter is not able to establish or ascertain a clear policy for a provider or endpoint, we take a conservative stance and assume that the endpoint both retains and trains on data and mark it as such.
+</Note>
+
+A full list of providers and their data policies can be found [here](/docs/guides/privacy/logging#data-retention--logging). Note that this list shows the default policy for each provider; if there is a particular endpoint that has a policy that differs from the provider default, it may not be available if "ZDR Only" is enabled.
+
+## Per-Request ZDR Enforcement
+
+In addition to the global ZDR setting in your [privacy settings](/settings/privacy), you can enforce Zero Data Retention on a per-request basis using the `zdr` parameter in your API calls.
+
+The request-level `zdr` parameter operates as an "OR" with your account-wide ZDR setting - if either is enabled, ZDR enforcement will be applied. This means the per-request parameter can only be used to ensure ZDR is enabled for a specific request, not to override or disable account-wide ZDR enforcement.
+
+This is useful for customers who don't want to globally enforce ZDR but need to ensure specific requests only route to ZDR endpoints.
+
+### Usage
+
+Include the `zdr` parameter in your provider preferences:
+
+```json
+{
+  "model": "gpt-4",
+  "messages": [...],
+  "provider": {
+    "zdr": true
+  }
+}
+```
+
+When `zdr` is set to `true`, the request will only be routed to endpoints that have a Zero Data Retention policy. When `zdr` is `false` or not provided, ZDR enforcement will still apply if enabled in your account settings.
+
+## Caching
+
+Some endpoints/models provide implicit caching of prompts. This keeps repeated prompt data in an in-memory cache in the provider's datacenter, so that the repeated part of the prompt does not need to be re-processed. This can lead to considerable cost savings.
+
+OpenRouter has taken the stance that in-memory caching of prompts is *not* considered "retaining" data, and we therefore allow endpoints/models with implicit caching to be hit when a ZDR routing policy is in effect.
+
+## OpenRouter's Retention Policy
+
+OpenRouter itself has a ZDR policy; your prompts are not retained unless you specifically opt in to prompt logging.
+
+## Zero Retention Endpoints
+
+The following endpoints have a ZDR policy. Note that this list is also available progammatically via [https://openrouter.ai/api/v1/endpoints/zdr](https://openrouter.ai/api/v1/endpoints/zdr). It is automatically updated when there are changes to a provider's data policy.:
+
+<ZDREndpointsTable />

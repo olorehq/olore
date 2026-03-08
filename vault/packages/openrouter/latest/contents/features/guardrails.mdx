@@ -1,0 +1,97 @@
+***
+
+title: Guardrails
+subtitle: Control spending and model access for your organization
+headline: Guardrails | OpenRouter Organization Controls
+canonical-url: '[https://openrouter.ai/docs/guides/features/guardrails](https://openrouter.ai/docs/guides/features/guardrails)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Guardrails - Organization Spending and Access Controls
+'og:description': >-
+Set spending limits, restrict model access, and enforce data policies for your
+organization members and API keys with OpenRouter guardrails.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Guardrails\&description=Control%20spending%20and%20model%20access](https://openrouter.ai/dynamic-og?title=Guardrails\&description=Control%20spending%20and%20model%20access)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+Guardrails let organizations control how their members and API keys can use OpenRouter. You can set spending limits, restrict which models and providers are available, and enforce data privacy policies.
+
+Any existing account wide settings will continue to apply. Guardrails help enforce tighter restrictions for individual API keys or users.
+
+## Enabling Guardrails
+
+To create and manage guardrails for your account or organization:
+
+1. Navigate to [Settings > Privacy](https://openrouter.ai/settings/privacy) in your OpenRouter dashboard
+2. Scroll to the Guardrails section
+3. Click "New Guardrail" to create your first guardrail
+
+<Tip>
+  If you're using an organization account, you must be an organization admin to create and manage guardrails.
+</Tip>
+
+## Guardrail Settings
+
+Each guardrail can include any combination of:
+
+* **Budget limit** - Spending cap in USD that resets daily, weekly, or monthly. Requests are rejected when the limit is reached.
+* **Model allowlist** - Restrict to specific models. Leave empty to allow all.
+* **Provider allowlist** - Restrict to specific providers. Leave empty to allow all.
+* **Zero Data Retention** - Require ZDR-compatible providers for all requests.
+
+<Note>
+  Individual API key budgets still apply. The lower limit wins.
+</Note>
+
+## Assigning Guardrails
+
+Guardrails can be assigned at multiple levels:
+
+* **Member assignments** - Assign to specific organization members. Sets a baseline for all their API keys and chatroom usage.
+* **API key assignments** - Assign directly to specific keys for granular control. Layers on top of member guardrails.
+
+Only one guardrail can be directly assigned to a user or key. All of an organization member's created API keys will implicitly follow that user's guardrail assignment, even if the API Key is further restricted with its own guardrail assignment.
+
+## Guardrail Hierarchy
+
+Account-wide privacy and provider settings are always enforced as a default guardrail. When additional guardrails apply to a request, they are combined using the following rules:
+
+* **Provider allowlists**: Intersection across all guardrails (only providers allowed by all guardrails are available)
+* **Model allowlists**: Intersection across all guardrails (only models allowed by all guardrails are available)
+* **Zero Data Retention**: OR logic (if any guardrail enforces ZDR, it is enforced)
+* **Budget limits**: Each guardrail's budget is checked independently. See [Budget Enforcement](#budget-enforcement) for details.
+
+This means stricter rules always win when multiple guardrails apply. For example, if a member guardrail allows providers A, B, and C, but an API key guardrail only allows providers A and B, only providers A and B will be available for that key.
+
+## Eligibility Preview
+
+When viewing a guardrail, you can see an eligibility preview that shows which providers and models are available with that guardrail combined with your account settings. This helps you understand the effective restrictions before assigning the guardrail.
+
+## Budget Enforcement
+
+Guardrail budgets are enforced per-user and per-key, not shared across all users with that guardrail. When an API key makes a request, its usage counts toward both the key's budget and the owning member's budget.
+
+**Example 1: Member guardrail with \$50/day limit**
+
+You assign a guardrail with a \$50/day budget to three team members: Alice, Bob, and Carol. Each member gets their own \$50/day allowance. If Alice spends \$50, she is blocked, but Bob and Carol can still spend up to \$50 each.
+
+**Example 2: API key usage accumulates to member usage**
+
+Alice creates two API keys, both assigned a guardrail with a \$20/day limit. Key A spends \$15 and Key B spends \$10. Each key is within its own \$20 limit, but Alice's total member usage is \$25. If Alice also has a member guardrail with a \$20/day limit, her requests would be blocked because her combined usage (\$25) exceeds the member limit (\$20).
+
+**Example 3: Layered guardrails**
+
+Bob has a member guardrail with a \$100/day limit. His API key has a separate guardrail with a \$30/day limit. The key can only spend \$30/day (its own limit), but Bob's total usage across all his keys cannot exceed \$100/day. Both limits are checked independently on each request.
+
+## API Access
+
+You can manage guardrails programmatically using the OpenRouter API. This allows you to create, update, delete, and assign guardrails to API keys and organization members directly from your code.
+
+See the [Guardrails API reference](/docs/api/api-reference/guardrails/list-guardrails) for available endpoints and usage examples.

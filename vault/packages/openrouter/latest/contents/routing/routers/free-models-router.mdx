@@ -1,0 +1,204 @@
+***
+
+title: Free Models Router
+subtitle: Get free AI inference by routing to available free models
+headline: Free Models Router | Zero-Cost AI Inference
+canonical-url: '[https://openrouter.ai/docs/guides/routing/routers/free-router](https://openrouter.ai/docs/guides/routing/routers/free-router)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Free Models Router - Zero-Cost AI Inference
+'og:description': >-
+Route requests to free AI models automatically using OpenRouter's Free Models
+Router.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Free%20Models%20Router\&description=Zero-cost%20AI%20inference](https://openrouter.ai/dynamic-og?title=Free%20Models%20Router\&description=Zero-cost%20AI%20inference)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+-----------------------------
+
+The [Free Models Router](https://openrouter.ai/openrouter/free) (`openrouter/free`) automatically selects a free model at random from the available free models on OpenRouter. The router intelligently filters for models that support the features your request needs, such as image understanding, tool calling, and structured outputs.
+
+## Overview
+
+Instead of manually choosing a specific free model, let the Free Models Router handle model selection for you. This is ideal for experimentation, learning, and low-volume use cases where you want zero-cost inference without worrying about which specific model to use.
+
+To try the Free Models Router without writing any code, see the [Chat Playground guide](/docs/guides/guides/free-models-router-playground).
+
+## Usage
+
+Set your model to `openrouter/free`:
+
+<CodeGroup>
+  ```typescript title="TypeScript SDK"
+  import { OpenRouter } from '@openrouter/sdk';
+
+  const openRouter = new OpenRouter({
+    apiKey: '<OPENROUTER_API_KEY>',
+  });
+
+  const completion = await openRouter.chat.send({
+    model: 'openrouter/free',
+    messages: [
+      {
+        role: 'user',
+        content: 'Hello! What can you help me with today?',
+      },
+    ],
+  });
+
+  console.log(completion.choices[0].message.content);
+  // Check which model was selected
+  console.log('Model used:', completion.model);
+  ```
+
+  ```typescript title="TypeScript (fetch)"
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer <OPENROUTER_API_KEY>',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'openrouter/free',
+      messages: [
+        {
+          role: 'user',
+          content: 'Hello! What can you help me with today?',
+        },
+      ],
+    }),
+  });
+
+  const data = await response.json();
+  console.log(data.choices[0].message.content);
+  // Check which model was selected
+  console.log('Model used:', data.model);
+  ```
+
+  ```python title="Python"
+  import requests
+  import json
+
+  response = requests.post(
+    url="https://openrouter.ai/api/v1/chat/completions",
+    headers={
+      "Authorization": "Bearer <OPENROUTER_API_KEY>",
+      "Content-Type": "application/json",
+    },
+    data=json.dumps({
+      "model": "openrouter/free",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello! What can you help me with today?"
+        }
+      ]
+    })
+  )
+
+  data = response.json()
+  print(data['choices'][0]['message']['content'])
+  # Check which model was selected
+  print('Model used:', data['model'])
+  ```
+
+  ```bash title="cURL"
+  curl https://openrouter.ai/api/v1/chat/completions \
+    -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "openrouter/free",
+      "messages": [{"role": "user", "content": "Hello!"}]
+    }'
+  ```
+</CodeGroup>
+
+## Response
+
+The response includes the `model` field showing which free model was actually used:
+
+```json
+{
+  "id": "gen-...",
+  "model": "upstage/solar-pro-3:free",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "..."
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 85,
+    "total_tokens": 97
+  }
+}
+```
+
+## How It Works
+
+1. **Request Analysis**: Your request is analyzed to determine required capabilities (e.g., vision, tool calling, structured outputs)
+2. **Model Filtering**: The router filters available free models to those supporting your request's requirements
+3. **Random Selection**: A model is randomly selected from the filtered pool
+4. **Request Forwarding**: Your request is forwarded to the selected free model
+5. **Response Tracking**: The response includes metadata showing which model was used
+
+## Available Free Models
+
+The Free Models Router selects from all currently available free models on OpenRouter. Some popular options include:
+
+<Callout intent="warning">
+  Free model availability changes frequently. Check the [models page](https://openrouter.ai/models?pricing=free) for the current list of free models.
+</Callout>
+
+* **DeepSeek R1 (free)** - DeepSeek's reasoning model
+* **Llama models (free)** - Various Meta Llama models
+* **Qwen models (free)** - Alibaba's Qwen family
+* And other community-contributed free models
+
+## Pricing
+
+The Free Models Router is completely free. There is no charge for:
+
+* Using the router itself
+* Requests routed to free models
+
+## Use Cases
+
+* **Learning and experimentation**: Try AI capabilities without any cost
+* **Prototyping**: Build and test applications before committing to paid models
+* **Low-volume applications**: Suitable for personal projects or demos
+* **Education**: Perfect for students and educators exploring AI
+
+## Limitations
+
+* **Rate limits**: Free models may have lower rate limits than paid models
+* **Availability**: Free model availability can vary; some may be temporarily unavailable
+* **Performance**: Free models may have higher latency during peak usage
+* **Model selection**: You cannot control which specific model is selected (use the `:free` variant suffix on a specific model if you need a particular free model)
+
+## Selecting Specific Free Models
+
+If you prefer to use a specific free model rather than random selection, you can:
+
+1. **Use the `:free` variant**: Append `:free` to any model that has a free variant:
+   ```json
+   {
+     "model": "meta-llama/llama-3.2-3b-instruct:free"
+   }
+   ```
+
+2. **Browse free models**: Visit the [models page](https://openrouter.ai/models?pricing=free) to see all available free models and select one directly.
+
+## Related
+
+* [Free Models Router in Chat Playground](/docs/guides/guides/free-models-router-playground) - Try the router without writing code
+* [Free Variant](/docs/guides/routing/model-variants/free) - Use the `:free` suffix for specific models
+* [Auto Router](/docs/guides/routing/routers/auto-router) - Intelligent model selection (paid models)
+* [Body Builder](/docs/guides/routing/routers/body-builder) - Generate multiple parallel API requests
+* [Model Fallbacks](/docs/guides/routing/model-fallbacks) - Configure fallback models

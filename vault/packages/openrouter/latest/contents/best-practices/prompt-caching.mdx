@@ -1,0 +1,418 @@
+***
+
+title: Prompt Caching
+subtitle: Cache prompt messages
+headline: Prompt Caching | Reduce AI Model Costs with OpenRouter
+canonical-url: '[https://openrouter.ai/docs/guides/best-practices/prompt-caching](https://openrouter.ai/docs/guides/best-practices/prompt-caching)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Prompt Caching - Optimize AI Model Costs with Smart Caching
+'og:description': >-
+Reduce your AI model costs with OpenRouter's prompt caching feature. Learn how
+to cache and reuse responses across OpenAI, Anthropic Claude, and DeepSeek
+models.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Prompt%20Caching\&description=Optimize%20AI%20model%20costs%20with%20OpenRouter](https://openrouter.ai/dynamic-og?title=Prompt%20Caching\&description=Optimize%20AI%20model%20costs%20with%20OpenRouter)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+To save on inference costs, you can enable prompt caching on supported providers and models.
+
+Most providers automatically enable prompt caching, but note that some (see Anthropic below) require you to enable it on a per-message basis.
+
+When using caching (whether automatically in supported models, or via the `cache_control` property), OpenRouter uses provider sticky routing to maximize cache hits — see [Provider Sticky Routing](#provider-sticky-routing) below for details.
+
+## Provider Sticky Routing
+
+To maximize cache hit rates, OpenRouter uses **provider sticky routing** to route your subsequent requests to the same provider endpoint after a cached request. This works automatically with both implicit caching (e.g. OpenAI, DeepSeek, Gemini 2.5) and explicit caching (e.g. Anthropic `cache_control` breakpoints).
+
+**How it works:**
+
+* After a request that uses prompt caching, OpenRouter remembers which provider served your request.
+* Subsequent requests for the same model are routed to the same provider, keeping your cache warm.
+* Sticky routing only activates when the provider's cache read pricing is cheaper than regular prompt pricing, ensuring you always benefit from cost savings.
+* If the sticky provider becomes unavailable, OpenRouter automatically falls back to the next-best provider.
+* Sticky routing is not used when you specify a manual [provider order](/docs/api-reference/provider-preferences) via `provider.order` — in that case, your explicit ordering takes priority.
+
+**Sticky routing granularity:**
+
+Sticky routing is tracked at the account level, per model, and per conversation. OpenRouter identifies conversations by hashing the first system (or developer) message and the first non-system message in each request, so requests that share the same opening messages are routed to the same provider. This means different conversations naturally stick to different providers, improving load-balancing and throughput while keeping caches warm within each conversation.
+
+## Inspecting cache usage
+
+To see how much caching saved on each generation, you can:
+
+1. Click the detail button on the [Activity](/activity) page
+2. Use the `/api/v1/generation` API, [documented here](/docs/api/api-reference/generations/get-generation)
+3. Check the `prompt_tokens_details` object in the [usage response](/docs/guides/guides/usage-accounting) included with every API response
+
+The `cache_discount` field in the response body will tell you how much the response saved on cache usage. Some providers, like Anthropic, will have a negative discount on cache writes, but a positive discount (which reduces total cost) on cache reads.
+
+### Usage object fields
+
+The usage object in API responses includes detailed cache metrics in the `prompt_tokens_details` field:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 10339,
+    "completion_tokens": 60,
+    "total_tokens": 10399,
+    "prompt_tokens_details": {
+      "cached_tokens": 10318,
+      "cache_write_tokens": 0
+    }
+  }
+}
+```
+
+The key fields are:
+
+* `cached_tokens`: Number of tokens read from the cache (cache hit). When this is greater than zero, you're benefiting from cached content.
+* `cache_write_tokens`: Number of tokens written to the cache. This appears on the first request when establishing a new cache entry.
+
+## OpenAI
+
+Caching price changes:
+
+* **Cache writes**: no cost
+* **Cache reads**: (depending on the model) charged at 0.25x or 0.50x the price of the original input pricing
+
+[Click here to view OpenAI's cache pricing per model.](https://platform.openai.com/docs/pricing)
+
+Prompt caching with OpenAI is automated and does not require any additional configuration. There is a minimum prompt size of 1024 tokens.
+
+[Click here to read more about OpenAI prompt caching and its limitation.](https://platform.openai.com/docs/guides/prompt-caching)
+
+## Grok
+
+Caching price changes:
+
+* **Cache writes**: no cost
+* **Cache reads**: charged at {GROK_CACHE_READ_MULTIPLIER}x the price of the original input pricing
+
+[Click here to view Grok's cache pricing per model.](https://docs.x.ai/docs/models#models-and-pricing)
+
+Prompt caching with Grok is automated and does not require any additional configuration.
+
+## Moonshot AI
+
+Caching price changes:
+
+* **Cache writes**: no cost
+* **Cache reads**: charged at {MOONSHOT_CACHE_READ_MULTIPLIER}x the price of the original input pricing
+
+Prompt caching with Moonshot AI is automated and does not require any additional configuration.
+
+## Groq
+
+Caching price changes:
+
+* **Cache writes**: no cost
+* **Cache reads**: charged at {GROQ_CACHE_READ_MULTIPLIER}x the price of the original input pricing
+
+Prompt caching with Groq is automated and does not require any additional configuration. Currently available on Kimi K2 models.
+
+[Click here to view Groq's documentation.](https://console.groq.com/docs/prompt-caching)
+
+## Anthropic Claude
+
+Caching price changes:
+
+* **Cache writes (5-minute TTL)**: charged at {ANTHROPIC_CACHE_WRITE_MULTIPLIER}x the price of the original input pricing
+* **Cache writes (1-hour TTL)**: charged at 2x the price of the original input pricing
+* **Cache reads**: charged at {ANTHROPIC_CACHE_READ_MULTIPLIER}x the price of the original input pricing
+
+There are two ways to enable prompt caching with Anthropic:
+
+* **Automatic caching**: Add a single `cache_control` field at the top level of your request. The system automatically applies the cache breakpoint to the last cacheable block and advances it forward as conversations grow. Best for multi-turn conversations.
+* **Explicit cache breakpoints**: Place `cache_control` directly on individual content blocks for fine-grained control over exactly what gets cached. There is a limit of four explicit breakpoints. It is recommended to reserve the cache breakpoints for large bodies of text, such as character cards, CSV data, RAG data, book chapters, etc.
+
+<Note>
+  **Automatic caching** (top-level `cache_control`) is only supported when requests are routed to the **Anthropic** provider directly. Amazon Bedrock and Google Vertex AI currently do not support top-level `cache_control` — when it is present, OpenRouter will only route to the Anthropic provider and exclude Bedrock and Vertex endpoints. Explicit per-block `cache_control` breakpoints work across all Anthropic-compatible providers including Bedrock and Vertex.
+</Note>
+
+By default, the cache expires after 5 minutes, but you can extend this to 1 hour by specifying `"ttl": "1h"` in the `cache_control` object.
+
+[Click here to read more about Anthropic prompt caching and its limitation.](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
+
+### Supported models
+
+The following Claude models support prompt caching (both automatic and explicit):
+
+* Claude Opus 4.6
+* Claude Opus 4.5
+* Claude Opus 4.1
+* Claude Opus 4
+* Claude Sonnet 4.6
+* Claude Sonnet 4.5
+* Claude Sonnet 4
+* Claude Sonnet 3.7 (deprecated)
+* Claude Haiku 4.5
+* Claude Haiku 3.5
+
+### Minimum token requirements
+
+Each model has a minimum cacheable prompt length:
+
+* **4096 tokens**: Claude Opus 4.6, Claude Opus 4.5, Claude Haiku 4.5
+* **2048 tokens**: Claude Sonnet 4.6, Claude Haiku 3.5
+* **1024 tokens**: Claude Sonnet 4.5, Claude Opus 4.1, Claude Opus 4, Claude Sonnet 4, Claude Sonnet 3.7
+
+Prompts shorter than these minimums will not be cached.
+
+### Cache TTL Options
+
+OpenRouter supports two cache TTL values for Anthropic:
+
+* **5 minutes** (default): `"cache_control": { "type": "ephemeral" }`
+* **1 hour**: `"cache_control": { "type": "ephemeral", "ttl": "1h" }`
+
+The 1-hour TTL is useful for longer sessions where you want to maintain cached content across multiple requests without incurring repeated cache write costs. The 1-hour TTL costs more for cache writes (2x base input price vs 1.25x for 5-minute TTL) but can save money over extended sessions by avoiding repeated cache writes. The 1-hour TTL for explicit cache breakpoints is supported across all Claude model providers (Anthropic, Amazon Bedrock, and Google Vertex AI).
+
+### Examples
+
+#### Automatic caching (recommended for multi-turn conversations)
+
+With automatic caching, add `cache_control` at the top level of the request. The system automatically caches all content up to the last cacheable block:
+
+```json
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "cache_control": { "type": "ephemeral" },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a historian studying the fall of the Roman Empire. You know the following book very well: HUGE TEXT BODY"
+    },
+    {
+      "role": "user",
+      "content": "What triggered the collapse?"
+    }
+  ]
+}
+```
+
+As the conversation grows, the cache breakpoint automatically advances to cover the growing message history.
+
+Automatic caching with 1-hour TTL:
+
+```json
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "cache_control": { "type": "ephemeral", "ttl": "1h" },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the meaning of life?"
+    }
+  ]
+}
+```
+
+#### Explicit cache breakpoints (fine-grained control)
+
+System message caching example (default 5-minute TTL):
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a historian studying the fall of the Roman Empire. You know the following book very well:"
+        },
+        {
+          "type": "text",
+          "text": "HUGE TEXT BODY",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What triggered the collapse?"
+        }
+      ]
+    }
+  ]
+}
+```
+
+User message caching example with 1-hour TTL:
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Given the book below:"
+        },
+        {
+          "type": "text",
+          "text": "HUGE TEXT BODY",
+          "cache_control": {
+            "type": "ephemeral",
+            "ttl": "1h"
+          }
+        },
+        {
+          "type": "text",
+          "text": "Name all the characters in the above book"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## DeepSeek
+
+Caching price changes:
+
+* **Cache writes**: charged at the same price as the original input pricing
+* **Cache reads**: charged at {DEEPSEEK_CACHE_READ_MULTIPLIER}x the price of the original input pricing
+
+Prompt caching with DeepSeek is automated and does not require any additional configuration.
+
+## Google Gemini
+
+### Implicit Caching
+
+Gemini 2.5 Pro and 2.5 Flash models now support **implicit caching**, providing automatic caching functionality similar to OpenAI’s automatic caching. Implicit caching works seamlessly — no manual setup or additional `cache_control` breakpoints required.
+
+Pricing Changes:
+
+* No cache write or storage costs.
+* Cached tokens are charged at {GOOGLE_CACHE_READ_MULTIPLIER}x the original input token cost.
+
+Note that the TTL is on average 3-5 minutes, but will vary. There is a minimum of {GOOGLE_CACHE_MIN_TOKENS_2_5_FLASH} tokens for Gemini 2.5 Flash, and {GOOGLE_CACHE_MIN_TOKENS_2_5_PRO} tokens for Gemini 2.5 Pro for requests to be eligible for caching.
+
+[Official announcement from Google](https://developers.googleblog.com/en/gemini-2-5-models-now-support-implicit-caching/)
+
+<Tip>
+  To maximize implicit cache hits, keep the initial portion of your message
+  arrays consistent between requests. Push variations (such as user questions or
+  dynamic context elements) toward the end of your prompt/requests.
+</Tip>
+
+### Pricing Changes for Cached Requests:
+
+* **Cache Writes:** Charged at the input token cost plus 5 minutes of cache storage, calculated as follows:
+
+```
+Cache write cost = Input token price + (Cache storage price × (5 minutes / 60 minutes))
+```
+
+* **Cache Reads:** Charged at {GOOGLE_CACHE_READ_MULTIPLIER}× the original input token cost.
+
+### Supported Models and Limitations:
+
+Only certain Gemini models support caching. Please consult Google's [Gemini API Pricing Documentation](https://ai.google.dev/gemini-api/docs/pricing) for the most current details.
+
+Cache Writes have a 5 minute Time-to-Live (TTL) that does not update. After 5 minutes, the cache expires and a new cache must be written.
+
+Gemini models have typically have a 4096 token minimum for cache write to occur. Cached tokens count towards the model's maximum token usage. Gemini 2.5 Pro has a minimum of {GOOGLE_CACHE_MIN_TOKENS_2_5_PRO} tokens, and Gemini 2.5 Flash has a minimum of {GOOGLE_CACHE_MIN_TOKENS_2_5_FLASH} tokens.
+
+### How Gemini Prompt Caching works on OpenRouter:
+
+OpenRouter simplifies Gemini cache management, abstracting away complexities:
+
+* You **do not** need to manually create, update, or delete caches.
+* You **do not** need to manage cache names or TTL explicitly.
+
+### How to Enable Gemini Prompt Caching:
+
+Gemini caching in OpenRouter requires you to insert `cache_control` breakpoints explicitly within message content, similar to Anthropic. We recommend using caching primarily for large content pieces (such as CSV files, lengthy character cards, retrieval augmented generation (RAG) data, or extensive textual sources).
+
+<Tip>
+  There is not a limit on the number of `cache_control` breakpoints you can
+  include in your request. OpenRouter will use only the last breakpoint for
+  Gemini caching. Including multiple breakpoints is safe and can help maintain
+  compatibility with Anthropic, but only the final one will be used for Gemini.
+</Tip>
+
+### Examples:
+
+#### System Message Caching Example
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a historian studying the fall of the Roman Empire. Below is an extensive reference book:"
+        },
+        {
+          "type": "text",
+          "text": "HUGE TEXT BODY HERE",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What triggered the collapse?"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### User Message Caching Example
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Based on the book text below:"
+        },
+        {
+          "type": "text",
+          "text": "HUGE TEXT BODY HERE",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        },
+        {
+          "type": "text",
+          "text": "List all main characters mentioned in the text above."
+        }
+      ]
+    }
+  ]
+}
+```

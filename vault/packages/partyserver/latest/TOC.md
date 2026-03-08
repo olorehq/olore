@@ -1,32 +1,21 @@
-# cf-partykit Documentation Structure
+# partyserver Documentation Structure
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `contents/_index.md` | Guide index with links to all topics |
-| `contents/quickstart.md` | Getting started guide |
-| `contents/how it works.md` | Architecture and concepts |
-| `contents/routing.md` | Request routing configuration |
-| `contents/scaling.md` | Scaling strategies |
-| `contents/composition.md` | Composing PartyServer instances |
-| `contents/configuration.md` | Configuration options (wrangler.jsonc, migrations) |
-| `contents/multiplayer.md` | Multiplayer features |
-| `contents/full-stack.md` | Full-stack application patterns |
-| `contents/durable-objects.md` | Durable Objects integration |
-| `contents/alarms.md` | Scheduled tasks and alarms |
-| `contents/auth.md` | Authentication patterns |
-| `contents/debugging.md` | Debugging techniques |
-| `contents/observability.md` | Monitoring and observability |
-| `contents/testing.md` | Testing strategies |
-| `contents/presence.md` | User presence tracking |
-| `contents/storage.md` | Storage options (inbuilt and external) |
-| `contents/rate-limiting.md` | Rate limiting configuration |
-| `contents/rpc.md` | RPC communication |
-| `contents/multi-parties.md` | Multi-party coordination |
-| `contents/games.md` | Game development patterns |
-| `contents/text-editors.md` | Real-time text editor integration |
-| `contents/chat.md` | Chat application patterns |
-| `contents/ai-agents.md` | AI agent integration |
-| `contents/pubsub.md` | Publish/subscribe patterns |
-| `contents/migrating-from-partykit.md` | Migration guide from PartyKit |
+| `contents/hono-party/README.md` | Hono middleware integration for PartyServer WebSockets in Hono apps |
+| `contents/partyagent/README.md` | Autonomous AI agents powered by Durable Objects with tool usage and task hand-off |
+| `contents/partybase/README.md` | Database solution for PartyServer built on Durable Objects with migration system |
+| `contents/partyflow/README.md` | Lightweight workflow engine for PartyServer built on Durable Objects |
+| `contents/partyfn/README.md` | Typesafe bidirectional RPC system between client and PartyServer |
+| `contents/partyhard/README.md` | Component of the PartyServer ecosystem |
+| `contents/partyserver/README.md` | Core PartyServer library for real-time apps with WebSocket lifecycle hooks and broadcasting |
+| `contents/partysession/README.md` | Per-user Durable Object model for session and shopping cart state management |
+| `contents/partysmart/README.md` | Alternative name for partyagent; see partyagent for details |
+| `contents/partysocket/README.md` | Reconnecting WebSocket client with buffering, timeouts, and multi-platform support |
+| `contents/partysub/README.md` | Pub-sub functionality for Durable Objects powered by PartyServer |
+| `contents/partysync/README.md` | Experimental library to synchronize state between a Durable Object and client |
+| `contents/partytracks/README.md` | Observable-based WebRTC audio/video handling using Cloudflare Realtime SFU |
+| `contents/partywhen/README.md` | Sophisticated scheduler for durable tasks built on Durable Object Alarms |
+| `contents/y-partyserver/README.md` | Yjs backend for PartyServer enabling collaborative editing via CRDTs |

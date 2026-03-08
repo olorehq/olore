@@ -1,0 +1,100 @@
+***
+
+title: Comet Opik
+subtitle: Send traces to Comet Opik
+headline: Broadcast to Comet Opik | OpenRouter Observability
+canonical-url: '[https://openrouter.ai/docs/guides/features/broadcast/opik](https://openrouter.ai/docs/guides/features/broadcast/opik)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Broadcast to Comet Opik - Send Traces to Opik
+'og:description': >-
+Connect Comet Opik to automatically receive traces from your OpenRouter
+requests. Step-by-step setup guide for Opik integration.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Comet%20Opik%20Broadcast\&description=Send%20traces%20to%20Comet%20Opik](https://openrouter.ai/dynamic-og?title=Comet%20Opik%20Broadcast\&description=Send%20traces%20to%20Comet%20Opik)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+[Comet Opik](https://www.comet.com/site/products/opik/) is an open-source platform for evaluating, testing, and monitoring LLM applications.
+
+## Step 1: Get your Opik credentials
+
+In Comet, set up your Opik workspace and project:
+
+1. Log in to your Comet account
+2. Create or select a workspace for your LLM traces
+3. Create a project within the workspace
+4. Go to **Settings > API Keys** to create or copy your API key
+
+## Step 2: Enable Broadcast in OpenRouter
+
+Go to [Settings > Observability](https://openrouter.ai/settings/observability) and toggle **Enable Broadcast**.
+
+![Enable Broadcast](https://files.buildwithfern.com/openrouter.docs.buildwithfern.com/docs/3e095d95758bab05594f468011be81b7d5a2fb19293fa91d5b3923d9f09b81d8/content/pages/features/broadcast/broadcast-enable.png)
+
+## Step 3: Configure Comet Opik
+
+Click the edit icon next to **Comet Opik** and enter:
+
+* **Api Key**: Your Comet API key (starts with `opik_...`)
+* **Workspace**: Your Comet workspace name
+* **Project Name**: The project name where traces will be logged
+
+## Step 4: Test and save
+
+Click **Test Connection** to verify the setup. The configuration only saves if the test passes.
+
+## Step 5: Send a test trace
+
+Make an API request through OpenRouter and view the trace in your Opik
+project dashboard.
+
+![Opik Trace View](https://files.buildwithfern.com/openrouter.docs.buildwithfern.com/docs/bd71a7fd9d80d09e76d05ea52e654e94dd15e68914669145afe6416e832a0103/content/pages/features/broadcast/broadcast-opik-trace.png)
+
+## Custom Metadata
+
+Comet Opik supports custom metadata on both traces and spans for organizing and filtering your LLM evaluations.
+
+### Supported Metadata Keys
+
+| Key               | Opik Mapping                           | Description                                  |
+| ----------------- | -------------------------------------- | -------------------------------------------- |
+| `trace_id`        | Trace metadata (`openrouter_trace_id`) | Group multiple requests into a single trace  |
+| `trace_name`      | Trace Name                             | Custom name displayed in the Opik trace list |
+| `span_name`       | Span Name                              | Name for intermediate spans in the hierarchy |
+| `generation_name` | Span Name                              | Name for the LLM generation span             |
+
+### Example
+
+```json
+{
+  "model": "openai/gpt-4o",
+  "messages": [{ "role": "user", "content": "Evaluate this response..." }],
+  "user": "user_12345",
+  "session_id": "session_abc",
+  "trace": {
+    "trace_name": "Response Quality Eval",
+    "generation_name": "Quality Assessment",
+    "eval_suite": "quality_v2",
+    "test_case_id": "tc_001"
+  }
+}
+```
+
+### Additional Context
+
+* Custom metadata keys from `trace` are included in both the trace and span metadata objects
+* Cost information (input, output, total) is automatically added to span metadata
+* Model parameters and finish reasons are included in span metadata when available
+* The `user` field maps to user identification in trace metadata
+* Opik uses UUIDv7 format for trace and span IDs internally; original OpenRouter IDs are stored in metadata as `openrouter_trace_id` and `openrouter_observation_id`
+
+## Privacy Mode
+
+When [Privacy Mode](/docs/guides/features/broadcast#privacy-mode) is enabled for this destination, prompt and completion content is excluded from traces. All other trace data — token usage, costs, timing, model information, and custom metadata — is still sent normally. See [Privacy Mode](/docs/guides/features/broadcast#privacy-mode) for details.

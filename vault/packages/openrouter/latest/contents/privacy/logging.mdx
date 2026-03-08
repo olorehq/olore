@@ -1,0 +1,59 @@
+***
+
+title: Logging
+subtitle: Provider logging and data retention policies
+headline: Logging | Provider Data Retention
+canonical-url: '[https://openrouter.ai/docs/guides/privacy/logging](https://openrouter.ai/docs/guides/privacy/logging)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Logging - Provider Data Retention Policies
+'og:description': >-
+Understand how AI providers handle logging and data retention when you use
+OpenRouter.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Logging\&description=Provider%20data%20retention%20policies](https://openrouter.ai/dynamic-og?title=Logging\&description=Provider%20data%20retention%20policies)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+Each AI provider on OpenRouter has its own data handling policies for logging and retention. This page explains how to control which providers can access your data.
+
+## Provider Policies
+
+### Training on Prompts
+
+Each provider on OpenRouter has its own data handling policies. We reflect those policies in structured data on each AI endpoint that we offer.
+
+On your account settings page, you can set whether you would like to allow routing to providers that may train on your data (according to their own policies). There are separate settings for paid and free models.
+
+Wherever possible, OpenRouter works with providers to ensure that prompts will not be trained on, but there are exceptions. If you opt out of training in your account settings, OpenRouter will not route to providers that train. This setting has no bearing on OpenRouter's own policies and what we do with your prompts.
+
+<Tip title="Data Policy Filtering">
+  You can [restrict individual requests](/docs/features/provider-routing#requiring-providers-to-comply-with-data-policies)
+  to only use providers with a certain data policy.
+
+  This is also available as an account-wide setting in [your privacy settings](https://openrouter.ai/settings/privacy).
+</Tip>
+
+### Data Retention & Logging
+
+Providers also have their own data retention policies, often for compliance reasons. OpenRouter does not have routing rules that change based on data retention policies of providers, but the retention policies as reflected in each provider's terms are shown below. Any user of OpenRouter can ignore providers that don't meet their own data retention requirements.
+
+The full terms of service for each provider are linked from the provider's page, and aggregated in the [documentation](/docs/features/provider-routing#terms-of-service).
+
+<ProviderDataRetentionTable />
+
+## Enterprise EU in-region routing
+
+For enterprise customers, OpenRouter supports EU in-region routing. When enabled for your account, your prompts and completions are processed within the European Union and do not leave the EU. Use the base URL `https://eu.openrouter.ai` for API requests to keep traffic and data within Europe. This feature is only enabled for enterprise customers by request.
+
+<Info title="EU-only models list">
+  To see which models are available for EU in-region routing, call `/api/v1/models/user` through the EU domain. [Learn more](/docs/api/api-reference/models/list-models-user)
+</Info>
+
+If you're interested, please contact our enterprise team at [https://openrouter.ai/enterprise/form](https://openrouter.ai/enterprise/form).

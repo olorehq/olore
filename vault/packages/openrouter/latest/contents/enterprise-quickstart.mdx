@@ -1,0 +1,132 @@
+***
+
+title: Enterprise Quickstart
+subtitle: Get your organization up and running with OpenRouter
+slug: enterprise-quickstart
+headline: Enterprise Quickstart | OpenRouter for Organizations
+canonical-url: '[https://openrouter.ai/docs/guides/guides/enterprise-quickstart](https://openrouter.ai/docs/guides/guides/enterprise-quickstart)'
+'og:site\_name': OpenRouter Documentation
+'og:title': Enterprise Quickstart - OpenRouter for Organizations
+'og:description': >-
+A comprehensive guide for enterprise customers to get started with OpenRouter.
+Learn about organizations, API key management, security controls, and
+observability.
+'og:image':
+type: url
+value: >-
+[https://openrouter.ai/dynamic-og?title=Enterprise%20Quickstart\&description=Get%20your%20organization%20up%20and%20running](https://openrouter.ai/dynamic-og?title=Enterprise%20Quickstart\&description=Get%20your%20organization%20up%20and%20running)
+'og:image:width': 1200
+'og:image:height': 630
+'twitter:card': summary\_large\_image
+'twitter:site': '@OpenRouter'
+noindex: false
+nofollow: false
+---------------
+
+## 1. Set Up Your Organization
+
+Organizations enable teams to collaborate with shared credits, centralized API key management, and unified usage tracking.
+
+To create an organization, navigate to [Settings > Preferences](https://openrouter.ai/settings/preferences) and click **Create Organization**. Once created, you can invite team members and switch between personal and organization contexts using the organization switcher.
+
+Key organization capabilities include shared credit pools for centralized billing, role-based access control (Admin and Member roles), and organization-wide activity tracking.
+
+For complete details on organization setup and management, see the [Organization Management](/docs/guides/guides/use-cases/organization-management) guide.
+
+## 2. Configure API Key Management
+
+Enterprise deployments typically require programmatic API key management for automated provisioning, rotation, and lifecycle management.
+
+### Management API Keys
+
+Create a [Management API key](https://openrouter.ai/settings/management-keys) to manage API keys programmatically. This enables automated key creation for customer instances, programmatic key rotation for security compliance, and usage monitoring with automatic limit enforcement.
+
+See [Management API Keys](/docs/guides/overview/auth/management-api-keys) for the full API reference and code examples.
+
+### API Key Rotation
+
+Regular key rotation limits the impact of compromised credentials. OpenRouter's Management API supports zero-downtime rotation: create a new key, update your applications, then delete the old key.
+
+If you use [BYOK (Bring Your Own Key)](/docs/guides/overview/auth/byok), you can rotate OpenRouter API keys without touching your provider credentials, simplifying key management.
+
+See [API Key Rotation](/docs/guides/guides/api-key-rotation) for step-by-step instructions.
+
+## 3. Implement Security Controls
+
+### Guardrails
+
+Guardrails let organizations control how members and API keys use OpenRouter. Configure spending limits with daily, weekly, or monthly resets, model and provider allowlists to restrict access, and Zero Data Retention enforcement for sensitive workloads.
+
+Guardrails can be assigned to organization members (baseline for all their keys) or directly to specific API keys for granular control. When multiple guardrails apply, stricter rules always win.
+
+See [Guardrails](/docs/guides/features/guardrails) for configuration details and the [Guardrails API reference](/docs/api-reference/guardrails/list-guardrails) for programmatic management.
+
+### Zero Data Retention (ZDR)
+
+Zero Data Retention ensures providers do not store your prompts or responses. Enable ZDR globally in your [privacy settings](/settings/privacy) or per-request using the `zdr` parameter.
+
+OpenRouter itself has a ZDR policy and does not retain your prompts unless you explicitly opt in to prompt logging.
+
+See [Zero Data Retention](/docs/guides/features/zdr) for the full list of ZDR-compatible endpoints and configuration options.
+
+### Data Privacy
+
+OpenRouter does not store your prompts or responses unless you opt in to prompt logging. Only metadata (token counts, latency, etc.) is stored for reporting and your activity feed.
+
+See [Data Collection](/docs/guides/privacy/data-collection) and [Logging](/docs/guides/privacy/logging) for complete privacy documentation.
+
+## 4. Set Up Observability
+
+### Broadcast
+
+Broadcast automatically sends traces from your OpenRouter requests to external observability platforms without additional instrumentation. Supported destinations include Datadog, Langfuse, LangSmith, Braintrust, OpenTelemetry Collector, S3, and more.
+
+Configure broadcast at [Settings > Observability](https://openrouter.ai/settings/observability). You can filter traces by API key, set sampling rates, and configure up to 5 destinations of the same type for different environments.
+
+See [Broadcast](/docs/guides/features/broadcast) for setup instructions and destination-specific walkthroughs.
+
+### User Tracking
+
+Track your end-users by including a `user` parameter in API requests. This improves caching performance (sticky routing per user) and enables user-level analytics in your activity feed and exports.
+
+See [User Tracking](/docs/guides/guides/user-tracking) for implementation details.
+
+## 5. Monitor Usage and Costs
+
+### Usage Accounting
+
+Every API response includes detailed usage information: token counts (prompt, completion, reasoning, cached), cost in credits, and timing data. This enables real-time cost tracking without additional API calls.
+
+See [Usage Accounting](/docs/guides/guides/usage-accounting) for response format details and code examples.
+
+### Activity Export
+
+Export aggregated usage data as CSV or PDF from the [Activity page](https://openrouter.ai/activity). Filter by time period and group by Model, API Key, or Creator (organization member) for detailed reporting.
+
+See [Activity Export](/docs/guides/guides/activity-export) for export instructions.
+
+## 6. Optimize for Reliability
+
+### Provider Routing and Fallbacks
+
+OpenRouter monitors provider health in real-time and automatically routes around outages. Configure fallback chains by specifying multiple models, and customize provider selection based on cost, latency, or specific provider preferences.
+
+See [Provider Selection](/docs/features/provider-routing) and [Model Fallbacks](/docs/routing/model-fallbacks) for configuration options.
+
+### Uptime Optimization
+
+OpenRouter tracks response times, error rates, and availability across all providers. This data powers intelligent routing decisions and provides transparency about service reliability.
+
+See [Uptime Optimization](/docs/guides/best-practices/uptime-optimization) for details on how OpenRouter maximizes availability.
+
+## Next Steps
+
+Once your organization is configured, explore these additional resources:
+
+* [Quickstart](/docs/quickstart) for basic API integration examples
+* [Structured Outputs](/docs/features/structured-outputs) for JSON schema enforcement
+* [Tool Calling](/docs/features/tool-calling) for function calling capabilities
+* [Prompt Caching](/docs/guides/best-practices/prompt-caching) for cost optimization
+* [Latency and Performance](/docs/guides/best-practices/latency-and-performance) for performance tuning
+
+For enterprise sales inquiries or custom requirements, contact our sales team at [openrouter.ai/enterprise](https://openrouter.ai/enterprise).
