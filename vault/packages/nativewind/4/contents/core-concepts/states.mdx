@@ -1,0 +1,117 @@
+---
+title: States & Pseudo-classes
+---
+
+{/* # States & Pseudo-classes */}
+
+## Hover, Focus, and Active
+
+Nativewind supports the `:hover`, `:focus`, and `:active` pseudo-classes. These work by mapping to the corresponding React Native event props on the component.
+
+| Pseudo-class | Tailwind Modifier | Activating Event | Deactivating Event |
+| --- | --- | --- | --- |
+| `:hover` | `hover:` | `onHoverIn` | `onHoverOut` |
+| `:active` | `active:` | `onPressIn` | `onPressOut` |
+| `:focus` | `focus:` | `onFocus` | `onBlur` |
+
+```tsx
+import { Pressable, Text } from "react-native";
+
+function MyButton() {
+  return (
+    <Pressable className="bg-blue-500 active:bg-blue-700">
+      <Text className="text-white">Press Me</Text>
+    </Pressable>
+  );
+}
+```
+
+<Callout type="info">
+The component must support the relevant event prop for the modifier to work. For example, `hover:` requires `onHoverIn`/`onHoverOut`, which is available on `Pressable` and `TextInput` but not `View` or `Text`.
+</Callout>
+
+### Combining Pseudo-classes
+
+Multiple pseudo-classes can be combined. All conditions must be met for the styles to apply:
+
+```tsx
+<TextInput className="hover:active:focus:border-blue-500" />
+```
+
+## Disabled and Empty
+
+Nativewind supports the `:disabled` and `:empty` pseudo-classes.
+
+| Pseudo-class | Tailwind Modifier | Condition |
+| --- | --- | --- |
+| `:disabled` | `disabled:` | Component has `disabled={true}` prop |
+| `:empty` | `empty:` | Component has no children |
+
+```tsx
+import { TextInput } from "react-native";
+
+function MyInput({ disabled }) {
+  return (
+    <TextInput
+      className="border disabled:opacity-50 disabled:bg-gray-200"
+      disabled={disabled}
+    />
+  );
+}
+```
+
+## Data Attribute Selectors
+
+Nativewind supports `[data-*]` attribute selectors, allowing you to style components based on data attributes. This uses React Native Web's `dataSet` prop.
+
+```tsx
+import { View, Text } from "react-native";
+
+function StatusBadge({ active }) {
+  return (
+    <View
+      className="[&[data-active]]:bg-green-500 [&[data-active='false']]:bg-gray-500"
+      {...{ dataSet: { active: active } }}
+    >
+      <Text>Status</Text>
+    </View>
+  );
+}
+```
+
+Attribute selectors support both presence checks (`[data-test]`) and value equality checks (`[data-test='value']`).
+
+## Styling Based on Parent State
+
+You can style child components based on the state of a parent using the `group` utility. Add `group/{name}` to the parent and use `group-hover/{name}:`, `group-active/{name}:`, or `group-focus/{name}:` modifiers on children.
+
+```tsx
+import { Pressable, Text, View } from "react-native";
+
+function Card() {
+  return (
+    <Pressable className="group/card">
+      <View className="group-active/card:bg-blue-100">
+        <Text className="group-active/card:text-blue-700">
+          Press the card to see child styles change
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+```
+
+### How it works
+
+1. The parent component is tagged with `group/{name}` (e.g. `group/item`)
+2. Children use `group-{modifier}/{name}:` to react to the parent's state
+3. When the parent's state changes (e.g. pressed), child styles update automatically
+4. Transitions and animations work with group states
+
+```tsx
+<View className="group/item">
+  <Text className="group-active/item:text-red-500 transition-colors duration-300">
+    This text transitions to red when the parent is pressed
+  </Text>
+</View>
+```

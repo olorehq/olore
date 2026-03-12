@@ -1,0 +1,30 @@
+---
+title: Editor Setup
+---
+
+{  /* # Editor Setup */}
+
+Please refer to the [v3 documentation on the Tailwind CSS website](https://v3.tailwindcss.com/docs/editor-setup) for more information.
+
+## Editor Support for Custom ClassName Props
+
+When using `cssInterop` or `remapProps` to create custom className props for third-party components, you may need to configure your editor to recognize these new props for proper IntelliSense and autocomplete.
+
+For detailed information about working with third-party components and creating custom className props, see the [Styling Third-Party Components](../guides/third-party-components) guide.
+
+### VS Code Configuration
+
+If you're using VS Code with the Tailwind CSS IntelliSense extension, you can add custom className props to the `tailwindCSS.classAttributes` setting:
+
+```json
+{
+  (...)
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    "headerClassName"
+  ]
+}
+```
+
+This will enable autocomplete and IntelliSense for your custom className props created with `cssInterop` or `remapProps`.

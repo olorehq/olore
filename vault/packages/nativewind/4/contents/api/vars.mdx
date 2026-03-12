@@ -1,0 +1,45 @@
+---
+title: vars() & useUnstableNativeVariable()
+---
+
+{ /* # vars() & useUnstableNativeVariable() */}
+
+## vars()
+
+`vars` is a function that takes a dictionary of CSS variables and returns a style object that can be used in React Native components. This allows you to set CSS variable values from JavaScript and have them flow down the component tree.
+
+```tsx
+import { View, Text } from "react-native";
+import { vars } from "nativewind";
+
+function ThemedSection({ brandColor }) {
+  return (
+    <View style={vars({ "--brand-color": brandColor })}>
+      <Text className="text-[--brand-color]">Themed text</Text>
+    </View>
+  );
+}
+```
+
+Variables set via `vars()` follow standard CSS variable inheritance -- child components can reference variables set by any ancestor. Variables are reactive and update children when values change.
+
+## useUnstableNativeVariable()
+
+<Callout type="warn" title="UNSTABLE API">
+This hook is prefixed with "unstable" because its API may change in future versions.
+</Callout>
+
+`useUnstableNativeVariable` reads a CSS variable value from the current variable context. This is useful when you need to access a CSS variable's resolved value directly in JavaScript rather than through a className.
+
+```tsx
+import { useUnstableNativeVariable } from "nativewind";
+
+function MyComponent() {
+  const brandColor = useUnstableNativeVariable("--brand-color");
+
+  // brandColor is the resolved value, e.g. "red"
+  return <ThirdPartyComponent color={brandColor} />;
+}
+```
+
+The hook is reactive -- if the variable's value changes (e.g. due to a parent re-rendering with different `vars()`), the component will re-render with the new value. It reads from `:root` variables and any variables set by ancestor components via `vars()` or className.

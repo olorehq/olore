@@ -1,0 +1,21 @@
+---
+title: _install helper
+---
+
+import NPM from './_npm.mdx';
+
+You will need to install `nativewind` and its peer dependencies `tailwindcss`, `react-native-reanimated` and `react-native-safe-area-context`.
+
+<NPM
+  framework={props.framework}
+  deps={[
+    "nativewind",
+    "react-native-reanimated",
+    "react-native-safe-area-context",
+  ]}
+  devDeps={[
+    "tailwindcss@^3.4.17",
+    "prettier-plugin-tailwindcss@^0.5.11",
+    ...(props.framework === 'expo' ? ["babel-preset-expo"] : []),
+  ]}
+/>
