@@ -1,0 +1,116 @@
+---
+title: Feedback
+description: Receive feedback from your users
+---
+
+## Overview
+
+Feedback is crucial for knowing what your reader thinks, and help you to further improve documentation content.
+
+You can integrate a simple feedback system with Fumadocs.
+
+## Installation
+
+Install it using **Fumadocs CLI**.
+
+```npm
+npx @fumadocs/cli@latest add feedback
+```
+
+### Page Feedback
+
+To create a page-level feedback UI, add the `<Feedback />` component to your docs page:
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/layout/docs/page';
+import { Feedback } from '@/components/feedback/client';
+import posthog from 'posthog-js';
+
+export default async function Page() {
+  return (
+    <DocsPage>
+      {/* at the bottom of page */}
+      <Feedback
+        onSendAction={async (feedback) => {
+          'use server';
+
+          await posthog.capture('on_rate_docs', feedback);
+        }}
+      />
+    </DocsPage>
+  );
+}
+```
+
+- `onSendAction`: fired when user submit feedback.
+
+You can specify a server action, or any function (in client component) to handle the user feedback.
+For example, to report user feedback as a `on_rate_docs` event on PostHog.
+
+### Feedback Block
+
+You can also configure block-level feedback (e.g. a feedback popover for each paragraph).
+
+Add the `remark-feedback-block` Remark plugin:
+
+```tsx title="source.config.ts (Fumadocs MDX)"
+import {
+  remarkFeedbackBlock,
+  type RemarkFeedbackBlockOptions,
+} from 'fumadocs-core/mdx-plugins/remark-feedback-block';
+import { defineConfig } from 'fumadocs-mdx/config';
+
+const feedbackOptions: RemarkFeedbackBlockOptions = {
+  // other options:
+};
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [
+      // [!code ++]
+      [remarkFeedbackBlock, feedbackOptions],
+    ],
+  },
+});
+```
+
+Then, define the `FeedbackBlock` MDX component:
+
+```tsx title="mdx-components.tsx"
+import { FeedbackBlock } from '@/components/feedback/client';
+import defaultComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultComponents,
+    FeedbackBlock: ({ children, ...rest }) => (
+      <FeedbackBlock {...rest} onSendAction={onBlockFeedbackAction}>
+        {children}
+      </FeedbackBlock>
+    ),
+    ...components,
+  };
+}
+```
+
+- `onSendAction`: fired when user submit feedback.
+
+<Callout type='info' title='Good to know'>
+
+`remark-feedback-block` generates a block ID from its content and order in the page, hence it is also possible to track the blocks from 3rd party services.
+
+</Callout>
+
+### Integrating with GitHub Discussion
+
+To report your feedback to GitHub Discussion, you can copy this file as a starting point:
+
+<include cwd meta="title='lib/github.ts'">
+  ./lib/github.ts
+</include>
+
+1. Create your own GitHub App and obtain its app ID and private key.
+2. Fill required environment variables.
+3. Replace constants like `owner`, `repo`, and `DocsCategory`.
+4. Use the `onPageFeedbackAction` & `onBlockFeedbackAction` in your feedback components.

@@ -1,0 +1,49 @@
+---
+title: Global Options
+description: Customise Fumadocs MDX
+---
+
+## Global Options
+
+Shared options of Fumadocs MDX.
+
+```ts title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  // global options
+});
+```
+
+<auto-type-table path="./props.ts" name="GlobalConfig" />
+
+### MDX Options
+
+Customise the [default MDX preset](/docs/mdx/mdx).
+
+```ts title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [remarkMath],
+    // When order matters
+    rehypePlugins: (v) => [rehypeKatex, ...v],
+  },
+});
+```
+
+Or using the minimal preset:
+
+```ts title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    preset: 'minimal',
+    // now it accepts only MDX processor options
+  },
+});
+```
