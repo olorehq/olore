@@ -1,0 +1,185 @@
+---
+title: "Font Family"
+description: "Utilities for controlling the font family of an element."
+---
+
+import utilities from 'utilities?plugin=fontFamily'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Setting the font family
+
+You can control the typeface of text using the font family utilities.
+
+```html {{ example: true }}
+<div class="flex flex-col gap-8">
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">font-sans</span>
+    <p class="font-sans text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">font-serif</span>
+    <p class="font-serif text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">font-mono</span>
+    <p class="font-mono text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+</div>
+```
+
+```html
+<p class="**font-sans** ...">The quick brown fox ...</p>
+<p class="**font-serif** ...">The quick brown fox ...</p>
+<p class="**font-mono** ...">The quick brown fox ...</p>
+```
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="font-sans" featuredClass="font-serif" element="p" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="font-sans" featuredClass="font-serif" element="p" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind provides three font family utilities: a cross-browser sans-serif stack, a cross-browser serif stack, and a cross-browser monospaced stack. You can change, add, or remove these by editing the `theme.fontFamily` section of your Tailwind config.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      fontFamily: {
+-       'sans': ['ui-sans-serif', 'system-ui', ...],
+-       'serif': ['ui-serif', 'Georgia', ...],
+-       'mono': ['ui-monospace', 'SFMono-Regular', ...],
++       'display': ['Oswald', ...],
++       'body': ['"Open Sans"', ...],
+      }
+    }
+  }
+```
+
+Font families can be specified as an array or as a simple comma-delimited string:
+
+```js
+{
+  // Array format:
+  'sans': ['Helvetica', 'Arial', 'sans-serif'],
+
+  // Comma-delimited format:
+  'sans': 'Helvetica, Arial, sans-serif',
+}
+```
+
+Note that **Tailwind does not automatically escape font names** for you. If you're using a font that contains an invalid identifier, wrap it in quotes or escape the invalid characters.
+
+```js
+{
+  // Won't work:
+  'sans': ['Exo 2', ...],
+
+  // Add quotes:
+  'sans': ['"Exo 2"', ...],
+
+  // ...or escape the space:
+  'sans': ['Exo\\ 2', ...],
+}
+```
+
+Like any other web project, make sure to include the necessary `@font-face` or `@import` rules in your CSS for any custom fonts you're using so that those fonts are loaded by the browser for your site:
+
+```css {{ filename: 'app.css' }}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/Roboto.woff2) format('woff2');
+  }
+}
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+#### Providing default font settings
+
+You can optionally provide default [font-feature-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings) and [font-variation-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/font-variation-settings) for each font in your project using a tuple of the form `[fontFamilies, { fontFeatureSettings, fontVariationSettings }]` when configuring custom fonts.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      fontFamily: {
+        sans: [
+          '"Inter var", sans-serif',
++         {
++           fontFeatureSettings: '"cv11", "ss01"',
++           fontVariationSettings: '"opsz" 32'
++         },
+        ],
+      },
+    },
+  }
+```
+
+### Arbitrary values
+
+<ArbitraryValues property="font-family" featuredClass="font-['Open_Sans']" element="p" />
+
+### Customizing the default font
+
+For convenience, [Preflight](/docs/preflight) sets the font family on the `html` element to match your configured `sans` font, so one way to change the default font for your project is to customize the `sans` key in your `fontFamily` configuration:
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  const defaultTheme = require('tailwindcss/defaultTheme')
+
+  module.exports = {
+    theme: {
+      extend: {
+        fontFamily: {
++         'sans': ['"Proxima Nova"', ...defaultTheme.fontFamily.sans],
+        },
+      }
+    }
+  }
+```
+
+You can also customize the default font used in your project by [adding a custom base style](/docs/adding-custom-styles#adding-base-styles) that sets the `font-family` property explicitly:
+
+```css {{ filename: 'main.css' }}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Proxima Nova", system-ui, sans-serif;
+  }
+}
+```
+
+This is the best approach if you have customized your font family utilities to have different names and don't want there to be `font-sans` utility available in your project.

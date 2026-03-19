@@ -1,0 +1,120 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+
+title: noUnnecessaryConditions
+description: Learn more about noUnnecessaryConditions
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+<TabItem label="JavaScript (and super languages)" icon="seti:javascript">
+:::caution
+This rule is part of the [nursery](/linter/#nursery) group. This means that it is experimental and the behavior can change at any time.
+:::
+:::note
+This rule belongs to the types domain. This means that its activation will activate the Biome Scanner to scan the files of your project, and enable the type inference engine. Read more about it in the [documentation page](/linter/domains#types)
+:::
+## Summary
+- Rule available since: `v2.1.4`
+- Diagnostic Category: [`lint/nursery/noUnnecessaryConditions`](/reference/diagnostics#diagnostic-category)
+- This rule doesn't have a fix.
+- The default severity of this rule is [**warning**](/reference/diagnostics#warning).
+- This rule belongs to the following domains:
+  - [`types`](/linter/domains#types)
+- Sources: 
+  - Inspired from [`@typescript-eslint/no-unnecessary-condition`](https://typescript-eslint.io/rules/no-unnecessary-condition)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"nursery": {
+				"noUnnecessaryConditions": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow unnecessary type-based conditions that can be statically determined as redundant.
+
+This rule detects if expressions inside conditions are statically inferrable and yield
+falsy or truthy values that don't change during the life cycle of the program.
+
+## Examples
+
+### Invalid
+
+```ts
+function head<T>(items: T[]) {
+  if (items) {  // This check is unnecessary
+    return items[0].toUpperCase();
+  }
+}
+```
+
+```ts
+function foo(arg: 'bar' | 'baz') {
+  if (arg) {  // This check is unnecessary
+  }
+}
+```
+
+```ts
+function bar(arg: string) {
+  return arg?.length;  // ?. is unnecessary
+}
+```
+
+Contrary to the source rule, this rule doesn't trigger bindings that are assigned to multiple
+values. In the following example, the variable `greeting` is assigned to multiple values; hence
+it can't be inferred to a truthy or falsy value.
+
+```ts
+let greeting = false;
+
+function changeGreeting() {
+    greeting = "Hello World!"
+}
+
+if (greeting) {} // rule not triggered here
+
+```
+
+### Valid
+
+```ts
+function head<T>(items: T[] | null) {
+  if (items) {  // This check is necessary
+    return items[0].toUpperCase();
+  }
+}
+```
+
+```ts
+function foo(arg: 'bar' | 'baz' | null) {
+  if (arg) {  // This check is necessary
+  }
+}
+```
+
+```ts
+function bar(arg: string | undefined) {
+  return arg?.length;  // ?. is necessary
+}
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/src/lint/nursery/no_unnecessary_conditions.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/tests/specs/nursery/noUnnecessaryConditions)
+
+</TabItem>
+</Tabs>
+

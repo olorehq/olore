@@ -1,0 +1,64 @@
+---
+title: "Text Transform"
+description: "Utilities for controlling the transformation of text."
+---
+
+import utilities from 'utilities?plugin=textTransform'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Transforming text
+
+The `uppercase` and `lowercase` will uppercase and lowercase text respectively, whereas `capitalize` utility will convert text to title-case. The `normal-case` utility can be used to preserve the original casing — typically to reset capitalization at different breakpoints.
+
+```html {{ example: true }}
+<div class="flex flex-col gap-8">
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">normal-case</span>
+    <p class="normal-case text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">uppercase</span>
+    <p class="uppercase text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">lowercase</span>
+    <p class="lowercase text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+  <div>
+    <span class="font-medium text-sm text-slate-500 font-mono mb-3 dark:text-slate-400">capitalize</span>
+    <p class="capitalize text-lg font-medium text-slate-900 dark:text-slate-200">
+      The quick brown fox jumps over the lazy dog.
+    </p>
+  </div>
+</div>
+```
+
+```html
+<p class="**normal-case** ...">The quick brown fox ...</p>
+<p class="**uppercase** ...">The quick brown fox ...</p>
+<p class="**lowercase** ...">The quick brown fox ...</p>
+<p class="**capitalize** ...">The quick brown fox ...</p>
+```
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="capitalize" featuredClass="uppercase" element="p" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="capitalize" featuredClass="uppercase" element="p" />

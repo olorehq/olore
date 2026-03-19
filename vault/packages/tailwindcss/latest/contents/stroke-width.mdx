@@ -1,0 +1,69 @@
+---
+title: "Stroke Width"
+description: "Utilities for styling the stroke width of SVG elements."
+---
+
+import utilities from 'utilities?plugin=strokeWidth'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Setting the stroke width
+
+Use the `stroke-*` utilities to set the stroke width of an SVG.
+
+```html {{ example: true }}
+<div class="flex items-center justify-center space-x-8">
+  <svg class="stroke-indigo-500 stroke-1" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="24" cy="24" r="23" stroke-linejoin="round"/> <path d="M23 1C23 1 15 10.4901 15 24C15 37.5099 23 47 23 47" stroke-linejoin="round"/> <path d="M25 1C25 1 33 10.4901 33 24C33 37.5099 25 47 25 47" stroke-linejoin="round"/> <path d="M1 24H47"/> </svg>
+  <svg class="stroke-indigo-500 stroke-2" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <circle cx="24" cy="24" r="23" stroke-linejoin="round"/> <path d="M23 1C23 1 15 10.4901 15 24C15 37.5099 23 47 23 47" stroke-linejoin="round"/> <path d="M25 1C25 1 33 10.4901 33 24C33 37.5099 25 47 25 47" stroke-linejoin="round"/> <path d="M1 24H47"/> </svg>
+</div>
+```
+
+```html
+<svg class="**stroke-1** ..."></svg>
+<svg class="**stroke-2** ..."></svg>
+```
+
+This can be useful for styling icon sets like [Heroicons](https://heroicons.com).
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="stroke-1" featuredClass="stroke-2" element="svg" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="stroke-1" featuredClass="stroke-2" element="svg" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind provides three `stroke-width` utilities. You change, add, or remove these by editing the `theme.strokeWidth` section of your Tailwind config.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      extend: {
++       strokeWidth: {
++         '2': '2px',
++       }
+      }
+    }
+  }
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+### Arbitrary values
+
+<ArbitraryValues property="stroke-width" featuredClass="stroke-[2px]" element="svg" />

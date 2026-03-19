@@ -1,0 +1,228 @@
+---
+title: "Border Radius"
+description: "Utilities for controlling the border radius of an element."
+---
+
+import utilities from 'utilities?plugin=borderRadius'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Rounded corners
+
+Use utilities like `rounded-sm`, `rounded`, or `rounded-lg` to apply different border radius sizes to an element.
+
+```html {{ example: true }}
+<div class="flex flex-col sm:flex-row items-center justify-around gap-4 text-white text-sm text-center font-bold leading-6">
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded</p>
+    <div class="p-4 shadow-sm bg-purple-500 w-16 h-16 rounded"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-md</p>
+    <div class="p-4 shadow-sm bg-purple-500 w-16 h-16 rounded-md"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-lg</p>
+    <div class="p-4 shadow-sm bg-purple-500 w-16 h-16 rounded-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-full</p>
+    <div class="p-4 shadow-sm bg-purple-500 w-16 h-16 rounded-full"></div>
+  </div>
+</div>
+```
+
+```html
+<div class="**rounded** ..."></div>
+<div class="**rounded-md** ..."></div>
+<div class="**rounded-lg** ..."></div>
+<div class="**rounded-full** ..."></div>
+```
+
+### Pill buttons
+
+Use the `rounded-full` utility to create pill buttons.
+
+```html {{ example: true }}
+<div class="flex justify-center gap-4 text-white text-sm text-center font-bold leading-6">
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-full</p>
+    <button class="px-4 py-2 font-semibold text-sm bg-cyan-500 text-white rounded-full shadow-sm">Save Changes</button>
+  </div>
+</div>
+```
+
+```html
+<button class="**rounded-full** ...">Save Changes</button>
+```
+
+### No rounding
+
+Use `rounded-none` to remove an existing border radius from an element.
+
+```html {{ example: true }}
+<div class="flex justify-center gap-4 text-white text-sm text-center font-bold leading-6">
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-none</p>
+    <button class="px-4 py-2 font-semibold text-sm bg-sky-500 text-white rounded-none shadow-sm">Save Changes</button>
+  </div>
+</div>
+```
+
+```html
+<button class="**rounded-none** ...">Save Changes</button>
+```
+
+This is most commonly used to remove a border radius that was applied at a smaller breakpoint.
+
+### Rounding sides separately
+
+Use the `rounded-t-*`, `rounded-r-*`, `rounded-b-*`, and `rounded-l-*` utilities to only round one side of an element.
+
+```html {{ example: true }}
+<div class="flex flex-col sm:flex-row items-center justify-around gap-4 text-white text-sm text-center font-bold leading-6">
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-t-lg</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-t-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-r-lg</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-r-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-b-lg</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-b-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-l-lg</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-l-lg"></div>
+  </div>
+</div>
+```
+
+```html
+<div class="**rounded-t-lg** ..."></div>
+<div class="**rounded-r-lg** ..."></div>
+<div class="**rounded-b-lg** ..."></div>
+<div class="**rounded-l-lg** ..."></div>
+```
+
+### Rounding corners separately
+
+Use the `rounded-tl-*`, `rounded-tr-*`, `rounded-br-*`, and `rounded-bl-*` utilities to only round one corner of an element.
+
+```html {{ example: true }}
+<div class="flex flex-col sm:flex-row items-center justify-around gap-4 text-white text-sm text-center font-bold leading-6">
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-tl-lg</p>
+    <div class="p-4 shadow-sm bg-pink-500 w-16 h-16 rounded-tl-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-tr-lg</p>
+    <div class="p-4 shadow-sm bg-pink-500 w-16 h-16 rounded-tr-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-br-lg</p>
+    <div class="p-4 shadow-sm bg-pink-500 w-16 h-16 rounded-br-lg"></div>
+  </div>
+  <div class="flex flex-col items-center shrink-0">
+    <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3 dark:text-slate-400">rounded-bl-lg</p>
+    <div class="p-4 shadow-sm bg-pink-500 w-16 h-16 rounded-bl-lg"></div>
+  </div>
+</div>
+```
+
+```html
+<div class="**rounded-tl-lg** ..."></div>
+<div class="**rounded-tr-lg** ..."></div>
+<div class="**rounded-br-lg** ..."></div>
+<div class="**rounded-bl-lg** ..."></div>
+```
+
+### <Heading ignore>Using logical properties</Heading>
+
+Use the `rounded-s-*`, `rounded-e-*`, `rounded-ss-*`, `rounded-se-*`, `rounded-es-*`, and `rounded-ee-*` utilities to set the border radius using [logical properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Logical_Properties/Basic_concepts), which map to the appropriate corners based on the text direction.
+
+```html {{ example: true }}
+<div class="grid grid-cols-2 gap-x-4 place-items-center">
+  <div class="flex flex-col items-start gap-y-4" dir="ltr">
+    <p class="text-sm font-medium">Left-to-right</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-s-lg"></div>
+  </div>
+  <div class="flex flex-col items-start gap-y-4" dir="rtl">
+    <p class="text-sm font-medium">Right-to-left</p>
+    <div class="p-4 shadow-sm bg-blue-500 w-16 h-16 rounded-s-lg"></div>
+  </div>
+</div>
+```
+
+```html
+<div dir="**ltr**">
+  <div class="**rounded-s-lg** ..."></div>
+<div>
+
+<div dir="**rtl**">
+  <div class="**rounded-s-lg** ..."></div>
+<div>
+```
+
+Here are all the available border color logical property utilities and their physical property equivalents in both LTR and RTL modes.
+
+| Class | Left-to-right | Right-to-left |
+| --- | --- | --- |
+| `rounded-s-*` | `rounded-l-*` | `rounded-r-*` |
+| `rounded-e-*` | `rounded-r-*` | `rounded-l-*` |
+| `rounded-ss-*` | `rounded-tl-*` | `rounded-tr-*` |
+| `rounded-se-*` | `rounded-tr-*` | `rounded-tl-*` |
+| `rounded-es-*` | `rounded-bl-*` | `rounded-br-*` |
+| `rounded-ee-*` | `rounded-br-*` | `rounded-bl-*` |
+
+For more control, you can also use the [LTR and RTL modifiers](/docs/hover-focus-and-other-states#rtl-support) to conditionally apply specific styles depending on the current text direction.
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="rounded" featuredClass="rounded-lg" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="rounded" featuredClass="rounded-lg" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind provides five border radius size utilities. You can change, add, or remove these by editing the `theme.borderRadius` section of your Tailwind config.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      borderRadius: {
+        'none': '0',
+-       'sm': '0.125rem',
+-       DEFAULT: '0.25rem',
++       DEFAULT: '4px',
+-       'md': '0.375rem',
+-       'lg': '0.5rem',
+-       'full': '9999px',
++       'large': '12px',
+      }
+    }
+  }
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+### Arbitrary values
+
+<ArbitraryValues property="border-radius" featuredClass="rounded-[12px]" />

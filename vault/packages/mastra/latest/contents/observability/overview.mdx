@@ -1,0 +1,82 @@
+---
+title: "Observability overview | Observability"
+description: Monitor and debug applications with Mastra's Observability features.
+packages:
+  - "@mastra/core"
+  - "@mastra/libsql"
+  - "@mastra/loggers"
+  - "@mastra/observability"
+---
+
+# Observability overview
+
+Mastra provides observability features for AI applications. Monitor LLM operations, trace agent decisions, and debug complex workflows with tools that understand AI-specific patterns.
+
+## Key features
+
+### Tracing
+
+Specialized tracing for AI operations that captures:
+
+- **Model interactions**: Token usage, latency, prompts, and completions
+- **Agent execution**: Decision paths, tool calls, and memory operations
+- **Workflow steps**: Branching logic, parallel execution, and step outputs
+- **Automatic instrumentation**: Tracing with decorators
+
+## Storage requirements
+
+The `DefaultExporter` persists traces to your configured storage backend. Not all storage providers support observability—for the full list, see [Storage Provider Support](/docs/observability/tracing/exporters/default#storage-provider-support).
+
+For production environments with high traffic, we recommend using **ClickHouse** for the observability domain via [composite storage](/reference/storage/composite). See [Production Recommendations](/docs/observability/tracing/exporters/default#production-recommendations) for details.
+
+## Quickstart
+
+Configure Observability in your Mastra instance:
+
+```typescript title="src/mastra/index.ts"
+import { Mastra } from '@mastra/core'
+import { PinoLogger } from '@mastra/loggers'
+import { LibSQLStore } from '@mastra/libsql'
+import {
+  Observability,
+  DefaultExporter,
+  CloudExporter,
+  SensitiveDataFilter,
+} from '@mastra/observability'
+
+export const mastra = new Mastra({
+  logger: new PinoLogger(),
+  storage: new LibSQLStore({
+    id: 'mastra-storage',
+    url: 'file:./mastra.db', // Storage is required for tracing
+  }),
+  observability: new Observability({
+    configs: {
+      default: {
+        serviceName: 'mastra',
+        exporters: [
+          new DefaultExporter(), // Persists traces to storage for Mastra Studio
+          new CloudExporter(), // Sends traces to Mastra Cloud (if MASTRA_CLOUD_ACCESS_TOKEN is set)
+        ],
+        spanOutputProcessors: [
+          new SensitiveDataFilter(), // Redacts sensitive data like passwords, tokens, keys
+        ],
+      },
+    },
+  }),
+})
+```
+
+:::note[Serverless environments]
+The `file:./mastra.db` storage URL uses the local filesystem, which doesn't work in serverless environments like Vercel, AWS Lambda, or Cloudflare Workers. For serverless deployments, use external storage. See the [Vercel deployment guide](/guides/deployment/vercel#observability) for a complete example.
+:::
+
+With this basic setup, you will see Traces and Logs in both Studio and in Mastra Cloud.
+
+We also support various external tracing providers like MLflow, Langfuse, Braintrust, and any OpenTelemetry-compatible platform (Datadog, New Relic, SigNoz, etc.). See more about this in the [Tracing](/docs/observability/tracing/overview) documentation.
+
+## What's next?
+
+- **[Set up Tracing](/docs/observability/tracing/overview)**: Configure tracing for your application
+- **[Configure Logging](/docs/observability/logging)**: Add structured logging
+- **[API Reference](/reference/observability/tracing/instances)**: Detailed configuration options

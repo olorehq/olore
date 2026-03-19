@@ -1,0 +1,241 @@
+import { TimePickerDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.TimePicker);
+
+## Usage
+
+`TimePicker` component is an alternative to [TimeInput](/dates/time-input) that offers more
+features, it supports 24-hour and 12-hour formats, dropdown with hours, minutes and seconds, and
+more.
+
+<Demo data={TimePickerDemos.usage} />
+
+## Controlled
+
+`TimePicker` component value is a string in `hh:mm:ss` or `hh:mm` 24-hour format (for example `18:34:55`, `18:34`).
+Empty string is used to represent no value. `onChange` function is called only when the entered value is valid.
+The input value is considered valid in the following cases:
+
+- All inputs are empty. In this case `onChange` is called with an empty string.
+- All inputs are filled. For example if `withSeconds` prop is set and the user entered `12:34:56`, `onChange` will be called with `12:34:56`. But if the user entered `12:34`, `onChange` will not be called because seconds value is missing.
+
+```tsx
+import { useState } from 'react';
+import { TimePicker } from '@mantine/dates';
+
+function Demo() {
+  const [value, setValue] = useState('');
+  return <TimePicker value={value} onChange={setValue} />;
+}
+```
+
+## With seconds
+
+Set `withSeconds` prop to enable seconds input. Note that if this prop is used,
+`onChange` is not called until all inputs are filled – it is not possible
+to enter only hours and minutes.
+
+<Demo data={TimePickerDemos.withSeconds} />
+
+## 12-hour format
+
+Set `format="12h"` to use 12-hour format. Note that `onChange` is called only when all inputs are filled
+including am/pm input.
+
+<Demo data={TimePickerDemos.format12h} />
+
+## Change am/pm labels
+
+To change am/pm labels use `amPmLabels` prop. Example of changing labels to Hindi:
+
+<Demo data={TimePickerDemos.amPmLabels} />
+
+## Min and max values
+
+Set `min` and `max` props to limit available time range:
+
+<Demo data={TimePickerDemos.minMax} />
+
+## With dropdown
+
+Set `withDropdown` prop to display the dropdown with hours, minutes, seconds and am/pm selects.
+By default, the dropdown is visible when one of the inputs is focused.
+
+<Demo data={TimePickerDemos.withDropdown} />
+
+## Hours/minutes/seconds step
+
+Use `hoursStep`, `minutesStep` and `secondsStep` props to control step for each input.
+These props are used to control value by which the input is incremented or decremented when
+up/down arrow keys are pressed and to generate corresponding values range in the dropdown.
+
+<Demo data={TimePickerDemos.steps} />
+
+## Control dropdown opened state
+
+Use `popoverProps` to pass props down to the underlying [Popover](/core/popover) component:
+
+<Demo data={TimePickerDemos.controlledDropdown} />
+
+## Time presets
+
+You can define time presets with `presets` prop. Presets are displayed in the dropdown and can be selected by clicking on them.
+Time values for presets should be in `hh:mm:ss` or `hh:mm` 24-hour time format. Presets
+display value is generated based on `format`, `amPmLabels` and `withSeconds` props.
+
+<Demo data={TimePickerDemos.presets} />
+
+## Time presets groups
+
+To group presets use an array of objects with `label` and `values` keys:
+
+<Demo data={TimePickerDemos.presetsGroups} />
+
+## Time presets range
+
+If you need to generate a range of time values, use `getTimeRange` function exported from
+`@mantine/dates` package. The function accepts start, end time and interval in `hh:mm:ss` format.
+
+<Demo data={TimePickerDemos.presetsRange} />
+
+## Dropdown position
+
+By default, the dropdown is displayed below the input if there is enough space; otherwise it is displayed above the input.
+You can change this behavior by setting `position` and `middlewares` props, which are passed down to the
+underlying [Popover](/core/popover) component.
+
+Example of dropdown that is always displayed above the input:
+
+<Demo data={TimePickerDemos.dropdownPosition} />
+
+## Dropdown width
+
+To change dropdown width, set `width` prop in `comboboxProps`. By default,
+dropdown width is adjusted to fit all content. Example of dropdown width set
+to the input width:
+
+<Demo data={TimePickerDemos.dropdownWidth} />
+
+## Paste events
+
+By default, `TimePicker` handles only time in 24-hour format (for example `17:33:43` or `19:22`) for paste events.
+With `pasteSplit` prop you can create a custom paste time parser:
+
+<Demo data={TimePickerDemos.pasteSplit} />
+
+## Clearable
+
+Set `clearable` prop to display a clear button in the right section of the input.
+The clear button is visible when at least one of the fields has value.
+
+<Demo data={TimePickerDemos.clearable} />
+
+## Disabled
+
+<Demo data={TimePickerDemos.disabled} />
+
+## Read only
+
+<Demo data={TimePickerDemos.readOnly} />
+
+## Input props
+
+<InputFeatures component="TimePicker" element="div" />
+
+<Demo data={TimePickerDemos.configurator} />
+
+## Get refs of inner inputs
+
+Use `hoursRef`, `minutesRef`, `secondsRef` and `amPmRef` props to get refs of inner inputs:
+
+```tsx
+import { useRef } from 'react';
+import { TimePicker } from '@mantine/dates';
+
+function Demo() {
+  const hoursRef = useRef<HTMLInputElement>(null);
+  const minutesRef = useRef<HTMLInputElement>(null);
+  const secondsRef = useRef<HTMLInputElement>(null);
+  const amPmRef = useRef<HTMLSelectElement>(null);
+
+  return (
+    <TimePicker
+      hoursRef={hoursRef}
+      minutesRef={minutesRef}
+      secondsRef={secondsRef}
+      amPmRef={amPmRef}
+    />
+  );
+}
+```
+
+## onFocus and onBlur events
+
+`onFocus` and `onBlur` events are called when the first input is focused and the last input is blurred:
+
+```tsx
+import { TimePicker } from '@mantine/dates';
+
+function Demo() {
+  return (
+    <TimePicker
+      onFocus={() => console.log('Focused')}
+      onBlur={() => console.log('Blurred')}
+    />
+  );
+}
+```
+
+## Accessibility
+
+Set aria labels for hours, minutes, seconds and am/pm inputs and clear button with corresponding props:
+
+```tsx
+import { TimePicker } from '@mantine/dates';
+
+function Demo() {
+  return (
+    <TimePicker
+      hoursInputLabel="Hours"
+      minutesInputLabel="Minutes"
+      secondsInputLabel="Seconds"
+      amPmInputLabel="AM/PM"
+      clearButtonProps={{ 'aria-label': 'Clear time' }}
+    />
+  );
+}
+```
+
+Keyboard interactions:
+
+<KeyboardEventsTable
+  data={[
+    {
+      key: 'ArrowDown',
+      description: 'Decrements current value by step',
+    },
+    {
+      key: 'ArrowUp',
+      description: 'Increments current value by step',
+    },
+    {
+      key: 'Home',
+      description: 'Sets current value to min possible value',
+    },
+    {
+      key: 'End',
+      description: 'Sets current value to max possible value',
+    },
+    { key: 'Backspace', description: 'Clears current value' },
+    {
+      key: 'ArrowRight',
+      description: 'Moves focus to the next input',
+    },
+    {
+      key: 'ArrowLeft',
+      description: 'Moves focus to the previous input',
+    },
+  ]}
+/>
