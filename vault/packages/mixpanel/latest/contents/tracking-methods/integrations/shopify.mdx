@@ -1,0 +1,150 @@
+import { Callout, Tabs } from "nextra/components";
+
+import ExtendedButton from "/components/ExtendedButton/ExtendedButton";
+import ExtendedTabs from "/components/ExtendedTabs/ExtendedTabs";
+
+import { dataItems } from "/utils/constants";
+
+# Shopify
+
+Mixpanel [Autocapture](https://docs.mixpanel.com/docs/tracking-methods/autocapture) gathers pageviews, clicks, scroll events (and [more](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#autocapture)!) automatically. With minimal setup, you can easily unlock fine-grain insights into how customers are engaging with your Shopify storefront. Alternatively, for a powerful cross-platform, no-code solution that syncs your data across surfaces like ad and payment platforms, consider the [Vendo/Mixpanel integration](https://docs.mixpanel.com/docs/tracking-methods/integrations/vendo) available in the [Shopify app store](https://apps.shopify.com/vendo).
+
+This guide explores two simple options to integrate Mixpanel’s [Javascript SDK](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript) into your shop:
+
+1. [Mixpanel SDK + Autocapture](#install-mixpanel-sdk-with-autocapture): collect data automatically (minimal setup)
+2. [Mixpanel SDK +  Shopify Web Pixel](#mixpanel-sdk--shopify-web-pixel): define your own customer events (robust, yet approachable setup)
+
+For optimal visibility, we recommend both! Shopify’s checkout flow is strict about only running proprietary scripts, but you can still fully capture conversion events by implementing Option 2 with the [Shopify Web Pixel](https://shopify.dev/docs/api/web-pixels-api#custom-web-pixels) setup guide.
+
+## Install Mixpanel SDK with Autocapture
+_Automatically collect customer events with minimal steps_
+
+1. Copy the Mixpanel SDK code snippet at the top of [this guide](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#installing-the-library)
+
+2. Go to your Store Dashboard > Sales Channels > Online Store > Theme and click “Edit code”
+
+    ![](/shopify_store_channel.png)
+
+3. Open the theme.liquid file and scroll down to the closing `</head>` tag
+    
+    ![](/shopify_theme_editor.png)
+    
+4. Paste the code snippet you just copied to add Mixpanel’s SDK (we’re almost there—we just need to do one more thing to enable it)
+    
+    ![](/shopify_code_snippet_1.png)
+
+5. Go to your Mixpanel Dashboard > Project Settings and copy your Project Token under Access Keys
+
+    ![](/access_keys_project_token.png)
+
+6. Back in your Shopify `theme.liquid` file, enable Mixpanel’s SDK by adding your Project Token to the `mixpanel.init` code (wrapped in `script` tags). Altogether, it should look like this:
+    
+    ![](/shopify_code_snippet_2.png)
+
+7. Confirm the configuration in your Mixpanel Project and enjoy a data pipeline flowing with `[Auto]` tracked events!
+
+    ![](/autotracked_events.png)
+
+## Mixpanel SDK + [Shopify Web Pixel](https://shopify.dev/docs/api/web-pixels-api#custom-web-pixels)    
+_Define your own customer events with an approachable setup_
+
+1. Copy the Mixpanel SDK code snippet at the top of [this guide](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#installing-the-library) and remove the `<script></script>` wrapper tags
+
+2. Go to your Shopify Store > Settings > [Customer Events](https://admin.shopify.com/settings/customer_events), click “Add custom Pixel”, and name your Pixel something snazzy
+
+    ![](/shopify_web_pixel.png)
+
+3. Add some code to get your Pixel up and running. This code is a three-part recipe that will:
+
+    - Subscribe to Shopify’s Pixel Event API
+    - Load the Mixpanel SDK snippet that you copied in step 1
+    - Define and track the customer events we’d like to collect (reference the complete property list in [Shopify’s Web Pixel Event API](https://shopify.dev/docs/api/web-pixels-api/standard-events) docs)
+
+    An outline of this structure looks like this:
+
+    ```javascript
+    // Subscribe to Shopify Pixel Event API (https://shopify.dev/docs/api/web-pixels-api/standard-events)
+    analytics.subscribe('EVENT_NAME', (event) => {
+
+        // Paste Mixpanel SDK code snippet sans <script> tags
+        (function (f, b) { if (!b.__SV) { var e, g, i, h; window.mixpanel = b; b._i = []; b.init = function (e, f, c) { function g(a, d) { var b = d.split("."); 2 == b.length && ((a = a[b[0]]), (d = b[1])); a[d] = function () { a.push([d].concat(Array.prototype.slice.call(arguments, 0))); }; } var a = b; "undefined" !== typeof c ? (a = b[c] = []) : (c = "mixpanel"); a.people = a.people || []; a.toString = function (a) { var d = "mixpanel"; "mixpanel" !== c && (d += "." + c); a || (d += " (stub)"); return d; }; a.people.toString = function () { return a.toString(1) + ".people (stub)"; }; i = "disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split( " "); for (h = 0; h < i.length; h++) g(a, i[h]); var j = "set set_once union unset remove delete".split(" "); a.get_group = function () { function b(c) { d[c] = function () { call2_args = arguments; call2 = [c].concat(Array.prototype.slice.call(call2_args, 0)); a.push([e, call2]); }; } for ( var d = {}, e = ["get_group"].concat( Array.prototype.slice.call(arguments, 0)), c = 0; c < j.length; c++) b(j[c]); return d; }; b._i.push([e, f, c]); }; b.__SV = 1.2; e = f.createElement("script"); e.type = "text/javascript"; e.async = !0; e.src = "undefined" !== typeof MIXPANEL_CUSTOM_LIB_URL ? MIXPANEL_CUSTOM_LIB_URL : "file:" === f.location.protocol && "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//) ? "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" : "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"; g = f.getElementsByTagName("script")[0]; g.parentNode.insertBefore(e, g); } })(document, window.mixpanel || []);
+        
+        // Initialize Mixpanel SDK	
+        mixpanel.init('YOUR_PROJECT_TOKEN');
+        
+        // Define and track events example
+        mixpanel.track('My plain text event name', {
+            productTitle: web.pixel.event.property.chain.here
+            productPrice: web.pixel.event.property.chain.here
+        })
+    });
+    ```
+
+    Putting this recipe to work, here’s an example of how to track `product_viewed` events:
+    
+    ```javascript
+    // Subscribe to Shopify Pixel Event API
+    analytics.subscribe('product_viewed', (event) => {
+
+        // Load Mixpanel SDK 
+        (function (f, b) { if (!b.__SV) { var e, g, i, h; window.mixpanel = b; b._i = []; b.init = function (e, f, c) { function g(a, d) { var b = d.split("."); 2 == b.length && ((a = a[b[0]]), (d = b[1])); a[d] = function () { a.push([d].concat(Array.prototype.slice.call(arguments, 0))); }; } var a = b; "undefined" !== typeof c ? (a = b[c] = []) : (c = "mixpanel"); a.people = a.people || []; a.toString = function (a) { var d = "mixpanel"; "mixpanel" !== c && (d += "." + c); a || (d += " (stub)"); return d; }; a.people.toString = function () { return a.toString(1) + ".people (stub)"; }; i = "disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split( " "); for (h = 0; h < i.length; h++) g(a, i[h]); var j = "set set_once union unset remove delete".split(" "); a.get_group = function () { function b(c) { d[c] = function () { call2_args = arguments; call2 = [c].concat(Array.prototype.slice.call(call2_args, 0)); a.push([e, call2]); }; } for ( var d = {}, e = ["get_group"].concat( Array.prototype.slice.call(arguments, 0)), c = 0; c < j.length; c++) b(j[c]); return d; }; b._i.push([e, f, c]); }; b.__SV = 1.2; e = f.createElement("script"); e.type = "text/javascript"; e.async = !0; e.src = "undefined" !== typeof MIXPANEL_CUSTOM_LIB_URL ? MIXPANEL_CUSTOM_LIB_URL : "file:" === f.location.protocol && "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//) ? "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" : "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"; g = f.getElementsByTagName("script")[0]; g.parentNode.insertBefore(e, g); } })(document, window.mixpanel || []);
+        
+        // Initialize Mixpanel SDK	
+        mixpanel.init('YOUR_PROJECT_TOKEN');
+        
+        // Track product_viewed
+        const productVariant = event.data.productVariant;
+        mixpanel.track('Product viewed', {
+            productTitle: productVariant.title,
+            productPrice: productVariant.price.amount
+        });
+    });
+    ```
+
+    And, another example of gathering `checkout_completed` events:
+
+    ```javascript
+    // Subscribe to Shopify Pixel Event API
+    analytics.subscribe('checkout_completed', (event) => {
+
+        // Load Mixpanel SDK 
+        (function (f, b) { if (!b.__SV) { var e, g, i, h; window.mixpanel = b; b._i = []; b.init = function (e, f, c) { function g(a, d) { var b = d.split("."); 2 == b.length && ((a = a[b[0]]), (d = b[1])); a[d] = function () { a.push([d].concat(Array.prototype.slice.call(arguments, 0))); }; } var a = b; "undefined" !== typeof c ? (a = b[c] = []) : (c = "mixpanel"); a.people = a.people || []; a.toString = function (a) { var d = "mixpanel"; "mixpanel" !== c && (d += "." + c); a || (d += " (stub)"); return d; }; a.people.toString = function () { return a.toString(1) + ".people (stub)"; }; i = "disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split( " "); for (h = 0; h < i.length; h++) g(a, i[h]); var j = "set set_once union unset remove delete".split(" "); a.get_group = function () { function b(c) { d[c] = function () { call2_args = arguments; call2 = [c].concat(Array.prototype.slice.call(call2_args, 0)); a.push([e, call2]); }; } for ( var d = {}, e = ["get_group"].concat( Array.prototype.slice.call(arguments, 0)), c = 0; c < j.length; c++) b(j[c]); return d; }; b._i.push([e, f, c]); }; b.__SV = 1.2; e = f.createElement("script"); e.type = "text/javascript"; e.async = !0; e.src = "undefined" !== typeof MIXPANEL_CUSTOM_LIB_URL ? MIXPANEL_CUSTOM_LIB_URL : "file:" === f.location.protocol && "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//) ? "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" : "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"; g = f.getElementsByTagName("script")[0]; g.parentNode.insertBefore(e, g); } })(document, window.mixpanel || []);
+        
+        // Initialize Mixpanel SDK	
+        mixpanel.init('YOUR_PROJECT_TOKEN');
+        
+        // Track checkout_completed
+        const checkout = event.data.checkout;
+        mixpanel.track('Checkout completed', {
+            value: checkout.totalPrice.amount,
+            created_at: event.timestamp,
+            order_number: checkout.order.id,
+            userId: event.clientId,
+            order_id: checkout.order.id,
+            products: checkout.lineItems.map((item) => {
+            return {
+                product_id: item.id,
+                title: item.variant.product.title,
+                quantity: item.quantity,
+                price: item.variant.price.amount,
+                currency: item.variant.price.currencyCode,
+                sku: item.variant.sku,
+                size: item.variant.product.size
+            }
+        })
+    });
+    ```
+4. Click “Test” to confirm the Shopify Web Pixel API is connected (next, we’ll confirm Mixpanel is receiving those events from Shopify)
+
+    ![](/shopify_web_pixel_test.png)
+
+5. Connect the Pixel to release it into the wild
+
+    ![](/shopify_pixel_connect.png)
+
+6. Visit your Shopify storefront and trigger your custom events 
+
+7. Verify data is flowing into your Mixpanel dashboard and enjoy tracking custom conversions  in real time! 🎉
+
+    ![](/shopify_events_in_MXP_1.png)
+    ![](/shopify_events_in_MXP_2.png)

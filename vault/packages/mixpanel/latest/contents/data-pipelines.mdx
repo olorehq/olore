@@ -1,0 +1,171 @@
+import { Callout, Steps } from 'nextra/components'
+
+# Data Pipelines Overview
+
+<Callout type="warning">
+  If you already did setup older version of pipelines via the API and want to manage it,
+  go to docs [here](/docs/data-pipelines/old-pipelines).
+</Callout>
+
+<Callout type="info">
+  Customers on an Enterprise or Growth plan can access Data Pipeline as an add-on package. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+Data Pipelines is a feature that continuously exports data from your Mixpanel project to a Cloud Storage bucket or Data Warehouse of your choice. This feature is ideal for those who wish to perform SQL analysis on Mixpanel data within their own environment.
+
+Setting up Data Pipelines involves two main steps:
+
+1. Configuring your destination to accept data writes from Mixpanel.
+2. Creating data pipelines through the **Integrations** page in the UI.
+
+We offer a 30-day free trial of the Data Pipelines add-on. For details on activation, refer to the [FAQ](#how-does-the-free-trial-work).
+
+## Step 1: Configuring Your Destination
+
+The configuration process varies depending on the type of destination you choose: Cloud Storage or Data Warehouse.
+
+### Cloud Storage
+
+JSON pipelines export data as JSON files to a cloud storage bucket, providing a straightforward method for data handling.
+
+For specific configuration instructions, see our guides for each storage destination:
+
+- [AWS S3](/docs/data-pipelines/integrations/aws-s3)
+- [Google Cloud Storage](/docs/data-pipelines/integrations/gcp-gcs)
+- [Azure Blob Storage](/docs/data-pipelines/integrations/azure-blob-storage)
+
+Data is exported to the following structured paths in your bucket:
+
+- Events: `<BUCKET_NAME>/<MIXPANEL_PROJECT_ID>/mp_master_event/<YEAR>/<MONTH>/<DAY>/`
+- User profiles: `<BUCKET_NAME>/<MIXPANEL_PROJECT_ID>/mp_people_data/`
+- Identity mappings: `<BUCKET_NAME>/<MIXPANEL_PROJECT_ID>/mp_identity_mappings_data/`
+
+### Data Warehouse
+
+JSON Pipelines also facilitate data export into tables, creating schemas that are inferred from your event data.
+
+For detailed setup guides per destination, see:
+
+- [BigQuery](/docs/data-pipelines/integrations/bigquery)
+- [Databricks](/docs/data-pipelines/integrations/databricks)
+- [Redshift Spectrum](/docs/data-pipelines/integrations/redshift-spectrum)
+- [Snowflake](/docs/data-pipelines/integrations/snowflake)
+
+## Step 2: Creating the Pipeline
+
+<Callout type="info">
+ To create and manage a Data Pipeline, you must have an admin or owner project role. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
+</Callout>
+
+After configuring your destination to accept data exported from Mixpanel, we must initiate the pipeline from the Mixpanel UI.
+
+After configuring your destination, initiate data export in **Integrations** page on your Mixpanel project > **Create Pipeline** > fill in necessary configurations. You can choose different data sources including events, people and identity and other advanced options. See [Data Pipelines](/docs/data-pipelines/json-pipelines) for more details.
+
+<Steps>
+
+{<h3>Click the settings button and select Integrations.</h3>}
+
+![create_pipeline1](/create_pipeline1.png)
+
+{<h3>Select the provider of your warehouse destination, and click "+ Create Pipeline".</h3>}
+
+![create_pipeline2](/create_pipeline2.png)
+
+{<h3>Provide the details of your destination to create the pipeline.</h3>}
+
+![create_pipeline3](/create_pipeline3.png)
+
+</Steps>
+
+## FAQ
+
+### Managing Existing Pipelines
+
+To delete, pause, or unpause a JSON pipeline:
+
+1. Go to the **Integrations** page
+2. Find the pipeline you want to manage
+3. Click the **3-dot** menu on the right side of the pipeline
+4. Select **Delete Pipeline**, **Pause Pipeline**, or **Unpause Pipeline** as needed
+
+Note: JSON pipelines can only be managed through the UI, not via the data pipelines API.
+
+### Backfilling Historical Data
+
+You can schedule an initial backfill when creating a pipeline. This ensures that historical data is also exported to the data warehouse. Note that the `from_date` must be within 6 months in the past.
+
+The completion time for a backfill depends on the number of days and the amount of data in the project. Larger backfills can take up to multiple weeks.
+
+### Viewing Pipeline Configuration
+
+To check a pipeline's configuration:
+
+1. Go to the **Integrations** page
+2. Either:
+   - Click on the pipeline name to view configuration at the top of the page, or
+   - Click the **3-dot** menu and select **View Configuration**
+
+### Why does the number of events in Mixpanel not match the number of exported events to my destination?
+
+Discrepancies between the event counts in Mixpanel and those exported to your destination can occur for several reasons:
+
+- **Data Sync**: If [Events Data Sync](/docs/data-pipelines/json-pipelines#events-data-sync) is not enabled or is unsupported for your pipeline, this could prevent some data from being exported.
+- **Data Delay**: Late-arriving data may take up to one day to sync from Mixpanel to your destination, leading to temporary discrepancies.
+- **Hidden Events**: Mixpanel exports all events, including those hidden in the Mixpanel UI via Lexicon. To reconcile differences in counts, check if the events in your destination include those hidden in the Mixpanel UI.
+- **Timezone Differences**: Data is exported to your warehouse in UTC, whereas data displayed in Mixpanel is in your project timezone. 
+
+### What timezone is the data exported in?
+
+The data is exported in UTC timezone. You’ll need to convert it to your project’s timezone when running queries in your warehouse. Please refer to [this page](/docs/data-pipelines/common-sql-queries) for some common SQL queries.
+
+### How can I count events exported by Mixpanel in the warehouse?
+
+Counting events can be slightly different for each warehouse, since we use different partitioning methods. Here are examples for [BigQuery](/docs/data-pipelines/integrations/bigquery#get-the-number-of-events-each-day) and [Snowflake](/docs/data-pipelines/integrations/snowflake#get-the-number-of-events-each-day).
+
+### How does the free trial work?
+
+Mixpanel offers a 30-day free trial of the Data Pipelines, allowing you to create one pipeline per data source for each project.
+
+**Trial limitations**:
+
+- Exports are scheduled on a daily basis only.
+- Data synchronization feature is not available.
+- Only one pipeline can be created per data source per project.
+- Backfilled data is limited to one day prior to the creation date of the pipeline.
+
+### Why can’t I delete my trial pipeline?
+
+You can’t delete a trial pipeline in Mixpanel — this is intentional. Each project is limited to one trial pipeline per data source, and keeping it prevents deleting/recreating trials to bypass limits. It also serves as a record that the trial has been used. Even after you upgrade to a paid Data Pipelines package, the trial pipeline remains visible and cannot be removed. This is a policy decision to preserve the integrity of the trial program, not a technical constraint.
+
+### What is Active Pipeline Limit
+
+Each project can have 2 recurring pipelines and 1 date ranged backfill pipeline active. Multiple pipelines cannot write to the same destination or for the same date range in a destination. Recurring pipelines must have different frequencies.
+
+To maintain optimal performance across our services, we limit the number of concurrently running pipeline steps to one per project. This approach ensures that each job, including those involving substantial backfills, waits its turn, preventing any single project from monopolizing resources and thus promoting fair scheduling among all customers.
+
+### Is it possible to specify when pipeline exports run?
+
+No. Hourly pipelines are targeted to run 30 minutes past the hour to be exported, and daily pipelines are targeted to run 30 minutes past the day to be exported (e.g. 00:30 AM) in the project’s timezone. For example, a project in the Pacific timezone with a daily events pipeline will start the export for data from 5/22 on 5/23 00:30 AM PT.
+
+Please note that the [24-hour SLA](/docs/data-pipelines#what-is-the-service-level-agreement) applies.
+
+### What is the Service Level Agreement?
+
+Our Service Level Agreement (SLA) stipulates a latency policy for exported events of up to 24 hours end-to-end, with an additional 24-hour allowance for late-arriving data.
+
+**Note**: Mixpanel classifies late data as any data point or user profile update that reaches Mixpanel servers more than two hours after the end of the export window. Late-arriving event data is exported only for pipelines that with **sync** enabled.
+
+For hourly pipelines, data that arrives on time is expected to be exported within 24 hours from the moment it is ingested by Mixpanel. For daily pipelines, this 24-hour period begins at the start of the next calendar day based on project time (e.g., data ingested on January 1st is scheduled to be exported from the start of January 2nd midnight to the end of the day on January 3rd).
+
+Data arriving late is handled during a daily sync process the following day after ingestion, provided sync is enabled. For instance, if data for January 1st arrives on January 3rd, it would be exported in the sync run on January 4th.
+
+### What should I set for the Account Name and Storage Integration when creating a Snowflake pipeline?
+
+The Account Name should be set to your unique account identifier Eg. "blah2321.us-west-2" while the Storage Integration should be set to the name of the storage integration you created in Snowflake Eg. "MIXPANEL_EXPORT_STORAGE_INTEGRATION".
+
+### What happens to late-arriving data?
+
+For [incremental JSON pipelines](/docs/data-pipelines/json-pipelines#incremental-pipelines), late-arriving data will be exported as it's ingested. However, that is not the case for Raw and Schematized pipelines without [sync](/docs/data-pipelines/json-pipelines#events-data-sync) enabled — manual intervention will be needed to export late-arriving data into your data warehouse.
+### Can I change the destination of an existing pipeline?
+
+No, you cannot. If you need to change the destination, you would need to create a new pipeline.

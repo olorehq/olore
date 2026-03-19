@@ -1,0 +1,168 @@
+import { Callout } from 'nextra/components'
+
+# JSON Pipelines
+
+<Callout type="info">
+  Customers on an Enterprise or Growth plan can access Data Pipeline as an add-on package. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+JSON Pipeline is designed to export your Mixpanel data to supported data warehouses or object storage solutions. We maintain all properties in a high-level JSON format under the `properties` key for both events and user profile data.
+
+This documentation is intended for users with intermediate or advanced knowledge of databases and familiarity with Amazon Web Services, Google Cloud Platform, or Snowflake technology.
+
+## Create JSON Pipelines
+
+Follow the instructions here in the [Overview](/docs/data-pipelines).
+
+## Destination and Date Range Restrictions
+
+To prevent data duplication and conflicts, the system enforces the following rule: **you cannot create multiple event pipelines that export to the same destination with overlapping date ranges**. 
+
+For example, if you already have a pipeline exporting to BigQuery dataset "my_dataset" for dates January 1-31, you cannot create another pipeline exporting to the same dataset with dates January 15 - February 15, as the January 15-31 period would overlap.
+
+This constraint ensures data integrity and prevents duplicate exports to the same destination tables or storage locations.
+
+## Data Sources Output
+
+Json pipelines support three different data sources: events, people, and identity.
+
+We aggregate all events and user profiles properties under the `properties` key to facilitate easier querying of every row with conditions. In addition to consolidating all event and user profiles properties under the `properties` key, we export several common properties across all records. This standardization facilitates simpler and more consistent querying conditions. Below are examples of the output structure in **BigQuery**
+
+The following are examples of the output in **BigQuery** for each data source pipeline. Note that different warehouses may have different corresponding types, but the names will be the same.
+
+### Events
+
+| name        | Type      | description                                                             |
+| :---------- | :-------- | :---------------------------------------------------------------------- |
+| device_id   | STRING    | Unique ID used to track a device while the user remains anonymous       |
+| distinct_id | STRING    | Unique ID for the user who triggered the event                          |
+| event_name  | STRING    | Name of the event                                                       |
+| insert_id   | STRING    | Unique ID used to deduplicate events that are sent multiple times       |
+| properties  | JSON      | JSON object containing all the properties associated with the event     |
+| time        | TIMESTAMP | Timestamp marking when the event occurred                               |
+| user_id     | STRING    | Unique ID used to track a user across different devices when identified |
+
+### User Profiles
+
+| name        | Type   | description                                |
+| :---------- | :----- | :----------------------------------------- |
+| distinct_id | STRING | Unique ID for the user                     |
+| properties  | JSON   | JSON object containing all user properties |
+
+### Identity Mappings
+
+| name                 | Type   | description                                    |
+| :------------------- | :----- | :--------------------------------------------- |
+| distinct_id          | STRING | Unique ID for the user who triggered the event |
+| resolved_distinct_id | STRING | Unique ID of the user after merging            |
+
+## Events Data Sync
+
+Events Data Sync is enabled by default when creating JSON pipelines to ensure data consistency. This feature automatically detects data changes as soon as they are ingested and appends new files for new/late data to your storage/warehouses, helping keep the data fresh and minimizing missing data points.
+
+Event data can fall out of sync between Mixpanel's datastore and the export destination due to several causes:
+
+- Late data can arrive multiple days later due to a mobile client being offline.
+- The import API can add data to previous days.
+- Delete requests related to GDPR can cause deletion of events and event properties.
+
+**Important limitations**: Data sync does not guarantee syncing GDPR Data Deletions. It is recommended to implement a strategy to remove all records of GDPR Deleted Users in your data warehouse.
+
+## Backfill Historical Events
+
+You can schedule an initial backfill when creating events pipeline to ensure that historical data is also exported to the destination.
+
+Use the `from_date` parameter to specify the date from which you want to export historical data. Note that the `from_date` must be no more than 6 months in the past.
+
+The completion time for a backfill depends on the number of days and the volume of data in the project. Larger backfills can take several weeks.
+
+## Export Frequency
+
+Mixpanel supports hourly and daily exports, with daily being the default.
+
+## People Data Support
+
+User profiles are exported to a single table or directory named `mp_people_data`. Since user profiles are mutable, the data in the table is replaced with the latest user profiles each time an export occurs, based on the chosen schedule (daily or hourly).
+
+## User Identity Resolution
+
+Exports from projects with [ID merge enabled](/docs/tracking-methods/id-management/identifying-users#how-do-i-switch-between-the-simplified-and-original-api) will need to use the identity mapping table to replicate the user counts seen in UI reporting. Mixpanel resolves multiple identifiers for an individual into one identifier for reporting unique user counts. Learn more about how Mixpanel resolves IDs [here](/docs/tracking-methods/id-management/identifying-users#example-user-flows).
+
+Pipelines export event data as they appear when Mixpanel ingests them. Data sent before an alias event carries the original user identifier, not the resolved one. Use the identity mappings table to accurately count unique users. This will allow you to recreate the identity cluster that Mixpanel creates.
+
+Note: Use the `resolved_distinct_id` from the identity mappings table instead of the non-resolved `distinct_id` when available. If there is no resolved `distinct_id`, use the `distinct_id` from the existing people or events table.
+
+Examples of querying the identity mapping table are available for [BigQuery](/docs/data-pipelines/integrations/bigquery#query-identity-mappings) and [Snowflake](/docs/data-pipelines/integrations/snowflake#query-identity-mappings).
+
+## Incremental Pipelines
+
+As of 10 September 2025, all JSON pipelines in all regions (US/EU/IN) have been migrated to our improved incremental pipeline export system. Schematized pipelines will be migrated to this same export system soon.
+
+**What is affected?**
+
+- **Events pipelines with sync enabled only**: This improvement only affects event pipelines that have sync enabled. People and identity mapping pipelines remain unchanged.
+
+**Benefits**
+
+- **Elimination of data sync delays**: No more waiting for daily sync processes to detect and fix data discrepancies.
+- **Complete data export**: All events are exported without the risk of missing late-arriving data. Late-arriving events are automatically exported regardless of how late they arrive, eliminating the previous 10-day sync window restriction.
+
+**Changes you may notice**
+
+- **Event count display**: The event count shown per task in the UI now represents the total events processed per batch rather than events exported per day or per hour. Since each batch can span multiple days, this number may appear different from before.
+- **Backfill process**: When a new pipeline is created, it will complete the full historical backfill first before starting regular processing. For example, if you create a pipeline on January 15th at 11 AM with a backfill from January 1st, the system will first export all events that arrived in Mixpanel before around January 15th 11 AM as the initial backfill, then begin processing any new events that arrive after around January 15th 11 AM, regardless of which date those events are for. Existing pipelines will have the last 10 days backfilled as part of the migration and then the new incremental behavior will start.
+- **Storage location file structure changes**: Previous behavior of sync would replace files for a day when the day was re-synced. No sync means Mixpanel will no longer coalesce files for days when sync runs so files are no longer updated/removed. Incremental pipelines will instead add a new file with events seen in each day for each run of the pipeline meaning more small files are expected.
+- **Pipelines logs reset**: Once your pipeline is migrated, the logging available in the UI will be reset so past jobs log lines will no longer be available. Only the new incremental jobs will be visible going forward.
+- **Predicable deletion behavior**:  In rare cases, the sync functionality meant that Mixpanel could re-sync days for which data was deleted, allowing the pipeline to also remove that data from your data warehouse. Sync keeping your warehouse in line with deletions was not guaranteed behavior however. The removal of sync means this unreliable behavior has been removed and as such, warehouse data owners are responsible for the deletion of all data on the warehouse side.
+- **More pre-shuffled distinct IDs in data**: The faster export and removal of late syncs for data can lead to more events exported with their original `distinct_id` as opposed to the resolved identifier seen in Mixpanel after we’ve shuffled the data. These discrepancies are expected in pipelines on both the old and new behavior, and can be resolved using the ID mappings table exported from identity pipelines outlined in [our docs here](/docs/data-pipelines/json-pipelines#user-identity-resolution).
+
+## FAQs
+
+### Why is sync not available for People and Identity pipelines?
+
+The sync feature is designed for events to keep the exported data up-to-date with changes that occur in Mixpanel (e.g. late-arriving data). For People and Identity pipelines, the data is re-exported in full in each export for profiles and identity mappings, which means that it's always up-to-date and does not require the sync feature. For that reason, you would not be able to enable sync for People and Identity pipelines — there is simply no use for it.
+
+### How are GDPR deletions handled?
+
+GDPR deletions do not automatically cascade deletions to data warehouses via pipelines. When a user is deleted from Mixpanel via the GDPR deletion API, this deletion is reflected in Mixpanel’s own storage, but the deletion does not propagate to data that has already been exported to data warehouses via pipelines.
+
+To keep your synced warehouse data GDPR compliant, you will need to implement a process to delete the corresponding user and event data from your warehouse when a GDPR deletion occurs in Mixpanel.
+
+### Can I configure my pipeline to export data into a subfolder or prefix within my bucket?
+
+No, Mixpanel’s JSON pipeline configuration does not currently support custom subfolders or prefixes. Data is exported into predefined structured paths that are automatically generated by Mixpanel.
+
+For example, event data is exported to the following path: `<BUCKET_NAME>/<PROJECT_ID>/mp_master_event/<YEAR>/<MONTH>/<DAY>/`
+
+This structure is created by Mixpanel and cannot be customized at the moment.
+
+### Can I export only a subset of events or properties with JSON pipelines?
+
+No, all events and properties are exported as they are ingested into Mixpanel. It’s not possible to filter for events and properties to include or exclude in your data pipeline exports. However, it is possible to whitelist events to export and filter by properties if you’re using our older pipelines created via API (Raw and Schematized).
+
+### Why isn’t my hourly pipeline running exactly every hour?
+
+With incremental pipelines, the next export iteration begins after the previous one completes rather than on a fixed schedule. This ensures we export all data completely without the risk of cutting off late-arriving events. While your pipeline is configured for “hourly” export, the actual run time will vary based on how long each iteration takes to process.
+
+## Change Log
+
+<ExtendedAccordion title="2025-09-29: Sync Enabled by Default for JSON Pipelines">
+
+Removed sync toggle from JSON pipeline creation UI. All new JSON pipelines now have incremental sync enabled by default to ensure data consistency without requiring manual configuration.
+
+**Impact**: New JSON pipelines automatically include sync functionality - no longer optional through UI toggle.
+</ExtendedAccordion>
+
+<ExtendedAccordion title="2025-08-14: Incremental Export Deployed for US Pipelines">
+
+We have deployed the Incremental Export Improvement for newly created pipelines with US data residency.
+
+The rollout of these updates to existing pipelines in US residency is scheduled for the near future.
+Your pipeline will automatically transition to the new system when ready.
+Your data quality and completeness remain the same; only the processing method has improved.
+</ExtendedAccordion>
+
+<ExtendedAccordion title="2025-06-26: Introducing Incremental Export for Event Pipelines">
+
+We're rolling out an improved pipeline system to improve the efficiency and reliability of your data exports. We're deploying these improvements for newly created pipelines in our EU and IN data residency. New pipelines in projects with US residency and migrating existing pipelines in all regions will follow after. Your pipeline will automatically transition to the new system when ready. Your data quality and completeness remain the same - only the processing method has improved.
+</ExtendedAccordion>

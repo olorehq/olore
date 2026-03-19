@@ -1,0 +1,678 @@
+import { Callout, Tabs } from 'nextra/components'
+
+# Mixpanel SDKs: Java
+
+## Getting Started
+
+The Mixpanel Java library is useful for tracking events from Java servers.
+
+The [Full API Reference](http://mixpanel.github.io/mixpanel-java/), [Library Source Code](https://github.com/mixpanel/mixpanel-java) and an [Example Application](https://github.com/mixpanel/mixpanel-java/blob/master/src/demo/java/com/mixpanel/mixpanelapi/demo/MixpanelAPIDemo.java) is documented in our GitHub repo.
+
+## Installing the Library
+
+To install the library, declare it as a dependency in your project's `pom.xml` file:
+
+```xml
+<dependency>
+    <groupId>com.mixpanel</groupId>
+    <artifactId>mixpanel-java</artifactId>
+    <version>1.5.2</version>
+</dependency>
+```
+<Callout type="info">
+    If you're not using Maven to build your project, you can browse and download the library jar directly from [Maven central](http://search.maven.org/#search%7Cga%7C1%7Cmixpanel-java).
+</Callout>
+
+To use the library, import the [`MessageBuilder`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html), [`MixpanelAPI`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MixpanelAPI.html), and [`ClientDelivery`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/ClientDelivery.html) classes in to your code. 
+
+The library sends data by using `MessageBuilder` to create payload messages, using `ClientDelivery` to bundle the messages, then using `MixpanelAPI` to push the bundles into Mixpanel.
+
+The `MessageBuilder` instance must be initialized with [your project token](/docs/orgs-and-projects/managing-projects#find-your-project-tokens).
+
+```java
+// import the classes from the library
+import com.mixpanel.mixpanelapi.MessageBuilder; // create messages
+import com.mixpanel.mixpanelapi.ClientDelivery; // bundle messages
+import com.mixpanel.mixpanelapi.MixpanelAPI; // send bundles to Mixpanel
+
+// initialize MessageBuilder class
+MessageBuilder messageBuilder =
+    new MessageBuilder("YOUR_PROJECT_TOKEN");
+```
+
+## Sending Events
+
+To send events, use the [`event()`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#event-java.lang.String-java.lang.String-org.json.JSONObject-) method under the [`MessageBuilder`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html) class to create the event message payload by providing a distinct_id, event name, and any event properties. The JSONObjects produced by `MessageBuilder` are completely self-contained, and can be sent over a network or enqueued for later processing.
+
+Then bundle the events using `ClientDelivery`, and send them to your project with `MixpanelAPI`. This will trigger a request to the [/track API endpoint](https://developer.mixpanel.com/reference/track-event) to ingest the events into your project.
+
+<Callout type="info">
+  The [/track endpoint](https://developer.mixpanel.com/reference/track-event) will only validate events with timestamps within the last 5 days of the request. Events with timestamps older than 5 days will not be ingested. See below on best practices for historical imports.
+</Callout>
+
+**Example Usage**
+
+```java
+// import library classes
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.ClientDelivery;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+// initialize MessageBuilder with your project token
+MessageBuilder messageBuilder =
+    new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+// Create an event
+JSONObject someEvent =
+    messageBuilder.event(distinctId, "some_event", null);
+
+// Create event properties
+JSONObject props = new JSONObject();
+props.put("Location", "San Francisco");
+props.put("Plan", "Premium");
+
+// create an event with event properties
+JSONObject otherEvent =
+    messageBuilder.event(distinctId, "other_event", props);
+
+// initialize ClientDelivery, and bundle the 2 events above
+ClientDelivery delivery = new ClientDelivery();
+delivery.addMessage(someEvent);
+delivery.addMessage(otherEvent);
+
+// Initialize MixpanelAPI, then use it to send the bundle to your project
+MixpanelAPI mixpanel = new MixpanelAPI();
+mixpanel.deliver(delivery);
+```
+
+Mixpanel determines default geolocation data (`$city`, `$region`, `mp_country_code`) using the IP address on the incoming request. As all server-side calls will likely originate from the same IP (that is, the IP of your server), this can have the unintended effect of setting the location of all of your users to the location of your data center. [Learn more about best practices for geolocation.](/docs/tracking-best-practices/geolocation).
+
+### Importing Historical Events
+
+The Java SDK is a tracking SDK designed for real-time tracking in a server-side environment. When `MixpanelAPI` detects an event message, it triggers a request to our [/track API endpoint](https://developer.mixpanel.com/reference/track-event) to send the payload to your project, which will validate for events with a timestamp that is within the last 5 days of the request. **Events older than 5 days will not be ingested**.
+
+For bulk import of historical events older than 5 days, we will need to use the [/import API endpoint](https://developer.mixpanel.com/reference/import-events) which is optimized for scripting and supports ingesting historical data. We recommend the [Python SDK](/docs/tracking-methods/sdks/python) (see the [`.import_data()`](https://mixpanel.github.io/mixpanel-python/#primary-interface) function) and [mixpanel-utils module](https://github.com/mixpanel/mixpanel-utils) (see the [`import_events()`](https://github.com/mixpanel/mixpanel-utils?tab=readme-ov-file#import-events) function) which both leverages the /import API for event ingestion.
+
+## Managing User Identity
+Since the Java SDK is a server-side library, IDs are not generated by the SDK. Instead, you will need to generate and manage the distinct_id yourself and include it in your events and profile data. 
+
+Learn more about [server-side identity management](/docs/tracking-methods/id-management/identifying-users-simplified#server-side-identity-management).
+
+## Storing User Profiles
+
+Create [user profiles](/docs/data-structure/user-profiles) by setting profile properties to describe them. Example profile properties include "name", "email", "company", and any other demographic details about the user.
+
+The Java SDK provides a few methods for setting profile properties, which will trigger requests to the [/engage API endpoint](https://developer.mixpanel.com/reference/profile-set).
+
+Mixpanel determines default geolocation data (`$city`, `$region`, `mp_country_code`) using the IP address on the incoming request. As all server-side calls will likely originate from the same IP (that is, the IP of your server), this can have the unintended effect of setting the location of all of your users to the location of your data center. [Learn more about best practices for geolocation.](/docs/tracking-best-practices/geolocation).
+
+### Setting Profile Properties
+
+To set profile properties, create a profile update message payload with [`MessageBuilder.set`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#set(java.lang.String,%20org.json.JSONObject)). Then send it to your project with [`MixpanelAPI`](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MixpanelAPI.html).
+
+If a profile property already exists, it will be overwritten with the latest value provided in the method. If a profile property does not exist, it will be added to the profile.
+
+**Example Usage**
+
+```java
+// import classes from the library
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+// initialize MessageBuilder and MixpanelAPI
+MessageBuilder messageBuilder =
+    new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+MixpanelAPI mixpanel = new MixpanelAPI();
+
+// create profile update message for "sample_distinct_id"
+// with "Plan" property and geolocation disabled
+JSONObject props = new JSONObject();
+props.put("Plan", "Premium");
+props.put("$ip", "0"); // do not update profile location
+JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+
+// Send the message to mixpanel
+mixpanel.sendMessage(newUser);
+
+// overwrite "Plan" with "deluxe"
+JSONObject updateProps = new JSONObject();
+updateProps.put("Plan", "deluxe");
+updateProps.put("$ip", "0");
+JSONObject updateUser = messageBuilder.set("sample_distinct_id", updateProps);
+mixpanel.sendMessage(updateUser);
+```
+
+### Other Types of Profile Updates
+
+There are a few other methods for setting profile properties by creating different messages using `MessageBuilder`. See a complete reference of the available methods [here](http://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html)
+
+A few commonly used people methods are highlighted below:
+
+<Tabs items={['setOnce()','append()','union()','increment()']} >
+  <Tabs.Tab>
+    The [`MessageBuilder.setOnce()`](https://mixpanel.github.io/mixpanel-android/com/mixpanel/android/mpmetrics/MixpanelAPI.People.html#setOnce(org.json.JSONObject)) method set profile properties only if they do not exist yet. If it is setting a profile property that already exists, it will be ignored.
+
+    Use this method if you want to set profile properties without the risk of overwriting existing data.
+
+    **Example Usage**
+    ```java Java
+    // import classes from the library
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+    // initialize MessageBuilder and MixpanelAPI
+    MessageBuilder messageBuilder =
+        new MessageBuilder("YOUR_PROJECT_TOKEN");
+    
+    MixpanelAPI mixpanel = new MixpanelAPI();
+
+    // create profile update message for "sample_distinct_id"
+    JSONObject props = new JSONObject();
+    props.put("name", "Sam");
+    props.put("$ip", "0"); // do not update profile location
+    JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+
+    // Send the message to mixpanel
+    mixpanel.sendMessage(newUser);
+
+    // will be ignored since "name" already exists
+    JSONObject updateProps = new JSONObject();
+    updateProps.put("name", "Samantha");
+    updateProps.put("$ip", "0");
+    JSONObject updateUser = messageBuilder.setOnce("sample_distinct_id", updateProps);
+    mixpanel.sendMessage(updateUser);
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`MessageBuilder.append()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#append-java.lang.String-org.json.JSONObject-) method append values to a list profile property.
+
+    Use this method to add additional values to an existing list property instead of redefining the entire list.
+
+    **Example Usage**
+    ```java Java
+    // import classes from the library
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+    // initialize MessageBuilder and MixpanelAPI
+    MessageBuilder messageBuilder =
+        new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+    MixpanelAPI mixpanel = new MixpanelAPI();
+
+    // create profile update message for "sample_distinct_id"
+    JSONObject props = new JSONObject();
+    String[] roles = {"sales", "engineer"};
+    props.put("name", "Sam");
+    props.put("roles", roles);
+    props.put("$ip", "0");
+    JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+    mixpanel.sendMessage(newUser);
+
+    // add "legal" to "roles"  
+    // new role values are ['sales','engineer','legal']
+    JSONObject newProps = new JSONObject();
+    newProps.put("roles","legal")
+    JSONObject updateUser = messageBuilder.append("sample_distinct_id", newProps);
+    mixpanel.sendMessage(updateUser);
+
+    // append allows duplicates
+    // new "roles" values are ['sales','engineer','legal', 'legal']
+    JSONObject newerProps = new JSONObject();
+    newerProps.put("roles","legal")
+    JSONObject updateUserAgain = messageBuilder.append("sample_distinct_id", newerProps);
+    mixpanel.sendMessage(updateUserAgain);
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`MessageBuilder.union()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#union-java.lang.String-java.util.Map-) method append new values to a list property, excluding duplicates.
+
+    Use this method to create a list profile property that only contains unique values without duplicates.
+
+    **Example Usage**
+    ```java Java
+    // import classes from the library
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+    // initialize MessageBuilder and MixpanelAPI
+    MessageBuilder messageBuilder =
+        new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+    MixpanelAPI mixpanel = new MixpanelAPI();
+
+    // create profile update message for "sample_distinct_id"
+    JSONObject props = new JSONObject();
+    String[] roles = {"sales", "engineer"};
+    props.put('name', 'Sam');
+    props.put('roles', roles);
+    JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+    mixpanel.sendMessage(newUser);
+
+    // append "engineer" to "roles"
+    // will be ignored since "engineer" already exists in "roles"
+    JSONObject newProps = new JSONObject();
+    newProps.put("roles","engineer");
+    JSONObject updateRoles = messageBuilder.union("sample_distinct_id", newProps);
+    mixpanel.sendMessage(updateRoles);
+
+    // append "legal" to "roles"
+    // new role values are ['sales','engineer','legal']
+    JSONObject newerProps = new JSONObject();
+    newerProps.put("roles","legal");
+    JSONObject updateRolesAgain = messageBuilder.union("sample_distinct_id", newProps);
+    mixpanel.sendMessage(updateRolesAgain);
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`MessageBuilder.increment()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#increment-java.lang.String-java.util.Map-) method increments a numeric property by a whole number.
+
+    Use this method to add to or subtract from your numeric property based on its current value.
+
+    **Example Usage**
+    ```java Java
+    // import classes from the library
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+    // initialize MessageBuilder and MixpanelAPI
+    MessageBuilder messageBuilder =
+        new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+    MixpanelAPI mixpanel = new MixpanelAPI();
+
+    // set profile properties for user "sample_distinct_id"
+    JSONObject props = new JSONObject();
+    props.put('name', 'Sam');
+    props.put('age', 25);
+    JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+    mixpanel.sendMessage(newUser);
+
+    // increment "age" by 2
+    JSONObject newAge = new JSONObject();
+    newAge.put("age", 2);
+    JSONObject addAge = messageBuilder.increment("sample_distinct_id", newAge);
+    mixpanel.sendMessage(addAge);
+
+    // use negative number to decrement
+    // decrement "age" by 5
+    JSONObject newerAge = new JSONObject();
+    newerAge.put("age", -5);
+    JSONObject subtractAge = messageBuilder.increment("sample_distinct_id", newerAge);
+    mixpanel.sendMessage(subtractAge);
+    ```
+
+  </Tabs.Tab>
+</Tabs>
+
+## Group Analytics
+
+<Callout type="info">
+    Read more about [Group Analytics](/docs/data-structure/group-analytics) before proceeding. You will need to have the [group key defined in your project settings](/docs/data-structure/group-analytics#group-keys-in-project-settings) first.
+</Callout>
+
+Mixpanel Group Analytics is a paid add-on that allows behavioral data analysis by selected groups, as opposed to individual users.
+
+A group is identified by the `group_key` and `group_id`.
+* `group_key` is the event property that connects event data to a group. (e.g. `company`)
+* `group_id` is the identifier for a specific group. (e.g. `mixpanel`,`company_a`,`company_b`, etc.)
+
+### Sending Group Identifiers With Events
+
+[All events must have the group key as an event property in order to be attributed to a group](/docs/data-structure/group-analytics#group-keys-tracked-as-event-properties). Without the group key, an event cannot be attributed to a group.
+
+To send group identifiers with your events, set the `group_key` as an event property with the `group_id` as the value.
+
+**Example Usage**
+
+```java
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+ 
+MixpanelAPI mixpanelApi = new MixpanelAPI();
+MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+ 
+// send event with "name" and "company" event props
+// event is associated with the "mixpanel" company group
+JSONObject props = new JSONObject();
+props.put("name", "sam");
+props.put("company", "mixpanel")
+JSONObject eventPayload =
+    messageBuilder.event("sample_distinct_id", "some_event", props);
+mixpanel.sendMessage(eventPayload);
+```
+
+**Multiple Groups**
+
+[An event can be attributed to multiple groups](/docs/data-structure/group-analytics#attribute-events-to-multiple-groups) by passing in the `group_key` value as a list of multiple `group_id` values.
+
+**Example Usage**
+
+```java
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+ 
+MixpanelAPI mixpanelApi = new MixpanelAPI();
+MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+ 
+// send event with "name" and "company" event props
+// event is associated with the 2 company groups ("mp-eu" and "mp-us")
+JSONObject props = new JSONObject();
+String[] companies = {"mp-eu", "mp-us"};
+props.put("name", "sam");
+props.put("company", companies)
+JSONObject eventPayload =
+    messageBuilder.event("sample_distinct_id", "some_event", props);
+mixpanel.sendMessage(eventPayload);
+```
+
+### Adding Group Identifiers to User Profiles
+
+To connect group information to a user profile, include the `group_key` and `group_id` as a user profile property using the `.set()` call.
+
+```java
+// import classes from the library
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+// initialize MessageBuilder and MixpanelAPI
+MessageBuilder messageBuilder =
+    new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+MixpanelAPI mixpanel = new MixpanelAPI();
+
+// create profile update message for "sample_distinct_id"
+// with group key "company" as user prop and group id "mixpanel" as value
+JSONObject props = new JSONObject();
+props.put("company", "mixpanel");
+props.put("$ip", "0"); // do not update profile location
+JSONObject newUser = messageBuilder.set("sample_distinct_id", props);
+
+// Send the message to mixpanel
+mixpanel.sendMessage(newUser);
+```
+
+### Setting Group Profile Properties
+Create a group profile by setting group properties, similar to a user profile. For example, you may want to describe a company group with properties such as "ARR", "employee_count", and "subscription".
+
+To set group profile properties, use the [`MessageBuilder.groupSet()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#groupSet-java.lang.String-java.lang.String-org.json.JSONObject-) function, which will trigger a request to the [/groups API endpoint](https://developer.mixpanel.com/reference/group-set-property).
+
+**Example Usage**
+
+```java
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+ 
+MixpanelAPI mixpanel = new MixpanelAPI();
+MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+ 
+// Create a group profile with group_key = "company", group_id = "mixpanel"
+// and assign the properties "name" and "industry"
+JSONObject groupProperties = new JSONObject();
+groupProperties.put("name", "Mixpanel");
+groupProperties.put("industry", "analytics");
+JSONObject message = messageBuilder.groupSet(
+    "company",
+    "mixpanel",
+    groupProperties
+);
+mixpanel.sendMessage(message);
+```
+
+### Other Group Profile Methods
+
+See all of the group methods under the `MessageBuilder` class [here](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html).
+
+A few commonly used group methods are highlighted below:
+
+<Tabs items={['.groupSetOnce()','.groupUnset()','.groupUnion()','.groupRemove()']}>
+  <Tabs.Tab>
+    The [`MessageBuilder.groupSetOnce()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#groupSetOnce-java.lang.String-java.lang.String-org.json.JSONObject-) method set group profile properties only if they do not exist yet. If it is setting a profile property that already exists, it will be ignored.
+
+    Use this method if you want to set group profile properties without the risk of overwriting existing data.
+
+    **Example Usage**
+    
+    ```java
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+    
+    MixpanelAPI mixpanel = new MixpanelAPI();
+    MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+    
+    // Create a group profile with group_key = "company", group_id = "mixpanel"
+    JSONObject groupProperties = new JSONObject();
+    groupProperties.put("name", "Mixpanel");
+    groupProperties.put("industry", "analytics");
+    JSONObject message = messageBuilder.groupSet(
+        "company",
+        "mixpanel",
+        groupProperties
+    );
+    mixpanel.sendMessage(message);
+
+    // will be ignored since "name" already exists
+    JSONObject groupProps = new JSONObject();
+    groupProps.put("name", "mp-us");
+    JSONObject updateMsg = messageBuilder.groupSetOnce(
+        "company",
+        "mixpanel",
+        groupProps
+        );
+    mixpanel.sendMessage(updateMsg);
+
+    // set location group prop
+    JSONObject newGroupProps = new JSONObject();
+    newGroupProps.put("location", "us");
+    JSONObject newUpdateMsg = messageBuilder.groupSetOnce(
+        "company",
+        "mixpanel",
+        newGroupProps
+    );
+    mixpanel.sendMessage(newUpdateMsg);
+
+    //
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`MessageBuilder.groupUnset()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#groupUnset-java.lang.String-java.lang.String-java.util.Collection-) method removes a group property from a group profile.
+
+    Use this method to delete unwanted group profile properties from a specific group profile.
+
+    **Example Usage**
+    ```java Java
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+    
+    MixpanelAPI mixpanel = new MixpanelAPI();
+    MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+    
+    // Create a group profile with group_key = "company", group_id = "mixpanel"
+    JSONObject groupProperties = new JSONObject();
+    groupProperties.put("name", "Mixpanel");
+    groupProperties.put("industry", "analytics");
+    JSONObject message = messageBuilder.groupSet(
+        "company",
+        "mixpanel",
+        groupProperties
+    );
+    mixpanel.sendMessage(message);
+
+
+    // delete "industry" from the group profile
+    ArrayList<String> unsetPropNames = new ArrayList<>(
+        Arrays.asList("industry")
+    );
+    JSONObject unsetMsg = messageBuilder.groupUnset(
+        "company",
+        "mixpanel",
+        unsetPropNames
+    );
+    mixpanel.sendMessage(unsetMsg)
+
+    // only "name" remains as a group prop
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`MessageBuilder.groupUnion()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#groupUnion-java.lang.String-java.lang.String-java.util.Map-) method append new values to a list property, excluding duplicates.
+
+    Use this method to create a list group profile property that only contains unique values without duplicates.
+
+    **Example Usage**
+
+    ```java Java
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+    
+    MixpanelAPI mixpanel = new MixpanelAPI();
+    MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+    
+    // Create a group profile with group_key = "company", group_id = "mixpanel"
+    ArrayList<String> featuresList = new ArrayList<String>(
+        Arrays.asList("alert","report","cohort")
+    );
+    JSONObject groupProps = new JSONObject();
+    groupProps.put("name", "Mixpanel");
+    groupProps.put("features", featuresList);
+    JSONObject message = messageBuilder.groupSet(
+        "company",
+        "mixpanel",
+        groupProps
+    );
+    mixpanel.sendMessage(message);
+
+    // add "data pipeline" to "features" prop
+    // ignore "alert" since it is a duplicate value
+    ArrayList<String> addFeaturesList = new ArrayList<String>(
+        Arrays.asList("pipeline","alert")
+    );
+    JSONObject newGroupProps = new JSONObject();
+    newGroupProps.put("features", addFeaturesList);
+    JSONObject newMsg = messageBuilder.groupUnion(
+        "company",
+        "mixpanel",
+        newGroupProps
+    );
+    mixpanel.sendMessage(newMsg);
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`groupRemove()`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MessageBuilder.html#groupRemove-java.lang.String-java.lang.String-org.json.JSONObject-) method removes a value from a list-valued group profile property.
+
+    Use this method to remove specific values from a list without affecting all of the other values in the list.
+
+    **Example Usage**
+    ```java Java
+    import com.mixpanel.mixpanelapi.MessageBuilder;
+    import com.mixpanel.mixpanelapi.MixpanelAPI;
+    
+    MixpanelAPI mixpanel = new MixpanelAPI();
+    MessageBuilder messageBuilder = new MessageBuilder("YOUR_PROJECT_TOKEN");
+    
+    // Create a group profile with group_key = "company", group_id = "mixpanel"
+    ArrayList<String> featuresList = new ArrayList<String>(
+        Arrays.asList("alert","report","cohort")
+    );
+    JSONObject groupProps = new JSONObject();
+    groupProps.put("name", "Mixpanel");
+    groupProps.put("features", featuresList);
+    JSONObject message = messageBuilder.groupSet(
+        "company",
+        "mixpanel",
+        groupProps
+    );
+    mixpanel.sendMessage(message);
+
+    //remove "alert" from "features"
+    // "features" now contain ["reports","cohorts"]
+    JSONObject removeFeature = new JSONObject();
+    removeFeature.put("features","alert");
+    JSONObject newMsg = messageBuilder.groupRemove(
+        "company",
+        "mixpanel",
+        removeFeature
+    )
+    mixpanel.sendMessage(newMsg)
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## Privacy-Friendly Tracking
+
+You have control over the data you send to Mixpanel. The Ruby SDK have a few configurations to help you protect user data.
+
+Since this is a server-side tracking library where you have control of the servers, your server is responsible for determining whether to send data about a particular user or not.
+
+### EU Data Residency
+
+Route data to Mixpanel's EU servers by passing in positional arguments into the [`MixpanelAPI`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MixpanelAPI.html) constructor:
+
+**Example Usage**
+
+```java
+// set event, people, and group endpoints to Mixpanel's EU domains
+MixpanelAPI mixpanel = new MixpanelAPI( "https://api-eu.mixpanel.com/track",
+                                        "https://api-eu.mixpanel.com/engage",
+                                        "https://api-eu.mixpanel.com/groups");
+```
+
+### India Data Residency
+
+Route data to Mixpanel's India servers by passing in positional arguments into the [`MixpanelAPI`](https://mixpanel.github.io/mixpanel-java/com/mixpanel/mixpanelapi/MixpanelAPI.html) constructor:
+
+**Example Usage**
+
+```java
+// set event, people, and group endpoints to Mixpanel's India domains
+MixpanelAPI mixpanel = new MixpanelAPI( "https://api-in.mixpanel.com/track",
+                                        "https://api-in.mixpanel.com/engage",
+                                        "https://api-in.mixpanel.com/groups");
+```
+
+### Disable Geolocation
+
+The Java SDK parse the request IP address to generate geolocation properties for events and profiles. You may want to disable them to prevent the unintentional setting of your data's geolocation to the location of your server that is sending the request, or to prevent geolocation data from being tracked entirely.
+
+To disable geolocation, set the `ip` of your events and profile updates to `0`.
+
+**Example Usage**
+
+```java
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.ClientDelivery;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+MessageBuilder messageBuilder =
+    new MessageBuilder("YOUR_PROJECT_TOKEN");
+
+MixpanelAPI mixpanel = new MixpanelAPI();
+
+// create profile without updating geolocation
+JSONObject userProps = new JSONObject();
+userProps.put("Plan", "Premium");
+userProps.put("$ip", "0"); // do not update profile location
+JSONObject newUser = messageBuilder.set("sample_distinct_id", userProps);
+
+//send event without geolocation parsing
+JSONObject eventProps = new JSONObject();
+eventProps.put("name", "sam");
+eventProps.put("ip", "0");
+JSONObject someEvent = messageBuilder.event(distinctId, "some_event", eventProps);
+
+
+ClientDelivery delivery = new ClientDelivery();
+delivery.addMessage(newUser);
+delivery.addMessage(someEvent);
+
+mixpanel.sendMessage(delivery);
+```
+
+## Release History
+
+[See all releases.](https://github.com/mixpanel/mixpanel-java/releases)

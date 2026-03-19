@@ -1,0 +1,344 @@
+# Track Events
+
+import { Tabs } from "nextra/components";
+
+import ExtendedButton from "/components/ExtendedButton/ExtendedButton";
+import ExtendedTabs from "/components/ExtendedTabs/ExtendedTabs";
+
+import { dataItems } from "/utils/constants";
+
+## Overview
+
+This step introduces the `track` method, which allows you to see how your users are using your product.
+
+Use the track method to track events on behalf of your users. Add this code snippet to basic events like "Sign Up" and any additional events that may track the core features of your product.
+
+## Code
+
+Replace `Sign Up` with a unique identifier for the event. Passing additional information is possible using the properties object.
+
+<ExtendedTabs urlParam="sdk" urlToItemsMap={dataItems}>
+
+<Tabs.Tab>
+```js Javascript
+mixpanel.track('Sign Up', {
+  'Signup Type': 'Referral'
+})
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+_ Video: [Debug Common Issues When Installing Mixpanel on Web](https://www.loom.com/embed/fbba03274dc441b49b578e8a734b1d99).
+_ Docs: [Read the Full Javascript SDK Docs](/docs/tracking-methods/sdks/javascript/) \* Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python Python
+# Note: you must supply the USER_ID
+mp.track('USER_ID', 'Sign Up',  {
+  'Signup Type': 'Referral'
+})
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+_ Docs: [Read the Python SDK Doc](/docs/tracking-methods/sdks/python/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```shell php
+$mp->track("button clicked", array("label" => "sign-up"));
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+_ Docs: [Read the Python SDK Doc](/docs/tracking-methods/sdks/php/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```js Node.js
+// Note: you must supply the USER_ID
+mixpanel.track("Sign Up", {
+  distinct_id: "USER_ID",
+  "Signup Type": "Referral",
+});
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+_ Docs: [Read the Node.js SDK Doc](/docs/tracking-methods/sdks/nodejs/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```go Go
+exampleEvent = mp.NewEvent("Sign Up", "USER_ID", map[string]any{
+    "Signup Type": "Referral",
+})
+
+err := mp.Track(ctx,
+[]\*mp.PeopleProperties{
+exampleUser,
+},
+)
+
+````
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+    * Docs: [Read the Go SDK Doc](/docs/tracking-methods/sdks/go/)
+    * Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+</Tabs.Tab>
+
+<Tabs.Tab>
+```ruby Ruby
+# Note: you must supply the USER_ID
+mp.track('USER_ID', 'Sign Up', {
+  'Signup Type' => 'Referral'
+})
+````
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+_ Docs: [Read the Ruby SDK Doc](/docs/tracking-methods/sdks/ruby/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java Java
+import com.mixpanel.mixpanelapi.ClientDelivery;
+
+// You can send properties along with events
+JSONObject props = new JSONObject();
+props.put("Signup Type", "Referral");
+
+// Create an event
+JSONObject sentEvent = messageBuilder.event(userId, "Sign Up", props);
+
+ClientDelivery delivery = new ClientDelivery();
+delivery.addMessage(sentEvent);
+
+// Send the update to mixpanel
+MixpanelAPI mixpanel = new MixpanelAPI();
+mixpanel.deliver(delivery);
+
+````
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+**More resources:**
+    * Docs: [Read the Java SDK Doc](/docs/tracking-methods/sdks/java/)
+    * Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+mixpanel.track("Sign Up", {
+  "Signup Type": "Referral"
+})
+````
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+_ Docs: [Read the React Native SDK Doc](/docs/tracking-methods/sdks/react-native/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+mixpanel.track('Sign Up', {
+  'Signup Type': 'Referral'
+});
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+
+- Docs: [Read the Flutter SDK Docs](/docs/tracking-methods/sdks/flutter/)
+- Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```objc
+[mixpanel track:@"Signed Up" properties:
+    @{ @"Signup Type": @"Referral" }
+];
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+
+- Docs: [Read the iOS (Objective-C) SDK Doc](/docs/tracking-methods/sdks/ios/)
+- Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```swift
+Mixpanel.mainInstance().track(event:"Sign Up", properties: [
+    "Signup Type": "Referral",
+])
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+_ Docs: [Read the iOS (Swift) SDK Doc](/docs/tracking-methods/sdks/swift/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+JSONObject props = new JSONObject();
+props.put("Signup Type", "Referral");
+mp.track("Signed Up", props);
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+_ Docs: [Read the Android SDK Doc](/docs/tracking-methods/sdks/android/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```csharp
+var props = new Value();
+props["Signup Type"] =  "Referral";
+Mixpanel.Track('Sign up', props);
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+**More resources:**
+_ Docs: [Read the Unity SDK Doc](/docs/tracking-methods/sdks/unity/)
+_ Github: [Browse the Open Source SDKs](https://github.com/mixpanel)
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+If you don't see an SDK or an integration in your language, you can send events to our API directly.
+
+Here's a sample script. Replace `YOUR_TOKEN` with your project token. You can find your token [here](https://mixpanel.com/settings/project).
+
+```python test.py
+# Fill this out
+import json
+import time
+import requests
+
+events = [
+    {"event": "my_test_event", "properties": {"time": int(time.time()), "distinct_id": "test_user_1", "$insert_id": "04ce0cf4-a633-4371-b665-9b45317b4976", "city": "San Francisco"}},
+    {"event": "another_event", "properties": {"time": int(time.time()), "distinct_id": "test_user_2", "$insert_id": "3b033b9a-6bc9-4b70-90c3-a53e11f6896e", "city": "Seattle"}}
+]
+resp = requests.post(
+    "https://api.mixpanel.com/import",
+    params={"strict": "1"},
+    auth=("YOUR_TOKEN", ""),
+    headers={"Content-Type": "application/json"},
+    data=json.dumps(events)
+)
+
+print(resp.json())
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+See our [API reference](https://developer.mixpanel.com/reference/events) for more details.
+
+**Best Practices for Scale**
+
+You can use this API at scale, for example to backfill historical data into Mixpanel or as part of a high-throughput streaming pipeline. We provide walkthroughs for [Amazon S3](/docs/data-pipelines/old-pipelines/integrations/schematized-aws-pipeline) and [Google Cloud Storage](/docs/data-pipelines/old-pipelines/integrations/schematized-gcs-pipeline) to provide a more production-grade example of how to use this API at scale.
+
+Here are some other best practices:
+
+- Be explicit about what is tracked to Mixpanel rather than implicitly tracking everything, both for performance and security reasons. Avoid sending user generated content, high-cardinality IDs, or large semi-structured objects.
+- Import a more recent time window first (last 7 days or last 30 days) before backfilling historical data. Mixpanel's autocomplete menus populate events and properties based on the last 30 days of data, so this is the best way to test that data looks as expected.
+- Leverage batching and compression. Each request to /import can send 2000 events to Mixpanel and can be sent compressed using gzip. The sample code in this guide does both.
+- When using Cloud Storage, partition files into ~200MB of JSON (or ~200K records) each. Each file is processed in parallel by Cloud Functions/Lambda and must be ingested by the function within the configured timeout.
+- Log any 400 errors returned by the API. These are non-retryable and indicate something malformed with the data. This should be extremely unlikely once the API is up and running. If a batch contains a mix of valid and invalid data, we will ingest the valid data.
+
+**Limits**
+
+Our Import API is built to ingest billions of events per day across our customers. That said, we do rate limit at very high scale to ensure quality of service and real-time ingestion. Please refer to our [Import API docs](https://developer.mixpanel.com/reference/import-events) for details.
+
+All of our sample code transparently retries and backoff from rate limit exceptions. If you require a higher-limit for a 1-time backfill, please reach out to us at apis@mixpanel.com.
+
+</Tabs.Tab>
+
+</ExtendedTabs>
+
+<br></br>
+<br></br>
+<br></br>
+<br></br>
+
+
+{/* Next Section */}
+
+<hr></hr>
+<br></br>
+<div className="extendedButtonComponent" >
+<div className="bg-base100 rounded-xl">
+  <h2 className="text-2xl font-medium mb-2 color:bg-purple200">
+    You're Ready to Start Using Mixpanel
+  </h2>
+  <p>
+    It's time to create your first [report](/docs/reports) or use one
+    of our [many templates](/docs/boards/templates).
+  </p>
+  <br></br>
+  <ExtendedButton
+    title="Open Mixpanel"
+    link="https://mixpanel.com"
+  ></ExtendedButton>
+</div>
+</div>
+<br></br>
+<br></br>
+
+## FAQ
+
+
+<div className="faqComponent" >
+
+<ExtendedAccordion title="Does Mixpanel automatically track page views?">
+  Yes, if you pass `track_pageview: true` in the `mixpanel.init()` call,
+  Mixpanel will automatically track a "Page View" event every time a new page is
+  loaded. Learn more
+  [here](/docs/tracking-methods/sdks/javascript#tracking-page-views).
+</ExtendedAccordion>
+
+<ExtendedAccordion title="Why aren't my events showing up?">
+  If tracking from the web, make sure you've disabled ad blockers and your Do Not Track (DNT) 
+  browser settings are set to false when testing your JavaScript implementation. If 
+  the DNT setting is set to true, then Mixpanel won't collect information from that Mixpanel 
+  instance. We also recommend [setting up a proxy server](/docs/tracking-methods/sdks/javascript#tracking-via-proxy) 
+  so that you don't lose events due to ad-blockers.
+
+If tracking from a mobile device, events may take 1-2 minutes to appear because Mixpanel's
+mobile SDKs buffer events for 1 minute, or when the app transitions to the background, to
+conserve battery life and bandwidth. You can call `.flush()` in the mobile SDKs to manually flush events to Mixpanel.
+
+</ExtendedAccordion>
+</div>

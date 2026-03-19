@@ -1,0 +1,475 @@
+import { Callout } from 'nextra/components'
+
+# Experiments: Measure the impact of a/b testing
+
+<Callout type="info">
+    The Experiment Report is a separately priced product add-on. It is currently only offered to those on the Enterprise Plan. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+
+    Customers who have not purchased the Experiment add-on will be able to create up to 3 experiments per project. Please note that creation is irreversible, so you would not be able to delete experiments. If you are interested in exploring the features fully, you can request a trial from your account team.
+</Callout>
+
+## Why Experiment?
+
+Experimentation helps you make data-driven product decisions by measuring the real impact of changes on user behavior. Mixpanel is an ideal place to run experiments because all your product analytics data is already here, providing you with comprehensive insights into how changes affect your users' journey.
+
+## Prerequisites
+
+Before getting started with experiments:
+
+- **Exposure Event Tracking**: [Implement](#implementation-for-experimentation) your experimentation events
+- **Baseline Metrics**: Ensure that Mixpanel is already tracking your key metrics
+
+## Overview & Workflow
+
+![image](/exp_overview.png)
+
+The Experiment report analyzes how one variant impacts your metrics versus other variant(s), helping you decide which variant should be rolled out more broadly. To access Experiments, click on the **Experiments** tab in the navigation panel, or **Create New > Experiment**.
+
+### Experiment Process
+
+**Plan** → **Setup & Launch** → **Monitor** → **Interpret Results** → **Make Decisions**
+
+1. **Plan**: Define hypothesis, success metrics, and test parameters
+2. **Setup & Launch**: Configure experiment settings and begin exposure
+3. **Monitor**: Track experiment progress and data collection
+4. **Interpret Results**: Analyze statistical significance and lift
+5. **Make Decisions**: Choose whether to ship, iterate, or abandon changes
+
+## Plan Your Experiment
+
+Before creating an experiment report, ensure you have:
+
+- A clear hypothesis about what change will improve which metric
+- Defined primary success metrics (and secondary/guardrail metrics)
+- Estimated sample size and test duration requirements
+- Proper exposure event tracking implemented
+
+## Setup & Launch Your Experiment
+
+### Step 1: Select an Experiment
+
+Click 'New Experiment' from the Experiment report menu and select your experiment. Any experiment started in the last 30 days will automatically be detected and populated in the dropdown. To analyze experiments that began before 30 days, please hard-code the experiment name
+
+<Callout type="info">
+Only experiments tracked via exposure events, i.e, `$experiment_started`, can be analyzed in the experiment report. Read more on how to track experiments [here](#implementation-for-experimentation). 
+</Callout>
+### Step 2: Choose the ‘Control’ Variant
+
+Select the ‘Variant’ that represents your control. All your other variant(s) will be compared to the control, i.e, how much better they perform compared to the control variant. 
+
+### Step 3: Choose Success Metrics
+
+Choose the primary metrics of success for the experiment. You can choose from either saved Mixpanel metrics or create a new metric leveraging the query panel. You can also add secondary metrics and guardrail metrics as required.
+
+### Step 4: Select the Test Duration
+
+Enter either the sample size (the number of users to be exposed to the experiment) or the minimum number of days you want the experiment to run. This will determine the test duration. Once the sample size or days are complete, you can conclusively read the experiment results and make a decision.
+
+### Step 5: Confirm other Default Configurations
+
+Mixpanel has set default automatic configurations, seen below. If required, please modify them as needed for the experiment
+
+1. **Experiment Model type**: Sequential
+2. **Confidence Threshold**: 95%
+3. **Experiment Start Date**: Date of the first user exposed to the experiment
+
+### Changing Settings Mid-Experiment
+
+Mixpanel analyzes your experiment on the fly, so you can adjust settings at any time if needed. If you notice a configuration mistake - like selecting Frequentist when you meant Sequential - feel free to correct it, even if the experiment has been running for weeks.
+
+The one thing to avoid is changing settings because the current results aren't what you hoped for. If you adjust the confidence level, metrics, or duration in search of a significant result, you're more likely to find something that looks meaningful but is actually noise. When you roll out that change, it may not deliver the improvement you expected.
+
+If you want to test a different configuration, restart the experiment instead. This resets the data and ensures your analysis starts fresh.
+
+## Monitor Your Experiment
+
+Once your experiment is running, you can track its progress in the Experiments dashboard. Monitor key indicators:
+
+- **Sample Size Progress**: Track how many users have been exposed
+- **Data Quality**: Ensure exposure events are being tracked correctly
+- **Guardrail Metrics**: Watch for any negative impacts on important metrics
+- **External Factors**: Note any external events that might affect results
+
+## Interpret Your Results
+
+The Experiments report identifies significant differences between the Control and Variant groups. Every metric has two key attributes: 
+
+- p-value: this shows if the variants’ delta impact vs the control is statistically significant
+- lift: the variants’ delta impact on the metric vs control
+
+Metric rows in the table are highlighted when any difference is calculated with high confidence. Specifically, if the difference is greater than the confidence interval you set up during the experiment configuration
+
+- Positive differences, where the variant value is in the target direction compared to the control, are highlighted in green
+- Negative differences, where the variant value is opposite the target direction compared to the control, are highlighted in red
+- Statistically insignificant results remain gray
+
+<Callout type="info">
+Hover over a value in a metric row to see more detail behind the numbers and to view the metric in Insights.
+</Callout>
+
+### How do you read statistical significance?
+
+Statistical significance (p-value) helps you determine whether your experiment results are likely to hold true for the full rollout, giving you confidence in your decisions.
+
+![image](/exp_stat_sig.png)
+
+#### Statistical Significance Calculation
+
+Mixpanel uses Frequentist statistical methods to compute p-values and confidence intervals. The specific approach depends on your metric type and experiment model.
+
+**Metric Types and Their Distributions:**
+
+Mixpanel categorizes metrics into four types, each using different statistical distributions:
+
+1. **Total Events Metrics**: Use **normal distribution** of per-user event counts
+   - Examples: Total purchases, total page views
+   - Variance is calculated directly from the distribution of per-user event counts
+
+2. **Total Sessions Metrics**: Use **Poisson distribution**
+   - Variance equals the mean (characteristic of Poisson distributions)
+
+3. **Rate Metrics** (Conversion rates, Retention rates): Use **Bernoulli distribution**
+   - Examples: Signup conversion rate, checkout completion rate, 7-day retention
+   - Models binary outcomes (did/didn't convert) across your user base
+
+4. **Value Metrics** (Averages, Sums of properties): Use **normal distribution approximation**
+   - Examples: Average order value, total revenue, average session duration
+   - Calculates variance using sample statistics
+
+**Statistical Calculation Process:**
+
+For all metric types, we follow the same general process:
+
+1. **Calculate group rates** for control and treatment
+2. **Estimate variance** using the appropriate distribution 
+3. **Compute standard error** from variance and sample size
+4. **Calculate Z-score** measuring how many standard errors apart the groups are
+5. **Derive p-value** from Z-score using normal distribution
+
+**Statistical Foundation:**
+Our calculations assume normal distributions for the sampling distributions of our metrics. While individual data points may not be normally distributed, the Central Limit Theorem tells us that with sufficient sample sizes, the sampling distributions of means and proportions will approximate normal distributions, making our statistical methods valid.
+
+**For Sequential Testing:**
+- Uses continuous monitoring with adjusted significance thresholds with [mSPRT method](https://arxiv.org/pdf/1905.10493)
+- Allows for early stopping when significance is reached
+- More conservative calculations to account for multiple testing
+
+**For Frequentist Testing:**
+- Uses traditional hypothesis testing with fixed sample sizes
+- Formula: Max Significance Level (p-value) = [1-CI]/2 where CI = Confidence Interval
+
+In the above image for example, max p=0.025 [(1-0.95)/2]
+
+So, if an experiment's results show 
+
+- p ≤ 0.025: results are statistically significant for this metric, i.e, you can be 95% confident in the lift seen if the change is rolled out to all users.
+- p > 0.025: results are not statistically significant for this metric, i.e, you cannot be very confident in the results if the change is rolled out broadly.
+
+#### Example: E-commerce Checkout Experiment
+
+To illustrate how these calculations work in practice, let's walk through a concrete example.
+
+**Scenario:** Testing a new checkout UI on an e-commerce site with 20 users (10 control, 10 treatment).
+
+**Results:**
+- **Control group:** 5 users converted (50% conversion rate), average cart size $60
+- **Treatment group:** 6 users converted (60% conversion rate), average cart size $67
+
+**For Conversion Rate (Rate Metric - Bernoulli Distribution):**
+
+1. **Group rates:** Control = 0.5, Treatment = 0.6
+2. **Variance calculation:** Control = 0.5 × (1-0.5) = 0.25, Treatment = 0.6 × (1-0.6) = 0.24  
+3. **Standard error:** Combined SE = √((0.25/10) + (0.24/10)) = 0.221
+4. **Z-score:** (0.6 - 0.5) / 0.221 = 0.45
+5. **P-value:** ~0.65 (not statistically significant)
+
+**For Average Cart Size (Value Metric - Normal Distribution):**
+
+1. **Group means:** Control = $60, Treatment = $67
+2. **Variance calculation:** Uses the sample variance of cart values in each group
+3. **Standard error:** Calculated from combined variance and sample sizes
+4. **Z-score and p-value:** Computed using the same Z-test framework
+
+This example shows why larger sample sizes are crucial—with only 10 users per group, even a 10-point difference in conversion rate isn't statistically significant.
+
+### How do you read lift?
+
+Lift is the percentage difference between the control and variant(s) metrics. 
+$Lift= { (variant \,group\,rate - control \,group\,rate) \over (control \,group\,rate)}$
+
+Lift, mean, and variance are calculated differently based on the type of metric being analyzed:
+
+**Total Events Metrics:**
+- **Group Rate:** Total count ÷ Number of users exposed
+- **Variance:** Calculated directly from the per-user event counts, treated as a continuous variable
+- **Example:** If the treatment group has 150 total purchases from 100 exposed users, the group rate = 1.5 purchases per user
+
+**Total Sessions Metrics:**
+- **Group Rate:** Total count ÷ Number of users exposed
+- **Variance:** Equal to the mean (Poisson distribution property)
+
+**Rate Metrics (Conversion, Retention):** 
+- **Group Rate:** The actual rate (already normalized)
+- **Variance:** Calculated using Bernoulli distribution: p × (1-p)
+- **Example:** If 25 out of 100 users convert, group rate = 0.25 (25% conversion rate)
+
+**Value Metrics (Averages, Sums):**
+- **Group Rate:** Sum of property values ÷ Number of users exposed  
+- **Variance:** Calculated from the distribution of individual property values
+- **Example:** If the treatment group spent $5,000 total from 100 users, the group rate = $50 average per exposed user
+
+**Why This Matters:**
+Normalizing by exposed users (not just converters) helps you understand the impact on your entire user base. A feature that increases average order value among buyers but reduces conversion rate may decrease overall revenue per user.
+
+**Custom Formula Metrics:**
+For complex metrics using formulas like `Revenue per User = Total Revenue ÷ Unique Users`, Mixpanel uses propagation of uncertainty to estimate variance. This combines the variances of the component metrics (Total Revenue and Unique Users) to calculate the overall metric's statistical significance. The system assumes metrics in formulas are uncorrelated for these calculations.
+
+### When do we say the Experiment is ready to review?
+Once the ‘Test Duration’ setup during configuration is complete, we show a banner that says “Experiment is ready to review”.
+
+ Test Duration can be either of two options:
+
+1. Sample size to be exposed
+2. Number of days you’d like to run the experiment
+
+NOTE: If you are using a 'sequential' testing experiment model type, you can always peek at the results sooner. Learn more about what sequential testing is [here](#experiment-model-types)
+
+### Diagnosing experiments further in regular Mixpanel reports
+Click 'Analyze' on a metric to dive deeper into the results. This will open a normal Mixpanel insights report for the time range being analyzed with the experiment breakdown applied. This allows you to view users, view replays, or apply additional breakdowns to further analyze the results.
+
+You can also add the experiment breakdowns and filters directly in a report via the Experiments tab in the query builder. This lets you do on-the-fly analysis with the experiment groups. Under the hood, the experiment breakdown and filter work the same as the Experiment report.
+
+
+## Advanced Statistical Methods
+
+Mixpanel offers several advanced statistical options to help you get more reliable experiment results. These features address common challenges in experimentation: controlling for multiple comparisons, handling outliers, validating experiment setup, and reducing variance to reach significance faster.
+
+### Methods at a Glance
+
+| Technique | What It Does | When to Use | Actions to Take |
+| --- | --- | --- | --- |
+| **Bonferroni Correction** | Makes significance thresholds stricter to account for testing multiple metrics/variants at once | You're tracking multiple metrics or testing multiple variants | If a metric loses significance after correction, don't treat it as a confirmed winner. Run a follow-up experiment focused on that metric alone. |
+| **Winsorization** | Caps extreme outlier values at a percentile you choose | Revenue or value-based metrics where outliers are common | If results change substantially after Winsorization, this indicates your original results were driven by outliers. Decide whether your business decision is about typical users or extreme ones. |
+| **SRM** | Checks whether your variant split matches the configured allocation | Always on as a health check | Pause the experiment. Identify and fix the root cause of the mismatch, then restart the experiment. |
+| **Retro-AA** | Checks whether variant groups were already different *before* the experiment started | Always on as a health check | Your groups had pre-existing bias. Consider enabling CUPED to correct for it. Investigate your assignment logic to prevent it in future experiments. |
+| **CUPED** | Uses pre-experiment behavior to adjust for natural variance and pre-existing bias, helping you reach significance faster | Your users have pre-experiment history and your metrics have high natural variance | If confidence intervals don't noticeably tighten, pre-experiment behavior isn't predictive for your metrics. Results are still valid, you just won't get faster detection. |
+
+### Bonferroni Correction
+
+When you track multiple metrics in an experiment, or test multiple variants against a control, you increase the chance of seeing a false positive. This is similar to rolling multiple dice: there's only a 1-in-6 chance of rolling a six with one die, but if you roll 10 dice, the chance that at least one shows a six is much higher.
+
+The same principle applies to experiment metrics. At a 95% confidence level, each metric has a 5% chance of showing a significant result by pure chance. But when you're tracking many metrics, the probability that at least one of them shows a false positive increases substantially.
+
+Bonferroni Correction addresses this by making the significance threshold stricter. When enabled, Mixpanel divides your confidence threshold by the number of comparisons being made (metrics × non-control variants). For example, if you have 3 metrics and 2 treatment variants, that's 6 total comparisons. If you selected a 95% confidence level, we'd increase the threshold to about 99% to compensate.
+
+**When to use Bonferroni Correction:**
+
+- You're tracking multiple primary metrics and want to reduce false positive risk
+- You have multiple treatment variants competing against control
+- You want higher confidence that significant results are real
+
+Bonferroni Correction is conservative. It reduces false positives but also makes it harder to detect true effects. If you have a single metric that matters most to you, you may prefer to focus on that primary metric without correction.
+
+### Winsorization
+
+Outliers can distort experiment results, especially for revenue or value-based metrics. If most customers have cart sizes under $100 but one customer in the treatment group spends $100,000, this single extreme value could skew all your results and make it harder to detect real effects.
+
+Winsorization addresses this by capping extreme values at a specified percentile. When enabled, you select a percentile threshold (such as 5%). Mixpanel then finds the values at the top and bottom of that percentile range and caps any values beyond those limits. In the example above, if the 95th percentile corresponds to $90, then the $100,000 purchase would be treated as $90 for the analysis.
+
+**When to use Winsorization:**
+
+- Your metrics have high variance due to extreme values
+- You're measuring revenue, order value, or other metrics where outliers are common
+- You want to understand the effect on typical users rather than being influenced by rare extremes
+
+Winsorization changes the data being analyzed. If extreme values are genuinely important to your business (for example, if a small number of customers drive most of your revenue), you may want to analyze results without Winsorization to understand the full picture.
+
+### Health Checks
+
+Before trusting your experiment results, it's important to verify that your experiment was set up correctly. Mixpanel offers two health checks to help you validate your experiment's integrity.
+
+#### Sample Ratio Mismatch (SRM)
+
+When randomly assigning users to control or treatment groups, you expect the split to roughly match your allocation targets. If you configured a 50/50 split but ended up with 60% in control and 40% in treatment, something may have gone wrong.
+
+Small imbalances can happen by random chance, but larger mismatches often indicate a bug in your assignment logic, tracking implementation, or user bucketing. SRM uses a Chi-squared test to determine whether the observed split is likely due to chance or signals an actual problem.
+
+If Mixpanel detects a statistically significant sample ratio mismatch, you'll see a warning. We recommend investigating the root cause of the mismatch and restarting the experiment after fixing it.
+
+#### Retrospective-AA Analysis (Retro-AA)
+
+When you see lift in your experiment, you want to be confident it's caused by your treatment—not by pre-existing differences between the groups. Retro-AA helps you check this.
+
+The idea is simple: Mixpanel runs the same statistical analysis on 2 weeks of pre-experiment data. It looks at how each variant's users behaved *before* they were exposed to the experiment, using the same metrics you're measuring during the experiment.
+
+If the groups were properly randomized, there should be no significant difference in the pre-experiment period—users hadn't been treated yet, so nothing should cause a difference. But if Retro-AA finds statistically significant lift in the pre-experiment data, that's a red flag. It suggests the groups weren't equivalent to begin with, which means any lift you see during the experiment might not be caused by your treatment.
+
+**Example:** Your experiment shows the treatment group has 15% higher engagement. But Retro-AA reveals this same group already had 12% higher engagement before the experiment started. This suggests your randomization may have assigned more naturally-engaged users to treatment, and the lift you're seeing is largely a pre-existing difference rather than a treatment effect.
+
+Retro-AA failing for a metric doesn't necessarily invalidate your experiment. Enabling CUPED may help reduce the impact of pre-experiment bias on the data, allowing you to still analyze the results. You may however want to review your implementation to ensure assignment is not biased towards some users.
+
+#### Common reasons health checks may fail:
+
+- Bugs in the randomization or bucketing logic
+- Exposure events not firing consistently across variants
+- Users being reassigned to different variants mid-experiment
+
+### CUPED (Controlled-experiment Using Pre-Experiment Data)
+
+CUPED is a variance reduction technique that helps you reach statistical significance faster. It uses pre-experiment behavioral data to produce narrower confidence intervals, potentially reducing the time needed to conclude an experiment significantly.
+
+The core insight is that users who had high engagement or revenue *before* the experiment are likely to have high values *during* the experiment as well. By accounting for this correlation, CUPED can separate the natural variation in user behavior from the effect of your treatment.
+
+**How it works:** For each user, Mixpanel looks at their metric value during a pre-exposure period of your choosing and their metric value during the experiment. If these values are strongly correlated (users with high pre-experiment values tend to have high post-experiment values), CUPED uses this relationship to reduce variance in the experiment results. The mean values remain unchanged—CUPED only tightens the confidence intervals. This is applied to all metric categories: primary, secondary, and guardrail metrics.
+
+**Handling users without pre-experiment data:** Not all users in your experiment will have activity during the pre-exposure period. New users, or users who simply didn't perform the relevant event before the experiment, are assigned a value of zero for the pre-exposure metric. This allows all experiment users to be included while still benefiting from variance reduction for users who do have historical data.
+
+**When to use CUPED:**
+
+- You have sufficient pre-experiment data for most users in your experiment
+- Your metrics have high natural variance between users
+- You're measuring metrics where past behavior predicts future behavior (engagement, revenue, retention)
+
+CUPED works best when pre-experiment and post-experiment metrics are strongly correlated. If users' behavior is highly unpredictable or your experiment targets new users with no history, you may not see any benefit.
+
+## Looking under the hood - How does the analysis engine work?
+
+![image](/exp_under_hood.png)
+
+The Experiment report behavior is powered by [borrowed properties](/docs/features/custom-properties#borrowed-properties). 
+
+For every user event, we identify if the event is performed after being exposed to an experiment. If it were, then we would borrow the variant details from the tracked `$experiment_started` to attribute the event to the proper variant.
+
+
+### Implementation for Experimentation
+
+Mixpanel experiment analysis work based on exposure events. To use the experiment report, you must send your Exposure events in the following format: 
+
+**Event Name:** “$experiment_started”
+
+**Event Properties:**
+
+- “Experiment name” - the name of the experiment to which the user has been exposed
+- “Variant name” - the name of the variant into which the user was bucketed, for that experiment
+
+An example track call would look like this:
+
+`mixpanel.track('$experiment_started', {'Experiment name': 'Test', 'Variant name': 'v1'})`
+
+You can specify the event and property that should be used as the exposure event, name, and variant in the project settings in the Overview tab under 'Experiment Event Settings'. This allows you to use an experiment event that you're already tracking, for example, via a 3rd party feature flagging tool. Note, only string properties should be used for the 'Name' and 'Variant'.
+
+![image](/exp_settings_rescale.png)
+
+### When to track an exposure event? 
+- An exposure event  ONLY needs to be sent the first time a user is exposed to an experiment, as long as the user is always in the initial bucketed variant. Exposure events don’t have to be sent subsequently in new sessions.
+- If a user is part of multiple experiments, send a corresponding exposure event for each experiment.
+- Send exposure event only when a user is actually exposed, not at the start of a session.
+    
+    For example, if you want to run an experiment on the payment page of a ride-sharing app, you only really care about users who open the app, book a ride, and then reach the payment page. Users who only open the app and do other activities shouldn't be considered in the sample size. So exposure event should ideally be implemented to track only once the payment page is reached. 
+    
+- Send exposure details and not the assignment.
+    
+    For example, you begin an experiment on 1st Aug, and 1M users are ‘assigned’ to the control and variant. You do not want to send an ‘exposure’ event for all these users right away, as they have only been assigned to the experiment.  It’s possible that some user gets exposed on 4th Aug and some on 8th Aug. You would want to track $experiment_started at the exposure for accurate analysis.
+
+### FAQs
+1. If a user switches variants mid-experiment, how do we calculate the impact on metrics? 
+    
+    We break a user and their associated behavior into fractional parts for analysis. We consider the initial behavior part of the first variant, then once the variant changes, we consider the rest of the behavior for analysis towards the new variant. 
+    
+2. If a user is part of multiple experiments, how do we calculate the impact of a single experiment?
+    
+    We consider the complete user’s behavior for every experiment that they are a part of. 
+    
+    We believe this will still give accurate results for a particular experiment, as the users have been randomly allocated. So there should be enough similar users, ie, part of multiple experiments, across both control and variants for a particular experiment. 
+    
+3. For what time duration do we associate the user being exposed to an experiment to impact metrics? 
+    
+    After the most recent experiment exposure for a user, we consider that user’s behavior as ‘exposed’ to an experiment for a max of 90 days.
+
+## Experimentation Pricing FAQ
+<Callout type="info">
+    The Experiment Report is a separately priced product offered to organizations on the Enterprise Plan. Please [contact us](https://mixpanel.com/contact-us/sales/) for more details.
+</Callout>
+
+### Pricing Unit
+Experimentation is priced based on MEUs - Monthly Experiment Users. Only users exposed to an experiment in a month are counted towards this tally.
+#### How are MEUs different than MTUs (Monthly Tracked Users)?
+MTUs count any user who has tracked an event to the project in the calendar month. MEU is a subset of MTU; it’s only users who have tracked an exposure experiment event (ie, `$experiment_started`) in the calendar month.
+
+#### How can I estimate MEUs?
+If you actively run experiments, you can look at the number of  monthly users exposed to an experiment. Note that the MEU calculation is different if users are, on average, exposed to 30 or more experiments in a month. 
+
+If not running experiments, below are some rough estimations of MEU's based on the number of MTUs being tracked to the project.
+| **MTU bucket** | **Estimated MEU (% MTU) ** |
+| ------------ | ---------------- |
+| Small (< 100k) | 50-100% |
+| Medium (100k - 1M) | 40-75% |
+| Large (1M - 10M) | 25-60%|
+| Very large (10M - 100M) | 20-50% |
+| 100M +  | 10-25% |
+
+#### Does it matter how many experiments a user is exposed to within the month? 
+We’ve accounted for an MEU to be exposed to up to 30 experiments per month. If the average number of experiment exposure events per MEU is over 30, then the MEUs will be calculated as the total number of exposure events divided by 30.
+
+#### What happens if I go over my purchased MEU bucket? 
+You can continue using Mixpanel Experiment Report, but you will be charged a higher rate for the overages. 
+
+#### Can I analyze experiments prior to the purchase date? 
+No. You can only analyze experiments starting from your experimentation purchase date. This means that the date used in your experiment cannot start prior to the purchase date.
+
+#### But I am already paying for exposure events in my regular plan. Am I getting double-charged?
+If you buy the Experimentation offering, we waive the charge for exposure events in your regular Mixpanel plan. You only get charged for the exposure events via the MEU calculation.
+
+#### How can I monitor my account’s MEU consumption?
+You can see your experiment MEU usage by going to Organization settings > Plan Details & Billing.
+
+## References
+
+### Experiment Model Types
+- Sequential: Allows you to detect lift and conclude experiments quickly, but may fail to reach significance for very small lifts. **When to use?** For large changes (~10%+ lift) when you want to stop early once significance is reached.
+    
+- Frequentist: Capable of detecting smaller lifts, but requires you to keep experiments for the full duration. You’re discouraged from preemptively making decisions before the test duration is complete. **When to use?** For very small changes (~1% lift) when precision matters.
+
+### Experiment metric types
+- **Primary Metrics:**  Main goals you're trying to improve. These are metrics used to determine if the experiment succeeded. Examples: revenue, conversion rates, ARPU.
+- **Guardrail Metrics:** These are other important metrics that you want to ensure haven’t been negatively affected while focusing on the primary metrics. Examples: CSAT, churn rate.
+- **Secondary Metrics:** These provide a deeper understanding of how users are interacting with your changes, i.e, help to understand the "why" behind changes in the primary metric. Examples: time spent, number of pages visited, or specific user actions.
+
+## Make Your Decision
+
+Once the experiment is ready to review, you can choose to 'End Analysis'. Use these guidelines to make informed decisions:
+
+### When to Ship a Variant
+- **Statistical significance achieved** AND **practical significance met** (lift meets your minimum threshold)
+- **Guardrail metrics remain stable** (no significant negative impacts)
+- **Sample size is adequate** for your confidence requirements
+- **Results align with your hypothesis** and business objectives
+
+### When to Ship None
+- **No statistical significance** achieved after adequate test duration
+- **Statistically significant but practically insignificant** (lift too small to matter)
+- **Negative impact on guardrail metrics** outweighs primary metric gains
+- **Results contradict** your hypothesis significantly
+
+### When to Rerun or Iterate
+- **Inconclusive results** due to insufficient sample size
+- **Mixed signals** across different user segments
+- **External factors** contaminated the test period
+- **Technical issues** affected data collection
+
+### What to Watch Post-Rollout
+- **Monitor guardrail metrics** for 2-4 weeks after full rollout
+- **Track long-term effects** beyond your experiment window
+- **Watch for novelty effects** that may wear off
+- **Document learnings** for future experiments
+
+### Decision Options in Mixpanel
+
+- **Ship Variant (any of the variants)**: You had a statistically significant result. You have made a decision to ship a variant to all users. NOTE: Shipping variant here is just a log; it does not actually trigger rolling out the feature flag unless you are using Mixpanel feature flags **(in beta today)**.
+- **Ship None**: You may not have had any statistically significant results, or even if you have statistically significant results, the lift is not sufficient to warrant a change in user experience. You decide not to ship the change.
+- **Defer Decision**: You may have a direction you want to go, but need to sync with other stakeholders before confirming the decision. This is an example where you might defer a decision and come back at a later date and log the final decision.
+
+### Experiment Management
+You can manage all your experiments via the Experiments Home tab. You can customize which columns you’d like to see. 
+
+![image](/exp_management.png)

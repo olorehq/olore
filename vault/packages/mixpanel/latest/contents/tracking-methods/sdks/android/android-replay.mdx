@@ -1,0 +1,395 @@
+import { Callout } from 'nextra/components'
+
+# Implement Session Replay (Android)
+
+## Overview
+
+This developer guide will assist you in configuring your Android app for [Session Replay](/docs/session-replay) using the [Session Replay SDK (Android)](/docs/tracking-methods/sdks/android/android-replay). Learn more about [viewing captured Replays in your project here](/docs/session-replay).
+
+<Callout type="info">
+  Mobile Session Replay is generally available (GA) to customers on all plans and in all regions.
+</Callout>
+
+## Best Practices
+Session Replay provides powerful insights into user behavior, but it also introduces risks, especially on mobile. These risks are not unique to Mixpanel; they are common across the entire session replay product category. Because SDKs run on end-user devices and screen content may include sensitive data, we recommend implementing / testing Session Replay carefully. Be especially cautious with masking, edge-case testing, and rollout strategies. For more information on risk categories and best practices, read more [here](/docs/session-replay#best-practices)
+
+## Prerequisite
+You are already a Mixpanel customer and have the latest version of the [Mixpanel Android SDK](/docs/tracking-methods/sdks/android) installed (minimum supported version is [`v8.0.2`](https://github.com/mixpanel/mixpanel-android/releases/tag/v8.0.2)). If not, please follow [this doc](/docs/quickstart/install-mixpanel) to install the SDK.
+
+The Session Replay SDK requires a minimum Android API version of 21 or higher.
+
+## Installation
+
+You can integrate the [Mixpanel Android Session Replay SDK](/docs/tracking-methods/sdks/android/android-replay) into your Android project using Maven Central.
+
+### Add to your project
+
+1. Open your existing Android Studio project where you want to integrate the Mixpanel Android Session Replay SDK.
+
+2. Add the following dependency to your module's `build.gradle` or `build.gradle.kts`:
+
+```gradle
+dependencies {
+    implementation("com.mixpanel.android:mixpanel-android-session-replay:VERSION_NAME")
+}
+```
+
+Replace `VERSION_NAME` with the latest version available on [Maven Central](https://central.sonatype.com/artifact/com.mixpanel.android/mixpanel-android-session-replay).
+
+3. Sync your project with Gradle files.
+
+### Initialize
+
+You should have the main Mixpanel Android SDK installed (minimum version `v8.0.2`), if not, please refer to [Prerequisite](/docs/tracking-methods/sdks/android).
+
+Initialize the `MPSessionReplay` SDK in your `Application` class:
+
+**Example Usage**
+
+```kotlin
+private fun initializeMixpanel() {
+    val token = "MY_PROJECT_TOKEN"
+    val trackAutomaticEvents = true
+ 
+    val mixpanel = MixpanelAPI.getInstance(this, token, trackAutomaticEvents)
+    mixpanel.identify("DISTINCT_ID")
+ 
+ 
+    val config = MPSessionReplayConfig(
+        wifiOnly = false,
+        enableLogging = true
+    )
+ 
+    MPSessionReplay.initialize(this, token, mixpanel.distinctId, config)
+}
+```
+
+## Capturing Replays
+
+<Callout type="warning">
+	Test in a sandbox project and start with a 100% sample rate. This allows you to monitor performance, usage, and ensure your privacy rules align with your company policies.
+</Callout>
+
+You can capturing replay data using a sampling method (recommended), or customize when and where replays are captured manually using methods provided by the Session Replay Android SDK.
+
+By default recording begins automatically upon initialization. This behavior is configurable via the `autoStartRecording` property of `MPSessionReplayConfig`.
+
+### Sampling
+
+We recommend using the sampling method unless you need to customize when you capture replay data.
+
+To enable Session Replay and set your sampling rate, create a `MPSessionReplayConfig` object and set the `recordingSessionsPercent` with a value between `0.0` and `100.0` (default). At `0.0` no sessions will be recorded, at `100.0` all sessions will be recorded.
+
+To start, we recommend using an 100% sampling rate to ensure replay capture is behaving as expected, then adjust according to your specific analytics needs.
+
+**Example Usage**
+
+```kotlin
+// records 100% of all sessions
+MPSessionReplayConfig(recordingSessionsPercent = 100.0)
+```
+
+### Manual Capture
+
+To programatically start and stop replay capture, use the `.startRecording()` and `.stopRecording()` methods. 
+
+#### Start Capturing Replay 
+
+When calling `.startRecording()` recording always begins regardless of the `recordingSessionsPercent` configuration. You may optionally specify a sampling percentage when calling `.startRecording()`
+
+```kotlin
+// start recording with a specified sampling rate (10%)
+MPSessionReplay.getInstance()?.startRecording(sessionsPercent = 10.0)
+```
+
+Recording automatically stops when the app goes into the background. If the `autoStartRecording` configuration is `true` (default) recording will automatically start when the app returns to the foreground.
+
+`.startRecording()` will have no effect if recording is already in progress.
+
+**Example Usage**
+
+```kotlin Kotlin
+// manually trigger a replay capture
+MPSessionReplay.getInstance()?.startRecording()
+```
+
+#### Stop Capturing Replay Data
+
+Call `.stopRecording()` to stop any active replay data collection. The SDK automatically stops recording when the app goes to the background. 
+
+`.stopRecording()` will have no effect if there is no recording in progress.
+
+**Example Usage**
+
+```kotlin Kotlin
+// manually end a replay capture
+MPSessionReplay.getInstance()?.stopRecording()
+```
+
+#### Example Use Cases for Manual Capture
+
+| Scenario | Guidance | 
+| --- | --- |
+| We have a sensitive screen we don't want to capture | When user is about to access the sensitive screen, call `.stopRecording()`. To resume recording once they leave this screen, you can resume recording with `.startRecording()`  | 
+| We only want to record certain types of users (e.g. Free plan users only) | Using your application code, determine if current user meets the criteria of users you wish to capture. If they do, then call `.startRecording()` to begin recording |
+| We only want to users utilizing certain features | When user is about to access the feature you wish to capture replays for, call `.startRecording()` to begin recording |
+
+### Additional Configuration Options
+
+Upon initialization you can provide a `MPSessionReplayConfig` object to customize your replay capture.
+
+The current configuration options are:
+
+| Option | Description | Default | 
+| --- | --- | --- |
+| `wifiOnly` | When `true`, replay events will only be flushed to the server when the device has a WiFi connection. If there is no wifi, flushes are skipped and the events remain in the in-memory queue until wifi is restored (or until the queue reaches its limit and the oldest events are evicted to make room for newer events). <br/> When `false`, replay events will be flushed with any network connection, including cellular. | `true` |
+| `autoMaskedViews` | This is a `Set` of enum options for the types of views that should be masked by the SDK automatically. | `Image`, `Text`, and `Web` |
+| `autoStartRecording` | This is a boolean value that determines whether or not recording begins automatically upon initialization and when returning to the foreground.  | `true` |
+| `recordingSessionsPercent` | This is a value between `0.0` and `100.0` that controls the sampling rate for recording session replays. <br/> At `0.0` no sessions will be recorded. At `100.0` all sessions will be recorded.  | `100.0` |
+| `flushInterval` | Specifies the flush interval (in seconds) at which session replay events are sent to the Mixpanel server. | `10` |
+| `enableLogging` | This is a boolean value that determines whether or not debugging logs are printed to the console. | `false` |
+| `remoteSettingsMode` | Setting for handling remote configuration during SDK initialization. Can be `disabled`, `fallback`, `strict`. | `disabled` |
+
+**autoMaskedViews Example Usage**
+
+```kotlin Kotlin
+// mask images only
+MPSessionReplayConfig(autoMaskedViews = mutableSetOf(AutoMaskedView.Image))
+
+// disable auto masking
+MPSessionReplayConfig(autoMaskedViews = emptySet())
+
+```
+
+#### Identity Management
+
+The Mixpanel distinct ID for the current user can be passed into the initializer and changed at runtime by calling the `.identify(distinctId =)` method:
+
+**Example Usage**
+
+```kotlin
+// initialize the main Mixpanel tracking SDK
+ MixpanelAPI.getInstance(this, token, trackAutomaticEvents)
+
+// initialize the session replay SDK with the project token and distinct ID from above
+ MPSessionReplay.initialize(this, token, mixpanel.distinctId)
+```
+
+To change the distinct ID later:
+
+```kotlin
+// for example when the user logs out
+fun logout() {
+    // reset the main Mixpanel tracking SDK to generate a new distinct ID
+    mixpanel.reset()
+    val newDistinctId = mixpanel.distinctId
+    // change session replay distinct ID
+    MPSessionReplay.getInstance()?.identify(distinctId = newDistinctId)
+}
+```
+
+#### Manual Flushing
+
+You can flush any currently queued session replay events at any time by calling `.flush()`:
+
+```kotlin
+MPSessionReplay.getInstance()?.flush()
+```
+
+## Remote Configuration
+
+By setting `remoteSettingsMode` you can quickly set SDK options for your project in mixpanel under `Settings > Project > Session Replay`.
+
+Three modes are available:
+
+- `disabled`: Do not use remote configuration and proceed to use the hardcoded initial options provided in `MPSessionReplay.initialize`
+- `fallback`: Attempt to retrieve remote configuration and proceed with those settings. If there is failure or timeout (500 ms), will use initial provided options.
+- `strict`: Will prevent session replay from auto-starting unless a remote configuration was successfully retrieved.
+
+Can use this setting to quickly update and adjust configurations to your liking.
+
+List of currently supported remote settings:
+- `recordingSessionsPercent`
+
+Settings that are not yet supported, will not appear in the remote configuration. These non-included options will use the value that was initially set by the user for all `remoteSettingsMode` options.
+
+## Replay ID
+
+When a replay capture begins, a Replay ID is generated by the SDK and is attached as an event property (`$mp_replay_id`) to events tracked by the SDK during the capture session. Events containing the same `$mp_replay_id` will appear in the same Replay.
+
+If you are sending any events not coming from the SDK, add the `$mp_replay_id` event property to attribute the event to a specific Replay.
+
+You can use the `getReplayId()` method to return the Replay ID for the current replay capture. The method will return an empty object if there is no active replay capture in progress.
+
+**Example Usage**
+
+```kotlin Kotlin
+// return the $mp_replay_id for the currently active capture
+MPSessionReplay.getInstance()?.getReplayId()
+// {$mp_replay_id: '19221397401184-063a51e0c3d58d-17525637-1d73c0-1919139740f185'}
+```
+
+### Logging
+
+Developers can enable or disable logging with the `enableLogging` option of the `MPSessionReplayConfig` object.
+
+**Example Usage**
+
+```kotlin
+val config = MPSessionReplayConfig(wifiOnly = false, enableLogging = true)
+MPSessionReplay.initialize(appContext = this, token = token, distinctId = distinctId, config = config)
+```
+
+### Server-side Stitching
+
+Server-Side Stitching allows you to easily watch Replays for events that were not fired from the SDK.
+
+It works by inferring the Replay that an event belong using the Distinct ID and time property attached to the event. This is especially useful if you have events coming in from multiple sources.
+
+For example, let's say a user with Distinct ID "ABC" has a Replay recorded from 1-2pm. Two hours later, an event was sent from your warehouse with a timestamp of 1:35pm with Distinct ID "ABC". Server-Side Stitching will infer that the event should belong in the same Replay.
+
+To ensure Server-Side Stitching works, call [`identify()`](/docs/tracking-methods/sdks/android#identify) from the client-side using our SDK with the user's `$user_id`. This guarantees that events generated from both the client-side and server-side share the same Distinct ID. Learn more about [identifying users](/docs/tracking-methods/id-management).
+
+## Debugging
+
+<Callout type="info">
+`$mp_session_record` is exempt from your plan data allowance.
+</Callout>
+
+To check your implementation, select **Session Replay** from the side navigation in your Mixpanel project to see whether replays are being captured and appearing as expected. When a capture begins, a "Session Recording Checkpoint" event (`$mp_session_record`) also appears in your project; you can use this to verify that Session Replay is implemented correctly.
+
+If you are using the [recommended sampling method](/docs/tracking-methods/sdks/android/android-replay#sampling) to capture your Replays but having trouble finding the Replays in your project, try calling `.startRecording()` manually and see if the `$mp_session_record` event appears. If it does appear but you are still struggling to locate your Replays, you may want to increase your sampling rate.
+
+---
+
+### Troubleshooting
+
+If you are still struggling with either of the following common issues:
+- Replays are not showing up in my project
+- Replays are not displaying my UI correctly
+
+Please [submit a request to our Support team](https://mixpanel.com/get-support) and include the following information:
+- Whether your issue is with iOS, Android, or both
+- Your Session Replay (SR) code snippet
+- Where you initialize the Mobile Session Replay SDK
+- Any relevant logs
+- (If applicable) A link to a replay showing the issue
+- (If applicable) A screenshot of the UI or a description of the expected behavior
+
+## Privacy
+
+Mixpanel offers a privacy-first approach to Session Replay, including features such as data masking. Mixpanel's Session Replay privacy controls were designed to assist customers in protecting end user privacy. Read more [here](/docs/session-replay/session-replay-privacy-controls).
+
+### User Data
+
+The Mixpanel SDK will always mask all inputs. To protect end-user privacy, input text fields cannot be unmasked.
+
+By default, all text, images, and WebViews are also masked.
+
+You can unmask these elements at your own discretion using the [`autoMaskedViews` config option described above](/docs/tracking-methods/sdks/android/android-replay#additional-configuration-options).
+
+Along with other data, the SDK respects all Do Not Track (DNT) settings as well as manual opt-out for any replay data. 
+
+#### Mark Views as Sensitive
+
+All `EditText` and `TextView` components are masked by default. `EditText` cannot be unmasked, while `TextView` can be unmasked.
+
+You can also mark any views as sensitive using `mpReplaySensitive` or `addSensitiveView`. Views marked as "sensitive" will be masked.
+
+**Example Usage**
+
+```kotlin Kotlin
+// Compose
+Image(
+    painter = painterResource(id = R.drawable.family_photo),
+    contentDescription = "Family Photo",
+    modifier = Modifier.mpReplaySensitive(true)
+)
+ 
+// XML
+val creditCardView: ImageView = findViewById(R.id.creditCardView)
+MPSessionReplay.getInstance()?.addSensitiveView(creditCardView)
+```
+
+Set `mpReplaySensitive` to `false` to mark any view as safe. Views marked as "safe" will not be masked.
+
+**Example Usage**
+
+```kotlin Kotlin
+// Compose
+Image(
+    painter = painterResource(id = R.drawable.family_photo),
+    contentDescription = "Family Photo",
+    modifier = Modifier.mpReplaySensitive(false)
+)
+```
+
+### Retention
+
+By default, Mixpanel retains Session Replays for 30 days from the date the replay is ingested and becomes available for viewing within Mixpanel. Customers on our [Enterprise plan](https://mixpanel.com/pricing/) can customize this retention period between 7 days and 360 days. Once a replay is expired, there is no way to view that replay.
+
+### Legal (Beta Terms)
+
+Our Session Replay Beta Service Addendum can be found [here](https://mixpanel.com/legal/session-replay-beta-service-addendum/).
+
+The alpha and beta of Mixpanel's mobile session replay SDK will track certain events and send them to Mixpanel so that Mixpanel can understand and improve the alpha and beta mobile session replay feature experience. These events include starting and stopping a session, adding and removing sensitive classes, adding sensitive views and adding safe views. Nothing about your application will be included in this tracking; only your usage of the Mixpanel Session Replay SDK.
+
+## Known Product Limitations
+- Jetpack Compose apps (Android only) have limited support for automatic masking of sensitive views, so if your app uses Jetpack Compose, you should manually mark sensitive views and test thoroughly.
+- At this time, webview masking is all-or-none, meaning embedded webviews in your mobile app can only be masked entirely or not at all, which may reduce the value of Session Replay for apps with many webviews—be sure to test thoroughly in your use case.
+- Android Session Replay requires a minimum Android API level of 21. Older versions are not supported.
+
+## FAQ
+
+#### How does Session Replay work in Android?
+
+Session Replay observes user interactions within your app, capturing UI hierarchy changes and storing them as images, which are then sent to Mixpanel. Mixpanel reconstructs these images, applying recorded events as an end-user completes them. 
+
+Within Mixpanel's platform, you can view a reconstruction of your end-user's screen as they navigate your app. 
+
+However, Session Replay is not a literal video recording of your end-user's screen; end-user actions are not video-recorded.
+
+#### Can I prevent Session Replay from recording sensitive content?
+
+The Mixpanel SDK will always mask all inputs. By default, all text, images, and WebViews on a page.
+
+Additionally, you can customize how you leverage our SDK to fully control (1) where to record and (2) whom to record. Consider the [manual capture example scenarios](/docs/tracking-methods/sdks/android/android-replay#manual-capture), [SDK configuration options](/docs/tracking-methods/sdks/android/android-replay#additional-configuration-options), and [manual view masking example](/docs/tracking-methods/sdks/android/android-replay#mark-views-as-sensitive) provided above to customize the replay capture of your implementation.
+
+#### How can I estimate how many Replays I will generate?
+
+If you already use Mixpanel, the [Session Start events](/docs/features/sessions) are a way to estimate the rough amount of replays you might expect. This is especially true if you use timeout-based query sessions. However, because our sessions are defined at query time, we cannot guarantee these metrics will be directly correlated.
+
+When you enable Session Replay, use the above proxy metric to determine a starting sampling percentage, which will determine how many replays will be sent. You can always adjust this as you go to calibrate to the right level.
+
+#### How does Session Replay affect my app's bandwidth consumption?
+
+The bandwidth impact of Session Replay depends on the setting of the [`wifiOnly` parameter](/docs/tracking-methods/sdks/android/android-replay#additional-configuration-options).
+
+By default, `wifiOnly` is set to `true`, which means replay events are only flushed to the server when the device has a wifi connection. If there is no wifi, flushes are skipped, and the events remain in the in-memory queue until WiFi is restored. This ensures no additional cellular data is used, preventing users from incurring additional data charges.
+
+When `wifiOnly` is set to `false`, replay events are flushed with any available network connection, including cellular. In this case, the amount of cellular data consumed depends on the intensity of user interactions and the typical session length of your app. Users may incur additional data charges if large amounts of data are transmitted over cellular connections.
+
+#### How does Session Replay for mobile work if my app is offline?
+
+Session Replay for mobile does not work in offline mode.
+
+#### Does it work in XML/Jetpack Compose apps?
+
+Yes, standard XML-based apps are fully supported while Jetpack Compose apps have limited support for automatic masking of sensitive views. If your app is using Jetpack Compose, it is recommended that you manually mark your views as sensitive.
+
+#### Does it support Java based app?
+
+Yes, Java and Kotlin are fully interoperable.
+
+#### Does Mobile Session Replay work with my CDP?
+Yes — but only if the Mixpanel Session Replay SDK is installed client-side.
+
+Mobile Session Replay is compatible with CDPs like Segment and mParticle, but you must integrate the Mixpanel Session Replay SDK directly in your mobile app. Without it, replays won’t be captured.
+
+Key Considerations:
+- If you are using Segment server-side, session replays will not be recorded, since the SDK isn’t running in the app.
+- For Segment's client-side Analytics-Kotlin SDK, you can use Segment’s Plugin Architecture to enrich events with the $mp_replay_id property, ensuring they’re linked to their replays.
+- The Mixpanel Session Replay SDK is separate from the standard Mixpanel tracking SDK. You do not need the regular SDK, but the Replay SDK must be configured with a distinct_id and project token.
+- Events can be linked to replays either by:
+    - Manually attaching the current replay ID to each event
+    - Using server-side stitching after the fact

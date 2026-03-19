@@ -1,0 +1,39 @@
+import { Callout } from 'nextra/components'
+
+# Data Standards: Keep Your Data Clean and Consistent
+
+<Callout type="info">
+  Customers on an Enterprise plan can access the Data Standards feature. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+## Overview
+
+Data Standards is a Data Governance feature that helps organizations enforce naming and metadata standards on events ingested into Mixpanel. This helps improve event consistency, easy navigation, and user trust in using data for analysis.
+
+This feature evaluates your event metadata against predefined standards and assigns a "Compliancy" status to each event. This status is visible in Lexicon, helping admins and analysts quickly identify and correct non-compliant events.
+
+## Enabling Data Standards
+
+To define data standards, organizations can navigate to the Data Standards tab in Lexicon. There, they can configure rules such as:
+
+| Rule                 | Description |
+|----------------------|-------------|
+| **Naming conventions** | Events must follow a required syntax (e.g., snake_case, camelCase). |
+| **Descriptions**     | All events must include a description. |
+| **Ownership**       | Events must have an assigned owner. |
+| **Rich media uploads** | Events should have relevant media assets uploaded (like Figma or app screenshots). |
+                                                                                                
+## Viewing Compliancy Status in Lexicon
+
+For every event in your project, Mixpanel will automatically evaluate against your defined data standards. The compliancy status is displayed in Lexicon, allowing Data Governors to:
+
+- Identify compliant and non-compliant events at a glance.
+- Filter / sort events based on their compliancy status.
+- Take corrective actions by updating metadata directly within Lexicon.
+
+## Additional Notes
+
+- The feature will check the standard against the Display Name if set. If no Display Name is set, it will check against the tracked event name
+- Only Project Admins or Owners can define data standards.
+- This feature is only available on Enterprise plans.
+- We will soon be adding automated actions to be applied when Data Standards are violated. Please reach out to your Account Manager if you're interested in getting early access to these tools.

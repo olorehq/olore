@@ -1,0 +1,53 @@
+import { Callout } from "nextra/components";
+
+# Warehouse Sync Monitoring (Beta)
+
+## Overview
+
+Mixpanel provides comprehensive monitoring for your warehouse syncs to help you maintain data quality and control costs. When you create a warehouse sync, you're automatically subscribed to Sync Health notifications, ensuring you stay informed about the status of your data pipelines.
+
+<Callout type="info">
+  Warehouse sync monitoring is currently available for BigQuery, Snowflake, and Redshift warehouses only.
+</Callout>
+
+## Sync Health Notifications
+
+Sync Health notifications alert you to potential issues with your warehouse syncs. These notifications are automatically enabled for all warehouse connections and are sent to project owners and admins by default. You can add additional email addresses and Slack channels to receive alerts.
+
+The following sync issues trigger notifications:
+
+**Sync Failed**: Alerts you when a sync fails to complete successfully, helping you quickly identify and resolve connection or data issues.
+
+These notifications help you maintain data pipeline reliability without changing the status of your syncs. Your syncs will continue to retry according to their configured schedule.
+
+## Data Volume Alerts
+
+Data volume alerts help you monitor unusual increases in your warehouse sync data and prevent unexpected billing charges. You can configure two types of thresholds:
+
+**Notify and Sync**: When data volume exceeds this threshold, Mixpanel sends a notification but continues to sync the data. This allows you to monitor volume changes while maintaining data completeness.
+
+**Notify and Pause**: When data volume exceeds this higher threshold, Mixpanel sends a notification and pauses the sync for up to 14 days. This gives you time to investigate the volume increase and decide whether to proceed.
+
+Data volume increases can occur when:
+
+- New columns are added to your warehouse tables
+- Historical data is backfilled
+- Table schemas are modified in ways that trigger updates across many rows
+- Your data processing pipeline generates more events than usual
+
+Volume thresholds are calculated based on the rolling 30-day average of billable events for each sync. You can customize these thresholds in your warehouse sync settings to match your organization's needs and risk tolerance.
+
+## Managing Notifications
+
+To configure your notification preferences:
+
+1. Navigate to **Data > Lexicon**
+2. Select **Volume Monitoring** under **Data Governance**
+3. Toggle **Enable monitoring for data warehouse syncs**
+4. Configure your email recipients
+5. Set your data volume thresholds
+
+<Callout type="info">
+  Sync Health notifications are built into warehouse monitoring and cannot be
+  disabled independently.
+</Callout>

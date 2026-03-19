@@ -1,0 +1,309 @@
+import { Callout } from 'nextra/components'
+
+# Implement Feature Flags (React Native)
+
+<Callout type="warning">
+Feature Flags for React Native is currently in **Beta**. Install the beta SDK version: `npm install mixpanel-react-native@beta` (minimum version `v3.2.0-beta.3`).
+</Callout>
+
+## Overview
+
+This developer guide will assist you in configuring your React Native application for Feature Flags using the [Mixpanel React Native SDK](/docs/tracking-methods/sdks/react-native). Feature Flags allow you to control the rollout of your features, conduct A/B testing, and manage application behavior without deploying new code.
+
+Feature Flags in the React Native SDK work across iOS, Android, Expo, and React Native Web platforms.
+
+For complete React Native SDK documentation, see the [React Native SDK guide](/docs/tracking-methods/sdks/react-native).
+
+## Prerequisites
+
+Before implementing Feature Flags, ensure:
+
+- You are on an Enterprise subscription plan and have the beta version of the SDK installed (minimum supported version is `v3.2.0-beta.3`). Install via: `npm install mixpanel-react-native@beta`
+- You have your Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+- For iOS native apps, run `cd ios && pod install` after installing the beta SDK
+
+<Callout type="info">
+**Data Residency:** Use the server URL that matches your Mixpanel project's data residency region:
+- **US** (default): `https://api.mixpanel.com`
+- **EU**: `https://api-eu.mixpanel.com`
+- **India**: `https://api-in.mixpanel.com`
+</Callout>
+
+## Execution Modes
+
+The React Native SDK operates in two modes that affect how feature flags are evaluated:
+
+| Mode | Platforms | How It Works |
+|------|-----------|-------------|
+| **Native** | iOS, Android | Bridges to the native Swift/Android SDKs for flag evaluation |
+| **JavaScript** | Expo, React Native Web | Uses a pure JavaScript implementation (aligned with mixpanel-js) |
+
+<Callout type="info">
+Expo apps automatically use JavaScript mode since native modules are not available. You do not need to configure this manually.
+</Callout>
+
+The mode is determined by the `useNative` parameter in the `Mixpanel` constructor:
+
+```javascript
+import { Mixpanel } from 'mixpanel-react-native';
+
+// Native mode (default for bare React Native apps)
+const mixpanel = new Mixpanel("YOUR_PROJECT_TOKEN");
+
+// JavaScript mode (for Expo or React Native Web)
+const mixpanel = new Mixpanel("YOUR_PROJECT_TOKEN", false, false);
+```
+
+## Flag Initialization
+
+Initializing the SDK with feature flags enabled requires passing `featureFlagsOptions` with `enabled: true` to the `init()` method. This enables making an outbound request to Mixpanel servers with the current user context.
+
+The server will assign the user context to a variant for each feature flag according to how they are configured in the Mixpanel UX.
+
+The response will include an assigned variant for each flag that the user context is in a rollout group for. If a flag is not returned, it most likely signifies that the user was excluded by filtering rules or the rollout percentage for the flag.
+
+**Example Usage**
+
+```javascript
+import { Mixpanel } from 'mixpanel-react-native';
+
+// For native apps (iOS/Android)
+const mixpanel = new Mixpanel("YOUR_PROJECT_TOKEN");
+
+// For Expo / React Native Web, use JavaScript mode:
+// const mixpanel = new Mixpanel("YOUR_PROJECT_TOKEN", false, false);
+
+await mixpanel.init(
+  false,                       // optOutTrackingDefault
+  {},                          // superProperties
+  "https://api.mixpanel.com",  // serverURL (see Data Residency above)
+  true,                        // useGzipCompression
+  { enabled: true }            // featureFlagsOptions
+);
+```
+
+If your flag is configured with a Variant Assignment Key other than `distinct_id` or `device_id` for any of the feature flags in your project, then the call to initialize feature flags must include those keys.
+
+For example, for a Variant Assignment Key, `company_id`, you would setup the SDK as follows:
+
+```javascript
+await mixpanel.init(
+  false,
+  {},
+  undefined,
+  undefined,
+  {
+    enabled: true,
+    context: {
+      company_id: "X",
+    },
+  }
+);
+```
+
+If you are using Runtime Targeting in any of the feature flags in your project, then any properties that you use in targeting should be included in a `custom_properties` node within the context:
+
+```javascript
+await mixpanel.init(
+  false,
+  {},
+  undefined,
+  undefined,
+  {
+    enabled: true,
+    context: {
+      company_id: "X",
+      custom_properties: {
+        platform: "react-native",
+      },
+    },
+  }
+);
+```
+
+## Flag Reload
+
+Following initialization, you can reload feature flag assignments in several ways:
+
+### Reload via identify
+
+After a user logs in or out of your application and you call `identify`, a feature flag reload will be triggered.
+
+```javascript
+const updatedDistinctId = "user-123";
+await mixpanel.identify(updatedDistinctId);
+```
+
+### Manual Reload
+
+You can manually reload flags at any time:
+
+```javascript
+await mixpanel.flags.loadFlags();
+```
+
+### Update Context (JavaScript Mode Only)
+
+<Callout type="warning">
+The `updateContext` method is only available in **JavaScript mode** (Expo / React Native Web). In native mode, context must be set during initialization and calling `updateContext` will throw an error.
+</Callout>
+
+In JavaScript mode, you can update the feature flags context after initialization, which will trigger a reload with the new context values:
+
+```javascript
+await mixpanel.flags.updateContext({
+  company_id: "Y",
+  custom_properties: {
+    platform: "mobile",
+  },
+});
+```
+
+By default, the new context is merged with the existing context. To replace the context entirely, pass `{ replace: true }`:
+
+```javascript
+await mixpanel.flags.updateContext(
+  { company_id: "Z" },
+  { replace: true }
+);
+```
+
+## Flag Evaluation
+
+The SDK provides both asynchronous (Promise-based) and synchronous methods for evaluating flags.
+
+### Async Evaluation (Recommended)
+
+Async methods return Promises that resolve once flags are ready. This is the recommended approach as it handles the case where flags may not yet be loaded.
+
+**Experiment Flags: Get Variant Value**
+
+```javascript
+// Fetch the variant value once flags are ready and track an exposure event
+// *if* the user context is in a rollout group for the feature flag.
+const fallback = "control"; // used if the user doesn't match any rollout rules
+const variantValue = await mixpanel.flags.getVariantValue("my-feature-flag", fallback);
+
+if (variantValue === "variant_a") {
+  showExperienceForVariantA();
+} else if (variantValue === "variant_b") {
+  showExperienceForVariantB();
+} else {
+  showDefaultExperience();
+}
+```
+
+**Feature Gates: Check if Flag is Enabled/Disabled**
+
+```javascript
+const isEnabled = await mixpanel.flags.isEnabled("my-boolean-flag", false);
+
+if (isEnabled) {
+  showNewFeature();
+} else {
+  showOldFeature();
+}
+```
+
+**Get Full Variant Object**
+
+Use `getVariant` to retrieve the full variant object, which includes metadata like `experiment_id`:
+
+```javascript
+const variant = await mixpanel.flags.getVariant("my-feature-flag", {
+  key: "control",
+  value: "standard",
+});
+
+console.log(`Variant: ${variant.key}, Value: ${variant.value}`);
+if (variant.experiment_id) {
+  console.log(`Part of experiment: ${variant.experiment_id}`);
+}
+```
+
+**Callback Pattern**
+
+All async methods also support a callback-style API:
+
+```javascript
+mixpanel.flags.getVariantValue("my-feature-flag", "control", (value) => {
+  console.log(`Variant value: ${value}`);
+});
+
+mixpanel.flags.isEnabled("my-boolean-flag", false, (isEnabled) => {
+  if (isEnabled) {
+    showNewFeature();
+  }
+});
+```
+
+### Sync Evaluation
+
+Synchronous methods return values immediately without waiting. Use these when you need to evaluate flags in render paths or other synchronous contexts.
+
+<Callout type="warning">
+Sync methods return the fallback value if flags have not finished loading. Always check `areFlagsReady()` before relying on sync results.
+</Callout>
+
+```javascript
+if (mixpanel.flags.areFlagsReady()) {
+  const variantValue = mixpanel.flags.getVariantValueSync("my-feature-flag", "control");
+  const isEnabled = mixpanel.flags.isEnabledSync("my-boolean-flag", false);
+
+  // Full variant object
+  const variant = mixpanel.flags.getVariantSync("my-feature-flag", {
+    key: "control",
+    value: "standard",
+  });
+}
+```
+
+## Exposure Events
+
+Calling `isEnabled`, `isEnabledSync`, `getVariantValue`, `getVariantValueSync`, `getVariant`, or `getVariantSync` triggers tracking an exposure event, `$experiment_started` to your Mixpanel project *if* the user context is in a rollout group for the feature flag.
+
+## Method Name Aliases
+
+The React Native SDK supports both camelCase and snake_case method names, aligned with mixpanel-js conventions:
+
+| camelCase | snake_case |
+|-----------|------------|
+| `areFlagsReady()` | `are_flags_ready()` |
+| `getVariant()` | `get_variant()` |
+| `getVariantSync()` | `get_variant_sync()` |
+| `getVariantValue()` | `get_variant_value()` |
+| `getVariantValueSync()` | `get_variant_value_sync()` |
+| `isEnabled()` | `is_enabled()` |
+| `isEnabledSync()` | `is_enabled_sync()` |
+| `updateContext()` | `update_context()` |
+
+## Frequently Asked Questions
+
+### What if I'm not receiving any flags on SDK initialization?
+
+1. **Check your project token**:
+  - Ensure you're using the correct project token from your [Mixpanel project settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+2. **Review flag configuration**:
+  - Make sure your feature flag is enabled
+  - Check the flag's rollout percentage
+    - User contexts that are not assigned to the rollout percentage will not receive flags
+  - If you are using a targeting cohort, verify on the mixpanel 'Users' page that the user's `distinct_id` is a member of that cohort.
+
+3. **Review SDK parameters**:
+  - Ensure `featureFlagsOptions` with `enabled: true` is passed to `init()`
+  - If using a custom Variant Assignment Key, ensure it is included in the `context` object
+  - If using Runtime Targeting, ensure all properties used in targeting are included in the `custom_properties` object within `context`
+
+4. **Confirm beta SDK version**: Feature flags require the beta version (`npm install mixpanel-react-native@beta`, minimum `v3.2.0-beta.3`)
+5. **Check flags readiness**: Use `areFlagsReady()` to check if flags have been loaded before using sync evaluation methods
+6. **Enable debug logging**: Call `mixpanel.setLoggingEnabled(true)` to see detailed information about flag requests and responses
+
+### Why is `updateContext` throwing an error?
+
+`updateContext` is only supported in **JavaScript mode** (Expo / React Native Web). If you are using native mode (bare React Native on iOS/Android), you must set the context during initialization via `featureFlagsOptions`. There is no way to update context after init in native mode.
+
+### Which mode should I use?
+
+- **Bare React Native apps** (iOS/Android): Use **native mode** (`new Mixpanel(token)`) for best performance, as it delegates to the optimized native SDKs.
+- **Expo apps**: Use **JavaScript mode** (`new Mixpanel(token, false, false)`), which is the automatic default in Expo since native modules are not available.
+- **React Native Web**: Use **JavaScript mode**.

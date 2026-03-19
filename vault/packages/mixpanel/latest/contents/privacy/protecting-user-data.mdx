@@ -1,0 +1,176 @@
+# Protecting User Data: Opting users out of tracking and anonymizing data
+
+import { Tabs } from 'nextra/components'
+
+## Overview
+Mixpanel gives you full control over the data you send to Mixpanel and provides you with the tools necessary to respect a customer's request to opt out of tracking. When a user is opted out, no data is sent to Mixpanel for that user, meaning their events won't be tracked or available in Mixpanel. Here, we share best practices for tracking in a privacy-friendly way.
+
+## Opting Users Out of Tracking
+Mixpanel's client-side libraries include an 'opt_out' method that allows you to manage a user's request to opt out of tracking. This allows you to quickly flag a user when they choose to opt out of tracking during the cookie consent management process.
+
+The client-side 'opt_out' method sets a flag in the user's browser cookie or local storage, preventing data from being sent to Mixpanel. The opt-out state persists across sessions, meaning that if a user has opted out, they will remain opted out even if they close and reopen the app or website, unless the cookie/local storage is cleared or they explicitly opt back in.
+
+For mobile SDKs, when the 'opt_out' method is called, any events and people updates that have not been sent to Mixpanel (i.e., those still in the local queue) are deleted from the device. This ensures that even data collected just before opting out, like App Open events, does not get sent to Mixpanel.
+
+Once opted out, the Mixpanel SDKs will continue to function normally, but will not send any data to the Mixpanel project. This means that calls to tracking methods, like track or identify, will essentially be ignored for the opted-out user.
+
+The client-side 'opt out' call will not affect server-side events. For server-side implementations, you need to manage the opt-out process manually. The server is responsible for generating IDs, maintaining ID persistence, and managing the opt-out state of users.
+
+<Tabs items={['Javascript', 'Objective-C', 'Swift', 'Android', 'React Native']}>
+<Tabs.Tab>
+```javascript
+mixpanel.opt_out_tracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```objc
+Mixpanel *mixpanel = [Mixpanel sharedInstance];\n[mixpanel optOutTracking];
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```swift
+Mixpanel.mainInstance().optOutTracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```java
+mixpanel.optOutTracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```javascript
+mixpanel.optOutTracking();
+```
+</Tabs.Tab>
+</Tabs>
+
+You can also configure our SDKs to opt users out of tracking by default:
+
+<Tabs items={['Javascript', 'Objective-C', 'Swift', 'Android', 'React Native']}>
+<Tabs.Tab>
+```javascript
+mixpanel.init(YOUR TOKEN, {opt_out_tracking_by_default: true});
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```objc
+Mixpanel *mixpanel = [Mixpanel sharedInstanceWithToken:@YOUR_API_TOKEN trackAutomaticEvents:NO optOutTrackingByDefault:YES];
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```swift
+let mixpanel = Mixpanel.initialize(token: YOUR PROJECT TOKEN, trackAutomaticEvents: no, optOutTrackingByDefault: true)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```java
+MixpanelAPI mixpanelOptOutDefault = MixpanelAPI.getInstance(context, YOUR PROJECT TOKEN, true, true /* opt out by default */);
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```javascript
+const trackAutomaticEvents = false;
+const optOutTrackingDefault = true;
+const mixpanel = new Mixpanel('your project token', trackAutomaticEvents, optOutTrackingDefault);
+mixpanel.init();
+```
+</Tabs.Tab>
+</Tabs>
+
+## Opting Users In For Tracking
+The 'Opt In' methods in used to allow users to opt into tracking after they have been previously opted out or when the SDK is initialized with users opted out by default.
+
+When the Opt In method is called, it triggers an event called "$opt_in", which appears as "Opt In" in your project. This event is sent to Mixpanel to indicate that the user has opted into tracking. Locally, a flag is set in the user's cookie/local storage to indicate to the SDK that the user consents to data tracking.
+
+After calling the 'Opt In' method, Mixpanel will start collecting and sending data for that user. This includes events, user properties, and other tracking information.
+
+<Tabs items={['Javascript', 'Objective-C', 'Swift', 'Android', 'React Native']}>
+<Tabs.Tab>
+```javascript
+mixpanel.opt_in_tracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```objc
+Mixpanel *mixpanel = [Mixpanel sharedInstance];\n[mixpanel optOutTracking];
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```swift
+Mixpanel.mainInstance().optInTracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```java
+mixpanel.optInTracking();
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```javascript
+mixpanel.optInTracking();
+```
+</Tabs.Tab>
+</Tabs>
+
+## Disabling Geolocation
+Mixpanel's Web and Mobile libraries use IP addresses to enrich events with geographic information like city, country, and region. Mixpanel does not store IP addresses, but rather, only uses IPs to assign [geolocation properties to data upon ingestion](/docs/tracking-best-practices/geolocation). You can disable this using the following configuration options in each of our SDKs:
+
+<Tabs items={['Javascript', 'Objective-C', 'Swift', 'Android', 'React Native']}>
+<Tabs.Tab>
+```javascript Javascript
+mixpanel.init("YOUR_TOKEN", {"ip": false})
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```objectivec Objective-C
+useIPAddressForGeoLocation = NO
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```swift
+Mixpanel.initialize(token: "MIXPANEL_TOKEN", useIPAddressForGeoLocation: false)
+```
+</Tabs.Tab>
+<Tabs.Tab>
+  ```xml Android
+<meta-data android:name="com.mixpanel.android.MPConfig.UseIpAddressForGeolocation" android:value="false" />
+```
+</Tabs.Tab>
+<Tabs.Tab>
+  ```javascript React Native
+setUseIpAddressForGeolocation(false)
+```
+</Tabs.Tab>
+</Tabs>
+
+You can also disable geolocation for individual payloads by setting the `ip` property value to 0. Learn more about ignoring IP addresses [here](/docs/tracking-best-practices/geolocation#ignore-ip-address).
+
+
+## Anonymizing Users
+Mixpanel does not know, or need to know, any identifying information about users (like email or phone number). Mixpanel only needs to know that a set of events was performed by a particular user ID. You choose the ID and how you want to send that to Mixpanel.
+
+If you want to analyze aggregate user behavior without being able to drill down into any particular user, we recommend generating a hash of some unique ID of the user and using that hash as the user's ID when you call the `.identify()` method in our SDKs.
+
+## Blacklisting Default Properties
+Our JavaScript library [automatically captures default properties](/docs/data-structure/property-reference/default-properties) to help enrich your data, but you can choose to prevent the setting of default properties using the property_blacklist config option. To prevent default event properties from being sent, specify a list of properties to blacklist on library load, for example:
+
+```javascript Javascript
+mixpanel.init("YOUR_TOKEN", {
+  property_blacklist: ['$referrer', 'custom_property']
+});
+```
+## FAQ
+
+**Is opting users out of tracking compliant with privacy regulations like GDPR?**
+
+While Mixpanel provides tools to help our customers remain compliant with privacy regulations (such as methods for opting users in and out of tracking), it is the responsibility of the implementing company to ensure compliance with privacy regulations. Typically, organizations must obtain explicit consent from individuals before collecting, using, or sharing their personal data.
+
+For GDPR purposes, Mixpanel is considered the data processor, whereas you (the customer) are considered the data controller. Your end user's data is your responsibility.
+
+**Can users request a copy of their data?**
+
+Yes, Mixpanel provides tools for handling user data requests. However, it is important to note that Mixpanel doesn't handle end-users' requests directly. The company implementing Mixpanel is responsible for using Mixpanel's tools to fetch the data and provide it to its end-users. Learn more about our [GDPR Data Retrieval API Endpoint](https://developer.mixpanel.com/reference/create-retrieval-1).
+
+**What happens to previously collected data when a user opts out?**
+
+When a user is opted out of tracking, no subsequent data moving forward is sent to Mixpanel for that user. This means that future events won't be tracked or available in Mixpanel. However, data previously collected will remain in your project until the data retention period has passed, a data deletion is performed for that user's data, or a GDPR deletion is requested and performed. Learn more about [Data Deletion](/docs/data-governance/data-clean-up#2-deleting-problematic-data) and [GDPR Deletion requests](/docs/privacy/end-user-data-management).

@@ -1,0 +1,73 @@
+import { Tabs, Callout } from 'nextra/components'
+
+# Stripe
+
+This guide demonstrates how to stream events from Stripe Webhooks to Mixpanel, via a Google Cloud Function. It requires access to a cloud account and ~10 minutes of setup time.
+
+Note: This guide assumes you are running in Google Cloud Platform, and have the necessary IAM Access to have Cloud Functions read from GCS. An equivalent process works using AWS Lambda.
+
+<Callout type="info">
+If you prefer not to build and maintain your data pipelines, consider using [Vendo](/docs/tracking-methods/integrations/vendo). The Vendo integration with Mixpanel enables you to integrate Stripe purchase and subscription data into Mixpanel without needing any custom development. Learn more [here](https://www.vendodata.com/connections/stripe?utm_source=mixpanel-partner-portal&utm_medium=partner).
+</Callout>
+
+## Step 1: Create a Cloud Function
+
+Create a [new Cloud Function](https://console.cloud.google.com/functions/add), set the trigger to `HTTPS`, and check the box to Allow Unauthenticated Invocations, since this will be called from Stripe. Copy the URL, which should look something like `https://<zone>-<your-gcp-project>.cloudfunctions.net/stripe-demo`.
+
+![](/stripe_cloud_functions_setup.png)
+
+Paste in the following code, which accepts Stripe's webhook format, and forwards it to Mixpanel's `/import` API:
+
+<Tabs items={['python', 'requirements.txt']}>
+<Tabs.Tab>
+    ```python main.py
+    import functions_framework
+    import json
+    import requests
+
+    @functions_framework.http
+    def hello_http(request):
+        req = request.get_json(silent=True)
+        e = {
+          'event': req['type'],
+          'properties': {
+            '$insert_id': req['id'],
+            '$device_id': req['data']['object'].get('customer', ''), # If your project is on Original ID Merge, you would specify distinct_id for the user identifier
+            'time': req['created'],
+            **req['data']['object']
+          }
+        }
+        resp = requests.post(
+            "https://api.mixpanel.com/import",
+            params={"strict": "1"},
+            headers={
+                "Content-Type": "application/x-ndjson",
+                "User-Agent": "mixpanel-stripe"
+            },
+            auth=(request.args.get('token'), ""),
+            data=json.dumps(e),
+        )
+        return resp.json()
+    ```
+</Tabs.Tab>
+<Tabs.Tab>
+    ```txt requirements.txt
+    functions-framework==3.*
+    requests
+    ```
+</Tabs.Tab>
+</Tabs>
+
+Click `Deploy`, which enables your Cloud Function to listen for new events. 
+
+## Step 2: Create a Stripe Webhook
+Create a [Stripe Webhook](https://dashboard.stripe.com/webhooks/create) and paste in the URL of your Cloud Function, with your [Project Token](https://mixpanel.com/report/settings) as the `token` query parameter. So it should look something like `<function_url>.cloudfunctions.net?token=<your_token>`.
+
+We recommend selecting all events, since it affords the most flexibility and you can filter them down easily in Mixpanel. 
+
+![](/stripe_cloud_functions_screenshot.png)
+
+🎉 Congrats: you now have a fully functioning Stripe -> Mixpanel integration!
+
+## Next Steps
+You can start doing analysis on the Stripe events. If you want to model your data more prior to ingesting it into Mixpanel, you can update the Cloud Function to do additional transformations. If you have historical Stripe data in a data warehouse, you can also use our Warehouse Connectors to BigQuery and Snowflake to load it into Mixpanel.
