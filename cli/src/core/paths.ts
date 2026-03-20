@@ -5,11 +5,13 @@ import { fileURLToPath } from 'url';
 
 import { pathStartsWith } from './platform.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Get the root of the olore repository (where vault/, .claude/ are)
+// Get the root of the olore repository (where vault/, .claude/ are).
+// Only meaningful in local development where the CLI runs from source.
+// Not used by any installed command — resolved lazily so it does not
+// execute at module load time (avoids import.meta.url issues in CJS).
 export function getRepoRoot(): string {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   // cli/dist/core/paths.js -> cli/ -> olore/
   return path.resolve(__dirname, '../../..');
 }

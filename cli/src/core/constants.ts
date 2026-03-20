@@ -3,7 +3,11 @@ export const REGISTRY_URL =
   'https://github.com/olorehq/olore/releases/download/registry/registry.json';
 export const REGISTRY_FALLBACK_URL = 'https://olore.dev/registry';
 export const DOWNLOAD_TIMEOUT = 60000; // 60 seconds
-export const USER_AGENT = 'olore-cli/0.1.0';
 
-// Cache directory for downloaded packages
-export const CACHE_DIR = '.olore/cache';
+/**
+ * Build the User-Agent header string for HTTP requests.
+ * @param version - The current CLI version from package.json
+ */
+export function getUserAgent(version: string): string {
+  return `olore-cli/${version}`;
+}

@@ -1,4 +1,10 @@
-import { DOWNLOAD_TIMEOUT, REGISTRY_FALLBACK_URL, REGISTRY_URL, USER_AGENT } from './constants.js';
+import {
+  DOWNLOAD_TIMEOUT,
+  getUserAgent,
+  REGISTRY_FALLBACK_URL,
+  REGISTRY_URL,
+} from './constants.js';
+import { getVersion } from './version-check.js';
 
 // Registry index format (v1 — used by search, derived from combined registry)
 export interface PackageIndex {
@@ -64,7 +70,7 @@ async function fetchWithTimeout(
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent': getUserAgent(getVersion()),
       },
     });
     return response;

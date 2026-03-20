@@ -18,7 +18,6 @@ import { checkForUpdates } from '../core/version-check.js';
 
 interface InstallOptions {
   version?: string;
-  keep?: boolean;
   force?: boolean;
 }
 

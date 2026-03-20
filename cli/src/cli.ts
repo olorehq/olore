@@ -13,10 +13,12 @@ import { order66 } from './commands/order66.js';
 import { prune } from './commands/prune.js';
 import { remove } from './commands/remove.js';
 import { search } from './commands/search.js';
+import { setVersion } from './core/version-check.js';
 
 const require = createRequire(import.meta.url);
 // Path relative to compiled dist/cli.js
 const { version } = require('../package.json');
+setVersion(version);
 
 const program = new Command();
 
@@ -48,7 +50,6 @@ program
   .alias('i')
   .description('Install a documentation package from the registry')
   .option('-v, --version <version>', 'Install specific version')
-  .option('--keep', 'Keep previous version active (for migrations)')
   .option('--force', 'Force installation')
   .action(async (pkg, options) => {
     try {
