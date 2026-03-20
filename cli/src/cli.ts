@@ -13,10 +13,12 @@ import { order66 } from './commands/order66.js';
 import { prune } from './commands/prune.js';
 import { remove } from './commands/remove.js';
 import { search } from './commands/search.js';
+import { setVersion } from './core/version-check.js';
 
 const require = createRequire(import.meta.url);
 // Path relative to compiled dist/cli.js
 const { version } = require('../package.json');
+setVersion(version);
 
 const program = new Command();
 

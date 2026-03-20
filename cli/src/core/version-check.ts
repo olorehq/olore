@@ -4,11 +4,14 @@ import { join } from 'path';
 
 import pc from 'picocolors';
 
-// Import version from package.json at build time via tsup
-// The version is injected by the build process
-import pkg from '../../package.json';
+let currentVersion = '0.0.0';
 
-const currentVersion = pkg.version;
+/**
+ * Set the current CLI version. Must be called before checkForUpdates.
+ */
+export function setVersion(version: string): void {
+  currentVersion = version;
+}
 
 const NPM_REGISTRY = 'https://registry.npmjs.org/@olorehq/olore';
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
