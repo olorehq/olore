@@ -15,6 +15,9 @@ ADRs document significant architectural decisions with context, rationale, and c
 | [0005](0005-registry-generation-at-build-time.md) | Registry Generation at Build Time | Proposed | 2026-01 |
 | [0006](0006-compact-retrieval-index.md) | Compact Retrieval Index for Passive Context | Accepted | 2026-01 |
 | [0007](0007-reclaim-init-for-auto-detect-flow.md) | Reclaim `init` for Auto-Detect Flow | Accepted | 2026-01 |
+| [0008](0008-plugin-bridge-over-full-migration.md) | Plugin Bridge over Full Migration | Proposed | 2026-03 |
+| [0009](0009-vercel-native-registry-with-analytics.md) | Vercel-Native Registry with Analytics | Superseded by 0010 | 2026-03 |
+| [0010](0010-delegate-distribution-to-skills-sh.md) | Delegate Distribution to skills.sh | Proposed | 2026-03 |
 
 ## ADR Format
 
