@@ -28,6 +28,13 @@ export default function Home() {
           </div>
           <div className="flex gap-8 text-sm uppercase">
             <a
+              href="/registry"
+              className="px-2 py-1 transition-colors hover:text-cyan-400"
+            >
+              <span className="mr-1 text-zinc-600">[</span> Registry{" "}
+              <span className="ml-1 text-zinc-600">]</span>
+            </a>
+            <a
               href="https://github.com/olorehq/olore"
               className="px-2 py-1 transition-colors hover:text-cyan-400"
             >
