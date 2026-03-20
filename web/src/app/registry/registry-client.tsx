@@ -1,85 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 interface PackageInfo {
   name: string;
   description: string;
+  downloads: number;
   versions: {
     version: string;
     files: number;
-    builtAt: string;
+    downloads: number;
   }[];
-}
-
-interface DownloadCounts {
-  [key: string]: number; // "name@version" -> count
 }
 
 export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
   const [query, setQuery] = useState("");
-  const [downloads, setDownloads] = useState<DownloadCounts>({});
-  const [loadingDownloads, setLoadingDownloads] = useState(true);
   const [sortBy, setSortBy] = useState<"name" | "downloads" | "files">("name");
 
-  // Fetch download counts from GitHub Releases API
-  useEffect(() => {
-    async function fetchDownloads() {
-      try {
-        const counts: DownloadCounts = {};
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const res = await fetch(
-            `https://api.github.com/repos/olorehq/olore/releases?per_page=100&page=${page}`
-          );
-          if (!res.ok) break;
-
-          const releases = await res.json();
-          if (releases.length === 0) {
-            hasMore = false;
-            break;
-          }
-
-          for (const release of releases) {
-            const tag = release.tag_name;
-            if (!tag.includes("@")) continue;
-
-            for (const asset of release.assets) {
-              if (asset.name.endsWith(".tar.gz")) {
-                counts[tag] = (counts[tag] || 0) + asset.download_count;
-              }
-            }
-          }
-
-          if (releases.length < 100) hasMore = false;
-          page++;
-        }
-
-        setDownloads(counts);
-      } catch {
-        // Fail silently — counts are optional
-      } finally {
-        setLoadingDownloads(false);
-      }
-    }
-
-    fetchDownloads();
-  }, []);
-
-  // Get total downloads for a package (sum across versions)
-  function getDownloads(
-    name: string,
-    versions: PackageInfo["versions"]
-  ): number {
-    return versions.reduce((sum, v) => {
-      const key = `${name}@${v.version}`;
-      return sum + (downloads[key] || 0);
-    }, 0);
-  }
-
-  // Filter packages by search query
   const filtered = useMemo(() => {
     let result = packages;
 
@@ -93,22 +30,17 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
     }
 
     if (sortBy === "downloads") {
-      result = [...result].sort(
-        (a, b) =>
-          getDownloads(b.name, b.versions) - getDownloads(a.name, a.versions)
-      );
+      result = [...result].sort((a, b) => b.downloads - a.downloads);
     } else if (sortBy === "files") {
       result = [...result].sort(
         (a, b) => (b.versions[0]?.files || 0) - (a.versions[0]?.files || 0)
       );
     }
-    // "name" is already sorted alphabetically from server
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packages, query, sortBy, downloads]);
+  }, [packages, query, sortBy]);
 
-  const totalDownloads = Object.values(downloads).reduce((a, b) => a + b, 0);
+  const totalDownloads = packages.reduce((sum, p) => sum + p.downloads, 0);
 
   return (
     <>
@@ -128,11 +60,7 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
         </div>
         <div className="p-4">
           <div className="text-2xl font-bold text-cyan-400">
-            {loadingDownloads ? (
-              <span className="text-zinc-600">...</span>
-            ) : (
-              totalDownloads.toLocaleString()
-            )}
+            {totalDownloads.toLocaleString()}
           </div>
           <div className="text-xs text-zinc-500 uppercase">Downloads</div>
         </div>
@@ -167,7 +95,6 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
 
       {/* Package List */}
       <section>
-        {/* Table Header */}
         <div className="grid grid-cols-[1fr_80px_80px] border-b border-zinc-800 px-6 py-3 text-xs text-zinc-600 uppercase md:grid-cols-[200px_1fr_80px_80px]">
           <span>Package</span>
           <span className="hidden md:block">Description</span>
@@ -183,7 +110,6 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
           </div>
         ) : (
           filtered.map((pkg) => {
-            const dl = getDownloads(pkg.name, pkg.versions);
             const latestVersion = pkg.versions[0];
             return (
               <div
@@ -212,10 +138,8 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
                   {latestVersion?.files || 0}
                 </span>
                 <span className="self-center text-right text-xs text-zinc-400">
-                  {loadingDownloads ? (
-                    <span className="text-zinc-700">-</span>
-                  ) : dl > 0 ? (
-                    dl.toLocaleString()
+                  {pkg.downloads > 0 ? (
+                    pkg.downloads.toLocaleString()
                   ) : (
                     <span className="text-zinc-700">0</span>
                   )}

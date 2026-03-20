@@ -1,62 +1,77 @@
-import fs from "fs";
-import path from "path";
-
 import { RegistryClient } from "./registry-client";
+
+export const dynamic = "force-dynamic";
+
+interface RegistryPackage {
+  description: string;
+  latest: string;
+  versions: Record<
+    string,
+    {
+      version: string;
+      files: number;
+      size: number;
+      downloads: number;
+      releasedAt: string;
+    }
+  >;
+}
+
+interface Registry {
+  version: number;
+  updated: string;
+  packages: Record<string, RegistryPackage>;
+}
 
 interface PackageInfo {
   name: string;
   description: string;
+  downloads: number;
   versions: {
     version: string;
     files: number;
-    builtAt: string;
+    downloads: number;
   }[];
 }
 
-function getPackages(): PackageInfo[] {
-  const configsDir = path.resolve(process.cwd(), "../vault/configs");
-  const packagesDir = path.resolve(process.cwd(), "../vault/packages");
+async function getPackages(): Promise<{
+  packages: PackageInfo[];
+  updated: string;
+}> {
+  try {
+    const res = await fetch(
+      "https://github.com/olorehq/olore/releases/download/registry/registry.json",
+      { next: { revalidate: 0 } }
+    );
+    if (!res.ok) return { packages: [], updated: "" };
 
-  if (!fs.existsSync(configsDir)) return [];
+    const registry: Registry = await res.json();
+    const packages: PackageInfo[] = [];
 
-  const configFiles = fs
-    .readdirSync(configsDir)
-    .filter((f) => f.endsWith(".json"));
+    for (const [name, pkg] of Object.entries(registry.packages)) {
+      const versions = Object.entries(pkg.versions).map(([ver, info]) => ({
+        version: ver,
+        files: info.files || 0,
+        downloads: info.downloads || 0,
+      }));
 
-  const packages: PackageInfo[] = [];
+      const totalDownloads = versions.reduce((sum, v) => sum + v.downloads, 0);
 
-  for (const file of configFiles) {
-    try {
-      const config = JSON.parse(
-        fs.readFileSync(path.join(configsDir, file), "utf-8")
-      );
-      const name = config.name;
-      const description = config.description || "";
-
-      const versions: PackageInfo["versions"] = [];
-      const versionKeys = Object.keys(config.versions || {});
-
-      for (const ver of versionKeys) {
-        const lockPath = path.join(packagesDir, name, ver, "olore-lock.json");
-        if (fs.existsSync(lockPath)) {
-          const lock = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
-          versions.push({
-            version: ver,
-            files: lock.files || 0,
-            builtAt: lock.builtAt || "",
-          });
-        }
-      }
-
-      if (versions.length > 0) {
-        packages.push({ name, description, versions });
-      }
-    } catch {
-      // Skip invalid configs
+      packages.push({
+        name,
+        description: pkg.description,
+        downloads: totalDownloads,
+        versions,
+      });
     }
-  }
 
-  return packages.sort((a, b) => a.name.localeCompare(b.name));
+    return {
+      packages: packages.sort((a, b) => a.name.localeCompare(b.name)),
+      updated: registry.updated,
+    };
+  } catch {
+    return { packages: [], updated: "" };
+  }
 }
 
 export const metadata = {
@@ -65,8 +80,8 @@ export const metadata = {
     "Browse 70+ documentation packages for AI coding agents. Version-pinned docs for Claude Code, Codex, and OpenCode.",
 };
 
-export default function RegistryPage() {
-  const packages = getPackages();
+export default async function RegistryPage() {
+  const { packages, updated } = await getPackages();
 
   return (
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-300 selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -106,6 +121,11 @@ export default function RegistryPage() {
           <p className="text-sm text-zinc-500">
             {packages.length} documentation packages available. Install with{" "}
             <span className="text-cyan-400">olore install &lt;name&gt;</span>
+            {updated && (
+              <span className="ml-4 text-zinc-700">
+                Updated {new Date(updated).toLocaleDateString()}
+              </span>
+            )}
           </p>
         </section>
 
