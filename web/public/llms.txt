@@ -1,0 +1,37 @@
+# olore
+
+> Documentation package manager for AI coding agents. Version-pinned, offline-first docs for Claude Code, Codex, and OpenCode.
+
+olore solves AI hallucination of library APIs by providing version-pinned documentation packages that install locally. One command installs curated docs for 70+ libraries. No network required after install. Works with Claude Code, Codex, OpenCode, and any agent supporting the Agent Skills specification.
+
+## Key Links
+
+- [Homepage](https://olore.dev)
+- [Registry](https://olore.dev/registry)
+- [GitHub](https://github.com/olorehq/olore)
+- [npm](https://www.npmjs.com/package/@olorehq/olore)
+
+## How It Works
+
+Install the CLI: `npm install -g @olorehq/olore`
+Add docs for a library: `olore install prisma`
+Inject reference into project: `olore inject prisma`
+
+Docs are stored locally at ~/.olore/ and symlinked to each agent's skills directory. Agents discover docs automatically via AGENTS.md reference tables.
+
+## vs Context7
+
+| Feature | olore | Context7 |
+|---------|-------|----------|
+| Network | Offline after install | Required |
+| Version | Pinned to exact version | Latest only |
+| Setup | One CLI command | MCP server configuration |
+| Private docs | Yes | No |
+| Context depth | Full documentation | Snippets |
+| Agent support | Claude Code, Codex, OpenCode | MCP-compatible agents |
+
+## Available Packages (70+)
+
+nextjs, prisma, drizzle, zod, tailwindcss, clerk, supabase, sentry, playwright, hono, ai-sdk, bun, eslint, tanstack-query, zustand, better-auth, biome, mantine, radix-ui, msw, tanstack-router, tanstack-table, turborepo, vite, remotion, react-three-fiber, cloudflare, expo, storybook, posthog, axiom, neon, convex, hono, langchain, langfuse, and more.
+
+Browse the full registry: https://olore.dev/registry

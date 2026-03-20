@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://olore.dev";
 const title = "olore - Docs as Agent Skills";
 const description =
-  "Version-pinned documentation packages for AI coding agents. Works offline with Claude Code, Codex, and OpenCode.";
+  "Version-pinned documentation packages for AI coding agents. Works offline with Claude Code, Codex, and OpenCode. 70+ packages available.";
 
 export const metadata: Metadata = {
   title,
@@ -36,14 +36,27 @@ export const metadata: Metadata = {
   },
   keywords: [
     "olore",
-    "documentation",
+    "documentation package manager",
     "AI coding agent",
     "Claude Code",
     "Codex",
     "OpenCode",
     "developer tools",
-    "offline docs",
+    "offline documentation",
+    "version-pinned docs",
+    "context7 alternative",
+    "AI agent skills",
+    "documentation as code",
+    "package registry",
+    "stop AI hallucinations",
   ],
+  authors: [
+    {
+      name: "olore contributors",
+      url: "https://github.com/olorehq/olore",
+    },
+  ],
+  creator: "olore contributors",
   robots: {
     index: true,
     follow: true,
@@ -53,6 +66,37 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "olore",
+      alternateName: "O(pen)LORE",
+      description:
+        "Documentation package manager for AI coding agents. Version-pinned, offline-first docs for Claude Code, Codex, and OpenCode.",
+      url: "https://olore.dev",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "macOS, Linux, Windows",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      license: "https://opensource.org/licenses/MIT",
+      downloadUrl: "https://www.npmjs.com/package/@olorehq/olore",
+      codeRepository: "https://github.com/olorehq/olore",
+      author: {
+        "@type": "Organization",
+        name: "olorehq",
+        url: "https://github.com/olorehq",
+      },
+    },
+    {
+      "@type": "WebSite",
+      name: "olore",
+      url: "https://olore.dev",
+      description: "Documentation package manager for AI coding agents",
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -60,6 +104,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

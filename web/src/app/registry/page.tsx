@@ -74,11 +74,23 @@ async function getPackages(): Promise<{
   }
 }
 
-export const metadata = {
-  title: "Registry - olore",
-  description:
-    "Browse 70+ documentation packages for AI coding agents. Version-pinned docs for Claude Code, Codex, and OpenCode.",
-};
+export async function generateMetadata() {
+  const { packages } = await getPackages();
+  const count = packages.length || 70;
+  return {
+    title: `Registry - ${count}+ Doc Packages for AI Agents | olore`,
+    description: `Browse ${count} version-pinned documentation packages for Claude Code, Codex, and OpenCode. Install with one command. Offline-first.`,
+    openGraph: {
+      title: `olore Registry - ${count}+ Documentation Packages`,
+      description: `Version-pinned docs for AI coding agents. ${count} packages including Next.js, Prisma, Zod, Tailwind CSS, and more.`,
+      url: "https://olore.dev/registry",
+      type: "website",
+    },
+    alternates: {
+      canonical: "https://olore.dev/registry",
+    },
+  };
+}
 
 export default async function RegistryPage() {
   const { packages, updated } = await getPackages();
