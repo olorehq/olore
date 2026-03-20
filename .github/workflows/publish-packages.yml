@@ -111,7 +111,7 @@ jobs:
 
           # Fetch all package releases (name@version pattern) via paginated API
           gh api --paginate repos/olorehq/olore/releases \
-            --jq '.[] | select(.tag_name | test("@")) | {tag: .tag_name, published_at: .published_at, assets: [.assets[] | {name, size, browser_download_url}]}' \
+            --jq '.[] | select(.tag_name | test("@")) | {tag: .tag_name, published_at: .published_at, assets: [.assets[] | {name, size, download_count, browser_download_url}]}' \
             > /tmp/releases.jsonl
 
           # Start building registry JSON
@@ -141,6 +141,7 @@ jobs:
             # Get tarball info
             TARBALL_URL=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .browser_download_url')
             TARBALL_SIZE=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .size')
+            DOWNLOADS=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .download_count')
 
             if [ -z "$TARBALL_URL" ] || [ "$TARBALL_URL" = "null" ]; then
               echo "  Skipping ${TAG} - no tarball asset"
@@ -172,7 +173,8 @@ jobs:
               --arg i "$INTEGRITY" \
               --arg d "$TARBALL_URL" \
               --arg r "$PUBLISHED" \
-              '{version: $v, files: $f, size: $s, integrity: $i, downloadUrl: $d, releasedAt: $r}')
+              --argjson dl "${DOWNLOADS:-0}" \
+              '{version: $v, files: $f, size: $s, integrity: $i, downloadUrl: $d, releasedAt: $r, downloads: $dl}')
 
             # Accumulate versions per package
             if [ -z "${PKG_VERSIONS[$NAME]+x}" ]; then
