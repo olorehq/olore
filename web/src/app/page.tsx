@@ -151,83 +151,48 @@ export default function Home() {
           <div className="mb-px bg-zinc-800">
             <div className="bg-zinc-950 p-6 font-mono text-sm">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">01</span> Install docs
+                <span className="text-cyan-500">01</span> Install
               </p>
               <p className="text-zinc-300">
-                <span className="text-zinc-600">$</span> olore install zod
+                <span className="text-zinc-600">$</span> olore install prisma
               </p>
               <p className="mt-2 text-xs text-zinc-600">
                 Downloads version-pinned docs to ~/.olore/ and symlinks them
-                into each agent&apos;s global skill directory — Claude Code,
-                Codex, OpenCode. Skills are available immediately.
+                into every agent&apos;s skill directory. Claude Code, Codex,
+                OpenCode — all get the docs instantly.
               </p>
             </div>
           </div>
 
-          {/* Two Options */}
-          <div className="grid gap-px bg-zinc-800 font-mono text-sm md:grid-cols-2">
-            {/* Option A: Use as skills (default) */}
-            <div className="bg-zinc-950 p-6">
+          {/* Step 2: Inject (optional) */}
+          <div className="mb-px bg-zinc-800">
+            <div className="bg-zinc-950 p-6 font-mono text-sm">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">02a</span> Use as skills
-              </p>
-              <p className="text-zinc-300">Done — start coding.</p>
-              <p className="mt-2 text-xs text-zinc-600">
-                After install, every coding agent on your machine can see the
-                doc skill. Agent reads the full docs when it decides it needs
-                them.
-              </p>
-            </div>
-            {/* Option B: Inject into context */}
-            <div className="bg-zinc-950 p-6">
-              <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
-                <span className="text-cyan-500">02b</span> Inject into context
+                <span className="text-cyan-500">02</span> Inject{" "}
+                <span className="text-zinc-700">(optional)</span>
               </p>
               <p className="text-zinc-300">
-                <span className="text-zinc-600">$</span> olore inject zod
+                <span className="text-zinc-600">$</span> olore inject prisma
               </p>
               <p className="mt-2 text-xs text-zinc-600">
-                Writes a skill reference table for the specified packages into
-                your project&apos;s AGENTS.md &amp; CLAUDE.md. Agents discover
-                installed docs and invoke skills when needed.
-              </p>
-              <p className="mt-2 text-xs text-zinc-600">
-                Commit it — your whole team gets the docs.
+                Adds a reference table to AGENTS.md so agents know docs exist
+                and invoke them automatically. Commit it — your whole team gets
+                the docs.
               </p>
             </div>
           </div>
 
-          {/* Step 3 */}
-          <div className="mt-px bg-zinc-800">
+          {/* Step 3: Code */}
+          <div className="bg-zinc-800">
             <div className="bg-zinc-950 p-6 font-mono text-sm">
               <p className="mb-3 text-xs tracking-wider text-zinc-500 uppercase">
                 <span className="text-cyan-500">03</span> Code
               </p>
               <p className="text-zinc-400">
                 Your agent has the right docs. No hallucinated APIs. No outdated
-                patterns. Use both approaches together for maximum coverage.
+                patterns.
               </p>
             </div>
-          </div>
-        </section>
-
-        {/* Two Approaches */}
-        <section className="border-b border-zinc-800">
-          <div className="border-b border-zinc-800 p-6">
-            <h2 className="text-xl font-bold text-zinc-100 uppercase">
-              <span className="text-purple-500">&gt;&gt;</span> Inject_vs_Skills
-            </h2>
-          </div>
-          <div className="p-6">
-            <p className="mb-6 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              olore supports two approaches.{" "}
-              <span className="text-zinc-300">Inject</span> writes a skill
-              reference table into AGENTS.md — agents discover available docs
-              and reliably invoke skills when needed.{" "}
-              <span className="text-zinc-300">Skills</span> generate full doc
-              packages — deeper access, but agents must decide to read them. Use
-              both together for maximum coverage.
-            </p>
           </div>
         </section>
 
