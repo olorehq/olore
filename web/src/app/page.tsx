@@ -15,8 +15,22 @@ function getCliVersion(): string {
   }
 }
 
+function getPackageNames(): string[] {
+  try {
+    const configsDir = path.resolve(process.cwd(), "../vault/configs");
+    return fs
+      .readdirSync(configsDir)
+      .filter((f: string) => f.endsWith(".json"))
+      .map((f: string) => f.replace(".json", ""))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
 export default function Home() {
   const cliVersion = getCliVersion();
+  const packageNames = getPackageNames();
   return (
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-300 selection:bg-cyan-500/30 selection:text-cyan-200">
       <main className="mx-auto min-h-screen max-w-7xl border-x border-zinc-800">
@@ -383,55 +397,19 @@ export default function Home() {
         <section className="border-b border-zinc-800 p-6">
           <h2 className="mb-6 text-xl font-bold text-zinc-100 uppercase">
             <span className="text-purple-500">&gt;&gt;</span> Official_Packages
+            <span className="ml-3 text-sm font-normal text-zinc-600">
+              ({packageNames.length})
+            </span>
           </h2>
           <div className="flex flex-wrap gap-2 font-mono text-xs">
-            {[
-              "a2a",
-              "agentskills",
-              "astro",
-              "axiom",
-              "azure-sdk-js",
-              "cargo",
-              "checkly",
-              "claude-code",
-              "clerk",
-              "cloudflare",
-              "codex",
-              "convex",
-              "drizzle",
-              "github-actions",
-              "hono",
-              "langchain",
-              "lucia",
-              "neon",
-              "neverthrow",
-              "nextjs",
-              "openclaw",
-              "opencode",
-              "opennext",
-              "partykit",
-              "partyserver",
-              "posthog",
-              "prettier",
-              "prisma",
-              "rhf",
-              "sentry",
-              "supabase",
-              "t3-env",
-              "tanstack-query",
-              "trpc",
-              "tsf",
-              "turso",
-              "vitest",
-              "xstate",
-              "zod",
-            ].map((pkg) => (
-              <span
+            {packageNames.map((pkg) => (
+              <a
                 key={pkg}
+                href="/registry"
                 className="cursor-default border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-zinc-400 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
               >
-                olore-{pkg}
-              </span>
+                {pkg}
+              </a>
             ))}
           </div>
         </section>
@@ -445,28 +423,28 @@ export default function Home() {
           </div>
           <div className="grid divide-y divide-zinc-800 md:grid-cols-3 md:divide-x md:divide-y-0">
             <FeatureItem
-              title="Passive Context"
-              desc="Skill reference table injected into AGENTS.md / CLAUDE.md. Agents discover available docs and invoke skills reliably."
+              title="Build From Any Repo"
+              desc="Point at a GitHub repo, get a ready-to-use doc package. Automated build pipeline handles download, filtering, and skill generation."
             />
             <FeatureItem
               title="Offline-First"
-              desc="All documentation stored locally. No internet connection required after install."
+              desc="All documentation stored locally. No internet connection required after install. No MCP server to configure."
+            />
+            <FeatureItem
+              title="Version Pinned"
+              desc="Pin docs to your exact library version. No hallucinating future APIs or deprecated patterns."
             />
             <FeatureItem
               title="Private Docs"
               desc="Generate packages for your internal APIs. No data ever leaves your machine."
             />
             <FeatureItem
-              title="Version Pinned"
-              desc="Pin your documentation to your exact version. No more hallucinating future features."
+              title="Multi-Agent"
+              desc="One install, every agent. Works with Claude Code, Codex, OpenCode, and any tool that supports Agent Skills."
             />
             <FeatureItem
-              title="Skill Reference Table"
-              desc="A markdown table injected into CLAUDE.md lists your installed doc packages. Agents see what's available and invoke the right skill."
-            />
-            <FeatureItem
-              title="Dual Mode"
-              desc="Two approaches: inject a skill reference table into AGENTS.md so agents discover available docs, plus full skill packages for deep dives. Use both together."
+              title="Passive Discovery"
+              desc="Inject a reference table into AGENTS.md so agents know docs exist. They invoke the right skill automatically."
             />
           </div>
         </section>
