@@ -21,7 +21,7 @@ export async function Hero() {
 
   return (
     <section className="grid border-b border-zinc-800 lg:grid-cols-2">
-      <div className="flex flex-col justify-center border-r border-b border-zinc-800 p-12 pl-6 lg:border-r lg:border-r-0 lg:border-b-0">
+      <div className="flex flex-col justify-center border-b border-zinc-800 p-12 pl-6 lg:border-b-0 lg:border-r">
         <pre className="mb-6 hidden text-[10px] leading-none text-cyan-500/80 opacity-75 sm:block sm:text-xs">
           {`
  ██████╗ ██╗      ██████╗ ██████╗ ███████╗

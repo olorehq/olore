@@ -21,9 +21,13 @@ const agents = [
 ];
 
 export function SupportedAgents() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const activeAgent = hoveredIndex !== null ? agents[hoveredIndex] : null;
+  const activeAgent = activeIndex !== null ? agents[activeIndex] : null;
+
+  const handleClick = (index: number) => {
+    setActiveIndex((prev) => (prev === index ? null : index));
+  };
 
   return (
     <>
@@ -31,15 +35,16 @@ export function SupportedAgents() {
         {agents.map((agent, index) => (
           <span
             key={agent.name}
-            className={`group cursor-default transition-colors ${
-              hoveredIndex === index ? "text-cyan-400" : "hover:text-cyan-400"
+            className={`group cursor-pointer transition-colors ${
+              activeIndex === index ? "text-cyan-400" : "hover:text-cyan-400"
             }`}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseEnter={() => setActiveIndex(index)}
+            onMouseLeave={() => setActiveIndex(null)}
+            onClick={() => handleClick(index)}
           >
             <span
               className={`transition-colors ${
-                hoveredIndex === index
+                activeIndex === index
                   ? "text-cyan-400/50"
                   : "text-zinc-700 group-hover:text-cyan-400/50"
               }`}
@@ -49,7 +54,7 @@ export function SupportedAgents() {
             {agent.name}{" "}
             <span
               className={`transition-colors ${
-                hoveredIndex === index
+                activeIndex === index
                   ? "text-cyan-400/50"
                   : "text-zinc-700 group-hover:text-cyan-400/50"
               }`}
@@ -75,7 +80,7 @@ export function SupportedAgents() {
           <p className="text-zinc-600">
             <span className="text-zinc-700">&gt;</span>{" "}
             <span className="italic">
-              hover to see how each agent uses olore
+              tap or hover to see how each agent uses olore
             </span>
           </p>
         )}

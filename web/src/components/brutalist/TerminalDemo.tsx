@@ -42,9 +42,9 @@ export function TerminalDemo() {
   }, [currentStep]);
 
   return (
-    <div className="w-full border border-white bg-black p-1">
+    <div className="w-full border border-zinc-700 bg-black p-1">
       {/* Title Bar - Brutalist */}
-      <div className="mb-1 flex items-center justify-between border-b border-white bg-black px-2 py-1 text-white">
+      <div className="mb-1 flex items-center justify-between border-b border-zinc-700 bg-black px-2 py-1 text-white">
         <span className="font-mono text-xs uppercase">[ TERMINAL ]</span>
         <span className="font-mono text-xs uppercase">80x24</span>
       </div>

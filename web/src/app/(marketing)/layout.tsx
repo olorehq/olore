@@ -17,20 +17,22 @@ export default function MarketingLayout({
             <span className="text-zinc-500">[</span> O(pen)LORE{" "}
             <span className="text-zinc-500">]</span>
           </Link>
-          <div className="flex gap-8 text-sm uppercase">
+          <div className="flex gap-3 text-xs uppercase sm:gap-8 sm:text-sm">
             <Link
               href="/registry"
-              className="px-2 py-1 transition-colors hover:text-cyan-400"
+              className="px-1 py-1 transition-colors hover:text-cyan-400 sm:px-2"
             >
-              <span className="mr-1 text-zinc-600">[</span> Registry{" "}
-              <span className="ml-1 text-zinc-600">]</span>
+              <span className="mr-1 hidden text-zinc-600 sm:inline">[</span>
+              Registry
+              <span className="ml-1 hidden text-zinc-600 sm:inline">]</span>
             </Link>
             <a
               href="https://github.com/olorehq/olore"
-              className="px-2 py-1 transition-colors hover:text-cyan-400"
+              className="px-1 py-1 transition-colors hover:text-cyan-400 sm:px-2"
             >
-              <span className="mr-1 text-zinc-600">[</span> GitHub{" "}
-              <span className="ml-1 text-zinc-600">]</span>
+              <span className="mr-1 hidden text-zinc-600 sm:inline">[</span>
+              GitHub
+              <span className="ml-1 hidden text-zinc-600 sm:inline">]</span>
             </a>
           </div>
         </nav>
