@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { RegistryClient } from "./registry-client";
 
 export const dynamic = "force-dynamic";
@@ -100,21 +102,21 @@ export default async function RegistryPage() {
       <main className="mx-auto min-h-screen max-w-7xl border-x border-zinc-800">
         {/* Navigation */}
         <nav className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-          <a
+          <Link
             href="/"
             className="text-xl font-bold tracking-widest text-zinc-100"
           >
             <span className="text-zinc-500">[</span> O(pen)LORE{" "}
             <span className="text-zinc-500">]</span>
-          </a>
+          </Link>
           <div className="flex gap-8 text-sm uppercase">
-            <a
+            <Link
               href="/registry"
               className="px-2 py-1 text-cyan-400 transition-colors"
             >
               <span className="mr-1 text-zinc-600">[</span> Registry{" "}
               <span className="ml-1 text-zinc-600">]</span>
-            </a>
+            </Link>
             <a
               href="https://github.com/olorehq/olore"
               className="px-2 py-1 transition-colors hover:text-cyan-400"
@@ -149,9 +151,9 @@ export default async function RegistryPage() {
           <div className="flex items-center justify-between p-6 text-xs text-zinc-500 uppercase">
             <span className="opacity-75">Open Source Forever</span>
             <div className="flex gap-6">
-              <a href="/" className="transition-colors hover:text-cyan-400">
+              <Link href="/" className="transition-colors hover:text-cyan-400">
                 Home
-              </a>
+              </Link>
               <a
                 href="https://github.com/olorehq/olore"
                 className="transition-colors hover:text-cyan-400"
