@@ -1,3 +1,5 @@
+import { createRequire } from 'module';
+
 import { Command } from 'commander';
 import pc from 'picocolors';
 
@@ -12,9 +14,9 @@ import { prune } from './commands/prune.js';
 import { remove } from './commands/remove.js';
 import { search } from './commands/search.js';
 
-// Inlined at build time by tsup's `define` option — no runtime file read needed.
-declare const __CLI_VERSION__: string;
-const version = __CLI_VERSION__;
+const require = createRequire(import.meta.url);
+// Path relative to compiled dist/cli.js
+const { version } = require('../package.json');
 
 const program = new Command();
 
