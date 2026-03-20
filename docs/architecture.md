@@ -65,7 +65,6 @@ vault/
 │   │       ├── olore-lock.json   # Build metadata
 │   │       ├── SKILL.md
 │   │       ├── TOC.md
-│   │       ├── INDEX.md          # Compressed keyword→file index
 │   │       └── contents/
 │   │           └── *.md
 │   └── zod/
@@ -97,7 +96,6 @@ web/
 │   │       ├── olore-lock.json
 │   │       ├── SKILL.md
 │   │       ├── TOC.md
-│   │       ├── INDEX.md
 │   │       └── contents/
 │   │           └── *.md
 │   └── zod-docs/
@@ -105,7 +103,6 @@ web/
 │           ├── olore-lock.json
 │           ├── SKILL.md
 │           ├── TOC.md
-│           ├── INDEX.md
 │           └── contents/
 │               └── *.md
 └── config.json                   # User preferences
@@ -114,7 +111,6 @@ web/
 ├── olore-lock.json
 ├── SKILL.md
 ├── TOC.md
-├── INDEX.md
 └── contents/
     └── *.md
 ```
@@ -398,7 +394,7 @@ olore has two build tools for different audiences:
 | `/build-docs` | `.claude/skills/build-docs/` | Maintainers: build from GitHub configs | Downloads from GitHub repos |
 | `docs-packager` | `vault/packages/docs-packager/` | Users: package local docs | User's local `./docs` folder |
 
-Both tools generate the same output format (SKILL.md, TOC.md, INDEX.md, contents/) and use **shared templates** from `vault/packages/docs-packager/1.0.0/templates/` as the single source of truth.
+Both tools generate the same output format (SKILL.md, TOC.md, contents/) and use **shared templates** from `vault/packages/docs-packager/1.0.0/templates/` as the single source of truth.
 
 ### Template Structure
 
@@ -409,10 +405,7 @@ vault/packages/docs-packager/1.0.0/templates/
 ├── skill-tier3.md    # SKILL.md for large docs (> 100 files)
 ├── toc-tier1.md      # TOC.md for small docs
 ├── toc-tier2.md      # TOC.md for medium docs
-├── toc-tier3.md      # TOC.md for large docs
-├── index-tier1.md    # INDEX.md for small docs
-├── index-tier2.md    # INDEX.md for medium docs
-└── index-tier3.md    # INDEX.md for large docs
+└── toc-tier3.md      # TOC.md for large docs
 ```
 
 The internal `package-builder` agent reads these templates at runtime, ensuring consistency between maintainer-built packages and user-built packages.
