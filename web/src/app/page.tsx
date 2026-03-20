@@ -362,21 +362,40 @@ export default function Home() {
         <section className="border-b border-zinc-800 p-6">
           <h2 className="mb-6 text-xl font-bold text-zinc-100 uppercase">
             <span className="text-purple-500">&gt;&gt;</span> Official_Packages
-            <span className="ml-3 text-sm font-normal text-zinc-600">
-              ({packageNames.length})
-            </span>
           </h2>
           <div className="flex flex-wrap gap-2 font-mono text-xs">
-            {packageNames.map((pkg) => (
-              <a
+            {[
+              "nextjs",
+              "prisma",
+              "drizzle",
+              "zod",
+              "tailwindcss",
+              "clerk",
+              "supabase",
+              "sentry",
+              "playwright",
+              "hono",
+              "ai-sdk",
+              "bun",
+              "eslint",
+              "tanstack-query",
+              "zustand",
+            ].map((pkg) => (
+              <span
                 key={pkg}
-                href="/registry"
-                className="cursor-default border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-zinc-400 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
+                className="border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-zinc-400"
               >
                 {pkg}
-              </a>
+              </span>
             ))}
           </div>
+          <a
+            href="/registry"
+            className="mt-4 inline-block text-sm text-zinc-500 transition-colors hover:text-cyan-400"
+          >
+            + {packageNames.length - 15} more{" "}
+            <span className="text-zinc-600">&rarr;</span> Browse Registry
+          </a>
         </section>
 
         {/* Features */}
