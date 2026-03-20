@@ -1,0 +1,118 @@
+name: Refresh Registry
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours
+  workflow_dispatch: # Manual trigger
+
+concurrency:
+  group: refresh-registry
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    name: Refresh registry.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild registry.json with latest download counts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Building combined registry.json from all releases..."
+
+          gh api --paginate repos/olorehq/olore/releases \
+            --jq '.[] | select(.tag_name | test("@")) | {tag: .tag_name, published_at: .published_at, assets: [.assets[] | {name, size, download_count, browser_download_url}]}' \
+            > /tmp/releases.jsonl
+
+          REGISTRY=$(jq -n '{version: 2, updated: (now | todate), packages: {}}')
+
+          declare -A DESCRIPTIONS
+          for CONFIG in vault/configs/*.json; do
+            PKG_NAME=$(jq -r '.name' "$CONFIG")
+            PKG_DESC=$(jq -r '.description // ""' "$CONFIG")
+            DESCRIPTIONS[$PKG_NAME]="$PKG_DESC"
+          done
+
+          declare -A PKG_VERSIONS
+          declare -A PKG_LATEST
+
+          while IFS= read -r RELEASE; do
+            TAG=$(echo "$RELEASE" | jq -r '.tag')
+            NAME="${TAG%@*}"
+            VERSION="${TAG#*@}"
+            PUBLISHED=$(echo "$RELEASE" | jq -r '.published_at')
+
+            TARBALL_NAME="${NAME}-${VERSION}.tar.gz"
+            SHA256_NAME="${TARBALL_NAME}.sha256"
+
+            TARBALL_URL=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .browser_download_url')
+            TARBALL_SIZE=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .size')
+            DOWNLOADS=$(echo "$RELEASE" | jq -r --arg n "$TARBALL_NAME" '.assets[] | select(.name == $n) | .download_count')
+
+            if [ -z "$TARBALL_URL" ] || [ "$TARBALL_URL" = "null" ]; then
+              continue
+            fi
+
+            SHA256_URL=$(echo "$RELEASE" | jq -r --arg n "$SHA256_NAME" '.assets[] | select(.name == $n) | .browser_download_url')
+            INTEGRITY=""
+            if [ -n "$SHA256_URL" ] && [ "$SHA256_URL" != "null" ]; then
+              HASH=$(curl -sL "$SHA256_URL" | head -c 100 | tr -d '[:space:]')
+              if [ -n "$HASH" ]; then
+                INTEGRITY="sha256-${HASH}"
+              fi
+            fi
+
+            FILES=0
+            LOCK_FILE="vault/packages/${NAME}/${VERSION}/olore-lock.json"
+            if [ -f "$LOCK_FILE" ]; then
+              FILES=$(jq -r '.files // 0' "$LOCK_FILE")
+            fi
+
+            VERSION_JSON=$(jq -n \
+              --arg v "$VERSION" \
+              --argjson f "$FILES" \
+              --argjson s "${TARBALL_SIZE:-0}" \
+              --arg i "$INTEGRITY" \
+              --arg d "$TARBALL_URL" \
+              --arg r "$PUBLISHED" \
+              --argjson dl "${DOWNLOADS:-0}" \
+              '{version: $v, files: $f, size: $s, integrity: $i, downloadUrl: $d, releasedAt: $r, downloads: $dl}')
+
+            if [ -z "${PKG_VERSIONS[$NAME]+x}" ]; then
+              PKG_VERSIONS[$NAME]="{}"
+            fi
+            PKG_VERSIONS[$NAME]=$(echo "${PKG_VERSIONS[$NAME]}" | jq --arg v "$VERSION" --argjson vj "$VERSION_JSON" '. + {($v): $vj}')
+            PKG_LATEST[$NAME]="$VERSION"
+          done < /tmp/releases.jsonl
+
+          for NAME in "${!PKG_VERSIONS[@]}"; do
+            DESC="${DESCRIPTIONS[$NAME]:-}"
+            LATEST="${PKG_LATEST[$NAME]}"
+            VERSIONS_OBJ="${PKG_VERSIONS[$NAME]}"
+
+            REGISTRY=$(echo "$REGISTRY" | jq \
+              --arg name "$NAME" \
+              --arg desc "$DESC" \
+              --arg latest "$LATEST" \
+              --argjson versions "$VERSIONS_OBJ" \
+              '.packages[$name] = {description: $desc, latest: $latest, versions: $versions}')
+          done
+
+          REGISTRY=$(echo "$REGISTRY" | jq '.packages = (.packages | to_entries | sort_by(.key) | from_entries)')
+
+          echo "$REGISTRY" > /tmp/registry.json
+          PKG_COUNT=$(echo "$REGISTRY" | jq '.packages | length')
+          echo "Built registry.json with ${PKG_COUNT} packages"
+
+          gh release delete registry --yes --cleanup-tag 2>/dev/null || true
+          gh release create registry \
+            --title "Package Registry" \
+            --notes "Auto-generated. Updated: $(date -u +%Y-%m-%dT%H:%M:%SZ). Packages: ${PKG_COUNT}" \
+            /tmp/registry.json
+
+          echo "Published registry.json"

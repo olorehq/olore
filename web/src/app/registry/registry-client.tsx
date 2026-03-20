@@ -22,39 +22,29 @@ export function RegistryClient({ packages }: { packages: PackageInfo[] }) {
   const [loadingDownloads, setLoadingDownloads] = useState(true);
   const [sortBy, setSortBy] = useState<"name" | "downloads" | "files">("name");
 
-  // Fetch download counts from GitHub Releases API
+  // Fetch download counts from registry.json (updated every 6h by cron)
   useEffect(() => {
     async function fetchDownloads() {
       try {
+        const res = await fetch(
+          "https://github.com/olorehq/olore/releases/download/registry/registry.json"
+        );
+        if (!res.ok) return;
+
+        const registry = await res.json();
         const counts: DownloadCounts = {};
-        let page = 1;
-        let hasMore = true;
 
-        while (hasMore) {
-          const res = await fetch(
-            `https://api.github.com/repos/olorehq/olore/releases?per_page=100&page=${page}`
-          );
-          if (!res.ok) break;
-
-          const releases = await res.json();
-          if (releases.length === 0) {
-            hasMore = false;
-            break;
-          }
-
-          for (const release of releases) {
-            const tag = release.tag_name;
-            if (!tag.includes("@")) continue;
-
-            for (const asset of release.assets) {
-              if (asset.name.endsWith(".tar.gz")) {
-                counts[tag] = (counts[tag] || 0) + asset.download_count;
-              }
+        for (const [name, pkg] of Object.entries(
+          registry.packages as Record<
+            string,
+            { versions: Record<string, { downloads?: number }> }
+          >
+        )) {
+          for (const [version, info] of Object.entries(pkg.versions)) {
+            if (info.downloads) {
+              counts[`${name}@${version}`] = info.downloads;
             }
           }
-
-          if (releases.length < 100) hasMore = false;
-          page++;
         }
 
         setDownloads(counts);
