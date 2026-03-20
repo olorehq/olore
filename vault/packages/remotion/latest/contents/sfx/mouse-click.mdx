@@ -1,0 +1,44 @@
+---
+image: /generated/articles-docs-sfx-mouse-click.png
+title: 'mouseClick'
+crumb: '@remotion/sfx'
+---
+
+# mouseClick<AvailableFrom v="4.0.429" />
+
+import {PlayButton} from './PlayButton';
+
+<PlayButton src="https://remotion.media/mouse-click.wav" />
+<br />
+
+A URL pointing to a mouse click sound effect WAV file.
+
+## Example
+
+```tsx twoslash title="MyComp.tsx"
+import {mouseClick} from '@remotion/sfx';
+import {Audio} from '@remotion/media';
+
+const MyVideo = () => {
+  return <Audio src={mouseClick} />;
+};
+```
+
+## Value
+
+```bash
+https://remotion.media/mouse-click.wav
+```
+
+## Duration
+
+0.397 seconds (2 channels, 44100 Hz, 16-bit)
+
+## Attribution
+
+Mouse Click Sound.mp3 by Pixeliota - [freesound.org/s/678248](https://freesound.org/s/678248/) - License: Creative Commons 0
+
+## See also
+
+- [`uiSwitch`](/docs/sfx/ui-switch)
+- [`whip`](/docs/sfx/whip)
