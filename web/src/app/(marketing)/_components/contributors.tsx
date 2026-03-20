@@ -19,7 +19,7 @@ export function Contributors() {
           <img
             src="https://contrib.rocks/image?repo=olorehq/olore&max=12"
             alt="Contributors"
-            className="opacity-60 grayscale transition-opacity hover:opacity-80 hover:opacity-100 hover:grayscale-0"
+            className="opacity-60 grayscale transition-opacity hover:opacity-100 hover:grayscale-0"
           />
         </a>
       </div>
