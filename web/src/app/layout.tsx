@@ -28,20 +28,11 @@ export const metadata: Metadata = {
     siteName: "olore",
     type: "website",
     locale: "en_US",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "olore - Version-pinned docs for AI coding agents",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og-image.png"],
   },
   keywords: [
     "olore",
