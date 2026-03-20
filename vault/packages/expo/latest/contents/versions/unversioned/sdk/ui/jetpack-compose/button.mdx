@@ -1,0 +1,72 @@
+---
+title: Button
+description: A Jetpack Compose Button component for displaying native buttons.
+sourceCodeUrl: 'https://github.com/expo/expo/tree/main/packages/expo-ui'
+packageName: '@expo/ui'
+platforms: ['android']
+---
+
+import APISection from '~/components/plugins/APISection';
+import { APIInstallSection } from '~/components/plugins/InstallSection';
+
+Expo UI Button matches the official Jetpack Compose [Button API](https://developer.android.com/develop/ui/compose/components/button) and supports variants, icons, custom colors, and shapes.
+
+## Installation
+
+<APIInstallSection />
+
+## Usage
+
+### Basic button
+
+```tsx BasicButtonExample.tsx
+import { Host, Button } from '@expo/ui/jetpack-compose';
+
+export default function BasicButtonExample() {
+  return (
+    <Host matchContents>
+      <Button onPress={() => alert('Pressed!')}>Press me</Button>
+    </Host>
+  );
+}
+```
+
+### Button variants
+
+Use the `variant` prop to change the button's appearance. Available variants are: `default`, `bordered`, `borderless`, `outlined`, and `elevated`.
+
+```tsx ButtonVariantsExample.tsx
+import { Host, Button, Column } from '@expo/ui/jetpack-compose';
+
+export default function ButtonVariantsExample() {
+  return (
+    <Host matchContents>
+      <Column verticalArrangement={{ spacedBy: 8 }}>
+        <Button variant="default" onPress={() => {}}>
+          Default
+        </Button>
+        <Button variant="bordered" onPress={() => {}}>
+          Bordered
+        </Button>
+        <Button variant="borderless" onPress={() => {}}>
+          Borderless
+        </Button>
+        <Button variant="outlined" onPress={() => {}}>
+          Outlined
+        </Button>
+        <Button variant="elevated" onPress={() => {}}>
+          Elevated
+        </Button>
+      </Column>
+    </Host>
+  );
+}
+```
+
+## API
+
+```tsx
+import { Button } from '@expo/ui/jetpack-compose';
+```
+
+<APISection packageName="expo-ui/jetpack-compose/button" apiName="Button" />

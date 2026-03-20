@@ -1,0 +1,60 @@
+---
+title: Last Modified Time
+description: Get the last edit time of a file in Github repository
+---
+
+## Usage
+
+Pass your repository name, and the path to file.
+
+```ts
+import { getGithubLastEdit } from 'fumadocs-core/content/github';
+
+const time = await getGithubLastEdit({
+  owner: 'fuma-nama',
+  repo: 'fumadocs',
+  // example: "content/docs/index.mdx"
+  path: `content/docs/${page.path}`,
+});
+```
+
+### Github Token
+
+Notice that you may easily reach the rate limit in development mode. Hence, you
+should pass a Github token for a higher rate limit.
+
+Learn more about
+[Authenticating to the REST API](https://docs.github.com/en/rest/overview/authenticating-to-the-rest-api).
+
+```ts
+import { getGithubLastEdit } from 'fumadocs-core/content/github'
+
+ const time = await getGithubLastEdit({
+    ...,
+    token: `Bearer ${process.env.GIT_TOKEN}`
+  })
+```
+
+Also, you can skip this in development mode if you don't need that
+functionality.
+
+```ts
+process.env.NODE_ENV === 'development'? null : getGithubLastEdit(...)
+```
+
+### Custom GitHub Base URL
+
+If you need to access GitHub a instance at a url other than `https://api.github.com`, you can override the base URL:
+
+```ts
+import { getGithubLastEdit } from 'fumadocs-core/content/github';
+
+const time = await getGithubLastEdit({
+  owner: 'your-org',
+  repo: 'your-repo',
+  path: `content/docs/${page.path}`,
+  baseUrl: 'https://api.octocorp.ghe.com', // Your custom GitHub API URL
+});
+```
+
+The `baseUrl` parameter defaults to `'https://api.github.com'` if not specified.

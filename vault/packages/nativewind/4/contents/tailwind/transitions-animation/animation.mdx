@@ -1,0 +1,44 @@
+---
+title: Animation
+---
+
+import Compatibility from "../_compatibility.mdx";
+import Usage from "../_usage.tsx";
+
+{/* # Animation */}
+
+## Usage
+
+<Usage />
+
+Animations are powered by `react-native-reanimated` and support keyframe-based CSS animations including `from`/`to` blocks, multi-step keyframes, per-frame timing functions (`cubic-bezier`), and transform animations.
+
+## Supported Features
+
+- Keyframe animations with `from`/`to` and percentage-based frames
+- Transform animations (rotate, translateX, translateY, scale, etc.)
+- Starting transform values (animating from a non-default transform)
+- Per-frame `animation-timing-function` (e.g. `cubic-bezier`)
+- Animations triggered by pseudo-classes (e.g. `:active`)
+- Stopping animations by removing the animation class
+- `animation-none` to halt an active animation
+- Changing `animation-duration` mid-animation (resets and restarts)
+- Infinite animations with `animation-iteration-count: infinite`
+
+## Compatibility
+
+<Compatibility
+  experimental={[
+    "animate-none",
+    "animate-spin",
+    "animate-ping",
+    "animate-pulse",
+    "animate-bounce",
+    "animate-[n]",
+  ]}
+/>
+
+## Known Limitations
+
+- Animations currently only work with the `style` prop (not all mapped props)
+- We are looking for contributors to help improve performance

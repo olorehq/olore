@@ -1,0 +1,47 @@
+import { Callout } from 'nextra/components'
+
+# Event Approval: Review unexpected events before they are visible
+
+<Callout type="info">
+  Customers on an Enterprise can access the Event Approval feature. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+## Overview
+
+Event Approval is a Data Governance feature for organizations that want visibility and control over all new events sent to their Mixpanel project. The feature is a project-level setting that hides new events by default and notifies admins when those new events come in, so they can then mark them as visible for everyone to see. 
+
+
+### Enabling Event Approval
+
+To enable Event Approval, navigate to Lexicon, scroll to Event Approval under the Data Governance section, and click the Event Approval toggle.
+
+When enabling this setting, input email addresses or aliases to be notified when a new event is ingested. Admins can also set up a Slack channel to be notified when a new event is ingested.
+
+You can also enable new property detection, which will notify the same email addresses or Slack channels about new properties detected on new and existing events.
+
+Notifications are sent once per day. If multiple events are implemented in a project within one day, the notification will batch all these events. 
+
+Only Project Admins or Owners can enable this setting, and it's only available on Enterprise plans. 
+
+![event-approval-settings](/event-approval-settings.png)
+
+
+### Lexicon Workflow
+
+When an admin receives a notification that new events have been ingested, they can click the "View New Events" button, which will take them to a Lexicon view of hidden events. New events will have a "New" tag and be sorted to the top of the list. 
+
+From there, an admin can take actions such as marking the event as visible, adding a description, or a tag. 
+
+Events will be marked as "New" as long as the following criteria are met:
+- It hasn’t been modified
+- It is hidden
+- It was created within the last 30 days
+
+![lexicon-event-approval](/Lexicon-Event-Approval.png)
+
+If new property detection is enabled, notifications will also include a "View New Properties" button, which will take them to a Lexicon view of new properties.  Properties will be marked as "New" as long as the following criteria are met:
+- It was created within the last 30 days
+
+### Additional Notes
+- Please note that all [custom properties](/docs/features/custom-properties) will **not** be marked as "New"
+- Event Approval is not available for projects with > 3000 hidden events and will be auto-disabled if projects exceed this limit

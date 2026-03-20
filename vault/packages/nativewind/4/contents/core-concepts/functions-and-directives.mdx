@@ -1,0 +1,138 @@
+---
+title: Functions & Directives
+---
+
+{/* # Functions & Directives */}
+
+## Overview
+
+Nativewind allows the same functions and directives as Tailwind CSS. Please refer to the [Tailwind CSS documentation](https://tailwindcss.com/docs/functions-and-directives).
+
+These functions can be used within your theme, arbitrary class names, or within your custom CSS.
+
+In addition to the functions and directives provided by Tailwind CSS, Nativewind polyfills the following CSS functions:
+
+## var()
+
+`var()` is a CSS function that allows you to use the value of a custom property (sometimes called a "CSS variable") inside the value of another property.
+
+```js title="tailwind.config.js"
+module.exports = {
+  theme: {
+    extend: {
+      color: {
+        custom: "var(--my-custom-color)",
+      },
+    },
+  },
+};
+```
+
+```tsx
+// style: { color: "red" }
+<Text className="text-custom [--my-custom-color:red]">
+
+// style: { color: "green" }
+<View style={vars({ "--my-custom-color": "green" })}>
+  <Text className="text-custom">
+</View>
+```
+
+## calc()
+
+`calc()` is a CSS function that allows you to perform calculations when specifying CSS property values. It can be used to perform addition, subtraction, multiplication, and division and can be used with other CSS functions such as `var()`
+
+### Supported Modes
+
+Nativewind supports `calc()` with the following unit types:
+
+- **Numerical** (`px`): `calc(10px + 100px)` resolves to `110`
+- **Percentage** (`%`): `calc(var(--width) + 20%)` resolves to `"30%"` (when `--width` is `10%`)
+- **`rem` units**: `calc(2rem * 5)` resolves correctly using the platform rem value
+- **`em` units**: `calc(2em * 2)` resolves relative to the element's font size
+- **CSS variables**: `calc(var(--variable) + 20px)` resolves with the variable's runtime value
+- **Inside color functions**: `hsl(calc(var(--H) + 20), calc(var(--S) - 10%), calc(var(--L) + 30%))` works for dynamic color calculations
+
+```css
+// Numerical calc
+.element {
+  width: calc(10px + 100px);
+}
+
+// With rem units
+.element {
+  width: calc(2rem * 5);
+}
+
+// With CSS variables
+.element {
+  width: calc(var(--my-variable) + 20px);
+}
+
+// Inside color functions
+.element {
+  background-color: hsl(
+    calc(var(--H) + 20),
+    calc(var(--S) - 10%),
+    calc(var(--L) + 30%)
+  )
+}
+```
+
+### Limitations
+
+#### Mixing Unit Types
+
+React Native's layout engine does not support mixing numerical and percentage units in the same expression. Ensure all operands use the same unit type.
+
+```css
+.element {
+  // ❌ This mixes numerical and percentage units
+  width: calc(100% - 20px);
+}
+
+.element {
+  // ✅  This only uses numerical units
+  --width: 100rem;
+  width: calc(var(--width) - 20px);
+}
+
+.element {
+  // ✅  This only uses percentage units
+  --width: 100%;
+  width: calc(var(--width) - 20%);
+}
+```
+
+#### Custom Properties
+
+Nativewind does not support operations in custom properties. Instead, you can use `calc()` with custom properties by first defining the custom property and then using `calc()` to perform the operation.
+
+```css
+.element {
+  // ❌ Operators cannot be in a custom property
+  --width: 100% - 20%;
+  width: calc(var(--width));
+}
+
+.element {
+  // ✅  Operator is part of the calc() expression
+  --width: 100%;
+  width: calc(var(--width) - 20%);
+}
+```
+
+## env()
+
+`env()` is a CSS function that allows you to access device specific environment information.
+
+Nativewind supports:
+
+```css
+env(safe-area-inset-top);
+env(safe-area-inset-bottom);
+env(safe-area-inset-left);
+env(safe-area-inset-right);
+```
+
+Please see [Safe Area Insets](../tailwind//new-concepts/safe-area-insets.mdx) for more information.

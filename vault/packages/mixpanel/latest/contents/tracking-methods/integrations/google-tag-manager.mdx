@@ -1,0 +1,221 @@
+import { Callout, Steps } from 'nextra/components'
+
+# Google Tag Manager
+
+This page walks through Mixpanel's native integration with Google Tag Manager (GTM). The source code is hosted [here](https://github.com/mixpanel/mixpanel-gtm-template) for reference.
+
+## Installation
+
+Our [video walkthrough](https://user-images.githubusercontent.com/556882/154125933-b584de10-b7fa-4668-b815-7429192d867a.mp4) demonstrates how get started using our GTM template.
+
+<video playsInline controls className='nx-rounded-lg'>
+  <source
+    src='https://user-images.githubusercontent.com/556882/154125933-b584de10-b7fa-4668-b815-7429192d867a.mp4'
+    type='video/mp4'
+  />
+</video>
+
+The easiest way to install the custom template is to locate it in the [Google Tag Manager community template gallery](https://tagmanager.google.com/gallery/#/owners/mixpanel/templates/mixpanel-gtm-template). You can install the template via the Google Tag Manager user interface.
+
+To **manually install** the template, e.g. for debugging prior to the changes being published in the community template gallery, follow the steps below:
+
+1. Download the `./src/template.tpl` file locally.
+2. Open a **Google Tag Manager** _Web_ container via the [Google Tag Manager user interface](https://tagmanager.google.com/). Preferably one that is already deployed on a website where you can test the template with real use cases. (Learn more about creating a container [here](https://support.google.com/tagmanager/answer/14842164?hl=en&ref_topic=15191151&sjid=13808649871508707391-NC))
+3. In the GTM UI, browse to **Templates**, and in the box titled **Tag Templates**, click the blue **New** button.
+4. Once the **Template Editor** is open, click the menu (three vertical dots) in the top-right corner of the window and choose **Import**.
+5. Select the `template.tpl` file you downloaded locally.
+6. Follow the prompts. Once the import is complete, the Template Editor should show the Mixpanel template in edit mode.
+7. Click **Save** to save the template, and then proceed to close the Template Editor.
+8. In the GTM UI, browse to **Tags** and click **New** to create a new tag.
+9. From the list of available tag templates, choose the **Mixpanel** template you just imported to the container.
+
+## How It Works
+
+The template brings the functionality of the [Mixpanel JS SDK](/docs/tracking-methods/sdks/javascript) to Google Tag Manager so that you can implement Mixpanel through the Tag Manager interface without needing to directly edit your website's code.
+
+GTM will load our custom-created [Javascript wrapper](https://github.com/mixpanel/mixpanel-js/blob/master/src/loaders/mixpanel-js-wrapper.md) with predefined tags. These tags correspond to core [Javascript SDK methods](/docs/tracking-methods/integrations/google-tag-manager#tag-to-function-mapping). You can decide when to trigger each tag (on specific pages, button clicks, etc.).
+
+The wrapper overcomes the restrictions GTM's templating system places on available Javascript APIs.
+
+## Initialization
+
+When _any_ Mixpanel GTM tag fires, it automatically tries to initialize a new instance using the **Initialization Options** configured in the tag. If an instance with the given name has already been initialized on the page, the initialization process will be skipped.
+
+This way, the user does not need to worry about initialization; just ensure that the Initialization Options are configured consistently across the tags.
+
+### Custom Initialization Options
+
+To add initialization options for capabilities like [Session Replay](/docs/tracking-methods/sdks/javascript#implementation--sampling) (`record_sessions_percent`), [Heatmaps](/docs/tracking-methods/sdks/javascript#heatmaps) (`record_heatmap_data`), routing data to [EU Servers for EU Data Residency](/docs/tracking-methods/sdks/javascript#eu-data-residency), or routing data to [IN Servers for India Data Residency](/docs/tracking-methods/sdks/javascript#india-data-residency) to Google Tag Manager:
+
+1. Add a new tag in GTM and choose the Mixpanel tag type
+
+2. For the **Project Token** field, enter [your Mixpanel project token](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+3. For **Tag Type**, select **init** from the dropdown
+
+4. For **Initialization**, choose **Set Options Manually**
+
+5. In the **Option** section, add the relevant key-value pair according to your needs. The config options are listed [here](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelset_config).
+
+For example:
+
+- `record_heatmap_data` as the key and set a boolean value of `true`
+- `api_host: https://api-eu.mixpanel.com` if your project has EU Data Residency
+- `api_host: https://api-in.mixpanel.com` if your project has India Data Residency
+
+6. For the Triggering section, choose an early GTM lifecycle event, such as `Initialization - All Pages` or `Consent Initialization - All Pages`.
+
+### Google Tag Manager with Custom Autocapture Configurations
+
+To use [autocapture initialization options](/docs/tracking-methods/sdks/javascript#autocapture), such as `capture_extra_attrs` with GTM, you will need to create a [custom Javascript variable](https://support.google.com/tagmanager/answer/7683362?hl=en) in GTM, then use that variable for your Autocapture configuration.
+
+<Steps>
+
+{<h3>1. Create a Custom Javascript Variable in GTM</h3>}
+
+First, create a Custom Javascript variable that returns the autocapture configuration object:
+
+1. In GTM, go to **Variables > User-Defined Variables > New**
+2. Choose **Custom Javascript** as the variable type
+3. Add code that returns the autocapture configuration object, including the `capture_extra_attrs` option
+
+For example, the Custom Javascript variable might look like this:
+
+```javascript Javascript
+function() {
+ return {
+   pageview: "full-url",
+   click: true,
+   input: true,
+   scroll: true,
+   submit: true,
+   capture_extra_attrs: ['data-cta-name', 'data-cta-position']
+ };
+}
+```
+
+{<h3>2. Use the Variable in Your Mixpanel Tag</h3>}
+
+Once the custom variable is created:
+
+1. Edit the Mixpanel initialization tag in GTM
+
+2. For the Autocapture option, instead of selecting "Enabled" or "Disabled" from the dropdown, select the custom Javascript variable
+
+{<h3>3. Verify Your Implementation</h3>}
+
+After setting up the tag with the custom variable:
+
+1. Use GTM's [preview mode](https://support.google.com/tagmanager/answer/6107056?hl=en&sjid=13808649871508707391-NC) to verify that the tag is firing correctly
+
+2. Check in the browser's developer console that the Mixpanel configuration includes the custom autocapture settings
+
+3. Verify in Mixpanel that the extra attributes are being captured with your events
+
+This approach allows for customized autocapture options beyond the simple enabled/disabled toggle that's available in the standard GTM template interface.
+
+</Steps>
+
+## Sending Mixpanel Commands
+
+After adding the **Project Token** to its respective field, you need to choose what **type** of tag to use. Each type corresponds with some command you can use with the Mixpanel Javascript API.
+
+<Callout type="warning">
+Note that `init`, `push`, and any of the "getter" commands are not supported in the template.
+</Callout>
+
+The more complex tag types (`group`, `people`, and `track`) are elevated to the top of the drop-down menu with the `-` prefix to separate them from the other commands.
+
+Once you select a tag type, **additional options may appear.** Please have a look at the SDK reference for details on how to configure these options.
+
+### Tag to Function Mapping
+
+**Essential Tags**
+
+These are tags you will likely need in any Mixpanel-GTM implementation:
+
+| GTM Tag Type     | Equivalent Mixpanel SDK Method (Link to Spec)                                                                                                                       | Function Description                                                                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - Track          | [`track`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack)                   | Tracks an event. This is the most important and frequently used Mixpanel function.                                                                                                                                   |
+| - Track Pageview | [`track_pageview`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack_pageview) | Tracks a default Mixpanel page view event, which can include extra default event properties to improve page view data                                                                                                |
+| init             | [`init`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelinit)                     | Initializes a new instance of Mixpanel                                                                                                                                                                               |
+| identify         | [`identify`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelidentify)             | Identifies a user with a unique ID to track user activity across devices and ties a user to their events                                                                                                             |
+| register         | [`register`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelregister)             | Registers a set of [super properties](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#setting-super-properties), which are included with all events. Overwrites existing super properties if present |
+| reset            | [`reset`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelreset)                   | Clears super properties and generates a new random distinct_id                                                                                                                                                       |
+
+**Group Tags for Group Analytics**
+
+| GTM Tag Type   | Equivalent Mixpanel SDK Method (Link to Spec)                                                                                                                      | Function Description                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| add_group      | [`add_group`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneladd_group)          | Adds a new group for the user                                                     |
+| remove_group   | [`remove_group`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelremove_group)    | Removes a group from the user                                                     |
+| set_group      | [`set_group`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelset_group)          | Registers the current user into one/many groups                                   |
+| group.remove   | [`group.remove`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelgroupremove)     | Removes a group property from a group. The value will be ignored if doesn't exist |
+| group.set      | [`group.set`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelgroupset)           | Sets properties on a group, overwriting existing values if present                |
+| group.set_once | [`group.set_once`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelgroupset_once) | Set properties on a group, only if they do not yet exist                          |
+| group.union    | [`group.union`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelgroupunion)       | Merges a given list with a list-valued group property, excluding duplicate values |
+| group.unset    | [`group.unset`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelgroupunset)       | Unsets properties on a group permanently                                          |
+
+**People Tags for User Profiles**
+
+| GTM Tag Type       | Equivalent Mixpanel SDK Method (Link to Spec)                                                                                                                              | Function Description                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| people.append      | [`people.append`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeopleappend)           | Appends a value to a list-typed user property                                              |
+| people.delete_user | [`people.delete_user`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeopledelete_user) | Permanently deletes the current user profile from Mixpanel (using the current distinct_id) |
+| people.increment   | [`people.increment`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeopleincrement)     | Increments/decrements numeric user profile properties                                      |
+| people.remove      | [`people.remove`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeopleremove)           | Removes a value from a list-typed user property                                            |
+| people.set         | [`people.set`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeopleset)                 | Sets properties on a user profile, overwriting existing values if present                  |
+| people.set_once    | [`people.set_once`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeople.set_once)      | Sets properties on a user profile, only if they do not yet exist                           |
+| people.union       | [`people.union`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeople.union)            | Merges a given list with a list-valued user property, excluding duplicate values           |
+| people.unset       | [`people.unset`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelpeople.unset)            | Unsets properties on a user profile permanently                                            |
+
+**Additional Mappings**
+
+| GTM Tag Type              | Equivalent Mixpanel SDK Method (Link to Spec)                                                                                                                                             | Function Description                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| alias                     | [`alias`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelalias)                                         | Creates an alias which Mixpanel will use to remap one id to another (Only relevant for projects using [Legacy ID Management](https://github.com/mixpanel/docs/blob/main/legacy/aliases.md#manage-identity-with-alias-and-identify-methods) or [Original ID Merge](https://docs.mixpanel.com/docs/tracking-methods/id-management/identifying-users-original)) |
+| clear_opt_in_out_tracking | [`clear_opt_in_out_tracking`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelclear_opt_in_out_tracking) | Clears the user's opt in/out status and sets it to the default specified in `init` (`false` by default)                                                                                                                                                                                                                                                      |
+| disable                   | [`disable`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneldisable)                                     | Disables specific events from being tracked                                                                                                                                                                                                                                                                                                                  |
+| opt_in_tracking           | [`opt_in_tracking`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelopt_in_tracking)                     | Opts the user in to data tracking and cookies/localstorage                                                                                                                                                                                                                                                                                                   |
+| opt_out_tracking          | [`opt_out_tracking`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelopt_out_tracking)                   | Opts the user out of data tracking and cookies/localstorage                                                                                                                                                                                                                                                                                                  |
+| register_once             | [`register_once`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelregister_once)                         | Registers a set of super properties only once. This will not overwrite existing super properties                                                                                                                                                                                                                                                             |
+| set_config                | [`set_config`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelset_config)                               | Updates the configuration for the Mixpanel instance                                                                                                                                                                                                                                                                                                          |
+| time_event                | [`time_event`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltime_event)                               | Starts timing an event by including the time between this call and a later 'track' call for the same event as the `$duration` event property                                                                                                                                                                                                                 |
+| track_forms               | [`track_forms`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack_forms)                             | Tracks form submissions                                                                                                                                                                                                                                                                                                                                      |
+| track_links               | [`track_links`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack_links)                             | Track clicks on a set of document elements                                                                                                                                                                                                                                                                                                                   |
+| start_session_recording   | [`start_session_recording`](https://docs.mixpanel.com/docs/session-replay/implement-session-replay/session-replay-web#start-capturing-replay-data)                  | Forces recording to begin, regardless of the `record_sessions_percent` init option. This will have no effect if replay data collection is already in progress                                                                                                                                                                                                |
+| stop_session_recording    | [`stop_session_recording`](https://docs.mixpanel.com/docs/session-replay/implement-session-replay/session-replay-web#stop-capturing-replay-data)                    | Stops any active replay data collection. This will have no effect if there is no replay data collection in progress                                                                                                                                                                                                                                          |
+| unregister                | [`unregister`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelunregister)                               | Delete a super property stored with the current user                                                                                                                                                                                                                                                                                                         |
+
+## Firing The Tag
+
+Once you are happy with your tag, add a [Trigger](https://support.google.com/tagmanager/topic/7679384?hl=en&ref_topic=3441647,3441645,2789291,&sjid=13808649871508707391-NC) to it. For example, to trigger your tag with every page load, add the **All Pages** trigger.
+
+Be sure to save the tag once you are done.
+
+## Testing
+
+You can then enter [Preview mode](https://support.google.com/tagmanager/answer/6107056?hl=en&sjid=13808649871508707391-NC) by clicking the blue **Preview** button in the Google Tag Manager UI. This opens a new tab with your website running the GTM container, and you can proceed to test the Mixpanel tag as if the container were published. In the Tag Assistant Preview tab, you can see additional information about the trigger events, tags, and variables that fire while you are browsing the page in Preview mode.
+
+You can also enable the Javascript SDK's [Debug Mode](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#debug-mode) by following [Steps 1-4](http://localhost:3000/docs/tracking-methods/integrations/google-tag-manager#custom-initialization-options). Then, add `debug` and `true` as an Option key and Option value, respectively.
+
+## FAQ
+
+### Why is my Mixpanel tag not firing?
+
+- Ensure that the tag is properly configured with the correct Project Token in your Project Settings
+- Verify that the trigger conditions are met. For example, if you set the tag to fire on "All Pages," make sure you are testing on a page that matches this condition.
+- Check the browser console for any Javascript errors that might be preventing the tag from executing
+- Use the GTM Preview mode to see if the tag is firing and if there are any errors in the console
+
+### Why are my events not found in Mixpanel?
+
+- Check if the Project Token in the GTM tag matches the one in your Mixpanel project settings
+- Use GTM Preview mode to ensure tags are firing.
+- Check the browser console for Mixpanel logs (enable debug mode).
+- Disable ad blockers, as they can [block client-side tracking](https://docs.mixpanel.com/docs/tracking-best-practices/debugging#ad-blockers-and-do-not-track-settings).
+- Make sure your variables are set up correctly.
+
+### Does the Mixpanel template work with iOS/Android/AMP/Server Containers?
+
+The Mixpanel GTM template _only_ works with web containers.

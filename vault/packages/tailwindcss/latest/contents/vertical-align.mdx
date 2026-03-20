@@ -1,0 +1,154 @@
+---
+title: "Vertical Align"
+shortTitle: Vertical Align
+description: "Utilities for controlling the vertical alignment of an inline or table-cell box."
+---
+
+import utilities from 'utilities?plugin=verticalAlign'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Baseline
+
+Use `align-baseline` to align the baseline of an element with the baseline of its parent.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-baseline">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-baseline** ...">...</span>
+```
+
+### Top
+
+Use `align-top` to align the top of an element and its descendants with the top of the entire line.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-top">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-top** ...">...</span>
+```
+
+### Middle
+
+Use `align-middle` to align the middle of an element with the baseline plus half the x-height of the parent.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-middle">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-middle** ...">...</span>
+```
+
+### Bottom
+
+Use `align-bottom` to align the bottom of an element and its descendants with the bottom of the entire line.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-bottom">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-bottom** ...">...</span>
+```
+
+### Text Top
+
+Use `align-text-top` to align the top of an element with the top of the parent element's font.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-text-top">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-text-top** ...">...</span>
+```
+
+### Text Bottom
+
+Use `align-text-bottom` to align the bottom of an element with the bottom of the parent element's font.
+
+```html {{ example: true }}
+<div class="bg-white rounded-lg shadow-lg ring-1 ring-slate-900/5 py-4 max-w-md mx-auto dark:bg-slate-800 dark:ring-0 dark:highlight-white/5">
+  <div class="leading-none relative">
+    <span class="w-0 h-8 inline-block align-text-bottom">
+      <span class="absolute top-0 border-slate-200 border-t border-b border-dashed w-full h-8 dark:border-slate-700"></span>
+      <span class="absolute top-0 border-slate-200 border-b border-dashed w-full h-4 dark:border-slate-700"></span>
+    </span>
+    <span class="relative z-10 text-slate-700 font-medium px-4 dark:text-slate-200">The quick brown fox jumps over the lazy dog.</span>
+  </div>
+</div>
+```
+
+```html
+<span class="inline-block **align-text-bottom** ...">...</span>
+```
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="align-middle" featuredClass="align-top" element="p" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="align-middle" featuredClass="align-top" element="p" />
+
+---
+
+## Using custom values
+
+### Arbitrary values
+
+<ArbitraryValues property="vertical-align" featuredClass="align-[4px]" hasTheme={false} />

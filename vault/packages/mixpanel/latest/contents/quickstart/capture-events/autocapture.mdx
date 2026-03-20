@@ -1,0 +1,33 @@
+import { Callout, Tabs } from "nextra/components";
+
+import ExtendedButton from "/components/ExtendedButton/ExtendedButton";
+import ExtendedTabs from "/components/ExtendedTabs/ExtendedTabs";
+
+import { dataItems } from "/utils/constants";
+
+# Autocapture
+
+Starting with SDK version 2.60.0, the Javascript SDK can autocapture events when you enable it. To do so, enable the autocapture configuration:
+```javascript
+// create an instance of the Mixpanel object
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    autocapture: true,    // enable autocapture
+});
+```
+
+If you'd like to change the default Autocapture settings, you can use custom configs. These are the default configs:
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+  autocapture: {
+    pageview: "full-url",
+    click: true,    
+    input: true,
+    rage_click: true,
+    dead_click: true,
+    scroll: true,
+    submit: true,
+    capture_text_content: false,
+  },
+});
+```
+[You can read more about custom configuration of Autocapture here](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript).

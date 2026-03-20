@@ -1,0 +1,174 @@
+import { Callout } from 'nextra/components'
+
+# Implement Feature Flags (Web)
+
+## Overview
+
+This developer guide will assist you in configuring your web platform for Feature Flags using the [Mixpanel JavaScript SDK](/docs/tracking-methods/sdks/javascript). Feature Flags allow you to control the rollout of your features, conduct A/B testing, and manage application behavior without deploying new code.
+
+For complete JavaScript SDK documentation, see the [JavaScript SDK guide](/docs/tracking-methods/sdks/javascript).
+
+## Prerequisites
+
+Before implementing Feature Flags, ensure:
+
+- You are on an Enterprise subscription plan and have the latest version of the SDK installed (minimum supported version is [`v2.71.0`](https://github.com/mixpanel/mixpanel-js/releases/tag/v2.71.0)). If not, please follow [this doc](/docs/quickstart/install-mixpanel) to install the SDK.
+- You have your Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Flag Initialization
+
+Initializing the SDK with the `flags` option enables making an outbound request to Mixpanel servers with the current user context.
+
+The server will assign the user context to a variant for each feature flag according to the how they are configured in the Mixpanel UX.
+
+The response will include an assigned variant for each flag that the user context is in a rollout group for. If a flag is not returned, it most likely signifies that the user was either not in the rollout percentage for a flag or in the configured targeting cohort.
+ 
+**Example Usage**
+
+```javascript Javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  debug: true,
+  flags: true,
+});
+```
+
+If your flag is configured with a Variant Assignment Key other than `distinct_id` or `device_id` for any of the feature flags in your project, then the call to initialize feature flags must include those keys.
+
+For example, for a Variant Assignment Key, `company_id`, you would setup the SDK as follows.
+
+```javascript Javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  debug: true,
+  flags: {
+    context: {
+      company_id: "X",
+    },
+  },
+});
+```
+
+If you are using Runtime Targeting in any of the feature flags in your project, then any properties that you use in targeting should be included in a `custom_properties` node within `context`:
+
+```javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  debug: true,
+  flags: {
+    context: {
+      company_id: "X",
+      custom_properties: {
+        platform: "web",
+      },
+    },
+  },
+});
+```
+
+## Flag Reload
+
+Following initialization, you can reload feature flag assignments in a couple of ways:
+
+1) After a user logs in or out of your application and you call `identify`, a feature flag reload will be triggered.
+
+```javascript
+updated_distinct_id = ""
+mixpanel.identify(updated_distinct_id)
+```
+
+2) To refresh flag variants that may have changed during the lifetime of your app, you can manually reload flags with a new context:
+
+```javascript
+mixpanel.flags.update_context({
+  company_id: "Y",
+  custom_properties: {
+    platform: "mobile",
+  },
+});
+```
+
+## Flag Evaluation
+
+Lookup the assigned value for a feature flag.
+This action triggers tracking an exposure event, `$experiment_started` to your Mixpanel project.
+
+### Asynchronous Flag Variant Retrieval
+
+**Experiment Flags: Get Variant Value**
+
+```javascript
+// Fetch the variant value once flags are ready and track an exposure event *if* the user context is in a rollout group for the feature flag.
+const fallback = "control"; // the value to use if the user doesn't match any of the flag's rollout rules
+const variant_value = await mixpanel.flags.get_variant_value("my-feature-flag", fallback);
+
+// Use flag value in your application logic
+if (variant_value == "variant_a") {
+  showExperienceForVariantA();
+} else if (variant_value == "variant_b") {
+  showExperienceForVariantB();
+} else if (variant_value == "control") {
+  showDefaultExperience();
+}
+```
+
+**Feature Gates: Check if Flag is Enabled/Disabled**
+```javascript
+// Fetch the variant value once flags are ready and track an exposure event *if* the user context is in a rollout group for the feature flag.
+const fallback = false;
+const isEnabled = await mixpanel.flags.is_enabled("my-feature-flag", fallback);
+
+// Use the result in your application logic. 
+if (isEnabled) {
+  showNewFeature();
+} else {
+  showOldFeature();
+}
+```
+
+### Synchronous Flag Variant Retrieval
+**Experiment Flags: Get Variant Value**
+
+```javascript
+// Fetch the variant value once flags are ready and track an exposure event *if* the user context is in a rollout group for the feature flag.
+const fallback = "control"; // the value to use if the user doesn't match any of the flag's rollout rules
+const variant_value = mixpanel.flags.get_variant_value_sync("my-feature-flag", fallback);
+
+// Use flag value in your application logic
+if (variant_value == "variant_a") {
+  showExperienceForVariantA();
+} else if (variant_value == "variant_b") {
+  showExperienceForVariantB();
+} else if (variant_value == "control") {
+  showDefaultExperience();
+}
+```
+**Feature Gates: Check if Flag is Enabled/Disabled**
+```javascript
+// Fetch the variant value once flags are ready and track an exposure event *if* the user context is in a rollout group for the feature flag.
+const fallback = false;
+const isEnabled = mixpanel.flags.is_enabled_sync("my-feature-flag", fallback);
+
+// Use the result in your application logic. 
+if (isEnabled) {
+  showNewFeature();
+} else {
+  showOldFeature();
+}
+
+
+## Frequently Asked Questions
+
+### What if I'm not receiving any flags on SDK initialization?
+
+1. **Check your project token**: 
+  - Ensure you're using the correct project token from your [Mixpanel project settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+2. **Review flag configuration**: 
+  - Make sure your feature flag is enabled
+  - Check the flag's rollout percentage
+    - User contexts that are not assigned to the rollout percentage will not be assigned variant values
+  - If you are using a targeting cohort, verify on the mixpanel 'Users' page that the user's `distinct_id` is a member of that cohort.
+
+3. **Review SDK parameters**:
+  - Ensure `flags: true` or `flags: { context: {...} }` is included in the init options
+  - If using a custom Variant Assignment Key, ensure it is included in the `context` object
+  - If using Runtime Targeting, ensure all properties used in targeting are included in the `custom_properties` object within `context` 
+
+5. **Enable debug mode**: Use `debug: true` in initialization to see detailed logs in the browser console

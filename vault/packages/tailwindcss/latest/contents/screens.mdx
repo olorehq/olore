@@ -1,0 +1,133 @@
+---
+title: Customizing Screens
+shortTitle: Screens
+description: Customizing the default breakpoints for your project.
+---
+
+import { Heading } from '@/components/Heading'
+
+## <Heading hidden>Configuring custom screens</Heading>
+
+You define your project's breakpoints in the `theme.screens` section of your `tailwind.config.js` file. The keys become your [responsive modifiers](/docs/responsive-design) (like `md:text-center`), and the values are the `min-width` where that breakpoint should start.
+
+The default breakpoints are inspired by common device resolutions:
+
+```js {{ filename: 'tailwind.config.js' }}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    screens: {
+      'sm': '640px',
+      // => @media (min-width: 640px) { ... }
+
+      'md': '768px',
+      // => @media (min-width: 768px) { ... }
+
+      'lg': '1024px',
+      // => @media (min-width: 1024px) { ... }
+
+      'xl': '1280px',
+      // => @media (min-width: 1280px) { ... }
+
+      '2xl': '1536px',
+      // => @media (min-width: 1536px) { ... }
+    }
+  }
+}
+```
+
+Feel free to have as few or as many screens as you want, naming them in whatever way you'd prefer for your project.
+
+### Overriding the defaults
+
+To completely replace the default breakpoints, add your custom `screens` configuration directly under the `theme` key:
+
+```js {{ filename: 'tailwind.config.js' }}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    screens: {
+      'sm': '576px',
+      // => @media (min-width: 576px) { ... }
+
+      'md': '960px',
+      // => @media (min-width: 960px) { ... }
+
+      'lg': '1440px',
+      // => @media (min-width: 1440px) { ... }
+    },
+  }
+}
+```
+
+Any default screens you haven't overridden (such as `xl` using the above example) will be removed and will not be available as screen modifiers.
+
+### Overriding a single screen
+
+To override a single screen size (like `lg`), add your custom `screens` value under the `theme.extend` key:
+
+```js {{ filename: 'tailwind.config.js' }}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    extend: {
+      screens: {
+        'lg': '992px',
+        // => @media (min-width: 992px) { ... }
+      },
+    },
+  },
+}
+```
+
+This will replace the default value for that breakpoint with the specified value.
+
+### Adding new breakpoints
+
+The easiest way to add a new breakpoint is using the `extend` key:
+
+```js {{ filename: 'tailwind.config.js' }}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    extend: {
+      screens: {
+        '3xl': '1600px',
+      },
+    },
+  },
+  plugins: [],
+}
+```
+
+Tailwind will automatically sort your breakpoints to make sure smaller breakpoints are inserted first, and larger breakpoints are appended to the end.
+
+### Using custom screen names
+
+You can name your custom screens whatever you like, and are not limited to following the `sm`/`md`/`lg`/`xl`/`2xl`  convention that Tailwind uses by default.
+
+```js {{ filename: 'tailwind.config.js' }}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  theme: {
+    screens: {
+      'tablet': '640px',
+      // => @media (min-width: 640px) { ... }
+
+      'laptop': '1024px',
+      // => @media (min-width: 1024px) { ... }
+
+      'desktop': '1280px',
+      // => @media (min-width: 1280px) { ... }
+    },
+  }
+}
+```
+
+Your responsive modifiers will reflect these custom screen names, so using them in your HTML would now look like this:
+
+```html
+<div class="grid grid-cols-1 **tablet**:grid-cols-2 **laptop**:grid-cols-3 **desktop**:grid-cols-4">
+  <!-- ... -->
+</div>
+```

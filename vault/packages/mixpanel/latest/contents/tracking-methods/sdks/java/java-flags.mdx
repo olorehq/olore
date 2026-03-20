@@ -1,0 +1,214 @@
+import { Callout } from "nextra/components";
+
+# Implement Feature Flags (Java)
+
+## Overview
+
+This developer guide will assist you in configuring your server-side Java platform for [Feature Flags](/docs/featureflags) using the [Mixpanel Java SDK](/docs/tracking-methods/sdks/java). Feature Flags allow you to control the rollout of your features, conduct A/B testing, and manage application behavior without deploying new code.
+
+## Prerequisites
+
+Before implementing [Feature Flags](/docs/featureflags), ensure:
+
+- You are on an Enterprise subscription plan and have the appropriate version of the SDK installed (minimum supported version is `1.6.0-SNAPSHOT`). If not, please follow [this doc](/docs/quickstart/install-mixpanel) to install the SDK.
+- You have your Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Flag Evaluation Modes
+
+There are two modes available for using the Java SDK for feature flagging: Local Evaluation and Remote Evaluation.
+
+For local evaluation, the SDK will poll Mixpanel servers for feature flag configurations. Assignment of user contexts to variants will be done locally within the SDK. This mode is recommended for low latency since there is no network call made at assignment time.
+
+For remote evaluation, the SDK will make a network call to Mixpanel servers at assignment time. This mode is recommended for use cases where you want to leverage Mixpanel cohorts for user targeting or sticky variants for persistent variant assignments.
+
+## Local Evaluation
+
+<Callout type="warning">
+  Targeting by Mixpanel cohorts and sticky variants are not supported in Local
+  Evaluation mode.
+</Callout>
+
+- The SDK is configured with a `LocalFlagsConfig` object that specifies parameters:
+
+  1. `apiHost` - If your project is in the EU/IN region, this should be set to route to `api-eu.mixpanel.com`/`api-in.mixpanel.com` respectively.
+  2. `enablePolling` - This should be set to `true` to enable local evaluation.
+  3. `pollingIntervalSeconds` - This is the interval in seconds at which the SDK will poll Mixpanel servers for feature flag configurations.
+
+- The SDK will continue to poll for the lifetime of the SDK instance or until stopped.
+
+```java
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+import com.mixpanel.mixpanelapi.featureflags.config.LocalFlagsConfig;
+import java.util.HashMap;
+import java.util.Map;
+
+// Configure local flags
+LocalFlagsConfig localConfig = LocalFlagsConfig.builder()
+    .projectToken("YOUR_PROJECT_TOKEN")
+    .apiHost("api.mixpanel.com")
+    .enablePolling(true)
+    .pollingIntervalSeconds(60)
+    .requestTimeoutSeconds(10)
+    .build();
+
+// Initialize MixpanelAPI
+MixpanelAPI mixpanel = new MixpanelAPI(localConfig);
+
+// Start polling for flag definitions
+mixpanel.getLocalFlags().startPollingForDefinitions();
+
+// This should be the 'key' of the feature flag from Mixpanel's UX.
+String flagKey = "sample-flag";
+
+// This is the fallback variant to return if the user context is not in a rollout group for the flag.
+String fallbackVariant = "control";
+
+// Current user context for evaluation.
+// At minimum, this needs to include the user's distinct_id.
+// If any of your feature flags use a Variant Assignment Key other than 'distinct_id', this should also include those keys for evaluation. For example, 'company_id' below
+// If any of your feature flags use Runtime targeting, this should also include 'custom_properties' for evaluation
+Map<String, Object> userContext = new HashMap<>();
+userContext.put("distinct_id", "1234");
+userContext.put("company_id", "X");
+
+Map<String, Object> customProperties = new HashMap<>();
+customProperties.put("platform", "java");
+userContext.put("custom_properties", customProperties);
+
+// Get variant value for the flag
+String variantValue = mixpanel.getLocalFlags().getVariantValue(flagKey, fallbackVariant, userContext);
+
+// Check if flag is enabled (boolean check)
+boolean isEnabled = mixpanel.getLocalFlags().isEnabled(flagKey, userContext);
+
+// Clean up resources when done
+mixpanel.close();
+```
+
+## Remote Evaluation
+
+- The SDK is configured with a `RemoteFlagsConfig` object to use remote evaluation.
+
+```java
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+import com.mixpanel.mixpanelapi.featureflags.config.RemoteFlagsConfig;
+import java.util.HashMap;
+import java.util.Map;
+
+// Configure remote flags
+RemoteFlagsConfig remoteConfig = RemoteFlagsConfig.builder()
+    .projectToken("YOUR_PROJECT_TOKEN")
+    .apiHost("api.mixpanel.com")
+    .requestTimeoutSeconds(5)
+    .build();
+
+// Initialize MixpanelAPI
+MixpanelAPI mixpanel = new MixpanelAPI(remoteConfig);
+
+// Context for evaluation
+Map<String, Object> userContext = new HashMap<>();
+userContext.put("distinct_id", "user-123");
+
+Map<String, Object> customProperties = new HashMap<>();
+customProperties.put("platform", "java");
+userContext.put("custom_properties", customProperties);
+
+String flagKey = "sample-flag";
+String fallbackVariant = "control";
+
+// getVariantValue usage is the same as for local evaluation, but will make a network call to Mixpanel servers at assignment time.
+String variantValue = mixpanel.getRemoteFlags().getVariantValue(flagKey, fallbackVariant, userContext);
+System.out.println("Variant value: " + variantValue);
+
+// Check if flag is enabled (boolean check)
+boolean isEnabled = mixpanel.getRemoteFlags().isEnabled(flagKey, userContext);
+
+// Clean up resources when done
+mixpanel.close();
+```
+
+## Configuration Options
+
+### LocalFlagsConfig Builder Options
+
+- `projectToken(String)` - Your Mixpanel project token (required)
+- `apiHost(String)` - API host without protocol (default: `"api.mixpanel.com"`)
+  - For EU region: `"api-eu.mixpanel.com"`
+  - For India region: `"api-in.mixpanel.com"`
+- `enablePolling(boolean)` - Whether to enable automatic polling (default: `true`)
+- `pollingIntervalSeconds(int)` - Polling interval in seconds (default: `60`)
+- `requestTimeoutSeconds(int)` - Request timeout in seconds (default: `10`)
+
+### RemoteFlagsConfig Builder Options
+
+- `projectToken(String)` - Your Mixpanel project token (required)
+- `apiHost(String)` - API host without protocol (default: `"api.mixpanel.com"`)
+  - For EU region: `"api-eu.mixpanel.com"`
+  - For India region: `"api-in.mixpanel.com"`
+- `requestTimeoutSeconds(int)` - Request timeout in seconds (default: `5`)
+
+## Additional Methods
+
+### Evaluating All Flags
+
+You can evaluate all flags at once using the `getAllVariants()` method:
+
+```java
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+import com.mixpanel.mixpanelapi.featureflags.config.LocalFlagsConfig;
+import com.mixpanel.mixpanelapi.featureflags.model.SelectedVariant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+LocalFlagsConfig config = LocalFlagsConfig.builder()
+    .projectToken("YOUR_PROJECT_TOKEN")
+    .build();
+
+MixpanelAPI mixpanel = new MixpanelAPI(config);
+mixpanel.getLocalFlags().startPollingForDefinitions();
+
+Map<String, Object> userContext = new HashMap<>();
+userContext.put("distinct_id", "user-123");
+
+// Evaluate all flags at once
+List<SelectedVariant<Object>> allVariants = mixpanel.getLocalFlags().getAllVariants(userContext, true);
+
+for (SelectedVariant<Object> variant : allVariants) {
+    if (variant.isSuccess()) {
+        System.out.println("Flag: " + variant.getVariantKey() + " = " + variant.getVariantValue());
+    }
+}
+
+// Clean up resources when done
+mixpanel.close();
+```
+
+## Best Practices
+
+### Context Management
+
+- Always include `distinct_id` in your user context
+- Include any custom properties used in your flag targeting rules
+- Use consistent data types for context values across your application
+
+### Resource Management
+
+- Initialize the `MixpanelAPI` once and reuse it throughout your application
+- Always call `close()` when shutting down to stop polling and release resources:
+
+```java
+MixpanelAPI mixpanel = new MixpanelAPI(config);
+try {
+    // Use mixpanel here
+} finally {
+    mixpanel.close(); // Stops polling and releases resources
+}
+```
+
+- For local evaluation, remember to start polling with `startPollingForDefinitions()`
+- For local evaluation, you can also explicitly stop polling with `stopPollingForDefinitions()`:
+
+```java
+mixpanel.getLocalFlags().stopPollingForDefinitions();
+```

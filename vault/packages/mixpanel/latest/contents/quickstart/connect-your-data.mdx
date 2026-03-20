@@ -1,0 +1,555 @@
+# Connect Your Data
+
+import { Tabs } from 'nextra/components'
+
+import ExtendedTabs from '../../../components/ExtendedTabs/ExtendedTabs';
+
+import { dataItems } from '../../../utils/constants';
+
+You can use Mixpanel's SDKs to track events from your website, web application, or backend servers. We [recommend](/docs/tracking-methods/choosing-the-right-method) server-side tracking, since it is more reliable and easier to maintain than web/mobile tracking.
+
+Note: You'll need your Project Token to authenticate, which you can get [here](https://mixpanel.com/settings/project).
+
+
+## Step 1: Install the SDK
+<ExtendedTabs urlParam="sdk" urlToItemsMap={dataItems}>
+
+<Tabs.Tab>
+
+<Tabs items={['snippet', 'npm', 'yarn']}>
+	<Tabs.Tab>
+	```html
+	<!-- Paste this right before your closing </head> tag -->
+	<script type="text/javascript">
+	  (function (f, b) { if (!b.__SV) { var e, g, i, h; window.mixpanel = b; b._i = []; b.init = function (e, f, c) { function g(a, d) { var b = d.split("."); 2 == b.length && ((a = a[b[0]]), (d = b[1])); a[d] = function () { a.push([d].concat(Array.prototype.slice.call(arguments, 0))); }; } var a = b; "undefined" !== typeof c ? (a = b[c] = []) : (c = "mixpanel"); a.people = a.people || []; a.toString = function (a) { var d = "mixpanel"; "mixpanel" !== c && (d += "." + c); a || (d += " (stub)"); return d; }; a.people.toString = function () { return a.toString(1) + ".people (stub)"; }; i = "disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split( " "); for (h = 0; h < i.length; h++) g(a, i[h]); var j = "set set_once union unset remove delete".split(" "); a.get_group = function () { function b(c) { d[c] = function () { call2_args = arguments; call2 = [c].concat(Array.prototype.slice.call(call2_args, 0)); a.push([e, call2]); }; } for ( var d = {}, e = ["get_group"].concat( Array.prototype.slice.call(arguments, 0)), c = 0; c < j.length; c++) b(j[c]); return d; }; b._i.push([e, f, c]); }; b.__SV = 1.2; e = f.createElement("script"); e.type = "text/javascript"; e.async = !0; e.src = "undefined" !== typeof MIXPANEL_CUSTOM_LIB_URL ? MIXPANEL_CUSTOM_LIB_URL : "file:" === f.location.protocol && "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//) ? "https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js" : "//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"; g = f.getElementsByTagName("script")[0]; g.parentNode.insertBefore(e, g); } })(document, window.mixpanel || []);
+	</script>
+	```
+	</Tabs.Tab>
+	<Tabs.Tab>
+	```text
+	npm install --save mixpanel-browser
+	```
+	</Tabs.Tab>
+	<Tabs.Tab>
+	```text
+	yarn add mixpanel-browser
+	```
+	</Tabs.Tab>
+</Tabs>
+
+</Tabs.Tab>
+<Tabs.Tab>
+```shell Python
+pip install mixpanel
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```shell Node.js
+npm install mixpanel
+```
+</Tabs.Tab>
+
+<Tabs.Tab>
+```shell Go
+go get github.com/mixpanel/mixpanel-go
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```shell Ruby
+gem install mixpanel-ruby
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```xml Java
+<!--Include the following in your project's pom.xml-->
+<dependency>
+  <groupId>com.mixpanel</groupId>
+  <artifactId>mixpanel-java</artifactId>
+  <version>1.4.4</version>
+</dependency>
+```
+</Tabs.Tab>
+<Tabs.Tab>
+Under your app's root directory, run:
+
+```
+npm install mixpanel-react-native
+```
+
+Under your application's iOS folder, run:
+
+```
+pod install
+```
+
+Note: For XCode 12.5+, there is a known compile issue, please refer to this [workaround](https://github.com/mixpanel/mixpanel-react-native/issues/43#issuecomment-829599732).
+</Tabs.Tab>
+<Tabs.Tab>
+Add `mixpanel_flutter: ^2.0.0` to your package's pubspec.yaml file and run:
+
+```
+flutter pub get
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+**Swift Package Manager**
+
+1.  In Xcode, select File > Swift Packages > Add Package Dependency.
+2.  Follow the prompts using the URL for this repository and must select a version greater than or equal to v4.0.0
+
+**CocoaPods**
+
+1. Create a Podfile in your Xcode project directory by running `pod init` in your terminal, edit the Podfile generated, and add the following line: `pod 'Mixpanel'`.
+2. Run `pod install` in your Xcode project directory. CocoaPods should download and install the Mixpanel library, and create a new Xcode workspace. Open up this workspace in Xcode or typing `open *.xcworkspace` in your terminal.
+
+**Carthage**
+Add `github "mixpanel/mixpanel-iphone"` to your Cartfile.
+</Tabs.Tab>
+<Tabs.Tab>
+**Swift Package Manager (requires Xcode 12+)**
+
+1. In Xcode, select File > Swift Packages > Add Package Dependency.
+2. Paste the URL `https://github.com/mixpanel/mixpanel-swift` and a minimum semantic version of v2.8.0.
+
+**CocoaPods**
+
+1. Create a Podfile in your Xcode project directory by running `pod init` in your terminal, edit the Podfile generated, and add the following line: `pod 'Mixpanel-swift'`.
+2. Run `pod install` in your Xcode project directory. CocoaPods should download and install the Mixpanel library, and create a new Xcode workspace. Open up this workspace in Xcode or typing `open *.xcworkspace` in your terminal.
+
+**Carthage**
+Add `github "mixpanel/mixpanel-swift"` to your Cartfile.
+</Tabs.Tab>
+<Tabs.Tab>
+Add `implementation 'com.mixpanel.android:mixpanel-android:7.+'` as a dependency to your `build.gradle` file.
+
+Once you've updated `build.gradle`, you can force Android Studio to sync with your new configuration by clicking the Sync Project with Gradle Files icon at the top of the window:
+![Sync Android With Gradle](https://storage.googleapis.com/cdn-mxpnl-com/static/readme/android-sync-gradle.png)
+
+If it cannot find the dependency, you should make sure you've specified `mavenCentral()` as a repository in `build.gradle`.
+
+Next, add the following permissions in your AndroidManifest.xml:
+
+```java
+<!--Required to allow the application to send events to Mixpanel.-->
+<uses-permission android:name="android.permission.INTERNET" />
+
+<!--Optional, but recommended so we can send data intelligently based on network conditions -->
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- Optional, but recommended so events will contain information about bluetooth state-->
+<uses-permission android:name="android.permission.BLUETOOTH" />
+```
+</Tabs.Tab>
+<Tabs.Tab>
+
+Add `https://github.com/mixpanel/mixpanel-unity.git#master` to the dependencies section of `com.mixpanel.unity`.
+
+Alternatively, you can download and install the .unitypackage file from our [releases page](https://github.com/mixpanel/mixpanel-unity/releases).
+</Tabs.Tab>
+</ExtendedTabs>
+
+## Step 2: Track your first event
+<ExtendedTabs urlParam="sdk" urlToItemsMap={dataItems}>
+
+<Tabs.Tab>
+```js Javascript
+import mixpanel from 'mixpanel-browser';
+
+mixpanel.init('YOUR_TOKEN', {debug: true, track_pageview: true, persistence: 'localStorage'});
+
+// Set this to a unique identifier for the user performing the event.
+mixpanel.identify('USER_ID')
+
+// Track an event. It can be anything, but in this example, we're tracking a Sign Up event.
+mixpanel.track('Sign Up', {
+  'Signup Type': 'Referral'
+})
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+You can also follow our video walkthrough [here](https://www.loom.com/embed/fbba03274dc441b49b578e8a734b1d99).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```python Python
+from mixpanel import Mixpanel
+
+mp = Mixpanel("YOUR_TOKEN")
+
+# Note: you must supply the user_id who performed the event as the first parameter.
+mp.track(user_id, 'Signed Up',  {
+  'Signup Type': 'Referral'
+})
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```js Node.js
+var Mixpanel = require("mixpanel");
+
+var mixpanel = Mixpanel.init("<YOUR_TOKEN>");
+
+// Note: you must supply the user_id who performed the event in the `distinct_id` field
+mixpanel.track("Signed Up", {
+  distinct_id: user_id,
+  "Signup Type": "Referral",
+});
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```go Go
+package main
+
+import (
+	"context"
+	"github.com/mixpanel/mixpanel-go"
+)
+
+func main() {
+	ctx := context.Background()
+
+	mp := mixpanel.NewApiClient("PROJECT_TOKEN")
+	if err := mp.Track(ctx, []*mixpanel.Event{
+		mp.NewEvent("Signed Up", mixpanel.EmptyDistinctID, map[string]any{
+			"Signup Type": "Referral",
+		}),
+	}); err != nil {
+		panic(err)
+	}
+}
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```ruby Ruby
+require 'mixpanel-ruby'
+mp = Mixpanel::Tracker.new(PROJECT_TOKEN)
+
+# Note: you must supply the user_id who performed the event as the first parameter
+mp.track(user_id, 'Signed Up', {
+  'Signup Type' => 'Referral'
+})
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+
+<Tabs.Tab>
+```java Java
+import com.mixpanel.mixpanelapi.ClientDelivery;
+import com.mixpanel.mixpanelapi.MessageBuilder;
+import com.mixpanel.mixpanelapi.MixpanelAPI;
+
+MessageBuilder messageBuilder = new MessageBuilder(PROJECT_TOKEN);
+
+// You can send properties along with events
+JSONObject props = new JSONObject();
+props.put("Signup Type", "Referral");
+
+// Create an event
+JSONObject sentEvent = messageBuilder.event(userId, "Signup", props);
+
+ClientDelivery delivery = new ClientDelivery();
+delivery.addMessage(sentEvent);
+
+// Use an instance of MixpanelAPI to send the messages to Mixpanel's servers.
+MixpanelAPI mixpanel = new MixpanelAPI();
+mixpanel.deliver(delivery);",
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events page](https://mixpanel.com/report/events).
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```javascript
+import React from "react";
+import { Button, SafeAreaView } from "react-native";
+import { Mixpanel } from "mixpanel-react-native";
+
+const trackAutomaticEvents = false;
+const mixpanel = new Mixpanel("Your Token", trackAutomaticEvents);
+mixpanel.init();
+
+const SampleApp = () => {
+  return (
+    <SafeAreaView>
+      <Button
+        title="Select Premium Plan"
+        onPress={() =>
+          mixpanel.track("Signed Up", { "Signup Type": "Referral" })
+        }
+      />
+    </SafeAreaView>
+  );
+};
+
+export default SampleApp;
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```dart
+import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+class _YourClassState extends State<YourClass> {
+  Mixpanel mixpanel;
+
+  @override
+  void initState() {
+    super.initState();
+    initMixpanel();
+  }
+
+  Future<void> initMixpanel() async {
+    // Replace with your Project Token
+    // Once you've called this method once, you can access `mixpanel` throughout the rest of your application.
+    mixpanel = await Mixpanel.init("Your Token", trackAutomaticEvents: false);
+  }
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```objc
+
+#import "Mixpanel/Mixpanel.h"
+
+- (BOOL)application:(UIApplication _)application didFinishLaunchingWithOptions:(NSDictionary _)launchOptions {
+  ...
+  Mixpanel *mixpanel = [Mixpanel sharedInstanceWithToken:@"YOUR_TOKEN" trackAutomaticEvents: NO];
+  [mixpanel track:@"Signed Up" properties:@{
+  @"Signup Type": @"Referral"
+  }];
+  ...
+  }
+
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+Import Mixpanel into `AppDelegate.swift`, and initialize Mixpanel within `application:didFinishLaunchingWithOptions`:
+
+```swift
+import Mixpanel
+
+func application(_ application: UIApplication,
+                 didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+    ...
+    // Replace with your Project Token
+    Mixpanel.initialize(token: "Your Token", trackAutomaticEvents: false)
+    Mixpanel.mainInstance().track(event: "Signed Up", properties: [
+        "Signup Type": "Referral",
+    ])
+    ...
+}
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+```java
+import com.mixpanel.android.mpmetrics.MixpanelAPI;
+
+public class MainActivity extends ActionBarActivity {
+  private MixpanelAPI mp;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    trackAutomaticEvents = false;
+    // Replace with your Project Token
+    mp = MixpanelAPI.getInstance(this, "YOUR_TOKEN", trackAutomaticEvents);
+  }
+
+  private void sendToMixpanel() throws JSONException {
+    JSONObject props = new JSONObject();
+    props.put("Signup Type", "Referral");
+    mp.track("Signed Up", props);
+  }
+}
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+To initialize the library, first open the unity project settings menu for Mixpanel. (Edit -> Project Settings -> Mixpanel) Then, enter your project token into the Token and Debug Token input fields within the inspector. If you prefer to initialize Mixpanel manually, you can select the `Manual Initialization` in the settings and call `Mixpanel.Init()` to initialize.
+
+![unity_screenshots](https://user-images.githubusercontent.com/36679208/152408022-62440f50-04c7-4ff3-b331-02d3d3122c9e.jpg)
+
+Add the following sample code to a part of your application:
+
+```csharp
+using mixpanel;
+var props = new Value();
+props["Signup Type"] =  "Referral";
+Mixpanel.Track('Signup', props);
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+For more options, see the reference and code for each SDK in [Github](https://github.com/mixpanel).
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+If you don't see an SDK or an integration in your language, you can send events to our API directly.
+
+Here's a sample script. Just plug in your Project Token at the top, run the script, and visit our [Events page](https://mixpanel.com/report/events) to see the events in our UI.
+
+```python test.py
+# Fill this out
+PROJECT_TOKEN = ""  # Get this from mixpanel.com/settings/project
+
+import json
+import time
+import requests
+
+
+events = [
+    {"event": "my_test_event", "properties": {"time": int(time.time()), "distinct_id": "test_user_1", "$insert_id": "04ce0cf4-a633-4371-b665-9b45317b4976", "city": "San Francisco"}},
+    {"event": "another_event", "properties": {"time": int(time.time()), "distinct_id": "test_user_2", "$insert_id": "3b033b9a-6bc9-4b70-90c3-a53e11f6896e", "city": "Seattle"}}
+]
+resp = requests.post(
+    "https://api.mixpanel.com/import",
+    params={"strict": "1"},
+    auth=(PROJECT_TOKEN, ""),
+    headers={"Content-Type": "application/json"},
+    data=json.dumps(events)
+)
+
+print(resp.json())
+```
+
+🎉 Congratulations, you've tracked your first event! You can see it in Mixpanel via the [Events](https://mixpanel.com/report/events) page.
+
+See our [API reference](https://developer.mixpanel.com/reference/events) for more details.
+
+**Best Practices for Scale**
+
+You can use this API at scale, for example to backfill historical data into Mixpanel or as part of a high-throughput streaming pipeline. We provide walkthroughs for [Amazon S3](/docs/data-pipelines/old-pipelines/integrations/schematized-aws-pipeline) and [Google Cloud Storage](/docs/data-pipelines/old-pipelines/integrations/schematized-gcs-pipeline) to provide a more production-grade example of how to use this API at scale.
+
+Here are some other best practices:
+
+- Be explicit about what is tracked to Mixpanel rather than implicitly tracking everything, both for performance and security reasons. Avoid sending user generated content, high-cardinality IDs, or large semi-structured objects.
+- Import a more recent time window first (last 7 days or last 30 days) before backfilling historical data. Mixpanel's autocomplete menus populate events and properties based on the last 30 days of data, so this is the best way to test that data looks as expected.
+- Leverage batching and compression. Each request to /import can send 2000 events to Mixpanel and can be sent compressed using gzip. The sample code in this guide does both.
+- When using Cloud Storage, partition files into ~200MB of JSON (or ~200K records) each. Each file is processed in parallel by Cloud Functions/Lambda and must be ingested by the function within the configured timeout.
+- Log any 400 errors returned by the API. These are non-retryable and indicate something malformed with the data. This should be extremely unlikely once the API is up and running. If a batch contains a mix of valid and invalid data, we will ingest the valid data.
+
+**Limits**
+
+Our Import API is built to ingest billions of events per day across our customers. That said, we do rate limit at very high scale to ensure quality of service and real-time ingestion. Please refer to our [Import API docs](https://developer.mixpanel.com/reference/import-events) for details.
+
+All of our sample code transparently retries and backoff from rate limit exceptions. If you require a higher-limit for a 1-time backfill, please reach out to us at apis@mixpanel.com.
+</Tabs.Tab>
+
+</ExtendedTabs>
+
+
+## FAQ
+
+
+<ExtendedAccordion title="Does Mixpanel automatically track page views?">
+  Yes, if you pass `track_pageview: true` in the `mixpanel.init()` call,
+   Mixpanel will automatically track a "Page View" event every time a new 
+   page is loaded. 
+   Learn more [here](/docs/tracking-methods/sdks/javascript#tracking-page-views).
+</ExtendedAccordion>
+
+<ExtendedAccordion title="Why aren't my events showing up?">
+  If tracking from web, make sure you've disabled ad blockers and your Do Not Track (DNT) 
+  browser settings are set to false when testing your JavaScript implementation. If 
+  the DNT setting is set to true, then Mixpanel won't collect information from that Mixpanel 
+  instance. We also recommend [setting up a proxy server](/docs/tracking-methods/sdks/javascript#tracking-via-proxy) 
+  so that you don't lose events due to ad-blockers.
+
+  If tracking from a mobile device, events may take 1-2 minutes to appear because Mixpanel's 
+  mobile SDKs buffer events for 1 minute, or when the app transitions to the background, to 
+  conserve battery life and bandwidth. You can call `.flush()` in the mobile SDKs to manually flush events to Mixpanel.
+</ExtendedAccordion>
+
+<ExtendedAccordion title="How can I track in a privacy compliant way?">
+  If a user opts out of tracking, you can call the `.optOutTracking()` method on any of our 
+  client-side SDKs; this prevents any subsequent data being tracked from that user's device. 
+  Learn more [here](/docs/privacy/protecting-user-data).
+
+  For iOS specifically: Mixpanel does not use IDFA, so it does not require user permission 
+  through the AppTrackingTransparency(ATT) framework. For more details, refer to our 
+  [Apple App Developer Privacy Guidance](https://mixpanel.com/legal/app-store-privacy-details).
+</ExtendedAccordion>
+
+<ExtendedAccordion title="Does Mixpanel use third-party cookies?">
+  No, our Mixpanel JavaScript SDK does not set or use any third-party cookies. If you wish 
+  to disable cookies entirely, you can set the disable_persistence option to true when initializing 
+  your Mixpanel JS instance. Note that disabling persistence will disable the use of super properties 
+  and anonymous -> identified user tracking.
+</ExtendedAccordion>
+
+<ExtendedAccordion title="What are the recommended configuration options?">
+  When tracking on web, we recommend using localStorage, as this is more reliable:
+
+```javascript
+mixpanel.set_config({ persistence: "localStorage" });
+```
+</ExtendedAccordion>
+
+<ExtendedAccordion title="How do I connect events from logged out vs logged in users?">
+If tracking client-side, just call `.identify(<user_id>)` when a user logs in and `.reset()`
+ when they log out. Mixpanel will automatically stitch the user journey across
+  logged out and logged in.
+
+  If tracking server-side, check out our [server-side best practices guide](/docs/best-practices/server-side-best-practices). 
+  For more information, read our comprehensive guide on [Identifying Users](/docs/tracking-methods/id-management/identifying-users).
+
+</ExtendedAccordion>

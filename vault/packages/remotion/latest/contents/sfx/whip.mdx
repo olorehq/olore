@@ -1,0 +1,43 @@
+---
+image: /generated/articles-docs-sfx-whip.png
+title: 'whip'
+crumb: '@remotion/sfx'
+---
+
+# whip<AvailableFrom v="4.0.429" />
+
+import {PlayButton} from './PlayButton';
+
+<PlayButton src="https://remotion.media/whip.wav" />
+<br />
+
+A URL pointing to a whip sound effect WAV file.
+
+## Example
+
+```tsx twoslash title="MyComp.tsx"
+import {whip} from '@remotion/sfx';
+import {Audio} from '@remotion/media';
+
+const MyVideo = () => {
+  return <Audio src={whip} />;
+};
+```
+
+## Value
+
+```bash
+https://remotion.media/whip.wav
+```
+
+## Duration
+
+0.173 seconds (2 channels, 96000 Hz, 24-bit)
+
+## Attribution
+
+SWSH_Badminton Racquet_Recording_01_JW Audio by JW_Audio - [freesound.org/s/838766](https://freesound.org/s/838766/) - License: Creative Commons 0
+
+## See also
+
+- [`whoosh`](/docs/sfx/whoosh)

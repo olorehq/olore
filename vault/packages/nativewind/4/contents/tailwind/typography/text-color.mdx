@@ -1,0 +1,34 @@
+---
+title: Text Color
+---
+
+import Compatibility from "../_compatibility.mdx";
+import Usage from "../_usage.tsx";
+
+{/* # Text Color */}
+
+## Usage
+
+<Usage />
+
+## Compatibility
+
+<Compatibility
+  supported={["text-{n}", "text-[n]"]}
+  none={["text-inherit", "text-current"]}
+/>
+
+<Callout type="note" title="textOpacity (native only)">
+For performance reasons, Nativewind renders with the `corePlugin` `textOpacity` disabled. This plugin allows text to dynamically change its opacity via the `--tw-text-opacity` variable. Instead, the opacity is set as a static value in the `color` property.
+
+If you need to use this feature, you can enable it by adding the following to your `tailwind.config.js` file:
+
+```js title=tailwind.config.js
+module.exports = {
+  /* ...  */
+  corePlugin: {
+    textOpacity: true,
+  },
+};
+```
+</Callout>

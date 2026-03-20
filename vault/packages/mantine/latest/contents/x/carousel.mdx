@@ -1,0 +1,165 @@
+import { CarouselDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.Carousel);
+
+## Installation
+
+<InstallScript packages="embla-carousel@^8.5.2 embla-carousel-react@^8.5.2 @mantine/carousel" />
+
+After installation import package styles at the root of your application:
+
+```tsx
+import '@mantine/core/styles.css';
+// ‼️ import carousel styles after core package styles
+import '@mantine/carousel/styles.css';
+```
+
+## Do not forget to import styles
+
+Followed installation instructions above but something is not working
+(Carousel slides are rendered vertically, no controls or indicators)?
+You've fallen into the trap of not importing carousel styles!
+To fix the issue, import carousel styles at the root of your application:
+
+```tsx
+import '@mantine/carousel/styles.css';
+```
+
+## Documentation demos
+
+Demos on this page use a blue background color for demonstration purposes. To simplify
+the demos, background color and other demo-only styles are not included in the code.
+If you copy-paste demo code into your project, it will not have a blue background color.
+
+## Usage
+
+`@mantine/carousel` package is based on [embla carousel](https://www.embla-carousel.com/):
+
+<Demo data={CarouselDemos.usage} />
+
+## Options
+
+<Demo data={CarouselDemos.configurator} />
+
+## Embla options
+
+You can pass configuration options directly to embla carousel with `emblaOptions` prop.
+You can find embla options description in [embla options reference](https://www.embla-carousel.com/api/options/).
+
+Example of passing `loop`, `dragFree` and `align` options:
+
+<Demo data={CarouselDemos.emblaOptions} />
+
+## Size and gap
+
+Set `slideSize` and `slideGap` on `Carousel` component to control size and gap of every slide:
+
+<Demo data={CarouselDemos.multiple} />
+
+## Responsive styles
+
+`slideSize` and `slideGap` props work the same way as [style props](/styles/style-props/),
+you can pass an object with values for different breakpoints:
+
+<Demo data={CarouselDemos.breakpoints} />
+
+## Container queries
+
+To use [container queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries)
+instead of media queries, set `type="container"`. With container queries, slides size and gap
+will be adjusted based on the container width, not the viewport width.
+
+Note that, when using container queries, `slideSize` and `slideGap` props cannot
+reference `theme.breakpoints` values in keys. It is required to use exact px or em values.
+
+To see how the slides size and gap changes, resize the root element of the demo
+with the resize handle located at the bottom right corner of the demo:
+
+<Demo data={CarouselDemos.container} />
+
+## Drag free
+
+`dragFree` will disable slides snap points – user will be able to stop dragging at any position:
+
+<Demo data={CarouselDemos.dragFree} />
+
+## Vertical orientation
+
+Carousel with `orientation="vertical"` requires `height` prop to be set:
+
+<Demo data={CarouselDemos.vertical} />
+
+## Controls icons
+
+You can replace default next/previous controls icons with any React nodes:
+
+<Demo data={CarouselDemos.icons} />
+
+## 100% height
+
+Set `height="100%"` to make Carousel take 100% height of the container. Note that in this case:
+
+- container element must have `display: flex` styles
+- carousel root element must have `flex: 1` styles
+- container element must have fixed height
+
+```tsx
+import { Carousel } from '@mantine/carousel';
+
+export function PercentageHeight() {
+  return (
+    <div style={{ height: 400, display: 'flex' }}>
+      <Carousel withIndicators height="100%" flex={1}>
+        <Carousel.Slide>1</Carousel.Slide>
+        <Carousel.Slide>2</Carousel.Slide>
+        <Carousel.Slide>3</Carousel.Slide>
+      </Carousel>
+    </div>
+  );
+}
+```
+
+## Get embla instance
+
+You can get [embla instance](https://www.embla-carousel.com/api/methods/) with `getEmblaApi` prop.
+You will be able enhance carousel with additional logic after that using embla api methods:
+
+<Demo data={CarouselDemos.progress} />
+
+## Embla plugins
+
+Set `plugins` prop to enhance carousel with [embla plugins](https://www.embla-carousel.com/plugins/).
+Note that plugins are not installed with `@mantine/carousel` package and you will need to
+install them on your side.
+
+Example with [autoplay plugin](https://www.embla-carousel.com/plugins/autoplay/):
+
+<InstallScript packages="embla-carousel-autoplay@^8.5.2" />
+
+<Demo data={CarouselDemos.autoplay} />
+
+<StylesApiSelectors component="Carousel" />
+
+<Demo data={CarouselDemos.stylesApi} />
+
+## Indicator styles
+
+<Demo data={CarouselDemos.indicatorStyles} />
+
+## Hide inactive controls
+
+<Demo data={CarouselDemos.controlsStyles} />
+
+## Show controls on hover
+
+<Demo data={CarouselDemos.controlsHover} />
+
+## Example: Images carousel
+
+<Demo data={CarouselDemos.images} />
+
+## Example: Cards carousel
+
+<Demo data={CarouselDemos.cards} />

@@ -1,0 +1,120 @@
+---
+title: "Grid Template Rows"
+description: "Utilities for specifying the rows in a grid layout."
+---
+
+import utilities from 'utilities?plugin=gridTemplateRows'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = { utilities }
+
+## Basic usage
+
+### Specifying the rows in a grid
+
+Use the `grid-rows-*` utilities to create grids with _n_ equally sized rows.
+
+```html {{ example: true }}
+<div class="grid grid-rows-4 grid-flow-col gap-4 font-mono text-white text-sm text-center font-bold leading-6 bg-stripes-pink rounded-lg">
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">01</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">02</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">03</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">04</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">05</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">06</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">07</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">08</div>
+  <div class="p-4 rounded-lg shadow-lg bg-pink-500">09</div>
+</div>
+```
+
+```html
+<div class="grid **grid-rows-4** grid-flow-col gap-4">
+  <div>01</div>
+  <!-- ... -->
+  <div>09</div>
+</div>
+```
+
+### Subgrid
+
+Use the `grid-rows-subgrid` utility to adopt the row tracks defined by the item's parent.
+
+```html {{ example: true }}
+<div class="grid grid-rows-4 grid-flow-col gap-4 rounded-lg text-center font-mono text-sm font-bold leading-6 text-white">
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">01</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">02</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">03</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">04</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">05</div>
+  <div class="row-span-3 grid grid-rows-subgrid gap-4">
+    <div class="rounded-lg bg-stripes-fuchsia h-14"></div>
+    <div class="rounded-lg bg-fuchsia-500 grid items-center justify-center h-14 shadow-lg">06</div>
+    <div class="rounded-lg bg-stripes-fuchsia h-14"></div>
+  </div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">07</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">08</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">09</div>
+  <div class="rounded-lg dark:bg-indigo-900 bg-indigo-300 grid items-center justify-center h-14 shadow-lg">10</div>
+</div>
+```
+
+```html
+<div class="grid grid-rows-4 grid-flow-col gap-4">
+  <div>01</div>
+  <!-- ... -->
+  <div>05</div>
+  <div class="grid **grid-rows-subgrid** gap-4 row-span-3">
+      <div class="row-start-2">06</div>
+  </div>
+  <div>07</div>
+  <!-- ... -->
+  <div>10</div>
+</div>
+```
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="grid grid-rows-2" featuredClass="grid-rows-6" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="grid grid-rows-2" featuredClass="grid-rows-6" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind includes `grid-template-row` utilities for creating basic grids with up to 12 equal width rows. You can customize these values by editing `theme.gridTemplateRows` or `theme.extend.gridTemplateRows` in your `tailwind.config.js` file.
+
+You have direct access to the `grid-template-rows` CSS property here so you can make your custom rows values as generic or as complicated and site-specific as you like.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      extend: {
+        gridTemplateRows: {
+          // Simple 16 row grid
++         '16': 'repeat(16, minmax(0, 1fr))',
+
+          // Complex site-specific row configuration
++         'layout': '200px minmax(900px, 1fr) 100px',
+        }
+      }
+    }
+  }
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+### Arbitrary values
+
+<ArbitraryValues property="grid-template-rows" defaultClass="grid" featuredClass="grid-rows-[200px_minmax(900px,_1fr)_100px]" />

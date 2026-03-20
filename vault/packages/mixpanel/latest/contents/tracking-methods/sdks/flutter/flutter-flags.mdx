@@ -1,0 +1,202 @@
+import { Callout } from 'nextra/components'
+
+# Implement Feature Flags (Flutter)
+
+## Overview
+
+This developer guide will assist you in configuring your Flutter application for Feature Flags using the [Mixpanel Flutter SDK](/docs/tracking-methods/sdks/flutter). Feature Flags allow you to control the rollout of your features, conduct A/B testing, and manage application behavior without deploying new code.
+
+Feature Flags in the Flutter SDK work across iOS, Android, and Web platforms.
+
+For complete Flutter SDK documentation, see the [Flutter SDK guide](/docs/tracking-methods/sdks/flutter).
+
+## Prerequisites
+
+Before implementing Feature Flags, ensure:
+
+- You are on an Enterprise subscription plan and have the latest version of the SDK installed (minimum supported version is `v2.5.0`). If not, please follow [this doc](/docs/quickstart/install-mixpanel) to install the SDK.
+- You have your Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Flag Initialization
+
+Initializing the SDK with feature flags enabled requires passing a `FeatureFlagsConfig` with `enabled: true` to the `Mixpanel.init()` method. This enables making an outbound request to Mixpanel servers with the current user context.
+The server will assign the user context to a variant for each feature flag according to how they are configured in the Mixpanel UX.
+
+The response will include an assigned variant for each flag that the user context is in a rollout group for. If a flag is not returned, it most likely signifies that the user was excluded by filtering rules or the rollout percentage for the flag.
+
+**Example Usage**
+
+```dart
+import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+
+// Initialize Mixpanel with feature flags enabled
+Mixpanel mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  featureFlags: FeatureFlagsConfig(enabled: true),
+);
+```
+
+If your flag is configured with a Variant Assignment Key other than `distinct_id` or `device_id` for any of the feature flags in your project, then the call to initialize feature flags must include those keys.
+
+For example, for a Variant Assignment Key, `company_id`, you would setup the SDK as follows:
+
+```dart
+Mixpanel mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  featureFlags: FeatureFlagsConfig(
+    enabled: true,
+    context: {
+      "company_id": "X",
+    },
+  ),
+);
+```
+
+If you are using Runtime Targeting in any of the feature flags in your project, then any properties that you use in targeting should be included in a `custom_properties` node within the context:
+
+```dart
+Mixpanel mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  featureFlags: FeatureFlagsConfig(
+    enabled: true,
+    context: {
+      "company_id": "X",
+      "custom_properties": {
+        "platform": "flutter",
+      },
+    },
+  ),
+);
+```
+
+## Flag Reload
+
+Following initialization, you can reload feature flag assignments. The available methods vary by platform.
+
+### Reload via identify (All Platforms)
+
+After a user logs in or out of your application and you call `identify`, a feature flag reload will be triggered. This works consistently across iOS, Android, and Web.
+
+```dart
+String updatedDistinctId = "";
+// Reload after login
+mixpanel.identify(updatedDistinctId);
+```
+
+### Manual Reload (iOS & Android)
+
+To refresh flag variants that may have changed during the lifetime of your app, you can manually reload flags. This is supported on iOS and Android.
+
+```dart
+FeatureFlags flags = mixpanel.getFeatureFlags();
+
+// Manually reload flag assignments
+await flags.loadFlags();
+```
+
+<Callout type="info">
+On Web, `loadFlags()` is not supported. Use `updateContext()` to trigger a flag reload instead.
+</Callout>
+
+### Update Context (Web Only)
+
+<Callout type="warning">
+The `updateContext` method has different behavior across platforms. Context updates are only fully supported on **Web**. On mobile platforms, context must be set during initialization.
+</Callout>
+
+On **Web**, you can update the feature flags context after initialization, which will trigger a reload with the new context values:
+
+```dart
+// Get the feature flags instance
+FeatureFlags flags = mixpanel.getFeatureFlags();
+
+// Update context to reload flags (Web only)
+await flags.updateContext({
+  "company_id": "Y",
+});
+```
+
+**Platform-specific behavior:**
+
+| Platform | `updateContext` Behavior |
+|----------|-------------------------|
+| **Web** | Fully supported. Updates the context and reloads flags with the new values. |
+| **Android** | Context update is ignored. Calling this method will trigger a flag reload using the current user identity, but the new context values will not be applied. |
+| **iOS** | Not supported. This method is a no-op and logs a warning. Context must be set during `Mixpanel.init()`. |
+
+For iOS and Android, if you need to use custom context values (such as `company_id` for group-based targeting), you must provide them during SDK initialization via `FeatureFlagsConfig`.
+
+### Check Flags Ready
+
+Before evaluating flags, you can check if they have been loaded:
+
+```dart
+FeatureFlags flags = mixpanel.getFeatureFlags();
+
+bool ready = await flags.areFlagsReady();
+if (ready) {
+  // Flags are loaded and ready to use
+}
+```
+
+### Feature Gates: Check if Flag is Enabled/Disabled
+
+```dart
+FeatureFlags flags = mixpanel.getFeatureFlags();
+
+// Check if a boolean flag is enabled
+// The fallback value is used if the user doesn't match any of the flag's rollout rules
+bool isEnabled = await flags.isEnabled("my-boolean-flag", false);
+
+if (isEnabled) {
+  showNewFeature();
+} else {
+  showOldFeature();
+}
+```
+
+### Experiment and Dynamic Config Flags: Get Variant Value
+
+```dart
+FeatureFlags flags = mixpanel.getFeatureFlags();
+
+// Get the flag value
+// The fallback value is used if the user doesn't match any of the flag's rollout rules
+dynamic value = await flags.getVariantValue("my-feature-flag", "control");
+
+// Use flag value in your application logic
+if (value == "variant_a") {
+  showExperienceForVariantA();
+} else if (value == "variant_b") {
+  showExperienceForVariantB();
+} else {
+  showDefaultExperience();
+}
+```
+
+## Exposure Events
+
+Calling `isEnabled` or `getVariantValue` triggers tracking an exposure event, `$experiment_started` to your Mixpanel project *if* the user context is in a rollout group for the feature flag.
+
+## Frequently Asked Questions
+
+### What if I'm not receiving any flags on SDK initialization?
+
+1. **Check your project token**:
+  - Ensure you're using the correct project token from your [Mixpanel project settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+2. **Review flag configuration**:
+  - Make sure your feature flag is enabled
+  - Check the flag's rollout percentage
+    - User contexts that are not assigned to the rollout percentage will not receive flags
+  - If you are using a targeting cohort, verify on the mixpanel 'Users' page that the user's `distinct_id` is a member of that cohort.
+
+3. **Review SDK parameters**:
+  - Ensure `FeatureFlagsConfig(enabled: true)` is passed to `Mixpanel.init()`
+  - If using a custom Variant Assignment Key, ensure it is included in the `context` map
+  - If using Runtime Targeting, ensure all properties used in targeting are included in the `custom_properties` object within `context`
+
+4. **Check flags readiness**: Use `areFlagsReady()` to check if flags have been loaded before making flag evaluation calls
+5. **Enable debug logging**: Call `mixpanel.setLoggingEnabled(true)` to see detailed information about flag requests and responses

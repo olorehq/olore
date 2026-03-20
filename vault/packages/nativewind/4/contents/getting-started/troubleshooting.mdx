@@ -1,0 +1,141 @@
+---
+title: Troubleshooting
+---
+{/* # Troubleshooting */}
+
+<Callout type="tip">
+While troubleshooting, always start your application without the cache!
+
+- Expo: `npx expo start --clear`
+- Framework-less React Native: `npx react-native start --reset-cache`
+</Callout>
+
+Before troubleshooting Nativewind, it's crucial to ensure that Tailwind CSS itself is functioning correctly. Nativewind uses the Tailwind CLI to compile your styles, so any issues with the Tailwind CLI should be resolved first. 
+
+Using the command `npx tailwindcss --input <input.css> --output output.css`, the Tailwind CLI will generate an `output.css` file. **The `<input.css>` should be your project's main CSS file (typically `global.css` or `styles.css`) that contains the `@import 'tailwindcss';` directive.**
+
+For example:
+```bash
+npx tailwindcss --input ./global.css --output output.css
+```
+
+If you are troubleshooting a class that is not working, ensure that the CSS rule is present in the `output.css` file. This will help you determine if the issue is with Tailwind compilation or with Nativewind's runtime.
+
+## Verifying Nativewind Installation
+
+Nativewind provides a utility function `verifyInstallation()` designed to help confirm that the package has been correctly installed.
+
+Import the `verifyInstallation` function from the Nativewind package and run it within the scope of a React component. **Do not invoke this function on the global scope**; it should be run within a component.
+
+```tsx
+import React from 'react';
+import { verifyInstallation } from 'nativewind';
+
+function App() {
+    // Ensure to call inside a component, not globally
+    verifyInstallation();
+
+    return (
+      // Your component JSX here...
+    );
+}
+
+export default App;
+```
+
+## Enabling debug mode
+
+Nativewind supports the `DEBUG` environment variable and will output various debug information while your server is running. **Run this command in your project's root directory where your `package.json` file is located.**
+
+The `<start-command>` should be replaced with your project's actual start command:
+
+- **Expo**: `npx expo start --clear`
+- **Framework-less React Native**: `npx react-native start --reset-cache`
+- **Next.js**: `npm run dev` or `yarn dev`
+- **Other frameworks**: Use your project's standard development start command
+
+<Tabs groupId="Troubleshooting" items={['Mac / Linux', 'Windows']}>
+  <Tab value="Mac / Linux" label="Mac / Linux">
+    ```bash
+    DEBUG=nativewind <start-command>
+    ```
+  </Tab>
+  <Tab value="Windows" label="Windows">
+    ```cmd
+    set "DEBUG=nativewind" && <start-command>
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+@react-native-community/cli may create multiple terminal sessions. You will need to ensure all sessions have `DEBUG=nativewind` set.
+</Callout>
+
+By itself, this information may or may not be useful to you, but it is extremely useful when reporting issues to the developers on GitHub. You can record the terminal output by redirecting the output to a file.
+
+<Tabs groupId="Troubleshooting" items={['Mac / Linux', 'Windows']}>
+  <Tab value="Mac / Linux" label="Mac / Linux">
+    ```bash
+    DEBUG=nativewind script output.log <start-command>
+    ```
+  </Tab>
+  <Tab value="Windows" label="Windows">
+    ```cmd
+    set "DEBUG=nativewind" && script output.log <start-command>
+    ```
+    
+    **Note:** For older Windows versions, use:
+    ```cmd
+    set "DEBUG=nativewind" && <start-command> > output.log 2>output.log
+    ```
+    
+    **For PowerShell:**
+    ```powershell
+    $env:DEBUG="nativewind"; <start-command> *> output.log
+    ```
+  </Tab>
+</Tabs>
+
+## Common Issues
+
+### Your cache is loading old data
+
+Always reset your cache before troubleshooting an issue.
+
+### Colors are not working
+
+React Native styling is much more restrictive than the web. This code will work on the web, but not on React Native:
+
+```tsx title=App.tsx
+export function App() {
+  return (
+    <View className="text-red-500">
+      <Text>Hello, World!</Text>
+    </View>
+  );
+}
+```
+
+The reason is that `<View />` does not accept a `color` style and will not cascade the style! Instead, you must move the color classes to the `<Text />` element.
+
+### Modifiers are not working
+
+Ensure the component you are applying the style to supports both the style and the required props (e.g., `hover:text-white` - does the component support `color` styles and have an `onHover` prop?).
+
+### Explicit styles
+
+React Native has various issues when conditionally applying styles. To prevent these issues, it's best to declare all styles explicitly.
+
+For example, instead of only applying a text color for dark mode, provide both a light and dark mode text color.
+
+### dp vs px
+
+React Native's default unit is density-independent pixels (dp) while the web's default is pixels (px). These two units are different; however, Nativewind treats them as if they are equivalent. Additionally, Nativewind's compiler requires a unit for most numeric values, forcing some styles to use a `px` unit.
+
+### Flex
+
+React Native uses a different base flex definition than the web. This can be fixed by adding `flex-1` to your classes, which forces the platforms to align.
+
+### Flex Direction
+
+React Native uses a different default `flex-direction` than the web. This can be fixed by explicitly setting a `flex-direction`. 

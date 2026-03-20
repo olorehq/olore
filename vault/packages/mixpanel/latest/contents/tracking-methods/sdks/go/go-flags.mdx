@@ -1,0 +1,208 @@
+import { Callout } from 'nextra/components'
+
+# Implement Feature Flags (Go)
+
+## Overview
+
+This developer guide will assist you in configuring your server-side Go platform for [Feature Flags](/docs/featureflags) using the [Mixpanel Go SDK](/docs/tracking-methods/sdks/go). Feature Flags allow you to control the rollout of your features, conduct A/B testing, and manage application behavior without deploying new code.
+
+## Prerequisites
+
+Before implementing [Feature Flags](/docs/featureflags), ensure:
+
+- You are on an Enterprise subscription plan and have the [Mixpanel Go SDK](https://github.com/mixpanel/mixpanel-go) installed. If not, please follow [this doc](/docs/quickstart/install-mixpanel) to install the SDK. The minimum supported version is [`v2.0.0`](https://github.com/mixpanel/mixpanel-go/releases/tag/v2.0.0)
+
+```bash
+go get github.com/mixpanel/mixpanel-go@v2.0.0
+```
+
+- You have your Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Flag Evaluation Scenarios
+
+There are two scenarios available for using the Go SDK for feature flagging: Local Evaluation and Remote Evaluation.
+
+For local evaluation, the SDK will poll Mixpanel servers for feature flag configurations. Assignment of user contexts to variants will be done locally within the SDK. This mode is recommended for low latency since there is no network call made at assignment time.
+
+For remote evaluation, the SDK will make a network call to Mixpanel servers at assignment time. This mode is recommended for use cases where you want to leverage Mixpanel cohorts for user targeting or sticky variants for persistent variant assignments.
+
+In either case there is also the capability to evaluate all flags for a given user context at once, to avoid needing to make multiple calls to get individual flag variants for the same user. This is particularly useful for remote evaluation to avoid incurring additional network calls.
+
+## Local Evaluation
+
+<Callout type="warning">
+Targeting by Mixpanel cohorts and sticky variants are not supported in Local Evaluation mode.
+</Callout>
+
+- The SDK is configured with a `flags.LocalFlagsConfig` struct that specifies parameters:
+    1) `APIHost` - If your project is in the EU/IN region, this should be set to route to `api-eu.mixpanel.com`/`api-in.mixpanel.com` respectively.
+    2) `EnablePolling` - This should be set to `true` to enable polling for new flag configurations.
+    3) `PollingInterval` - This is the interval (`time.Duration`) at which the SDK will poll Mixpanel servers for feature flag configurations.
+
+- The SDK will continue to poll for the lifetime of the SDK instance or until stopped.
+
+```go
+package main
+
+import (
+	"context"
+	"time"
+
+	mixpanel "github.com/mixpanel/mixpanel-go"
+	"github.com/mixpanel/mixpanel-go/flags"
+)
+
+func main() {
+	localConfig := flags.LocalFlagsConfig{
+		FlagsConfig: flags.FlagsConfig{
+			APIHost: "api.mixpanel.com",
+		},
+		EnablePolling:   true,
+		PollingInterval: 60 * time.Second,
+	}
+
+	mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.WithLocalFlags(localConfig))
+
+	ctx := context.Background()
+
+	// If EnablePolling is set to false, this will fetch definitions only once for the lifetime of the SDK.
+	mp.LocalFlags.StartPollingForDefinitions(ctx)
+
+	// This should be the 'key' of the feature flag from Mixpanel's UX.
+	flagKey := "sample-flag"
+
+	// This is the fallback variant to return if the user context is not in a rollout group for the flag.
+	fallbackValue := "control"
+
+	// Current user context for evaluation.
+	// At minimum, this needs to include the user's distinct_id.
+	// If any of your feature flags use a Variant Assignment Key other than 'distinct_id', this should also include those keys for evaluation. For example, 'company_id' below
+	// If any of your feature flags use Runtime targeting, this should also include 'custom_properties' for evaluation
+	userContext := flags.FlagContext{
+		"distinct_id": "1234",
+		"company_id":  "X",
+		"custom_properties": map[string]any{
+			"platform": "go",
+		},
+	}
+
+	// Gets the assigned variant for the flag for the given user context.
+	// This will return the fallbackValue if the user context is not in an assignment group for the flag.
+	variantValue, err := mp.LocalFlags.GetVariantValue(ctx, flagKey, fallbackValue, userContext)
+
+	// Check if a feature is enabled (returns boolean)
+	isEnabled, err := mp.LocalFlags.IsEnabled(ctx, "new_feature", userContext)
+}
+```
+
+## Remote Evaluation
+
+- The SDK is configured with a `flags.RemoteFlagsConfig` struct to use remote evaluation.
+
+### Get a specific variant
+
+```go
+package main
+
+import (
+	"context"
+
+	mixpanel "github.com/mixpanel/mixpanel-go"
+	"github.com/mixpanel/mixpanel-go/flags"
+)
+
+func main() {
+	remoteConfig := flags.RemoteFlagsConfig{
+		FlagsConfig: flags.FlagsConfig{
+			APIHost: "api.mixpanel.com",
+		},
+	}
+
+	mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.WithRemoteFlags(remoteConfig, mixpanel.DefaultFlagsExposureTracker))
+
+	ctx := context.Background()
+
+	// GetVariantValue usage is the same as for local evaluation, but will make a network call to Mixpanel servers at assignment time.
+	variantValue, err := mp.RemoteFlags.GetVariantValue(ctx, flagKey, fallbackValue, userContext)
+
+	// IsEnabled also works with remote flags
+	isEnabled, err := mp.RemoteFlags.IsEnabled(ctx, "beta_feature", userContext)
+}
+```
+
+### Evaluate all flags at once
+
+Below is a remote evaluation sample of evaluating all flags for a given user context at once.
+
+```go
+package main
+
+import (
+	"context"
+
+	mixpanel "github.com/mixpanel/mixpanel-go"
+	"github.com/mixpanel/mixpanel-go/flags"
+)
+
+func main() {
+	userContext := flags.FlagContext{
+		"distinct_id": "1234",
+	}
+
+	remoteConfig := flags.RemoteFlagsConfig{
+		FlagsConfig: flags.FlagsConfig{
+			APIHost: "api.mixpanel.com",
+		},
+	}
+
+	mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.WithRemoteFlags(remoteConfig, mixpanel.DefaultFlagsExposureTracker))
+
+	ctx := context.Background()
+
+	// Returns a map, mapping flag keys to assigned variants ONLY for flags that the user context is in an assignment group for.
+	// By default, this will not track an exposure event.
+	variants, err := mp.RemoteFlags.GetAllVariants(ctx, userContext)
+
+	// Given a flag key and the selected variant for that key, manually track an exposure event for a given flag and assigned variant, after exposing the user to the variant
+	mp.RemoteFlags.TrackExposureEvent(ctx, flagKey, selectedVariant, userContext)
+}
+```
+
+## Custom Exposure Tracking
+
+By default, the SDK sends exposure events synchronously via `DefaultFlagsExposureTracker`. You can provide a custom `TrackerBuilder` — a function that receives the `*ApiClient` and returns a `flags.Tracker` — to control how exposure events are sent.
+
+### Asynchronous tracker
+
+For example, to avoid blocking on exposure event delivery, you could wrap the tracking call in a goroutine like shown below. If desired, you could implement controls around how many active go routines can be in flight at once.
+
+```go
+package main
+
+import (
+	"context"
+
+	mixpanel "github.com/mixpanel/mixpanel-go"
+	"github.com/mixpanel/mixpanel-go/flags"
+)
+
+func asyncTracker(client *mixpanel.ApiClient) flags.Tracker {
+	return func(distinctID string, eventName string, props map[string]any) {
+		go func() {
+			event := client.NewEvent(eventName, distinctID, props)
+			_ = client.Track(context.Background(), []*mixpanel.Event{event})
+		}()
+	}
+}
+
+func main() {
+	localConfig := flags.LocalFlagsConfig{
+		FlagsConfig: flags.FlagsConfig{
+			APIHost: "api.mixpanel.com",
+		},
+		EnablePolling:   true,
+		PollingInterval: 60 * time.Second,
+	}
+	mp = mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.WithLocalFlagsAndTracker(localConfig, asyncTracker))
+}
+```

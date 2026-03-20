@@ -1,0 +1,31 @@
+# Google Cloud Storage
+
+Mixpanel supports exporting events and people data directly to Google Cloud Storage (GCS) via [Json Pipelines](/docs/data-pipelines).
+
+## Setting GCS Permissions
+
+To facilitate data export to Google Cloud Storage, proper permissions need to be configured to allow Mixpanel access to your GCS bucket.
+
+### Step 1: Assign Roles to Service Account on Bucket
+
+You must grant the `Storage Object Admin` role to the service account `export-upload@mixpanel-prod-1.iam.gserviceaccount.com` for the bucket you are creating or intend to reuse. This role allows Mixpanel to manage storage objects on your behalf.
+
+To assign this role:
+
+- Navigate to the **Cloud Storage** in your Google Cloud Console and select the GCS bucket you have created or plan to reuse
+- Click on the **PERMISSIONS** tab and select **GRANT ACCESS**
+- In the new principals field, add `export-upload@mixpanel-prod-1.iam.gserviceaccount.com` and then select `Storage Object Admin` from the role dropdown menu
+- Confirm the assignment by clicking the **SAVE** button.
+
+This process ensures that the specified service account has the necessary permissions to efficiently manage and handle the data exported to your GCS bucket.
+
+### Step 2: Provide Mixpanel with GCS Details
+
+Refer to [Step 2: Creating the Pipeline](/docs/data-pipelines/#step-2-creating-the-pipeline) to create data pipeline via UI. You need to provide the following details to ensure Mixpanel can accurately direct the data exports to your GCS:
+
+- Bucket: The GCS bucket to export Mixpanel data to
+- Region: The GCS region for the bucket
+
+## Supported GCS Regions
+
+`NORTHAMERICA-NORTHEAST1, US-CENTRAL1, US-EAST1, US-EAST4, US-WEST1, US-WEST2, SOUTHAMERICA-EAST1, EUROPE-NORTH1, EUROPE-WEST1, EUROPE-WEST2, EUROPE-WEST3, EUROPE-WEST4, EUROPE-WEST6, ASIA-EAST1, ASIA-EAST2, ASIA-NORTHEAST1, ASIA-NORTHEAST2, ASIA-NORTHEAST3, ASIA-SOUTH1, ASIA-SOUTHEAST1, AUSTRALIA-SOUTHEAST1`

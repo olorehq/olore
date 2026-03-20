@@ -1,0 +1,149 @@
+# Templates: Generate a board using customizable templates
+
+![/changelog/Templates.gif](/changelog/Templates.gif)
+
+Mixpanel’s Templates make it simple for anyone to get answers to important questions as soon as data is available in Mixpanel. Our templates create out-of-the-box and fully customizable Boards designed to guide you section by section. They help you better understand your user base and monitor metrics like adoption, retention, virality, and product impact.
+
+To get started, click the icon in the left-hand navigator to create a new Board, and select `Use a Template`. You’ll then select your desired template and click `Start from Template`.
+
+## Adding Your Events
+
+The Company KPI template uses two events: “Sign Up” and “Value Moment.”
+
+- [Sign Up](https://developer.mixpanel.com/docs/plan-your-implementation#sign-up-event): Select the event where a new user—free or paid—is acquired by creating a new account. For products that do not include an account creation step, a similar “[Session Start](https://help.mixpanel.com/hc/en-us/articles/115004695223)” event can be used as a proxy.
+- [Value Moment](https://developer.mixpanel.com/docs/plan-your-implementation#value-moment-event): Select an event that indicates that a user is experiencing value in your product. For a social media platform, it could be creating a post; for a streaming service, it's watching a video; for e-commerce, it might be completing a purchase.
+
+The Lifecycle cohort analysis template uses one event: “Value Moment.”
+
+- [Value Moment](https://developer.mixpanel.com/docs/plan-your-implementation#value-moment-event): Select an event that indicates that a user is experiencing value in your product. For a social media platform, it could be creating a post; for a streaming service, it's watching a video; for e-commerce, it might be completing a purchase.
+
+The Feature Launch template uses four inputs, two of which are events: “Feature Name,” “Launch Date,” “New Feature,” and “Value Moment.”
+
+- Feature Name: Whatever you want to name your feature. It will be populated throughout the template so we recommend something on the shorter side. Including the feature name will help you better keep track of your Boards when you have multiple feature launches.
+- Launch Date: Choose the date your feature went live. Some reports show the percentage of active users engaging with the feature, so be aware that if you’re doing a partial rollout, those numbers might be skewed, as the report will be using your total active user base.
+- New Feature: Pick an event that captures the adoption of your new feature. For adding reviews to a streaming service, the event could be publishing a review. For e-commerce, it might be creating a “save for later” collection.
+- [Feature Value Moment](https://developer.mixpanel.com/docs/plan-your-implementation#value-moment-event): Select an event that indicates that a user is experiencing value in your feature. For a social media platform, it could be liking a new type of content; for a streaming service, it could be sharing a playlist; for e-commerce, it might be purchasing from the “save for later” collection.
+
+The AI Company KPI template uses several events and properties:
+
+- Sign Up: An event triggered the first time a user is identified in your system, typically upon account creation or registration.
+- Launch AI: An event triggered when a user first begins interacting with an AI feature, such as opening a chatbot interface or engaging a virtual assistant.
+- AI Prompt Sent: An event recorded each time a user submits a prompt or query to an AI system. Include the prompt content as a property.
+- AI Response Sent: An event triggered when the AI system sends a response back to the user. Include properties such as api token usage (API Tokens Used), estimated cost (API Cost), and latency (API Response Time).
+- API Error: An event that logs runtime errors encountered by the AI feature or its underlying APIs during user interaction. This should capture relevant error metadata for diagnostics.
+- User Feedback Submitted: An event triggered when a user provides feedback on an AI-generated response. Include properties for the Feedback Text and Sentiment, which could be structured (e.g., thumbs up/down) or unstructured (e.g., free-text).
+- AI Dismissed: An event triggered when a user ends their interaction with an AI feature, such as closing a chatbot or exiting an assistant interface.
+- [Conversion Event](https://developer.mixpanel.com/docs/plan-your-implementation#value-moment-event): Select an event that indicates that a user is experiencing value in your feature. For a social media platform, it could be liking a new type of content; for a streaming service, it could be sharing a playlist; for e-commerce, it might be purchasing from the “save for later” collection.
+
+For projects that have already been implemented and have data, you will select your events, which will enable the `Create` CTA, and your Board will be generated.
+
+For projects that do not have data, please refer to our [dev docs](https://developer.mixpanel.com/docs/plan-your-implementation) and [implementation](https://help.mixpanel.com/hc/en-us/categories/115001197206-Data-and-Implementation) resources.
+
+## Key Metrics
+
+These templates monitor a number of metrics for you. A few are highlighted below.
+
+### Engagement
+
+User engagement measures how users find value in a product or service. Engagement can be measured by a variety of activities such as clicks, shares, and more. Highly engaged users are more likely to lead to higher user growth because they are more likely to share the product or service with their network. Tracking engagement helps evaluate:
+
+- How many users are finding value in your product?
+- Who are your most engaged users?
+- What is your product’s activation rate?
+- What happens to users who don’t reach your product’s value moment?
+
+### Retention
+
+Retention is the metric that shows whether your product has staying power. Retention measures how many people are coming back, which is also a key indicator that users are realizing value in your product. Tracking retention helps identify:
+
+- How many engaged users come back?
+- Who are your dormant users?
+
+### Growth
+
+Growth is about finding people who need your product and showing them that your product can bring value to them. Tracking growth helps you answer:
+
+- How many new users are signing up?
+- Which channels are generating the most signups?
+- What is your DAU (Daily Active Users) and WAU (Weekly Active Users)?
+
+### Adoption
+
+Feature adoption is when a customer actually uses your feature. It could be purchasing an add-on, leaving a review, saving a video to a collection, or even using a new template. Tracking your feature adoption helps you answer questions like:
+
+- How many users used the new feature this month?
+- What percentage of my users have used the new feature?
+- How many times do users use the new feature in a month?
+
+### Product Impact
+
+Product impact metrics give you a full look at how your feature is helping or hurting your overall product. At the end of the day, every feature should be working to drive growth to the product. The product impact metric can help you evaluate:
+
+- Is this feature’s adoption driving product growth?
+- Is this feature’s engagement hurting another part of the product?
+- Is this feature increasing product retention?
+
+### User Base
+
+The Lifecycle Cohort Analysis Template breaks down your user base into the parts that make up the active user calculation:
+
+- New users: user who performed the value moment action for the first time ever during the current period
+- Retained users: user who performed the value moment action this current period and the previous period
+- Resurrected users: user who has performed the value moment before, didn't perform it last period, but performed the value moment again this current period
+
+## Other Examples
+
+In this section, you will find other example Boards built out in our demo data sets to highlight examples of how our most successful and data-mature customers monitor their implementation and drive adoption of Mixpanel across their organizations. The examples in this section are meant to be used as inspiration for additional Boards you can create to make sure your team is effectively monitoring your implementation as well as enabling end users to feel confident implementing and using Mixpanel.
+
+### Implementation Monitoring & Data Governance
+
+This template is meant to be used largely by teams that implemented Mixpanel instrumentation and will be monitoring the data governance of the implementation on an on going basis. The two sections in the Board cover best practices for:
+
+- Monitoring the health of your implementation and nuances to look out for that could be a sign of poor implementation health.
+- Driving consistency in naming convention best practices and a better general understanding of how to manage data governance of your Mixpanel implementation
+
+[Implementation Monitoring & Data Governance Example Board Here](https://mixpanel.com/project/3018488/view/3536632/app/boards/#id=6664368)
+
+<img
+  width="923"
+  alt="Implementation Monitoring and Data Governance"
+  src="https://github.com/mixpanel/docs/assets/136498120/6c21d6a2-bb33-4043-b762-6c4b64ccda1d"
+/>
+
+### Training Board for Champions to use to Educate Users
+
+This template is meant to be used by Mixpanel Champions looking to train their team on what metrics they can report on out of Mixpanel. The three main sections of the board are:
+
+- An overview of the Mixpanel Data Model and tips for how to familiarize yourself with your Mixpanel project
+- Summaries of each core Mixpanel report (Insights, Funnels, Flows, & Retention) and clear examples articulating which Mixpanel reports/features users can leverage given the type of metric on which they’re wanting to report.
+- Links to support articles so users can self-serve education on nuances of Mixpanel’s functionality
+
+[Training Board for Champions Example Here](https://mixpanel.com/project/3018488/view/3536632/app/boards#id=7198653)
+
+<img
+  width="923"
+  alt="Training Board for Champions to use to Educate Users"
+  src="https://github.com/mixpanel/docs/assets/136498120/1bf32c1d-1bc8-43e8-8efc-01c2ae56aea1"
+/>
+
+### Data Troubleshooting Guide for End Users
+
+This template is meant to be used as a guideline for us to follow if we discover anything unusual about the data. The goal is that end users in Mixpanel are able to correctly identify whether there is an issue with the data or a misunderstanding in Mixpanel functionality, and if there is an issue, notify the appropriate team and individual.
+
+When we find something strange about the data, we can classify it as a **Mixpanel functionality question** or an **implementation issue**.
+
+Below are various examples of some common questions or issues that Mixpanel end users face - especially when they weren’t involved in the initial data design & implementation - and what can users do to troubleshoot
+
+- Is the property typecast to the wrong data type?
+- What does it mean that the property value is `(not set)`?
+- What are the properties available in each event?
+- Who should I talk to about reporting questions and Mixpanel UI misunderstandings?
+- Who should I report a data issue or bug to?
+
+[Data Troubleshooting Guide Example Here](https://mixpanel.com/project/3018488/view/3536632/app/boards#id=6664372)
+
+<img
+  width="921"
+  alt="Data Troubleshooting Guide for End Users"
+  src="https://github.com/mixpanel/docs/assets/136498120/ed65ef6a-b080-4aa8-a54b-598d8ac2f982"
+/>

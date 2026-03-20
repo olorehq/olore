@@ -1,0 +1,88 @@
+# Common SQL Queries
+
+### Total daily count with deduplication logic and timezone adjustment 
+
+Events exported via pipelines (i.e. raw exports) can contain duplicates. Deduplication should be performed using 4 event properties: `event_name`, `time`, `distinct_id`, and `insert_id` (docs [here](https://developer.mixpanel.com/reference/event-deduplication)). This is an example of a total daily count, converted to a specific timezone and deduplicated.
+
+```sql
+SELECT
+  DATE(time, 'America/Los_Angeles') AS event_date,
+  COUNT(DISTINCT CONCAT(event_name, time, distinct_id, insert_id)) AS event_count,
+FROM
+  `<your dataset>.mp_master_event`
+WHERE
+  DATE(time, 'America/Los_Angeles') >= '2025-08-01'
+  AND DATE(time, 'America/Los_Angeles') < '2025-09-16'
+GROUP BY
+  1
+ORDER BY
+  1 ASC
+```
+
+### Unique user count with user ID resolution
+
+Raw events may contain the original `distinct_id` associated with the user at the time of the event instead of the final canonical `distinct_id` for the user after authentication. The `mp_identity_mappings_data_view` contains mappings of the original `distinct_id`s to the resolved ones (i.e. canonical `distinct_id`s). You can use this mapping to make sure that the unique users calculations account for ID management and therefore more accurate.
+
+```sql
+SELECT
+  DATE(time, 'America/Los_Angeles') AS event_date,
+  COUNT(DISTINCT resolved_user_id) AS unique_users
+FROM (
+  SELECT
+    time,
+    IFNULL(id_mappings.resolved_distinct_id, events.distinct_id) AS resolved_user_id
+  FROM
+    `<your dataset>.mp_master_event` AS events
+  LEFT JOIN
+    `<your dataset>.mp_identity_mappings_data_view` AS id_mappings
+  ON
+    events.distinct_id = id_mappings.distinct_id
+  WHERE
+    DATE(time, 'America/Los_Angeles') >= '2025-08-01'
+    AND DATE(time, 'America/Los_Angeles') < '2025-09-16' )
+GROUP BY
+  1
+ORDER BY
+  1 ASC
+```
+
+### Top 20 events by volume
+
+```sql
+SELECT
+  event_name,
+  COUNT(*) AS event_count
+FROM
+  `<your dataset>.mp_master_event`
+WHERE
+  DATE(time, 'America/Los_Angeles') >= '2025-08-01'
+  AND DATE(time, 'America/Los_Angeles') < '2025-09-16'
+GROUP BY
+  1
+ORDER BY
+  2 DESC
+LIMIT
+  20
+```
+
+### Querying duplicate events 
+
+Raw exported events can contain duplicates. You can use these 4 event properties to identify duplicates: `event_name`, `time`, `distinct_id`, and `insert_id` (docs [here](https://developer.mixpanel.com/reference/event-deduplication)). This is an example of a query you can use to identify duplicate events in your raw data.
+
+```sql
+SELECT
+ *,
+ COUNT(*) OVER (PARTITION BY event_name, time, distinct_id, insert_id ) AS dup_group_size
+FROM
+ `<your dataset>.mp_master_event`
+WHERE
+ DATE(time, 'America/Los_Angeles') >= '2025-08-01'
+ AND DATE(time, 'America/Los_Angeles') < '2025-09-16'
+QUALIFY
+ dup_group_size > 1
+ORDER BY
+ DATE(time, 'America/Los_Angeles'),
+ event_name,
+ time
+ ```
+

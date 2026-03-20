@@ -1,0 +1,50 @@
+---
+title: Graph View
+description: A graph of all pages.
+---
+
+import { GraphView } from '@/components/preview/lazy';
+import { buildGraph } from '@/lib/build-graph';
+
+<GraphView graph={await buildGraph()} />
+
+## Installation
+
+You can install this from CLI:
+
+```npm
+npx @fumadocs/cli add graph-view
+```
+
+Enable `extractLinkReferences` on Fumadocs MDX.
+
+```ts title="source.config.ts"
+import { defineDocs } from 'fumadocs-mdx/config';
+
+export const docs = defineDocs({
+  docs: {
+    postprocess: {
+      // [!code ++]
+      extractLinkReferences: true,
+    },
+  },
+});
+```
+
+## Usage
+
+You can use it in MDX files or the layout components (e.g. in `page.tsx`):
+
+```tsx title="page.tsx"
+import { GraphView } from '@/components/graph-view';
+import { buildGraph } from '@/lib/build-graph';
+
+export function PageBody() {
+  return (
+    <div>
+      <GraphView graph={buildGraph()} />
+      {/* ... */}
+    </div>
+  );
+}
+```

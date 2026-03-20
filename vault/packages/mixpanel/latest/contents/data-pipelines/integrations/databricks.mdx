@@ -1,0 +1,278 @@
+import { Callout } from "nextra/components";
+
+# Databricks
+
+<Callout type="info">
+  Customers on an Enterprise or Growth plan can access Data Pipeline as an
+  add-on package. See our [pricing page](https://mixpanel.com/pricing/) for more
+  details.
+</Callout>
+
+<Callout type="info">
+  The Databricks export destination is currently in Private Beta.
+</Callout>
+
+Export your Mixpanel data to Databricks using Unity Catalog Managed Volumes. This integration supports all Databricks clouds (AWS, GCP, and Azure).
+
+## Design
+
+Mixpanel exports data to the customer's Databricks workspace using Unity Catalog Managed Volumes. We first load the data into a single-column (VARIANT type) raw data table, then create a view to expose all properties as typed columns.
+
+### Supported Features
+
+- **Cross-cloud Support**: Works with Databricks on AWS, GCP, or Azure
+- **Date Clustering**: Raw tables use liquid clustering on `event_date` for efficient date-based queries
+- **Static IP Addresses**: Supports IP allowlisting for secure connections
+
+### IP Allowlist
+
+Mixpanel Data Pipelines supports static IP addresses for Databricks connections when IP restrictions are configured on your Databricks workspace. If you are using network policies to restrict access to your instance, you might need to add the following IP addresses to the allowed list:
+
+**US**
+
+```text
+34.31.112.201
+35.184.21.33
+35.225.176.74
+```
+
+**EU**
+
+```text
+34.147.68.192
+35.204.164.122
+35.204.177.251
+```
+
+**IN**
+
+```text
+34.47.224.29
+34.93.42.83
+35.244.19.238
+```
+
+## Prerequisites
+
+Before setting up the integration, ensure you have:
+
+- A Databricks workspace with Unity Catalog enabled
+- A SQL Warehouse (Serverless recommended for best performance and cost)
+- Admin permissions in your Databricks workspace to create Service Principals
+
+## Set Export Permissions
+
+### Step 1: Create a Service Principal (or use existing one)
+
+A Service Principal is a Databricks identity that Mixpanel will use to access your workspace.
+
+1. In your Databricks workspace, navigate to **Settings** → **Identity and access** → **Service principals**
+2. Click **Add service principal**
+3. Click **Add new**
+4. Note the **Application ID** - you'll need this later
+
+### Step 2: Generate OAuth Secret
+
+1. Click on the Service Principal you just created
+2. Navigate to the **Secrets** tab
+3. Click **Generate secret** and enter lifetime (730 days recommended)
+4. Copy the **Secret value** immediately - it won't be shown again
+5. Store it securely - you'll need it for Mixpanel configuration
+
+### Step 3: Create new Catalog (or use existing ones) and Schema
+
+<Callout type="info">
+  Creating a new catalog requires the `CREATE CATALOG` privilege, which is a metastore-level permission. Contact your **metastore admin** or **account admin** to grant this privilege.
+</Callout>
+<Callout type="info">
+  If you are using an existing shared catalog, contact the **catalog owner** or a **metastore admin** to grant the following privileges:
+  ```sql
+  GRANT USE CATALOG ON CATALOG <catalog> TO `<user>`;
+  GRANT CREATE SCHEMA ON CATALOG <catalog> TO `<user>`;
+  GRANT MANAGE ON CATALOG <catalog> TO `<user>`;
+  ```
+</Callout>
+
+Create a dedicated catalog and schema for Mixpanel data. You can run SQL under SQL Editor or Catalog Explorer.
+
+```sql
+-- Create Catalog
+CREATE CATALOG IF NOT EXISTS mixpanel_export;
+
+-- Create schema
+CREATE SCHEMA IF NOT EXISTS mixpanel_export.json_pipelines;
+```
+
+### Step 4: Grant Permissions to Service Principal
+
+Grant the Service Principal required permissions to operate within the catalog.
+
+```sql
+GRANT USE CATALOG ON CATALOG mixpanel_export
+  TO `<service-principal-application-id>`;
+
+GRANT USE SCHEMA ON SCHEMA mixpanel_export.json_pipelines
+  TO `<service-principal-application-id>`;
+
+GRANT CREATE TABLE ON SCHEMA mixpanel_export.json_pipelines
+  TO `<service-principal-application-id>`;
+
+GRANT CREATE VOLUME ON SCHEMA mixpanel_export.json_pipelines
+  TO `<service-principal-application-id>`;
+```
+
+**For Metastore Privilege Version 1.1+**, additionally grant "CREATE VIEW" on schema:
+
+- **Version 1.0**: privilege `CREATE TABLE` covers both tables and views
+- **Version 1.1+**: Separate `CREATE VIEW` privilege required
+
+```sql
+-- Check your metastore privilege version by PrivilegeModelVersion
+DESCRIBE METASTORE;
+
+GRANT CREATE VIEW ON SCHEMA mixpanel_export.json_pipelines
+  TO `<service-principal-application-id>`;
+```
+
+#### Why These Permissions?
+
+- `USE CATALOG`: Required to access the catalog
+- `USE SCHEMA`: Required to access objects in the schema
+- `CREATE TABLE`: Create raw tables to store event data
+- `CREATE VOLUME`: Create temporary volumes for uploading files
+- `CREATE VIEW`: Create views with typed columns (metastore v1.1+ only)
+
+**Note**: The Service Principal automatically becomes the **owner** of all objects it creates (tables, views, volumes), which grants it full permissions (SELECT, MODIFY, READ FILES, WRITE FILES, etc.) on those objects. No additional grants needed.
+
+### Step 5: Grant SQL Warehouse Access
+
+The Service Principal needs permission to use the SQL Warehouse to execute queries.
+
+1. In your Databricks workspace, navigate to **SQL Warehouses**
+2. Click on your SQL Warehouse (or create one if needed)
+3. Go to the **Permissions** tab
+4. Click **Add** or **Grant permissions**
+5. Search for your Service Principal by Application ID (from Step 1)
+6. Select permission level: **Can use** (minimum required)
+7. Click **Save**
+
+**Why this is needed**: SQL Warehouses have their own access control separate from data permissions. Even with all catalog/schema/table permissions, the Service Principal cannot execute queries without warehouse access.
+
+### Step 6: Get SQL Warehouse Connection Details
+
+1. In the same SQL Warehouse, go to the **Connection details** tab
+2. Note the following values:
+   - **Server hostname**: e.g., `abc123.cloud.databricks.com`
+   - **HTTP Path**: e.g., `/sql/1.0/warehouses/xyz789`
+
+**Recommendation**: Use a Serverless SQL Warehouse for:
+
+- Fast startup (~3 seconds)
+- Auto-scaling
+- Pay-per-use pricing
+- No idle cluster costs
+
+### Step 7: Configure Mixpanel Integration
+
+Refer to [Step 2: Creating the Pipeline](/docs/data-pipelines/#step-2-creating-the-pipeline) to create data pipeline via UI. You'll need to provide:
+
+- **Server Hostname** (from Step 6)
+- **HTTP Path** (from Step 6)
+- **Catalog** (from Step 3, e.g., `mixpanel_export`)
+- **Schema** (from Step 3, e.g., `json_pipelines`)
+- **Service Principal ID** (Application ID from Step 1)
+- **Service Principal Secret** (from Step 2)
+
+## Clustering
+
+Raw tables are clustered by the `event_date` column, which is computed in your project's timezone during data load. This clustering significantly improves query performance when filtering by date.
+
+## Data Schema
+
+Mixpanel creates a raw table and a view with typed columns:
+
+**Raw Table Columns** (`mp_master_event_raw`):
+
+- `DATA` (VARIANT) - Contains the complete event JSON
+- `event_date` (DATE) - Computed from event time in your project's timezone
+
+**View Columns** (`mp_master_event`):
+
+- `user_id` (STRING)
+- `time` (TIMESTAMP)
+- `properties` (VARIANT) - All event properties as semi-structured data
+- `insert_id` (STRING)
+- `event_name` (STRING)
+- `distinct_id` (STRING)
+- `device_id` (STRING)
+- `event_date` (DATE)
+
+## Queries
+
+<Callout type="info">
+  Remember to grant necessary permissions to any user who wants to query the table
+  ```sql
+  GRANT USE CATALOG ON CATALOG mixpanel_export TO `<user>`;
+  GRANT USE SCHEMA ON SCHEMA mixpanel_export.json_pipelines TO `<user>`;
+  GRANT SELECT ON SCHEMA mixpanel_export.json_pipelines TO `<user>`;
+  ```
+</Callout>
+
+Databricks supports a VARIANT type that can store semi-structured JSON data. Use the `::` syntax to extract and cast properties from VARIANT columns.
+
+### Basic event query
+
+```sql
+SELECT count(*)
+FROM mixpanel_export.json_pipelines.mp_master_event
+WHERE event_name = 'sign up';
+```
+
+### Query nested properties
+
+```sql
+SELECT
+    event_name,
+    time,
+    distinct_id,
+    properties:button_name::STRING AS button_name,
+    properties:product:category::STRING AS product_category,
+    properties:price::DOUBLE AS price
+FROM mixpanel_export.json_pipelines.mp_master_event
+WHERE event_name = 'Purchase'
+  AND properties:product:category::STRING = 'Electronics';
+```
+
+### Getting the number of events per day
+
+```sql
+SELECT
+    event_date,
+    count(*) as event_count
+FROM mixpanel_export.json_pipelines.mp_master_event
+WHERE event_date >= '2024-01-01' AND event_date <= '2024-01-31'
+GROUP BY event_date
+ORDER BY event_date;
+```
+
+### Efficient date filtering
+
+Use the `event_date` column for best performance:
+
+```sql
+SELECT
+    event_name,
+    time,
+    distinct_id,
+    properties:button_name::STRING AS button_name
+FROM mixpanel_export.json_pipelines.mp_master_event
+WHERE event_date BETWEEN '2024-01-01' AND '2024-01-31'
+  AND event_name = 'Purchase'
+ORDER BY time DESC;
+```
+
+## Costs
+
+- **Delta tables**: Billed by your cloud provider (AWS S3, GCP GCS, or Azure ADLS) via Databricks
+- **Managed volumes**: Temporary storage cleaned up after each export
+- **Compute**: SQL Warehouse usage during COPY INTO operations

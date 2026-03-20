@@ -1,0 +1,56 @@
+---
+image: /generated/articles-docs-scaling.png
+id: scaling
+title: Output scaling
+crumb: 'How To'
+---
+
+<AvailableFrom v="2.6.7" />
+
+Output scaling is useful if you would like to render the video in multiple resolutions in the same aspect ratio.
+
+**Example**: Your video canvas is in Full HD (`1920x1080`), but would like to render your video to be in 4k (`3840x2160` or `2x`).
+
+Remotion can support this higher resolution by:
+
+- setting the [`deviceScaleFactor`](https://puppeteer.github.io/puppeteer/docs/puppeteer.viewport.devicescalefactor) of the headless browser in server-side rendering.
+- upscaling items on the canvas in client-side rendering.
+
+## How to scale
+
+- In the CLI, during a render of a video or a still, pass the [`--scale`](/docs/cli/render#--scale) flag. For example: `--scale=2`
+- In the Node.JS functions [`renderStill()`](/docs/renderer/render-still#scale), [`renderFrames()`](/docs/renderer/render-frames#scale), [`renderStillOnLambda()`](/docs/lambda/renderstillonlambda) and [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#scale) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#scale), [`renderMediaOnCloudRun()`](/docs/cloudrun/rendermediaoncloudrun), [`renderStillOnCloudRun()`](/docs/cloudrun/renderstilloncloudrun), you can pass a `scale` option.
+- In the client-side rendering functions [`renderMediaOnWeb()`](/docs/renderer/render-media#scale), [`renderStillOnWeb()`](/docs/renderer/render-still#scale), you can pass a `scale` option.
+- In the [config file](/docs/config), you can pass the scale using the following statement:
+
+  ```ts twoslash
+  import {Config} from '@remotion/cli/config';
+  // ---cut---
+  Config.setScale(2);
+  ```
+
+## Allowed values
+
+The highest scale possible is `16` (sixteen times higher dimensions on each size or 256 times more pixels).
+
+Positive values below 1 are allowed. For example, `0.5` will half each dimension.
+
+Before 4.0.328, there were further limitations:
+
+- Scaling values leading to non-integer pixels were not allowed.
+- Scaling values leading to non-even numbers were not allowed when rendering with codec `h264`.
+
+Since 4.0.328, rounding is performed automatically.
+
+## Scalable elements
+
+Elements that can be upscaled and that will enhance increased resolution are:
+
+- Text elements
+- SVG elements
+- Images (if their resolution is sufficient to display in a higher resolution)
+
+Elements that **cannot** be upscaled for increased resolution are:
+
+- Videos
+- Canvas and WebGL elements

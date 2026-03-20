@@ -1,0 +1,88 @@
+---
+title: Remark Admonition
+description: Use Admonition in Fumadocs
+---
+
+In Docusaurus, there's an [Admonition syntax](https://docusaurus.io/docs/markdown-features/admonitions).
+
+For people migrating from Docusaurus, you can enable this remark plugin to support the Admonition syntax.
+
+## Usage
+
+It requires `remark-directive` to work.
+
+```npm
+npm i remark-directive
+```
+
+Configure both plugins in your config.
+
+```ts title="source.config.ts" tab="Fumadocs MDX"
+import remarkDirective from 'remark-directive';
+import { remarkDirectiveAdmonition } from 'fumadocs-core/mdx-plugins';
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [remarkDirective, remarkDirectiveAdmonition],
+  },
+});
+```
+
+```ts tab="MDX Compiler"
+import remarkDirective from 'remark-directive';
+import { remarkDirectiveAdmonition } from 'fumadocs-core/mdx-plugins';
+import { compile } from '@mdx-js/mdx';
+
+await compile('...', {
+  remarkPlugins: [remarkDirective, remarkDirectiveAdmonition],
+});
+```
+
+### Example
+
+```md tab="Input"
+:::tip[This is a `title`]
+
+Hello World
+
+:::
+
+:::warning
+
+Hello World
+
+:::
+```
+
+```mdx tab="Output"
+<CalloutContainer type='info'>
+  <CalloutTitle>This is a `title`</CalloutTitle>
+  <CalloutDescription>
+
+    Hello World
+
+  </CalloutDescription>
+</CalloutContainer>
+
+<CalloutContainer type='warning'>
+  <CalloutDescription>
+
+    Hello World
+
+  </CalloutDescription>
+</CalloutContainer>
+```
+
+### When to use
+
+We highly recommend using the JSX syntax of MDX instead.
+It's more flexible, some editors support IntelliSense in MDX files.
+
+```mdx
+<Callout type='warn'>
+
+Hello World
+
+</Callout>
+```

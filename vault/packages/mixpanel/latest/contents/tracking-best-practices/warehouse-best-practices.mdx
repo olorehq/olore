@@ -1,0 +1,52 @@
+---
+title: "Warehouse Best Practices"
+slug: "warehouse-best-practices"
+hidden: false
+metadata: 
+  title: "Warehouse Best Practices"
+  description: "Learn best practices for implementing Mixpanel with your data warehouse to maintain high-quality data governance and successful analytics outcomes."
+createdAt: "2023-04-16T17:00:00.000Z"
+updatedAt: "2023-04-16T17:00:00.000Z"
+---
+
+import { Callout } from 'nextra/components'
+
+# Warehouse Best Practices
+
+<Callout type="info">
+Warehouse Connector is a paid add-on available to organizations on a Growth or Enterprise plan. Learn more on our [pricing page](https://mixpanel.com/pricing/).
+</Callout>
+
+In this page, we describe best practices for implementing [Warehouse Connectors](http://mixpanel.com/docs/tracking-methods/warehouse-connectors), which allow you to seamlessly integrate your existing data warehouse with Mixpanel's powerful analytics platform, unlocking deeper insights while maintaining your existing trusted data infrastructure and workflows.
+
+
+## Hub & Spoke Data Governance Model
+
+To provide a clean, trusted dataset for your analytics needs we recommend implementing a structured hub & spoke rollout method prior to importing your data. In an effort to maintain high quality, trusted events and properties optimized for self-serve metrics, a central hub team will own core strategy and defined rollout rules, and the spoke teams operate within their verticals to define the metrics they care most about, owning the socialization and standardization of key reports and dashboards.
+
+### Central Hub Responsibilities
+
+Appoint a hub data governance owner who is in charge of enforcing data validation rules, reviewing event transformations before import, and monitoring quality standards.
+   * Responsible for: approving new data requests, enforcing naming conventions, requirements on any global property values, designating a canonical identifier for users, what constitutes as PII, and data retention, etc.
+
+### Spoke Team Responsibilities
+
+Designate spoke data governance owners for each underlying team that contributes data to Mixpanel. These spoke owners must regularly collaborate with the hub data governance owner to ensure alignment with data governance policies and best practices.
+   * Responsible for: logging new data requests, defining the business need behind the data request, driving ongoing enablement & adoption on their teams data, etc.
+
+## Phased Implementation Approach
+
+Always start by importing a smaller time period of data for quality assurance testing. Ensure the spoke data governance owner signs off, confirming that their team can access the insights they need before proceeding with the full dataset import.
+
+## Change Management Process
+
+Ongoing Change Management: All changes to data tables must be documented. The hub data governance owner is required to record the rationale behind changes and inform the relevant stakeholders.
+   * We've seen success with distributed teams using a [data request template](https://docs.google.com/spreadsheets/d/1Bx0LpGi5JoyWVCLU3UlmEBpvy09wFrLNH1HWHPnTe6A/edit?gid=0#gid=0) to organize the urgency and need for new data sets that need to be brought in.
+
+## Learn More
+
+For more information about warehouse connectors, check out these resources:
+
+* [Warehouse Connectors Help Docs](http://mixpanel.com/docs/tracking-methods/warehouse-connectors)
+* [Warehouse Billing FAQ](http://mixpanel.com/docs/tracking-methods/warehouse-connectors#billing-faq)
+* [General Warehouse FAQ](http://mixpanel.com/docs/tracking-methods/warehouse-connectors#faq)

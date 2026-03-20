@@ -1,0 +1,166 @@
+---
+title: Include
+description: Reuse content from other files.
+---
+
+## Usage
+
+### Content
+
+To display content from another Markdown/MDX file, specify its path relative to the file itself in the `<include>` tag.
+
+```mdx tab="MDX"
+<include>./another.mdx</include>
+```
+
+```md tab="Markdown"
+::include[./another.mdx]
+```
+
+<Callout title='For Markdown'>
+
+Markdown (`.md`) files do not support JSX syntax. To use `<include />`, you need to configure `remark-directive`.
+
+```ts title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+import remarkDirective from 'remark-directive';
+
+export default defineConfig({
+  mdxOptions: {
+    // [!code ++]
+    remarkPlugins: [remarkDirective],
+  },
+});
+```
+
+You may also need `rehype-raw` for HTML comments & content.
+
+</Callout>
+
+### CodeBlock
+
+For other types of files, it will become a codeblock:
+
+```mdx tab="MDX"
+<include>./script.ts</include>
+
+<include lang="md" meta='title="lib.md"'>
+  page.md
+</include>
+```
+
+```md tab="Markdown"
+::include[./script.ts]
+
+::include[page.md]{lang=md meta='title="lib.md"'}
+```
+
+You can include only a region of content:
+
+```ts title="code.ts"
+export function fn() {
+  //#region a
+  console.log('one');
+  //#endregion
+}
+```
+
+```mdx tab="MDX"
+<include>./code.ts#a</include>
+```
+
+```md tab="Markdown"
+::include[./code.ts#a]
+```
+
+### `cwd`
+
+Resolve relative paths from cwd instead of the current file:
+
+```mdx tab="MDX"
+<include cwd lang="tsx" meta='title="lib.ts"'>
+  ./script.ts
+</include>
+```
+
+```md tab="Markdown"
+::include[./script.ts]{cwd lang=tsx meta='title="lib.ts"'}
+```
+
+## Extraction
+
+When referencing content files, you can only include a certain part of the document.
+
+### Section
+
+Encapsulate by a `<section />` tag:
+
+```mdx tab="a.mdx"
+## Hello World
+
+<section id="test">This is included</section>
+
+This is not included.
+```
+
+```mdx tab="b.mdx"
+Include the content from `a.mdx`:
+
+<include>a.mdx#test</include>
+```
+
+In Markdown:
+
+```md tab="a.md"
+## Hello World
+
+:::section{#test}
+This is included
+:::
+
+This is not included.
+```
+
+```md tab="b.md"
+Include the content from `a.mdx`:
+
+::include[a.md#test]
+```
+
+### Heading
+
+Include contents under a certain heading.
+
+```mdx tab="a.mdx"
+## Included Section
+
+I'm here!
+
+## Not Included
+
+Some random text.
+```
+
+```mdx tab="b.mdx"
+Content under the heading:
+
+<include>a.mdx#included-section</include>
+```
+
+In Markdown:
+
+```md tab="a.md"
+## Included Section
+
+I'm here!
+
+## Not Included
+
+Some random text.
+```
+
+```md tab="b.md"
+Content under the heading:
+
+::include[a.mdx#included-section]
+```

@@ -1,0 +1,119 @@
+---
+title: "Drop Shadow"
+description: "Utilities for applying drop-shadow filters to an element."
+---
+
+import utilities from 'utilities?plugin=dropShadow'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+import { RemovingFilters } from '@/components/RemovingFilters'
+
+export const classes = {
+  utilities,
+  transformProperties: ({ properties }) => {
+    return {
+      filter: properties['--tw-drop-shadow'],
+    }
+  },
+}
+
+## Basic usage
+
+### Adding a drop shadow
+
+Use the `drop-shadow-*` utilities to add a drop shadow to an element.
+
+```html {{ example: { p: 'none', lightOnly: true } }}
+<div class="flex justify-start sm:block overflow-scroll sm:overflow-visible scroll-p-8">
+  <div class="flex items-center justify-around gap-6 sm:gap-4 font-mono font-bold shrink-0 p-8">
+    <div class="flex flex-col items-center shrink-0">
+      <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3">drop-shadow-md</p>
+      <svg class="drop-shadow-md h-28 w-28" viewBox="0 0 84 84" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.0992 77L2.19922 42.5L22.0992 8H61.8992L81.7992 42.5L61.8992 77H22.0992Z" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="flex flex-col items-center shrink-0">
+      <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3">drop-shadow-lg</p>
+      <svg class="drop-shadow-lg h-28 w-28" viewBox="0 0 84 84" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.0992 77L2.19922 42.5L22.0992 8H61.8992L81.7992 42.5L61.8992 77H22.0992Z" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="flex flex-col items-center shrink-0">
+      <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3">drop-shadow-xl</p>
+      <svg class="drop-shadow-xl h-28 w-28" viewBox="0 0 84 84" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.0992 77L2.19922 42.5L22.0992 8H61.8992L81.7992 42.5L61.8992 77H22.0992Z" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="flex flex-col items-center shrink-0">
+      <p class="font-medium text-sm text-slate-500 font-mono text-center mb-3">drop-shadow-2xl</p>
+      <svg class="drop-shadow-2xl h-28 w-28" viewBox="0 0 84 84" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.0992 77L2.19922 42.5L22.0992 8H61.8992L81.7992 42.5L61.8992 77H22.0992Z" fill="#fff"/>
+      </svg>
+    </div>
+  </div>
+</div>
+```
+
+```html
+<div class="**drop-shadow-md** ...">
+  <!-- ... -->
+</div>
+<div class="**drop-shadow-lg** ...">
+  <!-- ... -->
+</div>
+<div class="**drop-shadow-xl** ...">
+  <!-- ... -->
+</div>
+<div class="**drop-shadow-2xl** ...">
+  <!-- ... -->
+</div>
+```
+
+This is useful for applying shadows to irregular shapes, like text and SVG elements. For applying shadows to regular elements, you probably want to use [box shadow](/docs/box-shadow) instead.
+
+### Removing filters
+
+<RemovingFilters defaultClass="blur-md invert drop-shadow-xl" />
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="drop-shadow-md" featuredClass="drop-shadow-xl" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="drop-shadow-md" featuredClass="drop-shadow-xl" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind includes a handful of general purpose `dropShadow` utilities. You can customize these values by editing `theme.dropShadow` or `theme.extend.dropShadow` in your `tailwind.config.js` file.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      extend: {
++       dropShadow: {
++         '3xl': '0 35px 35px rgba(0, 0, 0, 0.25)',
++         '4xl': [
++             '0 35px 35px rgba(0, 0, 0, 0.25)',
++             '0 45px 65px rgba(0, 0, 0, 0.15)'
++         ]
++       }
+      }
+    }
+  }
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+### Arbitrary values
+
+<ArbitraryValues property="drop-shadow" featuredClass="drop-shadow-[0_35px_35px_rgba(0,0,0,0.25)]" />

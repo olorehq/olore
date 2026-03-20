@@ -1,0 +1,235 @@
+---
+image: /generated/articles-docs-vercel-render-media-on-vercel.png
+title: renderMediaOnVercel()
+crumb: '@remotion/vercel'
+---
+
+# renderMediaOnVercel()<AvailableFrom v="4.0.426" />
+
+:::warning
+Experimental package: We reserve the right to make breaking changes in order to correct bad design decisions until this notice is gone.
+:::
+
+Renders a video inside a Vercel Sandbox.
+
+The rendered file stays inside the sandbox. Use [`uploadToVercelBlob()`](/docs/vercel/upload-to-vercel-blob) to upload it to Vercel Blob.
+
+## Example
+
+```ts twoslash title="route.ts"
+// @module: es2022
+// @target: es2022
+import {renderMediaOnVercel, addBundleToSandbox, createSandbox} from '@remotion/vercel';
+const sandbox = await createSandbox();
+// ---cut---
+const {sandboxFilePath} = await renderMediaOnVercel({
+  sandbox,
+  compositionId: 'MyComp',
+  inputProps: {title: 'Hello World'},
+  onProgress: async (update) => {
+    console.log(`Overall: ${Math.round(update.overallProgress * 100)}%`);
+    if (update.stage === 'render-progress') {
+      console.log(`Rendering: ${Math.round(update.progress.progress * 100)}%`);
+    }
+  },
+});
+```
+
+## Arguments
+
+An object with the following properties:
+
+### `sandbox`
+
+A [`Sandbox`](https://vercel.com/docs/vercel-sandbox/sdk-reference#sandbox-class) instance.
+
+### `compositionId`
+
+The ID of the Remotion composition to render.
+
+### `inputProps`
+
+Props to pass to the composition.
+
+### `codec?`
+
+_string_ <TsType type="Codec" source="@remotion/renderer" href="/docs/renderer/types#codec" />
+
+Choose a suitable codec for your output media. Refer to the [Encoding guide](/docs/encoding) to find the best codec for your use case. Default: `"h264"`.
+
+### `outputFile?`
+
+The output file path inside the sandbox. Default: `"/tmp/video.mp4"`.
+
+### `crf?`
+
+<Options id="crf" />
+
+### `imageFormat?`
+
+<Options id="video-image-format" />
+
+### `pixelFormat?`
+
+<Options id="pixel-format" />
+
+### `envVariables?`
+
+`Record<string, string>`
+
+An object containing environment variables to be injected in your project.
+
+See: [Environment variables](/docs/env-variables/)
+
+### `frameRange?`
+
+_number | [number, number] | [number, null]_ <TsType type="FrameRange" source="@remotion/renderer" href="/docs/renderer/types#framerange" />
+
+Specify a single frame (passing a `number`) or a range of frames (passing a tuple `[number, number]`) to be rendered. By passing `null` (default) all frames of a composition get rendered.
+
+### `everyNthFrame?`
+
+<Options id="every-nth-frame" />
+
+### `proResProfile?`
+
+<Options id="prores-profile" />
+
+### `chromiumOptions?`
+
+Allows you to set certain Chromium / Google Chrome flags. See: [Chromium flags](/docs/chromium-flags).
+
+### `scale?`
+
+<Options id="scale" />
+
+### `preferLossless?`
+
+<Options id="prefer-lossless" />
+
+### `enforceAudioTrack?`
+
+<Options id="enforce-audio-track" />
+
+### `disallowParallelEncoding?`
+
+<Options id="disallow-parallel-encoding" />
+
+### `concurrency?`
+
+<Options id="concurrency" />
+
+### `metadata?`
+
+<Options id="metadata" />
+
+### `logLevel?`
+
+<Options id="log" />
+
+### `timeoutInMilliseconds?`
+
+<Options id="timeout" />
+
+### `videoBitrate?`
+
+<Options id="video-bitrate" />
+
+### `audioBitrate?`
+
+<Options id="audio-bitrate" />
+
+### `audioCodec?`
+
+<Options id="audio-codec" />
+
+### `encodingMaxRate?`
+
+<Options id="max-rate" />
+
+### `encodingBufferSize?`
+
+<Options id="buffer-size" />
+
+### `muted?`
+
+<Options id="muted" />
+
+### `numberOfGifLoops?`
+
+<Options id="number-of-gif-loops" />
+
+### `x264Preset?`
+
+<Options id="x264-preset" />
+
+### `colorSpace?`
+
+<Options id="color-space" />
+
+### `jpegQuality?`
+
+<Options id="jpeg-quality" />
+
+### `forSeamlessAacConcatenation?`
+
+<Options id="for-seamless-aac-concatenation" />
+
+### `separateAudioTo?`
+
+<Options cli id="separate-audio-to" />
+
+### `hardwareAcceleration?`
+
+<Options id="hardware-acceleration" />
+
+### `offthreadVideoCacheSizeInBytes?`
+
+<Options id="offthreadvideo-cache-size-in-bytes" />
+
+### `mediaCacheSizeInBytes?`
+
+<Options id="media-cache-size-in-bytes" />
+
+### `offthreadVideoThreads?`
+
+<Options id="offthreadvideo-video-threads" />
+
+### `licenseKey?`
+
+<Options id="license-key" />
+
+### `onProgress?`
+
+_function_ <TsType type="RenderMediaOnVercelProgress" source="@remotion/vercel" href="/docs/vercel/types#rendermediaonvercelprogress" />
+
+A callback that receives progress updates. Every variant includes `overallProgress` (0–1).
+
+```ts twoslash
+import type {RenderMediaOnVercelProgress} from '@remotion/vercel';
+// ---cut---
+const onProgress = async (update: RenderMediaOnVercelProgress) => {
+  console.log(`Overall: ${Math.round(update.overallProgress * 100)}%`);
+  if (update.stage === 'render-progress') {
+    console.log(`Rendering: ${Math.round(update.progress.progress * 100)}%`);
+  }
+};
+```
+
+## Return value
+
+An object containing:
+
+### `sandboxFilePath`
+
+The path to the rendered video inside the sandbox.
+
+### `contentType`
+
+The MIME type of the rendered output (e.g. `"video/mp4"`, `"video/webm"`, `"image/gif"`).
+
+## See also
+
+- [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel)
+- [`uploadToVercelBlob()`](/docs/vercel/upload-to-vercel-blob)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/vercel/src/render-media-on-vercel.ts)

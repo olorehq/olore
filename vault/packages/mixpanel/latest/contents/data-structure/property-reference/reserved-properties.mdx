@@ -1,0 +1,55 @@
+# Reserved Properties: Properties used for system features
+
+Mixpanel reserves certain property names for special processing or for specific system features. These properties, when populated, will affect the way Mixpanel processes your data.
+
+## Reserved Profile Properties
+
+> **Note:** Also refer to the list of Mixpanel [Default Properties](/docs/data-structure/property-reference/default-properties) indicated in our documentation.
+
+| **Raw Name** | **Display Name** | **Description** |
+| ------------ | ---------------- | --------------- |
+| $distinct_id | Distinct ID | Mixpanel's internal unique identifier for a profile. See [Identifying Users](/docs/tracking-methods/id-management/identifying-users) and [Group Profiles](/docs/data-structure/advanced/group-analytics#group-profiles) | 
+| \$name, <br /> \$first_name, <br /> \$last_name | Name, <br /> First Name, <br /> Last Name | The user's / group's general name, as well as, first and last names. These are primarily useful because they are used, if available, in various Mixpanel UI / reports. For user [Cohort Syncs](/docs/cohort-sync), only `$first_name` and `$last_name` is exported. |
+| $email | Email | The user's / group's email address. You must set this property if you want to send emails to users via partners receiving cohorts from our [Cohort Syncs](/docs/cohort-sync). | 
+| $phone | Phone | The user's / group's phone number. You must set this property if you want to send SMS to users via partners receiving cohorts from our [Cohort Syncs](/docs/cohort-sync). Note that a '+' needs to precede international phone numbers. If the user does not import a phone number with the '+' sign in front, the country code will be prefixed to the front of the number based on the $country_code default property, resulting in a phone number with two country codes. |
+| $avatar | Avatar URL | Set this property to a URL resource of a gif, jpg, jpeg, or png to update the profile picture in a profile. This property will override a profile picture pulled from [Gravatar](https://gravatar.com/). |
+| $created | Created | The time that the profile was created. Note that this is not auto-populated. |
+| $mp_first_event_time | First Seen | Mixpanel calculated property that represents the time of the user's (or group's) very first event in Mixpanel. This can be used to filter/segment reports by users (or groups) who were "new" in a particular timeframe. |
+
+## Reserved Event Properties
+
+> **Note:** Also refer to the list of Mixpanel [Default Properties](/docs/data-structure/property-reference/default-properties) indicated in our documentation.
+
+| **Raw Name** | **Display Name** | **Description** |
+| ------------ | ---------------- | --------------- |
+| token | - | The project's token when sending data via [/track API](https://developer.mixpanel.com/reference/track-event). Not visible via Mixpanel UI reports. |
+| ip | - | The `ip` event property is the value to be used for [geo-location parsing](/docs/tracking-best-practices/geolocation) (i.e. `$city`, `$region`, and `mp_country_code`) if `ip` as param to the [/track endpoint](https://developer.mixpanel.com/reference/track-event) has **not been** set to 1. Our client-side libraries, by default, will set the `ip` param to 1 so geo location is parsed from the incoming request, but this can be disabled or, if you're implementing from the [server-side](/docs/best-practices/server-side-best-practices#tracking-geolocation-server-side), you can include the `ip` event property so it's parsed from it instead of the IP of the incoming request. The `ip` event property is not stored in Mixpanel. |
+| $bucket / bucket | - | A reserved property that is hidden from the Mixpanel interface, and will cause other events to not appear in the interface. Do not name any property bucket or $bucket. |
+| $distinct_id / distinct_id | Distinct ID | Mixpanel's internal unique identifier for a user. See [Identifying Users](/docs/tracking-methods/id-management/identifying-users). |
+| $device_id | Device ID | In [Simplified ID Merge](/docs/tracking-methods/id-management/identifying-users#example-user-flows): unique identifier used to track a device while the user is in anonymous state. |
+| $user_id | User ID | In [Simplified ID Merge](/docs/tracking-methods/id-management/identifying-users#example-user-flows): unique identifier used to track a user across devices when user is in identified state. |
+| $event_name | Event Name | Name of the tracked event used in the Mixpanel UI. |
+| $time / time | Time or Date | A unix time epoch that is used to determine the time of an event. If no time property is provided, we will use the time when the event arrives at our servers. |
+| $insert_id | Insert ID | A unique identifier for the event, used to deduplicate events that are accidentally sent multiple times. More details [here](https://developer.mixpanel.com/reference/import-events#propertiesinsert_id). |
+| $identified_id | Identified ID | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Internal Mixpanel property to track the identifier passed into the [`$identify`](https://developer.mixpanel.com/reference/create-identity) event. |
+| $anon_id | Anonymous ID | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Internal Mixpanel property to track the anonymous ID passed into the [`$identify`](https://developer.mixpanel.com/reference/create-identity) event. |
+| alias | Alias | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Internal Mixpanel property to track the alias passed into the [`$create_alias`](https://developer.mixpanel.com/reference/identity-create-alias) event. |
+| $distinct_ids | Distinct Ids | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Internal Mixpanel property to track the distinct IDs passed into the [`$merge`](https://developer.mixpanel.com/reference/identity-merge) event. |
+| $distinct_id_before_identity | Distinct ID Before Identity | Internal Mixpanel property to track an event's original $distinct_id before it was updated due to identity merging. Used in [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge) and [Simplified ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#understanding-simplified-id-merge). |
+| $is_reshuffled | Is Reshuffled | Internal Mixpanel property to denote an event was reshuffled (sets to true if original $distinct_id was updated) due to identity merging. Used in [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge) and [Simplified ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#understanding-simplified-id-merge). |
+| $failure_description | Failure Description | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Mixpanel property explaining in detail why identity merging was not executed. | 
+| $failure_reason | Failure Reason | In [Original ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#on-original-id-merge): Mixpanel property summarizing why identity merging was not executed. | 
+| $identity_failure_reason | Identity Failure Reason | In [Simplified ID Merge](/docs/tracking-methods/id-management/migrating-to-simplified-id-merge-system#understanding-simplified-id-merge): Mixpanel property summarizing why identity merging was not executed. |
+|mp_original_distinct_id | Hotshard Original Distinct ID | Original $distinct_id for an event that was identified as contributing to a [hot shard](https://docs.mixpanel.com/docs/debugging/distinct-id-limits#what-is-a-hot-shard). |
+| mp_original_event_name | Hotshard Original Event Name | Original $event_name for an event that was identified as contributing to [hot shard](https://docs.mixpanel.com/docs/debugging/distinct-id-limits#what-is-a-hot-shard). |
+| $source | Source | Hidden property used by certain integration partners to denote events were sent by them. Refer to the respective partners under [Cohort Sync -> Integrations](/docs/cohort-sync/integrations/airship). |
+| $partner_id | Partner Id | Hidden property used by certain integration partners to denote events were sent by them. Refer to the respective partners under [Cohort Sync -> Integrations](/docs/cohort-sync/integrations/airship). |
+| $warehouse_type | Warehouse Type | The type of the warehouse sync setup to send the event. See [Supported Warehouses](/docs/tracking-methods/warehouse-connectors#getting-started). |
+| $warehouse_import_id | Warehouse Import ID | The ID of the warehouse sync setup to send this event. See [Data Warehouse](/docs/tracking-methods/warehouse-connectors). |
+| $warehouse_import_job_id | Warehouse Import Job ID | The internal Mixpanel Job ID of the warehouse sync setup to send this event. See [Data Warehouse](/docs/tracking-methods/warehouse-connectors). |
+| $warehouse_import_run_id | Warehouse Import Run ID | The internal Mixpanel Run ID of the warehouse sync setup to send this event. See [Data Warehouse](/docs/tracking-methods/warehouse-connectors). |
+| $warehouse_table | Warehouse Table | The name of a table (or view) in the warehouse where the event came from; useful for understanding row-level lineage of any event. See [Data Warehouse](/docs/tracking-methods/warehouse-connectors). |
+| $duration_s | Session Duration (Seconds) | The duration between Session Start and Session End events in seconds. See [How Sessions Work](/docs/features/sessions#how-sessions-work). |
+| $event_count | Session Event Count | The number of events during a session (i.e. Session Start and Session End). This does not include [Excluded Events](/docs/features/sessions#excluded-events) and [Hidden Events](/docs/data-governance/lexicon#hide-events-and-properties) in Lexicon. See [How Sessions Work](/docs/features/sessions#how-sessions-work). | 
+| $origin_start | Session Start Event Name | The original event name that triggered Session Start event. See [How Sessions Work](/docs/features/sessions#how-sessions-work). | 
+| $origin_end | Session End Event Name | The original event name that triggered Session End event. See [How Sessions Work](/docs/features/sessions#how-sessions-work). | 

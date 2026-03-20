@@ -1,0 +1,141 @@
+---
+title: "Max-Height"
+description: "Utilities for setting the maximum height of an element."
+---
+
+import utilities from 'utilities?plugin=maxHeight'
+import { numbersFirst } from '@/utils/sortClasses'
+import { ArbitraryValues } from '@/components/ArbitraryValues'
+import { BreakpointsAndMediaQueries } from '@/components/BreakpointsAndMediaQueries'
+import { HoverFocusAndOtherStates } from '@/components/HoverFocusAndOtherStates'
+
+export const classes = {
+  utilities,
+  sort: numbersFirst,
+}
+
+## Basic usage
+
+### Setting the maximum height
+
+Set the maximum height of an element using `max-h-*` utilities.
+
+```html {{ example: true }}
+<div class="h-96 flex justify-center items-end space-x-4 font-mono font-bold text-xs text-center text-white">
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-80 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-80</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-64 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-64</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-48 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-48</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-40 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-40</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-32 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-32</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-24 relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-24</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-8 grid items-end bg-stripes-blue rounded-lg h-full">
+    <div class="w-full bg-blue-500 rounded-lg shadow-lg h-full max-h-full relative">
+      <div class="absolute w-8 text-nowrap bottom-6">
+        <div class="-rotate-90">max-h-full</div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+```html
+<div class="**h-96** ...">
+  <div class="h-full **max-h-80** ...">max-h-80</div>
+  <div class="h-full **max-h-64** ...">max-h-64</div>
+  <div class="h-full **max-h-48** ...">max-h-48</div>
+  <div class="h-full **max-h-40** ...">max-h-40</div>
+  <div class="h-full **max-h-32** ...">max-h-32</div>
+  <div class="h-full **max-h-24** ...">max-h-24</div>
+  <div class="h-full **max-h-full** ...">max-h-full</div>
+</div>
+```
+
+---
+
+## <Heading ignore>Applying conditionally</Heading>
+
+### <Heading ignore>Hover, focus, and other states</Heading>
+
+<HoverFocusAndOtherStates defaultClass="h-48 max-h-full" featuredClass="max-h-screen" />
+
+### <Heading ignore>Breakpoints and media queries</Heading>
+
+<BreakpointsAndMediaQueries defaultClass="h-48 max-h-full" featuredClass="max-h-screen" />
+
+---
+
+## Using custom values
+
+### Customizing your theme
+
+By default, Tailwind's maximum height scale is a combination of the [default spacing scale](/docs/customizing-spacing#default-spacing-scale) as well as some additional values specific to heights.
+
+You can customize your spacing scale by editing `theme.spacing` or `theme.extend.spacing` in your `tailwind.config.js` file.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      extend: {
++       spacing: {
++         '128': '32rem',
++       }
+      }
+    }
+  }
+```
+
+To customize `max-height` separately, use the `theme.maxHeight` section of your `tailwind.config.js` file.
+
+```diff-js {{ filename: 'tailwind.config.js' }}
+  module.exports = {
+    theme: {
+      extend: {
++       maxHeight: {
++         '128': '32rem',
++       }
+      }
+    }
+  }
+```
+
+Learn more about customizing the default theme in the [theme customization](/docs/theme#customizing-the-default-theme) documentation.
+
+### Arbitrary values
+
+<ArbitraryValues property="max-height" featuredClass="max-h-[220px]" />

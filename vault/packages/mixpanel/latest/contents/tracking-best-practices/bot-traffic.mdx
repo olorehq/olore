@@ -1,0 +1,40 @@
+# Block unwanted bot traffic
+
+In this guide, we describe how to avoid bot traffic from affecting your tracking.
+
+
+## Exclude Bot Traffic From Javascript SDK
+By default, the following bots are filtered out by the Mixpanel JavaScript library:
+- Yahoo! Slurp
+- bingbot/2.0
+- Googlebot/2.1
+- Baiduspider/2.0
+- YandexBot/3.0
+
+You can find the exact list on our [GitHub](https://github.com/mixpanel/mixpanel-js/blob/8ac526e5cb8563d11e2206046ab986c6491ac6d7/src/utils.js#L900C1-L925C3)
+
+Any other bot hitting your site will affect your Mixpanel data. That being said, it’s possible to set up some code to filter out these users:
+
+1. Find the user agent information of the individual accessing the site.
+2. Look for the word “bot” anywhere in the user agent information.
+3. If you find “bot,” set the $ignore property to true.
+
+If you can, identify a common pattern in the bots to block them all in one shot by filtering out any interaction with your site that comes from a web framework that is not a consumer-facing browser. As an example, for GTM bots, this code would look like this:
+
+```
+var userAgentBotTest = navigator.userAgent;
+mixpanel.register({"User Agent": userAgentBotTest});
+if (/(Mozilla\/4.0)/i.test(userAgentBotTest)) {
+     mixpanel.register({"$ignore": true});
+}
+```
+
+If you implement this code, you will block all userAgents with "Mozilla/4.0" in the userAgent. This does include some older browsers, but modern browsers such as Chrome, Safari, and Firefox will never include this in their userAgent strings. See a [common list of bot userAgents](https://www.useragentstring.com/pages/useragentstring.php?typ=Crawler) and [common bot browsers](https://www.useragentstring.com/pages/useragentstring.php?typ=Browser).
+
+If this does not work, you can start tracking this userAgent going forward so you can find the common pattern among all of the bots crawling your site.
+
+Note: `$ignore` must have a string or at least be set to true, or else the event will fire. For example, if I have `'$ignore': ''`, the event will still fire since it's an empty string. `'$ignore': false` will also fire the event.
+
+## Remove Bot Traffic Historically
+
+Events in Mixpanel are immutable, which means they cannot be removed. However, they can be filtered out. If there are some events that have been sent in with bots and you can identify those events based on some property value (eg: the device type or location), we recommend creating a [custom event](/docs/features/custom-events) that applies that filter.  You can also [hide](/docs/data-governance/lexicon#hide-events-and-properties) the original event. That way, when you use the custom event, all bot traffic will automatically be filtered out.

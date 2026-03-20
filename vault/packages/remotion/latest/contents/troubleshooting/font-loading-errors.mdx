@@ -1,0 +1,40 @@
+---
+image: /generated/articles-docs-troubleshooting-font-loading-errors.png
+id: font-loading-errors
+title: 'Font loading errors'
+sidebar_label: Font loading errors
+crumb: 'Troubleshooting'
+---
+
+## Render timeout when loading Google Fonts
+
+When using `@remotion/google-fonts`, you may encounter timeout errors like:
+
+```diff
+- A delayRender() "Fetching Inter font {"style":"normal","weight":"100","subset":"cyrillic-ext"}" was called but not cleared after 58000ms.
+```
+
+### Problem
+
+By default, `loadFont()` attempts to load all available font weights and character subsets, which can cause timeouts.
+
+### Solution
+
+Only load the specific font weights and character subsets that your project needs:
+
+```tsx
+import {loadFont} from '@remotion/google-fonts/Inter';
+
+// ❌ Avoid: Loading all weights and subsets
+loadFont();
+
+// ✅ Recommended: Load only required weights and subsets
+loadFont('normal', {
+  subsets: ['latin'],
+  weights: ['400', '700'], // Only load regular (400) and bold (700)
+});
+```
+
+If your project uses multiple fonts, centralize font loading in one module and wait until all fonts are loaded before rendering:
+
+- [Higher-order component example](/docs/layout-utils/best-practices#example-with-high-order-component)

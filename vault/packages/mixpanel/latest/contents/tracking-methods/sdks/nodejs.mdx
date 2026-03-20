@@ -1,0 +1,547 @@
+import { Callout, Tabs, Cards } from 'nextra/components'
+
+# Mixpanel SDKs: Node.js
+
+## Getting Started
+
+This Mixpanel Node.js library provides many of the features in available in the [JavaScript SDK](/docs/tracking-methods/sdks/javascript). It is fully async, and intended to be used in Javascript server-side outside of the browser (such as importing past events with a script). 
+
+For the in-browser client-side library, please use the [JavaScript SDK](/docs/tracking-methods/sdks/javascript).
+
+The [Library Source Code](https://github.com/mixpanel/mixpanel-node) and an [Example Application](https://github.com/mixpanel/mixpanel-node/blob/master/example.js) is documented in our GitHub repo.
+
+## Installing the Library
+
+<Callout type="info">
+  The [Javascript library](/docs/tracking-methods/sdks/javascript) is named `mixpanel-browser` in NPM. This is to distinguish it from this server-side Node.js library, which is available as `mixpanel`.
+</Callout>
+
+Use [npm](https://www.npmjs.com/) to install Mixpanel. Open your CLI, and run the following command in your root directory to install the library:
+
+```bash
+# install Mixpanel using npm
+npm install mixpanel
+```
+
+After installation, import the Mixpanel class in your code and create the Mixpanel object using the [`.init()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L64) method with [your project token](/docs/orgs-and-projects/managing-projects#find-your-project-tokens).
+
+```javascript Javascript
+// import the Mixpanel class
+const Mixpanel = require('mixpanel');
+
+// create an instance of the mixpanel object
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN')
+```
+
+## Library Configuration
+
+The Mixpanel object can be initialized with different configurations. See a complete list of the configuration options[here](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L17).
+
+You can override the default configuration using the `config` argument when initializing the library.
+
+**Example Usage**
+
+```javascript Javascript
+const Mixpanel = require('mixpanel');
+
+// initialize mixpanel with verbose enabled
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN',{
+    verbose: true,
+  }
+);
+```
+
+## Sending Events
+
+Use [`track()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L67) to send an event by providing the distinct_id, event name, and any event properties. This will trigger a request to the [/track API endpoint](https://developer.mixpanel.com/reference/track-event) to ingest the event into your project.
+
+<Callout type="info">
+  The [/track endpoint](https://developer.mixpanel.com/reference/track-event) will only validate events with timestamps within the last 5 days of the request. Events with timestamps older than 5 days will not be ingested. See below on best practices for historical imports.
+</Callout>
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+// track "some_event" for distinct_id 12345
+// with "plan" event prop
+mp.track('some_event', {
+    distinct_id: '12345',
+    plan: 'premium'
+});
+```
+
+Mixpanel determines default geolocation data (`$city`, `$region`, `mp_country_code`) using the IP address on the incoming request. As all server-side calls will likely originate from the same IP (that is, the IP of your server), this can have the unintended effect of setting the location of all of your users to the location of your data center. [Learn more about best practices for geolocation.](/docs/tracking-best-practices/geolocation).
+
+<Callout type="info">
+  Note that tracking with Node in an async serverless implementation requires you to wait for the Mixpanel request to complete. The easiest way to do this would be to pass in in a callback as a 3rd parameter into `track` and return a promise that is resolved when the request is sent.
+</Callout>
+
+### Importing Historical Events
+
+The [`track()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L67) function is designed for real-time tracking in a server-side environment and will trigger request to the [/track API endpoint](https://developer.mixpanel.com/reference/track-event), which will validate for events with a time stamp that is within the last 5 days of the request. **Events older than 5 days will not be ingested.**
+
+Use the [`import()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.js#L349) function to import events that occurred more than 5 days in the past. The `import()` function is based on the [/import API endpoint](https://developer.mixpanel.com/reference/import-events).
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+// import an old event for distinct_id 12345
+// with epoch timestamp 1698023982
+// with "plan" event prop
+mp.import('some_event', 1698023982, {
+      distinct_id: '12345',
+      plan: 'premium'
+  });
+```
+
+You can also use the [mp-utils python module](https://github.com/mixpanel/mixpanel-utils) designed for scripting.
+
+## Managing User Identity
+
+Since the Node.js  SDK is a server-side library, IDs are not generated by the SDK. Instead, you will need to generate and manage the distinct_id yourself and include it in your events and profile data. 
+
+Learn more about [server-side identity management](/docs/tracking-methods/id-management/identifying-users-simplified#server-side-identity-management).
+
+## Storing User Profiles
+
+Create [user profiles](/docs/data-structure/user-profiles) by setting profile properties to describe them. Example profile properties include "name", "email", "company", and any other demographic details about the user.
+
+The Mixpanel object contains a `people` property, that exposes the [`MixpanelPeople`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js) class which contain methods for managing user profile properties. These methods will trigger requests to the [/engage API endpoint](https://developer.mixpanel.com/reference/profile-set).
+
+Mixpanel determines default geolocation data (`$city`, `$region`, `mp_country_code`) using the IP address on the incoming request. As all server-side calls will likely originate from the same IP (that is, the IP of your server), this can have the unintended effect of setting the location of all of your users to the location of your data center. [Learn more about best practices for geolocation.](/docs/tracking-best-practices/geolocation).
+
+### Setting Profile Properties
+
+Set profile properties on a user profile by calling [`people.set()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js#L41).
+
+If a profile property already exists, it will be overwritten with the latest value provided in the method. If a profile property does not exist, it will be added to the profile.
+
+**Example Usage**
+
+```javascript
+// initialize Mixpanel
+const Mixpanel = require('mixpanel');
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+// create a user profile with name and plan user props
+mp.people.set('sample_distinct_id', {
+    name: 'sam',
+    plan: 'premium',
+    ip: '0' // do not update geolocation
+});
+
+// overwrite "name" user prop with "samantha"
+mp.people.set('sample_distinct_id', {
+    name: 'samantha',
+    ip: '0'
+});
+```
+
+### Other Types of Profile Updates
+
+There are a few other methods for setting profile properties. See a complete reference of the available methods in the `MixpanelPeople` class [here](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js).
+
+A few commonly used people methods are highlighted below:
+
+<Tabs items={['set_once()','append()','union()','increment()']} >
+  <Tabs.Tab>
+    The [`people.set_once()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js#L22) method set profile properties only if they do not exist yet. If it is setting a profile property that already exists, it will be ignored.
+
+    Use this method if you want to set profile properties without the risk of overwriting existing data.
+
+    **Example Usage**
+
+    ```javascript
+    // initialize Mixpanel
+    const Mixpanel = require('mixpanel');
+    const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+    // create a user profile with name and plan user props
+    mp.people.set('sample_distinct_id', {
+        name: 'sam',
+        plan: 'premium',
+        ip: '0'
+    });
+
+    // will be ignored since "name" already exists
+    mp.people.set_once('sample_distinct_id', {
+        name: 'samantha',
+        ip: '0'
+    });
+
+    //set "location" user prop since it does not exist
+    mp.people.set_once('sample_distinct_id', {
+        location: 'san francisco',
+        ip: '0'
+    });
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`people.append()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js#L141) method append values to a list profile property.
+
+    Use this method to add additional values to an existing list property instead of redefining the entire list.
+
+    **Example Usage**
+
+    ```javascript
+    // initialize Mixpanel
+    const Mixpanel = require('mixpanel');
+    const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+    // create a user profile with name and roles user props
+    mp.people.set('sample_distinct_id', {
+        name: 'sam',
+        roles: ['sales','engineer'],
+        ip: '0'
+    });
+
+    // add "legal" to "roles"  
+    // new role values are ['sales','engineer','legal']
+    mp.people.append('sample_distinct__id', 'roles', 'legal');
+
+    // .append() allows duplicates
+    // new "roles" values are ['sales','engineer','legal', 'legal']
+    mp.people.append('sample_distinct__id', 'roles', 'legal');
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`people.union()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js#L309) method append new values to a list property, excluding duplicates.
+
+    Use this method to create a list profile property that only contains unique values without duplicates.
+
+    **Example Usage**
+
+    ```javascript
+    // initialize Mixpanel
+    const Mixpanel = require('mixpanel');
+    const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+    // create a user profile with name and roles user props
+    mp.people.set('sample_distinct_id', {
+        name: 'sam',
+        roles: ['sales','engineer'],
+        ip: '0'
+    });
+
+    // "engineer" ignored since it already exists
+    // append "legal" to "roles"
+    mp.people.union('sample_distinct__id', {
+      'roles': ['engineer','legal']
+    });
+    
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`people.increment()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/people.js#L69) method increments a numeric property by a whole number.
+
+    Use this method to add to or subtract from your numeric property based on its current value.
+
+    **Example Usage**
+
+    ```javascript
+    // initialize Mixpanel
+    const Mixpanel = require('mixpanel');
+    const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+    // create a user profile with name and age user props
+    mp.people.set('sample_distinct_id', {
+        name: 'sam',
+        age: 25,
+        ip: '0'
+    });
+    
+    // increment "age" by 2
+    mp.people.increment('sample_distinct_id', 'age', 2);
+
+    // use negative number to decrement
+    // decrement "age" by 5
+    mp.people.increment('sample_distinct_id', 'age', -5);
+    ```
+
+  </Tabs.Tab>
+</Tabs>
+
+## Group Analytics
+
+<Callout type="info">
+    Read more about [Group Analytics](/docs/data-structure/group-analytics) before proceeding. You will need to have the [group key defined in your project settings](/docs/data-structure/group-analytics#group-keys-in-project-settings) first.
+</Callout>
+
+Mixpanel Group Analytics is a paid add-on that allows behavioral data analysis by selected groups, as opposed to individual users.
+
+A group is identified by the `group_key` and `group_id`.
+* `group_key` is the event property that connects event data to a group. (e.g. `company`)
+* `group_id` is the identifier for a specific group. (e.g. `mixpanel`,`company_a`,`company_b`, etc.)
+
+### Sending Group Identifiers With Events
+[All events must have the group key as an event property in order to be attributed to a group](/docs/data-structure/group-analytics#group-keys-tracked-as-event-properties). Without the group key, an event cannot be attributed to a group.
+
+To send group identifiers with your events, set the `group_key` as an event property with the `group_id` as the value.
+
+**Example Usage**
+
+```javascript
+// track "some_event" with a "distinct_id"
+// event is attributed to the "mixpanel" company group
+mp.track('some_event', {
+    'distinct_id': 'sample_distinct_id',
+    'Plan Type': 'Premium',
+    'company': 'mixpanel'
+});
+```
+
+**Multiple Groups**
+
+[An event can be attributed to multiple groups](/docs/data-structure/group-analytics#attribute-events-to-multiple-groups) by passing in the `group_key` value as a list of multiple `group_id` values.
+
+**Example Usage**
+
+```javascript
+// track "some_event" with a "distinct_id"
+// event is attributed to 2 company groups: "mp-us" and "mp-eu"
+mp.track('some_event', {
+    'distinct_id': 'sample_distinct_id',
+    'Plan Type': 'Premium',
+    'company': ['mp-us','mp-eu']
+});
+```
+
+### Adding Group Identifiers to User Profiles
+
+To connect group information to a user profile, include the `group_key` and `group_id` as a user profile property using the `people.set()` call.
+
+**Example Usage**
+
+```javascript
+// initialize Mixpanel
+const Mixpanel = require('mixpanel');
+const mp = Mixpanel.init('YOUR_PROJECT_TOKEN');
+
+// set group key "company" as a user prop
+// with group id "mixpanel" as value
+mp.people.set('sample_distinct_id', {
+    name: 'sam',
+    company: 'mixpanel',
+    ip: '0'
+});
+```
+
+### Setting Group Profile Properties
+Create a group profile by setting group properties, similar to a user profile. For example, you may want to describe a company group with properties such as "ARR", "employee_count", and "subscription".
+
+The Mixpanel object contains a `groups` property, that exposes the [`MixpanelGroups`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js) class which contain methods for managing group profile properties.
+
+To set group profile properties, use the [`groups.set()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js#L37) method, which will trigger a request to the [/groups API endpoint](https://developer.mixpanel.com/reference/group-set-property).
+
+**Example Usage**
+
+```js JavaScript
+// track some event attributed to the "mixpanel" company group
+mp.track('some_event', {
+    'distinct_id': 'sample_distinct_id',
+    'company': 'mixpanel'
+});
+
+// Create or update a the "mixpanel" company group
+// setting "name" and "industry" as group props
+mixpanel.groups.set('company', 'mixpanel', {
+  name: 'Mixpanel',
+  industry: 'Analytics',
+})
+```
+
+### Other Group Profile Methods
+
+See all of the methods under the `MixpanelGroups` class [here](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js).
+
+A few commonly used group methods are highlighted below:
+
+<Tabs items={['set_once()','unset()','union()','remove()']}>
+  <Tabs.Tab>
+    The [`groups.set_once()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js#L18) method set group profile properties only if they do not exist yet. If it is setting a profile property that already exists, it will be ignored.
+
+    Use this method if you want to set group profile properties without the risk of overwriting existing data.
+
+    **Example Usage**
+
+    ```js
+    // set group profile for "mixpanel" company group
+    mp.groups.set('company', 'mixpanel', {
+      name: 'Mixpanel',
+      employee_count: 100
+    });
+
+    // ignored since "name" is already exists
+    mp.groups.set_once('company', 'mixpanel', {
+      name: 'mp-us'
+    });
+
+    # set "location" group prop since it does not exist
+    mp.groups.set_once('company', 'mixpanel', {
+      location: 'us',
+    });
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`groups.unset()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js#L102) method removes a group property from a group profile.
+
+    Use this method to delete unwanted group profile properties from a specific group profile.
+
+    **Example Usage**
+
+    ```js
+    // set group profile for the "mixpanel" company group
+    mp.groups.set('company', 'mixpanel', {
+      name: 'Mixpanel',
+      employee_count: 100
+    });
+
+    // delete "employee_count" from the group profile
+    mp.groups.unset('company', 'mixpanel', 'employee_count');
+
+    // only "name" remains as a group prop
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`groups.union()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js#L86) method append new values to a list property, excluding duplicates.
+
+    Use this method to create a list group profile property that only contains unique values without duplicates.
+
+    **Example Usage**
+
+    ```js 
+    // set group profile for the "mixpanel" company group
+    mp.groups.set('company', 'mixpanel', {
+      name: 'Mixpanel',
+      features: ['alert','cohort','reports']
+    });
+
+    // add "data pipeline" to "features" prop
+    // ignore "alert" since it is a duplicate value
+   mp.groups.union('company','mixpanel', {
+        features: ['data pipeline','alert']
+    });
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    The [`groups.remove()`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/groups.js#L70) method removes a value from a list-valued group profile property.
+
+    Use this method to remove specific values from a list without affecting all of the other values in the list.
+
+    **Example Usage**
+
+    ```js 
+    // set group profile for the "mixpanel" company group
+    mp.groups.set('company','mixpanel', {
+        name: 'Mixpanel',
+        features: ['reports','alerts','cohorts']
+    });
+    
+    // remove "alerts" from "features"
+    // "features" now contain ["reports","cohorts"]
+    mp.groups.remove('company','mixpanel', {
+        'features': ['alerts']
+    });
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## Debug Mode
+
+To enable debug mode, set the [`debug`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L19) configuration option to `true` during the library initialization.
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+
+// enable debug logs
+mixpanel.init('YOUR_PROJECT_TOKEN',{
+    debug: true
+});
+```
+
+## Privacy-Friendly Tracking
+
+You have control over the data you send to Mixpanel. The Node.js SDK have a few configurations to help you protect user data.
+
+Since this is a server-side tracking library where you have control of the servers, your server is responsible for determining whether to send data about a particular user or not.
+
+### EU Data Residency
+
+Route data to Mixpanel's EU servers by setting the [`host`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L21) config property during the library initialization.
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+
+// set request URLs to Mixpanel's EU domain
+mixpanel.init('YOUR_PROJECT_TOKEN',{
+    host: 'api-eu.mixpanel.com'
+});
+```
+
+### India Data Residency
+
+Route data to Mixpanel's EU servers by setting the [`host`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L21) config property during the library initialization.
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+
+// set request URLs to Mixpanel's India domain
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    host: 'api-in.mixpanel.com'
+});
+```
+
+### Disable Geolocation
+
+The Node.js SDK parse the request IP address to generate geolocation properties for events and profiles. You may want to disable them to prevent the unintentional setting of your data's geolocation to the location of your server that is sending the request, or to prevent geolocation data from being tracked entirely.
+
+To disable geolocation, set the [`geolocate`](https://github.com/mixpanel/mixpanel-node/blob/master/lib/mixpanel-node.d.ts#L25) config property to `false` during the library initialization.
+
+You can also disable geolocation for individual requests by setting the `ip` to `0`.
+
+**Example Usage**
+
+```javascript
+const Mixpanel = require('mixpanel');
+
+// Initialize Mixpanel with geolocation parsing disabled
+const mp = Mixpanel.init('<YOUR_TOKEN>', { geolocate: false });
+
+// track an event without geolocation parsing
+// by setting ip to 0
+mp.track('event name', {
+    distinct_id: 'sample_distinct_id',
+    ip: '0'
+});
+
+// set profile properties without geolocation parsing
+// by setting ip to 0
+mp.people.set('sample_distinct_id', {
+    name: 'sam',
+    plan: 'premium',
+    ip: '0'
+});
+
+```
+
+## Release History
+
+[See all releases.](https://github.com/mixpanel/mixpanel-node/releases)

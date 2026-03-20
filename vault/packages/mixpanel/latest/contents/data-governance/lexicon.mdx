@@ -1,0 +1,432 @@
+---
+title: Lexicon
+tags: [lexicon, data-governance, data-dictionary, event-definitions, event-properties, profile-properties, data-management, event-documentation, data-catalog, metadata-management, data-discovery, custom-events, cohorts, lookup-tables, formulas, behaviors, verified-data, data-quality, event-validation, data-standardization, analytics-governance, mixpanel-lexicon, event-catalog, property-definitions, data-lineage, session-replay-metadata]
+---
+
+import { Callout } from 'nextra/components'
+
+# Lexicon: Describe your events and data using a dictionary
+
+## Overview
+
+<div
+  style={{
+    position: "relative",
+    paddingBottom: "64.90384615384616%",
+    height: 0,
+  }}
+>
+  <p>
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/lAToFlwXHEU"
+      frameBorder="0"
+      webkitallowfullscreen="true"
+      mozallowfullscreen="true"
+      allowFullScreen
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        borderRadius: "16px",
+      }}
+    ></iframe>
+  </p>
+</div>
+
+Lexicon is a data dictionary that stores descriptions of events and their properties. Project owners and admins can add/manage descriptions for all events and properties and organize data for clarity and discoverability. Event and property definitions help your entire team understand what your data means, so everyone stays on the same page.
+
+To open Lexicon, select the **Data Management** icon on the right side of the top navigation menu and then select **Lexicon**.
+
+When you open Lexicon, you'll see two sections:
+
+Tracked Data
+1. Events
+2. Event Properties
+3. Profile Properties
+
+Computed Data
+1. Cohorts
+2. Custom Events
+3. Lookup Tables
+4. Formulas
+5. Behaviors
+
+### Events
+
+Events are actions a user performs in your application or website.
+
+![Lexicon Events](/lexicon-events-with-em.png)
+
+This table contains descriptions for each field in the “Events” view. 
+
+| Field | Description |
+| --- | --- |
+| Event Name | The database name of the event. Status Icons indicate whether the event is hidden or visible in the Mixpanel project |
+| Display Name | The event name that displays in the Mixpanel interface. |
+| Description | The information that describes the event, such as what triggers it or what properties are sent with it. |
+| 30-Day Volume | The total number of events that users fired in the last 30 days. |
+| 30-Day Queries | The total number of UI queries that project members executed in the last 30 days. Includes queries from selecting events in reports, viewing reports, and queries in "Users" and "Events" tabs. Excludes dashboard views.|
+| Last Queried | The user that last used this event in the Mixpanel UI. |
+| First Queried | The user that first used this event in the Mixpanel UI. |
+| Owners | The user(s) that are points-of-contact for this event. |
+| Status | Whether this event is Pending, Visible, Hidden, Dropped, or Merged. |
+
+
+### Event Properties
+
+Event properties describe details about events, such as distinct_id or browser.
+
+This table contains descriptions for each field in the “Event Properties” view. 
+
+| Field | Description |
+| --- | --- |
+| Name | The database name of the property. |
+| Display Name | The property name that displays in the Mixpanel interface. |
+| Description | The information that describes the property, such as what events it is sent with. |
+| Example Value | What is an example value of this property. |
+| Events With Property | The total number of events that contain this property in the last 30 days. |
+| Queries | The total number of UI queries that project members executed in the last 30 days. Includes queries from selecting events in reports, viewing reports, and queries in "Users" and "Events" tabs. Excludes dashboard views.|
+| Status | Indicates whether the property is visible or hidden from the Mixpanel interface. Also indicates if the property is dropped, merged, or marked as sensitive. |
+
+Lexicon contains property definitions for the default properties that Mixpanel’s client-side libraries automatically send with each event across web and mobile platforms.
+
+![Lexicon Event Properties](/lexicon-default-properties.png)
+
+### Profile Properties
+
+Profile properties describe details about your users, such as username or email address. 
+
+This table contains descriptions for each field in the “Profile Properties” view.
+
+| Field | Description |
+| --- | --- |
+| Name | The database name of the property. |
+| Display Name | The property name that displays in the Mixpanel interface. |
+| Description | The information that describes the property, such as what events it is sent with. |
+| Example Value | What is an example value of this property. |
+| Status | Indicates whether the property is visible or hidden from the Mixpanel interface. Also indicates if the property is dropped, merged, or marked as sensitive. |
+| Users With Property | The total number of profiles that contain this property. |
+| Queries | The total number of UI queries that project members executed in the last 30 days. Includes queries from selecting events in reports, viewing reports, and queries in "Users" and "Events" tabs. Excludes dashboard views.|
+
+If you have Group Analytics enabled, you will see a dropdown on the Profile Properties tab that will let you select any Group Types that you may have configured. The default selection will be "User Profiles" which correspond to User properties.
+
+![Lexicon Profile Properties](/lexicon-group-analytics-GIF.gif)
+
+### Cohorts
+
+[Cohorts](/docs/users/cohorts) are groups of users that share a certain set of properties or who perform a similar sequence of events. You can create cohorts based on user properties, events, and other criteria to analyze user behavior and engagement.
+
+### Custom Events
+
+[Custom Events](/docs/features/custom-events) are events and properties you combine into one event to use in Mixpanel reports. The fields for custom events are “Name”, “Description”, "Definition", "30 Day Queries", "Last Queried" and “Created” (defined above). 
+
+### Lookup Tables
+
+[Lookup Tables](/docs/data-structure/lookup-tables) in your project are listed in your Lexicon. Click into a Lookup Table definition to export the underlying CSV, replace the Lookup Table with a new CSV, and see which properties are linked.
+
+### Formulas and Behaviors
+Saved [Formulas](/docs/reports/insights#formulas) and [Funnels/Retention Behaviors](/docs/features/saved-metrics-and-behaviors) in your project are also documented in your Lexicon. Review here to get an overview of existing definitions in your project that you can quickly leverage in your own analysis.
+
+## Renaming Properties
+After you ingest raw data into a project, you cannot rename it. However, you can change the display names of events, event properties, and user profile properties to control how they appear in the UI. The system dynamically renders these display names on the front end and does not modify the underlying data in the project’s data store or affect how the data appears in exports.
+
+## Filtering Events, Custom Events, and Properties
+
+Lexicon provides several options for you to filter your events, custom events, event properties, and profile properties.
+
+You can filter by visible or hidden events, dropped events, merged events, tags, your defined events, autotracked events, and default Mixpanel events. These filtering options help you arrive at the most useful data to analyze your performance.
+
+![Lexicon Filtering](/lexiconFiltering.png)
+
+## Viewing Query Volumes for Events and Properties
+
+In each view, you can see the total UI and API queries in the last 30 days for any of these data types and sort by them. 
+
+This data lets you easily discover the parts of your implementation that are most valuable and the parts that are not being used. You can use this information to determine which events and properties you should drop.
+
+![Lexicon Query Volumes](/thirtyDayMetrics.png)
+
+## Dropping Data
+
+<Callout type="info">
+Only project owners may drop and undrop data from the Lexicon. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
+</Callout>
+
+In Lexicon, you can intercept and drop incoming events or properties. Mixpanel won’t store any **new data** for the event or property you select to drop. **Warning: You cannot recover event data after you drop it.**
+
+When an event is dropped, all events of that type that have previously been ingested (before dropping it) will still show in the interface. Only project owners can drop events and properties. **Note: It takes a few hours for Mixpanel to process the dropped event.**
+
+Sample use cases for dropping events and properties are:
+
+**Sensitive data:** If you accidentally send sensitive data, such as passwords or credit card information, you can drop the event or property with that data and prevent it from being stored in Mixpanel servers.
+
+**Cost and Time Efficiency:** Being able to drop events and properties that are no longer useful directly from Lexicon is easier and more efficient than having to implement changes to your code base.
+
+**Better Organization:** Events and properties that are no longer useful can cause a cluttered Mixpanel project. Dropping unnecessary events and properties optimizes your code for a clean and streamlined project implementation.
+
+**Dropping Events**
+
+By dropping an event, you can intercept and drop incoming events. Mixpanel will not store any new data for the event you select to drop. 
+
+To drop an event in Lexicon:
+
+1. Select an event to drop. The Drop icon appears.
+![Lexicon Drop Events](/lexicon-drop-events.png)
+2. Click Drop. A “Confirm dropping your event(s)” warning indicates you cannot recover the data associated with the event.
+![Lexicon Drop Events Warning](/lexicon-drop-events-warning.png)
+3. Click Drop. The status of the event indicates **Dropped**.
+
+**Undropping Events**
+
+You can undrop events and properties when you decide you need them again.
+
+To undrop an event:
+
+1. Select a dropped event. The “Status” column indicates if an event is dropped.
+![Lexicon Undrop Events](/lexicon-undrop-events.png)
+2. Click **Undrop**. The “Status” column no longer contains “Dropped”.
+
+**Dropping Properties**
+
+By dropping a property, you can intercept and drop incoming property. Mixpanel won’t store any new data for the property you select to drop. 
+
+To drop a property in Lexicon:
+
+1. Select a property to drop. The Drop icon appears.
+![Lexicon Drop Properties](/lexicon-drop-properties.png)
+2. Click **Drop**. A warning indicates that you cannot recover the data that you choose to drop. Click Drop to confirm. The status of the property will indicate Dropped.
+
+**Undropping Properties**
+
+1. Select a dropped property. The “Status” column indicates if a property is dropped.
+![Lexicon Undrop Properties](/lexicon-undrop-properties.png)
+2. Click **Undrop**. The “Status” column no longer contains “Dropped”.
+
+## Hiding Data
+
+<Callout type="info">
+You must have an admin or owner project role to hide and unhide data from the Lexicon. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
+</Callout>
+
+In Lexicon, you can hide any events or properties. Unlike [dropping data](/docs/data-governance/lexicon#dropping-data), hiding data does not affect data ingestion; any events/properties that are hidden will continue to be ingested in your project and count toward your data allowance.
+
+A hidden entity will not be indexed in your event/properties menu in the query builder. Any [inactive events and properties](/docs/tracking-best-practices/debugging#inactive-events-and-properties) will also be hidden.
+
+Hidden events will be excluded from your query results. For example, it will not be included in "All Events" and won't appear as an intermediate step in your [Flows report](/docs/reports/flows).
+
+Hiding data is useful for preventing not-so-commonly used entities from cluttering your events/properties menu, or to prevent certain events from being considered in your reports.
+
+If you wish to use a hidden entity in your report, you may manually select the entity by searching in the events/properties menu and then clicking "Show Hidden Events/Properties" to reveal the hidden entity.
+
+**Hiding Events and Properties**
+
+To hide an event or property:
+
+1. Select one or more visible events, event properties, or profile properties. The “Hide” icon appears. You can check the “Status” field to determine whether an event or property is visible or hidden.
+![Lexicon Hide Events](/hide-events.png)
+2. Select **Hide**. A message appears to allow you to confirm hiding the event(s). After you select **Hide**, the event or property status changes to “Hidden”.
+![Lexicon Hide Events Warning](/lexicon-hide-events2.png)
+
+Another option for hiding an event, property, or property value is to let it inactivate until it is hidden in report dropdown menus. Mixpanel’s report dropdown menus hide events that have not been fired within the last 30 days. Event properties and property values that have not been sent to your project in 28 days are hidden from dropdown menus.
+
+**Show Events and Properties**
+
+To show an event or property:
+
+1. Select one or more hidden events, event properties, or profile properties. The “Unhide” icon appears. You can check the “Status” field to determine whether an event or property is visible or hidden.
+2. Select **Unhide**. After you select **Unhide**, the event or property status changes to “Visible”.
+![Lexicon Show Events and Properties](/show-events-and-properties.png)
+
+## Merging Data
+
+<Callout type="info">
+In Lexicon, only project owners can merge events and event properties. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
+</Callout>
+
+Let's suppose your iOS app sends an event named “Purchase”, and your Android app sends an event named “purchase item”. Even though both events have the same function, you have to individually select them every time you build a report.
+
+By merging “Purchase” and “purchase item” into a single event named “Purchase”, you would no longer need to query each event separately since Mixpanel would recognize both “Purchase” and “purchase item” as a unique event.
+
+Being able to merge events can help streamline your implementation, reduce your costs by eliminating redundant events being sent to Mixpanel, and simplify report analysis because you’re only using optimal events and properties.
+Do note however that user profile properties cannot be merged at this time.
+
+<Callout type="info">
+ After you merge an event into another, it no longer appears in reports or custom events that reference it. Update those reports with the new merged event to maintain accuracy.
+</Callout>
+
+<Callout type="info">
+ [Autocapture](https://docs.mixpanel.com/docs/tracking-methods/autocapture) events cannot be merged. These events are displayed using preset labels such as “[Auto] Page View” and “[Auto] Element Click”. 
+</Callout>
+
+**Merging Events**
+
+To merge events:
+
+1. Select the events to merge. The “Merge” icon appears.
+2. Click Merge. The “Merge Events” window appears. It shows the events you selected and explains that merging the selected events combines them into a single event, which does not affect the raw data.
+![Lexicon Merge Events](/lexicon-merge-events.png)
+3. In the “MERGE SELECTED EVENTS INTO…” section, specify which event Mixpanel should consider as the new unique event.
+4. Click **Merge**. The merged event appears and the “Status” column indicates “Merged”.
+
+**Unmerge Events**
+
+To unmerge events:
+
+1. Select the merged event to unmerge. The “Unmerge” icon appears.
+![Lexicon Unmerge Events](/unmerge-events.png)
+2. Click Unmerge. The merged event appears as the original two distinct events.
+
+**Merging Properties**
+
+To merge properties:
+
+1. Select the properties to merge. The “Merge” icon appears.
+2. Click Merge. The “Merge Properties” window appears. It shows the properties you selected and explains that merging the selected properties combines them into a single property, which does not affect the raw data.
+![Lexicon Merge Events](/merge-properties.png)
+3. In the “MERGE SELECTED PROPERTIES INTO…” section, specify which property Mixpanel should recognize as the newly merged property name.
+4. Click **Merge**. The merged property appears and the “Status” column indicates “Merged”.
+
+**Unmerge Properties**
+
+To unmerge properties:
+
+1. Select the merged property to unmerge. The “Unmerge” icon appears.
+
+![Lexicon Unmerge Events](/unmerge-properties.png)
+
+2. Click Unmerge. The merged property appears as the original two distinct properties.
+
+## Verify Data
+
+<Callout type="info">
+  Customers on an Enterprise can access the Verified Data feature. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+Verified Data in Mixpanel allows designated project owners and admins to add Verified badges to certain Events, Behaviors, Formulas, and Custom Events. This signals to other users within your project that this data has been vetted and can be confidently used for analysis and reporting. 
+
+By providing a clear distinction between vetted and non-vetted data, it becomes easier for teams to adopt Mixpanel, knowing they are using the right events.
+
+**How it Works**
+
+1. Navigate to Lexicon
+2. Go to any event, behavior, formula, or custom event
+3. In the top right corner, click the Verify button
+4. Now, whenever end users are creating reports, or browsing data in Lexicon, they will see a Verified icon next to this data item.
+
+![verifyButton](/verifyButton.png)
+
+## Session Replay in Event Metadata
+
+Event metadata across Query Builder, Lexicon, and Event pages now automatically includes relevant Session Replays when available.
+
+**How it works:** When viewing event details, Session Replays that captured the specific event will appear in the metadata panel. This applies to:
+
+- Individual event inspection in Query Builder
+- Event definitions in Lexicon  
+- Event detail views on dedicated Event pages
+
+**Requirements:** This feature is available to accounts with Session Replay enabled. No additional configuration is needed—relevant replays will automatically appear when present.
+
+**What you'll see:** Session Replay thumbnails and links will display alongside standard event properties. Click any replay to view the full session context surrounding that event.
+
+This enhancement provides immediate visual context for event analysis without requiring manual correlation between Events and Session Replay data.
+
+For Session Replay setup and configuration, see our [Session Replay documentation](/docs/session-replay).
+
+## Export and Import Lexicon Data
+
+Mixpanel supports exporting and importing Lexicon data dictionaries. Project owners, admins, analysts, and consumers can click **Export** in Lexicon to receive a CSV file via email that contains the events and properties, and/or user profile properties data from a project.
+
+![Lexicon Export](/lexiconExport.png)
+
+In the Export panel, you can select:
+
+- Events & Properties and/or
+- User Profile Properties
+
+The requester will receive an email with a link to download a single CSV file. This link remains active for 14 days. Each CSV file can contain up to 5,000 events, 2,000 properties per event, and 2,000 user profile properties.
+
+### CSV Import
+
+Project owners and admins can export a CSV of their Lexicon changes, make changes, and import that CSV back into Lexicon.
+
+When you export your Lexicon Data into a CSV file, you can make modifications, add events and/or properties, and import them into Lexicon.
+
+To import CSV files, they must be in the exported CSV format, otherwise the file will be rejected: 
+
+![Lexicon CSV Import Format](/lexicon-csv-import-format.png)
+
+Once you've made your modifications, you can directly import the CSV file into Lexicon:
+
+- Select your CSV file
+- Review Events, Event Properties, and/or User Profile Properties
+- Import into Lexicon
+
+Event and property descriptions and metadata (hidden, dropped, sensitive, etc) that are already in Lexicon will be overwritten by descriptions and metadata for matching event and property names. By default, any event and property descriptions for events that are not imported will remain unchanged unless you check the option to overwrite your entire data dictionary during import.
+
+### Segment Import
+When importing a data dictionary from Segment Protocols using the Segment Config API, you will be asked for your Segment Token and Segment Workspace. You can find your Segment Token by going to your Segment dashboard: Settings > Access Management > Tokens
+
+You can use an existing Token, or create a new token with a Token Role of Workspace Owner.
+
+For the Segment Workplace value, we recommend using the Slug name located in the Segment dashboard: Settings > General Settings.
+
+Once you have your Segment Token & Workspace, head over to Lexicon and select Import from Segment.
+- Enter your Token & Workspace
+- Select the Plan you want to import from Segment
+- Review the Events and Profile Properties that will be imported
+- Import your Segment Plan into Lexicon
+
+### Avo.app Import
+To import your data dictionary from Avo.app, you will need to enable an integration with Mixpanel. The following information would be necessary to complete this integration from Avo.app:
+- Mixpanel Project ID (`https://mixpanel.com/project/[Mixpanel Project ID]/...`)
+- Mixpanel Service Account Username & Secret (Owner or Admin role required)
+To publish your Avo data dictionary to Lexicon, click the "Publish to Lexicon" button in the integration interface.
+
+Click [here](https://www.avo.app/docs/publishing/integrations) for more information on integrating Avo.app with Lexicon.
+
+### mParticle Import
+When importing a data dictionary from mParticle, navigate to your Data Plan and select Download Plan Version from the upper right menu.
+
+- Click Import on the top right-hand side of Lexicon
+- Select mParticle
+- Select the downloaded JSON file from mParticle Data Plans
+- Review Events, Event Properties, and User Profile Properties to be imported.
+- Import data into Lexicon
+
+## Lexicon Schemas API
+
+Mixpanel provides a suite of API endpoints for you to Retrieve, Create, and Delete your data dictionary in Lexicon. To use these APIs, check out our [API reference docs](https://developer.mixpanel.com/reference/lexicon-schemas-api).
+
+### Lexicon UI vs Lexicon Schemas API
+
+The payload returned from the Lexicon Schemas API is most likely not an exact match of the Lexicon as seen in your project's UI. This is because the Lexicon Schemas are a subset of the data that appears in Lexicon UI.
+
+The Lexicon UI contains entities that were sent to your project within the last 30 days or have an associated Lexicon Schema.
+
+A Lexicon Schema is created when one of the following takes place:
+1. When a schema is created through the Lexicon Schema API
+2. When a new entity is imported to your Lexicon via CSV import
+3. When metadata about an entity is added via the UI (such as adding description, hiding/showing, adding tags, etc.)
+
+When using the Lexicon Schema API to export, only entities that have a Schema are exported. Entities that are seen in your Lexicon UI that were sent within the last 30 days without a Schema will not be reflected in the Lexicon Schema payload.
+
+To export all of your entities from the Lexicon, please use the [CSV export method](/docs/data-governance/lexicon#export-and-import-lexicon-data), which will export everything as seen in the UI, which includes recently sent entities and all entities with a Schema.
+
+## Lexicon Event Details 
+
+Mixpanel provides a variety of tools to make it easier for teams to better understand what specific events mean. 
+
+| Field | Description |
+| --- | --- |
+| Name | The database name of the event. |
+| Display Name | The event name that displays in the Mixpanel interface. |
+| Description | The information that describes the event, such as what triggers it or what properties are sent with it. |
+| Status | The event is either hidden or visible in the Mixpanel project. |
+| Tags | Allows your team to categorize events by different themes. |
+| Platforms | Allows your team to categorize which platforms this event is fired in. |
+| Owners | Allows your team to assign a point-of-contact to events in case team members have follow-up questions about an event. (Only available on the Enterprise Plan) |
+| First Tracked | The earliest date a given event was tracked, within the past two years. If the event was first tracked more than two years ago, that earlier date won't be reflected here. |
+| Image | Allows your team to upload a JPG, PNG, or GIF that helps to describe the event. This will show up throughout the platform wherever the event appears. |

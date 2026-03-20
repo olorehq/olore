@@ -1,0 +1,91 @@
+import { Callout } from 'nextra/components'
+
+# Events: Capture behaviors and actions
+
+## Overview
+Events are the core of [Mixpanel's Data Model](/docs/tutorials/plan/tracking-strategy#the-mixpanel-data-model). All events should have an **Event Name**, a **Timestamp** of when that event has occurred, and a **[Distinct ID](/docs/tracking-methods/id-management#distinct-id)** (Mixpanel's identifier for a user) to tie all events belonging to the same user. Events can optionally have a set of properties, which describes the event in more detail.
+
+* If you're familiar with databases, events are like tables and properties are like columns.
+* If you're familiar with Google Analytics, events are like hits and properties are like dimensions.
+
+<Callout type="info">
+    **Note:** There are a few use cases, such as tracking [Ad Spend](/docs/tracking-methods/integrations/ad-spend), in which the event should not be tied to specific users; as such, these events should be sent without a Distinct ID, but this is the exception.
+</Callout>
+For more information about events refer to the documentation on [The Mixpanel Data Model](/docs/tutorials/plan/tracking-strategy#the-mixpanel-data-model).
+
+## Examples
+
+* A `Page Viewed` event might have a property called `Page URL`, which is set to the URL of the page that was viewed.
+* A `Signed Up` event might have a property called `Signup Type`, which indicates whether the signup was `organic` vs `referral`.
+* A `Song Played` event might have a property called `Song Name`, which is set to the name of the song that was played.
+* An `Order Completed` event might have a property called `Items`, which is a list of objects, each of which contains details about an item, like its name, category, and price.
+
+## Use Cases
+
+You can filter, breakdown, and aggregate your events by their properties to answer more questions:
+
+* Which pages do users look at before they visit the pricing page?
+* How many sign-ups did I get that were organic vs referral?
+* Which song name is most popular among my users?
+* How many orders contain shoes? What is the sum total price that users paid for shoes in the last month?
+
+## Best Practices
+
+### Keep Events as Actions
+
+We recommend striking the right balance when defining your events. Events should neither be too broad nor too specific, and should be defined at the level of how you plan to analyze the user's action or behavior. Also keep in mind to use event properties to provide context or details about an event, instead of creating different events to capture similar actions. 
+
+**For example:**
+
+* If your goal is to analyze at high-level how users traverse through different pages: instead of tracking multiple events `Home Page Viewed` and `Pricing Page Viewed`, track a `Page Viewed` event with a `Page Name` property set to **"\/home"** or **"\/pricing"**. See [Tracking Page Views](/docs/tracking-methods/sdks/javascript#tracking-page-views) in our Javascript SDK documentation on how to instrument this.
+
+* If your goal is to track users adding items to a shopping cart: instead of tracking multiple events `Add Shirt to Cart`, `Add Hoodie to Cart`, and `Add Socks to Cart`, track a `Add to Cart` event with a `Item` property set to **"Shirt"**, or **"Hoodie"**, or **"Socks"**.
+
+* If your goal is to track 1 button on a specific screen: instead of tracking multiple events `Blue Button Clicked` and `Checkout Button Clicked`, track a `Button Clicked` event with a `Color` property set to **"Blue"** and `Button Name` set to **"Checkout"**.
+  
+* If your goal is to track different buttons from different user journeys: instead of tracking 1 event `Button Clicked` with `Button Name` property set to **"Play"**, or **"Profile"**, or **"X"**, track them as different events `Song Played` and `Profile Updated` and `Logout` with specific properties for each event to provide richer context.
+
+### Use a Naming Convention for Events and Properties
+
+<Callout type="warning">
+   Mixpanel strings are case-sensitive; `sign_up_completed` and `Sign_Up_Completed` are considered two separate events.
+</Callout>
+
+We recommend having a consistent naming convention for your events and properties:
+
+* Generally, adopting snake_case for your event and property names tend to be more robust, especially if you plan to export your Mixpanel data to downstream processes such as data warehouses.
+
+* Use the **(Object) (Verb)** format for event names. Like `song_played` or `page_viewed`.
+
+* Mixpanel [Lexicon](/docs/data-governance/lexicon) provides a means for you to change an event's or property's display name on the UI (if needed, to make it more user-friendly).
+
+### Avoid Creating Events or Property Names Dynamically
+
+For example, don't create an event name like `Purchase (11-01-2019)`. Instead, create an event called `Purchase` and have some property (eg: `Return Date`) set to the dynamic value **"11-01-2019"**.
+
+> **Tip:** Learn more best practices around defining your events and properties under our tutorials for [Creating a Tracking Plan](/docs/tutorials/plan/tracking-strategy#tracking-plan-methodology).
+
+### Super Properties
+
+It's very common to have certain event properties that you want to include with each event you send. Generally, these are things you know about the user rather than about a specific event - for example, the user's age, gender, source, or initial referrer.
+
+To make things easier, you can register these properties as super properties. If you tell us just once that these properties are important, we will automatically include them with all events sent. Super properties are stored in a browser cookie, and will persist between visits to your site. Mixpanel already stores some information as super properties by default; see a full list of Mixpanel default properties [here](/docs/data-structure/property-reference/properties).
+
+Learn more about registering super properties [here](/docs/tracking-methods/sdks/javascript#setting-super-properties).
+
+
+## FAQ
+
+### What types of data can I send as properties?
+Mixpanel accepts arbitrary JSON as properties, including strings, numbers, booleans, lists, and objects. See our [Property Reference doc](/docs/data-structure/property-reference/data-type) or our [API docs](https://developer.mixpanel.com/reference/import-events) for more details.
+
+### What are the limits of events and properties?
+We don't have a limit on the total number of events you can send to Mixpanel, but it will factor into your [pricing](https://mixpanel.com/pricing).
+
+We have a soft limit of 5000 distinct event names. If you send more event names, we'll still ingest them, but those event names will not be indexed and will not appear in our autocomplete menus.
+
+Each event can have up to 255 properties. Event property names/values can be at most 255 characters in length (longer names are truncated). Event property values are limited based on data type, refer to these limits under [Supported Data Types](/docs/data-structure/property-reference/data-type).
+
+<Callout info="warning">
+    **Note**: while events can have up to 255 properties and batches of events can have up to 2000 events per ingestion batch, some libraries might default to sending the data through the GET protocol which would have a much lower size limit since the information is appended to the URL. If you are hitting the limits on the size of the request, first verify if the method being used is GET and can be switched to POST.
+</Callout>

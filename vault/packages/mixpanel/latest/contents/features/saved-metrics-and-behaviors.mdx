@@ -1,0 +1,134 @@
+import { Callout } from 'nextra/components'
+
+# Saved Metrics and Behaviors
+
+## Overview
+
+Saved Metrics and Behaviors allow you to define and standardize key measurements and user actions across your product/business. By saving these definitions, you ensure consistency, reusability, and accuracy across your reporting and analysis.
+
+![](/saved-metrics-and-behaviors1.png)
+
+## Saved Metrics
+
+**Saved Metrics** are standardized definitions for your organization's KPIs. They quantify the performance, progress, or success of various aspects of your product/business. Each saved metric is a measurement of an event, behavior, user cohort, or profile.
+
+**Example:** Create a saved metric for your Signup Conversion Rate to consistently track how effectively users complete your signup process.
+
+## Saved Behaviors
+
+**Saved Behaviors** are reusable definitions of specific user actions that represent a meaningful user journey or experience.
+
+**Example:** If your signup process involves multiple steps, you can define this entire sequence as a "Signup Funnel" saved behavior.
+
+Behaviors fall into one of three types: **Simple**, **Funnel**, or **Retention**.
+
+### Simple Behaviors
+
+**Simple Behaviors** are an "or" list of one or more events. These are useful when you have multiple events that need to be looked at together to measure a specific behavior. For example, below is a simple behavior for all product page interactions:
+
+![](/saved-metrics-and-behaviors8.png)
+
+**Simple Behaviors versus Custom Events**
+
+Simple Behaviors and [Custom Events](/docs/features/custom-events) are similar in that both allow you to combine multiple events for analysis. As a best practice, follow the guidelines below to determine whether to use Simple Behaviors or Custom Events:
+
+- Use **Simple Behaviors** if you want to create a definition that can be easily viewed and modified from the query builder in Insights reports
+- Use **Custom Events** if you need to need to create a virtual event that can be used everywhere in Mixpanel (e.g. inside a cohort definition or Funnel) 
+
+
+### Funnel Behaviors
+
+<Callout type="info">
+    Learn more about the [Funnels report](/docs/reports/funnels).
+</Callout>
+
+Funnel Behaviors define a sequence of events completed within a specified time frame. For example, save a behavior for the "Product Viewed through Purchased" Funnels.
+
+![](/saved-metrics-and-behaviors9.png)
+
+### Retention Behaviors
+
+<Callout type="info">
+    Learn more about the [Retention report](/docs/reports/retention).
+</Callout>
+
+Retention Behaviors look at when a user did an event, then came back to do the same or another event within a window of time. For example, we can save a behavior for our monthly returning purchasers.
+
+![](/saved-metrics-and-behaviors10.png)
+
+## Use Cases
+You can use Saved Metrics and Saved Behaviors independently or combine them. Below are example use cases for each: 
+
+**Metrics**
+
+- **Save time:** Avoid redundant work. If you frequently recreate the same metric across multiple reports or boards, saving it as a metric streamlines your workflow.
+
+- **Onboarding & ease of use:** Make it easy for anyone to understand what events and properties your organization uses to track your key metrics.
+
+- **Align your teams:** Establish trusted KPIs that all teams can rely on. This ensures everyone is working toward common goals using the same data.
+
+**Behaviors**
+
+- **Save time:** If you find yourself creating different metrics using the same set of events and filters, this is a good signal to create a saved behavior. 
+
+- **Simplify updates:** Centralize definition management. If a specific user behavior or flow changes (e.g. your "Signup Flow" removes a step), you only need to update the saved behavior definition once. All saved metrics that rely on that behavior (e.g. "Signup Flow Time to Convert," "Signup Flow Conversion Rate," "Signup Flow Unique Users") will automatically reflect the updated Signup Flow definition.
+
+## Saving
+
+Click on the three dots menu next to the metric name. Select either **Save Metric** or **Saved Behavior**. You will be prompted to add a name and description.
+
+![](/saved-metrics-and-behaviors2.png)
+
+## Sharing
+
+By default, saved metrics and behaviors are private to you. After saving, you will be prompted to share.
+
+![](/saved-metrics-and-behaviors3.png)
+
+**Permissions**
+
+- Viewers: Can use this metric in analysis, but cannot modify the saved definition
+- Editors: Can use this metric in analysis, and modify the saved definition
+
+**Audiences**
+- Individuals: Set the permission for specific users in the project
+- Project: Sets the permission for all users in the project
+
+<Callout type="info">
+    The best practice is to give the project **View** access and add any **Editors** individually. This ensures that everyone can use the definitions that are managed by select people.
+</Callout>
+
+## Using a Saved Metric or Behavior
+
+When you click “Select Metric” to populate your report, you will see all events as well as any saved definitions. You can search for a saved metric or behavior by name. Alternatively, you can browse the available saved metrics and behaviors using the tabs on the left. 
+
+From an Insights report, you can select metrics and behaviors of all types. From Funnels and Retention reports, you will see only metrics and behaviors for that report type.
+
+![](/saved-metrics-and-behaviors4.png)
+
+## Updating Definitions
+Saved metrics or behaviors definitions may change over time. Mixpanel enables you to easily update these definitions and apply the changes across all reports that use them.
+
+After selecting a saved metric or behavior, you can modify the definition in the Query Builder. You will see a dotted line around the metric or behavior icon if the definition has been modified from the last saved state. Click the three-dot menu to make updates.
+
+![](/saved-metrics-and-behaviors5.png)
+
+- **Push Changes:** This applies your new definition to the original saved metric/behavior. All reports using this metric/behavior will be updated with the new definition.
+- **Save as New:** Creates a new metric with this new definition. The originally saved metric definition will not be affected.
+- **Clear Changes:** Reverts back to the previously saved state.
+
+## Managing Saved Metrics and Behaviors
+
+You can view all Saved Metrics and Behaviors in your project, add descriptions to clearly define them, and delete any unwanted definitions directly from the [Lexicon](/docs/data-governance/lexicon).
+
+From the Lexicon, click the "Metrics" tab to access all [Saved Metrics](/docs/features/saved-metrics-and-behaviors#saved-metrics) and [Formulas](/docs/reports/insights#formulas). Click the Behaviors tab to access all [Saved Behaviors](/docs/features/saved-metrics-and-behaviors#saved-behaviors).
+
+![](/saved-metrics-and-behaviors6.png)
+
+Click on the name of the definition you want to modify or delete. From the detail page, you will see all the options to customize the metric, including:
+- **Permissions:** Click "Share" to modify the metrics share settings.
+- **Verify:** [Add Verified badges](/docs/data-governance/lexicon#verify-data) to the metric/behavior. Only project Admins and Owners can verify entities in the Lexicon.
+- **Display Customizations:** Modify details about how this metric and its data appear by default.
+- **Delete:** Remove a saved metric from the project. Note, any reports using that saved metric will retain the definition, but be displayed in an unsaved state.
+
+![](/saved-metrics-and-behaviors7.png)

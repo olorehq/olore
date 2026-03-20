@@ -1,0 +1,332 @@
+# Implement Session Replay (React Native)
+
+Mixpanel's React Native Session Replay SDK enables you to capture and analyze user interactions in your mobile applications. Built as a Turbo Module for React Native's New Architecture, it provides native implementations for both iOS and Android with a unified JavaScript API.
+
+## Features
+
+- **📱 Cross-Platform Support** - Unified API for iOS and Android
+- **🎥 Session Recording** - Capture user interactions and screen recordings
+- **🔒 Privacy-First** - Built-in data masking for sensitive information
+- **⚡ High Performance** - Native implementation with minimal JavaScript bridge overhead
+- **🎯 Selective Recording** - Configurable sampling rates and recording controls
+- **🚀 New Architecture Ready** - Built as a Turbo Module with full type safety
+- **🛡️ Granular Privacy Controls** - Auto-masking and manual masking via wrapper components
+
+## Requirements
+
+- React Native >= 0.70
+- iOS >= 13.0
+- Android API Level >= 21
+- New Architecture support (backward compatible with old architecture)
+
+## Installation
+
+```sh
+npm install @mixpanel/react-native-session-replay
+```
+
+or
+
+```sh
+yarn add @mixpanel/react-native-session-replay
+```
+
+### Platform Setup
+
+#### iOS
+
+The SDK dependencies are automatically added via CocoaPods. Your project must target iOS 13 or later.
+
+```sh
+cd ios && pod install
+```
+
+#### Android
+
+Dependencies are automatically added through Gradle. Requirements:
+
+- Minimum Android SDK 21+
+- Kotlin support enabled
+
+## Quick Start
+
+Here's a minimal example to get started with Session Replay:
+
+```typescript
+import {
+  MPSessionReplay,
+  MPSessionReplayConfig,
+  MPSessionReplayMask,
+} from "@mixpanel/react-native-session-replay";
+
+// Initialize session replay
+const config = new MPSessionReplayConfig({
+  wifiOnly: false,
+  recordingSessionsPercent: 100,
+  autoStartRecording: true,
+  autoMaskedViews: [MPSessionReplayMask.Image, MPSessionReplayMask.Text],
+  flushInterval: 5,
+  enableLogging: true,
+});
+
+await MPSessionReplay.initialize(token, distinctId, config).catch((error) => {
+  console.error("Initialization error:", error);
+});
+
+// Control recording
+await MPSessionReplay.startRecording();
+await MPSessionReplay.stopRecording();
+
+// Check recording status
+const recording = await MPSessionReplay.isRecording();
+```
+
+## Configuration
+
+The `MPSessionReplayConfig` class provides comprehensive control over session replay behavior:
+
+```typescript
+const config = new MPSessionReplayConfig({
+  wifiOnly: boolean,                // Default: true
+  autoStartRecording: boolean,      // Default: true
+  recordingSessionsPercent: number, // Default: 100 (range: 0-100)
+  autoMaskedViews: MPSessionReplayMask[], // Default: all types
+  flushInterval: number,            // Default: 10 (seconds)
+  enableLogging: boolean,           // Default: false
+});
+```
+
+### Configuration Options
+
+| Option                     | Type                  | Default   | Description                                     |
+| -------------------------- | --------------------- | --------- | ----------------------------------------------- |
+| `wifiOnly`                 | boolean               | `true`    | Only transmit recordings over WiFi              |
+| `autoStartRecording`       | boolean               | `true`    | Automatically start recording on initialization |
+| `recordingSessionsPercent` | number                | `100`     | Percentage of sessions to record (0-100)        |
+| `autoMaskedViews`          | MPSessionReplayMask[] | All types | View types to automatically mask                |
+| `flushInterval`            | number                | `10`      | Interval in seconds to flush recordings         |
+| `enableLogging`            | boolean               | `false`   | Enable debug logging                            |
+
+### Auto-Masked View Types
+
+The `MPSessionReplayMask` enum defines view types that can be automatically masked:
+
+```typescript
+enum MPSessionReplayMask {
+  Text = "text", // Text inputs and labels
+  Web = "web", // WebView content
+  Map = "map", // Map views (iOS only)
+  Image = "image", // Image components
+}
+```
+
+**Example - Custom Auto-Masking:**
+
+```typescript
+import {
+  MPSessionReplayConfig,
+  MPSessionReplayMask,
+} from "mixpanel-react-native-session-replay";
+
+// Only mask text inputs and images
+const config = new MPSessionReplayConfig({
+  autoMaskedViews: [MPSessionReplayMask.Text, MPSessionReplayMask.Image],
+});
+```
+
+## API Reference
+
+### initialize
+
+Initialize the Session Replay SDK with your configuration.
+
+```typescript
+initialize(
+  token: string,
+  distinctId: string,
+  config: MPSessionReplayConfig
+): Promise<void>
+```
+
+**Parameters:**
+
+- `token` (required) - Your Mixpanel project token
+- `distinctId` (required) - User identifier for the session
+- `config` (required) - Session replay configuration
+
+**Validation:**
+
+- Token must be a non-empty string
+- distinctId must be a non-empty string
+- recordingSessionsPercent must be between 0 and 100
+
+**Example:**
+
+```typescript
+const config = new MPSessionReplayConfig({
+  autoStartRecording: true,
+  enableLogging: __DEV__, // Enable logging in development
+});
+
+try {
+  await MPSessionReplay.initialize("YOUR_TOKEN", "user-123", config);
+  console.log("Session Replay initialized");
+} catch (error) {
+  console.error("Failed to initialize:", error);
+}
+```
+
+### startRecording
+
+Start recording user interactions.
+
+```typescript
+startRecording(): Promise<void>
+```
+
+**Example:**
+
+```typescript
+await MPSessionReplay.startRecording();
+```
+
+### stopRecording
+
+Stop recording user interactions.
+
+```typescript
+stopRecording(): Promise<void>
+```
+
+**Example:**
+
+```typescript
+await MPSessionReplay.stopRecording();
+```
+
+### isRecording
+
+Check if session recording is currently active.
+
+```typescript
+isRecording(): Promise<boolean>
+```
+
+**Returns:** Boolean indicating recording status
+
+**Example:**
+
+```typescript
+const recording = await MPSessionReplay.isRecording();
+if (recording) {
+  console.log("Session is being recorded");
+}
+```
+
+### identify
+
+Update the user identifier for the current recording session.
+
+```typescript
+identify(distinctId: string): Promise<void>
+```
+
+**Parameters:**
+
+- `distinctId` (required) - New user identifier
+
+**Example:**
+
+```typescript
+// Update user ID after authentication
+await MPSessionReplay.identify("authenticated-user-456");
+```
+
+## Privacy & Data Masking
+
+Session Replay provides two approaches to protect sensitive data: automatic masking and manual masking.
+
+### Automatic Masking
+
+Configure which view types are automatically masked during initialization:
+
+```typescript
+const config = new MPSessionReplayConfig({
+  autoMaskedViews: [
+    MPSessionReplayMask.Text, // Masks all text inputs
+    MPSessionReplayMask.Image, // Masks all images
+    MPSessionReplayMask.Web, // Masks all WebViews
+    MPSessionReplayMask.Map, // Masks map views (iOS only)
+  ],
+});
+```
+
+**Default Behavior:** All view types are masked by default for maximum privacy.
+
+### Manual Masking with MPSessionReplayView
+
+Use the `MPSessionReplayView` wrapper component for granular control over what gets masked:
+
+```typescript
+import { MPSessionReplayView } from 'mixpanel-react-native-session-replay';
+
+// Mask sensitive content
+<MPSessionReplayView sensitive={true}>
+  <TextInput
+    value={password}
+    onChangeText={setPassword}
+    secureTextEntry
+  />
+  <Text>Social Security Number: {ssn}</Text>
+</MPSessionReplayView>
+
+// Explicitly mark content as safe (not masked)
+<MPSessionReplayView sensitive={false}>
+  <Text>Public information that should always be visible</Text>
+</MPSessionReplayView>
+```
+
+### Complete Masking Example
+
+```typescript
+import React, { useState } from "react";
+import { View, TextInput, Image, Text } from "react-native";
+import { MPSessionReplayView } from "mixpanel-react-native-session-replay";
+import { WebView } from "react-native-webview";
+
+function ProfileScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <View>
+      {/* Public information - not masked */}
+      <Text>Welcome to Your Profile</Text>
+
+      {/* Sensitive user data - masked */}
+      <MPSessionReplayView sensitive={true}>
+        <View>
+          <Text>Email: {email}</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="email@example.com"
+          />
+
+          <Text>Password:</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <Image source={{ uri: profilePhotoUrl }} />
+        </View>
+      </MPSessionReplayView>
+
+      {/* WebView masked by default if Web type is in autoMaskedViews */}
+      <WebView source={{ uri: "https://example.com/terms" }} />
+    </View>
+  );
+}
+```

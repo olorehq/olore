@@ -1,0 +1,34 @@
+import { HooksDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.useWindowScroll);
+
+## Usage
+
+`use-window-scroll` returns current scroll position and a function to scroll smoothly to given position:
+
+<Demo data={HooksDemos.useWindowScrollDemo} />
+
+## Definition
+
+```tsx
+interface UseWindowScrollPosition {
+  x: number;
+  y: number;
+}
+
+type UseWindowScrollTo = (position: Partial<UseWindowScrollPosition>) => void;
+type UseWindowScrollReturnValue = [UseWindowScrollPosition, UseWindowScrollTo];
+
+function useWindowScroll(): UseWindowScrollReturnValue;
+```
+
+## Exported types
+
+`UseWindowScrollTo`, `UseWindowScrollPosition` and `UseWindowScrollReturnValue` types are exported from `@mantine/hooks` package,
+you can import them in your application:
+
+```tsx
+import type { UseWindowScrollTo, UseWindowScrollPosition, UseWindowScrollReturnValue } from '@mantine/hooks';
+```

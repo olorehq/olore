@@ -1,0 +1,65 @@
+---
+title: Configuration
+description: Shared i18n configuration
+---
+
+<Callout title="Core API Only">
+  For framework integration guide, see [Internationalization](/docs/internationalization).
+</Callout>
+
+## Define Config
+
+Fumadocs core provides necessary middleware and utilities for i18n support.
+
+You can define a config to share between utilities.
+
+<include cwd meta='title="lib/i18n.ts"'>
+  ../../examples/i18n/lib/i18n.ts
+</include>
+
+### Hide Locale Prefix
+
+To hide the locale prefix (e.g. `/en/page` -> `/page`), use the `hideLocale` option.
+
+```ts
+import { defineI18n } from 'fumadocs-core/i18n';
+
+export const i18n = defineI18n({
+  defaultLanguage: 'en',
+  languages: ['en', 'cn'],
+  hideLocale: 'default-locale',
+});
+```
+
+| Mode             | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `always`         | Always hide the prefix, detect locale from cookies |
+| `default-locale` | Only hide the default locale                       |
+| `never`          | Never hide the prefix (default)                    |
+
+<Callout type='warn' title={<>Using <code>always</code></>}>
+
+On `always` mode, locale is stored as a cookie (set by the middleware), which isn't optimal for static sites.
+
+This may cause undesired cache problems, and need to pay extra attention on SEO to ensure search engines can index your pages correctly.
+
+</Callout>
+
+### Fallback Language
+
+The fallback language to use when translations are missing for a page, default to your `defaultLanguage`.
+
+Supported:
+
+- A language in your `languages` array.
+- When set to `null`, no fallback will be used.
+
+```ts
+import { defineI18n } from 'fumadocs-core/i18n';
+
+export const i18n = defineI18n({
+  languages: ['en', 'cn'],
+  defaultLanguage: 'en',
+  fallbackLanguage: 'cn',
+});
+```

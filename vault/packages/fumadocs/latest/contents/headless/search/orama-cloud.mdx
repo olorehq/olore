@@ -1,0 +1,145 @@
+---
+title: Orama Cloud
+description: Integrate with Orama Cloud
+---
+
+To begin, create an account on Orama Cloud.
+
+## REST API
+
+REST API integration requires your docs to upload the indexes.
+
+1. Create a new project with **REST API** data source on Orama Cloud dashboard.
+
+   Store your credentials in environment variables, for example:
+
+   ```dotenv
+   NEXT_PUBLIC_ORAMA_DATASOURCE_ID="Rest API data source ID"
+   NEXT_PUBLIC_ORAMA_PROJECT_ID="project ID"
+   NEXT_PUBLIC_ORAMA_API_KEY="public API key"
+
+   ORAMA_PRIVATE_API_KEY="private API key"
+   ```
+
+2. Export the search indexes by pre-rendering a static route.
+
+   ```ts title="lib/export-search-indexes.ts"
+   import { source } from '@/lib/source';
+   import type { OramaDocument } from 'fumadocs-core/search/orama-cloud';
+
+   export async function exportSearchIndexes() {
+     return source.getPages().map((page) => {
+       return {
+         id: page.url,
+         structured: page.data.structuredData,
+         url: page.url,
+         title: page.data.title,
+         description: page.data.description,
+       } satisfies OramaDocument;
+     });
+   }
+   ```
+
+   <include>.static-route-example.mdx</include>
+
+3. Create a script to sync search indexes.
+
+   ```ts title="scripts/sync-content.ts"
+   import { sync, type OramaDocument } from 'fumadocs-core/search/orama-cloud';
+   import * as fs from 'node:fs/promises';
+   import { OramaCloud } from '@orama/core';
+
+   // the path of pre-rendered `static.json`, choose one according to your React framework
+   const filePath = {
+     next: '.next/server/app/static.json.body',
+     'tanstack-start': '.output/public/static.json',
+     'react-router': 'build/client/static.json',
+     waku: 'dist/public/static.json',
+   }['next'];
+
+   async function main() {
+     const orama = new OramaCloud({
+       projectId: process.env.NEXT_PUBLIC_ORAMA_PROJECT_ID,
+       apiKey: process.env.ORAMA_PRIVATE_API_KEY,
+     });
+
+     const content = await fs.readFile(filePath);
+     const records = JSON.parse(content.toString()) as OramaDocument[];
+
+     await sync(orama, {
+       index: process.env.NEXT_PUBLIC_ORAMA_DATASOURCE_ID,
+       documents: records,
+     });
+
+     console.log(`search updated: ${records.length} records`);
+   }
+
+   void main();
+   ```
+
+4. Run the script after production build, make sure the environment variables are available (e.g. Bun reads from `.env` files):
+
+   ```json title="package.json"
+   {
+     "scripts": {
+       "build": "... && bun scripts/sync-content.ts"
+     }
+   }
+   ```
+
+### Search Client
+
+To search documents on the client side, consider:
+
+- Using [Fumadocs UI search dialog](/docs/search/orama-cloud).
+- Custom search UI using the built-in hook of Fumadocs:
+
+  ```ts
+  import { useDocsSearch } from 'fumadocs-core/search/client';
+  import { OramaCloud } from '@orama/core';
+
+  const client = new OramaCloud({
+    projectId: process.env.NEXT_PUBLIC_ORAMA_PROJECT_ID,
+    apiKey: process.env.NEXT_PUBLIC_ORAMA_API_KEY,
+  });
+
+  const { search, setSearch, query } = useDocsSearch({
+    type: 'orama-cloud',
+    client,
+    params: {
+      // optional search params
+    },
+  });
+  ```
+
+- Use their search client directly.
+
+## Web Crawler
+
+1. Create a Crawler data source from dashboard, and configure it correctly with the "Documentation" preset.
+2. Copy the credentials from dashboard.
+
+### Search Client
+
+Same as REST API integration, but make sure to set `index` to `crawler`.
+
+```ts
+import { useDocsSearch } from 'fumadocs-core/search/client';
+import { OramaCloud } from '@orama/core';
+
+const client = new OramaCloud({
+  projectId: '<project id>',
+  apiKey: '<read only api key>',
+});
+
+const { search, setSearch, query } = useDocsSearch({
+  type: 'orama-cloud',
+  index: 'crawler',
+  client,
+  params: {
+    // optional search params
+  },
+});
+```
+
+It's same for Fumadocs UI.

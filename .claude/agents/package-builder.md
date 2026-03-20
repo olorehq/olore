@@ -1,14 +1,14 @@
 ---
 name: package-builder
-description: Build a documentation package from config. Downloads docs, generates artifacts and index. Use proactively when building or updating documentation packages.
+description: Build a documentation package from config. Downloads docs and generates artifacts. Use proactively when building or updating documentation packages.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
-skills: download-docs, build-artifacts, build-index
+skills: download-docs, build-artifacts
 ---
 
 # Package Builder
 
-Build a complete documentation package by executing three phases: download, build artifacts, and build index.
+Build a complete documentation package by executing two phases: download and build artifacts.
 
 ## Input
 
@@ -29,7 +29,7 @@ Follow the **download-docs** skill instructions to:
 - Filter files (GitHub >50 files, AI-based)
 - Update `olore-lock.json` with final file count
 
-If download is skipped (already exists, no `--force`), still continue to Phase 2 and 3 to ensure artifacts exist.
+If download is skipped (already exists, no `--force`), still continue to Phase 2 to ensure artifacts exist.
 
 ### Phase 2: Build artifacts
 
@@ -39,15 +39,7 @@ Follow the **build-artifacts** skill instructions to:
 - Generate TOC.md from tier template
 - Generate SKILL.md from tier template (name: `olore-{config_name}-{version}`)
 
-### Phase 3: Build index
-
-Follow the **build-index** skill instructions to:
-- Verify `contents/` exists
-- Determine tier from file count/size
-- Read file contents and extract keywords (API names, method names)
-- Generate INDEX.md in compact `keyword1,keyword2|path` format from tier template
-
-### Phase 4: Return summary
+### Phase 3: Return summary
 
 Return ONLY a brief summary in this format:
 

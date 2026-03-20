@@ -1,0 +1,166 @@
+import { Callout } from 'nextra/components'
+
+# Export Methods: Export raw data and reports from Mixpanel
+
+## Overview
+
+This page provides a high-level overview of your options for exporting event data, profile data, and formatted report data.
+
+You can export data from your project using a variety of methods, including lightweight CSVs generated from the UI, large volume raw data export from our APIs, and data syncs to external destinations through [Cohort Syncs](/docs/cohort-sync) and [Data Pipelines](/docs/data-pipelines).
+
+<Callout type="info">
+  For GDPR/CCPA-compliant exports, please [see the End User Data Management page](https://docs.mixpanel.com/docs/privacy/end-user-data-management).
+</Callout>
+
+## Exporting Events
+
+### Event Export via API
+
+<Callout type="info">
+  The `from_date` and `to_date` params are interpreted using UTC timezones. For projects created before 1 January 2023, the `from_date` and `to_date` params are interpreted using your current project timezone.
+</Callout>
+
+To export raw event data, use the [Raw Event Export API](https://developer.mixpanel.com/reference/raw-event-export). The events payload is returned as JSONL, where each line is a valid JSON object. This method is recommended for high volume exports.
+
+Example request:
+
+```
+# Returning "sample_event" from 2026-01-10 to 2026-01-11
+curl -gG --request GET \
+     --url 'https://data.mixpanel.com/api/2.0/export?from_date=2026-01-10&to_date=2026-01-11&limit=100' \
+     --data-urlencode 'event=["sample_event"]' \
+     --header 'accept: text/plain' \
+     --header 'authorization: Basic YOUR_TOKEN'
+```
+
+Example payload:
+
+```
+# The entire payload is a JSONL
+# Each line of event is a JSON object
+{"event":"Signed up","properties":{"time":1602611311,"$insert_id":"ABCDE","mp_processing_time_ms":1602625711874}}
+{"event":"Signed up","properties":{"time":1602787121,"$insert_id":"ABCDE","mp_processing_time_ms":1602801521561}}
+
+```
+
+The exported payloads are raw events, containing timestamps as they are stored in your project. For projects created before 1 Jan 2023, your event timestamp is stored in your local project timezone at the time of ingestion. For projects created after 1 Jan 2023, your event timestamp is stored in UTC timezone. Learn more about managing your project timezone [here](/docs/orgs-and-projects/managing-projects#manage-timezones-for-projects).
+
+### CSV Events Export
+
+<Callout type="info">
+  Only the events visible in the Events table at the time of your export will be included in the CSV. Scroll down and click “Load More” to make more events visible.
+</Callout>
+
+You may export small batches of events as a CSV for use in quick analysis by navigating to the Events tab, querying the events that you are interested in seeing, then clicking the “Export” button in the top right corner.
+
+By default, only the columns that are shown in the UI will be exported. You can click the “Edit Columns” button to modify the properties columns shown in the Events table.
+
+Select the option to include “All event properties” if you are interested in all of the event properties.
+
+![image](/event-csv-export-settings.png)
+
+## Exporting Profiles
+
+### User Profile Export via API
+
+<Callout type="info">
+  Profiles and events will always export the canonical distinct ID as shown in the UI.
+</Callout>
+
+To export User Profile data, use the [Engage API](https://developer.mixpanel.com/reference/engage-query). The return payload is a JSON object, where the profiles are stored in the results key, as an array of objects where each profile is its own object.
+
+Sample request:
+
+```
+# Returns all user profiles in project 1234567 
+curl --request POST \
+     --url 'https://mixpanel.com/api/query/engage?project_id=1234567' \
+     --header 'accept: application/json' \
+     --header 'authorization: Basic YOUR_TOKEN' \
+     --header 'content-type: application/x-www-form-urlencoded'
+```
+
+Sample payload:
+
+```
+# Your profiles are stored in an array of objects in the results key
+# Each object is a separate profile
+{
+  "page": 0,
+  "page_size": 1000,
+  "results": [
+    {
+      "$distinct_id": 1,
+      "$properties": {
+        "$created": "2008-12-12T11:20:47",
+        "$email": "example1@mixpanel.com",
+        "$first_name": "Example1”,
+        "$last_name": "Name1”,
+        "$last_seen": "2008-06-09T23:08:40"
+      }
+    },
+{
+      "$distinct_id": 2,
+      "$properties": {
+        "$created": "2008-12-12T11:20:47",
+        "$email": "example2@mixpanel.com",
+        "$first_name": "Example2”,
+        "$last_name": "Name2”,
+        "$last_seen": "2008-06-09T23:08:40"
+      }
+    }
+  ],
+  "session_id": "1234567890-EXAMPLE",
+  "status": "ok",
+  "total": 1
+}
+```
+
+By default, all profile properties are returned. Use the output_properties parameter to specify specific profile properties to return.
+
+Example: `output_properties=["$last_name", "$email", "Total Spent"]`
+
+You may export specific cohorts by using the `filter_by_cohort` parameter. You may find the `cohort_id` in the UI next to your cohort or by using the [cohorts-list API](https://developer.mixpanel.com/reference/cohorts-list).
+
+![image](/cohort-id-viz.png)
+
+#### Group Profile Export via API
+
+You can also leverage the [Engage API](https://developer.mixpanel.com/reference/engage-query) to export Group Profiles. To do so, provide  the `data_group_id` parameter in your Engage API request. You can find the `data_group_id` for your group keys in your project settings.
+
+![image](/data_group_id_project_settings.png)
+
+### CSV User Profile Export
+
+You may export your profiles as a CSV for use in quick analysis by navigating to the Users tab, querying the profiles that you are interested in seeing, then clicking the “Export” button in the top right corner.
+
+Only the columns shown in the UI will be exported in the CSV. You may modify the table by clicking the “Edit Columns” button to choose the profile properties to return before your export.
+
+#### CSV Group Profile Export
+
+To export Group Profiles as a CSV, switch the group key to your group of choice by clicking the “Analyze Uniques by” button in the top left of the UI
+
+![image](/switch_group_key.png)
+
+## Exporting Reports
+
+<Callout type="info">
+  Users with a Growth or Enterprise plan can use our Query API to export formatted report data. Users with a Free plan can export reports as CSV, PNG, or PDF from the UI. See our [pricing page](https://mixpanel.com/pricing/) for more details.
+</Callout>
+
+### Downloading Reports via the UI
+You can download any reports as a CSV, PNG, or PDF by clicking the "..." button in the top right corner of the report UI, and then selecting "Export".
+
+**Enterprise plan customers:** When you export a CSV from an Insights report in Bar, Stacked Bar, Pie, Table, or Metric view, you can export up to 50,000 rows of data. For all other views and reports, you can export up to 10,000 rows. If a report exceeds these limits, the export returns only the first rows in ascending order, up to the applicable limit.
+
+**All other customers:** You can export up to 10,000 rows of data for all report types.
+
+### Exporting Reports via API
+
+You may use our [Query API](https://developer.mixpanel.com/reference/query-api) to export the formatted results that you see in our web app. Learn more about the [Insights API](https://developer.mixpanel.com/reference/insights-query), [Funnels API](https://developer.mixpanel.com/reference/funnels-query), and [Retention API](https://developer.mixpanel.com/reference/retention-query). 
+
+The Flows report cannot be exported using API. Please use the export method from the UI outlined above.
+
+## Export Integrations
+
+You can sync your Mixpanel data to your other destinations using our native connectors. Learn more about the [Data Pipeline](/docs/data-pipelines) for warehouse syncs and [Cohort Syncs](/docs/cohort-sync) for audience targeting.
