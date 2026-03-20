@@ -8,7 +8,8 @@ import { pipeline } from 'stream/promises';
 import fs from 'fs-extra';
 import * as tar from 'tar';
 
-import { DOWNLOAD_TIMEOUT, USER_AGENT } from './constants.js';
+import { DOWNLOAD_TIMEOUT, getUserAgent } from './constants.js';
+import { getVersion } from './version-check.js';
 
 // Custom error for download operations
 export class DownloadError extends Error {
@@ -32,7 +33,7 @@ export async function downloadFile(url: string, dest: string): Promise<void> {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent': getUserAgent(getVersion()),
       },
     });
 

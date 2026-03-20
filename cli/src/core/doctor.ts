@@ -377,6 +377,9 @@ async function cleanEmptyParentDir(removedPath: string): Promise<void> {
   }
 }
 
+/**
+ * Synchronously compute the file count and total byte size of a directory tree.
+ */
 function getDirectoryStats(dir: string): { files: number; size: number } {
   let files = 0;
   let size = 0;

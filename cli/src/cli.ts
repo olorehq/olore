@@ -50,7 +50,6 @@ program
   .alias('i')
   .description('Install a documentation package from the registry')
   .option('-v, --version <version>', 'Install specific version')
-  .option('--keep', 'Keep previous version active (for migrations)')
   .option('--force', 'Force installation')
   .action(async (pkg, options) => {
     try {

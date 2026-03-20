@@ -68,7 +68,7 @@ async function fetchLatestVersion(): Promise<string | null> {
   }
 }
 
-function compareVersions(current: string, latest: string): number {
+export function compareVersions(current: string, latest: string): number {
   const parseVersion = (v: string) =>
     v
       .replace(/^v/, '')
