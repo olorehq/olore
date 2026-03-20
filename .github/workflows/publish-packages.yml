@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - 'vault/packages/**/olore-lock.json'
+  schedule:
+    - cron: '0 */6 * * *' # Refresh registry.json download counts every 6h
   workflow_dispatch:
     inputs:
       package:
         description: 'Package to publish (e.g., "prisma@latest")'
-        required: true
+        required: false
         type: string
 
 concurrency:
@@ -103,7 +105,6 @@ jobs:
           done < /tmp/packages.txt
 
       - name: Update registry.json
-        if: steps.detect.outputs.has_packages == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -217,7 +218,6 @@ jobs:
           echo "Published registry.json as GitHub Release asset"
 
       - name: Trigger Vercel redeploy
-        if: steps.detect.outputs.has_packages == 'true'
         continue-on-error: true
         env:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
