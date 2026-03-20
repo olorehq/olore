@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Rejected — explored but decided against. Vercel Pro required for custom events, and GitHub Releases already provides download counts for free. Registry page uses SSR to fetch registry.json from GitHub Releases instead.
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Rejected — explored but decided against. Doc packages are too large for skills.sh's clone-the-repo model (211MB repo for a 444KB skill). Kept own registry on GitHub Releases with tarball distribution per ADR-0004/0005. INDEX.md removal and build pipeline simplification from this ADR were implemented separately.
 
 ## Context
 
