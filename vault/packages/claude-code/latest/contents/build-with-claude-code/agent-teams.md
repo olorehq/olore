@@ -14,6 +14,10 @@ Agent teams let you coordinate multiple Claude Code instances working together. 
 
 Unlike [subagents](/en/sub-agents), which run within a single session and can only report back to the main agent, you can also interact with individual teammates directly without going through the lead.
 
+<Note>
+  Agent teams require Claude Code v2.1.32 or later. Check your version with `claude --version`.
+</Note>
+
 This page covers:
 
 * [When to use agent teams](#when-to-use-agent-teams), including best use cases and how they compare with subagents
@@ -37,9 +41,9 @@ Agent teams add coordination overhead and use significantly more tokens than a s
 Both agent teams and [subagents](/en/sub-agents) let you parallelize work, but they operate differently. Choose based on whether your workers need to communicate with each other:
 
 <Frame caption="Subagents only report results back to the main agent and never talk to each other. In agent teams, teammates share a task list, claim work, and communicate directly with each other.">
-  <img src="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=2f8db9b4f3705dd3ab931fbe2d96e42a" className="dark:hidden" alt="Diagram comparing subagent and agent team architectures. Subagents are spawned by the main agent, do work, and report results back. Agent teams coordinate through a shared task list, with teammates communicating directly with each other." data-og-width="4245" width="4245" data-og-height="1615" height="1615" data-path="images/subagents-vs-agent-teams-light.png" data-optimize="true" data-opv="3" srcset="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=280&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=a2cfe413c2084b477be40ac8723d9d40 280w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=560&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=c642c09a4c211b10b35eee7d7d0d149f 560w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=840&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=40d286f77c8a4075346b4fcaa2b36248 840w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=1100&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=923986caa23c0ef2c27d7e45f4dce6d1 1100w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=1650&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=17a730a070db6d71d029a98b074c68e8 1650w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?w=2500&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=e402533fc9e8b5e8d26a835cc4aa1742 2500w" />
+  <img src="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-light.png?fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=2f8db9b4f3705dd3ab931fbe2d96e42a" className="dark:hidden" alt="Diagram comparing subagent and agent team architectures. Subagents are spawned by the main agent, do work, and report results back. Agent teams coordinate through a shared task list, with teammates communicating directly with each other." width="4245" height="1615" data-path="images/subagents-vs-agent-teams-light.png" />
 
-  <img src="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=d573a037540f2ada6a9ae7d8285b46fd" className="hidden dark:block" alt="Diagram comparing subagent and agent team architectures. Subagents are spawned by the main agent, do work, and report results back. Agent teams coordinate through a shared task list, with teammates communicating directly with each other." data-og-width="4245" width="4245" data-og-height="1615" height="1615" data-path="images/subagents-vs-agent-teams-dark.png" data-optimize="true" data-opv="3" srcset="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=280&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=06ca5b18b232855acc488357d8d01fa7 280w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=560&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=3d34daee83994781eb74b74d1ed511c4 560w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=840&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=82ea35ac837de7d674002de69689b9cf 840w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=1100&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=3653085214a9fc65d1f589044894a296 1100w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=1650&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=8e74b42694e428570e876d34f29e6ad6 1650w, https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?w=2500&fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=3be00c56c6a0dcccbe15640020be0128 2500w" />
+  <img src="https://mintcdn.com/claude-code/nsvRFSDNfpSU5nT7/images/subagents-vs-agent-teams-dark.png?fit=max&auto=format&n=nsvRFSDNfpSU5nT7&q=85&s=d573a037540f2ada6a9ae7d8285b46fd" className="hidden dark:block" alt="Diagram comparing subagent and agent team architectures. Subagents are spawned by the main agent, do work, and report results back. Agent teams coordinate through a shared task list, with teammates communicating directly with each other." width="4245" height="1615" data-path="images/subagents-vs-agent-teams-dark.png" />
 </Frame>
 
 |                   | Subagents                                        | Agent teams                                         |
@@ -70,7 +74,7 @@ After enabling agent teams, tell Claude to create an agent team and describe the
 
 This example works well because the three roles are independent and can explore the problem without waiting on each other:
 
-```
+```text  theme={null}
 I'm designing a CLI tool that helps developers track TODO comments across
 their codebase. Create an agent team to explore this from different angles: one
 teammate on UX, one on technical architecture, one playing devil's advocate.
@@ -120,7 +124,7 @@ Split-pane mode requires either [tmux](https://github.com/tmux/tmux/wiki) or iTe
 
 Claude decides the number of teammates to spawn based on your task, or you can specify exactly what you want:
 
-```
+```text  theme={null}
 Create a team with 4 teammates to refactor these modules in parallel.
 Use Sonnet for each teammate.
 ```
@@ -129,7 +133,7 @@ Use Sonnet for each teammate.
 
 For complex or risky tasks, you can require teammates to plan before implementing. The teammate works in read-only plan mode until the lead approves their approach:
 
-```
+```text  theme={null}
 Spawn an architect teammate to refactor the authentication module.
 Require plan approval before they make any changes.
 ```
@@ -160,7 +164,7 @@ Task claiming uses file locking to prevent race conditions when multiple teammat
 
 To gracefully end a teammate's session:
 
-```
+```text  theme={null}
 Ask the researcher teammate to shut down
 ```
 
@@ -170,7 +174,7 @@ The lead sends a shutdown request. The teammate can approve, exiting gracefully,
 
 When you're done, ask the lead to clean up:
 
-```
+```text  theme={null}
 Clean up the team
 ```
 
@@ -253,7 +257,7 @@ These examples show how agent teams handle tasks where parallel exploration adds
 
 A single reviewer tends to gravitate toward one type of issue at a time. Splitting review criteria into independent domains means security, performance, and test coverage all get thorough attention simultaneously. The prompt assigns each teammate a distinct lens so they don't overlap:
 
-```
+```text  theme={null}
 Create an agent team to review PR #142. Spawn three reviewers:
 - One focused on security implications
 - One checking performance impact
@@ -267,7 +271,7 @@ Each reviewer works from the same PR but applies a different filter. The lead sy
 
 When the root cause is unclear, a single agent tends to find one plausible explanation and stop looking. The prompt fights this by making teammates explicitly adversarial: each one's job is not only to investigate its own theory but to challenge the others'.
 
-```
+```text  theme={null}
 Users report the app exits after one message instead of staying connected.
 Spawn 5 agent teammates to investigate different hypotheses. Have them talk to
 each other to try to disprove each other's theories, like a scientific
@@ -284,7 +288,7 @@ With multiple independent investigators actively trying to disprove each other, 
 
 Teammates load project context automatically, including CLAUDE.md, MCP servers, and skills, but they don't inherit the lead's conversation history. See [Context and communication](#context-and-communication) for details. Include task-specific details in the spawn prompt:
 
-```
+```text  theme={null}
 Spawn a security reviewer teammate with the prompt: "Review the authentication module
 at src/auth/ for security vulnerabilities. Focus on token handling, session
 management, and input validation. The app uses JWT tokens stored in
@@ -319,7 +323,7 @@ Scale up only when the work genuinely benefits from having teammates work simult
 
 Sometimes the lead starts implementing tasks itself instead of waiting for teammates. If you notice this:
 
-```
+```text  theme={null}
 Wait for your teammates to complete their tasks before proceeding
 ```
 

@@ -24,7 +24,7 @@ Claude Code supports two ways to add custom skills, agents, and hooks:
 * You're customizing Claude Code for a single project
 * The configuration is personal and doesn't need to be shared
 * You're experimenting with skills or hooks before packaging them
-* You want short skill names like `/hello` or `/review`
+* You want short skill names like `/hello` or `/deploy`
 
 **Use plugins when**:
 
@@ -152,7 +152,7 @@ This quickstart walks you through creating a plugin with a custom skill. You'll 
     Greet the user named "$ARGUMENTS" warmly and ask how you can help them today. Make the greeting personal and encouraging.
     ```
 
-    Restart Claude Code to pick up the changes, then try the skill with your name:
+    Run `/reload-plugins` to pick up the changes, then try the skill with your name:
 
     ```shell  theme={null}
     /my-first-plugin:hello Alex
@@ -205,7 +205,7 @@ Plugins can include [Agent Skills](/en/skills) to extend Claude's capabilities. 
 
 Add a `skills/` directory at your plugin root with Skill folders containing `SKILL.md` files:
 
-```
+```text  theme={null}
 my-plugin/
 ├── .claude-plugin/
 │   └── plugin.json
@@ -229,7 +229,7 @@ When reviewing code, check for:
 4. Test coverage
 ```
 
-After installing the plugin, restart Claude Code to load the Skills. For complete Skill authoring guidance including progressive disclosure and tool restrictions, see [Agent Skills](/en/skills).
+After installing the plugin, run `/reload-plugins` to load the Skills. For complete Skill authoring guidance including progressive disclosure and tool restrictions, see [Agent Skills](/en/skills).
 
 ### Add LSP servers to your plugin
 
@@ -281,7 +281,9 @@ Use the `--plugin-dir` flag to test plugins during development. This loads your 
 claude --plugin-dir ./my-plugin
 ```
 
-As you make changes to your plugin, restart Claude Code to pick up the updates. Test your plugin components:
+When a `--plugin-dir` plugin has the same name as an installed marketplace plugin, the local copy takes precedence for that session. This lets you test changes to a plugin you already have installed without uninstalling it first. Marketplace plugins force-enabled by managed settings are the only exception and cannot be overridden.
+
+As you make changes to your plugin, run `/reload-plugins` to pick up the updates without restarting. This reloads plugins, skills, agents, hooks, plugin MCP servers, and plugin LSP servers. Test your plugin components:
 
 * Try your skills with `/plugin-name:skill-name`
 * Check that agents appear in `/agents`
@@ -313,6 +315,13 @@ When your plugin is ready to share:
 4. **Test with others**: Have team members test the plugin before wider distribution
 
 Once your plugin is in a marketplace, others can install it using the instructions in [Discover and install plugins](/en/discover-plugins).
+
+### Submit your plugin to the official marketplace
+
+To submit a plugin to the official Anthropic marketplace, use one of the in-app submission forms:
+
+* **Claude.ai**: [claude.ai/settings/plugins/submit](https://claude.ai/settings/plugins/submit)
+* **Console**: [platform.claude.com/plugins/submit](https://platform.claude.com/plugins/submit)
 
 <Note>
   For complete technical specifications, debugging techniques, and distribution strategies, see [Plugins reference](/en/plugins-reference).

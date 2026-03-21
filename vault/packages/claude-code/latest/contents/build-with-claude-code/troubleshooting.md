@@ -224,14 +224,14 @@ These are the most frequently encountered installation problems and their soluti
 
 When running the install command, you may see one of these errors:
 
-```
+```text  theme={null}
 bash: line 1: syntax error near unexpected token `<'
 bash: line 1: `<!DOCTYPE html>'
 ```
 
 On PowerShell, the same problem appears as:
 
-```
+```text  theme={null}
 Invoke-Expression: Missing argument in parameter list.
 ```
 
@@ -386,7 +386,7 @@ If you see `'irm' is not recognized` or `The token '&&' is not valid`, you're ru
 
 If you see `Killed` during installation on a VPS or cloud instance:
 
-```
+```text  theme={null}
 Setting up Claude Code...
 Installing Claude Code native build latest...
 bash: line 142: 34803 Killed    "$binary_path" install ${TARGET:+"$TARGET"}
@@ -462,7 +462,7 @@ If your Git is installed somewhere else, find the path by running `where.exe git
 
 If you see errors about missing shared libraries like `libstdc++.so.6` or `libgcc_s.so.1` after installation, the installer may have downloaded the wrong binary variant for your system.
 
-```
+```text  theme={null}
 Error loading shared library libstdc++.so.6: No such file or directory
 ```
 
@@ -487,7 +487,7 @@ This can happen on glibc-based systems that have musl cross-compilation packages
 
 If the installer prints `Illegal instruction` instead of the OOM `Killed` message, the downloaded binary doesn't match your CPU architecture. This commonly happens on ARM servers that receive an x86 binary, or on older CPUs that lack required instruction sets.
 
-```
+```text  theme={null}
 bash: line 142: 2238232 Illegal instruction    "$binary_path" install ${TARGET:+"$TARGET"}
 ```
 
@@ -508,7 +508,7 @@ bash: line 142: 2238232 Illegal instruction    "$binary_path" install ${TARGET:+
 
 If you see `dyld: cannot load` or `Abort trap: 6` during installation, the binary is incompatible with your macOS version or hardware.
 
-```
+```text  theme={null}
 dyld: cannot load 'claude-2.1.42-darwin-x64' (load command 0x80000034 is unknown)
 Abort trap: 6
 ```
@@ -640,6 +640,21 @@ If you see `API Error: 403 {"error":{"type":"forbidden","message":"Request not a
 * **Console users**: confirm your account has the "Claude Code" or "Developer" role assigned by your admin
 * **Behind a proxy**: corporate proxies can interfere with API requests. See [network configuration](/en/network-config) for proxy setup.
 
+### "This organization has been disabled" with an active subscription
+
+If you see `API Error: 400 ... "This organization has been disabled"` despite having an active Claude subscription, an `ANTHROPIC_API_KEY` environment variable is overriding your subscription. This commonly happens when an old API key from a previous employer or project is still set in your shell profile.
+
+When `ANTHROPIC_API_KEY` is present and you have approved it, Claude Code uses that key instead of your subscription's OAuth credentials. In non-interactive mode (`-p`), the key is always used when present. See [authentication precedence](/en/authentication#authentication-precedence) for the full resolution order.
+
+To use your subscription instead, unset the environment variable and remove it from your shell profile:
+
+```bash  theme={null}
+unset ANTHROPIC_API_KEY
+claude
+```
+
+Check `~/.zshrc`, `~/.bashrc`, or `~/.profile` for `export ANTHROPIC_API_KEY=...` lines and remove them to make the change permanent. Run `/status` inside Claude Code to confirm which authentication method is active.
+
 ### OAuth login fails in WSL2
 
 Browser-based login in WSL2 may fail if WSL can't open your Windows browser. Set the `BROWSER` environment variable:
@@ -733,7 +748,7 @@ apk add ripgrep
 pacman -S ripgrep
 ```
 
-Then set `USE_BUILTIN_RIPGREP=0` in your [environment](/en/settings#environment-variables).
+Then set `USE_BUILTIN_RIPGREP=0` in your [environment](/en/env-vars).
 
 ### Slow or incomplete search results on WSL
 
@@ -833,7 +848,7 @@ If you notice code blocks like this in generated markdown:
 function example() {
   return "hello";
 }
-```
+```text
 ````
 
 Instead of properly tagged blocks like:
@@ -843,7 +858,7 @@ Instead of properly tagged blocks like:
 function example() {
   return "hello";
 }
-```
+```text
 ````
 
 **Solutions:**
@@ -878,7 +893,7 @@ To minimize formatting issues:
 
 If you're experiencing issues not covered here:
 
-1. Use the `/bug` command within Claude Code to report problems directly to Anthropic
+1. Use the `/feedback` command within Claude Code to report problems directly to Anthropic
 2. Check the [GitHub repository](https://github.com/anthropics/claude-code) for known issues
 3. Run `/doctor` to diagnose issues. It checks:
    * Installation type, version, and search functionality

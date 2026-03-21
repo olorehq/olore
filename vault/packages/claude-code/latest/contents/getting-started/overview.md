@@ -10,7 +10,7 @@ Claude Code is an AI-powered coding assistant that helps you build features, fix
 
 ## Get started
 
-Choose your environment to get started. Most surfaces require a [Claude subscription](https://claude.com/pricing) or [Anthropic Console](https://console.anthropic.com/) account. The Terminal CLI and VS Code also support [third-party providers](/en/third-party-integrations).
+Choose your environment to get started. Most surfaces require a [Claude subscription](https://claude.com/pricing?utm_source=claude_code\&utm_medium=docs\&utm_content=overview_pricing) or [Anthropic Console](https://console.anthropic.com/) account. The Terminal CLI and VS Code also support [third-party providers](/en/third-party-integrations).
 
 <Tabs>
   <Tab title="Terminal">
@@ -22,19 +22,19 @@ Choose your environment to get started. Most surfaces require a [Claude subscrip
       <Tab title="Native Install (Recommended)">
         **macOS, Linux, WSL:**
 
-        ```bash  theme={null}
+        ```bash theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null}
         curl -fsSL https://claude.ai/install.sh | bash
         ```
 
         **Windows PowerShell:**
 
-        ```powershell  theme={null}
+        ```powershell theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null}
         irm https://claude.ai/install.ps1 | iex
         ```
 
         **Windows CMD:**
 
-        ```batch  theme={null}
+        ```batch theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null}
         curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
         ```
 
@@ -46,7 +46,7 @@ Choose your environment to get started. Most surfaces require a [Claude subscrip
       </Tab>
 
       <Tab title="Homebrew">
-        ```bash  theme={null}
+        ```bash theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null}
         brew install --cask claude-code
         ```
 
@@ -56,7 +56,7 @@ Choose your environment to get started. Most surfaces require a [Claude subscrip
       </Tab>
 
       <Tab title="WinGet">
-        ```powershell  theme={null}
+        ```powershell theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null} theme={null}
         winget install Anthropic.ClaudeCode
         ```
 
@@ -92,7 +92,7 @@ Choose your environment to get started. Most surfaces require a [Claude subscrip
   </Tab>
 
   <Tab title="Desktop app">
-    A standalone app for running Claude Code outside your IDE or terminal. Review diffs visually, run multiple sessions side by side, and kick off cloud sessions.
+    A standalone app for running Claude Code outside your IDE or terminal. Review diffs visually, run multiple sessions side by side, schedule recurring tasks, and kick off cloud sessions.
 
     Download and install:
 
@@ -100,7 +100,7 @@ Choose your environment to get started. Most surfaces require a [Claude subscrip
     * [Windows](https://claude.ai/api/desktop/win32/x64/exe/latest/redirect?utm_source=claude_code\&utm_medium=docs) (x64)
     * [Windows ARM64](https://claude.ai/api/desktop/win32/arm64/exe/latest/redirect?utm_source=claude_code\&utm_medium=docs) (remote sessions only)
 
-    After installing, launch Claude, sign in, and click the **Code** tab to start coding. A [paid subscription](https://claude.com/pricing) is required.
+    After installing, launch Claude, sign in, and click the **Code** tab to start coding. A [paid subscription](https://claude.com/pricing?utm_source=claude_code\&utm_medium=docs\&utm_content=overview_desktop_pricing) is required.
 
     [Learn more about the desktop app →](/en/desktop-quickstart)
   </Tab>
@@ -156,9 +156,9 @@ Here are some of the ways you can use Claude Code:
   </Accordion>
 
   <Accordion title="Customize with instructions, skills, and hooks" icon="sliders">
-    [`CLAUDE.md`](/en/claude-md) is a markdown file you add to your project root that Claude Code reads at the start of every session. Use it to set coding standards, architecture decisions, preferred libraries, and review checklists.
+    [`CLAUDE.md`](/en/memory) is a markdown file you add to your project root that Claude Code reads at the start of every session. Use it to set coding standards, architecture decisions, preferred libraries, and review checklists. Claude also builds [auto memory](/en/memory#auto-memory) as it works, saving learnings like build commands and debugging insights across sessions without you writing anything.
 
-    Create [custom slash commands](/en/skills) to package repeatable workflows your team can share, like `/review-pr` or `/deploy-staging`.
+    Create [custom commands](/en/skills) to package repeatable workflows your team can share, like `/review-pr` or `/deploy-staging`.
 
     [Hooks](/en/hooks) let you run shell commands before or after Claude Code actions, like auto-formatting after every file edit or running lint before a commit.
   </Accordion>
@@ -173,8 +173,8 @@ Here are some of the ways you can use Claude Code:
     Claude Code is composable and follows the Unix philosophy. Pipe logs into it, run it in CI, or chain it with other tools:
 
     ```bash  theme={null}
-    # Monitor logs and get alerted
-    tail -f app.log | claude -p "Slack me if you see any anomalies"
+    # Analyze recent log output
+    tail -200 app.log | claude -p "Slack me if you see any anomalies"
 
     # Automate translations in CI
     claude -p "translate new strings into French and raise a PR for review"
@@ -202,21 +202,24 @@ Each surface connects to the same underlying Claude Code engine, so your CLAUDE.
 
 Beyond the [Terminal](/en/quickstart), [VS Code](/en/vs-code), [JetBrains](/en/jetbrains), [Desktop](/en/desktop), and [Web](/en/claude-code-on-the-web) environments above, Claude Code integrates with CI/CD, chat, and browser workflows:
 
-| I want to...                                             | Best option                                                                                                        |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Continue a local session from my phone or another device | [Remote Control](/en/remote-control)                                                                               |
-| Start a task locally, continue on mobile                 | [Web](/en/claude-code-on-the-web) or [Claude iOS app](https://apps.apple.com/app/claude-by-anthropic/id6473753684) |
-| Automate PR reviews and issue triage                     | [GitHub Actions](/en/github-actions) or [GitLab CI/CD](/en/gitlab-ci-cd)                                           |
-| Route bug reports from Slack to pull requests            | [Slack](/en/slack)                                                                                                 |
-| Debug live web applications                              | [Chrome](/en/chrome)                                                                                               |
-| Build custom agents for your own workflows               | [Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview)                                                |
+| I want to...                                                          | Best option                                                                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Continue a local session from my phone or another device              | [Remote Control](/en/remote-control)                                                                               |
+| Push events from Telegram, Discord, or my own webhooks into a session | [Channels](/en/channels)                                                                                           |
+| Start a task locally, continue on mobile                              | [Web](/en/claude-code-on-the-web) or [Claude iOS app](https://apps.apple.com/app/claude-by-anthropic/id6473753684) |
+| Automate PR reviews and issue triage                                  | [GitHub Actions](/en/github-actions) or [GitLab CI/CD](/en/gitlab-ci-cd)                                           |
+| Get automatic code review on every PR                                 | [GitHub Code Review](/en/code-review)                                                                              |
+| Route bug reports from Slack to pull requests                         | [Slack](/en/slack)                                                                                                 |
+| Debug live web applications                                           | [Chrome](/en/chrome)                                                                                               |
+| Build custom agents for your own workflows                            | [Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview)                                                |
 
 ## Next steps
 
 Once you've installed Claude Code, these guides help you go deeper.
 
 * [Quickstart](/en/quickstart): walk through your first real task, from exploring a codebase to committing a fix
-* Level up with [best practices](/en/best-practices) and [common workflows](/en/common-workflows)
+* [Store instructions and memories](/en/memory): give Claude persistent instructions with CLAUDE.md files and auto memory
+* [Common workflows](/en/common-workflows) and [best practices](/en/best-practices): patterns for getting the most out of Claude Code
 * [Settings](/en/settings): customize Claude Code for your workflow
 * [Troubleshooting](/en/troubleshooting): solutions for common issues
 * [code.claude.com](https://code.claude.com/): demos, pricing, and product details

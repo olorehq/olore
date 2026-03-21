@@ -19,15 +19,15 @@ We give you the choice to allow your data to be used to improve future Claude mo
 
 If you explicitly opt in to methods to provide us with materials to train on, such as via the [Development Partner Program](https://support.claude.com/en/articles/11174108-about-the-development-partner-program), we may use those materials provided to train our models. An organization admin can expressly opt-in to the Development Partner Program for their organization. Note that this program is available only for Anthropic first-party API, and not for Bedrock or Vertex users.
 
-### Feedback using the `/bug` command
+### Feedback using the `/feedback` command
 
-If you choose to send us feedback about Claude Code using the `/bug` command, we may use your feedback to improve our products and services. Transcripts shared via `/bug` are retained for 5 years.
+If you choose to send us feedback about Claude Code using the `/feedback` command, we may use your feedback to improve our products and services. Transcripts shared via `/feedback` are retained for 5 years.
 
 ### Session quality surveys
 
-When you see the "How is Claude doing this session?" prompt in Claude Code, responding to this survey (including selecting "Dismiss"), only your numeric rating (1, 2, 3, or dismiss) is recorded. We do not collect or store any conversation transcripts, inputs, outputs, or other session data as part of this survey. Unlike thumbs up/down feedback or `/bug` reports, this session quality survey is a simple product satisfaction metric. Your responses to this survey do not impact your data training preferences and cannot be used to train our AI models.
+When you see the "How is Claude doing this session?" prompt in Claude Code, responding to this survey (including selecting "Dismiss"), only your numeric rating (1, 2, 3, or dismiss) is recorded. We do not collect or store any conversation transcripts, inputs, outputs, or other session data as part of this survey. Unlike thumbs up/down feedback or `/feedback` reports, this session quality survey is a simple product satisfaction metric. Your responses to this survey do not impact your data training preferences and cannot be used to train our AI models.
 
-To disable these surveys, set `CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1`. The survey is also automatically disabled when using third-party providers (Bedrock, Vertex, Foundry) or when telemetry is disabled.
+To disable these surveys, set `CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1`. The survey is also disabled when `DISABLE_TELEMETRY` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set. To control frequency instead of disabling, set [`feedbackSurveyRate`](/en/settings#available-settings) in your settings file to a probability between `0` and `1`.
 
 ### Data retention
 
@@ -42,8 +42,10 @@ Anthropic retains Claude Code data based on your account type and preferences.
 **Commercial users (Team, Enterprise, and API)**:
 
 * Standard: 30-day retention period
-* Zero data retention: Available with appropriately configured API keys - Claude Code will not retain chat transcripts on servers
+* [Zero data retention](/en/zero-data-retention): available for Claude Code on Claude for Enterprise. ZDR is enabled on a per-organization basis; each new organization must have ZDR enabled separately by your account team
 * Local caching: Claude Code clients may store sessions locally for up to 30 days to enable session resumption (configurable)
+
+You can delete individual Claude Code on the web sessions at any time. Deleting a session permanently removes the session's event data. For instructions on how to delete sessions, see [Managing sessions](/en/claude-code-on-the-web#managing-sessions).
 
 Learn more about data retention practices in our [Privacy Center](https://privacy.anthropic.com/).
 
@@ -57,7 +59,7 @@ For all first party users, you can learn more about what data is logged for [loc
 
 The diagram below shows how Claude Code connects to external services during installation and normal operation. Solid lines indicate required connections, while dashed lines represent optional or user-initiated data flows.
 
-<img src="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=e0239c69a0bbae485b726338e50f1082" alt="Diagram showing Claude Code's external connections: install/update connects to NPM, and user requests connect to Anthropic services including Console auth, public-api, and optionally Statsig, Sentry, and bug reporting" data-og-width="720" width="720" data-og-height="520" height="520" data-path="images/claude-code-data-flow.svg" data-optimize="true" data-opv="3" srcset="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=280&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=06435e080df22e66a454e99af1b6040b 280w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=560&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=8261c15b4ffc12504e0a6e3f0ccd8c7d 560w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=840&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=163bfaa8d4727a1bbb492cb086e5f083 840w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=1100&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=ea3c2f801dfa5ad956b18b5f72df5c50 1100w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=1650&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=91d743def7a8d074c93001b351f23037 1650w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/claude-code-data-flow.svg?w=2500&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=df68b2dd6de83316f70fd7f61c3a3bbd 2500w" />
+<img src="https://mintcdn.com/claude-code/c5r9_6tjPMzFdDDT/images/claude-code-data-flow.svg?fit=max&auto=format&n=c5r9_6tjPMzFdDDT&q=85&s=b3f71c69d743bff63343207dfb7ad6ce" alt="Diagram showing Claude Code's external connections: install/update connects to NPM, and user requests connect to Anthropic services including Console auth, public-api, and optionally Statsig, Sentry, and bug reporting" width="720" height="520" data-path="images/claude-code-data-flow.svg" />
 
 Claude Code is installed from [NPM](https://www.npmjs.com/package/@anthropic-ai/claude-code). Claude Code runs locally. In order to interact with the LLM, Claude Code sends data over the network. This data includes all user prompts and model outputs. The data is encrypted in transit via TLS and is not encrypted at rest. Claude Code is compatible with most popular VPNs and LLM proxies.
 
@@ -80,17 +82,17 @@ Claude Code connects from users' machines to the Statsig service to log operatio
 
 Claude Code connects from users' machines to Sentry for operational error logging. The data is encrypted in transit using TLS and at rest using 256-bit AES encryption. Read more in the [Sentry security documentation](https://sentry.io/security/). To opt out of error logging, set the `DISABLE_ERROR_REPORTING` environment variable.
 
-When users run the `/bug` command, a copy of their full conversation history including code is sent to Anthropic. The data is encrypted in transit and at rest. Optionally, a Github issue is created in our public repository. To opt out of bug reporting, set the `DISABLE_BUG_COMMAND` environment variable.
+When users run the `/feedback` command, a copy of their full conversation history including code is sent to Anthropic. The data is encrypted in transit and at rest. Optionally, a Github issue is created in our public repository. To opt out, set the `DISABLE_FEEDBACK_COMMAND` environment variable.
 
 ## Default behaviors by API provider
 
-By default, we disable all non-essential traffic (including error reporting, telemetry, bug reporting functionality, and session quality surveys) when using Bedrock, Vertex, or Foundry. You can also opt out of all of these at once by setting the `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` environment variable. Here are the full default behaviors:
+By default, error reporting, telemetry, and bug reporting are disabled when using Bedrock, Vertex, or Foundry. Session quality surveys are the exception and appear regardless of provider. You can opt out of all non-essential traffic, including surveys, at once by setting `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`. Here are the full default behaviors:
 
-| Service                         | Claude API                                                           | Vertex API                                            | Bedrock API                                            | Foundry API                                            |
-| ------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
-| **Statsig (Metrics)**           | Default on.<br />`DISABLE_TELEMETRY=1` to disable.                   | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1. | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1. | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1. |
-| **Sentry (Errors)**             | Default on.<br />`DISABLE_ERROR_REPORTING=1` to disable.             | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1. | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1. | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1. |
-| **Claude API (`/bug` reports)** | Default on.<br />`DISABLE_BUG_COMMAND=1` to disable.                 | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1. | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1. | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1. |
-| **Session quality surveys**     | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1. | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1. | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1. |
+| Service                              | Claude API                                                           | Vertex API                                                           | Bedrock API                                                          | Foundry API                                                          |
+| ------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Statsig (Metrics)**                | Default on.<br />`DISABLE_TELEMETRY=1` to disable.                   | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
+| **Sentry (Errors)**                  | Default on.<br />`DISABLE_ERROR_REPORTING=1` to disable.             | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
+| **Claude API (`/feedback` reports)** | Default on.<br />`DISABLE_FEEDBACK_COMMAND=1` to disable.            | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
+| **Session quality surveys**          | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. |
 
 All environment variables can be checked into `settings.json` ([read more](/en/settings)).

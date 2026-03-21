@@ -23,7 +23,7 @@ Whether you're using the Claude API directly (1P) or accessing it through AWS Be
 
 ### Healthcare compliance (BAA)
 
-If a customer has a Business Associate Agreement (BAA) with us, and wants to use Claude Code, the BAA will automatically extend to cover Claude Code if the customer has executed a BAA and has Zero Data Retention (ZDR) activated. The BAA will be applicable to that customer's API traffic flowing through Claude Code.
+If a customer has a Business Associate Agreement (BAA) with us, and wants to use Claude Code, the BAA will automatically extend to cover Claude Code if the customer has executed a BAA and has [Zero Data Retention (ZDR)](/en/zero-data-retention) activated. The BAA will be applicable to that customer's API traffic flowing through Claude Code. ZDR is enabled on a per-organization basis, so each organization must have ZDR enabled separately to be covered under the BAA.
 
 ## Usage policy
 
@@ -40,7 +40,7 @@ Claude Code authenticates with Anthropic's servers using OAuth tokens or API key
 
 Anthropic reserves the right to take measures to enforce these restrictions and may do so without prior notice.
 
-For questions about permitted authentication methods for your use case, please [contact sales](https://www.anthropic.com/contact-sales).
+For questions about permitted authentication methods for your use case, please [contact sales](https://www.anthropic.com/contact-sales?utm_source=claude_code\&utm_medium=docs\&utm_content=legal_compliance_contact_sales).
 
 ## Security and trust
 

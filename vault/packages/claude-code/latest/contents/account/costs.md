@@ -22,7 +22,7 @@ This page covers how to [track your costs](#track-your-costs), [manage costs for
 
 The `/cost` command provides detailed token usage statistics for your current session:
 
-```
+```text  theme={null}
 Total cost:            $0.55
 Total duration (API):  6m 19.7s
 Total duration (wall): 6h 33m 10.2s
@@ -165,7 +165,7 @@ Your [CLAUDE.md](/en/memory) file is loaded into context at session start. If it
 
 ### Adjust extended thinking
 
-Extended thinking is enabled by default with a budget of 31,999 tokens because it significantly improves performance on complex planning and reasoning tasks. However, thinking tokens are billed as output tokens, so for simpler tasks where deep reasoning isn't needed, you can reduce costs by lowering the [effort level](/en/model-config#adjust-effort-level) in `/model` for Opus 4.6, disabling thinking in `/config`, or lowering the budget (for example, `MAX_THINKING_TOKENS=8000`).
+Extended thinking is enabled by default because it significantly improves performance on complex planning and reasoning tasks. Thinking tokens are billed as output tokens, and the default budget can be tens of thousands of tokens per request depending on the model. For simpler tasks where deep reasoning isn't needed, you can reduce costs by lowering the [effort level](/en/model-config#adjust-effort-level) with `/effort` or in `/model`, disabling thinking in `/config`, or lowering the budget with `MAX_THINKING_TOKENS=8000`.
 
 ### Delegate verbose operations to subagents
 

@@ -28,22 +28,22 @@ Suppose you've just joined a new project and need to understand its structure qu
   </Step>
 
   <Step title="Ask for a high-level overview">
-    ```
-    > give me an overview of this codebase 
+    ```text  theme={null}
+    give me an overview of this codebase
     ```
   </Step>
 
   <Step title="Dive deeper into specific components">
-    ```
-    > explain the main architecture patterns used here 
-    ```
-
-    ```
-    > what are the key data models?
+    ```text  theme={null}
+    explain the main architecture patterns used here
     ```
 
+    ```text  theme={null}
+    what are the key data models?
     ```
-    > how is authentication handled?
+
+    ```text  theme={null}
+    how is authentication handled?
     ```
   </Step>
 </Steps>
@@ -62,20 +62,20 @@ Suppose you need to locate code related to a specific feature or functionality.
 
 <Steps>
   <Step title="Ask Claude to find relevant files">
-    ```
-    > find the files that handle user authentication 
+    ```text  theme={null}
+    find the files that handle user authentication
     ```
   </Step>
 
   <Step title="Get context on how components interact">
-    ```
-    > how do these authentication files work together? 
+    ```text  theme={null}
+    how do these authentication files work together?
     ```
   </Step>
 
   <Step title="Understand the execution flow">
-    ```
-    > trace the login process from front-end to database 
+    ```text  theme={null}
+    trace the login process from front-end to database
     ```
   </Step>
 </Steps>
@@ -96,20 +96,20 @@ Suppose you've encountered an error message and need to find and fix its source.
 
 <Steps>
   <Step title="Share the error with Claude">
-    ```
-    > I'm seeing an error when I run npm test 
+    ```text  theme={null}
+    I'm seeing an error when I run npm test
     ```
   </Step>
 
   <Step title="Ask for fix recommendations">
-    ```
-    > suggest a few ways to fix the @ts-ignore in user.ts 
+    ```text  theme={null}
+    suggest a few ways to fix the @ts-ignore in user.ts
     ```
   </Step>
 
   <Step title="Apply the fix">
-    ```
-    > update user.ts to add the null check you suggested 
+    ```text  theme={null}
+    update user.ts to add the null check you suggested
     ```
   </Step>
 </Steps>
@@ -130,26 +130,26 @@ Suppose you need to update old code to use modern patterns and practices.
 
 <Steps>
   <Step title="Identify legacy code for refactoring">
-    ```
-    > find deprecated API usage in our codebase 
+    ```text  theme={null}
+    find deprecated API usage in our codebase
     ```
   </Step>
 
   <Step title="Get refactoring recommendations">
-    ```
-    > suggest how to refactor utils.js to use modern JavaScript features 
+    ```text  theme={null}
+    suggest how to refactor utils.js to use modern JavaScript features
     ```
   </Step>
 
   <Step title="Apply the changes safely">
-    ```
-    > refactor utils.js to use ES2024 features while maintaining the same behavior 
+    ```text  theme={null}
+    refactor utils.js to use ES2024 features while maintaining the same behavior
     ```
   </Step>
 
   <Step title="Verify the refactoring">
-    ```
-    > run tests for the refactored code 
+    ```text  theme={null}
+    run tests for the refactored code
     ```
   </Step>
 </Steps>
@@ -170,8 +170,8 @@ Suppose you want to use specialized AI subagents to handle specific tasks more e
 
 <Steps>
   <Step title="View available subagents">
-    ```
-    > /agents
+    ```text  theme={null}
+    /agents
     ```
 
     This shows all available subagents and lets you create new ones.
@@ -180,28 +180,28 @@ Suppose you want to use specialized AI subagents to handle specific tasks more e
   <Step title="Use subagents automatically">
     Claude Code automatically delegates appropriate tasks to specialized subagents:
 
-    ```
-    > review my recent code changes for security issues
+    ```text  theme={null}
+    review my recent code changes for security issues
     ```
 
-    ```
-    > run all tests and fix any failures
+    ```text  theme={null}
+    run all tests and fix any failures
     ```
   </Step>
 
   <Step title="Explicitly request specific subagents">
-    ```
-    > use the code-reviewer subagent to check the auth module
+    ```text  theme={null}
+    use the code-reviewer subagent to check the auth module
     ```
 
-    ```
-    > have the debugger subagent investigate why users can't log in
+    ```text  theme={null}
+    have the debugger subagent investigate why users can't log in
     ```
   </Step>
 
   <Step title="Create custom subagents for your workflow">
-    ```
-    > /agents
+    ```text  theme={null}
+    /agents
     ```
 
     Then select "Create New subagent" and follow the prompts to define:
@@ -226,7 +226,7 @@ Suppose you want to use specialized AI subagents to handle specific tasks more e
 
 ## Use Plan Mode for safe code analysis
 
-Plan Mode instructs Claude to create a plan by analyzing the codebase with read-only operations, perfect for exploring codebases, planning complex changes, or reviewing code safely. In Plan Mode, Claude uses [`AskUserQuestion`](/en/settings#tools-available-to-claude) to gather requirements and clarify your goals before proposing a plan.
+Plan Mode instructs Claude to create a plan by analyzing the codebase with read-only operations, perfect for exploring codebases, planning complex changes, or reviewing code safely. In Plan Mode, Claude uses [`AskUserQuestion`](/en/tools-reference) to gather requirements and clarify your goals before proposing a plan.
 
 ### When to use Plan Mode
 
@@ -264,18 +264,23 @@ claude --permission-mode plan -p "Analyze the authentication system and suggest 
 claude --permission-mode plan
 ```
 
-```
-> I need to refactor our authentication system to use OAuth2. Create a detailed migration plan.
+```text  theme={null}
+I need to refactor our authentication system to use OAuth2. Create a detailed migration plan.
 ```
 
 Claude analyzes the current implementation and create a comprehensive plan. Refine with follow-ups:
 
+```text  theme={null}
+What about backward compatibility?
 ```
-> What about backward compatibility?
-> How should we handle database migration?
+
+```text  theme={null}
+How should we handle database migration?
 ```
 
 <Tip>Press `Ctrl+G` to open the plan in your default text editor, where you can edit it directly before Claude proceeds.</Tip>
+
+When you accept a plan, Claude automatically names the session from the plan content. The name appears on the prompt bar and in the session picker. If you've already set a name with `--name` or `/rename`, accepting a plan won't overwrite it.
 
 ### Configure Plan Mode as default
 
@@ -298,26 +303,26 @@ Suppose you need to add tests for uncovered code.
 
 <Steps>
   <Step title="Identify untested code">
-    ```
-    > find functions in NotificationsService.swift that are not covered by tests 
+    ```text  theme={null}
+    find functions in NotificationsService.swift that are not covered by tests
     ```
   </Step>
 
   <Step title="Generate test scaffolding">
-    ```
-    > add tests for the notification service 
+    ```text  theme={null}
+    add tests for the notification service
     ```
   </Step>
 
   <Step title="Add meaningful test cases">
-    ```
-    > add test cases for edge conditions in the notification service 
+    ```text  theme={null}
+    add test cases for edge conditions in the notification service
     ```
   </Step>
 
   <Step title="Run and verify tests">
-    ```
-    > run the new tests and fix any failures 
+    ```text  theme={null}
+    run the new tests and fix any failures
     ```
   </Step>
 </Steps>
@@ -330,32 +335,24 @@ For comprehensive coverage, ask Claude to identify edge cases you might have mis
 
 ## Create pull requests
 
-You can create pull requests by asking Claude directly ("create a pr for my changes") or by using the `/commit-push-pr` skill, which commits, pushes, and opens a PR in one step.
-
-```
-> /commit-push-pr
-```
-
-If you have a Slack MCP server configured and specify channels in your CLAUDE.md (for example, "post PR URLs to #team-prs"), the skill automatically posts the PR URL to those channels.
-
-For more control over the process, guide Claude through it step-by-step or [create your own skill](/en/skills):
+You can create pull requests by asking Claude directly ("create a pr for my changes"), or guide Claude through it step-by-step:
 
 <Steps>
   <Step title="Summarize your changes">
-    ```
-    > summarize the changes I've made to the authentication module
+    ```text  theme={null}
+    summarize the changes I've made to the authentication module
     ```
   </Step>
 
   <Step title="Generate a pull request">
-    ```
-    > create a pr
+    ```text  theme={null}
+    create a pr
     ```
   </Step>
 
   <Step title="Review and refine">
-    ```
-    > enhance the PR description with more context about the security improvements
+    ```text  theme={null}
+    enhance the PR description with more context about the security improvements
     ```
   </Step>
 </Steps>
@@ -372,26 +369,26 @@ Suppose you need to add or update documentation for your code.
 
 <Steps>
   <Step title="Identify undocumented code">
-    ```
-    > find functions without proper JSDoc comments in the auth module 
+    ```text  theme={null}
+    find functions without proper JSDoc comments in the auth module
     ```
   </Step>
 
   <Step title="Generate documentation">
-    ```
-    > add JSDoc comments to the undocumented functions in auth.js 
+    ```text  theme={null}
+    add JSDoc comments to the undocumented functions in auth.js
     ```
   </Step>
 
   <Step title="Review and enhance">
-    ```
-    > improve the generated documentation with more context and examples 
+    ```text  theme={null}
+    improve the generated documentation with more context and examples
     ```
   </Step>
 
   <Step title="Verify documentation">
-    ```
-    > check if the documentation follows our project standards 
+    ```text  theme={null}
+    check if the documentation follows our project standards
     ```
   </Step>
 </Steps>
@@ -420,36 +417,36 @@ Suppose you need to work with images in your codebase, and you want Claude's hel
   </Step>
 
   <Step title="Ask Claude to analyze the image">
-    ```
-    > What does this image show?
-    ```
-
-    ```
-    > Describe the UI elements in this screenshot
+    ```text  theme={null}
+    What does this image show?
     ```
 
+    ```text  theme={null}
+    Describe the UI elements in this screenshot
     ```
-    > Are there any problematic elements in this diagram?
+
+    ```text  theme={null}
+    Are there any problematic elements in this diagram?
     ```
   </Step>
 
   <Step title="Use images for context">
-    ```
-    > Here's a screenshot of the error. What's causing it?
+    ```text  theme={null}
+    Here's a screenshot of the error. What's causing it?
     ```
 
-    ```
-    > This is our current database schema. How should we modify it for the new feature?
+    ```text  theme={null}
+    This is our current database schema. How should we modify it for the new feature?
     ```
   </Step>
 
   <Step title="Get code suggestions from visual content">
-    ```
-    > Generate CSS to match this design mockup
+    ```text  theme={null}
+    Generate CSS to match this design mockup
     ```
 
-    ```
-    > What HTML structure would recreate this component?
+    ```text  theme={null}
+    What HTML structure would recreate this component?
     ```
   </Step>
 </Steps>
@@ -472,24 +469,24 @@ Use @ to quickly include files or directories without waiting for Claude to read
 
 <Steps>
   <Step title="Reference a single file">
-    ```
-    > Explain the logic in @src/utils/auth.js
+    ```text  theme={null}
+    Explain the logic in @src/utils/auth.js
     ```
 
     This includes the full content of the file in the conversation.
   </Step>
 
   <Step title="Reference a directory">
-    ```
-    > What's the structure of @src/components?
+    ```text  theme={null}
+    What's the structure of @src/components?
     ```
 
     This provides a directory listing with file information.
   </Step>
 
   <Step title="Reference MCP resources">
-    ```
-    > Show me the data from @github:repos/owner/repo/issues
+    ```text  theme={null}
+    Show me the data from @github:repos/owner/repo/issues
     ```
 
     This fetches data from connected MCP servers using the format @server:resource. See [MCP resources](/en/mcp#use-mcp-resources) for details.
@@ -511,24 +508,25 @@ Use @ to quickly include files or directories without waiting for Claude to read
 
 [Extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking) is enabled by default, giving Claude space to reason through complex problems step-by-step before responding. This reasoning is visible in verbose mode, which you can toggle on with `Ctrl+O`.
 
-Additionally, Opus 4.6 introduces adaptive reasoning: instead of a fixed thinking token budget, the model dynamically allocates thinking based on your [effort level](/en/model-config#adjust-effort-level) setting. Extended thinking and adaptive reasoning work together to give you control over how deeply Claude reasons before responding.
+Additionally, Opus 4.6 and Sonnet 4.6 support adaptive reasoning: instead of a fixed thinking token budget, the model dynamically allocates thinking based on your [effort level](/en/model-config#adjust-effort-level) setting. Extended thinking and adaptive reasoning work together to give you control over how deeply Claude reasons before responding.
 
 Extended thinking is particularly valuable for complex architectural decisions, challenging bugs, multi-step implementation planning, and evaluating tradeoffs between different approaches.
 
 <Note>
-  Phrases like "think", "think hard", "ultrathink", and "think more" are interpreted as regular prompt instructions and don't allocate thinking tokens.
+  Phrases like "think", "think hard", and "think more" are interpreted as regular prompt instructions and don't allocate thinking tokens.
 </Note>
 
 ### Configure thinking mode
 
 Thinking is enabled by default, but you can adjust or disable it.
 
-| Scope                  | How to configure                                                                           | Details                                                                                                                                               |
-| ---------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Effort level**       | Adjust in `/model` or set [`CLAUDE_CODE_EFFORT_LEVEL`](/en/settings#environment-variables) | Control thinking depth for Opus 4.6: low, medium, high (default). See [Adjust effort level](/en/model-config#adjust-effort-level)                     |
-| **Toggle shortcut**    | Press `Option+T` (macOS) or `Alt+T` (Windows/Linux)                                        | Toggle thinking on/off for the current session (all models). May require [terminal configuration](/en/terminal-config) to enable Option key shortcuts |
-| **Global default**     | Use `/config` to toggle thinking mode                                                      | Sets your default across all projects (all models).<br />Saved as `alwaysThinkingEnabled` in `~/.claude/settings.json`                                |
-| **Limit token budget** | Set [`MAX_THINKING_TOKENS`](/en/settings#environment-variables) environment variable       | Limit the thinking budget to a specific number of tokens (ignored on Opus 4.6 unless set to 0). Example: `export MAX_THINKING_TOKENS=10000`           |
+| Scope                    | How to configure                                                                     | Details                                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Effort level**         | Run `/effort`, adjust in `/model`, or set [`CLAUDE_CODE_EFFORT_LEVEL`](/en/env-vars) | Control thinking depth for Opus 4.6 and Sonnet 4.6. See [Adjust effort level](/en/model-config#adjust-effort-level)                                                                       |
+| **`ultrathink` keyword** | Include "ultrathink" anywhere in your prompt                                         | Sets effort to high for that turn on Opus 4.6 and Sonnet 4.6. Useful for one-off tasks requiring deep reasoning without permanently changing your effort setting                          |
+| **Toggle shortcut**      | Press `Option+T` (macOS) or `Alt+T` (Windows/Linux)                                  | Toggle thinking on/off for the current session (all models). May require [terminal configuration](/en/terminal-config) to enable Option key shortcuts                                     |
+| **Global default**       | Use `/config` to toggle thinking mode                                                | Sets your default across all projects (all models).<br />Saved as `alwaysThinkingEnabled` in `~/.claude/settings.json`                                                                    |
+| **Limit token budget**   | Set [`MAX_THINKING_TOKENS`](/en/env-vars) environment variable                       | Limit the thinking budget to a specific number of tokens. On Opus 4.6 and Sonnet 4.6, only `0` applies unless adaptive reasoning is disabled. Example: `export MAX_THINKING_TOKENS=10000` |
 
 To view Claude's thinking process, press `Ctrl+O` to toggle verbose mode and see the internal reasoning displayed as gray italic text.
 
@@ -536,11 +534,11 @@ To view Claude's thinking process, press `Ctrl+O` to toggle verbose mode and see
 
 Extended thinking controls how much internal reasoning Claude performs before responding. More thinking provides more space to explore solutions, analyze edge cases, and self-correct mistakes.
 
-**With Opus 4.6**, thinking uses adaptive reasoning: the model dynamically allocates thinking tokens based on the [effort level](/en/model-config#adjust-effort-level) you select (low, medium, high). This is the recommended way to tune the tradeoff between speed and reasoning depth.
+**With Opus 4.6 and Sonnet 4.6**, thinking uses adaptive reasoning: the model dynamically allocates thinking tokens based on the [effort level](/en/model-config#adjust-effort-level) you select. This is the recommended way to tune the tradeoff between speed and reasoning depth.
 
-**With other models**, thinking uses a fixed budget of up to 31,999 tokens from your output budget. You can limit this with the [`MAX_THINKING_TOKENS`](/en/settings#environment-variables) environment variable, or disable thinking entirely via `/config` or the `Option+T`/`Alt+T` toggle.
+**With older models**, thinking uses a fixed token budget drawn from your output allocation. The budget varies by model; see [`MAX_THINKING_TOKENS`](/en/env-vars) for per-model ceilings. You can limit the budget with that environment variable, or disable thinking entirely via `/config` or the `Option+T`/`Alt+T` toggle.
 
-`MAX_THINKING_TOKENS` is ignored when using Opus 4.6, since adaptive reasoning controls thinking depth instead. The one exception: setting `MAX_THINKING_TOKENS=0` still disables thinking entirely on any model.
+On Opus 4.6 and Sonnet 4.6, [adaptive reasoning](/en/model-config#adjust-effort-level) controls thinking depth, so `MAX_THINKING_TOKENS` only applies when set to `0` to disable thinking, or when `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1` reverts these models to the fixed budget. See [environment variables](/en/env-vars).
 
 <Warning>
   You're charged for all thinking tokens used, even though Claude 4 models show summarized thinking
@@ -565,11 +563,17 @@ Sessions are stored per project directory. The `/resume` picker shows sessions f
 Give sessions descriptive names to find them later. This is a best practice when working on multiple tasks or features.
 
 <Steps>
-  <Step title="Name the current session">
-    Use `/rename` during a session to give it a memorable name:
+  <Step title="Name the session">
+    Name a session at startup with `-n`:
 
+    ```bash  theme={null}
+    claude -n auth-refactor
     ```
-    > /rename auth-refactor
+
+    Or use `/rename` during a session, which also shows the name on the prompt bar:
+
+    ```text  theme={null}
+    /rename auth-refactor
     ```
 
     You can also rename any session from the picker: run `/resume`, navigate to a session, and press `R`.
@@ -584,8 +588,8 @@ Give sessions descriptive names to find them later. This is a best practice when
 
     Or from inside an active session:
 
-    ```
-    > /resume auth-refactor
+    ```text  theme={null}
+    /resume auth-refactor
     ```
   </Step>
 </Steps>
@@ -617,12 +621,12 @@ The picker displays sessions with helpful metadata:
 * Message count
 * Git branch (if applicable)
 
-Forked sessions (created with `/rewind` or `--fork-session`) are grouped together under their root session, making it easier to find related conversations.
+Forked sessions (created with `/branch`, `/rewind`, or `--fork-session`) are grouped together under their root session, making it easier to find related conversations.
 
 <Tip>
   Tips:
 
-  * **Name sessions early**: Use `/rename` when starting work on a distinct task—it's much easier to find "payment-integration" than "explain this function" later
+  * **Name sessions early**: Use `/rename` when starting work on a distinct task: it's much easier to find "payment-integration" than "explain this function" later
   * Use `--continue` for quick access to your most recent conversation in the current directory
   * Use `--resume session-name` when you know which session you need
   * Use `--resume` (without a name) when you need to browse and select
@@ -721,12 +725,76 @@ For automated coordination of parallel sessions with shared tasks and messaging,
 When you kick off a long-running task and switch to another window, you can set up desktop notifications so you know when Claude finishes or needs your input. This uses the `Notification` [hook event](/en/hooks-guide#get-notified-when-claude-needs-input), which fires whenever Claude is waiting for permission, idle and ready for a new prompt, or completing authentication.
 
 <Steps>
-  <Step title="Open the hooks menu">
-    Type `/hooks` and select `Notification` from the list of events.
+  <Step title="Add the hook to your settings">
+    Open `~/.claude/settings.json` and add a `Notification` hook that calls your platform's native notification command:
+
+    <Tabs>
+      <Tab title="macOS">
+        ```json  theme={null}
+        {
+          "hooks": {
+            "Notification": [
+              {
+                "matcher": "",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "osascript -e 'display notification \"Claude Code needs your attention\" with title \"Claude Code\"'"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        ```
+      </Tab>
+
+      <Tab title="Linux">
+        ```json  theme={null}
+        {
+          "hooks": {
+            "Notification": [
+              {
+                "matcher": "",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "notify-send 'Claude Code' 'Claude Code needs your attention'"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        ```
+      </Tab>
+
+      <Tab title="Windows">
+        ```json  theme={null}
+        {
+          "hooks": {
+            "Notification": [
+              {
+                "matcher": "",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "powershell.exe -Command \"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('Claude Code needs your attention', 'Claude Code')\""
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    If your settings file already has a `hooks` key, merge the `Notification` entry into it rather than overwriting. You can also ask Claude to write the hook for you by describing what you want in the CLI.
   </Step>
 
-  <Step title="Configure the matcher">
-    Select `+ Match all (no filter)` to fire on all notification types. To notify only for specific events, select `+ Add new matcher…` and enter one of these values:
+  <Step title="Optionally narrow the matcher">
+    By default the hook fires on all notification types. To fire only for specific events, set the `matcher` field to one of these values:
 
     | Matcher              | Fires when                                      |
     | :------------------- | :---------------------------------------------- |
@@ -736,42 +804,12 @@ When you kick off a long-running task and switch to another window, you can set 
     | `elicitation_dialog` | Claude is asking you a question                 |
   </Step>
 
-  <Step title="Add your notification command">
-    Select `+ Add new hook…` and enter the command for your OS:
-
-    <Tabs>
-      <Tab title="macOS">
-        Uses [`osascript`](https://ss64.com/mac/osascript.html) to trigger a native macOS notification through AppleScript:
-
-        ```
-        osascript -e 'display notification "Claude Code needs your attention" with title "Claude Code"'
-        ```
-      </Tab>
-
-      <Tab title="Linux">
-        Uses `notify-send`, which is pre-installed on most Linux desktops with a notification daemon:
-
-        ```
-        notify-send 'Claude Code' 'Claude Code needs your attention'
-        ```
-      </Tab>
-
-      <Tab title="Windows (PowerShell)">
-        Uses PowerShell to show a native message box through .NET's Windows Forms:
-
-        ```
-        powershell.exe -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show('Claude Code needs your attention', 'Claude Code')"
-        ```
-      </Tab>
-    </Tabs>
-  </Step>
-
-  <Step title="Save to user settings">
-    Select `User settings` to apply the notification across all your projects.
+  <Step title="Verify the hook">
+    Type `/hooks` and select `Notification` to confirm the hook appears. Selecting it shows the command that will run. To test it end-to-end, ask Claude to run a command that requires permission and switch away from the terminal, or ask Claude to trigger a notification directly.
   </Step>
 </Steps>
 
-For the full walkthrough with JSON configuration examples, see [Automate workflows with hooks](/en/hooks-guide#get-notified-when-claude-needs-input). For the complete event schema and notification types, see the [Notification reference](/en/hooks#notification).
+For the complete event schema and notification types, see the [Notification reference](/en/hooks#notification).
 
 ***
 
@@ -866,28 +904,28 @@ Claude has built-in access to its documentation and can answer questions about i
 
 ### Example questions
 
-```
-> can Claude Code create pull requests?
-```
-
-```
-> how does Claude Code handle permissions?
+```text  theme={null}
+can Claude Code create pull requests?
 ```
 
-```
-> what skills are available?
-```
-
-```
-> how do I use MCP with Claude Code?
+```text  theme={null}
+how does Claude Code handle permissions?
 ```
 
-```
-> how do I configure Claude Code for Amazon Bedrock?
+```text  theme={null}
+what skills are available?
 ```
 
+```text  theme={null}
+how do I use MCP with Claude Code?
 ```
-> what are the limitations of Claude Code?
+
+```text  theme={null}
+how do I configure Claude Code for Amazon Bedrock?
+```
+
+```text  theme={null}
+what are the limitations of Claude Code?
 ```
 
 <Note>
@@ -920,6 +958,6 @@ Claude has built-in access to its documentation and can answer questions about i
   </Card>
 
   <Card title="Reference implementation" icon="code" href="https://github.com/anthropics/claude-code/tree/main/.devcontainer">
-    Clone our development container reference implementation
+    Clone the development container reference implementation
   </Card>
 </CardGroup>

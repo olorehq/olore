@@ -14,7 +14,7 @@ This guide covers the core architecture, built-in capabilities, and [tips for wo
 
 When you give Claude a task, it works through three phases: **gather context**, **take action**, and **verify results**. These phases blend together. Claude uses tools throughout, whether searching files to understand your code, editing to make changes, or running tests to check its work.
 
-<img src="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=9d9cdb2102f397a0f57450ca5ca2a969" alt="The agentic loop: Your prompt leads to Claude gathering context, taking action, verifying results, and repeating until task complete. You can interrupt at any point." data-og-width="720" width="720" data-og-height="280" height="280" data-path="images/agentic-loop.svg" data-optimize="true" data-opv="3" srcset="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=280&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=9c6a590754c1c1b281d40fc9f10fed0d 280w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=560&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=9fb2f2fc174e285797cad25a9ca2a326 560w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=840&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=3a1b68dd7b861e8ff25391773d8ab60c 840w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=1100&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=e64edf9f5cbc62464617945cf08ef134 1100w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=1650&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=3bf3319e76669f11513c6bcc5bf86feb 1650w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/agentic-loop.svg?w=2500&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=9413880a191409ff3c81bafc8f7ab977 2500w" />
+<img src="https://mintcdn.com/claude-code/c5r9_6tjPMzFdDDT/images/agentic-loop.svg?fit=max&auto=format&n=c5r9_6tjPMzFdDDT&q=85&s=5f1827dec8539f38adee90ead3a85a38" alt="The agentic loop: Your prompt leads to Claude gathering context, taking action, verifying results, and repeating until task complete. You can interrupt at any point." width="720" height="280" data-path="images/agentic-loop.svg" />
 
 The loop adapts to what you ask. A question about your codebase might only need context gathering. A bug fix cycles through all three phases repeatedly. A refactor might involve extensive verification. Claude decides what each step requires based on what it learned from the previous step, chaining dozens of actions together and course-correcting along the way.
 
@@ -44,7 +44,7 @@ The built-in tools generally fall into five categories, each representing a diff
 | **Web**               | Search the web, fetch documentation, look up error messages                                                                                                   |
 | **Code intelligence** | See type errors and warnings after edits, jump to definitions, find references (requires [code intelligence plugins](/en/discover-plugins#code-intelligence)) |
 
-These are the primary capabilities. Claude also has tools for spawning subagents, asking you questions, and other orchestration tasks. See [Tools available to Claude](/en/settings#tools-available-to-claude) for the complete list.
+These are the primary capabilities. Claude also has tools for spawning subagents, asking you questions, and other orchestration tasks. See [Tools available to Claude](/en/tools-reference) for the complete list.
 
 Claude chooses which tools to use based on your prompt and what it learns along the way. When you say "fix the failing tests," Claude might:
 
@@ -61,12 +61,15 @@ Each tool use gives Claude new information that informs the next step. This is t
 
 ## What Claude can access
 
+This guide focuses on the terminal. Claude Code also runs in [VS Code](/en/vs-code), [JetBrains IDEs](/en/jetbrains), and other environments.
+
 When you run `claude` in a directory, Claude Code gains access to:
 
 * **Your project.** Files in your directory and subdirectories, plus files elsewhere with your permission.
 * **Your terminal.** Any command you could run: build tools, git, package managers, system utilities, scripts. If you can do it from the command line, Claude can too.
 * **Your git state.** Current branch, uncommitted changes, and recent commit history.
 * **Your [CLAUDE.md](/en/memory).** A markdown file where you store project-specific instructions, conventions, and context that Claude should know every session.
+* **[Auto memory](/en/memory#auto-memory).** Learnings Claude saves automatically as you work, like project patterns and your preferences. The first 200 lines of MEMORY.md are loaded at the start of each session.
 * **Extensions you configure.** [MCP servers](/en/mcp) for external services, [skills](/en/skills) for workflows, [subagents](/en/sub-agents) for delegated work, and [Claude in Chrome](/en/chrome) for browser interaction.
 
 Because Claude sees your whole project, it can work across it. When you ask Claude to "fix the authentication bug," it searches for relevant files, reads multiple files to understand context, makes coordinated edits across them, runs tests to verify the fix, and commits the changes if you ask. This is different from inline code assistants that only see the current file.
@@ -107,7 +110,7 @@ Since sessions are tied to directories, you can run parallel Claude sessions by 
 
 When you resume a session with `claude --continue` or `claude --resume`, you pick up where you left off using the same session ID. New messages append to the existing conversation. Your full conversation history is restored, but session-scoped permissions are not. You'll need to re-approve those.
 
-<img src="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=808da1b213c731bf98874c75981d688b" alt="Session continuity: resume continues the same session, fork creates a new branch with a new ID." data-og-width="560" width="560" data-og-height="280" height="280" data-path="images/session-continuity.svg" data-optimize="true" data-opv="3" srcset="https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=280&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=ba75f64bc571f3ef84a3237ef795bf22 280w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=560&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=343ad422a171a2b909c87ed01c768745 560w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=840&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=afce54d5e3b08cdb54d506332462b74c 840w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=1100&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=28648c0a04cf7aef2de02d1c98491965 1100w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=1650&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=a5287882beedaea54af606f682e4818d 1650w, https://mintcdn.com/claude-code/TBPmHzr19mDCuhZi/images/session-continuity.svg?w=2500&fit=max&auto=format&n=TBPmHzr19mDCuhZi&q=85&s=f392dbe67b63eead4a2aae67adfbfdbe 2500w" />
+<img src="https://mintcdn.com/claude-code/c5r9_6tjPMzFdDDT/images/session-continuity.svg?fit=max&auto=format&n=c5r9_6tjPMzFdDDT&q=85&s=fa41d12bfb57579cabfeece907151d30" alt="Session continuity: resume continues the same session, fork creates a new branch with a new ID." width="560" height="280" data-path="images/session-continuity.svg" />
 
 To branch off and try a different approach without affecting the original session, use the `--fork-session` flag:
 
@@ -181,15 +184,17 @@ Built-in commands also guide you through setup:
 
 Claude Code is conversational. You don't need perfect prompts. Start with what you want, then refine:
 
+```text  theme={null}
+Fix the login bug
 ```
-> Fix the login bug
 
-[Claude investigates, tries something]
+\[Claude investigates, tries something]
 
-> That's not quite right. The issue is in the session handling.
-
-[Claude adjusts approach]
+```text  theme={null}
+That's not quite right. The issue is in the session handling.
 ```
+
+\[Claude adjusts approach]
 
 When the first attempt isn't right, you don't start over. You iterate.
 
@@ -201,21 +206,21 @@ You can interrupt Claude at any point. If it's going down the wrong path, just t
 
 The more precise your initial prompt, the fewer corrections you'll need. Reference specific files, mention constraints, and point to example patterns.
 
-```
-> The checkout flow is broken for users with expired cards.
-> Check src/payments/ for the issue, especially token refresh.
-> Write a failing test first, then fix it.
+```text  theme={null}
+The checkout flow is broken for users with expired cards.
+Check src/payments/ for the issue, especially token refresh.
+Write a failing test first, then fix it.
 ```
 
-Vague prompts like "fix the login bug" work, but you'll spend more time steering. Specific prompts like the above often succeed on the first attempt.
+Vague prompts work, but you'll spend more time steering. Specific prompts like the one above often succeed on the first attempt.
 
 ### Give Claude something to verify against
 
 Claude performs better when it can check its own work. Include test cases, paste screenshots of expected UI, or define the output you want.
 
-```
-> Implement validateEmail. Test cases: 'user@example.com' → true,
-> 'invalid' → false, 'user@.com' → false. Run the tests after.
+```text  theme={null}
+Implement validateEmail. Test cases: 'user@example.com' → true,
+'invalid' → false, 'user@.com' → false. Run the tests after.
 ```
 
 For visual work, paste a screenshot of the design and ask Claude to compare its implementation against it.
@@ -224,9 +229,9 @@ For visual work, paste a screenshot of the design and ask Claude to compare its 
 
 For complex problems, separate research from coding. Use plan mode (`Shift+Tab` twice) to analyze the codebase first:
 
-```
-> Read src/auth/ and understand how we handle sessions.
-> Then create a plan for adding OAuth support.
+```text  theme={null}
+Read src/auth/ and understand how we handle sessions.
+Then create a plan for adding OAuth support.
 ```
 
 Review the plan, refine it through conversation, then let Claude implement. This two-phase approach produces better results than jumping straight to code.
@@ -235,9 +240,9 @@ Review the plan, refine it through conversation, then let Claude implement. This
 
 Think of delegating to a capable colleague. Give context and direction, then trust Claude to figure out the details:
 
-```
-> The checkout flow is broken for users with expired cards.
-> The relevant code is in src/payments/. Can you investigate and fix it?
+```text  theme={null}
+The checkout flow is broken for users with expired cards.
+The relevant code is in src/payments/. Can you investigate and fix it?
 ```
 
 You don't need to specify which files to read or what commands to run. Claude figures that out.

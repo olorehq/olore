@@ -44,7 +44,7 @@ If your organization has specific infrastructure requirements, compare the optio
 
     <tr>
       <td>Billing</td>
-      <td><strong>Teams:</strong> \$150/seat (Premium) with PAYG available<br /><strong>Enterprise:</strong> <a href="https://claude.com/contact-sales">Contact Sales</a></td>
+      <td><strong>Teams:</strong> \$150/seat (Premium) with PAYG available<br /><strong>Enterprise:</strong> <a href="https://claude.com/contact-sales?utm_source=claude_code&utm_medium=docs&utm_content=third_party_enterprise">Contact Sales</a></td>
       <td>PAYG</td>
       <td>PAYG through AWS</td>
       <td>PAYG through GCP</td>
@@ -128,7 +128,7 @@ The following examples show the environment variables to set in your shell or sh
 
 <Tabs>
   <Tab title="Corporate proxy">
-    Route Bedrock traffic through your corporate proxy by setting the following [environment variables](/en/settings#environment-variables):
+    Route Bedrock traffic through your corporate proxy by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Bedrock
@@ -141,7 +141,7 @@ The following examples show the environment variables to set in your shell or sh
   </Tab>
 
   <Tab title="LLM Gateway">
-    Route Bedrock traffic through your LLM gateway by setting the following [environment variables](/en/settings#environment-variables):
+    Route Bedrock traffic through your LLM gateway by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Bedrock
@@ -158,7 +158,7 @@ The following examples show the environment variables to set in your shell or sh
 
 <Tabs>
   <Tab title="Corporate proxy">
-    Route Foundry traffic through your corporate proxy by setting the following [environment variables](/en/settings#environment-variables):
+    Route Foundry traffic through your corporate proxy by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Microsoft Foundry
@@ -172,7 +172,7 @@ The following examples show the environment variables to set in your shell or sh
   </Tab>
 
   <Tab title="LLM Gateway">
-    Route Foundry traffic through your LLM gateway by setting the following [environment variables](/en/settings#environment-variables):
+    Route Foundry traffic through your LLM gateway by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Microsoft Foundry
@@ -189,7 +189,7 @@ The following examples show the environment variables to set in your shell or sh
 
 <Tabs>
   <Tab title="Corporate proxy">
-    Route Vertex AI traffic through your corporate proxy by setting the following [environment variables](/en/settings#environment-variables):
+    Route Vertex AI traffic through your corporate proxy by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Vertex
@@ -203,7 +203,7 @@ The following examples show the environment variables to set in your shell or sh
   </Tab>
 
   <Tab title="LLM Gateway">
-    Route Vertex AI traffic through your LLM gateway by setting the following [environment variables](/en/settings#environment-variables):
+    Route Vertex AI traffic through your LLM gateway by setting the following [environment variables](/en/env-vars):
 
     ```bash  theme={null}
     # Enable Vertex
