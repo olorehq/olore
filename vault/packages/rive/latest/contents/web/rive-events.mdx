@@ -1,0 +1,97 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+<Overview />
+
+### Examples
+
+- [Star rating example](https://codesandbox.io/p/sandbox/rive-events-js-forked-gkwjqr)
+- [Neostream example (Chrome only)](https://codesandbox.io/p/sandbox/neostream-rive-events-js-forked-g7t3xl) (This example does not make use of the new [Audio Events ](/editor/events/audio-events)feature)
+
+### High-level API usage
+
+#### Adding an Event Listener
+
+Similar to the `addEventListener()` / `removeEventListener()` API for DOM elements, you'll use the Rive instance's `on()` / `off()` API to subscribe to Rive events. Simply supply the RiveEvent enum and a callback for the runtime to call at the appropriate moment any Rive event gets detected.
+
+#### Example Usage
+
+```javascript
+import { Rive, EventType, RiveEventType } from '@rive-app/canvas'
+
+const r = new Rive({
+src: "/static-assets/star-rating.riv",
+artboard: "my-artboard-name",
+autoplay: true,
+stateMachines: "State Machine 1",
+// automaticallyHandleEvents: true, // Automatically handle OpenUrl events
+onLoad: () => {
+    r.resizeDrawingSurfaceToCanvas();
+},
+});
+
+function onRiveEventReceived(riveEvent) {
+const eventData = riveEvent.data;
+const eventProperties = eventData.properties;
+if (eventData.type === RiveEventType.General) {
+    console.log("Event name", eventData.name);
+    // Added relevant metadata from the event
+    console.log("Rating", eventProperties.rating);
+    console.log("Message", eventProperties.message);
+} else if (eventData.type === RiveEventType.OpenUrl) {
+    console.log("Event name", eventData.name);
+    window.open(eventData.url);
+}
+}
+
+// Add event listener and provide callback to handle Rive Event
+r.on(EventType.RiveEvent, onRiveEventReceived);
+// Can unsubscribe to Rive Events at any time via the off() API like below
+// r.off(EventType.RiveEvent, onRiveEventReceived);
+```
+
+### Low-level API usage
+
+When using the low-level APIs (i.e. `@rive-app/canvas-advanced`), you'll need to catch Rive events reported during the render loop yourself via your created state machine instance (see docs on [Low-level API Usage](/runtimes/web/low-level-api-usage)). To achieve this, before advancing the state machine:
+
+- Determine the number of Rive events reported since the last frame via the state machine's `reportedEventCount()` API
+- Iterate over the events and grab a reference to an Event via the state machine's `reportedEventAt(idx)` API
+
+```javascript
+import RiveCanvas, {RiveEventType} from '@rive-app/canvas-advanced';
+
+...
+// render loop
+function myCustomRenderLoop(timestamp) {
+    ...
+    const elapsedTimeSec = (timestamp - prevTimestamp) / 1000;
+    if (stateMachine) {
+    const numFiredEvents = stateMachine.reportedEventCount();
+    for (let i = 0; i < numFiredEvents; i++) {
+        const event = stateMachine.reportedEventAt(i);
+        // Run any Event-based logic now
+        if (event.type === RiveEventType.OpenUrl) {
+        const a = document.createElement("a");
+        a.setAttribute("href", event.url);
+        a.setAttribute("target", event.target);
+        a.click();
+        }
+    }
+    }
+    // Now advance
+    stateMachine.advance(elapsedTimeSec);
+    ...
+    rive.requestAnimationFrame(myCustomRenderLoop);
+}
+rive.requestAnimationFrame(myCustomRenderLoop);
+```
+
+<AdditionalResources />

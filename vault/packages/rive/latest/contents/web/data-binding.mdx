@@ -1,0 +1,362 @@
+---
+title: "Data Binding"
+description: "Connect your code to bound editor elements using View Models"
+---
+
+import Overview from "/snippets/runtimes/data-binding/overview.mdx"
+import ViewModels from "/snippets/runtimes/data-binding/view-models.mdx"
+import ViewModelInstances from "/snippets/runtimes/data-binding/view-model-instances.mdx"
+import Binding from "/snippets/runtimes/data-binding/binding.mdx"
+import AutoBinding from "/snippets/runtimes/data-binding/auto-binding.mdx"
+import Properties from "/snippets/runtimes/data-binding/properties.mdx"
+import ListingProperties from "/snippets/runtimes/data-binding/listing-properties.mdx"
+import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading-and-writing-properties.mdx"
+import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
+import Observability from "/snippets/runtimes/data-binding/observability.mdx"
+import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Lists from "/snippets/runtimes/data-binding/lists.mdx"
+import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
+import Enums from "/snippets/runtimes/data-binding/enums.mdx"
+
+
+import { YouTube } from "/snippets/youtube.mdx";
+import { Demos } from "/snippets/demos.jsx";
+
+<Overview />
+
+<Demos examples={["quickStart"]} runtime="web" />
+
+<ViewModels />
+
+Access a View Model from the created Rive object in the `onLoad` callback:
+
+```typescript
+const r = new rive.Rive({
+    onLoad: () => {
+        // The Rive object is now loaded and ready to use.
+    }
+});
+```
+
+Once Rive is loaded, you can access the view models using the following methods:
+
+```typescript
+// Get reference by name
+const namedVM = r.viewModelByName("My View Model");
+
+// Get reference by index
+for (let i = 0; i < r.viewModelCount; i++) {
+    const indexedVM = r.viewModelByIndex(i);
+}
+
+// Get reference to the default view model
+const defaultVM = r.defaultViewModel();
+```
+
+Alternatively, if you have access to the underlying Rive File object you can access the above methods on the file.
+
+```typescript
+const namedVM = file.viewModelByName("My View Model");
+const indexedVM = file.viewModelByIndex(0);
+const defaultVM = file.defaultArtboardViewModel(artboard);
+```
+
+<ViewModelInstances />
+
+```typescript
+// Create a blank instance from a view model (ViewModel)
+const vmiBlank = viewModel.instance();
+
+// Create a default instance from a view model (ViewModel)
+const vmiDefault = viewModel.defaultInstance();
+
+// Create an instance by index from a view model (ViewModel)
+for (let i = 0; i < viewModel.instanceCount; i++) {
+    const vmiIndexed = viewModel.instanceByIndex(i);
+}
+
+// Create an instace by name from a view model (ViewModel)
+const vmiNamed = viewModel.instanceByName("My Instance");
+```
+
+<Binding />
+
+```typescript
+const r = new rive.Rive({
+    autoBind: false, // This should be set to false (default)
+    onLoad: () => {
+        const vm = r.viewModelByName("My View Model");
+        const vmi = vm.instanceByName("My Instance");
+
+        // Manually bind by applying the instance to the state machine and artboard
+        r.bindViewModelInstance(vmi);
+    }
+});
+```
+
+<AutoBinding />
+
+ ```typescript {4}
+const r = new rive.Rive({
+    src: "my_rive_file.riv",
+    canvas: document.getElementById("canvas"),
+    autoBind: true,
+    onLoad: () => {
+        // Access the current instance that was auto-bound
+        let boundInstance = r.viewModelInstance;
+    }
+});
+```
+
+<Properties />
+
+<ListingProperties />
+
+```typescript
+    // A list of properties on a view model (ViewModel)
+    const properties = viewModel.properties;
+    console.log(properties);
+```
+
+<ReadingAndWritingProperties />
+
+```typescript
+const r = new rive.Rive({
+    autoBind: true,
+    onLoad: () => {
+        // Access the current instance that was auto-bound
+        let vmi = r.viewModelInstance;
+
+        // Booleans
+        const booleanProperty = vmi.boolean("My Boolean Property");
+        const booleanValue = booleanProperty.value;
+        booleanProperty.value = true;
+
+        // Strings
+        const stringProperty = vmi.string("My String Property");
+        const stringValue = stringProperty.value;
+        stringProperty.value = "Hello, Rive!";
+
+        // Numbers
+        const numberProperty = vmi.number("My Number Property");
+        const numberValue = numberProperty.value;
+        numberProperty.value = 10;
+
+        // Colors
+        const colorProperty = vmi.color("My Color Property");
+        const colorValue = colorProperty.value;
+        colorProperty.value = 0xFF000000; // Set color to black with 100% opacity
+
+        // Other ways to set color
+        colorProperty.rgb(255, 0, 0); // Set RGB to red
+        colorProperty.rbga(255, 0, 0, 128); // Set RGBA to red with 50% opacity
+        colorProperty.argba(128, 255, 0, 0); // Set RGBA to red with 50% opacity
+        colorProperty.opacity(0.5); // Set opacity to 50%
+
+        // Triggers
+        const triggerProperty = vmi.trigger("My Trigger Property");
+        triggerProperty.trigger();
+
+        // Enumerations
+        const enumProperty = vmi.enum("My Enum Property");
+        const enumValue = enumProperty.value;
+        enumProperty.value = "Option1";
+    }
+});
+```
+
+<NestedPropertyPaths />
+
+```typescript
+const r = new rive.Rive({
+    autoBind: true,
+    onLoad: () => {
+        // Access the current instance that was auto-bound
+        let vmi = r.viewModelInstance;
+
+        const nestedNumberByChain = vmi
+            .viewModel("My Nested View Model")
+            .viewModel("My Second Nested VM")
+            .number("My Nested Number");
+
+        const nestedNumberByPath = vmi.number("My Nested View Model/My Second Nested VM/My Nested Number");
+    }
+});
+```
+
+<Observability />
+
+Adding an observer to a property is done by calling the `on` method on the property.
+
+    ```typescript
+    public on(callback: EventCallback)
+    ```
+
+    The observer can be removed by calling the `off` method on the property and passing the callback function. Alternatively, you can call `off()` without any arguments to remove all observers.
+
+    ```typescript
+    public off(callback?: EventCallback)
+    ```
+
+    Example:
+
+    ```typescript
+    const r = new rive.Rive({
+        autoBind: true,
+        onLoad: () => {
+            // Access the current instance that was auto-bound
+            let vmi = r.viewModelInstance;
+            const numberProperty = vmi.number("My Number Property");
+            // Observe
+            numberProperty.on((event) => {
+                console.log(event.data);
+            });
+            // Remove all listener when done
+            numberProperty.off();
+        }
+    });
+    ```
+
+<Images />
+
+<Demos examples={['dataBindingImages']} runtime="web" />
+
+```js
+const randomImageAsset = (imageProperty) => {
+    fetch("https://picsum.photos/300/500").then(async (res) => {
+        // Decode the image from the response. This object is used to set the image property.
+        const image = await rive.decodeImage(
+            new Uint8Array(await res.arrayBuffer())
+        );
+        imageProperty.value = image;
+        // Rive will automatically clean this up. But it's good practice to dispose this manually
+        // after you have already set the decoded image. Don't call `unref` if you intend
+        // to use the decoded asset again.
+        image.unref();
+    });
+};
+
+const r = new rive.Rive({
+    autoBind: true,
+    onLoad: () => {
+        // Access the current instance that was auto-bound
+        let vmi = r.viewModelInstance;
+
+        // Get the image property by name
+        var imageProperty = vmi.image("bound_image");
+
+        // Load random image
+        randomImageAsset(imageProperty);
+
+        // Clear the image to render nothing
+        imageProperty.value = null;
+    }
+});
+```
+
+<Lists />
+
+<Demos examples={['dataBindingLists']} runtime="web" />
+
+```javascript
+const r = new rive.Rive({
+    autoBind: true,
+    onLoad: () => {
+        // Access the current instance that was auto-bound
+        let vmi = r.viewModelInstance;
+
+        // Get the list property by name
+        var list = vmi.list("todos");
+        console.log("length: ", list.length);
+
+        // Get the view model
+        var todoItemVM = r.viewModelByName("TodoItem");
+
+        // Create a blank instance from the view model.
+        // Do this for each new item you want to add.
+        var myTodo = todoItemVM.instance();
+        myTodo.string("description").value = "Buy groceries";
+
+        // Add the newly created instance to the list
+        list.addInstance(myTodo);
+
+        // Remove a specific instance from the list
+        list.removeInstance(myTodo);
+
+        // Swap two instances in the list at index 0 and 1
+        list.swap(0, 1);
+
+        // Remove instance at index 0
+        list.removeInstanceAt(0);
+    }
+});
+```
+
+<Artboards />
+
+<Demos examples={["dataBindingArtboards"]}  runtime="web" />
+
+```typescript
+let artboardProperty = null;
+let characterArtboard = null;
+
+function attachCharacter() {
+    // If the artboard property and the character artboard, both exist, set the artboard
+    if (characterArtboard && artboardProperty) {
+        artboardProperty.value = characterArtboard;
+    }
+}
+
+const r = new Rive({
+    src: "swap_character_main.riv",
+    autoplay: true,
+    canvas: el,
+    autoBind: true,
+    layout: new Layout({
+        fit: Fit.Layout,
+        layoutScaleFactor: 0.5,
+    }),
+    stateMachines: "State Machine 1",
+    onLoad: () => {
+        r.resizeDrawingSurfaceToCanvas();
+
+        const vmi = r.viewModelInstance;
+        artboardProperty = vmi.artboard("Artboard property");
+
+        attachCharacter();
+    },
+    onLoadError: () => {
+        console.log("error");
+    },
+});
+
+// Load an external artboard
+const assetsFile = new RiveFile({
+    src: "swap_character_assets.riv",
+    onLoad: () => {
+        characterArtboard = assetsFile.getArtboard("Character 1");
+        attachCharacter();
+    },
+    onLoadError: () => {
+        console.log("error");
+    },
+});
+assetsFile.init();
+```
+
+<Enums />
+
+```typescript
+const r = new rive.Rive({
+    onLoad: () => {
+        const enums = r.enums();
+
+        console.log(enums);
+    }
+});
+```
+
+# Examples
+
+<YouTube id="y7glxOIFEjg" />
+<YouTube id="1WFtGX2coXM" />

@@ -1,0 +1,87 @@
+---
+title: "State Machine Playback"
+description: "Playing a state machine"
+---
+
+import Overview from "/snippets/runtimes/state-machines/overview.mdx"
+import ControllingPlayback from "/snippets/runtimes/state-machines/controlling-playback.mdx"
+import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-state-machines.mdx"
+
+<Overview />
+
+<ControllingPlayback />
+
+<PlayingStateMachines />
+
+<Tabs>
+  <Tab title="Compose">
+    By default, the `Rive` composable will select and create the default state machine specified in the Rive editor. To specify a different state machine, you must first create a `StateMachine` object from an `Artboard`.
+
+    ### Compose
+    State machine objects can be created in Compose using the `rememberStateMachine` function, which takes an artboard and name of the state machine.
+
+    ```kotlin
+    val artboard = rememberArtboard(myRiveFile, "My Artboard")
+    val stateMachine = rememberStateMachine(artboard, "My State Machine")
+    ```
+
+    ### Outside of Compose
+    Alternatively, you can create a state machine outside of Compose contexts. Note that with this approach you are responsible for managing the state machine's lifecycle and must eventually close it with `StateMachine::close()` when no longer needed, or leveraging its [`AutoClosable`](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable.html) interface with a `use` block.
+
+    ```kotlin
+    val artboard = Artboard.fromFile(myRiveFile, "My Artboard")
+    val stateMachine = StateMachine.fromArtboard(artboard, "My State Machine")
+    ...
+    stateMachine.close()
+    artboard.close()
+    ```
+
+    ### Using the State Machine
+    Once you have a state machine, you can pass it to the `Rive` composable via the `stateMachine` parameter.
+
+    By default the Rive composable will play the selected state machine. To toggle the play/pause state, set the `playing` parameter, triggering a re-composition. This is also used to replicate the auto-play behavior of other runtimes - simply set `playing` to false if you need to perform initial setup and set to true once ready.
+
+    ```kotlin
+    Rive(
+      myRiveFile,
+      artboard = artboard,
+      stateMachine = stateMachine,
+      playing = true // Or false to pause
+    )
+    ```
+  </Tab>
+  <Tab title="Legacy">
+    By default RiveAnimationView will auto-play the selected state machine.
+
+    ⚠️ The legacy API allows for playing multiple linear animations and state machines simultaneously. This is discouraged due to complexity and divergence from other runtimes. Prefer to use a single state machine controlling all animation through states and transitions.
+
+    ### Using XML Layouts
+
+    ```xml
+    <app.rive.runtime.kotlin.RiveAnimationView
+        app:riveResource="@raw/my_rive_file"
+        app:riveStateMachine="My State Machine"
+        app:riveAutoPlay="true" />
+    ```
+
+    ### Using Kotlin
+
+    ```kotlin
+    animationView.setRiveResource(
+        R.raw.my_rive_file,
+        stateMachineName = "My State Machine",
+        autoplay = true
+    )
+    ```
+
+    ### Controlling Playback
+
+    You can control the state machine's playing state using the same APIs as those for linear animation playback (i.e. `play`, `pause`, and `stop`). When doing so, ensure you set the `isStateMachine` parameter to `true`.
+
+    ```kotlin
+    animationView.play("My State Machine", isStateMachine = true)
+    animationView.pause("My State Machine", isStateMachine = true)
+    animationView.stop("My State Machine", isStateMachine = true)
+    ```
+  </Tab>
+</Tabs>

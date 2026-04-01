@@ -1,0 +1,165 @@
+---
+title: Inference-Time Optimizations
+description: Learn how to use inference-time strategies like dynamic in-context learning (DICL) and best-of-N sampling to optimize LLM performance.
+---
+
+Inference-time optimizations are powerful techniques that can significantly enhance the performance of your LLM applications without the need for model fine-tuning.
+
+This guide will explore three key strategies implemented as variant types in TensorZero: Best-of-N (BoN) sampling, Dynamic In-Context Learning (DICL), and Mixture-of-N (MoN) sampling.
+Dynamic In-Context Learning enhances context by incorporating relevant historical examples into the prompt.
+Best-of-N and Mixture-of-N sampling both generate multiple response candidates; Best-of-N selects the best one using an evaluator model, while Mixture-of-N combines the responses using a fuser model.
+All three techniques can lead to improved response quality and consistency in your LLM applications.
+
+## Best-of-N Sampling
+
+![Inference-Time Optimization: Best-of-N Sampling](./inference-time-optimizations-best-of-n-sampling.png)
+
+Best-of-N (BoN) sampling is an inference-time optimization strategy that can significantly improve the quality of your LLM outputs.
+Here's how it works:
+
+1. Generate multiple response candidates using one or more variants (i.e. possibly using different models and prompts)
+2. Use an evaluator model to select the best response from these candidates
+3. Return the selected response as the final output
+
+This approach allows you to leverage multiple prompts or variants to increase the likelihood of getting a high-quality response.
+It's particularly useful when you want to benefit from an ensemble of variants or reduce the impact of occasional bad generations.
+Best-of-N sampling is also commonly referred to as rejection sampling in some contexts.
+
+<Tip>
+
+TensorZero also supports a similar inference-time strategy called [Mixture-of-N Sampling](#mixture-of-n-sampling).
+
+</Tip>
+
+To use BoN sampling in TensorZero, you need to configure a variant with the `experimental_best_of_n` type.
+Here's a simple example configuration:
+
+```toml title="tensorzero.toml"
+[functions.draft_email.variants.promptA]
+type = "chat_completion"
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/promptA/user.minijinja"
+
+[functions.draft_email.variants.promptB]
+type = "chat_completion"
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/promptB/user.minijinja"
+
+[functions.draft_email.variants.best_of_n]
+type = "experimental_best_of_n"
+candidates = ["promptA", "promptA", "promptB"]
+
+[functions.draft_email.variants.best_of_n.evaluator]
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/best_of_n/user.minijinja"
+
+[functions.draft_email.experimentation]
+type = "static"
+candidate_variants = ["best_of_n"]  # so we don't sample `promptA` or `promptB` directly
+```
+
+In this configuration:
+
+- We define a `best_of_n` variant that uses two different variants (`promptA` and `promptB`) to generate candidates.
+  It generates two candidates using `promptA` and one candidate using `promptB`.
+- The `evaluator` block specifies the model and instructions for selecting the best response.
+
+<Tip>
+
+You should define the evaluator model as if it were solving the problem (not judging the quality of the candidates).
+TensorZero will automatically make the necessary prompt modifications to evaluate the candidates.
+
+</Tip>
+
+Read more about the `experimental_best_of_n` variant type in [Configuration Reference](/gateway/configuration-reference).
+
+<Tip>
+
+We also provide a complete runnable example:
+
+[Improving LLM Chess Ability with Best/Mixture-of-N Sampling](https://github.com/tensorzero/tensorzero/tree/main/examples/chess-puzzles)
+
+This example showcases how best-of-N sampling can significantly enhance an LLM's chess-playing abilities by selecting the most promising moves from multiple generated options.
+
+</Tip>
+
+## Dynamic In-Context Learning (DICL)
+
+![Inference-Time Optimization: Dynamic In-Context Learning](./inference-time-optimizations-dynamic-in-context-learning.png)
+
+Dynamic In-Context Learning (DICL) is an inference-time optimization that improves LLM performance by incorporating relevant historical examples into your prompt.
+Instead of incorporating static examples manually in your prompts, DICL selects the most relevant examples at inference time.
+
+See the [Dynamic In-Context Learning (DICL) Guide](/optimization/dynamic-in-context-learning-dicl) to learn more.
+
+## Mixture-of-N Sampling
+
+![Inference-Time Optimization: Mixture-of-N Sampling](./inference-time-optimizations-mixture-of-n-sampling.png)
+
+Mixture-of-N (MoN) sampling is an inference-time optimization strategy that can significantly improve the quality of your LLM outputs.
+Here's how it works:
+
+1. Generate multiple response candidates using one or more variants (i.e. possibly using different models and prompts)
+2. Use a fuser model to combine the candidates into a single response
+3. Return the combined response as the final output
+
+This approach allows you to leverage multiple prompts or variants to increase the likelihood of getting a high-quality response.
+It's particularly useful when you want to benefit from an ensemble of variants or reduce the impact of occasional bad generations.
+
+<Tip>
+
+TensorZero also supports a similar inference-time strategy called [Best-of-N Sampling](#best-of-n-sampling).
+
+</Tip>
+
+To use MoN sampling in TensorZero, you need to configure a variant with the `experimental_mixture_of_n` type.
+Here's a simple example configuration:
+
+```toml title="tensorzero.toml"
+[functions.draft_email.variants.promptA]
+type = "chat_completion"
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/promptA/user.minijinja"
+
+[functions.draft_email.variants.promptB]
+type = "chat_completion"
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/promptB/user.minijinja"
+
+[functions.draft_email.variants.mixture_of_n]
+type = "experimental_mixture_of_n"
+candidates = ["promptA", "promptA", "promptB"]
+
+[functions.draft_email.variants.mixture_of_n.fuser]
+model = "gpt-4o-mini"
+user_template = "functions/draft_email/mixture_of_n/user.minijinja"
+
+[functions.draft_email.experimentation]
+type = "static"
+candidate_variants = ["mixture_of_n"]  # so we don't sample `promptA` or `promptB` directly
+```
+
+In this configuration:
+
+- We define a `mixture_of_n` variant that uses two different variants (`promptA` and `promptB`) to generate candidates.
+  It generates two candidates using `promptA` and one candidate using `promptB`.
+- The `fuser` block specifies the model and instructions for combining the candidates into a single response.
+
+<Tip>
+
+You should define the fuser model as if it were solving the problem (not judging the quality of the candidates).
+TensorZero will automatically make the necessary prompt modifications to combine the candidates.
+
+</Tip>
+
+Read more about the `experimental_mixture_of_n` variant type in [Configuration Reference](/gateway/configuration-reference).
+
+<Tip>
+
+We also provide a complete runnable example:
+
+[Improving LLM Chess Ability with Best/Mixture-of-N Sampling](https://github.com/tensorzero/tensorzero/tree/main/examples/chess-puzzles/)
+
+This example showcases how Mixture-of-N sampling can significantly enhance an LLM's chess-playing abilities by selecting the most promising moves from multiple generated options.
+
+</Tip>

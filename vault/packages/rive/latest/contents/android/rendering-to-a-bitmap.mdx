@@ -1,0 +1,32 @@
+---
+title: 'Rendering to a Bitmap'
+description: 'Render screenshots and video at runtime.'
+---
+
+import Overview from "/snippets/runtimes/rendering-to-bitmap/overview.mdx"
+
+<Overview />
+
+<Note>
+  For rendering to a bitmap from the Rive Editor, see [Exporting for Video or Static Design](/editor/exporting/exporting-for-video-and-static-design).
+</Note>
+
+
+<Tabs>
+  <Tab title="Compose">
+    <Card
+      title="Demo"
+      icon="external-link"
+      arrow="true"
+      horizontal
+      href="https://github.com/rive-app/rive-android/blob/master/app/src/main/java/app/rive/runtime/example/RiveSnapshotActivity.kt"
+    >
+      See the `RiveSnapshotActivity` example for a demonstration of this feature.
+    </Card>
+
+    Rendering to a bitmap is done using the `RenderBuffer` class or the `onBitmapAvailable` callback in the `Rive` Composable.
+  </Tab>
+  <Tab title="Legacy">
+    Rendering to a bitmap was technically possible in the legacy runtime by rendering to a Canvas backed by a bitmap or by sub-classing the renderer, but it was not a built-in feature and required more effort to implement. There are no plans to retrofit this feature into the legacy runtime.
+  </Tab>
+</Tabs>

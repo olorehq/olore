@@ -1,0 +1,51 @@
+---
+title: 'Artboards'
+description: 'Selecting which artboard to render at runtime'
+---
+
+import Header from "/snippets/runtimes/artboards/header.mdx"
+import ChoosingAnArtboard from "/snippets/runtimes/artboards/choosing-an-artboard.mdx"
+
+<Header />
+
+<ChoosingAnArtboard />
+
+### Creating an artboard
+
+Manually create an artboard:
+
+```dart
+// Default artboard
+final artboard = riveFile.defaultArtboard();
+// Artboard named
+final artboard = riveFile.artboard('My Artboard');
+// Artboard at index
+final artboard = riveFile.artboardAt(0);
+```
+
+### Specifying an artboard
+
+Specify the artboard to use in `RiveWidgetController` or `RiveWidgetBuilder`:
+
+```dart
+// Default artboard
+final artboardSelector = ArtboardSelector.byDefault();
+// Artboard named
+final artboardSelector = ArtboardSelector.byName('My Artboard');
+// Artboard at index
+final artboardSelector = ArtboardSelector.byIndex(0);
+
+// Pass to RiveWidgetController
+final controller = RiveWidgetController(
+  riveFile,
+  artboardSelector: artboardSelector,
+);
+
+// Pass to RiveWidgetBuilder
+return RiveWidgetBuilder(
+  fileLoader: fileLoader,
+  artboardSelector: ArtboardSelector.byName('My Artboard'),
+  builder: (context, state) {
+    // return a widget
+  },
+);

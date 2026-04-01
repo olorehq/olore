@@ -1,0 +1,119 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+<Overview />
+
+### Adding an Event Listener
+
+Use the `addEventListener` and `removeEventListener` on `RiveAnimationView` to subscribe/unsubscribe a`RiveFileController.RiveEventListener`.
+
+This listener receives either an `OpenURLRiveEvent` or `GeneralRiveEvent` of type `RiveEvent`.
+
+```kotlin
+/// Access the RiveAnimationView
+private val yourRiveAnimationView: RiveAnimationView by lazy(LazyThreadSafetyMode.NONE) {
+    findViewById(R.id.your_animation_view)
+}
+
+...
+
+/// Create a RiveEventListener
+val eventListener = object : RiveFileController.RiveEventListener {
+    override fun notifyEvent(event: RiveEvent) {
+        when (event) {
+            is OpenURLRiveEvent -> {
+                Log.i("RiveEvent", "Open URL Rive event: ${event.url}")
+            }
+            is GeneralRiveEvent -> {
+                Log.i("RiveEvent", "General Rive event")
+            }
+        }
+        Log.i("RiveEvent", "name: ${event.name}")
+        Log.i("RiveEvent", "type: ${event.type}")
+        Log.i("RiveEvent", "properties: ${event.properties}")
+        // `data` contains all information in the event
+        Log.i("RiveEvent", "data: ${event.data}");
+    }
+}
+
+/// Attach the listener
+yourRiveAnimationView.addEventListener(eventListener);
+
+...
+
+/// Remove when no longer needed
+override fun onDestroy() {
+    yourRiveAnimationView.removeEventListener(eventListener);
+    super.onDestroy()
+}
+```
+
+<Note>
+    The Rive Android Runtime is executed on a separate thread. Any UI updates that are triggered from a Rive event will need to be manually marked to run on the UI thread using `runOnUiThread`. See examples below.
+</Note>
+### Opening a URL
+
+<Note>
+    Events of type `OpenUrlRiveEvent` will not automatically open links. The code needs to be added manually in your project.
+</Note>
+The following is an example that demonstrates how to open a URL on Android when an `OpenUrlRiveEvent` is received:
+
+```kotlin
+val eventListener = object : RiveFileController.RiveEventListener {
+    override fun notifyEvent(event: RiveEvent) {
+        when (event) {
+            is OpenURLRiveEvent -> {
+                runOnUiThread {
+                    try {
+                        val uri = Uri.parse(event.url);
+                        val browserIntent =
+                            Intent(Intent.ACTION_VIEW, uri)
+                        startActivity(browserIntent)
+                    } catch (e: Exception) {
+                        Log.i("RiveEvent", "Not a valid URL ${event.url}")
+                    }
+                }
+            }
+        }
+    }
+}
+yourRiveAnimationView.addEventListener(eventListener);
+```
+
+You can also access `event.target` to get the target destination of the URL, as set in the editor.
+
+### Example
+
+The following demonstrates how to update UI in response to some Rive event (named "StarRating") that contains a custom number property (named "Rating"). Note the `runOnUiThread`:
+
+```kotlin
+val eventListener = object : RiveFileController.RiveEventListener {
+    override fun notifyEvent(event: RiveEvent) {
+        when (event) {
+            is GeneralRiveEvent -> {
+                runOnUiThread {
+                    // This event contains a number value with the name "rating"
+                    // to indicate the star rating selected
+                    if (event.name == "StarRating" && event.properties.containsKey("rating")) {
+                        starRatingTextView.text = "Star rating: ${event.properties["rating"]}"
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+It's possible to evaluate which event has come through by checking the `name` and type of event (`GeneralRiveEvent` vs `OpenURLRiveEvent`).
+
+By calling `event.properties` you'll get a `HashMap` that contains any custom properties defined on the event.
+
+<AdditionalResources />

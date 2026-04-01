@@ -1,0 +1,798 @@
+---
+title: "Migrating from the Legacy Rive Apple Runtime"
+sidebarTitle: "Migrating from Legacy"
+description: "A guide to help you transition from the legacy Rive Apple runtime to the new runtime."
+---
+
+import { Apple } from "/snippets/constants.mdx"
+
+## Overview
+
+The [new Rive Apple runtime](/runtimes/apple/apple) is a **near-complete rewrite** of both the public API and the internal architecture. While conceptually most operations have an equivalent, the two APIs are incompatible. Any existing work in the legacy API that you would like to migrate must be rebuilt using the new API.
+
+This guide covers:
+1. [Shared Features](#shared-features) - Common operations and their equivalents.
+2. [New Exclusive Features](#new-exclusive-features) - Capabilities only available in the new runtime.
+3. [Legacy Exclusive Features](#legacy-exclusive-features) - Features no longer available in the new runtime and migration guidance.
+
+<Note>
+    This guide is not meant to be exhaustive as it would be redundant with existing general documentation. Please refer to the relevant sections of the documentation for more details on specific topics.
+</Note>
+
+## Package and Import
+
+The new Apple runtime is available in the same Swift package and CocoaPods pod as the legacy runtime.
+
+The new Apple runtime APIs are currently behind the `@_spi(RiveExperimental)` SPI:
+
+```swift
+@_spi(RiveExperimental) import RiveRuntime
+```
+
+Compared to the legacy runtime:
+
+```swift
+import RiveRuntime
+```
+
+This is a temporary transition mechanism while the new API remains experimental.
+
+## Asynchronous APIs
+
+The new runtime is built around Swift Concurrency. Most setup and query operations are asynchronous and should be called from an async context.
+
+<Card icon="eye" href="/runtimes/apple/apple#getting-started" horizontal>
+  For more information, see the Apple getting started guide for end-to-end setup examples.
+</Card>
+
+Common examples include:
+
+- Creating a `Worker` asynchronously
+- Creating `File` and `Rive` objects
+- Creating artboards, state machines, and view model instances
+
+```swift
+let worker = try await Worker()
+let file = try await File(source: .local("my_file", Bundle.main), worker: worker)
+let rive = try await Rive(file: file)
+```
+
+## Lifecycles and Threading
+
+The legacy runtime is effectively main-thread driven through `RiveViewModel` and `RiveView`.
+
+The new runtime introduces `Worker` objects for background processing while still enforcing API calls on the main actor. In practice:
+
+- `Worker` owns the background processing context
+- `File` strongly references its `Worker`
+- Out-of-band assets registered on a worker can be shared across files created with that worker
+
+<Card icon="eye" href="/runtimes/apple/apple#threading" horizontal>
+  For more information, see the Threading section for additional details.
+</Card>
+
+For most apps, a shared worker is recommended:
+
+```swift
+actor WorkerProvider {
+    static let shared = WorkerProvider()
+
+    @MainActor
+    private var cachedWorker: Worker?
+
+    @MainActor
+    func worker() async throws -> Worker {
+        if let cachedWorker {
+            return cachedWorker
+        }
+
+        let worker = try await Worker()
+        cachedWorker = worker
+        return worker
+    }
+}
+```
+
+## Shared Features
+
+### Shared APIs
+
+The main shared API area is fallback fonts through `RiveFont.fallbackFontsCallback`.
+For fallback font types and behavior, see [Fallback Fonts](/runtimes/fonts#fallback-fonts).
+
+### RiveViewModel to Rive
+
+Use the sections below as a migration map: [Loading a File from Disk](#loading-a-file-from-disk), [Creating a Rive View](#creating-a-rive-view), and [Data Binding](#data-binding). Legacy `RiveViewModel` flows in these areas become explicit `File` + `Rive` setup, then `RiveUIView`/SwiftUI representables in the new runtime.
+
+### Loading a File from Disk
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+// Cache this file for reuse
+let file = try RiveFile(name: "my_rive_file")
+let model = RiveModel(riveFile: file)
+let viewModel = RiveViewModel(model)
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+let rive = try await Rive(file: file)
+```
+
+### Loading a File from URL
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let webURL = URL(string: "https://example.com/my_rive_file.riv")!
+let file = RiveFile(httpUrl: webURL, loadCdn: false, with: self)
+let model = RiveModel(riveFile: file)
+let viewModel = RiveViewModel(model)
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let webURL = URL(string: "https://example.com/my_rive_file.riv")!
+let file = try await File(
+    source: .url(webURL),
+    worker: worker
+)
+let rive = try await Rive(file: file)
+```
+
+### Loading a File from Data (Bytes)
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let data: Data = ...
+let file = try RiveFile(data: data, loadCdn: false)
+let model = RiveModel(riveFile: file)
+let viewModel = RiveViewModel(model)
+```
+
+#### {Apple.currentRuntimeName}
+
+Use the `.data` file source when your `.riv` bytes are already available in memory.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let data: Data = ...
+let file = try await File(source: .data(data), worker: worker)
+let rive = try await Rive(file: file)
+```
+
+### Tracking Loading and Error State
+
+For common setup operations (loading files, creating artboards, creating state machines), the migration pattern is:
+
+- Legacy runtime: many lookup APIs return optionals (`nil` on failure), so handle with `guard let` / fallback logic.
+- New runtime: APIs throw errors, so use `do/catch`.
+
+#### {Apple.legacyRuntimeName}
+
+Legacy APIs commonly return `nil` for lookup/create-style operations:
+
+```swift
+let file = try RiveFile(name: "my_rive_file")
+
+guard let artboard = file.artboard() else {
+    // Handle missing artboard
+    return
+}
+
+guard let stateMachine = artboard.defaultStateMachine() else {
+    // Handle missing state machine
+    return
+}
+```
+
+#### {Apple.currentRuntimeName}
+
+New runtime APIs throw errors, so failure handling moves to `do/catch`:
+
+```swift
+do {
+    let worker = try await WorkerProvider.shared.worker()
+    let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+    let artboard = try await file.createArtboard("My Artboard")
+    let stateMachine = try await artboard.createStateMachine("My State Machine")
+    let rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine)
+} catch {
+    // Handle file/artboard/state machine setup errors
+}
+```
+
+This pattern applies equally in UIKit and SwiftUI. The key migration change is optional unwrapping in legacy vs error catching in the new runtime.
+
+### Choosing an Artboard and State Machine
+
+<Card icon="eye" href="/runtimes/artboards" horizontal>
+  For more information, see artboards documentation for more details.
+</Card>
+
+<Card icon="eye" href="/runtimes/state-machines" horizontal>
+  For more information, see state machines documentation for more details.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let file = try RiveFile(name: "my_rive_file")
+let model = RiveModel(riveFile: file)
+model.setArtboard("My Artboard")
+model.setStateMachine("My State Machine")
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+let artboard = try await file.createArtboard("My Artboard")
+let stateMachine = try await artboard.createStateMachine("My State Machine")
+let rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine)
+```
+
+### Creating a Rive View
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let viewModel = RiveViewModel(...)
+
+// UIKit
+let riveView = viewModel.createRiveView()
+
+// SwiftUI
+var body: some View {
+    viewModel.view()
+}
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: ..., worker: worker)
+let rive = try await Rive(file: file)
+
+// UIKit (sync object already available)
+let riveView = RiveUIView(rive: rive)
+
+// UIKit (async loading)
+let riveView = RiveUIView({
+    let worker = try await WorkerProvider.shared.worker()
+    let file = try await File(source: ..., worker: worker)
+    return try await Rive(file: file)
+})
+
+// SwiftUI
+var body: some View {
+    RiveUIViewRepresentable(rive)
+}
+
+// SwiftUI (async)
+var body: some View {
+    AsyncRiveUIViewRepresentable {
+        let worker = try await WorkerProvider.shared.worker()
+        let file = try await File(source: ..., worker: worker)
+        return try await Rive(file: file)
+    }
+}
+```
+
+### Setting Fit and Alignment
+
+<Card icon="eye" href="/runtimes/layout#apple" horizontal>
+  For more information, see the layout docs for all fit and alignment options.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let viewModel = RiveViewModel(
+    fileName: "my_rive_file",
+    fit: .contain,
+    alignment: .center
+)
+
+// Update at runtime
+viewModel.fit = .fitWidth
+viewModel.alignment = .topCenter
+```
+
+To use artboard layout sizing in the legacy runtime:
+
+```swift
+let viewModel = RiveViewModel(fileName: "my_rive_file")
+viewModel.fit = .layout
+viewModel.layoutScaleFactor = RiveViewModel.layoutScaleFactorAutomatic // default behavior
+// Or explicitly set a scale factor
+viewModel.layoutScaleFactor = 2.0
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+var rive = try await Rive(file: file, fit: .contain(alignment: .center))
+
+// Update at runtime
+rive.fit = .fitWidth(alignment: .topCenter)
+```
+
+To use artboard layout sizing in the new runtime:
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+var rive = try await Rive(file: file, fit: .layout(scaleFactor: .automatic))
+
+// Or explicitly set a scale factor
+rive.fit = .layout(scaleFactor: .explicit(2.0))
+```
+
+### Default Layout Scale Factor
+
+When using layout fit, both runtimes support automatic and explicit scale factors.
+
+#### {Apple.legacyRuntimeName}
+
+Use `RiveViewModel.layoutScaleFactorAutomatic` (default) or set an explicit numeric value on `layoutScaleFactor`.
+
+#### {Apple.currentRuntimeName}
+
+Use `.layout(scaleFactor: .automatic)` or `.layout(scaleFactor: .explicit(...))` on `Rive.fit`.
+
+### View Models
+
+<Card icon="eye" href="/runtimes/data-binding" horizontal>
+  For more information, see the data binding docs for complete view model instance APIs.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+In legacy, view models are queried from `RiveFile`, then instances are created from that queried view model.
+
+```swift
+let riveViewModel = RiveViewModel(...)
+let file = riveViewModel.riveModel!.riveFile
+
+guard let viewModel = file.viewModelNamed("My View Model") else {
+    return
+}
+
+// Create blank/default/named instances from the queried view model
+let blankInstance = viewModel.createInstance()
+let defaultInstance = viewModel.createDefaultInstance()
+let namedInstance = viewModel.createInstance(fromName: "My Instance")
+```
+
+#### {Apple.currentRuntimeName}
+
+In the new runtime, the view model is represented as source metadata passed directly into `createViewModelInstance`.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+
+// By explicit view model name
+let blankInstance = try await file.createViewModelInstance(
+    from: .blank(from: .name("My View Model"))
+)
+let defaultInstance = try await file.createViewModelInstance(
+    from: .name("My View Model")
+)
+let namedInstance = try await file.createViewModelInstance(
+    from: .name("My Instance", from: .name("My View Model"))
+)
+```
+
+You can also source the view model from an artboard default:
+
+```swift
+let artboard = try await file.createArtboard()
+let defaultFromArtboard = try await file.createViewModelInstance(
+    from: .viewModelDefault(from: .artboardDefault(artboard))
+)
+```
+
+### View Model Instance Properties
+
+#### {Apple.legacyRuntimeName}
+
+Legacy data-binding instances expose typed property objects that you query from the instance.
+
+```swift
+let riveViewModel = RiveViewModel(...)
+var instance: RiveDataBindingViewModel.Instance!
+
+riveViewModel.riveModel?.enableAutoBind { boundInstance in
+    instance = boundInstance
+}
+
+guard let stringProperty = instance.stringProperty(fromPath: "path/to/string") else {
+    return
+}
+
+// Set
+stringProperty.value = "Hello, Rive"
+// Get
+let currentValue = stringProperty.value
+```
+
+#### {Apple.currentRuntimeName}
+
+The new runtime uses typed path descriptors with methods on `ViewModelInstance` for set/get/observe.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+let viewModelInstance = try await file.createViewModelInstance(
+    from: .name("My View Model")
+)
+
+let stringProperty = StringProperty(path: "path/to/string")
+
+// Set
+viewModelInstance.setValue(of: stringProperty, to: "Hello, Rive")
+
+// Get current value
+let currentValue = try await viewModelInstance.value(of: stringProperty)
+
+// Observe changes over time
+let valueStream = viewModelInstance.valueStream(of: stringProperty)
+for try await updatedValue in valueStream {
+    print(updatedValue)
+}
+```
+
+### Bindable Artboards
+
+#### {Apple.legacyRuntimeName}
+
+Legacy artboard property binding uses a bindable artboard wrapper type.
+
+```swift
+let instance: RiveDataBindingViewModel.Instance = ...
+guard let artboardProperty = instance.artboardProperty(fromPath: "path/to/artboard") else {
+    return
+}
+
+let components = try RiveFile(name: "component_library")
+guard let bindableArtboard = components.bindableArtboard(withName: "My Artboard") else {
+    return
+}
+
+artboardProperty.setValue(bindableArtboard)
+```
+
+#### {Apple.currentRuntimeName}
+
+The new runtime binds artboards with a typed property descriptor and `setValue` on the instance.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+let viewModelInstance = try await file.createViewModelInstance(from: .name("My View Model"))
+
+let artboardProperty = ArtboardProperty(path: "path/to/artboard")
+let artboard = try await file.createArtboard("My Artboard")
+viewModelInstance.setValue(of: artboardProperty, to: artboard)
+```
+
+### Data Binding
+
+<Card icon="eye" href="/runtimes/data-binding" horizontal>
+  For more information, see the data binding docs for full API coverage.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let file = try RiveFile(...)
+let model = RiveModel(riveFile: file)
+model.enableAutoBind { instance in
+    self.viewModelInstance = instance
+    instance.stringProperty(fromPath: "...").value = "Hello, Rive"
+}
+```
+
+You can also manually bind a specific instance:
+
+```swift
+let file = try RiveFile(...)
+guard let artboard = file.artboard() else { return }
+guard let stateMachine = artboard.defaultStateMachine() else { return }
+guard let viewModel = file.defaultViewModel(for: artboard) else { return }
+guard let instance = viewModel.createDefaultInstance() else { return }
+stateMachine.bindViewModelInstance(instance) // bound successfully
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: ..., worker: worker)
+
+// Auto bind (default)
+let autoBoundRive = try await Rive(file: file, dataBind: .auto)
+
+// Bind a specific instance
+let artboard = try await file.createArtboard()
+let viewModel = try await file.createViewModelInstance(
+    .viewModelDefault(from: .artboardDefault(artboard))
+)
+let instanceBoundRive = try await Rive(file: file, dataBind: .instance(viewModel))
+
+// Opt out of data binding
+let noBindingRive = try await Rive(file: file, dataBind: .none)
+```
+
+### Updating a Data Bind Unsettles the State Machine
+
+Legacy and new runtime behavior differ here:
+
+- Legacy: after changing a data bound property, you typically call `play()` to advance/unsettle and apply the change if the graphic has settled.
+- New runtime: setting a data bound property no longer requires an explicit `play()` call, simplifying the API.
+
+Best practice for migration: if you need initial values, set them **before** creating and presenting a view.
+
+This avoids showing default values for a frame before your app-provided values are applied.
+
+#### {Apple.legacyRuntimeName}
+
+When updating a bound value after the view is created, keep a reference to the instance and call `play()` after mutation:
+
+```swift
+let viewModel = RiveViewModel(...)
+var instance: RiveDataBindingViewModel.Instance?
+
+viewModel.riveModel?.enableAutoBind { boundInstance in
+    instance = boundInstance
+}
+
+let riveView = viewModel.createRiveView()
+
+instance?.stringProperty(fromPath: "path/to/string")?.value = "Updated Value"
+viewModel.play() // Required to advance/unsettle after mutation
+```
+
+#### {Apple.currentRuntimeName}
+
+In the new runtime, update the bound value after the view is created. No explicit `play()` call is needed.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let file = try await File(source: .local("my_rive_file", Bundle.main), worker: worker)
+
+let instance = try await file.createViewModelInstance(from: .name("My View Model"))
+let property = StringProperty(path: "path/to/string")
+let rive = try await Rive(file: file, dataBind: .instance(instance))
+let riveView = RiveUIView(rive: rive)
+
+instance.setValue(of: property, to: "Updated Value") // Applies without play()
+```
+
+### Playing and Pausing
+
+<Card icon="eye" href="/runtimes/apple/apple#playing--pausing" horizontal>
+  For more information, see playback controls in the Apple runtime guide.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let viewModel = RiveViewModel(fileName: "...")
+viewModel.pause() // or play() to resume
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let rive = try await Rive(...)
+let riveView = RiveUIView(rive: rive)
+riveView.isPaused = true // or false to resume
+
+// SwiftUI
+RiveUIViewRepresentable(rive)
+    .paused(true)
+```
+
+### Frame Rate
+
+<Card icon="eye" href="/runtimes/apple/apple#frame-rate" horizontal>
+  For more information, see frame rate controls and ProMotion notes.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+let viewModel = RiveViewModel(fileName: "...")
+viewModel.setPreferredFramesPerSecond(preferredFramesPerSecond: 30)
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+let rive = try await Rive(...)
+let riveView = RiveUIView(rive: rive)
+riveView.frameRate = .fps(30)
+// or
+riveView.frameRate = .range(minimum: 30, maximum: 60)
+// or
+riveView.frameRate = .default
+```
+
+### Loading Referenced Assets
+
+#### {Apple.legacyRuntimeName}
+
+The legacy runtime uses a pull model via a callback that resolves assets on demand.
+
+```swift
+let viewModel = RiveViewModel(fileName: "my_rive_file") { asset, _, factory in
+    if let imageAsset = asset as? RiveImageAsset {
+        let decodedImage = factory.decodeImage(Data(...))
+        imageAsset.renderImage(decodedImage)
+        return true
+    } else if let fontAsset = asset as? RiveFontAsset {
+        let decodedFont = factory.decodeFont(Data(...))
+        fontAsset.font(decodedFont)
+        return true
+    } else if let audioAsset = asset as? RiveAudioAsset {
+        let decodedAudio = factory.decodeAudio(Data(...))
+        audioAsset.audio(decodedAudio)
+        return true
+    } else {
+        return false
+    }
+}
+```
+
+#### {Apple.currentRuntimeName}
+
+The new runtime uses a push model, where assets are registered on the worker ahead of use.
+
+```swift
+let worker = try await WorkerProvider.shared.worker()
+let image = try await worker.decodeImage(from: Data(...))
+worker.addGlobalImageAsset(image, name: "MyImage-1234")
+
+let font = try await worker.decodeFont(from: Data(...))
+worker.addGlobalFontAsset(font, name: "MyFont-1234")
+
+let audio = try await worker.decodeAudio(from: Data(...))
+worker.addGlobalAudioAsset(audio, name: "MyAudio-1234")
+```
+
+### Logging
+
+<Card icon="eye" href="/runtimes/logging" horizontal>
+  For more information, see the logging guide for shared concepts and filtering options.
+</Card>
+
+#### {Apple.legacyRuntimeName}
+
+```swift
+RiveLogger.isEnabled = true
+RiveLogger.levels = [.debug, .error]
+RiveLogger.categories = [.stateMachine, .artboard, .viewModel]
+RiveLogger.isVerbose = true
+```
+
+#### {Apple.currentRuntimeName}
+
+```swift
+RiveLog.logger = RiveLog.system(levels: .default)
+
+// Or use your own implementation of RiveLog.Logger
+RiveLog.logger = MyLogger()
+
+// Disable logs
+RiveLog.logger = RiveLog.none
+```
+
+### Fallback Fonts
+
+Both runtimes support fallback fonts.
+
+- `RiveFont.fallbackFontsCallback` remains available
+- Existing fallback font strategies can be reused across both runtimes
+
+```swift
+RiveFont.fallbackFontsCallback = { style in
+    switch style.weight {
+    case .thin:
+        return [RiveFallbackFontDescriptor(weight: .thin)]
+    case .bold:
+        return [RiveFallbackFontDescriptor(weight: .bold)]
+    default:
+        return [RiveFallbackFontDescriptor()]
+    }
+}
+```
+
+## New Exclusive Features
+
+### Worker-Based Concurrency
+
+The new runtime introduces `Worker` as an explicit concurrency primitive. This is a substantial change from the legacy runtime, which did not expose an equivalent concept.
+
+Benefits include:
+
+- Better control over background processing
+- Shared global asset registration per worker
+- More predictable architecture when rendering multiple files
+
+<Callout icon="check">
+  A shared worker is usually the best default. Use multiple workers only when you need additional parallel processing, such as when rendering multiple heavyweight graphics.
+</Callout>
+
+### Async Initialization APIs
+
+The new runtime supports async constructors and async view wrappers (`RiveUIView` with async closure and `AsyncRiveUIViewRepresentable`) to better model real-world loading flows.
+
+<Callout icon="question">
+  The async wrappers are useful when a view must own its own loading lifecycle. If you need reuse and caching across screens, prefer creating and storing `File`/`Rive` objects at a higher level.
+</Callout>
+
+## Legacy Exclusive Features
+
+Some features in the legacy runtime are intentionally not present in the new runtime.
+
+### CDN Assets
+
+Legacy file loading may use CDN-backed asset flows (for example via `loadCdn` behavior). The new runtime's asset model is worker-based and push-oriented via explicit asset registration APIs.
+
+### State Machine Inputs
+
+The legacy runtime supports state machine input APIs directly. The new runtime does not expose equivalent input APIs, and migration should move to data binding properties (number, boolean, string, trigger-style interactions).
+
+The Rive Editor provides a conversion tool in **Menu > Convert Inputs to ViewModels** that can help with initial migration.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce direct state machine input APIs in the new runtime.
+</Callout>
+
+### Events
+
+The legacy runtime supports event listeners. The new runtime does not currently expose an equivalent event listener API. For many migration scenarios, a data binding contract is the recommended replacement for app-runtime communication.
+
+Simple event-like behavior can often be modeled with trigger-oriented view model properties.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce legacy-style event listener APIs in the new runtime.
+</Callout>
+
+### Linear Animations
+
+Legacy integrations can directly target linear animations. In migration, graphics are required to contain a state machine.
+
+For existing files that rely on linear animations, create a state machine in the Editor with a single state that plays the desired animation.
+
+### Observing State Machine State
+
+Legacy integrations often used state-change delegate callbacks (for example, `RiveStateDelegate.stateChange(...)`) to react to animation state.
+
+The new runtime does not expose a direct state-name observation API in this guide. For migration, model those app-facing signals as data-binding properties and observe them from the bound instance.
+
+```swift
+let property = StringProperty(path: "path/to/state_signal")
+let stream = viewModelInstance.valueStream(of: property)
+for try await value in stream {
+    // React to state-like changes emitted from the Rive file
+}
+```
+
+### Getting by Index
+
+Where possible, prefer named queries and explicit sources (for example, `ViewModelSource` and named artboard/state machine queries) over index-based coupling.

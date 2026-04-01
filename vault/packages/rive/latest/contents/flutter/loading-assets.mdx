@@ -1,0 +1,83 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import LoadingViaCDN from '/snippets/runtimes/loading-assets/loading-via-cdn.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<LoadingViaCDN />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+### Examples
+
+- See the [Rive Flutter example app](https://github.com/rive-app/rive-flutter/tree/master/example).
+
+### Using the Asset Handler API
+When instantiating a `File`, add an `assetLoader` callback to the list of parameters. This callback will be called for every asset the runtime detects from the `.riv` file on load, and will be responsible for either handling the load of an asset at runtime or passing on the responsibility and giving the runtime a chance to load it otherwise.
+
+```dart Font Asset Example
+final fontFile = await File.asset(
+    'assets/acqua_text_out_of_band.riv',
+    riveFactory: Factory.rive,
+    assetLoader: (asset, bytes) {
+        // Replace font assets that are not embedded in the rive file
+        if (asset is FontAsset && bytes == null) {
+            final urls = [
+                'https://cdn.rive.app/runtime/flutter/IndieFlower-Regular.ttf',
+                'https://cdn.rive.app/runtime/flutter/comic-neue.ttf',
+                'https://cdn.rive.app/runtime/flutter/inter.ttf',
+                'https://cdn.rive.app/runtime/flutter/inter-tight.ttf',
+                'https://cdn.rive.app/runtime/flutter/josefin-sans.ttf',
+                'https://cdn.rive.app/runtime/flutter/send-flowers.ttf',
+            ];
+
+            // pick a random url from the list of fonts
+            http.get(Uri.parse(urls[Random().nextInt(urls.length)])).then((res) {
+                if (mounted) {
+                    asset.decode(
+                        Uint8List.view(res.bodyBytes.buffer),
+                    );
+                    setState(() {
+                        // force rebuild in case the Rive graphic is no longer advancing
+                    });
+                }
+            });
+            return true; // Tell the runtime not to load the asset automatically
+        } else {
+            // Tell the runtime to proceed with loading the asset if it exists
+            return false;
+        }
+    },
+);
+```
+
+Your provided callback will be passed an `asset` and `bytes`.
+
+- `asset` - Reference to a `FileAsset` object. You can grab a number of properties from this object, such as the name, asset type, and more. You'll also use this to set a new Rive specific asset for dynamically loaded content. Types: `FontAsset`, `ImageAsset`, and `AudioAsset`.
+- `bytes` - Array of bytes for the asset (if it's available as an embedded asset)
+
+<Info>
+**Important**: Note that the return value is a `boolean`, which is where you need to return:
+-  `true` if you intend on handling and loading in an asset yourself
+- or `false` if you do not want to handle asset loading for that given asset yourself, and attempt to have the runtime try to load the asset
+</Info>
+
+<Warning>
+Once the `File` is disposed, the `FileAsset` will no longer be valid and would be dangerous to use.
+</Warning>
+
+<Resources />

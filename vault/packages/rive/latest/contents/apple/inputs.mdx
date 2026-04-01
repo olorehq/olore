@@ -1,0 +1,57 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+import { Apple } from "/snippets/constants.mdx"
+
+<Overview />
+
+<Warning>
+  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+</Warning>
+
+
+<ControllingInputs />
+
+### Inputs
+
+Setting input values for state machines goes through the `RiveViewModel` instantiated in the View class.
+
+`.setInput()`
+
+- `inputName` (String) - Name of the input on a state machine to set a value for
+- `value` (Bool, Float, or Double) - value to set for the associated `inputName`
+
+`triggerInput()`
+
+- `inputName` (String) - Name of the input on a state machine to trigger
+
+```swift
+// Example of a number input
+starsVM.setInput("Rating Changed", value: 5)
+
+// Example of a boolean input
+toggleVM.setInput("Switch Flipped", value: true)
+
+// Example of a trigger input
+confettiVM.triggerInput("Celebrate")
+```
+
+<NestedInputs />
+
+To set the **Volume** input for the above example:
+
+```swift
+@StateObject private var riveState = RiveViewModel(fileName: "file_name", stateMachineName: "StateMachineName")
+...
+riveState.setInput("volume", value: 80.0, path: "Volume Molecule/Volume Component")
+```
+
+**All options:**
+- `setInput(_ inputName, value: value, path)` where `value` can be a `Bool`, `Double`, or `Float`
+- `triggerInput(_ inputName, path: path)`

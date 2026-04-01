@@ -1,0 +1,48 @@
+---
+title: Deploy Aspire projects to Azure Container Apps
+description: Learn how to use the Azure Developer CLI to deploy Aspire projects to Azure.
+ms.date: 07/17/2025
+ms.custom: devx-track-extended-azdevcli
+---
+
+# Deploy an Aspire project to Azure Container Apps
+
+Aspire projects are designed to run in containerized environments. Azure Container Apps is a fully managed environment that enables you to run microservices and containerized applications on a serverless platform. This article will walk you through creating a new Aspire solution and deploying it to Microsoft Azure Container Apps using the Azure Developer CLI (`azd`). You'll learn how to complete the following tasks:
+
+> [!div class="checklist"]
+>
+> - Provision an Azure resource group and Container Registry
+> - Publish the Aspire projects as container images in Azure Container Registry
+> - Provision a Redis container in Azure
+> - Deploy the apps to an Azure Container Apps environment
+> - View application console logs to troubleshoot application issues
+
+[!INCLUDE [aspire-prereqs](../../includes/aspire-prereqs.md)]
+
+As an alternative to this tutorial and for a more in-depth guide, see [Deploy an Aspire project to Azure Container Apps using `azd` (in-depth guide)](aca-deployment-azd-in-depth.md).
+
+## Deploy Aspire projects with `azd`
+
+With Aspire and Azure Container Apps (ACA), you have a great hosting scenario for building out your cloud-native apps with .NET. We built some great new features into the Azure Developer CLI (`azd`) specific for making Aspire development and deployment to Azure a friction-free experience. For production scenarios that require granular control over infrastructure, see [Customize Aspire Azure deployments](customize-deployments.md). But for new projects, you won't find an easier path to success for getting a new microservice topology deployed into the cloud.
+
+## Create an Aspire project
+
+As a starting point, this article assumes that you've created an Aspire project from the **Aspire Starter Application** template. For more information, see [Quickstart: Build your first Aspire project](https://aspire.dev/get-started/first-app/).
+
+### Resource naming
+
+[!INCLUDE [azure-container-app-naming](../../includes/azure-container-app-naming.md)]
+
+## Install the Azure Developer CLI
+
+The process for installing `azd` varies based on your operating system, but it is widely available via `winget`, `brew`, `apt`, or directly via `curl`. To install `azd`, see [Install Azure Developer CLI](/azure/developer/azure-developer-cli/install-azd).
+
+[!INCLUDE [init-workflow](../includes/init-workflow.md)]
+
+[!INCLUDE [azd-up-workflow](../includes/azd-up-workflow.md)]
+
+[!INCLUDE [test-deployed-app](../includes/test-deployed-app.md)]
+
+[!INCLUDE [azd-dashboard](../includes/azd-dashboard.md)]
+
+[!INCLUDE [clean-up-resources](../../includes/clean-up-resources.md)]

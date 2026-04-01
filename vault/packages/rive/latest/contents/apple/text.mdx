@@ -1,0 +1,106 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+import { Apple } from "/snippets/constants.mdx"
+
+<Warning>
+  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+</Warning>
+
+<Overview />
+
+#### Reading Text
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `RiveViewModel`:
+
+```swift
+open func getTextRunValue(_ textRunName: String) -> String?
+```
+
+Supply the text run name and you'll have the Rive text run value returned, or `nil` if the text run could not be queried.
+
+#### Setting Text
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `RiveViewModel`:
+
+```swift
+open func setTextRunValue(_ textRunName: String, textValue: String) throws
+```
+
+Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for.
+
+<Note>
+If the supplied `textRunName` Rive text run cannot be queried on the active artboard, Rive will throw a `RiveError.textValueRunError` that you may need to catch and handle gracefully in your application.
+</Note>
+#### Example Usage
+
+```swift
+@State private var userInput: String = ""
+@State private var rvm = RiveViewModel(fileName: "my-rive-file")
+
+var body: some View {
+    VStack(spacing: 20) {
+        Text("Enter text:")
+            .font(.headline)
+        TextField("Enter text...", text: $userInput)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .padding()
+            .onChange(of: userInput, perform: { newValue in
+                if (!newValue.isEmpty) {
+                    try! rvm.setTextRunValue("MyTextRunName", textValue: userInput)
+                }
+            })
+        rvm.view()
+    }
+}
+```
+
+<NestedArtboard />
+
+### Reading Text
+
+Similar to [reading text from a text run within a parent artboard](#reading-text), you can set the value of a text run within a component instance using the following API:
+
+```swift
+open func getTextRunValue(_ textRunName: String, path: String) -> String?
+```
+
+### Setting Text
+
+Additionally, similar to [setting text within a parent artboard](#setting-text), you can read the value of a text run within a component instance using the following API:
+
+```swift
+open func setTextRunValue(_ textRunName: String, textValue: String, path: String) throws
+```
+
+### Example:
+
+```swift
+@State private var userInput: String = ""
+@State private var rvm = RiveViewModel(fileName: "my-rive-file")
+
+var body: some View {
+    VStack(spacing: 20) {
+        Text("Enter text:")
+            .font(.headline)
+        TextField("Enter text...", text: $userInput)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .padding()
+            .onChange(of: userInput, perform: { newValue in
+                if (!newValue.isEmpty) {
+                    try! rvm.setTextRunValue("MyTextRunName", textValue: userInput, path: "Artboard/NestedArtboard")
+                }
+            })
+        rvm.view()
+    }
+}
+```
+
+<SemanticsForAccessibility />

@@ -1,0 +1,22 @@
+---
+title: 'Resource Usage'
+description: ''
+---
+
+This page outlines some additional considerations when comparing Rive to other libraries' resource usage (specifically CPU and memory).
+
+An important note is that Rive uses Metal APIs directly over other APIs and frameworks (like Core Animation) to be able to adjust its usage for best performance with Rive.
+
+To get an accurate representation of the overall CPU and memory used by Rive, consider using the "Activity Monitor" template in Xcode, in addition to other templates. 
+
+Since Rive uses Metal directly, CPU usage and memory allocations appear in the app process. Other APIs can make use of other system processes, the stats of which will not be immediately visible by Xcode or Instruments.
+
+## Core Animation
+
+<Note>Lottie is an example of a library that uses Core Animation.</Note>
+
+For libraries using Core Animation, logic and rendering is managed in a separate process known as the "Render Server" (`backboardd`). In doing so, CPU and memory usage isn't reported by the app process itself, and instead is reported by `backboardd`, which Xcode and Instruments are not monitoring by default.
+
+By default, Xcode and Instruments show stats for the single process it is monitoring (and attached to). This is commonly the app that you are developing, unless otherwise specified. Resource usage for libraries using Core Animation will additionally appear in the "Render Server" process `backboardd`, and not just the app process.
+
+The **overall** difference in resource usage can be found when profiling your app process _in addition to_ the `backboardd` process. This can be seen by using the “Activity Monitor” Instruments template, and filtering by your app and the `backboardd` processes.

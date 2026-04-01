@@ -1,0 +1,60 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+<Overview />
+
+`Event` is a sealed class with two options:
+
+- `OpenUrlEvent`
+- `GeneralEvent`
+
+You need to register an event listener on a `StateMachine` instance:
+
+```dart
+final controller = RiveWidgetController(_riveFile!);
+controller?.stateMachine.addEventListener(_onRiveEvent);
+
+void _onRiveEvent(Event event) {
+    // Do something with the event
+}
+```
+
+Accessing `properties` returns `Map<String, CustomProperty>`. `CustomProperty` is also a sealed class with options:
+
+- `CustomNumberProperty`
+- `CustomBooleanProperty`
+- `CustomStringProperty`
+
+All of these have a `value` field. On the `Event` class, there are convenient accessors:
+
+```dart
+// Convenient accessors
+event.property(name);           // Returns a CustomProperty
+event.numberProperty(name);     // Returns a CustomNumberProperty
+event.booleanProperty(name);    // Returns a CustomBooleanProperty
+event.stringProperty(name);     // Returns a CustomStringProperty
+```
+
+    It's important to remove the event listener when no longer needed to avoid memory leaks:
+
+```dart
+stateMachine.removeEventListener(_onRiveEvent);
+```
+
+Or the event listeners will also be disposed when the `StateMachine` is disposed.
+
+```dart
+stateMachine.dispose();
+```
+
+If you dispose the `RiveWidgetController`, that will also dispose the `StateMachine` and remove all event listeners.
+
+<AdditionalResources />

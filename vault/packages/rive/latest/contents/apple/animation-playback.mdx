@@ -1,0 +1,156 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+import { Apple } from "/snippets/constants.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+By default, `RiveViewModel` will automatically play the animation or state machine you've given it.
+
+<Warning>
+  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+</Warning>
+
+### SwiftUI
+```javascript
+struct AnimationView: View {
+    var body: some View {
+        RiveViewModel(
+            fileName: "dancing_banana",
+            animationName: "Charleston",
+            artboardName: "Banana"
+        ).view()
+    }
+}
+```
+
+### UIKit
+```swift
+class AnimationViewController: UIViewController {
+    @IBOutlet weak var riveView: RiveView!
+
+    var bananaVM = RiveViewModel(
+        fileName: "dancing_banana",
+        animationName: "Charleston",
+        artboardName: "Banana"
+    )
+
+    override func viewDidLoad() {
+        bananaVM.setView(riveView)
+    }
+}
+```
+
+<ControllingPlayback />
+
+#### Invoking Playback Controls
+
+After creating a `RiveViewModel`, you can invoke animation playback control methods on a reference to this view model.
+
+Very often that will be all that is needed to display your Rive asset. However, we have some convenient controls for when you want more fine-grained control of when it plays and doesn't.
+
+You can also choose the loop mode of the animation as additional parameters as needed. Along with playing animations, you similarly have the ability to pause, stop, and reset animation(s).
+
+Playing without
+
+- `play(animationName: String? = nil, loop: Loop = .autoLoop, direction: Direction = .autoDirection)`
+  - `animationName` - Name of the animation to play
+  - `loop` - Loop mode to play the animation in. Possible values listed below:
+    - `oneShot` - plays animation through once
+    - `loop` - plays through animation and repeats from the set starting time
+    - `pingPong` - plays animation from start -&gt; end, then end -&gt; start on repeat
+    - `autoLoop` (default) - plays through the loop setting set on the animation
+  - `direction` - Direction to play the animation in
+    - `backwards` - plays through animation timeline backward
+    - `forwards` - plays through animation timeline forwards
+    - `autoDirection` - plays through direction set on the animation
+- `pause()`
+- `stop()`
+- `reset()`
+
+### Play
+
+If you set autoplay to false you can play the active animation or state machine very simply.
+
+```swift
+simpleVM.play()
+```
+
+If there are multiple animations on the active artboard you can play a specific one.
+
+```swift
+simpleVM.play(animationName: "Fancy Animation")
+```
+
+### Pause/Stop/Reset
+
+Based on certain events in your app you may want to adjust the playback further.
+
+```swift
+simpleVM.pause()
+simpleVM.stop()
+simpleVM.reset()
+```
+
+#### Player Delegates
+
+This runtime allows for delegates that can be set on the `RiveViewModel`. You can use delegates to define functions that hook into when certain playback events are invoked. See the below class for how you can hook into the following playback events:
+  - played
+  - paused
+  - stopped
+  - advanced
+  - animation looped
+
+```swift
+class ToggleViewModel: RiveViewModel {
+  private let onAnimation: String = "On"
+  private let offAnimation: String = "Off"
+  private let startAnimation: String = "StartOff"
+
+  var action: ((Bool) -> Void)? = nil
+  var isOn = false {
+      didSet {
+          stop()
+          play(animationName: isOn ? onAnimation : offAnimation)
+          action?(isOn)
+      }
+  }
+
+  init() {
+      super.init(fileName: "toggle", animationName: startAnimation, fit: .cover)
+  }
+
+  func view(_ action: ((Bool) -> Void)? = nil) -> some View {
+      self.action = action
+      return super.view().frame(width: 100, height: 50, alignment: .center)
+  }
+
+  // When an animation is played
+  override func player(playedWithModel riveModel: RiveModel?) {
+    if let animationName = riveModel?.animation?.name() {...}
+  }
+  // When an animation is paused
+  override func player(pausedWithModel riveModel: RiveModel?) {
+    if let animationName = riveModel?.animation?.name() {...}
+  }
+  // When an animation is stopped
+  override func player(stoppedWithModel riveModel: RiveModel?) {
+    if let animationName = riveModel?.animation?.name() {...}
+  }
+  // When an animation is looped
+  override func player(loopedWithModel riveModel: RiveModel?, type: Int) {
+    if let animationName = riveModel?.animation?.name() {...}
+  }
+  // When an animation is advanced
+  override func player(didAdvanceby seconds: Double, riveModel: RiveModel?) {...}
+}
+```

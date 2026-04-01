@@ -1,0 +1,59 @@
+---
+title: "FAQ"
+description: "Common Flutter runtime issues and fixes."
+---
+
+## Where should I look first when my Flutter build fails?
+
+Start with these docs:
+
+- [Flutter runtime troubleshooting](/runtimes/flutter/flutter#troubleshooting)
+- [Rive Native troubleshooting](/runtimes/flutter/rive-native#troubleshooting)
+- [Building `rive_native`](/runtimes/flutter/rive-native#building-rive-native)
+- [Flutter migration guide](/runtimes/flutter/migration-guide)
+
+Most build issues come from setup/version mismatches, stale native artifacts, or skipped native setup. A clean rebuild usually helps:
+
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
+
+If native libraries were not downloaded, run the `rive_native` setup CLI for your target platform:
+
+```bash
+dart run rive_native:setup --verbose --clean --platform <platform>
+```
+
+Replace `<platform>` with the platform you are building for (for example, `android` or `macos`).
+You can also provide multiple platforms as a comma-separated list (for example, `android,ios,macos`).
+
+If you still see setup errors, follow [Rive Native troubleshooting](/runtimes/flutter/rive-native#troubleshooting). For Android-specific setup issues, see the [Android notes](/runtimes/flutter/rive-native#android).
+
+## `LateInitializationError: Field 'makeFlutterFactory' has not been initialized`
+
+If you see an error like `LateInitializationError: Field 'makeFlutterFactory' has not been initialized`, make sure you initialize Rive before showing any Rive widgets.
+
+Call `await RiveNative.init()` early (for example in `main()`), before creating or using `Factory.flutter`/`Factory.rive`.
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:rive/rive.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RiveNative.init();
+  runApp(const MyApp());
+}
+```
+
+## How to enable 16KB page support on Android?
+
+Rive Flutter `0.14.x` includes 16KB page support by default.
+
+If you're on `0.13.x`, you need to specify the NDK version used by setting `rive.ndk.version=28.1.13356709` in your `gradle.properties` file.
+
+This gives you 16KB page support and flexibility to control the NDK used for future updates.
+
+For additional context, see [rive-flutter issue #479](https://github.com/rive-app/rive-flutter/issues/479).

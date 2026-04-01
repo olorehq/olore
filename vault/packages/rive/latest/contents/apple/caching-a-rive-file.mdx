@@ -1,0 +1,81 @@
+---
+title: "Caching a Rive File"
+description: ""
+---
+
+import { Apple } from "/snippets/constants.mdx";
+import Overview from "/snippets/runtimes/caching/overview.mdx"
+
+<Overview />
+
+## Example Usage
+
+<Tabs>
+    <Tab title={Apple.currentRuntimeName}>
+        To cache a Rive file, you can create a strong reference to a `File` object. This `File` can then be reused to create `Rive` objects.
+
+        Artboards and state machines are unique when created using the `create` functions. This means that you can create a new `Rive` object with the same file, but with different (and unique) artboards and state machines.
+
+        ```swift
+        // An example builder class that creates a new Rive object with a cached file, creating new and unique artboards and state machines for each Rive object.
+        class RiveBuilder {
+            private let file: File
+
+            init(file: File) {
+                self.file = file
+            }
+
+            @MainActor
+            func createRive(artboard: String? = nil, stateMachine: String? = nil) async throws -> Rive {
+                let artboardInstance = try await file.createArtboard(artboard ?? .default)
+                let stateMachineInstance = try await artboardInstance.createStateMachine(stateMachine ?? .default)
+                return try await Rive(file: file, artboard: artboardInstance, stateMachine: stateMachineInstance)
+            }
+        }
+
+        // Load and cache the file once
+        let file = try await File(source: ..., worker: Worker())
+
+        // Create a builder with the cached file
+        let builder = RiveBuilder(file: file)
+
+        // Create multiple Rive objects with different configurations
+        // Each Rive object is unique, but they all share the same cached File
+        let rive1 = try await builder.createRive() // Creates a unique artboard and state machine
+        let rive2 = try await builder.createRive() // Creates a unique artboard and state machine, behaving separately from the first Rive object
+        let rive4 = try await builder.createRive(artboard: "MainArtboard", stateMachine: "Walking") // Creates a unique artboard and state machine, behaving separately from the first three Rive objects
+        let rive5 = try await builder.createRive(artboard: "MainArtboard", stateMachine: "Idle") // Creates a unique artboard and state machine, behaving separately from the first four Rive objects
+        ```
+    </Tab>
+    <Tab title={Apple.legacyRuntimeName}>
+        ```swift
+        // Cache a RiveFile somewhere to cache for reuse
+        let file = try! RiveFile(resource: "file", loadCdn: false)
+
+        // For example purposes, a type that reuses a single RiveFile
+        // when creating new view models for given state machines or artboards.
+        class ViewModelGenerator {
+            /// The RiveFile to reuse when generating new view models.
+            private let file: RiveFile
+
+            init(file: RiveFile) {
+                self.file = file
+            }
+
+            // Returns a new view model using a cached RiveFile.
+            // This means that the RiveFile will not have to be reparsed
+            // each time a view model is generated.
+            func viewModel(stateMachine: String?, artboard: String?) -> RiveViewModel {
+                // While one RiveFile can be cached and reused, each view model
+                // should have its own model as to not share state.
+                let model = RiveModel(riveFile: file)
+                return RiveViewModel(model, stateMachineName: stateMachine, artboardName: artboard)
+            }
+        }
+        ```
+
+        When using the `RiveViewModel(fileName:)` initializer, the Apple runtime does not cache file usage; that has to be handled manually. You may find that when reusing the same file, your memory usage increases (over time) as you create more view models. This is when you should consider caching the underlying file for reuse.
+
+        Reusing a single `RiveFile` (when applicable) will reduce the overall memory usage of your application. If your `.riv` can be reused across multiple views, where each view requires the same file but uses different artboards or state machines, consider caching the `RiveFile` before creating your view models. While one `RiveFile` can be cached, to ensure that each view is in its own state, you must create a unique `RiveModel` per `RiveViewModel` instance.
+    </Tab>
+</Tabs>

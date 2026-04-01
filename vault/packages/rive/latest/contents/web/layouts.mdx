@@ -1,0 +1,94 @@
+---
+title: "Layout"
+description: "Control how graphics are laid out within the canvas."
+---
+
+import { Demos } from "/snippets/demos.jsx";
+
+import FitMode from '/snippets/runtimes/layouts/fit-mode.mdx'
+import Alignment from "/snippets/runtimes/layouts/alignment.mdx"
+import Bounds from "/snippets/runtimes/layouts/bounds.mdx"
+import ApplyingFitMode from "/snippets/runtimes/layouts/applying-fit-mode.mdx"
+import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx"
+
+<Demos examples={["layouts"]} runtime="web"/>
+
+<FitMode />
+
+<Alignment />
+
+<Bounds />
+
+<ApplyingFitMode />
+
+Use the `Layout` object to configure `Fit` and `Alignment`. See [Fit](#the-fit-mode) and [Alignment](#alignment) for all enum options.
+
+  ```javascript
+
+// Fill the canvas, cropping Rive if necessary
+let layout = new rive.Layout({
+    fit: rive.Fit.Cover,
+});
+
+// Fit to the width and align to the top of the canvas
+layout = new rive.Layout({
+    fit: rive.Fit.FitWidth,
+    alignment: rive.Alignment.TopCenter,
+});
+
+// Constrain the Rive content to (minX, minY), (maxX, maxY) in the canvas
+layout = new rive.Layout({
+    fit: rive.Fit.Contain,
+    minX: 50,
+    minY: 50,
+    maxX: 100,
+    maxY: 100,
+});
+
+const riveInstance = new rive.Rive({
+    src: 'https://cdn.rive.app/animations/vehicles.riv',
+    canvas: document.getElementById('canvas'),
+    layout: layout,
+    autoplay: true
+});
+
+// Update the layout
+riveInstance.layout = new rive.Layout({ fit: rive.Fit.Fill });
+```
+
+<ResponsiveLayouts />
+
+**Steps**
+
+    1. Set `fit` to `Fit.Layout` - this will automatically scale and resize the artboard to match the canvas size when calling `resizeDrawingSurfaceToCanvas()`.
+    2. Optionally set `layoutScaleFactor` for manual control of the artboard size (scale factor).
+    3. Subscribe to `window.onresize` and call `resizeDrawingSurfaceToCanvas()` to adjust the artboard size as the canvas and window changes.
+    4. Subscribe to **device pixel ratio** changes and call `resizeDrawingSurfaceToCanvas()` to ensure the artboard updates correctly on various screen densities. For example, when dragging the window between multiple monitors with different device pixel ratios.
+
+```javascript
+  const rive = new Rive({
+    src: "your-rive-file.riv",
+    autoplay: true,
+    canvas: riveCanvas,
+    layout: new Layout({
+      fit: Fit.Layout,
+      // layoutScaleFactor: 2, // 2x scale of the layout, when using `Fit.Layout`. This allows you to resize the layout as needed.
+    }),
+    stateMachines: ["State Machine 1"],
+    onLoad: () => {
+      computeSize();
+    },
+  });
+
+  function computeSize() {
+    rive.resizeDrawingSurfaceToCanvas();
+  }
+
+  // Subscribe to window size changes and update call `resizeDrawingSurfaceToCanvas`
+  window.onresize = computeSize;
+
+  // Subscribe to devicePixelRatio changes and call `resizeDrawingSurfaceToCanvas`
+  window
+    .matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+    .addEventListener("change", computeSize);
+```

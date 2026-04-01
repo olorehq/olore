@@ -1,0 +1,84 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+
+<Overview />
+
+<ControllingInputs />
+
+### Examples
+
+- [Setting state machine inputs](https://codesandbox.io/p/sandbox/rive-state-machine-inputs-js-forked-s6gfjg)
+
+### Inputs
+
+The web runtime provides an `onLoad` callback that's run when the Rive file is loaded and ready for use. We use this callback to ensure that the state machine is instantiated before we query for inputs.
+
+```javascript
+<div id="button">
+    <canvas id="canvas" width="1000" height="500"></canvas>
+</div>
+<script src="https://unpkg.com/@rive-app/canvas@2.10.3"></script>
+<script>
+    const button = document.getElementById('button');
+
+    const r = new rive.Rive({
+        src: 'https://cdn.rive.app/animations/vehicles.riv',
+        canvas: document.getElementById('canvas'),
+        autoplay: true,
+        stateMachines: 'bumpy',
+        onLoad: (_) => {
+            // Get the inputs via the name of the state machine
+            const inputs = r.stateMachineInputs('bumpy');
+            // Find the input you want to set a value for, or trigger
+            const bumpTrigger = inputs.find(i => i.name === 'bump');
+            button.onclick = () => bumpTrigger.fire();
+        },
+    });
+</script>
+```
+We use the `stateMachineInputs` function on the Rive object to retrieve the inputs. Each input will have a name and type. There are three types:
+
+- `StateMachineInputType.Trigger` which has a `fire()` function
+- `StateMachineInputType.Number` which has a `value` number property where you can `get`/`set` the value
+- `StateMachineInputType.Boolean` which has a `value` boolean property where you can `get`/`set` the value
+
+```javascript
+const inputs = r.stateMachineInputs("bumpy");
+inputs.forEach((i) => {
+  const inputName = i.name;
+  const inputType = i.type;
+  switch (inputType) {
+    case rive.StateMachineInputType.Trigger:
+      i.fire();
+      break;
+    case rive.StateMachineInputType.Number:
+      i.value = 42;
+      break;
+    case rive.StateMachineInputType.Boolean:
+      i.value = true;
+      break;
+  }
+});
+```
+
+<NestedInputs />
+
+To set the **Volume** input for the above example:
+
+```javascript
+const rive = new Rive({...});
+...
+rive?.setNumberStateAtPath("volume", 80.0, "Volume Molecule/Volume Component");
+```
+
+**All options:**
+- `setNumberStateAtPath(inputName: string, value: number, path: string)`
+- `setBooleanStateAtPath(inputName: string, value: boolean, path: string)`
+- `fireStateAtPath(inputName: string, path: string)`

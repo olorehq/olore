@@ -1,0 +1,61 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+
+<Overview />
+
+<ControllingInputs />
+
+### Example
+
+- [Setting state machine inputs (React)](https://codesandbox.io/p/sandbox/rive-state-machine-inputs-react-forked-k6gglh)
+
+### Inputs
+
+The react runtime provides a `useStateMachineInput` hook to make the process of retrieving a state machine input much simpler than that of the basic web runtime.
+
+```javascript
+import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
+
+export default function Simple() {
+    const { rive, RiveComponent } = useRive({
+        src: "https://cdn.rive.app/animations/vehicles.riv",
+        stateMachines: "bumpy",
+        autoplay: true,
+    });
+
+    const bumpInput = useStateMachineInput(rive, "bumpy", "bump");
+
+    return (
+        <RiveComponent
+            style={{ height: "1000px" }}
+            onClick={() => bumpInput && bumpInput.fire()}
+        />
+    );
+}
+```
+
+<NestedInputs />
+
+To set the **Volume** input for the above example:
+
+```tsx
+const {rive, RiveComponent} = useRive({...});
+
+useEffect(() => {
+  if (rive) {
+    rive?.setNumberStateAtPath("volume", 80.0, "Volume Molecule/Volume Component");
+  }
+}, [rive]);
+```
+
+**All options:**
+- `setNumberStateAtPath(inputName: string, value: number, path: string)`
+- `setBooleanStateAtPath(inputName: string, value: boolean, path: string)`
+- `fireStateAtPath(inputName: string, path: string)`

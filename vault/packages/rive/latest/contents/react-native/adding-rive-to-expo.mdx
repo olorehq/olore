@@ -1,0 +1,263 @@
+---
+title: "Adding Rive to Expo"
+description: "Rive React Native Expo. "
+---
+
+To use Rive with Expo, you'll need to install the Rive React Native package.
+
+Because this package contains custom native code, it's not compatible with Expo Go. Instead, you'll need to use a development build, which gives you full access to native modules.
+
+<Note>
+  Development builds are the [recommended setup for production
+  apps](https://github.com/expo/fyi/blob/main/expo-go-usage.md).
+</Note>
+
+This guide will walk you through integrating Rive into your Expo project, including installing dependencies, configuring your build, and testing your graphics.
+
+## Initial Setup
+
+If you don’t already have a project, create a new Expo app:
+
+```bash
+npx create-expo-app MyRiveApp
+```
+
+Install the Expo development client:
+
+```bash
+npx expo install expo-dev-client
+```
+
+Then install the Rive package:
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    
+  ```bash
+  npx expo install @rive-app/react-native
+  ```
+
+  </Tab>
+  <Tab title="Legacy Runtime">
+
+```bash
+npx expo install rive-react-native
+```
+
+  </Tab>
+</Tabs>
+
+## Android - Expo SDK 53
+
+<Accordion title="Build failure with Expo SDK 53?">
+  Expo SDK 53 may fail to build on Android due to dependency version conflicts. The Rive Android SDK requires `compileSdkVersion` 36 and Android Gradle Plugin 8.9.1+, but Expo SDK 53 defaults to lower versions.
+
+  To fix this, install `expo-build-properties` and `expo-custom-agp`:
+
+  ```bash
+  npx expo install expo-build-properties expo-custom-agp
+  ```
+
+  Then update your `app.json` or `app.config.js`:
+
+  ```json
+  {
+    "expo": {
+      "plugins": [
+        ["expo-custom-agp", "8.9.2"],
+        [
+          "expo-build-properties",
+          {
+            "android": {
+              "compileSdkVersion": 36
+            }
+          }
+        ]
+      ]
+    }
+  }
+  ```
+
+  After updating, run `npx expo prebuild --clean` and rebuild your app.
+</Accordion>
+
+## iOS Minimum Version
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    The new runtime requires iOS **15.1** or later.
+
+If you’re using Expo SDK 52 or later, it already requires `15.1` or later.
+
+If you're using an older SDK, you’ll need to update your iOS deployment target manually or via configuration.
+
+### Option 1: Using `expo-build-properties` (Recommended)
+
+    [Continuous Native Generation (CNG)](https://docs.expo.dev/workflow/continuous-native-generation/) simplifies app maintenance and configuration by automatically generating your iOS and Android native projects using [Prebuild](https://docs.expo.dev/workflow/continuous-native-generation/#usage).
+
+    If you're using CNG, you can set the minimum iOS deployment target directly in your `app.json` or `app.config.js`:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ]
+  }
+}
+```
+
+### Option 2: Manual Configuration
+
+If you’re not using Prebuild, update the target directly in your `ios/Podfile`:
+
+```ruby
+platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+```
+
+  </Tab>
+  <Tab title="Legacy Runtime">
+    The legacy runtime requires iOS **14.0** or later.
+
+    If you're using Expo SDK 52 or later, you can skip this step as it has a higher default.
+
+    If you're using an older SDK, you'll need to update your iOS deployment target manually or via configuration.
+
+    ### Option 1: Using `expo-build-properties` (Recommended)
+
+    [Continuous Native Generation (CNG)](https://docs.expo.dev/workflow/continuous-native-generation/) simplifies app maintenance and configuration by automatically generating your iOS and Android native projects using [Prebuild](https://docs.expo.dev/workflow/continuous-native-generation/#usage).
+
+    If you're using CNG, you can set the minimum iOS deployment target directly in your `app.json` or `app.config.js`:
+
+    ```json
+    {
+      "expo": {
+        "plugins": [
+          [
+            "expo-build-properties",
+            {
+              "ios": {
+                "deploymentTarget": "14.0"
+              }
+            }
+          ]
+        ]
+      }
+    }
+    ```
+
+    ### Option 2: Manual Configuration
+
+    If you're not using Prebuild, update the target directly in your `ios/Podfile`:
+
+    ```ruby
+    platform :ios, podfile_properties['ios.deploymentTarget'] || '14.0'
+    ```
+
+  </Tab>
+</Tabs>
+
+## Creating a Development Build
+
+To run your app with the Rive runtime, you’ll need to create a development build.
+
+Since there are several ways to do this, refer to the [Expo development builds guide](https://docs.expo.dev/develop/development-builds/create-a-build/) to choose the method that best suits your needs.
+
+## Running Your App
+
+Once you've created a development build and installed it on your device or simulator, start your app with:
+
+```bash
+npx expo start
+```
+
+You can use the following component to test Rive:
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    ```tsx
+    import { View, ActivityIndicator, Text } from "react-native";
+    import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
+
+    export default function RiveDemo() {
+      const { riveFile, isLoading, error } = useRiveFile(
+        "https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+      );
+
+      if (isLoading) {
+        return (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="large" />
+          </View>
+        );
+      }
+
+      if (error || !riveFile) {
+        return (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text>Error loading Rive file: {error || "Unknown error"}</Text>
+          </View>
+        );
+      }
+
+      return (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <RiveView
+            file={riveFile}
+            artboardName="Avatar 1"
+            stateMachineName="avatar"
+            fit={Fit.Contain}
+            style={{ width: 400, height: 400 }}
+            autoPlay={true}
+          />
+        </View>
+      );
+    }
+    ```
+
+    <Note>
+      If you encounter errors loading the Rive file, make sure you're running in a development build and not Expo Go.
+    </Note>
+
+  </Tab>
+  <Tab title="Legacy Runtime">
+    ```js
+    import { View } from "react-native";
+    import Rive from "rive-react-native";
+
+    export default function RiveDemo() {
+      return (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Rive
+            url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+            artboardName="Avatar 1"
+            stateMachineName="avatar"
+            style={{ width: 400, height: 400 }}
+          />
+        </View>
+      );
+    }
+    ```
+
+    <Note>
+      If you encounter this error: `Invariant Violation: requireNativeComponent:
+      "RiveReactNativeView" was not found in the UIManager`, it usually means the
+      app is running in **Expo Go**. Press `s` in your terminal and select the
+      development build instead.
+    </Note>
+
+  </Tab>
+</Tabs>
+
+## Adding Local Assets
+
+The example above loads a `.riv` file from a remote URL.
+To use local `.riv` files, they must be bundled into your native build.
+See [Loading in Rive Files](/runtimes/react-native/loading-rive-files) for instructions on working with local assets.

@@ -1,0 +1,549 @@
+---
+title: "Flutter"
+description: "Flutter runtime for Rive."
+---
+
+import NoteOnFeatureSupport from "/snippets/runtimes/rendering-feature-support.mdx";
+import { Demos } from "/snippets/demos.jsx";
+
+<NoteOnFeatureSupport />
+
+## Overview
+
+This guide documents how to use the Rive Flutter runtime to easily integrate Rive graphics in your Flutter apps.
+
+<Note>
+  The latest version of Rive Flutter is currently published as a dev release
+  `0.14.0-dev.x`. This means that while the package is stable and ready for
+  production use, we are still actively developing new features and
+  improvements. We recommend using the latest dev version to take advantage of
+  the newest features and fixes.
+</Note>
+
+<Info>
+  Already using Rive Flutter? See our [Migration
+  Guide](/runtimes/flutter/migration-guide) for information on adopting the
+  latest `0.14.x` version.
+</Info>
+
+## Quick start
+
+See our [example app](https://github.com/rive-app/rive-flutter/tree/master/example).
+
+<Demos examples={["dataBindingQuickStart"]} runtime="flutter" />
+
+## Getting started
+
+Follow the steps below to integrate Rive into your Flutter apps.
+
+<Steps>
+  <Step title="Add the Rive package dependency">
+    Check out Rive's [pub.dev](https://pub.dev/packages/rive) page to get the latest version.
+
+    ```yaml
+    # pubspec.yaml
+    dependencies:
+      rive: ^0.14.0-dev.6 # or latest dev version
+    ```
+
+  </Step>
+  <Step title="Import the Rive package">
+    Import the Rive runtime library in the file you're looking to integrate Rive animations into.
+
+    ```dart
+    import 'package:rive/rive.dart';
+    ```
+
+    Consider doing a named import to avoid conflicts with other libraries:
+
+    ```dart
+    import 'package:rive/rive.dart' as rive;
+    ```
+
+  </Step>
+  <Step title="Initialize Rive">
+    <Info>
+      You're encouraged to call `await RiveNative.init()` at the start of your app, or before you use Rive. For example, in `main.dart`. This will automatically be called the first time you load a Rive file, but if you want to ensure Rive is loaded before showing your first graphic, call it manually.
+    </Info>
+    ```dart
+    import 'package:rive/rive.dart';
+
+    Future<void> main() async {
+      WidgetsFlutterBinding.ensureInitialized();
+      // Call init before using Rive.
+      await RiveNative.init();
+      runApp(const MyApp());
+    }
+    ```
+
+  </Step>
+  <Step title="Add a Rive widget">
+    There are several ways to render Rive graphics in Flutter. We recommend using the `RiveWidget`, and optionally the `RiveWidgetBuilder`, or `RivePanel`.
+
+    - `RiveWidget` is responsible for rendering the graphic and exposing common view configuration.
+    - `RiveWidgetBuilder` handles file loading, error states, and resource management automatically.
+    - `RivePanel` is a higher-level inherited widget that creates a shared texture to paint multiple `RiveWidget`s to. Only usable when using the Rive Renderer (`Factory.rive`). This can drastically improve performance when showing many Rive graphics at once by reducing the number of textures and avoiding WebGL context limitations on the web.
+
+    <Tabs>
+      <Tab title="Using RiveWidgetBuilder">
+        ```dart
+        class ExampleRiveBuilder extends StatefulWidget {
+          const ExampleRiveBuilder({super.key});
+
+          @override
+          State<ExampleRiveBuilder> createState() => _ExampleRiveBuilderState();
+        }
+
+        class _ExampleRiveBuilderState extends State<ExampleRiveBuilder> {
+          late final fileLoader = FileLoader.fromAsset("assets/vehicles.riv", riveFactory: Factory.rive);
+
+          @override
+          void dispose() {
+            fileLoader.dispose();
+            super.dispose();
+          }
+
+          @override
+          Widget build(BuildContext context) {
+            return RiveWidgetBuilder(
+              fileLoader: fileLoader,
+              builder: (context, state) => switch (state) {
+                RiveLoading() => const Center(child: CircularProgressIndicator()),
+                RiveFailed() => ErrorWidget.withDetails(
+                    message: state.error.toString(),
+                    error: FlutterError(state.error.toString()),
+                  ),
+                RiveLoaded() => RiveWidget(
+                    controller: state.controller,
+                    fit: Fit.cover,
+                  )
+              },
+            );
+          }
+        }
+        ```
+      </Tab>
+      <Tab title="Using RiveWidget directly">
+        ```dart
+        class ExampleBasic extends StatefulWidget {
+          const ExampleBasic({super.key});
+
+          @override
+          State<ExampleBasic> createState() => _ExampleBasicState();
+        }
+
+        class _ExampleBasicState extends State<ExampleBasic> {
+          late File file;
+          late RiveWidgetController controller;
+          bool isInitialized = false;
+
+          @override
+          void initState() {
+            super.initState();
+            initRive();
+          }
+
+          void initRive() async {
+            file = (await File.asset("assets/vehicles.riv", riveFactory: Factory.rive))!;
+            controller = RiveWidgetController(file);
+            setState(() => isInitialized = true);
+          }
+
+          @override
+          void dispose() {
+            file.dispose();
+            controller.dispose();
+            super.dispose();
+          }
+
+          @override
+          Widget build(BuildContext context) {
+            if (!isInitialized) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return RiveWidget(
+              controller: controller,
+              fit: Fit.cover,
+            );
+          }
+        }
+        ```
+      </Tab>
+      <Tab title="Using RivePanel">
+        Steps:
+
+        1. Wrap the `RiveWidget`s that should draw to the same texture with a single inherited `RivePanel`.
+        2. Set `useSharedTexture: true` in each `RiveWidget` that should draw to the shared texture.
+        3. (Optional) Set `drawOrder` in each `RiveWidget` to control the order they are drawn in. Lower numbers are drawn first.
+
+        ```dart
+         class ExampleRivePanel extends StatelessWidget {
+           const ExampleRivePanel({super.key});
+
+           @override
+           Widget build(BuildContext context) {
+             return const RivePanel(
+               backgroundColor: Colors.red,
+               child: ListViewExample(),
+             );
+           }
+        }
+        class ListViewExample extends StatefulWidget {
+          const ListViewExample({super.key});
+
+          @override
+          State<ListViewExample> createState() => _ListViewExampleState();
+        }
+
+        class _ListViewExampleState extends State<ListViewExample> {
+          late final fileLoader = FileLoader.fromAsset(
+            'assets/rating.riv',
+            riveFactory: Factory.rive,
+          );
+
+          @override
+          void dispose() {
+            fileLoader.dispose();
+            super.dispose();
+          }
+
+          @override
+          Widget build(BuildContext context) {
+            return ListView.builder(
+              itemCount: 10,
+              itemBuilder: (context, index) {
+                return MyRiveWidget(fileLoader: fileLoader);
+              },
+            );
+          }
+        }
+        class MyRiveWidget extends StatelessWidget {
+          const MyRiveWidget({super.key, required this.fileLoader});
+          final FileLoader fileLoader;
+
+          @override
+          Widget build(BuildContext context) {
+            return RiveWidgetBuilder(
+              fileLoader: fileLoader,
+              builder: (context, state) => switch (state) {
+                RiveLoading() => const Center(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                RiveFailed() => ErrorWidget.withDetails(
+                    message: state.error.toString(),
+                    error: FlutterError(state.error.toString()),
+                  ),
+                RiveLoaded() => RiveWidget(
+                    controller: state.controller,
+                    fit: Fit.contain,
+                    // Set this to true to draw to the nearest RivePanel
+                    useSharedTexture: true,
+                  )
+              },
+            );
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+  </Step>
+  <Step title="Loading from different sources">
+    **From Asset Bundle:**
+
+    Make sure you add the Rive files to your asset bundle and reference them in `pubspec.yaml`:
+
+    ```yaml
+    # pubspec.yaml
+    assets:
+        - assets/vehicles.riv
+    ```
+
+    ```dart
+    // Using FileLoader (with RiveWidgetBuilder)
+    final fileLoader = FileLoader.fromAsset("assets/vehicles.riv", riveFactory: Factory.rive);
+
+    // Using File directly
+    final file = await File.asset("assets/vehicles.riv", riveFactory: Factory.rive);
+    ```
+
+    **From URL:**
+
+    ```dart
+    // Using FileLoader (with RiveWidgetBuilder)
+    final fileLoader = FileLoader.fromUrl("https://cdn.rive.app/animations/vehicles.riv", riveFactory: Factory.rive);
+
+    // Using File directly
+    final file = await File.url("https://cdn.rive.app/animations/vehicles.riv", riveFactory: Factory.rive);
+    ```
+
+    **From Rive File:**
+
+    ```dart
+    // Using FileLoader (with RiveWidgetBuilder)
+    final fileLoader = FileLoader.fromFile(existingFile, riveFactory: Factory.rive);
+    ```
+
+  </Step>
+</Steps>
+
+## Key components
+
+### `RiveWidget`
+
+`RiveWidget` is responsible for displaying Rive graphics.
+
+**Properties:**
+
+- `controller` [**required**]: The `RiveWidgetController` that manages the Rive graphic
+- `fit`: How the artboard should fit within the widget (default: `contain`)
+- `alignment`: How the artboard should be aligned within the widget (default: `center`)
+- `hitTestBehavior`: How pointer events should be handled (default: `opaque`)
+- `cursor`: The cursor to display when hovering over the widget (default: `defer`)
+- `layoutScaleFactor`: Scale factor when using `Fit.layout` (default: `1.0`)
+- `useSharedTexture`: Whether to use a shared texture ([RivePanel](#rivepanel)) to draw the artboard to. Defaults to false. When set to true, it draws to nearest inherited widget of type [RivePanel](#rivepanel).
+- `drawOrder`: The draw order of the artboard. This is only used when `useSharedTexture` is true when drawing to a [RivePanel](#rivepanel), and using `Factory.rive`. Defaults to 1.
+
+### `RiveWidgetBuilder`
+
+`RiveWidgetBuilder` is a higher-level widget that handles file loading, error states, and resource management automatically.
+
+**Properties:**
+
+- `fileLoader` [**required**]: The `FileLoader` for loading the Rive file
+- `builder` [**required**]: Function that builds the widget based on state
+- `artboardSelector`: Which artboard to use (default: `ArtboardDefault()`)
+- `stateMachineSelector`: Which state machine to use (default: `StateMachineDefault()`)
+- `dataBind`: How to bind view model data (optional)
+- `controller`: Optional custom controller builder
+- `onLoaded`: Callback when Rive state is loaded
+- `onFailed`: Callback when Rive state fails to load
+
+### `RivePanel`
+
+`RivePanel` is a widget that creates a shared texture to paint multiple `RiveWidget` s to. This is useful when using `Factory.rive` and can significantly improve performance under certain conditions.
+
+**When to use RivePanel:**
+
+- When displaying multiple `RiveWidget`s in your app and they can be drawn to the same texture
+- When you want to programatically composit a scene that includes multiple Rive graphics (from multiple Rive files/artboards)
+- When using `Factory.rive` (will report errors with `Factory.flutter`) and want to improve performance
+- When you want to reduce the number of textures being drawn to
+- When targeting web platforms to avoid WebGL context limitations through `Factory.rive`
+
+**Performance considerations:**
+
+- **Benefits**: Drawing multiple `RiveWidget`s to the same texture can drastically improve performance by reducing texture allocation overhead
+- **Memory cost**: There is a memory cost in allocating a larger texture, though this may be offset by the reduced number of individual textures
+- **Rendering limitations**: Drawing to the same surface means you cannot interleave Rive drawing commands with Flutter's drawing commands
+- **Benchmarking recommended**: Performance characteristics vary by use case - what works for one scenario may not work for another
+
+**Usage:**
+
+```dart
+RivePanel(
+  backgroundColor: Colors.red, // Optional background color
+  child: YourWidgetWithMultipleRiveWidgets(),
+)
+```
+
+**Important notes:**
+
+- Only works with `Factory.rive` - has no effect with `Factory.flutter`
+- Set `useSharedTexture: true` in your `RiveWidget`s to enable shared texture rendering
+- If you need to interleave Rive content with Flutter content, consider using separate `RivePanel`s or `Factory.flutter`
+- For complex scenarios, benchmark both approaches to determine the best performance strategy
+
+### `RiveWidgetController`
+
+`RiveWidgetController` manages the graphic.
+
+**Creating a Controller:**
+
+```dart
+// Using default artboard and state machine
+final controller = RiveWidgetController(file);
+
+// Specifying artboard and state machine
+final controller = RiveWidgetController(
+  file,
+  artboardSelector: ArtboardSelector.byName("MyArtboard"),
+  stateMachineSelector: StateMachineSelector.byName("MyStateMachine"),
+);
+```
+
+**Data Binding:**
+
+```dart
+// Auto-bind with default view model instance
+final viewModelInstance = controller.dataBind(DataBind.auto());
+
+// Bind by specific instance
+final viewModelInstance = controller.dataBind(DataBind.byInstance(myInstance));
+
+// Bind by name
+final viewModelInstance = controller.dataBind(DataBind.byName("MyViewModel"));
+```
+
+### File loading
+
+The `FileLoader` class provides a unified way to load Rive files from different sources.
+
+**Loading from Assets:**
+
+```dart
+final fileLoader = FileLoader.fromAsset(
+  "assets/vehicles.riv",
+  riveFactory: Factory.rive,
+);
+```
+
+**Loading from URL:**
+
+```dart
+final fileLoader = FileLoader.fromUrl(
+  "https://example.com/animation.riv",
+  riveFactory: Factory.rive,
+);
+```
+
+**Loading from Existing File:**
+
+```dart
+final fileLoader = FileLoader.fromFile(
+  existingFile,
+  riveFactory: Factory.rive,
+);
+```
+
+Or you can load files directly using the `File` class:
+
+```dart
+// Load from asset
+final file = await File.asset("assets/vehicles.riv", riveFactory: Factory.rive);
+// Load from URL
+final file = await File.url("https://example.com/animation.riv", riveFactory:
+Factory.rive);
+// Load from path
+final file = await File.path("/path/to/animation.riv", riveFactory: Factory.rive);
+// Load from bytes
+final file = await File.decode(bytes, riveFactory: Factory.rive);
+```
+
+## Error handling
+
+The Rive Flutter package provides specific exception types for different error scenarios:
+
+- `RiveFileLoaderException`: Thrown when file loading fails
+- `RiveArtboardException`: Thrown when artboard selection fails
+- `RiveStateMachineException`: Thrown when state machine selection fails
+- `RiveDataBindException`: Thrown when data binding fails
+
+## Resource management
+
+### Manual resource management (`RiveWidget`)
+
+When using `RiveWidget` directly, you are responsible for managing all resources:
+
+```dart
+@override
+void dispose() {
+  // Dispose resources in reverse order of creation
+  viewModelInstance.dispose();
+  controller.dispose();
+  file.dispose();
+  super.dispose();
+}
+```
+
+### Automatic resource management (`RiveWidgetBuilder`)
+
+When using `RiveWidgetBuilder`, the widget automatically manages most resources. You only need to dispose the file loader:
+
+```dart
+@override
+void dispose() {
+  fileLoader.dispose();
+  super.dispose();
+}
+```
+
+<Note>
+  Because the resources are managed by the `RiveWidgetBuilder`, you will not be able to access the `RiveWidgetController` (and other state) after the widget is disposed. If you need to access the controller after the widget is disposed, consider creating the file and controller yourself.
+
+The exception to this is the `FileLoader`, which you control. This loader can be reused across multiple `RiveWidgetBuilder` instances. The underlying `File` will only be loaded once. The `File` will be disposed when the `FileLoader` is disposed.
+
+</Note>
+
+## Specifying a renderer
+
+When creating a Rive `File` or `FileLoader`, you need to specify a factory to use:
+
+- `Factory.rive` for the Rive renderer
+- `Factory.flutter` for the Flutter renderer (Skia or Impeller)
+
+You can use different renderers for different graphics in your app.
+
+Some considerations when choosing a renderer:
+
+- If you plan on showing many Rive graphics that are all drawing to different Rive widgets consider using a [RivePanel](#rivepanel) with `Factory.rive` to draw multiple graphics to the same texture to reduce the overhead of allocating native render targets and textures. Or make use of `Factory.flutter`.
+- If you are showing a complex graphic, consider using `Factory.rive` to take advantage of the Rive renderer's optimizations.
+- Vector Feathering is only available with `Factory.rive`, so if you need that feature, use the Rive renderer.
+
+For more information see [Choosing a Renderer](/runtimes/choose-a-renderer/).
+
+<Warning>
+  The Rive Renderer is not yet supported on Linux through Flutter. On Linux, it
+  automatically falls back to `Factory.flutter`.
+</Warning>
+
+### Note on Flutter Rendering
+
+[Impeller](https://docs.flutter.dev/perf/impeller) is replacing [Skia](https://skia.org/) to become the default renderer for all platforms. As such, there is a possibility of rendering and [performance](https://github.com/flutter/flutter/issues/134432) discrepancies when using the Rive Flutter runtime with platforms that use the Impeller renderer that may not have surfaced before. If you encounter any visual or performance errors at runtime compared to expected behavior in the Rive editor, we recommend trying the following steps to triage:
+
+1. Try running the Flutter app with the `--no-enable-impeller` flag to use the Skia renderer. If the visual discrepancy does not show when using Skia, it may be a rendering bug on Impeller. However, before raising a bug with the Flutter team, try the second point below👇
+
+```bash
+flutter run --no-enable-impeller
+```
+
+2. Try running the Flutter app on the latest `master` channel. It is possible that visual bugs may be resolved on the latest Flutter commits, but not yet released in the `beta` or `stable` channel.
+3. If you are still seeing visual discrepancies with just the Impeller renderer on the latest master branch, we recommend raising a detailed issue to the [Flutter](https://github.com/flutter/flutter) Github repo with a reproducible example, and other relevant details that can help the team debug any possible issues that may be present.
+
+## Troubleshooting
+
+If you encounter issues with Rive in Flutter, consider the following:
+
+- Ensure you have called `await RiveNative.init()` before using any Rive features.
+- Check the console for any error messages related to Rive.
+- Make sure your Rive files are correctly referenced in `pubspec.yaml` and exist in the specified paths.
+- If using `RiveWidgetBuilder`, ensure you handle all possible states (loading, loaded, failed) in the builder function.
+
+### Build errors
+
+If you encounter build errors related to Rive, ensure that:
+
+- You have the correct version of the Rive package in your `pubspec.yaml`.
+- You have run `flutter pub get` to fetch the latest dependencies.
+- You have reviewed the [Flutter FAQ](/runtimes/flutter/faq) for common issues and questions.
+
+If you're still having issues, please see the [Troubleshooting section](/runtimes/flutter/rive-native#troubleshooting) in the Rive Native documentation.
+
+## Manually building Rive native libraries
+
+Rive automatically downloads the native libraries for you as part of the `rive_native` plugin.
+
+However, if you need to manually build the native libraries, see the [build section](/runtimes/flutter/rive-native#building-rive-native) in the Rive Native documentation.
+
+## Resources
+
+Rive Flutter:
+
+- [GitHub](https://github.com/rive-app/rive-flutter)
+- [pub.dev](https://pub.dev/packages/rive)
+- [Example app](https://github.com/rive-app/rive-flutter/tree/master/example/)
+
+Rive Native:
+
+- [Rive Native overview](/runtimes/flutter/rive-native)
+- [pub.dev](https://pub.dev/packages/rive_native)

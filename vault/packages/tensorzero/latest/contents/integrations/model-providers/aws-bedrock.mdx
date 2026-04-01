@@ -1,0 +1,217 @@
+---
+title: Getting Started with AWS Bedrock
+sidebarTitle: AWS Bedrock
+description: "Learn how to use TensorZero with AWS Bedrock LLMs: open-source gateway, observability, optimization, evaluations, and experimentation."
+---
+
+This guide shows how to set up a minimal deployment to use the TensorZero Gateway with the AWS Bedrock API.
+
+## Setup
+
+For this minimal setup, you'll need just two files in your project directory:
+
+```
+- config/
+  - tensorzero.toml
+- docker-compose.yml
+```
+
+<Tip>
+
+You can also find the complete code for this example on [GitHub](https://github.com/tensorzero/tensorzero/tree/main/examples/guides/providers/aws-bedrock).
+
+</Tip>
+
+For production deployments, see our [Deployment Guide](/deployment/tensorzero-gateway/).
+
+### Configuration
+
+Create a minimal configuration file that defines a model and a simple chat function:
+
+```toml title="config/tensorzero.toml"
+[models.claude_haiku_4_5]
+routing = ["aws_bedrock"]
+
+[models.claude_haiku_4_5.providers.aws_bedrock]
+type = "aws_bedrock"
+model_id = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+region = "us-east-1"
+
+[functions.my_function_name]
+type = "chat"
+
+[functions.my_function_name.variants.my_variant_name]
+type = "chat_completion"
+model = "claude_haiku_4_5"
+```
+
+See the [list of available models on AWS Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html).
+
+<Tip>
+
+Many AWS Bedrock models are only available through cross-region inference profiles.
+For those models, the `model_id` requires special prefix (e.g. the `us.` prefix in `us.anthropic.claude-haiku-4-5-20251001-v1:0`).
+See the [AWS documentation on inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html).
+
+</Tip>
+
+See the [Configuration Reference](/gateway/configuration-reference/) for optional fields (e.g. overriding the `region`).
+
+### Credentials
+
+You must make sure that the gateway has the necessary permissions to access AWS Bedrock.
+TensorZero supports many authentication methods for AWS Bedrock.
+
+TensorZero will attempt the following methods in order:
+
+1. Explicit `api_key` in your configuration (bearer auth)
+2. Explicit IAM credentials (`access_key_id`, `secret_access_key`, optionally `session_token`) in your configuration (SigV4)
+3. `AWS_BEARER_TOKEN_BEDROCK` environment variable (bearer auth)
+4. AWS SDK credential chain (SigV4)
+
+You can also provide credentials dynamically at inference time using the `dynamic::` prefix (e.g. `access_key_id = "dynamic::aws_access_key_id"`).
+See the [Credential Management](/operations/manage-credentials/) guide and [Configuration Reference](/gateway/configuration-reference/) for more details on authentication options.
+
+### AWS Region
+
+You can configure an explicit AWS region (e.g. `region = "us-east-1"`), delegate region selection to the AWS SDK (`region = "sdk"`), or specify the region dynamically at inference time (`region = "dynamic::xxx"`).
+
+See the [Configuration Reference](/gateway/configuration-reference/) for more details.
+
+### Deployment (Docker Compose)
+
+Create a minimal Docker Compose configuration:
+
+```yaml title="docker-compose.yml"
+# This is a simplified example for learning purposes. Do not use this in production.
+# For production-ready deployments, see: https://www.tensorzero.com/docs/gateway/deployment
+
+services:
+  gateway:
+    image: tensorzero/gateway
+    volumes:
+      - ./config:/app/config:ro
+    command: --config-file /app/config/tensorzero.toml
+    environment:
+      # AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:?Environment variable AWS_BEARER_TOKEN_BEDROCK must be set.}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Environment variable AWS_ACCESS_KEY_ID must be set.}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Environment variable AWS_SECRET_ACCESS_KEY must be set.}
+      # AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:?Environment variable AWS_SESSION_TOKEN must be set.}
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+Make sure to configure the relevant environment variables (if any) for your AWS setup.
+
+You can start the gateway with `docker compose up`.
+
+## Inference
+
+Make an inference request to the gateway:
+
+```bash
+curl -X POST http://localhost:3000/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tensorzero::function_name::my_function_name",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of Japan?"
+      }
+    ]
+  }'
+```
+
+## Enable AWS Bedrock's prompt caching capability
+
+You can enable [AWS Bedrock's prompt caching capability](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html) for supported models with TensorZero's `extra_body`.
+
+For example, to enable caching on your system prompt:
+
+```bash {15-22}
+curl -X POST "http://localhost:3000/openai/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tensorzero::model_name::claude_haiku_4_5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "... very long prompt ..."
+      },
+      {
+        "role": "user",
+        "content": "Write a haiku about TensorZero."
+      }
+    ],
+    "tensorzero::extra_body": [
+        {
+            "pointer": "/system/-",
+            "value": {
+                "cachePoint": {"type": "default"}
+            }
+        }
+    ]
+  }'
+```
+
+<Tip>
+
+The `/abc/-` notation appends a value to the `abc` array.
+
+</Tip>
+
+Similarly, to enable caching on a message:
+
+```bash {17}
+curl -X POST "http://localhost:3000/openai/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tensorzero::model_name::claude_haiku_4_5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "... very long prompt ..."
+      },
+      {
+        "role": "user",
+        "content": "Write a haiku about TensorZero."
+      }
+    ],
+    "tensorzero::extra_body": [
+        {
+            "pointer": "/messages/0/content/-",
+            "value": {
+                "cachePoint": {"type": "default"}
+            }
+        }
+    ]
+  }'
+```
+
+<Tip>
+
+You can also specify `extra_body` in the [configuration](/gateway/configuration-reference).
+See the [API Reference](/gateway/api-reference/inference-openai-compatible) for more information.
+
+</Tip>
+
+<Tip>
+
+You can retrieve prompt caching usage information with `tensorzero::include_raw_usage`.
+See the [API Reference](/gateway/api-reference/inference-openai-compatible) for more information.
+
+</Tip>
+
+## Other Features
+
+See [Extend TensorZero](/operations/extend-tensorzero) for information about Anthropic Computer Use and other beta features.
+
+<Note>
+
+TensorZero integrates with AWS Bedrock's Converse API.
+To use `extra_body` with AWS Bedrock, the JSON Pointer should match the Converse API specification.
+
+</Note>

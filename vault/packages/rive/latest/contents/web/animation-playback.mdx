@@ -1,0 +1,85 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+```javascript
+// Play the idle animation
+new rive.Rive({
+    src: 'https://cdn.rive.app/animations/vehicles.riv',
+    canvas: document.getElementById('canvas'),
+    animations: 'idle',
+    autoplay: true
+});
+```
+
+<ControllingPlayback />
+
+#### Invoking Playback Controls
+
+With the web runtime, you can provide callback functions to receive notification when certain animation events have occurred:
+
+- `onLoad` when a rive file has been loaded and initialized; it's now ready for playback
+- `onPlay` when one or more animations play; provides a list of animations
+- `onPause` when one or more animations pause; provides a list of animations
+- `onStop` when one or more animations are stopped; provides a list of animations
+- `onLoop` when an animation loops; provides the animation name
+
+See the following Codesandbox link to try out the below code: [https://codesandbox.io/p/sandbox/adoring-sea-n7m59f](https://codesandbox.io/p/sandbox/adoring-sea-n7m59f)
+
+```javascript
+const idleButton = document.getElementById("idle");
+const wipersButton = document.getElementById("wipers");
+const loopDiv = document.getElementById("loop");
+
+const truck = new rive.Rive({
+  src: "https://cdn.rive.app/animations/vehicles.riv",
+  artboard: "Jeep",
+  canvas: document.getElementById("canvas"),
+  layout: new rive.Layout({ fit: "fill" }),
+  // Listen for play events to update button text
+  onPlay: (event) => {
+    const names = event.data;
+    names.forEach((name) => {
+      if (name === "idle") {
+        idleButton.innerHTML = "Stop Truck";
+      } else if (name === "windshield_wipers") {
+        wipersButton.innerHTML = "Stop Wipers";
+      }
+    });
+  },
+  // Listen for pause events to update button text
+  onPause: (event) => {
+    const names = event.data;
+    names.forEach((name) => {
+      if (name === "idle") {
+        idleButton.innerHTML = "Start Truck";
+      } else if (name === "windshield_wipers") {
+        wipersButton.innerHTML = "Start Wipers";
+      }
+    });
+  },
+  onLoop: (event) => {
+    loopDiv.innerHTML = `Looped Animation: ${event.data.animation}`;
+  }
+});
+
+idleButton.onclick = (_) =>
+  truck.playingAnimationNames.includes("idle")
+    ? truck.pause("idle")
+    : truck.play("idle");
+
+wipersButton.onclick = (_) =>
+  truck.playingAnimationNames.includes("windshield_wipers")
+    ? truck.pause("windshield_wipers")
+    : truck.play("windshield_wipers");
+```

@@ -1,0 +1,102 @@
+---
+title: "Caching a Rive File"
+description: ""
+---
+
+import Overview from "/snippets/runtimes/caching/overview.mdx"
+
+<Overview />
+
+## Example Usage
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+        In the new React Native runtime, you always need to load and manage the lifetime of a `RiveFile` object that is passed to `RiveView`. The `useRiveFile` hook handles loading, and you can reuse the same `RiveFile` across multiple `RiveView` components to cache it in memory.
+
+        Here's an example showing how to cache a Rive file and reuse it across multiple components:
+
+        ```tsx Reuse RiveFile example expandable
+        import { useState } from 'react';
+        import { View, ActivityIndicator, Text } from 'react-native';
+        import {
+            RiveView,
+            useRiveFile,
+            Fit,
+            type RiveFile,
+        } from '@rive-app/react-native';
+
+        // Custom component to display a Rive animation
+        const RiveExample = ({ riveFile }: { riveFile: RiveFile }) => {
+            return (
+            <RiveView
+                file={riveFile}
+                fit={Fit.Contain}
+                autoPlay={true}
+                style={{ width: 200, height: 200 }}
+            />
+            );
+        };
+
+        export default function CacheExample() {
+            // Load the Rive file once using useRiveFile
+            const { riveFile, isLoading, error } = useRiveFile(
+            require('../../assets/rive/rating.riv')
+            );
+
+            const [instanceCount] = useState(5); // Number of RiveExample components to render
+
+            if (isLoading) {
+            return <ActivityIndicator size="large" />;
+            }
+
+            if (error || !riveFile) {
+            return <Text>Failed to load Rive file: {error || 'Unknown error'}</Text>;
+            }
+
+            // Each RiveExample component uses the same RiveFile we loaded earlier,
+            // so it is only fetched and initialized once
+            return (
+            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
+                {Array.from({ length: instanceCount }, (_, index) => (
+                <RiveExample key={`rive-instance-${index}`} riveFile={riveFile} />
+                ))}
+            </View>
+            );
+        }
+        ```
+
+        <Tip>
+            To optimize memory usage, reuse the same `RiveFile` object across multiple `RiveView` instances if they use the same `.riv` file. This ensures the file is loaded only once and shared in memory.
+        </Tip>
+
+        #### Managing State
+
+        How you keep the `RiveFile` alive and share it with components depends on your state management approach:
+
+        - **Global access**: Load the file at the app level or in a context provider, and expose it using React Context or a state management library like Redux or Zustand.
+        - **Component-level**: If the file is only needed in a specific part of your app, load it in a parent component and pass it down as props.
+        - **Custom hook**: Create a custom hook that manages the `RiveFile` lifecycle and provides it to consuming components.
+
+        #### Memory Management
+
+        The `useRiveFile` hook automatically manages the lifecycle of the `RiveFile` object. When the component unmounts or the input changes, the hook will dispose of the previous file and load a new one if needed. This gives you automatic memory management without manual cleanup.
+
+        #### Network Assets
+
+        To load a Rive file from a remote URL, pass the URL string to `useRiveFile`:
+
+        ```tsx
+        const { riveFile, isLoading, error } = useRiveFile(
+            'https://cdn.rive.app/animations/vehicles.riv'
+        );
+        ```
+
+        For network assets, caching the file in memory avoids repeated downloads and unnecessary decoding. The `useRiveFile` hook handles this automatically as long as you reuse the same `riveFile` object.
+
+        See [Loading Rive Files](/runtimes/react-native/loading-rive-files) for more information on different loading methods.
+
+    </Tab>
+    <Tab title="Legacy Runtime">
+        Not supported
+    </Tab>
+</Tabs>

@@ -1,0 +1,232 @@
+---
+title: "CLI Reference"
+description: Learn how to use the TensorZero Evaluations CLI.
+---
+
+TensorZero Evaluations is available both through a command-line interface (CLI) tool and through the TensorZero UI.
+
+## Usage
+
+We provide a `tensorzero/evaluations` Docker image for easy usage.
+
+We strongly recommend using TensorZero Evaluations CLI with Docker Compose to keep things simple.
+
+```yaml title="docker-compose.yml"
+services:
+  evaluations:
+    profiles: [evaluations] # this service won't run by default with `docker compose up`
+    image: tensorzero/evaluations
+    volumes:
+      - ./config:/app/config:ro
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Environment variable OPENAI_API_KEY must be set.}
+      # ... and any other relevant API credentials ...
+      TENSORZERO_POSTGRES_URL: postgres://postgres:postgres@postgres:5432/tensorzero
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+```
+
+```bash
+docker compose run --rm evaluations \
+    --function-name write_haiku \
+    --evaluator-names valid_haiku,exact_match \
+    --dataset-name haiku_dataset \
+    --variant-name gpt_4o \
+    --concurrency 5
+```
+
+<Accordion title="Building from Source">
+
+You can build the TensorZero Evaluations CLI from source if necessary. See our [GitHub repository](https://github.com/tensorzero/tensorzero/tree/main/crates/evaluations) for instructions.
+
+</Accordion>
+
+### Inference Caching
+
+TensorZero Evaluations uses [Inference Caching](/gateway/guides/inference-caching/) to improve inference speed and cost.
+
+By default, it will read from and write to the inference cache.
+Soon, you'll be able to customize this behavior.
+
+### Environment Variables
+
+#### Model Provider Credentials
+
+- **Example:** `OPENAI_API_KEY=sk-...`
+- **Required:** no
+
+If you're using an external TensorZero Gateway (see `--gateway-url` flag below), you don't need to provide these credentials to the evaluations tool.
+
+If you're using a built-in gateway (no `--gateway-url` flag), you must provide same credentials the gateway would use.
+See [Integrations](/integrations/model-providers) for more information.
+
+#### `TENSORZERO_CLICKHOUSE_URL`
+
+- **Example:** `TENSORZERO_CLICKHOUSE_URL=http://chuser:chpassword@localhost:8123/database_name`
+- **Required:** either ClickHouse or Postgres must be available
+
+This environment variable specifies the URL of your ClickHouse database.
+
+#### `TENSORZERO_POSTGRES_URL`
+
+- **Example:** `TENSORZERO_POSTGRES_URL="postgres://myuser:mypass@localhost:5432/mydatabase"`
+- **Required:** either ClickHouse or Postgres must be available
+
+This environment variable specifies the URL of your Postgres database.
+
+### CLI Flags
+
+#### `--adaptive-stopping-precision EVALUATOR=PRECISION[,...]`
+
+- **Example:** `--adaptive-stopping-precision exact_match=0.13,llm_judge=0.16`
+- **Required:** no (default: none)
+
+This flag enables adaptive stopping for specified evaluators by setting per-evaluator precision thresholds.
+An evaluator stops when both sides of its 95% confidence interval are within the threshold of its mean value.
+
+You can specify multiple evaluators by separating them with commas.
+Each evaluator's precision threshold should be a positive number.
+
+If adaptive stopping is enabled for all evaluators, then the evaluation will stop once all evaluators have met their targets or all datapoints have been evaluated.
+
+#### `--concurrency N` (`-c`)
+
+- **Example:** `--concurrency 5`
+- **Required:** no (default: `1`)
+
+This flag specifies the maximum number of concurrent TensorZero inference requests during evaluation.
+
+#### `--config-file PATH`
+
+- **Example:** `--config-file /path/to/tensorzero.toml`
+- **Required:** no (default: `./config/tensorzero.toml`)
+
+This flag specifies the path to the TensorZero configuration file.
+You should use the same configuration file for your entire project.
+
+#### `--cutoffs EVALUATOR=CUTOFF[,...]`
+
+- **Example:** `--cutoffs exact_match=0.95,llm_judge=0.8`
+- **Required:** no (default: none)
+
+Sets a per-evaluator threshold at which the test is passing.
+
+This can be useful for applications where the evaluations are run as an automated test.
+If the average value of this evaluator does not meet the cutoff, the evaluations binary will return a nonzero status code.
+
+- For evaluators with `optimize = "max"`, runs fail when `mean < cutoff`.
+- For evaluators with `optimize = "min"`, runs fail when `mean > cutoff`.
+
+The `cutoff` field in evaluator config is deprecated. Prefer using this CLI `--cutoffs` flag instead.
+If both evaluator-config `cutoff` and CLI `--cutoffs` are provided for the same evaluator, the CLI value is used.
+
+#### `--datapoint-ids ID[,ID,...]`
+
+- **Example:** `--datapoint-ids 01957bbb-44a8-7490-bfe7-32f8ed2fc797,01957bbb-44a8-7490-bfe7-32f8ed2fc798`
+- **Required:** Either `--dataset-name` or `--datapoint-ids` must be provided (but not both)
+
+This flag allows you to specify individual datapoint IDs to evaluate.
+Multiple IDs should be separated by commas.
+
+Use this flag when you want to evaluate a specific subset of datapoints rather than an entire dataset.
+
+<Note>
+  This flag is mutually exclusive with `--dataset-name` and `--max-datapoints`.
+  You must provide either `--dataset-name` or `--datapoint-ids`, but not both.
+</Note>
+
+#### `--dataset-name NAME` (`-d`)
+
+- **Example:** `--dataset-name my_dataset`
+- **Required:** Either `--dataset-name` or `--datapoint-ids` must be provided (but not both)
+
+This flag specifies the dataset to use for evaluation.
+The dataset should be stored in your database.
+
+<Note>
+  This flag is mutually exclusive with `--datapoint-ids`. You must provide
+  either `--dataset-name` or `--datapoint-ids`, but not both.
+</Note>
+
+#### `--function-name NAME`
+
+- **Example:** `--function-name my_function`
+- **Required:** yes
+
+This flag specifies the name of the function to evaluate.
+The function should be defined in your TensorZero configuration file.
+
+#### `--evaluator-names NAME[,NAME,...]`
+
+- **Example:** `--evaluator-names exact_match,valid_haiku`
+- **Required:** yes
+
+This flag specifies which evaluators to run, as a comma-separated list.
+The evaluators should be defined under the function's configuration in your TensorZero configuration file.
+
+#### `--format FORMAT` (`-f`)
+
+- **Options:** `pretty`, `jsonl`
+- **Example:** `--format jsonl`
+- **Required:** no (default: `pretty`)
+
+This flag specifies the output format for the evaluation CLI tool.
+
+You can use the `jsonl` format if you want to programatically process the evaluation results.
+
+#### `--gateway-url URL`
+
+- **Example:** `--gateway-url http://localhost:3000`
+- **Required:** no (default: none)
+
+If you provide this flag, the evaluations tool will use an external TensorZero Gateway for inference requests.
+
+If you don't provide this flag, the evaluations tool will use a built-in TensorZero gateway.
+In this case, the evaluations tool will require the same credentials the gateway would use.
+See [Integrations](/integrations/model-providers) for more information.
+
+#### `--inference-cache MODE`
+
+- **Options:** `on`, `read_only`, `write_only`, `off`
+- **Example:** `--inference-cache read_only`
+- **Required:** no (default: `on`)
+
+This flag specifies the behavior of the inference cache.
+See [Inference Caching](/gateway/guides/inference-caching/) for more information.
+
+#### `--max-datapoints N`
+
+- **Example:** `--max-datapoints 100`
+- **Required:** no
+
+This flag specifies the maximum number of datapoints to evaluate from the dataset.
+
+<Note>
+  This flag can only be used with `--dataset-name`. It cannot be used with
+  `--datapoint-ids`.
+</Note>
+
+#### `--variant-name NAME` (`-v`)
+
+- **Example:** `--variant-name gpt_4o`
+- **Required:** yes
+
+This flag specifies the variant to evaluate.
+The variant name should be present in your TensorZero configuration file.
+
+### Exit Status
+
+The evaluations process exits with a status code of `0` if the evaluation was successful, and a status code of `1` if the evaluation failed.
+
+If you pass `--cutoffs`, the evaluation will fail if any evaluator violates its cutoff threshold.
+
+<Tip>
+
+The exit status code is helpful for integrating TensorZero Evaluations into your CI/CD pipeline.
+
+You can define sanity checks for your variants with `--cutoffs` to detect performance regressions early before shipping to production.
+
+</Tip>

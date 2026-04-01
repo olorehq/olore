@@ -1,0 +1,74 @@
+---
+title: "Canvas vs WebGL"
+description: "Choose between `@rive-app/webgl2` and `@rive-app/canvas`, with guidance on performance, package size, and when to use canvas-lite."
+---
+
+### Choose a runtime
+
+For web, start by choosing one of these two packages:
+
+- [`@rive-app/webgl2`](https://www.npmjs.com/package/@rive-app/webgl2)
+- [`@rive-app/canvas`](https://www.npmjs.com/package/@rive-app/canvas)
+
+They share the same high-level API, so switching packages does not require changing how you create a `new Rive({...})` instance. The key differences are the renderer and package size; read the sections below to decide what is best for your use case, and compare package sizes on [Runtime Sizes](/runtimes/runtime-sizes/).
+
+### `@rive-app/webgl2` (recommended)
+
+Use `@rive-app/webgl2` if you want the best rendering quality and performance in most cases.
+
+```bash
+npm install @rive-app/webgl2
+```
+
+- Uses the [Rive Renderer](https://rive.app/renderer) for the best rendering performance
+- Supports Rive Renderer-only features (for example, vector feathering)
+
+<Note>
+ WebGL has browser limits on concurrent contexts, which can limit how many `new Rive({...})` instances you can run at once. If you display many graphics on the same page, set `useOffscreenRenderer: true` for each Rive object.
+ This moves rendering work to a shared offscreen WebGL context instead of creating as many separate contexts on visible canvases, which helps avoid context-limit issues and improves stability when many Rive instances are active.
+</Note>
+
+<Note>
+  Enabling the draft
+  [WEBGL_shader_pixel_local_storage](https://www.wikihow.tech/Enable-WebGL-Draft-Extensions-in-Google-Chrome)
+  extension in Chrome improves rendering performance. Without it, Rive falls
+  back to an MSAA-based WebGL2 path. We are actively working with browser
+  vendors to make this enabled by default.
+</Note>
+
+### `@rive-app/canvas`
+
+Use `@rive-app/canvas` when your graphics are less complex and you want a smaller runtime package.
+
+```bash
+npm install @rive-app/canvas
+```
+
+- Uses the browser's built-in [CanvasRenderingContext2D](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) renderer
+- Smaller package size than WebGL renderer options
+- Good for simpler vector/raster graphics
+
+### More options after your runtime choice
+
+After choosing `@rive-app/webgl2` or `@rive-app/canvas`, you can use these variants based on packaging needs.
+
+#### `*-light` variants
+
+Some runtimes provide a `-lite` variant for smaller package size.
+
+- Example: [`@rive-app/canvas-lite`](https://www.npmjs.com/package/@rive-app/canvas-lite)
+- Use `-lite` when you want the smallest runtime footprint
+- `-lite` variants remove some features (for example, text, layout, audio, and scripting engines)
+
+#### `*-single` variants
+
+Some runtime packages also provide a `-single` variant, which bundles `rive.wasm` directly into the JavaScript file.
+
+- Example: [`@rive-app/canvas-single`](https://www.npmjs.com/package/@rive-app/canvas-single)
+- Use `-single` if you want to avoid a separate WASM network request
+- Expect a larger JS bundle compared to the standard package
+- ⚠️ Non-`single` variants can cache better across pages, since the WASM is fetched separately
+
+### Deprecated package
+
+`@rive-app/webgl` is deprecated. Prefer `@rive-app/webgl2`.

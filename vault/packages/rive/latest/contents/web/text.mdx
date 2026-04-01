@@ -1,0 +1,210 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+
+<Overview />
+
+## Examples
+
+- [Updating Text at Runtime - Localization example](https://codesandbox.io/p/sandbox/rive-text-js-x9jn5w)
+
+## High-level API usage
+
+**Reading Text**
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the Rive instance:
+
+```javascript
+public getTextRunValue(textRunName: string): string | undefined
+```
+
+Supply the text run name, and you'll have the Rive text run value returned, or `undefined` if the text run could not be queried.
+
+**Setting Text**
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the Rive instance:
+
+```javascript
+public setTextRunValue(textRunName: string, textRunValue: string): void
+```
+
+Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for if the text run can be successfully queried on the active artboard.
+
+### Example Usage
+
+```javascript
+import {Rive} from '@rive-app/canvas'
+
+const r = new Rive({
+src: "my-rive-file.riv"
+artboard: "my-artboard-name",
+autoplay: true,
+stateMachines: "State Machine 1",
+onLoad: () => {
+    console.log("My design-time text is, ", r.getTextRunValue("MyRun"));
+    r.setTextRunValue("MyRun", "New text value");
+},
+})
+```
+
+## Low-level API usage
+
+Get a reference to the Rive `Artboard`, find a text run by a given **name**, and get/update the text value property.
+
+```javascript
+import RiveCanvas from '@rive-app/canvas-advanced';
+
+
+const bytes = await (
+await fetch(new Request('./my-rive-file.riv'))
+).arrayBuffer();
+const myRiveFile = await rive.load(new Uint8Array(bytes));
+
+const artboard = myRiveFile.defaultArtboard();
+const textRun = artboard.textRun("MyRun"); // Query by the text run name
+console.log(`My design-time text is ${textRun.text}`);
+textRun.text = "Hello JS Runtime!";
+
+...
+```
+
+<NestedArtboard />
+
+## Examples
+
+- [Updating Nested Text at Runtime - Localization example](https://codesandbox.io/p/sandbox/rive-text-nested-js-pzs9lf)
+
+### High-level API usage
+
+**Reading Text**
+
+To read a given text run text value at a specific path, reference the `.getTextRunValueAtPath()` API on the Rive instance:
+
+```javascript
+public getTextRunValueAtPath(textRunName: string, path: string): string | undefined
+```
+
+Supply the text run name and the path where it is located, and you'll have the Rive text run value returned, or `undefined` if the text run could not be queried.
+
+**Setting Text**
+
+To set a given text run value at a specific path, reference the `.setTextRunValueAtPath()` API on the Rive instance:
+
+```javascript
+public setTextRunValueAtPath(textRunName: string, textRunValue: string, path: string): void
+```
+
+Supply the `textRunName`, the new `textValue`, and the `path` where the run is located at a component instance level.
+
+### Example Usage
+
+```javascript
+import {Rive} from '@rive-app/canvas'
+
+const r = new Rive({
+src: "my-rive-file.riv"
+artboard: "my-artboard-name",
+autoplay: true,
+stateMachines: "State Machine 1",
+onLoad: () => {
+    console.log("My design-time text is, ", r.getTextRunValueAtPath("MyRun", "path/to/run"));
+    r.setTextRunValueAtPath("MyRun", "New text value", "path/to/run");
+},
+})
+```
+
+<SemanticsForAccessibility />
+
+The following code snippets provide guidance on how to add semantic labels to your Rive animations.
+
+#### Adding ARIA Label
+
+At a minimum - if it is important to convey the text value displayed in the Rive animation to all users, add an `aria-label` to the `<canvas>` element with the text value from the animation. Screen readers may read this label out immediately as it parses out the DOM contents. You'll also want to add `role="img"` to the `<canvas>` element as well.
+
+```javascript
+<canvas
+    id="rive-canvas"
+    width={500}
+    height={500}
+    role="img"
+    aria-label="Hello friend, welcome to my page"
+></canvas>
+```
+
+#### Adding ARIA Live Region
+
+While ARIA labels are a direct method to manage a textual label for screen readers to read out as it parses web content, using an ARIA live region allows you a way to control when screen readers read out dynamic text content.
+
+Live regions are useful in cases where the text content in your Rive graphic becomes visible or changes on a particular state in a state machine, and you want screen readers to pick up on text changes. Another use case is when you only want screen readers to read your Rive text content when the `<canvas>` is scrolled into view.
+
+Read more on ARIA live regions [here](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Live_Regions).
+
+#### Example: Rating Graphic
+
+<Note>
+    To try this example out, visit this [CodeSandbox link](https://codesandbox.io/p/sandbox/rive-rating-ally-example-ptydr8)
+</Note>
+Imagine you're displaying an interactive Rive graphic that allows users to choose a rating from 1-5 stars. Users clicking on the different stars can visually see the state machine in action with animations to see what star they click, but screen readers may need a way to announce what selection was chosen as other users navigate the canvas with keyboard controls, for example.
+
+The HTML for this might look like the following:
+
+```javascript
+<canvas
+role="img"
+tabindex="0"
+aria-describedby="rating-animation-live"
+id="canvas"
+></canvas>
+<p id="rating-animation-live" class="sr-only" aria-live="assertive">
+An interactive rating simulation. Use the left and right arrow keys to
+select a rating
+</p>
+```
+
+Note that the `<canvas>` element has an `aria-describedby` attribute whose value matches the `id` of the `<p>` below it, `#rating-animation-live`. This allows the `<p>` block content to describe the `<canvas>` element. And similar to using `aria-label`, we have to add the `role="img"` attribute to the canvas as well. The `aria-live="assertive"` attribute describes how to interrupt the screen reader's flow of reading content based on when the content within this `<p>` changes.
+
+Let's take a look at what the JS might look like using the Rive Web (JS) runtime:
+
+```javascript
+const rive = require("@rive-app/canvas");
+const dynamicTextEl = document.getElementById("rating-animation-live");
+
+const r = new rive.Rive({
+src: "rating.riv",
+canvas: document.getElementById("canvas"),
+stateMachines: "State Machine 1",
+autoplay: true,
+onLoad: () => {
+    r.setTextRunValue("RatingRun", "0");
+    r.resizeDrawingSurfaceToCanvas();
+    // See CodeSandbox link above for further functionality
+},
+onStateChange: (e) => {
+    const name = e.data[0];
+    const ratingStr = name.charAt(0);
+    const ratingNum = parseInt(ratingStr);
+    if (!isNaN(ratingNum)) {
+    const ratingString = name
+        .split("_")
+        .reduce((acc, temp) => {
+        return (acc += ` ${temp}`);
+        }, "")
+        .trim();
+    r.setTextRunValue("RatingRun", ratingStr);
+
+    dynamicTextEl.innerHTML = `Rating: ${ratingString}`;
+    }
+}
+});
+```
+
+In the above snippet, we've created an instance of Rive, and as the state changes in the state machine, we're dynamically updating the contents of the live region (represented by `dynamicTextEl`) with the string rating. Due to the live region having the property of `aria-live="assertive"`, screen readers should read off the new dynamic text content.
+
+<Resources />

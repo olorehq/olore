@@ -1,0 +1,119 @@
+---
+description: "Compiler Error CS0173"
+title: "Compiler Error CS0173"
+ms.date: 08/07/2025
+f1_keywords:
+  - "CS0173"
+helpviewer_keywords:
+  - "CS0173"
+ms.assetid: eb1797ad-bf62-4e2b-8922-bef4aff36954
+---
+# Compiler Error CS0173
+
+Type of conditional expression cannot be determined because there is no implicit conversion between 'type1' and 'type2'.
+
+This error occurs when the compiler can't determine the type of a conditional expression because the two possible return values have no implicit conversion between them. This can happen with classes, value types, or any other types where there's no common type that both can be implicitly converted to.
+
+Starting with C# 9, *target-typed conditional expressions* allow the compiler to use the target type (the type being assigned to) to resolve ambiguity in some cases. However, CS0173 still occurs when using `var` or when there's no target type to guide the compiler.
+
+To resolve CS0173, you can:
+
+- Provide an explicit target type (available in C# 9+):
+
+   ```csharp
+   object result = condition ? value1 : value2;  // Works in C# 9.0+
+   ```
+
+- Use explicit casting:
+
+   ```csharp
+   var result = condition ? (object)value1 : (object)value2;
+   ```
+
+- Ensure there's an implicit conversion between the types by adding conversion operators or using compatible types.
+
+For more information, see [User-defined conversion operators](../operators/user-defined-conversion-operators.md) and [Built-in numeric conversions](../builtin-types/numeric-conversions.md).
+
+## Examples
+
+### Example 1: CS0173 with `var` (all C# versions)
+
+The following example generates CS0173 because `var` provides no target type for the compiler to use:
+
+```csharp
+class Program
+{
+    static void Main()
+    {
+        // CS0173: Type of conditional expression can't be determined
+        // because there is no implicit conversion between 'int' and 'string'.
+        var result = true ? 100 : "ABC";
+    }
+}
+```
+
+To fix this, provide an explicit type:
+
+```csharp
+// Fix: Use explicit target type (C# 9.0+).
+object result = true ? 100 : "ABC";  // OK in C# 9.0+
+
+// Or use explicit casting (all versions).
+var result = true ? (object)100 : (object)"ABC";
+```
+
+### Example 2: Class conversion example
+
+The following example shows CS0173 with custom classes:
+
+```csharp
+public class C {}
+
+public class A
+{
+    // Uncomment to add implicit conversion from C to A.
+    //public static implicit operator A(C c)
+    //{
+    //    return new A();
+    //}
+}
+
+public class MyClass
+{
+    public static void F(bool b)
+    {
+        A a = new A();
+        C c = new C();
+
+        // CS0173: No implicit conversion between A and C.
+        var result = b ? a : c;
+
+        // Fix: Cast to common base type.
+        object result2 = b ? (object)a : (object)c;
+
+        // Or in C# 9.0+, provide target type.
+        object result3 = b ? a : c;  // OK in C# 9.0+.
+    }
+}
+```
+
+### Example 3: Version differences with nullable types
+
+The behavior of conditional expressions has evolved across C# versions:
+
+```csharp
+class Program
+{
+    static void Main()
+    {
+        // This example shows how different C# versions handle the same code.
+        
+        // In C# 8.0 and earlier: CS8957 (feature not available).
+        // In C# 9.0+: Compiles successfully.
+        object? result = (1 == 0) ? null : null;
+    }
+}
+```
+
+> [!NOTE]
+> Starting with C# 9, target-typed conditional expressions allow the compiler to use the assignment target's type to resolve type ambiguity. In earlier versions, you might see error CS8957 instead of CS0173 when using language features not available in the current language version.

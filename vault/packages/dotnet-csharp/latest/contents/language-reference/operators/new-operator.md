@@ -1,0 +1,73 @@
+---
+title: "new operator - Create and initialize a new instance of a type"
+description: "The C# new operator is used to create a optionally initialize a new instance of a type."
+ms.date: 01/20/2026
+f1_keywords:
+ - new_CSharpKeyword
+helpviewer_keywords:
+  - "new operator keyword [C#]"
+---
+# new operator - The `new` operator creates a new instance of a type
+
+The `new` operator creates a new instance of a type. You can also use the `new` keyword as a [member declaration modifier](../keywords/new-modifier.md) or a [generic type constraint](../keywords/new-constraint.md).
+
+[!INCLUDE[csharp-version-note](../includes/initial-version.md)]
+
+## Constructor invocation
+
+To create a new instance of a type, invoke one of the [constructors](../../programming-guide/classes-and-structs/constructors.md) of that type by using the `new` operator:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="Constructor":::
+
+You can use an [object or collection initializer](../../programming-guide/classes-and-structs/object-and-collection-initializers.md) with the `new` operator to instantiate and initialize an object in one statement, as the following example shows:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="ConstructorWithInitializer":::
+
+### Target-typed `new`
+
+Constructor invocation expressions are target-typed. That is, if a target type of an expression is known, you can omit a type name, as the following example shows:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="SnippetTargetTyped":::
+
+As the preceding example shows, always use parentheses in a target-typed `new` expression.
+
+If a target type of a `new` expression is unknown (for example, when you use the [`var`](../statements/declarations.md#implicitly-typed-local-variables) keyword), you must specify a type name.
+
+## Array creation
+
+You also use the `new` operator to create an array instance, as the following example shows:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="Array":::
+
+Use array initialization syntax to create an array instance and populate it with elements in one statement. The following example shows various ways how you can do that:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="ArrayInitialization":::
+
+For more information about arrays, see [Arrays](../builtin-types/arrays.md).
+
+## Instantiation of anonymous types
+
+To create an instance of an [anonymous type](../../fundamentals/types/anonymous-types.md), use the `new` operator and object initializer syntax:
+
+:::code language="csharp" source="snippets/shared/NewOperator.cs" id="AnonymousType":::
+
+## Destruction of type instances
+
+You don't need to destroy previously created type instances. The system automatically destroys instances of both reference and value types. The system destroys instances of value types as soon as the context that contains them is destroyed. The [garbage collector](../../../standard/garbage-collection/index.md) destroys instances of reference types at some unspecified time after the last reference to them is removed.
+
+For type instances that contain unmanaged resources, such as a file handle, employ deterministic clean-up to ensure that the resources are released as soon as possible. For more information, see the <xref:System.IDisposable?displayProperty=nameWithType> API reference and the [`using` statement](../statements/using.md) article.
+
+## Operator overloadability
+
+A user-defined type can't overload the `new` operator.
+
+## C# language specification
+
+For more information, see [The new operator](~/_csharpstandard/standard/expressions.md#12817-the-new-operator) section of the [C# language specification](~/_csharpstandard/standard/README.md).
+
+For more information about a target-typed `new` expression, see the [feature proposal note](~/_csharplang/proposals/csharp-9.0/target-typed-new.md).
+
+## See also
+
+- [C# operators and expressions](index.md)
+- [Object and collection initializers](../../programming-guide/classes-and-structs/object-and-collection-initializers.md)

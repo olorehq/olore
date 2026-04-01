@@ -1,0 +1,236 @@
+---
+title: Retries & Fallbacks
+description: Learn how to use retries and fallbacks to handle errors and improve reliability with TensorZero.
+---
+
+The TensorZero Gateway offers multiple strategies to handle errors and improve reliability.
+
+These strategies are defined at three levels: models (model provider routing), variants (variant retries), and functions (variant fallbacks).
+You can combine these strategies to define complex fallback behavior.
+
+## Model Provider Routing
+
+We can specify that a model is available on multiple providers using its `routing` field.
+If we include multiple providers on the list, the gateway will try each one sequentially until one succeeds or all fail.
+
+In the example below, the gateway will first try OpenAI, and if that fails, it will try Azure.
+
+```toml
+[models.gpt_5_mini]
+# Try the following providers in order:
+# 1. `models.gpt_5_mini.providers.openai`
+# 2. `models.gpt_5_mini.providers.azure`
+routing = ["openai", "azure"]
+
+[models.gpt_5_mini.providers.openai]
+type = "openai"
+model_name = "gpt-5-mini"
+
+[models.gpt_5_mini.providers.azure]
+type = "azure"
+deployment_id = "gpt-5-mini"
+endpoint = "https://your-azure-openai-endpoint.openai.azure.com"
+
+[functions.extract_data]
+type = "chat"
+
+[functions.extract_data.variants.gpt_5_mini]
+type = "chat_completion"
+model = "gpt_5_mini"
+```
+
+For variant types that require multiple model inferences (e.g. best-of-N sampling), the `routing` fallback applies to each individual model inference separately.
+
+## Variant Retries
+
+We can add a `retries` field to a variant to specify the number of times to retry that variant if it fails.
+The retry strategy is a truncated exponential backoff with jitter.
+
+In the example below, the gateway will retry the variant four times (i.e. a total of five attempts), with a maximum delay of 10 seconds between retries.
+
+```toml
+[functions.extract_data]
+type = "chat"
+
+[functions.extract_data.variants.claude_haiku_4_5]
+type = "chat_completion"
+model = "anthropic::claude-haiku-4-5"
+# Retry the variant up to four times, with a maximum delay of 10 seconds between retries.
+retries = { num_retries = 4, max_delay_s = 10 }
+```
+
+## Variant Fallbacks
+
+If we specify multiple variants for a function, the gateway will try different variants until one succeeds or all fail.
+
+By default, the gateway will sample between all variants uniformly.
+You can customize the sampling behavior, including fallback-only variants, using the `[functions.function_name.experimentation]` section.
+
+In the example below, both variants have an equal chance of being selected:
+
+```toml
+[functions.extract_data]
+type = "chat"
+
+[functions.extract_data.variants.gpt_5_mini]
+type = "chat_completion"
+model = "openai::gpt-5-mini"
+
+[functions.extract_data.variants.claude_haiku_4_5]
+type = "chat_completion"
+model = "anthropic::claude-haiku-4-5"
+```
+
+You can specify candidate variants to sample uniformly from, and fallback variants to try sequentially if all candidates fail.
+In the example below, the gateway will first sample uniformly from `gpt_5_mini` or `claude_haiku_4_5`.
+If both of those variants fail, the gateway will try the fallback variants in order: first `grok_4`, then `gemini_2_5_flash`.
+
+```toml
+[functions.extract_data]
+type = "chat"
+
+[functions.extract_data.experimentation]
+type = "static"
+candidate_variants = ["gpt_5_mini", "claude_haiku_4_5"]
+fallback_variants = ["grok_4", "gemini_2_5_flash"]
+
+[functions.extract_data.variants.gpt_5_mini]
+type = "chat_completion"
+model = "openai::gpt-5-mini"
+
+[functions.extract_data.variants.claude_haiku_4_5]
+type = "chat_completion"
+model = "anthropic::claude-haiku-4-5"
+
+[functions.extract_data.variants.grok_4]
+type = "chat_completion"
+model = "xai::grok-4-0709"
+
+[functions.extract_data.variants.gemini_2_5_flash]
+type = "chat_completion"
+model = "google_ai_studio_gemini::gemini-2.5-flash"
+```
+
+You can also use weights to control the sampling probabilities of candidate variants.
+In the example below, the gateway will sample `gpt_5_mini` 70% of the time and `claude_haiku_4_5` 30% of the time.
+If both of those variants fail, the gateway will try the fallback variants sequentially.
+
+```toml
+[functions.extract_data.experimentation]
+type = "static"
+candidate_variants = {"gpt_5_mini" = 0.7, "claude_haiku_4_5" = 0.3}
+fallback_variants = ["grok_4", "gemini_2_5_flash"]
+```
+
+See [Run adaptive A/B tests](/experimentation/run-adaptive-ab-tests) and [Run static A/B tests](/experimentation/run-static-ab-tests) for more information.
+
+## Combining Strategies
+
+We can combine strategies to define complex fallback behavior.
+
+The gateway will try the following strategies in order:
+
+1. Model Provider Routing
+2. Variant Retries
+3. Variant Fallbacks
+
+In other words, the gateway will follow a strategy like the pseudocode below.
+
+```python
+while variants:
+    # Sample according to experimentation config (static, adaptive, etc.)
+    variant = sample_variant(variants)  # sampling without replacement
+
+    for _ in range(num_retries + 1):
+        for provider in variant.routing:
+            try:
+                return inference(variant, provider)
+            except:
+                continue
+```
+
+## Load Balancing
+
+TensorZero doesn't currently offer an explicit strategy for load balancing API keys, but you can achieve a similar effect by defining multiple variants with equal sampling probabilities.
+We plan to add a streamlined load balancing strategy in the future.
+
+In the example below, the gateway will split the traffic evenly between two variants (`gpt_4o_mini_api_key_A` and `gpt_4o_mini_api_key_B`).
+Each variant leverages a model with providers that use different API keys (`OPENAI_API_KEY_A` and `OPENAI_API_KEY_B`).
+See [Credential Management](/operations/manage-credentials/) for more details on credential management.
+
+```toml
+[models.gpt_4o_mini_api_key_A]
+routing = ["openai"]
+
+[models.gpt_4o_mini_api_key_A.providers.openai]
+type = "openai"
+model_name = "gpt-4o-mini-2024-07-18"
+api_key_location = "env:OPENAI_API_KEY_A"
+
+[models.gpt_4o_mini_api_key_B]
+routing = ["openai"]
+
+[models.gpt_4o_mini_api_key_B.providers.openai]
+type = "openai"
+model_name = "gpt-4o-mini-2024-07-18"
+api_key_location = "env:OPENAI_API_KEY_B"
+
+[functions.extract_data]
+type = "chat"
+
+# Uniform sampling (default) splits traffic equally
+[functions.extract_data.variants.gpt_4o_mini_api_key_A]
+type = "chat_completion"
+model = "gpt_4o_mini_api_key_A"
+
+[functions.extract_data.variants.gpt_4o_mini_api_key_B]
+type = "chat_completion"
+model = "gpt_4o_mini_api_key_B"
+```
+
+## Timeouts
+
+You can set granular timeouts for individual requests to a model provider, model, or variant using the `timeouts` field in the corresponding configuration block.
+You can define timeouts for non-streaming and streaming requests separately:
+
+- `timeouts.non_streaming.total_ms` — the total time allowed for a non-streaming request to complete.
+- `timeouts.streaming.ttft_ms` — the time allowed to receive the first token (TTFT) in a streaming request.
+- `timeouts.streaming.total_ms` — the total time allowed for the entire streaming request to complete (measured from request start). This is useful for bounding the total duration of a stream, even after the first token has arrived.
+
+For example, the following configuration sets a 15-second timeout for non-streaming requests, a 3-second TTFT timeout, and a 60-second total timeout for streaming requests to a particular model provider.
+
+```toml
+[models.model_name.providers.provider_name]
+# ...
+timeouts = { non_streaming.total_ms = 15000, streaming.ttft_ms = 3000, streaming.total_ms = 60000 }
+# ...
+```
+
+This setting applies to individual requests to the model provider.
+If you're using an advanced variant type that performs multiple requests, the timeout will apply to each request separately.
+If you've defined retries and fallbacks, the timeout will apply to each retry and fallback separately.
+This setting is particularly useful if you'd like to retry or fallback on a request that's taking too long.
+
+If you specify timeouts for a model, they apply to every inference request in the model's scope, including retries and fallbacks.
+
+If you specify timeouts for a variant, they apply to every inference request in the variant's scope, including retries and fallbacks.
+For advanced variant types that perform multiple requests, the timeout applies collectively to the sequence of all requests.
+
+Separately, you can set a global timeout for the entire inference request using the TensorZero client's `timeout` field (or simply killing the request if you're using a different client).
+
+Embedding models and embedding model providers support a `timeout_ms` configuration field.
+
+### Global Timeout
+
+You can set a global timeout for all outbound HTTP requests using `gateway.global_outbound_http_timeout_ms` in your configuration.
+By default, this is set to 15 minutes to accommodate slow model responses.
+
+```toml
+[gateway]
+global_outbound_http_timeout_ms = 900_000 # 15 minutes
+```
+
+This global timeout acts as an upper bound for all more specific timeout configurations.
+Any variant-level, model-level, provider-level, or embedding model timeouts must be less than or equal to this global timeout.
+
+See the [Configuration Reference](/gateway/configuration-reference#global_outbound_http_timeout_ms) for more details.
