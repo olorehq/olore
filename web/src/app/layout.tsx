@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://olore.dev";
 const title = "olore - Docs as Agent Skills";
 const description =
-  "Version-pinned documentation packages for AI coding agents. Works offline with Claude Code, Codex, and OpenCode. 70+ packages available.";
+  "Version-pinned documentation packages for AI coding agents. Works offline with Claude Code, Codex, and OpenCode. 80+ packages available.";
 
 export const metadata: Metadata = {
   title,

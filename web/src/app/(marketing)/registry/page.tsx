@@ -74,7 +74,7 @@ async function getPackages(): Promise<{
 
 export async function generateMetadata() {
   const { packages } = await getPackages();
-  const count = packages.length || 70;
+  const count = packages.length || 80;
   return {
     title: `Registry - ${count}+ Doc Packages for AI Agents | olore`,
     description: `Browse ${count} version-pinned documentation packages for Claude Code, Codex, and OpenCode. Install with one command. Offline-first.`,
