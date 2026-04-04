@@ -1,5 +1,5 @@
 ---
-name: olore-rhf-latest
+name: olore-react-hook-form-latest
 description: Local React Hook Form documentation reference (latest). Performant, flexible, and extensible forms with easy-to-use validation.
 ---
 

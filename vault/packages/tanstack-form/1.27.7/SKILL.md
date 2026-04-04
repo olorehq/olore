@@ -1,5 +1,5 @@
 ---
-name: olore-tsf-1.27.7
+name: olore-tanstack-form-1.27.7
 description: Local TanStack Form documentation reference (1.27.7). Use when asked about form management, validation, field APIs, or framework-specific form implementations.
 ---
 
