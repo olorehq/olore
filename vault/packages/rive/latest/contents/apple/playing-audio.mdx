@@ -1,0 +1,42 @@
+---
+title: "Playing Audio"
+description: "Playing Rive audio events"
+---
+
+import Overview from "/snippets/runtimes/playing-audio/overview.mdx"
+import WebWarning from "/snippets/runtimes/playing-audio/web-warning.mdx"
+import EmbeddedAssets from "/snippets/runtimes/playing-audio/embedded-assets.mdx"
+import ReferencedAssets from "/snippets/runtimes/playing-audio/referenced-assets.mdx"
+
+<Overview />
+
+<Warning>
+    This feature is currently only supported in the Legacy Runtime.
+</Warning>
+
+<EmbeddedAssets />
+
+<ReferencedAssets />
+
+For more information, see [Loading Assets](/runtimes/apple/loading-assets).
+
+## Audio Settings
+
+On iOS, playing audio will respect your `AVAudioSession` shared instance settings. For more information, see [Apple's documentation](https://developer.apple.com/documentation/avfaudio/avaudiosession) on `AVAudioSession`. Using this, you can choose to mix audio, duck audio, and more. You can update your shared instance early in your app lifecycle if you would like to ensure all Rive audio plays  with the correct settings.
+
+```swift IOS
+// Example: Ignore the silent switch, and mix with other audio
+let category: AVAudioSession.Category = .playback
+let options: AVAudioSession.CategoryOptions = [.mixWithOthers]
+AVAudioSession.sharedInstance().setCategory(category, options: options)
+```
+
+## Setting Volume
+
+An artboard is capable of setting its volume. A parent artboard will set the volume of all component instances; however, setting a component's volume will **not** update the parent's volume.
+
+```swift IOS
+// Set the current artboard's volume to 50%
+let viewModel = RiveViewModel(fileName: "my_rive_file")
+viewModel.riveModel?.volume = 0.5
+```

@@ -1,0 +1,41 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+```dart
+// Create a File, Artboard, and SingleAnimationPainter
+final file = (await File.asset(
+  'assets/rewards.riv',
+  riveFactory: Factory.rive,
+))!;
+final artboard = file.artboard('Main')!;
+final animationPainter = SingleAnimationPainter("Artboard Name");
+
+// Later create the widget
+return RiveArtboardWidget(
+  artboard: artboard,
+  painter: animationPainter,
+);
+```
+
+## Controlling playback
+
+Flutter handles things a little differently compared to the other runtimes due to its reactive nature.
+
+Every animation and state machine in Flutter has an underlying painter that manages the state/painting/advancing.
+
+In order to access controls for animations, you'll need to create a `SingleAnimationPainter` or `StateMachinePainter` and pass it to the `RiveArtboardWidget`.
+
+Or you can create `RiveWidgetController` and pass it to the `RiveWidget` to control playback of state machines with a more feature-rich API (recommended).
+
+This painter concept is extensible, and you can also create your own custom painter, for example, to control multiple animations at once.

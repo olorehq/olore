@@ -1,0 +1,102 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+import { Apple } from "/snippets/constants.mdx"
+
+<Warning>
+  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+</Warning>
+
+<Overview />
+
+### Subscribing to Events via State Machine Delegate
+
+To subscribe to Rive events, implement the `onRiveEventReceived` protocol from `StateMachineDelegate`.
+
+`@objc optional func onRiveEventReceived(onRiveEvent riveEvent: RiveEvent)`
+
+This implementation may be invoked when a Rive event is fired from the render loop and provides a generic `RiveEvent` data type, of which you can type check to cast to a specific event for further parsing, such as a `RiveGeneralEvent` or a `RiveOpenUrlEvent`.
+
+For example:
+
+```swift
+@objc func onRiveEventReceived(onRiveEvent riveEvent: RiveEvent) {
+    debugPrint("Event Name: \(riveEvent.name())")
+    debugPrint("Event Type: \(riveEvent.type())")
+    if let openUrlEvent = riveEvent as? RiveOpenUrlEvent {
+        // i.e., open the URL
+    } else if let generalEvent = riveEvent as? RiveGeneralEvent {
+        // i.e., print the string data provided in a Text widget
+    }
+}
+```
+
+<Note>
+    **Note:** Events of type `RiveOpenUrlEvent` will not automatically open links in the user's preferred browser. You will need to add the logic to grab the `url` property of the `riveEvent` passed into the delegate and open the link.
+</Note>
+**Example Usage**
+
+```swift
+import SwiftUI
+import RiveRuntime
+
+struct SwiftEvents: DismissableView {
+    var dismiss: () -> Void = {}
+    @StateObject private var rvm = RiveEventsVMExample()
+
+    var body: some View {
+        VStack {
+            rvm.view()
+            Text("Event Message")
+                .font(.headline)
+                .padding(.bottom, 10)
+            Text(rvm.eventText)
+                .padding()
+                .background(rvm.eventText.isEmpty ? Color.clear : Color.black)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+        }
+    }
+}
+
+class RiveEventsVMExample: RiveViewModel {
+    @Published var eventText = ""
+
+    init() {
+        super.init(fileName: "rating_animation")
+    }
+
+    func view() -> some View {
+        return super.view().frame(width: 400, height: 400, alignment: .center)
+    }
+
+    // Subscribe to Rive events and this delegate will be invoked
+    @objc func onRiveEventReceived(onRiveEvent riveEvent: RiveEvent) {
+        if let openUrlEvent = riveEvent as? RiveOpenUrlEvent {
+            if let url = URL(string: openUrlEvent.url()) {
+                #if os(iOS)
+                UIApplication.shared.open(url)
+                #else
+                NSWorkspace.shared.open(url)
+                #endif
+            }
+        } else if let generalEvent = riveEvent as? RiveGeneralEvent {
+            let genEventProperties = generalEvent.properties();
+            if let msg = genEventProperties["message"] {
+                eventText = msg as! String
+            }
+        }
+
+    }
+}
+```
+
+<AdditionalResources />

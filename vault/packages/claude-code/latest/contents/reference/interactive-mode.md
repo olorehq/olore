@@ -13,9 +13,9 @@
 
   **macOS users**: Option/Alt key shortcuts (`Alt+B`, `Alt+F`, `Alt+Y`, `Alt+M`, `Alt+P`) require configuring Option as Meta in your terminal:
 
-  * **iTerm2**: Settings → Profiles → Keys → Set Left/Right Option key to "Esc+"
-  * **Terminal.app**: Settings → Profiles → Keyboard → Check "Use Option as Meta Key"
-  * **VS Code**: Settings → Profiles → Keys → Set Left/Right Option key to "Esc+"
+  * **iTerm2**: settings → Profiles → Keys → set Left/Right Option key to "Esc+"
+  * **Terminal.app**: settings → Profiles → Keyboard → check "Use Option as Meta Key"
+  * **VS Code**: settings → Profiles → Keys → set Left/Right Option key to "Esc+"
 
   See [Terminal configuration](/en/terminal-config) for details.
 </Note>
@@ -84,47 +84,17 @@
 | `!` at start | Bash mode         | Run commands directly and add execution output to the session        |
 | `@`          | File path mention | Trigger file path autocomplete                                       |
 
+### Voice input
+
+| Shortcut     | Description            | Notes                                                                                                                                                      |
+| :----------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hold `Space` | Push-to-talk dictation | Requires [voice dictation](/en/voice-dictation) to be enabled. Transcript inserts at cursor. [Rebindable](/en/voice-dictation#rebind-the-push-to-talk-key) |
+
 ## Built-in commands
 
-Built-in commands are shortcuts for common actions. The table below covers commonly used commands but not all available options. Type `/` in Claude Code to see the full list, or type `/` followed by any letters to filter.
+Type `/` in Claude Code to see all available commands, or type `/` followed by any letters to filter. The `/` menu shows both built-in commands and [bundled skills](/en/skills#bundled-skills) like `/simplify`. Not all commands are visible to every user since some depend on your platform or plan.
 
-To create your own commands you can invoke with `/`, see [skills](/en/skills).
-
-| Command                   | Purpose                                                                                                                                                                                                                    |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/clear`                  | Clear conversation history                                                                                                                                                                                                 |
-| `/compact [instructions]` | Compact conversation with optional focus instructions                                                                                                                                                                      |
-| `/config`                 | Open the Settings interface (Config tab)                                                                                                                                                                                   |
-| `/context`                | Visualize current context usage as a colored grid                                                                                                                                                                          |
-| `/cost`                   | Show token usage statistics. See [cost tracking guide](/en/costs#using-the-cost-command) for subscription-specific details.                                                                                                |
-| `/debug [description]`    | Troubleshoot the current session by reading the session debug log. Optionally describe the issue                                                                                                                           |
-| `/doctor`                 | Checks the health of your Claude Code installation                                                                                                                                                                         |
-| `/exit`                   | Exit the REPL                                                                                                                                                                                                              |
-| `/export [filename]`      | Export the current conversation to a file or clipboard                                                                                                                                                                     |
-| `/help`                   | Get usage help                                                                                                                                                                                                             |
-| `/init`                   | Initialize project with `CLAUDE.md` guide                                                                                                                                                                                  |
-| `/mcp`                    | Manage MCP server connections and OAuth authentication                                                                                                                                                                     |
-| `/memory`                 | Edit `CLAUDE.md` memory files                                                                                                                                                                                              |
-| `/model`                  | Select or change the AI model. With Opus 4.6, use left/right arrows to [adjust effort level](/en/model-config#adjust-effort-level). The change takes effect immediately without waiting for the current response to finish |
-| `/permissions`            | View or update [permissions](/en/permissions#manage-permissions)                                                                                                                                                           |
-| `/plan`                   | Enter plan mode directly from the prompt                                                                                                                                                                                   |
-| `/rename <name>`          | Rename the current session for easier identification                                                                                                                                                                       |
-| `/resume [session]`       | Resume a conversation by ID or name, or open the session picker                                                                                                                                                            |
-| `/rewind`                 | Rewind the conversation and/or code, or summarize from a selected message                                                                                                                                                  |
-| `/stats`                  | Visualize daily usage, session history, streaks, and model preferences                                                                                                                                                     |
-| `/status`                 | Open the Settings interface (Status tab) showing version, model, account, and connectivity                                                                                                                                 |
-| `/statusline`             | Set up Claude Code's status line UI                                                                                                                                                                                        |
-| `/copy`                   | Copy the last assistant response to clipboard                                                                                                                                                                              |
-| `/tasks`                  | List and manage background tasks                                                                                                                                                                                           |
-| `/teleport`               | Resume a remote session from claude.ai (subscribers only)                                                                                                                                                                  |
-| `/desktop`                | Hand off the current CLI session to the Claude Code Desktop app (macOS and Windows only)                                                                                                                                   |
-| `/theme`                  | Change the color theme                                                                                                                                                                                                     |
-| `/todos`                  | List current TODO items                                                                                                                                                                                                    |
-| `/usage`                  | For subscription plans only: show plan usage limits and rate limit status                                                                                                                                                  |
-
-### MCP prompts
-
-MCP servers can expose prompts that appear as commands. These use the format `/mcp__<server>__<prompt>` and are dynamically discovered from connected servers. See [MCP prompts](/en/mcp#use-mcp-prompts-as-commands) for details.
+See the [commands reference](/en/commands) for the full list of built-in commands. To create your own commands, see [skills](/en/skills).
 
 ## Vim editor mode
 
@@ -204,18 +174,18 @@ Text objects work with operators like `d`, `c`, and `y`:
 
 Claude Code maintains command history for the current session:
 
-* History is stored per working directory
-* Cleared with `/clear` command
+* Input history is stored per working directory
+* Input history resets when you run `/clear` to start a new session. The previous session's conversation is preserved and can be resumed.
 * Use Up/Down arrows to navigate (see keyboard shortcuts above)
-* **Note**: History expansion (`!`) is disabled by default
+* **Note**: history expansion (`!`) is disabled by default
 
 ### Reverse search with Ctrl+R
 
 Press `Ctrl+R` to interactively search through your command history:
 
-1. **Start search**: Press `Ctrl+R` to activate reverse history search
-2. **Type query**: Enter text to search for in previous commands - the search term will be highlighted in matching results
-3. **Navigate matches**: Press `Ctrl+R` again to cycle through older matches
+1. **Start search**: press `Ctrl+R` to activate reverse history search
+2. **Type query**: enter text to search for in previous commands. The search term is highlighted in matching results
+3. **Navigate matches**: press `Ctrl+R` again to cycle through older matches
 4. **Accept match**:
    * Press `Tab` or `Esc` to accept the current match and continue editing
    * Press `Enter` to accept and execute the command immediately
@@ -223,7 +193,7 @@ Press `Ctrl+R` to interactively search through your command history:
    * Press `Ctrl+C` to cancel and restore your original input
    * Press `Backspace` on empty search to cancel
 
-The search displays matching commands with the search term highlighted, making it easy to find and reuse previous inputs.
+The search displays matching commands with the search term highlighted, so you can find and reuse previous inputs.
 
 ## Background bash commands
 
@@ -243,8 +213,9 @@ To run commands in the background, you can either:
 * Output is buffered and Claude can retrieve it using the TaskOutput tool
 * Background tasks have unique IDs for tracking and output retrieval
 * Background tasks are automatically cleaned up when Claude Code exits
+* Background tasks are automatically terminated if output exceeds 5GB, with a note in stderr explaining why
 
-To disable all background task functionality, set the `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` environment variable to `1`. See [Environment variables](/en/settings#environment-variables) for details.
+To disable all background task functionality, set the `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` environment variable to `1`. See [Environment variables](/en/env-vars) for details.
 
 **Common backgrounded commands:**
 
@@ -271,6 +242,7 @@ Bash mode:
 * Supports the same `Ctrl+B` backgrounding for long-running commands
 * Does not require Claude to interpret or approve the command
 * Supports history-based autocomplete: type a partial command and press **Tab** to complete from previous `!` commands in the current project
+* Exit with `Escape`, `Backspace`, or `Ctrl+U` on an empty prompt
 
 This is useful for quick shell operations while maintaining conversation context.
 
@@ -293,6 +265,25 @@ To disable prompt suggestions entirely, set the environment variable or toggle t
 export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
 ```
 
+## Side questions with /btw
+
+Use `/btw` to ask a quick question about your current work without adding to the conversation history. This is useful when you want a fast answer but don't want to clutter the main context or derail Claude from a long-running task.
+
+```
+/btw what was the name of that config file again?
+```
+
+Side questions have full visibility into the current conversation, so you can ask about code Claude has already read, decisions it made earlier, or anything else from the session. The question and answer are ephemeral: they appear in a dismissible overlay and never enter the conversation history.
+
+* **Available while Claude is working**: you can run `/btw` even while Claude is processing a response. The side question runs independently and does not interrupt the main turn.
+* **No tool access**: side questions answer only from what is already in context. Claude cannot read files, run commands, or search when answering a side question.
+* **Single response**: there are no follow-up turns. If you need a back-and-forth, use a normal prompt instead.
+* **Low cost**: the side question reuses the parent conversation's prompt cache, so the additional cost is minimal.
+
+Press **Space**, **Enter**, or **Escape** to dismiss the answer and return to the prompt.
+
+`/btw` is the inverse of a [subagent](/en/sub-agents): it sees your full conversation but has no tools, while a subagent has full tools but starts with an empty context. Use `/btw` to ask about what Claude already knows from this session; use a subagent to go find out something new.
+
 ## Task list
 
 When working on complex, multi-step work, Claude creates a task list to track progress. Tasks appear in the status area of your terminal with indicators showing what's pending, in progress, or complete.
@@ -301,7 +292,6 @@ When working on complex, multi-step work, Claude creates a task list to track pr
 * To see all tasks or clear them, ask Claude directly: "show me all tasks" or "clear all tasks"
 * Tasks persist across context compactions, helping Claude stay organized on larger projects
 * To share a task list across sessions, set `CLAUDE_CODE_TASK_LIST_ID` to use a named directory in `~/.claude/tasks/`: `CLAUDE_CODE_TASK_LIST_ID=my-project claude`
-* To revert to the previous TODO list, set `CLAUDE_CODE_ENABLE_TASKS=false`.
 
 ## PR review status
 

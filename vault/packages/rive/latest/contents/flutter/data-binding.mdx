@@ -1,0 +1,382 @@
+---
+title: "Data Binding"
+description: "Connect your code to bound editor elements using View Models"
+---
+
+import Overview from "/snippets/runtimes/data-binding/overview.mdx"
+import ViewModels from "/snippets/runtimes/data-binding/view-models.mdx"
+import ViewModelInstances from "/snippets/runtimes/data-binding/view-model-instances.mdx"
+import Binding from "/snippets/runtimes/data-binding/binding.mdx"
+import AutoBinding from "/snippets/runtimes/data-binding/auto-binding.mdx"
+import Properties from "/snippets/runtimes/data-binding/properties.mdx"
+import ListingProperties from "/snippets/runtimes/data-binding/listing-properties.mdx"
+import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading-and-writing-properties.mdx"
+import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
+import Observability from "/snippets/runtimes/data-binding/observability.mdx"
+import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Lists from "/snippets/runtimes/data-binding/lists.mdx"
+import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
+import Enums from "/snippets/runtimes/data-binding/enums.mdx"
+
+
+import { YouTube } from "/snippets/youtube.mdx";
+import { Demos } from "/snippets/demos.jsx";
+
+<Overview />
+
+<Demos examples={["dataBindingQuickStart"]} runtime="flutter" />
+
+<ViewModels />
+
+<Info>
+    If you're using a `RiveWidgetController`, you can skip the step of creating a `ViewModel`. Go to [View Model Instances](#view-model-instances).
+</Info>
+```dart
+// Get reference to the File and Artboard
+final file = await File.asset(
+    'assets/my_file.riv',
+    riveFactory: Factory.rive,
+);
+final artboard = file!.defaultArtboard()!;
+
+// Get reference by name
+file.viewModelByName("My View Model");
+
+// Get reference by index
+for (var i = 0; i < file.viewModelCount; i++) {
+    final indexedVM = file.viewModelByIndex(i);
+}
+
+// Get reference to the default view model for an artboard
+final defaultVM = file.defaultArtboardViewModel(artboard);
+
+// Dispose the view model when you're no longer using it
+viewModel.dispose();
+```
+
+<ViewModelInstances />
+
+If you're using  `RiveWidgetController`:
+
+```dart
+// Get reference to the File
+file = await File.asset(
+    'assets/rewards.riv',
+    riveFactory: Factory.rive,
+);
+
+// Create a controller
+controller = RiveWidgetController(file!);
+
+// Data bind by name
+viewModelInstance = controller.dataBind(DataBind.byName('My View Model'));
+
+// Data bind by index
+viewModelInstance = controller.dataBind(DataBind.byIndex(0));
+
+// Auto data bind
+viewModelInstance = controller.dataBind(DataBind.auto());
+
+// Bind some existing view model instance to the controller:
+viewModelInstance = controller.dataBind(DataBind.byInstance(someViewModelInstance));
+
+// Dispose of objects you created when no longer needed
+viewModelInstance.dispose();
+controller.dispose();
+file.dispose();
+```
+
+If you want to manage the creation of view model instances yourself:
+
+```dart
+final vm = file.viewModelByName("My View Model")!;
+
+// Create blank
+final vmiBlank = vm.createInstance();
+
+// Create default
+final vmiDefault = vm.createDefaultInstance();
+
+// Create by index
+for (int i = 0; i < vm.instanceCount; i++) {
+final vmiIndexed = vm.createInstanceByIndex(i);
+}
+
+// Create by name
+final vmiNamed = vm.createInstanceByName("My Instance");
+
+// Dispose the view model instance
+viewModelInstance.dispose();
+```
+
+<Binding />
+
+If you're using `RiveWidgetController` the binding happens automatically when you call any of the following:
+
+```dart
+viewModelInstance = controller.dataBind(DataBind.auto());
+viewModelInstance = controller.dataBind(DataBind.byName('My View Model'));
+viewModelInstance = controller.dataBind(DataBind.byIndex(0));
+viewModelInstnace = controller.dataBind(someViewModelInstance);
+```
+
+Else, you need to make sure to bind the view model instance to the state machine, or artboard.
+
+```dart
+final file = await File.asset(
+'assets/my_file.riv',
+riveFactory: Factory.rive,
+);
+
+final artboard = file!.defaultArtboard();
+final stateMachine = artboard!.defaultStateMachine()!;
+
+final vm = file.defaultArtboardViewModel(artboard)!;
+final vmi = vm.createDefaultInstance()!;
+
+// Bind to the state machine. This automatically binds to the artboard as well.
+stateMachine.bindViewModelInstance(vmi);
+
+// If you're not using a state machine, bind to the artboard
+artboard.bindViewModelInstance(vmi);
+```
+
+<AutoBinding />
+
+```dart
+// Get reference to the File
+file = await File.asset(
+    'assets/rewards.riv',
+    riveFactory: Factory.rive,
+);
+
+// Create a controller
+controller = RiveWidgetController(file!);
+
+// Auto data bind
+viewModelInstance = controller.dataBind(DataBind.auto());
+
+// Dispose of objects you created when no longer needed
+viewModelInstance.dispose();
+controller.dispose();
+file.dispose();
+```
+
+<Properties />
+
+<ListingProperties />
+
+```dart
+// Accesss on a ViewModel object
+print("Properties: ${viewModel.properties}");
+
+// Access on a ViewModelInstance object
+print("Properties: ${viewModelInstance.properties}");
+```
+
+<ReadingAndWritingProperties />
+
+```dart
+// Get reference to the ViewModel instance
+final vmi = someExistingViewModelInstance;
+
+final numberProperty = vmi.number("My Number Property")!;
+// Get
+final numberValue = numberProperty.value;
+
+// Set
+numberProperty.value = 10;
+
+// Observe
+void onNumberChange(double value) {
+    print("Number changed to: $value");
+}
+numberProperty.addListener(onNumberChange);
+
+// Remove listener when done
+numberProperty.removeListener(onNumberChange);
+
+// Alternatively, clear all listeners
+numberProperty.clearListeners();
+
+// Dispose of the property to clear up resources when you're no longer using it
+// This will call `clearListeners()` internally.
+numberProperty.dispose();
+```
+
+<NestedPropertyPaths />
+
+```dart
+// Get reference to the ViewModel instance
+final vmi = someExistingViewModelInstance;
+
+final nestedNumberByChain = vmi
+    .viewModel("My Nested View Model")!
+    .viewModel("My Second Nested VM")!
+    .number("My Nested Number");
+
+final nestedNumberByPath = vmi.number("My Nested View Model/My Second Nested VM/My Nested Number");
+```
+
+<Observability />
+
+```dart
+// Get reference to the ViewModel instance
+final vmi = someExistingViewModelInstance;
+
+final numberProperty = vmi.number("My Number Property")!;
+// Get
+final numberValue = numberProperty.value;
+
+// Set
+numberProperty.value = 10;
+
+// Observe
+void onNumberChange(double value) {
+    print("Number changed to: $value");
+}
+numberProperty.addListener(onNumberChange);
+
+// Remove listener when done
+numberProperty.removeListener(onNumberChange);
+
+// Alternatively, clear all listeners
+numberProperty.clearListeners();
+
+// Dispose of the property to clear up resources when you're no longer using it
+// This will call `clearListeners()` internally.
+numberProperty.dispose();
+```
+
+<Images />
+
+<Demos examples={['dataBindingImages']} runtime="flutter" />
+
+<Info>
+  See the [Flutter data binding images example](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding_images.dart).
+</Info>
+```dart
+// Access the image property by path on a ViewModelInstance object
+final imageProperty = viewModelInstance.image('my_image')!; // image property named "my_image"
+
+// Create a RenderImage
+final renderImage = await Factory.rive.decodeImage(bytes); // use `Factory.flutter` if you're using the Flutter renderer
+
+// If the image is valid, update the image property value
+if (renderImage != null) {
+    imageProperty.value = renderImage;
+}
+
+// You can also set the image property to null to clear it
+imageProperty.value = null;
+```
+
+<Lists />
+
+<Demos examples={['dataBindingLists']} runtime="flutter" />
+
+The list API in Flutter is designed to be similar to the [List](https://api.dart.dev/dart-core/List-class.html) class in Dart. It doesn't contain the full API spec of that class, but it does provide the most commonly used methods.
+
+<Warning>
+    Working with lists can result in errors ([`RangeError`](https://api.flutter.dev/flutter/dart-core/RangeError-class.html)) being thrown if you try to access an index that is out of bounds, or perform other list operations that are not permitted. Similar to the Dart List API.
+</Warning>
+Access a list property by path on a `ViewModelInstance` object:
+
+```dart Access a List property
+final todosProperty = viewModelInstance.list('todos')!; // list property named "todos"
+print(todosProperty.length); // print the length of the list
+```
+
+To add an item you first need to create an instance of the view model that you want to add to the list:
+
+```dart Create a blank view model instance
+final todoItemVM = riveFile.viewModelByName("TodoItem")!;
+final todoItemInstance = todoItemVM.createInstance()!;
+```
+
+You can also create an instance from an existing instance (as exported in the Rive Editor), using:
+
+- `createDefaultInstance()`
+- `createInstanceByName('exercise')`
+- `createInstanceByIndex(0)`.
+
+Then add the instance to the list:
+
+```dart Add an instance to the list
+todosProperty.add(todoItemInstance);
+```
+
+To remove a particular instance from the list, you can use the `remove` method:
+
+```dart Remove an instance from the list
+todosProperty.remove(todoItemInstance);
+```
+
+Other operations:
+
+```dart List operations
+// Remove at index
+todosProperty.removeAt(0); // can throw
+
+// Insert at index
+todosProperty.insert(0, todoItemInstance); // can throw
+
+// Swap
+todosProperty.swap(0, 1); // can throw
+
+// First
+ViewModelInstance todo = todosProperty.first(); // can throw
+
+// Last
+ViewModelInstance todo = todosProperty.last(); // can throw
+
+// First or null
+ViewModelInstance? todo todosProperty.firstOrNull(); // will return null if the list is empty
+
+// Last or null
+ViewModelInstance? todosProperty.lastOrNull(); // will return null if the list is empty
+
+// Access/set directly by index
+final instance = todosProperty[0]; // can throw
+todosProperty[0] = todoItemInstance; // can throw
+
+// Instance at index
+todosProperty.instanceAt(2); // can throw
+
+// Length
+todosProperty.length;
+```
+
+<Artboards />
+
+<Demos examples={["dataBindingArtboards"]}  runtime="flutter" />
+
+<Info>
+    See the [Flutter data binding artboards example](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding_artboards.dart).
+</Info>
+Artboard properties work with the `BindableArtboard` class, which is different from the regular `Artboard` class in the package.
+
+`BindableArtboard` is a runtime wrapper for interacting with artboards through data binding. These instances reference existing artboards in your file, so no additional setup is required in the Rive Editor.
+
+```dart
+    // Artboard property to bind
+    final artboardProp = viewModelInstance.artboard('artboardPropertyName')!;
+
+    // Create a bindable artboard
+    final bindableArtboard = riveFile.artboardToBind('artboardName')!;
+    artboardProp.value = bindableArtboard;
+```
+
+<Enums />
+
+```dart
+// Accesss on a File object
+print("Data enums: ${file.enums}");
+```
+
+# Examples
+
+    - [Data binding overview](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding.dart)
+    - [Data binding images](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding_images.dart)
+    - [Data binding artboards](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding_artboards.dart)
+    - [Data binding lists](https://github.com/rive-app/rive-flutter/blob/master/example/lib/examples/databinding_lists.dart)

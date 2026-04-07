@@ -1,0 +1,54 @@
+---
+title: 'Preloading WASM'
+description: ''
+---
+
+import Overview from '/snippets/runtimes/preloading-wasm/overview.mdx'
+import Thanks from '/snippets/runtimes/preloading-wasm/thanks.mdx'
+
+<Overview />
+
+If you're using `@rive-app/react-canvas` or `@rive-app/react-webgl`, import the WASM resource into your app, as well as the `RuntimeLoader` API:
+
+```javascript
+import riveWASMResource from '@rive-app/canvas/rive.wasm';
+import { useRive, RuntimeLoader } from '@rive-app/react-canvas';
+
+RuntimeLoader.setWasmUrl(riveWASMResource);
+
+const MyComponent = () => {
+  const { rive, RiveComponent } = useRive({
+    src: 'foo.riv',
+    ...
+  });
+};
+```
+
+The `RuntimeLoader` is a singleton that manages loading in the WASM file behind the scenes when loading in the `Rive` instance. By calling the `setWasmUrl` API, you can load in WASM for the Rive runtime with the data URI from the direct import of the WASM file. Run this API on any page that has a Rive animation to load.
+
+<Note>
+ You may need to add configuration into your build tool to import WASM files. See the [original blog post](https://dev.to/alex_barashkov/optimization-techniques-for-rive-animations-in-react-apps-1a8p) that inspired us to add these to docs for some guidance here
+</Note>
+
+You can additionally preload the WASM module if you set up your build tools to load Web Assembly for your application in relevant pages where you create Rive instances to instance your Rive animations quickly.
+
+For example, with Next.js, you may attach the following to your main page layout:
+
+```javascript
+import { Html, Head } from "next/document";
+import riveWASMResource from '@rive-app/canvas/rive.wasm';
+
+export default function Document() {
+  return (
+    <Html>
+      <Head>
+        <link rel="preload" href={riveWASMResource} as="fetch" crossOrigin="anonymous" />
+      </Head>
+    </Html>
+  );
+}
+```
+
+You may need to install `@rive-app/canvas` at the version tied down with the correlated React version on `@rive-app/react-canvas` or you may notice issues at runtime. For example, `@rive-app/react-canvas@3.0.33` ties down the JS dependency at `@rive-app/canvas@1.0.95`; therefore you may want to install that specific version of the JS runtime to ensure compatibility.
+
+<Thanks />

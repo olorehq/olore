@@ -1,0 +1,80 @@
+---
+title: "Caching a Rive File"
+description: ""
+---
+
+import { Demos } from "/snippets/demos.jsx";
+import Overview from "/snippets/runtimes/caching/overview.mdx"
+
+<Overview />
+
+## Example Usage
+
+<Demos examples={["cachingARiveFile"]} runtime="web" />
+
+The following is a basic example to illustrate how to preload a Rive file, and pass the data to multiple Rive instances.
+
+```javascript
+const rive = require("@rive-app/canvas");
+
+let riveInstances = [];
+
+function loadRiveFile(src, onSuccess, onError) {
+const file = new rive.RiveFile({
+    src: src,
+    onLoad: () => onSuccess(file),
+    onLoadError: onError,
+});
+// Remember to call init() to trigger the load;
+file.init().catch(onError);
+}
+
+function setupRiveInstance(loadedRiveFile, canvasId) {
+const canvas = document.getElementById(canvasId);
+if (!canvas) return;
+
+const riveInstance = new rive.Rive({
+    riveFile: loadedRiveFile,
+    // Be sure to specify the correct state machine (or animation) name
+    stateMachines: "Motion", // Name of the State Machine to play
+    canvas: canvas,
+    layout: new rive.Layout({
+    fit: rive.Fit.FitWidth,
+    alignment: rive.Alignment.Center,
+    }),
+    autoplay: true,
+    onLoad: () => {
+    // Prevent a blurry canvas by using the device pixel ratio
+    riveInstance.resizeDrawingSurfaceToCanvas();
+    },
+});
+
+riveInstances.push(riveInstance);
+}
+
+// Loads the .riv file and initializes multiple Rive instances using the same loaded RiveFile in memory
+loadRiveFile(
+"clean_the_car.riv",
+(file) => {
+    setupRiveInstance(file, "rive-canvas-1");
+    setupRiveInstance(file, "rive-canvas-2");
+    // You could also store a reference to the loaded RiveFile here so you're able to initialize other Rive instances later.
+},
+(error) => {
+    console.error("Failed to load Rive file:", error);
+}
+);
+
+// Resize the drawing surface for all instances if the window resizes
+window.addEventListener(
+"resize",
+() => {
+    riveInstances.forEach((instance) => {
+    if (instance) {
+        instance.resizeDrawingSurfaceToCanvas();
+    }
+    });
+},
+false
+);
+```

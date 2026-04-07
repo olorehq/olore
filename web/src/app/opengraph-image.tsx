@@ -80,7 +80,7 @@ export default function Image() {
             }}
           >
             <span style={{ fontSize: 32, fontWeight: 700, color: "#22d3ee" }}>
-              70+
+              80+
             </span>
             <span
               style={{

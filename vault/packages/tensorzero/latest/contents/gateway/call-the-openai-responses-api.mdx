@@ -1,0 +1,330 @@
+---
+title: How to call the OpenAI Responses API
+sidebarTitle: Call the OpenAI Responses API
+description: Learn how to use OpenAI's Responses API with built-in tools like web search.
+---
+
+This page shows how to:
+
+- **Use a unified API.** TensorZero provides the same chat completion format for the Responses API.
+- **Access built-in tools.** Enable built-in tools from OpenAI like `web_search`.
+- **Enable reasoning models.** Support models with extended thinking capabilities.
+
+<Tip>
+
+You can find a [complete runnable example](https://github.com/tensorzero/tensorzero/tree/main/examples/docs/guides/gateway/call-the-openai-responses-api) of this guide on GitHub.
+
+</Tip>
+
+## Call the OpenAI Responses API
+
+<Tabs>
+
+<Tab title="Python">
+
+You can point the OpenAI Python SDK to a TensorZero Gateway to access the Responses API.
+
+<Steps>
+
+<Step title="Set up your OpenAI API key">
+
+You can set the `OPENAI_API_KEY` environment variable with your API key.
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+</Step>
+
+<Step title="Install the OpenAI Python SDK">
+
+You can install the OpenAI SDK with a Python package manager like `pip`.
+
+```bash
+pip install openai
+```
+
+</Step>
+
+<Step title="Configure a model for the OpenAI Responses API">
+
+Create a configuration file with a model using `api_type = "responses"` and provider tools:
+
+```toml title="tensorzero.toml"
+[models.gpt-5-mini-responses-web-search]
+routing = ["openai"]
+
+[models.gpt-5-mini-responses-web-search.providers.openai]
+type = "openai"
+model_name = "gpt-5-mini"
+api_type = "responses"
+include_encrypted_reasoning = true
+provider_tools = [{type = "web_search"}]  # built-in OpenAI web search tool
+# Enable plain-text summaries of encrypted reasoning
+extra_body = [
+    { pointer = "/reasoning", value = { effort = "low", summary = "auto" } }
+]
+```
+
+</Step>
+
+<Step title="Deploy the TensorZero Gateway">
+
+Let's deploy the TensorZero Gateway using Docker.
+For simplicity, we'll use the gateway with the configuration above.
+
+```bash
+docker run \
+  -e OPENAI_API_KEY \
+  -v $(pwd)/tensorzero.toml:/app/config/tensorzero.toml:ro \
+  -p 3000:3000 \
+  tensorzero/gateway \
+  --config-file /app/config/tensorzero.toml
+```
+
+<Tip>
+
+See the [Deploy the TensorZero Gateway](/deployment/tensorzero-gateway) page for more details.
+
+</Tip>
+
+</Step>
+
+<Step title="Initialize the OpenAI client">
+
+Let's initialize the OpenAI SDK and point it to the gateway we just launched.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:3000/openai/v1", api_key="not-used")
+```
+
+</Step>
+
+<Step title="Call the LLM">
+
+<Note>OpenAI web search can take up to a minute to complete.</Note>
+
+```python
+response = client.chat.completions.create(
+    model="tensorzero::model_name::gpt-5-mini-responses-web-search",
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the current population of Japan?",
+        }
+    ],
+)
+```
+
+<Accordion title="Sample Response">
+
+```python
+ChatCompletion(
+    id='0199ff78-5bad-7312-ab13-e4c5fa0bde8d',
+    choices=[
+        Choice(
+            finish_reason='stop',
+            index=0,
+            logprobs=None,
+            message=ChatCompletionMessage(
+                content="Short answer — it depends on the source/date:\n\n- Japan's official demographic survey (Ministry of Internal Affairs and Communications, reported by major Japanese outlets) shows a total population of 124,330,690 as of January 1, 2025 (this includes foreign residents). ([asahi.com](https://www.asahi.com/ajw/articles/15952384?utm_source=openai))\n\n- International mid‑year estimates (United Nations/UNFPA) put Japan's 2025 population at about 123.1 million (mid‑2025 estimate), which uses a different methodology and reference date. ([unfpa.org](https://www.unfpa.org/data/world-population/JP?utm_source=openai))\n\nToday is October 20, 2025 — would you like me to fetch a live or another specific estimate (e.g., UN mid‑year, World Bank, or the latest Japanese government update)?",
+                refusal=None,
+                role='assistant',
+                annotations=None,
+                audio=None,
+                function_call=None,
+                tool_calls=[]
+            )
+        )
+    ],
+    created=1760927745,
+    model='tensorzero::model_name::gpt-5-mini-responses-web-search',
+    object='chat.completion',
+    service_tier=None,
+    system_fingerprint='',
+    usage=CompletionUsage(
+        completion_tokens=2304,
+        prompt_tokens=21444,
+        total_tokens=23748,
+        completion_tokens_details=None,
+        prompt_tokens_details=None
+    ),
+    episode_id='0199ff78-5bad-7312-ab13-e4d8708e5b73'
+)
+```
+
+</Accordion>
+
+</Step>
+
+</Steps>
+
+</Tab>
+
+<Tab title="Node">
+
+You can point the OpenAI Node SDK to a TensorZero Gateway to access the Responses API.
+
+<Steps>
+
+<Step title="Set up your OpenAI API key">
+
+You can set the `OPENAI_API_KEY` environment variable with your API key.
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+</Step>
+
+<Step title="Install the OpenAI Node SDK">
+
+You can install the OpenAI SDK with a package manager like `npm`.
+
+```bash
+npm i openai
+```
+
+</Step>
+
+<Step title="Configure a model for the OpenAI Responses API">
+
+Create a configuration file with a model using `api_type = "responses"` and provider tools:
+
+```toml title="tensorzero.toml"
+[models.gpt-5-mini-responses-web-search]
+routing = ["openai"]
+
+[models.gpt-5-mini-responses-web-search.providers.openai]
+type = "openai"
+model_name = "gpt-5-mini"
+api_type = "responses"
+include_encrypted_reasoning = true
+provider_tools = [{type = "web_search"}]  # built-in OpenAI web search tool
+# Enable plain-text summaries of encrypted reasoning
+extra_body = [
+    { pointer = "/reasoning", value = { effort = "low", summary = "auto" } }
+]
+```
+
+</Step>
+
+<Step title="Deploy the TensorZero Gateway">
+
+Let's deploy the TensorZero Gateway using Docker.
+For simplicity, we'll use the gateway with the configuration above.
+
+```bash
+docker run \
+  -e OPENAI_API_KEY \
+  -v $(pwd)/tensorzero.toml:/app/config/tensorzero.toml:ro \
+  -p 3000:3000 \
+  tensorzero/gateway \
+  --config-file /app/config/tensorzero.toml
+```
+
+<Tip>
+
+See the [Deploy the TensorZero Gateway](/deployment/tensorzero-gateway) page for more details.
+
+</Tip>
+
+</Step>
+
+<Step title="Initialize the OpenAI client">
+
+Let's initialize the OpenAI SDK and point it to the gateway we just launched.
+
+```ts
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://localhost:3000/openai/v1",
+  apiKey: "not-used",
+});
+```
+
+</Step>
+
+<Step title="Call the LLM">
+
+<Note>OpenAI web search can take up to a minute to complete.</Note>
+
+```ts
+const response = await client.chat.completions.create({
+  model: "tensorzero::model_name::gpt-5-mini-responses-web-search",
+  messages: [
+    {
+      role: "user",
+      content: "What is the current population of Japan?",
+    },
+  ],
+});
+```
+
+<Accordion title="Sample Response">
+
+```json
+{
+  id: '0199ff74-0203-70d1-857a-a52b89291955',
+  episode_id: '0199ff74-0203-70d1-857a-a53eb122c72f',
+  choices: [
+    {
+      index: 0,
+      finish_reason: 'stop',
+      message: {
+        content: 'According to Japan’s Statistics Bureau, the preliminary population count was 12,317 ten‑thousand (i.e., 123,170,000) as of September 1, 2025. ([stat.go.jp](https://www.stat.go.jp/english/?s=1&vm=r))\n' +
+          '\n' +
+          'Would you like a mid‑year UN estimate or the latest monthly update?',
+        tool_calls: [],
+        role: 'assistant'
+      }
+    }
+  ],
+  created: 1760927476,
+  model: 'tensorzero::model_name::gpt-5-mini-responses-web-search',
+  system_fingerprint: '',
+  service_tier: null,
+  object: 'chat.completion',
+  usage: {
+    prompt_tokens: 32210,
+    completion_tokens: 2253,
+    total_tokens: 34463
+  }
+}
+```
+
+</Accordion>
+
+</Step>
+
+</Steps>
+
+</Tab>
+
+</Tabs>
+
+## Call the OpenAI Responses API with Azure
+
+You can call the OpenAI Responses API with Azure by setting `api_base` in your configuration to your Azure deployment URL.
+
+```toml
+[models.azure-gpt-5-mini-responses]
+routing = ["azure"]
+
+[models.azure-gpt-5-mini-responses.providers.azure]
+type = "openai"  # CAREFUL: not `azure`!
+api_base = "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"  # TODO: Insert your API base URL here
+api_key_location = "env::AZURE_API_KEY"
+model_name = "gpt-5-mini"
+api_type = "responses"
+```
+
+<Warning>
+
+The `azure` model provider does not support the Responses API.
+You must use the `openai` provider with a custom `api_base` instead.
+
+</Warning>

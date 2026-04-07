@@ -1,0 +1,137 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import LoadingViaCDN from '/snippets/runtimes/loading-assets/loading-via-cdn.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<LoadingViaCDN />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+### Examples
+
+{/* TODO Demo cards */}
+
+- [Specify a font asset to load](https://codesandbox.io/p/devbox/rive-out-of-band-fonts-js-forked-kml2wd?file=%2Fsrc%2Findex.ts)
+- [Specify an image asset to load](https://codesandbox.io/p/sandbox/rive-out-of-band-images-js-forked-23jx8m?file=%2Fsrc%2Findex.ts)
+
+### Using the Asset Handler API
+
+When instantiating a new Rive instance, add an `assetLoader` callback property to the list of parameters. This callback will be called for every asset the runtime detects from the `.riv` file on load, and will be responsible for either handling the load of an asset at runtime or passing on the responsibility and giving the runtime a chance to load it otherwise.
+
+An instance where you may want to handle loading an asset is if an asset in the file is marked as **Referenced**, and you need to provide an actual asset to render for the graphic, as Rive does not embed it in the `.riv` and thus cannot load it.
+
+An instance where you may want to give the runtime a chance to load the asset is if the asset in the file is marked as **Hosted**, and want to pass the responsibility of loading it to the runtime (which will call into a Rive CDN to do so).
+
+```javascript
+assetLoader: (asset: rc.FileAsset, bytes: Uint8Array) => boolean;
+```
+
+Your provided callback will be passed an `asset` and `bytes`.
+
+- `asset` - Reference to a `FileAsset` object from WASM. You can grab a number of properties from this object, such as the name, asset type, and more. You'll also use this to set a new Rive-specific asset for the dynamically loaded in asset you want to set (i.e. `RenderImage` for an image, `Font` for a font, or `Audio` for audio).
+- `bytes` - Array of bytes for the asset (if possible, such as if it's an embedded asset)
+
+**Important**: Note that the return value is a `boolean`, which is where you need to return `true` if you intend on handling and loading in an asset yourself, or `false` if you do not want to handle asset loading for that given asset yourself, and attempt to have the runtime try to load the asset.
+
+When decoding an asset be sure to call `unref` once it is no longer needed - to avoid memory leaks. This allows the engine to clean it up when it is not used by any more animations.\
+Example Usage
+
+```javascript
+import {
+    Rive,
+    Fit,
+    Alignment,
+    Layout,
+    decodeFont,
+    ImageAsset, // Optionally include for type checking
+    FontAsset, // Optionally include for type checking
+    FileAsset, // Optionally include for type checking
+} from "@rive-app/canvas";
+
+// Load a random asset by using a decodeFont API to feed to a
+// setFont API on the asset provided in assetLoader
+const randomFontAsset = (asset) => {
+const urls = [
+    "https://cdn.rive.app/runtime/flutter/IndieFlower-Regular.ttf",
+    "https://cdn.rive.app/runtime/flutter/comic-neue.ttf",
+    "https://cdn.rive.app/runtime/flutter/inter.ttf",
+    "https://cdn.rive.app/runtime/flutter/inter-tight.ttf",
+    "https://cdn.rive.app/runtime/flutter/josefin-sans.ttf",
+    "https://cdn.rive.app/runtime/flutter/send-flowers.ttf",
+];
+let randomIndex = Math.floor(Math.random() * urls.length);
+fetch(urls[randomIndex]).then(
+    async (res) => {
+    // decodeFont creates a Rive-specific Font object that `setFont()` takes
+    // on the asset from assetLoader
+    const font = await decodeFont(new Uint8Array(await res.arrayBuffer()));
+    asset.setFont(font);
+
+    // Be sure to call unref on the font once it is no longer needed. This
+    // allows the engine to clean it up when it is not used by any more animations.
+    font.unref();
+    }
+);
+};
+
+
+const riveInstance = new Rive({
+src: "acqua_text.riv",
+stateMachines: "State Machine 1", // Name of the State Machine to play
+canvas: document.getElementById("rive-canvas"),
+layout: new Layout({
+    fit: Fit.Cover,
+    alignment: Alignment.Center,
+}),
+autoplay: true,
+// Callback handler to pass in that dictates what to do with an asset found in
+// the Rive file that's being loaded in
+assetLoader: (asset, bytes) => {
+    console.log("Asset properties to query", {
+        name: asset.name,
+        fileExtension: asset.fileExtension,
+        cdnUuid: asset.cdnUuid,
+        isFont: asset.isFont,
+        isImage: asset.isImage,
+        isAudio: asset.isAudio,
+        bytes,
+    });
+
+    // If the asset has a `cdnUuid`, return false to let the runtime handle
+    // loading it in from a CDN. Or if there are bytes found for the asset
+    // (aka, it was embedded), return false as there's no work needed here
+    if (asset.cdnUuid.length > 0 || bytes.length > 0) {
+        return false;
+    }
+
+    // Here, we load a font asset with a random font on load of the Rive file
+    // and return true, because this callback handler is responsible for loading
+    // the asset, as opposed to the runtime
+    if (asset.isFont) {
+        randomFontAsset(asset);
+        return true;
+    }
+},
+onLoad: () => {
+    // Prevent a blurry canvas by using the device pixel ratio
+    riveInstance.resizeDrawingSurfaceToCanvas();
+}
+});
+```
+
+<Resources />

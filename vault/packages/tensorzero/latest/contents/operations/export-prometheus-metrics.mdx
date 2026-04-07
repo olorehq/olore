@@ -1,0 +1,59 @@
+---
+title: Export Prometheus metrics
+description: Learn how the TensorZero Gateway exports Prometheus-compatible metrics for monitoring and debugging.
+---
+
+The TensorZero Gateway exposes runtime metrics through a [Prometheus](https://prometheus.io/)-compatible endpoint.
+This allows you to monitor gateway performance, track usage patterns, and set up alerting using standard Prometheus tooling.
+This endpoint provides operational metrics about the gateway itself.
+It's not meant to replace TensorZero's observability features.
+
+You can access the metrics by scraping the `/metrics` endpoint.
+
+## `tensorzero_inference_latency_overhead_seconds`
+
+This metric tracks the latency overhead introduced by TensorZero on inference requests.
+It measures the total request duration minus the time spent waiting for external model provider HTTP requests.
+This is useful for understanding how much latency TensorZero adds to your inference requests, independently of model provider latency.
+
+This metric is reported as a histogram with configurable buckets (default: `[0.001, 0.01, 0.1]`).
+You can customize the buckets in your configuration file using [`gateway.metrics.tensorzero_inference_latency_overhead_seconds_buckets`](/gateway/configuration-reference):
+
+```toml title="tensorzero.toml"
+[gateway.metrics]
+tensorzero_inference_latency_overhead_seconds_buckets = [0.001, 0.005, 0.01, 0.05, 0.1]
+```
+
+```txt title="GET /metrics"
+# HELP tensorzero_inference_latency_overhead_seconds Overhead of TensorZero on HTTP requests
+# TYPE tensorzero_inference_latency_overhead_seconds histogram
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="0.001"} 0
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="0.005"} 2
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="0.01"} 5
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="0.05"} 8
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="0.1"} 10
+tensorzero_inference_latency_overhead_seconds_bucket{function_name="my_function",variant_name="my_variant",le="+Inf"} 10
+tensorzero_inference_latency_overhead_seconds_sum{function_name="my_function",variant_name="my_variant"} 0.025
+tensorzero_inference_latency_overhead_seconds_count{function_name="my_function",variant_name="my_variant"} 10
+```
+
+## `tensorzero_inferences_total`
+
+This metric counts the total number of inferences performed by TensorZero.
+
+```txt title="GET /metrics"
+# HELP tensorzero_inferences_total Inferences performed by TensorZero
+# TYPE tensorzero_inferences_total counter
+tensorzero_inferences_total{endpoint="inference",function_name="my_function",model_name="gpt-4o-mini-2024-07-18"} 1
+```
+
+## `tensorzero_requests_total`
+
+This metric counts the total number of requests handled by TensorZero.
+
+```txt title="GET /metrics"
+# HELP tensorzero_requests_total Requests handled by TensorZero
+# TYPE tensorzero_requests_total counter
+tensorzero_requests_total{endpoint="inference",function_name="my_function",model_name="gpt-4o-mini-2024-07-18"} 1
+tensorzero_requests_total{endpoint="feedback",metric_name="draft_accepted"} 10
+```

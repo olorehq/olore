@@ -1,0 +1,113 @@
+---
+title: Getting Started with GCP Vertex AI Anthropic
+sidebarTitle: GCP Vertex AI Anthropic
+description: "Learn how to use TensorZero with GCP Vertex AI Anthropic LLMs: open-source gateway, observability, optimization, evaluations, and experimentation."
+---
+
+This guide shows how to set up a minimal deployment to use the TensorZero Gateway with GCP Vertex AI Anthropic.
+
+## Setup
+
+For this minimal setup, you'll need just two files in your project directory:
+
+```
+- config/
+  - tensorzero.toml
+- docker-compose.yml
+```
+
+<Tip>
+
+You can also find the complete code for this example on [GitHub](https://github.com/tensorzero/tensorzero/tree/main/examples/guides/providers/gcp-vertex-ai-anthropic).
+
+</Tip>
+
+For production deployments, see our [Deployment Guide](/deployment/tensorzero-gateway/).
+
+### Configuration
+
+Create a minimal configuration file that defines a model and a simple chat function:
+
+```toml title="config/tensorzero.toml"
+[models.claude_haiku_4_5]
+routing = ["gcp_vertex_anthropic"]
+
+[models.claude_haiku_4_5.providers.gcp_vertex_anthropic]
+type = "gcp_vertex_anthropic"
+model_id = "claude-haiku-4-5@20251001"  # or endpoint_id = "..." for fine-tuned models and custom endpoints
+location = "us-east5"
+project_id = "your-project-id"  # change this
+
+[functions.my_function_name]
+type = "chat"
+
+[functions.my_function_name.variants.my_variant_name]
+type = "chat_completion"
+model = "claude_haiku_4_5"
+```
+
+See the [list of models available on GCP Vertex AI Anthropic](https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-claude).
+
+Alternatively, you can use the short-hand `gcp_vertex_anthropic::model_name` to use a GCP Vertex AI Anthropic model with TensorZero if you don't need advanced features like fallbacks or custom credentials:
+
+- `gcp_vertex_anthropic::projects/<PROJECT_ID>/locations/<REGION>/publishers/google/models/<MODEL_ID>`
+- `gcp_vertex_anthropic::projects/<PROJECT_ID>/locations/<REGION>/endpoints/<ENDPOINT_ID>`
+
+### Credentials
+
+By default, TensorZero reads the path to your GCP service account JSON file from the `GCP_VERTEX_CREDENTIALS_PATH` environment variable (using `path_from_env::GCP_VERTEX_CREDENTIALS_PATH`).
+
+You must generate a GCP service account key in JSON format as described [here](https://cloud.google.com/docs/authentication/provide-credentials-adc#service-account).
+
+You can customize the credential location using:
+
+- `sdk`: use the Google Cloud SDK to auto-discover credentials
+- `path::/path/to/credentials.json`: use a specific file path
+- `path_from_env::YOUR_ENVIRONMENT_VARIABLE`: read file path from an environment variable (default behavior)
+- `dynamic::ARGUMENT_NAME`: provide credentials dynamically at inference time
+- `{ default = ..., fallback = ... }`: configure credential fallbacks
+
+See the [Credential Management](/operations/manage-credentials/) guide and [Configuration Reference](/gateway/configuration-reference/) for more information.
+
+### Deployment (Docker Compose)
+
+Create a minimal Docker Compose configuration:
+
+```yaml title="docker-compose.yml"
+# This is a simplified example for learning purposes. Do not use this in production.
+# For production-ready deployments, see: https://www.tensorzero.com/docs/deployment/tensorzero-gateway
+
+services:
+  gateway:
+    image: tensorzero/gateway
+    volumes:
+      - ./config:/app/config:ro
+      - ${GCP_VERTEX_CREDENTIALS_PATH:-/dev/null}:/app/gcp-credentials.json:ro
+    command: --config-file /app/config/tensorzero.toml
+    environment:
+      GCP_VERTEX_CREDENTIALS_PATH: ${GCP_VERTEX_CREDENTIALS_PATH:+/app/gcp-credentials.json}
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+You can start the gateway with `docker compose up`.
+
+## Inference
+
+Make an inference request to the gateway:
+
+```bash
+curl -X POST http://localhost:3000/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tensorzero::function_name::my_function_name",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of Japan?"
+      }
+    ]
+  }'
+```

@@ -1,0 +1,102 @@
+---
+description: "Use the `interface` keyword to define contracts that any implementing type must support. Interfaces provide the means to create common behavior among a set of unrelated types."
+title: "interface keyword"
+ms.date: 01/21/2026
+f1_keywords:
+  - "interface_CSharpKeyword"
+helpviewer_keywords:
+  - "interface keyword [C#]"
+---
+# :::no-loc text="interface"::: (C# Reference)
+
+An interface defines a contract. Any [`class`](class.md), [`record`](../builtin-types/record.md), or [`struct`](../builtin-types/struct.md) that implements that contract must provide an implementation of the members defined in the interface.
+
+An interface can define a [default implementation](#default-interface-members) for a member. It can also define [`static`](static.md) members to provide a single implementation for common functionality.
+
+An interface can define `static abstract` or `static virtual` members to declare that an implementing type must provide the declared members. Typically, `static virtual` methods declare that an implementation must define a set of [overloaded operators](../operators/operator-overloading.md).
+
+[!INCLUDE[csharp-version-note](../includes/initial-version.md)]
+
+In the following example, class `ImplementationClass` must implement a method named `SampleMethod` that has no parameters and returns `void`.
+
+:::code language="csharp" source="./snippets/keywordsTypes.cs" id="14":::
+
+For more information and examples, see [Interfaces](../../fundamentals/types/interfaces.md).
+
+## Access modifiers
+
+An interface can be a member of a namespace or a class. You can declare a top-level interface, one declared in a namespace but not nested inside another type, as `public` or `internal`. The default is `internal`. You can declare nested interface declarations, declared inside another type, by using any access modifier.
+
+Interface members *without* an implementation (abstract members) are implicitly `public` and can't have any other access modifier. Interface members *with* a default implementation are `private` by default if you don't specify an access modifier, but you can declare any access modifier (`public`, `private`, `protected`, or `internal`).
+
+## Interface members
+
+An interface declaration can contain the following members:
+
+- [Methods](../../programming-guide/classes-and-structs/methods.md).
+- [Properties](../../programming-guide/classes-and-structs/using-properties.md).
+- [Indexers](../../programming-guide/indexers/using-indexers.md).
+- [Events](event.md).
+- [Constants](const.md).
+- [Operators](../operators/operator-overloading.md).
+- [A static constructor](../../programming-guide/classes-and-structs/constructors.md#static-constructors).
+- [Nested types](../../programming-guide/classes-and-structs/nested-types.md).
+- [Static fields, methods, properties, indexers, and events](static.md).
+- Explicit access modifiers (the default access for abstract methods is [`public`](access-modifiers.md)).
+
+## Default interface members
+
+Member declarations typically don't contain a body. However, an interface member can declare a body. Member bodies in an interface are the *default implementation*. By using members with bodies, the interface can provide a default implementation for classes and structs that don't provide an overriding implementation.
+
+> [!IMPORTANT]
+> If you add default interfaces members, any `ref struct` that implements the interface must explicitly declare that member.
+
+## Static abstract and virtual members
+
+An interface can declare `static abstract` and `static virtual` members for all member types except fields. By declaring these members, an interface can require that implementing types define operators or other static members. This feature enables generic algorithms to specify number-like behavior. You can see examples in the numeric types in the .NET runtime, such as <xref:System.Numerics.INumber`1?displayProperty=nameWithType>. These interfaces define common mathematical operators implemented by many numeric types. The compiler must resolve calls to `static virtual` and `static abstract` methods at compile time. The `static virtual` and `static abstract` methods declared in interfaces don't have a runtime dispatch mechanism analogous to `virtual` or `abstract` methods declared in classes. Instead, the compiler uses type information available at compile time. Therefore, `static virtual` methods are almost exclusively declared in [generic interfaces](../../programming-guide/generics/generic-interfaces.md). Furthermore, most interfaces that declare `static virtual` or `static abstract` methods declare that one of the type parameters must [implement the declared interface](../../programming-guide/generics/constraints-on-type-parameters.md#type-arguments-implement-declared-interface). For example, the `INumber<T>` interface declares that `T` must implement `INumber<T>`. The compiler uses the type argument to resolve calls to the methods and operators declared in the interface declaration. For example, the `int` type implements `INumber<int>`. When the type parameter `T` denotes the type argument `int`, the `static` members declared on `int` are invoked. Alternatively, when `double` is the type argument, the `static` members declared on the `double` type are invoked.
+
+> [!IMPORTANT]
+> Method dispatch for `static abstract` and `static virtual` methods declared in interfaces is resolved by using the compile-time type of an expression. If the runtime type of an expression is derived from a different compile-time type, the static methods on the base (compile-time) type are called.
+
+You can try this feature by working with the tutorial on [static abstract members in interfaces](../../advanced-topics/interface-implementation/static-virtual-interface-members.md).
+
+## Interface inheritance
+
+Interfaces can't contain instance state. While static fields are now permitted, instance fields aren't permitted in interfaces. [Instance auto-properties](../../programming-guide/classes-and-structs/auto-implemented-properties.md) aren't supported in interfaces, as they would implicitly declare a hidden field. This rule has a subtle effect on property declarations. In an interface declaration, the following code doesn't declare an automatically implemented property as it does in a `class` or `struct`. Instead, it declares a property that doesn't have a default implementation but must be implemented in any type that implements the interface:
+
+```csharp
+public interface INamed
+{
+  public string Name {get; set;}
+}
+```
+
+An interface can inherit from one or more base interfaces. When an interface inherits from another interface, a type implementing the derived interface must implement all the members in the base interfaces in addition to those members declared in the derived interface, as shown in the following code:
+
+:::code language="csharp" source="./snippets/DefineTypes.cs" id="SnippetDerivedInterfaces":::
+
+When an interface [overrides a method](override.md) implemented in a base interface, it must use the [explicit interface implementation](../../programming-guide/interfaces/explicit-interface-implementation.md) syntax.
+
+When a base type list contains a base class and interfaces, the base class must come first in the list.
+
+A class that implements an interface can explicitly implement members of that interface. An explicitly implemented member can't be accessed through a class instance, but only through an instance of the interface. In addition, default interface members can only be accessed through an instance of the interface.
+
+For more information about explicit interface implementation, see [Explicit Interface Implementation](../../programming-guide/interfaces/explicit-interface-implementation.md).
+
+## Example interface implementation
+
+The following example demonstrates interface implementation. In this example, the interface contains the property declaration and the class contains the implementation. Any instance of a class that implements `IPoint` has integer properties `x` and `y`.
+
+:::code language="csharp" source="./snippets/DefineTypes.cs" id="Snippet15":::
+
+## C# language specification
+
+For more information, see the [Interfaces](~/_csharpstandard/standard/interfaces.md) section of the [C# language specification](~/_csharpstandard/standard/README.md) and the feature spec for [static abstract members in interfaces](~/_csharplang/proposals/csharp-11.0/static-abstracts-in-interfaces.md).
+
+## See also
+
+- [C# Keywords](index.md)
+- [Reference Types](reference-types.md)
+- [Interfaces](../../fundamentals/types/interfaces.md)
+- [Using Properties](../../programming-guide/classes-and-structs/using-properties.md)
+- [Using Indexers](../../programming-guide/indexers/using-indexers.md)

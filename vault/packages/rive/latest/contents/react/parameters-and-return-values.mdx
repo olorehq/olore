@@ -1,0 +1,135 @@
+---
+title: 'Parameters and Return Values'
+description: 'Rive React API.'
+---
+
+## Hooks
+
+### useRive
+
+The `useRive` hook is the recommended way to hook into the Rive runtime for full control, especially when using the Rive State Machine. See below for parameters to pass in and the return values.
+
+`useRive(riveParams: UseRiveParameters, opts: UseRiveOptions): RiveState`
+
+- `riveParams` - See below for a set of parameters passed to the `Rive` object at instantiation from the Web runtime. `null` and `undefined` can be passed to conditionally display the .riv file
+- `opts` - *(Optional)* See below for a set of options specific to `rive-react`
+
+#### Parameters
+
+**UseRiveParameters**
+
+Most of these parameters come from the underlying web runtime configuration items for the Rive object, with the exception of supplying a `canvas` element. See [Rive Parameters](/runtimes/web/rive-parameters) for all the parameters you can supply in this object.
+
+<Note>
+ If you supply an `onLoad` callback in the parameters, you may not have access to the `rive` instance yet. The React runtime uses `onLoad` internally to setState with the `rive` instance, and therefore may not be populated by the time it reaches a consumer-supplied callback. We recommend using a `useEffect` in place of `onLoad` to reliably use the `rive` instance if you are looking for a similar method. In a future version of the web runtime, we may supply the `rive` instance in the parameters of your callback so you can supply an `onLoad` here.
+</Note>
+
+**UseRiveOptions**
+
+- `useDevicePixelRatio` - *(optional)* If `true`, the hook will scale the resolution of the animation based on the [devicePixelRatio](https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio). Defaults to `true`. NOTE: Requires the `setContainerRef` ref callback to be passed to an element wrapping a canvas element. If you use the `RiveComponent`, then this will happen automatically
+- `fitCanvasToArtboardHeight` - *(optional)* If `true`, then the canvas will resize based on the height of the artboard. Defaults to `false`
+- `useOffscreenRenderer` - *(optional)* If `true`, the Rive instance will share (or create if one does not exist) an offscreen `WebGL` context. This allows you to display multiple Rive animations on one screen to work around some browser limitations regarding multiple concurrent WebGL contexts. If `false`, each Rive instance will have its own dedicated `WebGL` context and you may need to be cautious of the browser limitations just mentioned. We recommend **not** changing this default prop, so you don't have to manage WebGL contexts. Destroying a React component does not guarantee the browser cleans up the WebGL context that was created when the canvas was mounted. Only relevant when using `@rive-app/react-webgl`. Defaults to `true`
+
+#### Return Values
+
+**RiveState**
+
+- `canvas` - Canvas element the Rive instance is rendered onto
+- `container` - Container element of the canvas that Rive instance is rendered onto
+- `setCanvasRef` - Ref callback to be passed to the canvas element
+- `setContainerRef` - Ref callback to be passed to the container element of the canvas. This is optional, however, if not used then the hook will not take care of automatically resizing the canvas to its outer container if the window resizes
+- `rive` - Newly created Rive instance from the Web runtime
+- `RiveComponent` - JSX element to render the Rive instance in the DOM
+
+<Note>
+ In most cases, you will just need to grab the `RiveComponent` and `rive` return values from the `useRive` hook. Setting the canvas ref and container ref is only needed if you need to control the canvas/containing element yourself.
+</Note>
+### useStateMachineInput
+
+The `useStateMachineInput` hook is the recommended way to grab references to Rive State Machine inputs, both for reading input values, and setting (or triggering) them. See below for parameters to pass in and the return value.
+
+`useStateMachineInput(rive: Rive | null, stateMachineName?: string, inputName?: string, initialValue?: number | boolean): StateMachineInput | null`
+
+<Note>
+ The return value which is the state machine input may not be immediately available due to the need for the `rive` instance to resolve first. You may want to use a `useEffect` to watch for when the `rive` instance and the return value of the `useStateMachineInput` hook has value
+</Note>
+
+#### parameters
+
+- `rive` - The 1st parameter is the Rive object instantiated - this can be retrieved via the `useRive` hook
+- `stateMachineName?` - *(optional)* Name of the state machine to grab the input from
+- `inputName?` - *(optional)* Name of a single state machine input to grab a reference to
+- `initialValue?` - *(optional)* Initial value to set on the input
+
+#### Return Values
+
+This hook returns a default instance of a `StateMachineInput`.
+
+**StateMachineInput**
+
+- `name` (get) - Access the name of the input
+- `value` (get and set) - Access the value of the input, and set the value of the input via this property
+- `fire()` - Fires off a trigger input
+
+See the [Inputs page](/runtimes/react/inputs) to see more usage of this hook.
+
+### useResizeCanvas
+
+The `useResizeCanvas` hook is an optional utility hook to resize the `<canvas>` element to its parent container element's size, while also resetting the appropriate surface area size of the canvas as well. This is useful when you don't want to use the `useRive` hook to render your Rive, and are perhaps using the web JS runtime in your React apps, but still want the ability to scale the `<canvas>` to its parent appropriately.
+
+<Note>
+ This hook is already internally used in the Rive React runtime, so if you use the `useRive` hook or the default exported `<RiveComponent />` to render your Rive, you don't need to consume this hook yourself.
+</Note>
+
+`useResizeCanvas(resizeProps: UseResizeCanvasProps): void`
+
+- `resizeProps` - See below for a set of properties to set onto this object parameter
+
+#### Parameters
+
+**UseResizeCanvasProps**
+
+- `riveLoaded: boolean` - If `true`, the Rive instance has been created and the Rive file have been parsed. This ensures the hook does not prematurely scale the `<canvas>` element. Defaults to `false`
+- `canvasRef: MutableRefObject<HTMLCanvasElement | null>` - React `Ref` for the `<canvas>` element where Rive will be rendering onto
+- `containerRef: MutableRefObject<HTMLElement | null>` - React `Ref` for the canvas's parent container element
+- `onCanvasHasResized?: () => void` (Optional) Callback to be invoked after the canvas has been resized due to a resize of its parent container. This is where you would want to reset the layout dimensions for the Rive renderer to dictate the new min/max bounds of the canvas.
+  - Using the high-level JS runtime, this might be a simple call to `rive.resizeToCanvas()`
+  - Using the low-level JS runtime, this might be invoking the renderer's `.align()` method, with the Layout and min/max X/Y values of the canvas.
+- `options?: Partial` - (Optional) Options passed to the useRive hook (see `UseRiveOptions` further up the document)
+- `artboardBounds?: Bounds` - (Optional) AABB bounds of the Artboard; you only need to supply this if `options.fitCanvasToArtboardHeight` is set to `true`.
+
+### useRiveFile
+
+The `useRiveFile` hook is designed for initializing and managing a `RiveFile` instance within a component. It sets up a `RiveFile` based on provided source parameters (URL or ArrayBuffer) and ensures proper cleanup to avoid memory leaks when the component unmounts or inputs change.
+
+The main benefit of this hook is that it allows you to create a `RiveFile` instance that you can reuse across components without needing to fetch it again from the `src` URL or reload it from the `buffer`. This improves performance by eliminating redundant network requests and loading times, especially when creating multiple Rive instances from the same source. Unlike passing the `buffer` and `src` parameters to the `useRive` hook directly—which still requires parsing under the hood to create the `RiveFile` object—this hook returns an already parsed `RiveFile` object, including any loaded assets.
+
+`useRiveFile(params: UseRiveFileParameters): RiveFileState`
+
+#### Parameters
+
+**UseRiveFileParameters**
+
+- `src?` - *(optional)* There are two optional ways to use `src`: either via URL to the `.riv` file, or a path to the public `.riv` asset to use. One of `src` or `buffer` must be provided.
+  - URL - If you are hosting your `.riv` on some publicly accessible bucket/CDN (i.e. AWS, GCS, etc.), you can pass in the URL here.
+    - Alternatively, with ES6, you may import the `.riv` file as a data URI. Depending on your bundle loader, you may need to use a plugin (i.e `url-loader` for Webpack) to properly parse and load in `.riv` files as a data URI string. See [this project](https://github.com/zplata/rive-nextjs/blob/main/next.config.js#L8) as a basic example on how to set this up
+  - Path to public asset - This is a string path to the`.riv` public asset if bundled in your application. Note that this is **not** a relative path to the asset from wherever the current JS file is in. Treat the `.riv` as any other asset bundled in your application, such as an image or font. If your JS is compiled and run at the root of your web application, you must specify the path from the root to the location of the asset. For example, if your asset is in `/public/foo.riv`, and your JS is run from the root at `/`, you would specify: `src: '/public/foo.riv'` in this property.
+- `buffer?` - *(optional)* ArrayBuffer containing the raw bytes from a .riv file. One of `src` or `buffer` must be provided.
+- `enableRiveAssetCDN?` - *(optional)* Allow the runtime to automatically load assets hosted in Rive's CDN. Enabled by default.
+
+**Return Values**
+
+**RiveFileState**
+
+- `riveFile` - The `RiveFile` instance. This is `null` until the file is loaded.
+- `status` - The status of the file loading process, can be `idle`, `loading`, `failed`, or `success`.
+
+## Components
+
+### `<RiveComponent />`
+
+The `RiveComponent` default export and the `RiveComponent` returned from the `useRive` hook are both to be rendered in the JSX of a component. As noted previously, all attributes and event handlers that can be passed to a `canvas` element can also be passed to the `Rive` component and used in the same manner.
+
+One thing to note is that `style`/`className` props set on the component will be passed onto the containing `<div>` element, rather than the underlying `<canvas>` itself. The reason for this is that the containing `<div>` element handles resizing and layout for you, and thus, all styles should be passed onto this element.
+
+The `<canvas>` element will still receive any other props passed into the component, such as `aria-*` attributes, `role`'s, etc. You can also set children content inside the component for fallback scenarios where the `<canvas>` element cannot be shown.

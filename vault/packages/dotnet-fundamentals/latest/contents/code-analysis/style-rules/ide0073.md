@@ -1,0 +1,117 @@
+---
+title: "IDE0073: Require file header"
+description: "Learn about code analysis rule IDE0073: Require file header"
+ms.date: 09/30/2020
+f1_keywords:
+- IDE0073
+- file_header_template
+helpviewer_keywords:
+- IDE0073
+- file_header_template
+author: gewarren
+ms.author: gewarren
+dev_langs:
+- CSharp
+- VB
+---
+# Require file header (IDE0073)
+
+| Property                 | Value                                          |
+|--------------------------|------------------------------------------------|
+| **Rule ID**              | IDE0073                                        |
+| **Title**                | Require file header                            |
+| **Category**             | Style                                          |
+| **Subcategory**          | Language rules (`using` directive preferences) |
+| **Applicable languages** | C# and Visual Basic                            |
+| **Options**              | `file_header_template`                         |
+
+## Overview
+
+This style rule concerns providing a file header at top of source code files.
+
+## Options
+
+Specify the required header text by setting the `file_header_template` option.
+
+- When the option value is a non-empty string, require the specified file header.
+- When the option value is `unset` or an empty string, do not require a file header.
+
+For information about configuring options, see [Option format](language-rules.md#option-format).
+
+### file_header_template
+
+| Property                 | Value                                                              | Description                                    |
+| ------------------------ | ------------------------------------------------------------------ | ---------------------------------------------- |
+| **Option name**          | file_header_template                                               |                                                |
+| **Option values**        | non-empty string, optionally containing a `{fileName}` placeholder | Prefer the string as the required file header. |
+|                          | `unset` or empty string                                            | Do not require a file header.                  |
+| **Default option value** | `unset`                                                            |                                                |
+
+```csharp
+// file_header_template = Copyright (c) SomeCorp. All rights reserved.\nLicensed under the xyz license.
+
+// Copyright (c) SomeCorp. All rights reserved.
+// Licensed under the xyz license.
+namespace N1
+{
+    class C1 { }
+}
+
+// file_header_template = unset
+//      OR
+// file_header_template =
+namespace N2
+{
+    class C2 { }
+}
+```
+
+```vb
+' file_header_template = Copyright (c) SomeCorp. All rights reserved.\nLicensed under the xyz license.
+
+' Copyright (c) SomeCorp. All rights reserved.
+' Licensed under the xyz license.
+Namespace N1
+    Class C1
+    End Class
+End Namespace
+
+' file_header_template = unset
+'      OR
+' file_header_template =
+Namespace N2
+    Class C2
+    End Class
+End Namespace
+```
+
+## Suppress a warning
+
+If you want to suppress only a single violation, add preprocessor directives to your source file to disable and then re-enable the rule.
+
+```csharp
+#pragma warning disable IDE0073
+// The code that's violating the rule is on this line.
+#pragma warning restore IDE0073
+```
+
+To disable the rule for a file, folder, or project, set its severity to `none` in the [configuration file](../configuration-files.md).
+
+```ini
+[*.{cs,vb}]
+dotnet_diagnostic.IDE0073.severity = none
+```
+
+To disable all of the code-style rules, set the severity for the category `Style` to `none` in the [configuration file](../configuration-files.md).
+
+```ini
+[*.{cs,vb}]
+dotnet_analyzer_diagnostic.category-Style.severity = none
+```
+
+For more information, see [How to suppress code analysis warnings](../suppress-warnings.md).
+
+## See also
+
+- [Code style language rules](language-rules.md)
+- [Code style rules reference](index.md)

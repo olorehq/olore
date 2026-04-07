@@ -1,0 +1,185 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import LoadingViaCDN from '/snippets/runtimes/loading-assets/loading-via-cdn.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<LoadingViaCDN />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+### Examples
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+        ### Using the Asset Handler API
+
+        To load out-of-band assets, provide a key-value object that maps expected assets to their sources when loading the Rive file.
+
+        The **key** is the name + unique identifier combination, as exported from the Rive editor.
+        ```javascript
+        const { riveFile, isLoading, error } = useRiveFile(
+            require('path/to/file.riv'),
+            {
+                referencedAssets: {
+                    'Inter-594377': {
+                        source: require('../../assets/fonts/Inter-594377.ttf'),
+                    },
+                    'referenced-image-2929282': {
+                        source: { uri: 'https://picsum.photos/id/372/500/500' },
+                    },
+                    'referenced_audio-2929340': {
+                        source: require('../../assets/audio/referenced_audio-2929340.wav'),
+                    },
+                },
+            }
+        );
+        ```
+
+        <Note>
+        You can optionally exclude the unique identifier. For example, instead of `Inter-594377`, you can use `Inter`. However, it is recommended to use the full identifier to avoid potential conflicts. Using just the asset name allows you to avoid knowing the unique identifier and gives you more control over naming.
+        </Note>
+
+        ### Using Suspense
+
+        You can manage the asset decoding yourself, and share this resource across multiple Rive views.
+
+        <Info>
+        We currently only support images, but work is underway for the other asset types.
+        </Info>
+        ```ts
+        function getImagePromise(url: string): Promise<RiveImage> {
+            return RiveImages.loadFromURLAsync(url);
+        }
+        ```
+
+        ```ts
+        <ErrorBoundary key={errorBoundaryKey} fallback={renderErrorFallback}>
+            <React.Suspense
+                fallback={
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" />
+                    <Text style={styles.loadingText}>Loading image...</Text>
+                </View>
+                }
+            >
+                <RiveContent imageUrl={uri} />
+            </React.Suspense>
+        </ErrorBoundary>
+
+        ```
+
+        ```ts
+        function RiveContent({ imageUrl }: { imageUrl: string }) {
+            const imagePromise = React.useMemo(
+                () => getImagePromise(imageUrl),
+                [imageUrl]
+            );
+            const riveImage = React.use(imagePromise);
+
+            const { riveFile, isLoading, error } = useRiveFile(
+                require('../../assets/rive/out_of_band.riv'),
+                {
+                    referencedAssets: {
+                        'Inter-594377': {
+                        source: require('../../assets/fonts/Inter-594377.ttf'),
+                        },
+                        'referenced-image-2929282': riveImage,
+                        'referenced_audio-2929340': {
+                        source: require('../../assets/audio/referenced_audio-2929340.wav'),
+                        },
+                    },
+                }
+            );
+
+            if (isLoading) {
+                return <ActivityIndicator />;
+            } else if (error != null) {
+                return (
+                    <View style={styles.safeAreaViewContainer}>
+                        <Text>Error loading Rive file: {error}</Text>
+                    </View>
+                );
+            }
+
+            return (
+                <RiveView
+                    file={riveFile}
+                    fit={Fit.Contain}
+                    style={styles.rive}
+                    stateMachineName="State Machine 1"
+                    artboardName="Artboard"
+                />
+            );
+        }
+        ```
+
+        See [this example](https://github.com/rive-app/rive-nitro-react-native/blob/main/example/src/exercisers/OutOfBandAssetsWithSuspense.tsx) for more information.
+
+    </Tab>
+    <Tab title="Legacy Runtime">
+        ### Examples
+        - [Out of bands example](https://github.com/rive-app/rive-react-native/blob/main/example/app/(examples)/OutOfBandAssets.tsx)
+
+        ### Using the Referenced Assets API
+
+        <Note>
+        React Native has a different API for handling out-of-band assets compared to our other runtimes.
+        </Note>
+
+        The `referencedAssets` prop accepts a key-value object. The `key` is the unique identifier of the asset (as exported in the Editor), which combines the asset name and its unique identifier. The `value` specifies how to load the asset:
+        - A source loaded directly from JavaScript.
+        - A URI pointing to an asset downloaded from the web.
+        - A bundled asset on the native platform (iOS and Android), included through Xcode and Android Studio, respectively.
+
+        <Note>
+        You can optionally exclude the unique identifier. For example, instead of `Inter-594377`, you can use `Inter`. However, it is recommended to use the full identifier to avoid potential conflicts. Using just the asset name allows you to avoid knowing the unique identifier and gives you more control over naming.
+        </Note>
+
+        The following code sample illustrates the three different ways an asset can be loaded:
+
+        ```javascript
+        <Rive
+            autoplay={true}
+            stateMachineName="State Machine 1"
+            referencedAssets={{
+                'Inter-594377': {
+                    source: require('./assets/Inter-594377.ttf'), // loaded directly from JavaScript
+                },
+                'referenced-image-2929282': {
+                    source: {
+                        uri: 'https://picsum.photos/id/270/500/500' // Loaded from a URI
+                    },
+                },
+                'referenced_audio-2929340': {
+                    source: {
+                        fileName: 'referenced_audio-2929340.wav', // Loaded from a bundled asset
+                        path: 'audio', // only needed for Android assets
+                    },
+                },
+            }}
+            artboardName="Artboard"
+            resourceName={'out_of_band'}
+            onError={(riveError: RNRiveError) => {
+                console.log(riveError);
+            }}
+        />
+        ```
+    </Tab>
+</Tabs>
+
+<Resources />

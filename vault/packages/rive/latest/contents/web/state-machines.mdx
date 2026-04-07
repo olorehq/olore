@@ -1,0 +1,53 @@
+---
+title: "State Machine Playback"
+description: "Playing a state machine"
+---
+
+import Overview from "/snippets/runtimes/state-machines/overview.mdx"
+import ControllingPlayback from "/snippets/runtimes/state-machines/controlling-playback.mdx"
+import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-state-machines.mdx"
+
+<Overview />
+
+<ControllingPlayback />
+
+<PlayingStateMachines />
+
+#### Autoplay the State Machine
+
+To autoplay a state machine immediately after it loads, simply set `autoplay` to `true`.
+
+```js
+const r = new rive.Rive({
+    src: 'https://cdn.rive.app/animations/vehicles.riv',
+    canvas: document.getElementById('canvas'),
+    autoplay: true,
+    stateMachines: 'bumpy',
+    onLoad: () => {}
+});
+```
+
+#### Controlling State Machine Playback
+
+You can manually play and pause the State Machine using the `play`, `pause`, and `stop` methods.
+
+```js
+const r = new rive.Rive({
+    src: 'https://cdn.rive.app/animations/vehicles.riv',
+    canvas: document.getElementById('canvas'),
+    stateMachines: 'bumpy',
+    onLoad: () => {}
+});
+
+const handlePlay = () => {
+  r.play()
+}
+
+const handlePause = () => {
+  r.pause()
+}
+
+const handleStop = () => {
+  r.stop()
+}
+```

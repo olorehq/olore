@@ -1,0 +1,54 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+
+<Overview />
+
+<ControllingInputs />
+
+### Inputs
+
+Just like other methods within the `rive-android` runtime, use the view to set values on a state machine input. In this case, there is no need to grab references to state machine input instances to set values.
+
+There are 3 different methods to set input values or trigger inputs for number, boolean, and trigger inputs respectively:
+
+- `.setNumberState(stateMachineName: String, inputName: String, value: Float)`
+- `.setBooleanState(stateMachineName: String, inputName: String, value: Boolean)`
+- `.fireState(stateMachineName: String, inputName: String)`
+
+```kotlin
+// i.e Set input state on a number input
+animationView.setNumberState("Designer's Test", "Level", 0f)
+
+// i.e Set boolean state on a boolean input
+animationView.setBooleanState("Boolean test", "foo", true)
+
+// i.e Fire a trigger input
+animationView.fireState("Trigger test", "fireInput");
+```
+
+
+<NestedInputs />
+
+To set the **Volume** input for the above example:
+
+```kotlin
+// `animationView` is RiveAnimationView
+animationView.setNumberStateAtPath("volume", 80.0, "Volume Molecule/Volume Component")
+```
+
+**All options on `RiveAnimationView`:**
+- `setNumberStateAtPath(inputName: String, value: Float, path: String)`
+- `setBooleanStateAtPath(inputName: String, value: Boolean, path: String)`
+- `fireStateAtPath(inputName: String, path: String)`
+
+**All options on `RiveFileController`:**
+- `setNumberStateAtPath(inputName: String, value: Float, path: String)`
+- `setBooleanStateAtPath(inputName: String, value: Boolean, path: String)`
+- `fireStateAtPath(inputName: String, path: String)`

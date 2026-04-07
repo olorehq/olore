@@ -1,0 +1,115 @@
+---
+title: 'Getting Started (Legacy API)'
+description: 'Getting started instructions for the Rive Android Legacy API.'
+---
+## Adding Rive to Your Project
+See the [Adding Rive to Your Project](./android#adding-rive-to-your-project) section for instructions on adding Rive to your Android project. Once complete, resume here.
+
+## Building a RiveAnimationView
+
+There are a number of ways to add Rive animations to your Android application.
+
+Before getting started, ensure your Rive files (.riv) are included in your Android project. The recommended way is to add them to the raw resources (`res/raw`) folder of your project.
+
+### Using setRiveResource or setRiveUrl
+
+For the simplest programmatic initialization, use `setRiveResource` (local) or `setRiveUrl` (networked) methods. They have a number of optional parameters to customize the view.
+
+```kotlin
+class MyActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val riveView = RiveAnimationView(this)
+        riveView.setRiveResource(R.raw.my_rive_file)
+        // or
+        riveView.setRiveUrl("https://mycdn.myorg.com/my_rive_file.riv")
+
+        setContentView(riveView)
+    }
+}
+```
+
+### Using RiveAnimationView.Builder
+
+Rive also provides a builder pattern for constructing a `RiveAnimationView` which allows for staggered initialization steps. Note that the `setResource` method can take a raw resource ID, a URL (string), a byte array, or a Rive `File`.
+
+```kotlin
+val riveView = RiveAnimationView.Builder(this)
+    .setResource(R.raw.my_rive_file)
+    // or
+    .setResource("https://mycdn.myorg.com/my_rive_file.riv")
+    .build()
+
+setContentView(riveView)
+```
+
+### Using a Rive File
+
+If you have already loaded a Rive `File` instance, you can use that to initialize the view as well. See [Caching a Rive File](../caching-a-rive-file) for more details on how and why to load Rive files.
+
+```kotlin
+// Loads bytes on the main thread for simplicity; consider loading on a background thread for production use.
+val bytes = resources.openRawResource(R.raw.rating).use { res -> res.readBytes() }
+val riveFile = File(bytes)
+val riveView = RiveAnimationView(this)
+riveView.setRiveFile(riveFile)
+// Release the file if you no longer need it, keep if you plan to reuse it.
+riveFile.release()
+
+setContentView(riveView)
+```
+
+### Using Compose (AndroidView)
+You can also use `RiveAnimationView` inside a Compose UI using the `AndroidView` composable. See also the [LegacyComposeActivity](https://github.com/rive-app/rive-android/blob/master/app/src/main/java/app/rive/runtime/example/LegacyComposeActivity.kt) in the example app.
+
+```kotlin
+setContent {
+    AndroidView(
+        factory = { context ->
+            RiveAnimationView(context).also {
+                it.setRiveResource(R.raw.my_rive_file)
+            }
+        }
+    )
+}
+```
+
+### Using XML Layouts
+
+To use XML, include it as part of your layout. It has a number of optional attributes to customize the view.
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:riveResource="@raw/my_rive_file"
+    ... />
+```
+
+If you would rather load the Rive file from a hosted location, use the `app:riveUrl` attribute. Ensure you have the necessary [internet permissions](#internet-permissions).
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveUrl="https://mycdn.myorg.com/my_rive_file.riv"
+    ... />
+```
+
+From your activity you can load it as usual:
+
+```kotlin
+setContentView(R.layout.my_layout)
+```
+
+## Internet Permissions
+
+If you're retrieving Rive files over a network, your app will need permission to access the internet in `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+Note that this isn't necessary if you include the .riv files in your Android project and load them as raw resources.
+
+See the pages in the "Runtime Fundamentals" section to learn how to control animation playback, state machines, and more.

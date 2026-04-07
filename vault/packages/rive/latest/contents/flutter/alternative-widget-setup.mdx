@@ -1,0 +1,130 @@
+---
+title: 'Alternative Widget Setup'
+description: 'Techniques and considerations to cache a Rive File in Flutter.'
+---
+
+
+The easiest way to integrate Rive animations and state machines into your application is via the `RiveAnimation` widget mentioned throughout the runtime help docs. However, there are cases where you may want to set up animation or state machine controllers associated with the Rive widget before the Artboard is rendered. Check out below for other ways to integrate Rive into your Flutter applications:
+
+## Alternative Methods
+
+### File loading
+
+If you want to load in the `.riv` file from the `rootBundle`, you'll need to import the data yourself. The main pattern here is:
+
+<Steps>
+  <Step title="Load in the bytes of the `.riv` file" />
+  <Step title="Use the `RiveFile` class to parse the data and get a reference to the file" />
+  <Step title="Create a reference to the Artboard you want to display, from that file" />
+  <Step title="(Optional) Associate controllers to an Artboard (i.e `StateMachineController`)" />
+  <Step title="Render the `Rive` widget with the artboard reference" />
+</Steps>
+
+<Steps>
+  <Step title="Load in the bytes from .riv">
+    ```
+    rootBundle.load('assets/new_file.riv').then(
+      (data) async {
+        ...
+      }
+    );
+    ```
+  </Step>
+  <Step title="Use RiveFile to parse bytes">
+    ```
+    (data) async {
+        // Load the RiveFile from the binary data.
+        final file = RiveFile.import(data);
+    },
+    ```
+  </Step>
+  <Step title="Create an Artboard reference">
+    ```
+    // The artboard is the root of the animation and gets drawn in the
+    // Rive widget
+    final riveArtboard = file.mainArtboard;
+    ```
+  </Step>
+  <Step title="Associate controllers to an Artboard">
+    If you're looking to just play a specific animation:
+
+    ```javascript
+    var controller =
+      StateMachineController.fromArtboard(riveArtboard, 'SomeStateMachineName');
+    if (controller != null) {
+      riveArtboard.addController(controller);
+    }
+    ```
+
+    If you're looking to play a state machine:
+
+    ```javascript
+    var controller =
+      StateMachineController.fromArtboard(riveArtboard, 'SomeStateMachineName');
+    if (controller != null) {
+      riveArtboard.addController(controller);
+    }
+    ```
+  </Step>
+  <Step title="Render the Rive widget">
+    ```javascript
+    Widget build(BuildContext context) {
+      return Center(
+        child: riveArtboard == null
+          ? const SizedBox()
+          : SizedBox(
+              width: 250,
+              height: 250,
+              child: Rive(
+                artboard: riveArtboard!.instance(),
+              ),
+            )
+      );
+    }
+    ```
+
+    <Note>
+    **Important**: Note above that when connecting the Artboard to the `Rive` widget, you will need to call `.instance()` on it. This will allow any component instances to render within the canvas space appropriately
+    </Note>
+  </Step>
+</Steps>
+
+### Complete Example
+
+Altogether, this pattern might look like the following snippet below:
+
+```javascript
+class _ExampleStateMachineState extends State<ExampleStateMachine> {
+  Artboard? _riveArtboard;
+
+  @override
+  void initState() {
+    super.initState();
+
+    rootBundle.load('assets/rocket.riv').then(
+      (data) async {
+        final file = RiveFile.import(data);
+
+        final artboard = file.mainArtboard;
+        var controller =
+            StateMachineController.fromArtboard(artboard, 'Button');
+        if (controller != null) {
+          artboard.addController(controller);
+        }
+        setState(() => _riveArtboard = artboard);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 250,
+      height: 250,
+      child: Rive(
+        artboard: _riveArtboard!.instance(),
+      ),
+    );
+  }
+}
+```

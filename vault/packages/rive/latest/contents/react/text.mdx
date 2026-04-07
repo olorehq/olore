@@ -1,0 +1,138 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+
+<Overview />
+
+## Examples
+
+- [Updating Text at Runtime - Localization example](https://codesandbox.io/p/sandbox/rive-text-react-38lt4k)
+
+#### Reading Text
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `rive` instance returned from `useRive`:
+
+```javascript
+public getTextRunValue(textRunName: string): string | undefined
+```
+
+Supply the text run name, and you'll have the Rive text run value returned, or `undefined` if the text run could not be queried.
+
+#### Setting Text
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `rive` instance returned from `useRive`:
+
+```javascript
+public setTextRunValue(textRunName: string, textRunValue: string): void
+```
+
+Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for if the text run can be successfully queried on the active artboard.
+
+#### Example Usage
+
+```javascript
+import { useRive } from '@rive-app/canvas';
+
+const MyTextComponent = () => {
+const {rive, RiveComponent} = useRive({
+    src: "my-rive-file.riv",
+    artboard: "New Artboard",
+    stateMachines: "State Machine 1",
+    autoplay: true,
+});
+
+// Cannot query for the text run immediately, you have to wait until `rive`
+// has value and has instantiated before querying or setting text run values
+useEffect(() => {
+    if (rive) {
+    console.log("Rive text was initially: ", rive.getTextRunValue("MyRun"));
+    rive.setTextRunValue("MyRun", "New Text!!");
+    console.log("Rive text is now: ", rive.getTextRunValue("MyRun"));
+    }
+}, [rive]);
+
+return (
+    <RiveComponent />
+);
+};
+```
+
+<NestedArtboard />
+
+## Examples
+
+- [Updating Text at Runtime - Localization example](https://codesandbox.io/p/sandbox/rive-text-react-38lt4k)
+
+#### Reading Text
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `rive` instance returned from `useRive`:
+
+```javascript
+public getTextRunValue(textRunName: string): string | undefined
+```
+
+Supply the text run name, and you'll have the Rive text run value returned, or `undefined` if the text run could not be queried.
+
+#### Setting Text
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `rive` instance returned from `useRive`:
+
+```javascript
+public setTextRunValue(textRunName: string, textRunValue: string): void
+```
+
+Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for if the text run can be successfully queried on the active artboard.
+
+#### Example Usage
+
+```javascript
+import { useRive } from '@rive-app/canvas';
+
+const MyTextComponent = () => {
+const {rive, RiveComponent} = useRive({
+    src: "my-rive-file.riv",
+    artboard: "New Artboard",
+    stateMachines: "State Machine 1",
+    autoplay: true,
+});
+
+// Cannot query for the text run immediately, you have to wait until `rive`
+// has value and has instantiated before querying or setting text run values
+useEffect(() => {
+    if (rive) {
+    console.log("Rive text was initially: ", rive.getTextRunValue("MyRun"));
+    rive.setTextRunValue("MyRun", "New Text!!");
+    console.log("Rive text is now: ", rive.getTextRunValue("MyRun"));
+    }
+}, [rive]);
+
+return (
+    <RiveComponent />
+);
+};
+```
+
+<SemanticsForAccessibility />
+
+
+
+#### Adding ARIA Label
+
+At a minimum - if it is important to convey the text value displayed in the Rive animation to all users, add an `aria-label` to the `<canvas>` element with the text value from the animation. Screen readers may read this label out immediately as it parses out the DOM contents. You'll also want to add `role="img"` to the `<canvas>` element as well.
+
+#### Adding ARIA Live Region
+
+While ARIA labels are a direct method to manage a textual label for screen readers to read out as it parses web content, using an ARIA live region allows you a way to control when screen readers read out dynamic text content.
+
+Live regions are useful in cases where the text content in your Rive graphic becomes visible or changes on a particular state in a state machine, and you want screen readers to pick up on text changes. Another use case is when you only want screen readers to read your Rive text content when the `<canvas>` is scrolled into view.
+
+Read more on ARIA live regions [here](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Live_Regions).
+
+<Resources />

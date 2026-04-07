@@ -1,0 +1,828 @@
+---
+title: "Data Binding"
+description: "Connect your code to bound editor elements using View Models"
+---
+
+import Overview from "/snippets/runtimes/data-binding/overview.mdx"
+import ViewModels from "/snippets/runtimes/data-binding/view-models.mdx"
+import ViewModelInstances from "/snippets/runtimes/data-binding/view-model-instances.mdx"
+import Binding from "/snippets/runtimes/data-binding/binding.mdx"
+import AutoBinding from "/snippets/runtimes/data-binding/auto-binding.mdx"
+import Properties from "/snippets/runtimes/data-binding/properties.mdx"
+import ListingProperties from "/snippets/runtimes/data-binding/listing-properties.mdx"
+import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading-and-writing-properties.mdx"
+import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
+import Observability from "/snippets/runtimes/data-binding/observability.mdx"
+import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Lists from "/snippets/runtimes/data-binding/lists.mdx"
+import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
+import Enums from "/snippets/runtimes/data-binding/enums.mdx"
+
+
+import { YouTube } from "/snippets/youtube.mdx";
+import { Demos } from "/snippets/demos.jsx";
+
+<Overview />
+
+<Demos examples={["quickStart", "dataBindingQuickStart"]} runtime="reactNative" />
+
+<ViewModels />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    ```tsx
+    import { useRiveFile } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+
+    // Get reference by name
+    const namedVM = riveFile?.viewModelByName('My View Model');
+
+    // Get reference by index
+    const indexVM = riveFile?.viewModelByIndex(0);
+
+    // Get reference to the default artboard view model
+    const defaultVM = riveFile?.defaultArtboardViewModel();
+    ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Info>
+        Creating a view model object is only supported in the new React Native runtime.
+    </Info>
+    </Tab>
+</Tabs>
+
+<ViewModelInstances />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Use the `useViewModelInstance` hook to create a view model instance. You can pass a `RiveFile`, `ViewModel`, or `RiveViewRef` as the source.
+
+    ```tsx
+    import { useRiveFile, useViewModelInstance, RiveView } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+
+    // From RiveFile — default artboard's ViewModel, default instance
+    const instance = useViewModelInstance(riveFile);
+
+    // Specify artboard or ViewModel name (mutually exclusive)
+    const instance = useViewModelInstance(riveFile, { artboardName: 'MainArtboard' });
+    const instance = useViewModelInstance(riveFile, { viewModelName: 'Settings' });
+
+    // instanceName can be combined with any of the above to pick a specific instance
+    const instance = useViewModelInstance(riveFile, { instanceName: 'PersonInstance' });
+    const instance = useViewModelInstance(riveFile, { viewModelName: 'Settings', instanceName: 'UserSettings' });
+
+    // From a ViewModel object
+    const viewModel = riveFile?.viewModelByName('My View Model');
+    const namedInstance = useViewModelInstance(viewModel, { name: 'My Instance' });
+    const newInstance = useViewModelInstance(viewModel, { useNew: true });
+
+    // With required: true (throws if null, use with Error Boundary)
+    const instance = useViewModelInstance(riveFile, { required: true });
+
+    // With onInit to set initial values synchronously
+    const instance = useViewModelInstance(riveFile, {
+        onInit: (vmi) => {
+            vmi.numberProperty('health')!.value = 100;
+        },
+    });
+
+    return (
+        <RiveView file={riveFile} dataBind={instance} />
+    );
+    ```
+
+    You can also get the auto-bound instance from a `RiveViewRef`:
+
+    ```tsx
+    import { useRive, useViewModelInstance } from '@rive-app/react-native';
+
+    const { riveViewRef, setHybridRef } = useRive();
+    const instance = useViewModelInstance(riveViewRef);
+    ```
+
+    </Tab>
+    <Tab title="Legacy Runtime">
+    You can bind a view model instance to a Rive component by passing in a `dataBinding` prop to the Rive component.
+
+    The `dataBinding` prop accepts a `DataBindBy` type, which can be one of the following:
+
+    ```typescript
+    export type DataBindBy =
+        | { type: 'autobind'; value: boolean }
+        | { type: 'index'; value: number }
+        | { type: 'name'; value: string }
+        | { type: 'empty' };
+
+    export const AutoBind = (value: boolean): DataBindBy => ({
+        type: 'autobind',
+        value,
+    });
+    export const BindByIndex = (value: number): DataBindBy => ({
+        type: 'index',
+        value,
+    });
+    export const BindByName = (value: string): DataBindBy => ({
+        type: 'name',
+        value,
+    });
+    export const BindEmpty = (): DataBindBy => ({ type: 'empty' });
+    ```
+
+    Example usage:
+
+    ```typescript {7,8,9,10}
+    const [setRiveRef, riveRef] = useRive();
+
+    return (
+        <Rive
+            ref={setRiveRef}
+            autoplay={true}
+            dataBinding={AutoBind(true)} // default: `AutoBind(false)`
+            // dataBinding={BindByIndex(0)}
+            // dataBinding={BindByName('SomeName')}
+            // dataBinding={BindEmpty()}
+            stateMachineName={'State Machine 1'}
+            resourceName={'rewards'}
+        />
+    );
+    ```
+
+    You can listen to errors by passing in the `onError={(riveError: RNRiveError)` prop to the Rive component.
+    The `riveError` object contains the error type and message, and you can filter out for `RNRiveErrorType.DataBindingError`:
+
+    ```typescript
+    onError={(riveError: RNRiveError) => {
+        switch (riveError.type) {
+            case RNRiveErrorType.DataBindingError: {
+            console.error(`${riveError.message}`);
+            return;
+            }
+            default:
+            console.error('Unhandled error');
+            return;
+        }
+    }}
+    ```
+    </Tab>
+</Tabs>
+
+<Binding />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    For React Native, no additional steps are needed to bind the view model instance to the Rive component. Pass the instance to the `dataBind` prop on `RiveView`:
+
+    ```tsx
+    import { RiveView, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    return (
+        <RiveView
+            file={riveFile}
+            dataBind={instance}
+        />
+    );
+    ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+    For React Native, no additional steps are needed to bind the view model instance to the Rive component. The `dataBinding` prop handles this automatically.
+    </Tab>
+</Tabs>
+
+<AutoBinding />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Auto-binding is available through the `DataBindMode` enum. You can pass `DataBindMode.Auto` to the `dataBind` prop:
+
+    ```tsx
+    import { RiveView, useRiveFile, DataBindMode } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+
+    return (
+        <RiveView
+            file={riveFile}
+            dataBind={DataBindMode.Auto}
+            autoPlay={true}
+        />
+    );
+    ```
+
+    You can also bind by name:
+
+    ```tsx
+    <RiveView
+        file={riveFile}
+        dataBind={{ byName: 'My Instance' }}
+        autoPlay={true}
+    />
+    ```
+
+    Or bind a specific instance:
+
+    ```tsx
+    const instance = useViewModelInstance(riveFile);
+    <RiveView
+        file={riveFile}
+        dataBind={instance}
+        autoPlay={true}
+    />
+    ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+    The default value for the `dataBinding` prop is `AutoBind(false)`, which means auto-binding is disabled by default.
+
+    To enable auto-binding, set the `dataBinding` prop to `AutoBind(true)`.
+
+    ```typescript {7}
+    const [setRiveRef, riveRef] = useRive();
+
+    return (
+        <Rive
+            ref={setRiveRef}
+            autoplay={true}
+            dataBinding={AutoBind(true)} // default: `AutoBind(false)`
+            stateMachineName={'State Machine 1'}
+            resourceName={'rewards'}
+        />
+    );
+    ```
+    </Tab>
+</Tabs>
+
+<Properties />
+
+<ListingProperties />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    <Note>Coming soon</Note>
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+        The properties API is not supported on the legacy runtime.
+    </Warning>
+    </Tab>
+</Tabs>
+
+<ReadingAndWritingProperties />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Use the specific hooks for each property type to get and set property values:
+
+    - `useRiveBoolean`: Read/write boolean properties
+    - `useRiveString`: Read/write string properties
+    - `useRiveNumber`: Read/write number properties
+    - `useRiveColor`: Read/write color properties with hex string or RGBA support
+    - `useRiveEnum`: Read/write enum properties
+    - `useRiveTrigger`: Fire trigger events with optional callbacks
+
+    These hooks return the current `value`, a setter function (`setValue` or `trigger`), and an `error` if the property is not found.
+
+    <Note>
+        The `setValue` function allows you to pass a function that receives the previous value, similar to React's `setState` pattern. This is useful when you need to update a value based on its current state:
+
+        ```tsx
+        setValue((v) => (v ?? 0) + 5)
+        ```
+    </Note>
+
+    ```tsx
+    import {
+        useRiveFile,
+        useViewModelInstance,
+        useRiveBoolean,
+        useRiveString,
+        useRiveNumber,
+        useRiveColor,
+        useRiveEnum,
+        useRiveTrigger,
+        RiveView
+    } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    // Boolean
+    const { value: isActive, setValue: setIsActive, error: boolError } = useRiveBoolean(
+        'isToggleOn',
+        instance
+    );
+    // Set: setIsActive(true);
+
+    // String
+    const { value: userName, setValue: setUserName, error: stringError } = useRiveString(
+        'user/name',
+        instance
+    );
+    // Set: setUserName('Rive');
+
+    // Number
+    const { value: score, setValue: setScore, error: numberError } = useRiveNumber(
+        'levelScore',
+        instance
+    );
+    // Set: setScore(100);
+
+    // Color (accepts hex string or RiveColor object)
+    const { value: themeColor, setValue: setThemeColor, error: colorError } = useRiveColor(
+        'ui/themeColor',
+        instance
+    );
+    // Set: setThemeColor('#FF0000FF'); // hex string
+    // Or: setThemeColor({ r: 255, g: 0, b: 0, a: 255 }); // RGBA object
+
+    // Enum
+    const { value: status, setValue: setStatus, error: enumError } = useRiveEnum(
+        'appStatus',
+        instance
+    );
+    // Set: setStatus('loading');
+
+    // Trigger (No value, just a trigger function)
+    const { trigger: playEffect, error: triggerError } = useRiveTrigger(
+        'playButtonEffect',
+        instance,
+        {
+            // Optional callback to be called when the trigger is fired
+            onTrigger: () => {
+                console.log('Trigger Fired!');
+            }
+        }
+    );
+    // Trigger: playEffect();
+
+    return (
+        <RiveView
+            file={riveFile}
+            dataBind={instance}
+            autoPlay={true}
+        />
+    );
+    ```
+
+    The `value` returned by each hook will update automatically when the property changes in the Rive graphic.
+    </Tab>
+    <Tab title="Legacy Runtime">
+    The following data binding methods are exposed on the `RiveRef` object.
+
+    ```typescript
+    setBoolean: (path: string, value: boolean) => void;
+    setString: (path: string, value: string) => void;
+    setNumber: (path: string, value: number) => void;
+    setColor: (path: string, color: RiveRGBA | string) => void;
+    setEnum: (path: string, value: string) => void;
+    trigger: (path: string) => void;
+    ```
+
+    <Note>
+        The color property can be set using either a `RiveRGBA` object or a hex string. The hex string should be in the format
+        `#RRGGBBAA`, where `RR`, `GG`, `BB`, and `AA` are two-digit hexadecimal values representing the red, green, blue, and
+        alpha channels, respectively.
+
+        ```js
+        type RiveRGBA = { r: number; g: number; b: number; a: number };
+        ```
+    </Note>
+    Example usage:
+
+    ```typescript
+    const [setRiveRef, riveRef] = useRive();
+    const setBoolean = () => {
+        if (riveRef) {
+            riveRef.setBoolean('My Boolean Property', true);
+        }
+    };
+    const setString = () => {
+        if (riveRef) {
+            riveRef.current.setString('My String Property', 'Hello, Rive');
+        }
+    };
+    const setNumber = () => {
+        if (riveRef) {
+            riveRef.current.setNumber('My Number Property', 10);
+        }
+    };
+    const setColor = () => {
+        if (riveRef) {
+            riveRef.setColor('My Color Property', { r: 255, g: 0, b: 0, a: 1 });
+            // or
+            riveRef.setColor('My Color Property', '#00FF00FF');
+        }
+    };
+    const setEnum = () => {
+        if (riveRef) {
+            riveRef.setEnum('My Enum Property', 'Option 1');
+        }
+    };
+    const trigger = () => {
+        if (riveRef) {
+            riveRef.trigger('My Trigger Property');
+        }
+    };
+    ```
+    </Tab>
+</Tabs>
+
+<NestedPropertyPaths />
+
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Access nested properties by providing the full path (separated by `/`) as the first argument to the property hooks.
+
+    ```tsx
+    import { useRiveString, useRiveNumber, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    // Accessing 'settings/theme/name' (String)
+    const { value: themeName, setValue: setThemeName } = useRiveString(
+        'settings/theme/name',
+        instance
+    );
+
+    // Accessing 'settings/volume' (Number)
+    const { value: volume, setValue: setVolume } = useRiveNumber(
+        'settings/volume',
+        instance
+    );
+
+    console.log('Current theme:', themeName);
+    // setThemeName('Dark Mode');
+    // setVolume(80);
+    ```
+
+    <Info>
+        The Rive React Native runtime does not yet support accessing a ViewModel property directly, to be able to do the chain notation.
+    </Info>
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+        The Rive React Native runtime does not support accessing nested properties using the chain notation.
+        But you can access nested properties using the path notation.
+    </Warning>
+    ```js
+    const [setRiveRef, riveRef] = useRive();
+    const nestedNumberByPath = useRiveNumber(riveRef, 'My Nested View Model/My Second Nested VM/My Nested Number');
+    useEffect(() => {
+        if (nestedNumberByPath) {
+            nestedNumberByPath.setValue(10);
+        }
+    }, [nestedNumberByPath]);
+    ```
+    </Tab>
+</Tabs>
+
+<Observability />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Values are observed automatically through hooks. When a property's value changes within the Rive instance (either because you set it via a hook or due to an internal binding), the `value` returned by the corresponding hook updates. This state change triggers a re-render of your React component, allowing you to react to the new value.
+
+    For Triggers, you can provide an `onTrigger` callback directly to the `useRiveTrigger` hook, which fires when the trigger is activated in the Rive instance.
+
+    ```tsx
+    import {
+        useRiveFile,
+        useViewModelInstance,
+        useRiveBoolean,
+        useRiveString,
+        useRiveNumber,
+        useRiveColor,
+        useRiveEnum,
+        useRiveTrigger,
+        useEffect
+    } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    const { value: boolValue, setValue: setBoolValue } = useRiveBoolean('My Boolean Property', instance);
+    const { value: stringValue, setValue: setStringValue } = useRiveString('My String Property', instance);
+    const { value: numberValue, setValue: setNumberValue } = useRiveNumber('My Number Property', instance);
+    const { value: colorValue, setValue: setColorValue } = useRiveColor('My Color Property', instance);
+    const { value: enumValue, setValue: setEnumValue } = useRiveEnum('My Enum Property', instance);
+    const { trigger: triggerButton } = useRiveTrigger('My Trigger Property', instance, {
+        onTrigger: () => {
+            console.log('Trigger fired');
+        }
+    });
+
+    useEffect(() => {
+        if (numberValue !== undefined) {
+            console.log('numberValue changed:', numberValue);
+        }
+    }, [numberValue]);
+
+    const handleButtonPress = () => {
+        triggerButton();
+    };
+    ```
+
+    <Note>
+        The `useRiveTrigger` hook returns a `trigger` function that can be called to fire the trigger. This hook accepts an optional `onTrigger` callback in its third parameter that will be executed when the trigger is fired.
+    </Note>
+    </Tab>
+    <Tab title="Legacy Runtime">
+    Values are observed through hooks.
+
+    ```typescript
+    const [setRiveRef, riveRef] = useRive();
+    const [boolValue, setBoolValue] = useRiveBoolean(riveRef, 'My Boolean Property');
+    const [stringValue, setStringValue] = useRiveString(riveRef, 'My String Property');
+    const [numberValue, setNumberValue] = useRiveNumber(riveRef, 'My Number Property');
+    const [colorValue, setColorValue] = useRiveColor(riveRef, 'My Color Property');
+    const [enumValue, setEnumValue] = useRiveEnum(riveRef, 'My Enum Property');
+    const triggerButton = useRiveTrigger(riveRef, 'My Trigger Property', () => {
+        console.log('Trigger fired');
+    });
+
+    useEffect(() => {
+        if (numberValue !== undefined) {
+            console.log('numberValue changed:', numberValue);
+        }
+    }, [numberValue]);
+
+    const handleButtonPress = () => {
+        if (triggerButton) {
+            triggerButton();
+        }
+    };
+    ```
+
+    <Note>
+        The `useRiveTrigger` hook does not return a value, but instead takes a callback function as its third argument.
+        This callback will be executed when the trigger is fired.
+    </Note>
+    </Tab>
+</Tabs>
+
+<Images />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Image properties can be set using the `imageProperty` method on a `ViewModelInstance` and the `RiveImages` utility for loading images.
+
+    ```tsx
+    import {
+        useRive,
+        useRiveFile,
+        useViewModelInstance,
+        RiveView,
+        RiveImages,
+        type RiveViewRef
+    } from '@rive-app/react-native';
+    import { useRef } from 'react';
+
+    const { riveViewRef, setHybridRef } = useRive();
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+    const riveViewRef = useRef<RiveViewRef>(undefined);
+
+    const handleLoadImage = async () => {
+        if (!riveViewRef) return;
+
+        const vmi = riveViewRef.getViewModelInstance();
+        if (!vmi) return;
+
+        const imgProp = vmi.imageProperty('imageValue');
+        if (!imgProp) return;
+
+        // Load image from URL
+        const riveImage = await RiveImages.loadFromURLAsync(
+            'https://picsum.photos/id/372/500/500'
+        );
+        imgProp.set(riveImage);
+        riveViewRef.playIfNeeded();
+    };
+
+    return (
+        <RiveView
+            hybridRef={setHybridRef}
+            file={riveFile}
+            dataBind={instance}
+            autoPlay={true}
+        />
+    );
+    ```
+
+    You can also add listeners to image properties:
+
+    ```tsx
+    const imgProp = vmi.imageProperty('imageValue');
+    if (imgProp) {
+        imgProp.addListener(() => {
+            console.log('Image property changed!');
+        });
+    }
+    ```
+
+    Other image loading options on `RiveImages`:
+    ```ts
+        /**
+        * Load an image from a bundled resource
+        * @param resource The resource name (e.g., "image.png")
+        * @returns A promise that resolves to the loaded RiveImage
+        */
+        loadFromResourceAsync(resource: string): Promise<RiveImage>;
+
+        /**
+        * Load an image from raw bytes
+        * @param bytes The image data as an ArrayBuffer
+        * @returns A promise that resolves to the loaded RiveImage
+        */
+        loadFromBytesAsync(bytes: ArrayBuffer): Promise<RiveImage>;
+    ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+        Image data binding is not supported on the legacy runtime.
+    </Warning>
+    </Tab>
+</Tabs>
+
+<Lists />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    Use the `useRiveList` hook to manage list properties on view model instances.
+
+    ```tsx
+    import {
+        useRiveFile,
+        useViewModelInstance,
+        useRiveList,
+        RiveView
+    } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    // Get the list property with manipulation functions
+    const {
+        length,
+        getInstanceAt,
+        addInstance,
+        addInstanceAt,
+        removeInstance,
+        removeInstanceAt,
+        swap,
+        error
+    } = useRiveList('todos', instance);
+
+    // Add a new todo item
+    const handleAddItem = () => {
+        const todoItemViewModel = riveFile?.viewModelByName('TodoItem');
+        if (todoItemViewModel) {
+            const newTodoItem = todoItemViewModel.createInstance();
+            if (newTodoItem) {
+                // Set some initial values
+                newTodoItem.stringProperty('description')?.set('Buy groceries');
+                addInstance(newTodoItem);
+            }
+        }
+    };
+
+    // Insert item at specific index
+    const handleInsertItem = () => {
+        const todoItemViewModel = riveFile?.viewModelByName('TodoItem');
+        if (todoItemViewModel) {
+            const newTodoItem = todoItemViewModel.createInstance();
+            if (newTodoItem) {
+                addInstanceAt(newTodoItem, 0); // Insert at beginning
+            }
+        }
+    };
+
+    // Remove first item by instance
+    const handleRemoveFirst = () => {
+        const firstInstance = getInstanceAt(0);
+        if (firstInstance) {
+            removeInstance(firstInstance);
+        }
+    };
+
+    // Remove item by index
+    const handleRemoveAt = () => {
+        if (length > 0) {
+            removeInstanceAt(0);
+        }
+    };
+
+    // Swap two items
+    const handleSwap = () => {
+        if (length >= 2) {
+            swap(0, 1);
+        }
+    };
+
+    console.log(`List has ${length} items`);
+
+    return (
+        <RiveView
+            file={riveFile}
+            dataBind={instance}
+            autoPlay={true}
+        />
+    );
+    ```
+
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+    List data binding is not supported on the legacy runtime.
+    </Warning>
+    </Tab>
+</Tabs>
+
+<Artboards />
+
+<Demos examples={["dataBindingArtboards"]}  runtime="reactNative" />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    <Info>
+        See the [React Native data binding artboards example](https://github.com/rive-app/rive-nitro-react-native/blob/main/example/src/demos/DataBindingArtboardsExample.tsx).
+    </Info>
+    Artboard properties work with the `BindableArtboard` class. Use `getBindableArtboard` on a `RiveFile` to create a bindable reference, then set it on the artboard property.
+
+    ```typescript
+    // Get artboard property from view model instance
+    const artboardProp = instance.artboardProperty('CharacterArtboard');
+
+    // Create a bindable artboard and set it
+    const bindableArtboard = riveFile.getBindableArtboard('Character 1');
+    artboardProp?.set(bindableArtboard);
+    ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+        Artboard data binding is not supported on the legacy runtime.
+    </Warning>
+    </Tab>
+</Tabs>
+
+<Enums />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    You can access enum properties using the `useRiveEnum` hook. The hook returns the current value and a setter function.
+
+    ```tsx
+    import {
+        useRiveFile,
+        useViewModelInstance,
+        useRiveEnum,
+        RiveView
+    } from '@rive-app/react-native';
+
+    const { riveFile } = useRiveFile(require('./my_file.riv'));
+    const instance = useViewModelInstance(riveFile);
+
+    const { value: category, setValue: setCategory, error } = useRiveEnum(
+        'category',
+        instance
+    );
+
+    // Set enum value
+    setCategory('option_name');
+
+    return (
+        <RiveView
+            file={riveFile}
+            dataBind={instance}
+            autoPlay={true}
+        />
+    );
+    ```
+
+    <Note>
+        Retrieving the list of all enums in the file, or accessing all possible values on an Enum, is not yet available.
+    </Note>
+    </Tab>
+    <Tab title="Legacy Runtime">
+    <Warning>
+        Retrieving the list of enums is not supported on the legacy API.
+    </Warning>
+    </Tab>
+</Tabs>
+
+# Examples
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+    See the [example app](https://github.com/rive-app/rive-nitro-react-native/tree/main/example) for data binding demos with the new runtime.
+    </Tab>
+    <Tab title="Legacy Runtime">
+    See the [Data Binding view](https://github.com/rive-app/rive-react-native/blob/main/example/app/\(examples\)/DataBinding.tsx) in the Example app for a demo.
+    </Tab>
+</Tabs>

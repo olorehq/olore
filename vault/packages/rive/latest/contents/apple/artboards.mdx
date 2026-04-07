@@ -1,0 +1,77 @@
+---
+title: 'Artboards'
+description: 'Selecting which artboard to render at runtime'
+---
+
+import Header from "/snippets/runtimes/artboards/header.mdx"
+import ChoosingAnArtboard from "/snippets/runtimes/artboards/choosing-an-artboard.mdx"
+
+import { Apple } from "/snippets/constants.mdx"
+
+<Header />
+
+<ChoosingAnArtboard />
+
+<Tabs>
+  <Tab title={Apple.currentRuntimeName}>
+  The following section assumes that you have read through the [Apple](/runtimes/apple/apple) overview.
+
+  ### Getting an Artboard
+
+  Once you have created a `File`, you can then retrieve information for and create `Artboard` types.
+
+  ```swift
+  // Get all artboard names in the file
+  let artboardNames = try await file.getArtboardNames()
+  // Get the default artboard for the file
+  let defaultArtboard = try await file.createArtboard()
+  // Get an artboard by name from the file
+  let artboardByName = try await file.createArtboard("Artboard")
+  ```
+
+  Note that these are all async throwing functions marked as `@MainActor`. Since they are functions called on a `File` object, any thrown errors will be of type `FileError`.
+
+  An example of when one of these functions will throw is if you call `.createArtboard(_:)` with a name that is not in the origin `File`, which will throw a `FileError.invalidArtboard(String)`.
+
+  ### Using an Artboard
+
+  Remember that the Rive configuration for a view is the `Rive` type. In the overview, we show initializing a `Rive` object with a file, opting to use the default artboard and state machine. However, you can initialize a `Rive` object with a specific artboard:
+  ```swift
+  let worker = try await Worker()
+  let file = try await File(source: .local("my_file", Bundle.main))
+  let artboardByName = try await file.createArtboard("Artboard")
+  let rive = try await Rive(file: file, artboard: artboardByName)
+  ```
+
+  Artboards then become the source of truth for state machines. See [State Machine](/runtimes/apple/state-machines) for more details.
+  </Tab>
+  <Tab title={Apple.legacyRuntimeName}>
+  **SwiftUI**
+  ```swift
+  struct AnimationView: View {
+      var body: some View {
+          RiveViewModel(
+              fileName: "my_rive_file",
+              artboardName: "My Artboard"
+          ).view()
+      }
+  }
+  ```
+
+  **UIKit**
+  ```swift
+  class AnimationViewController: UIViewController {
+      @IBOutlet weak var riveView: RiveView!
+
+      var bananaVM = RiveViewModel(
+          fileName: "my_rive_file",
+          artboardName: "My Artboard",
+      )
+
+      override func viewDidLoad() {
+          bananaVM.setView(riveView)
+      }
+  }
+  ```
+  </Tab>
+</Tabs>

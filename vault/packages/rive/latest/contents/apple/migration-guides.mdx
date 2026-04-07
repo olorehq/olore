@@ -1,0 +1,193 @@
+---
+title: 'Migration Guides'
+description: 'Migrating between major versions of the Apple runtime'
+---
+
+<AccordionGroup>
+    <Accordion title="Migrating from 5.x.x to 6.x.x">
+        <Warning>
+        Contains a breaking change
+        </Warning>
+
+        ## Rive Renderer
+
+        ### RendererType
+
+        `riveRenderer` is now the new default renderer type, and `skiaRenderer` has been removed. If you were previously explicitly setting the renderer type to Skia, then you will have to [specify a new renderer](/runtimes/choose-a-renderer/), or use the new default Rive Renderer (our recommendation).
+
+        ## Package Size
+
+        Rive's iOS runtime is now \~57% smaller, at \~3.3mb, compared to \~7.6mb prior to v6.0.0.
+    </Accordion>
+    <Accordion title="Migrating from 4.x.x to 5.x.x">
+        <Note>
+        No breaking API changes!
+        </Note>
+
+        There should be no major changes to your code to migrate to `v5.x.x`. Starting in `v5.x.x`, a new text engine dependency to support the new Rive [Text](/runtimes/apple/text) feature, so you may see a slight bump in the size of the package to account for this.
+    </Accordion>
+    <Accordion title="Migrating from 3.x.x to 4.x.x">
+        There should be no major changes to your code to migrate to `v4.x.x`. Starting in `v4.0.1`, you can use the same runtime package `rive-ios` to install `RiveRuntime` into native `macOS` applications. The API usage of `RiveRuntime` in iOS and macOS applications should remain the same. If you do find any discrepancies or issues, please log an issue to [https://github.com/rive-app/rive-ios/issues](https://github.com/rive-app/rive-ios/issues).
+
+        [https://github.com/rive-app/rive-ios/issues](https://github.com/rive-app/rive-ios/issues)
+    </Accordion>
+    <Accordion title="Migrating from 2.x.x to 3.x.x">
+        Migrating to v3 of the Apple runtime should be fairly straightforward. See the sections below on concerns you may need to look out for to change to your app if you upgrade.
+
+        ## Enums Naming
+
+        Starting in v3, the Layout option enums have changed to match enum naming conventions from the other runtimes for consistency. See below for what you should change `Fit` and `Alignment` options to. There are also a few other enums for parameters that have changed slightly regarding loop modes and direction.
+
+        | Fit | Before | After |
+        | --- | --- | --- |
+        | Fill | `.fitFill` | `.fill` |
+        | Contain | `.fitContain` | `.contain` |
+        | Cover | `.fitCover` | `.cover` |
+        | Fit Width | `.fitFitWidth` | `.fitWidth` |
+        | Fit Height | `.fitFitHeight` | `.fitHeight` |
+        | Scale Down | `.fitScaleDown` | `.scaleDown` |
+        | None | `.fitNone` | `.noFit` |
+
+        | Alignment | Before | After |
+        | --- | --- | --- |
+        | Top Left | `.alignmentTopLeft` | `.topLeft` |
+        | Top Center | `.alignmentTopCenter` | `.topCenter` |
+        | Top Right | `.alignmentTopRight` | `.topRight` |
+        | Center Left | `.alignmentCenterLeft` | `.centerLeft` |
+        | Center | `.alignmentCenter` | `.center` |
+        | Center Right | `.alignmentCenterRight` | `.centerRight` |
+        | Bottom Left | `.alignmentBottomLeft` | `.bottomLeft` |
+        | Bottom Center | `.alignmentBottomCenter` | `.bottomCenter` |
+        | Bottom Right | `.alignmentBottomRight` | `.bottomRight` |
+
+        | Loop Mode | Before | After |
+        | --- | --- | --- |
+        | One Shot | `loopOneShot` | `oneShot` |
+        | Loop | `loopLoop` | `loop` |
+        | Ping Pong | `loopPingPong` | `pingPong` |
+        | Auto | `loopAuto` | `autoLoop` |
+
+        | Direction | Before | After |
+        | --- | --- | --- |
+        | Backwards | `directionBackwards` | `backwards` |
+        | Forwards | `directionForwards` | `forwards` |
+        | Auto | `directionAuto` | `autoDirection` |
+
+        ## Default playing behavior
+
+        One changed default behavior in v3 is what plays in the Rive canvas. Before v3, if no state machine or specific animation was specified when setting up the `RiveViewModel`, the first animation made in the Rive file would play.
+
+        With v3, if no state machine or specific animation is specified, the first state machine (if one is created) in the Rive file will play. So if you prefer to keep your existing default behavior of the first animation, simply set the `animationName` property on `RiveViewModel` when creating it.
+    </Accordion>
+    <Accordion title="Migrating from 1.x.x to 2.x.x">
+        <Info>
+        The Rive Apple runtime has a different API in 2.x.x from 1.x.x that allows for a unified internal model that supports both Storyboard/UIKit and SwiftUI usage.
+        </Info>
+
+        There are now 3 main pieces of the Rive API to be familiar with for iOS development:
+
+        - `RiveView` - Core logic for building and manipulating Rive views
+        - `RiveModel` - Describes the configuration model for Rive objects
+        - `RiveViewModel` - The main class to interface with when integrating rive, creating a Rive view in some instances. It provides a high-level API that makes it simple to do actions like instantiation, animation playback, layout changes, and more.
+
+        We recommend migrating to the latest version of v2.x.x as soon as possible, and you can find steps on this below:
+
+        ## UIKit
+
+        In v1.x.x, you may have loaded in a Rive file in the following snippet pattern:
+
+        ```javascript
+        class SimpleAnimationViewController: UIViewController {
+            let url = "https://cdn.rive.app/animations/truck.riv"
+
+            override public func loadView() {
+                super.loadView()
+
+                let view = RiveView()
+                guard let riveFile = RiveFile(httpUrl: url, with: view) else {
+                    fatalError("Unable to load RiveFile")
+                }
+                try? view.configure(riveFile)
+
+                self.view = view
+            }
+        }
+        ```
+
+        This pattern interfaced with 2 Rive APIs, `RiveFile` and `RiveView`. With v2.x.x, the pattern becomes simpler, interfacing with one `RiveViewModel`.
+
+        ```javascript
+        class SimpleAnimationViewController: UIViewController {
+            var viewModel = RiveViewModel(fileName: "truck")
+
+            override func viewWillAppear(_ animated: Bool) {
+                let riveView = viewModel.createRiveView()
+                view.addSubview(riveView)
+                riveView.frame = view.frame
+            }
+        }
+        ```
+
+        Here's another example:
+
+        ```javascript
+        class MultipleAnimationsController: UIViewController, RivePLayerDelegate {
+            @IBOutlet weak var riveView: RiveView!
+
+            var viewModel = RiveViewModel(
+                fileName: "multiple_animations",
+                animationName: "Animation 1",
+                artboardName: "Animation Playground"
+            )
+
+            override func viewDidLoad() {
+                viewModel.setView(riveView)
+            }
+        }
+        ```
+
+        See subsequent runtime pages for new usage of animation playback and layouts with UIKit.
+
+        ### State Machine Usage
+
+        In v1.x.x, you would set state machine input values with the following API: `riveView.setNumberState("Number Test", inputName: "Level", value: 2.0)`
+
+        `riveView.setBooleanState("Boolean Test", inputName: "isSuccess", value: true)`
+
+        `riveView.fireState("Trigger Test", inputName: "trigFail")`
+
+        In v2.x.x, some of the input state setters have been consolidated and renamed. Additionally, the setters are called on the `RiveViewModel` which has the context of the state machine that was instantiated, so there is no longer a need to pass it the name: viewModel`.setInput("Level", value: 2.0)`
+
+        viewModel`.setInput("isSuccess", value: true)`
+
+        `viewModel.triggerInput("trigFail")`
+
+        ### Delegates
+
+        In the past, you may have implemented various functions that came with some of the following delegates: `LoopDelegate` , `PlayDelegate`, `PauseDelegate`, `StopDelegate`, and `StateChangeDelegate`. The various functions that get implemented on your end (i.e `loop`, `play`, `pause`, `stateChange`, etc.) have been consolidated under 2 main delegates, `RivePlayerDelegate` and `RiveStateMachineDelegate` with a slightly different function to override.
+
+        See the following list of delegates for methods to hook into:
+
+        - `RivePlayerDelegate` - Hook into animation and state machine lifecycle events
+        - `player`: `(loopedWithModel riveModel: RiveModel?, type: Int) {}`
+        - `player`: `(playedWithModel riveModel: RiveModel?) {}`
+        - `player`: `(pausedWithModel riveModel: RiveModel?) {}`
+        - `player`: `(stoppedWithModel riveModel: RiveModel?) {}`
+        - `RiveStateDelegate` - Hook into state changes on a state machine lifecycle
+        - `stateChange`: `(_ stateMachineName: String, _ stateName: String) {}`
+
+        ## SwiftUI
+
+        v1.x.x had a small wrapper around the existing `RiveView` class to help support Rive in the context of applications written in SwiftUI. v2.x.x now supports a more robust pattern for consuming Rive in your SwiftUI applications that fixes several bugs with the existing wrapper approach and provides a closer experience with the new pattern of SwiftUI.
+
+        See subsequent runtime pages to learn how to control animation playback, state machines, and more with v2.x.x
+
+        ```javascript
+        struct AnimationView: View {
+            var body: some View {
+                RiveViewModel(fileName: "cool_rive_animation").view()
+            }
+        }
+        ```
+    </Accordion>
+</AccordionGroup>

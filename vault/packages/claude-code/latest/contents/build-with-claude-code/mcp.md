@@ -223,6 +223,7 @@ With MCP servers connected, you can ask Claude Code to:
 * **Query databases**: "Find emails of 10 random users who used feature ENG-4521, based on our PostgreSQL database."
 * **Integrate designs**: "Update our standard email template based on the new Figma designs that were posted in Slack"
 * **Automate workflows**: "Create Gmail drafts inviting these 10 users to a feedback session about the new feature."
+* **React to external events**: An MCP server can also act as a [channel](/en/channels) that pushes messages into your session, so Claude reacts to Telegram messages, Discord chats, or webhook events while you're away.
 
 ## Popular MCP servers
 
@@ -328,6 +329,10 @@ claude mcp remove github
 
 Claude Code supports MCP `list_changed` notifications, allowing MCP servers to dynamically update their available tools, prompts, and resources without requiring you to disconnect and reconnect. When an MCP server sends a `list_changed` notification, Claude Code automatically refreshes the available capabilities from that server.
 
+### Push messages with channels
+
+An MCP server can also push messages directly into your session so Claude can react to external events like CI results, monitoring alerts, or chat messages. To enable this, your server declares the `claude/channel` capability and you opt it in with the `--channels` flag at startup. See [Channels](/en/channels) to use an officially supported channel, or [Channels reference](/en/channels-reference) to build your own.
+
 <Tip>
   Tips:
 
@@ -395,8 +400,8 @@ Or inline in `plugin.json`:
 
 **Plugin MCP features**:
 
-* **Automatic lifecycle**: Servers start when plugin enables, but you must restart Claude Code to apply MCP server changes (enabling or disabling)
-* **Environment variables**: Use `${CLAUDE_PLUGIN_ROOT}` for plugin-relative paths
+* **Automatic lifecycle**: At session startup, servers for enabled plugins connect automatically. If you enable or disable a plugin during a session, run `/reload-plugins` to connect or disconnect its MCP servers
+* **Environment variables**: use `${CLAUDE_PLUGIN_ROOT}` for bundled plugin files and `${CLAUDE_PLUGIN_DATA}` for [persistent state](/en/plugins-reference#persistent-data-directory) that survives plugin updates
 * **User environment access**: Access to same environment variables as manually configured servers
 * **Multiple transport types**: Support stdio, SSE, and HTTP transports (transport support may vary by server)
 
@@ -532,57 +537,92 @@ If a required environment variable is not set and has no default value, Claude C
 {/* ### Example: Automate browser testing with Playwright
 
   ```bash
-  # 1. Add the Playwright MCP server
   claude mcp add --transport stdio playwright -- npx -y @playwright/mcp@latest
+  ```
 
-  # 2. Write and run browser tests
-  > "Test if the login flow works with test@example.com"
-  > "Take a screenshot of the checkout page on mobile"
-  > "Verify that the search feature returns results"
+  Then write and run browser tests:
+
+  ```text
+  Test if the login flow works with test@example.com
+  ```
+  ```text
+  Take a screenshot of the checkout page on mobile
+  ```
+  ```text
+  Verify that the search feature returns results
   ``` */}
 
 ### Example: Monitor errors with Sentry
 
 ```bash  theme={null}
-# 1. Add the Sentry MCP server
 claude mcp add --transport http sentry https://mcp.sentry.dev/mcp
+```
 
-# 2. Use /mcp to authenticate with your Sentry account
-> /mcp
+Authenticate with your Sentry account:
 
-# 3. Debug production issues
-> "What are the most common errors in the last 24 hours?"
-> "Show me the stack trace for error ID abc123"
-> "Which deployment introduced these new errors?"
+```text  theme={null}
+/mcp
+```
+
+Then debug production issues:
+
+```text  theme={null}
+What are the most common errors in the last 24 hours?
+```
+
+```text  theme={null}
+Show me the stack trace for error ID abc123
+```
+
+```text  theme={null}
+Which deployment introduced these new errors?
 ```
 
 ### Example: Connect to GitHub for code reviews
 
 ```bash  theme={null}
-# 1. Add the GitHub MCP server
 claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+```
 
-# 2. In Claude Code, authenticate if needed
-> /mcp
-# Select "Authenticate" for GitHub
+Authenticate if needed by selecting "Authenticate" for GitHub:
 
-# 3. Now you can ask Claude to work with GitHub
-> "Review PR #456 and suggest improvements"
-> "Create a new issue for the bug we just found"
-> "Show me all open PRs assigned to me"
+```text  theme={null}
+/mcp
+```
+
+Then work with GitHub:
+
+```text  theme={null}
+Review PR #456 and suggest improvements
+```
+
+```text  theme={null}
+Create a new issue for the bug we just found
+```
+
+```text  theme={null}
+Show me all open PRs assigned to me
 ```
 
 ### Example: Query your PostgreSQL database
 
 ```bash  theme={null}
-# 1. Add the database server with your connection string
 claude mcp add --transport stdio db -- npx -y @bytebase/dbhub \
   --dsn "postgresql://readonly:pass@prod.db.com:5432/analytics"
+```
 
-# 2. Query your database naturally
-> "What's our total revenue this month?"
-> "Show me the schema for the orders table"
-> "Find customers who haven't made a purchase in 90 days"
+Then query your database naturally:
+
+```text  theme={null}
+What's our total revenue this month?
+```
+
+```text  theme={null}
+Show me the schema for the orders table
+```
+
+```text  theme={null}
+Find customers who haven't made a purchase in 90 days
 ```
 
 ## Authenticate with remote MCP servers
@@ -601,8 +641,8 @@ Many cloud-based MCP servers require authentication. Claude Code supports OAuth 
   <Step title="Use the /mcp command within Claude Code">
     In Claude code, use the command:
 
-    ```
-    > /mcp
+    ```text  theme={null}
+    /mcp
     ```
 
     Then follow the steps in your browser to login.
@@ -614,9 +654,23 @@ Many cloud-based MCP servers require authentication. Claude Code supports OAuth 
 
   * Authentication tokens are stored securely and refreshed automatically
   * Use "Clear authentication" in the `/mcp` menu to revoke access
-  * If your browser doesn't open automatically, copy the provided URL
+  * If your browser doesn't open automatically, copy the provided URL and open it manually
+  * If the browser redirect fails with a connection error after authenticating, paste the full callback URL from your browser's address bar into the URL prompt that appears in Claude Code
   * OAuth authentication works with HTTP servers
 </Tip>
+
+### Use a fixed OAuth callback port
+
+Some MCP servers require a specific redirect URI registered in advance. By default, Claude Code picks a random available port for the OAuth callback. Use `--callback-port` to fix the port so it matches a pre-registered redirect URI of the form `http://localhost:PORT/callback`.
+
+You can use `--callback-port` on its own (with dynamic client registration) or together with `--client-id` (with pre-configured credentials).
+
+```bash  theme={null}
+# Fixed callback port with dynamic client registration
+claude mcp add --transport http \
+  --callback-port 8080 \
+  my-server https://mcp.example.com/mcp
+```
 
 ### Use pre-configured OAuth credentials
 
@@ -653,6 +707,15 @@ Some MCP servers don't support automatic OAuth setup. If you see an error like "
         ```
       </Tab>
 
+      <Tab title="claude mcp add-json (callback port only)">
+        Use `--callback-port` without a client ID to fix the port while using dynamic client registration:
+
+        ```bash  theme={null}
+        claude mcp add-json my-server \
+          '{"type":"http","url":"https://mcp.example.com/mcp","oauth":{"callbackPort":8080}}'
+        ```
+      </Tab>
+
       <Tab title="CI / env var">
         Set the secret via environment variable to skip the interactive prompt:
 
@@ -675,9 +738,32 @@ Some MCP servers don't support automatic OAuth setup. If you see an error like "
 
   * The client secret is stored securely in your system keychain (macOS) or a credentials file, not in your config
   * If the server uses a public OAuth client with no secret, use only `--client-id` without `--client-secret`
+  * `--callback-port` can be used with or without `--client-id`
   * These flags only apply to HTTP and SSE transports. They have no effect on stdio servers
   * Use `claude mcp get <name>` to verify that OAuth credentials are configured for a server
 </Tip>
+
+### Override OAuth metadata discovery
+
+If your MCP server returns errors on the standard OAuth metadata endpoint (`/.well-known/oauth-authorization-server`) but exposes a working OIDC endpoint, you can tell Claude Code to fetch OAuth metadata directly from a URL you specify, bypassing the standard discovery chain.
+
+Set `authServerMetadataUrl` in the `oauth` object of your server's config in `.mcp.json`:
+
+```json  theme={null}
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp",
+      "oauth": {
+        "authServerMetadataUrl": "https://auth.example.com/.well-known/openid-configuration"
+      }
+    }
+  }
+}
+```
+
+The URL must use `https://`. This option requires Claude Code v2.1.64 or later.
 
 ## Add MCP servers from JSON configuration
 
@@ -764,14 +850,19 @@ If you've logged into Claude Code with a [Claude.ai](https://claude.ai) account,
   <Step title="View and manage servers in Claude Code">
     In Claude Code, use the command:
 
-    ```
-    # Within Claude Code, see all MCP servers including Claude.ai ones
-    > /mcp
+    ```text  theme={null}
+    /mcp
     ```
 
     Claude.ai servers appear in the list with indicators showing they come from Claude.ai.
   </Step>
 </Steps>
+
+To disable claude.ai MCP servers in Claude Code, set the `ENABLE_CLAUDEAI_MCP_SERVERS` environment variable to `false`:
+
+```bash  theme={null}
+ENABLE_CLAUDEAI_MCP_SERVERS=false claude
+```
 
 ## Use Claude Code as an MCP server
 
@@ -858,6 +949,19 @@ This is particularly useful when working with MCP servers that:
   If you frequently encounter output warnings with specific MCP servers, consider increasing the limit or configuring the server to paginate or filter its responses.
 </Warning>
 
+## Respond to MCP elicitation requests
+
+MCP servers can request structured input from you mid-task using elicitation. When a server needs information it can't get on its own, Claude Code displays an interactive dialog and passes your response back to the server. No configuration is required on your side: elicitation dialogs appear automatically when a server requests them.
+
+Servers can request input in two ways:
+
+* **Form mode**: Claude Code shows a dialog with form fields defined by the server (for example, a username and password prompt). Fill in the fields and submit.
+* **URL mode**: Claude Code opens a browser URL for authentication or approval. Complete the flow in the browser, then confirm in the CLI.
+
+To auto-respond to elicitation requests without showing a dialog, use the [`Elicitation` hook](/en/hooks#elicitation).
+
+If you're building an MCP server that uses elicitation, see the [MCP elicitation specification](https://modelcontextprotocol.io/docs/learn/client-concepts#elicitation) for protocol details and schema examples.
+
 ## Use MCP resources
 
 MCP servers can expose resources that you can reference using @ mentions, similar to how you reference files.
@@ -872,20 +976,20 @@ MCP servers can expose resources that you can reference using @ mentions, simila
   <Step title="Reference a specific resource">
     Use the format `@server:protocol://resource/path` to reference a resource:
 
-    ```
-    > Can you analyze @github:issue://123 and suggest a fix?
+    ```text  theme={null}
+    Can you analyze @github:issue://123 and suggest a fix?
     ```
 
-    ```
-    > Please review the API documentation at @docs:file://api/authentication
+    ```text  theme={null}
+    Please review the API documentation at @docs:file://api/authentication
     ```
   </Step>
 
   <Step title="Multiple resource references">
     You can reference multiple resources in a single prompt:
 
-    ```
-    > Compare @postgres:schema://users with @docs:file://database/user-model
+    ```text  theme={null}
+    Compare @postgres:schema://users with @docs:file://database/user-model
     ```
   </Step>
 </Steps>
@@ -924,15 +1028,16 @@ Add clear, descriptive server instructions that explain:
 
 ### Configure tool search
 
-Tool search runs in auto mode by default, meaning it activates only when your MCP tool definitions exceed the context threshold. If you have few tools, they load normally without tool search. This feature requires models that support `tool_reference` blocks: Sonnet 4 and later, or Opus 4 and later. Haiku models do not support tool search.
+Tool search is enabled by default: MCP tools are deferred and discovered on demand. When `ANTHROPIC_BASE_URL` points to a non-first-party host, tool search is disabled by default because most proxies do not forward `tool_reference` blocks. Set `ENABLE_TOOL_SEARCH` explicitly if your proxy does. This feature requires models that support `tool_reference` blocks: Sonnet 4 and later, or Opus 4 and later. Haiku models do not support tool search.
 
 Control tool search behavior with the `ENABLE_TOOL_SEARCH` environment variable:
 
 | Value      | Behavior                                                                           |
 | :--------- | :--------------------------------------------------------------------------------- |
-| `auto`     | Activates when MCP tools exceed 10% of context (default)                           |
+| (unset)    | Enabled by default. Disabled when `ANTHROPIC_BASE_URL` is a non-first-party host   |
+| `true`     | Always enabled, including for non-first-party `ANTHROPIC_BASE_URL`                 |
+| `auto`     | Activates when MCP tools exceed 10% of context                                     |
 | `auto:<N>` | Activates at custom threshold, where `<N>` is a percentage (e.g., `auto:5` for 5%) |
-| `true`     | Always enabled                                                                     |
 | `false`    | Disabled, all MCP tools loaded upfront                                             |
 
 ```bash  theme={null}
@@ -967,20 +1072,20 @@ MCP servers can expose prompts that become available as commands in Claude Code.
   </Step>
 
   <Step title="Execute a prompt without arguments">
-    ```
-    > /mcp__github__list_prs
+    ```text  theme={null}
+    /mcp__github__list_prs
     ```
   </Step>
 
   <Step title="Execute a prompt with arguments">
     Many prompts accept arguments. Pass them space-separated after the command:
 
-    ```
-    > /mcp__github__pr_review 456
+    ```text  theme={null}
+    /mcp__github__pr_review 456
     ```
 
-    ```
-    > /mcp__jira__create_issue "Bug in login flow" high
+    ```text  theme={null}
+    /mcp__jira__create_issue "Bug in login flow" high
     ```
   </Step>
 </Steps>

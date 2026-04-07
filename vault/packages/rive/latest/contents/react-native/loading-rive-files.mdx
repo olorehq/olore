@@ -1,0 +1,326 @@
+---
+title: "Loading Rive Files"
+description: "How to use Rive files with the Rive React Native runtime. "
+---
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    There are several ways to load Rive files in your React Native projects using the new runtime:
+
+    - **Option 1: Using `require()`** - Load files from your project directory (recommended for development and OTA updates)
+    - **Option 2: URL** - Load files from a remote URL
+    - **Option 3: Resource name** - Load files from native asset bundles
+    - **Option 4: ArrayBuffer** - Load files from binary data
+
+    All loading methods use the `useRiveFile` hook, which returns a `RiveFile` object that you pass to the `RiveView` component via the `file` prop.
+
+### Option 1: Using `require()` (Recommended)
+
+    <Note>
+      Loading Rive files using `require()` is recommended because it doesn't require a native rebuild when you update the Rive file. During development, files loaded with `require()` are served by the Metro development server. When you build your app, the file is automatically bundled into the app's assets. With Expo, this also enables Over The Air (OTA) updates.
+    </Note>
+
+    ```tsx
+    import { View, ActivityIndicator, Text } from "react-native";
+    import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
+
+    export default function RiveDemo() {
+      const { riveFile, isLoading, error } = useRiveFile(
+        require("./assets/flying_car.riv")
+      );
+
+      if (isLoading) {
+        return <ActivityIndicator size="large" />;
+      }
+
+      if (error || !riveFile) {
+        return <Text>Error: {error || "Failed to load file"}</Text>;
+      }
+
+      return (
+        <RiveView
+          file={riveFile}
+          fit={Fit.Contain}
+          autoPlay={true}
+          style={{ width: 400, height: 400 }}
+        />
+      );
+    }
+    ```
+
+    To make this work, ensure your `metro.config.js` supports `.riv` files.
+    If you're using Expo and don't already have this file, you can generate it with:
+
+    ```bash
+    npx expo customize metro.config.js
+    ```
+
+    Then add:
+
+    ```javascript
+    const { getDefaultConfig } = require("expo/metro-config");
+
+    const config = getDefaultConfig(__dirname);
+
+    // Add support for `.riv` files
+    config.resolver.assetExts.push("riv");
+
+    module.exports = config;
+    ```
+
+    ### Option 2: Loading from URL
+
+    You can load Rive files from a remote URL (e.g., AWS S3, Google Storage, CDN):
+
+    ```tsx
+    import { View, ActivityIndicator, Text } from "react-native";
+    import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
+
+    export default function RiveDemo() {
+      const { riveFile, isLoading, error } = useRiveFile(
+        "https://cdn.rive.app/animations/vehicles.riv"
+      );
+
+      if (isLoading) {
+        return <ActivityIndicator size="large" />;
+      }
+
+      if (error || !riveFile) {
+        return <Text>Error: {error || "Failed to load file"}</Text>;
+      }
+
+      return (
+        <RiveView
+          file={riveFile}
+          fit={Fit.Contain}
+          autoPlay={true}
+          style={{ width: 400, height: 400 }}
+        />
+      );
+    }
+    ```
+
+    ### Option 3: Loading from Resource Name
+
+    You can load Rive files from native asset bundles by referencing the resource name (without the `.riv` extension).
+
+    ```tsx
+    import { View, ActivityIndicator, Text } from "react-native";
+    import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
+
+    export default function RiveDemo() {
+      const { riveFile, isLoading, error } = useRiveFile("weather_app");
+
+      if (isLoading) {
+        return <ActivityIndicator size="large" />;
+      }
+
+      if (error || !riveFile) {
+        return <Text>Error: {error || "Failed to load file"}</Text>;
+      }
+
+      return (
+        <RiveView
+          file={riveFile}
+          fit={Fit.Contain}
+          autoPlay={true}
+          style={{ width: 400, height: 400 }}
+        />
+      );
+    }
+    ```
+
+    #### Adding to iOS
+
+    In the `ios/` folder of your React Native project, open the `.xcodeproj` file in XCode. This will open up the native iOS project.
+
+    Create a New Group under the root of this project and give it a name (i.e., Assets). Drop your `.riv` file into this group, and when prompted by XCode, add it to the _Target_ of your app. This ensures that the Rive file gets included in the bundle resources.
+
+    ![Image](/images/runtimes/react-native/3dc3d0fd-34b8-48db-9baa-0fdf668ad76d.webp)
+
+    #### Adding to Android
+
+Open the `android/` folder of your React Native project in Android Studio.
+
+    Under the `/app/src/main/res/` directory, create a new _Android Resource Directory_, which is where you'll store Rive file assets. When prompted to select a name for the folder and resource type, select `raw` from the resource type dropdown. Drop your `.riv` file into this new folder which ensures that the Rive file gets included in the bundle resources.
+
+    ![Image](/images/runtimes/react-native/f4d4f2f4-7231-43c8-881b-a3f05fbe33ae.webp)
+
+    Adding `weather_app.riv` to the Android project
+
+    ### Option 4: Loading from ArrayBuffer
+
+    You can load Rive files from binary data using an `ArrayBuffer`:
+
+    ```tsx
+    import { View, ActivityIndicator, Text } from "react-native";
+    import { RiveView, useRiveFile, Fit } from "@rive-app/react-native";
+    import { useState, useEffect } from "react";
+
+    export default function RiveDemo() {
+      const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | undefined>();
+
+      useEffect(() => {
+        const loadFile = async () => {
+          try {
+            const response = await fetch(
+              "https://cdn.rive.app/animations/vehicles.riv"
+            );
+            const buffer = await response.arrayBuffer();
+            setArrayBuffer(buffer);
+          } catch (error) {
+            console.error("Failed to load file:", error);
+          }
+        };
+
+        loadFile();
+      }, []);
+
+      const { riveFile, isLoading, error } = useRiveFile(arrayBuffer);
+
+      if (isLoading || !arrayBuffer) {
+        return <ActivityIndicator size="large" />;
+      }
+
+      if (error || !riveFile) {
+        return <Text>Error: {error || "Failed to load file"}</Text>;
+      }
+
+      return (
+        <RiveView
+          file={riveFile}
+          fit={Fit.Contain}
+          autoPlay={true}
+          style={{ width: 400, height: 400 }}
+        />
+      );
+    }
+    ```
+
+  </Tab>
+  <Tab title="Legacy Runtime">
+    There are several ways to include Rive files in your React Native projects:
+
+    - Option 1: URL where a Rive file is hosted
+    - Option 2: Add the asset to the asset bundles of the native iOS and Android projects
+    - Option 3: Add the asset to the asset bundles in an Expo project using `expo-asset`
+    - Option 4: Source prop and require
+
+    When you render the `<Rive />` component, you must supply the `url` or `resourceName` prop respectively to the options above, or your component will fail to load.
+
+    ### Option 1: URL
+
+    ```javascript
+    <Rive url="https://cdn.rive.app/animations/vehicles.riv" />
+    ```
+
+    When using the Rive React Native runtime to load in a Rive file, one option is to reference the URL where the Rive file may be hosted (i.e AWS S3 bucket, Google Storage, etc.). This can be done via the `url` parameter when instantiating the `<Rive />` component.
+
+    ### Option 2: Asset Bundle
+
+    ```javascript
+    <Rive
+      resourceName="weather_app" // weather_app.riv
+    />
+    ```
+
+    Another alternative to loading in a Rive file for the `<Rive />` component is to reference the name of the resource/asset in the respective `ios/` and `android/` projects.
+
+    #### Adding to iOS
+
+    In the `ios/` folder of your React Native project, open the `.xcodeproj` file in XCode. This will open up the native iOS project.
+
+    Create a _New Group_ under the root of this project and name it whatever asset folder name you'd like to give it (i.e., _Assets_). Drop your `.riv` file into this group, and when prompted by XCode, add it to the _Target_ of your app. This ensures that the Rive file gets included in the bundle resources.
+
+    ![Image](/images/runtimes/react-native/3dc3d0fd-34b8-48db-9baa-0fdf668ad76d.webp)
+
+    #### Adding to Android
+
+    In the `android/` folder of your React Native project, open the whole folder in Android Studio. This will open up the Android project.
+
+    Under the `/app/src/main/res/` directory, create a new _Android Resource Directory_, which is where you'll store Rive file assets, and when prompted to select a name for the folder and resource type, select `raw` from the resource type dropdown. Drop your `.riv` file into this new folder; this ensures that the Rive file gets included in the bundle resources.
+
+    ![Image](/images/runtimes/react-native/f4d4f2f4-7231-43c8-881b-a3f05fbe33ae.webp)
+
+    Adding `weather_app.riv` to the Android project
+
+    Once the Rive files are added to the asset/resource bundles of the iOS and Android projects in the React Native app, you should be free to start referencing the name of the file (without the `.riv` extension) when creating the `<Rive />` component, using that `resourceName` prop.
+
+    ### Option 3: Using expo-asset with Expo CNG
+
+    ```javascript
+    <Rive
+      resourceName="weather_app" // weather_app.riv
+    />
+    ```
+
+    If you're using Expo SDK 53 or later and want to take advantage of [Expo CNG (Continuous Native Generation)](https://docs.expo.dev/workflow/continuous-native-generation/), you can use the [expo-asset plugin](https://docs.expo.dev/versions/latest/sdk/asset/) to bundle your `.riv` files into your native builds.
+
+    In your `app.json` or `app.config.js`, add the `expo-asset` plugin and specify your `.riv` files or asset directories:
+
+    ```json
+    {
+      "expo": {
+        "plugins": [
+          [
+            "expo-asset",
+            {
+              "assets": ["path/to/file.riv", "path/to/directory"]
+            }
+          ]
+        ]
+      }
+    }
+    ```
+
+    To enable support for Rive files in Metro, update your `metro.config.js`.
+    If you don't already have this file, generate it with:
+
+    ```bash
+    npx expo customize metro.config.js
+    ```
+
+    Then edit it as follows:
+
+    ```javascript
+    const { getDefaultConfig } = require("expo/metro-config");
+
+    const config = getDefaultConfig(__dirname);
+
+    // Add support for `.riv` files
+    config.resolver.assetExts.push("riv");
+
+    module.exports = config;
+    ```
+
+    Then regenerate your development build, just remember to run `npx expo prebuild` first if you're using any `expo run:*` commands.
+
+    If you're using an earlier version of Expo, you can find an alternative approach in [this Github Issue](https://github.com/rive-app/rive-react-native/issues/185).
+
+    ### Option 4: Source Prop with Require
+
+    ```javascript
+    <Rive source={require("./flying_car.riv")} />
+    ```
+
+    If you prefer to keep your Rive files in the same folder as your component code, you can use the `source` prop with `require()` to load the Rive file by referencing its path.
+
+    To make this work, ensure your `metro.config.js` supports `.riv` files.
+    If you're using Expo and don't already have this file, you can generate it with:
+
+    ```bash
+    npx expo customize metro.config.js
+    ```
+
+    Then add:
+
+    ```javascript
+    // Add support for `.riv` files
+    config.resolver.assetExts.push("riv");
+    ```
+
+    An additional advantage of this method is that during development, the file is served by the Metro development server, allowing you to update it without rebuilding your app.
+    When you build your app, the file is automatically bundled into the app's assets.
+
+  </Tab>
+</Tabs>

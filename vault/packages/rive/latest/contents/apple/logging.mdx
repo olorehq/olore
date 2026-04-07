@@ -1,0 +1,72 @@
+---
+title: 'Logging'
+description: ''
+---
+
+import { Apple } from '/snippets/constants.mdx'
+
+import Overview from '/snippets/runtimes/logging/overview.mdx'
+
+<Overview />
+
+<Tabs>
+    <Tab title={Apple.currentRuntimeName}>
+        The new runtime supports logging via the `RiveLog` type. To enable logging, set the `RiveLog.logger` property to a `RiveLog.Logger` implementation. The new runtime defaults to no logging, which can be set at any time by setting `RiveLog.logger` to `RiveLog.none`. The new runtime ships with a default implementation that logs to the console, which can be set by using the `RiveLog.system(levels:)` helper function. When using the system logger, any logs that are not emitted at the levels specified will be suppressed.
+
+        ```swift
+        // To enable the default logging implementation, which uses os.Logger
+        RiveLog.logger = RiveLog.system(levels: .default)
+
+        // To disable logging (the default)
+        RiveLog.logger = RiveLog.none
+        ```
+
+        ### Levels
+
+        Logs will be logged at various levels, which are inspired by `OSLogType` . These levels can be used to additionally filter logs to be logged at certain levels only. Available levels are:
+
+        - **Notice**: important informational logs
+        - **Debug**: commonly used to aid with debugging
+        - **Trace**: highly detailed and potentially verbose diagnostic logs, including operations like advancing that may emit at least one log per frame
+        - **Info**: logs that provide additional information
+        - **Error**: used when an error occurs
+        - **Warning**: used when a potential issue is detected
+        - **Fault**: used when a severe error occurs
+        - **Critical**: used when a fatal error occurs
+
+        Convenience presets are also available:
+        - **.default**: `.debug`, `.warning`, `.error`, `.fault`, `.critical`
+        - **.all**: all levels (`.notice`, `.debug`, `.trace`, `.info`, `.error`, `.warning`, `.fault`, `.critical`)
+
+        ### Custom Logger
+
+        You can also implement your own custom logger by implementing the `RiveLog.Logger` protocol. This allows you to log to any desired sink, such as a file, a network endpoint, or a custom console.
+
+        ```swift
+        nonisolated public protocol Logger: Sendable {
+            nonisolated func notice(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func debug(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func trace(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func info(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func error(tag: Tag, error _: (any Error)?, _ message: @escaping () -> String)
+            nonisolated func warning(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func fault(tag: Tag, _ message: @escaping () -> String)
+            nonisolated func critical(tag: Tag, _ message: @escaping () -> String)
+        }
+        ```
+
+        Once you have implemented your own logger, you can set it to the `RiveLog.logger` property.
+
+        ```swift
+        RiveLog.logger = MyLogger()
+        ```
+    </Tab>
+    <Tab title={Apple.legacyRuntimeName}>
+        ```
+        RiveLogger.isEnabled = true // Enable logging; false by default
+        RiveLogger.levels = [.debug] // Filter logs; all by default
+        RiveLogger.categories = [.viewModel] // Filter categories; all by default
+        RiveLogger.isVerbose = true // Include verbose logs; false by default
+        ```
+    </Tab>
+</Tabs>

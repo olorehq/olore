@@ -1,0 +1,113 @@
+---
+description: "Compiler Error CS8170"
+title: "Compiler Error CS8170"
+ms.date: 9/19/2022
+f1_keywords:
+  - "CS8170"
+helpviewer_keywords:
+  - "CS8170"
+---
+# Compiler Error CS8170
+
+Struct members cannot return 'this' or other instance members by reference
+
+## Example
+
+ The following sample generates CS8170:
+
+Value types (i.e. `struct`s), are most commonly allocated on the stack.  A value type allocated on the stack becomes invalid leaving the scope in which it was declared.  The compiler avoids a reference to a variable that becomes invalid leaving the scope by generating this error.
+
+```csharp
+// CS8170.cs (8,14)
+
+struct Program
+{
+    public int d;
+
+    public ref int M()
+    {
+        return ref d;
+    }
+}
+
+public class Other
+{
+    public void Method()
+    {
+        var p = new Program();
+        ref int d = ref p.M();
+    }
+}
+```
+
+## To correct this error
+
+Changing the method to not `ref`-return corrects this error:
+
+```csharp
+delegate void D();
+
+struct Program
+{
+    public event D d;
+
+    public D M()
+    {
+        return d;
+    }
+}
+```
+
+If a reference to a member is required, consider extending the scope of the value.  For example:
+
+```csharp
+public struct Program
+{
+    public int d;
+}
+
+public static class Extensions
+{
+    public static ref readonly int RefD(this in Program program)
+    {
+        return ref program.d;
+    }
+}
+
+public class Other
+{
+    public void Method()
+    {
+        var p = new Program();
+        var d = p.RefD();
+    }
+}
+```
+
+Another approach is to use the <xref:System.Diagnostics.CodeAnalysis.UnscopedRefAttribute?displayProperty=nameWithType> attribute. It will mark the reference to be allowed to escape the scope.<br/>
+Use this only when you know that it is safe for the reference to leave the scope.
+Below is the example of applying <xref:System.Diagnostics.CodeAnalysis.UnscopedRefAttribute?displayProperty=nameWithType> to `int M()` method, which fixes the CS8170:
+
+```csharp
+using System.Diagnostics.CodeAnalysis;
+
+struct Program
+{
+    public int d;
+
+    [UnscopedRef]
+    public ref int M()
+    {
+        return ref d;    // No error - ref is valid to escape the scope in this line of that method
+    }
+}
+
+public class Other
+{
+    public void Method()
+    {
+        var p = new Program();
+        ref int d = ref p.M();
+    }
+}
+```

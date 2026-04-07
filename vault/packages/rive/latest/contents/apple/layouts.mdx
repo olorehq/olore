@@ -1,0 +1,187 @@
+---
+title: "Layout"
+description: "Control how graphics are laid out within the canvas."
+---
+
+import { Apple } from '/snippets/constants.mdx'
+
+import FitMode from '/snippets/runtimes/layouts/fit-mode.mdx'
+import Alignment from "/snippets/runtimes/layouts/alignment.mdx"
+import Bounds from "/snippets/runtimes/layouts/bounds.mdx"
+import ApplyingFitMode from "/snippets/runtimes/layouts/applying-fit-mode.mdx"
+import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx"
+
+{/*
+    TODO create demo
+
+    <Demos examples={["layouts"]} runtime="apple"/>
+*/}
+
+<FitMode />
+
+<Alignment />
+
+<ApplyingFitMode />
+
+<Tabs>
+  <Tab title={Apple.currentRuntimeName}>
+    You can set the fit and layout options on a `Rive` object. The `.fit` can be updated at runtime without creating a new `Rive` object.
+
+    For all possible options, see [Fit.swift](https://github.com/rive-app/rive-ios/blob/main/Source/Experimental/View/Fit.swift)
+
+    ```swift
+    // Set a fit and alignment for an artboard that does not use layouts
+    let file = try await File(source: ..., worker: Worker())
+    var rive = try await Rive(file: file, fit: .contain(alignment: .center))
+    // Update the fit and alignment at runtime
+    rive.fit = .fitWidth(alignment: .topCenter)
+    ```
+  </Tab>
+  <Tab title={Apple.legacyRuntimeName}>
+    The runtime provides the following enums to set on layout parameters:
+
+    - **Fit**
+      - `.fill`
+      - `.contain`
+      - `.cover`
+      - `.fitWidth`
+      - `.fitHeight`
+      - `.scaleDown`
+      - `.noFit`
+
+    - **Alignment**
+      - `.topLeft`
+      - `.topCenter`
+      - `.topRight`
+      - `.centerLeft`
+      - `.center`
+      - `.centerRight`
+      - `.bottomLeft`
+      - `.bottomCenter`
+      - `.bottomRight`
+
+    ### SwiftUI
+
+    The following example shows how to set layout parameters and switch them at runtime:
+
+    ```swift
+    struct SwiftLayout: View {
+        @State private var fit: RiveFit = .contain
+        @State private var alignment: RiveAlignment = .center
+
+        var body: some View {
+            VStack {
+                RiveViewModel(fileName: "fancy_rive_file", fit: fit, alignment: alignment).view()
+            }
+            HStack {
+                Text("Some Fit Examples")
+            }
+            HStack {
+                Button("Fill") { fit = .fill }
+                Button("Contain") { fit = .contain }
+                Button("Cover") { fit = .cover }
+            }
+            HStack {
+                Text("Some Alignment Examples")
+            }
+            HStack {
+                Button("Top Left") { alignment = .topLeft }
+                Button("Top Center") { alignment = .topCenter }
+                Button("Top Right") { alignment = .topRight }
+            }
+        }
+    }
+    ```
+
+    ### UIKit
+
+    The following example shows how to set layout parameters and switch them at runtime:
+
+    ```swift
+    class LayoutViewController: UIViewController {
+        @IBOutlet weak var riveView: RiveView!
+        var viewModel = RiveViewModel(fileName: "fancy_rive_file")
+
+        override func viewDidLoad() {
+            viewModel.setView(riveView)
+        }
+
+        @IBAction func fitButtonTriggered(_ sender: UIButton) {
+            setFit(name: sender.currentTitle!)
+        }
+
+        @IBAction func alignmentButtonTriggered(_ sender: UIButton) {
+            setAlignment(name: sender.currentTitle!)
+        }
+
+        func setFit(name: String) {
+            var fit: RiveFit = .contain
+            switch name {
+            case "Fill": fit = .fill
+            case "Contain": fit = .contain
+            case "Cover": fit = .cover
+            case "Fit Width": fit = .fitWidth
+            case "Fit Height": fit = .fitHeight
+            case "Scale Down": fit = .scaleDown
+            case "None": fit = .noFit
+            default: fit = .contain
+            }
+            viewModel.fit = fit
+        }
+
+        func setAlignment(name: String) {
+            var alignment: RiveAlignment = .center
+            switch name {
+            case "Top Left": alignment = .topLeft
+            case "Top Center": alignment = .topCenter
+            case "Top Right": alignment = .topRight
+            case "Center Left": alignment = .centerLeft
+            case "Center": alignment = .center
+            case "Center Right": alignment = .centerRight
+            case "Bottom Left": alignment = .bottomLeft
+            case "Bottom Center": alignment = .bottomCenter
+            case "Bottom Right": alignment = .bottomRight
+            default: alignment = .center
+            }
+            viewModel.alignment = alignment
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<ResponsiveLayouts />
+
+<Tabs>
+  <Tab title={Apple.currentRuntimeName}>
+    When creating a new `Rive` object, you can set the fit to layout, with two options for the scale factor: automatic or explicit.
+
+    ```swift
+    let file = try await File(source: ..., worker: Worker())
+    // Create a new Rive object with a layout fit that automatically determines the scale factor based on the screen the view is being displayed on
+    var rive = try await Rive(file: file, fit: .layout(scaleFactor: .automatic))
+    // Or, use an explicit scale factor
+    rive.fit = .layout(scaleFactor: .explicit(2.0))
+    ```
+  </Tab>
+  <Tab title={Apple.legacyRuntimeName} borderBottom>
+    **Examples**
+
+    - [SwiftUI](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/SwiftUI/SwiftLayout.swift)
+
+    **Steps**
+
+    1. Set `fit` on an instance of `RiveViewModel` to `layout`
+    2. Optionally set `layoutScaleFactor` on `RiveViewModel` for manual control of an artboard's scale factor.
+
+    <Info>
+    To enable automatically determining the scale factor, set `.layoutScaleFactor` to `RiveViewModel.layoutScaleFactorAutomatic`. This is the default value; it is equivalent to `-1`. When set, Rive will listen for window and screen changes for the view model's view, and automatically apply the correct scale factor for the current view hierarchy.
+    </Info>
+    ```swift
+    let viewModel = RiveViewModel(fileName: "...")
+    viewModel.fit = .layout
+    viewModel.layoutScaleFactor = RiveViewModel.layoutScaleFactorAutomatic // Allow Rive to determine the scale factor
+    viewModel.layoutScaleFactor = 2.0 // Or, explicitly set the scale factor
+    ```
+  </Tab>
+</Tabs>

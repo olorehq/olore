@@ -1,0 +1,119 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    <Info>
+      The new runtime only supports state machine playback, and not direct animation playback.
+    </Info>
+  </Tab>
+  <Tab title="Legacy Runtime">
+    Currently, with the React Native runtime, you can set one animation to autoplay at the start. Despite this, see below in the playback sections to see how you can mix multiple animations on playback functions.
+
+    ```javascript
+    export default function App() {
+      return (
+        <View>
+          <Rive
+            resourceName="truck_v7"
+            artboardName="Jeep"
+            autoplay
+            animationName="idle"
+          />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<ControllingPlayback />
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    #### Invoking Playback Controls
+
+    The new runtime uses the `useRive` hook to access the Rive instance for controlling playback: `play`, `pause`, `reset`.
+
+    ```javascript
+    export default function PlaybackExample() {
+      const { riveViewRef, setHybridRef } = useRive();
+      const { riveFile } = useRiveFile(require('../../assets/rive/rewards.riv'));
+
+      const play = () => {
+        riveViewRef?.play();
+      };
+
+      const pause = () => {
+        riveViewRef?.pause();
+      };
+
+      const reset = () => {
+        riveViewRef?.reset();
+      };
+
+      return (
+        <View style={styles.container}>
+          <View style={styles.riveContainer}>
+            {riveFile ? (
+              <RiveView
+                file={riveFile}
+                hybridRef={setHybridRef}
+                autoPlay={true} // Automatically starts the state machine
+                style={styles.rive}
+              />
+            ) : null}
+          </View>
+          <Button onPress={play} title="Play" />
+          <Button onPress={pause} title="Pause" />
+          <Button onPress={reset} title="Reset" />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+  <Tab title="Legacy Runtime">
+    #### Invoking Playback Controls
+
+    To trigger animation playback controls, set a `ref` on the Rive component rendered. Once the `ref` is populated, you can trigger functions such as `play`, `pause`, etc. See the `ref` method docs for React Native [Rive Ref Methods](/runtimes/react-native/rive-ref-methods).
+
+    ```javascript
+    import Rive, { RiveRef } from 'rive-react-native'
+
+    export default function App() {
+      const riveRef = React.useRef<RiveRef>(null);
+
+      const handlePlayPress = () => {
+        riveRef?.current?.play();
+      };
+
+      const handlePausePress = () => {
+        riveRef?.current?.pause();
+      };
+
+      return (
+        <View>
+          <Rive
+            resourceName="truck_v7"
+            animationName="idle"
+            ref={riveRef}
+          />
+          <Button onPress={handlePlayPress} title="play" />
+          <Button onPress={handlePausePress} title="pause" />
+        </View>
+      );
+    }
+```
+  </Tab>
+</Tabs>

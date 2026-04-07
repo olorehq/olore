@@ -1,0 +1,81 @@
+---
+title: "The lambda operator - The `=>` operator is used to define a lambda expression"
+description: "The C# => operator defines lambda expressions and expression bodied members. Lambda expressions define a block of code used as data."
+ms.date: 01/20/2026
+f1_keywords: 
+  - "=>_CSharpKeyword"
+helpviewer_keywords: 
+  - "lambda operator [C#]"
+  - "=> operator [C#]"
+  - "lambda expressions [C#], => operator"
+---
+# Lambda expression (`=>`) operator defines a lambda expression
+
+The `=>` token is supported in two forms: as the [lambda operator](#lambda-operator) and as a separator of a member name and the member implementation in an [expression body definition](#expression-body-definition).
+
+[!INCLUDE[csharp-version-note](../includes/initial-version.md)]
+
+## Lambda operator
+
+In [lambda expressions](lambda-expressions.md), the lambda operator `=>` separates the input parameters on the left side from the lambda body on the right side.
+
+The following example uses the [LINQ](../../linq/index.md) feature with method syntax to demonstrate the usage of lambda expressions:
+
+:::code language="csharp" source="snippets/shared/LambdaOperator.cs" id="InferredTypes":::
+
+Input parameters of a lambda expression are strongly typed at compile time. When the compiler infers the types of input parameters, like in the preceding example, you can omit type declarations. If you need to specify the type of input parameters, you must specify the type for each parameter, as the following example shows:
+
+:::code language="csharp" source="snippets/shared/LambdaOperator.cs" id="ExplicitTypes":::
+
+The following example shows how to define a lambda expression without input parameters:
+
+:::code language="csharp" source="snippets/shared/LambdaOperator.cs" id="WithoutInput":::
+
+For more information, see [Lambda expressions](lambda-expressions.md).
+
+## Expression body definition
+
+An expression body definition uses the following general syntax:
+
+```csharp
+member => expression;
+```
+
+The `expression` is a valid expression. The return type of `expression` must be implicitly convertible to the member's return type. If the member:
+
+- Has a `void` return type, or
+- Is a:
+  - Constructor
+  - Finalizer
+  - Property or indexer `set` accessor
+
+`expression` must be a [*statement expression*](~/_csharpstandard/standard/statements.md#137-expression-statements). Because the expression's result is discarded, the return type of that expression can be any type.
+
+The following example shows an expression body definition for a `Person.ToString` method:
+
+```csharp
+public override string ToString() => $"{fname} {lname}".Trim();
+```
+
+It's a shorthand version of the following method definition:
+
+```csharp
+public override string ToString()
+{
+   return $"{fname} {lname}".Trim();
+}
+```
+
+You can create expression body definitions for methods, operators, read-only properties, constructors, finalizers, and property and indexer accessors. For more information, see [Expression-bodied members](../../programming-guide/statements-expressions-operators/expression-bodied-members.md).
+
+## Operator overloadability
+
+You can't overload the `=>` operator.
+
+## C# language specification
+
+For more information about the lambda operator, see the [Anonymous function expressions](~/_csharpstandard/standard/expressions.md#1221-anonymous-function-expressions) section of the [C# language specification](~/_csharpstandard/standard/README.md).
+
+## See also
+
+- [C# operators and expressions](index.md)

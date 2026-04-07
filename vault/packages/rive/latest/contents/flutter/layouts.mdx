@@ -1,0 +1,62 @@
+---
+title: "Layout"
+description: "Control how graphics are laid out within the canvas."
+---
+
+import { Demos } from "/snippets/demos.jsx";
+
+import FitMode from '/snippets/runtimes/layouts/fit-mode.mdx'
+import Alignment from "/snippets/runtimes/layouts/alignment.mdx"
+import Bounds from "/snippets/runtimes/layouts/bounds.mdx"
+import ApplyingFitMode from "/snippets/runtimes/layouts/applying-fit-mode.mdx"
+import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx"
+
+<Demos examples={["layouts"]} runtime="flutter"/>
+
+<FitMode />
+
+<Alignment />
+
+{/* TODO Has bounds? */}
+<Bounds />
+
+<ApplyingFitMode />
+
+Pass the `Fit` and `Alignment` to the `RiveWidget` widget.
+
+```dart
+return RiveWidget(
+  controller: controller,
+  fit: Fit.contain,
+  alignment: Alignment.center,
+);
+```
+
+Alternatively, you can also the set `fit` and `alignment` properties directly on any `RivePainter`, such as the `RiveWidgetController`:
+
+```dart
+final controller = RiveWidgetController(riveFile);
+controller.fit = Fit.contain;
+controller.alignment = Alignment.center;
+```
+
+<ResponsiveLayouts />
+
+Pass the `Fit.layout` to the `RiveWidget` widget. This will automatically scale and resize the artboard to match the widget size.
+You can also set the `layoutScaleFactor` to control the scale of the artboard. This is useful for adjusting the size of the artboard when using `Fit.layout`.
+
+```dart
+return RiveWidget(
+  controller: controller,
+  fit: Fit.layout,
+  layoutScaleFactor: 2.0, // Optional: 2x scale of the layout,
+);
+```
+
+Alternatively, you can also set the `fit` and `layoutScaleFactor` properties directly on any `RivePainter`, such as the `RiveWidgetController`:
+
+```dart
+final controller = RiveWidgetController(riveFile);
+controller.fit = Fit.layout;
+controller.layoutScaleFactor = 2.0; // Optional: 2x scale of the layout
+```

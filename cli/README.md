@@ -37,7 +37,7 @@ Your AI coding agent makes decisions about which tools to invoke. Sometimes it d
 
 ## Available Packages
 
-`a2a` · `agentskills` · `astro` · `axiom` · `azure-sdk-js` · `cargo` · `checkly` · `claude-code` · `clerk` · `cloudflare` · `codex` · `convex` · `drizzle` · `github-actions` · `hono` · `langchain` · `lucia` · `neon` · `neverthrow` · `nextjs` · `openclaw` · `opencode` · `opennext` · `partykit` · `partyserver` · `posthog` · `prettier` · `prisma` · `rhf` · `sentry` · `supabase` · `t3-env` · `tanstack-query` · `trpc` · `tsf` · `turso` · `vitest` · `xstate` · `zod`
+`a2a` · `agentskills` · `ai-sdk` · `antigravity` · `astro` · `axiom` · `better-auth` · `biome` · `bun` · `bunit` · `cargo` · `chanfana` · `checkly` · `claude-code` · `clerk` · `cloudflare` · `codex` · `convex` · `dotnet-architecture` · `dotnet-aspire` · `dotnet-csharp` · `dotnet-fundamentals` · `dotnet-orleans` · `drizzle` · `eslint` · `expo` · `expo-sdk` · `fluentassertions` · `fumadocs` · `github-actions` · `hono` · `langchain` · `langfuse` · `lucia` · `mantine` · `masstransit` · `mastra` · `mixpanel` · `ms-agent-framework` · `msw` · `nativewind` · `neon` · `neverthrow` · `nextjs` · `openclaw` · `opencode` · `opennext` · `openrouter` · `orpc` · `partykit` · `partyserver` · `playwright` · `polly` · `posthog` · `prettier` · `prisma` · `radix-ui` · `react-native-skia` · `react-three-fiber` · `remotion` · `react-hook-form` · `rive` · `sentry` · `storybook` · `supabase` · `t3-env` · `tailwindcss` · `tanstack-query` · `tanstack-router` · `tanstack-start` · `tanstack-table` · `tensorzero` · `trpc` · `tanstack-form` · `turborepo` · `turso` · `vite` · `vitest` · `xstate` · `zod` · `zustand`
 
 Browse all with `olore search`. Contributions welcome on [GitHub](https://github.com/olorehq/olore).
 

@@ -1,0 +1,1009 @@
+---
+title: "Migrating from the Legacy Rive Android Runtime"
+sidebarTitle: "Migrating from Legacy"
+description: "A guide to help you transition from the legacy Rive Android runtime to the new runtime."
+---
+
+## Overview
+
+The [new Rive Android runtime](/runtimes/android/android) is a **near-complete rewrite** of both the public API and the internal architecture. While conceptually most operations have an equivalent, the two APIs are incompatible. Any existing work in the legacy API that you would like to migrate must be rebuilt using the new API. This guide aims to demonstrate how to migrate each feature area.
+
+This guide covers:
+
+1. [Shared Features](#shared-features) - Common operations and their equivalents.
+2. [New Exclusive Features](#new-exclusive-features) - Features available only in the new runtime.
+3. [Legacy Exclusive Features](#legacy-exclusive-features) - Features no longer supported in the new runtime. Most have workarounds or alternatives; these removals simplify the API surface, reduce maintenance overhead, and eliminate anti-patterns.
+
+<Note>
+    This guide is not meant to be exhaustive as it would be redundant with existing general documentation. Please refer to the relevant sections of the documentation for more details on specific topics.
+</Note>
+
+## Package
+
+The legacy Rive Android runtime is provided in the `app.rive.runtime.kotlin` package (+ `.core`). The new runtime is provided in the `app.rive` package (+ `.core`). This allows identical class names, such as `Artboard` to coexist without conflict. If you need to use identically named classes from both packages in the same file, you can use Kotlin's `import as` feature to alias one of the imports.
+
+```kotlin
+import app.rive.Artboard
+import app.rive.runtime.kotlin.core.Artboard as LegacyArtboard
+```
+
+## Asynchronous APIs
+
+Due to the new threading model based on the `RiveWorker`, almost all operations which return values that were originally synchronous on the main thread are now asynchronous `suspend` functions, e.g. loading Rive files and performing queries. You will need to call these functions from a coroutine context, such as within a `LaunchedEffect` in Compose or using `lifecycleScope.launch` in an Activity or Fragment.
+
+The most common Compose operations are wrapped in helpers, such as `rememberRiveFile`, which expose the async state as a `Result` type for easier consumption in Composables. Other operations are "fire and forget", such as creating artboards and view model instances from a loaded Rive file, or advancing a state machine.
+
+## Lifecycles
+
+The legacy Rive Android runtime is View based, with the `RiveAnimationView` class managing its lifecycle based on the owning Activity or Fragment lifecycle. The Rive file's lifetime is associated with the view's, as well as the renderer, controller, and created objects such as artboards and state machines. These used hierarchical reference counting to manage their lifetimes.
+
+The new runtime makes use of the `AutoCloseable` interface to manage lifetimes explicitly for objects such as the Rive file, artboards, and state machines. The worker by contrast is reference counted and owns all memory for resources it creates. When creating objects manually, you must `close` them to free their resources or they will last for the duration of the worker. Alternatively, you can use them with the `use` helper, which will call `close` at the end of its block. The worker itself must have all references released or it and its resources will leak.
+
+In Compose, lifecycles are tied to `remember` Composables and use `DisposableEffect` to create and dispose of objects as needed, simplifying memory management.
+
+## Shared Features
+
+### Shared APIs
+
+A few APIs are shared between the legacy and new runtimes. They are still in the `app.rive.runtime.kotlin` package of the legacy runtime.
+
+- The `Rive` global object for initialization, including the `Rive.init` method.
+- The `RiveInitializer` XML initialization helper.
+- The fallback font APIs, including the `FontFallbackStrategy` interface and the `FontFallbackStrategy.stylePicker` global.
+
+<Callout icon="question">
+  These shared APIs may change in the future to be fully separated with revised versions in the new package. This will only happen as a breaking change in a major version release.
+</Callout>
+
+### RiveAnimationView to Rive
+
+The legacy Rive Android runtime is View based and provided the `RiveAnimationView` class to display Rive animations. The name reflects the more limited feature set at the time of its creation, being mostly for animation playback.
+
+The new API is Compose based, with the intention to provide a View API in the future. The main Composable is simply called `Rive`, reflecting the broader feature set and use cases it supports.
+
+#### Setting a Local Raw Resource
+
+<Info>
+  The new API will use the I/O dispatcher by default to load Rive files asynchronously. This is different from the legacy runtime, which loaded files synchronously on the main thread. If you want to load files using a different threading model, load the resource using your preferred method and pass the bytes to a `RiveFileSource.Bytes` source.
+</Info>
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveResource(R.raw.my_rive_file)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file" />
+```
+
+**New Rive Composable**
+
+```kotlin
+val riveWorker = rememberRiveWorker()
+val riveFile = rememberRiveFile(
+    RiveFileSource.RawRes.from(R.raw.my_rive_file),
+    riveWorker
+)
+
+when (riveFile) {
+    is Result.Success -> Rive(riveFile.value)
+    else -> {} // Handle loading and error states appropriately
+}
+```
+
+#### Setting a Rive File from Bytes
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(myBytes)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveBytes(myBytes)
+```
+
+**New Rive Composable**
+
+```kotlin
+val riveWorker = rememberRiveWorker()
+val riveFile = rememberRiveFile(
+    RiveFileSource.Bytes(myBytes),
+    riveWorker
+)
+
+when (riveFile) {
+    is Result.Success -> Rive(riveFile.value)
+    else -> {} // Handle loading and error states appropriately
+}
+```
+
+#### Caching a Rive File
+
+<Card icon="eye" href="/runtimes/android/caching-a-rive-file" horizontal>
+  See also Caching a Rive File for more details.
+</Card>
+
+In the new runtime, Rive files are always created explicitly, as opposed to often being created implicitly by the view. This makes it more obvious to cache and reuse Rive files across multiple Rive instances.
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Load bytes on the main thread for simplicity; consider loading on a background thread for production use.
+val bytes = resources.openRawResource(R.raw.my_rive_file).use { res -> res.readBytes() }
+val riveFile = File(bytes)
+
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(riveFile)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveFile(riveFile)
+
+// Release the file if you no longer need it, keep if you plan to reuse it.
+riveFile.release()
+```
+
+**New Rive Composable**
+
+The Rive file produced by `rememberRiveFile` can be hoisted to a higher level Composable to live longer and be shared across multiple Rive instances.
+
+```kotlin
+val riveWorker = rememberRiveWorker()
+val riveFile = rememberRiveFile(
+    RiveFileSource.RawRes.from(R.raw.my_rive_file),
+    riveWorker
+)
+
+when (riveFile) {
+    is Result.Success -> Rive(riveFile.value)
+    else -> {} // Handle loading and error states appropriately
+}
+```
+
+#### Choosing an Artboard and State Machine
+
+<Card icon="eye" href="/runtimes/android/artboards" horizontal>
+  See also the artboard documentation for more details.
+</Card>
+
+<Card icon="eye" href="/runtimes/android/state-machines" horizontal>
+  See also the state machine documentation for more details.
+</Card>
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setArtboardName("My Artboard")
+    .setStateMachineName("My State Machine")
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveResource(R.raw.my_rive_file,
+    artboardName = "My Artboard",
+    stateMachineName = "My State Machine"
+)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveArtboard="My Artboard"
+    app:riveStateMachine="My State Machine" />
+```
+
+**New Rive Composable**
+
+Artboards and state machines are passed as objects rather than names. You can use the `rememberArtboard` and `rememberStateMachine` helpers to get these objects from a loaded `RiveFile`.
+
+```kotlin
+val riveWorker = rememberRiveWorker()
+val riveFile = rememberRiveFile(
+    RiveFileSource.RawRes.from(R.raw.my_rive_file),
+    riveWorker
+)
+
+when (riveFile) {
+    is Result.Success -> {
+        val artboard = rememberArtboard(riveFile.value, "My Artboard")
+        val stateMachine = rememberStateMachine(artboard, "My State Machine")
+
+        Rive(
+            riveFile.value,
+            artboard = artboard,
+            stateMachine = stateMachine
+        )
+    }
+    else -> {} // Handle loading and error states appropriately
+}
+```
+
+#### Setting the Fit and Alignment
+
+<Card icon="eye" href="/runtimes/android/layouts" horizontal>
+  See also the Layout documentation for more details.
+</Card>
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setFit(Fit.CONTAIN)
+    .setAlignment(Alignment.CENTER)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveResource(R.raw.my_rive_file,
+    fit = Fit.CONTAIN,
+    alignment = Alignment.CENTER
+)
+
+// Property
+riveView.controller.fit = Fit.CONTAIN
+riveView.controller.alignment = Alignment.CENTER
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveFit="CONTAIN"
+    app:riveAlignment="CENTER" />
+```
+
+**New Rive Composable**
+
+The new runtime models fit modes as a sealed class, allowing alignment only on variants that support it. Additionally, the `Layout` variant exposes the layout scale factor.
+
+```kotlin
+Rive(
+    riveFile,
+    fit = Fit.Contain(Alignment.Center),
+)
+```
+
+#### Auto Binding
+
+<Card icon="eye" href="/runtimes/android/data-binding" horizontal>
+  See also the auto binding section in data binding for more details.
+</Card>
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setAutoBind(true)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveResource(R.raw.my_rive_file, autoBind = true)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveAutoBind="true" />
+```
+
+**New Rive Composable**
+
+Auto-binding was not implemented in the Compose API due to the nature of composables. Since they are functions, it is difficult to get values out of them as compared to classes. Callbacks would require a null placeholder to remember the value before it has fired which creates more overhead than supplying the instance directly.
+
+The equivalent is to create a view model instance with no source. This will internally create the default artboard, the default view model for that artboard, and the default instance for that view model. You can then pass that into the Rive composable.
+
+```kotlin
+val vmi = rememberViewModelInstance(riveFile)
+Rive(
+    riveFile,
+    viewModelInstance = vmi,
+)
+```
+
+#### Playing, Pausing, and State Machine Settling
+
+**Legacy RiveAnimationView**
+
+The legacy API includes `play()` and `pause()` methods on the `RiveAnimationView` class to control playback of the animation. Notably, the paused state is the same as the settled state, which is not ideal. `play()` will both unpause and unsettle the state machine, causing it to advance.
+
+```kotlin
+riveView.play()  // Unsettles and plays
+riveView.pause() // Pauses
+```
+
+**New Rive Composable**
+
+In the new runtime, there are no play or pause methods. Instead, control of the play state is done through the `playing` parameter on the `Rive` Composable. Setting `playing` to `false` will pause the animation, while setting it to `true` will resume it. State machine settling and unsettling is done automatically and covers all scenarios that would require it.
+
+```kotlin
+var isPlaying by remember { mutableStateOf(true) }
+Rive(
+    riveFile,
+    playing = isPlaying
+)
+```
+
+#### Autoplay and Setting Initial Values
+
+The legacy runtime includes an `autoplay` feature, defaulting to true, that automatically starts playing the given animation or state machine when the Rive file is loaded. This can be disabled to allow setting initial values before playback begins.
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setAutoPlay(true)
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setRiveResource(R.raw.my_rive_file, autoPlay = true)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveAutoPlay="true" />
+```
+
+The new runtime does not include an `autoplay` feature as it is not necessary due to the decoupling of Rive files from their presentation. You can leave `playing` at its default value of `true` to achieve similar behavior. To set initial values before playback begins, you can set `playing` to `false`, update your data-bound properties, and then set `playing` to `true` to start playback.
+
+```kotlin
+var isPlaying by remember { mutableStateOf(false) }
+val vmi = rememberViewModelInstance(riveFile)
+
+LaunchedEffect(vmi) {
+    // Set initial values
+    vmi.setNumber("My Number Property", 42.0f)
+
+    // Start playback
+    isPlaying = true
+}
+
+Rive(
+    riveFile,
+    playing = isPlaying,
+    viewModelInstance = vmi,
+)
+```
+
+#### Touch Pass-Through
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setTouchPassThrough(true)
+    .build()
+
+// Property
+riveView.touchPassThrough = true
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveTouchPassThrough="true" />
+```
+
+**New Rive Composable**
+
+The new runtime provides the `touchPassThrough` parameter on the `Rive` Composable. This is more nuanced, as it can be set to `Consume` (default behavior), `Observe`, or `PassThrough`. `Observe` shares only with ancestors in the Compose hierarchy, useful for not blocking scroll events, while `PassThrough` also shares with siblings (equivalent to the legacy behavior).
+
+```kotlin
+Rive(
+    riveFile,
+    touchPassThrough = RivePointerInputMode.PassThrough,
+)
+```
+
+### View Models
+
+**Legacy**
+
+The legacy runtime includes a `ViewModel` class retrieved from a `File` which corresponds to a view model in the Rive Editor. This class provides methods to query and create view model instances.
+
+```kotlin
+val viewModel = riveFile.getViewModelByName("My View Model")
+val instance = viewModel.createInstanceFromName("My Instance")
+
+val properties = viewModel.properties
+```
+
+**New**
+
+The new runtime collapses querying into the `RiveFile` class, where the view model name is included when required for queries. View model instances are specified by a `ViewModelSource`, which can be either `Named` or `DefaultForArtboard`. This `ViewModelSource` can then be converted into a `ViewModelInstanceSource` using the `blankInstance`, `defaultInstance`, or `namedInstance` helpers. This completed source can then be passed to `rememberViewModelInstance` or `ViewModelInstance.fromFile`.
+
+```kotlin
+val instanceSource = ViewModelSource.Named("My View Model").namedInstance("My Instance")
+val instance = rememberViewModelInstance(riveFile, instanceSource)
+
+LaunchedEffect(riveFile) {
+    val properties = riveFile.getViewModelProperties("My View Model")
+}
+```
+
+### View Model Instance Properties
+
+**Legacy**
+
+The legacy runtime provides explicit property objects on the `ViewModelInstance` class for querying and updating data-bound properties.
+
+```kotlin
+// Getting a property
+val numberProperty = vmi.getNumberProperty("My Number Property")
+// Reading its value
+val numberValue = numberProperty.value
+// Observing its value
+numberProperty.valueFlow.collect { value ->
+    // Handle value updates
+}
+// Writing its value
+numberProperty.value = 42.0f
+```
+
+**New**
+
+The new runtime does not provide explicit property objects. Instead, properties are queried and updated on the `ViewModelInstance` by name using getter and setter methods.
+
+```kotlin
+LaunchedEffect(vmi) {
+    // Reading a property value
+    val numberValue = vmi.getNumberFlow("My Number Property").first()
+    // Observing its value
+    vmi.getNumberFlow("My Number Property").collect { value ->
+        // Handle value updates
+    }
+}
+
+// Observing in Compose
+val numberValue by vmi.collectNumberAsState("My Number Property", initial = 0.0f)
+// Writing a property value
+vmi.setNumber("My Number Property", 42.0f)
+```
+
+### Bindable Artboards
+
+**Legacy**
+
+The legacy runtime includes a `BindableArtboard` class that wraps a native `Artboard` and provides data-binding capabilities. This class is meant to limit the API surface and prevent anti-patterns by restricting direct access to the underlying artboard.
+
+```kotlin
+val bindableArtboard = riveFile.createBindableArtboardByName("My Artboard")
+val artboardProperty = vmi.getArtboardProperty("My Artboard Property")
+artboardProperty.set(bindableArtboard)
+```
+
+**New**
+
+The new runtime does not include a `BindableArtboard` class. Instead, the same `Artboard` class is used in both cases.
+
+```kotlin
+val artboard = rememberArtboard(riveFile, "My Artboard")
+vmi.setArtboard("My Artboard Property", artboard)
+```
+
+### Loading Referenced Assets
+
+**Legacy**
+
+The legacy runtime uses a "pull" model for loading referenced assets, where the runtime requests assets by callback as needed through the `FileAssetLoader` class or its subclasses. This allows lazy loading of assets, but removes control from the user for when assets are loaded.
+
+**Legacy RiveAnimationView**
+
+```kotlin
+class MyAssetLoader(private val context: Context) : ContextAssetLoader(context) {
+    // Example asset loader that handles one image asset named "my_image"
+    override fun loadContents(asset: FileAsset, inBandBytes: ByteArray): Boolean {
+        val identifier =
+            if (asset.uniqueFilename == "my_image") R.raw.my_image
+            else return false
+
+        context.resources.openRawResource(identifier).use {
+            asset.decode(it.readBytes())
+        }
+        return true
+    }
+}
+
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setAssetLoader(MyAssetLoader(context))
+    .build()
+
+// Set method
+val riveView = RiveAnimationView(context)
+riveView.setAssetLoader(MyAssetLoader(context))
+riveView.setRiveResource(R.raw.my_rive_file)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveAssetLoaderClass="com.example.MyAssetLoader" />
+```
+
+**New**
+
+The new runtime uses a "push" model, where the application is responsible for supplying referenced assets to the worker before they are needed. If assets are supplied after they are required, they will "pop in" instead. This change was made to simplify the internal architecture and to allow users the flexibility to load assets in whatever manner they choose.
+
+The current way to retrieve the list of required assets is through inspecting the files in the exported .zip. In the future we will add an API to query the manifest of required assets from a Rive file.
+
+Assets are "global" to the worker, meaning they can be shared across multiple Rive files and instances, assuming they have the same key. This reduces memory usage for common assets such as fonts.
+
+```kotlin
+val riveWorker = rememberRiveWorker()
+val bytesResult = produceState<Result<ByteArray>>(Result.Loading) {
+    value = withContext(Dispatchers.IO) {
+        context.resources.openRawResource(R.raw.my_image)
+            .use { Result.Success(it.readBytes()) }
+    }
+}.value
+val image = bytesResult.andThen { bytes -> rememberRegisteredImage(riveWorker, "My Image", bytes) }
+```
+
+### Default Layout Scale Factor
+
+The legacy runtime uses the reported device density as the default scale factor when rendering Rive with Layout as the fit mode.
+
+The new runtime uses a default scale factor of 1.0, meaning Rive units map directly to screen pixels. In practice, matching density often results in visuals appearing too large. However, if that is the desired behavior and you want to match the legacy runtime, you can set the scale factor to the device density using `LocalDensity`.
+
+```kotlin
+val density = LocalDensity.current.density
+Rive(
+    riveFile,
+    fit = Fit.Layout(scaleFactor = density)
+)
+```
+
+## New Exclusive Features
+
+A growing number of features are only available in the new runtime. These features were added to address limitations in the legacy runtime or to provide new capabilities that were not previously possible. Below is a list of such features along with brief descriptions.
+
+### Logging
+
+The new runtime includes a fine-grained, flexible [Logging](/runtimes/android/logging) system that allows you to capture logs at various levels (debug, info, warning, error) and redirect them to your preferred logging framework or sink.
+
+By comparison, the legacy runtime has limited logs.
+
+<Callout icon="question">
+  We may consider retrofitting more logging capabilities to the legacy runtime in the future, especially if doing so would illuminate a potential source for bugs.
+</Callout>
+
+### Rendering to a Bitmap
+
+The new runtime provides built-in support for [rendering Rive to an Android `Bitmap`](/runtimes/advanced-topic/rendering-to-a-bitmap), which can be useful for scenarios such as snapshot testing or rendering video encoded from data-bound Rive files into image frames on the edge (i.e. the user's device). This is done using the `RenderBuffer` class or the `onBitmapAvailable` callback in the `Rive` Composable.
+
+<Callout icon="ban">
+    Rendering to a Bitmap is technically possible in the legacy runtime by rendering to a Canvas backed by a Bitmap or by sub-classing the renderer, but it is not a built-in feature and requires more effort to implement.
+
+    There are no plans to retrofit this feature into the legacy runtime.
+</Callout>
+
+### Updating a Data Bind Unsettles the State Machine
+
+In the new runtime, updating a data-bound property [automatically "unsettles" the state machine](/runtimes/android/android#adding-rive-to-your-composition), causing it to advance and draw based on the new data. By comparison, the legacy runtime required you to call `RiveAnimationView.play()` after updating data-bound properties on a settled state machine to achieve the same effect.
+
+<Callout icon="question">
+  We may consider retrofitting this behavior into the legacy runtime in the future as it is a common source of confusion. However, doing so would be a breaking change, and it may not be worth the disruption for existing users.
+</Callout>
+
+## Legacy Exclusive Features
+
+Some features are only available in the legacy runtime. This is usually because they were less commonly used, were complex in practice, or were difficult to maintain and support. Below is a list of such features along with guidance on how to handle their absence in the new runtime.
+
+### View-Based API
+
+The legacy runtime is built around the `RiveAnimationView` class, which is a subclass of Android's `TextureView` (and subsequently `View`). This makes it easy to integrate into existing View-based Android applications. The new runtime is currently Compose-based and does not provide a View subclass. If you need to use Rive in a View-based application, you will need to set up a Compose environment within your View hierarchy using `ComposeView`.
+
+<Callout icon="check">
+  There are plans to provide a View-based API in the future.
+</Callout>
+
+### Tracking the Loading State of a Rive File
+
+The new runtime provides a `Result` wrapper around Rive file loading operations, allowing you to track the state (loading, success, error) of a Rive file. This is useful for providing user feedback during loading or handling errors gracefully.
+
+```kotlin
+val riveFile = rememberRiveFile(
+    RiveFileSource.RawRes.from(R.raw.my_rive_file),
+    riveWorker
+)
+when (riveFile) {
+    is Result.Loading -> {
+        // Show loading indicator
+    }
+    is Result.Failure -> {
+        // Show error message
+    }
+    is Result.Success -> {
+        Rive(riveFile.value)
+    }
+}
+```
+
+The legacy runtime's convenience methods, e.g. `setRiveResource()`, do not provide a way to track loading state or handle errors directly. Instead, the file must first be loaded using the `File` class. Loading is normally synchronous, though could be performed on a background thread. With some effort similar loading state tracking could be implemented.
+
+<Callout icon="ban">
+  There are no plans to retrofit this feature into the legacy runtime.
+</Callout>
+
+### Frame Metrics
+
+The legacy runtime includes support for frame metrics, providing some rendering performance numbers and potentially helping to identify bottlenecks. This is done by enabling frame metrics collection on the `RiveAnimationView`.
+
+```kotlin
+riveView.startFrameMetrics()
+```
+
+The new runtime does not yet include any comparable feature. Instead, you can use Android's built-in profiling tools, such as the Android Profiler in Android Studio, to measure rendering performance and identify bottlenecks.
+
+<Callout icon="check">
+  We will be adding performance monitoring in the future. The specific form it takes is to be determined.
+</Callout>
+
+### CDN Assets
+
+**Legacy**
+
+The Rive Editor allows marking an asset as "Hosted", meaning it is uploaded to Rive's CDN. The legacy runtime includes built-in support for loading these assets directly from the CDN when the Rive file is loaded. This is done automatically and by default when using the `RiveAnimationView` class.
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API (enabled by default)
+val riveView = RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setShouldLoadCDNAssets(true)
+    .build()
+
+// Using asset loader (enabled by default)
+val riveView = RiveAnimationView(context)
+riveView.setAssetLoader(FallbackAssetLoader(context, loadCDNAssets = true))
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveShouldLoadCDNAssets="true" />
+```
+
+**New**
+
+The new runtime does not include built-in support for loading CDN assets.
+
+<Callout icon="check">
+  We will be adding a new API in a future update to query the asset manifest for a file, which will include URLs for hosted assets. This will allow you to load them using standard networking libraries and supply them to the Rive worker using existing asset APIs.
+</Callout>
+
+### Setting a Rive File from Network
+
+The legacy runtime provides built-in support for loading Rive files from network URLs using the now defunct Volley library. This includes methods such as:
+
+**Legacy Builder API**
+```kotlin
+RiveAnimationView.Builder(context)
+    .setResource("https://example.com/animation.riv")
+```
+
+**Legacy XML Layout**
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveUrl="https://example.com/animation.riv" />
+```
+
+ The new runtime does not include this feature directly. Instead you can implement it using standard Android networking libraries (e.g., Retrofit, OkHttp) to fetch the file and then load it using a `RiveFileSource.Bytes` source, passing the downloaded bytes. This source can be supplied to `rememberRiveFile` when using Compose or `RiveFile.fromSource` when working outside of a Compose context.
+
+<Callout icon="question">
+  We are considering adding built-in network loading capabilities in future releases. If implemented, it would not use Volley, preferring a modern alternative. It would also likely be opt-in to avoid adding unnecessary dependencies for users who do not need network loading.
+</Callout>
+
+### Rendering to Canvas
+
+<Card icon="eye" href="/runtimes/choose-a-renderer/overview#android" horizontal>
+  See also Choose a Renderer for more details.
+</Card>
+
+The legacy runtime includes a Canvas renderer that allows rendering Rive animations directly into an Android `Canvas`. This was useful as a fallback for scenarios where the Rive Renderer wasn't yet feature compatible. As we have improved the Rive Renderer, this use case has diminished.
+
+The Canvas renderer is enabled with the following APIs.
+
+**Rive Global Default**
+
+```kotlin
+Rive.defaultRendererType = RendererType.Canvas
+```
+
+**Legacy RiveAnimationView Builder**
+
+```kotlin
+RiveAnimationView.Builder(context)
+    .setRendererType(RendererType.Canvas)
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveRenderer="Canvas" />
+```
+
+The new runtime does not include a Canvas renderer, focusing instead on the Rive Renderer for optimal performance and feature support, such as vector feathering. Additionally, the Canvas renderer has limitations around performance and visual fidelity compared to the Rive Renderer.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce Canvas rendering in the new runtime.
+</Callout>
+
+### Artboard Volume
+
+The legacy runtime can set an artboard's audio volume through the `Artboard.volume` property or `RiveAnimationView.setVolume()`. This feature is not present in the new runtime.
+
+<Callout icon="question">
+  We may consider adding audio features in the future, but there are no immediate plans to do so.
+</Callout>
+
+### State Machine Inputs
+
+<Card icon="eye" href="/runtimes/android/inputs" horizontal>
+  See also the Inputs documentation for more details.
+</Card>
+
+The legacy runtime provides methods to set state machine inputs.
+
+```kotlin
+riveView.setNumberState("My State Machine", "My Number Input", 42.0f)
+riveView.setBooleanState("My State Machine", "My Boolean Input", true)
+riveView.fireState("My State Machine", "My Trigger Input")
+```
+
+The new runtime does not include these methods. State machine inputs are deprecated in favor of data binding, which provides a more flexible and powerful way to manage changes to state machines.
+
+The Rive Editor provides an automatic conversion tool in Menu > "Convert Inputs to ViewModels". This is a 1:1 conversion that preserves existing behavior while enabling the benefits of data binding, though this may not be ideal for performance or semantics. You can use this feature to perform initial migration when adopting the new runtime and then iterate on the data contract to improve it further.
+
+### Events
+
+<Card icon="eye" href="/runtimes/android/rive-events" horizontal>
+  See also the Rive Events documentation for more details.
+</Card>
+
+The legacy runtime includes support for listening to Rive events to respond to events emitted from the Rive file. This is done through the `RiveFileController.Listener` interface.
+
+```kotlin
+riveView.addEventListener(object : RiveFileController.RiveEventListener {
+    override fun notifyEvent(event: RiveEvent) {
+        // Handle event
+    }
+})
+```
+
+The new runtime does not include this feature. Events are deprecated in favor of data binding, which provides a more flexible and powerful way to listen for changes from the Rive file. Simple events can be replaced with trigger properties in a view model.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce event listening in the new runtime.
+</Callout>
+
+### Text Runs
+
+<Card icon="eye" href="/runtimes/android/text" horizontal>
+  See also the Text documentation for more details.
+</Card>
+
+The legacy runtime includes support for text runs, used to get and set dynamic text in Rive content.
+
+```kotlin
+val text = riveView.getTextRunValue("My Text Run")
+riveView.setTextRunValue("My Text Run", "Hello, World!")
+```
+
+The new runtime does not include this feature. Text runs are deprecated in favor of data binding, which provides a more flexible and powerful way to manage dynamic text content through string properties. Any text run which was previously addressed by name must instead be bound to a string property in a view model.
+
+```kotlin
+val vmi = rememberViewModelInstance(riveFile)
+
+// Collect from flow
+val text by vmi.getStringFlow("My Text Property").collectAsState(initial = "")
+
+// Or get imperatively
+LaunchedEffect(vmi) {
+    val text = vmi.getStringFlow("My Text Property").first()
+}
+
+vmi.setString("My Text Property", "Hello, World!")
+```
+
+<Callout icon="ban">
+  There are no current plans to reintroduce text run support in the new runtime.
+</Callout>
+
+### Linear Animations
+
+<Card icon="eye" href="/runtimes/android/animation-playback" horizontal>
+  See also the Linear Animation documentation for more details.
+</Card>
+
+In the Rive Editor's animate mode, designers can create both state machines and linear animations. The legacy Android runtime supports playing multiple linear animations directly allowing developers to trigger these animations without using state machines. These included loop modes, direction, duration, and seeking.
+
+**Legacy Kotlin Methods**
+
+```kotlin
+// Query the list of linear animation names
+val linearAnimations = riveView.animations
+
+// Query the playing animations
+val playingAnimations = riveView.playingAnimations
+
+// Play a linear animation from the Builder API
+RiveAnimationView.Builder(context)
+    .setResource(R.raw.my_rive_file)
+    .setAnimationName("My Animation")
+
+// Play a linear animation using the set method
+riveView.setRiveResource(R.raw.my_rive_file, animationName = "My Animation")
+
+// Play a linear animation directly
+riveView.play("My Animation")
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveAnimation="My Animation" />
+```
+
+In practice, working with linear animations is more granular and brittle compared to state machines, and as such they are not directly supported in the new runtime. To achieve similar functionality, you can create a state machine in the Rive Editor that plays the desired linear animation and then trigger that state machine from your Android code.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce direct linear animation playback in the new runtime.
+</Callout>
+
+### Multiple State Machines Per View
+
+The legacy runtime allows multiple state machines to be associated with a single `RiveAnimationView` instance. At the core runtime level there is no technical limitation, and each state machine is processed in sequence. In practice this leads to complexity and difficulty reasoning about state, especially when data binding is involved. Only the Android legacy runtime supported this capability among the various Rive runtimes.
+
+The new runtime enforces a one-to-one relationship between Rive instances and state machines to simplify state management. If you need to manage concurrent, overlapping states, consider using [state machine layers](/editor/state-machine/layers).
+
+<Callout icon="ban">
+  There are no current plans to reintroduce multiple state machines per Rive instance in the new runtime.
+</Callout>
+
+### Observing State Machine State
+
+The legacy runtime provides methods to observe which state is currently active in a state machine. This can be useful for triggering actions in your application based on the current state of the animation.
+
+```kotlin
+riveView.registerListener(object : RiveFileController.Listener {
+    override fun notifyStateChanged(stateMachineName: String, stateName: String) {
+        // Handle state change
+    }
+})
+```
+
+The new runtime does not include this feature. The original feature was added before data binding and is brittle to Rive file changes. The modern equivalent is through data binding properties emitting values when the state changes. This means looser coupling to the Rive file and allows designers to iterate without breaking the application code.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce state observation in the new runtime.
+</Callout>
+
+### Single Touch Support
+
+The legacy runtime supports single touch input, allowing only one touch interaction at a time. This is to maintain backwards compatibility with existing Rive files that were designed with single touch in mind. As such it is also the default behavior.
+
+**Legacy RiveAnimationView**
+
+```kotlin
+// Builder API
+val riveView = RiveAnimationView.Builder(context)
+    .setMultiTouchEnabled(false)
+    .build()
+
+// Property
+riveView.multiTouchEnabled = false
+```
+
+**Legacy XML Layout**
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveResource="@raw/my_rive_file"
+    app:riveMultiTouchEnabled="false" />
+```
+
+The new runtime supports only multitouch input. In practice, Rive files should rarely need to distinguish between single and multitouch, as touch points are typically used to trigger interactions rather than being tracked individually. Test your Rive files when migrating to ensure they behave as expected with multitouch input, and adjust the design if necessary.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce single touch support in the new runtime.
+</Callout>
+
+### Getting by Index
+
+The legacy runtime provides methods to get artboards, animations state machines, view models, and view model instances by their index in addition to their name. This is rarely useful in scenarios where you want to iterate over all elements.
+
+```kotlin
+val artboard = riveFile.artboard(0)
+val animation = artboard.animation(0)
+val stateMachine = artboard.stateMachine(0)
+val viewModel = riveFile.getViewModelByIndex(0)
+val instance = viewModel.createInstanceFromIndex(0)
+```
+
+The new runtime can achieve similar functionality by iterating over queried names. For artboards, for example:
+
+```kotlin
+LaunchedEffect(riveFile) {
+    val artboardNames = riveFile.getArtboardNames()
+    for (name in artboardNames) {
+        Artboard.fromFile(riveFile, name).use {
+            // Use artboard
+        }
+    }
+}
+```
+
+<Callout icon="ban">
+  There are no current plans to reintroduce getting by index in the new runtime.
+</Callout>
+
+### Renderer Class
+
+The legacy runtime includes the `Renderer` and `RiveArtboardRenderer` classes that allow you to override rendering behavior for Rive. It is difficult to use correctly, ensure proper life cycles, and maintain compatibility with the Rive Renderer as it evolves.
+
+The new runtime does not include a `Renderer` class, focusing instead on the most common use cases. Other use cases, such as rendering to an Android Bitmap, are supported through dedicated APIs. Render loops are managed by the `Rive` Composable and execute on the `RiveWorker`.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce a Renderer class in the new runtime.
+</Callout>
+
+### Controller Class
+
+The legacy runtime includes a `RiveFileController` class that provides methods to control playback, manage state machines, and observe state changes. It is tightly coupled to the `RiveAnimationView`.
+
+The new runtime does not need a separate controller class, as control is provided directly through the `Rive` Composable and associated helpers.
+
+<Callout icon="ban">
+  There are no current plans to reintroduce a Controller class in the new runtime.
+</Callout>

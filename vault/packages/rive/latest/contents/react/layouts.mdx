@@ -1,0 +1,83 @@
+---
+title: "Layout"
+description: "Control how graphics are laid out within the canvas."
+---
+
+import { Demos } from "/snippets/demos.jsx";
+
+import FitMode from '/snippets/runtimes/layouts/fit-mode.mdx'
+import Alignment from "/snippets/runtimes/layouts/alignment.mdx"
+import Bounds from "/snippets/runtimes/layouts/bounds.mdx"
+import ApplyingFitMode from "/snippets/runtimes/layouts/applying-fit-mode.mdx"
+import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx"
+
+<Demos examples={["layouts"]} runtime="react"/>
+
+<FitMode />
+
+<Alignment />
+
+<Bounds />
+
+<ApplyingFitMode />
+
+Use the `Layout` object to configure `Fit` and `Alignment`. See [Fit](#the-fit-mode) and [Alignment](#alignment) for all enum options.
+
+```javascript
+import Rive, { Layout, Fit, Alignment } from '@rive-app/react-canvas';
+
+export const Simple = () => (
+  <Rive
+    src="https://cdn.rive.app/animations/vehicles.riv"
+    layout={new Layout({ fit: Fit.Contain, alignment: Alignment.TopCenter })}
+  />
+);
+```
+
+With the `useRive` hook:
+
+```javascript
+import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas';
+
+export default function Example() {
+  const { RiveComponent } = useRive({
+    src: 'my-file.riv',
+    artboard: 'my-artboard',
+    animations: 'my-animation',
+    layout: new Layout({
+      fit: Fit.Cover,
+      alignment: Alignment.TopCenter,
+    }),
+    autoplay: true,
+  });
+
+  return <RiveComponent />;
+}
+```
+
+<ResponsiveLayouts />
+
+**Steps**
+
+1. Set `fit` to `Fit.Layout` in the `Layout` object - this will automatically scale and resize the artboard to match the canvas size.
+2. Pass the `Layout` object to the `layout` prop in `useRive`.
+3. Optionally set `layoutScaleFactor` in the `Layout` object for manual control of the artboard's scale factor.
+4. The React runtime automatically handles window resizing and device pixel ratio changes.
+
+```jsx
+import { useRive, Layout, Fit } from "@rive-app/react-canvas";
+
+export const RiveComponent = () => {
+  const { RiveComponent } = useRive({
+    src: "your-rive-file.riv",
+    stateMachines: "State Machine 1",
+    layout: new Layout({
+      fit: Fit.Layout,
+      // layoutScaleFactor: 2, // Optional: 2x scale of the layout
+    }),
+    autoplay: true,
+  });
+
+  return <RiveComponent />;
+};
+```

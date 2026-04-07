@@ -5,108 +5,107 @@
 | Directory | Purpose | Files |
 |-----------|---------|-------|
 | `contents/getting-started/` | Overview, quickstart, setup, workflows, best practices | 8 |
-| `contents/surfaces/` | IDE integrations, desktop, web, Chrome, Slack, remote control | 8 |
-| `contents/build-with-claude-code/` | Skills, subagents, plugins, hooks, MCP, agent teams, programmatic usage | 11 |
+| `contents/surfaces/` | IDE integrations and deployment surfaces | 8 |
+| `contents/build-with-claude-code/` | Agents, plugins, skills, hooks, MCP, programmatic usage | 11 |
 | `contents/ci-cd/` | GitHub Actions and GitLab CI/CD integration | 2 |
-| `contents/deployment/` | Cloud providers, network config, LLM gateway, devcontainer, sandboxing | 8 |
-| `contents/configuration/` | Settings, permissions, memory, model config, keybindings, terminal | 8 |
-| `contents/reference/` | CLI reference, hooks reference, interactive mode, plugins reference, changelog | 6 |
-| `contents/account/` | Authentication, costs, usage monitoring, analytics, security, compliance | 7 |
+| `contents/deployment/` | Cloud providers, network config, sandboxing | 7 |
+| `contents/configuration/` | Settings, permissions, memory, model config | 8 |
+| `contents/reference/` | CLI reference, hooks spec, plugins spec, changelog | 6 |
+| `contents/account/` | Authentication, costs, monitoring, security | 7 |
 
 ## getting-started/
 
 | File | Description |
 |------|-------------|
-| `overview.md` | What Claude Code is, supported surfaces, and how to get started |
-| `quick-start.md` | Step-by-step quickstart guide for installation and first use |
-| `setup.md` | Detailed setup instructions and configuration |
-| `common-workflows.md` | Common development workflows including plan mode and task management |
-| `best-practices.md` | Recommended patterns and tips for effective use |
+| `overview.md` | Claude Code product overview and introduction |
+| `quick-start.md` | Quickstart guide to get up and running |
+| `setup.md` | Advanced setup and installation options |
+| `common-workflows.md` | Common development workflows with Claude Code |
+| `best-practices.md` | Best practices for effective Claude Code usage |
 | `how-claude-code-works.md` | Architecture and internals of Claude Code |
-| `features-overview.md` | Overview of all major features |
-| `fast-mode.md` | Fast mode and how it affects performance |
+| `features-overview.md` | Overview of all features and extensions |
+| `fast-mode.md` | How to speed up responses with fast mode |
 
 ## surfaces/
 
 | File | Description |
 |------|-------------|
-| `vs-code.md` | VS Code extension installation and usage |
-| `jetbrains.md` | JetBrains IDE plugin integration |
-| `desktop.md` | Desktop app overview and capabilities |
-| `desktop-quickstart.md` | Quickstart guide for the desktop application |
-| `claude-code-on-the-web.md` | Using Claude Code through the web interface |
-| `chrome.md` | Chrome browser extension integration |
-| `slack.md` | Slack integration setup and usage |
-| `remote-control.md` | Remote control session from Claude.ai or Claude app |
+| `vs-code.md` | VS Code extension: inline diffs, @-mentions, shortcuts |
+| `jetbrains.md` | JetBrains IDE plugin for IntelliJ, PyCharm, WebStorm |
+| `desktop.md` | Claude Code Desktop app: parallel sessions, visual diffs, PR monitoring |
+| `desktop-quickstart.md` | Desktop app installation and first session guide |
+| `claude-code-on-the-web.md` | Running Claude Code tasks asynchronously on cloud |
+| `chrome.md` | Chrome browser extension for web app testing and automation |
+| `slack.md` | Delegating coding tasks from Slack via @Claude |
+| `remote-control.md` | Continuing local sessions from phone or browser |
 
 ## build-with-claude-code/
 
 | File | Description |
 |------|-------------|
-| `agent-teams.md` | Coordinating multiple Claude Code sessions as a team |
-| `sub-agents.md` | Creating and using specialized subagents |
-| `plugins.md` | Creating custom plugins with skills, agents, hooks, and MCP |
-| `discover-plugins.md` | How to find and install existing plugins |
-| `plugin-marketplaces.md` | Plugin marketplaces and distribution |
-| `skills.md` | Creating and managing skills (custom slash commands) |
-| `output-styles.md` | Configuring output format and style |
-| `hooks-guide.md` | Guide for automating workflows with hooks |
-| `programmatic-usage.md` | Headless/programmatic usage via the SDK |
-| `mcp.md` | Model Context Protocol server setup and usage |
-| `troubleshooting.md` | Common issues and how to resolve them |
+| `agent-teams.md` | Coordinating multiple Claude Code instances as a team |
+| `sub-agents.md` | Creating specialized AI subagents for task-specific workflows |
+| `plugins.md` | Creating custom plugins with skills, agents, hooks, and MCP servers |
+| `discover-plugins.md` | Finding and installing plugins from marketplaces |
+| `plugin-marketplaces.md` | Building and hosting plugin marketplaces |
+| `skills.md` | Creating and sharing skills to extend Claude's capabilities |
+| `output-styles.md` | Adapting Claude Code output for non-engineering use cases |
+| `hooks-guide.md` | Running shell commands automatically at lifecycle events |
+| `programmatic-usage.md` | Using the Agent SDK to run Claude Code from CLI, Python, or TypeScript |
+| `mcp.md` | Connecting Claude Code to tools via the Model Context Protocol |
+| `troubleshooting.md` | Solutions to common installation and usage issues |
 
 ## ci-cd/
 
 | File | Description |
 |------|-------------|
-| `github-actions.md` | Integrating Claude Code into GitHub Actions workflows |
-| `gitlab-ci-cd.md` | Integrating Claude Code into GitLab CI/CD pipelines |
+| `github-actions.md` | Integrating Claude Code with GitHub Actions for AI-powered automation |
+| `gitlab-ci-cd.md` | Integrating Claude Code with GitLab CI/CD pipelines |
 
 ## deployment/
 
 | File | Description |
 |------|-------------|
-| `third-party-integrations.md` | Third-party provider integrations overview |
-| `aws-bedrock.md` | Using Claude Code via AWS Bedrock |
-| `google-vertex-ai.md` | Using Claude Code via Google Vertex AI |
-| `microsoft-foundry.md` | Using Claude Code via Microsoft Azure AI Foundry |
-| `network-config.md` | Network configuration, proxies, and firewall settings |
-| `llm-gateway.md` | LLM gateway setup for routing and management |
-| `devcontainer.md` | Using Claude Code in dev containers |
-| `sandboxing.md` | Sandboxing and isolation for secure execution |
+| `third-party-integrations.md` | Overview of enterprise deployment options and cloud providers |
+| `google-vertex-ai.md` | Configuring Claude Code through Google Vertex AI |
+| `microsoft-foundry.md` | Configuring Claude Code through Microsoft Foundry |
+| `network-config.md` | Enterprise proxy, custom CA, and mTLS configuration |
+| `llm-gateway.md` | Routing Claude Code through LLM gateway solutions |
+| `devcontainer.md` | Using the reference devcontainer for consistent environments |
+| `sandboxing.md` | Filesystem and network isolation for safer agent execution |
 
 ## configuration/
 
 | File | Description |
 |------|-------------|
-| `settings.md` | All settings options with scope system (user, project, managed) |
-| `server-managed-settings.md` | Server-managed settings for enterprise deployment |
-| `terminal-config.md` | Terminal and shell configuration |
-| `model-config.md` | Model selection and configuration |
-| `memory.md` | Memory management and CLAUDE.md hierarchy |
-| `statusline.md` | Statusline and UI configuration |
-| `keybindings.md` | Keyboard shortcut customization |
-| `permissions.md` | Permission rules, modes (default, plan, acceptEdits, dontAsk) |
+| `settings.md` | Global and project-level settings, environment variables |
+| `server-managed-settings.md` | Centrally managing settings for organizations via Claude.ai |
+| `terminal-config.md` | Optimizing terminal configuration for Claude Code |
+| `model-config.md` | Available models and model aliases like `opusplan` |
+| `memory.md` | CLAUDE.md persistent instructions and auto memory |
+| `statusline.md` | Configuring a custom status bar for context and cost tracking |
+| `keybindings.md` | Customizing keyboard shortcuts |
+| `permissions.md` | Fine-grained permission rules, modes, and managed policies |
 
 ## reference/
 
 | File | Description |
 |------|-------------|
 | `cli-reference.md` | Complete CLI commands and flags reference |
-| `interactive-mode.md` | Keyboard shortcuts and interactive REPL features |
-| `checkpointing.md` | Session checkpointing and state management |
-| `hooks.md` | Hooks reference: events, schemas, JSON formats, exit codes |
-| `plugins-reference.md` | Complete technical reference for plugins |
+| `interactive-mode.md` | Keyboard shortcuts, input modes, interactive features |
+| `checkpointing.md` | Tracking, rewinding, and summarizing Claude's edits |
+| `hooks.md` | Hook events, configuration schema, JSON formats, exit codes |
+| `plugins-reference.md` | Technical reference for the plugin system schemas and CLI |
 | `changelog.md` | Release notes and version history |
 
 ## account/
 
 | File | Description |
 |------|-------------|
-| `authentication.md` | Sign-in methods including SSO authentication |
-| `costs.md` | Pricing and cost management |
-| `monitoring-usage.md` | Monitoring API usage and spend |
-| `analytics.md` | Usage analytics and reporting |
-| `data-usage.md` | Data handling and retention policies |
-| `security.md` | Security practices and disclosures |
-| `legal-and-compliance.md` | Legal terms and compliance documentation |
+| `authentication.md` | Login methods for individuals, teams, and organizations |
+| `costs.md` | Token usage, spend limits, and cost reduction strategies |
+| `monitoring-usage.md` | OpenTelemetry setup for usage and cost tracking |
+| `analytics.md` | Usage metrics, adoption tracking, and velocity dashboards |
+| `data-usage.md` | Anthropic data usage and retention policies |
+| `security.md` | Security safeguards and safe usage best practices |
+| `legal-and-compliance.md` | Legal agreements and compliance certifications |

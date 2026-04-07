@@ -1,0 +1,65 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+
+<Overview />
+
+<ControllingInputs />
+
+Inputs are retrieved from a `StateMachine` instance.
+
+Access the state machine directly from the `RiveWidgetController`:
+
+```dart
+final riveController = RiveWidgetController(riveFile);
+final stateMachine = riveController.stateMachine;
+
+final myTrigger = stateMachine.trigger('myTrigger');
+final myBool = stateMachine.boolean('myBool');
+final myNumber = stateMachine.number('myNumber');
+```
+
+Interact with the inputs:
+
+```dart
+myTrigger.fire(); // Trigger input
+myBool.value = true; // Set boolean input
+myNumber.value = 42.0; // Set number input
+```
+
+When you're done with the inputs, dispose them:
+
+```dart
+myTrigger.dispose();
+myBool.dispose();
+myNumber.dispose();
+```
+
+The State Machine is owned by the controller. When you dispose the controller, the state machine will also be disposed.
+
+```dart
+controller.dispose();
+```
+
+<NestedInputs />
+
+To set the **Volume** input for the above example:
+
+```dart
+// Get the nested input named 'volume' from the state machine
+final controller = RiveWidgetController(riveFile);
+final stateMachine = controller.stateMachine;
+final volumeInput = stateMachine.number('volume', path: 'Volume Molecule/Volume Component')!;
+volumeInput.value = 80.0;
+```
+
+**All options:**
+- `number(name, path: 'path/to/input')`
+- `bool(name, path: 'path/to/input')`
+- `trigger(name, path: 'path/to/input')`

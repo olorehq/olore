@@ -1,0 +1,102 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+
+<Overview />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+        #### Setting Text via Data Binding
+
+        This functionality is deprecated. We recommend using [Data Binding](/runtimes/react-native/data-binding) for controlling text.
+
+        ```javascript
+        export default function TextRunExample() {
+            const { riveViewRef, setHybridRef } = useRive();
+            const { riveFile } = useRiveFile(
+            require('../../assets/rive/hello_world_text.riv')
+            );
+
+            useEffect(() => {
+            if (riveViewRef) {
+                try {
+                console.log(riveViewRef.getTextRunValue('name'));
+                riveViewRef.setTextRunValue('name', 'React Native');
+                console.log(riveViewRef.getTextRunValue('name'));
+                } catch (err) {
+                console.error(err);
+                }
+            }
+            }, [riveViewRef]);
+
+            return (
+            <View style={styles.container}>
+                <View style={styles.riveContainer}>
+                {riveFile ? (
+                    <RiveView
+                    style={styles.rive}
+                    autoPlay={true}
+                    fit={Fit.Contain}
+                    file={riveFile}
+                    hybridRef={setHybridRef}
+                    />
+                ) : null}
+                </View>
+            </View>
+            );
+        }
+        ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+        #### Setting Text via Rive Ref
+
+        To set a given text run value at any given time, reference the `.setTextRunValue()` API on the Rive `ref`:
+
+        ```javascript
+        setTextRunValue: (textRunName: string, value: string) => void;
+        ```
+
+        Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for.
+
+        #### Example Usage
+
+        ```javascript
+        export default function DynamicText() {
+        const riveRef = useRef<RiveRef>(null);
+
+        const handleInputChange = (e: string) => {
+            // Set the TextRun value of the 'name' TextRun
+            // The name must exist else an error will be thrown
+            riveRef.current?.setTextRunValue('name', e);
+        };
+
+        return (
+            <SafeAreaView style={styles.safeAreaViewContainer}>
+            <ScrollView>
+                <Rive
+                ref={riveRef}
+                resourceName="hello_world_text"
+                stateMachineName="State Machine 1"
+                />
+                <TextInput
+                onChangeText={handleInputChange}
+                defaultValue="world"
+                />
+            </ScrollView>
+            </SafeAreaView>
+        );
+        }
+        ```
+    </Tab>
+</Tabs>
+
+<NestedArtboard />
+
+<SemanticsForAccessibility />

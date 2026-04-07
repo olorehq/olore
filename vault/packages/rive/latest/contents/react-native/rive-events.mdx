@@ -1,0 +1,119 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+<Overview />
+
+<Tabs>
+    <Tab title="New Runtime (Recommended)">
+        ### Adding a Rive Event Listener
+        <Warning>
+        This functionality is deprecated. We recommend using [Data Binding](runtimes/react-native/data-binding).
+        </Warning>
+
+        ```javascript
+        export default function EventsExample() {
+            const { riveViewRef, setHybridRef } = useRive();
+            const { riveFile } = useRiveFile(require('path/to/file.riv'));
+
+            const handleRiveEvent = (event: any) => {
+            console.log('Rive Event:', event);
+            };
+
+            // Add event listener when the ref is available
+            useEffect(() => {
+            if (riveViewRef) {
+                riveViewRef.onEventListener(handleRiveEvent);
+            }
+            return () => {
+                if (riveViewRef) {
+                riveViewRef.removeEventListeners();
+                }
+            };
+            }, [riveViewRef]);
+
+            return (
+            <View style={styles.container}>
+                <View style={styles.riveContainer}>
+                {riveFile ? (
+                    <RiveView
+                    style={styles.rive}
+                    autoPlay={true}
+                    fit={Fit.Contain}
+                    file={riveFile}
+                    hybridRef={setHybridRef}
+                    />
+                ) : null}
+                </View>
+            </View>
+            );
+        }
+        ```
+    </Tab>
+    <Tab title="Legacy Runtime">
+        ### Adding a Rive Event Listener
+
+        Similar to other callback functions you can provide on the `<Rive>` component, such as `onPlay` or `onStateChange`, you can now provide an `onRiveEventReceived` callback which will be invoked any time a Rive Event gets reported during the render loop.
+
+        The API signature is as follows:
+
+        ```javascript
+        onRiveEventReceived?: (event: RiveGeneralEvent | RiveOpenUrlEvent) => void;
+        ```
+
+        Example Usage
+
+        ```javascript
+        import React, { useRef, useState } from 'react';
+        import {
+        SafeAreaView,
+        ScrollView,
+        Linking,
+        Text,
+        } from 'react-native';
+        import Rive, { Fit, RiveOpenUrlEvent, RiveRef } from 'rive-react-native';
+
+        export default function Events() {
+        const riveRef = useRef<RiveRef>(null);
+        const [eventMessage, setEventMessage] = useState('');
+
+        return (
+            <SafeAreaView>
+            <ScrollView>
+                <Rive
+                ref={riveRef}
+                autoplay={true}
+                fit={Fit.Cover}
+                resourceName={'rating'}
+                stateMachineName="State Machine 1"
+                onRiveEventReceived={(event) => {
+                    // These are properties added to the event at Design Time in the
+                    // Rive editor
+                    const eventProperties = event.properties;
+                    if (eventProperties?.message) {
+                    setEventMessage(eventProperties.message as string);
+                    }
+
+                    // If an event has an accompanying URL, open it
+                    if ('url' in event) {
+                    Linking.openURL((event as RiveOpenUrlEvent).url || '');
+                    }
+                }}
+                />
+                <Text>{eventMessage}</Text>
+            </ScrollView>
+            </SafeAreaView>
+        );
+        }
+        ```
+    </Tab>
+</Tabs>
+
+<AdditionalResources />

@@ -1,0 +1,153 @@
+---
+title: "Inputs"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Inputs for controlling Rive animations"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/inputs/overview.mdx"
+import ControllingInputs from "/snippets/runtimes/inputs/controlling-inputs.mdx"
+import NestedInputs from "/snippets/runtimes/inputs/nested-inputs.mdx"
+
+<Overview />
+
+<ControllingInputs />
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    <Warning>
+      This functionality is deprecated. We recommend using [react-native/Data Binding](runtimes/react-native/data-binding).
+    </Warning>
+
+    You can access the methods to control data binding input on the view reference:
+
+    ```ts
+    export default function StateMachineInputsExample() {
+      const { riveViewRef, setHybridRef } = useRive();
+      const { riveFile } = useRiveFile(require('../../assets/rive/rating.riv'));
+
+      useEffect(() => {
+        if (riveViewRef) {
+          try {
+            // Original value
+            console.log(
+              'Number value: ',
+              riveViewRef.getNumberInputValue('rating')
+            );
+            // Set the value of the input
+            riveViewRef.setNumberInputValue('rating', 3.0);
+            console.log(
+              'Number value: ',
+              riveViewRef.getNumberInputValue('rating')
+            );
+            // Add a delay to allow the view controller to be ready
+            setTimeout(() => {
+              console.log(
+                'Number value after delay: ',
+                riveViewRef.getNumberInputValue('rating')
+              );
+            }, 16);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }, [riveViewRef]);
+
+      return (
+        <View style={styles.riveContainer}>
+          {riveFile ? (
+            <RiveView
+              style={styles.rive}
+              autoPlay={true}
+              file={riveFile}
+              hybridRef={setHybridRef}
+            />
+          ) : null}
+        </View>
+      );
+    }
+    ```
+
+  </Tab>
+  <Tab title="Legacy Runtime">
+    ### Inputs
+
+    With the React Native runtime, most methods/triggers are available on the ref of the `Rive` component, including setting input values/triggering for state machines. In this case, there is no need to acquire an instance of an input. Simply set the input state from the Rive `ref` or fire an input state.
+
+    ```javascript
+    export default function StateMachine() {
+        const riveRef = React.useRef<RiveRef>(null);
+        // Maintain the values of your state machine in React state
+        const [selectedLevel, setSelectedLevel] = useState('2');
+
+        const setLevel = (n: number) => {
+            setSelectedLevel(n.toString());
+            // No need to acquire an instance of a state machine input, just set the
+            // input state on the `riveRef` itself
+            riveRef.current?.setInputState("Designer's Test", 'Level', n);
+        };
+
+        return (
+            <SafeAreaView style={styles.safeAreaViewContainer}>
+                <ScrollView contentContainerStyle={styles.container}>
+                    <Rive
+                        resourceName={'skills'}
+                        ref={riveRef}
+                        autoplay={true}
+                        stateMachineName="Designer's Test"
+                    />
+                    <RadioButton.Group
+                        onValueChange={(newValue) => setLevel(parseInt(newValue, 10))}
+                        value={selectedLevel}
+                    >
+                        <View style={styles.radioButtonsWrapper}>
+                            <View style={styles.radioButtonWrapper}>
+                                <Text>{'Beginner'}</Text>
+                                <RadioButton value={'0'} />
+                            </View>
+                            <View style={styles.radioButtonWrapper}>
+                                <Text>{'Intermediate'}</Text>
+                                <RadioButton value={'1'} />
+                            </View>
+                            <View style={styles.radioButtonWrapper}>
+                                <Text>{'Expert'}</Text>
+                                <RadioButton value={'2'} />
+                            </View>
+                        </View>
+                    </RadioButton.Group>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+    ```
+    <Note>
+      See the [React Native API's](/runtimes/react-native/rive-ref-methods#.setinputstate) to learn more about the parameters for `.setInputState()` and `.fireState()`
+    </Note>
+  </Tab>
+</Tabs>
+
+<NestedInputs />
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    <Warning>
+      **Note:** The new runtime recommends using [Data Binding](/runtimes/react-native/data-binding) instead of the legacy Inputs system for controlling nested component properties.
+    </Warning>
+
+    The new runtime primarily uses data binding for controlling nested properties. See the [Data Binding documentation](/runtimes/react-native/data-binding) for details.
+
+    <Note>
+      For examples of using data binding with nested properties in the new runtime, see the [example app](https://github.com/rive-app/rive-nitro-react-native/blob/main/example/src/demos/QuickStart.tsx).
+    </Note>
+  </Tab>
+  <Tab title="Legacy Runtime">
+    To set the **Volume** input for the above example:
+
+    ```tsx
+    riveRef.current?.setInputStateAtPath("volume", 80.0, "Volume Molecule/Volume Component");
+    ```
+
+    **All options:**
+    - `setInputStateAtPath(inputName: string, value: boolean | number, path: string)`
+    - `fireStateAtPath(inputName: string, path: string)`
+  </Tab>
+</Tabs>

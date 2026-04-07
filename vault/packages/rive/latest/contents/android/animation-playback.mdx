@@ -1,0 +1,97 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+With the Android runtime, specify **one** animation with the `riveAnimation` property.
+
+```xml
+<app.rive.runtime.kotlin.RiveAnimationView
+    app:riveAutoPlay="true"
+    app:riveArtboard="Square"
+    app:riveAnimation="rollaround"
+    app:riveResource="@raw/artboard_animations" />
+```
+
+Or
+
+```kotlin
+animationView.setRiveResource(
+    R.raw.artboard_animations,
+    artboardName = "Square",
+    animationName = "rollaround",
+    autoplay = true
+)
+```
+
+<ControllingPlayback />
+
+#### Invoking Playback Controls
+
+After setting the Rive Resource with your animation view, you can invoke animation playback control methods.
+
+Along with programmatically playing an animation, you can also choose the loop mode and direction of the animation as additional parameters as needed. You can additionally pause or stop an animation as well.
+
+```kotlin
+// Play one animation
+animationView.play("rollaround")
+
+// Set loop mode and direction
+animationView.play("rollaround", Loop.ONE_SHOT, Direction.Backwards)
+
+animationView.pause()
+animationView.pause("bouncing")
+
+animationView.stop()
+animationView.stop("bouncing")
+```
+
+#### Animation Event Listeners
+
+The Rive Android runtime also allows listener registration. Check out the events section in the
+[rive player](https://github.com/rive-app/rive-android/blob/master/app/src/main/java/app/rive/runtime/example/AndroidPlayerActivity.kt) for an example of how this works.
+
+```kotlin
+val listener = object : Listener {
+    override fun notifyPlay(animation: PlayableInstance) {
+        var text: String? = null
+        if (animation is LinearAnimationInstance) {
+            text = animation.name
+        }
+    }
+
+    override fun notifyPause(animation: PlayableInstance) {
+        var text: String? = null
+        if (animation is LinearAnimationInstance) {
+            text = animation.name
+        }
+    }
+
+    override fun notifyStop(animation: PlayableInstance) {
+        var text: String? = null
+        if (animation is LinearAnimationInstance) {
+            text = animation.name
+        }
+    }
+
+    override fun notifyLoop(animation: PlayableInstance) {
+        var text: String? = null
+        if (animation is LinearAnimationInstance) {
+            text = animation.name
+        }
+    }
+}
+animationView.registerListener(listener)
+```
+
+Check out this Activity example:
+[LoopModeActivity.kt](https://github.com/rive-app/rive-android/blob/master/app/src/main/java/app/rive/runtime/example/LoopModeActivity.kt)

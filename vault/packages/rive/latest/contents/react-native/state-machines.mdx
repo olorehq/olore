@@ -1,0 +1,146 @@
+---
+title: "State Machine Playback"
+description: "Playing a state machine"
+---
+
+import Overview from "/snippets/runtimes/state-machines/overview.mdx"
+import ControllingPlayback from "/snippets/runtimes/state-machines/controlling-playback.mdx"
+import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-state-machines.mdx"
+
+<Overview />
+
+<ControllingPlayback />
+
+<PlayingStateMachines />
+
+<Tabs>
+  <Tab title="New Runtime (Recommended)">
+    By default, `RiveView` automatically uses the default artboard and state machine [configured in the Editor](https://rive.app/docs/editor/fundamentals/artboards#default-state-machine). In most cases, you only need to provide the `file` prop.
+
+    For programmatic control, you can optionally specify `artboardName` and `stateMachineName` props to use a different artboard or state machine.
+
+    ```ts
+    export default function PlaybackExample() {
+      const { riveFile } = useRiveFile(
+        'https://cdn.rive.app/animations/vehicles.riv'
+      );
+
+      return (
+        <View style={styles.container}>
+          <View style={styles.riveContainer}>
+            {riveFile ? <RiveView file={riveFile} style={styles.rive} /> : null}
+          </View>
+        </View>
+      );
+    }
+    ```
+
+    #### Controlling State Machine Playback
+
+    For more control, you can manage playback and set the **artboard**/**state machine** combination:
+
+    <ResponseField name="autoPlay" type="boolean" default="true">
+      Automatically start playing the state machine.
+    </ResponseField>
+    <ResponseField name="artboardName" type="String">
+      The name of the artboard to display.
+
+      _If not set, the default artboard will be used, as configured in the Editor._
+    </ResponseField>
+    <ResponseField name="stateMachineName" type="String">
+      The name of the state machine to play.
+
+      _If not set, the default state machine will be used, as configured in the Editor._
+    </ResponseField>
+
+    And manage `play`, `pause`, and `reset` on the Rive view reference.
+
+    ```javascript
+    import { Fit, RiveView, useRive, useRiveFile } from '@rive-app/react-native';
+
+    export default function PlaybackExample() {
+      const { riveViewRef, setHybridRef } = useRive();
+      const { riveFile } = useRiveFile(
+        'https://cdn.rive.app/animations/vehicles.riv'
+      );
+
+      const play = () => {
+        riveViewRef?.play();
+      };
+
+      const pause = () => {
+        riveViewRef?.pause();
+      };
+
+      const reset = () => {
+        riveViewRef?.reset();
+      };
+
+      return (
+        <View style={styles.container}>
+          <View style={styles.riveContainer}>
+            {riveFile ? (
+              <RiveView
+                file={riveFile}
+                hybridRef={setHybridRef}
+                autoPlay={false}
+                artboardName="Truck" // specify the artboard to play
+                stateMachineName="bumpy" // specify the state machine to play
+                style={styles.rive}
+              />
+            ) : null}
+          </View>
+          <Button onPress={play} title="Play" />
+          <Button onPress={pause} title="Pause" />
+          <Button onPress={reset} title="Reset" />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+  <Tab title="Legacy Runtime">
+    #### Autoplay the State Machine
+
+    To auto-play a state machine by default, simply set `autoPlay` to `true`.
+
+    ```jsx
+      <Rive
+        resourceName={'vehicles'}
+        autoplay={true}
+        stateMachineName="bumpy"
+      />
+    ```
+
+    #### Controlling State Machine Playback
+
+    You can manually play and pause the State Machine using the `play` and `pause` methods.
+
+    ```jsx
+    import Rive, { RiveRef } from 'rive-react-native'
+
+    export default function App() {
+      const riveRef = React.useRef<RiveRef>(null);
+
+      const handlePlayPress = () => {
+        riveRef?.current?.play();
+      };
+
+      const handlePausePress = () => {
+        riveRef?.current?.pause();
+      };
+
+      return (
+        <View>
+          <Rive
+            resourceName="truck_v7"
+            stateMachineName="bumpy"
+            ref={riveRef}
+          />
+          <Button onPress={handlePlayPress} title="play">
+          <Button onPress={handlePausePress} title="pause">
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>

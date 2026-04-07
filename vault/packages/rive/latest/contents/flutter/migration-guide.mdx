@@ -1,0 +1,629 @@
+---
+title: "Migration Guide"
+description: "Learn how to migrate your Flutter app when upgrading between major versions of the Rive Flutter runtime, including breaking changes and new features."
+---
+
+## Version 0.14.0
+
+This is a significant update for Rive Flutter. We've completely removed all of the Dart code that was used for the Rive runtime and replaced it with our underlying [C++ Runtime](https://github.com/rive-app/rive-runtime). See the [Rive Native for Flutter](/runtimes/flutter/rive-native) page for more details.
+
+This has resulted in a number of changes to the underlying API, and a large portion of the code base that was previously accessible through Dart is now implemented in C++ through FFI.
+
+### What's New in 0.14.0
+
+This release of Rive Flutter adds support for:
+
+- [Rive Renderer](https://rive.app/renderer)
+- [Data Binding](/editor/data-binding/)
+- [Layouts](/editor/layouts/layouts-overview)
+- [Scrolling](/editor/layouts/scrolling)
+- [N-Slicing](/editor/layouts/n-slicing)
+- [Vector Feathering](https://rive.app/blog/introducing-vector-feathering)
+- All other features added to Rive that did not make it to the previous versions of Rive Flutter
+- Includes the latest fixes and improvements for the Rive C++ runtime
+- Adds prebuilt libraries, with the ability to build manually. See the [rive_native](https://pub.dev/packages/rive_native) package for more information
+- Removes the `rive_common` package and replaces it with `rive_native`
+
+Now that Rive Flutter makes use of the core Rive C++ runtime, you can expect new Rive features to be supported sooner for Rive Flutter.
+
+<Note>
+  All your Rive graphics will still look and function the same as they did
+  before.
+</Note>
+
+### Requirements
+
+#### Dart and Flutter Versions
+
+This release bumps to these versions:
+
+```yaml
+sdk: ">=3.5.0 <4.0.0"
+flutter: ">=3.3.0"
+```
+
+#### Required Setup
+
+**Important:** You must call `RiveNative.init` at the start of your app, or before you use Rive. For example, in `main.dart`:
+
+```dart
+import 'package:rive/rive.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RiveNative.init(); // Call init before using Rive
+  runApp(const MyApp());
+}
+```
+
+### Migration Guide
+
+#### Quick Migration Checklist
+
+1. ✅ Update your `pubspec.yaml` dependencies to use version `0.14.0` or later
+   ```yaml
+   dependencies:
+     rive: ^0.14.0-dev.8 # or latest version
+   ```
+2. ✅ Add `RiveNative.init()` to your `main()` function, or call before using Rive.
+3. ✅ Replace `Rive` and `RiveAnimation` widgets with [`RiveWidget`](/runtimes/flutter/flutter#rivewidget) or [`RiveWidgetBuilder`](/runtimes/flutter/flutter#rivewidgetbuilder)
+4. ✅ Update your controllers to use the new API, see [`RiveWidgetController`](/runtimes/flutter/flutter#rivewidgetcontroller)
+5. ✅ Review and update any custom asset loading code
+6. ✅ Test your graphics and interactions
+
+#### Removed Classes
+
+The following classes have been completely removed:
+
+- `Rive` and `RiveAnimation` widgets → Use `RiveWidget` and `RiveWidgetBuilder`
+- `RiveAnimationController` and its subclasses → Use `RiveWidgetController`, `SingleAnimationPainter`, and `StateMachinePainter`
+- `OneShotAnimation` and `SimpleAnimation` → Use `SingleAnimationPainter` to play individual animations
+- `StateMachineController` → Use `StateMachine` instead (can be accessed via `RiveWidgetController.stateMachine`)
+- `RiveEvent` → Replaced with `Event`
+- `SMITrigger` → Replaced with `TriggerInput`
+- `SMIBool` → Replaced with `BooleanInput`
+- `SMINumber` → Replaced with `NumberInput`
+- `FileAssetLoader` → Replaced with optional callback when creating a `File`
+
+#### Loading Rive Files
+
+`RiveFile` has been removed and replaced with `File`. Important changes:
+
+<Tabs>
+  <Tab title="New API">
+    ```dart 
+    final file = await File.decode(bytes, factory: Factory.rive);
+    final artboard = file.defaultArtboard();
+    final artboard = file.artboard('MyArtboard');
+    ```
+  </Tab>
+  <Tab title="Old API">
+    ```dart Old API
+    final file = await RiveFile.import(bytes);
+    final artboard = file.mainArtboard;
+    final artboard = file.artboardByName('MyArtboard');
+    ```
+  </Tab>
+</Tabs>
+
+The provided `Factory` determines the renderer that will be used. Use `Factory.rive` for the Rive renderer or `Factory.flutter` for the shipped Flutter renderer (Skia or Impeller).
+
+<Warning>Vector Feathering only works with the Rive Renderer.</Warning>
+
+**Key Changes:**
+
+- Creating a Rive File now requires a factory (`Factory.rive` or `Factory.flutter`)
+- Replace `RiveFile.import` with `File.decode()` which returns a `Future<File>`
+- Replace `mainArtboard` with `defaultArtboard()`
+- Replace `artboardByName(name)` with `artboard(name)`
+- Replace `RiveFile.network` with `File.url`
+- Replace `RiveFile.file` with `File.path`
+
+#### Widget Migration
+
+See the updated example app for a complete migration guide, including how to use the new `RiveWidget` and `RiveWidgetBuilder` APIs.
+
+| Old Widget             | New Widget                       | Notes              |
+| ---------------------- | -------------------------------- | ------------------ |
+| `Rive`/`RiveAnimation` | `RiveWidget`/`RiveWidgetBuilder` | Direct replacement |
+
+<Tabs>
+    <Tab title="New API - Option 1">
+    ```dart Using RiveWidgetBuilder
+    class SimpleAssetAnimation extends StatefulWidget {
+        const SimpleAssetAnimation({Key? key}) : super(key: key);
+
+        @override
+        State<SimpleAssetAnimation> createState() => _SimpleAssetAnimationState();
+    }
+
+    class _SimpleAssetAnimationState extends State<SimpleAssetAnimation> {
+        late final fileLoader = FileLoader.fromAsset(
+            'assets/off_road_car.riv',
+            riveFactory: Factory.rive,
+        );
+
+        @override
+        void dispose() {
+            fileLoader.dispose();
+            super.dispose();
+        }
+
+        @override
+        Widget build(BuildContext context) {
+            return Scaffold(
+                appBar: AppBar(
+                    title: const Text('Simple Animation'),
+                ),
+                body: Center(
+                    child: RiveWidgetBuilder(
+                        fileLoader: fileLoader,
+                        builder: (context, state) => switch (state) {
+                            RiveLoading() => const CircularProgressIndicator(),
+                            RiveFailed() => Text('Failed to load: ${state.error}'),
+                            RiveLoaded() => RiveWidget(
+                                controller: state.controller,
+                                fit: Fit.cover,
+                            ),
+                        },
+                    ),
+                ),
+            );
+        }
+    }
+    ```
+    </Tab>
+    <Tab title="New API - Option 2">
+    ```dart Using RiveWidget directly
+    class SimpleAssetAnimation extends StatefulWidget {
+        const SimpleAssetAnimation({Key? key}) : super(key: key);
+
+        @override
+        State<SimpleAssetAnimation> createState() => _SimpleAssetAnimationState();
+    }
+
+    class _SimpleAssetAnimationState extends State<SimpleAssetAnimation> {
+        File? file;
+        RiveWidgetController? controller;
+        bool isInitialized = false;
+
+        @override
+        void initState() {
+            super.initState();
+            initRive();
+        }
+
+        void initRive() async {
+            file = (await File.asset('assets/off_road_car.riv', riveFactory: Factory.rive))!;
+            controller = RiveWidgetController(file!);
+            setState(() => isInitialized = true);
+        }
+
+        @override
+        void dispose() {
+            controller?.dispose();
+            file?.dispose();
+            super.dispose();
+        }
+
+        @override
+        Widget build(BuildContext context) {
+            return Scaffold(
+                appBar: AppBar(
+                    title: const Text('Simple Animation'),
+                ),
+                body: Center(
+                    child: isInitialized && controller != null
+                        ? RiveWidget(
+                            controller: controller!,
+                            fit: Fit.cover,
+                        )
+                        : const CircularProgressIndicator(),
+                ),
+            );
+        }
+    }
+    ```
+    </Tab>
+    <Tab title="Old API">
+    ```dart Old API
+    class SimpleAssetAnimation extends StatelessWidget {
+        const SimpleAssetAnimation({Key? key}) : super(key: key);
+
+        @override
+        Widget build(BuildContext context) {
+            return Scaffold(
+                appBar: AppBar(
+                    title: const Text('Simple Animation'),
+                ),
+                body: const Center(
+                    child: RiveAnimation.asset(
+                        'assets/off_road_car.riv',
+                        fit: BoxFit.cover,
+                    ),
+                ),
+            );
+        }
+    }
+    ```
+    </Tab>
+
+</Tabs>
+
+#### Controller Migration
+
+| Old Controller                           | New Controller           | Notes                       |
+| ---------------------------------------- | ------------------------ | --------------------------- |
+| `RiveAnimationController`                | `RiveWidgetController`   | Main controller for widgets |
+| `StateMachineController`                 | `StateMachine`           | Direct state machine access |
+| `OneShotAnimation` and `SimpleAnimation` | `SingleAnimationPainter` | For individual animations   |
+
+Example using the new `RiveWidgetController`:
+
+```dart Using RiveWidgetController
+final file = await File.asset('assets/off_road_car.riv', riveFactory: Factory.rive);
+final controller = RiveWidgetController(file!);
+final artboard = controller.artboard; // access the loaded artboard
+final viewModelInstance = controller.dataBind(DataBind.auto()); // auto data binding
+```
+
+Optionally specify which Artboard and State Machine to use:
+
+```dart Specifying Artboard and State Machine
+final file = await File.asset('assets/off_road_car.riv', riveFactory: Factory.rive);
+final controller = RiveWidgetController(
+  file,
+  artboardSelector: ArtboardSelector.byName('Main'),
+  stateMachineSelector: StateMachineSelector.byName('State Machine 1'),
+);
+```
+
+#### Playing Animations
+
+<Warning>
+  This functionality is deprecated. We strongly encourage playing and blending
+  animations through a state machine.
+</Warning>
+
+In the previous version you were able to play an animation directly by passing `animations: ['myAnimation']` to `RiveAnimation`.
+
+To achieve the same in the new version, use a `SingleAnimationPainter` and `RiveArtboardWidget` instead of `RiveWidgetController` and `RiveWidget`.
+
+```dart Single animation example expandable
+import 'package:flutter/material.dart';
+import 'package:rive/rive.dart';
+import 'package:rive_example/main.dart' show RiveExampleApp;
+
+/// This is an alternative controller (painter) to use instead of the
+/// [RiveWidgetController].
+///
+/// This painter is used to paint/advance a state machine. Functionally it's
+/// very similar to the [RiveWidgetController], which we recommend using for
+/// most use cases.
+class ExampleSingleAnimationPainter extends StatefulWidget {
+  const ExampleSingleAnimationPainter({super.key});
+
+  @override
+  State<ExampleSingleAnimationPainter> createState() =>
+      _ExampleSingleAnimationPainterState();
+}
+
+class _ExampleSingleAnimationPainterState
+    extends State<ExampleSingleAnimationPainter> {
+  late File file;
+  Artboard? artboard;
+  late SingleAnimationPainter painter;
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  void init() async {
+    file = (await File.asset(
+      'assets/off_road_car.riv',
+      riveFactory: RiveExampleApp.getCurrentFactory,
+    ))!;
+    painter = SingleAnimationPainter('idle');
+    artboard = file.defaultArtboard();
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    painter.dispose();
+    artboard?.dispose();
+    file.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (artboard == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return RiveArtboardWidget(
+      artboard: artboard!,
+      painter: painter,
+    );
+  }
+}
+```
+
+<Note>
+  To play and mix multiple animations, you need to create your own painter. See
+  the implementation of `SingleAnimationPainter` and extend it to create and
+  advance multiple animations.
+</Note>
+
+#### Handling State Machine Inputs
+
+<Tip>
+  Consider using [Data Binding](/editor/data-binding/overview) for more advanced
+  use cases
+</Tip>
+
+`StateMachineController` has been removed and replaced with `StateMachine`. Important changes:
+
+<Tabs>
+  <Tab title="New API">
+    ```dart State Machine Inputs: New API
+    stateMachine.trigger('myTrigger');
+    stateMachine.boolean('myBool');
+    stateMachine.number('myNumber');
+    ```
+  </Tab>
+  <Tab title="Old API">
+    ```dart State Machine Inputs: Old API
+    controller.getTriggerInput('myTrigger');
+    controller.getBooleanInput('myBool');
+    controller.getNumberInput('myNumber');
+    ```
+  </Tab>
+</Tabs>
+
+You can access the `stateMachine` from the `RiveWidgetController`:
+
+```dart
+final controller = RiveWidgetController(file);
+final stateMachine = controller.stateMachine;
+```
+
+<Info>
+  It is recommended to manually dispose inputs when no longer needed:
+  `input.dispose()`
+</Info>
+
+##### Nested Inputs
+
+You can access nested inputs by providing an optional `path` parameter:
+
+```dart Nested Inputs
+stateMachine.boolean('myBool', path: 'nested/path');
+stateMachine.number('myNumber', path: 'nested/path');
+stateMachine.trigger('myTrigger', path: 'nested/path');
+```
+
+#### Handling Rive Events
+
+<Tip>
+  Consider using [Data Binding](/editor/data-binding/overview) instead of events
+  for more advanced use cases.
+</Tip>
+
+`RiveEvent` has been removed and replaced with `Event`. `Event` is a sealed class with two options:
+
+- `OpenUrlEvent`
+- `GeneralEvent`
+
+Registering an event listener:
+
+<Tabs>
+    <Tab title="New API">
+    ```dart Rive Events: New API
+    // New API
+    final controller = RiveWidgetController(_riveFile!);
+    controller?.stateMachine.addEventListener(_onRiveEvent);
+
+    void _onRiveEvent(Event event) {
+        // Do something with the event
+    }
+    ```
+    </Tab>
+    <Tab title="Old API">
+    ```dart Rive Events: Old API
+    // Old API
+    final controller =
+        StateMachineController.fromArtboard(artboard, 'State Machine 1')!;
+    controller.addEventListener(_onRiveEvent);
+
+    void _onRiveEvent(RiveEvent event) {
+        // Do something with the event
+    }
+    ```
+    </Tab>
+
+</Tabs>
+
+Accessing `properties` returns `Map<String, CustomProperty>`. `CustomProperty` is also a sealed class with options:
+
+- `CustomNumberProperty`
+- `CustomBooleanProperty`
+- `CustomStringProperty`
+
+All of these have a `value` field. On the `Event` class, there are convenient accessors:
+
+```dart
+// Convenient accessors
+event.property(name);           // Returns a CustomProperty
+event.numberProperty(name);     // Returns a CustomNumberProperty
+event.booleanProperty(name);    // Returns a CustomBooleanProperty
+event.stringProperty(name);     // Returns a CustomStringProperty
+```
+
+#### Layout Changes
+
+##### BoxFit → Fit
+
+Previously we used Flutter's `BoxFit` class. Now we use our own `Fit` which includes an extra option:
+
+```dart
+// Old API
+BoxFit.contain
+
+// New API
+Fit.contain
+Fit.layout  // New option for layout-based fitting
+```
+
+#### Asset Loading Changes
+
+The `FileAssetLoader` class and all its subclasses have been removed:
+
+- `CDNAssetLoader`
+- `LocalAssetLoader`
+- `CallbackAssetLoader`
+- `FallbackAssetLoader`
+
+##### Out-of-band Asset Loading
+
+<Tabs>
+  <Tab title="New API">
+    Asset types: `FontAsset`, `ImageAsset`, and `AudioAsset`.
+
+    See this example that demonstrates loading random fonts.
+    ```dart Out-of-band assets: New API
+    // New API
+    final fontFile = await File.asset(
+      'assets/acqua_text_out_of_band.riv',
+      riveFactory: Factory.rive,
+      assetLoader: (asset, bytes) {
+        // Replace font assets that are not embedded in the rive file
+        if (asset is FontAsset && bytes == null) {
+          final urls = [
+            'https://cdn.rive.app/runtime/flutter/IndieFlower-Regular.ttf',
+            'https://cdn.rive.app/runtime/flutter/comic-neue.ttf',
+            'https://cdn.rive.app/runtime/flutter/inter.ttf',
+            'https://cdn.rive.app/runtime/flutter/inter-tight.ttf',
+            'https://cdn.rive.app/runtime/flutter/josefin-sans.ttf',
+            'https://cdn.rive.app/runtime/flutter/send-flowers.ttf',
+          ];
+
+          // pick a random url from the list of fonts
+          http.get(Uri.parse(urls[Random().nextInt(urls.length)])).then((res) {
+            if (mounted) {
+              asset.decode(
+                Uint8List.view(res.bodyBytes.buffer),
+              );
+              setState(() {
+                // force rebuild in case the Rive graphic is no longer advancing
+              });
+            }
+          });
+          return true; // Tell the runtime not to load the asset automatically
+        } else {
+          return false; // Tell the runtime to proceed with loading the asset if it exists
+        }
+      },
+    );
+    ```
+
+    You can also create the asset resource types manually and set them. This is useful if you want to preload the resources:
+    ```dart
+    Future<void?> updateImageAsset(ImageAsset asset, Uint8List bytes) async {
+        final renderImage = await Factory.rive.decodeImage(bytes);
+        if (renderImage != null) {
+            asset.renderImage(renderImage);
+        }
+    }
+
+    Future<void?> updateFontAsset(FontAsset asset, Uint8List bytes) async {
+        final font = await Factory.rive.decodeFont(bytes);
+        if (font != null) {
+            asset.font(font);
+        }
+    }
+
+    Future<void?> updateAudioAsset(AudioAsset asset, Uint8List bytes) async {
+        final audioSource = await Factory.rive.decodeAudio(bytes);
+        if (audioSource != null) {
+            asset.audio(audioSource);
+        }
+    }
+    ```
+
+  </Tab>
+  <Tab title="Old API">
+    ```dart Out-of-band Asset Loading: Old API
+    // Old API
+    assetLoader: (asset, bytes) async {
+      /* async work */
+      final someImage = await ImageAsset.parseBytes(bytes)
+      asset.image = someImage;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+**Key Changes:**
+
+- `assetLoader` can no longer be an asynchronous lambda
+- `ImageAsset.parseBytes(bytes)` → `riveFactory.decodeImage(bytes)` or `asset.decode(bytes)`
+- `FontAsset.parseBytes(bytes)` → `riveFactory.decodeFont(bytes)` or `asset.decode(bytes)`
+- `AudioAsset.parseBytes(bytes)` → `riveFactory.decodeAudio(bytes)` or `asset.decode(bytes)`
+- `ImageAsset.image = value` → `ImageAsset.renderImage(value)` (returns boolean)
+- `FontAsset.font = value` → `FontAsset.font(value)` (returns boolean)
+- `AudioAsset.audio = value` → `AudioAsset.audio(value)` (returns boolean)
+
+#### Text Run Updates
+
+<Tip>
+  We recommend using [Data Binding](/editor/data-binding/overview) instead to
+  update text at runtime.
+</Tip>
+
+It's no longer possible to access a `TextValueRun` object directly. Use these methods instead to access the String value:
+
+```dart Get/Set Text Run Value
+final controller = RiveWidgetController(riveFile);
+final artboard = controller.artboard;
+
+// Get a text run value
+artboard.getText('textRunName')
+artboard.getText('textRunName', path: 'nested/path')
+
+// Set a text run value
+artboard.setText('textRunName', 'new value')
+artboard.setText('textRunName', 'new value', path: 'nested/path')
+```
+
+### Known Missing Features
+
+These features are not available in `v0.14.0` but may be added in future releases:
+
+- Automatic Rive CDN asset loading
+- `speedMultiplier`
+- `useArtboardSize`
+- `clipRect`
+- `isTouchScrollEnabled`
+- `dynamicLibraryHelper`
+
+### Removed Code Paths
+
+All of the "runtime" Dart code has been removed from these paths:
+
+- `src/controllers`
+- `src/core`
+- `src/generated`
+- `rive_core`
+- `utilities`
+
+### Getting Help
+
+If you encounter issues during migration:
+
+1. Check the [Rive Flutter documentation](https://rive.app/docs/flutter)
+2. Review the [Data Binding guide](/editor/data-binding/overview)
+3. Visit the [Rive community forums](https://community.rive.app)
+4. Report issues on the [GitHub repository](https://github.com/rive-app/rive-flutter)

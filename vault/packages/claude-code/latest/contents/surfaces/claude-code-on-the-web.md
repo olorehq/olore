@@ -22,7 +22,7 @@ Claude Code on the web lets developers kick off Claude Code from the Claude app.
 
 Claude Code is also available on the Claude app for [iOS](https://apps.apple.com/us/app/claude-by-anthropic/id6473753684) and [Android](https://play.google.com/store/apps/details?id=com.anthropic.claude) for kicking off tasks on the go and monitoring work in progress.
 
-You can move between local and remote development: [send tasks from your terminal to run on the web](#from-terminal-to-web) with the `&` prefix, or [teleport web sessions back to your terminal](#from-web-to-terminal) to continue locally. To use the web interface while running Claude Code on your own machine instead of cloud infrastructure, see [Remote Control](/en/remote-control).
+You can [kick off new tasks on the web from your terminal](#from-terminal-to-web) with `--remote`, or [teleport web sessions back to your terminal](#from-web-to-terminal) to continue locally. To use the web interface while running Claude Code on your own machine instead of cloud infrastructure, see [Remote Control](/en/remote-control).
 
 ## Who can use Claude Code on the web?
 
@@ -47,7 +47,7 @@ Claude Code on the web is available in research preview to:
 When you start a task on Claude Code on the web:
 
 1. **Repository cloning**: Your repository is cloned to an Anthropic-managed virtual machine
-2. **Environment setup**: Claude prepares a secure cloud environment with your code
+2. **Environment setup**: Claude prepares a secure cloud environment with your code, then runs your [setup script](#setup-scripts) if configured
 3. **Network configuration**: Internet access is configured based on your settings
 4. **Task execution**: Claude analyzes code, makes changes, runs tests, and checks its work
 5. **Completion**: You're notified when finished and can create a PR with the changes
@@ -69,50 +69,44 @@ This lets you refine changes through multiple rounds of feedback without creatin
 
 ## Moving tasks between web and terminal
 
-You can start tasks on the web and continue them in your terminal, or send tasks from your terminal to run on the web. Web sessions persist even if you close your laptop, and you can monitor them from anywhere including the Claude iOS app.
+You can start new tasks on the web from your terminal, or pull web sessions into your terminal to continue locally. Web sessions persist even if you close your laptop, and you can monitor them from anywhere including the Claude mobile app.
 
 <Note>
-  Session handoff is one-way: you can pull web sessions into your terminal, but you can't push an existing terminal session to the web. The [`&` prefix](#from-terminal-to-web) creates a *new* web session with your current conversation context.
+  Session handoff is one-way: you can pull web sessions into your terminal, but you can't push an existing terminal session to the web. The `--remote` flag creates a *new* web session for your current repository.
 </Note>
 
 ### From terminal to web
 
-Start a message with `&` inside Claude Code to send a task to run on the web:
-
-```
-& Fix the authentication bug in src/auth/login.ts
-```
-
-This creates a new web session on claude.ai with your current conversation context. The task runs in the cloud while you continue working locally. Use `/tasks` to check progress, or open the session on claude.ai or the Claude iOS app to interact directly. From there you can steer Claude, provide feedback, or answer questions just like any other conversation.
-
-You can also start a web session directly from the command line:
+Start a web session from the command line with the `--remote` flag:
 
 ```bash  theme={null}
 claude --remote "Fix the authentication bug in src/auth/login.ts"
 ```
 
-#### Tips for background tasks
+This creates a new web session on claude.ai. The task runs in the cloud while you continue working locally. Use `/tasks` to check progress, or open the session on claude.ai or the Claude mobile app to interact directly. From there you can steer Claude, provide feedback, or answer questions just like any other conversation.
 
-**Plan locally, execute remotely**: For complex tasks, start Claude in plan mode to collaborate on the approach before sending work to the web:
+#### Tips for remote tasks
+
+**Plan locally, execute remotely**: For complex tasks, start Claude in plan mode to collaborate on the approach, then send work to the web:
 
 ```bash  theme={null}
 claude --permission-mode plan
 ```
 
-In plan mode, Claude can only read files and explore the codebase. Once you're satisfied with the plan, send it to the web for autonomous execution:
+In plan mode, Claude can only read files and explore the codebase. Once you're satisfied with the plan, start a remote session for autonomous execution:
 
-```
-& Execute the migration plan we discussed
+```bash  theme={null}
+claude --remote "Execute the migration plan in docs/migration-plan.md"
 ```
 
 This pattern gives you control over the strategy while letting Claude execute autonomously in the cloud.
 
-**Run tasks in parallel**: Each `&` command creates its own web session that runs independently. You can kick off multiple tasks and they'll all run simultaneously in separate sessions:
+**Run tasks in parallel**: Each `--remote` command creates its own web session that runs independently. You can kick off multiple tasks and they'll all run simultaneously in separate sessions:
 
-```
-& Fix the flaky test in auth.spec.ts
-& Update the API documentation
-& Refactor the logger to use structured output
+```bash  theme={null}
+claude --remote "Fix the flaky test in auth.spec.ts"
+claude --remote "Update the API documentation"
+claude --remote "Refactor the logger to use structured output"
 ```
 
 Monitor all sessions with `/tasks`. When a session completes, you can create a PR from the web interface or [teleport](#from-web-to-terminal) the session to your terminal to continue working.
@@ -168,6 +162,23 @@ verification is not enabled by default.
 Enable repository access verification and/or withhold your name from your shared
 sessions by going to Settings > Claude Code > Sharing settings.
 
+## Managing sessions
+
+### Archiving sessions
+
+You can archive sessions to keep your session list organized. Archived sessions are hidden from the default session list but can be viewed by filtering for archived sessions.
+
+To archive a session, hover over the session in the sidebar and click the archive icon.
+
+### Deleting sessions
+
+Deleting a session permanently removes the session and its data. This action cannot be undone. You can delete a session in two ways:
+
+* **From the sidebar**: Filter for archived sessions, then hover over the session you want to delete and click the delete icon
+* **From the session menu**: Open a session, click the dropdown next to the session title, and select **Delete**
+
+You will be asked to confirm before a session is deleted.
+
 ## Cloud environment
 
 ### Default image
@@ -216,7 +227,7 @@ The universal image includes the following databases:
 
 When you start a session in Claude Code on the web, here's what happens under the hood:
 
-1. **Environment preparation**: We clone your repository and run any configured Claude hooks for initialization. The repo will be cloned with the default branch on your GitHub repo. If you would like to check out a specific branch, you can specify that in the prompt.
+1. **Environment preparation**: We clone your repository and run any configured [setup script](#setup-scripts). The repo will be cloned with the default branch on your GitHub repo. If you would like to check out a specific branch, you can specify that in the prompt.
 
 2. **Network configuration**: We configure internet access for the agent. Internet access is limited by default, but you can configure the environment to have no internet or full internet access based on your needs.
 
@@ -228,26 +239,76 @@ When you start a session in Claude Code on the web, here's what happens under th
   Claude operates entirely through the terminal and CLI tools available in the environment. It uses the pre-installed tools in the universal image and any additional tools you install through hooks or dependency management.
 </Note>
 
-**To add a new environment:** Select the current environment to open the environment selector, and then select "Add environment". This will open a dialog where you can specify the environment name, network access level, and any environment variables you want to set.
+**To add a new environment:** Select the current environment to open the environment selector, and then select "Add environment". This will open a dialog where you can specify the environment name, network access level, environment variables, and a [setup script](#setup-scripts).
 
-**To update an existing environment:** Select the current environment, to the right of the environment name, and select the settings button. This will open a dialog where you can update the environment name, network access, and environment variables.
+**To update an existing environment:** Select the current environment, to the right of the environment name, and select the settings button. This will open a dialog where you can update the environment name, network access, environment variables, and setup script.
 
-**To select your default environment from the terminal:** If you have multiple environments configured, run `/remote-env` to choose which one to use when starting web sessions from your terminal with `&` or `--remote`. With a single environment, this command shows your current configuration.
+**To select your default environment from the terminal:** If you have multiple environments configured, run `/remote-env` to choose which one to use when starting web sessions from your terminal with `--remote`. With a single environment, this command shows your current configuration.
 
 <Note>
   Environment variables must be specified as key-value pairs, in [`.env` format](https://www.dotenv.org/). For example:
 
-  ```
+  ```text  theme={null}
   API_KEY=your_api_key
   DEBUG=true
   ```
 </Note>
 
+### Setup scripts
+
+A setup script is a Bash script that runs when a new cloud session starts, before Claude Code launches. Use setup scripts to install dependencies, configure tools, or prepare anything the cloud environment needs that isn't in the [default image](#default-image).
+
+Scripts run as root on Ubuntu 24.04, so `apt install` and most language package managers work.
+
+<Tip>
+  To check what's already installed before adding it to your script, ask Claude to run `check-tools` in a cloud session.
+</Tip>
+
+To add a setup script, open the environment settings dialog and enter your script in the **Setup script** field.
+
+This example installs the `gh` CLI, which isn't in the default image:
+
+```bash  theme={null}
+#!/bin/bash
+apt update && apt install -y gh
+```
+
+Setup scripts run only when creating a new session. They are skipped when resuming an existing session.
+
+If the script exits non-zero, the session fails to start. Append `|| true` to non-critical commands to avoid blocking the session on a flaky install.
+
+<Note>
+  Setup scripts that install packages need network access to reach registries. The default network access allows connections to [common package registries](#default-allowed-domains) including npm, PyPI, RubyGems, and crates.io. Scripts will fail to install packages if your environment has network access disabled.
+</Note>
+
+#### Setup scripts vs. SessionStart hooks
+
+Use a setup script to install things the cloud needs but your laptop already has, like a language runtime or CLI tool. Use a [SessionStart hook](/en/hooks#sessionstart) for project setup that should run everywhere, cloud and local, like `npm install`.
+
+Both run at the start of a session, but they belong to different places:
+
+|               | Setup scripts                                     | SessionStart hooks                                             |
+| ------------- | ------------------------------------------------- | -------------------------------------------------------------- |
+| Attached to   | The cloud environment                             | Your repository                                                |
+| Configured in | Cloud environment UI                              | `.claude/settings.json` in your repo                           |
+| Runs          | Before Claude Code launches, on new sessions only | After Claude Code launches, on every session including resumed |
+| Scope         | Cloud environments only                           | Both local and cloud                                           |
+
+SessionStart hooks can also be defined in your user-level `~/.claude/settings.json` locally, but user-level settings don't carry over to cloud sessions. In the cloud, only hooks committed to the repo run.
+
 ### Dependency management
 
-Custom environment images and snapshots are not yet supported. As a workaround, you can use [SessionStart hooks](/en/hooks#sessionstart) to install packages when a session starts. This approach has [known limitations](#dependency-management-limitations).
+Custom environment images and snapshots are not yet supported. Use [setup scripts](#setup-scripts) to install packages when a session starts, or [SessionStart hooks](/en/hooks#sessionstart) for dependency installation that should also run in local environments. SessionStart hooks have [known limitations](#dependency-management-limitations).
 
-To configure automatic dependency installation, add a SessionStart hook to your repository's `.claude/settings.json` file:
+To configure automatic dependency installation with a setup script, open your environment settings and add a script:
+
+```bash  theme={null}
+#!/bin/bash
+npm install
+pip install -r requirements.txt
+```
+
+Alternatively, you can use SessionStart hooks in your repository's `.claude/settings.json` file for dependency installation that should also run in local environments:
 
 ```json  theme={null}
 {
@@ -600,7 +661,7 @@ Claude Code on the web shares rate limits with all other Claude and Claude Code 
 
 ## Best practices
 
-1. **Use Claude Code hooks**: Configure [SessionStart hooks](/en/hooks#sessionstart) to automate environment setup and dependency installation.
+1. **Automate environment setup**: Use [setup scripts](#setup-scripts) to install dependencies and configure tools before Claude Code launches. For more advanced scenarios, configure [SessionStart hooks](/en/hooks#sessionstart).
 2. **Document requirements**: Clearly specify dependencies and commands in your `CLAUDE.md` file. If you have an `AGENTS.md` file, you can source it in your `CLAUDE.md` using `@AGENTS.md` to maintain a single source of truth.
 
 ## Related resources

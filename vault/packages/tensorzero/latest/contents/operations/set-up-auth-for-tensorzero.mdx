@@ -1,0 +1,327 @@
+---
+title: Set up auth for TensorZero
+description: Learn how to set up TensorZero API keys to authenticate your inference requests and manage access control for your workflows.
+---
+
+You can create TensorZero API keys to authenticate your requests to the TensorZero Gateway.
+This way, your clients don't need access to model provider credentials, making it easier to manage access and security.
+
+This page shows how to:
+
+- Create API keys for the TensorZero Gateway
+- Require clients to use these API keys for requests
+- Manage and disable API keys
+
+<Note>
+
+TensorZero supports authentication for the gateway.
+Authentication for the UI is coming soon.
+In the meantime, we recommend pairing the UI with complementary products like Nginx, OAuth2 Proxy, or Tailscale.
+
+</Note>
+
+## Configure
+
+<Tip>
+
+You can find a [complete runnable example](https://github.com/tensorzero/tensorzero/tree/main/examples/docs/guides/operations/set-up-auth-for-tensorzero) of this guide on GitHub.
+
+</Tip>
+
+<Steps>
+
+<Step title="Configure your gateway to require authentication">
+
+You can instruct the TensorZero Gateway to require authentication in the configuration:
+
+```toml title="tensorzero.toml"
+[gateway]
+auth.enabled = true
+```
+
+With this setting, every gateway endpoint except for `/status` and `/health` will require authentication.
+
+</Step>
+
+<Step title="Deploy TensorZero and Postgres">
+
+You must set up Postgres to use TensorZero's authentication features.
+
+- [Deploy the TensorZero Gateway](/deployment/tensorzero-gateway)
+- [Deploy the TensorZero UI](/deployment/tensorzero-ui)
+- [Deploy Postgres](/deployment/postgres)
+
+<Accordion title="Example: Docker Compose">
+
+You can deploy all the requirements using the Docker Compose file below:
+
+```yaml title="docker-compose.yml"
+# This is a simplified example for learning purposes. Do not use this in production.
+# For production-ready deployments, see: https://www.tensorzero.com/docs/deployment/tensorzero-gateway
+
+services:
+  gateway:
+    image: tensorzero/gateway
+    volumes:
+      - ./config:/app/config:ro
+    command: --config-file /app/config/tensorzero.toml
+    environment:
+      TENSORZERO_POSTGRES_URL: postgres://postgres:postgres@postgres:5432/tensorzero
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Environment variable OPENAI_API_KEY must be set.}
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health",
+        ]
+      start_period: 1s
+      start_interval: 1s
+      timeout: 1s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gateway-run-postgres-migrations:
+        condition: service_completed_successfully
+
+  ui:
+    image: tensorzero/ui
+    environment:
+      TENSORZERO_API_KEY: $TENSORZERO_API_KEY
+      TENSORZERO_POSTGRES_URL: postgres://postgres:postgres@postgres:5432/tensorzero
+      TENSORZERO_GATEWAY_URL: http://gateway:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  postgres:
+    image: tensorzero/postgres:17
+    command: ["postgres", "-c", "cron.database_name=tensorzero"]
+    environment:
+      POSTGRES_DB: tensorzero
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tensorzero"]
+      start_period: 30s
+      start_interval: 1s
+      timeout: 1s
+
+  # Apply Postgres migrations before the gateway starts
+  gateway-run-postgres-migrations:
+    image: tensorzero/gateway
+    environment:
+      TENSORZERO_POSTGRES_URL: postgres://postgres:postgres@postgres:5432/tensorzero
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["--run-postgres-migrations"]
+
+volumes:
+  postgres-data:
+```
+
+</Accordion>
+
+</Step>
+
+<Step title="Create a TensorZero API key">
+
+You can create API keys using the TensorZero UI.
+If you're running a standard local deployment, visit `http://localhost:4000/api-keys` to create a key.
+
+Alternatively, you can create API keys programmatically in the CLI using the gateway binary with the `--create-api-key` flag.
+For example:
+
+```bash
+docker compose run --rm gateway --create-api-key
+```
+
+You can optionally set an expiration date and time for the new API key by providing the UTC timestamp as an argument, like so:
+
+```bash
+docker compose run --rm gateway --create-api-key --expiration "2025-12-20 23:00:00.000000 UTC"
+```
+
+<Warning>
+
+The API key is a secret and should be kept secure.
+
+</Warning>
+
+Once you've created an API key, set the `TENSORZERO_API_KEY` environment variable.
+
+</Step>
+
+<Step title="Make an authenticated inference request">
+
+<Tabs>
+
+<Tab title="Python (OpenAI SDK)">
+
+You can make authenticated requests by setting the `api_key` parameter in your OpenAI client:
+
+```python title="openai_sdk.py"
+import os
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TENSORZERO_API_KEY"],
+    base_url="http://localhost:3000/openai/v1",
+)
+
+response = client.chat.completions.create(
+    model="tensorzero::model_name::openai::gpt-5-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": "Tell me a fun fact.",
+        }
+    ],
+)
+
+print(response)
+```
+
+</Tab>
+
+<Tab title="Node (OpenAI SDK)">
+
+You can make authenticated requests by setting the `apiKey` parameter in your OpenAI client:
+
+```ts title="openai_sdk.ts"
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.TENSORZERO_API_KEY,
+  baseURL: "http://localhost:3000/openai/v1",
+});
+
+const response = await client.chat.completions.create({
+  model: "tensorzero::model_name::openai::gpt-5-mini",
+  messages: [
+    {
+      role: "user",
+      content: "Tell me a fun fact.",
+    },
+  ],
+});
+```
+
+</Tab>
+
+<Tab title="HTTP">
+
+You can make authenticated requests by setting the `Authorization` HTTP header to `Bearer <API_KEY>`:
+
+```bash title="curl.sh"
+curl -X POST http://localhost:3000/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TENSORZERO_API_KEY}" \
+  -d '{
+    "model": "tensorzero::model_name::openai::gpt-5-mini",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me a fun fact."
+      }
+    ]
+  }'
+```
+
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step title="Manage API keys">
+
+You can manage and disable API keys in the TensorZero UI.
+If you're running a standard local deployment, visit `http://localhost:4000/api-keys` to manage your keys.
+
+Alternatively, you can disable API keys programmatically in the CLI using the gateway binary with the `--disable-api-key` flag.
+Pass the public ID of the key you want to disable (the 12-character portion after `sk-t0-`).
+For example:
+
+```bash
+docker compose run --rm gateway --disable-api-key xxxxxxxxxxxx
+```
+
+</Step>
+
+</Steps>
+
+## Advanced
+
+### Customize the gateway's authentication cache
+
+By default, the TensorZero Gateway caches authentication database queries for one second.
+You can customize this behavior in the configuration:
+
+```toml
+[gateway.auth.cache]
+enabled = true # boolean
+ttl_ms = 60_000 # one minute
+```
+
+### Set up rate limiting by API key
+
+Once you have authentication enabled, you can apply rate limits on a per-API-key basis using the `api_key_public_id` scope in your rate limiting rules.
+This allows you to enforce different usage limits for different API keys, which is useful for implementing tiered access or preventing individual keys from consuming too many resources.
+
+<Tip>
+
+TensorZero API keys have the following format:
+
+`sk-t0-xxxxxxxxxxxx-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy`
+
+The `xxxxxxxxxxxx` portion is the 12-character public ID that you can use in rate limiting rules.
+The remaining portion of the key is secret and should be kept secure.
+
+</Tip>
+
+For example, you can limit each API key to 100 model inferences per hour, but allow a specific API key to make 1000 inferences:
+
+```toml
+# Each API key can make up to 100 model inferences per hour
+[[rate_limiting.rules]]
+priority = 0
+model_inferences_per_hour = 100
+scope = [
+    { api_key_public_id = "tensorzero::each" }
+]
+
+# But override the limit for a specific API key
+[[rate_limiting.rules]]
+priority = 1
+model_inferences_per_hour = 1000
+scope = [
+    { api_key_public_id = "xxxxxxxxxxxx" }
+]
+```
+
+See [Enforce custom rate limits](/operations/enforce-custom-rate-limits) for more details on configuring rate limits with API keys.
+
+### Centralize auth across multiple TensorZero deployments
+
+If you have multiple TensorZero deployments (e.g. one per team), you can centralize auth using gateway relay.
+
+With gateway relay, an LLM inference request can be routed through multiple independent TensorZero Gateway deployments before reaching a model provider.
+This enables you to enforce organization-wide controls without restricting how teams build their LLM features.
+
+See [Centralize auth, rate limits, and more](/operations/centralize-auth-rate-limits-and-more) for details.

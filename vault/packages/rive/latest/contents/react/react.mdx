@@ -1,0 +1,118 @@
+---
+title: 'React'
+description: 'React runtime for Rive.'
+---
+
+import NoteOnFeatureSupport from "/snippets/runtimes/rendering-feature-support.mdx"
+import { Demos } from '/snippets/demos.jsx'
+
+<NoteOnFeatureSupport/>
+
+<Demos examples={['quickStartReact']} />
+
+## Overview
+
+This guide documents how to get started using the React runtime library. Rive runtime libraries are open-source. The source is available in its [GitHub repository](https://github.com/rive-app/rive-react).
+
+This library contains a React component, as well as custom hooks to help integrate Rive into your web application (types included). Under the hood, this runtime is a React-friendly wrapper around the `@rive-app/webgl2` runtime, exposing types, and Rive instance functionality.
+
+## Getting Started
+
+Follow the steps below for a quick start on integrating Rive into your React app.
+
+<Steps>
+  <Step title="Install the dependency">
+    The Rive React runtime allows for two main options based on which backing renderer you need.
+
+    - **(Recommended)** `@rive-app/react-webgl2` - Wraps the `@rive-app/webgl2` dependency, which uses the Rive Renderer.
+    - `@rive-app/react-canvas` - Wraps the `@rive-app/canvas` dependency. This does not utilize the Rive Renderer and doesn't support advanced features, like Vector Feathering.
+    - `@rive-app/react-canvas-lite` - Similar to `@rive-app/react-canvas`, but [smaller](/runtimes/web/canvas-vs-webgl). This is not recommended if the Rive file uses [Rive Text](/editor/text/) or other advanced features.
+
+    <Note>
+    To take advantage of the full performance benefits of the Rive Renderer with `react-webgl2`, [enable the draft](https://www.wikihow.tech/Enable-WebGL-Draft-Extensions-in-Google-Chrome) `WEBGL_shader_pixel_local_storage` Chrome Extension (by adding WebGL Draft Extensions).
+
+    If the draft extension is disabled on a user's device, Rive will fall back to an MSAA solution (also with WebGL2) on browsers without the extension support.
+
+    Current work is underway with major browsers to support this extension by default in consumer's browsers.
+    </Note>
+
+    ```bash
+    npm i --save @rive-app/react-webgl2
+    ```
+  </Step>
+  <Step title="Render the Rive component">
+    Rive React provides a basic component as its default import for displaying simple animations with a few props you can set such as artboard and layout. Include the code below in your React project to test out an example Rive animation.
+
+    ```javascript
+    import Rive from '@rive-app/react-webgl2';
+
+    export const Simple = () => (
+      <Rive
+        src="https://cdn.rive.app/animations/vehicles.riv"
+        stateMachines="bumpy"
+      />
+    );
+    ```
+
+    See [Parameters and Return Values](/runtimes/react/parameters-and-return-values) for more on the parameters and return values of the `<Rive />` component.
+  </Step>
+  <Step title="Using the useRive hook">
+    In many cases, you may not only need the React component to render your animation but also the `rive` object instance that controls it as well. The Rive object instance allows you to tap into APIs for:
+
+    - Setting Rive Text values dynamically
+    - Subscribing to Rive Events with your own callbacks
+    - Controlling animation playback (i.e. pause and play)
+    - ... and [much more](https://github.com/rive-app/rive-wasm)
+
+    The `useRive` hook returns both this `rive` instance, as well as the React component that mounts the underlying `<canvas>` element that Rive will draw onto.
+
+    ```javascript
+    import { useRive } from '@rive-app/react-webgl2';
+
+    export default function Simple() {
+      const { rive, RiveComponent } = useRive({
+        src: 'https://cdn.rive.app/animations/vehicles.riv',
+        stateMachines: "bumpy",
+        autoplay: false,
+      });
+
+      return (
+        <RiveComponent
+          onMouseEnter={() => rive && rive.play()}
+          onMouseLeave={() => rive && rive.pause()}
+        />
+      );
+    }
+    ```
+
+    <Note>
+    **Note:** Rive will not instantiate until the `<RiveCopmonent />` is rendered out, as the underlying `<canvas>` element needs to be present in the DOM.
+    </Note>
+
+    Also, keep in mind that the canvas size depends on the container it's placed within. Initially, this is 0x0. Either pass a `className` to `RiveComponent` or wrap `RiveComponent` with an appropriately sized container.
+
+    See [here](/runtimes/react/parameters-and-return-values) for more on the parameters and return values of `useRive`.
+
+    Additionally, explore subsequent runtime pages to learn how to control animation playback, state machines, and more.
+  </Step>
+</Steps>
+
+## Rendering Considerations with useRive
+
+At this time, we highly recommend isolating your usage of `useRive` to its own wrapper component if you plan on conditionally rendering the `<RiveComponent />` returned from the `useRive` hook. This is due to Rive being instanced when the component is mounted and the rendering context associated with a specific underlying `<canvas>` element. When React tries to unmount/re-render, you may end up with the animation restarting or not displaying when a new `<canvas>` is mounted.
+
+By isolating `useRive` to its own wrapper component, Rive will have a chance to properly clean up, and restart the animation with a new canvas. In a parent component, you can then conditionally render the wrapper component based on any state or prop-based logic.
+
+Check out [this example CodeSandbox](https://codesandbox.io/p/sandbox/rive-react-swapping-skins-with-solos-ctcnlx?file=%2Fsrc%2FApp.tsx) to see this pattern in use.
+
+## Resources
+
+**GitHub**: [https://github.com/rive-app/rive-react](https://github.com/rive-app/rive-react)
+
+**Types**: [https://github.com/rive-app/rive-react/blob/main/src/types.ts](https://github.com/rive-app/rive-react/blob/main/src/types.ts)
+
+**Examples**
+- Simple skinning example: [https://codesandbox.io/p/sandbox/rive-react-swapping-skins-with-solos-ctcnlx](https://codesandbox.io/p/sandbox/rive-react-swapping-skins-with-solos-ctcnlx?file=%2Fsrc%2FApp.tsx)
+- Storybook demo: [https://rive-app.github.io/rive-react/](https://rive-app.github.io/rive-react/)
+- Animated Login Form:
+  - Demo: [https://rive-app.github.io/rive-use-cases/?path=/story/example-loginformcomponent--primary](https://rive-app.github.io/rive-use-cases/?path=/story/example-loginformcomponent--primary)

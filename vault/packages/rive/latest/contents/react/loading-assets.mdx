@@ -1,0 +1,49 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import { Demos } from "/snippets/demos.jsx";
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import LoadingViaCDN from '/snippets/runtimes/loading-assets/loading-via-cdn.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<LoadingViaCDN />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+<Demos examples={["fontsHostedCompressed"]} runtime="react" />
+
+
+### Examples
+
+- [Specify a font asset to load](https://codesandbox.io/p/sandbox/peaceful-water-2chg77?file=%2Fsrc%2FApp.tsx%3A20%2C38)
+- [Localization - Swap a font based on language (TypeScript & i18n)](https://codesandbox.io/p/sandbox/rive-react-i18n-localization-and-font-swapping-kfsqsl?file=%2Fsrc%2FRiveDemo.tsx)
+- [Specify an image asset to load](https://codesandbox.io/p/sandbox/rive-out-of-band-images-react-forked-gstq2w?file=%2Fsrc%2FApp.tsx%3A14%2C30)
+
+### Using the Asset Handler API
+
+When instantiating a new Rive instance with the `useRive` hook, add an `assetLoader` callback property to the list of parameters. This callback will be called for every asset the runtime detects from the `.riv` file on load, and will be responsible for either handling the load of an asset at runtime or passing on the responsibility and giving the runtime a chance to load it otherwise.
+
+<Note>
+Note that you can only use the `assetLoader` callback with the `useRive` hook, and not the default-exported `<Rive />` component from the React runtime
+</Note>
+
+```javascript
+assetLoader: (asset: rc.FileAsset, bytes: Uint8Array) => boolean;
+```
+
+See the [Web (JS) example](/runtimes/web/loading-assets#using-the-asset-handler-api) for more API details.
+
+<Resources />

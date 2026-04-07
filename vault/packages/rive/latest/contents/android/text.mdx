@@ -1,0 +1,116 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+
+<Overview />
+
+#### Reading Text via RiveAnimationView
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `RiveAnimationView`:
+
+```kotlin
+fun getTextRunValue(textRunName: String): String? = try
+```
+
+Supply the text run name and you'll have the Rive text run value returned, or `null` if the text run could not be queried.
+
+#### Setting Text via RiveAnimationView
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `RiveAnimationView`:
+
+```kotlin
+fun setTextRunValue(textRunName: String, textValue: String)
+```
+
+Supply the text run name and a second parameter, `textValue`, with a String value that you want to set the new text value for.
+
+<Note>
+If the supplied `textRunName` Rive text run cannot be queried on the active artboard, Rive will throw a `RiveException` that you may need to catch and handle gracefully in your application.
+</Note>
+#### Reference to Rive TextRun
+
+You can also choose to query the active Artboard for the Rive text run reference and get/set a text property manually.
+
+```kotlin
+private val textRun by lazy(LazyThreadSafetyMode.NONE) {
+    yourRiveAnimationView.artboardRenderer?.activeArtboard?.textRun("name")
+}
+```
+
+**Example Usage**
+
+```kotlin
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
+import android.widget.EditText
+import androidx.appcompat.app.AppCompatActivity
+import app.rive.runtime.kotlin.RiveAnimationView
+
+class DynamicTextActivity : AppCompatActivity(), TextWatcher {
+    private val animationView by lazy(LazyThreadSafetyMode.NONE) {
+        findViewById<RiveAnimationView>(R.id.dynamic_text)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.dynamic_text)
+        val editText = findViewById<EditText>(R.id.text_run_value)
+        editText.addTextChangedListener(this)
+    }
+
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        // get the current value of the reference
+        animationView.getTextRunValue("name")
+    }
+
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        // update the reference
+        animationView.setTextRunValue("name", s.toString())
+    }
+}
+```
+
+<NestedArtboard />
+
+#### Reading Text via RiveAnimationView
+
+To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `RiveAnimationView`:
+
+```csharp
+fun getTextRunValue(textRunName: String, path: String): String? = try
+```
+
+Supply the text run name and the path to where it exists and you'll have the Rive text run value returned, or `null` if the text run could not be queried.
+
+#### Setting Text via RiveAnimationView
+
+To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `RiveAnimationView`:
+
+```csharp
+fun setTextRunValue(textRunName: String, textValue: String, path: String)
+```
+
+Supply the text run name, a second parameter, `textValue`, with a String value that you want to set the new text value for, and the `path` value to where the text run exists at an artboard level.
+
+If the supplied `textRunName` Rive text run cannot be queried on the active artboard, Rive will throw a `RiveException` that you may need to catch and handle gracefully in your application.
+
+#### Reference to Rive TextRun
+
+You can also choose to query the active Artboard for the Rive text run reference and get/set a text property manually.
+
+```csharp
+private val textRun by lazy(LazyThreadSafetyMode.NONE) {
+    yourRiveAnimationView.artboardRenderer?.activeArtboard?.textRun("name", "path/to/artboard")
+}
+```
+
+<SemanticsForAccessibility />

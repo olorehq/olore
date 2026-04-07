@@ -1,0 +1,90 @@
+---
+title: "State Machine Playback"
+description: "Playing a state machine"
+---
+
+import Overview from "/snippets/runtimes/state-machines/overview.mdx"
+import ControllingPlayback from "/snippets/runtimes/state-machines/controlling-playback.mdx"
+import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-state-machines.mdx"
+
+<Overview />
+
+<ControllingPlayback />
+
+<PlayingStateMachines />
+
+There are a number of ways to play/select a state machine in Flutter.
+
+#### When Using `RiveWidgetController` (Recommended)
+
+When you create a `RiveWidgetController` it will use the default state machine, or you can specify a state machine by name or index.
+
+```dart
+// Default state machine
+var controller = RiveWidgetController(riveFile);
+// By name
+controller = RiveWidgetController(
+  riveFile,
+  stateMachineSelector: StateMachineSelector.byName("State Machine 1"),
+);
+// By index
+controller = RiveWidgetController(
+  riveFile,
+  stateMachineSelector: StateMachineSelector.byIndex(0),
+);
+```
+
+Passing this controller to a `RiveWidget` will automatically play the state machine.
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return RiveWidget(controller: controller);
+}
+```
+
+You can mark the controller as `active` to play/pause the state machine (advancing and drawing):
+
+```dart
+final controller = RiveWidgetController(riveFile);
+controller.active = false;
+```
+
+The `StateMachineSelector` can also be passed to `RiveWidgetBuilder` to specify which state machine to use:
+
+```dart
+return RiveWidgetBuilder(
+  fileLoader: fileLoader,
+  stateMachineSelector: StateMachineSelector.byIndex(0),
+  builder: (context, state) => switch (state) {
+    /// ...
+  },
+);
+```
+
+#### When Using `StateMachinePainter`
+
+When using `StateMachinePainter`, you can specify the state machine to use by passing an optional name.
+```dart
+// Default state machine
+final painter = rive.StateMachinePainter(withStateMachine: _withStateMachine);
+// By name
+painter = rive.StateMachinePainter(
+  withStateMachine: _withStateMachine,
+  stateMachineName: 'State Machine 1  ',
+);
+```
+
+#### Creating a State Machine Directly
+
+Create the state machine directly from an `Artboard`:
+
+```dart
+final artboard = riveFile.defaultArtboard()!;
+// Default state machine
+var stateMachine = artboard.defaultStateMachine();
+// By name
+stateMachine = artboard.stateMachine('State Machine 1');
+// By index
+stateMachine = artboard.stateMachineAt(0);
+```

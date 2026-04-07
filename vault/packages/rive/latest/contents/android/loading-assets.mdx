@@ -1,0 +1,100 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import LoadingViaCDN from '/snippets/runtimes/loading-assets/loading-via-cdn.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<LoadingViaCDN />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+### Examples
+
+- https://github.com/rive-app/rive-android/blob/master/app/src/main/java/app/rive/runtime/example/AssetLoaderFragment.kt
+
+### Using the Asset Handler API
+
+When instantiating a new `RiveAnimationView`, set a new attribute called `riveAssetLoaderClass` whose value is a string name of the full path to a class that will be responsible for either handling the load of an asset at runtime or passing on the responsibility and giving the runtime a chance to load it otherwise.
+
+**via XML**
+
+```kotlin
+<app.rive.runtime.kotlin.RiveAnimationView
+    android:id="@+id/rive_font_load_simple"
+    app:riveStateMachine="State Machine 1"
+    app:riveAssetLoaderClass="app.rive.runtime.example.HandleRiveFontAsset"
+    app:riveResource="@raw/acqua_text" />
+```
+
+In your accompanying activity, create a new class with the name provided to `riveAssetLoaderClass`, who should implement the `ContextAssetLoader` abstract class from the Rive runtime. Here, you can override a `loadContents` function, which will do the work of determining what assets (if any) to load:
+
+- `asset` - Reference to a `FileAsset` object. You can grab a number of properties from this object, such as the name, asset type, and more. You'll also use this to set a new Rive-specific asset for the dynamically loaded in asset you want to set
+- `bytes` - Array of bytes for the asset (if possible, such as if it's an embedded asset)
+
+```kotlin
+override fun loadContents(asset: FileAsset, inBandBytes: ByteArray): Boolean
+```
+
+**Important**: Note that the return value is a `boolean`, which is where you need to return `true` if you intend on handling and loading in an asset yourself, or `false` if you do not want to handle asset loading for that given asset yourself, and attempt to have the runtime try to load the asset.
+
+**Example Usage**
+
+To accompany the XML snippet above, here's an example of what the accompanying activity may look like:
+
+```kotlin
+
+
+package app.rive.runtime.example
+
+import android.content.Context
+import android.os.Bundle
+import android.widget.FrameLayout
+import androidx.appcompat.app.AppCompatActivity
+import app.rive.runtime.kotlin.core.ExperimentalAssetLoader
+import app.rive.runtime.kotlin.core.FileAsset
+
+
+import app.rive.runtime.kotlin.core.ContextAssetLoader
+import kotlin.random.Random
+
+class FontLoadActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.rive_font_load_simple)
+    }
+}
+
+open class HandleSimpleRiveAsset(context: Context) : ContextAssetLoader(context) {
+    private val fontPool = arrayOf(
+        R.raw.montserrat,
+        R.raw.opensans,
+    )
+    /**
+    * Override this method to customize the asset loading process.
+    */
+    override fun loadContents(asset: FileAsset, inBandBytes: ByteArray): Boolean {
+        val randFontIndex = Random.nextInt(fontPool.size)
+        val fontToLoad = fontPool[randFontIndex]
+        context.resources.openRawResource(fontToLoad).use {
+            // Load in the font bytes to the asset
+            return asset.decode(it.readBytes())
+        }
+    }
+}
+```
+
+<Resources />

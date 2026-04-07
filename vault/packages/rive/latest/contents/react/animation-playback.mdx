@@ -1,0 +1,114 @@
+---
+title: "Animation Playback"
+description: "⚠️ DEPRECATED: Use State Machines instead of direct animation playback at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/animation-playback/overview.mdx"
+import ChoosingStartingAnimations from "/snippets/runtimes/animation-playback/choosing-starting-animations.mdx"
+import ControllingPlayback from "/snippets/runtimes/animation-playback/controlling-playback.mdx"
+
+<Overview />
+
+<ChoosingStartingAnimations />
+
+```javascript
+// Play the idle animation
+export const Simple = () => (
+  <Rive src="https://cdn.rive.app/animations/vehicles.riv" animations="idle" />
+);
+
+// With `useRive` Hook:
+export default function Simple() {
+  const { RiveComponent } = useRive({
+    src: 'https://cdn.rive.app/animations/vehicles.riv',
+    animations: ['idle'],
+    autoplay: true,
+  });
+
+  return <RiveComponent />;
+}
+```
+
+<ControllingPlayback />
+
+#### Invoking Playback Controls
+
+Very similarly to Web, you can pass in Rive params and callbacks for certain animation events. See the Web tab for some examples of callbacks you can set. Additionally, you can use the `rive` object returned from the `useRive` hook to invoke playback controls.
+
+See the example below here: [https://codesandbox.io/p/sandbox/adoring-sea-n7m59f](https://codesandbox.io/p/sandbox/adoring-sea-n7m59f)
+
+```javascript
+import { useState } from "react";
+import { useRive, Layout, Fit } from "@rive-app/react-canvas";
+
+export default function App() {
+  const [truckButtonText, setTruckButtonText] = useState("Start Truck");
+  const [wiperButtonText, setWiperButtonText] = useState("Start Wipers");
+
+  // animation will show the first frame but not start playing
+  const { rive, RiveComponent } = useRive({
+    src: "https://cdn.rive.app/animations/vehicles.riv",
+    artboard: "Jeep",
+    layout: new Layout({ fit: Fit.Cover }),
+    // Listen for play events to update button text
+    onPlay: (event) => {
+      const names = event.data;
+      names.forEach((name) => {
+        if (name === "idle") {
+          setTruckButtonText("Stop Truck");
+        } else if (name === "windshield_wipers") {
+          setWiperButtonText("Stop Wipers");
+        }
+      });
+    },
+    // Listen for pause events to update button text
+    onPause: (event) => {
+      const names = event.data;
+      names.forEach((name) => {
+        if (name === "idle") {
+          setTruckButtonText("Start Truck");
+        } else if (name === "windshield_wipers") {
+          setWiperButtonText("Start Wipers");
+        }
+      });
+    },
+  });
+
+  function onStartTruckClick() {
+    if (rive) {
+      if (rive.playingAnimationNames.includes("idle")) {
+        rive.pause("idle");
+      } else {
+        rive.play("idle");
+      }
+    }
+  }
+
+  function onStartWiperClick() {
+    if (rive) {
+      if (rive.playingAnimationNames.includes("windshield_wipers")) {
+        rive.pause("windshield_wipers");
+      } else {
+        rive.play("windshield_wipers");
+      }
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <RiveComponent style={{ height: "1000px" }} />
+      </div>
+      <div>
+        <button id="idle" onClick={onStartTruckClick}>
+          {truckButtonText}
+        </button>
+        <button id="wipers" onClick={onStartWiperClick}>
+          {wiperButtonText}
+        </button>
+      </div>
+    </>
+  );
+}
+```

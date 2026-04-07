@@ -1,0 +1,75 @@
+---
+title: "Text"
+description: "⚠️ DEPRECATED: Use Data Binding instead of direct text run manipulation at runtime"
+noindex: true
+---
+
+import Overview from "/snippets/runtimes/text/overview.mdx"
+import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
+import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
+import Resources from "/snippets/runtimes/text/resources.mdx"
+
+<Overview />
+
+Get/set the text run value on an `Artboard` instance.
+
+<Tip>
+We recommend using [Data Binding](/editor/data-binding/overview) instead to update text at runtime.
+</Tip>
+
+```dart Get/Set Text Run Value
+final controller = RiveWidgetController(riveFile);
+final artboard = controller.artboard;
+
+// Get a text run value
+artboard.getText(value)
+// Optional path parameter to get a text run value at a component instance level
+artboard.getText(value, path: path)
+
+// Set a text run value
+artboard.setText(value)
+// Optional path parameter to set a text run value at a component instance level
+artboard.setText(value, path: path)
+```
+
+<NestedArtboard />
+
+## Examples
+
+Get/set a nested text run value on an `Artboard` instance.
+
+<Tip>
+We recommend using [Data Binding](/editor/data-binding/overview) instead to update text at runtime.
+</Tip>
+
+```dart Get/Set Text Run Value
+final controller = RiveWidgetController(riveFile);
+final artboard = controller.artboard;
+
+//Use the path parameter to get a text run value at a component instance level
+artboard.getText(value, path: path)
+
+// Use the path parameter to set a text run value at a component instance level
+artboard.setText(value, path: path)
+```
+
+<SemanticsForAccessibility />
+
+See Flutter's [documentation on Accessibility](https://docs.flutter.dev/accessibility-and-localization/accessibility) for more information. In this example you'll use the [Semantics widget](https://api.flutter.dev/flutter/widgets/Semantics-class.html) to provide a label that reflects the current value of the Rive Text component.
+
+```
+...
+
+final controller = RiveWidgetController(riveFile);
+final textValue = controller.artboard.getText('some_text_run_name').value;
+String semanticLabel = textValue;
+
+...
+
+Semantics(
+    label: semanticLabel,
+    child: RiveWidget(controller: controller);
+),
+```
+
+<Resources />

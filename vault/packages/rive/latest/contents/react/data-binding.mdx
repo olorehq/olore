@@ -1,0 +1,480 @@
+---
+title: "Data Binding"
+description: "Connect your code to bound editor elements using View Models"
+---
+
+import Overview from "/snippets/runtimes/data-binding/overview.mdx"
+import ViewModels from "/snippets/runtimes/data-binding/view-models.mdx"
+import ViewModelInstances from "/snippets/runtimes/data-binding/view-model-instances.mdx"
+import Binding from "/snippets/runtimes/data-binding/binding.mdx"
+import AutoBinding from "/snippets/runtimes/data-binding/auto-binding.mdx"
+import Properties from "/snippets/runtimes/data-binding/properties.mdx"
+import ListingProperties from "/snippets/runtimes/data-binding/listing-properties.mdx"
+import ReadingAndWritingProperties from "/snippets/runtimes/data-binding/reading-and-writing-properties.mdx"
+import NestedPropertyPaths from "/snippets/runtimes/data-binding/nested-property-paths.mdx"
+import Observability from "/snippets/runtimes/data-binding/observability.mdx"
+import Images from "/snippets/runtimes/data-binding/images.mdx"
+import Lists from "/snippets/runtimes/data-binding/lists.mdx"
+import Artboards from "/snippets/runtimes/data-binding/artboards.mdx"
+import Enums from "/snippets/runtimes/data-binding/enums.mdx"
+
+
+import { YouTube } from "/snippets/youtube.mdx";
+import { Demos } from "/snippets/demos.jsx";
+
+<Overview />
+
+<Demos examples={["quickStartReact"]} />
+
+<ViewModels />
+
+Use the `useViewModel` hook to get a reference to a view model. You need to pass the `rive` object obtained from `useRive`.
+
+```typescript
+import { useRive, useViewModel } from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    // ... other options
+});
+
+// Option 1: Get the default ViewModel for the artboard
+const defaultViewModel = useViewModel(rive);
+
+// Option 2: Get the default ViewModel explicitly
+const defaultViewModelExplicit = useViewModel(rive, { useDefault: true });
+
+// Option 3: Get a ViewModel by its name
+const namedViewModel = useViewModel(rive, { name: 'MyViewModelName' });
+```
+
+<ViewModelInstances />
+
+Use the `useViewModelInstance` hook to create a view model instance from a view model returned by the `useViewModel` hook.
+
+```typescript
+import { useRive, useViewModel, useViewModelInstance } from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    // ... other options
+});
+
+const viewModel = useViewModel(rive, { name: 'MyViewModelName' });
+// Or: const viewModel = useViewModel(rive); // Default VM
+
+// Get default instance without binding
+const defaultUnbound = useViewModelInstance(viewModel, { useDefault: true });
+
+// Get named instance without binding
+const namedUnbound = useViewModelInstance(viewModel, { name: 'MyInstanceName' });
+
+// Create new blank instance without binding
+const newUnbound = useViewModelInstance(viewModel, { useNew: true });
+```
+
+You can also bind the view model instance directly to the Rive instance by passing the `rive` object to the `useViewModelInstance` hook.
+
+```typescript
+import { useRive, useViewModel, useViewModelInstance } from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: false, // Disable auto binding so we can manually bind later
+    // ... other options
+});
+
+const viewModel = useViewModel(rive, { name: 'MyViewModelName' });
+
+// Get default instance (implicit) and bind it
+const defaultBound = useViewModelInstance(viewModel, { rive });
+
+// Get named instance and bind it
+const namedBound = useViewModelInstance(viewModel, { name: 'MyInstanceName', rive });
+
+// Create a new blank instance and bind it
+const newBound = useViewModelInstance(viewModel, { useNew: true, rive });
+```
+
+If you set `autoBind: true` in `useRive`, you can access the automatically bound default instance directly via `rive.viewModelInstance` once Rive is loaded, without needing `useViewModel` or `useViewModelInstance`.
+
+```typescript
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: true,
+});
+
+// Once loaded, the instance is available:
+const boundInstance = rive?.viewModelInstance;
+```
+
+<Binding />
+
+For React, no additional steps are needed to bind the view model instance to the Rive component. Passing the `rive` object to `useViewModelInstance` handles this automatically.
+
+<AutoBinding />
+
+```typescript
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: true, // Enable auto-binding
+    // ... other options
+});
+
+// Once loaded, the instance is available:
+const boundInstance = rive?.viewModelInstance;
+```
+
+<Properties />
+
+<ListingProperties />
+
+```typescript
+// Access properties from the view model returned by useViewModel
+const viewModel = useViewModel(rive);
+console.log(viewModel?.properties);
+```
+
+<ReadingAndWritingProperties />
+
+Use the specific hook for a given property type to get and set property values.
+
+- `useViewModelInstanceBoolean`: Read/write boolean properties
+- `useViewModelInstanceString`: Read/write string properties
+- `useViewModelInstanceNumber`: Read/write number properties
+- `useViewModelInstanceColor`: Read/write color properties with additional RGB/alpha methods
+- `useViewModelInstanceEnum`: Read/write enum properties with available values
+- `useViewModelInstanceTrigger`: Fire trigger events with optional callbacks
+
+These hooks return the current `value` and a function to update it (`setValue`, `setRgb`, `trigger`). The `value` will be null if the property is not found or if the hook is provided with an invalid viewModelInstance.
+
+```typescript
+import {
+    useViewModelInstanceBoolean,
+    useViewModelInstanceString,
+    useViewModelInstanceNumber,
+    useViewModelInstanceEnum,
+    useViewModelInstanceColor,
+    useViewModelInstanceTrigger
+} from '@rive-app/react-webgl2';
+
+// Assuming viewModelInstance is obtained via useViewModelInstance or rive.viewModelInstance
+
+// Boolean
+const { value: isActive, setValue: setIsActive } = useViewModelInstanceBoolean(
+    'isToggleOn', // Property path
+    viewModelInstance
+);
+// Set: setIsActive(true);
+
+// String
+const { value: userName, setValue: setUserName } = useViewModelInstanceString(
+    'user/name', // Property path
+    viewModelInstance
+);
+// Set: setUserName('Rive');
+
+// Number
+const { value: score, setValue: setScore } = useViewModelInstanceNumber(
+    'levelScore', // Property path
+    viewModelInstance
+);
+// Set: setScore(100);
+
+// Enum
+const { value: status, setValue: setStatus, values: statusOptions } = useViewModelInstanceEnum(
+    'appStatus', // Property path
+    viewModelInstance
+);
+// Set: setStatus('loading');
+// Get available options: statusOptions is an array like ['idle', 'loading', 'error']
+
+// Color
+const {
+    value: themeColor, // Raw number value like -3267805
+    setRgb: setThemeColorRgb, // Set RGB components (0-255 values)
+    setAlpha: setThemeColorAlpha, // Set alpha component (0-255)
+    setOpacity: setThemeColorOpacity, // Set opacity (0.0-1.0)
+    setRgba: setThemeColorRgba, // Set all components at once
+    setValue: setThemeColorValue // Set raw color value
+} = useViewModelInstanceColor(
+    'ui/themeColor', // Property path
+    viewModelInstance
+);
+// Set RGB: setThemeColorRgb(0, 128, 255); // Set to a blue color
+// Set Alpha: setThemeColorAlpha(128); // Set to 50% opacity
+// Set Opacity: setThemeColorOpacity(0.5); // Set to 50% opacity
+// Set RGBA: setThemeColorRgba(0, 128, 255, 255); // Blue with full opacity
+// Set Value: setThemeColorValue(-3267805); // Set using raw color value
+
+// Trigger (No value, just a trigger function)
+const { trigger: playEffect } = useViewModelInstanceTrigger(
+    'playButtonEffect', // Property path
+    viewModelInstance,
+    {
+        // Optional callback to be called when the trigger is fired
+        onTrigger: () => {
+            console.log('Trigger Fired!');
+        }
+    }
+);
+// Trigger: playEffect();
+```
+
+The `value` returned by each hook will update automatically when the property changes in the Rive graphic.
+
+<NestedPropertyPaths />
+
+Access nested properties by providing the full path (separated by `/`) as the first argument to the property hooks.
+
+```typescript
+import { useViewModelInstanceString, useViewModelInstanceNumber } from '@rive-app/react-webgl2';
+
+// Accessing 'settings/theme/name' (String)
+const { value: themeName, setValue: setThemeName } = useViewModelInstanceString(
+    'settings/theme/name',
+    viewModelInstance
+);
+
+// Accessing 'settings/volume' (Number)
+const { value: volume, setValue: setVolume } = useViewModelInstanceNumber(
+    'settings/volume',
+    viewModelInstance
+);
+
+console.log('Current theme:', themeName);
+// setThemeName('Dark Mode');
+// setVolume(80);
+```
+
+<Observability />
+
+The React hooks handle observability automatically. When a property's value changes within the Rive instance (either because you set it via a hook or due to an internal binding), the `value` returned by the corresponding hook (e.g., `useViewModelInstanceString`) updates. This state change triggers a re-render of your React component, allowing you to react to the new value.
+
+For Triggers, you can provide an `onTrigger` callback directly to the `useViewModelInstanceTrigger` hook, which fires when the trigger is activated in the Rive instance.
+
+```typescript
+import { useViewModelInstanceTrigger } from '@rive-app/react-webgl2';
+
+// Assuming viewModelInstance is available
+const { trigger } = useViewModelInstanceTrigger(
+    'showPopup',
+    viewModelInstance,
+    {
+        onTrigger: () => {
+            console.log('Show Popup Trigger Fired!');
+            // Show your popup UI
+        }
+    }
+);
+```
+
+<Images />
+
+Use the `useViewModelInstanceImage` hook to set image properties on view model instances.
+
+    ```typescript
+    import { useRive, useViewModel, useViewModelInstance, useViewModelInstanceImage } from '@rive-app/react-webgl2';
+
+    const { rive, RiveComponent } = useRive({
+        src: 'your_file.riv',
+        artboard: 'MyArtboard',
+        stateMachine: 'MyStateMachine',
+        autoBind: false,
+        // ... other options
+    });
+
+    const viewModel = useViewModel(rive, { name: 'MyViewModel' });
+    const viewModelInstance = useViewModelInstance(viewModel, { rive });
+
+    // Get the image property setter
+    const { setValue: setImage } = useViewModelInstanceImage(
+        'profileImage', // Property path
+        viewModelInstance
+    );
+
+    // Load and set a random image
+    const loadRandomImage = async () => {
+        if (!setImage) return;
+
+        try {
+            const imageUrl = 'https://picsum.photos/300/500';
+            const response = await fetch(imageUrl);
+            const imageBuffer = await response.arrayBuffer();
+
+            // Decode the image from the response
+            const decodedImage = await decodeImage(new Uint8Array(imageBuffer));
+            setImage(decodedImage);
+
+            // Clean up the decoded image
+            decodedImage.unref();
+        } catch (error) {
+            console.error('Failed to load image:', error);
+        }
+    };
+
+    // Clear the image
+    const clearImage = () => {
+        if (setImage) {
+            setImage(null);
+        }
+    };
+    ```
+
+<Lists />
+
+<Demos examples={['dataBindingLists']} runtime="react" />
+
+Use the `useViewModelInstanceList` hook to manage list properties on view model instances.
+
+```typescript
+import { useRive, useViewModel, useViewModelInstance, useViewModelInstanceList } from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: false,
+    // ... other options
+});
+
+const viewModel = useViewModel(rive, { name: 'MyViewModel' });
+const viewModelInstance = useViewModelInstance(viewModel, { rive });
+
+// Get the list property with manipulation functions
+const {
+    length,
+    addInstance,
+    addInstanceAt,
+    removeInstance,
+    removeInstanceAt,
+    getInstanceAt,
+    swap
+} = useViewModelInstanceList('todos', viewModelInstance);
+
+// Add a new todo item
+const handleAddItem = () => {
+    const todoItemViewModel = rive?.viewModelByName?.('TodoItem');
+    if (todoItemViewModel) {
+        const newTodoItem = todoItemViewModel.instance?.();
+        if (newTodoItem) {
+            // Set some initial values
+            newTodoItem.string('description').value = 'Buy groceries';
+            addInstance(newTodoItem);
+        }
+    }
+};
+
+// Insert item at specific index
+const handleInsertItem = () => {
+    const todoItemViewModel = rive?.viewModelByName?.('TodoItem');
+    if (todoItemViewModel) {
+        const newTodoItem = todoItemViewModel.instance?.();
+        if (newTodoItem) {
+            addInstanceAt(newTodoItem, 0); // Insert at beginning
+        }
+    }
+};
+
+// Remove first item by instance
+const handleRemoveFirst = () => {
+    const firstInstance = getInstanceAt(0);
+    if (firstInstance) {
+        removeInstance(firstInstance);
+    }
+};
+
+// Remove item by index
+const handleRemoveAt = () => {
+    if (length > 0) {
+        removeInstanceAt(0);
+    }
+};
+
+// Swap two items
+const handleSwap = () => {
+    if (length >= 2) {
+        swap(0, 1);
+    }
+};
+
+console.log(`List has ${length} items`);
+```
+
+<Artboards />
+
+<Demos examples={["dataBindingArtboards"]}  runtime="react" />
+
+Use the `useViewModelInstanceArtboard` hook to set artboard properties on view model instances.
+
+```typescript
+import { useRive, useViewModel, useViewModelInstance, useViewModelInstanceArtboard } from '@rive-app/react-webgl2';
+
+const { rive, RiveComponent } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: true,
+    // ... other options
+});
+
+// Get artboard property setters
+const { setValue: setArtboard1 } = useViewModelInstanceArtboard(
+    'artboard_1', // Property path
+    rive?.viewModelInstance
+);
+
+const { setValue: setArtboard2 } = useViewModelInstanceArtboard(
+    'artboard_2', // Property path
+    rive?.viewModelInstance
+);
+
+// Assign different artboards from the same file
+const handleSetBlueArtboard = () => {
+    if (rive) {
+        const blueArtboard = rive.getArtboard('ArtboardBlue');
+        setArtboard1(blueArtboard);
+    }
+};
+
+const handleSetRedArtboard = () => {
+    if (rive) {
+        const redArtboard = rive.getArtboard('ArtboardRed');
+        setArtboard2(redArtboard);
+    }
+};
+
+const handleSetGreenArtboard = () => {
+    if (rive) {
+        const greenArtboard = rive.getArtboard('ArtboardGreen');
+        setArtboard1(greenArtboard);
+    }
+};
+
+```
+
+<Enums />
+
+```typescript
+const { rive } = useRive({
+    src: 'your_file.riv',
+    artboard: 'MyArtboard',
+    stateMachine: 'MyStateMachine',
+    autoBind: true
+    // ... other options
+});
+const enums = rive?.enums();
+console.log(enums);
+```
+
+# Examples
+
+See the `DataBinding` story in the [Rive React repo](https://github.com/rive-app/rive-react) for a demo.

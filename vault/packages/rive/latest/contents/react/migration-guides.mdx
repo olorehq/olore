@@ -1,0 +1,94 @@
+---
+title: 'Migration Guides'
+description: 'Migrating between major versions of the Apple runtime'
+---
+
+<AccordionGroup>
+    <Accordion title="Migrating from 3.x.x to 4.x.x">
+        Starting in v4 of our React runtimes, Rive will support Rive Text at runtime, which includes the following packages:
+
+        - React
+        - `@rive-app/react-canvas`
+        - `@rive-app/react-webgl`
+
+        ## Major Changes
+
+        <Note>
+        No breaking API changes!
+        </Note>
+
+        While a new major version has been released for the runtimes without breaking API changes, v4 was released due to a **bundle** **size increase** in the package from the core Web (JS) runtime dependency. See that migration guide [here](/runtimes/react/migration-guides#migrating-from-1-x-x-to-3-x-x).
+
+        In the future, we may introduce a "lite" package without these larger dependencies if you don't need the text feature, but for now, it will remain the default on the main web runtime packages.
+    </Accordion>
+    <Accordion title="Migrating from 1.x.x to 3.x.x">
+
+        For the most part, if you're using v1.x.x of `rive-react`, you should be able to upgrade to the new dependencies in v3.x.x without many changes.
+
+        <Note>
+        **Note**: Migrating from v2.x.x to 3.x.x can be done safely without any changes on your end.
+        </Note>
+
+        ## Dependency Change
+
+        Previous to v2.x.x, you could use Rive in React via the `rive-react` package. This package was a wrapper around the `@rive-app/webgl` dependency. In version 2.x.x+, we enable the React runtime to wrap around both the `@rive-app/webgl` and `@rive-app/canvas` dependencies through 2 main new React packages:
+
+        - **(Recommended)** `@rive-app/react-canvas`
+        - `@rive-app/react-webgl`
+
+        The `rive-react` package will still be published to regularly along with the above packages, but it has both of the web runtime dependencies set as `dependencies` and may result in a larger bundle. Because of this, we recommend switching from `rive-react` to `@rive-app/react-canvas` or the WebGL variant if you need to use a WebGL backing context.
+
+        **Before:**
+
+        ```bash
+        npm i rive-react
+        ```
+
+        **After:**
+
+        ```bash
+        npm i @rive-app/react-canvas
+        ```
+
+        <Note>
+        There are no changes regarding the way you import from the React runtime between `rive-react` and `@rive-app/react-canvas `
+        </Note>
+
+        ## Prop Spreading
+
+        The React runtime provides a `RiveComponent` whether you use the default export or the `useRive` hook provided. This component should be passed into the JSX to render the canvas out. The DOM encompasses a wrapping div around the canvas that helps to handle the styling and sizing of the canvas. Most props spread on the `RiveComponent` would be spread onto that wrapping `<div>` element. Starting in v2.x.x, certain props will be spread onto the wrapping `<div>` that concern styling (i.e `className` and `style`), but any other props will now be spread onto the `<canvas>` element, so that you can set `role`, `aria-*` attributes, etc.
+
+        **Before:**
+
+        ```javascript
+        <RiveComponent className="foo" aria-label="Label" />
+        ```
+
+        Would render the (simplified) DOM such as:
+
+        ```javascript
+        <div className="foo" aria-label="Label">
+        <canvas></canvas>
+        </div>
+        ```
+
+        **After:**
+
+        ```javascript
+        <RiveComponent className="foo" aria-label="Label" />
+        ```
+
+        Now yields the following (simplified) DOM:
+
+        ```javascript
+        <div className="foo">
+        <canvas aria-label="Label"></canvas>
+        </div>
+        ```
+    </Accordion>
+    <Accordion title="Migrating from 0.x.x to 1.x.x">
+        Before v1.0.0 of `rive-react`, the React runtime wrapped the `@rive-app/canvas` runtime dependency, using the backing `CanvasRenderingContext2D`. In order for the React runtime to support some upcoming advanced drawing features like Mesh Deformations, it needed to use the `@rive-app/webgl` runtime.
+
+        The major version bump to v1.0.0 involves no breaking API changes, but rather internally uses a different backing context with WebGL. If you have issues, please log them to the issues tab of the `rive-react` runtime [here](https://github.com/rive-app/rive-react/issues).
+    </Accordion>
+</AccordionGroup>

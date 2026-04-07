@@ -1,0 +1,69 @@
+---
+title: "Rive Events"
+description: "⚠️ DEPRECATED: Use Data Binding instead of Events"
+noindex: true
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+
+import Overview from "/snippets/runtimes/events/overview.mdx"
+import AdditionalResources from "/snippets/runtimes/events/additional-resources.mdx"
+
+<Overview />
+
+### Examples
+
+- [Star rating example](https://codesandbox.io/p/sandbox/rive-events-react-forked-ct9k2z?file=%2Fsrc%2FApp.js%3A6%2C44)
+
+### Adding an Event Listener
+
+Similar to the `addEventListener()` / `removeEventListener()` API for DOM elements, you'll use the Rive instance's `on()` / `off()` API to subscribe to Rive events from the `rive` object returned from the `useRive` hook. Simply supply the RiveEvent enum and a callback for the runtime to call at the appropriate moment any Rive event gets detected.
+
+<Note>
+    **Note:** You must use the `useRive()` hook to subscribe to Rive events
+</Note>
+#### Example Usage
+
+```javascript
+import { useRive, EventType, RiveEventType } from '@rive-app/canvas';
+import { useCallback, useEffect } from 'react';
+
+const MyTextComponent = () => {
+const {rive, RiveComponent} = useRive({
+    src: "/static-assets/star-rating.riv",
+    artboard: "my-artboard-name",
+    autoplay: true,
+    // automaticallyHandleEvents: true, // Automatically handle OpenUrl events
+    stateMachines: "State Machine 1",
+});
+
+const onRiveEventReceived = (riveEvent) => {
+    const eventData = riveEvent.data;
+    const eventProperties = eventData.properties;
+    if (eventData.type === RiveEventType.General) {
+    console.log("Event name", eventData.name);
+    // Added relevant metadata from the event
+    console.log("Rating", eventProperties.rating);
+    console.log("Message", eventProperties.message);
+    } else if (eventData.type === RiveEventType.OpenUrl) {
+    console.log("Event name", eventData.name);
+    // Handle OpenUrl event manually
+    window.location.href = eventData.url;
+    }
+};
+
+// Wait until the rive object is instantiated before adding the Rive
+// event listener
+useEffect(() => {
+    if (rive) {
+    rive.on(EventType.RiveEvent, onRiveEventReceived);
+    }
+}, [rive]);
+
+return (
+    <RiveComponent />
+);
+};
+```
+
+<AdditionalResources />

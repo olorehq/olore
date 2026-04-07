@@ -1,0 +1,222 @@
+---
+title: "Loading Assets"
+description: "Loading and replacing assets dynamically at runtime"
+---
+
+import { YouTube } from "/snippets/youtube.mdx";
+import { Apple } from "/snippets/constants.mdx";
+
+import Overview from '/snippets/runtimes/loading-assets/overview.mdx'
+import MethodsForLoadingAssets from '/snippets/runtimes/loading-assets/methods-for-loading.mdx'
+import EmbeddedAssets from '/snippets/runtimes/loading-assets/embedded-assets.mdx'
+import ImageCDNs from '/snippets/runtimes/loading-assets/image-cdns.mdx'
+import ReferenceAssets from '/snippets/runtimes/loading-assets/referenced-assets.mdx'
+import HandlingAssets from '/snippets/runtimes/loading-assets/handling-assets.mdx'
+import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
+
+<Overview />
+<MethodsForLoadingAssets />
+<EmbeddedAssets />
+<ImageCDNs />
+<ReferenceAssets />
+<HandlingAssets />
+
+<Tabs>
+    <Tab title={Apple.currentRuntimeName}>
+        This section assumes that you have read through the [Apple](/runtimes/apple/apple) overview.
+
+        Referenced assets can be added using the global asset APIs of a `Worker`.
+
+        Adding global assets is a two-step process:
+        1. Decode the asset from its bytes
+        2. Add the asset to the worker
+
+        Global assets are push-based, meaning that you have to know the unique name of the asset ahead of time. You can retrieve the unique name of the asset from the exported `.zip` file containing the assets. The unique identifier is the identifier that is appended to the asset name (e.g `Font-1234`).
+
+        There is no need to maintain a strong reference to the asset. The asset will be automatically cleaned up when the worker is disposed.
+
+        <CodeGroup>
+            ```swift Font
+            let worker = try await Worker()
+            let fontData: Data = ...
+            let font = try await worker.decodeFont(from: fontData)
+            worker.addGlobalFontAsset(font, name: "MyFont-1234")
+
+            // If you would like to clean up the asset
+            worker.removeGlobalFontAsset(name: "MyFont-1234")
+            ```
+
+            ```swift Audio
+            let worker = try await Worker()
+            let audioData: Data = ...
+            let font = try await worker.decodeAudio(from: audioData)
+            worker.addGlobalAudioAsset(audio, name: "MyAudio-1234")
+
+            // If you would like to clean up the asset
+            worker.removeGlobalAudioAsset(name: "MyAudio-1234")
+            ```
+
+            ```swift Image
+            let worker = try await Worker()
+            let imageData: Data = ...
+            let image = try await worker.decodeImage(from: imageData)
+            worker.addGlobalImageAsset(image, name: "MyImage-1234")
+
+            // If you would like to clean up the asset
+            worker.removeGlobalImageAsset(name: "MyImage-1234")
+            ```
+        </CodeGroup>
+    </Tab>
+    <Tab title={Apple.legacyRuntimeName}>
+        ### Examples
+
+        - [(SwiftUI) Swap out images and fonts](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/SwiftUI/SwiftSimpleAssets.swift)
+        - [(UIKit) Swap and cache images and fonts](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Storyboard/CachedAssets.swift)
+
+        ### Using the Asset Handler API
+
+        When instantiating a `RiveViewModel` (or `RiveFile` directly), add a `customLoader` callback property to the list of parameters. This callback will be called for every asset the runtime detects from the `.riv` file on load, and the callback will be responsible for either handling the load of an asset at runtime or passing on the responsibility and giving the runtime a chance to load it otherwise.
+
+        An instance where you may want to handle loading an asset is if an asset in the file is marked as **Referenced**, and you need to provide an actual asset to render for the graphic, as Rive does not embed it in the `.riv` and thus cannot load it.
+
+        An instance where you may want to give the runtime a chance to load the asset is if the asset in the file is marked as **Hosted**, and want to pass the responsibility of loading it to the runtime (which will call into a Rive CDN to do so).
+
+        ```swift
+        RiveViewModel(fileName: "simple_assets", loadCdn: false, customLoader: { (asset: RiveFileAsset, data: Data, factory: RiveFactory) -> Bool in
+            // A simple check for a Rive file with one asset
+            if (asset is RiveImageAsset){
+                // picture-47982.jpeg can be exported with the .riv file from the Rive editor.
+                // It is then included in the main bundle resources of the project
+                guard let url = (.main as Bundle).url(forResource: "picture-47982", withExtension: "jpeg") else {
+                    fatalError("Failed to locate 'picture-47982' in bundle.")
+                }
+                guard let data = try? Data(contentsOf: url) else {
+                    fatalError("Failed to load \(url) from bundle.")
+                }
+                (asset as! RiveImageAsset).renderImage(
+                    factory.decodeImage(data)
+                )
+                return true;
+            }
+            return false;
+        }).view()
+        ```
+
+        Your provided callback will be passed an `asset`, `data`, and a `factory`.
+
+        - `asset` - Reference to a `RiveFileAsset` object. You'll use this reference to set a new Rive-specific asset for dynamically loaded content. If you wish to dynamically swap a given image/font over the lifetime of your view, you may want to cache this object. You can grab a number of properties from this object, such as:
+
+
+        - `name()` - Name of the asset without the unique file identifier appended, (i.e. `picture.webp` instead of `picture-47982.webp`)
+        - `uniqueFilename()` - Name of the asset with the unique file identifier, (i.e. `picture-47982.webp` instead of `picture.webp`)
+        - `fileExtension()` - Name of the file extension (i.e. `"png"`)
+        - `cdnBaseUrl()` - Name of the base URL for the CDN
+        - `cdnUuid()` - Identifier for the resource in the Rive CDN. Useful to see if this has length so you can see if the asset is marked for grabbing from a Rive CDN (in which case, you can let the Rive runtime retrieve the asset, rather than your app logic)
+
+
+        - `data` - Array of bytes for the asset. This is useful to determine if the asset is already embedded in the Rive file (aka, not marked as "referenced" in the editor)
+        - `factory` - Utility with methods to transform an asset's bytes into a `RiveRenderImage` ,`RiveFont`, or `RiveAudio` which the `asset` object uses to render via `.renderImage(your-rive-render-image)` , `.font(your-rive-font)` , or `.audio(your-rive-audio)` . These assets are created by calling `factory.decodeImage(data)`, `factory.decodeFont(data)`, or `factory.decodeAudio(data)`
+
+        **Important**: Note that the return value of the callback is a `boolean`, which is where you need to return:
+
+        - `true` if you intend on handling and loading in an asset yourself, or
+        - `false` if you do not want to handle asset loading for that given asset yourself, and attempt to have the runtime try to load the asset.
+
+        **Example Usage**
+
+        ```swift
+        import SwiftUI
+        import RiveRuntime
+
+        struct SimpleAssetReplacement: View {
+            @StateObject private var riveInstance = RiveViewModel(fileName: "simple_assets", autoPlay: false, loadCdn: false, customLoader: { (asset: RiveFileAsset, data: Data, factory: RiveFactory) -> Bool in
+                if (asset is RiveImageAsset) {
+                    guard let url = (.main as Bundle).url(forResource: "picture-47982", withExtension: "jpeg") else {
+                        fatalError("Failed to locate 'picture-47982' in bundle.")
+                    }
+                    guard let data = try? Data(contentsOf: url) else {
+                        fatalError("Failed to load \(url) from bundle.")
+                    }
+                    (asset as! RiveImageAsset).renderImage(
+                        factory.decodeImage(data)
+                    )
+                    return true;
+                } else if (asset is RiveFontAsset) {
+                    guard let url = (.main as Bundle).url(forResource: "Inter-45562", withExtension: "ttf") else {
+                        fatalError("Failed to locate 'Inter-45562' in bundle.")
+                    }
+                    guard let data = try? Data(contentsOf: url) else {
+                        fatalError("Failed to load \(url) from bundle.")
+                    }
+                    (asset as! RiveFontAsset).font(
+                        factory.decodeFont(data)
+                    )
+                    return true;
+                }
+                return false;
+            })
+
+            var body: some View {
+                riveInstance.view()
+            }
+        }
+        ```
+
+        ### Fonts
+
+        When using a custom loader, referenced fonts can be loaded one of two ways: with raw data (from a file, as seen above), or with a `UIFont` / `NSFont`.\
+        When using `UIFont` / `NSFont`, size, weight, and width of the supplied font is ignored. The font will be used as defined in the text run, rather than being overridden by the supplied font's styling.
+
+        ```swift
+        import SwiftUI
+        import RiveRuntime
+
+        struct SimpleFontReplacement: View {
+            @StateObject private var riveInstance = RiveViewModel(fileName: "simple_assets", autoPlay: false, loadCdn: false, customLoader: { (asset: RiveFileAsset, data: Data, factory: RiveFactory) -> Bool in
+                if (asset is RiveFontAsset) {
+                    (asset as! RiveFontAsset).font(
+                        factory.decodeFont(UIFont.systemFont(ofSize: 12))
+                    )
+                    return true;
+                }
+                return false;
+            })
+
+            var body: some View {
+                riveInstance.view()
+            }
+        }
+        ```
+
+        ### Images
+
+        When loading assets for referenced images, you may need to scale local assets to the size of an image asset as defined in your Rive file. When using a custom loader, you can access the size of the referenced image via the `size` property of a `RiveImageAsset`.
+
+        ```swift
+        import SwiftUI
+        import RiveRuntime
+
+        struct SimpleImageSizeReplacement: View {
+            @StateObject private var riveInstance = RiveViewModel(fileName: "simple_assets", autoPlay: false, loadCdn: false, customLoader: { (asset: RiveFileAsset, data: Data, factory: RiveFactory) -> Bool in
+                guard let imageAsset = asset as? RiveImageAsset else { return false }
+                    let requestedSize = imageAsset.size
+                    let image = UIImage(...)
+                    let resizedImage = resize(image, to: requestedSize)
+                    guard let pngData = resizedImage.pngData() else { return false }
+                    imageAsset.renderImage(
+                        factory.decodeImage(pngData)
+                    )
+                    return true
+                }
+                return false;
+            }
+
+            var body: some View {
+                riveInstance.view()
+            }
+
+        ```
+    </Tab>
+</Tabs>
+
+<Resources />
