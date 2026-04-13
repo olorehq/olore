@@ -4,217 +4,288 @@
 
 ```
 contents/
-├── getting-started/        # Installation, setup (14 files)
-├── integrate/              # SDK integration guides (115 files)
-├── libraries/              # Client libraries (103 files)
-├── cdp/                    # Customer Data Platform (125 files)
-│   ├── sources/            # Data sources
-│   ├── destinations/       # Data destinations
-│   ├── transformations/    # Event transformations
-│   └── batch-exports/      # Batch export configs
-├── feature-flags/          # Feature flags (61 files)
-├── experiments/            # A/B testing (51 files)
-├── session-replay/         # Session recording (50 files)
-├── product-analytics/      # Analytics features (69 files)
-├── web-analytics/          # Web analytics (23 files)
-├── error-tracking/         # Error monitoring (71 files)
-├── llm-analytics/          # LLM observability (42 files)
-├── surveys/                # User surveys (18 files)
-├── data-warehouse/         # Data warehouse (48 files)
-│   ├── sources/            # External data sources
-│   ├── views/              # SQL views
-│   └── sql/                # SQL reference
-├── workflows/              # Workflow automation (13 files)
-├── api/                    # API reference (19 files)
-├── self-host/              # Self-hosting (27 files)
-├── advanced/               # Advanced topics (23 files)
-├── privacy/                # Privacy features (18 files)
-├── migrate/                # Migration guides (15 files)
-└── ...more                 # Additional features
+├── getting-started/          # Installation and onboarding (14 files)
+├── new-to-posthog/           # Beginner guides (8 files)
+├── integrate/                # SDK integration code (113 files)
+│   ├── _snippets/            # Reusable code snippets (55 files)
+│   ├── feature-flags-code/   # Feature flag integration code (35 files)
+│   └── send-events/          # Event capture code (22 files)
+├── libraries/                # SDK reference by language (110 files)
+│   ├── js/                   # JavaScript SDK (7 files)
+│   ├── next-js/              # Next.js SDK (7 files)
+│   ├── python/               # Python SDK (6 files)
+│   ├── ios/                  # iOS SDK (6 files)
+│   ├── react-router/         # React Router SDK (14 files)
+│   ├── vue-js/               # Vue.js SDK (5 files)
+│   ├── node/                 # Node.js SDK (3 files)
+│   ├── dotnet/               # .NET SDK (3 files)
+│   ├── go/                   # Go SDK (3 files)
+│   ├── php/                  # PHP SDK (3 files)
+│   ├── ruby/                 # Ruby SDK (3 files)
+│   ├── react-native/         # React Native SDK (3 files)
+│   ├── flutter/              # Flutter SDK (2 files)
+│   ├── android/              # Android SDK (2 files)
+│   └── curl/                 # REST/curl examples (2 files)
+├── product-analytics/        # Analytics features (76 files)
+│   ├── _snippets/            # Code snippets (20 files)
+│   ├── installation/         # Setup guides (21 files)
+│   └── trends/               # Trends analysis (8 files)
+├── feature-flags/            # Feature flags docs (69 files)
+│   ├── installation/         # SDK setup (20 files)
+│   ├── local-evaluation/     # Local evaluation (6 files)
+│   └── snippets/             # Code snippets (17 files)
+├── experiments/              # A/B testing docs (59 files)
+│   └── installation/         # SDK setup (33 files)
+├── session-replay/           # Session replay docs (62 files)
+│   ├── _snippets/            # Code snippets (23 files)
+│   └── installation/         # SDK setup (21 files)
+├── error-tracking/           # Error tracking docs (77 files)
+│   ├── _snippets/            # Code snippets (15 files)
+│   ├── installation/         # SDK setup (22 files)
+│   └── upload-source-maps/   # Source map upload (17 files)
+├── llm-analytics/            # LLM/AI analytics (86 files)
+│   ├── _snippets/            # Code snippets (7 files)
+│   ├── installation/         # SDK setup by provider (42 files)
+│   ├── integrations/         # Third-party integrations (5 files)
+│   └── user-feedback/        # User feedback (2 files)
+├── surveys/                  # Surveys feature (33 files)
+├── cdp/                      # Customer Data Platform (106 files)
+│   ├── destinations/         # CDP destinations (41 files)
+│   ├── sources/              # CDP sources (42 files)
+│   ├── batch-exports/        # Batch export configs (8 files)
+│   └── transformations/      # Data transformations (3 files)
+├── data-warehouse/           # Data warehouse docs (21 files)
+├── data/                     # Data management (17 files)
+├── web-analytics/            # Web analytics (39 files)
+├── api/                      # REST API reference (19 files)
+├── endpoints/                # PostHog endpoints feature (30 files)
+│   └── start-here/           # Getting started with endpoints (10 files)
+├── self-host/                # Self-hosting guides (28 files)
+├── advanced/                 # Advanced configuration (23 files)
+├── migrate/                  # Migration guides (15 files)
+├── privacy/                  # Privacy and compliance (18 files)
+├── how-posthog-works/        # Architecture internals (6 files)
+├── sql/                      # HogQL/SQL reference (6 files)
+├── hog/                      # Hog scripting language (1 file)
+├── model-context-protocol/   # MCP integration (19 files)
+├── posthog-ai/               # PostHog AI features (17 files)
+├── ai-engineering/           # AI engineering guides (3 files)
+├── logs/                     # Log capture (19 files)
+├── workflows/                # Workflow automation (16 files)
+├── customer-analytics/       # Customer analytics (14 files)
+├── revenue-analytics/        # Revenue analytics (12 files)
+├── integrations/             # Third-party integrations (4 files)
+├── site-apps/                # Site apps (3 files)
+├── alerts/                   # Alerting (1 file)
+├── billing/                  # Billing docs (5 files)
+├── settings/                 # Account settings (7 files)
+├── support/                  # Support resources (8 files)
+├── toolbar/                  # PostHog toolbar (5 files)
+├── product-tours/            # Product tours feature (13 files)
+├── product-os/               # Product OS (1 file)
+├── notebooks/                # Notebooks feature (1 file)
+├── discussion/               # Discussions feature (1 file)
+└── _snippets/                # Shared code snippets (21 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New user | `contents/getting-started/start-here.mdx` |
-| Install SDK | `contents/integrate/` or `contents/libraries/` |
-| Track events | `contents/integrate/send-events/` |
+| New to PostHog | `contents/getting-started/` |
+| Install an SDK | `contents/libraries/` or `contents/integrate/` |
+| Event tracking | `contents/integrate/send-events/` |
 | Feature flags | `contents/feature-flags/` |
-| Session replay | `contents/session-replay/` |
 | A/B testing | `contents/experiments/` |
-| API reference | `contents/api/` |
+| Session replay | `contents/session-replay/` |
+| Product analytics | `contents/product-analytics/` |
+| Error tracking | `contents/error-tracking/` |
+| LLM analytics | `contents/llm-analytics/` |
+| Surveys | `contents/surveys/` |
+| Data pipeline / CDP | `contents/cdp/` |
+| Data warehouse | `contents/data-warehouse/` |
+| REST API | `contents/api/` |
 | Self-hosting | `contents/self-host/` |
+| Privacy/compliance | `contents/privacy/` |
+| SQL / HogQL | `contents/sql/` |
 
 ## Detailed Structure
 
 ### getting-started/ (14 files)
-Installation, quickstart, and initial setup guides.
 
-### integrate/ (115 files)
-SDK integration guides for various platforms and frameworks.
-
-| Directory | Description |
-|-----------|-------------|
-| `send-events/` | Event tracking integration |
-| `feature-flags-code/` | Feature flag code examples |
-| `identify-users/` | User identification |
-| `server/` | Server-side integration |
-| `client/` | Client-side integration |
-
-### libraries/ (103 files)
-Client library documentation for all supported platforms and languages.
-
-| Platform | Files |
-|----------|-------|
-| JavaScript/TypeScript | Multiple frameworks (React, Vue, Next.js, etc.) |
-| Mobile | iOS, Android, React Native, Flutter |
-| Backend | Node.js, Python, Ruby, PHP, Go, Java, etc. |
-
-### cdp/ (125 files)
-Customer Data Platform - sources, destinations, transformations.
-
-| Directory | Description |
-|-----------|-------------|
-| `sources/` | Ingest data from external platforms |
-| `destinations/` | Send data to external platforms |
-| `transformations/` | Transform events in real-time |
-| `batch-exports/` | Export data in batches |
-
-### feature-flags/ (61 files)
-Feature flag implementation, targeting, experiments integration.
-
-### experiments/ (51 files)
-A/B testing, multivariate testing, statistical analysis.
-
-### session-replay/ (50 files)
-Session recording, privacy controls, troubleshooting.
-
-### product-analytics/ (69 files)
-Trends, funnels, retention, user paths, lifecycle analysis.
-
-### web-analytics/ (23 files)
-Web analytics features, tracking, reports.
-
-### error-tracking/ (71 files)
-Error monitoring, stack traces, grouping, alerts.
-
-### llm-analytics/ (42 files)
-LLM observability, tracing, evaluation, monitoring.
-
-### surveys/ (18 files)
-User surveys, NPS, feedback collection.
-
-### data-warehouse/ (48 files)
-External data sources, SQL queries, data modeling.
-
-| Directory | Description |
-|-----------|-------------|
-| `sources/` | Connect external data sources |
-| `views/` | Create SQL views |
-| `sql/` | SQL query reference |
-
-### workflows/ (13 files)
-Workflow automation, triggers, actions.
-
-### api/ (19 files)
-REST API reference, authentication, endpoints.
-
-### self-host/ (27 files)
-Self-hosting deployment, configuration, scaling.
-
-| Directory | Description |
-|-----------|-------------|
-| `deploy/` | Deployment options |
-| `configure/` | Configuration guides |
-| `open-source/` | Open source edition |
-
-### advanced/ (23 files)
-Advanced topics: proxies, CORS, security.
-
-### privacy/ (18 files)
-Privacy features, GDPR, data masking, consent.
-
-### customer-analytics/ (11 files)
-Customer-specific analytics and reporting.
-
-### revenue-analytics/ (10 files)
-Revenue tracking and analytics.
-
-### posthog-ai/ (13 files)
-AI-powered features and insights.
-
-### data/ (16 files)
-Data management, exports, imports.
-
-### logs/ (14 files)
-Log ingestion and analysis.
-
-### migrate/ (15 files)
-Migration guides from other platforms (Amplitude, Mixpanel, etc.).
-
-### model-context-protocol/ (9 files)
-Model Context Protocol integration.
+| File | Description |
+|------|-------------|
+| `index.mdx` | Getting started overview |
+| Other files | Installation and onboarding guides |
 
 ### new-to-posthog/ (8 files)
-Onboarding guides for new users.
 
-### product-tours/ (8 files)
-Product tour creation and management.
+| File | Description |
+|------|-------------|
+| Various | Beginner guides and first steps |
 
-### settings/ (7 files)
-Account and project settings.
+### integrate/ (113 files)
 
-### billing/ (5 files)
-Billing, pricing, usage management.
+| Directory | Description |
+|-----------|-------------|
+| `send-events/` (22 files) | How to capture events with each SDK |
+| `feature-flags-code/` (35 files) | Feature flag usage code per SDK |
+| `_snippets/` (55 files) | Reusable MDX code snippets |
 
-### endpoints/ (5 files)
-Custom API endpoints.
+### libraries/ (110 files)
 
-### support/ (5 files)
-Support resources and troubleshooting.
+| Directory | Description |
+|-----------|-------------|
+| `js/` (7 files) | JavaScript/Web SDK |
+| `next-js/` (7 files) | Next.js SDK |
+| `python/` (6 files) | Python SDK |
+| `ios/` (6 files) | iOS Swift SDK |
+| `react-router/` (14 files) | React Router integration |
+| `vue-js/` (5 files) | Vue.js SDK |
+| `node/` (3 files) | Node.js SDK |
+| `dotnet/` (3 files) | .NET SDK |
+| `go/` (3 files) | Go SDK |
+| `php/` (3 files) | PHP SDK |
+| `ruby/` (3 files) | Ruby SDK |
+| `react-native/` (3 files) | React Native SDK |
+| `flutter/` (2 files) | Flutter SDK |
+| `android/` (2 files) | Android SDK |
+| `curl/` (2 files) | cURL / REST API examples |
+| `capacitor/` | Capacitor SDK |
+| `elixir/` | Elixir SDK |
+| `java/` | Java SDK |
+| `react/` | React SDK |
+| `rust/` | Rust SDK |
+| `unity/` | Unity SDK |
 
-### toolbar/ (5 files)
-PostHog toolbar integration.
+### product-analytics/ (76 files)
 
-### sql/ (6 files)
-SQL query language reference.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (21 files) | Setup by framework |
+| `trends/` (8 files) | Trends chart docs |
+| Root files | Insights, funnels, paths, cohorts, etc. |
 
-### how-posthog-works/ (6 files)
-Architecture, data model, ingestion pipeline.
+### feature-flags/ (69 files)
 
-### ai-engineering/ (3 files)
-AI engineering resources.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (20 files) | SDK-specific setup |
+| `local-evaluation/` (6 files) | Local flag evaluation |
+| `snippets/` (17 files) | Code snippets |
+| Root files | Flag types, targeting, bootstrapping |
 
-### site-apps/ (3 files)
-Site app integrations.
+### experiments/ (59 files)
 
-### alerts/ (1 file)
-Alert configuration.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (33 files) | SDK-specific experiment setup |
+| Root files | Statistical methods, metrics, variants |
 
-### cmd-k/ (1 file)
-Command palette documentation.
+### session-replay/ (62 files)
 
-### csp-tracking/ (1 file)
-Content Security Policy tracking.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (21 files) | SDK-specific setup |
+| `_snippets/` (23 files) | Code snippets |
+| Root files | Configuration, privacy, network recording |
 
-### discussion/ (1 file)
-Discussion feature.
+### error-tracking/ (77 files)
 
-### hog/ (1 file)
-HogQL language reference.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (22 files) | SDK-specific setup |
+| `upload-source-maps/` (17 files) | Source map upload guides |
+| `_snippets/` (15 files) | Code snippets |
+| Root files | Error grouping, alerts, issue management |
 
-### integrations/ (1 file)
-Integration overview.
+### llm-analytics/ (86 files)
 
-### notebooks/ (1 file)
-Notebook features.
+| Directory | Description |
+|-----------|-------------|
+| `installation/` (42 files) | Provider-specific setup (OpenAI, Anthropic, etc.) |
+| `integrations/` (5 files) | Third-party AI integrations |
+| `user-feedback/` (2 files) | Collecting feedback on LLM responses |
+| `_snippets/` (7 files) | Code snippets |
 
-### product-os/ (1 file)
-Product OS overview.
+### surveys/ (33 files)
 
-### _snippets/ (18 files)
-Reusable documentation snippets.
+| File | Description |
+|------|-------------|
+| Root files | Creating surveys, targeting, templates, API |
 
-### components/ (1 file)
-Component documentation.
+### cdp/ (106 files)
+
+| Directory | Description |
+|-----------|-------------|
+| `destinations/` (41 files) | Destination connectors (S3, BigQuery, Salesforce, etc.) |
+| `sources/` (42 files) | Source connectors (Stripe, Zendesk, etc.) |
+| `batch-exports/` (8 files) | Batch export configuration |
+| `transformations/` (3 files) | Data transformation pipelines |
+
+### data-warehouse/ (21 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Querying, schema, linking, syncing data |
+
+### web-analytics/ (39 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Web analytics setup, metrics, cookieless tracking |
+
+### api/ (19 files)
+
+| File | Description |
+|------|-------------|
+| Root files | REST API endpoints, authentication, pagination |
+
+### endpoints/ (30 files)
+
+| Directory | Description |
+|-----------|-------------|
+| `start-here/` (10 files) | Creating and deploying endpoints |
+| Root files | Variables, SQL endpoints, guides |
+
+### self-host/ (28 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Kubernetes, Docker, configuration, upgrades |
+
+### advanced/ (23 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Proxy, reverse proxy, custom domains, performance |
+
+### model-context-protocol/ (19 files)
+
+| File | Description |
+|------|-------------|
+| Root files | MCP server integration with PostHog |
+
+### logs/ (19 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Log capture, filtering, SDK setup |
+
+### workflows/ (16 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Workflow automation, triggers, actions |
+
+### migrate/ (15 files)
+
+| File | Description |
+|------|-------------|
+| Root files | Migration guides from Mixpanel, Amplitude, GA, etc. |
+
+### privacy/ (18 files)
+
+| File | Description |
+|------|-------------|
+| Root files | GDPR, CCPA, data deletion, anonymization |

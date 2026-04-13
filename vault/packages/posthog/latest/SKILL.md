@@ -12,36 +12,42 @@ PostHog product analytics documentation. Use for event tracking, feature flags, 
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/getting-started/` |
-| Install SDK | `contents/integrate/` or `contents/libraries/` |
-| Track events | `contents/integrate/send-events/` |
+| SDK installation | `contents/libraries/` |
+| Event capture | `contents/integrate/send-events/` |
 | Feature flags | `contents/feature-flags/` |
-| A/B testing | `contents/experiments/` |
+| A/B experiments | `contents/experiments/` |
 | Session replay | `contents/session-replay/` |
-| API reference | `contents/api/` |
+| Product analytics | `contents/product-analytics/` |
+| Error tracking | `contents/error-tracking/` |
+| LLM / AI analytics | `contents/llm-analytics/` |
 | Data warehouse | `contents/data-warehouse/` |
+| REST API | `contents/api/` |
 | Self-hosting | `contents/self-host/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Event tracking and analytics
-- Feature flags and targeting
-- A/B testing and experiments
-- Session replay and user recordings
-- User surveys and feedback
-- Data warehouse and SQL queries
-- SDK integration for various platforms
-- Error tracking and monitoring
-- LLM analytics and observability
-- Customer Data Platform (sources, destinations, transformations)
-- Web analytics
-- Workflow automation
-- Self-hosting and deployment
+- Setting up PostHog SDKs (JavaScript, Python, iOS, Android, Go, Ruby, PHP, .NET, etc.)
+- Tracking events, identifying users, setting user properties
+- Feature flags, feature flag local evaluation, flag bootstrapping
+- A/B testing, experiments, statistical significance
+- Session recording, network recording, privacy controls
+- Product analytics: funnels, trends, paths, retention, cohorts
+- Error tracking and source map uploads
+- LLM analytics and AI model observability
+- Surveys and in-app feedback
+- Customer Data Platform (CDP), destinations, sources, batch exports
+- Data warehouse querying and schema
+- HogQL / SQL queries
+- Web analytics and cookieless tracking
+- Self-hosting PostHog on Kubernetes or Docker
+- Privacy, GDPR, CCPA compliance
+- Migration from Mixpanel, Amplitude, or Google Analytics
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question
+2. Identify the relevant section based on the user's question
 3. Read specific files for details
 
 **TOC.md contains all files organized by directory - always check it first.**
