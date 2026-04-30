@@ -49,11 +49,11 @@ Run `claude` from your IDE's integrated terminal, and all integration features w
 
 Use the `/ide` command in any external terminal to connect Claude Code to your JetBrains IDE and activate all features:
 
-```bash  theme={null}
+```bash theme={null}
 claude
 ```
 
-```text  theme={null}
+```text theme={null}
 /ide
 ```
 
@@ -67,7 +67,7 @@ Configure IDE integration through Claude Code's settings:
 
 1. Run `claude`
 2. Enter the `/config` command
-3. Set the diff tool to `auto` for automatic IDE detection
+3. Set the diff tool to `auto` to show diffs in the IDE, or `terminal` to keep them in the terminal
 
 ### Plugin Settings
 
@@ -75,7 +75,7 @@ Configure the Claude Code plugin by going to **Settings → Tools → Claude Cod
 
 #### General Settings
 
-* **Claude command**: Specify a custom command to run Claude (for example, `claude`, `/usr/local/bin/claude`, or `npx @anthropic/claude`)
+* **Claude command**: Specify a custom command to run Claude (for example, `claude`, `/usr/local/bin/claude`, or `npx @anthropic-ai/claude-code`)
 * **Suppress notification for Claude command not found**: Skip notifications about not finding the Claude command
 * **Enable using Option+Enter for multi-line prompts** (macOS only): When enabled, Option+Enter inserts new lines in Claude Code prompts. Disable if experiencing issues with the Option key being captured unexpectedly (requires terminal restart)
 * **Enable automatic updates**: Automatically check for and install plugin updates (applied on restart)

@@ -86,7 +86,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
 
 **If your SDK isn't listed, you can use the comments in the example to help you adapt it to your SDK.**
 
-<Tabs items={["Next.js", "Astro", "Express", "JS Backend SDK", "React Router", "TanStack React Start"]}>
+<Tabs items={["Next.js", "Astro", "Express", "@clerk/backend", "React Router", "TanStack React Start"]}>
   <Tab>
     ```tsx {{ filename: 'app/api/notion/route.tsx' }}
     import { auth, clerkClient } from '@clerk/nextjs/server'
@@ -105,9 +105,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
 
       const provider = 'notion'
 
-      // Initialize the JS Backend SDK
-      // This varies depending on the SDK you're using
-      // https://clerk.com/docs/js-backend/getting-started/quickstart
+      // Initialize clerkClient
       const client = await clerkClient()
 
       // Use the `getUserOauthAccessToken()` method to get the user's OAuth access token
@@ -145,7 +143,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
     export const GET: APIRoute = async (context) => {
       // The `Auth` object gives you access to properties like `isAuthenticated` and `userId`
       // Accessing the `Auth` object differs depending on the SDK you're using
-      // https://clerk.com/docs/references/backend/types/auth-object#how-to-access-the-auth-object
+      // https://clerk.com/docs/reference/backend/types/auth-object#how-to-access-the-auth-object
       const { isAuthenticated, userId } = context.locals.auth()
 
       // Protect the route from unauthenticated users
@@ -155,9 +153,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
 
       const provider = 'notion'
 
-      // Initialize the JS Backend SDK
-      // This varies depending on the SDK you're using
-      // https://clerk.com/docs/js-backend/getting-started/quickstart
+      // Initialize clerkClient
       // Use the `getUserOauthAccessToken()` method to get the user's OAuth access token
       const clerkResponse = await clerkClient(context).users.getUserOauthAccessToken(userId, provider)
       const accessToken = clerkResponse.data[0].token || ''
@@ -192,9 +188,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
     import express from 'express'
 
     const app = express()
-    // Initialize the JS Backend SDK
-    // This varies depending on the SDK you're using
-    // https://clerk.com/docs/js-backend/getting-started/quickstart
+    // Initialize clerkClient
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 
     app.get('/user', async (req, res) => {
@@ -242,9 +236,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
     ```js
     import { createClerkClient } from '@clerk/backend'
 
-    // Initialize the JS Backend SDK
-    // This varies depending on the SDK you're using
-    // https://clerk.com/docs/js-backend/getting-started/quickstart
+    // Initialize clerkClient
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 
     async function getNotionData(request) {
@@ -255,7 +247,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
 
       // Protect the route from unauthenticated users
       if (!isAuthenticated) {
-        return null
+        return Response.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
       // Use the `getUserOauthAccessToken()` method to get the user's OAuth access token
@@ -263,7 +255,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
       const clerkResponse = await clerkClient.users.getUserOauthAccessToken(userId, provider)
       const accessToken = clerkResponse.data[0].token || ''
       if (!accessToken) {
-        return null
+        return Response.json({ error: 'Access token not found' }, { status: 403 })
       }
 
       // Fetch the user data from the Notion API
@@ -290,12 +282,10 @@ The following example demonstrates how to retrieve the OAuth access token for a 
   <Tab>
     ```tsx {{ filename: 'app/routes/notion.tsx' }}
     import { getAuth } from '@clerk/react-router/ssr.server'
-    import { createClerkClient } from '@clerk/react-router/api.server'
+    import { createClerkClient } from '@clerk/react-router/server'
     import type { Route } from './+types/notion'
 
-    // Initialize the JS Backend SDK
-    // This varies depending on the SDK you're using
-    // https://clerk.com/docs/js-backend/getting-started/quickstart
+    // Initialize clerkClient
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 
     export async function loader(args: Route.LoaderArgs) {
@@ -367,9 +357,7 @@ The following example demonstrates how to retrieve the OAuth access token for a 
 
             const provider = 'notion'
 
-            // Initialize the JS Backend SDK
-            // This varies depending on the SDK you're using
-            // https://clerk.com/docs/js-backend/getting-started/quickstart
+            // Initialize clerkClient
             // Use the `getUserOauthAccessToken()` method to get the user's OAuth access token
             const clerkResponse = await clerkClient().users.getUserOauthAccessToken(userId, provider)
             const accessToken = clerkResponse.data[0].token || ''
@@ -428,12 +416,7 @@ When using the [prebuilt components](/docs/reference/components/overview), you c
 
 Currently, the prebuilt components are not supported in native applications, but you can use the Clerk API to [build a custom flow for authenticating with social connections](/docs/guides/development/custom-flows/authentication/oauth-connections).
 
-Clerk ensures that security critical nonces are passed only to allowlisted URLs when the OAuth flow is completed in native browsers or webviews. For maximum security in your **production** instances, you need to allowlist your custom redirect URLs via the [Clerk Dashboard](https://dashboard.clerk.com/) or the [Clerk Backend API](/docs/reference/backend/redirect-urls/create-redirect-url).
-
-To allowlist a redirect URL via the Clerk Dashboard:
-
-1. In the Clerk Dashboard, navigate to the [**Native applications**](https://dashboard.clerk.com/~/native-applications) page.
-1. Scroll to the **Allowlist for mobile OAuth redirect** section and add your redirect URLs.
+<Include src="_partials/allowlist-redirect-urls" />
 
 ## OAuth for Apple native applications
 
@@ -597,4 +580,4 @@ Clerk provides a wide range of social providers to ease your user's sign-up and 
   - ![Xero logo](/docs/images/logos/auth_providers/xero.svg)
 </Cards>
 
-Don't see the provider you're looking for? You can [configure a custom OIDC-compatible provider](/docs/guides/configure/auth-strategies/social-connections/custom-provider) or [request a new one](https://feedback.clerk.com/roadmap/f9045ac8-0c8e-4f30-b84f-8d551b0767b9?_gl=1*1ywoqdy*_gcl_au*OTUwODgxMjg2LjE3MTI1OTEwNzMuMTczNjk0NTcxMC4xNzE1MTk4MTEyLjE3MTUxOTgxMTI.).
+Don't see the provider you're looking for? You can [configure a custom OIDC-compatible provider](/docs/guides/configure/auth-strategies/social-connections/custom-provider) or [request a new one](https://feedback.clerk.com/roadmap).

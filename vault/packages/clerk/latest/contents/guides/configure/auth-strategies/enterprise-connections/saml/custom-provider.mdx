@@ -84,7 +84,7 @@ This guide shows you how to set up a SAML connection with a custom IdP in Clerk.
 
   Mapping the claims in your IdP to the attributes in Clerk ensures that the data from your IdP is correctly mapped to the data in Clerk.
 
-  In the Clerk Dashboard, find the **Attribute mapping** section. Here, you are shown what properties on the [`User`](/docs/reference/javascript/user) object in Clerk are being mapped to the claims in your IdP.
+  In the Clerk Dashboard, find the **Attribute mapping** section. Here, you are shown what properties on the [`User`](/docs/reference/objects/user) object in Clerk are being mapped to the claims in your IdP.
 
   In your IdP dashboard, there should be a section where you can map the IdP's claims to the attributes in Clerk. For example, Google has a `Primary email` claim that needs to be mapped to Clerk's `mail` property. During SAML configuration in the Google dashboard, Google provides a section where these claims can be mapped.
 
@@ -92,13 +92,24 @@ This guide shows you how to set up a SAML connection with a custom IdP in Clerk.
 
   ### Map other claims (optional)
 
-  In Clerk, the [`User`](/docs/reference/javascript/user) object has a `publicMetadata` property that you can use to store additional information about your users.
+  In Clerk, the [`User`](/docs/reference/objects/user) object has a `publicMetadata` property that you can use to store additional information about your users.
 
   To map other claims from your IdP that do not have a direct mapping to Clerk attributes, you can map them to the `publicMetadata` property. To do this, prepend the Clerk claims with `public_metadata_` during the mapping process.
 
   For example, say you were using Google as your IdP. Google users have the "Phone number" attribute. Clerk does not have a direct mapping for this attribute, as you can see in the Clerk Dashboard in the **Attribute mapping** section. Instead, in the Google dashboard, you would map Google's "Phone number" claim to `public_metadata_phone_number`. Then, in Clerk, the value for the user's phone number would be saved in the user's `User.publicMetadata` under the key `phone_number`. Some IdP providers like Microsoft Entra map additional claims as URLs. To ensure the claims work with Clerk, you must add the claims as strings only.
 
   Learn more about [how to access the metadata from our APIs](/docs/guides/users/extending).
+
+  #### Map custom attributes (beta)
+
+  The `public_metadata_*` claim-name prefix described above is the SAML-only way to add IdP claims to `publicMetadata`. The shared custom attribute flow below is the recommended path when Directory Sync is also enabled on the connection, because the same attribute definitions apply to both SSO and SCIM.
+
+  In addition to the standard attribute mappings, you can sync custom attributes from your IdP (such as `department` or `employee_id`) into Clerk's `publicMetadata`. Custom attribute definitions are configured at the enterprise connection level and are shared with your SCIM/Directory Sync connection if one is enabled.
+
+  For a full walkthrough of defining custom attributes and mapping them for SAML connections, see [Custom Attribute Mapping](/docs/guides/configure/auth-strategies/enterprise-connections/custom-attribute-mapping).
+
+  > [!NOTE]
+  > When [Directory Sync](/docs/guides/configure/auth-strategies/enterprise-connections/directory-sync) is enabled on the same connection, SCIM becomes the exclusive source for custom attribute values and overrides SSO. Custom attributes become editable via SSO again when Directory Sync is disabled.
 
   ### Enable the connection for Clerk
 

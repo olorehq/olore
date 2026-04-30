@@ -4,44 +4,44 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/` | All English documentation (flat structure) | 35 |
+| `contents/` | All documentation (flat, no subdirectories) | 35 |
 
 ## contents/
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Introduction and getting started with OpenCode |
-| `cli.mdx` | CLI commands and options for programmatic use |
-| `tui.mdx` | Terminal user interface guide |
-| `config.mdx` | JSON/JSONC configuration reference |
-| `models.mdx` | Configuring LLM providers and models |
-| `providers.mdx` | Using any of 75+ LLM providers |
+| `acp.mdx` | Use OpenCode in any ACP-compatible editor |
 | `agents.mdx` | Configure and use specialized agents |
-| `skills.mdx` | Agent skills via SKILL.md definitions |
-| `tools.mdx` | Built-in tools the LLM can use |
-| `custom-tools.mdx` | Creating custom tools the LLM can call |
-| `mcp-servers.mdx` | Adding local and remote MCP tools |
+| `cli.mdx` | OpenCode CLI options and commands |
+| `commands.mdx` | Create custom commands for repetitive tasks |
+| `config.mdx` | Using the OpenCode JSON config |
+| `custom-tools.mdx` | Create tools the LLM can call in opencode |
+| `ecosystem.mdx` | Projects and integrations built with OpenCode |
+| `enterprise.mdx` | Enterprise features and deployment |
+| `formatters.mdx` | Language-specific formatters used by OpenCode |
+| `github.mdx` | Use OpenCode in GitHub issues and pull requests |
+| `gitlab.mdx` | Use OpenCode in GitLab issues and merge requests |
+| `go.mdx` | OpenCode Go low-cost subscription for open models |
+| `ide.mdx` | OpenCode extension for VS Code, Cursor, and other IDEs |
+| `index.mdx` | Introduction and getting started with OpenCode |
+| `keybinds.mdx` | Customize your keybinds |
+| `lsp.mdx` | LSP server integration |
+| `mcp-servers.mdx` | Add local and remote MCP tools |
+| `models.mdx` | Configuring an LLM provider and model |
+| `modes.mdx` | Different modes for different use cases |
+| `network.mdx` | Configure proxies and custom certificates |
 | `permissions.mdx` | Control which actions require approval |
-| `rules.mdx` | Custom instructions via AGENTS.md |
-| `modes.mdx` | Different modes for different use cases (deprecated in favor of agents) |
-| `keybinds.mdx` | Customizing TUI keybinds |
-| `commands.mdx` | Available commands reference |
-| `lsp.mdx` | Language server protocol integration |
-| `formatters.mdx` | Code formatter configuration |
-| `ide.mdx` | IDE extension usage |
-| `themes.mdx` | TUI theme customization |
-| `share.mdx` | Sharing sessions and conversations |
-| `sdk.mdx` | OpenCode SDK reference |
-| `server.mdx` | OpenCode server configuration |
-| `network.mdx` | Network and proxy settings |
-| `github.mdx` | GitHub integration |
-| `gitlab.mdx` | GitLab integration |
-| `go.mdx` | Go language-specific usage |
-| `acp.mdx` | Agent Communication Protocol |
-| `plugins.mdx` | Plugin system |
-| `ecosystem.mdx` | OpenCode ecosystem overview |
-| `enterprise.mdx` | Enterprise features and configuration |
-| `troubleshooting.mdx` | Common issues and solutions |
-| `windows-wsl.mdx` | Windows and WSL setup guide |
-| `web.mdx` | Web interface usage |
-| `zen.mdx` | Zen mode and focused workflow |
+| `plugins.mdx` | Write your own plugins to extend OpenCode |
+| `providers.mdx` | Using any LLM provider in OpenCode |
+| `rules.mdx` | Set custom instructions for opencode |
+| `sdk.mdx` | Type-safe JS client for opencode server |
+| `server.mdx` | Interact with opencode server over HTTP |
+| `share.mdx` | Share OpenCode conversations via public links |
+| `skills.mdx` | Define reusable behavior via SKILL.md definitions |
+| `themes.mdx` | Select a built-in theme or define your own |
+| `tools.mdx` | Manage the tools an LLM can use |
+| `troubleshooting.mdx` | Common issues and how to resolve them |
+| `tui.mdx` | Using the OpenCode terminal user interface |
+| `web.mdx` | Using OpenCode in your browser |
+| `windows-wsl.mdx` | Run OpenCode on Windows using WSL |
+| `zen.mdx` | OpenCode Zen curated verified model list |

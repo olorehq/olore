@@ -5,69 +5,68 @@ description: Local opencode documentation reference (latest). OpenCode AI coding
 
 # opencode Documentation
 
-OpenCode is an open source AI coding agent available as a terminal-based interface (TUI), desktop app, or IDE extension. It supports 75+ LLM providers, agents, skills, custom tools, MCP servers, and extensive configuration.
+OpenCode is an open source AI coding agent available as a terminal-based interface (TUI), desktop app, IDE extension, and web interface. It supports any LLM provider, MCP servers, custom tools, plugins, and agent skills.
 
 ## Documentation Structure
 
 ```
-contents/
-├── index.mdx          # Introduction and getting started
-├── cli.mdx            # CLI commands and options
-├── tui.mdx            # Terminal user interface
-├── config.mdx         # JSON/JSONC configuration
-├── agents.mdx         # Specialized agents
-├── skills.mdx         # Agent skills (SKILL.md)
-├── tools.mdx          # Built-in tools
-├── custom-tools.mdx   # Custom tool creation
-├── mcp-servers.mdx    # MCP tool integration
-├── providers.mdx      # LLM provider setup
-├── models.mdx         # Model configuration
-├── permissions.mdx    # Action approval control
-├── rules.mdx          # Custom instructions (AGENTS.md)
-├── keybinds.mdx       # TUI keybind customization
-├── lsp.mdx            # Language server integration
-├── formatters.mdx     # Code formatter configuration
-├── ide.mdx            # IDE extension
-├── themes.mdx         # TUI themes
-├── server.mdx         # Server configuration
-├── sdk.mdx            # SDK reference
-├── acp.mdx            # Agent Communication Protocol
-├── plugins.mdx        # Plugin system
-├── github.mdx         # GitHub integration
-├── gitlab.mdx         # GitLab integration
-├── enterprise.mdx     # Enterprise features
-├── troubleshooting.mdx # Common issues
-└── windows-wsl.mdx    # Windows/WSL setup
+contents/          # All docs (flat, 35 files)
+├── index.mdx      # Introduction and getting started
+├── config.mdx     # JSON configuration reference
+├── cli.mdx        # CLI commands and options
+├── tui.mdx        # Terminal UI usage
+├── agents.mdx     # Agent configuration
+├── models.mdx     # LLM providers and models
+├── providers.mdx  # Provider setup
+├── mcp-servers.mdx # MCP tool integration
+├── plugins.mdx    # Plugin development
+├── skills.mdx     # Agent skill definitions
+└── ...            # 25 more topic files
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Getting started / installation | `contents/index.mdx`, `contents/cli.mdx` |
-| Configuration | `contents/config.mdx`, `contents/models.mdx`, `contents/providers.mdx` |
-| TUI and keybinds | `contents/tui.mdx`, `contents/keybinds.mdx`, `contents/themes.mdx` |
-| Agents and skills | `contents/agents.mdx`, `contents/skills.mdx`, `contents/rules.mdx` |
-| Tools and MCP | `contents/tools.mdx`, `contents/custom-tools.mdx`, `contents/mcp-servers.mdx` |
-| Permissions and security | `contents/permissions.mdx`, `contents/network.mdx`, `contents/enterprise.mdx` |
-| IDE and integrations | `contents/ide.mdx`, `contents/lsp.mdx`, `contents/github.mdx`, `contents/gitlab.mdx` |
-| Server and SDK | `contents/server.mdx`, `contents/sdk.mdx`, `contents/acp.mdx` |
-| Troubleshooting | `contents/troubleshooting.mdx`, `contents/windows-wsl.mdx` |
+| Getting started / installation | `contents/index.mdx` |
+| Configuration (JSON config) | `contents/config.mdx` |
+| CLI commands and flags | `contents/cli.mdx`, `contents/commands.mdx` |
+| TUI usage and keybinds | `contents/tui.mdx`, `contents/keybinds.mdx` |
+| Agents and modes | `contents/agents.mdx`, `contents/modes.mdx` |
+| LLM providers and models | `contents/providers.mdx`, `contents/models.mdx` |
+| MCP servers | `contents/mcp-servers.mdx` |
+| Custom tools | `contents/custom-tools.mdx`, `contents/tools.mdx` |
+| Plugins | `contents/plugins.mdx` |
+| Agent skills (SKILL.md) | `contents/skills.mdx` |
+| Rules and instructions | `contents/rules.mdx` |
+| Permissions and security | `contents/permissions.mdx` |
+| IDE integration (VS Code, Cursor) | `contents/ide.mdx`, `contents/acp.mdx` |
+| GitHub / GitLab integration | `contents/github.mdx`, `contents/gitlab.mdx` |
+| HTTP server and SDK | `contents/server.mdx`, `contents/sdk.mdx` |
+| Web interface | `contents/web.mdx` |
+| Themes and formatting | `contents/themes.mdx`, `contents/formatters.mdx` |
+| LSP integration | `contents/lsp.mdx` |
+| Network / proxy config | `contents/network.mdx` |
+| Windows / WSL | `contents/windows-wsl.mdx` |
+| Sharing conversations | `contents/share.mdx` |
+| Subscriptions (Go, Zen) | `contents/go.mdx`, `contents/zen.mdx` |
+| Enterprise deployment | `contents/enterprise.mdx` |
+| Ecosystem and community | `contents/ecosystem.mdx` |
+| Troubleshooting | `contents/troubleshooting.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Installing or getting started with OpenCode
-- Configuring OpenCode (models, providers, config file)
-- Using the TUI, CLI commands, or IDE extension
-- Setting up agents, skills, or custom rules
-- Adding MCP servers or custom tools
-- Managing tool permissions
-- OpenCode server, SDK, or plugin development
-- Troubleshooting OpenCode issues
+- Installing, configuring, or running OpenCode
+- CLI flags, TUI navigation, or keybindings
+- Setting up LLM providers, models, or MCP servers
+- Writing plugins, custom tools, or agent skills
+- Integrating OpenCode with GitHub, GitLab, or IDEs
+- Permissions, rules, network/proxy settings
+- The OpenCode HTTP server or JS SDK
 
 ## How to find information
 
 1. Use Topic Guide above to identify relevant files
-2. Read `TOC.md` for complete file listing by directory
-3. Read specific files from `contents/{path}`
+2. Read `TOC.md` for the complete file listing
+3. Read specific files from `contents/{filename}.mdx`

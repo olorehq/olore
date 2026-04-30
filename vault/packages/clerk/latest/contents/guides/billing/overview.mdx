@@ -31,7 +31,11 @@ Clerk Billing allows your customers to purchase recurring Subscriptions to your 
 
 ### Can I use an existing Stripe account with Clerk Billing?
 
-Yes, you can. However, it must not already be linked to another platform.
+Yes, you can use an existing Stripe account, as long as it isn't controlled by another platform.
+
+Disconnect accounts created under a platform's Stripe Connect setup from that platform before linking them to Clerk.
+
+In general, if you created your Stripe account yourself via Stripe, it's independent; if it was created through another service, it may be platform-controlled.
 
 ### Can I see Subscriptions in my Stripe account?
 
@@ -40,6 +44,10 @@ Clerk Billing only uses Stripe for payment processing. You can see payment and c
 ### Can I use the same Stripe account for both dev and prod environments?
 
 No. Stripe accounts created for development instances are sandbox/test accounts and cannot be used for production. For a production environment, you must create a separate Stripe account.
+
+### Does Clerk Billing support refunds?
+
+No, Clerk Billing does not support refunds at this time. You can still issue a refund through your Stripe account. Please note that refunds performed in Stripe will not be reflected in income/MRR calculations.
 
 ### Is Clerk a Merchant of Record (MoR) for transactions?
 
@@ -55,7 +63,7 @@ None directly, but since payments are processed through Stripe, you can use any 
 
 ### Can I offer custom pricing plans to specific customers?
 
-Clerk Billing does not currently support custom pricing plans, though we plan to roll out support for this in the future.
+Yes, Clerk Billing supports custom pricing plans. See [Custom Plans and prices](/docs/guides/billing/custom-plans) for more information.
 
 ### Can I let users upgrade or downgrade their plans mid-cycle?
 

@@ -1,10 +1,10 @@
 ---
 title: '`<OrganizationProfile />` component'
 description: Clerk's <OrganizationProfile /> component is used to render a beautiful, full-featured Organization management UI that allows users to manage their Organization profile and security settings.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, remix, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+preview:
+  src: '/organization-profile'
 ---
-
-![The \<OrganizationProfile /> component allows users to manage their Organization membership and security settings.](/docs/images/ui-components/organization-profile.svg)
 
 The `<OrganizationProfile />` component allows users to manage their Organization membership, security, and billing settings.
 
@@ -33,7 +33,7 @@ The **Billing** tab displays the Plans and Features that are available to the Or
 
   <If sdk="react">
     ```jsx {{ filename: 'src/App.tsx' }}
-    import { OrganizationProfile } from '@clerk/clerk-react'
+    import { OrganizationProfile } from '@clerk/react'
 
     function App() {
       return <OrganizationProfile />
@@ -57,7 +57,7 @@ The **Billing** tab displays the Plans and Features that are available to the Or
     <Include src="_partials/expo/web-only-callout" />
 
     ```jsx {{ filename: '/app/organization-profile.web.tsx' }}
-    import { OrganizationProfile } from '@clerk/clerk-expo/web'
+    import { OrganizationProfile } from '@clerk/expo/web'
 
     export default function OrganizationProfilePage() {
       return <OrganizationProfile />
@@ -68,16 +68,6 @@ The **Billing** tab displays the Plans and Features that are available to the Or
   <If sdk="chrome-extension">
     ```jsx {{ filename: 'src/routes/organization-profile.tsx' }}
     import { OrganizationProfile } from '@clerk/chrome-extension'
-
-    export default function OrganizationProfilePage() {
-      return <OrganizationProfile />
-    }
-    ```
-  </If>
-
-  <If sdk="remix">
-    ```tsx {{ filename: 'app/routes/organization-profile.tsx' }}
-    import { OrganizationProfile } from '@clerk/remix'
 
     export default function OrganizationProfilePage() {
       return <OrganizationProfile />
@@ -142,7 +132,7 @@ The **Billing** tab displays the Plans and Features that are available to the Or
 <If sdk="js-frontend">
   ## Usage with JavaScript
 
-  The following methods available on an instance of the [`Clerk`](/docs/reference/javascript/clerk) class are used to render and control the `<OrganizationProfile />` component:
+  The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<OrganizationProfile />` component:
 
   - [`mountOrganizationProfile()`](#mount-organization-profile)
   - [`unmountOrganizationProfile()`](#unmount-organization-profile)
@@ -345,7 +335,7 @@ The `<OrganizationProfile />` component accepts the following properties, all of
   - `routing`
   - `'hash' | 'path'`
 
-  The [routing](/docs/guides/how-clerk-works/routing) strategy for your pages. <br />Defaults to `'path'` for frameworks that handle routing, such as Next.js and Remix. Defaults to `hash` for all other SDK's, such as React.
+  The [routing](/docs/guides/how-clerk-works/routing) strategy for your pages. <br />Defaults to `'path'` for frameworks that handle routing, such as Next.js. Defaults to `hash` for all other SDK's, such as React.
 </Properties>
 
 ## Customization

@@ -11,46 +11,50 @@
 <Note>
   Keyboard shortcuts may vary by platform and terminal. Press `?` to see available shortcuts for your environment.
 
-  **macOS users**: Option/Alt key shortcuts (`Alt+B`, `Alt+F`, `Alt+Y`, `Alt+M`, `Alt+P`) require configuring Option as Meta in your terminal:
+  **macOS users**: Option/Alt key shortcuts (`Alt+B`, `Alt+F`, `Alt+Y`, `Alt+M`, `Alt+P`, `Alt+T`) require configuring Option as Meta in your terminal:
 
-  * **iTerm2**: settings → Profiles → Keys → set Left/Right Option key to "Esc+"
-  * **Terminal.app**: settings → Profiles → Keyboard → check "Use Option as Meta Key"
-  * **VS Code**: settings → Profiles → Keys → set Left/Right Option key to "Esc+"
+  * **iTerm2**: Settings → Profiles → Keys → General → set Left/Right Option key to "Esc+"
+  * **Apple Terminal**: Settings → Profiles → Keyboard → check "Use Option as Meta Key"
+  * **VS Code**: set `"terminal.integrated.macOptionIsMeta": true` in VS Code settings
 
   See [Terminal configuration](/en/terminal-config) for details.
 </Note>
 
 ### General controls
 
-| Shortcut                                          | Description                                                         | Context                                                                                       |
-| :------------------------------------------------ | :------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------- |
-| `Ctrl+C`                                          | Cancel current input or generation                                  | Standard interrupt                                                                            |
-| `Ctrl+F`                                          | Kill all background agents. Press twice within 3 seconds to confirm | Background agent control                                                                      |
-| `Ctrl+D`                                          | Exit Claude Code session                                            | EOF signal                                                                                    |
-| `Ctrl+G`                                          | Open in default text editor                                         | Edit your prompt or custom response in your default text editor                               |
-| `Ctrl+L`                                          | Clear terminal screen                                               | Keeps conversation history                                                                    |
-| `Ctrl+O`                                          | Toggle verbose output                                               | Shows detailed tool usage and execution                                                       |
-| `Ctrl+R`                                          | Reverse search command history                                      | Search through previous commands interactively                                                |
-| `Ctrl+V` or `Cmd+V` (iTerm2) or `Alt+V` (Windows) | Paste image from clipboard                                          | Pastes an image or path to an image file                                                      |
-| `Ctrl+B`                                          | Background running tasks                                            | Backgrounds bash commands and agents. Tmux users press twice                                  |
-| `Ctrl+T`                                          | Toggle task list                                                    | Show or hide the [task list](#task-list) in the terminal status area                          |
-| `Left/Right arrows`                               | Cycle through dialog tabs                                           | Navigate between tabs in permission dialogs and menus                                         |
-| `Up/Down arrows`                                  | Navigate command history                                            | Recall previous inputs                                                                        |
-| `Esc` + `Esc`                                     | Rewind or summarize                                                 | Restore code and/or conversation to a previous point, or summarize from a selected message    |
-| `Shift+Tab` or `Alt+M` (some configurations)      | Toggle permission modes                                             | Switch between Auto-Accept Mode, Plan Mode, and normal mode.                                  |
-| `Option+P` (macOS) or `Alt+P` (Windows/Linux)     | Switch model                                                        | Switch models without clearing your prompt                                                    |
-| `Option+T` (macOS) or `Alt+T` (Windows/Linux)     | Toggle extended thinking                                            | Enable or disable extended thinking mode. Run `/terminal-setup` first to enable this shortcut |
+| Shortcut                                          | Description                                                         | Context                                                                                                                                                                                                                                                                                                |
+| :------------------------------------------------ | :------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ctrl+C`                                          | Cancel current input or generation                                  | Standard interrupt                                                                                                                                                                                                                                                                                     |
+| `Ctrl+X Ctrl+K`                                   | Kill all background agents. Press twice within 3 seconds to confirm | Background agent control                                                                                                                                                                                                                                                                               |
+| `Ctrl+D`                                          | Exit Claude Code session                                            | EOF signal                                                                                                                                                                                                                                                                                             |
+| `Ctrl+G` or `Ctrl+X Ctrl+E`                       | Open in default text editor                                         | Edit your prompt or custom response in your default text editor. `Ctrl+X Ctrl+E` is the readline-native binding. Turn on Show last response in external editor in `/config` to prepend Claude's previous reply as `#`-commented context above your prompt; the comment block is stripped when you save |
+| `Ctrl+L`                                          | Clear prompt input and redraw screen                                | Clears typed text and forces a full terminal redraw. Conversation history is kept. Use this to recover if the display becomes garbled or partially blank                                                                                                                                               |
+| `Ctrl+O`                                          | Toggle transcript viewer                                            | Shows detailed tool usage and execution. Also expands MCP calls, which collapse to a single line like "Called slack 3 times" by default                                                                                                                                                                |
+| `Ctrl+R`                                          | Reverse search command history                                      | Search through previous commands interactively                                                                                                                                                                                                                                                         |
+| `Ctrl+V` or `Cmd+V` (iTerm2) or `Alt+V` (Windows) | Paste image from clipboard                                          | Inserts an `[Image #N]` chip at the cursor so you can reference it positionally in your prompt                                                                                                                                                                                                         |
+| `Ctrl+B`                                          | Background running tasks                                            | Backgrounds bash commands and agents. Tmux users press twice                                                                                                                                                                                                                                           |
+| `Ctrl+T`                                          | Toggle task list                                                    | Show or hide the [task list](#task-list) in the terminal status area                                                                                                                                                                                                                                   |
+| `Left/Right arrows`                               | Cycle through dialog tabs                                           | Navigate between tabs in permission dialogs and menus                                                                                                                                                                                                                                                  |
+| `Up/Down arrows` or `Ctrl+P`/`Ctrl+N`             | Move cursor or navigate command history                             | In multiline input, first moves the cursor within the prompt. Once the cursor is already on the top or bottom edge, pressing again navigates command history                                                                                                                                           |
+| `Esc` + `Esc`                                     | Rewind or summarize                                                 | Restore code and/or conversation to a previous point, or summarize from a selected message                                                                                                                                                                                                             |
+| `Shift+Tab` or `Alt+M` (some configurations)      | Cycle permission modes                                              | Cycle through `default`, `acceptEdits`, `plan`, and any modes you have enabled, such as `auto` or `bypassPermissions`. See [permission modes](/en/permission-modes).                                                                                                                                   |
+| `Option+P` (macOS) or `Alt+P` (Windows/Linux)     | Switch model                                                        | Switch models without clearing your prompt                                                                                                                                                                                                                                                             |
+| `Option+T` (macOS) or `Alt+T` (Windows/Linux)     | Toggle extended thinking                                            | Enable or disable extended thinking mode. On macOS, configure your terminal to send Option as Meta for this shortcut to work                                                                                                                                                                           |
+| `Option+O` (macOS) or `Alt+O` (Windows/Linux)     | Toggle fast mode                                                    | Enable or disable [fast mode](/en/fast-mode)                                                                                                                                                                                                                                                           |
 
 ### Text editing
 
-| Shortcut                 | Description                  | Context                                                                                                       |
-| :----------------------- | :--------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `Ctrl+K`                 | Delete to end of line        | Stores deleted text for pasting                                                                               |
-| `Ctrl+U`                 | Delete entire line           | Stores deleted text for pasting                                                                               |
-| `Ctrl+Y`                 | Paste deleted text           | Paste text deleted with `Ctrl+K` or `Ctrl+U`                                                                  |
-| `Alt+Y` (after `Ctrl+Y`) | Cycle paste history          | After pasting, cycle through previously deleted text. Requires [Option as Meta](#keyboard-shortcuts) on macOS |
-| `Alt+B`                  | Move cursor back one word    | Word navigation. Requires [Option as Meta](#keyboard-shortcuts) on macOS                                      |
-| `Alt+F`                  | Move cursor forward one word | Word navigation. Requires [Option as Meta](#keyboard-shortcuts) on macOS                                      |
+| Shortcut                 | Description                          | Context                                                                                                                                                                               |
+| :----------------------- | :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Ctrl+A`                 | Move cursor to start of current line | In multiline input, moves to the start of the current logical line                                                                                                                    |
+| `Ctrl+E`                 | Move cursor to end of current line   | In multiline input, moves to the end of the current logical line                                                                                                                      |
+| `Ctrl+K`                 | Delete to end of line                | Stores deleted text for pasting                                                                                                                                                       |
+| `Ctrl+U`                 | Delete from cursor to line start     | Stores deleted text for pasting. Repeat to clear across lines in multiline input. On macOS, terminal emulators including iTerm2 and Terminal.app map `Cmd+Backspace` to this shortcut |
+| `Ctrl+W`                 | Delete previous word                 | Stores deleted text for pasting. On Windows, `Ctrl+Backspace` also deletes the previous word                                                                                          |
+| `Ctrl+Y`                 | Paste deleted text                   | Paste text deleted with `Ctrl+K`, `Ctrl+U`, or `Ctrl+W`                                                                                                                               |
+| `Alt+Y` (after `Ctrl+Y`) | Cycle paste history                  | After pasting, cycle through previously deleted text. Requires [Option as Meta](#keyboard-shortcuts) on macOS                                                                         |
+| `Alt+B`                  | Move cursor back one word            | Word navigation. Requires [Option as Meta](#keyboard-shortcuts) on macOS                                                                                                              |
+| `Alt+F`                  | Move cursor forward one word         | Word navigation. Requires [Option as Meta](#keyboard-shortcuts) on macOS                                                                                                              |
 
 ### Theme and display
 
@@ -58,59 +62,68 @@
 | :------- | :----------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
 | `Ctrl+T` | Toggle syntax highlighting for code blocks | Only works inside the `/theme` picker menu. Controls whether code in Claude's responses uses syntax coloring |
 
-<Note>
-  Syntax highlighting is only available in the native build of Claude Code.
-</Note>
-
 ### Multiline input
 
-| Method           | Shortcut       | Context                                                 |
-| :--------------- | :------------- | :------------------------------------------------------ |
-| Quick escape     | `\` + `Enter`  | Works in all terminals                                  |
-| macOS default    | `Option+Enter` | Default on macOS                                        |
-| Shift+Enter      | `Shift+Enter`  | Works out of the box in iTerm2, WezTerm, Ghostty, Kitty |
-| Control sequence | `Ctrl+J`       | Line feed character for multiline                       |
-| Paste mode       | Paste directly | For code blocks, logs                                   |
+| Method           | Shortcut       | Context                                                                                            |
+| :--------------- | :------------- | :------------------------------------------------------------------------------------------------- |
+| Quick escape     | `\` + `Enter`  | Works in all terminals                                                                             |
+| Option key       | `Option+Enter` | After enabling [Option as Meta](/en/terminal-config#enable-option-key-shortcuts-on-macos) on macOS |
+| Shift+Enter      | `Shift+Enter`  | Native in iTerm2, WezTerm, Ghostty, Kitty, Warp, Apple Terminal                                    |
+| Control sequence | `Ctrl+J`       | Works in any terminal without configuration                                                        |
+| Paste mode       | Paste directly | For code blocks, logs                                                                              |
 
 <Tip>
-  Shift+Enter works without configuration in iTerm2, WezTerm, Ghostty, and Kitty. For other terminals (VS Code, Alacritty, Zed, Warp), run `/terminal-setup` to install the binding.
+  Shift+Enter works without configuration in iTerm2, WezTerm, Ghostty, Kitty, Warp, and Apple Terminal. For VS Code, Cursor, Windsurf, Alacritty, and Zed, run `/terminal-setup` to install the binding.
 </Tip>
 
 ### Quick commands
 
-| Shortcut     | Description       | Notes                                                                |
-| :----------- | :---------------- | :------------------------------------------------------------------- |
-| `/` at start | Command or skill  | See [built-in commands](#built-in-commands) and [skills](/en/skills) |
-| `!` at start | Bash mode         | Run commands directly and add execution output to the session        |
-| `@`          | File path mention | Trigger file path autocomplete                                       |
+| Shortcut     | Description       | Notes                                                         |
+| :----------- | :---------------- | :------------------------------------------------------------ |
+| `/` at start | Command or skill  | See [commands](#commands) and [skills](/en/skills)            |
+| `!` at start | Bash mode         | Run commands directly and add execution output to the session |
+| `@`          | File path mention | Trigger file path autocomplete                                |
+
+### Transcript viewer
+
+When the transcript viewer is open (toggled with `Ctrl+O`), these shortcuts are available. `Ctrl+E` can be rebound via [`transcript:toggleShowAll`](/en/keybindings).
+
+| Shortcut             | Description                                                                                                                                                                                                           |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ctrl+E`             | Toggle show all content                                                                                                                                                                                               |
+| `[`                  | Write the full conversation to your terminal's native scrollback so `Cmd+F`, tmux copy mode, and other native tools can search it. Requires [fullscreen rendering](/en/fullscreen#search-and-review-the-conversation) |
+| `v`                  | Write the conversation to a temporary file and open it in `$VISUAL` or `$EDITOR`. Requires [fullscreen rendering](/en/fullscreen)                                                                                     |
+| `q`, `Ctrl+C`, `Esc` | Exit transcript view. All three can be rebound via [`transcript:exit`](/en/keybindings)                                                                                                                               |
 
 ### Voice input
 
-| Shortcut     | Description            | Notes                                                                                                                                                      |
-| :----------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hold `Space` | Push-to-talk dictation | Requires [voice dictation](/en/voice-dictation) to be enabled. Transcript inserts at cursor. [Rebindable](/en/voice-dictation#rebind-the-push-to-talk-key) |
+| Shortcut            | Description     | Notes                                                                                                                                                                            |
+| :------------------ | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hold or tap `Space` | Voice dictation | Requires [voice dictation](/en/voice-dictation) to be enabled. Hold to record, or run `/voice tap` for tap-to-toggle. [Rebindable](/en/voice-dictation#rebind-the-dictation-key) |
 
-## Built-in commands
+## Commands
 
-Type `/` in Claude Code to see all available commands, or type `/` followed by any letters to filter. The `/` menu shows both built-in commands and [bundled skills](/en/skills#bundled-skills) like `/simplify`. Not all commands are visible to every user since some depend on your platform or plan.
+Type `/` in Claude Code to see all available commands, or type `/` followed by any letters to filter. The `/` menu shows everything you can invoke: built-in commands, bundled and user-authored [skills](/en/skills), and commands contributed by [plugins](/en/plugins) and [MCP servers](/en/mcp#use-mcp-prompts-as-commands). Not all built-in commands are visible to every user since some depend on your platform or plan.
 
-See the [commands reference](/en/commands) for the full list of built-in commands. To create your own commands, see [skills](/en/skills).
+See the [commands reference](/en/commands) for the full list of commands included in Claude Code.
 
 ## Vim editor mode
 
-Enable vim-style editing with `/vim` command or configure permanently via `/config`.
+Enable vim-style editing via `/config` → Editor mode.
 
 ### Mode switching
 
-| Command | Action                      | From mode |
-| :------ | :-------------------------- | :-------- |
-| `Esc`   | Enter NORMAL mode           | INSERT    |
-| `i`     | Insert before cursor        | NORMAL    |
-| `I`     | Insert at beginning of line | NORMAL    |
-| `a`     | Insert after cursor         | NORMAL    |
-| `A`     | Insert at end of line       | NORMAL    |
-| `o`     | Open line below             | NORMAL    |
-| `O`     | Open line above             | NORMAL    |
+| Command | Action                                | From mode      |
+| :------ | :------------------------------------ | :------------- |
+| `Esc`   | Enter NORMAL mode                     | INSERT, VISUAL |
+| `i`     | Insert before cursor                  | NORMAL         |
+| `I`     | Insert at beginning of line           | NORMAL         |
+| `a`     | Insert after cursor                   | NORMAL         |
+| `A`     | Insert at end of line                 | NORMAL         |
+| `o`     | Open line below                       | NORMAL         |
+| `O`     | Open line above                       | NORMAL         |
+| `v`     | Start character-wise visual selection | NORMAL         |
+| `V`     | Start line-wise visual selection      | NORMAL         |
 
 ### Navigation (NORMAL mode)
 
@@ -133,7 +146,7 @@ Enable vim-style editing with `/vim` command or configure permanently via `/conf
 | `,`             | Repeat last f/F/t/T motion in reverse               |
 
 <Note>
-  In vim normal mode, if the cursor is at the beginning or end of input and cannot move further, the arrow keys navigate command history instead.
+  In vim normal mode, if the cursor is at the beginning or end of input and cannot move further, `j`/`k` and the arrow keys navigate command history instead.
 </Note>
 
 ### Editing (NORMAL mode)
@@ -154,6 +167,7 @@ Enable vim-style editing with `/vim` command or configure permanently via `/conf
 | `>>`           | Indent line             |
 | `<<`           | Dedent line             |
 | `J`            | Join lines              |
+| `u`            | Undo                    |
 | `.`            | Repeat last change      |
 
 ### Text objects (NORMAL mode)
@@ -169,6 +183,26 @@ Text objects work with operators like `d`, `c`, and `y`:
 | `i(`/`a(` | Inner/around parentheses                 |
 | `i[`/`a[` | Inner/around brackets                    |
 | `i{`/`a{` | Inner/around braces                      |
+
+### Visual mode
+
+Press `v` for character-wise selection or `V` for line-wise selection. Motions extend the selection, and operators act on it directly.
+
+| Command          | Action                                               |
+| :--------------- | :--------------------------------------------------- |
+| `d`/`x`          | Delete selection                                     |
+| `y`              | Yank selection                                       |
+| `c`/`s`          | Change selection                                     |
+| `p`              | Replace selection with register contents             |
+| `r{char}`        | Replace every selected character with `{char}`       |
+| `~`/`u`/`U`      | Toggle, lowercase, or uppercase selection            |
+| `>`/`<`          | Indent or dedent selected lines                      |
+| `J`              | Join selected lines                                  |
+| `o`              | Swap cursor and anchor                               |
+| `iw`/`aw`/`i"`/… | Select a text object                                 |
+| `v`/`V`          | Toggle between character-wise and line-wise, or exit |
+
+Block-wise visual mode with `Ctrl+V` is not supported.
 
 ## Command history
 
@@ -210,7 +244,7 @@ To run commands in the background, you can either:
 
 **Key features:**
 
-* Output is buffered and Claude can retrieve it using the TaskOutput tool
+* Output is written to a file and Claude can retrieve it using the Read tool
 * Background tasks have unique IDs for tracking and output retrieval
 * Background tasks are automatically cleaned up when Claude Code exits
 * Background tasks are automatically terminated if output exceeds 5GB, with a note in stderr explaining why
@@ -229,7 +263,7 @@ To disable all background task functionality, set the `CLAUDE_CODE_DISABLE_BACKG
 
 Run bash commands directly without going through Claude by prefixing your input with `!`:
 
-```bash  theme={null}
+```bash theme={null}
 ! npm test
 ! git status
 ! ls -la
@@ -243,6 +277,7 @@ Bash mode:
 * Does not require Claude to interpret or approve the command
 * Supports history-based autocomplete: type a partial command and press **Tab** to complete from previous `!` commands in the current project
 * Exit with `Escape`, `Backspace`, or `Ctrl+U` on an empty prompt
+* Pasting text that starts with `!` into an empty prompt enters bash mode automatically, matching typed `!` behavior
 
 This is useful for quick shell operations while maintaining conversation context.
 
@@ -252,7 +287,7 @@ When you first open a session, a grayed-out example command appears in the promp
 
 After Claude responds, suggestions continue to appear based on your conversation history, such as a follow-up step from a multi-part request or a natural continuation of your workflow.
 
-* Press **Tab** to accept the suggestion, or press **Enter** to accept and submit
+* Press **Tab** or **Right arrow** to accept the suggestion, or press **Enter** to accept and submit
 * Start typing to dismiss it
 
 The suggestion runs as a background request that reuses the parent conversation's prompt cache, so the additional cost is minimal. Claude Code skips suggestion generation when the cache is cold to avoid unnecessary cost.
@@ -261,7 +296,7 @@ Suggestions are automatically skipped after the first turn of a conversation, in
 
 To disable prompt suggestions entirely, set the environment variable or toggle the setting in `/config`:
 
-```bash  theme={null}
+```bash theme={null}
 export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
 ```
 
@@ -288,10 +323,18 @@ Press **Space**, **Enter**, or **Escape** to dismiss the answer and return to th
 
 When working on complex, multi-step work, Claude creates a task list to track progress. Tasks appear in the status area of your terminal with indicators showing what's pending, in progress, or complete.
 
-* Press `Ctrl+T` to toggle the task list view. The display shows up to 10 tasks at a time
+* Press `Ctrl+T` to toggle the task list view. The display shows up to 5 tasks at a time
 * To see all tasks or clear them, ask Claude directly: "show me all tasks" or "clear all tasks"
 * Tasks persist across context compactions, helping Claude stay organized on larger projects
 * To share a task list across sessions, set `CLAUDE_CODE_TASK_LIST_ID` to use a named directory in `~/.claude/tasks/`: `CLAUDE_CODE_TASK_LIST_ID=my-project claude`
+
+## Session recap
+
+When you return to the terminal after stepping away, Claude Code shows a one-line recap of what happened in the session so far. The recap generates in the background once at least three minutes have passed since the last completed turn and the terminal is unfocused, so it's ready when you switch back. Recaps only appear once the session has at least three turns, and never twice in a row.
+
+Run `/recap` to generate a summary on demand. To turn automatic recaps off, open `/config` and disable **Session recap**.
+
+Session recap is on by default for every plan and provider. The recap is always skipped in non-interactive mode.
 
 ## PR review status
 

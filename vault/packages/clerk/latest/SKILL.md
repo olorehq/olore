@@ -11,41 +11,32 @@ Clerk authentication documentation. Use for user authentication, session managem
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/getting-started/quickstart/overview.mdx` |
-| Framework quickstarts | `contents/getting-started/` |
-| Authentication strategies | `contents/guides/configure/auth-strategies/` |
-| User management | `contents/guides/users/` |
-| Organizations | `contents/guides/organizations/` |
-| JavaScript/React API | `contents/reference/javascript/` |
+| Getting started | `contents/getting-started/quickstart.mdx` |
+| Next.js integration | `contents/reference/nextjs/overview.mdx` |
+| React hooks | `contents/reference/hooks/overview.mdx` |
 | Backend SDK | `contents/reference/backend/` |
-| Webhooks | `contents/guides/development/webhooks/` |
+| UI components | `contents/reference/components/overview.mdx` |
+| TypeScript types | `contents/reference/types/overview.mdx` |
+| Auth strategies (OAuth/SAML) | `contents/guides/configure/auth-strategies/` |
+| Organizations | `contents/guides/organizations/` |
+| Billing | `contents/guides/billing/overview.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- User authentication and sign-in flows
-- Session management and JWT tokens
-- User management (CRUD, metadata, profiles)
-- Organization features (multi-tenancy, roles, permissions)
-- Social login (Google, GitHub, Microsoft, etc.)
-- Enterprise SSO (SAML, OIDC)
-- OAuth integration
-- React/Next.js/Remix integration
-- Clerk components and hooks
-- Backend authentication with Node.js, Go, Ruby
-- Webhooks and event handling
-- Migration from other auth providers
+- User authentication, sign-in, sign-up, and session management with Clerk
+- Integrating Clerk into Next.js, React, Vue, Astro, Expo, Express, or other frameworks
+- Organizations, multi-tenancy, roles, and permissions
+- OAuth, social login, SAML, enterprise SSO, and Web3 authentication
+- Clerk UI components, React hooks, and JavaScript SDK APIs
+- Backend SDK operations (user management, invitations, sessions via server)
+- Billing, subscriptions, and payment management
+- Webhooks, machine-to-machine auth, and API keys
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question:
-   - **New users**: Start with `getting-started/`
-   - **Authentication setup**: Check `guides/configure/auth-strategies/`
-   - **User operations**: Look in `guides/users/`
-   - **Organizations**: Check `guides/organizations/`
-   - **API usage**: Browse `reference/{framework}/`
-   - **Integration**: Check `guides/development/integrations/`
+2. Identify relevant section based on user's question
 3. Read specific files for details
 
-**TOC.md contains all 679 files organized by directory - always check it first.**
+**TOC.md contains all files organized by directory - always check it first.**

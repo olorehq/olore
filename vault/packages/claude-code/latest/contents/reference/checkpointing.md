@@ -62,7 +62,7 @@ Checkpoints are particularly useful when:
 
 Checkpointing does not track files modified by bash commands. For example, if Claude Code runs:
 
-```bash  theme={null}
+```bash theme={null}
 rm file.txt
 mv old.txt new.txt
 cp source.txt dest.txt
@@ -85,5 +85,5 @@ Checkpoints are designed for quick, session-level recovery. For permanent versio
 ## See also
 
 * [Interactive mode](/en/interactive-mode) - Keyboard shortcuts and session controls
-* [Built-in commands](/en/commands) - Accessing checkpoints using `/rewind`
+* [Commands](/en/commands) - Accessing checkpoints using `/rewind`
 * [CLI reference](/en/cli-reference) - Command-line options
