@@ -1,4 +1,23 @@
+import { neon } from "@neondatabase/serverless";
 import { RegistryClient } from "./_components/registry-client";
+
+/**
+ * Live per-package download totals from Neon, keyed by package name.
+ * Falls back to an empty map (callers use the GitHub-baked count) when the
+ * database is unavailable or unconfigured (e.g. local dev without DATABASE_URL).
+ */
+async function getLiveCounts(): Promise<Record<string, number>> {
+  if (!process.env.DATABASE_URL) return {};
+  try {
+    const sql = neon(process.env.DATABASE_URL);
+    const rows = (await sql`
+      select name, sum(count)::int as downloads from downloads group by name
+    `) as { name: string; downloads: number }[];
+    return Object.fromEntries(rows.map((r) => [r.name, r.downloads]));
+  } catch {
+    return {};
+  }
+}
 
 interface RegistryPackage {
   description: string;
@@ -43,7 +62,10 @@ async function getPackages(): Promise<{
     );
     if (!res.ok) return { packages: [], updated: "" };
 
-    const registry: Registry = await res.json();
+    const [registry, live] = await Promise.all([
+      res.json() as Promise<Registry>,
+      getLiveCounts(),
+    ]);
     const packages: PackageInfo[] = [];
 
     for (const [name, pkg] of Object.entries(registry.packages)) {
@@ -53,7 +75,10 @@ async function getPackages(): Promise<{
         downloads: info.downloads || 0,
       }));
 
-      const totalDownloads = versions.reduce((sum, v) => sum + v.downloads, 0);
+      // Prefer the live Neon count; fall back to the GitHub-baked total for
+      // packages that have no proxy pings yet (or when the DB is unavailable).
+      const githubTotal = versions.reduce((sum, v) => sum + v.downloads, 0);
+      const totalDownloads = live[name] ?? githubTotal;
 
       packages.push({
         name,

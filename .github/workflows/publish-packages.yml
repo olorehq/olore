@@ -166,16 +166,22 @@ jobs:
               FILES=$(jq -r '.files // 0' "$LOCK_FILE")
             fi
 
+            # downloadUrl routes installs through the counting proxy on Vercel,
+            # which increments the Neon counter then 302-redirects to GitHub.
+            # originUrl keeps the direct GitHub asset for CLI fallback.
+            PROXY_URL="https://olore.dev/api/dl/${NAME}/${VERSION}"
+
             # Build version entry JSON
             VERSION_JSON=$(jq -n \
               --arg v "$VERSION" \
               --argjson f "$FILES" \
               --argjson s "${TARBALL_SIZE:-0}" \
               --arg i "$INTEGRITY" \
-              --arg d "$TARBALL_URL" \
+              --arg d "$PROXY_URL" \
+              --arg o "$TARBALL_URL" \
               --arg r "$PUBLISHED" \
               --argjson dl "${DOWNLOADS:-0}" \
-              '{version: $v, files: $f, size: $s, integrity: $i, downloadUrl: $d, releasedAt: $r, downloads: $dl}')
+              '{version: $v, files: $f, size: $s, integrity: $i, downloadUrl: $d, originUrl: $o, releasedAt: $r, downloads: $dl}')
 
             # Accumulate versions per package
             if [ -z "${PKG_VERSIONS[$NAME]+x}" ]; then

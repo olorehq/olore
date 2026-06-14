@@ -64,6 +64,7 @@ interface VersionInfo {
   size: number;
   integrity: string;
   downloadUrl: string;
+  originUrl: string;
   releasedAt: string;
 }
 
@@ -291,7 +292,9 @@ async function generateRegistry(): Promise<void> {
         files: lock.files,
         size: tarballAsset.size,
         integrity,
-        downloadUrl: tarballAsset.browser_download_url,
+        // Route installs through the counting proxy; keep GitHub as fallback.
+        downloadUrl: `https://olore.dev/api/dl/${name}/${lock.version}`,
+        originUrl: tarballAsset.browser_download_url,
         releasedAt: release.published_at,
       };
 
