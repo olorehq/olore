@@ -1,11 +1,21 @@
 ---
 title: High Availability (HA) in Neon
 subtitle: Understanding Neon's approach to High Availability
+summary: >-
+  Neon high availability separates storage and compute. WAL is replicated
+  across Availability Zones by Safekeepers, and Pageservers fail over to
+  secondaries in seconds, without idle standby compute replicas. Object storage
+  provides 99.999999999% durability. Recovery times vary by failure type:
+  Postgres crash and VM failure resolve in seconds, node failure in 1-2
+  minutes, AZ failure in 1-10 minutes, and unresponsive endpoints after 5
+  minutes. Neon HA does not support cross-region replication. Session data such
+  as temporary tables and the Local File Cache does not persist across a
+  failover.
 enableTableOfContents: true
-updatedOn: '2025-03-13T12:56:34.386Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-At Neon, our serverless architecture takes a different approach to high availability. Instead of maintaining idle standby compute replicas, we achieve multi-AZ resilience through our separation of storage and compute.
+At Neon, our lakebase architecture takes a different approach to high availability. Instead of maintaining idle standby compute replicas, we achieve multi-AZ resilience through our separation of storage and compute.
 
 ![Neon architecture diagram](/docs/introduction/neon_architecture_5.jpg)
 
@@ -61,7 +71,7 @@ Our serverless architecture manages compute failures through rapid recovery and 
 
 ### Compute endpoints are ephemeral
 
-Your compute endpoint exists essentially as metadata — with your connection string being the core element. This design means endpoints can be instantly reassigned to new compute resources without changing your application's configuration. When you first connect, Neon assigns your endpoint to an available VM from our ready-to-use pool, eliminating traditional provisioning delays.
+Your compute endpoint exists essentially as metadata, with your connection string being the core element. This design means endpoints can be instantly reassigned to new compute resources without changing your application's configuration. When you first connect, Neon assigns your endpoint to an available VM from our ready-to-use pool, eliminating traditional provisioning delays.
 
 ### Postgres failure
 

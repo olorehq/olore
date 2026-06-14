@@ -1,15 +1,18 @@
 ---
-title: 'Webhook Integrations'
-description: 'Create custom webhook integrations to send Checkly alerts to any API endpoint'
-sidebarTitle: 'Webhooks'
+title: "Webhook Integrations"
+description: "Create custom webhook integrations to send Checkly alerts to any API endpoin"
+sidebarTitle: "Webhooks"
 ---
 
+import AlertChannelSecrets from '/snippets/alert-channel-secrets-callout.mdx';
+
 <Tip>
-**Monitoring as Code**: Learn more about the [Webhook Alert Channel Construct](/constructs/webhook-alert-channel).
+  **Monitoring as Code**: Learn more about the [Webhook Alert Channel Construct](/constructs/webhook-alert-channel).
 </Tip>
 
-Webhooks allow you to POST custom payloads to any endpoint in your own infrastructure or a third party provider. In a
-nutshell, you can:
+![Checkly Webhook Alert Channel](/images/checkly_webhook_alert_channel.png)
+
+Webhooks allow you to POST custom payloads to any endpoint in your own infrastructure or a third party provider. In a nutshell, you can:
 
 - Create a **custom URL** by adding in authentication tokens or other secrets.
 - Create a **custom payload body** using any environment variables and specific instance variables per event. Note: that means that if you are attaching the webhook to a Group, you will be able to access Group-level variables, too.
@@ -17,57 +20,85 @@ nutshell, you can:
 
 ## Using Variables
 
-![webhook jira example](/images/docs/images/alerting/webhook-jira.png)
-
 The example above shows a webhook configured to create a Jira ticket on each event. Notice the following:
 
-- We use the variable `JIRA_INSTANCE_URL` in the URL. We previously stored this variable in the [environment variables section](https://app.checklyhq.com/environment-variables). Alerting configurations only support the use of environment variables, secrets are not supported.
+- We use the variable `JIRA_INSTANCE_URL` in the URL. We previously stored this variable in the [environment variables section](https://app.checklyhq.com/environment-variables). Alert-channel configurations accept both [environment variables](/platform/variables) and [secrets](/platform/secrets) using the same `{{NAME}}` syntax.
 - We use the variable `CHECK_ID` in the payload. This is one of many event-based variables that will change with each call. See below for the complete list.
 
 In both cases we use the familiar Handlebars templating braces, i.e. `{{ }}` to insert the variable.
 
 <Note>
-To avoid encoding, you can access your environment variables with triple brackets, i.e. `{{{USER_API_KEY}}}`
+  To avoid encoding, you can access your environment variables with triple brackets, i.e. `{{{USER_API_KEY}}}`
 </Note>
+
+<AlertChannelSecrets />
 
 You can use the following event-related variables in both URL and payload.
 
-| Variable            | Description                                                  |
-|---------------------|--------------------------------------------------------------|
-| `ALERT_TITLE`       | Human readable title, e.g. 'Check "My API check" has failed' |
-| `ALERT_TYPE`        | Type of alert, e.g. "ALERT_FAILURE", "ALERT_RECOVERY", "ALERT_DEGRADED", "ALERT_DEGRADED_RECOVERY". See [alert states](/communicate/alerts/overview#alert-states) for all options. |
-| `API_CHECK_RESPONSE_STATUS_CODE`     | The response status code, e.g. 200. Only populated for API checks.                  |
-| `API_CHECK_RESPONSE_STATUS_TEXT`     | The response status text, e.g. "OK". Only populated for API checks.                  |
-| `CHECK_ERROR_MESSAGE` | The check error message                                    |
-| `CHECK_ID`          | The UUID of the check                                        |
-| `CHECK_NAME`        | Full name of the check                                       |
-| `CHECK_RESULT_ID`   | The UUID of the result that triggered this message           |
-| `CHECK_TYPE`        | The check type, e.g. API, BROWSER  .                         |
-| `GROUP_NAME`        | The name of the group, if the check belongs to one.          |
-| `REGION`            | AWS region code where check ran, e.g. "us-east-1"                       |
-| `RESPONSE_TIME`     | The reported response time for this result                   |
-| `RESULT_LINK`       | The full link to the check result                            |
-| `RUN_LOCATION`      | The location where the check ran, i.e. "N. California"       |
-| `SSL_CHECK_DOMAIN`  | The domain of the SSL certificate. For ALERT_SSL only.       |
-| `SSL_DAYS_REMAINING`| How many days remain on the SSL certificate. For ALERT_SSL only.|
-| `STARTED_AT`        | The ISO timestamp from when this check run started           |
-| `TAGS`              | An array of tags assigned to the check. Have a look at our Opsgenie example below on how to render this to a JSON array. |
+| Variable                         | Description                                                                                                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AI_ANALYSIS_CLASSIFICATION`     | Classification of the failure / error. Available when Rocky AI automation is enabled.                                                                                                    |
+| `AI_ANALYSIS_CODE_FIX`           | A code fix to resolve the analyzed problem. Available when Rocky AI automation is enabled.                                                                                               |
+| `AI_ANALYSIS_LINK`               | Direct link to full AI analysis. Available when Rocky AI automation is enabled.                                                                                                          |
+| `AI_ANALYSIS_ROOT_CAUSE`         | Description of possible root cause. Available when Rocky AI automation is enabled.                                                                                                       |
+| `AI_ANALYSIS_USER_IMPACT`        | Description of the user impact. Available when Rocky AI automation is enabled.                                                                                                           |
+| `ALERT_TITLE`                    | Human readable title, e.g. 'Check "My API check" has failed'                                                                                                                       |
+| `ALERT_TYPE`                     | Type of alert, e.g. "ALERT_FAILURE", "ALERT_RECOVERY", "ALERT_DEGRADED", "ALERT_DEGRADED_RECOVERY". See [alert states](/communicate/alerts/overview#alert-states) for all options. |
+| `API_CHECK_RESPONSE_STATUS_CODE` | The response status code, e.g. 200. Only populated for API checks.                                                                                                                 |
+| `API_CHECK_RESPONSE_STATUS_TEXT` | The response status text, e.g. "OK". Only populated for API checks.                                                                                                                |
+| `CHECK_ERROR_MESSAGE`            | The check error message                                                                                                                                                            |
+| `CHECK_ID`                       | The UUID of the check                                                                                                                                                              |
+| `CHECK_DESCRIPTION`              | The description of the check, if set                                                                                                                                               |
+| `CHECK_NAME`                     | Full name of the check                                                                                                                                                             |
+| `CHECK_RESULT_ID`                | The UUID of the result that triggered this message                                                                                                                                 |
+| `CHECK_TYPE`                     | The check type, e.g. API, BROWSER  .                                                                                                                                               |
+| `GROUP_NAME`                     | The name of the group, if the check belongs to one.                                                                                                                                |
+| `IS_REMINDER`                    | Whether this alert is a reminder (`true`) or the initial alert (`false`).                                                                                                          |
+| `REGION`                         | Region code where check ran, e.g. "us-east-1"                                                                                                                                  |
+| `REMINDER_SEQUENCE`              | The reminder number (`0` for initial alerts, `1`+ for reminders).                                                                                                                  |
+| `RESPONSE_TIME`                  | The reported response time for this result                                                                                                                                         |
+| `RESULT_LINK`                    | The full link to the check result                                                                                                                                                  |
+| `RUN_LOCATION`                   | The location where the check ran, i.e. "N. California"                                                                                                                             |
+| `SSL_CHECK_DOMAIN`               | The domain of the SSL certificate. For ALERT_SSL only.                                                                                                                             |
+| `SSL_DAYS_REMAINING`             | How many days remain on the SSL certificate. For ALERT_SSL only.                                                                                                                   |
+| `STARTED_AT`                     | The ISO timestamp from when this check run started                                                                                                                                 |
+| `TAGS`                           | An array of tags assigned to the check. Have a look at our Opsgenie example below on how to render this to a JSON array.                                                           |
+
+### Using AI analysis data in alerts
+
+When [automatic Rocky AI analysis](/resolve/ai-root-cause-analysis/overview#automatic-analysis) is enabled, you can include AI-generated root cause and user impact data in your webhook payloads. Use `{{#if}}` guards so the payload works whether AI analysis data is available or not.
+
+```json
+{
+  "message": "{{ALERT_TITLE}}",
+  "link": "{{RESULT_LINK}}",
+  {{#if AI_ANALYSIS_ROOT_CAUSE}}
+  "root_cause": "{{AI_ANALYSIS_ROOT_CAUSE}}",
+  {{/if}}
+  {{#if AI_ANALYSIS_USER_IMPACT}}
+  "user_impact": "{{AI_ANALYSIS_USER_IMPACT}}",
+  {{/if}}
+  {{#if AI_ANALYSIS_LINK}}
+  "ai_analysis_link": "{{AI_ANALYSIS_LINK}}",
+  {{/if}}
+  "classification": "{{AI_ANALYSIS_CLASSIFICATION}}"
+}
+```
 
 ### Handlebars Helpers
 
-| Helper | Description |
-|--------|-------------|
-| `{{$UUID}}` | Generates a random UUID/v4 (e.g., `9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d`) |
-| `{{$RANDOM_NUMBER}}` | Generates a random decimal number between 0 and 1000 (e.g., `345`) |
-| `{{moment}}` | Generates dates/times using **moment.js** with formatting:
+| Helper               | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| `{{$UUID}}`          | Generates a random UUID/v4 (e.g., `9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d`) |
+| `{{$RANDOM_NUMBER}}` | Generates a random decimal number between 0 and 1000 (e.g., `345`)        |
+| `{{moment}}`         | Generates dates/times using **moment.js** with formatting:                |
 
 - `{{moment "YYYY-MM-DD"}}` → `2020-08-26`
 - `{{moment "2 days ago" "YYYY-MM-DD"}}` → `2020-08-24`
 - `{{moment "last week" "X"}}` → `1597924480`
 
 <Note>
-You can find the [full list of helpers in the README.md file](https://github.com/checkly/handlebars) of the underlying library we are using.
-For a full overview of date formatting option, check the [moment.js docs](https://momentjs.com/docs/#/displaying/format/).
+  You can find the [full list of helpers in the README.md file](https://github.com/checkly/handlebars) of the underlying library we are using. For a full overview of date formatting option, check the [moment.js docs](https://momentjs.com/docs/#/displaying/format/).
 </Note>
 
 You can also use conditional helpers like `{{#eq}}` statements. Here is an example:
@@ -80,7 +111,7 @@ You can also use conditional helpers like `{{#eq}}` statements. Here is an examp
 
 The above webhook body uses the `{{#eq}}` helper to execute the logic
 
-*If the ALERT_TYPE variable equals 'ALERT_FAILURE', print 'DOWN', if it equals 'ALERT_RECOVERY' print 'UP'*
+_If the ALERT_TYPE variable equals 'ALERT_FAILURE', print 'DOWN', if it equals 'ALERT_RECOVERY' print 'UP'_
 
 So in the case of a failure event, the body would render to:
 
@@ -91,6 +122,7 @@ So in the case of a failure event, the body would render to:
 ```
 
 Two clear benefits here:
+
 - You only need to create one webhook to inform a 3rd party system.
 - You can translate Checkly terms to your 3rd party tool's term for the same concept, i.e. the "up status" of a check.
 
@@ -103,11 +135,9 @@ You can validate each webhook we deliver to your endpoint(s). Using the optional
 1. Check if the webhook was sent by Checkly.
 2. Check if the payload was not altered in any way during transmission.
 
-When you create a webhook secret, we proceed to use that secret token to cryptographically sign the webhook payload using
-the SHA256 hash algorithm. We add the resulting hash to the HTTP header `x-checkly-signature` on each webhook.
+When you create a webhook secret, we proceed to use that secret token to cryptographically sign the webhook payload using the SHA256 hash algorithm. We add the resulting hash to the HTTP header `x-checkly-signature` on each webhook.
 
-On the receiving end, you can then use the value of the `x-checkly-signature` header to assert the validity and authenticity
-of the webhook and its payload.
+On the receiving end, you can then use the value of the `x-checkly-signature` header to assert the validity and authenticity of the webhook and its payload.
 
 Have a look at the code examples below on how to use the header and your favourite web framework.
 
@@ -143,6 +173,7 @@ app.post('/webhook', bodyParser.json({ type: 'application/json' }), (request, re
 app.listen(4242, () => console.log('Running on port 4242'))
 ```
 
+
 ```ruby Ruby
 # We store the webhook secret in an environment variable called CHECKLY_WEBHOOK_SECRET
 require 'sinatra'
@@ -163,6 +194,7 @@ post '/webhook' do
   end
 end
 ```
+
 
 ```python Python
 # This example assumes you use Django
@@ -190,12 +222,9 @@ def webhook(request):
 
 ## Webhook Retries
 
-Checkly will retry your webhook up to **5 times** if we get an HTTP response higher than 399, e.g. a 404 or 503. Each retry
-is backed off 20 seconds for a total retry period of `5 * 20 = 100 seconds`.
+Checkly will retry your webhook up to **5 times** if we get an HTTP response higher than 399, e.g. a 404 or 503. Each retry is backed off 20 seconds for a total retry period of `5 * 20 = 100 seconds`.
 
-This means that for checks on a 1 minute schedule, there is a potential overlap between a failure alert and recovery alert. For this
-reason every webhook we send has a timestamp in the `x-checkly-timestamp` header. You can use this timestamp on the receiving
-end to ignore any webhooks that come in "late".
+This means that for checks on a 1 minute schedule, there is a potential overlap between a failure alert and recovery alert. For this reason every webhook we send has a timestamp in the `x-checkly-timestamp` header. You can use this timestamp on the receiving end to ignore any webhooks that come in "late".
 
 ## Webhook Examples
 
@@ -203,7 +232,9 @@ The following examples give an idea how to integrate Checkly with 3rd party aler
 
 ### OpsGenie
 
-You can create an <a href="https://docs.opsgenie.com/docs/alert-api" target="_blank">OpsGenie</a> alert by POST-ing the following body
+You can create an <a href="https://docs.opsgenie.com/docs/alert-api" target="_blank">OpsGenie</a>
+
+alert by POST-ing the following body
 
 ```json
 {
@@ -296,7 +327,6 @@ Send a message using [Pushover](https://pushover.net/) by posting this body:
 }
 ```
 
-
 ### Trello
 
 You can create a [Trello](https://trello.com) card using just the URL and no payload:
@@ -316,8 +346,7 @@ You can send your SSL alerts using webhooks. Using the following body:
 }
 ```
 
-Will yield the following output, where we customize the `ALERT_TITLE` to include the domain and the days remaining till your
-certificate expires.
+Will yield the following output, where we customize the `ALERT_TITLE` to include the domain and the days remaining till your certificate expires.
 
 ```json
 {
@@ -325,6 +354,7 @@ certificate expires.
   "link": "http://app-test.checklyhq.com/checks/08437f9c-df8c-45ed-975a-a3f9e24d626d"
 }
 ```
+
 ### Twilio
 
 You can configure a webhook to POST to a JavaScript snippet running in a [Twilio Function](https://www.twilio.com/docs/runtime/functions). This code receives the Checkly webhook JSON, then triggers a Twilio "Flow execution":

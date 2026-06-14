@@ -43,12 +43,17 @@ Users will not be reassigned different variants when purely increasing overall r
 
 ## Types of Feature Flags
 
-We support the following types of Flags 
+We support the following types of Flags:
+
 1. **Feature Gate** : Toggle a feature on or off for targeted users or all users. Useful for phased or controlled rollout.
-2. [**Experiment**](/docs/experiments) : Deliver different variant experiences (e.g., layouts, flows, pricing) to a targeted group of users. Enables measuring and analyzing impact.
+2. [**Experiment**](/docs/experiments) : Deliver different variant experiences (e.g., layouts, flows, pricing) to a targeted group of users. Enables measuring and analyzing impact. Each variant can optionally carry a **string** or **JSON object** value, letting you ship per-variant configuration (e.g., a CTA label, a layout config blob) alongside the variant name. See [Experiment JSON Parameters](/docs/experiments#experiment-json-parameters).
 3. **Dynamic Config** : Configure features with flexible key-value pairs instead of just on/off. It lets you:
-    - Pass JSON payloads (e.g., `{"cta_text": "Buy now", "discount": 20}`) to customize behavior or UI dynamically
+    - Pass **string** or **JSON object** payloads (e.g., `"Buy now"` or `{"cta_text": "Buy now", "discount": 20}`) to customize behavior or UI dynamically
     - Update values instantly without redeploying code
+
+    <Callout type="info">
+        Variant values (used by both Experiment and Dynamic Config flags) have a size limit of 32 KB per variant. Within a single flag, all variants must use the same value type — either all string or all JSON object and you can switch the type later from the flag's settings.
+    </Callout>
 
 
 ## Targeting & Identity Management
@@ -60,7 +65,7 @@ This is the randomization bucket unit: `distinct_id` (user), `device_id`, or a *
 
 **How to choose the right key?**
 - **User** `distinct_id`  — best for logged-in experiences across device; a user sees a consistent experience across various sessions and devices
-- **Device** `device_id`  — best for pre-auth or acquisition flows; a device keeps a consistent variant between pre-auth and post-auth experiences.
+- **Device** `device_id`  — best for pre-auth or acquisition flows; a device keeps a consistent variant between pre-auth and post-auth experiences. 
 - **Group** `group_id` — target by account/org using a group key (e.g., `account_id`). Values for group keys will need to be supplied to the Mixpanel feature flag SDK through the `context` parameter. When a group key is selected, cohort targeting targets that group accordingly.  For example, if you have a Franchise data group with key `franchise_id`, and you want to use a flag to rollout a feature to select Franchises, then `franchise_id` should be your assignment key.
 
 <Callout type="info">
@@ -86,14 +91,14 @@ Control variant by is always set to non-sticky. This is to ensure this is the on
 
 Feature flags may consist of one or more rollout groups. Users are evaluated against each rollout group in order until one is found that the user qualifies for.
 
-You can target 'All Users', or optionally target rollout of your feature flags to subsets of your user base rather than to all your users with [Cohorts](https://docs.mixpanel.com/docs/cohorts).
+You can target 'All Users', or optionally target rollout of your feature flags to subsets of your user base rather than to all your users with [Cohorts](/docs/users/cohorts).
 These are dynamic audiences of Mixpanel users based on user behavior or properties. Use these to target feature flags to specific subsets of your user base. For example, target only users who did 5 purchases in the last week.
 
 **Group Cohort Targeting**
 
 When the Variant Assignment Key is set to a group key (e.g., `company_id`, `account_id`), targeting uses **group cohorts** instead of user cohorts. Group cohorts are cohorts of entities matching the group key — for example, a cohort of Companies for a flag keyed on `company_id`.
 
-- Group cohorts are created in the same [cohort builder](/docs/cohorts), scoped to the relevant group key.
+- Group cohorts are created in the same [cohort builder](/docs/users/cohorts), scoped to the relevant group key.
 - The cohort builder automatically corresponds to the the flag's assignment key.
 - Example: A flag with assignment key `company_id` lets you target a cohort like "Enterprise companies with >50 seats."
 
@@ -101,6 +106,11 @@ When the Variant Assignment Key is set to a group key (e.g., `company_id`, `acco
  - Cohorts used in feature flag targeting refresh on a periodic cadence (~every 2 hours). So once a user or group entity qualifies for a cohort, it can take up to 2 hours before they see a desired experience.
  - If you want users or groups to continue seeing the same variant even if they disqualify from the cohort in the future, couple this with **Sticky Variants.** This will ensure they continue to see the new experience until the flag is turned off.
 </Callout>
+
+<Callout type="warning">
+Note that cohort targeting for `device_id` assignment key flags builds cohorts against Users, not devices. Furthermore, since this targeting is against Users, it will only target authenticated Users, which could defeat the purpose of using an auth-insensitive `device_id` rollout.  If you wish to do group cohort targeting against devices, make device a Data Group and then use group targeting against it.  
+</Callout>
+
 
 #### Runtime Targeting
 
@@ -123,7 +133,7 @@ This method enables targeting users immediately when they perform specific actio
   - Target users who trigger 'Add to Cart' event with product_category = 'premium'
 
 <Callout type="info">
-    For detailed configuration options and examples, see our [Runtime Events guide](/docs/feature-flags/runtime-events).
+    For detailed configuration options and examples, see our [Runtime Events guide](/docs/featureflags/runtime-events).
 </Callout>
 
 ### Rollout Percentage
@@ -144,20 +154,20 @@ Example: Building on the same example above, variant allocation is 50-50 for A/B
 
 ### Frequently Asked Questions
 
-**1. How do [Data Views](/docs/data-governance/data-views-and-classification) affect feature flags?**
+**How do [Data Views](/docs/data-governance/data-views-and-classification) affect feature flags?**
 
 Feature flags are scoped to data views. If targeting your flag to specific user cohorts, only end users included in the data view where the flag is created, will be targeted. Only users with access to a data-view and can view and edit the flag
 
-**2. Can I target a cohort, but also include run-time targeting like device or url path?**
+**Can I target a cohort, but also include run-time targeting like device or url path?**
 
 Yes. You can couple run-time targeting with both user cohorts and group cohorts. It works with an AND condition across the targeting criteria.
 
-**3. Why is control variant always non-sticky? I want all my variants to be sticky**
+**Why is control variant always non-sticky? I want all my variants to be sticky**
 
 Control variant is set to always be non-sticky to ensure this is the only group of users that can move up to other variants if allocation of other variants is increased. This is to avoid users moving from non-control variants.
 NOTE: If you do want all users to be sticky and do not anticipate needing to change the variant allocation, mark control variant as 0%, and allocate all the 100% to the other variants. This is recommended for use-cases where you have no default or control experience, and are testing a brand new experience with 2+ variants
 
-**4. How do we avoid overlapping target audiences across 2 different feature flags?**
+**How do we avoid overlapping target audiences across 2 different feature flags?**
 
 Let's say we have 2 features: feature A and feature B, and we want these to be non-overlapping in audience targeting.
 In the feature flag B page, in the target audience -
@@ -166,7 +176,7 @@ In the feature flag B page, in the target audience -
     - Rollout % : 100%
 - Create Rollout Group 2: All users, or any specific users you want for flag B
 
-**5. Are there any limits to variants or rollout group?**
+**Are there any limits to variants or rollout group?**
 
 Yes, today you can have a maximum of 5 variants per flag, and a maximum of 5 rollout groups per flag
 
@@ -186,9 +196,26 @@ This shows the history of changes related to the flag. This allows you to know t
 
 This section allows you to whitelist users who will receive the experience, vs rolling out more broadly. You can select users based on the $email user profile property. Once selected, you can specify which experience you would like each user to get. 
 
+> #### 📝 Note: Selecting QA testers on Original ID Merge
+>
+> This behavior applies only to projects on **Original ID Merge (V2)**. Projects on **Simplified ID Merge (V3)** use a deterministic canonical user ID and do not require manual QA tester maintenance.
+>
+> When you add a user as a QA tester (by email or distinct_id), Mixpanel saves a snapshot of that user's **most recent `$identified_id`** at the moment of addition, pulled from their `$identify` event history. At flag evaluation time, the `/flags/` endpoint performs an exact string match between the distinct_id your SDK sends and this saved value — there is no cluster-aware resolution at runtime.
+>
+> **What this means:** if the user later identifies with a different ID than what was saved (e.g., your app's identification logic changes, the user transitions between anonymous and identified states, or your hashing scheme is updated), the saved QA tester record becomes stale, and the flag will no longer return for that user.
+>
+> **To recover:** remove the QA tester from the flag's configuration and re-add them. The latest `$identified_id` will be snapshotted again.
+>
+> **Best practice:**
+> - Call `identify()` with a stable, consistent value for each logged-in user across sessions.
+> - Add QA testers only after the target user has identified at least once with that stable value.
+>
+> **Debugging tip:** to verify which ID was saved for a QA tester, inspect the `/flags/` network request in your browser's developer tools. The response payload includes a `test_users` field listing the saved IDs. Compare these against the `distinct_id` your SDK is sending — if they don't match, that's the source of the issue. You can also see this in the dropdown when searching for users.
+
 ### Testing Environment
 
-Use separate Mixpanel projects, which are connected to your different environments, to reduce risk and promote safety. You might have just 1 or 2 of these, which is also fine - 
+Use separate Mixpanel projects, which are connected to your different environments, to reduce risk and promote safety. You might have just 1 or 2 of these, which is also fine:
+
 1. **Dev** **Project** — rapid iteration; permissive targeting 
 2. **Staging Project** — mirrors prod cohorts; dry runs for promotion
 3. **Prod Project** — customer-facing
@@ -222,9 +249,67 @@ Mixpanel analytics downtime will result in suspended cohort membership refreshes
 The latency of Feature flags API responses is usually on the order of milliseconds.
 NOTE: Cohort membership is refreshed every 2 hours when targeting anything aside from 'All Users'/'All Entities' or 'Runtime Filters'. Therefore, new users or group entities entering cohorts may not be reflected in Feature flags API responses for up to that 2 hour period.
 
-
 ## Implementation
-Feature Flagging is currently supported on a subset of Mixpanel client and server SDK's.
+Feature Flagging is currently supported on a subset of Mixpanel client and server SDK's. There are two modes for using feature flags. Remote evaluation is available for both client and server SDKs whereas local evaluation is available for server SDKs.
+
+### Remote Evaluation
+
+Remote evaluation makes a network call to Mixpanel servers each time you evaluate a flag. The server receives the user context and determines the variant assignment based on your configured targeting rules.
+
+This is ideal for applications requiring cohort-based targeting or sticky variant assignments
+
+### Flag Persistence
+
+<Callout type="info">
+Flag persistence is a client SDK feature. It is officially supported on the Android, Swift, Flutter, and JavaScript (Web) client SDKs. Support for React Native is coming soon.
+</Callout>
+
+By default, client SDKs fetch flag assignments from Mixpanel feature flag evaluation endpoint. If the call fails due to network issues, the SDK returns the fallback variant, which can result in an undesirable user experience.
+
+Flag persistence lets the SDK persist assignments to the device so that they are made available, even if the network is not. This is useful for reducing latency at startup and for providing graceful degradation when the network is unavailable.
+
+Persistence is configured with a `variantLookupPolicy`, which accepts one of three strategies:
+
+| Policy | Behavior |
+|--------|----------|
+| `networkOnly` *(default)* | No persistence of variants. Every lookup waits for a fresh network response.|
+| `networkFirst` | The SDK waits for a network response first. If the network fails, previously persisted variants are served as a fallback |
+| `persistenceUntilNetworkSuccess` | Persisted variants are served immediately on launch. The next time a network call succeeds, the variants will update the in-memory state as well as be persisted to the device. |
+
+**TTL:** Both persistent policies accept a configurable TTL (default: 24 hours). Persisted variants older than the TTL are treated as expiring and not served.
+
+**Identity scoping:** Persisted variants are tied to the current `distinct_id`. Calling `identify()` with a different ID or calling `reset()` clears persisted data and triggers a fresh network fetch.
+
+**Variant source:** Each returned variant carries a `source` indicating where the value came from: `network`, `persistence`, or `fallback`. This lets you know at call time whether you are looking at a fresh or persisted assignment.
+
+**`$experiment_started` properties:** When a variant is served, the `$experiment_started` event includes a new `$variant_source` property (`"network"` or `"persistence"`). For persistence-sourced variants, two additional properties are included: `$persisted_at_in_ms` (the epoch ms when the variant set was persisted) and `$ttl_in_ms` (the configured TTL). Fallback variants do not trigger `$experiment_started`.
+
+See the SDK-specific guides below for implementation examples.
+
+### Local Evaluation
+
+Local evaluation minimizes latency by evaluating flags within your application. This mode is recommended for server-side SDKs used in latency-sensitive server-side applications.
+
+The SDK polls Mixpanel servers for feature flag configurations at a configurable interval (e.g., every 60 seconds). Flag configurations are cached and served via **Google Cloud CDN** for global low-latency access. Flag evaluation happens locally within your SDK with minimal latency (&lt;1ms).
+
+As evaluation is done completely locally, cohort targeting and sticky variants are not supported.
+
+#### Polling latency by region
+
+Below is a table, demonstrating the average latency of polling latency for cached calls, broken down by approximate caller region.
+
+| Region | Polling Latency |
+|--------|----------------|
+| Singapore, APAC | ~17ms |
+| Belgium, Europe | ~19ms |
+| São Paulo, South America | ~23ms |
+| Iowa, USA | ~20ms |
+| Oregon, USA | ~20ms |
+| Virginia, USA | ~29ms |
+
+#### Cache invalidation
+
+When you update the configuration of one of your feature flags, CDN cached settings will be invalidated. Your SDK will receive updated configurations on its next poll cycle.
 
 See our developer guides on implementing feature flags on these platforms below:
 
@@ -248,6 +333,28 @@ See our developer guides on implementing feature flags on these platforms below:
   <Cards.Card icon title="Go" href="/docs/tracking-methods/sdks/go/go-flags" />
 </Cards>
 
+### OpenFeature Providers
+
+Mixpanel also offers [OpenFeature](https://openfeature.dev/) providers, which let you use Mixpanel's feature flags through OpenFeature's standardized, vendor-agnostic API.
+
+#### Client Side
+
+<Cards>
+  <Cards.Card icon title="Web" href="/docs/tracking-methods/sdks/javascript/javascript-openfeature" />
+  <Cards.Card icon title="iOS" href="/docs/tracking-methods/sdks/swift/swift-openfeature" />
+  <Cards.Card icon title="Android" href="/docs/tracking-methods/sdks/android/android-openfeature" />
+</Cards>
+
+#### Server Side
+
+<Cards>
+  <Cards.Card icon title="Python" href="/docs/tracking-methods/sdks/python/python-openfeature" />
+  <Cards.Card icon title="Ruby" href="/docs/tracking-methods/sdks/ruby/ruby-openfeature" />
+  <Cards.Card icon title="Node.js" href="/docs/tracking-methods/sdks/nodejs/nodejs-openfeature" />
+  <Cards.Card icon title="Java" href="/docs/tracking-methods/sdks/java/java-openfeature" />
+  <Cards.Card icon title="Go" href="/docs/tracking-methods/sdks/go/go-openfeature" />
+</Cards>
+
 <Callout type="info">
 If you'd like to see Feature Flags availability in other SDKs, please [reach out to the Support team](https://mixpanel.com/get-support).
 </Callout>
@@ -255,13 +362,15 @@ If you'd like to see Feature Flags availability in other SDKs, please [reach out
 
 ### Other Implementation Methods
 
-**We use a CDP in our company. How do we use Mixpanel Feature Flags with our CDP?**
-You have two options - 
-- **Option 1:** Use Mixpanel sdk for purely feature flagging assignment and exposure event `$experiment_started`   
-- **Option 2:** Use mixpanel sdk for only feature flagging assignment, not exposure event
+**Mixpanel Feature Flags with a Customer Data Platform (CDP)**
+You have two options -
+- **Option 1:** Use Mixpanel SDK for purely feature flagging assignment and exposure event `$experiment_started`.
+- **Option 2:** Use mixpanel SDK for only feature flagging assignment, not exposure event
     - When you initialize the mixpanel feature flag SDK, configure it to not track any `$experiment_started` events directly to Mixpanel.
     - This way you use the mixpanel SDK to serve the feature flags, but when an end-user sees exposure, they manually use their existing method of tracking events through their CDP to mixpanel to track the $experiment_started event
 
+**Mixpanel Feature Flags with Google Tag Manager (GTM)**
+You can implement Mixpanel Feature Flags through Google Tag Manager. See the [Google Tag Manager integration guide](/docs/tracking-methods/integrations/google-tag-manager) for step-by-step instructions on initializing flags, evaluating them, and tracking exposure events via GTM.
 
 ## Identifying User Exposures
 
@@ -279,6 +388,41 @@ The Feature Flags tab on a user's profile page will display the most recently vi
 If a user later sees a new variant, that will be displayed instead. If the flag is tied to an experiment, clicking on the right arrow will open a menu allowing the user to navigate
 to the feature flag page of the associated flag, or the related experiment page.
 
+## Multiple Environments
+
+Multiple Environments lets you treat separate Mixpanel projects as development, staging, and production environments for the same feature flag or experiment. Build and iterate on a flag (and any experiment it's tied to) in one project, then push it to another project when you're ready — without recreating it by hand. Linked flags and experiments stay connected so you can continue pushing updates over time.
+
+### Other Environments Selector
+
+The "Other Environments" selector appears under the **Configuration** tab of a feature flag, inside the **More** section. This panel lets you manage a flag's links to copies of itself in other projects.
+
+#### Pushing changes
+
+Pushing changes copies the full configuration of the source (original) flag to the linked destination flag in the other project. Any changes that exist only on the destination flag will be overwritten.
+
+#### Other Environments Menu
+
+This menu lists the feature flags in other projects that are linked to the current flag. From here, you can navigate to a linked flag, push the source flag's current configuration to it, or remove the connection.
+
+#### Duplicate To Project
+
+To duplicate a feature flag to another project, open the Other Environments menu and select **Duplicate To Project**. In the dialog, choose the destination project.
+
+This flow is for duplicating across projects only — to duplicate within the same project, use the same **Duplicate** option within flag's overflow (`...`) menu in the top-right of the flag page .
+
+Note that flags created as part of an experiment (experiment-type flags) cannot be duplicated from the Feature Flags page — duplicate the parent experiment instead, which will optionally duplicate the linked flag with it.
+
+Once duplicated, the new flag is linked to the original and can be managed from the "Other Environments" menu.
+
+#### Data Groups
+
+Feature Flag rollouts may include configuration that references data groups in a given project. For instance, if you change the
+"Assignment Key" of a flag, both the source and destination projects _must_ include the referenced data group in order to duplicate or push changes.
+If the assignment key is _not_ present in the destination project, the operation will fail.
+
+<Callout type="info">
+  **Billing across projects:** You aren't double-charged for using the same feature flag across multiple projects. Mixpanel charges based on active feature flag keys, so the same flag-key shared across projects is counted once.
+</Callout>
 
 ## Feature Flagging Pricing FAQ
 
@@ -288,42 +432,42 @@ to the feature flag page of the associated flag, or the related experiment page.
 
 Pricing Unit: Feature Flags are priced based on Feature Flag API Requests, and number of 'active' feature flags at any time
 
-**1. What is a Feature Flag API Request?**
+**What is a Feature Flag API Request?**
 
 A feature flag API request is a call made by your application to a Feature Flag system’s API to determine **which all features** should be enabled or disabled, or which variant should be served to a user. All the active flags in the system are evaluated as part of this API request.  
 
-**2. How can I estimate Feature Flag API requests?**
+**How can I estimate Feature Flag API requests?**
 
 In general, you can expect every user session to have 1 API request. When the session starts, all the flags for the user are fetched in the single API request. So monthly API requests is at minimum equivalent to the total user sessions that month. 
 Few notes: 
 - If you have multiple sdk inits each session, that would increase the count of API requests in a session
 - Considering above, general rule of thumb: would consider API requests to be 1.5 x User Sessions considering implementation challenges, or multiple sdk inits in a session
 
-**3. How do I estimate API requests if implementing via server side sdk?**
+**How do I estimate API requests if implementing via server side sdk?**
 
 - If you are using server side sdk, with only local evaluation: your API requests depend on a) how many server instances you have and b) how frequently you poll your servers
 - If you are using server side sdk, but with remote evaluation or leveraging cohorts: your API request estimation is similar to client-side sdk requests laid our above
 
-**4. What happens if I go over my purchased Feature Flag API Request bucket?**
+**What happens if I go over my purchased Feature Flag API Request bucket?**
 
 You can continue using Mixpanel Feature Flags, but you will be charged a higher rate for the overages. 
 
-**5. Is there any limit on number of feature flags per API request?**
+**Is there any limit on number of feature flags per API request?**
 
 Yes, there is a limit depending on the plan you purchase. You can choose from 3 plans: to have upto 50, 200 or 1000 'active flags' per API request.
 - Once you reach this limit, no more flags will will be fetched as part of the API request until you disable some others or upgrade your plan 
 - Active flags are flags which are marked 'Enabled'. Only these flags are counted under the 'active flag' limit
 - If you are on the 50 active flag limit, the first 50 flags based on the 'start' date are fetched
 
-**6. Do I get double charged if I create the same feature flag across projects?**
+**Do I get double charged if I create the same feature flag across projects?**
 
 No. We charge based on active 'feature flag keys'. If the same flag-key is used across projects, it will be charged only once.
 
-**7. How can I monitor my account’s Feature Flag API requests consumption?**
+**How can I monitor my account’s Feature Flag API requests consumption?**
 
 You can see your feature flag usage by going to Organization settings > Plan Details & Billing.
 
-**8. If I purchase the feature flag add-on, do I still need to purchase the experimentation add-on as well?**
+**If I purchase the feature flag add-on, do I still need to purchase the experimentation add-on as well?**
 
 Yes. Both these are separate add-ons to ensure we're compatible with your tech stack. So, if you are also looking to analyze experiments, please check our [experimentation offering.] (https://docs.mixpanel.com/docs/experiments) 
 

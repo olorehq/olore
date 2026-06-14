@@ -1,0 +1,43 @@
+---
+title: 'Using the Checkly API'
+sidebarTitle: 'Overview'
+description: 'Use the Checkly Public API to manage monitoring resources, retrieve account information, and export analytics.'
+---
+
+The Checkly API enables you to manage your monitoring infrastructure, retrieve account information, and export analytics using HTTP requests.
+
+<Note>
+  For creating and updating resources, we recommend using the [Checkly CLI](/cli/overview) or another [Monitoring as Code](/learn/monitoring/monitoring-as-code/) option. Managing resources using the Checkly API is possible, but Monitoring as Code generally provides a better experience for this.
+</Note>
+
+## API specification
+
+Use `https://api.checklyhq.com/openapi.json` for the current Checkly Public API specification.
+
+<Warning>
+  The legacy `https://api.checklyhq.com/swagger.json` specification is deprecated and no longer receives updates. If you generate API clients, validate requests, or inspect the latest API contract, update your tooling to use `openapi.json`.
+</Warning>
+
+## Authentication
+
+The Checkly Public API uses API keys to authenticate requests. You can get a API Key in your [user settings](https://app.checklyhq.com/settings/user/api-keys).
+
+Your API key is like a password: keep it secure!
+
+Authentication to the API is performed using the Bearer auth method in the Authorization header and using the Account ID.
+
+For example, set the `Authorization` and `X-Checkly-Account` headers when using cURL:
+
+```bash Bash icon="square-terminal"
+curl -H "Authorization: Bearer [apiKey]" -H "X-Checkly-Account: [accountId]"
+```
+
+[More information about managing API keys](/admin/creating-api-key), including service API keys.
+
+## Rate Limits
+
+The Checkly Public API uses rate limits to help manage the sheer volume of requests we receive. The rate limit is characterized by allowing a maximum number of requests within a time interval.
+
+For most of our routes, that limit is **600 requests every 60 seconds**.
+
+However, we also have **routes with custom rate limits**. If the endpoint you are using has a custom rate limit, you will find that information in the documentation of that route.

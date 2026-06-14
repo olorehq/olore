@@ -10,7 +10,7 @@ Here you can find the most common `open-next.config.ts` file examples that you c
   let them know of the issue.
 </Callout>
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -29,7 +29,7 @@ Be aware that there has been some issues in the past with AWS breaking streaming
 
 ## Splitting the server
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   // This is the default server, similar to the server-function in open-next v2
@@ -62,7 +62,7 @@ export default config;
   300ms. Requires `OpenNext v3.0.3+`. Here is how you enable it:
 </Callout>
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -79,7 +79,7 @@ export default config;
 
 ## Running in Lambda@Edge
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -102,7 +102,7 @@ Be aware that this uses the exact same system for ISR/SSG as the default lambda 
 
 </Callout>
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   // In this case, the default server is meant to run as a classic Node server
@@ -137,7 +137,7 @@ This will generate 2 server functions, the default one and the edge one. The edg
 
 Edge runtime function have less cold start time, but you can only deploy one route per function. They also do not have the middleware bundled in the function, so you need to use external middleware if you need it in front of the edge function.
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},
@@ -160,7 +160,7 @@ In some cases (edge runtime, function splitting with some middleware rewrites, e
 With the default middleware configuration, it is bundled for a deployment in lambda@edge.
 This is how you can do it:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},

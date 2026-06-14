@@ -4,8 +4,10 @@ description: 'Run Playwright tests with Checkly monitoring features'
 sidebarTitle: 'checkly pw-test'
 ---
 
-The `checkly pw-test` command runs Playwright tests with Checkly monitoring features and reuses the Playwright CLI arguments.
-This command automatically records test sessions without requiring the `--record` flag.
+<Note>Available since CLI v6.1.0.</Note>
+
+The `checkly pw-test` command runs Playwright tests on Checkly's cloud infrastructure and supports standard Playwright CLI arguments.
+This command records test sessions by default.
 
 <Accordion title="Prerequisites">
 Before using `checkly pw-test`, ensure you have:
@@ -30,33 +32,37 @@ npx checkly pw-test [checkly options] -- [playwright options]
 
 Define `checkly pw-test` specific options before the `--` separator:
 
-| Option | Description |
-|--------|-------------|
-| `--config` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
-| `--create-check` | Create a Checkly check from the Playwright test. |
-| `--env, -e` | Env vars to be passed to the test run. Default: [] |
-| `--env-file` | dotenv file path to be passed. For example `--env-file="./.env"` |
-| `--location, -l` | The location to run the checks at. |
-| `--private-location` | The private location to run checks at. |
-| `--[no-]record` | Record test results in Checkly as a test session with full logs, traces and videos. |
-| `--reporter` | A list of custom reporters for the test output. |
-| `--stream-logs` | Stream logs from the test run to the console. |
-| `--test-session-name` | A name to use when storing results in Checkly |
-| `--timeout` | A timeout (in seconds) to wait for checks to complete. |
-| `--verbose` | Always show the full logs of the checks. |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--config` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
+| `--create-check` | - | Create a Checkly check from the Playwright test. |
+| `--detach, -d` | - | Keep checks running in the cloud when you stop the CLI with Ctrl+C, instead of cancelling the run. |
+| `--env, -e` | - | Env vars to be passed to the test run. Default: [] |
+| `--env-file` | - | dotenv file path to be passed. For example `--env-file="./.env"` |
+| `--include, -i` | - | File patterns to include when bundling the test project (e.g., `"utils/**/*"`). Can be repeated. |
+| `--install-command` | - | Override the command used to install dependencies before running tests. |
+| `--location, -l` | - | The location to run the checks at. |
+| `--private-location` | - | The private location to run checks at. |
+| `--[no-]record` | - | Record test results in Checkly as a test session with full logs, traces and videos. |
+| `--refresh-cache` | - | Force a fresh install of dependencies and update the cached version. |
+| `--reporter` | - | One or more custom reporters for the test output. Supports comma-separated values and repeated flags. |
+| `--stream-logs` | - | Stream logs from the test run to the console. |
+| `--test-session-name` | - | A name to use when storing results in Checkly |
+| `--timeout` | - | A timeout (in seconds) to wait for checks to complete. |
+| `--verbose` | - | Always show the full logs of the checks. |
 
 </Tab>
 <Tab title="Playwright Test Options">
 
 Define Playwright test runner flags after the `--` separator:
 
-| Option | Description |
-|------|-------------|
-| `--project` | Select Playwright projects |
-| `--grep` | Filter tests by pattern |
-| `--grep-invert` | Exclude tests by pattern |
+| Option | Required | Description |
+|------|----------|-------------|
+| `--project` | - | Select Playwright projects |
+| `--grep` | - | Filter tests by pattern |
+| `--grep-invert` | - | Exclude tests by pattern |
 
-<Tip>The `--reporter`, `--list`, and `--headed` options are not supported. Find more Playwright options in the [Playwright test runner docs](https://playwright.dev/docs/test-cli) .</Tip>
+<Tip>The `--reporter` and `--headed` options are not supported. Find more Playwright options in the [Playwright test runner docs](https://playwright.dev/docs/test-cli).</Tip>
 
 </Tab>
 </Tabs>
@@ -120,7 +126,19 @@ const config = defineConfig({
 
 </ResponseField>
 
-<ResponseField name="--env, -e">
+<ResponseField name="--detach, -d" type="boolean" default="false">
+
+By default, pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> during a `pw-test` run cancels the recorded test session. With `--detach`, <kbd>Ctrl</kbd>+<kbd>C</kbd> exits the CLI immediately instead, leaving the checks running in the cloud.
+
+**Usage:**
+
+```bash Terminal
+npx checkly pw-test --detach
+```
+
+</ResponseField>
+
+<ResponseField name="--env, -e" type="string[]">
 
 Pass environment variables to the test run. Can be specified multiple times to set multiple variables.
 
@@ -135,12 +153,40 @@ npx checkly pw-test -e NODE_ENV=production -e DEBUG=true
 
 <ResponseField name="--env-file" type="string">
 
-Specify a dotenv file path to load environment variables from. This is useful for managing multiple environment variables in a single file.
+Load environment variables from a dotenv file.
 
 **Usage:**
 
 ```bash Terminal
 npx checkly pw-test --env-file="./.env"
+```
+
+</ResponseField>
+
+<ResponseField name="--include, -i" type="string[]">
+
+File patterns to include when bundling the test project. Use this to add files that aren't automatically detected as dependencies, such as fixtures, helpers, or assets referenced at runtime. Can be specified multiple times to include multiple patterns.
+
+If not provided, falls back to the `checks.include` value in your `checkly.config`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly pw-test --include="utils/**/*"
+npx checkly pw-test -i="fixtures/**/*" -i="data/*.json"
+```
+
+</ResponseField>
+
+<ResponseField name="--install-command" type="string">
+
+Override the command used to install dependencies before running tests. By default, Checkly runs `npm install --dev`. Use this to customize the install step, for example to skip lifecycle scripts or use a different package manager.
+
+**Usage:**
+
+```bash Terminal
+npx checkly pw-test --install-command='npm install --no-scripts'
+npx checkly pw-test --install-command='pnpm install --frozen-lockfile'
 ```
 
 </ResponseField>
@@ -171,6 +217,18 @@ npx checkly pw-test --private-location="staging-vpc"
 
 </ResponseField>
 
+<ResponseField name="--refresh-cache" type="boolean" default="false">
+
+Force a fresh install of dependencies and update the cached version. Use this when you've changed your project's dependencies and need Checkly to pick up the latest versions instead of using the cache from a previous run.
+
+**Usage:**
+
+```bash Terminal
+npx checkly pw-test --refresh-cache
+```
+
+</ResponseField>
+
 <ResponseField name="--[no-]record" type="boolean">
 
 The `pw-test` automatically records your test results as a [test session](/detect/testing/overview) with full logs, traces, and videos. Use `--no-record` to disable recording.
@@ -184,9 +242,11 @@ npx checkly pw-test --no-record
 
 </ResponseField>
 
-<ResponseField name="--reporter" type="string">
+<ResponseField name="--reporter" type="string[]">
 
-Specify a custom reporter for the test output. Available options: `list`, `dot`, `ci`, `github`, `json`
+One or more custom reporters for the test output. Options: `list`, `dot`, `ci`, `github`, `json`.
+
+You can combine multiple reporters by passing multiple `--reporter` flags or using a comma-separated list.
 
 **Usage:**
 
@@ -195,11 +255,21 @@ npx checkly pw-test --reporter="json"
 npx checkly pw-test --reporter="github"
 ```
 
+**Examples:**
+
+```bash Terminal
+# Multiple reporters using comma-separated values
+npx checkly pw-test --reporter list,json
+
+# Multiple reporters using repeated flags
+npx checkly pw-test --reporter list --reporter json
+```
+
 </ResponseField>
 
 <ResponseField name="--stream-logs" type="boolean">
 
-Stream logs from the test run to the console in real-time. This provides immediate feedback during test execution.
+Logs appear in real time as tests run.
 
 **Usage:**
 
@@ -239,7 +309,7 @@ npx checkly pw-test --timeout="1200"
 
 <ResponseField name="--verbose" type="boolean">
 
-Enable verbose output to always show the full logs of the checks. This provides detailed information about test execution.
+Show full logs for every check, including passing ones.
 
 **Usage:**
 
@@ -251,9 +321,7 @@ npx checkly pw-test --verbose
 
 ### Common Playwright Test Options
 
-The `pw-test` command will reuse your `playwright.config` settings. To overwrite these values from the command line, [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) supports most [Playwright test runner options](https://playwright.dev/docs/test-cli).
-
-Here are some commonly used command line options for running your Playwright tests in the Checkly infrastructure.
+The `pw-test` command reuses your `playwright.config` settings. To overwrite these values from the command line, [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) supports most [Playwright test runner options](https://playwright.dev/docs/test-cli).
 
 <ResponseField name="--project" type="string">
 
@@ -334,35 +402,58 @@ npx checkly pw-test -- --workers=4 --project="chromium" --retries=3
 
 ## Examples
 
+### Validate smoke tagged tests from `us-east-1`
+
+```bash Terminal
+npx checkly pw-test --location="us-east-1" -- --grep="@smoke"
+```
+
+### Debug production issues
+
+```bash Terminal
+npx checkly pw-test --verbose -- tests/checkout.spec.ts
+```
+
+### Test from different locations
+
+```bash Terminal
+npx checkly pw-test --location="ap-southeast-1"
+npx checkly pw-test --location="eu-west-1"
+```
+
+### Run critical tests only
+
+```bash Terminal
+npx checkly pw-test --env ENVIRONMENT=production -- --grep="@critical"
+```
+
 ### Run tests in multiple browsers
 
 ```bash Terminal
-# Using different Playwright projects
 npx checkly pw-test -- --project=chromium --project=firefox
 ```
 
-### Run tests by pattern
+### Run a specific test file
 
 ```bash Terminal
-# Filter tests by grep pattern
-npx checkly pw-test -- --grep="login"
-
-# Exclude tests by pattern
-npx checkly pw-test -- --grep-invert="skip|todo"
-```
-
-### Run tests by file
-
-```bash Terminal
-# Run a specific test file
 npx checkly pw-test -- test.spec.ts
 ```
 
 ## Key Features
 
-- `pw-test` automatically records test sessions (no `--record` flag needed)
 - Your Playwright configuration applies automatically (traces, videos, screenshots)
+- Test sessions are recorded by default with full logs, traces, and videos
 - View all artifacts in Checkly's UI
+
+## Cancelling a run
+
+<Note>Available in CLI v8.0.0+.</Note>
+
+Cancellation is available only for recorded test sessions.
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a `checkly pw-test` run to cancel the test session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately without waiting. Pass the `--detach` flag to keep the checks running in the cloud instead — <kbd>Ctrl</kbd>+<kbd>C</kbd> then exits the CLI immediately without cancelling.
+
+See [Cancellation](/concepts/cancellation) for the full flow.
 
 ## Related Commands
 

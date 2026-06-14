@@ -5,38 +5,39 @@ description: Local dotnet-architecture documentation reference (latest). .NET ar
 
 # dotnet-architecture Documentation
 
-.NET architecture documentation covering microservices, clean architecture, DDD, CQRS, gRPC, containerized apps, serverless, and cloud-native design patterns.
+.NET architecture documentation covering microservices, cloud-native patterns, DDD, CQRS, Blazor migration, .NET MAUI enterprise patterns, and modern ASP.NET Core web app design.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Microservices architecture | `contents/microservices/index.md` |
-| Cloud-native patterns | `contents/cloud-native/index.md` |
+| Microservices architecture overview | `contents/microservices/index.md` |
 | DDD and CQRS patterns | `contents/microservices/microservice-ddd-cqrs-patterns/index.md` |
-| Resilient apps (Polly, circuit breaker) | `contents/microservices/implement-resilient-applications/index.md` |
-| Modern ASP.NET Core web apps | `contents/modern-web-apps-azure/index.md` |
-| Blazor (migrating from Web Forms) | `contents/blazor-for-web-forms-developers/index.md` |
-| .NET MAUI mobile/desktop | `contents/maui/index.md` |
-| Docker and containers | `contents/microservices/container-docker-introduction/index.md` |
+| Cloud-native .NET on Azure | `contents/cloud-native/index.md` |
+| Modern web apps with ASP.NET Core | `contents/modern-web-apps-azure/index.md` |
+| Blazor migration from Web Forms | `contents/blazor-for-web-forms-developers/index.md` |
+| .NET MAUI enterprise patterns | `contents/maui/index.md` |
+| Resilient HTTP with Polly | `contents/microservices/implement-resilient-applications/index.md` |
+| API gateway with Ocelot | `contents/microservices/multi-container-microservice-net-applications/implement-api-gateways-with-ocelot.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Microservices architecture, design patterns, and implementation in .NET
-- DDD (Domain-Driven Design), CQRS, event sourcing, and domain events
-- Cloud-native application design on Azure
-- Docker containers, orchestration, and Kubernetes
-- Resiliency patterns: circuit breaker, retries, health checks
-- gRPC, service mesh, API gateways, and service-to-service communication
-- Blazor development and migration from ASP.NET Web Forms
-- .NET MAUI cross-platform mobile and desktop apps
-- ASP.NET Core architecture, clean architecture, and Azure deployment
+- Microservices architecture design and patterns (.NET, Docker, Kubernetes)
+- Domain-Driven Design (DDD), CQRS, event sourcing in .NET
+- Cloud-native application design for Azure
+- Containerized .NET apps, Docker Compose, AKS
+- Clean architecture, SOLID principles, modern web app patterns
+- gRPC, service mesh, API gateways, messaging (RabbitMQ, integration events)
+- Blazor migration from ASP.NET Web Forms
+- .NET MAUI enterprise app patterns (MVVM, DI, navigation, validation)
+- Resilience patterns: retry, circuit breaker, Polly, IHttpClientFactory
+- Security in microservices: JWT, IdentityServer, Azure Key Vault
 
 ## How to find information
 
-1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question
+1. **First**, read `TOC.md` for the complete file listing organized by directory
+2. Identify the relevant section based on the user's question
 3. Read specific files for details
 
-**TOC.md contains all files organized by directory - always check it first.**
+**TOC.md contains all 158 files organized by directory - always check it first.**

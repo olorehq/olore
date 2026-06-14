@@ -1,218 +1,307 @@
 ---
 title: 'MSTeamsAlertChannel Construct'
 description: 'Learn how to configure Microsoft Teams alert channels with the Checkly CLI.'
-sidebarTitle: 'MS Teams Alert Channel'
+sidebarTitle: 'Microsoft Teams'
 ---
 
-import AlertChannelOptionsTable from '/snippets/alert-channel-options-table.mdx';
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
 
 <Tip>
-Learn more about Microsoft Teams alerts in [the Microsoft Teams Alerts documentation](/integrations/alerts/msteams).
+For general information about alerting, see our docs on [Microsoft Teams alerts](/integrations/alerts/msteams) and [alerting with Checkly](/communicate/alerts/overview/).
 </Tip>
 
-Use Microsoft Teams Alert Channels to send notifications to Microsoft Teams channels when checks fail or recover. Teams alerts help keep your team informed and enable quick collaboration on issues.
+Sends alert notifications to a Microsoft Teams channel via a Workflow webhook.
 
 <CodeGroup>
-
 ```ts Basic Example
-import { MSTeamsAlertChannel } from "checkly/constructs"
+import { MSTeamsAlertChannel } from 'checkly/constructs'
 
-const teamsChannel = new MSTeamsAlertChannel("teams-channel-1", {
-  name: "Dev Team Alerts",
-  url: "https://prod-24.westus.logic.azure.com:443/workflows/xxxxx",
+const msTeamsAlertChannel = new MSTeamsAlertChannel('msteams-channel-01', {
+  name: 'ACME alerts',
+  url: 'https://prod-24.westus.logic.azure.com:443/workflows/xxxxx',
 })
 ```
 
-```ts Advanced Example
-import { MSTeamsAlertChannel } from "checkly/constructs"
+```ts Advanced Example expandable
+import { MSTeamsAlertChannel } from 'checkly/constructs'
 
-const teamsChannel = new MSTeamsAlertChannel("advanced-teams-channel", {
-  name: "Production Monitoring Alerts",
-  url: "https://prod-24.westus.logic.azure.com:443/workflows/xxxxx",
+const msTeamsAlertChannel = new MSTeamsAlertChannel('msteams-channel-01', {
+  name: 'ACME alerts',
+  url: 'https://prod-24.westus.logic.azure.com:443/workflows/xxxxx',
   sendRecovery: true,
   sendFailure: true,
   sendDegraded: true,
   sslExpiry: true,
   sslExpiryThreshold: 14,
+  payload: `{
+  "type":"message",
+  "attachments":[
+    {
+      "contentType":"application/vnd.microsoft.card.adaptive",
+      "contentUrl":null,
+      "content":{
+        "$schema":"http://adaptivecards.io/schemas/adaptive-card.json",
+        "type":"AdaptiveCard",
+        "version":"1.2",
+        "body":[
+          {
+            "type": "Container",
+            "items": [
+              {
+                "type": "TextBlock",
+                "text": "{{ALERT_TITLE}}",
+                "weight": "Bolder",
+                "size": "Large",
+                "style": "heading"
+              },
+              {{#if AI_ANALYSIS_CLASSIFICATION}}
+              {
+                "type": "TextBlock",
+                "text": "AI analysis",
+                "weight": "Bolder",
+                "size": "Default",
+                "style": "heading"
+              },
+              {
+                "type": "ColumnSet",
+                "columns": [
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "{{AI_ANALYSIS_CLASSIFICATION}}",
+                        "weight": "Bolder",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "{{AI_ANALYSIS_ROOT_CAUSE}}",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ActionSet",
+                "actions": [
+                  {
+                    "type": "Action.OpenUrl",
+                    "title": "Read full analysis",
+                    "url": "{{AI_ANALYSIS_LINK}}",
+                    "style": "positive",
+                    "iconUrl": "icon:Sparkle"
+                  }
+                ]
+              },
+              {{/if}}
+              {
+                "type": "ColumnSet",
+                "columns": [
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "Response time: {{RESPONSE_TIME}}ms",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Location: {{RUN_LOCATION}}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Timestamp: {{STARTED_AT}}",
+                        "wrap": true
+                      },
+                      {{#if GROUP_NAME}}
+                      {
+                        "type": "TextBlock",
+                        "text": "Group: {{GROUP_NAME}}",
+                        "wrap": true
+                      },
+                      {{/if}}
+                      {
+                        "type": "TextBlock",
+                        "text": "Tags: {{#each TAGS}} {{this}} {{#unless @last}},{{/unless}} {{/each}}",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "actions":[
+          {
+            "type":"Action.OpenUrl",
+            "title":"View in Checkly",
+            "url":"{{RESULT_LINK}}",
+            "style": "positive"
+          }
+        ]
+      }
+    }
+  ]
+}`
 })
 ```
-
 </CodeGroup>
+
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
 
 ## Configuration
 
-<Tabs>
-  <Tab title="Microsoft Teams Alert Channel">
+### Microsoft Teams Alert Channel Options
 
-Configure Microsoft Teams-specific settings:
+<ResponseField name="url" type="string" required>
+The target URL created by [creating a Workflow in Microsoft Teams](/integrations/alerts/msteams).
+</ResponseField>
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `url` | `string` | ✅ | - | Microsoft Teams webhook URL created by the Workflow |
-| `name` | `string` | ❌ | - | Friendly name to recognize the integration |
-| `payload` | `string` | ❌ | - | Custom payload for the alert message |
+<ResponseField name="name" type="string">
+Friendly name to recognize the integration.
+</ResponseField>
 
-</Tab>
+<ResponseField name="payload" type="string">
+Custom payload for the alert message. If this is not specified, we'll send a default payload with basic information about the alert.
 
-<Tab title="General Alert Channel">
+We have [handlebar helpers and variables](/integrations/alerts/webhooks/#using-variables) available for building custom payloads.
 
-  <AlertChannelOptionsTable />
+Here's an example payload, using the default one that we provide:
 
-</Tab>
-</Tabs>
-
-## Examples
-
-<Tabs>
-  <Tab title="Development Team">
-    ```ts
-    import { MSTeamsAlertChannel, ApiCheck } from "checkly/constructs"
-
-    const devTeamsAlert = new MSTeamsAlertChannel("dev-team-alerts", {
-      name: "Development Team Alerts",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/dev-team-webhook",
-    })
-
-    new ApiCheck("dev-api-check", {
-      name: "Development API Health",
-      alertChannels: [devTeamsAlert],
-      tags: ["development", "api"],
-      request: {
-        method: "GET",
-        url: "https://dev-api.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Operations Team">
-    ```ts
-    import { ApiCheck, MSTeamsAlertChannel } from "checkly/constructs"
-
-    const opsTeamsAlert = new MSTeamsAlertChannel("ops-team-alerts", {
-      name: "Operations Team Alerts",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/ops-team-webhook",
-      sendRecovery: true,
-      sendFailure: true,
-      sendDegraded: true, // Ops team wants to know about degraded performance
-    })
-
-    new ApiCheck("infrastructure-check", {
-      name: "Infrastructure Health Check",
-      alertChannels: [opsTeamsAlert],
-      maxResponseTime: 5000,
-      degradedResponseTime: 2000,
-      tags: ["infrastructure", "operations"],
-      request: {
-        method: "GET",
-        url: "https://infrastructure.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Multi-Team Notifications">
-    ```ts
-    import { ApiCheck, MSTeamsAlertChannel } from "checkly/constructs"
-
-    const devTeams = new MSTeamsAlertChannel("dev-teams", {
-      name: "Development Team",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/dev-webhook",
-    })
-
-    const opsTeams = new MSTeamsAlertChannel("ops-teams", {
-      name: "Operations Team",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/ops-webhook",
-    })
-
-    const businessTeams = new MSTeamsAlertChannel("business-teams", {
-      name: "Business Team",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/business-webhook",
-      sendFailure: true,
-      sendRecovery: true,
-      sendDegraded: false, // Business team only needs to know about failures
-    })
-
-    new ApiCheck("multi-team-check", {
-      name: "Cross-Team Critical Service",
-      alertChannels: [devTeams, opsTeams, businessTeams],
-      tags: ["cross-team", "critical"],
-      request: {
-        method: "GET",
-        url: "https://critical-service.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Environment-Specific">
-    ```ts
-    import { ApiCheck, MSTeamsAlertChannel } from "checkly/constructs"
-
-    const prodTeams = new MSTeamsAlertChannel("prod-teams", {
-      name: "Production Alerts",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/prod-webhook",
-    })
-
-    const stagingTeams = new MSTeamsAlertChannel("staging-teams", {
-      name: "Staging Environment Alerts",
-      url: "https://prod-24.westus.logic.azure.com:443/workflows/staging-webhook",
-      sendDegraded: true, // More tolerant for staging
-    })
-
-    // Production monitoring
-    new ApiCheck("prod-api-check", {
-      name: "Production API",
-      alertChannels: [prodTeams],
-      tags: ["production"],
-      request: {
-        method: "GET",
-        url: "https://api.example.com/health",
-      },
-    })
-
-    // Staging monitoring
-    new ApiCheck("staging-api-check", {
-      name: "Staging API",
-      alertChannels: [stagingTeams],
-      tags: ["staging"],
-      maxResponseTime: 10000, // More lenient for staging
-      degradedResponseTime: 5000,
-      request: {
-        method: "GET",
-        url: "https://staging-api.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-</Tabs>
-
-## Setting Up Microsoft Teams Webhooks
-
-Find more information on how to set up a Microsoft Teams workflows in [the Microsoft Teams documentation](/integrations/alerts/msteams).
-
-## Environment Variables
-
-Store your Teams webhook URLs securely using environment variables:
-
-```ts
-const teamsChannel = new MSTeamsAlertChannel("teams-alerts", {
-  name: "Team Notifications",
-  url: process.env.TEAMS_WEBHOOK_URL!,
+```ts highlight={4-120} expandable
+new MSTeamsAlertChannel('msteams-channel-01', {
+  name: 'ACME alerts',
+  url: 'https://prod-24.westus.logic.azure.com:443/workflows/xxxxx',
+  payload: `{
+  "type":"message",
+  "attachments":[
+    {
+      "contentType":"application/vnd.microsoft.card.adaptive",
+      "contentUrl":null,
+      "content":{
+        "$schema":"http://adaptivecards.io/schemas/adaptive-card.json",
+        "type":"AdaptiveCard",
+        "version":"1.2",
+        "body":[
+          {
+            "type": "Container",
+            "items": [
+              {
+                "type": "TextBlock",
+                "text": "{{ALERT_TITLE}}",
+                "weight": "Bolder",
+                "size": "Large",
+                "style": "heading"
+              },
+              {{#if AI_ANALYSIS_CLASSIFICATION}}
+              {
+                "type": "TextBlock",
+                "text": "AI analysis",
+                "weight": "Bolder",
+                "size": "Default",
+                "style": "heading"
+              },
+              {
+                "type": "ColumnSet",
+                "columns": [
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "{{AI_ANALYSIS_CLASSIFICATION}}",
+                        "weight": "Bolder",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "{{AI_ANALYSIS_ROOT_CAUSE}}",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ActionSet",
+                "actions": [
+                  {
+                    "type": "Action.OpenUrl",
+                    "title": "Read full analysis",
+                    "url": "{{AI_ANALYSIS_LINK}}",
+                    "style": "positive",
+                    "iconUrl": "icon:Sparkle"
+                  }
+                ]
+              },
+              {{/if}}
+              {
+                "type": "ColumnSet",
+                "columns": [
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "Response time: {{RESPONSE_TIME}}ms",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Location: {{RUN_LOCATION}}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Timestamp: {{STARTED_AT}}",
+                        "wrap": true
+                      },
+                      {{#if GROUP_NAME}}
+                      {
+                        "type": "TextBlock",
+                        "text": "Group: {{GROUP_NAME}}",
+                        "wrap": true
+                      },
+                      {{/if}}
+                      {
+                        "type": "TextBlock",
+                        "text": "Tags: {{#each TAGS}} {{this}} {{#unless @last}},{{/unless}} {{/each}}",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "actions":[
+          {
+            "type":"Action.OpenUrl",
+            "title":"View in Checkly",
+            "url":"{{RESULT_LINK}}",
+            "style": "positive"
+          }
+        ]
+      }
+    }
+  ]
+}`
 })
 ```
+</ResponseField>
 
-```bash
-# .env
-TEAMS_WEBHOOK_URL=https://prod-24.westus.logic.azure.com:443/workflows/xxxxx
-```
+### General Alert Channel Options
 
-## Best Practices
-
-<Warning>
-**Webhook Security**: Keep your Teams webhook URLs secure. Anyone with access to the URL can send messages to your Teams channels.
-</Warning>
-
-<Info>
-**Channel Selection**: Choose appropriate Teams channels for different types of alerts. Consider creating dedicated monitoring channels to avoid noise in general discussion channels.
-</Info>
+<AlertChannelOptionsText />

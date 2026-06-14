@@ -1,8 +1,14 @@
 ---
 title: Connect a Remix application to Neon
 subtitle: Set up a Neon project in seconds and connect from a Remix application
+summary: >-
+  Connecting a Remix application (now React Router) to Neon Postgres requires a
+  server-side `db.server` file that holds the database connection, preventing
+  credentials from leaking into the client bundle. This guide walks through
+  creating a Neon project, storing the DATABASE_URL in `.env`, and wiring up a
+  loader route using node-postgres, postgres.js, or the Neon serverless driver.
 enableTableOfContents: true
-updatedOn: '2025-10-31T11:07:57.608Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <Admonition type="note">
@@ -164,15 +170,5 @@ PostgreSQL 16.0 on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1
 ```
 
 </Steps>
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-remix" description="Get started with Remix and Neon" icon="github">Get started with Remix and Neon</a>
-
-</DetailIconCards>
 
 <NeedHelp/>

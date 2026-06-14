@@ -1,0 +1,73 @@
+---
+title: isnan
+description: 'This page explains how to use the isnan function in APL.'
+---
+
+Use the `isnan` function in APL to check whether a numeric value is NaN (Not a Number). The function returns `true` when the value is NaN and `false` for all finite values and infinities.
+
+`isnan` is essential for data quality work. Operations such as `log` of a negative number, `sqrt` of a negative number, or `0 / 0` produce NaN in APL. Use `isnan` to detect and filter these invalid values before aggregating, charting, or alerting on your data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL includes the `isnan()` function, which works the same way as in APL: it returns `true` (1) when the value is NaN.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_nan = isnan(value)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_nan = isnan(value)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define an `ISNAN()` function. In most dialects, `NaN` is not a concept; division by zero raises an error instead. However, some databases (such as PostgreSQL) do support `NaN` as a float value, and you check for it with `value = 'NaN'`.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN value = 'NaN' THEN 1 ELSE 0 END AS is_nan FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_nan = isnan(value)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isnan(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The numeric value to check. |
+
+### Returns
+
+`true` if `x` is NaN. `false` for finite values and infinity.
+
+## List of related functions
+
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns `true` for values that are neither infinite nor NaN. Use it for a combined check covering all invalid float states.
+- [isinf](/apl/scalar-functions/mathematical-functions/isinf): Returns `true` only for infinite values. Use it alongside `isnan` to cover all edge cases.
+- [isint](/apl/scalar-functions/mathematical-functions/isint): Returns `true` for integer values. Use it for whole-number validation rather than float validity.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use `isnan` to catch NaN results when `log` is applied to non-positive values.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Use `isnan` to detect NaN results from `sqrt` on negative inputs.

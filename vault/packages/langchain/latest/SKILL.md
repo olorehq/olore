@@ -1,57 +1,41 @@
 ---
 name: olore-langchain-latest
-description: Local LangChain documentation reference (latest). Comprehensive documentation for LangChain and LangGraph frameworks in Python and JavaScript.
+description: Local LangChain documentation reference (latest). LangChain and LangGraph documentation. Use for agents, RAG, vector stores, chains, and LLM application development.
 ---
 
 # LangChain Documentation
 
-Comprehensive documentation for LangChain and LangGraph frameworks. Covers building LLM applications, agents, and stateful workflows in Python and JavaScript/TypeScript.
+LangChain and LangGraph documentation. Use for agents, RAG, vector stores, chains, and LLM application development. Also includes Deep Agents SDK documentation.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Learning resources | `contents/learn.mdx` |
 | LangChain quickstart | `contents/langchain/quickstart.mdx` |
 | LangGraph quickstart | `contents/langgraph/quickstart.mdx` |
-| Python integrations | `contents/python/integrations/` |
-| JavaScript integrations | `contents/javascript/integrations/` |
+| Deep Agents quickstart | `contents/deepagents/quickstart.mdx` |
 | Building agents | `contents/langchain/agents.mdx` |
+| RAG / retrieval | `contents/langchain/rag.mdx` |
+| LangGraph persistence | `contents/langgraph/persistence.mdx` |
+| Python integrations | `contents/python/integrations/providers/` |
+| JS/TS integrations | `contents/javascript/integrations/providers/` |
 | Common errors | `contents/common-errors.mdx` |
-| Migration guides | `contents/python/migrate/` or `contents/javascript/migrate/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Building LLM applications with LangChain
-- Creating agents and multi-agent systems
-- Building stateful workflows with LangGraph
-- Integrating with chat models, embeddings, vector stores, and tools
-- Python or JavaScript/TypeScript implementations
-- Prompt engineering, context management, and structured outputs
-- RAG (Retrieval-Augmented Generation) patterns
-- Memory management and state persistence
-- Middleware, guardrails, and observability
-- Deploying LangChain applications
+- LangChain agents, chains, RAG, retrieval, memory, tools, or streaming
+- LangGraph graph API, functional API, persistence, checkpointing, or subgraphs
+- Deep Agents SDK (harness, skills, subagents, sandboxes, memory)
+- Integrating LangChain with LLM providers (OpenAI, Anthropic, Google, Bedrock, etc.)
+- Vector stores, embeddings, document loaders, or text splitters
+- Deploying or scaling LangChain/LangGraph applications
+- Migrating to LangChain v1 or LangGraph v1
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Choose the appropriate language section (`python/` or `javascript/`)
-3. Pick the framework (`langchain/` for core, `langgraph/` for stateful workflows)
-4. Navigate to specific integrations, guides, or API references
+2. Identify relevant section based on user's question
+3. Read specific files for details
 
-**TOC.md contains all 1700+ files organized by directory - always check it first.**
-
-## Documentation Organization
-
-- **langchain/**: Core framework concepts, agents, tools, models, memory
-- **langgraph/**: Stateful workflows, graph API, persistence, interrupts
-- **python/**: 1290 Python files including extensive integrations
-- **javascript/**: 306 JavaScript/TypeScript files with provider integrations
-- **integrations/**: Provider-specific documentation (chat models, embeddings, vector stores, etc.)
-- **migrate/**: Version migration guides
-- **concepts/**: Architectural concepts
-- **reference/**: API reference documentation
-
-Use the Quick Reference table above to quickly access common entry points, then explore related files for detailed information.
+**TOC.md contains all files organized by directory - always check it first.**

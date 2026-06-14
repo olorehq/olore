@@ -7,16 +7,16 @@ description: "Configure logging integrations for your Convex deployment"
 
 Log streams enable streaming of events such as function executions and
 `console.log`s from your Convex deployment to supported destinations, such as
-Axiom, Datadog, or a custom webhook.
+Axiom, Datadog, PostHog, or a custom webhook.
 
 The most recent logs produced by your Convex deployment can be viewed in the
-Dashboard [Logs page](/dashboard/deployments/logs.md), the
-[Convex CLI](/cli.md), or in the browser console, providing a quick and easy way
-to view recent logs.
+Dashboard [Logs page](/dashboard/deployments/logs.mdx), the
+[Convex CLI](/cli/overview.mdx), or in the browser console, providing a quick
+and easy way to view recent logs.
 
-Log streaming to a third-party destination like Axiom or Datadog enables storing
-historical logs, more powerful querying and data visualization, and integrations
-with other tools (e.g. PagerDuty, Slack).
+Log streaming to a third-party destination like Axiom, Datadog, or PostHog
+enables storing historical logs, more powerful querying and data visualization,
+and integrations with other tools (e.g. PagerDuty, Slack).
 
 <ProFeatureUpsell feature="Log streams" verb="require" />
 
@@ -26,6 +26,7 @@ We currently support the following log streams, with plans to support many more:
 
 - [Axiom](https://www.axiom.co)
 - [Datadog](https://www.datadoghq.com/)
+- [PostHog](https://posthog.com/)
 - Webhook to a custom URL
 
 See the instructions for
@@ -63,6 +64,23 @@ Configuring a Datadog log stream requires specifying:
   payloads sent to Datadog. This can be used to include any other metadata that
   can be useful for querying or categorizing your Convex logs ingested by your
   Datadog deployment.
+
+### PostHog
+
+Configuring a PostHog log stream requires specifying:
+
+- A PostHog [project token](https://us.posthog.com/settings/project), found in
+  PostHog under Settings > Project > General
+- An optional host URL. Defaults to US Cloud (`https://us.i.posthog.com`). Use
+  `https://eu.i.posthog.com` for EU Cloud, or your self-hosted URL. The endpoint
+  path is added automatically.
+- An optional service name for log attribution via the OTLP `service.name`
+  resource attribute. Defaults to your deployment name.
+
+Logs are sent to PostHog using the
+[OpenTelemetry (OTLP)](https://posthog.com/docs/logs) log ingestion format. Each
+log event includes deployment metadata as resource attributes and the full event
+data as the log record body.
 
 ### Webhook
 
@@ -160,7 +178,7 @@ type-safe pipelines ingesting log events.
 All events will have the following three fields:
 
 - `topic`: string, categorizes a log event, one of
-  `["verification", "console", "function_execution", "audit_log", "concurrency_stats", "scheduler_stats", "current_storage_usage"]`
+  `["verification", "console", "function_execution", "audit_log", "concurrency_stats", "scheduler_stats", "current_storage_usage", "storage_api_bandwidth"]`
 - `timestamp`: number, Unix epoch timestamp in milliseconds as an integer
 - `convex`: An object containing metadata related to your Convex deployment,
   including `deployment_name`, `deployment_type`, `project_name`, and
@@ -223,6 +241,9 @@ Schema:
 - `function`: object, see
   [function fields](/production/integrations/log-streams/log-streams.mdx#function-fields)
 - `execution_time_ms`: number, the time in milliseconds this function took to
+  execute
+- `user_execution_time_ms`: optional number, the time in milliseconds the user's
+  code spent executing (excludes system overhead)
 - `status`: string, one of `["success", "failure"]`
 - `error_message`: string, present for functions with status `failure`,
   containing the error and any stack trace.
@@ -249,19 +270,29 @@ Schema:
     [`_scheduled_functions`](/scheduling/scheduled-functions#retrieving-scheduled-function-status)
     table
 - `usage`:
-  - `database_read_bytes`: number
-  - `database_write_bytes`: number, this and `database_read_bytes` make up the
-    database bandwidth used by the function
+  - `database_io_read_bytes`: number
+  - `database_io_write_bytes`: number, this and `database_io_read_bytes` make up
+    the Database I/O used by the function
   - `database_read_documents`: number, the number of documents read by the
     function
-  - `file_storage_read_bytes`: number
-  - `file_storage_write_bytes`: number, this and `file_storage_read_bytes` make
-    up the file bandwidth used by the function
-  - `vector_storage_read_bytes`: number
-  - `vector_storage_write_bytes`: number, this and `vector_storage_read_bytes`
-    make up the vector bandwidth used by the function
-  - `memory_used_mb`: number, for queries, mutations, and actions, the memory
-    used in MiB. This combined with `execution_time_ms` makes up the compute.
+  - `text_search_query_bytes`: number
+  - `text_search_write_query_bytes`: number, these two fields together track
+    text search query usage
+  - `vector_search_query_bytes`: number
+  - `vector_search_write_query_bytes`: number, these two fields together track
+    vector search query usage. Combined with the `text_search_*` fields, they
+    make up the Search queries pricing metric.
+  - `file_storage_read_bytes`: number, the bytes read from file storage using
+    the [storage API within Convex functions](/file-storage/store-files.mdx)
+    (e.g. `ctx.storage.get()`). This does not include bandwidth from clients
+    downloading files directly from the storage HTTP API; see
+    [`storage_api_bandwidth`](#storage_api_bandwidth-events).
+  - `network_egress_bytes`: number, the bytes sent to clients or external
+    services. This contributes to Data egress alongside
+    [`storage_api_bandwidth`](#storage_api_bandwidth-events) events.
+  - `action_memory_used_mb`: optional number (actions and HTTP actions only),
+    the memory used in MiB. This combined with `execution_time_ms` makes up
+    Action compute.
 
 Example event for a query:
 
@@ -279,13 +310,15 @@ Example event for a query:
     "timestamp": 1715973841548,
     "topic": "function_execution",
     "usage": {
-      "database_read_bytes": 1077,
-      "database_write_bytes": 0,
+      "database_io_read_bytes": 1077,
+      "database_io_write_bytes": 0,
       "database_read_documents": 3,
       "file_storage_read_bytes": 0,
-      "file_storage_write_bytes": 0,
-      "vector_storage_read_bytes": 0,
-      "vector_storage_write_bytes": 0
+      "text_search_query_bytes": 0,
+      "text_search_write_query_bytes": 0,
+      "vector_search_query_bytes": 0,
+      "vector_search_write_query_bytes": 0,
+      "network_egress_bytes": 0
     }
   }
 }
@@ -353,7 +386,7 @@ For calculating billing costs:
 
 - Database Storage Bytes: `total_document_size_bytes + total_index_size_bytes`
 - File Storage: `total_file_storage_bytes + total_backup_storage_bytes`
-- Vector Storage: `total_vector_storage_bytes`
+- Search Storage: `total_vector_storage_bytes + total_text_storage_bytes`
 
 Schema:
 
@@ -364,9 +397,12 @@ Schema:
 - `total_index_size_bytes`: number, total size in bytes of all database indexes
 - `total_vector_storage_bytes`: number, total size in bytes of vector index
   storage
+- `total_text_storage_bytes`: number, total size in bytes of text index storage
 - `total_file_storage_bytes`: number, total size in bytes of file storage
 - `total_backup_storage_bytes`: number, total size in bytes of snapshot/backup
   storage
+- `total_system_table_document_size_bytes`: object, document size in bytes per
+  system virtual table (e.g. `_storage`, `_scheduled_functions`)
 
 Example event:
 
@@ -377,8 +413,58 @@ Example event:
   "total_document_size_bytes": 104857600,
   "total_index_size_bytes": 10485760,
   "total_vector_storage_bytes": 5242880,
+  "total_text_storage_bytes": 1048576,
   "total_file_storage_bytes": 52428800,
-  "total_backup_storage_bytes": 209715200
+  "total_backup_storage_bytes": 209715200,
+  "total_system_table_document_size_bytes": {
+    "_storage": 1048576,
+    "_scheduled_functions": 2097152
+  }
+}
+```
+
+### `storage_api_bandwidth` events
+
+These events are emitted whenever a client downloads a file directly from the
+storage HTTP API (`GET /api/storage/*`), for example when using a
+[file URL](/file-storage/serve-files.mdx) obtained from `ctx.storage.getUrl()`.
+Each HTTP request that serves file bytes produces one event after the download
+stream completes or is dropped. This is separate from the
+`file_storage_read_bytes` and `file_storage_write_bytes` fields in
+[`function_execution`](#function_execution-events) events, which track file
+bandwidth consumed within Convex functions themselves.
+
+The `egress_bytes` field reports the total bytes actually delivered to the
+client, not necessarily the full file size. There are several cases where these
+values differ:
+
+- **Range requests**: When a client requests a specific byte range (e.g.
+  `Range: bytes=0-1023`), only the bytes in that range are reported.
+- **Partial downloads**: If a download is abandoned mid-stream (e.g. the user
+  navigates away), the event reports only the bytes that were delivered before
+  the connection closed.
+- **Browser prefetch behavior**: Browsers may issue multiple requests for the
+  same file. For example, a browser loading a video may first send a small range
+  request to read metadata, then follow up with a full request. Each request
+  produces a separate event, so you may see multiple events with different
+  `egress_bytes` values for what appears to be a single user download.
+
+Schema:
+
+- `topic`: `"storage_api_bandwidth"`
+- `timestamp`: Unix epoch timestamp in milliseconds
+- `storage_id`: string, the [document ID](/database/document-ids.mdx) of the
+  file in the `_storage` system table
+- `egress_bytes`: number, the total bytes delivered to the client
+
+Example event:
+
+```json
+{
+  "topic": "storage_api_bandwidth",
+  "timestamp": 1715973841548,
+  "storage_id": "k12345678901234567890123456789012",
+  "egress_bytes": 1048576
 }
 ```
 
@@ -417,6 +503,6 @@ stream.
 
 That's it! Your logs are now configured to stream out. If there is a log
 streaming destination that you would like to see supported,
-[please let us know](/production/contact.md)!
+[please let us know](/production/contact.mdx)!
 
 <StackPosts query="axiom" />

@@ -5,14 +5,18 @@ description: A guide on using react-native-fbsdk-next library to integrate Faceb
 
 import { BoxLink } from '~/ui/components/BoxLink';
 import { ContentSpotlight } from '~/ui/components/ContentSpotlight';
+import { Prerequisites, Requirement } from '~/ui/components/Prerequisites';
 
 The [`react-native-fbsdk-next`](https://github.com/thebergamo/react-native-fbsdk-next/) library provides a wrapper around Facebook's Android and iOS SDKs. It allows integrating Facebook authentication into your Expo project and provide access to native components.
 
 This guide provides additional information on configuring the library with Expo for Android.
 
-## Prerequisites
-
-The `react-native-fbsdk-next` library can't be used in the Expo Go app because it requires custom native code. Learn more about [adding custom native code to your app](/workflow/customizing/).
+<Prerequisites>
+  <Requirement title="A development build">
+    The `react-native-fbsdk-next` library can't be used in Expo Go because it requires custom native
+    code. Learn more about [adding custom native code to your app](/workflow/customizing/).
+  </Requirement>
+</Prerequisites>
 
 ## Installation
 
@@ -29,7 +33,7 @@ Adding Android as a platform in your Facebook project requires you to have your 
 
 <ContentSpotlight
   alt="Facebook project not recognizing unpublished Android app's package that doesn't have a valid Google Play Store URL."
-  src="/static/images/guides/android-package-error.png"
+  src="/static/images/guides/android-package-error.webp"
   className="max-w-[720px]"
 />
 
@@ -48,7 +52,7 @@ After that, go to your Facebook project's **Settings** > **Basic** and add the *
 
 <ContentSpotlight
   alt="Required fields to add Android platform in the Facebook project."
-  src="/static/images/guides/android-required-fields.png"
+  src="/static/images/guides/android-required-fields.webp"
   className="max-w-[720px]"
 />
 

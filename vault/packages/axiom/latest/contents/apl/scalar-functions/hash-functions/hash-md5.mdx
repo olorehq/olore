@@ -1,0 +1,133 @@
+---
+title: hash_md5
+description: 'This page explains how to use the hash_md5 function in APL.'
+---
+
+## Introduction
+
+The `hash_md5` function returns the MD5 hash of a scalar value as a 32-character hexadecimal string. Use it to anonymize personally identifiable information while preserving joinability, detect duplicate records across datasets, or generate consistent bucket keys for grouping.
+
+MD5 produces a 128-bit digest that's fast to compute. It isn't suitable for cryptographic security, but is appropriate for data deduplication, checksumming, and non-security anonymization tasks. For security-sensitive use cases, use [`hash_sha256`](/apl/scalar-functions/hash-functions/hash-sha256) or [`hash_sha512`](/apl/scalar-functions/hash-functions/hash-sha512) instead.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk provides the `md5(X)` function that returns a 32-character hex string. APL's `hash_md5` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hashed_id = md5(id)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed_id = hash_md5(id)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no standard MD5 function, but most databases provide one: MySQL's `MD5()`, PostgreSQL's `md5()`. APL's `hash_md5` returns the same 32-character lowercase hex digest.
+
+<CodeGroup>
+```sql SQL example
+SELECT MD5(id) AS hashed_id FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed_id = hash_md5(id)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hash_md5(source)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ------ | ------ | -------- | ----------- |
+| source | scalar | Yes | The value to hash. APL converts it to a string before hashing. |
+
+### Returns
+
+The MD5 hash of `source` as a 32-character lowercase hexadecimal string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Anonymize user IDs before counting requests per user to protect PII in shared dashboards.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hashed_id = hash_md5(id)
+| summarize request_count = count() by hashed_id
+| top 5 by request_count
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20hashed_id%20%3D%20hash_md5%28id%29%20%7C%20summarize%20request_count%20%3D%20count%28%29%20by%20hashed_id%20%7C%20top%205%20by%20request_count%22%7D)
+
+**Output**
+
+| hashed_id | request_count |
+| --------- | ------------- |
+| b980a9c041dbd33d5893fad65d33284b | 128 |
+| 3f7a2c1e8d4b6f9e0c5d3a7b2e4f8c1d | 97 |
+| 9c2e4a6f1d3b7e8c5a2f4d6b9e1c3a7f | 85 |
+| 1a3c5e7b9f2d4a6c8e0b3f5d7a9c1e3b | 74 |
+| 7f9e1c3a5b2d4f6e8c0a3b5d7e9f1c3a | 69 |
+
+The query replaces raw user IDs with MD5 hashes before aggregating, so the busiest users are visible without exposing their original identifiers.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Hash trace IDs to create stable, anonymized surrogate keys for grouping.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hashed_trace = hash_md5(trace_id)
+| project _time, ['service.name'], hashed_trace, duration
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20hashed_trace%20%3D%20hash_md5%28trace_id%29%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20hashed_trace%2C%20duration%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time | service.name | hashed_trace | duration |
+| ----- | ------------ | ------------ | -------- |
+| 2024-01-15 10:23:01 | frontend | a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4 | 320ms |
+| 2024-01-15 10:23:02 | checkout | f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3 | 875ms |
+| 2024-01-15 10:23:03 | cart | 2c4e6a8b0d2c4e6a8b0d2c4e6a8b0d2c | 140ms |
+
+The query projects the hashed trace ID alongside service name and duration so you can analyze traces without exposing the original trace identifiers.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [hash_sha1](/apl/scalar-functions/hash-functions/hash-sha1): Returns a 40-character SHA-1 hex digest. Use `hash_sha1` when you need a larger digest than MD5 but legacy compatibility matters.
+- [hash_sha256](/apl/scalar-functions/hash-functions/hash-sha256): Returns a 64-character SHA-256 hex digest. Use `hash_sha256` for security-sensitive hashing.
+- [hash_sha512](/apl/scalar-functions/hash-functions/hash-sha512): Returns a 128-character SHA-512 hex digest for maximum hash strength.
+- [hash](/apl/scalar-functions/hash-functions/hash): Returns a signed 64-bit integer hash. Use `hash` when you need a compact numeric key rather than a hex string.

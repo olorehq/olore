@@ -1,0 +1,91 @@
+---
+title: tan
+description: 'This page explains how to use the tan function in APL.'
+---
+
+Use the `tan` function in APL to compute the tangent of an angle expressed in radians. The tangent is defined as the ratio of the sine to the cosine: `tan(x) = sin(x) / cos(x)`. The function is undefined at odd multiples of π/2, where the cosine is zero.
+
+`tan` is useful when you work with angular data or want to convert a ratio into an angle. In observability contexts, it can be used alongside `sin` and `cos` to encode periodic signals or compute angular features for cyclic analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `tan()` takes an angle in radians and returns the tangent, just like APL.
+
+<CodeGroup>
+```sql Splunk example
+| eval tan_val = tan(angle_rad)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend tan_val = tan(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `TAN()` is a standard function with identical behavior.
+
+<CodeGroup>
+```sql SQL example
+SELECT TAN(angle_rad) AS tan_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend tan_val = tan(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+tan(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The angle in radians. |
+
+### Returns
+
+The tangent of `x`. The result is unbounded, approaching ±∞ near odd multiples of π/2.
+
+## Example
+
+Use `tan` to compute the tangent of an angle in radians.
+
+**Query**
+
+```kusto
+print result = tan(pi() / 4)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20tan%28pi%28%29%20/%204%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 1.0000 |
+
+## List of related functions
+
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine. Use `sin` and `cos` together for bounded cyclic encoding instead of `tan`, which is unbounded.
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine. It is the denominator in `tan(x) = sin(x) / cos(x)`.
+- [cot](/apl/scalar-functions/mathematical-functions/cot): Returns the cotangent, the reciprocal of `tan`. Use it when you need the inverse ratio.
+- [atan](/apl/scalar-functions/mathematical-functions/atan): Returns the arc tangent. Use it as the inverse of `tan`.
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns whether a value is finite. Use it to filter out `tan` overflow values near π/2 poles.

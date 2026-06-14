@@ -1,193 +1,193 @@
-# rive Documentation Structure
+# rive Table of Contents
 
 ## Directory Map
 
 ```
 contents/
-├── react-native/       # React Native runtime: setup, animation, state machines, data binding (20 files)
-├── react/              # React (web) runtime: hooks, state machines, data binding (17 files)
-├── web/                # Web JS runtime: canvas, WebGL, low-level API (17 files)
-├── flutter/            # Flutter runtime: widgets, custom painter, state machines (17 files)
-├── android/            # Android runtime: Kotlin API, animations, data binding (16 files)
-├── apple/              # iOS/macOS runtime: Swift API, animations, data binding (16 files)
-├── choose-a-renderer/  # Renderer selection and FAQ (2 files)
-├── advanced-topic/     # .riv file format, bitmap rendering (2 files)
-└── (root)              # Runtime sizes reference (1 file)
+├── getting-started.mdx          # Entry point: runtime overview and installation
+├── android/                     # Android runtime (15 files)
+├── apple/                       # iOS/macOS runtime (15 files)
+├── choose-a-renderer/           # Renderer selection (2 files)
+├── cpp/                         # C++ runtime (10 files)
+├── flutter/                     # Flutter runtime (19 files)
+├── react/                       # React runtime (16 files)
+├── react-native/                # React Native runtime (19 files)
+└── web/                         # Web/JS runtime (18 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| React Native setup | `contents/react-native/react-native.mdx` |
-| React Native Expo | `contents/react-native/adding-rive-to-expo.mdx` |
-| React (web) setup | `contents/react/react.mdx` |
-| Web JS setup | `contents/web/web-js.mdx` |
-| Flutter setup | `contents/flutter/flutter.mdx` |
-| iOS/macOS setup | `contents/apple/apple.mdx` |
-| Android setup | `contents/android/android.mdx` |
-| Data binding | `contents/react-native/data-binding.mdx` |
-| State machines | `contents/react-native/state-machines.mdx` |
+| Getting started | `contents/getting-started.mdx` |
+| Android integration | `contents/android/android.mdx` |
+| iOS/macOS integration | `contents/apple/apple.mdx` |
+| Flutter integration | `contents/flutter/flutter.mdx` |
+| React integration | `contents/react/react.mdx` |
+| React Native / Expo | `contents/react-native/react-native.mdx` |
+| Web / JS integration | `contents/web/web-js.mdx` |
+| C++ integration | `contents/cpp/overview.mdx` |
 | Renderer selection | `contents/choose-a-renderer/overview.mdx` |
 
 ## Detailed Structure
 
-### react-native/ (20 files)
+### Root (1 file)
 
 | File | Description |
 |------|-------------|
-| `react-native/react-native.mdx` | Getting started with Rive React Native runtime |
-| `react-native/adding-rive-to-expo.mdx` | Setting up Rive in an Expo project |
-| `react-native/loading-rive-files.mdx` | Loading .riv files from assets or URLs |
-| `react-native/animation-playback.mdx` | Playing and controlling animations |
-| `react-native/state-machines.mdx` | State machine playback and inputs |
-| `react-native/data-binding.mdx` | Data binding with View Models |
-| `react-native/inputs.mdx` | State machine inputs (legacy) |
-| `react-native/layouts.mdx` | Layout and fit options |
-| `react-native/artboards.mdx` | Selecting and switching artboards |
-| `react-native/loading-assets.mdx` | Loading external images and fonts at runtime |
-| `react-native/fonts.mdx` | Custom font loading |
-| `react-native/text.mdx` | Text run manipulation |
-| `react-native/playing-audio.mdx` | Audio event playback |
-| `react-native/rive-events.mdx` | Listening to Rive events |
-| `react-native/rive-ref-methods.mdx` | Ref API methods reference |
-| `react-native/props.mdx` | Component props reference |
-| `react-native/caching-a-rive-file.mdx` | Caching loaded Rive files for reuse |
-| `react-native/error-handling.mdx` | Error handling patterns |
-| `react-native/native-version-customization.mdx` | Customizing native runtime versions |
-| `react-native/migration-guide.mdx` | Migrating between major versions |
+| `getting-started.mdx` | Overview of all Rive runtimes and installation entry points |
 
-### react/ (17 files)
+### android/ (15 files)
 
 | File | Description |
 |------|-------------|
-| `react/react.mdx` | Getting started with Rive React runtime |
-| `react/animation-playback.mdx` | Playing and controlling animations |
-| `react/state-machines.mdx` | State machine playback and hooks |
-| `react/data-binding.mdx` | Data binding with View Models |
-| `react/inputs.mdx` | State machine inputs (legacy) |
-| `react/layouts.mdx` | Layout and fit options |
-| `react/artboards.mdx` | Selecting and switching artboards |
-| `react/loading-assets.mdx` | Loading external assets at runtime |
-| `react/fonts.mdx` | Custom font loading |
-| `react/text.mdx` | Text run manipulation |
-| `react/playing-audio.mdx` | Audio event playback |
-| `react/rive-events.mdx` | Listening to Rive events |
-| `react/parameters-and-return-values.mdx` | useRive hook parameters and return values |
-| `react/caching-a-rive-file.mdx` | Caching loaded Rive files |
-| `react/preloading-wasm.mdx` | Preloading the WASM runtime |
-| `react/rendering-to-a-bitmap.mdx` | Off-screen bitmap rendering |
-| `react/migration-guides.mdx` | Migrating between major versions |
+| `android.mdx` | Android runtime overview and setup |
+| `animation-playback.mdx` | Playing animations on Android |
+| `artboards.mdx` | Selecting artboards on Android |
+| `caching-a-rive-file.mdx` | Caching Rive files on Android |
+| `data-binding.mdx` | Data binding with View Models on Android |
+| `fonts.mdx` | Loading and replacing fonts on Android |
+| `inputs.mdx` | State machine inputs on Android |
+| `layouts.mdx` | Layout configuration on Android |
+| `loading-assets.mdx` | Loading external assets on Android |
+| `logging.mdx` | Logging and debugging on Android |
+| `playing-audio.mdx` | Playing audio on Android |
+| `rendering-to-a-bitmap.mdx` | Rendering Rive animations to a bitmap on Android |
+| `rive-events.mdx` | Handling Rive events on Android |
+| `state-machines.mdx` | State machine playback on Android |
+| `text.mdx` | Working with text on Android |
 
-### web/ (17 files)
+### apple/ (15 files)
 
 | File | Description |
 |------|-------------|
-| `web/web-js.mdx` | Getting started with Rive Web JS runtime |
-| `web/animation-playback.mdx` | Playing and controlling animations |
-| `web/state-machines.mdx` | State machine playback |
-| `web/data-binding.mdx` | Data binding with View Models |
-| `web/inputs.mdx` | State machine inputs (legacy) |
-| `web/layouts.mdx` | Layout and fit options |
-| `web/artboards.mdx` | Selecting and switching artboards |
-| `web/loading-assets.mdx` | Loading external assets at runtime |
-| `web/fonts.mdx` | Custom font loading |
-| `web/text.mdx` | Text run manipulation |
-| `web/playing-audio.mdx` | Audio event playback |
-| `web/rive-events.mdx` | Listening to Rive events |
-| `web/rive-parameters.mdx` | Rive constructor parameters reference |
-| `web/caching-a-rive-file.mdx` | Caching loaded Rive files |
-| `web/canvas-vs-webgl.mdx` | Choosing between Canvas and WebGL renderers |
-| `web/low-level-api-usage.mdx` | Low-level WASM API usage |
-| `web/preloading-wasm.mdx` | Preloading the WASM runtime |
-| `web/faq.mdx` | Frequently asked questions |
-| `web/migration-guides.mdx` | Migrating between major versions |
-
-### flutter/ (17 files)
-
-| File | Description |
-|------|-------------|
-| `flutter/flutter.mdx` | Getting started with Rive Flutter runtime |
-| `flutter/animation-playback.mdx` | Playing and controlling animations |
-| `flutter/state-machines.mdx` | State machine playback |
-| `flutter/data-binding.mdx` | Data binding with View Models |
-| `flutter/inputs.mdx` | State machine inputs (legacy) |
-| `flutter/layouts.mdx` | Layout and fit options |
-| `flutter/artboards.mdx` | Selecting and switching artboards |
-| `flutter/loading-assets.mdx` | Loading external assets at runtime |
-| `flutter/fonts.mdx` | Custom font loading |
-| `flutter/text.mdx` | Text run manipulation |
-| `flutter/playing-audio.mdx` | Audio event playback |
-| `flutter/rive-events.mdx` | Listening to Rive events |
-| `flutter/caching-a-rive-file.mdx` | Caching loaded Rive files |
-| `flutter/alternative-widget-setup.mdx` | Alternative widget initialization |
-| `flutter/custom-painter.mdx` | Using CustomPainter for rendering |
-| `flutter/custom-rive-renderobject.mdx` | Custom RenderObject integration |
-| `flutter/rive-native.mdx` | Rive Native Flutter integration |
-| `flutter/faq.mdx` | Frequently asked questions |
-| `flutter/migration-guide.mdx` | Migrating between major versions |
-
-### android/ (16 files)
-
-| File | Description |
-|------|-------------|
-| `android/android.mdx` | Getting started with Rive Android runtime |
-| `android/animation-playback.mdx` | Playing and controlling animations |
-| `android/state-machines.mdx` | State machine playback |
-| `android/data-binding.mdx` | Data binding with View Models |
-| `android/inputs.mdx` | State machine inputs (legacy) |
-| `android/layouts.mdx` | Layout and fit options |
-| `android/artboards.mdx` | Selecting and switching artboards |
-| `android/loading-assets.mdx` | Loading external assets at runtime |
-| `android/fonts.mdx` | Custom font loading |
-| `android/text.mdx` | Text run manipulation |
-| `android/playing-audio.mdx` | Audio event playback |
-| `android/rive-events.mdx` | Listening to Rive events |
-| `android/caching-a-rive-file.mdx` | Caching loaded Rive files |
-| `android/logging.mdx` | Debug logging configuration |
-| `android/rendering-to-a-bitmap.mdx` | Off-screen bitmap rendering |
-| `android/legacy-getting-started.mdx` | Legacy API getting started |
-| `android/migrating-from-legacy.mdx` | Migrating from legacy to new Android API |
-
-### apple/ (16 files)
-
-| File | Description |
-|------|-------------|
-| `apple/apple.mdx` | Getting started with Rive Apple runtime (iOS/macOS) |
-| `apple/animation-playback.mdx` | Playing and controlling animations |
-| `apple/state-machines.mdx` | State machine playback |
-| `apple/data-binding.mdx` | Data binding with View Models |
-| `apple/inputs.mdx` | State machine inputs (legacy) |
-| `apple/layouts.mdx` | Layout and fit options |
-| `apple/artboards.mdx` | Selecting and switching artboards |
-| `apple/loading-assets.mdx` | Loading external assets at runtime |
-| `apple/fonts.mdx` | Custom font loading |
-| `apple/text.mdx` | Text run manipulation |
-| `apple/playing-audio.mdx` | Audio event playback |
-| `apple/rive-events.mdx` | Listening to Rive events |
-| `apple/caching-a-rive-file.mdx` | Caching loaded Rive files |
-| `apple/logging.mdx` | Debug logging configuration |
-| `apple/resource-usage.mdx` | Memory and resource usage guidance |
-| `apple/faq.mdx` | Frequently asked questions |
-| `apple/migrating-from-legacy.mdx` | Migrating from legacy to new Apple API |
-| `apple/migration-guides.mdx` | Version-to-version migration guides |
+| `apple.mdx` | Apple (iOS/macOS) runtime overview and setup |
+| `animation-playback.mdx` | Playing animations on Apple platforms |
+| `artboards.mdx` | Selecting artboards on Apple platforms |
+| `caching-a-rive-file.mdx` | Caching Rive files on Apple platforms |
+| `data-binding.mdx` | Data binding with View Models on Apple platforms |
+| `faq.mdx` | Frequently asked questions for Apple runtime |
+| `fonts.mdx` | Loading and replacing fonts on Apple platforms |
+| `inputs.mdx` | State machine inputs on Apple platforms |
+| `layouts.mdx` | Layout configuration on Apple platforms |
+| `loading-assets.mdx` | Loading external assets on Apple platforms |
+| `logging.mdx` | Logging and debugging on Apple platforms |
+| `playing-audio.mdx` | Playing audio on Apple platforms |
+| `resource-usage.mdx` | Resource usage and memory management on Apple |
+| `rive-events.mdx` | Handling Rive events on Apple platforms |
+| `state-machines.mdx` | State machine playback on Apple platforms |
+| `text.mdx` | Working with text on Apple platforms |
 
 ### choose-a-renderer/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `choose-a-renderer/overview.mdx` | Overview of available renderers (Canvas, WebGL, Rive Renderer) |
-| `choose-a-renderer/faq.mdx` | Renderer selection FAQ |
+| `overview.mdx` | Overview of available Rive renderers |
+| `faq.mdx` | FAQ for renderer selection |
 
-### advanced-topic/ (2 files)
-
-| File | Description |
-|------|-------------|
-| `advanced-topic/format.mdx` | .riv binary file format specification |
-| `advanced-topic/rendering-to-a-bitmap.mdx` | Rendering Rive animations to a bitmap off-screen |
-
-### Root files (1 file)
+### cpp/ (10 files)
 
 | File | Description |
 |------|-------------|
-| `runtime-sizes.mdx` | Bundle size reference for all runtimes |
+| `overview.mdx` | C++ runtime overview |
+| `getting-started.mdx` | Getting started with C++ runtime |
+| `file-and-artboard.mdx` | Loading files and selecting artboards in C++ |
+| `state-machines.mdx` | State machine playback in C++ |
+| `data-binding.mdx` | Data binding in C++ |
+| `asset-loading.mdx` | Loading external assets in C++ |
+| `rendering-loop.mdx` | Rendering loop setup in C++ |
+| `renderers.mdx` | Renderer options in C++ |
+| `external-renderer.mdx` | Using an external renderer in C++ |
+| `command-queue.mdx` | Command queue API in C++ |
+
+### flutter/ (19 files)
+
+| File | Description |
+|------|-------------|
+| `flutter.mdx` | Flutter runtime overview and setup |
+| `animation-playback.mdx` | Playing animations in Flutter |
+| `api-reference.mdx` | API reference for Flutter runtime |
+| `artboards.mdx` | Selecting artboards in Flutter |
+| `caching-a-rive-file.mdx` | Caching Rive files in Flutter |
+| `custom-painter.mdx` | Using Rive with a custom Flutter painter |
+| `custom-rive-renderobject.mdx` | Using a custom RenderObject in Flutter |
+| `data-binding.mdx` | Data binding with View Models in Flutter |
+| `faq.mdx` | Frequently asked questions for Flutter runtime |
+| `fonts.mdx` | Loading and replacing fonts in Flutter |
+| `inputs.mdx` | State machine inputs in Flutter |
+| `layouts.mdx` | Layout configuration in Flutter |
+| `loading-assets.mdx` | Loading external assets in Flutter |
+| `playing-audio.mdx` | Playing audio in Flutter |
+| `rive-events.mdx` | Handling Rive events in Flutter |
+| `rive-native.mdx` | Rive Native for Flutter (C++ runtime via FFI) |
+| `state-machines.mdx` | State machine playback in Flutter |
+| `text.mdx` | Working with text in Flutter |
+| `alternative-widget-setup.mdx` | Alternative widget setup patterns in Flutter |
+
+### react/ (16 files)
+
+| File | Description |
+|------|-------------|
+| `react.mdx` | React runtime overview and setup |
+| `animation-playback.mdx` | Playing animations in React |
+| `artboards.mdx` | Selecting artboards in React |
+| `caching-a-rive-file.mdx` | Caching Rive files in React |
+| `data-binding.mdx` | Data binding with View Models in React |
+| `fonts.mdx` | Loading and replacing fonts in React |
+| `inputs.mdx` | State machine inputs in React |
+| `layouts.mdx` | Layout configuration in React |
+| `loading-assets.mdx` | Loading external assets in React |
+| `parameters-and-return-values.mdx` | useRive hook parameters and return values |
+| `playing-audio.mdx` | Playing audio in React |
+| `preloading-wasm.mdx` | Preloading WASM for React runtime |
+| `rendering-to-a-bitmap.mdx` | Rendering Rive animations to a bitmap in React |
+| `rive-events.mdx` | Handling Rive events in React |
+| `state-machines.mdx` | State machine playback in React |
+| `text.mdx` | Working with text in React |
+
+### react-native/ (19 files)
+
+| File | Description |
+|------|-------------|
+| `react-native.mdx` | React Native runtime overview and setup |
+| `adding-rive-to-expo.mdx` | Adding Rive to an Expo project |
+| `animation-playback.mdx` | Playing animations in React Native |
+| `artboards.mdx` | Selecting artboards in React Native |
+| `caching-a-rive-file.mdx` | Caching Rive files in React Native |
+| `data-binding.mdx` | Data binding with View Models in React Native |
+| `error-handling.mdx` | Error handling in React Native |
+| `fonts.mdx` | Loading and replacing fonts in React Native |
+| `inputs.mdx` | State machine inputs in React Native |
+| `layouts.mdx` | Layout configuration in React Native |
+| `loading-assets.mdx` | Loading external assets in React Native |
+| `loading-rive-files.mdx` | Loading Rive files in React Native |
+| `native-version-customization.mdx` | Customizing native runtime versions |
+| `playing-audio.mdx` | Playing audio in React Native |
+| `props.mdx` | Rive component props reference for React Native |
+| `rive-events.mdx` | Handling Rive events in React Native |
+| `rive-ref-methods.mdx` | Rive ref methods API for React Native |
+| `state-machines.mdx` | State machine playback in React Native |
+| `text.mdx` | Working with text in React Native |
+
+### web/ (18 files)
+
+| File | Description |
+|------|-------------|
+| `web-js.mdx` | Web (JS) runtime overview and setup |
+| `animation-playback.mdx` | Playing animations in Web runtime |
+| `artboards.mdx` | Selecting artboards in Web runtime |
+| `caching-a-rive-file.mdx` | Caching Rive files in Web runtime |
+| `canvas-vs-webgl.mdx` | Choosing between Canvas and WebGL renderers |
+| `data-binding.mdx` | Data binding with View Models in Web runtime |
+| `faq.mdx` | Frequently asked questions for Web runtime |
+| `fonts.mdx` | Loading and replacing fonts in Web runtime |
+| `inputs.mdx` | State machine inputs in Web runtime |
+| `layouts.mdx` | Layout configuration in Web runtime |
+| `loading-assets.mdx` | Loading external assets in Web runtime |
+| `low-level-api-usage.mdx` | Low-level API usage for Web runtime |
+| `playing-audio.mdx` | Playing audio in Web runtime |
+| `preloading-wasm.mdx` | Preloading WASM for Web runtime |
+| `rive-events.mdx` | Handling Rive events in Web runtime |
+| `rive-parameters.mdx` | Rive constructor parameters reference |
+| `state-machines.mdx` | State machine playback in Web runtime |
+| `text.mdx` | Working with text in Web runtime |

@@ -9,14 +9,16 @@ related:
   - /docs/reference/system-environment-variables
 ---
 
-import { ExperimentalBadge } from "@/components/geistdocs/experimental-badge";
-
-<ExperimentalBadge />
-
 Run GraphQL queries against your monorepo.
 
 ```bash title="Terminal"
 turbo query [query] [flags]
+```
+
+To quickly get the GraphQL schema, use the `--schema`flag.
+
+```bash title="Terminal"
+turbo query --schema
 ```
 
 When no arguments are passed, the command will open a GraphiQL playground to run queries.
@@ -41,6 +43,69 @@ turbo query query.gql
 
 Shorthands generate GraphQL queries for common operations so you don't need to write them by hand. The JSON output is identical to what you'd get from a raw query.
 
+### `ls`
+
+List packages in your monorepo. This is a shorthand for a `packages` query, equivalent to `turbo ls`.
+
+```bash title="Terminal"
+turbo query ls [packages] [flags]
+```
+
+With no arguments, lists all packages:
+
+```bash title="Terminal"
+turbo query ls
+```
+
+```json title="Output"
+{
+  "packageManager": "npm",
+  "packages": {
+    "count": 3,
+    "items": [
+      { "name": "docs", "path": "apps/docs" },
+      { "name": "ui", "path": "packages/ui" },
+      { "name": "web", "path": "apps/web" }
+    ]
+  }
+}
+```
+
+When passed package names, returns detailed information including tasks, dependencies, and dependents:
+
+```bash title="Terminal"
+turbo query ls web
+```
+
+#### `--filter` (`-F`)
+
+Use pnpm-style package selectors to narrow the package list. Same syntax as [`turbo run --filter`](/docs/reference/command-line-reference/run#--filter).
+
+```bash title="Terminal"
+turbo query ls --filter=web...
+turbo query ls -F my-app...
+```
+
+#### `--affected`
+
+Show only packages affected by changes between the current branch and `main`.
+
+When combined with `--filter`, returns the intersection: only packages that are both affected **and** match the filter.
+
+```bash title="Terminal"
+turbo query ls --affected
+turbo query ls --affected --filter=web
+```
+
+#### `--output`
+
+Control the output format. Defaults to `pretty` (human-readable).
+
+```bash title="Terminal"
+turbo query ls --output json
+turbo query ls --output pretty
+```
+
 ### `affected`
 
 Check which packages or tasks are affected by changes between two git refs.
@@ -48,6 +113,15 @@ Check which packages or tasks are affected by changes between two git refs.
 ```bash title="Terminal"
 turbo query affected [flags]
 ```
+
+<Callout type="warn">
+  The comparison requires everything between base and head to exist in the
+  checkout. If the checkout is too shallow, then all packages will be considered
+  changed.
+
+For example, setting up Git to check out with `--filter=blob:none --depth=0` will ensure `turbo query affected` has the right history to work correctly.
+
+</Callout>
 
 With no flags, returns all affected tasks:
 
@@ -122,7 +196,7 @@ turbo query affected --packages web docs
 
 Base git ref for comparison. Defaults to the auto-detected base (e.g. `GITHUB_BASE_REF` on GitHub Actions, or the merge-base with `main`).
 
-Can also be set with the `TURBO_SCM_BASE` environment variable.
+Can also be set with the `TURBO_SCM_BASE` environment variable. When both are provided, `--base` takes precedence.
 
 ```bash title="Terminal"
 turbo query affected --base main
@@ -132,7 +206,7 @@ turbo query affected --base main
 
 Head git ref for comparison. Defaults to `HEAD`.
 
-Can also be set with the `TURBO_SCM_HEAD` environment variable.
+Can also be set with the `TURBO_SCM_HEAD` environment variable. When both are provided, `--head` takes precedence.
 
 ```bash title="Terminal"
 turbo query affected --head my-branch

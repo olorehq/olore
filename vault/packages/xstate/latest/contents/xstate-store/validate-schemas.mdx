@@ -1,0 +1,103 @@
+---
+title: 'Validate schemas'
+---
+
+The `validateSchemas` extension validates context, events, and emitted events at runtime using schemas declared in the store config. Schemas are used for typing only by default; this extension opts into runtime checks.
+
+```ts
+import { createStore } from '@xstate/store';
+import { validateSchemas } from '@xstate/store/validate'; // [!code highlight:1]
+import { z } from 'zod';
+
+const store = createStore({
+  // [!code highlight:4]
+  schemas: {
+    context: z.object({ count: z.number() }),
+    events: {
+      inc: z.object({ by: z.number() }),
+    },
+  },
+  context: { count: 0 },
+  on: {
+    inc: (context, event) => ({ count: context.count + event.by }),
+  },
+// [!code highlight:1]
+}).with(validateSchemas());
+
+store.trigger.inc({ by: 1 }); // ok
+store.trigger.inc({ by: 'two' as any }); // throws StoreValidationError
+```
+
+Any [Standard Schema](https://standardschema.dev/) compatible library works (Zod, Valibot, ArkType, etc.).
+
+## What gets validated
+
+When applied, `validateSchemas()` checks:
+
+1. **Initial context** on store creation
+2. **Incoming events** before each transition
+3. **Context** after each transition
+4. **Emitted events** before effects execute
+
+If validation fails, a `StoreValidationError` is thrown. The `store.can.*()` methods return `false` for validation errors instead of throwing.
+
+## Options
+
+All options default to `true` or `'throw'`. Pass options to disable specific checks or change behavior for unknown events:
+
+```ts
+.with(validateSchemas({
+  context: true,       // validate context
+  events: true,        // validate incoming events
+  emitted: true,       // validate emitted events
+  unknownEvents: 'throw',   // 'throw' | 'ignore'
+  unknownEmitted: 'throw',  // 'throw' | 'ignore'
+}));
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `context` | `boolean` | `true` | Validate context at init and after each transition |
+| `events` | `boolean` | `true` | Validate incoming events before transitions |
+| `emitted` | `boolean` | `true` | Validate emitted events before effects |
+| `unknownEvents` | `'throw' \| 'ignore'` | `'throw'` | Behavior for events not declared in `schemas.events` |
+| `unknownEmitted` | `'throw' \| 'ignore'` | `'throw'` | Behavior for emitted events not declared in `schemas.emitted` |
+
+## `StoreValidationError`
+
+Thrown when validation fails. Contains metadata about the failure:
+
+```ts
+try {
+  store.trigger.inc({ by: 'bad' as any });
+} catch (error) {
+  if (error instanceof StoreValidationError) {
+    error.reason;    // 'invalidEvent' | 'invalidContext' | 'invalidEmitted' | 'unknownEvent' | 'unknownEmitted'
+    error.eventType; // 'inc'
+    error.payload;   // { by: 'bad' }
+    error.issues;    // validation issues from the schema library
+  }
+}
+```
+
+`StoreValidationError` can be imported from `@xstate/store/validate`.
+
+## Emitted event validation
+
+```ts
+const store = createStore({
+  schemas: {
+    emitted: {
+      // [!code highlight:1]
+      counted: z.object({ count: z.number() }),
+    },
+  },
+  context: { count: 0 },
+  on: {
+    inc: (context, event: { by: number }, enq) => {
+      enq.emit.counted({ count: context.count + event.by });
+      return { count: context.count + event.by };
+    },
+  },
+}).with(validateSchemas());
+```

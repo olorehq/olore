@@ -14,10 +14,10 @@ import { http, bypass } from 'msw'
 
 export const handlers = [
   http.get('/resource', async ({ request }) => {
-    const originalUrl = new URL(request.url)
+    const proxyUrl = new URL(request.url)
 
     // Modify the original URL to point to a different server.
-    originalUrl.hostname = 'api.example.com'
+    proxyUrl.hostname = 'api.example.com'
 
     // Construct a proxy request.
     const proxyRequest = new Request(proxyUrl, {

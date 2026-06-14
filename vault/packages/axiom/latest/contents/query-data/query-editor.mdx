@@ -1,0 +1,133 @@
+---
+title: Query using Editor
+description: This page explains how to use the text-based query editor to query your data in Console.
+sidebarTitle: Editor
+keywords: ["query", "editor", "logs", "traces", "events", "metrics"]
+---
+
+Query your data using the text-based query editor in Console:
+
+1. Click the Query tab.
+1. Click **Editor** in the top left.
+1. Write your query in the editor.
+1. Click **Run**.
+
+The Editor of the Query tab accepts both APL (Axiom Processing Language) and MPL (Metrics Processing Language) queries and automatically detects the query language you use:
+
+- APL is a data processing language that supports filtering, extending, and summarizing data. For more information, see [Introduction to APL](/apl/introduction).
+- MPL is a metric-focused query language that combines the simplicity of APL with the expressive power of PromQL. It enables effective querying, transformation, and aggregation of metric data, supporting diverse observability use cases. For more information, see [Introduction to MPL](/mpl/introduction).
+
+## Generate query using natural language
+
+Instead of writing the query yourself, you can use Axiom AI to generate a query for you. Explain what you want to infer from your data in your own words and Axiom AI generates the valid APL query.
+
+<Info>
+Query using natural language isn't currently supported for metrics datasets.
+</Info>
+
+To generate a query using natural language:
+
+1. Click the Query tab.
+1. Click **APL**, and then click in the query editor.
+1. Press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>K</kbd>.
+1. Type what you want to infer from your data in your own words using natural language, and then click **Generate**. For example, type `Show me the most common status responses in HTTP logs.`
+1. Axiom’s AI generates the APL query based on your prompt and gives you the following options:
+    - Click **Accept** to update the editor with the generated query and change the generated query before running it. Any previous input in the query editor is lost.
+    - Click **Accept and run** to update the editor with the generated query and run it immediately. Any previous input in the query editor is lost.
+    - Click **Reject** to go back to your previous input in the query editor and close the query generator.
+
+### Iterate over prompt history
+
+Axiom saves the prompts you type in the query generator. To find one of your previous prompts and generate an APL query for it:
+
+1. Click the Query tab.
+1. Click **APL**, and then click in the query editor.
+1. Press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>K</kbd>.
+1. Cycle through your history using the arrow keys <Icon icon="arrow-up" iconType="solid" /> and <Icon icon="arrow-down" iconType="solid" /> to find the prompt.
+1. Click **Generate**.
+
+## APL examples
+
+Some APL queries are explained below. The pipe symbol `|` separates the operations as they flow from left to right, and top to bottom.
+
+APL is case-sensitive for everything: dataset names, field names, operators, functions, etc.
+
+Use double forward slashes (`//`) for comments.
+
+### `count` operator
+
+The below query returns the number of events from the `sample-http-logs` dataset.
+
+```kusto
+['sample-http-logs']
+| summarize count()
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20count()%22%7D)
+
+### `limit` operator
+
+The `limit` operator returns a random subset of rows from a dataset up to the specified number of rows. This query returns a thousand rows from `sample-http-logs` randomly chosen by APL.
+
+```kusto
+['sample-http-logs']
+| limit 1000
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20limit%201000%22%7D)
+
+### `summarize` operator
+
+The `summarize` operator produces a table that aggregates the content of the dataset. This query returns a chart of the `avg(req_duration_ms)`, and a table of `geo.city` and `avg(req_duration_ms)` of the `sample-http-logs` dataset from the time range of 2 days and time interval of 4 hours.
+
+```kusto
+['sample-http-logs']
+| where _time > ago(2d)
+| summarize avg(req_duration_ms) by _time=bin(_time, 4h), ['geo.city']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20where%20_time%20%3E%20ago(2d)%5Cn%7C%20summarize%20avg(req_duration_ms)%20by%20_time%3Dbin(_time%2C%204h)%2C%20%5B'geo.city'%5D%22%7D)
+
+## MPL examples
+
+### `align` operator
+
+The `align` operator aggregates metric values over time windows. This query returns the average value of the `go.memory.used` metric from the `otel-demo-metrics` dataset, grouped into 5-minute intervals.
+
+```kusto
+`otel-demo-metrics`:`go.memory.used`
+| align to 5m using avg
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60go.memory.used%60%20%7C%20align%20to%205m%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### `where` operator
+
+The `where` operator restricts results to series whose tag values match the specified conditions. This query returns the average value of the `go.memory.used` metric from the `otel-demo-metrics` dataset for the `checkout` deployment, aligned over 5-minute windows.
+
+```kusto
+`otel-demo-metrics`:`go.memory.used`
+| where `k8s.deployment.name` == "checkout"
+| align to 5m using avg
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60go.memory.used%60%20%7C%20where%20%60k8s.deployment.name%60%20%3D%3D%20%5C%22checkout%5C%22%20%7C%20align%20to%205m%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### `group` operator
+
+The `group` operator combines multiple series by tag values into a single aggregated series. This query returns the sum of `go.memory.used` per deployment, aligned to 5-minute windows, showing memory usage broken down by `k8s.deployment.name`.
+
+```kusto
+`otel-demo-metrics`:`go.memory.used`
+| align to 5m using avg
+| group by `k8s.deployment.name` using sum
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60go.memory.used%60%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20by%20%60k8s.deployment.name%60%20using%20sum%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+## What's next
+
+- [Interpret query results](/query-data/query-results)
+- [Visualize data](/query-data/visualizations)
+- [Views](/query-data/views)
+- [Virtual fields](/query-data/virtual-fields)

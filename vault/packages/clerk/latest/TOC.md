@@ -1,64 +1,74 @@
-# clerk Table of Contents
+# Clerk Table of Contents
 
 ## Directory Map
 
 ```
 contents/
-├── getting-started/               # Quickstarts and core concepts (21 files)
-├── guides/                        # How-to guides and tutorials
-│   ├── account-portal/            # Account portal guides (4 files)
-│   ├── ai/                        # AI/MCP integration guides (6 files)
-│   ├── billing/                   # Billing and subscriptions (7 files)
-│   ├── configure/auth-strategies/ # OAuth, SAML, social, web3 (57 files)
-│   ├── customizing-clerk/         # Appearance, elements, custom pages (25 files)
-│   ├── development/               # Dev environment, custom flows, webhooks (156 files)
-│   ├── how-clerk-works/           # Architecture and security (8 files)
-│   ├── organizations/             # Multi-tenant org management (12 files)
-│   ├── secure/                    # Security best practices (21 files)
-│   ├── sessions/                  # Session management (7 files)
-│   └── users/                     # User management (11 files)
-└── reference/                     # SDK and API reference
-    ├── android/                   # Android SDK (1 file)
-    ├── api/                       # REST API reference (1 file)
-    ├── astro/                     # Astro SDK (14 files)
-    ├── backend/                   # Backend SDK - users, orgs, sessions (145 files)
-    ├── chrome-extension/          # Chrome extension SDK (2 files)
-    ├── components/                # UI components (40 files)
-    ├── composables/               # Vue composables (8 files)
-    ├── expo/                      # Expo/React Native SDK (12 files)
-    ├── express/                   # Express middleware (4 files)
-    ├── fastify/                   # Fastify plugin (3 files)
-    ├── go/                        # Go SDK (1 file)
-    ├── hooks/                     # React hooks (23 files)
-    ├── ios/                       # iOS/Swift SDK (2 files)
-    ├── javascript/                # Vanilla JS SDK (1 file)
-    ├── native-mobile/             # React Native SDK (15 files)
-    ├── nextjs/                    # Next.js SDK (10 files)
-    ├── nuxt/                      # Nuxt SDK (3 files)
-    ├── objects/                   # Client-side objects (12 files)
-    ├── react/                     # React SDK (1 file)
-    ├── react-router/              # React Router SDK (4 files)
-    ├── ruby/                      # Ruby/Rails SDK (6 files)
-    ├── tanstack-react-start/      # TanStack Start SDK (3 files)
-    ├── types/                     # TypeScript types (65 files)
-    ├── views/                     # Unstyled view components (4 files)
-    └── vue/                       # Vue SDK (3 files)
+├── getting-started/        # Quickstarts and core concepts (21 files)
+│   └── quickstart/         # Framework-specific Next.js quickstart steps
+├── guides/                 # How-to guides and configuration (339 files)
+│   ├── account-portal/     # Hosted account portal setup
+│   ├── ai/                 # AI agent authentication and MCP
+│   ├── billing/            # Subscription and billing setup
+│   ├── configure/          # Auth strategies, OAuth, SAML, social, Web3 (58 files)
+│   ├── customizing-clerk/  # Appearance, elements, theming (25 files)
+│   ├── dashboard/          # Clerk Dashboard usage
+│   ├── development/        # Custom flows, deployment, integrations, testing (170 files)
+│   ├── how-clerk-works/    # Concepts, security overview
+│   ├── organizations/      # Multi-org, members, roles
+│   ├── secure/             # Security best practices
+│   ├── sessions/           # Session management
+│   └── users/              # User management
+└── reference/              # SDK and API reference (403 files)
+    ├── android/            # Android SDK
+    ├── api/                # REST API overview
+    ├── astro/              # Astro SDK
+    ├── backend/            # Backend SDK (Node) (153 files)
+    ├── chrome-extension/   # Chrome Extension SDK
+    ├── components/         # UI components (40 files)
+    ├── composables/        # Vue composables
+    ├── expo/               # Expo/React Native SDK
+    ├── express/            # Express.js SDK
+    ├── fastify/            # Fastify plugin
+    ├── go/                 # Go SDK
+    ├── hooks/              # React hooks (23 files)
+    ├── ios/                # iOS SDK extras
+    ├── javascript/         # Vanilla JS SDK
+    ├── native-mobile/      # React Native SDK
+    ├── nextjs/             # Next.js SDK
+    ├── nuxt/               # Nuxt SDK
+    ├── objects/            # Core JS objects (12 files)
+    ├── react/              # React SDK overview
+    ├── react-router/       # React Router SDK
+    ├── ruby/               # Ruby SDK
+    ├── tanstack-react-start/ # TanStack Start SDK
+    ├── types/              # TypeScript types (74 files)
+    ├── views/              # React Native views
+    └── vue/                # Vue SDK
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New user | `contents/getting-started/quickstart.mdx` |
-| Next.js setup | `contents/getting-started/quickstart.mdx` (or framework-specific) |
-| React hooks | `contents/reference/hooks/overview.mdx` |
-| Backend SDK | `contents/reference/backend/` |
-| UI components | `contents/reference/components/overview.mdx` |
-| Authentication strategies | `contents/guides/configure/auth-strategies/` |
-| Organizations | `contents/guides/organizations/` |
+| New user (Next.js) | `contents/getting-started/quickstart.mdx` |
+| Core concepts | `contents/getting-started/core-concepts.mdx` |
+| Framework quickstart | `contents/getting-started/quickstart.{framework}.mdx` |
+| Configure auth strategies | `contents/guides/configure/auth-strategies/` |
+| Social / OAuth login | `contents/guides/configure/auth-strategies/social-connections/` |
+| SAML / Enterprise SSO | `contents/guides/configure/auth-strategies/enterprise-connections/` |
+| Custom UI flows | `contents/guides/development/custom-flows/` |
 | Webhooks | `contents/guides/development/webhooks/` |
-| Billing | `contents/guides/billing/overview.mdx` |
+| Organizations | `contents/guides/organizations/` |
+| Appearance customization | `contents/guides/customizing-clerk/appearance-prop/` |
+| Elements (headless UI) | `contents/guides/customizing-clerk/elements/` |
+| Next.js SDK reference | `contents/reference/nextjs/overview.mdx` |
+| React hooks | `contents/reference/hooks/overview.mdx` |
+| Backend (Node) SDK | `contents/reference/backend/` |
+| UI components | `contents/reference/components/` |
 | TypeScript types | `contents/reference/types/overview.mdx` |
+| Billing / subscriptions | `contents/guides/billing/` |
+| Machine-to-machine auth | `contents/guides/development/machine-auth/` |
 
 ## Detailed Structure
 
@@ -66,161 +76,184 @@ contents/
 
 | File | Description |
 |------|-------------|
-| `core-concepts.mdx` | Core concepts overview |
-| `quickstart.mdx` | General quickstart |
-| `quickstart.android.mdx` | Android quickstart |
-| `quickstart.astro.mdx` | Astro quickstart |
-| `quickstart.chrome-extension.mdx` | Chrome extension quickstart |
-| `quickstart.expo.mdx` | Expo quickstart |
-| `quickstart.expressjs.mdx` | Express.js quickstart |
-| `quickstart.fastify.mdx` | Fastify quickstart |
-| `quickstart.go.mdx` | Go quickstart |
-| `quickstart.ios.mdx` | iOS quickstart |
-| `quickstart.js-frontend.mdx` | Vanilla JS frontend quickstart |
-| `quickstart.nuxt.mdx` | Nuxt quickstart |
-| `quickstart.react-router.mdx` | React Router quickstart |
-| `quickstart.react.mdx` | React quickstart |
-| `quickstart.ruby.mdx` | Ruby quickstart |
-| `quickstart.tanstack-react-start.mdx` | TanStack Start quickstart |
-| `quickstart.vue.mdx` | Vue quickstart |
-| `quickstart/overview.mdx` | Quickstart overview |
-| `quickstart/setup-clerk.mdx` | Initial Clerk setup |
+| `quickstart.mdx` | Main quickstart (Next.js App Router) |
+| `quickstart.{framework}.mdx` | Quickstarts for astro, expo, expressjs, fastify, go, ios, android, nuxt, react, react-router, ruby, tanstack-react-start, vue, chrome-extension, js-frontend |
+| `core-concepts.mdx` | Authentication concepts overview |
+| `quickstart/` | Sub-steps for Next.js quickstart |
 
-### guides/configure/auth-strategies/ (57 files)
+### guides/configure/ (58 files)
 
-| File/Dir | Description |
-|----------|-------------|
-| `sign-up-sign-in-options.mdx` | Configure sign-up/sign-in options |
-| `enterprise-connections/overview.mdx` | Enterprise SSO overview |
-| `enterprise-connections/saml/` | SAML providers (Azure, Google, Okta, custom) |
-| `enterprise-connections/oidc/custom-provider.mdx` | Custom OIDC provider |
-| `enterprise-connections/easie/` | EASIE connections (Google, Microsoft) |
-| `oauth/overview.mdx` | OAuth configuration |
-| `oauth/verify-oauth-tokens.mdx` | Verify OAuth tokens |
-| `social-connections/overview.mdx` | Social login overview |
-| `social-connections/*.mdx` | Per-provider setup (GitHub, Google, etc.) |
-| `web3/` | Web3 wallet authentication |
+| Directory | Description |
+|-----------|-------------|
+| `auth-strategies/social-connections/` | Google, GitHub, Discord, etc. OAuth setup (29 files) |
+| `auth-strategies/enterprise-connections/saml/` | SAML enterprise SSO |
+| `auth-strategies/enterprise-connections/oidc/` | OIDC enterprise connections |
+| `auth-strategies/enterprise-connections/easie/` | EASIE connections |
+| `auth-strategies/oauth/` | OAuth as a provider |
+| `auth-strategies/web3/` | Web3 wallet authentication |
 
 ### guides/customizing-clerk/ (25 files)
 
-| File/Dir | Description |
-|----------|-------------|
-| `appearance-prop/` | Appearance customization prop |
-| `adding-items/` | Add custom items to Clerk components |
-| `elements/` | Clerk Elements (unstyled, headless components) |
+| Directory | Description |
+|-----------|-------------|
+| `appearance-prop/` | Styling via appearance prop (6 files) |
+| `elements/` | Headless UI components (15 files) |
+| `elements/reference/` | Elements API reference |
+| `elements/guides/` | Elements how-to guides |
+| `elements/examples/` | Elements code examples |
+| `adding-items/` | Adding custom pages/links to components |
 
-### guides/development/ (156 files)
+### guides/development/ (170 files)
 
-| File/Dir | Description |
-|----------|-------------|
-| `webhooks/` | Webhook setup and handling |
-| `machine-auth/` | Machine-to-machine auth, API keys |
-| `migrating/` | Migrating from other auth providers |
-| `custom-sign-in-or-up-page.*.mdx` | Custom sign-in/up pages per framework |
-| `endpoints.mdx` | Clerk API endpoints |
-| `local-credentials.mdx` | Local development credentials |
-| `geo-blocking.mdx` | Geographic blocking |
+| Directory | Description |
+|-----------|-------------|
+| `custom-flows/authentication/` | Custom sign-in/sign-up flows (20 files) |
+| `custom-flows/organizations/` | Custom org flows |
+| `custom-flows/account-updates/` | Profile/account update flows |
+| `custom-flows/api-keys/` | API key management flows |
+| `custom-flows/billing/` | Custom billing flows |
+| `deployment/` | Production deployment guides (8 files) |
+| `integrations/databases/` | Supabase, Convex, Neon, Fauna, etc. (9 files) |
+| `integrations/analytics/` | Analytics integration |
+| `integrations/frameworks/` | Framework-specific integrations |
+| `integrations/platforms/` | Platform integrations |
+| `machine-auth/` | Machine-to-machine / M2M authentication |
+| `migrating/` | Migrating from Auth.js, Firebase, Cognito, etc. |
+| `testing/` | Testing with Cypress and Playwright |
+| `webhooks/` | Webhook setup and events (6 files) |
+| `errors/` | Error reference |
+| `upgrading/` | SDK upgrade guides |
+| `troubleshooting/` | Debugging and support |
+| `web-support/` | Expo web support |
 
 ### guides/organizations/ (12 files)
 
-| File/Dir | Description |
-|----------|-------------|
-| `add-members/` | Adding members to organizations |
-| `control-access/` | Role-based access control |
+| File/Directory | Description |
+|----------------|-------------|
+| `overview.mdx` | Multi-organization overview |
+| `add-members/` | Invite and manage members |
+| `control-access/` | Roles, permissions, RBAC |
 
-### guides/secure/ (21 files)
+### guides/secure/ (22 files)
 
-| File/Dir | Description |
-|----------|-------------|
-| `best-practices/` | Security best practices |
+| File/Directory | Description |
+|----------------|-------------|
+| `overview.mdx` | Security overview |
+| `best-practices/` | Security best practices (6 files) |
+| `authorization-checks.mdx` | Authorization check patterns |
 
-### reference/backend/ (145 files)
+### reference/backend/ (153 files)
 
-| Dir | Description |
-|-----|-------------|
-| `allowlist/` | Allowlist management |
-| `api-keys/` | API key operations |
-| `billing/` | Billing operations |
-| `client/` | Client operations |
-| `domains/` | Domain management |
-| `email-addresses/` | Email address operations |
-| `invitations/` | Invitation management |
-| `m2m-tokens/` | Machine-to-machine tokens |
-| `machines/` | Machine management |
-| `oauth-applications/` | OAuth app management |
-| `organization/` | Organization CRUD |
-| `phone-numbers/` | Phone number operations |
-| `redirect-urls/` | Redirect URL management |
-| `saml-connections/` | SAML connection management |
+| Directory | Description |
+|-----------|-------------|
+| `overview.mdx` | Backend SDK overview |
+| `user/` | User CRUD methods (24 files) |
+| `organization/` | Organization methods (18 files) |
 | `sessions/` | Session management |
-| `sign-in-tokens/` | Sign-in token operations |
-| `testing-tokens/` | Testing token utilities |
-| `types/` | Backend types |
-| `user/` | User CRUD operations |
+| `api-keys/` | API key management (7 files) |
+| `billing/` | Billing backend methods |
+| `machines/` | Machine auth (9 files) |
+| `m2m-tokens/` | M2M token methods |
+| `invitations/` | Invitation management |
+| `allowlist/` | Allowlist management |
+| `email-addresses/` | Email address management |
+| `phone-numbers/` | Phone number management |
+| `domains/` | Domain management |
+| `oauth-applications/` | OAuth application management |
+| `saml-connections/` | SAML connection methods |
+| `sign-in-tokens/` | Sign-in token methods |
+| `testing-tokens/` | Testing token methods |
 | `waitlist-entries/` | Waitlist management |
+| `agent-tasks/` | Agent task backend methods |
+| `types/` | Backend SDK types (32 files) |
 
 ### reference/components/ (40 files)
 
-| Dir | Description |
-|-----|-------------|
-| `authentication/` | SignIn, SignUp, SignInOrUp components |
-| `billing/` | Billing/pricing components |
-| `control/` | Control flow components (Protect, SignedIn, etc.) |
-| `organization/` | Organization components |
-| `unstyled/` | Unstyled button components |
-| `user/` | UserButton, UserProfile, UserAvatar |
-| `utilities/` | Utility components |
-| `overview.mdx` | Components overview |
+| Directory | Description |
+|-----------|-------------|
+| `authentication/` | `<SignIn>`, `<SignUp>`, `<SignInButton>`, etc. (7 files) |
+| `user/` | `<UserButton>`, `<UserProfile>`, `<UserAvatar>` |
+| `organization/` | `<OrganizationSwitcher>`, `<OrganizationProfile>`, etc. |
+| `control/` | `<SignedIn>`, `<SignedOut>`, `<Protect>`, `<ClerkLoaded>`, etc. (12 files) |
+| `billing/` | Billing and subscription components |
+| `unstyled/` | Unstyled component variants |
+| `utilities/` | Portal provider |
+| `versioning.mdx` | Component versioning guide |
 
 ### reference/hooks/ (23 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Hooks overview |
-| `use-auth.mdx` | useAuth hook |
-| `use-clerk.mdx` | useClerk hook |
-| `use-user.mdx` | useUser hook |
-| `use-organization.mdx` | useOrganization hook |
-| `use-organization-list.mdx` | useOrganizationList hook |
-| `use-session.mdx` | useSession hook |
-| `use-session-list.mdx` | useSessionList hook |
-| `use-sign-in.mdx` | useSignIn hook |
-| `use-sign-up.mdx` | useSignUp hook |
-| `use-reverification.mdx` | useReverification hook |
-| `use-checkout.mdx` | Billing checkout hook |
-| `use-plans.mdx` | Billing plans hook |
-| `use-subscription.mdx` | Subscription hook |
-
-### reference/nextjs/ (10 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Next.js SDK overview |
-| `clerk-middleware.mdx` | clerkMiddleware() |
-| `app-router/auth.mdx` | auth() helper (App Router) |
-| `app-router/current-user.mdx` | currentUser() helper |
-| `app-router/route-handlers.mdx` | Route handler auth |
-| `app-router/server-actions.mdx` | Server actions auth |
-| `pages-router/get-auth.mdx` | getAuth() (Pages Router) |
+| `use-auth.mdx` | `useAuth()` - auth state and helpers |
+| `use-user.mdx` | `useUser()` - current user |
+| `use-clerk.mdx` | `useClerk()` - Clerk instance |
+| `use-sign-in.mdx` | `useSignIn()` - sign-in flow |
+| `use-sign-up.mdx` | `useSignUp()` - sign-up flow |
+| `use-session.mdx` | `useSession()` - current session |
+| `use-session-list.mdx` | `useSessionList()` - all sessions |
+| `use-organization.mdx` | `useOrganization()` - current org |
+| `use-organization-list.mdx` | `useOrganizationList()` - org list |
+| `use-reverification.mdx` | `useReverification()` - step-up auth |
+| `use-checkout.mdx` | `useCheckout()` - billing checkout |
+| `use-plans.mdx` | `usePlans()` - billing plans |
+| `use-subscription.mdx` | `useSubscription()` - subscription state |
+| `use-waitlist.mdx` | `useWaitlist()` - waitlist |
+| `use-api-keys.mdx` | `useApiKeys()` - API keys |
 
 ### reference/objects/ (12 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Objects overview |
-| `clerk.mdx` | Clerk object |
+| `clerk.mdx` | Main Clerk object |
 | `user.mdx` | User object |
 | `session.mdx` | Session object |
 | `organization.mdx` | Organization object |
 | `sign-in.mdx` | SignIn object |
 | `sign-up.mdx` | SignUp object |
 | `client.mdx` | Client object |
+| `billing.mdx` | Billing object |
 | `api-keys.mdx` | API keys object |
 
-### reference/types/ (65 files)
+### reference/types/ (74 files)
 
-Common TypeScript types for users, sessions, organizations, billing, errors, and verification resources.
+Comprehensive TypeScript type definitions. Key files:
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Types overview |
+| `errors.mdx` | Error types |
+| `metadata.mdx` | Metadata types |
+| `session-status.mdx` | Session status enum |
+| `organization-membership.mdx` | Membership type |
+| `external-account.mdx` | OAuth external account type |
+| `billing-*.mdx` | Billing-related types (multiple files) |
 
-### reference/astro/ (14 files), reference/expo/ (12 files), reference/native-mobile/ (15 files)
+### reference/nextjs/ (10 files)
 
-Framework-specific SDKs with components, hooks, and helpers for Astro, Expo, and React Native.
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Next.js SDK overview |
+| `clerk-middleware.mdx` | `clerkMiddleware()` API |
+| `app-router/auth.mdx` | `auth()` helper (App Router) |
+| `app-router/current-user.mdx` | `currentUser()` helper |
+| `app-router/route-handlers.mdx` | Route handler auth |
+| `app-router/server-actions.mdx` | Server action auth |
+| `pages-router/get-auth.mdx` | `getAuth()` (Pages Router) |
+| `pages-router/build-clerk-props.mdx` | `buildClerkProps()` |
+| `usage-with-older-versions.mdx` | Legacy version compatibility |
+
+### reference/astro/ (14 files)
+
+| File/Directory | Description |
+|----------------|-------------|
+| `overview.mdx` | Astro SDK overview |
+| `clerk-middleware.mdx` | Astro middleware |
+| `client-side-helpers/` | Client-side auth helpers (8 files) |
+
+### reference/expo/ (12 files)
+
+| File/Directory | Description |
+|----------------|-------------|
+| `overview.mdx` | Expo SDK overview |
+| `native-components/` | Native UI components |
+| `native-hooks/` | Native hooks (use-oauth, use-sso, etc.) |
+| `passkeys.mdx` | Expo passkey support |

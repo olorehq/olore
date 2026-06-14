@@ -159,6 +159,68 @@ mixpanel.init('YOUR_PROJECT_TOKEN', {
 <img src="https://example.com/photo.jpg" class="mp-block"/>
 ```
 
+## Configuring Privacy Options via GTM
+
+If you're using the Mixpanel GTM template, privacy options like `record_mask_all_text` and `record_block_selector` should be set using a **Custom JavaScript variable** rather than the template's "Set options manually" interface.
+
+The manual interface can pass empty strings or whitespace for selector fields, which are not valid CSS selectors and will cause a runtime error (`Failed to execute 'matches' on 'Element'`). Using a Custom JavaScript variable gives you full control over the config object passed to the SDK.
+
+### Setup
+
+In GTM, create a new **Variable → Custom JavaScript** and return your privacy configuration alongside your other init options:
+```javascript
+function() {
+  return {
+    record_sessions_percent: 100,
+    record_mask_all_text: false,       // show all text by default
+    record_block_selector: undefined   // uses default: 'img, video, audio'
+  };
+}
+```
+
+Then set **Initialization Options** in your Mixpanel init tag to use this variable.
+
+### Common GTM privacy configurations
+
+**Show all text, block nothing extra (testing/low-sensitivity sites)**
+```javascript
+function() {
+  return {
+    record_sessions_percent: 100,
+    record_mask_all_text: false,
+    record_block_selector: undefined
+  };
+}
+```
+
+**Mask everything except specific elements (default-private approach)**
+```javascript
+function() {
+  return {
+    record_sessions_percent: 100,
+    record_mask_all_text: true,
+    record_unmask_text_selector: '.public-content, nav, footer',
+    record_block_selector: 'img, video, audio, .sensitive-widget'
+  };
+}
+```
+
+**Show all text, selectively mask sensitive areas**
+```javascript
+function() {
+  return {
+    record_sessions_percent: 100,
+    record_mask_all_text: false,
+    record_mask_text_selector: '.user-data, .account-info, #billing-section',
+    record_block_selector: 'img, video, audio'
+  };
+}
+```
+
+> **Important:** Do not pass `""` or `[]` for selector options — both resolve to an empty string, which is an invalid CSS selector. Pass `undefined` to use the SDK default, or omit the key entirely.
+
+For the full list of available privacy options, see the sections above.
+
 ## How Nesting and Inheritance Works
 
 Both masking and unmasking selectors propagate through the DOM tree. When checking if an element should be masked, the SDK checks the **element itself and all of its ancestors**.

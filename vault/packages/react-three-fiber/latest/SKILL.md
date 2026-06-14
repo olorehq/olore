@@ -5,44 +5,44 @@ description: Local react-three-fiber documentation reference (latest). React Thr
 
 # react-three-fiber Documentation
 
-React Three Fiber (R3F) is a React renderer for three.js. Build 3D scenes declaratively with reusable, self-contained components that react to state, are readily interactive, and participate in React's ecosystem.
+React Three Fiber (R3F) documentation. Use for 3D rendering in React, Three.js integration, Canvas, hooks, events, performance optimization, and WebGL scenes.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/getting-started/introduction.mdx` | Introduction | What R3F is, limitations, performance, and compatibility with three.js |
-| `contents/getting-started/installation.mdx` | Installation | Installing with npm, Vite, Next.js, CDN, and React Native |
-| `contents/getting-started/your-first-scene.mdx` | Your First Scene | Setting up Canvas, adding meshes, lights, and scene basics |
-| `contents/getting-started/examples.mdx` | Examples | Codesandbox showcase of R3F scenes |
-| `contents/getting-started/community-r3f-components.mdx` | Community R3F Components | Community-contributed components outside of drei |
-| `contents/API/canvas.mdx` | Canvas | Canvas component props: gl, camera, scene, frameloop, shadows, raycaster, etc. |
-| `contents/API/objects.mdx` | Objects, Properties and Constructor Arguments | Declarative object syntax, args, attach, set, and constructor patterns |
-| `contents/API/hooks.mdx` | Hooks | useFrame, useThree, useLoader, useGraph, useInstanceHandle |
-| `contents/API/events.mdx` | Events | onClick, onPointerOver, onPointerMove, onPointerMissed, onUpdate |
-| `contents/API/additional-exports.mdx` | Additional Exports | addEffect, invalidate, advance, extend, createPortal, createRoot, applyProps, act |
-| `contents/API/typescript.mdx` | TypeScript | useRef typing, ThreeElements, extending JSX intrinsic elements |
-| `contents/API/testing.mdx` | Testing | Unit testing with @react-three/test-renderer |
-| `contents/tutorials/basic-animations.mdx` | Basic Animations | useFrame-based animation loops and ref mutation patterns |
-| `contents/tutorials/events-and-interaction.mdx` | Events and Interaction | Attaching pointer/click handlers to meshes |
-| `contents/tutorials/loading-models.mdx` | Loading Models | GLTF, FBX, OBJ loading with useLoader and GLTFLoader |
-| `contents/tutorials/loading-textures.mdx` | Loading Textures | TextureLoader, useLoader for texture maps |
-| `contents/tutorials/how-it-works.mdx` | How It Works | Reconciler internals, fiber nodes, scene graph construction |
-| `contents/tutorials/v9-migration-guide.mdx` | v9 Migration Guide | React 19 compatibility, StrictMode changes, useLoader instance reuse |
-| `contents/advanced/pitfalls.mdx` | Performance Pitfalls | Avoiding setState in loops, instancing, geometry/material sharing |
-| `contents/advanced/scaling-performance.mdx` | Scaling Performance | On-demand rendering, frameloop modes, Suspense, LOD strategies |
+| `contents/advanced/pitfalls.mdx` | Performance Pitfalls | Avoid expensive object creation in render loops; use instancing, shared materials/geometries, and mutate in useFrame |
+| `contents/advanced/scaling-performance.mdx` | Scaling Performance | On-demand rendering, demand frameloop, adaptive device performance for WebGL |
+| `contents/API/additional-exports.mdx` | Additional Exports | API exports: addEffect, buildGraph, invalidate, extend, createPortal, createRoot, applyProps, act |
+| `contents/API/canvas.mdx` | Canvas | Canvas component: the portal into three.js; all Canvas props and configuration |
+| `contents/API/events.mdx` | Events | Pointer events, clicks, wheel scroll on raycasting objects; onPointerMissed; event data structure |
+| `contents/API/hooks.mdx` | Hooks | useFrame, useThree, useLoader, useGraph — fiber hooks that must be used inside Canvas |
+| `contents/API/objects.mdx` | Objects, Properties and Constructor Arguments | Declarative three.js object patterns, attach prop, constructor args, set and non-primitive props |
+| `contents/API/testing.mdx` | Testing | Unit testing R3F components with @react-three/test-renderer |
+| `contents/API/typescript.mdx` | TypeScript | Typing useRef, extending JSX intrinsics for custom three.js objects, common TypeScript patterns |
+| `contents/getting-started/community-r3f-components.mdx` | Community R3F Components | Third-party R3F components: renderers, physics engines, UI, data loaders not in drei |
+| `contents/getting-started/examples.mdx` | Examples | Showcase of demo scenes built with React Three Fiber |
+| `contents/getting-started/installation.mdx` | Installation | Setup for Vite, Next.js, CDN without build tools, and React Native |
+| `contents/getting-started/introduction.mdx` | Introduction | Overview of R3F: declarative 3D, React ecosystem integration, zero overhead over three.js |
+| `contents/getting-started/your-first-scene.mdx` | Your First Scene | Step-by-step: Canvas setup, mesh, geometry, material, lights, and animation |
+| `contents/tutorials/basic-animations.mdx` | Basic Animations | Animation with useFrame and refs; continuous render loop patterns |
+| `contents/tutorials/events-and-interaction.mdx` | Events and Interaction | Click handlers, pointer events, interactive meshes responding to user input |
+| `contents/tutorials/how-it-works.mdx` | How It Works | R3F internals: JSX to THREE object mapping, reconciler, scene graph lifecycle |
+| `contents/tutorials/loading-models.mdx` | Loading Models | Load GLTF, FBX, OBJ models using useLoader and three.js loaders |
+| `contents/tutorials/loading-textures.mdx` | Loading Textures | Load textures with TextureLoader and useLoader; apply color, normal, roughness maps |
+| `contents/tutorials/v9-migration-guide.mdx` | v9 Migration Guide | React 19 compatibility: useLoader instance reuse, StrictMode changes, breaking changes |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Setting up a 3D scene in React with Canvas, meshes, lights, and cameras
-- R3F hooks: useFrame, useThree, useLoader, useGraph
+- Setting up a 3D scene in React with Canvas and mesh components
+- Using R3F hooks: useFrame, useThree, useLoader, useGraph
 - Handling pointer events, clicks, and interactions on 3D objects
-- Loading 3D models (GLTF, FBX, OBJ) or textures in React
+- Loading GLTF, FBX, OBJ models and textures
 - Performance optimization: on-demand rendering, instancing, avoiding re-renders
-- TypeScript usage with R3F refs and JSX intrinsic element extensions
-- Migrating from R3F v8 to v9 / React 18 to React 19
-- Testing R3F components with @react-three/test-renderer
+- TypeScript types for React Three Fiber components and refs
+- Migrating from R3F v8 to v9 (React 19 compatibility)
+- Testing three.js React components with @react-three/test-renderer
 
 ## How to find information
 

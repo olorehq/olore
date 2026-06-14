@@ -7,7 +7,7 @@
 While the [`nodejs_compat`](https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag) flag makes `workerd` mostly compatible with Node.js,
 there are still minor differences. Some packages publish code for different runtimes to account for those differences. For example, `postgres` has [conditional exports](https://nodejs.org/api/packages.html#conditional-exports) in its [`package.json`](https://github.com/porsager/postgres/blob/ad0ed4476e09f41f147859cb5a42971d2b99e9c7/package.json#L8-L13):
 
-```json
+```json filename="package.json"
 "exports": {
   "types": "./types/index.d.ts",
   "bun": "./src/index.js",
@@ -24,8 +24,7 @@ For that, you need to instruct Next.js not to bundle packages as it would use th
 
 To do that, add those packages in the `serverExternalPackages` key of your `next.config.ts`:
 
-```ts
-// node.config.ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

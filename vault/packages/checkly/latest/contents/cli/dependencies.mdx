@@ -1,43 +1,54 @@
 ---
-title: Using NPM packages and local dependencies
-sidebarTitle: NPM & Local Dependencies
+title: Using npm packages and local dependencies
+sidebarTitle: npm & Local Dependencies
 ---
 
-Checkly lets you use JavaScript / TypeScript in your [Browser](/detect/synthetic-monitoring/browser-checks/overview) and [Multistep](/detect/synthetic-monitoring/multistep-checks/overview) checks, [API check setup & teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown), and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). Checks are able to use NPM packages, as well as import local JavaScript and TypeScript files.
+Checkly lets you use JavaScript and TypeScript in your [Browser](/detect/synthetic-monitoring/browser-checks/overview) and [Multistep](/detect/synthetic-monitoring/multistep-checks/overview) checks, [API check setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown), and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). Checks can use npm packages and import local JavaScript and TypeScript files.
 
-## NPM packages
+How dependencies work depends on the check type:
+
+| Check type | Dependency model | Environment field |
+|------------|------------------|-------------------|
+| Browser Checks and Multistep Checks | Run in a Checkly runtime with fixed Checkly-provided dependencies | `runtimeId` |
+| Playwright Check Suites | Install dependencies from your project files, including `package.json` and your lock file | `engine` |
+
+Use `runtimeId` to choose a custom Checkly runtime for Browser Checks and Multistep Checks. Use `engine` only for Playwright Check Suites, where it overrides the JavaScript engine version that runs your own Playwright project.
+
+## npm packages
 
 ### Browser, Multistep, and API Checks
 
-<Note>Not all NPM packages from NPM are available inside the context of a Check.</Note>
+<Note>Not all npm packages are available in a Checkly runtime.</Note>
 
 The JavaScript code for these check types executes in a runtime environment managed by Checkly.
 Runtime versions can be selected by setting a `runtimeId`.
-This can be configured at the check and group level using constructs, and a default value for the project can be set in the [project configuration file](/constructs/project#param-checks-runtime-id).
+You can configure `runtimeId` at the check and group level using constructs, and set a project default in the [project configuration file](/constructs/project#param-checks-runtime-id).
 
-A runtime contains among others:
+A runtime includes fixed dependencies such as:
 
-- Nodejs v22+
+- Node.js 22+
 - `@playwright/test 1.51.1`
 - `axios 0.28.0`
 - `lodash 4.17.21`
 - `moment 2.30.1`
 
-...and a range of other popular NPM package to help you write and assert checks.
+Runtimes also include other popular npm packages to help you write and assert checks.
 
 - [Browse the latest runtime specs](/platform/runtimes/runtime-specification)
 - [Learn more about runtimes](/platform/runtimes/overview)
-- [Why can't I import any NPM package or other 3rd party dependencies?](/platform/runtimes/overview#why-can’t-i-import-any-npm-package-or-other-3rd-party-dependencies%3F)
+- [Why can't I import any npm package or other third-party dependencies?](/platform/runtimes/overview)
 
 ### Playwright Check Suites
 
-Playwright Check Suites don't use our predefined runtimes. Instead, you can install [custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies/), including private packages or packages from a custom registry.
+Playwright Check Suites do not use Checkly runtimes. Instead, Checkly installs your project's dependencies from your `package.json` and lock file. This lets you use [custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies/), including private packages or packages from a custom registry.
+
+Use the `engine` field to override the JavaScript engine version for a Playwright Check Suite. `engine` does not select a Checkly runtime or a fixed package set.
 
 ## Local Dependencies
 
-Your checks are also able to import other JavaScript and TypeScript files as dependencies.
+Your checks can also import other JavaScript and TypeScript files as dependencies.
 This is useful for defining helper functions to be reused across multiple checks.
-The Checkly CLI will automatically detect these dependencies and make sure that they're bundled as part of the check.
+The Checkly CLI automatically detects these dependencies and bundles them with the check.
 No additional configuration is needed.
 
 Here is a [Browser Check](/detect/synthetic-monitoring/browser-checks/overview) example of how this works in practice.
@@ -86,8 +97,7 @@ import { BrowserCheck } from 'checkly/constructs'
 
 new BrowserCheck('login-check', {
   name: 'Login Check',
-    code: { entrypoint: './login.spec.ts' }
-  })
+  code: { entrypoint: './login.spec.ts' }
 })
 ```
 

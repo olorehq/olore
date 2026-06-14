@@ -38,9 +38,6 @@ export const test = testBase.extend({
       // Remove any request handlers added in individual test cases.
       // This prevents them from affecting unrelated tests.
       worker.resetHandlers()
-
-      // Stop the worker after the test.
-      worker.stop()
     },
     {
       auto: true,
@@ -53,6 +50,8 @@ export const test = testBase.extend({
   Provide the `auto: true` fixture option so MSW would affect the tests that
   don't reference the `worker` fixture explicitly.
 </Warning>
+
+We recommend skipping `worker.stop()` at the end of the fixture because there's no practical reason for it. `worker.stop()` only controls whether the current client should be visible by the registered worker. It does not unregister the worker as that is a costly operation that is entirely redundant when testing in the browser (page context provides the network isolation).
 
 ### Initial request handlers
 

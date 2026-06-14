@@ -1,8 +1,16 @@
 ---
 title: Use Neon read replicas with Prisma
 subtitle: Learn how to scale Prisma applications with Neon read replicas
+summary: >-
+  Neon read replicas for Prisma route read queries to independent read-only
+  computes using the @prisma/extension-read-replicas package, distributing
+  load without extra storage costs. Use this page when you want to offload
+  SELECT queries from your primary compute in a Prisma app, keeping writes and
+  $transaction calls on the primary. Newer Prisma versions require each replica
+  to be a separate PrismaClient instance with a PrismaNeon adapter. Multiple
+  replicas are selected randomly per query.
 enableTableOfContents: true
-updatedOn: '2026-02-01T11:47:48.279Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 A Neon read replica is an independent read-only compute that performs read operations on the same data as your primary read-write compute, which means adding a read replica to a Neon project requires no additional storage.
@@ -11,7 +19,7 @@ A key benefit of read replicas is that you can distribute read requests to one o
 
 For more information about Neon's read replica feature, see [Read replicas](/docs/introduction/read-replicas).
 
-In this guide, we'll show you how you can leverage Neon read replicas to efficiently scale Prisma applications using Prisma Client's read replica extension: [@prisma/extension-read-replicas](https://github.com/prisma/extension-read-replicas).
+This guide shows how to use Neon read replicas to scale Prisma applications using Prisma Client's read replica extension: [@prisma/extension-read-replicas](https://github.com/prisma/extension-read-replicas).
 
 ## Prerequisites
 
@@ -39,7 +47,7 @@ You can add a read replica by following these steps:
 
    Your read replica compute is provisioned and appears on the **Computes** tab of the **Branches** page.
 
-Alternatively, you can create read replicas using the [Neon API](https://api-docs.neon.tech/reference/createprojectendpoint) or [Neon CLI](/docs/reference/cli-branches#create).
+Alternatively, you can create read replicas using the [Neon API](https://api-docs.neon.tech/reference/createprojectendpoint) or [Neon CLI](/docs/cli/branches#create).
 
 <CodeTabs labels={["API", "CLI"]}>
 

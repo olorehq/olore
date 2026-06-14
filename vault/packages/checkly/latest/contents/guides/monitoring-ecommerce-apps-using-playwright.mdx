@@ -7,6 +7,7 @@ tags: Playwright
 
 import CliAuth from '/snippets/cli-auth.mdx';
 import CliProjectInit from '/snippets/cli-project-init.mdx';
+import TsLoaderNote from '/snippets/ts-loader-note.mdx';
 import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
 
 ## Inspired by Infrastructure-as-Code and E2E-Testing
@@ -32,7 +33,7 @@ What does one gain when moving from a manual to a monitoring as code approach? T
 3. **Native @playwright/test support.** No lock-in, just write standard *.spec.ts files.
 4. **Alerting baked in.** Set alerts for Slack, SMS and many more channels.
 5. **Typescript-first.** Fully typed for a stellar developer experience with code completion.
-6. **Run in the cloud or on-prem**. Run on the Checkly cloud or in your network using [Private Locations](/product/private-locations/)
+6. **Run in the cloud or on-prem**. Run on the Checkly cloud or in your network using [Private Locations](/platform/private-locations/overview)
 
 Watch our launch event to learn more about our CLI:
 
@@ -187,11 +188,7 @@ First, install the CLI.
 npm install --save-dev checkly
 ```
 
-Since we are using TypeScript, also install ts-node and typescript:
-
-```bash install-typescript-dependencies
-npm install --save-dev ts-node typescript
-```
+<TsLoaderNote />
 
 Next up, we want to create our `checkly.config.ts` file and include the basic Checkly configuration as follows:
 
@@ -376,7 +373,7 @@ Expanding our initial setup from here is easy, please follow these links if you 
 ## Read More
 
 <div class="cards-list">
-<Card title="Monitoring as code" href="/guides/monitoring-as-code/">
+<Card title="Monitoring as code" href="/guides/getting-started-with-monitoring-as-code">
   Why should the way we manage monitoring be any different?
 </Card>
 
@@ -384,7 +381,7 @@ Expanding our initial setup from here is easy, please follow these links if you 
   Learn end-to-end monitoring with playwright to test key website flows.
 </Card>
 
-<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts/">
+<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts-for-apis">
   Setup scripts are a fundamental tool to tailor API checks to your own target endpoints.
 </Card>
 </div>

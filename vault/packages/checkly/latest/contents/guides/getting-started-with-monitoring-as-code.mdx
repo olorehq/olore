@@ -36,7 +36,7 @@ Let's jump into the step-by-step process.
 We’re going to pretend we are working on adding a feature to a web application that also requires some updates to our API backend. We will assume we already bootstrapped our repository with a Checkly CLI project using:
 
 ```bash install-checkly-cli
-npm create checkly@latest
+npx checkly init
 ```
 
 This command sets up all the basics to kickstart your MaC workflow in your repo.
@@ -95,11 +95,11 @@ Finally, we take a screenshot of the page and save it as 'homepage.jpg'.
 
 ### 3. Running Test Sessions
 
-Now that we have our test scripts ready, let’s execute them. We can use the Check CLI command to execute our monitoring pipeline in our staging environment, recording the results for inspection if something fails. Run the following command in the terminal of your project repository to execute the test:
+Now that we have our test scripts ready, let's execute them. Run the following command in the terminal of your project repository to test your checks against Checkly's infrastructure:
 
-`npx checkly test --record`
+`npx checkly test`
 
-The `--record` flag is optional, you can use it if you want to record a test session with git info, full logging, videos and traces. `--record` sessions can be reviewed within the Checkly web interface.
+You can review the test session with full logging, videos and traces in the Checkly web interface.
 
 Here is the result of the test we just executed:
 

@@ -1,0 +1,81 @@
+---
+title: Checkpoint
+description: How to compact the local WAL to bound disk usage while preserving sync state.
+---
+
+<Note>
+This particular usage uses the Turso Cloud to sync the local Turso databases and assumes that you have an account.
+</Note>
+
+## Overview
+
+The sync engine uses a WAL (Write-Ahead Log) to track local writes. Over time, the WAL grows as you make changes. Checkpoint compacts it by transferring committed frames into the main database file and then truncating the WAL.
+
+Auto-checkpoint is **disabled** for sync databases — you must call `checkpoint()` explicitly.
+
+## Why Checkpoint Matters
+
+Without checkpointing, the WAL grows unbounded. After many writes, the WAL can become significantly larger than the database itself. Checkpointing reclaims that disk space.
+
+You can observe this with `stats()`:
+
+<CodeGroup>
+
+```ts TypeScript
+const before = await db.stats();
+console.log('WAL size before:', before.mainWalSize);
+
+await db.checkpoint();
+
+const after = await db.stats();
+console.log('WAL size after:', after.mainWalSize);
+```
+
+```py Python
+before = conn.stats()
+print("WAL size before:", before.main_wal_size)
+
+conn.checkpoint()
+
+after = conn.stats()
+print("WAL size after:", after.main_wal_size)
+```
+
+```go Go
+before, _ := db.Stats(ctx)
+log.Printf("WAL size before: %d", before.MainWalSize)
+
+db.Checkpoint(ctx)
+
+after, _ := db.Stats(ctx)
+log.Printf("WAL size after: %d", after.MainWalSize)
+```
+
+</CodeGroup>
+
+
+## When to Checkpoint
+
+Call `checkpoint()` periodically based on your write patterns:
+
+- **After bulk inserts** — if you insert many rows at once, checkpoint afterward to reclaim WAL space
+- **On a schedule** — for steady write workloads, checkpoint at regular intervals (e.g. every few minutes)
+- **When WAL size is large** — use `stats().mainWalSize` to monitor and checkpoint when it exceeds a threshold
+
+<CodeGroup>
+
+```ts TypeScript
+await db.checkpoint();
+```
+
+```py Python
+conn.checkpoint()
+```
+
+```go Go
+if err := db.Checkpoint(ctx); err != nil {
+	return err
+}
+```
+
+</CodeGroup>

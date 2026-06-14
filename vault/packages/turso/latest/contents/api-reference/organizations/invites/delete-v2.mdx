@@ -1,0 +1,26 @@
+---
+sidebarTitle: Delete Invite
+openapi: "DELETE /v2/organizations/{organizationSlug}/invites/{email}"
+---
+
+<Warning>Invites are limited to scaler plan and above.</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE https://api.turso.tech/v2/organizations/{organizationSlug}/invites/{email} \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "mycompany",
+  token: "",
+});
+
+await turso.organizations.deleteInvite("user@example.com");
+```
+
+</RequestExample>

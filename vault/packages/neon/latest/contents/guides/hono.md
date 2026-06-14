@@ -1,8 +1,14 @@
 ---
 title: Connect a Hono application to Neon
 subtitle: Set up a Neon project in seconds and connect from a Hono application
+summary: >-
+  Connect a Hono application to Neon Postgres using node-postgres, postgres.js,
+  or the Neon serverless driver (@neondatabase/serverless). Covers
+  DATABASE_URL setup and route-level query code for Hono on Node.js, Bun,
+  Deno, and Edge runtimes. Each driver option includes a complete TypeScript
+  route handler with Postgres query examples.
 enableTableOfContents: true
-updatedOn: '2025-10-24T12:48:41.460Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/hono-prompt.md"
@@ -54,7 +60,7 @@ DATABASE_URL="postgresql://<user>:<password>@<endpoint_hostname>.neon.tech:<port
 
 ## Configure the Postgres client
 
-In your Hono application (e.g., in `src/index.ts` or a specific route file), import the driver and use it within your route handlers.
+In your Hono application (for example, in `src/index.ts` or a specific route file), import the driver and use it within your route handlers.
 
 Here's how you can set up a simple route to query the database:
 
@@ -150,15 +156,5 @@ Navigate to your application's URL ([localhost:3000](http://localhost:3000)). Yo
 > The specific version may vary depending on the PostgreSQL version you are using.
 
 </Steps>
-
-## Source code
-
-You can find a sample Hono application configured for Neon on GitHub:
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-hono" description="Get started with Hono and Neon" icon="github">Get started with Hono and Neon</a>
-
-</DetailIconCards>
 
 <NeedHelp/>

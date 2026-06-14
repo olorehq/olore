@@ -58,7 +58,7 @@ List<int> xs = new();
 List<int>? ys = new();
 ```
 
-When you work with [anonymous types](../../fundamentals/types/anonymous-types.md), you must use implicitly typed local variables. The following example shows a [query expression](../keywords/query-keywords.md) that uses an anonymous type to hold a customer's name and phone number:
+When you work with [anonymous types](../../programming-guide/classes-and-structs/anonymous-types.md), you must use implicitly typed local variables. The following example shows a [query expression](../keywords/query-keywords.md) that uses an anonymous type to hold a customer's name and phone number:
 
 :::code language="csharp" source="snippets/declarations/ImplicitlyTyped.cs" id="VarExample":::
 
@@ -119,7 +119,7 @@ For more information, see the following sections of the [C# language specificati
 - [Declaration statements](~/_csharpstandard/standard/statements.md#136-declaration-statements)
 - [Reference variables and returns](~/_csharpstandard/standard/variables.md#97-reference-variables-and-returns)
 
-For more information about the `scoped` modifier, see the [Low-level struct improvements](~/_csharplang/proposals/csharp-11.0/low-level-struct-improvements.md) proposal note.
+For more information about the `scoped` modifier, see [The scoped modifier](~/_csharpstandard/standard/variables.md#973-the-scoped-modifier) in the C# language specification.
 
 ## See also
 

@@ -30,22 +30,24 @@ import { PlaywrightCheck } from "checkly/constructs"
 
 new PlaywrightCheck("critical-e2e-monitor", {
   name: "Critical E2E Monitor",
+  description: "Runs the **critical path** e2e suite against production.",
   playwrightConfigPath: "./playwright.config.ts",
 })
 ```
 
 ```ts Advanced Example
-import { PlaywrightCheck } from "checkly/constructs"
+import { Engine, PlaywrightCheck } from "checkly/constructs"
 
 new PlaywrightCheck("critical-e2e-monitor", {
   name: "Critical E2E Monitor",
-  include: ['.npmrc','test-files/**'],
+  description: "Runs the **critical path** e2e suite against production.",
+  include: [".npmrc", "test-files/**"],
   playwrightConfigPath: "./playwright.config.ts",
+  engine: Engine.node("24"), // Optional: override the auto-detected engine.
   installCommand: "npm ci",
-  testCommand: "npx playwright test --retries=2",
+  testCommand: "npx playwright test --max-failures=5",
   pwProjects: ["chromium"],
   pwTags: ["e2e"],
-
 })
 ```
 
@@ -66,11 +68,28 @@ The Playwright Check Suite configuration consists of specific Playwright Check S
 | `pwProjects` | `string` `string[]` | ❌ | - | Specific Playwright projects to run from your configuration |
 | `pwTags` | `string` `string[]` | ❌ | - | Tags to filter which tests to run using Playwright's grep functionality |
 | `include` | `string` `string[]` | ❌ | - | File patterns to include when bundling the test project |
+| `engine` | `Engine` | ❌ | Auto-detected, then Node.js 22 | JavaScript engine and version used to run the Playwright Check Suite |
 
 </Tab>
-<Tab title="General Monitor">
+<Tab title="General Check">
 
-  <GeneralMonitorOptionsTable />
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `name` | `string` | ✅ | - | Friendly name for your check |
+| `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
+| `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
+| `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
+| `environmentVariables` | `object[]` | ❌ | `[]` | Check-level environment variables |
+| `frequency` | `Frequency` | ❌ | - | How often to run your check |
+| `group` | `CheckGroup` | ❌ | - | The CheckGroup this check belongs to |
+| `locations` | `string[]` | ❌ | `[]` | Array of public location codes |
+| `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
+| `privateLocations` | `string[]` | ❌ | `[]` | Array of Private Location slugs |
+| `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
+| `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
+| `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+| `triggerIncident` | `IncidentTrigger` | ❌ | - | Create and resolve an incident based on the check's alert configuration |
 
 </Tab>
 </Tabs>
@@ -125,6 +144,10 @@ new PlaywrightCheck("critical-e2e-monitor", {
 ```
 
 <Info>If you configure the `testCommand` property and `pwTags` or `pwProjects` the options will be merged and all configurations applied to `npx playwright test`.</Info>
+
+<Info>
+Checkly applies these Playwright defaults when you do not set them yourself: `workers: 4`, `retries: 2`, `use.video: "on-first-retry"`, and `use.screenshot: "on-first-retry"`. Checkly also records traces on every run, uses the Checkly reporter, and appends a Checkly user-agent suffix. Checkly supports Playwright's `globalTimeout`; the timer starts when `npx playwright test` begins.
+</Info>
 
 </ResponseField>
 
@@ -200,7 +223,7 @@ Defines the glob patterns for files and directories that should be included when
 new PlaywrightCheck("critical-e2e-monitor", {
   name: "Critical E2E Monitor",
   playwrightConfigPath: "../playwright.config.ts",
-  include: ['.npmrc','test-files/**'],
+  include: [".npmrc", "test-files/**"],
 })
 ```
 
@@ -208,6 +231,55 @@ new PlaywrightCheck("critical-e2e-monitor", {
 The Playwright Check Suite bundling process uses a breadth-first search algorithm starting from the entrypoint to recursively find all local file dependencies. It parses `import`/`require` statements and follows the dependency graph to include all necessary files.
 
 Use `include` to bundle files that are not directly imported/required.
+</Info>
+
+</ResponseField>
+
+<ResponseField name="engine" type="Engine">
+
+The JavaScript engine and version used to run the Playwright Check Suite. Use the `Engine` helpers to select Node.js or Bun explicitly.
+
+**Usage:**
+
+<CodeGroup>
+
+```ts Node.js highlight={1,5}
+import { Engine, PlaywrightCheck } from "checkly/constructs"
+
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  engine: Engine.node("24"),
+})
+```
+
+```ts Bun highlight={1,5}
+import { Engine, PlaywrightCheck } from "checkly/constructs"
+
+new PlaywrightCheck("critical-e2e-monitor", {
+  name: "Critical E2E Monitor",
+  playwrightConfigPath: "../playwright.config.ts",
+  engine: Engine.bun("1.3"),
+})
+```
+
+</CodeGroup>
+
+If you omit `engine`, the Checkly CLI tries to detect it from project version files. It checks `.node-version`, `.nvmrc`, `.tool-versions` (`nodejs` or `bun`), `.bun-version`, and `package.json` `engines.node` or `engines.bun`.
+
+When both Node.js and Bun candidates are found, Node.js takes precedence. `.nvmrc` aliases such as `lts`, `lts/*`, `node`, `stable`, and `latest` are skipped.
+
+For `package.json` engine ranges, the CLI uses the minimum version from the semver range. For example, `>=22` resolves to Node.js `22`, and `>=1.3` resolves to Bun `1.3`.
+
+Detected and explicit versions are checked against Checkly's engine rules:
+
+| Engine | Supported versions | Resolution behavior |
+|--------|--------------------|---------------------|
+| Node.js | `22`, `24`, `26` | Older, EOL, non-LTS, or future major versions are remapped to the nearest supported LTS version with a warning |
+| Bun | `1.3` | Older or future `1.x` versions are remapped to `1.3` with a warning; `2.x` and newer are rejected |
+
+<Info>
+If no engine is set and the CLI cannot auto-detect one, Checkly uses the default Node.js 22 engine.
 </Info>
 
 </ResponseField>

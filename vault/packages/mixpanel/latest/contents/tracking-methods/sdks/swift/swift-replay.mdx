@@ -190,11 +190,11 @@ Currently, there are seven config options:
 | --- | --- | --- |
 | `wifiOnly` | When `true`, replay events will only be flushed to the server when the device has a WiFi connection. If there is no wifi, flushes are skipped and the events remain in the in-memory queue until wifi is restored (or until the queue reaches its limit and the oldest events are evicted to make room for newer events). <br/> When `false`, replay events will be flushed with any network connection, including cellular. | `true` |
 | `autoMaskedViews` | This is a `Set` of enum options for the types of views that should be masked by the SDK automatically. | `[.image, .text, .web, .map]` |
-| `autoStartRecording` | This is a boolean value that determines whether or not recording begins automatically upon initialization and when returning to the foreground. | `true` |
+| `autoStartRecording` | This is a boolean value that determines whether or not recording begins automatically upon initialization and when returning to the foreground. <br/> **Deprecated in v1.3.0:** Use `recordingSessionsPercent` set to `0.0` to disable automatic recording. | `true` |
 | `recordingSessionsPercent` | This is a value between `0.0` and `100.0` (default) that controls the sampling rate for automatically triggered session replays. <br/> At `0.0` no sessions will be recorded. At `100.0` all sessions will be recorded.  | `100.0` |
 | `flushInterval` | Specifies the flush interval (in seconds) at which session replay events are sent to the Mixpanel server. | `10` |
 | `enableLogging` | This is a boolean value that determines whether or not debugging logs are printed to the console. | `false` |
-| `remoteSettingsMode` | Setting for handling remote configuration during SDK initialization. Can be `disabled`, `fallback`, `strict`. | `disabled` |
+| `remoteSettingsMode` | Setting for handling remote configuration during SDK initialization. Can be `.disabled`, `.fallback`, `.strict`. | `.disabled` |
 | `enableSessionReplayOniOS26AndLater` | Forces Session Replay to be enabled on iOS 26+, bypassing compatibility checks. Session Replay is disabled by default for apps built with Xcode 26+ running on iOS 26+ due to SwiftUI automasking issues. See the warning callout above for details. | `false` |
 
 **autoMaskedViews Example Usage**
@@ -270,20 +270,24 @@ MPSessionReplay.getInstance()?.flush()
 
 ## Remote Configuration
 
-By setting `remoteSettingsMode` you can quickly set SDK options for your project in mixpanel under `Settings > Project > Session Replay`.
+<Callout type="info">
+  Available only for customers with a paid session replay add-on.
+</Callout>
+
+By setting `remote_settings_mode` you can quickly set SDK options for your project in Mixpanel under `Settings > Organization Settings > Session Replay`.
 
 Three modes are available:
 
-- `disabled`: Do not use remote configuration and proceed to use the hardcoded initial options provided in `MPSessionReplay.initialize`
-- `fallback`: Attempt to retrieve remote configuration and proceed with those settings. If there is failure or timeout (500 ms), will use initial provided options.
-- `strict`: Will prevent session replay from auto-starting unless a remote configuration was successfully retrieved.
+- `.disabled`: Do not use remote configuration and proceed to use the SDK initialization config provided in `MPSessionReplay.initialize`
+- `.fallback`: Attempt to retrieve remote configuration and proceed with those settings. If there is failure or timeout (500 ms), will use previously cached remote settings (from last successful fetch) or the SDK initialization config.
+- `.strict`: Requires successful remote configuration fetch for SDK initialization.
 
 Can use this setting to quickly update and adjust configurations to your liking.
 
 List of currently supported remote settings:
 - `recordingSessionsPercent`
 
-Settings that are not yet supported, will not appear in the remote configuration. These non-included options will use the value that was initially set by the user for all `remoteSettingsMode` options.
+Settings that are not yet supported, will not appear in the remote configuration. These non-included options will use the value from the SDK initialization config.
 
 ## Replay ID
 

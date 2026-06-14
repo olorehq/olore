@@ -1,11 +1,19 @@
 ---
 title: Data anonymization
 subtitle: Mask sensitive data in development branches using PostgreSQL Anonymizer
+summary: >-
+  Anonymized branches permanently replace PII in a branch copy using static
+  masking via the PostgreSQL Anonymizer extension. The parent branch data
+  remains unchanged. Use this when you need production-realistic test data
+  without exposing sensitive information in development or CI/CD pipelines.
+  Masking rules are configured per branch through the Console, REST API, or
+  SQL SECURITY LABEL commands. Foreign key columns cannot be masked directly,
+  and the branch is unavailable while anonymization runs.
 redirectFrom:
   - /docs/concepts/anonymized-data
 tag: new
 enableTableOfContents: true
-updatedOn: '2026-01-30T19:25:14.193Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBeta />
@@ -30,19 +38,17 @@ This feature uses **static masking**, which permanently transforms data in the b
 
 <TabItem>
 
-Select **Anonymized data** as the data option when creating a new branch.
+To create a branch with anonymized data from the Neon Console:
 
-1. Navigate to your project in the Neon Console
-2. Select **Projects** -> **Branches** from the sidebar
-3. Click **New Branch**
-4. In the **Create new branch** dialog:
-   - Select your **Parent branch** (typically `production` or `main`)
-   - (Optional) Enter a **Branch name**
-   - (Optional) **Automatically delete branch after** is checked by default with 1 day selected. You can change it, uncheck it, or leave it as is to automatically delete the branch after the specified time.
-   - Under data options, select **Anonymized data**
-5. Click **Create**
-
-![Neon Console 'Create new branch' dialog with 'Anonymized data' selected](/docs/workflows/anon-create-a-new-branch.png)
+1. Select your project.
+2. Select **Branches**.
+3. Click **New branch** to open the branch creation dialog.
+   ![Neon Console 'Create new branch' dialog with 'Anonymized data' selected](/docs/workflows/anon-create-a-new-branch.png)
+4. Select a **Parent branch**. This determines the origin of the schema and data for your new branch. By default, your project's default branch (e.g., `production`) is selected, but you can choose any existing branch in your project.
+5. Specify a branch name, or leave it blank to use the default generated name.
+6. Select the **Anonymized data** option.
+7. Configure auto-deletion: By default, **Automatically delete branch after** is checked with 1 day selected to help prevent unused branches from accumulating. You can choose 1 hour, 1 day, or 7 days, or uncheck to disable expiration entirely. This is useful for CI/CD pipelines and short-lived development environments. Note: This default only applies when creating branches through the Console; API branches have no expiration by default. Refer to our [Branch expiration guide](/docs/guides/branch-expiration) for details.
+8. Click **Create** to create your anonymized branch.
 
 After creation, the Console loads the [Data Masking](#manage-masking-rules) page where you define and execute anonymization rules for your branch.
 </TabItem>
@@ -106,7 +112,7 @@ You can create and manage masking rules via the Console, API, or SQL. All three 
 From the **Data Masking** page:
 
 1. Select the schema, table, and column you want to mask.
-2. Choose a masking function from the dropdown list (e.g., **Dummy Free Email** to execute `anon.dummy_free_email()`). The Console provides a curated list of common functions. For the full set of PostgreSQL Anonymizer functions, you must use the API or SQL.
+2. Choose a masking function from the dropdown list (for example, **Dummy Free Email** to execute `anon.dummy_free_email()`). The Console provides a curated list of common functions. For the full set of PostgreSQL Anonymizer functions, you must use the API or SQL.
 
 <Admonition type="tip">
 For email columns with unique constraints, use **Random Unique Email**, which generates UUID-based emails that maintain uniqueness while preserving the email format.
@@ -130,7 +136,7 @@ Rerunning the anonymization process on the anonymized branch applies rules to pr
 
 <TabItem>
 
-For complete API documentation with request/response examples, see the [Data anonymization API reference](/docs/workflows/data-anonymization-api). Note that the Console uses friendly labels for masking functions (e.g., **Random Unique Email**), but the API returns and accepts the underlying PostgreSQL expressions (e.g., `pg_catalog.concat(anon.dummy_uuidv4(), '@example.com')`).
+For complete API documentation with request/response examples, see the [Data anonymization API reference](/docs/workflows/data-anonymization-api). Note that the Console uses friendly labels for masking functions (for example, **Random Unique Email**), but the API returns and accepts the underlying PostgreSQL expressions (for example, `pg_catalog.concat(anon.dummy_uuidv4(), '@example.com')`).
 
 **Update masking rules**
 
@@ -296,7 +302,6 @@ This query returns all rules regardless of how they were created (Console, API, 
 - Branch is unavailable during anonymization.
 - Masking does not fully enforce database constraints, but improvements are ongoing. For example, use **Random Unique Email** for columns with unique constraints on emails.
 - **Foreign key columns cannot be masked directly.** To maintain referential integrity, mask the corresponding primary key column instead. Neon automatically handles foreign key constraints during anonymization, temporarily modifying them to cascade updates and restoring them to their original state after the process completes. The Console displays an alert with a "Go to primary key" action that navigates to the relevant primary key column.
-- Anonymized branches do not currently support projects with [IP Allow](/docs/manage/projects#configure-ip-allow) or [Private Networking](/docs/guides/neon-private-networking) enabled.
 - The Console provides a curated subset of masking functions for creation. Use the API or SQL for all [PostgreSQL Anonymizer masking functions](https://postgresql-anonymizer.readthedocs.io/en/latest/masking_functions/).
 
 ## Related resources

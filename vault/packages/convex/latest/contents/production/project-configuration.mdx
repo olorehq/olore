@@ -64,6 +64,46 @@ have the following config:
 }
 ```
 
+### Configuring AI files messages
+
+Convex can install AI helper files (for tools like Cursor and Claude Code) and
+show install or update suggestions during `npx convex dev`.
+
+:::caution
+
+This setting is supported in Convex CLI `1.34.1` and later.
+
+:::
+
+To suppress those suggestions, set `aiFiles.enabled` to `false` in
+`convex.json`:
+
+```json title="convex.json"
+{
+  "$schema": "./node_modules/convex/schemas/convex.schema.json",
+  "aiFiles": {
+    "enabled": false
+  }
+}
+```
+
+When this is `false`, `npx convex dev` will not show the AI files install or
+staleness messages.
+
+You can also configure which agents the Convex skills are installed for
+(defaults to `["claude-code", "codex"]`):
+
+```json title="convex.json"
+{
+  "$schema": "./node_modules/convex/schemas/convex.schema.json",
+  "aiFiles": {
+    "skills": {
+      "agents": ["claude-code", "codex", "cursor"]
+    }
+  }
+}
+```
+
 ### Installing packages on the server
 
 You can specify which packages used by Node actions should be installed on the
@@ -79,10 +119,10 @@ the `_generated/api.js` file via the `generateCommonJSApi` field.
 ### Configuring the Node.js version
 
 You can specify which Node.js version is used by Node actions via the
-`node.nodeVersion` field. The currently supported values are `"20"` and `"22"`.
-[Read more](/functions/runtimes.mdx#nodejs-version-configuration).
+`node.nodeVersion` field. The currently supported values are `"20"`, `"22"`, and
+`"24"`. [Read more](/functions/runtimes.mdx#nodejs-version-configuration).
 
-<Admonition type="info" title="Convex version required">
+<Admonition type="info" title="Convex version requirement">
 
 To change the Node.js version used by your project, you must use the `convex`
 NPM package version 1.27.0 or later.
@@ -99,9 +139,12 @@ NPM package version 1.27.0 or later.
 ```
 
 Note: This configuration is not supported when running the self-hosted Convex
-backend. The node version that is specified in the
+backend. The Node version that is specified in the
 [.nvmrc](https://github.com/get-convex/convex-backend/blob/main/.nvmrc) will be
 used instead.
+
+When pushing a new Node.js version to the server, the new code for your
+functions may be executed in the old Node.js version for up a few minutes.
 
 ### Using static code generation (beta)
 
@@ -145,7 +188,7 @@ typechecking. If you would like to use the TypeScript 7 native preview instead,
 you can set the `typescriptCompiler` option to `tsgo`. Note that
 `@typescript/native-preview` must be installed in your project to use `tsgo`.
 
-<Admonition type="info" title="Convex version required">
+<Admonition type="info" title="Convex version requirement">
 
 To use the TypeScript 7 native preview, you must use the `convex` NPM package
 version 1.31.1 or later.
@@ -168,7 +211,7 @@ content from the bundle. Set the `includeSourcesContent` property to `false` in
 the `bundler` options. Stack traces will continue to function as usual, but you
 will no longer be able to view your source code in the dashboard.
 
-<Admonition type="info" title="Convex version required">
+<Admonition type="info" title="Convex version requirement">
 
 This configuration option is only available in version 1.31.3 or later of the
 `convex` NPM package.
@@ -190,7 +233,7 @@ If you're using [WorkOS AuthKit](/auth/authkit/index.mdx) for authentication,
 you can configure automatic provisioning (development only) and configuration of
 WorkOS environments via the `authKit` field.
 
-<Admonition type="info" title="Convex version required">
+<Admonition type="info" title="Convex version requirement">
 
 This configuration option is only available in version 1.31.6 or later of the
 `convex` NPM package.
@@ -238,3 +281,11 @@ This configuration controls how WorkOS environments are provisioned and
 configured for each deployment type (dev, preview, prod). See the
 [Automatic AuthKit Configuration](/auth/authkit/auto-provision.mdx) guide for
 complete details.
+
+<Admonition type="info">
+  Provisioning the Convex-managed WorkOS team and disconnecting it require the
+  you to be an admin of the team. Provisioning a per-deployment WorkOS
+  environment uses the deployment's own management permission, any team member
+  can self-serve one for their dev/preview deployment via `npx convex dev`, but
+  production deployments require you to be a team or project admin.
+</Admonition>

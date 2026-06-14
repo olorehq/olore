@@ -1,11 +1,16 @@
 ---
 title: Migrate from Heroku to Neon Postgres
+summary: >-
+  Heroku to Neon migration using the Heroku CLI command `heroku pg:pull`, which
+  runs pg_dump and pg_restore under the hood. Walks through creating a Neon
+  project, obtaining the required unpooled connection string, and verifying the
+  imported data in the Neon Console.
 enableTableOfContents: true
 redirectFrom:
   - /docs/how-to-guides/hasura-heroku-migration
   - /docs/how-to-guides/import-from-heroku
   - /docs/import/import-from-heroku
-updatedOn: '2025-07-03T12:36:49.566Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This guide describes how to import your data from Heroku Postgres to Neon.
@@ -28,6 +33,10 @@ The instructions assume that you have installed the Heroku CLI, which is used to
    ```text shouldWrap
    postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
    ```
+
+   <Admonition type="important">
+   `heroku pg:pull` uses `pg_dump` toward your Neon database. Avoid using a [pooled connection string](/docs/reference/glossary#pooled-connection-string). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
+   </Admonition>
 
 ## Retrieve your Heroku app name and database name
 

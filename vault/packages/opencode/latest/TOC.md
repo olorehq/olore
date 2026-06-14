@@ -4,44 +4,45 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/` | All documentation (flat, no subdirectories) | 35 |
+| `contents/` | All documentation (flat structure) | 36 |
 
 ## contents/
 
 | File | Description |
 |------|-------------|
-| `acp.mdx` | Use OpenCode in any ACP-compatible editor |
-| `agents.mdx` | Configure and use specialized agents |
-| `cli.mdx` | OpenCode CLI options and commands |
-| `commands.mdx` | Create custom commands for repetitive tasks |
-| `config.mdx` | Using the OpenCode JSON config |
-| `custom-tools.mdx` | Create tools the LLM can call in opencode |
-| `ecosystem.mdx` | Projects and integrations built with OpenCode |
-| `enterprise.mdx` | Enterprise features and deployment |
-| `formatters.mdx` | Language-specific formatters used by OpenCode |
-| `github.mdx` | Use OpenCode in GitHub issues and pull requests |
-| `gitlab.mdx` | Use OpenCode in GitLab issues and merge requests |
-| `go.mdx` | OpenCode Go low-cost subscription for open models |
-| `ide.mdx` | OpenCode extension for VS Code, Cursor, and other IDEs |
-| `index.mdx` | Introduction and getting started with OpenCode |
-| `keybinds.mdx` | Customize your keybinds |
-| `lsp.mdx` | LSP server integration |
-| `mcp-servers.mdx` | Add local and remote MCP tools |
-| `models.mdx` | Configuring an LLM provider and model |
-| `modes.mdx` | Different modes for different use cases |
-| `network.mdx` | Configure proxies and custom certificates |
-| `permissions.mdx` | Control which actions require approval |
-| `plugins.mdx` | Write your own plugins to extend OpenCode |
-| `providers.mdx` | Using any LLM provider in OpenCode |
-| `rules.mdx` | Set custom instructions for opencode |
-| `sdk.mdx` | Type-safe JS client for opencode server |
-| `server.mdx` | Interact with opencode server over HTTP |
-| `share.mdx` | Share OpenCode conversations via public links |
-| `skills.mdx` | Define reusable behavior via SKILL.md definitions |
-| `themes.mdx` | Select a built-in theme or define your own |
-| `tools.mdx` | Manage the tools an LLM can use |
-| `troubleshooting.mdx` | Common issues and how to resolve them |
-| `tui.mdx` | Using the OpenCode terminal user interface |
-| `web.mdx` | Using OpenCode in your browser |
-| `windows-wsl.mdx` | Run OpenCode on Windows using WSL |
-| `zen.mdx` | OpenCode Zen curated verified model list |
+| `index.mdx` | Introduction and getting started overview |
+| `cli.mdx` | CLI reference — all command-line flags and options |
+| `commands.mdx` | TUI keyboard commands and slash commands |
+| `config.mdx` | Configuration reference for opencode.json/opencode.jsonc |
+| `tui.mdx` | Terminal UI — using the interactive interface |
+| `web.mdx` | Web interface — running OpenCode in the browser |
+| `ide.mdx` | IDE extension integration |
+| `acp.mdx` | Agent Client Protocol (ACP) support for editors |
+| `agents.mdx` | Configuring and using sub-agents |
+| `skills.mdx` | Skills system — reusable agent instruction sets |
+| `tools.mdx` | Built-in tools available to the agent |
+| `custom-tools.mdx` | Creating and registering custom tools |
+| `mcp-servers.mdx` | MCP (Model Context Protocol) server configuration |
+| `providers.mdx` | AI provider setup (OpenAI, Anthropic, etc.) |
+| `models.mdx` | Model selection and configuration |
+| `zen.mdx` | OpenCode Zen — curated model list from OpenCode team |
+| `rules.mdx` | Rules system — per-project agent instructions |
+| `permissions.mdx` | Tool permission system and approval flows |
+| `policies.mdx` | Policy configuration for enterprise/team use |
+| `references.mdx` | Project references — external directories and repos |
+| `plugins.mdx` | Plugin system and writing plugins |
+| `sdk.mdx` | JavaScript/TypeScript SDK reference |
+| `server.mdx` | OpenCode server mode — headless API server |
+| `share.mdx` | Sharing sessions and outputs |
+| `lsp.mdx` | Language Server Protocol integration |
+| `formatters.mdx` | Code formatter configuration |
+| `keybinds.mdx` | Keyboard shortcut configuration |
+| `themes.mdx` | Theme configuration and customization |
+| `network.mdx` | Network configuration and proxies |
+| `go.mdx` | Go language-specific setup |
+| `github.mdx` | GitHub integration |
+| `gitlab.mdx` | GitLab integration |
+| `windows-wsl.mdx` | Windows and WSL setup guide |
+| `troubleshooting.mdx` | Common issues and fixes |
+| `enterprise.mdx` | Enterprise setup — SSO, AI gateway, centralized config |
+| `ecosystem.mdx` | Community plugins and integrations |

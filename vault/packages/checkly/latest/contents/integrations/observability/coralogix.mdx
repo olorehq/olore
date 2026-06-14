@@ -58,6 +58,18 @@ ingested into Coralogix as traces.
 If you are using a different trace header than the standard `traceparent`, you can configure this header in the *custom 
 trace header* field in the integration settings.
 
+### What's included
+
+- Traces for every check execution
+- HTTP request instrumentation with W3C headers
+- Trace correlation metadata
+
+<Note>
+Check **metrics** (response times, availability, etc.) are not sent through this integration. To send these metrics
+to Coralogix, scrape them via the [Prometheus integration](https://www.checklyhq.com/docs/integrations/observability/prometheus-v2/)
+and forward to Coralogix using an OpenTelemetry Collector.
+</Note>
+
 ## RUM integration
 
 In addition to the Open Telemetry tracing, Checkly can also send RUM data to Coralogix for all Browser checks. This enables

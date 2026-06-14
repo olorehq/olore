@@ -1,0 +1,131 @@
+---
+title: hash_sha512
+description: 'This page explains how to use the hash_sha512 function in APL.'
+---
+
+## Introduction
+
+The `hash_sha512` function returns the SHA-512 hash of a scalar value as a 128-character hexadecimal string. Use it when your security policy or compliance requirements demand the strongest standard hash available, or when you need a longer digest than SHA-256 provides.
+
+SHA-512 produces a 512-bit digest, making it the most collision-resistant of the SHA hash functions available in APL. It's well suited for high-security fingerprinting, long-term integrity verification, and compliance use cases. For most everyday hashing tasks, [`hash_sha256`](/apl/scalar-functions/hash-functions/hash-sha256) is sufficient.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk provides the `sha512(X)` function that returns a 128-character hex string. APL's `hash_sha512` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hashed = sha512(id)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha512(id)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no standard SHA-512 function. PostgreSQL provides `encode(digest(value, 'sha512'), 'hex')`. APL's `hash_sha512` returns the same 128-character lowercase hex digest.
+
+<CodeGroup>
+```sql SQL example
+SELECT encode(digest(id, 'sha512'), 'hex') AS hashed FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha512(id)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hash_sha512(source)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ------ | ------ | -------- | ----------- |
+| source | scalar | Yes | The value to hash. APL converts it to a string before hashing. |
+
+### Returns
+
+The SHA-512 hash of `source` as a 128-character lowercase hexadecimal string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Anonymize user IDs with a maximum-strength hash before publishing compliance-sensitive usage summaries.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hashed_id = hash_sha512(id)
+| summarize request_count = count() by hashed_id
+| top 5 by request_count
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20hashed_id%20%3D%20hash_sha512%28id%29%20%7C%20summarize%20request_count%20%3D%20count%28%29%20by%20hashed_id%20%7C%20top%205%20by%20request_count%22%7D)
+
+**Output**
+
+| hashed_id | request_count |
+| --------- | ------------- |
+| 0878a61b503dd5a9fe9ea3545d6d3bd41c3b50a47f3594cb8bbab3e47558d68fc8fcc409cd0831e91afc4e609ef9da84e0696c50354ad86b25f2609efef6a834 | 128 |
+| 95c6eacdd41170b129c3c287cfe088d4fafea34e371422b94eb78b9653a89d4132af33ef39dd6b3d80e18c33b21ae167ec9e9c2d820860689c647ffb725498c4 | 97 |
+| cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e | 85 |
+
+The query uses SHA-512 to produce maximum-strength anonymized user keys before aggregating request counts.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Fingerprint span IDs with SHA-512 for use in high-security audit trails.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hashed_span = hash_sha512(span_id)
+| project _time, ['service.name'], hashed_span, duration
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20hashed_span%20%3D%20hash_sha512%28span_id%29%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20hashed_span%2C%20duration%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time | service.name | hashed_span | duration |
+| ----- | ------------ | ----------- | -------- |
+| 2024-01-15 10:23:01 | frontend | 0878a61b503dd5a9fe9ea3545d6d3bd41c3b50a47f3594cb8bbab3e47558d68f... | 320ms |
+| 2024-01-15 10:23:02 | checkout | 95c6eacdd41170b129c3c287cfe088d4fafea34e371422b94eb78b9653a89d41... | 875ms |
+| 2024-01-15 10:23:03 | cart | cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce... | 140ms |
+
+The query outputs SHA-512 fingerprints of span IDs for external audit systems that require maximum-length digests.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [hash_sha256](/apl/scalar-functions/hash-functions/hash-sha256): Returns a 64-character SHA-256 hex digest. Use `hash_sha256` when SHA-256 strength is sufficient and you prefer shorter digests.
+- [hash_sha1](/apl/scalar-functions/hash-functions/hash-sha1): Returns a 40-character SHA-1 hex digest. SHA-1 is deprecated for security use; prefer `hash_sha512`.
+- [hash_md5](/apl/scalar-functions/hash-functions/hash-md5): Returns a 32-character MD5 hex digest. Not cryptographically safe; use `hash_sha512` for security contexts.
+- [hash](/apl/scalar-functions/hash-functions/hash): Returns a signed 64-bit integer hash. Use `hash` when you need a compact numeric key rather than a hex string.

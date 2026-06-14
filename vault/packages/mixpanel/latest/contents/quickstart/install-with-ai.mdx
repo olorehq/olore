@@ -1,228 +1,136 @@
-# Install with AI [BETA]
+import { Callout } from 'nextra/components'
 
-This guide will help you add Mixpanel analytics to your app or website using AI assistance, even if you're not a developer. The Mixpanel Installation Wizard creates step-by-step instructions that you can give to AI coding tools like Claude, ChatGPT, or Cursor.
+# Install with AI
+
+The Mixpanel Implementation Skill installs Mixpanel into your project through your AI coding agent. It handles SDK selection, identity management, event tracking, and compliance gates through a guided conversation — with paths ranging from a one-session Quick Start to a full production-ready rollout.
 
 ## What You'll Need
 
 Before starting, make sure you have:
 
 - A Mixpanel account with Admin or Owner access ([sign up](https://www.mixpanel.com/signup) if you don't have one)
-- Access to an AI coding assistant (Claude, ChatGPT, Cursor, etc.)
-    - Be sure to use the most advanced AI model you have access to
-- Your project's code files and a development or staging environment to test the changes
+- An AI coding agent with access to your project files (Claude Code, Cursor, ChatGPT, GitHub Copilot, Windsurf, etc.)
+    - Use the most advanced model your tool offers
+- A development or staging environment where you can test the changes
 
 ## Step 1: Get Your Mixpanel Project Token
 
-1. Log into your [Mixpanel account](https://www.mixpanel.com/login)
-2. Go to your [project settings](https://www.mixpanel.com/settings/project) (gear icon in the bottom left)
-3. Click on "Overview" in the left sidebar
-4. Scroll down to Access Keys section and copy your "Project Token" - it looks like a long string of letters and numbers
+1. **Log into your Mixpanel account** at [mixpanel.com/login](https://www.mixpanel.com/login).
+2. **Open project settings** by clicking the gear icon in the bottom left.
+3. **Click "Overview"** in the left sidebar.
+4. **Copy your Project Token** from the Access Keys section. It's a long string of letters and numbers.
+   *Note: You'll need to be an Admin or Owner in your project.*
+5. **Keep this handy** — you'll give it to your coding agent in the next step.
 
-    (You will need to be an Admin or Owner in your project)
+## Step 2: Run the Mixpanel Implementation Skill
 
-5. Keep this handy - you'll need it in the next step
+The skill runs inside your coding agent. To start it:
 
-## Step 2: Create Your AI Instructions
-
-1. Simply paste this command in your terminal:
-```
-npx @mixpanel/mixpanel-wizard
-```
-2. Go through and answer a few quick questions and it will then create a customized installation guide
-
-### Choose Your Settings
-
-You'll need to pick three things:
-
-**A. Choose Your SDK Type**
-
-This depends on what type of app or website you're building:
-
-- **`javascript`**
-- **`react-native`**
-- **`ios-swift`**
-- **`ios-objective-c`**
-- **`android`**
-- **`python`**
-- **`nodejs`**
-- **`flutter`**
-- **`unity`**
-- **`go`**
-- **`ruby`**
-- **`php`**
-- **`java`**
-
-*Don't see your platform? Check with a developer or choose the closest match.*
-
-**B. Choose Your Event Type**
-
-This determines what kinds of user actions you'll track:
-
-- **`ai`** - Best for AI-powered features (chatbots, AI tools, ML features)
-- **`ecommerce`** - Best for online stores and shopping apps
-- **`default`** - Good general-purpose events for most other apps
-
-**C. Decide on Extra Features**
-
-- **Autocapture** - Automatically tracks clicks and page views (JavaScript SDK only)
-- **Session Replay** - Records user sessions for debugging (JavaScript, iOS Swift, Android SDKs only)
-
-*Recommendation: Enable both if they're available for your platform*
-
-## Step 3: Give Instructions to Your AI Assistant
-
-1. Open your AI coding tool (Claude, ChatGPT, Cursor, etc.).
-2. Copy over the instruction file generated from the step2 to your project.
-3. Make sure it has access to your project files
-4. Next, copy and paste this prompt into your AI Agent
+1. **Open your AI coding agent** and make sure it has access to your project files.
+2. **Paste this prompt** into the chat:
 
 ```
-Let's set up Mixpanel.
-1. Set up mixpanel by following the steps in MIXPANEL_INSTALLATION_INSTRUCTIONS.txt. Make sure to follow the global rules specified in the MIXPANEL_INSTALLATION_INSTRUCTIONS.txt.
-2. After completing the steps in the installation guide, delete the MIXPANEL_INSTALLATION_INSTRUCTIONS.txt
+Set up Mixpanel tracking in this project.
+Use the Mixpanel setup skill: https://storage.googleapis.com/cdn-mxpnl-com/libs/mixpanel-skill/skill.md
 ```
 
-4. Let the AI complete all the steps
+3. **Answer the skill's questions.** The skill scans your codebase, confirms a few one-way-door details (platform, CDP usage, EU/CA users, your most important user action), and then writes the integration code.
 
-The AI will:
+## How the Skill Works
 
-- Follow the generated setup instructions
-- Install the necessary code
-- Set up tracking for your chosen events
+The skill starts by asking which mode fits your goal:
 
-## Step 4: Test Your Installation
+| Mode | What it covers |
+|------|----------------|
+| **Quick Start** | Get your first two events into Mixpanel in one session — sign-up plus your Value Moment. |
+| **Full Implementation** | Build a complete, production-ready setup: discovery, analytics strategy, data model, tracking plan, identity, and governance. |
+| **Add Tracking** | Extend an existing Mixpanel implementation with new events. |
+| **Audit** | Diagnose an existing implementation and produce a prioritized fix list. |
 
-After the AI completes the setup, test that everything is working:
+You can switch modes mid-flow. If Quick Start surfaces consent, CDP, or identity complexity, the skill offers to escalate to Full Implementation. If Full Implementation feels heavy, you can downshift to Quick Start.
 
-### Quick Test
+### What the Skill Does
 
-1. Deploy the changes to your testing environment
-2. Use your app or website normally
-3. Go to your Mixpanel dashboard
-4. Click on "Events" in the left sidebar or visit the [Events page](https://mixpanel.com/report/events)
-5. You should see events flowing in as you use your app (you may need to refresh Mixpanel)
+- **Scans your codebase** to identify your platform, framework, auth flow, and candidate events — so you don't answer questions the code already answers.
+- **Selects the correct SDK** for your platform (JavaScript, React Native, iOS Swift, Android, Python, Node.js, Flutter, Go, Ruby, PHP, Java, Unity).
+- **Routes through your CDP** if you use Segment, Rudderstack, or mParticle, instead of installing the SDK directly.
+- **Gates SDK initialization behind consent** when you have EU or California users.
+- **Wires identity correctly** — `identify` on login or signup, `reset` on logout, in the right files.
+- **Drops an `AGENTS.md` file** in your repo so future AI agents know Mixpanel is your analytics tool, how it's configured, and how to add tracking consistently.
+- **Verifies events in Live View** before considering the work done.
 
-### What to Look For
+### If You Don't Have Codebase Access
 
-Depending on your event type, you should see:
+The skill also supports a developer handoff path. Tell the skill you're scoping the work for a developer to implement later, and it generates a `MIXPANEL_IMPLEMENTATION_SPEC.md` file with copy-paste-ready code, business context, verification steps, and troubleshooting — instead of writing code directly.
 
-**For AI events:**
+## Step 3: Test Your Installation
 
-- "Launch AI" when AI features are used
-- "AI Prompt Sent" when users send prompts
-- "AI Response Sent" when AI responds
+After the skill finishes, confirm events are flowing:
 
-**For E-commerce events:**
+1. **Deploy the changes** to your testing environment.
+2. **Use your app or website** the way a user would.
+3. **Open the [Events page](https://mixpanel.com/report/events)** in Mixpanel.
+4. **Confirm events appear** as you interact with your app. You may need to refresh.
 
-- "Product Viewed" when products are viewed
-- "Add to Cart" when items are added to cart
-- "Purchase" when transactions complete
+### What You Should See
 
-**For Default events:**
+The skill names events based on your product, but a typical implementation includes:
 
-- "Sign Up" for new user registrations
-- "Page View" for page visits
-- "Search" for search queries
+- `sign_up_completed` — when a user finishes account creation
+- A **Value Moment** event named for the most important action in your product (e.g., `report_generated`, `purchase_completed`, `prompt_sent`)
+- Identity tied to your authenticated user ID
+
+If you chose Full Implementation, you'll also have a full tracking plan, governance setup in Lexicon, and a documented identity flow.
 
 ## Troubleshooting
 
-### No Events Showing Up?
+#### No events showing up?
 
-1. Check that you used the correct project token
-2. Verify your app is running and being used
-3. Wait a few minutes - sometimes there's a delay
-4. Check the browser console (F12) for any error messages
+1. Confirm you used the correct project token.
+2. Make sure your app is running and you're actually interacting with it.
+3. Wait a minute or two — there can be a small delay.
+4. Open your browser console (F12) and check for errors.
 
-### Wrong Events Tracking?
+#### Events tracking with the wrong name or properties?
 
-1. Make sure you chose the right event type in Step 2B
-2. Ask your AI assistant to show you what events are being tracked
-3. You can always re-run the setup with different event types
+Tell the skill to switch into **Audit** mode. It reviews what's currently tracked and produces a prioritized fix list.
 
-### Need Help?
+#### Wrong SDK installed?
 
-1. Check the Mixpanel documentation at [docs.mixpanel.com](https://docs.mixpanel.com/)
-2. Ask your AI assistant to explain what it installed
-3. Contact [Mixpanel support](https://mixpanel.com/contact-us/support/) through our help center
+The skill checks platform during its Pre-Flight scan, but if it picked the wrong SDK, tell it and ask it to redo the implementation step. The skill rolls back and tries again with the correct SDK.
 
-### Success! 🎉
+#### The skill is asking for information I don't have?
 
-Once you see events flowing into your Mixpanel dashboard, you're all set! You can now:
+Pause and gather it, or tell the skill you don't have codebase access — it will generate a developer handoff specification instead of writing code.
 
-- View real-time user activity
-- Create reports and dashboards
-- Set up alerts for important events
-- Analyze user behavior patterns
+#### Need more help?
 
-The AI has set up all the technical details for you - now you can focus on understanding your users and growing your product.
+- Browse the [Mixpanel documentation](https://docs.mixpanel.com/).
+- Ask your coding agent to explain what it installed.
+- Contact [Mixpanel support](https://mixpanel.com/contact-us/support/).
 
-## Command Line Mode
+## FAQ
 
-Skip the interactive prompts by providing options directly:
+#### Which coding agents does the skill work with?
 
-```bash
-# Basic usage
-mixpanel-wizard --token YOUR_TOKEN --sdk javascript --events ai
+Any agent that can fetch a URL and follow instructions — Claude Code, Cursor, ChatGPT, GitHub Copilot Chat, Windsurf, and others. The skill is a plain Markdown file your agent reads at runtime.
 
-# With additional options
-mixpanel-wizard --token YOUR_TOKEN --sdk javascript --autocapture --sessionreplay --events ecommerce
+#### Is my code or project token sent to Mixpanel?
 
-# With approval for each code change
-mixpanel-wizard --token YOUR_TOKEN --sdk javascript --confirm-each --events ai
+No. The skill runs entirely inside your coding agent. Your code never leaves your environment, and your project token is used only by the Mixpanel SDK that gets installed in your project.
 
-# iOS with specific package manager
-mixpanel-wizard --token YOUR_TOKEN --sdk ios-swift --events default
-```
+#### Can I run the skill again later?
 
-### Available Options
+Yes. Add new events through **Add Tracking** mode, or review your setup through **Audit** mode. The `AGENTS.md` file the skill drops in your repo gives future agents the context they need to add events consistently.
 
-| Option            | Description                                                    | Values                                                                                                                                      |
-| ----------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-t, --token`     | Your Mixpanel project token                                    | String                                                                                                                                      |
-| `--sdk`           | SDK type to install                                            | `javascript`, `flutter`, `ios-objective-c`, `ios-swift`, `android`, `react-native`, `go`, `python`, `ruby`, `php`, `nodejs`,`java`, `unity` |
-| `--events`        | Additional event type options                                  | `ai`, `ecommerce`, `default`                                                                                                                |
-| `--autocapture`   | Enable autocapture (JavaScript only)                           | Boolean flag                                                                                                                                |
-| `--sessionreplay` | Enable session replay (Javascript, iOS Swift and Android Only) | Boolean flag                                                                                                                                |
-| `--confirm-each`  | Require approval for each code change made by AI               | Boolean flag                                                                                                                                |
+#### What if I'm not technical?
 
-### Output
+The skill works whether or not you know how to code. If you don't have codebase access, choose the developer handoff path — the skill generates a complete specification your developer can implement.
 
-The wizard generates a `MIXPANEL_INSTALLATION_INSTRUCTIONS.txt` file containing:
+#### Does the skill work with a CDP like Segment?
 
-1. **Step 1: SDK Installation** - Platform-specific installation commands and configuration
-2. **Step 2: User Identification** - Code snippets for identifying users
-3. **Step 3: Event Tracking** - Implementation examples and event templates
-4. **Best Practices** - Security guidelines and recommendations
+Yes. If you route data through Segment, Rudderstack, or mParticle, the skill skips direct SDK installation and configures Mixpanel through your CDP instead.
 
-Simply provide the prompt from MIXPANEL_INSTALLATION_INSTRUCTIONS.txt to your AI coding agent.
-
-## Event Templates
-
-### Default Events
-
-- **Sign Up**: Track new user acquisition with signup method and UTM parameters
-- **Sign In**: Monitor user login events with authentication method tracking
-- **Page View**: Track page/screen views with URL and title information
-- **Search**: Capture search queries and result counts
-- **Error**: Monitor application errors with error types and messages
-- **Purchase**: Track completed transactions with revenue and currency data
-- **Conversion**: Monitor key value moments specific to your product type
-
-### AI Events
-
-- **Launch AI**: Track AI feature engagement and measure adoption patterns
-- **AI Prompt Sent and Prompt Text**: Capture user prompts and analyze engagement intent
-- **AI Response Sent**: Monitor AI outputs with cost, token usage, and response time metrics
-- **API Error**: Track AI feature errors and monitor failure rates
-- **User Feedback**: Collect user sentiment and feedback on AI interactions
-- **AI Dismissed**: Monitor AI feature disengagement points
-- **Conversion Event**: Measure how AI features influence key business outcomes
-
-### E-commerce Events
-
-- **Purchase**: Track completed transactions with cart contents and total price
-- **Add to Cart**: Monitor shopping behavior with cart items and product categories
-- **Product Viewed**: Track product engagement across the purchasing funnel
-- **Ad Data**: Monitor advertising spend and cost data for ROI calculations
-
-**⚠️ Important**: This tool generates AI-optimized installation instructions. Always review and test the generated code before deploying to production. Human oversight is strongly recommended for all integrations.
+<Callout type="warning">
+    The skill generates production code. Always review what your AI agent writes before merging or deploying. Human oversight is recommended for every integration.
+</Callout>

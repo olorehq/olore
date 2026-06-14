@@ -28,6 +28,7 @@ import * as path from "path"
 
 new MultiStepCheck("multistep-check-1", {
   name: "Multistep Check #1",
+  description: "Validates user signup and login flow.",
   locations: ["us-east-1", "eu-west-1"],
   code: {
     entrypoint: path.join(__dirname, "multi-step.spec.ts"),
@@ -41,6 +42,7 @@ import * as path from "path"
 
 new MultiStepCheck("complex-multistep-check", {
   name: "Complex User Journey",
+  description: "Validates user signup and login flow.",
   activated: true,
   runtimeId: "2025.04",
   frequency: Frequency.EVERY_15M,
@@ -74,6 +76,7 @@ new MultiStepCheck("complex-multistep-check", {
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
+| `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -88,6 +91,7 @@ new MultiStepCheck("complex-multistep-check", {
 | `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
 | `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
 | `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+| `triggerIncident` | `IncidentTrigger` | ❌ | - | Create and resolve an incident based on the check's alert configuration |
 
 </Tab>
 </Tabs>
@@ -268,7 +272,9 @@ new MultiStepCheck("my-multistep", {
 </ResponseField>
 
 <ResponseField name="runtimeId" type="string">
-The ID of the runtime to use for executing the multistep check. Required to be `2023.09` or later for multistep check support.
+The Checkly runtime version used to execute the Multistep Check. Runtimes are managed execution environments for Browser and Multistep Checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
+
+Multistep checks require runtime `2023.09` or later.
 
 Usage:
 ```ts highlight={3}

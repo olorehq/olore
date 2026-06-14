@@ -1,0 +1,101 @@
+---
+title: 'Cancellation'
+description: 'Stop in-flight Playwright Check Suite runs from the UI, API, or CLI. Other check types cannot be cancelled.'
+sidebarTitle: 'Cancellation'
+---
+
+Cancellation lets you stop an in-progress [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) run. Cancelled results are flagged with `isCancelled: true`, do not trigger alerts, and are excluded from availability and performance metrics. A session that contains at least one cancelled run ends in a terminal `CANCELLED` status.
+
+## What you can cancel
+
+You can cancel two kinds of sessions, and the behaviour differs:
+
+**Check sessions** — created by the UI "Schedule now" button and `checkly deploy`. A check session is one execution of a single Playwright Check Suite, fanned out across the locations you configured. Cancelling the session stops every in-progress run; cancelling a single run leaves the rest of the session going.
+
+**Test sessions** — created by `checkly test`, `checkly trigger`, and `checkly pw-test`, which all record by default. A test session can contain multiple checks of different types. Cancelling the test session stops only the Playwright Check Suite runs inside it; any URL, API, Browser, Multistep, Heartbeat, TCP, DNS, or ICMP runs in the same session continue until they finish normally. You can also cancel a single Playwright run within the session.
+
+<Warning>
+**Only Playwright Check Suite runs are cancellable.** Other check types cannot be cancelled, even when they appear inside a test session alongside Playwright runs. Scheduled runs are also excluded; cancellation is for user-initiated runs only.
+</Warning>
+
+## How to cancel
+
+<Tabs>
+<Tab title="UI">
+On a check session or test session page, click **Cancel session** in the header to stop the whole session. To stop just a single run, use the cancel button on its row.
+</Tab>
+
+<Tab title="Public API">
+Send a `POST` request to the cancel endpoint for the session type: [`/v1/check-sessions/{checkSessionId}/cancel`](/api-reference/check-sessions/cancel-a-check-session) or [`/v1/test-sessions/{testSessionId}/cancel`](/api-reference/test-sessions/cancel-a-test-session). The session ID goes in the path. Pass an optional `sequenceId` array in the body to cancel only specific runs within the session; send `{}` to cancel everything still running.
+
+```bash Cancel a whole check session
+curl -X POST https://api.checklyhq.com/v1/check-sessions/a1b2c3d4-e5f6-7890-abcd-ef1234567890/cancel \
+  -H "Authorization: Bearer $CHECKLY_API_KEY" \
+  -H "X-Checkly-Account: $CHECKLY_ACCOUNT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```bash Cancel specific runs in a test session
+curl -X POST https://api.checklyhq.com/v1/test-sessions/a1b2c3d4-e5f6-7890-abcd-ef1234567890/cancel \
+  -H "Authorization: Bearer $CHECKLY_API_KEY" \
+  -H "X-Checkly-Account: $CHECKLY_ACCOUNT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"sequenceId": ["b2c3d4e5-f6a7-8901-bcde-f12345678901"]}'
+```
+</Tab>
+
+<Tab title="CLI">
+<Note>CLI cancellation is available in CLI v8.0.0+.</Note>
+
+Press <kbd>Ctrl</kbd>+<kbd>C</kbd> during a recorded test session run — `checkly test`, `checkly trigger`, and `checkly pw-test` all record by default — to cancel the session. The CLI keeps running to report the cancelled results; press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately.
+
+See the [CLI reference](/cli/overview) for command-specific behavior.
+</Tab>
+</Tabs>
+
+## What happens after a run is cancelled
+
+<Steps>
+<Step title="The runner stops execution">
+The runner receives the cancellation signal, aborts the in-flight Playwright run, and reports the result back to Checkly.
+</Step>
+
+<Step title="The result is marked cancelled">
+Each cancelled run's result has `isCancelled: true`. Once the session has stopped (any remaining non-Playwright checks finish normally), the session's status becomes `CANCELLED` because at least one of its runs was cancelled.
+</Step>
+
+<Step title="No alert is sent">
+Cancelled runs never produce failure or recovery alerts, regardless of your alert settings. See [Alert configuration](/communicate/alerts/configuration).
+</Step>
+
+<Step title="Metrics ignore the run">
+Availability, response time percentiles, and success ratios exclude cancelled runs. Your check status does not change. Public and private dashboards omit cancelled runs from their summary counts.
+</Step>
+
+<Step title="Automated incidents are not triggered">
+Because no alert is sent and the check status does not change, [automated incidents](/communicate/status-pages/incidents) are not opened from a cancelled run.
+</Step>
+</Steps>
+
+## API versioning
+
+Cancellation introduces two API additions: a new `CANCELLED` value on the check-session status enum, and a new `isCancelled` boolean on individual check results. The `isCancelled` flag is additive and ships on every check-result and check-session response without a version bump. The status enum change is breaking for clients that switch on status values exhaustively, so the new `CANCELLED` value is only returned by the v2 check-session endpoints; v1 maps cancelled sessions to `TIMED_OUT` in `status` so existing clients continue to work unchanged.
+
+<ResponseField name="v1 check sessions" type="deprecated">
+[`POST /v1/check-sessions/trigger`](/api-reference/check-sessions/trigger-a-new-check-session), [`GET /v1/check-sessions/{checkSessionId}`](/api-reference/check-sessions/retrieve-a-check-session), and [`GET /v1/check-sessions/{checkSessionId}/completion`](/api-reference/check-sessions/await-the-completion-of-a-check-session) report cancelled sessions as `TIMED_OUT` in `status` rather than `CANCELLED`. Per-result objects still include `isCancelled`, so individual cancelled runs remain identifiable.
+</ResponseField>
+
+<ResponseField name="v2 check sessions" type="recommended">
+[`POST /v2/check-sessions/trigger`](/api-reference/check-sessions/trigger-a-new-check-session-v2), [`GET /v2/check-sessions/{checkSessionId}`](/api-reference/check-sessions/retrieve-a-check-session-v2), and [`GET /v2/check-sessions/{checkSessionId}/completion`](/api-reference/check-sessions/await-the-completion-of-a-check-session-v2) return `CANCELLED` in `status` for cancelled sessions. Response shape is otherwise the same as v1.
+</ResponseField>
+
+<ResponseField name="check results" type="additive change">
+[`GET /v1/check-results/{checkId}/{checkResultId}`](/api-reference/check-results/retrieve-a-check-result) and the list endpoints include `isCancelled` on every result.
+</ResponseField>
+
+<ResponseField name="cancel action" type="new endpoints">
+[`POST /v1/check-sessions/{checkSessionId}/cancel`](/api-reference/check-sessions/cancel-a-check-session) and [`POST /v1/test-sessions/{testSessionId}/cancel`](/api-reference/test-sessions/cancel-a-test-session) are the action endpoints. Each takes the session ID in the path and an optional `sequenceId` array in the body.
+</ResponseField>
+
+If you build automation against check sessions and need to distinguish cancelled sessions from genuine timeouts at the session level, switch to the v2 endpoints. Otherwise, the `isCancelled` flag on per-result objects is available in both versions.

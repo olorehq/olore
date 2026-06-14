@@ -5,6 +5,21 @@ sidebarTitle: Overview
 ---
 
 
+<Frame>
+<img
+  className="block dark:hidden"
+  src="/images/next/dns-monitor-overview-light.png"
+  alt="DNS monitor overview"
+  style={{width: "100%"}}
+/>
+<img
+  className="hidden dark:block"
+  src="/images/next/dns-monitor-overview-dark.png"
+  alt="DNS monitor overview"
+  style={{width: "100%"}}
+/>
+</Frame>
+
 ## What are DNS Monitors?
 
 DNS monitors check that your DNS records resolve as expected. They help you catch misconfigurations, expired records, or propagation issues before they impact your users.  
@@ -60,9 +75,24 @@ DNS monitors support the following DNS record types:
 - **SOA**: Start of authority records
 - **TXT**: Text records (SPF, DKIM, DMARC, etc.)
 
-## Limitations
+## DNS Monitor Results
 
-- **Private locations**: DNS monitors do not currently support private locations. You can only run DNS monitors from Checkly's global public locations.
+Select a specific check run to inspect its results:
+
+<Frame>
+  <img src="/images/dns_monitor_results_page.png" alt="DNS monitor results page" />
+</Frame>
+
+* **Summary:** Shows key request and response details:
+   * Target domain
+   * Monitor state (passed, degraded or failed), including the DNS status code
+   * Total check duration
+   * Nameserver used: Defaults to 8.8.8.8 (Google DNS) with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver on errors. You can also configure a custom nameserver and port
+   * Protocol used (UDP or TCP)
+
+* **Error details:** If a run fails, the DNS status code and error message are shown to help diagnose the issue
+
+* **Response payload:** Displays the raw DNS response and the [parsed JSON output](/detect/uptime-monitoring/dns-monitors/configuration#json-response-schemas) for assertions and debugging
 
 ## Troubleshooting Common Issues
 

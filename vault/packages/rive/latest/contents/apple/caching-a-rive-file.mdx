@@ -34,7 +34,8 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
         }
 
         // Load and cache the file once
-        let file = try await File(source: ..., worker: Worker())
+        let worker = try await Worker()
+        let file = try await File(source: ..., worker: worker)
 
         // Create a builder with the cached file
         let builder = RiveBuilder(file: file)

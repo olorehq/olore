@@ -2,8 +2,17 @@
 title: Generate TypeScript types from your database schema
 subtitle: Automatically generate TypeScript types from your database schema for
   type-safe Data API interactions.
+summary: >-
+  The `npx @neondatabase/neon-js gen-types` command introspects a PostgreSQL
+  schema and writes a TypeScript definition file with `Database`, `Tables`,
+  `TablesInsert`, and `TablesUpdate` interfaces for type-safe Data API access.
+  Use this page to add autocomplete, query-result type inference, and
+  compile-time error checking to `@neondatabase/neon-js` or
+  `@neondatabase/postgrest-js` clients. The tool accepts `--db-url`,
+  `--output`, and `--schemas` flags and can run as a package.json script to
+  keep generated types in sync after schema changes.
 enableTableOfContents: true
-updatedOn: '2025-12-12T18:18:11.075Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Data API" />

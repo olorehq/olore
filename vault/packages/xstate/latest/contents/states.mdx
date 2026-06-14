@@ -182,7 +182,8 @@ console.log(currentState.can({ type: 'feedback.submit' }));
 A state is considered "changed" if a transition is enabled for the given `state` and `event` object.
 
 <Callout>
-The `state.can(...)` method will also check transition guards by executing them. Transition guards should be pure functions.
+  The `state.can(...)` method will also check transition guards by executing
+  them. Transition guards should be pure functions.
 </Callout>
 
 ## `state.hasTag(tag)`
@@ -299,6 +300,115 @@ states: {
   },
 }
 ```
+
+## `mapState(snapshot, mapper)` [#map-state]
+
+_Since XState version 5.31.0_
+
+The `mapState(snapshot, mapper)` function maps a machine snapshot's active state nodes to values using a hierarchical mapper object. It traverses all active state nodes (from leaf to root) and collects results from matching `map` functions.
+
+```ts
+import { createActor, mapState, setup } from 'xstate';
+
+const machine = setup({
+  types: {
+    context: {} as { count: number },
+  },
+}).createMachine({
+  context: { count: 42 },
+  initial: 'active',
+  states: {
+    active: {
+      initial: 'idle',
+      states: {
+        idle: {},
+        loading: {},
+      },
+    },
+    done: { type: 'final' },
+  },
+});
+
+const actor = createActor(machine).start();
+
+// [!code highlight:12]
+const results = mapState(actor.getSnapshot(), {
+  map: ({ context }) => `root:${context.count}`,
+  states: {
+    active: {
+      map: ({ context }) => `active:${context.count}`,
+      states: {
+        idle: {
+          map: ({ context }) => `idle:${context.count}`,
+        },
+      },
+    },
+  },
+});
+
+console.log(results.map((r) => r.result));
+// ['idle:42', 'active:42', 'root:42']
+```
+
+The mapper mirrors the state hierarchy of the machine. The top-level `map` applies to the root state node, and nested `states` match child state nodes by key. Only active states are mapped; inactive states are skipped.
+
+Each result includes a `result` (the return value) and a `stateNode` (the matched state node).
+
+### Parallel states
+
+All active regions and their active children are mapped:
+
+```ts
+const machine = setup({}).createMachine({
+  type: 'parallel',
+  states: {
+    region1: {
+      initial: 'x',
+      states: { x: {}, y: {} },
+    },
+    region2: {
+      initial: 'p',
+      states: { p: {}, q: {} },
+    },
+  },
+});
+
+const results = mapState(createActor(machine).getSnapshot(), {
+  map: () => 'root',
+  states: {
+    region1: {
+      map: () => 'region1',
+      states: { x: { map: () => 'x' } },
+    },
+    region2: {
+      map: () => 'region2',
+      states: { p: { map: () => 'p' } },
+    },
+  },
+});
+
+console.log(results.map((r) => r.result));
+// ['x', 'region1', 'p', 'region2', 'root']
+```
+
+### Partial mapping
+
+You don't need to provide a `map` function at every level. Map only the states you care about:
+
+```ts
+const results = mapState(snapshot, {
+  states: {
+    active: {
+      states: {
+        // [!code highlight:1]
+        idle: { map: () => 'only idle is mapped' },
+      },
+    },
+  },
+});
+```
+
+`mapState` is fully typed: state keys are validated against the machine's state hierarchy, and the snapshot type is inferred in `map` functions.
 
 ## States and TypeScript
 

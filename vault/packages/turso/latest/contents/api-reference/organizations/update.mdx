@@ -5,12 +5,21 @@ openapi: "PATCH /v1/organizations/{organizationSlug}"
 
 <RequestExample>
 
-```bash cURL
+```bash cURL (overages)
 curl -L -X PATCH https://api.turso.tech/v1/organizations/{organizationSlug} \
   -H 'Authorization: Bearer TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
       "overages": true
+  }'
+```
+
+```bash cURL (require MFA)
+curl -L -X PATCH https://api.turso.tech/v1/organizations/{organizationSlug} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "require_mfa": true
   }'
 ```
 

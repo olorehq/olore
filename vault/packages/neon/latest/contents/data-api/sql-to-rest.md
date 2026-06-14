@@ -1,8 +1,16 @@
 ---
 title: SQL to PostgREST Converter
 subtitle: Convert SQL queries to PostgREST API calls with real-time preview
+summary: >-
+  The SQL to PostgREST Converter translates SQL SELECT statements into
+  equivalent PostgREST REST API calls with real-time preview. It covers
+  filtering, sorting, pagination, joins, and aggregations. Use it to move from
+  raw SQL to HTTP-based PostgREST queries against a Neon Data API endpoint
+  without manually constructing URL parameters. PostgREST auto-generates a
+  RESTful API from a PostgreSQL schema; this converter makes that translation
+  immediate and explorable.
 enableTableOfContents: false
-updatedOn: '2025-12-12T19:35:53.908Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>

@@ -45,7 +45,7 @@ const db = await connect({
   path: './app.db',
   url: 'libsql://...',
   authToken: process.env.TURSO_AUTH_TOKEN,
-  partialSync: {
+  partialSyncExperimental: {
     bootstrapStrategy: { kind: 'prefix', length: 128 * 1024 }, // 128 KiB
   },
 });
@@ -93,7 +93,7 @@ const db = await connect({
   path: './app.db',
   url: 'libsql://...',
   authToken: process.env.TURSO_AUTH_TOKEN,
-  partialSync: {
+  partialSyncExperimental: {
     bootstrapStrategy: {
       kind: 'query',
       query: `SELECT * FROM messages WHERE user_id = 'u_123' LIMIT 100`,
@@ -140,11 +140,106 @@ db, err := turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
 
 <Frame>
 
-![segment size](/images/sync/segment_size.png)
+<div id="seg-viz" style={{ padding: '1rem 0.5rem' }}>
+  <style>{`
+    #s1-cell-1, #s1-cell-2, #s1-cell-3, #s1-cell-4, #s1-cell-5, #s1-cell-6, #s1-cell-7, #s1-cell-8, #s1-cell-9, #s1-cell-10, #s1-cell-11, #s1-cell-12 { cursor: pointer; }
+    #s1-cell-1:hover rect, #s1-cell-2:hover rect, #s1-cell-3:hover rect, #s1-cell-4:hover rect, #s1-cell-5:hover rect, #s1-cell-6:hover rect, #s1-cell-7:hover rect, #s1-cell-8:hover rect, #s1-cell-9:hover rect, #s1-cell-10:hover rect, #s1-cell-11:hover rect, #s1-cell-12:hover rect { filter: brightness(1.2); }
+  `}</style>
+
+  <svg viewBox="0 0 540 140" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', minWidth: '480px', maxWidth: '620px', display: 'block', margin: '0 auto' }}>
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+      </marker>
+    </defs>
+
+    {/* === STATE 1: Initial (clickable) === */}
+    <g id="seg-state-1">
+      <text x="76" y="14" fill="#9ca3af" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">select page</text>
+      {/* Row 1 */}
+      <g id="s1-cell-1"><rect id="s1-rect-1" x="10" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s1-text-1" x="25" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>1</text></g>
+      <g id="s1-cell-2"><rect id="s1-rect-2" x="44" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s1-text-2" x="59" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>2</text></g>
+      <g id="s1-cell-3"><rect id="s1-rect-3" x="78" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s1-text-3" x="93" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>3</text></g>
+      <g id="s1-cell-4"><rect id="s1-rect-4" x="112" y="22" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-4" x="127" y="42" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>4</text></g>
+      {/* Row 2 */}
+      <g id="s1-cell-5"><rect id="s1-rect-5" x="10" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-5" x="25" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>5</text></g>
+      <g id="s1-cell-6"><rect id="s1-rect-6" x="44" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s1-text-6" x="59" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>6</text></g>
+      <g id="s1-cell-7"><rect id="s1-rect-7" x="78" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-7" x="93" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>7</text></g>
+      <g id="s1-cell-8"><rect id="s1-rect-8" x="112" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-8" x="127" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>8</text></g>
+      {/* Row 3 */}
+      <g id="s1-cell-9"><rect id="s1-rect-9" x="10" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-9" x="25" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>9</text></g>
+      <g id="s1-cell-10"><rect id="s1-rect-10" x="44" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-10" x="59" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>10</text></g>
+      <g id="s1-cell-11"><rect id="s1-rect-11" x="78" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-11" x="93" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>11</text></g>
+      <g id="s1-cell-12"><rect id="s1-rect-12" x="112" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s1-text-12" x="127" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>12</text></g>
+    </g>
+
+    {/* Arrow 1 */}
+    <g id="seg-arrow-1" style={{ transition: 'opacity 0.3s' }}>
+      <line x1="152" y1="71" x2="188" y2="71" stroke="#6b7280" strokeWidth="2" markerEnd="url(#arrow)"/>
+      <text id="seg-arrow-label" x="170" y="64" fill="#f97316" fontFamily="ui-monospace,monospace" fontSize="9" textAnchor="middle">read(7)</text>
+    </g>
+
+    {/* === STATE 2: Loading === */}
+    <g id="seg-state-2" style={{ transition: 'opacity 0.3s' }}>
+      <text x="268" y="14" fill="#f97316" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">fetching segment</text>
+      {/* Brackets */}
+      <rect id="s2-bracket-1" x="195" y="22" width="4" height="30" rx="2" fill="#f97316" style={{ opacity: 0, transition: 'opacity 0.3s' }}/>
+      <rect id="s2-bracket-2" x="195" y="56" width="4" height="30" rx="2" fill="#f97316" style={{ opacity: 1, transition: 'opacity 0.3s' }}/>
+      <rect id="s2-bracket-3" x="195" y="90" width="4" height="30" rx="2" fill="#f97316" style={{ opacity: 0, transition: 'opacity 0.3s' }}/>
+      {/* Row 1 */}
+      <g><rect id="s2-rect-1" x="203" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s2-text-1" x="218" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">1</text></g>
+      <g><rect id="s2-rect-2" x="237" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s2-text-2" x="252" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">2</text></g>
+      <g><rect id="s2-rect-3" x="271" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s2-text-3" x="286" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">3</text></g>
+      <g><rect id="s2-rect-4" x="305" y="22" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s2-text-4" x="320" y="42" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">4</text></g>
+      {/* Row 2 */}
+      <g><rect id="s2-rect-5" x="203" y="56" width="30" height="30" fill="#f97316" stroke="#f97316" strokeWidth="2" rx="4"/><text id="s2-text-5" x="218" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">5</text></g>
+      <g><rect id="s2-rect-6" x="237" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s2-text-6" x="252" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">6</text></g>
+      <g><rect id="s2-rect-7" x="271" y="56" width="30" height="30" fill="#f97316" stroke="#fbbf24" strokeWidth="3" rx="4"/><text id="s2-text-7" x="286" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">7</text></g>
+      <g><rect id="s2-rect-8" x="305" y="56" width="30" height="30" fill="#f97316" stroke="#f97316" strokeWidth="2" rx="4"/><text id="s2-text-8" x="320" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">8</text></g>
+      {/* Row 3 */}
+      <g><rect id="s2-rect-9" x="203" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s2-text-9" x="218" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">9</text></g>
+      <g><rect id="s2-rect-10" x="237" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s2-text-10" x="252" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">10</text></g>
+      <g><rect id="s2-rect-11" x="271" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s2-text-11" x="286" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">11</text></g>
+      <g><rect id="s2-rect-12" x="305" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s2-text-12" x="320" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">12</text></g>
+      <text id="seg-segment-label" x="268" y="132" fill="#f97316" fontFamily="ui-monospace,monospace" fontSize="9" textAnchor="middle">segment 5-8</text>
+    </g>
+
+    {/* Arrow 2 */}
+    <g id="seg-arrow-2" style={{ transition: 'opacity 0.3s' }}>
+      <line x1="345" y1="71" x2="381" y2="71" stroke="#6b7280" strokeWidth="2" markerEnd="url(#arrow)"/>
+    </g>
+
+    {/* === STATE 3: Loaded === */}
+    <g id="seg-state-3" style={{ transition: 'opacity 0.3s' }}>
+      <text x="461" y="14" fill="#1ebca1" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">segment cached</text>
+      {/* Row 1 */}
+      <g><rect id="s3-rect-1" x="396" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-1" x="411" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">1</text></g>
+      <g><rect id="s3-rect-2" x="430" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-2" x="445" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">2</text></g>
+      <g><rect id="s3-rect-3" x="464" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-3" x="479" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">3</text></g>
+      <g><rect id="s3-rect-4" x="498" y="22" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s3-text-4" x="513" y="42" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">4</text></g>
+      {/* Row 2 */}
+      <g><rect id="s3-rect-5" x="396" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-5" x="411" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">5</text></g>
+      <g><rect id="s3-rect-6" x="430" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-6" x="445" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">6</text></g>
+      <g><rect id="s3-rect-7" x="464" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-7" x="479" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">7</text></g>
+      <g><rect id="s3-rect-8" x="498" y="56" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="s3-text-8" x="513" y="76" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">8</text></g>
+      {/* Row 3 */}
+      <g><rect id="s3-rect-9" x="396" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s3-text-9" x="411" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">9</text></g>
+      <g><rect id="s3-rect-10" x="430" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s3-text-10" x="445" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">10</text></g>
+      <g><rect id="s3-rect-11" x="464" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s3-text-11" x="479" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">11</text></g>
+      <g><rect id="s3-rect-12" x="498" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="s3-text-12" x="513" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">12</text></g>
+    </g>
+
+  </svg>
+
+  <p id="seg-status" style={{ textAlign: 'center', color: '#f97316', fontSize: '0.8rem', margin: '0.5rem 0 0', fontFamily: 'ui-monospace, monospace', transition: 'color 0.3s' }}>
+    Read page 7 → fetch segment 5-8 (3 new pages)
+  </p>
+</div>
 
 </Frame>
 
 When the client needs a page that isn’t present locally, partial sync performs an on-demand fetch from the remote database.
+
 To reduce round-trips and speed up these fetches, you can configure the **segment size**: instead of requesting a single page, the client downloads a whole *segment* of pages in one request.
 
 This lets the client amortize network overhead and hydrate nearby pages that are likely to be accessed soon.
@@ -185,7 +280,7 @@ Conversely, very sparse/random-access workloads may benefit from smaller segment
 ```ts TypeScript
 await connect({
   ...
-  partialSync: {
+  partialSyncExperimental: {
     bootstrapStrategy: { kind: 'prefix', length: 128 * 1024 }, // 128 KiB
     segmentSize: 16 * 1024,
   },
@@ -218,7 +313,101 @@ turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
 
 <Frame>
 
-![prefetch](/images/sync/prefetch.png)
+<div id="prefetch-viz" style={{ padding: '1rem 0.5rem' }}>
+  <style>{`
+    #p1-cell-1, #p1-cell-2, #p1-cell-3, #p1-cell-4, #p1-cell-5, #p1-cell-6, #p1-cell-7, #p1-cell-8, #p1-cell-9, #p1-cell-10, #p1-cell-11, #p1-cell-12 { cursor: pointer; }
+    #p1-cell-1:hover rect, #p1-cell-2:hover rect, #p1-cell-3:hover rect, #p1-cell-4:hover rect, #p1-cell-5:hover rect, #p1-cell-6:hover rect, #p1-cell-7:hover rect, #p1-cell-8:hover rect, #p1-cell-9:hover rect, #p1-cell-10:hover rect, #p1-cell-11:hover rect, #p1-cell-12:hover rect { filter: brightness(1.2); }
+  `}</style>
+
+  <svg viewBox="0 0 540 140" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', minWidth: '480px', maxWidth: '620px', display: 'block', margin: '0 auto' }}>
+    <defs>
+      <marker id="arrowPf" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#6b7280"/>
+      </marker>
+      <marker id="arrowPrefetch" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto">
+        <polygon points="0 0, 6 2.5, 0 5" fill="#8b5cf6"/>
+      </marker>
+    </defs>
+
+    {/* === STATE 1: Initial (clickable) === */}
+    <g id="pf-state-1">
+      <text x="76" y="14" fill="#9ca3af" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">select page</text>
+      {/* Row 1 */}
+      <g id="p1-cell-1"><rect id="p1-rect-1" x="10" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p1-text-1" x="25" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>1</text></g>
+      <g id="p1-cell-2"><rect id="p1-rect-2" x="44" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p1-text-2" x="59" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>2</text></g>
+      <g id="p1-cell-3"><rect id="p1-rect-3" x="78" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p1-text-3" x="93" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>3</text></g>
+      <g id="p1-cell-4"><rect id="p1-rect-4" x="112" y="22" width="30" height="30" fill="#2a2a4a" stroke="#fbbf24" strokeWidth="3" rx="4"/><text id="p1-text-4" x="127" y="42" fill="#fbbf24" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>4</text></g>
+      {/* Row 2 */}
+      <g id="p1-cell-5"><rect id="p1-rect-5" x="10" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-5" x="25" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>5</text></g>
+      <g id="p1-cell-6"><rect id="p1-rect-6" x="44" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-6" x="59" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>6</text></g>
+      <g id="p1-cell-7"><rect id="p1-rect-7" x="78" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-7" x="93" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>7</text></g>
+      <g id="p1-cell-8"><rect id="p1-rect-8" x="112" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-8" x="127" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>8</text></g>
+      {/* Row 3 */}
+      <g id="p1-cell-9"><rect id="p1-rect-9" x="10" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-9" x="25" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>9</text></g>
+      <g id="p1-cell-10"><rect id="p1-rect-10" x="44" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p1-text-10" x="59" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" style={{ pointerEvents:'none' }}>10</text></g>
+      <g id="p1-cell-11"><rect id="p1-rect-11" x="78" y="90" width="30" height="30" fill="#2a2a4a" stroke="#8b5cf6" strokeWidth="2" rx="4"/><text id="p1-text-11" x="93" y="110" fill="#8b5cf6" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>11</text></g>
+      <g id="p1-cell-12"><rect id="p1-rect-12" x="112" y="90" width="30" height="30" fill="#2a2a4a" stroke="#8b5cf6" strokeWidth="2" rx="4"/><text id="p1-text-12" x="127" y="110" fill="#8b5cf6" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold" style={{ pointerEvents:'none' }}>12</text></g>
+      {/* B-tree arrows drawn here by JS */}
+      <g id="pf-btree-arrows"></g>
+    </g>
+
+    {/* Arrow 1 */}
+    <g id="pf-arrow-1" style={{ transition: 'opacity 0.3s' }}>
+      <line x1="152" y1="71" x2="188" y2="71" stroke="#6b7280" strokeWidth="2" markerEnd="url(#arrowPf)"/>
+      <text id="pf-arrow-label" x="170" y="64" fill="#8b5cf6" fontFamily="ui-monospace,monospace" fontSize="9" textAnchor="middle">read(4)</text>
+    </g>
+
+    {/* === STATE 2: Fetching === */}
+    <g id="pf-state-2" style={{ transition: 'opacity 0.3s' }}>
+      <text x="268" y="14" fill="#f97316" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">fetching</text>
+      {/* Row 1 */}
+      <g><rect id="p2-rect-1" x="203" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p2-text-1" x="218" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">1</text></g>
+      <g><rect id="p2-rect-2" x="237" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p2-text-2" x="252" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">2</text></g>
+      <g><rect id="p2-rect-3" x="271" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p2-text-3" x="286" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">3</text></g>
+      <g><rect id="p2-rect-4" x="305" y="22" width="30" height="30" fill="#f97316" stroke="#fbbf24" strokeWidth="3" rx="4"/><text id="p2-text-4" x="320" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">4</text></g>
+      {/* Row 2 */}
+      <g><rect id="p2-rect-5" x="203" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-5" x="218" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">5</text></g>
+      <g><rect id="p2-rect-6" x="237" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-6" x="252" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">6</text></g>
+      <g><rect id="p2-rect-7" x="271" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-7" x="286" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">7</text></g>
+      <g><rect id="p2-rect-8" x="305" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-8" x="320" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">8</text></g>
+      {/* Row 3 */}
+      <g><rect id="p2-rect-9" x="203" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-9" x="218" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">9</text></g>
+      <g><rect id="p2-rect-10" x="237" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p2-text-10" x="252" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">10</text></g>
+      <g><rect id="p2-rect-11" x="271" y="90" width="30" height="30" fill="#f97316" stroke="#f97316" strokeWidth="2" rx="4"/><text id="p2-text-11" x="286" y="110" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">11</text></g>
+      <g><rect id="p2-rect-12" x="305" y="90" width="30" height="30" fill="#f97316" stroke="#f97316" strokeWidth="2" rx="4"/><text id="p2-text-12" x="320" y="110" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">12</text></g>
+    </g>
+
+    {/* Arrow 2 */}
+    <g id="pf-arrow-2" style={{ transition: 'opacity 0.3s' }}>
+      <line x1="345" y1="71" x2="381" y2="71" stroke="#6b7280" strokeWidth="2" markerEnd="url(#arrowPf)"/>
+    </g>
+
+    {/* === STATE 3: Loaded === */}
+    <g id="pf-state-3" style={{ transition: 'opacity 0.3s' }}>
+      <text x="461" y="14" fill="#1ebca1" fontFamily="ui-monospace,monospace" fontSize="10" textAnchor="middle">loaded</text>
+      {/* Row 1 */}
+      <g><rect id="p3-rect-1" x="396" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p3-text-1" x="411" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">1</text></g>
+      <g><rect id="p3-rect-2" x="430" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p3-text-2" x="445" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">2</text></g>
+      <g><rect id="p3-rect-3" x="464" y="22" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p3-text-3" x="479" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">3</text></g>
+      <g><rect id="p3-rect-4" x="498" y="22" width="30" height="30" fill="#1ebca1" stroke="#fbbf24" strokeWidth="3" rx="4"/><text id="p3-text-4" x="513" y="42" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">4</text></g>
+      {/* Row 2 */}
+      <g><rect id="p3-rect-5" x="396" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-5" x="411" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">5</text></g>
+      <g><rect id="p3-rect-6" x="430" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-6" x="445" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">6</text></g>
+      <g><rect id="p3-rect-7" x="464" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-7" x="479" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">7</text></g>
+      <g><rect id="p3-rect-8" x="498" y="56" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-8" x="513" y="76" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">8</text></g>
+      {/* Row 3 */}
+      <g><rect id="p3-rect-9" x="396" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-9" x="411" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">9</text></g>
+      <g><rect id="p3-rect-10" x="430" y="90" width="30" height="30" fill="#2a2a4a" stroke="#3a3a5a" strokeWidth="1" rx="4"/><text id="p3-text-10" x="445" y="110" fill="#6b7280" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle">10</text></g>
+      <g><rect id="p3-rect-11" x="464" y="90" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p3-text-11" x="479" y="110" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">11</text></g>
+      <g><rect id="p3-rect-12" x="498" y="90" width="30" height="30" fill="#1ebca1" stroke="#1ebca1" strokeWidth="2" rx="4"/><text id="p3-text-12" x="513" y="110" fill="#0a0a0a" fontFamily="ui-monospace,monospace" fontSize="12" textAnchor="middle" fontWeight="bold">12</text></g>
+    </g>
+
+  </svg>
+
+  <p id="pf-status" style={{ textAlign: 'center', color: '#f97316', fontSize: '0.8rem', margin: '0.5rem 0 0', fontFamily: 'ui-monospace, monospace', transition: 'color 0.3s' }}>
+    Read page 4 → prefetch 2 child pages (11, 12)
+  </p>
+</div>
 
 </Frame>
 
@@ -233,7 +422,7 @@ This reduces the number of future on-demand fetches and helps avoid stalls durin
 ```ts TypeScript
 await connect({
   ...
-  partialSync: {
+  partialSyncExperimental: {
     bootstrapStrategy: { kind: 'prefix', length: 128 * 1024 }, // 128 KiB
     prefetch: true,
   },

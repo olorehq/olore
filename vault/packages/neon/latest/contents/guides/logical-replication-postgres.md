@@ -1,9 +1,18 @@
 ---
 title: Replicate data to an external Postgres instance
 subtitle: Learn how to replicate data from Neon to an external Postgres instance
+summary: >-
+  Logical replication from Neon to an external (non-Neon) Postgres instance
+  streams row-level changes over Postgres WAL by setting wal_level to logical,
+  creating a publication on Neon, and creating a subscription on the destination
+  database. Use this guide when you need to replicate data out of Neon to a
+  self-hosted or third-party Postgres server; for Neon-to-Neon replication, a
+  separate guide applies. Enabling logical replication is irreversible per
+  project and restarts all computes, keeping them active while subscribers are
+  connected.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-02-02T12:37:39.455Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from Neon to external subscribers. This guide shows you how to stream data from a Neon Postgres database to an external Postgres database (a Postgres destination other than Neon). If you're looking to replicate data from one Neon Postgres instance to another, see [Replicate data from one Neon project to another](/docs/guides/logical-replication-neon-to-neon).
@@ -23,6 +32,10 @@ Neon's logical replication feature allows you to replicate data from Neon to ext
 - A destination Postgres instance other than Neon.
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin.
 - Review our [logical replication tips](/docs/guides/logical-replication-tips), based on real-world customer data migration experiences.
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Prepare your source Neon database
 
@@ -85,10 +98,10 @@ To create a role in the Neon Console:
 
 <TabItem>
 
-The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](/docs/reference/cli-roles).
+The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](https://api-docs.neon.tech/reference/createprojectbranchrole).
 
 ```bash
-curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-blue-tooth-671580/roles' \
+curl 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/roles' \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H 'Content-Type: application/json' \
@@ -98,6 +111,8 @@ curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-b
   }
 }' | jq
 ```
+
+> Replace `{project_id}` and `{branch_id}` with your actual Neon project and branch IDs, and set the `NEON_API_KEY` environment variable with your Neon API key.
 
 </TabItem>
 

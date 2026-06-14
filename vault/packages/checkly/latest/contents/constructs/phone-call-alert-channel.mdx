@@ -1,246 +1,69 @@
 ---
 title: 'PhoneCallAlertChannel Construct'
 description: 'Learn how to configure phone call alert channels with the Checkly CLI.'
-sidebarTitle: 'Phone Call Alert Channel'
+sidebarTitle: 'Phone Call'
 ---
 
-import AlertChannelOptionsTable from '/snippets/alert-channel-options-table.mdx';
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
 
 <Tip>
-Learn more about Phone Call alerts in [the Phone Call Alerts documentation](/integrations/alerts/phone-calls).
+For general information about alerting, see our docs on [phone call alerts](/integrations/alerts/phone-calls) and [alerting with Checkly](/communicate/alerts/overview/).
 </Tip>
 
-Use Phone Call Alerts to make voice calls when checks fail or recover. Phone call alerts are the most immediate form of notification, ideal for critical systems requiring instant attention.
+Sends phone calls to the specified phone number.
 
 <CodeGroup>
 
 ```ts Basic Example
-import { PhoneCallAlertChannel } from "checkly/constructs"
+import { PhoneCallAlertChannel } from 'checkly/constructs'
 
-const callChannel = new PhoneCallAlertChannel("call-channel-1", {
-  phoneNumber: "+1234567890",
-  name: "Tim's phone",
+const callChannel = new PhoneCallAlertChannel('call-channel-1', {
+  phoneNumber: '+31061234567890',
 })
 ```
 
 ```ts Advanced Example
-import { PhoneCallAlertChannel } from "checkly/constructs"
+import { PhoneCallAlertChannel } from 'checkly/constructs'
 
-const emergencyCall = new PhoneCallAlertChannel("emergency-call-channel", {
-  phoneNumber: "+1234567890",
-  name: "Tim's phone",
-  sendRecovery: false, // Only call for failures, not recoveries
+const callChannel = new PhoneCallAlertChannel('call-channel-1', {
+  phoneNumber: '+31061234567890',
+  name: 'Ops on-call',
+  sendRecovery: false,
   sendFailure: true,
-  sendDegraded: false, // Only for complete failures
+  sendDegraded: false,
   sslExpiry: true,
-  sslExpiryThreshold: 3, // Call 3 days before SSL expires
+  sslExpiryThreshold: 3,
 })
 ```
 
 </CodeGroup>
 
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
 ## Configuration
 
-<Tabs>
-  <Tab title="Phone Call Alert Channel">
+### Phone Call Alert Channel Options
 
-Configure phone call-specific settings:
+<ResponseField name="phoneNumber" type="string" required>
+Phone number to call. 
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `phoneNumber` | `string` | ✅ | - | Phone number in international format (e.g., +1234567890) |
-| `name` | `string` | ❌ | - | Friendly name for the phone call alert channel (e.g. "Tim's phone") |
+Each `PhoneCallAlertChannel` supports only one phone number. Phone numbers need to be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164).
 
-</Tab>
+We only support phone numbers from certain [countries and regions](/integrations/alerts/phone-calls/#supported-countries-and-regions).
 
-<Tab title="General Alert Channel">
-
-  <AlertChannelOptionsTable />
-
-</Tab>
-</Tabs>
-
-## Phone Call Alert Channel Examples
-
-<Tabs>
-  <Tab title="Emergency Response">
-    ```ts
-    import { PhoneCallAlertChannel, ApiCheck } from "checkly/constructs"
-
-    const emergencyCall = new PhoneCallAlertChannel("emergency-response", {
-      phoneNumber: "+1555EMERGENCY",
-      sendFailure: true,
-      sendRecovery: false, // Don't call for recoveries
-      sendDegraded: false, // Only complete failures
-    })
-
-    new ApiCheck("life-safety-system", {
-      name: "Life Safety System",
-      alertChannels: [emergencyCall],
-      tags: ["life-safety", "critical"],
-      request: {
-        method: "GET",
-        url: "https://life-safety.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Executive Notifications">
-    ```ts
-    import { ApiCheck, PhoneCallAlertChannel } from "checkly/constructs"
-
-    const executiveCall = new PhoneCallAlertChannel("executive-call", {
-      phoneNumber: "+1555EXEC", // Executive phone number
-      sendFailure: true,
-      sendRecovery: true, // Notify of both failures and recoveries
-      sendDegraded: false,
-    })
-
-    new ApiCheck("revenue-critical-api", {
-      name: "Revenue Critical API",
-      alertChannels: [executiveCall],
-      tags: ["revenue-critical", "executive-level"],
-      request: {
-        method: "GET",
-        url: "https://payments.example.com/health",
-      },
-    })
-    ```
-  </Tab>
-
-  <Tab title="Security Incident Response">
-    ```ts
-    import { ApiCheck, PhoneCallAlertChannel } from "checkly/constructs"
-
-    const securityCall = new PhoneCallAlertChannel("security-incident", {
-      phoneNumber: "+1555SECURITY",
-      sendFailure: true,
-      sendRecovery: false,
-      sslExpiry: true,
-      sslExpiryThreshold: 1, // Call immediately for SSL expiry
-    })
-
-    new ApiCheck("security-endpoint", {
-      name: "Security Endpoint Monitor",
-      alertChannels: [securityCall],
-      tags: ["security", "authentication"],
-      request: {
-        method: "GET",
-        url: "https://auth.example.com/security-health",
-      },
-    })
-    ```
-  </Tab>
-</Tabs>
-
-## Phone Number Format
-
-The phone numbers used for SMS alerting need to be in [E.164 format](https://www.twilio.com/docs/glossary/what-e164). Stick to the following rules and you'll be fine:
-
-- Prepend international access codes with a + sign
-- Do not use any white spaces
-- Use up to 15 characters
-
-<Tabs>
-  <Tab title="Correct Format">
-    ```ts
-    // US numbers
-    const usCall = new PhoneCallAlertChannel('us-call', {
-      phoneNumber: '+15551234567' // +1 (country code) + area code + number
-    })
-
-    // UK numbers
-    const ukCall = new PhoneCallAlertChannel('uk-call', {
-      phoneNumber: '+447911123456' // +44 (country code) + mobile number
-    })
-
-    // German numbers
-    const deCall = new PhoneCallAlertChannel('de-call', {
-      phoneNumber: '+491701234567' // +49 (country code) + mobile number
-    })
-
-    // Australian numbers
-    const auCall = new PhoneCallAlertChannel('au-call', {
-      phoneNumber: '+61412345678' // +61 (country code) + mobile number
-    })
-    ```
-  </Tab>
-
-  <Tab title="Incorrect Format">
-    ```ts
-    // ❌ Don't use these formats:
-
-    // Missing country code
-    phoneNumber: '5551234567'
-
-    // With spaces or dashes
-    phoneNumber: '+1 555-123-4567'
-
-    // With parentheses
-    phoneNumber: '+1 (555) 123-4567'
-
-    // Domestic format
-    phoneNumber: '(555) 123-4567'
-    ```
-  </Tab>
-</Tabs>
-
-## Combining with Other Alert Channels
-
-Phone calls should be used as part of a comprehensive alerting strategy:
-
-```ts
-import {
-  PhoneCallAlertChannel,
-  SmsAlertChannel,
-  EmailAlertChannel,
-  SlackAlertChannel,
-  ApiCheck,
-} from "checkly/constructs"
-
-// Layered alerting approach
-const teamSlack = new SlackAlertChannel("team-slack", {
-  url: new URL("https://hooks.slack.com/services/YOUR/WEBHOOK/URL"),
-  channel: "#alerts",
-})
-
-const oncallEmail = new EmailAlertChannel("oncall-email", {
-  address: "oncall@example.com",
-})
-
-const oncallSms = new SmsAlertChannel("oncall-sms", {
-  phoneNumber: "+1555ONCALL",
-})
-
-const emergencyCall = new PhoneCallAlertChannel("emergency-call", {
-  phoneNumber: "+1555EMERGENCY",
-  sendFailure: true,
-  sendRecovery: false, // Only call for failures
-})
-
-new ApiCheck("comprehensive-alerting", {
-  name: "Critical System with Comprehensive Alerting",
-  alertChannels: [
-    teamSlack, // Immediate team visibility
-    oncallEmail, // Documentation and detail
-    oncallSms, // Mobile notification
-    emergencyCall, // Immediate voice alert
-  ],
-  tags: ["critical", "comprehensive"],
-  request: {
-    method: "GET",
-    url: "https://critical.example.com/health",
-  },
+```ts highlight={2}
+new PhoneCallAlertChannel('call-channel-1', {
+  phoneNumber: '+31061234567890',
 })
 ```
+</ResponseField>
 
-## Best Practices
+<ResponseField name="name" type="string">
+Friendly name for the phone call alert channel.
+</ResponseField>
 
-<Warning>
-**Use Sparingly**: Phone calls are the most intrusive form of notification. Reserve them for truly critical systems where immediate human intervention is required.
-</Warning>
+### General Alert Channel Options
 
-<Info>
-**Recovery Notifications**: Consider whether recovery calls are necessary. For some critical systems, knowing when the system recovers is as important as knowing when it fails.
-</Info>
+<AlertChannelOptionsText />

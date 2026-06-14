@@ -1,8 +1,16 @@
 ---
 title: Postgres Date and Time data types
 subtitle: Work with date and time values in Postgres
+summary: >-
+  Postgres date and time types (DATE, TIME, TIMESTAMP, TIMESTAMPTZ, and
+  INTERVAL) store moments, times of day, and durations with or without time
+  zone awareness, at 1-microsecond resolution. Use this page to choose between
+  TIMESTAMP and TIMESTAMPTZ, understand how Postgres converts timezone-aware
+  input to UTC internally, and write queries that filter date ranges or compute
+  durations. Topics include arithmetic operators, the OVERLAPS predicate, and
+  functions such as EXTRACT and AGE.
 enableTableOfContents: true
-updatedOn: '2024-06-14T07:55:54.366Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Postgres offers a rich set of native data types for storing date and time values. Both moment-in-time and interval data can be stored, and Postgres provides a variety of functions to query and manipulate them.
@@ -19,7 +27,7 @@ There are 5 primary date/time types in Postgres:
 - `TIME` - represents a time-of-day value, stored as 8 bytes. Resolution is 1 microsecond.
 - `TIMESTAMP` - represents a combined date and time value, stored as 8 bytes. Resolution is 1 microsecond.
 - `TIMESTAMPTZ` - represents a combined date and time value, along with time zone information, stored as 8 bytes. Resolution is 1 microsecond. It is stored internally as a UTC value, but is displayed in the timezone set by the client.
-- `INTERVAL` - represents a duration of time, stored as 16 bytes. Resolution is 1 microsecond. Optionally, you can restrict the set of values stored to a larger unit of time (e.g., `INTERVAL MONTH`).
+- `INTERVAL` - represents a duration of time, stored as 16 bytes. Resolution is 1 microsecond. Optionally, you can restrict the set of values stored to a larger unit of time (for example, `INTERVAL MONTH`).
 
 Date/time values are specified as string literals. Postgres accepts most of the standard datetime formats. For example:
 
@@ -140,8 +148,8 @@ This query returns no rows, indicating that there are no overlapping sessions.
 
 Postgres supports adding time zone information to both time-of-day (`TIME WITH TIME ZONE`) and moment-in-time (`TIMESTAMP WITH TIME ZONE` / `TIMESTAMPTZ`) values.
 
-- If you use a time zone unaware type (e.g., `TIME` or `TIMESTAMP`), Postgres ignores any time zone information provided in the input string.
-- If you use a time-zone-aware type (e.g., `TIMETZ` or `TIMESTAMPTZ`), Postgres converts the input string to UTC and stores it internally. It then displays the value in the `current time zone` set for the session.
+- If you use a time zone unaware type (for example, `TIME` or `TIMESTAMP`), Postgres ignores any time zone information provided in the input string.
+- If you use a time-zone-aware type (for example, `TIMETZ` or `TIMESTAMPTZ`), Postgres converts the input string to UTC and stores it internally. It then displays the value in the `current time zone` set for the session.
 
 To illustrate this, you can create a table with both time-zone aware and unaware columns, and insert a sample row:
 

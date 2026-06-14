@@ -2,8 +2,14 @@
 title: Python SDK (Neon API)
 subtitle: Programmatically manage Neon projects, branches, databases, and other platform
   resources
+summary: >-
+  The Neon Python SDK (neon-api, installable via pip) wraps the Neon REST API
+  and exposes methods for creating, updating, and deleting projects, branches,
+  databases, endpoints, roles, API keys, and organizations from Python code.
+  Use it when you need to automate Neon platform operations in Python scripts or
+  applications without constructing raw HTTP requests against the Neon API.
 enableTableOfContents: true
-updatedOn: '2025-12-11T19:49:37.744Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>
@@ -30,9 +36,7 @@ updatedOn: '2025-12-11T19:49:37.744Z'
 
 Neon supports the [neon-api - Python client for the Neon API](https://pypi.org/project/neon-api/), a wrapper for the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api). This SDK simplifies integration of Python applications with the Neon platform, providing methods to programmatically manage API keys, Neon projects, branches, databases, endpoints, roles, and operations.
 
-<Admonition type="tip" title="AI Rules available">
-Working with AI coding assistants? Check out our [AI rules for the Neon Python SDK](/docs/ai/ai-rules-neon-python-sdk) to help your AI assistant generate better code when managing Neon resources with Python.
-</Admonition>
+<AgentSkillsTip skill_topic="the Neon Python SDK for managing resources programmatically" />
 
 ## Installation
 
@@ -53,11 +57,12 @@ neon = NeonAPI(api_key='your_api_key')
 
 ## Documentation
 
-Documentation for the `neon-api - Python SDK`, including a [Quickstart](https://neon-api-python.readthedocs.io/en/latest/#quickstart), can be found on **Read the Docs**. See [neon-api — Python client for the Neon API](https://neon-api-python.readthedocs.io/en/latest/#neon-api-python-client-for-the-neon-api).
+Documentation for the `neon-api - Python SDK`, including a [Quickstart](https://neon-api-python.readthedocs.io/en/latest/#quickstart), can be found on **Read the Docs**. See [neon-api: Python client for the Neon API](https://neon-api-python.readthedocs.io/en/latest/#neon-api-python-client-for-the-neon-api).
 
 ## Methods of the `NeonAPI` Class
 
 - `me()`: Returns the current user.
+- `current_user_organizations()`: Returns the current user's organizations.
 
 ### Manage API Keys
 
@@ -67,7 +72,15 @@ Documentation for the `neon-api - Python SDK`, including a [Quickstart](https://
 
 ### Manage Projects
 
-- `projects()`: Returns a list of projects.
+All Neon accounts are organization-based. To list projects, first retrieve the user's organization with `current_user_organizations()`, then pass `org_id`:
+
+```python
+orgs = neon.current_user_organizations()
+org_id = orgs[0].id
+projects = neon.projects(org_id=org_id)
+```
+
+- `projects(org_id=None)`: Returns a list of projects. Pass `org_id` to list projects within an organization.
 - `project(project_id)`: Returns a specific project.
 - `project_create(project_id, **json)`: Creates a new project.
 - `project_update(project_id, **json)`: Updates a given project.
@@ -111,6 +124,10 @@ Documentation for the `neon-api - Python SDK`, including a [Quickstart](https://
 - `role_delete(project_id, branch_id, role_name)`: Deletes a given role.
 - `role_password_reveal(project_id, branch_id, role_name)`: Reveals the password for a given role.
 - `role_password_reset(project_id, branch_id, role_name)`: Resets the password for a given role.
+
+### Manage Organizations
+
+- `organization(org_id)`: Returns details for a specific organization.
 
 ### Manage Operations
 

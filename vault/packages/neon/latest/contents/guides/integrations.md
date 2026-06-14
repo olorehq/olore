@@ -2,10 +2,15 @@
 title: Neon integration guides
 subtitle: Find detailed instructions for integration across various platforms and
   services.
+summary: >-
+  Index of Neon integration guides organized by category: authentication,
+  deployment, schema migration, replication, monitoring, and serverless.
+  Use this page to find setup instructions for connecting Neon Postgres to a
+  specific platform or tool.
 enableTableOfContents: true
 redirectFrom:
   - /docs/integrations/integrations-list/
-updatedOn: '2026-01-13T18:46:54.024Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Authentication
@@ -126,9 +131,11 @@ updatedOn: '2026-01-13T18:46:54.024Z'
 
 <a href="/docs/guides/bemi" title="Bemi" description="Create an automatic audit trail with Bemi" icon="bemi"></a>
 
-<a href="https://docs.peerdb.io/mirror/cdc-neon-clickhouse" title="ClickHouse" description="Change Data Capture from Neon to ClickHouse with PeerDB (PeerDB docs)" icon="clickhouse"></a>
+<a href="/docs/guides/logical-replication-clickhouse" title="ClickHouse" description="Replicate data from Neon to ClickHouse using ClickPipes" icon="clickhouse"></a>
 
 <a href="/docs/guides/logical-replication-kafka-confluent" title="Confluent (Kafka)" description="Replicate data from Neon with Confluent (Kafka)" icon="confluent"></a>
+
+<a href="/docs/guides/logical-replication-databricks" title="Databricks" description="Replicate data from Neon to Databricks with Lakeflow Connect" icon="databricks"></a>
 
 <a href="/docs/guides/logical-replication-decodable" title="Decodable" description="Replicate data from Neon with Decodable" icon="decodable"></a>
 
@@ -149,6 +156,8 @@ updatedOn: '2026-01-13T18:46:54.024Z'
 <a href="/docs/guides/sequin" title="Sequin" description="Stream changes and rows from your database to anywhere with Sequin" icon="sequin"></a>
 
 <a href="/docs/guides/logical-replication-airbyte-snowflake" title="Snowflake" description="Replicate data from Neon to Snowflake with Airbyte" icon="snowflake"></a>
+
+<a href="/docs/guides/logical-replication-stacksync" title="Stacksync" description="Replicate data from Neon with Stacksync" icon="stacksync"></a>
 
 </TechCards>
 

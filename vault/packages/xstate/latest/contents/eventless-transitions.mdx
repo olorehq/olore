@@ -101,6 +101,29 @@ const machine = createMachine({
   title="Kettle with eventless transitions"
 />
 
+## Observability and transient states
+
+States that are **only** entered and left via eventless (`always`) transitions in the same step are *transient*: the machine passes through them without ever emitting a snapshot to subscribers. As a result:
+
+- **`actor.subscribe()`** only receives the final snapshot after all eventless transitions have been applied.
+- **`waitFor(actor, predicate)`** will never see those intermediate states, so a predicate that matches a transient state or its [tags](tags) will not resolve.
+- **`snapshot.matches(...)`** and **`snapshot.hasTag(...)`** will never be true for a state that is only reached and left via `always` in one step.
+
+Entry and exit [actions](actions) on those states still run; only the snapshot emission is skipped.
+
+**When you need to observe or wait for such a state** (for example in tests or when matching tags):
+
+1. **Use the [inspection API](inspection)** and listen for `@xstate.microstep` events. Each microstep (including eventless transitions) is reported there, so you can detect when the machine passes through a transient state.
+2. **Use a zero-delay transition instead of `always`** when observability is required: `after: { 0: 'nextState' }`. The behavior is the same in a single tick, but the actor emits a snapshot for that state, so `subscribe`, `waitFor`, `matches`, and `hasTag` work as expected.
+
+```ts
+// Transient: not observable via subscribe/waitFor/matches/hasTag
+always: { target: 'nextState' }
+
+// Observable: use when you need to wait for or match this state
+after: { 0: 'nextState' }
+```
+
 ## Eventless transitions and TypeScript
 
 <Callout>

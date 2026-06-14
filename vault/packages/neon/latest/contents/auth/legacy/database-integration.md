@@ -1,10 +1,19 @@
 ---
 title: Legacy Neon Auth - Database Integration
 subtitle: 'Technical reference for users_sync table, backend auth, and RLS'
+summary: >-
+  The legacy Neon Auth `neon_auth.users_sync` table is automatically created
+  and kept in sync with your Stack Auth provider, so you can query user data
+  and add foreign keys without building custom webhook handlers. This reference
+  covers foreign key patterns (CASCADE vs SET NULL), Row-Level Security setup
+  using a Stack Auth JWKS URL, and backend token verification via JWT or the
+  Stack Auth REST API in Node.js and Python. Legacy Neon Auth is no longer
+  available for new projects; new projects should use Neon Auth with
+  Better Auth.
 enableTableOfContents: true
 tag: archived
 noindex: true
-updatedOn: '2026-02-02T12:37:39.429Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <Admonition type="warning" title="You are viewing legacy documentation">
@@ -21,7 +30,7 @@ Neon Auth simplifies database operations by automatically managing user data syn
 
 ### The users_sync table
 
-The `neon_auth.users_sync` table is automatically created and kept in sync by Neon Auth. No action is needed from you—it's immediately available for use in your schema and queries.
+The `neon_auth.users_sync` table is automatically created and kept in sync by Neon Auth. No action is needed from you; it's immediately available for use in your schema and queries.
 
 **Table structure:**
 
@@ -87,7 +96,7 @@ Since the `neon_auth.users_sync` table is updated asynchronously, there may be a
 If you do choose to use foreign keys, make sure to specify an `ON DELETE` behavior that matches your needs: for example, `CASCADE` for personal data like todos or user preferences, and `SET NULL` for content like blog posts or comments that should persist after user deletion.
 
 ```sql
--- For personal data that should be removed with the user (e.g., todos)
+-- For personal data that should be removed with the user (for example, todos)
 CREATE TABLE todos (
     id SERIAL PRIMARY KEY,
     task TEXT NOT NULL,
@@ -95,7 +104,7 @@ CREATE TABLE todos (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- For content that should persist after user deletion (e.g., blog posts)
+-- For content that should persist after user deletion (for example, blog posts)
 CREATE TABLE posts (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
@@ -109,7 +118,7 @@ CREATE TABLE posts (
 
 When querying data that relates to users:
 
-- Use LEFT JOINs instead of INNER JOINs with the `users_sync` table in case of any sync delays. This ensures that all records from the main table (e.g., posts) are returned even if there's no matching user in the `users_sync` table yet.
+- Use LEFT JOINs instead of INNER JOINs with the `users_sync` table in case of any sync delays. This ensures that all records from the main table (for example, posts) are returned even if there's no matching user in the `users_sync` table yet.
 - Filter out deleted users since the table uses soft deletes (users are marked with a `deleted_at` timestamp when deleted).
 
 Here's an example of how to handle both in your queries:

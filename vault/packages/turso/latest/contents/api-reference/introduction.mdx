@@ -1,17 +1,81 @@
 ---
 sidebarTitle: Introduction
 title: Turso Platform API
-description:
+description: Programmatically manage databases, groups, organizations, and tokens with the Turso Platform API.
 ---
 
-The Turso API gives you everything needed to manage your organization and its members, groups, databases, and API tokens.
+## Quickstart with the TypeScript SDK
 
-If you want to programatically create and manage databases, either for building a platform where you provide SQLite databases to your users or have a per-user SQLite database architecture, this is the API to do that.
+The fastest way to use the Platform API from JavaScript or TypeScript is the official [`@tursodatabase/api`](https://www.npmjs.com/package/@tursodatabase/api) client:
+
+```bash
+npm install @tursodatabase/api
+```
+
+```ts
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: process.env.TURSO_ORG!,
+  token: process.env.TURSO_PLATFORM_TOKEN!,
+});
+
+// Create a database
+const db = await turso.databases.create("user-abc123", { group: "default" });
+
+// Generate a scoped auth token for that database
+const { jwt } = await turso.databases.createToken("user-abc123");
+
+// Delete it when no longer needed
+await turso.databases.delete("user-abc123");
+```
+
+For the raw HTTP reference, see the resource endpoints below.
+
+## Common use cases
+
+### Database per user / database per agent (multi-tenant)
+
+Provision a dedicated database per user or per AI agent. Each entity gets its own isolated SQLite database that you create, token-scope, and tear down via the API.
+
+```ts
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: process.env.TURSO_ORG!,
+  token: process.env.TURSO_PLATFORM_TOKEN!,
+});
+
+// On user signup or agent creation — provision a database
+const db = await turso.databases.create(`agent-${agentId}`, { group: "default" });
+
+// Generate a scoped token for that database
+const { jwt } = await turso.databases.createToken(`agent-${agentId}`);
+
+// Store db.hostname and jwt for the session
+```
+
+Once the database is created, connect to it from your application:
+
+- **Over the wire** — query the database remotely using [`@tursodatabase/serverless`](/sdk/ts/quickstart)
+- **Local-first with sync** — sync the database to and from a local file using [`@tursodatabase/sync`](/sync/usage)
+
+### Platform / reseller
+
+Create and manage databases on behalf of your end users. Use the Platform API to build your own database-as-a-service on top of Turso.
+
+```ts
+// List all databases in your organization
+const databases = await turso.databases.list();
+
+// Get details for a specific database
+const db = await turso.databases.get("customer-db");
+```
 
 <CardGroup cols={2}>
 
 <Card title="API Quickstart" icon="play" href="/api-reference/quickstart">
-  Get started with the Turso API to create your first database.
+  Step-by-step guide to create your first database with the API.
 </Card>
 
 </CardGroup>

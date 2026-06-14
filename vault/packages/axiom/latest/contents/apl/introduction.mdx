@@ -1,13 +1,17 @@
 ---
 title: "Axiom Processing Language (APL)"
-description: "This section explains how to use the Axiom Processing Language to get deeper insights from your data."
+description: "Use APL to query logs, traces, and events with a text-based query language."
 sidebarTitle: Introduction
 keywords: ['axiom documentation', 'documentation', 'axiom', 'APL', 'axiom processing language', 'data explorer', 'getiing started guide', 'summarize', 'filter']
 ---
 
 import Prerequisites from "/snippets/minimal-prerequisites.mdx"
 
-The Axiom Processing Language (APL) is a query language that’s perfect for getting deeper insights from your data. Whether logs, events, analytics, or similar, APL provides the flexibility to filter, manipulate, and summarize your data exactly the way you need it.
+Axiom Processing Language (APL) is a text-based query language for logs, traces, and events stored in [EventDB](/platform-overview/architecture). It provides the flexibility to filter, manipulate, and summarize your data exactly the way you need it.
+
+<Info>
+You can't use APL to query metrics. To query metrics, use [MPL](/mpl/introduction).
+</Info>
 
 <Prerequisites />
 
@@ -85,6 +89,104 @@ If the name of a dataset or field contains at least one of the following special
 To quote the dataset or field in your APL query, enclose its name with quotation marks (`'` or `"`) and square brackets (`[]`). For example, `['my-field']`.
 
 For more information on rules about naming and quoting entities, see [Entity names](/apl/entities/entity-names).
+
+## Common patterns
+
+### Handle nested JSON
+
+A common scenario is dealing with fields that contain JSON objects. Use `parse_json` to access nested data.
+
+```kusto
+['sample-http-logs']
+| extend parsed_headers = parse_json(req_duration_ms)
+| where isnotempty(method)
+| project _time, method, status, geo.city
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20extend%20parsed_headers%20%3D%20parse_json(req_duration_ms)%5Cn%7C%20where%20isnotempty(method)%5Cn%7C%20project%20_time%2C%20method%2C%20status%2C%20%5B'geo.city'%5D%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+- `extend parsedField = parse_json(...)` converts JSON text into a structured field you can access with dot notation.
+- `project _time, method, status, geo.city` selects only the fields you need.
+
+### Filter and project early
+
+A well-written query runs faster, consumes fewer resources, and gets you answers more efficiently. The two most important principles:
+
+1. **Filter early.** Reduce the amount of data as soon as possible.
+1. **Project only what you need.** Avoid selecting unnecessary fields.
+
+Some datasets are wide, containing hundreds or thousands of fields. When you query these datasets with APL, use `project` to select only the fields you need. Without `project`, Axiom retrieves all fields for each event, which slows down queries.
+
+**Sub-optimal:**
+
+```kusto
+['sample-http-logs']
+| sort by _time desc
+| take 10
+```
+
+This retrieves all fields for each of the 10 events.
+
+**Optimized:**
+
+```kusto
+['sample-http-logs']
+| project _time, method, status, uri, resp_body_size_bytes
+| sort by _time desc
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20project%20_time%2C%20method%2C%20status%2C%20uri%2C%20resp_body_size_bytes%5Cn%7C%20sort%20by%20_time%20desc%5Cn%7C%20take%2010%22%2C%22queryOptions%22%3A%7B%22quickRange%22%3A%2230d%22%7D%7D)
+
+By adding `project`, the query ignores all other fields, minimizing I/O and reducing data sent over the network.
+
+<Tip>
+- Always use `project` or `project-away` after your `where` filters to reduce data volume. `project` keeps specified fields, `project-away` removes them.
+- Place your most restrictive `where` filters as early as possible in the query.
+</Tip>
+
+### Virtual fields
+
+[Virtual fields](/query-data/virtual-fields) let you define new fields based on an APL expression. Instead of pre-processing data before sending it to Axiom, you create these fields on the fly during a query. This provides flexibility for analysis without altering the raw data.
+
+**Example: Simple conversion**
+
+This example converts a response body size from bytes to kilobytes:
+
+- **Name:** `resp_size_kb`
+- **Expression:** `resp_body_size_bytes / 1024`
+
+**Example: Categorization**
+
+This example uses conditional logic to segment data. Define a virtual field to categorize HTTP responses:
+
+- **Name:** `response_category`
+- **Expression:** `case(status >= 500, "Server Error", status >= 400, "Client Error", status >= 300, "Redirect", "Success")`
+
+Now you can run queries like `... | summarize count() by response_category` to compare behavior across these groups.
+
+<Tip>
+- Use virtual fields to avoid sending redundant data. If you can derive a value, you don't need to add it to your raw logs.
+- Use virtual fields to normalize data from different sources. If one service logs `request_time` and another logs `duration`, create a virtual field using `coalesce(request_time, duration)` to standardize them.
+- For very common, expensive transformations queried frequently, consider performing them at ingest time instead.
+</Tip>
+
+### Factors impacting query performance
+
+- **Catch-all queries:** Queries that don't specify fields with `project` select all fields. Avoid this on high-dimensionality datasets.
+- **High cardinality `summarize` operations:** When the `by` field has very many unique values (like a `traceId`), the query may produce an enormous number of groups. Axiom has built-in limits to protect against this.
+- **Mixed data types:** If a field has mixed types (for example, a status code is sometimes a number `200` and sometimes a string `"200"`), queries can produce unexpected results.
+For best performance, aim for consistent typing. If you can't avoid mixed types, normalize the data at query time using typecasting functions like `tostring()` or `toint()`. For example, `| where tostring(status) startswith "2"` works reliably on a field with mixed types.
+
+For more information, see [Performance](/reference/performance).
+
+### Platform limits
+
+- **Fields per dataset:** A dataset can have a maximum number of fields. While the limit is high, ingesting logs with thousands of fields can cause issues.
+- **Data retention:** Datasets have a configurable retention period. Data older than this period is automatically deleted.
+- **Query rate limits:** Axiom imposes rate limits on queries to ensure service stability.
+
+For more information, see [Limits](/reference/limits).
 
 ## What’s next
 

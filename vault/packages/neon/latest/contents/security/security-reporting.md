@@ -1,7 +1,13 @@
 ---
 title: Security reporting
+summary: >-
+  Neon accepts vulnerability reports at security@neon.tech or via Signal for
+  sensitive information. Neon commits to responding within three business
+  days with strict confidentiality and public credit in security.txt. Report
+  suspected vulnerabilities here, review responsible disclosure rules, or
+  submit through Neon's bug bounty program on HackerOne.
 enableTableOfContents: true
-updatedOn: '2025-03-07T12:51:22.977Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 We have established the following security reporting procedure to address security issues quickly.

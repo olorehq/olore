@@ -1,0 +1,75 @@
+---
+title: Write evaluations skill
+description: "This page explains how to use the Write evaluations skill to give AI coding agents the ability to scaffold and run evaluation suites for AI capabilities using Axiom AI SDK."
+sidebarTitle: Write evaluations
+keywords: ["skills", "ai agents", "evals", "evaluations", "amp", "claude code", "cursor", "codex", "scorers", "flag schemas", "axiom ai sdk", "llm testing"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The Write evaluations skill turns AI agents into evaluation suite authors for AI capabilities.
+
+Evaluations are the test suite for non-deterministic systems: they measure whether a capability still behaves correctly after every change. You can write offline evaluations to test your AI capability against a curated collection of inputs with expected outputs (ground truth). Or you can write online evaluations to score your AI capability's outputs on live production traffic.
+
+For more information, see [Evaluations](/ai-engineering/evaluate/overview).
+
+## What the Write evaluations skill does
+
+**Offline evaluations**
+
+- **Evaluation files**: Generates complete evaluation files with scorers, test data, and task definitions ready to run
+- **Scoring methods**: Supports a range of scoring strategies, from simple exact matching to structured output and tool-use validation
+- **Experiment configuration**: Sets up typed configuration so you can sweep models and parameters without changing code
+- **Project setup**: Scaffolds the config file that wires your evaluations into the Axiom AI SDK
+- **Test data**: Designs test cases that cover normal use, edge cases, and failure scenarios
+
+**Online evaluations**
+
+- **Live traffic scoring**: Scores real production responses without needing a reference answer to compare against
+- **Sampling controls**: Lets you score a fraction of traffic or apply conditional logic to decide what to evaluate
+- **Trace linking**: Connects evaluation results back to the traces that produced them
+
+<Prerequisites />
+- Follow the procedure in [Quickstart](/ai-engineering/quickstart) to set up Axiom AI SDK in your TypeScript project. Authenticate with [environment variables](/ai-engineering/quickstart#store-environment-variables).
+- Install [vitest](https://www.npmjs.com/package/vitest) as a dev dependency by running `npm install vitest --save-dev`.
+
+<SkillsCredentials />
+
+## Use the skill
+
+The Write evaluations skill activates automatically when you ask your AI agent to:
+
+- Write evaluations for an AI feature
+- Create scorers for testing AI output
+- Set up flag schemas for experiment configuration
+- Generate test data for AI capabilities
+
+Example prompts:
+
+- "Write evaluations for the support agent's message categorization function"
+- "Add adversarial test cases to the existing eval suite"
+- "Set up flag schemas to compare GPT-4o and GPT-5 across all evals"
+- "Create an online eval to monitor response quality in production"
+
+## How it works
+
+The Write evaluations skill follows a structured workflow:
+
+1. **Understand the feature**: The agent reads your AI function's code, traces inputs and outputs, identifies the model call, and checks for existing evaluations.
+1. **Determine evaluation type**: Based on the output type (classification, free-form text, structured object, tool calls, retrieval results), the agent selects the appropriate evaluation pattern and scorers.
+1. **Generate evaluation file**: The agent creates a `.eval.ts` file colocated with the source, imports the actual function, and wires up typed scorers.
+1. **Design test data**: The agent generates test cases covering happy path, adversarial, boundary, and negative categories.
+1. **Validate and run**: The agent validates the evaluation structure and runs it locally.
+
+## Supported evaluation types and templates
+
+The Write evaluations skill includes a pre-built template for each supported evaluation type:
+
+| Output type | Evaluation type | Scorer pattern | Use case |
+| --- | --- | --- | --- |
+| String category or label | Classification | Exact match | Category classification with adversarial cases |
+| Free-form text | Text quality | Contains keywords or LLM-as-judge | Open-ended response quality |
+| Array of items | Retrieval | Set match | RAG and document retrieval |
+| Structured object | Structured output | Field-by-field match | Complex object validation |
+| Agent result with tool calls | Tool use | Tool name presence | Agent tool usage validation |

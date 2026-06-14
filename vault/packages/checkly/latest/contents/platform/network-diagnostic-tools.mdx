@@ -12,7 +12,7 @@ Checkly provides:
 
 - **TCP dumps:** capture network traffic to inspect packet-level behavior
 - **Traceroute report:** trace the path your request takes across the internet
-{/* - **Ping (ICMP):** test basic reachability and measure latency to a target host */}
+- **ICMP monitors:** continuously monitor host reachability, latency, and packet loss
 
 Whether you're debugging a slow response or tracing a connection failure, these tools can help you get to the root of the problem.
 
@@ -58,7 +58,13 @@ Traceroute is currently only available for API checks.
 On checks that fail due to network errors (e.g. DNS resolution issues, TCP handshake failures, connection timeouts), a traceroute report is displayed in the **Network Diagnostics** section of the check results page.
 The table shows each hop, its IP or hostname, along with metrics such as packet loss, latency, and jitter.
 
-{/* ### Ping (ICMP)
+## ICMP monitors
 
-[coming in Q4 2025] */}
+[ICMP monitors](/detect/uptime-monitoring/icmp-monitors/overview) let you proactively detect network issues by continuously pinging a host. They measure round-trip latency and packet loss over time, making them useful for:
+
+- Verifying reachability of hosts that don't expose HTTP endpoints
+- Detecting network-level outages before they affect application-layer checks
+- Tracking latency and packet loss trends across regions
+
+Learn more about setting up ICMP monitors in the [ICMP monitor overview](/detect/uptime-monitoring/icmp-monitors/overview) and [configuration](/detect/uptime-monitoring/icmp-monitors/configuration) docs.
 

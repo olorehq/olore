@@ -2,8 +2,16 @@
 title: Schema diff tutorial
 subtitle: Step-by-step guide showing you how to compare two development branches using
   Schema Diff
+summary: >-
+  Schema Diff tutorial for comparing a feature branch against a production
+  branch in Neon using a side-by-side, GitHub-style diff. Available from the
+  Console, the `neon branches schema-diff` CLI command, or the compare-schema
+  REST API. Use this page when you need a concrete end-to-end example: create a
+  database on production, branch it to a dev branch, alter the schema, then run
+  Schema Diff to see exactly which tables, sequences, and constraints differ
+  before merging or restoring.
 enableTableOfContents: true
-updatedOn: '2026-01-15T23:54:00.610Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 In this guide we will create an initial schema on a new database called `people` on our `production` branch. We'll then create a development branch called `feature/address`, following one possible convention for naming feature branches. After making schema changes on `feature/address`, we'll use the **Schema Diff** tool on the **Branches** page to get a side-by-side, GitHub-style visual comparison between the `feature/address` development branch and `production`.
@@ -14,7 +22,7 @@ To complete this tutorial, you'll need:
 
 - A Neon account. Sign up [here](/docs/get-started/signing-up).
 - To interact with your Neon database from the command line:
-  - Install the [Neon CLI](/docs/reference/cli-install)
+  - Install the [Neon CLI](/docs/cli/install)
   - Download and install the [psql](https://www.postgresql.org/download/) client
 
 <Steps>
@@ -433,7 +441,7 @@ curl --request GET \
 | ------------------ | -------------------------------------------------------------------------- | -------- | ------------------------- |
 | `<project_id>`     | The ID of your Neon project.                                               | Yes      | `royal-band-06902338`     |
 | `<branch_id>`      | The ID of the target branch to compare.                                    | Yes      | `br-mute-dew-a5930esi`    |
-| `<base_branch_id>` | The ID of the base branch for comparison — the parent branch in this case. | Yes      | `br-bitter-bird-a56n6lh4` |
+| `<base_branch_id>` | The ID of the base branch for comparison (the parent branch in this case). | Yes      | `br-bitter-bird-a56n6lh4` |
 | `<db_name>`        | The name of the database in the target branch.                             | Yes      | `people`                  |
 | `Authorization`    | Bearer token for API access (your [Neon API key](/docs/manage/api-keys))   | Yes      | `$NEON_API_KEY`           |
 

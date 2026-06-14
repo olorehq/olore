@@ -1,8 +1,17 @@
 ---
 title: Postgres jsonb_array_elements() function
 subtitle: Expands a JSONB array into a set of rows
+summary: >-
+  `jsonb_array_elements(jsonb)` is a PostgreSQL set-returning function that
+  explodes a JSONB array into one row per element, preserving each element as a
+  JSONB value rather than plain text. Use it when you need to unnest a JSONB
+  array for filtering, joining against other tables, or further JSON operations;
+  choose `jsonb_array_elements_text` instead when you need plain-text output for
+  string aggregation or text functions. Also covered: ordering output with
+  `WITH ORDINALITY`, SQL NULL values inside arrays, nested JSONB arrays, and
+  `jsonb_path_query` for path-based filtering.
 enableTableOfContents: true
-updatedOn: '2024-06-14T07:55:54.376Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 You can use the `jsonb_array_elements` function to expand a `JSONB` array into a set of rows, each containing one element of the array. It is a simpler option compared to complex looping logic. It is also more efficient than executing the same operation on the application side by reducing data transfer and processing overhead.
@@ -374,7 +383,7 @@ GROUP BY name;
 
 If your query involves navigating through multiple levels of nesting, complex filtering conditions, or updates to `JSONB` data, `jsonb_path_query` is often the preferred choice.
 
-Consider a simple example — to extract the first skill of each developer in the `developers` table:
+Consider a simple example: to extract the first skill of each developer in the `developers` table:
 
 ```sql
 SELECT jsonb_path_query(skills, '$[0]') AS first_skill

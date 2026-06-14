@@ -16,7 +16,7 @@ Let's explore, in more detail, the application development workflow we recommend
 
 To create a new Next.js app, pre-configured to run on Cloudflare using `@opennextjs/cloudflare`, run:
 
-```bash
+```sh
 npm create cloudflare@latest -- my-next-app --framework=next --platform=workers
 ```
 
@@ -26,8 +26,7 @@ We believe that the best development workflow uses the `next dev` command provid
 
 To access Cloudflare resources using the `getCloudflareContext` API while running `next dev`, you will need to update the Next.js configuration to call `initOpenNextCloudflareForDev`, as shown in the following example:
 
-```ts
-// next.config.ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -61,7 +60,7 @@ Use the `build` command followed by either `deploy` or `upload` to deploy your l
 <Callout type="warning">
   When running the `build` command locally, `.dev.vars` and [Next `.env`
   files](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables) might
-  override your configuration. It is preferreable to use a CD system as [Workers
+  override your configuration. It is preferable to use a CD system as [Workers
   Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) to deploy your application for reproducible
   deployments.
 </Callout>

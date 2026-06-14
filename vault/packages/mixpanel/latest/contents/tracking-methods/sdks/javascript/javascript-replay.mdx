@@ -103,6 +103,32 @@ mixpanel.stop_session_recording();
 | We only want to record users utilizing certain features | When user is about to access the feature you wish to capture replays for, call `mixpanel.start_session_recording()` to force recording on |
 
 
+#### Cross-Origin iFrame Recording (Requires minimum SDK version: 2.76)
+
+Session Replay captures content from cross-origin iframes embedded within your page, delivering a unified replay experience across parent pages and embedded third-party content. To enable this feature, you must explicitly allowlist domains using record_allowed_iframe_origins for security purposes.
+
+**Example Usage**
+
+On your parent site `www.yoursite.com`, specify the origins from which recording data is accepted:
+
+```mixpanel.init('YOUR_PROJECT_TOKEN', {
+  record_sessions_percent: 100,
+  record_allowed_iframe_origins: [
+    'https://embedded-widget.example.com',
+  ],
+});
+```
+
+On the child iframe page `https://embedded-widget.example.com`, add the parent page's origin to `record_allowed_iframe_origins`:
+
+```mixpanel.init('YOUR_PROJECT_TOKEN', {
+  record_sessions_percent: 100,
+  record_allowed_iframe_origins: [
+    'https://yoursite.com',
+  ],
+});
+```
+
 ### Additional Configuration Options
 
 You can customize the behavior of replay captures by using the init options outlined below.
@@ -139,6 +165,8 @@ mixpanel.init(
 | `record_canvas` | When true, Mixpanel will record snapshots of `<canvas>` elements on your site at up to 15 frames per second | `false` |
 | `record_heatmap_data` | When true, Mixpanel will capture click events during replays to populate Heatmaps. You can learn more [here](/docs/session-replay/heatmaps). | `false` |
 | `record_console` | When true, Mixpanel will record console logs, warnings, and errors as part of the replay. | `true` |
+| `record_network` | When true, Mixpanel will record network requests as part of the replay. See [Network Recording](/docs/tracking-methods/sdks/javascript/javascript-replay#network-recording) for details. | `false` |
+| `record_network_options` | Configuration for network recording behavior, including which headers/bodies to capture. See [Network Recording Options](/docs/tracking-methods/sdks/javascript/javascript-replay#network-recording-options). | `{}` |
 | `remote_settings_mode` | Setting for handling remote configuration during SDK initialization. Can be `disabled`, `fallback`, `strict`. | `disabled` |
 
 Note: Canvas recording (record_canvas) utilizes [rrweb's](https://github.com/rrweb-io/rrweb) UNSAFE_replayCanvas option, which is experimental and not fully supported. We recommend testing thoroughly before deploying to production.
@@ -164,9 +192,94 @@ mixpanel.init('YOUR_PROJECT_TOKEN', {
     record_mask_input_selector: '.sensitive-input'
 });
 ```
+## Network Recording
+
+<Callout type="info">
+Network recording is available in SDK version `v2.76.0` and above.
+</Callout>
+
+Session Replay can capture network requests made during a replay, giving you visibility into API calls, resource loads, and other network activity alongside the visual playback. This is useful for debugging issues where network behavior (failed requests, slow responses, etc.) is relevant to the user experience.
+
+Network recording is disabled by default. To enable it, set `record_network` to `true` in your init options.
+
+**Example Usage**
+
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    record_sessions_percent: 100,
+    record_network: true
+});
+```
+
+By default, network recording captures timing and metadata (URL, status code, initiator type, duration) for all resource types. **No headers or request/response bodies are recorded unless you explicitly configure them.**
+
+### Network Recording Options
+
+For more control, use `record_network_options` to customize what gets recorded.
+
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    record_sessions_percent: 100,
+    record_network: true,
+    record_network_options: {
+        // Only capture these resource types (default: all types)
+        initiatorTypes: ['fetch', 'xmlhttprequest'],
+
+        // Ignore requests to these URL patterns
+        ignoreRequestUrls: ['https://api.example.com/health'],
+
+        // Custom function to ignore requests based on request data
+        ignoreRequestFn: function(data) {
+            return data.url.includes('/internal/');
+        },
+
+        // Allowlist of headers to record (empty by default)
+        recordHeaders: {
+            request: ['content-type', 'authorization'],
+            response: ['content-type', 'x-request-id']
+        },
+
+        // Record request/response bodies only for matching URL patterns
+        recordBodyUrls: {
+            request: ['https://api.example.com/submit'],
+            response: ['https://api.example.com/submit']
+        },
+
+        // Capture requests that occurred before recording started
+        recordInitialRequests: true
+    }
+});
+```
+
+#### Options Reference
+
+| Option | Type | Description | Default |
+| --- | --- | --- | --- |
+| `initiatorTypes` | `InitiatorType[]` | Resource types to capture. Supported types include: `fetch`, `xmlhttprequest`, `img`, `script`, `link`, `css`, `audio`, `video`, `beacon`, and [others](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/initiatorType). | All types |
+| `ignoreRequestUrls` | `string[]` | List of URL patterns (matched as regex) to exclude from recording. | `[]` |
+| `ignoreRequestFn` | `(data: NetworkRequest) => boolean` | Custom function to filter out requests. Return `true` to ignore a request. The function receives the network request data including URL, method, status, and any recorded headers. | `() => false` |
+| `recordHeaders` | `{ request: string[], response: string[] }` | Allowlist of header names to record for requests and responses. Header names are case-insensitive. Only headers in this list will be captured. | `{ request: [], response: [] }` |
+| `recordBodyUrls` | `{ request: string[], response: string[] }` | URL patterns (matched as regex) for which to record request and response bodies. Bodies are only recorded for `fetch` and `xmlhttprequest` initiator types. | `{ request: [], response: [] }` |
+| `recordInitialRequests` | `boolean` | When `true`, captures resource timing entries for requests that completed before recording started (e.g., initial page load resources). | `false` |
+
+<Callout type="warning">
+**Privacy Note:** Be mindful of what headers and bodies you choose to record. Avoid recording headers or bodies that contain sensitive information such as authentication tokens, personally identifiable information (PII), or other confidential data. Use the allowlist-based approach (`recordHeaders` and `recordBodyUrls`) to explicitly opt in to only the data you need.
+</Callout>
+
+### How It Works
+
+Network recording uses two complementary mechanisms:
+
+- **Performance Observer**: Captures timing data for all resource types (images, scripts, stylesheets, etc.) using the browser's [PerformanceObserver API](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver). This provides URL, status code, start/end times, and initiator type.
+- **Fetch & XHR monkey-patching**: For `fetch` and `xmlhttprequest` requests, the SDK wraps the native APIs to capture headers and bodies (when configured). Importantly, the SDK does not modify the original request arguments or block requests while reading response bodies — response bodies are cloned asynchronously to avoid impacting your application's performance.
+
 ## Remote Configuration
 
-By setting `remote_settings_mode` you can quickly set SDK options for your project in mixpanel under `Settings > Project > Session Replay`.
+<Callout type="info">
+  Available only for customers with a paid session replay add-on. Requires version 2.74.0
+</Callout>
+
+By setting `remote_settings_mode` you can quickly set SDK options for your project in Mixpanel under `Settings > Organization Settings > Session Replay`.
 
 Three modes are available:
 
@@ -180,6 +293,67 @@ List of currently supported remote settings:
 - `record_sessions_percent`
 
 Settings that are not yet supported, will not appear in the remote configuration. These non-included options will use the value that was initially set by the user for all `remote_settings_mode` options.
+
+**Example Usage**
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    record_sessions_percent: 100,
+    remote_settings_mode: 'fallback'
+});
+```
+
+## Cross-Origin Iframe Recording
+
+<Callout type="info">
+Cross-origin iframe recording requires SDK version 2.77.0 or later.
+</Callout>
+
+Session Replay can capture content from cross-origin iframes embedded within your page, providing a unified replay experience across parent pages and embedded third-party content. This is useful when your application embeds widgets, checkout flows, or other cross-origin content that you want to include in your replays.
+
+The SDK handles the communication between parent and child frames automatically using a secure handshake mechanism.
+
+### Configuration
+
+Both the parent page and the child iframe page must be configured to allow cross-origin recording.
+
+#### Parent Page Setup
+
+On your parent page, add the origins of any iframes you want to record to the `record_allowed_iframe_origins` array:
+
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    record_sessions_percent: 100,
+    record_allowed_iframe_origins: [
+        'https://embedded-widget.example.com',
+        'https://partner-checkout.example.com'
+    ]
+});
+```
+
+#### Child Iframe Page Setup
+
+On the child iframe page, add the parent page's origin to `record_allowed_iframe_origins`:
+
+```javascript
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+    record_sessions_percent: 100,
+    record_allowed_iframe_origins: [
+        'https://yoursite.com'
+    ]
+});
+```
+
+### Origin Format Requirements
+
+Origins must be specified in the format `protocol://domain[:port]`. The SDK performs exact matching, so ensure your origins are formatted correctly.
+
+| Format | Example | Valid |
+|--------|---------|-------|
+| HTTPS domain | `https://example.com` | ✓ |
+| HTTP with port | `http://localhost:3000` | ✓ |
+| No protocol | `example.com` | ✗ |
+| With path | `https://example.com/page` | ✗ |
+| Wildcard | `https://*.example.com` | ✗ |
 
 ## Replay ID
 
@@ -351,14 +525,31 @@ The direct integration automatically includes session replay properties (`$mp_re
 
 Rudderstack's Javascript SDK has a `.getAnonymousId()` method which can be used to [retrieve the device_id](https://www.rudderstack.com/docs/sources/event-streams/sdks/rudderstack-javascript-sdk/supported-api/#retrieving-anonymous-id). In the following example, we use this method to bind Rudderstack's anonymousId to Mixpanel's device_id, as well as patching [track](https://www.rudderstack.com/docs/sources/event-streams/sdks/rudderstack-javascript-sdk/supported-api/#track) and [page](https://www.rudderstack.com/docs/sources/event-streams/sdks/rudderstack-javascript-sdk/supported-api/#page) event methods to include session replay properties on every Rudderstack event.
 
+
+<Callout type="info">
+**Race Condition Note (RudderStack + Heatmaps):** If you are using `record_heatmap_data`, set it to `false` at init and enable it via `set_config()` only after the RudderStack anonymousId has been registered. This prevents heatmap click events from firing with Mixpanel's default `$device_id` before your custom identity binding completes, which can create orphaned anonymous profiles and inflate MTU counts.
+</Callout>
+
 ```javascript Javascript
 mixpanel.init('MIXPANEL-PROJECT-TOKEN', {
+  // Set your desired sampling rate at init — the sampling decision is evaluated here.
   record_sessions_percent: 10,
+
+// Disabled initially to prevent race condition with RudderStack ID binding.
+  // Remove this line if you are not using heatmaps.
+  record_heatmap_data: false,
+
+
   loaded: function (mixpanel) {
     window.rudderanalytics.ready(function() {
       const rudderAnonymousId = rudderanalytics.getAnonymousId();
       if (rudderAnonymousId) {
 	mixpanel.register({ $device_id: rudderAnonymousId, distinct_id : "$device:"+rudderAnonymousId });
+		
+		// Enable heatmap data now that the correct device_id is registered.
+        // Remove this line if you are not using heatmaps.
+        mixpanel.set_config({ record_heatmap_data: true });
+
       }
  
       // Patch track method to include sessionReplayProperties

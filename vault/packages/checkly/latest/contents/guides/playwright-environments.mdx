@@ -1,0 +1,268 @@
+---
+title: How to use environment variables in Checkly Playwright Check Suites
+description: Learn how to run the same Playwright tests against different environments and URLs using Checkly.
+sidebarTitle: Environment-aware Playwright Tests
+---
+
+import { YoutubeCallout } from "/snippets/youtube-callout.jsx"
+
+When you set up [a Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) to run Playwright in the Checkly infrastructure, your tests run in at least two very different contexts. Locally, they hit `localhost`. On Checkly, they hit a deployed URL.
+
+While you could maintain separate Playwright config files for each environment, you can also rely on environment variables to handle the entire Checkly workflow from a single `playwright.config.ts`. Run `npx playwright test` locally, [`npx checkly test`](/cli/checkly-test) against a staging URL, and [`npx checkly deploy`](/cli/checkly-deploy) for scheduled production monitoring.
+
+## What Checkly sets for you
+
+When your Playwright tests run as a Playwright Check Suite, Checkly sets [environment variables](/detect/synthetic-monitoring/playwright-checks/environment-variables) into your test process:
+
+| Variable | Value | Use case |
+|---|---|---|
+| `CHECKLY` | `"1"` | Detect that you're running on Checkly at all |
+| `CHECKLY_RUN_SOURCE` | `"SCHEDULER"`, `"TEST_NO_RECORD"`, `"TEST_RECORD"`, `"TRIGGER_API"`, `"CLI_DEPLOY"`, `"DEPLOYMENT"`, etc. | Distinguish _how_ the check was triggered |
+| `CHECKLY_REGION` | `"eu-west-1"`, `"us-east-1"`, etc. | Know which data center is running the check |
+| `CHECK_NAME` | String | The name of the check |
+| `CHECKLY_CHECK_ID` | UUID | The UUID of the check |
+
+`CHECKLY` is the simplest variable. It's a boolean flag.
+
+`CHECKLY_RUN_SOURCE` gives you more granularity: was this a scheduled production run, a test from the CLI, or a deployment trigger?
+
+<Tip>Please see [the Playwright Check Suites environment variable docs](/detect/synthetic-monitoring/playwright-checks/environment-variables) for all built-in environment variables. You can also define your own variables and secrets at the check, group, or account level. See [Environment Variables](/platform/variables) and [Secrets](/platform/secrets).</Tip>
+
+## The basic pattern: a simple toggle
+
+If you only need two modes (local development and Checkly monitoring), a single boolean defined in your `playwright.config` does the job.
+
+```typescript playwright.config.ts highlight={3}
+import { defineConfig, devices } from "@playwright/test";
+
+const isCheckly = !!process.env.CHECKLY;
+
+export default defineConfig({
+  retries: isCheckly ? 2 : 0,
+  use: {
+    trace: isCheckly ? "on" : "retain-on-failure",
+  },
+  projects: [
+    {
+      name: "checkly",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: isCheckly
+          ? "https://staging.example.com"
+          : "http://localhost:3000",
+      },
+    },
+  ],
+  webServer: isCheckly
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: true,
+      },
+});
+```
+
+In this scenario, `isCheckly` toggles four things at once:
+
+- **`baseURL`**: `localhost` for local dev, your deployed URL on Checkly
+- **`retries`**: no retries locally (fast feedback), 2 retries on Checkly (resilience against transient network issues and test flakiness)
+- **`trace`**: always captured on Checkly for debugging, only on failure locally to save disk space (see [Reading traces](/guides/reading-traces))
+- **`webServer`**: starts your dev server locally, skipped on Checkly (the deployed site is already running)
+
+<Note>`baseURL` only takes effect when your tests use relative URLs in `page.goto()` calls, e.g. `page.goto('/')`, not `page.goto('https://example.com')`.</Note>
+
+This pattern covers most setups. If you have one deployed URL and one local URL, you're done.
+
+## The advanced pattern: environment-aware configuration
+
+Some projects need more than two modes. Maybe your CI runs tests against a preview deployment, while Checkly monitors production. Or you want different behavior depending on whether a Checkly run was triggered by a schedule, a deployment, or a manual test. This pattern also works well with [CI/CD integrations](/integrations/ci-cd/overview) where `npx checkly test` runs against preview deployments before promoting to production.
+
+Instead of a boolean, you can use `CHECKLY_RUN_SOURCE` to determine which environment your tests are running in and map that to a specific URL. Sometimes it's not just about whether you're running on Checkly or not, but also _where_ your tests run. `CHECKLY_REGION` lets you adapt test behavior based on the data center location, for example to validate geo-specific content.
+
+### Step 1: Create an environment helper
+
+```typescript checkly-env.ts
+export type Environment = "DEV" | "CI" | "PROD";
+
+export function getEnvironment(): Environment {
+  // `npx checkly test` sets CHECKLY_RUN_SOURCE to "TEST_NO_RECORD" or "TEST_RECORD"
+  if (process.env.CHECKLY_RUN_SOURCE?.startsWith("TEST")) return "CI";
+
+  // Scheduled runs, triggers, and deployments are production
+  if (
+    process.env.CHECKLY_RUN_SOURCE?.startsWith("TRIGGER") ||
+    process.env.CHECKLY_RUN_SOURCE === "SCHEDULER" ||
+    process.env.CHECKLY_RUN_SOURCE === "SCHEDULE_NOW" ||
+    process.env.CHECKLY_RUN_SOURCE === "GROUP_RUN_ALL" ||
+    process.env.CHECKLY_RUN_SOURCE === "CLI_DEPLOY" ||
+    process.env.CHECKLY_RUN_SOURCE === "DEPLOYMENT"
+  )
+    return "PROD";
+
+  // No Checkly env vars? We're running locally
+  return "DEV";
+}
+
+export function getBaseUrl(env: Environment) {
+  switch (env) {
+    case "DEV":
+      return "http://localhost:3000";
+    case "CI":
+      return "https://preview.example.com";
+    case "PROD":
+      return "https://www.example.com";
+  }
+}
+
+export function getLocationCountry() {
+  if (process.env.CHECKLY !== "1") return null;
+
+  const region = process.env.CHECKLY_REGION;
+  if (region === "eu-central-1") return "DE";
+  if (region === "eu-west-1") return "IE";
+  if (region?.startsWith("us-")) return "US";
+  if (region === "ap-southeast-2") return "AU";
+  // more regions ...
+
+  return null;
+}
+```
+
+The logic: `npx checkly test` (what you run in CI pipelines) triggers a `TEST_*` source that maps to your preview/staging URL. Scheduled runs and deployments are production monitoring and point to the live site. Everything else is local dev.
+
+Once you know the environment, you can set different `baseURL` values, adjust retry and trace settings, or add other environment-specific logic.
+
+<Tip>
+  <p>
+  Platforms like Vercel and Netlify expose preview deployment URLs via environment variables (e.g. `VERCEL_URL`). You can pass these to your Checkly test runs using the `-e` flag: `npx checkly test -e ENVIRONMENT_URL=https://preview-abc.vercel.app`.
+  </p>
+  <p>
+  Your `getBaseUrl` function can then read `process.env.ENVIRONMENT_URL` instead of hardcoding a preview URL. See the [CI/CD integration docs](/integrations/ci-cd/overview) and the [`npx checkly test` reference](/cli/checkly-test) for more details.
+  </p>
+</Tip>
+
+### Step 2: Use the helper in your Playwright config
+
+```typescript playwright.config.ts highlight={4-5, 10}
+import { defineConfig, devices } from "@playwright/test";
+import { getBaseUrl, getEnvironment } from "./tests/checkly-env";
+
+const environment = getEnvironment(); // "DEV" | "CI" | "PROD"
+const baseURL = getBaseUrl(environment); // "http://localhost:3000" | "https://preview.example.com" | "https://www.example.com"
+
+export default defineConfig({
+  retries: environment === "DEV" ? 0 : 2,
+  use: {
+    baseURL,
+    trace: environment === "DEV" ? "retain-on-failure" : "on",
+  },
+  projects: [
+    {
+      name: "Critical",
+      use: { ...devices["Desktop Chrome"] },
+      grep: /@critical/,
+    },
+  ],
+});
+```
+
+With this approach, you have one config file that targets three environments with different base URLs and no duplication.
+
+### Going further: per-environment behavior in tests
+
+If you need per-test access to environment values, you can take the setup from Step 2 further by wiring your helpers into [Playwright test fixtures](https://playwright.dev/docs/test-fixtures). This keeps environment logic out of individual test files.
+
+<YoutubeCallout>
+  Watch [Reuse Playwright Code across Files and Tests with Fixtures](https://www.youtube.com/watch?v=2O7dyz6XO2s) for a walkthrough of the fixture patterns covered in this section.
+</YoutubeCallout>
+
+#### Create a custom test fixture
+
+Create a `base.ts` file that extends Playwright's `test` object with custom fixture values. All your test files import `test` and `expect` from here instead of `@playwright/test`:
+
+```typescript tests/base.ts highlight={11,13}
+import { test as base, expect } from "@playwright/test";
+import { type Environment } from "./checkly-env";
+
+export type TestOptions = {
+  environment: Environment;
+  locationCountry: null | string;
+};
+
+export const test = base.extend<TestOptions>({
+  // make `environment` available in your tests
+  environment: ["DEV", { option: true }],
+  // make `locationCountry` available in your tests
+  locationCountry: [null, { option: true }],
+});
+
+export { expect };
+```
+
+In this example, you specify that `environment` and `locationCountry` should be accessible in your Playwright tests. Their default values can be overwritten via the `use` option in your Playwright config.
+
+#### Wire it all up in the Playwright config
+
+Pass the helper values into your custom fixtures via the `use` option:
+
+```typescript playwright.config.ts highlight={17-19}
+import { defineConfig, devices } from "@playwright/test";
+import { type TestOptions } from "./tests/base";
+import {
+  getBaseUrl,
+  getEnvironment,
+  getLocationCountry,
+} from "./tests/checkly-env";
+
+const environment = getEnvironment();
+const baseURL = getBaseUrl(environment);
+const locationCountry = getLocationCountry();
+
+export default defineConfig<TestOptions>({
+  testDir: "./tests",
+  retries: environment === "DEV" ? 0 : 2,
+  use: {
+    environment,
+    baseURL,
+    locationCountry,
+    trace: environment === "DEV" ? "retain-on-failure" : "on",
+  },
+  projects: [
+    {
+      name: "Chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
+});
+```
+
+#### Use fixtures in your tests
+
+Your tests stay clean because the environment logic is handled by the fixtures:
+
+```typescript tests/geo-location.spec.ts highlight={4}
+import { expect, test } from "./base";
+
+// `environment` and `locationCountry` are now available in your tests
+test("geo location works @critical", async ({ page, locationCountry }) => {
+  await page.goto("/");
+
+  const locationContainer = page.getByTestId("geo-location");
+  if (locationCountry) {
+    await expect(locationContainer).toContainText(locationCountry);
+  } else {
+    await expect(locationContainer).toContainText("Geo location unavailable");
+  }
+});
+```
+
+The `locationCountry` fixture is automatically populated based on which Checkly region runs the check. There's no need for environment logic in the test itself.
+
+## Wrapping up
+
+Start with the simple `isCheckly` toggle. It handles most cases. When you need more than two environments or per-environment behavior beyond `baseURL`, extract the logic into a dedicated helper file.
+
+The pattern scales: add a new environment by adding a case to `getEnvironment()` and a URL to `getBaseUrl()`. Your tests and Playwright config stay the same.
+
+For the full reference on available environment variables, check the [Playwright Check Suite environment variables docs](/detect/synthetic-monitoring/playwright-checks/environment-variables).

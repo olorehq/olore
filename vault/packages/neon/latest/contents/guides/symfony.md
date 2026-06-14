@@ -1,11 +1,16 @@
 ---
 title: Connect from Symfony with Doctrine to Neon
 subtitle: Set up a Neon project in seconds and connect from Symfony with Doctrine
+summary: >-
+  Connecting Symfony to Neon Postgres via Doctrine ORM requires only setting the
+  DATABASE_URL in your .env file to a Neon connection string with sslmode=require
+  and channel_binding=require. Choose this page when adding a serverless Postgres
+  backend to a Symfony project using Doctrine for database access.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/symfony
   - /docs/integrations/symfony
-updatedOn: '2025-10-31T11:07:57.609Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/symfony-prompt.md" 

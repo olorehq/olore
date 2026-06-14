@@ -1,13 +1,20 @@
 ---
 title: Postgres avg() function
 subtitle: Calculate the average value of a set of numbers
+summary: >-
+  The Postgres `avg()` function computes the arithmetic mean of a numeric column
+  or expression, returning `numeric` for integer/numeric inputs and `double
+  precision` for floating-point inputs. Use it when you need grouped averages
+  with `GROUP BY`, conditional averages with `FILTER`, moving averages as a
+  window function, or row-vs-mean comparisons via subquery. `avg()` automatically
+  skips NULL values and works as both an aggregate and a window function.
 enableTableOfContents: true
-updatedOn: '2024-06-28T21:51:40.608Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The Postgres `avg()` function calculates the arithmetic mean of a set of numeric values.
 
-This function is particularly useful when you need to understand typical values in a dataset, compare different groups, or identify trends over time. For example, you might use it to calculate the average order value for an e-commerce platform, the average response time for a web service, or the mean of sensor readings over time.
+Use it when you need to understand typical values in a dataset, compare different groups, or identify trends over time. For example, you might use it to calculate the average order value for an e-commerce platform, the average response time for a web service, or the mean of sensor readings over time.
 
 <CTA />
 

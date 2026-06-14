@@ -1,11 +1,23 @@
 ---
 title: Neon Data API tutorial
 subtitle: Explore our demo note-taking app to learn about Data API queries with RLS
+summary: >-
+  Neon Data API tutorial using a React/Vite note-taking app. The app runs
+  PostgREST-compatible SELECT, INSERT, UPDATE, and DELETE queries from the
+  frontend via the @neondatabase/neon-js client. Row-Level Security policies
+  written with Drizzle ORM enforce per-user data isolation, with
+  `auth.user_id()` extracting the caller's identity from JWTs. Use this page
+  for a working end-to-end example of Data API query patterns, RLS setup, and
+  ON DELETE CASCADE.
 enableTableOfContents: true
-updatedOn: '2026-01-22T15:48:50.616Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-In this tutorial, we'll walk through our note-taking app to show how Neon's Data API works with the `@neondatabase/neon-js` client library to write queries from your frontend code, with proper authentication and Row-Level Security (RLS) policies ensuring your data stays secure. The Data API is compatible with PostgREST, so you can use any PostgREST client library.
+This tutorial uses a note-taking app to show how Neon's Data API works with the `@neondatabase/neon-js` client library to write queries from your frontend code, with authentication and Row-Level Security (RLS) policies keeping your data secure. The Data API is compatible with PostgREST, so you can use any PostgREST client library.
+
+<Admonition type="tip" title="Data API works with any auth provider">
+This tutorial uses [Neon Auth](/docs/auth/overview) for convenience, but the Data API works with any authentication provider that issues JWTs. The query patterns, RLS policies, and `auth.user_id()` function shown here apply regardless of your auth provider. See [Custom authentication providers](/docs/data-api/custom-authentication-providers) for setup details with Auth0, Clerk, Firebase, and others.
+</Admonition>
 
 ## About the sample application
 
@@ -28,7 +40,7 @@ Before you begin, ensure you have:
 
 ### Create a Neon project with Auth and Data API
 
-1. Go to [pg.new](https://pg.new) to create a new Neon project
+1. Go to the [Neon Console](https://console.neon.tech) to create a new Neon project
 2. In the Neon Console, navigate to your project and go to the **Data API** page in the left sidebar
 3. Select **Neon Auth** as your authentication option (the default), then click **Enable**
 
@@ -110,7 +122,7 @@ This single client provides:
 - **Authentication methods** via `client.auth` (sign up, sign in, sign out, get session)
 - **Database query methods** via `client.from()` (select, insert, update, delete)
 
-The client automatically handles JWT token management — when a user is signed in, the token is included in all Data API requests, enabling RLS policies to work correctly.
+The client automatically handles JWT token management; when a user is signed in, the token is included in all Data API requests, enabling RLS policies to work correctly.
 
 ### Database schema
 
@@ -129,7 +141,9 @@ export const notes = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
     shared: boolean('shared').default(false),
   }
-  // ... RLS policies defined here
+  (table) => [
+    // ... RLS policies defined here
+  ]
 ).enableRLS();
 
 export const paragraphs = pgTable(
@@ -140,7 +154,9 @@ export const paragraphs = pgTable(
     content: text('content').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   }
-  // ... RLS policies defined here
+  (table) => [
+    // ... RLS policies defined here
+  ]
 ).enableRLS();
 ```
 
@@ -226,7 +242,7 @@ const { data, error } = await client
   .single();
 ```
 
-The `.select()` chained after `.insert()` lets you insert a record and immediately fetch it back — along with related data from other tables — in a single query. This is a useful pattern provided by the PostgREST-compatible API.
+The `.select()` chained after `.insert()` lets you insert a record and immediately fetch it back (along with related data from other tables) in a single query. This is a useful pattern provided by the PostgREST-compatible API.
 
 That's why you'll see codename-style labels like "tender fuchsia" in your notes list:
 
@@ -283,7 +299,7 @@ const { data, error } = await client
 
 ## Try it yourself: Adding delete functionality
 
-If you've explored the app, you may have noticed there's no way to delete a note. This is intentional — it's a hands-on exercise to help you understand the Data API patterns.
+If you've explored the app, you may have noticed there's no way to delete a note. This is intentional; it's a hands-on exercise to help you understand the Data API patterns.
 
 ### Step 1: Add a delete button to the note card component
 
@@ -413,7 +429,7 @@ SELECT conname FROM pg_constraint WHERE conrelid = 'paragraphs'::regclass;
 
 Then use the name you find in the `DROP CONSTRAINT` and `ADD CONSTRAINT` commands above.
 
-Now test deleting a note that has paragraphs — both the note and its paragraphs should be removed from the database.
+Now test deleting a note that has paragraphs; both the note and its paragraphs should be removed from the database.
 
 ## Learn more
 
@@ -421,6 +437,6 @@ Now test deleting a note that has paragraphs — both the note and its paragraph
 - [Generate TypeScript types](/docs/data-api/generate-types)
 - [SQL to REST Converter](/docs/data-api/sql-to-rest)
 - [Neon Auth documentation](/docs/auth/overview)
-- [Neon Auth & Data API TypeScript SDKs](/docs/reference/javascript-sdk)
+- [Neon TypeScript SDK](/docs/reference/javascript-sdk)
 - [PostgREST documentation](https://docs.postgrest.org/en/v13/)
 - [Simplify RLS with Drizzle](/docs/guides/rls-drizzle)

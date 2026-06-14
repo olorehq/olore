@@ -1,0 +1,91 @@
+---
+title: cos
+description: 'This page explains how to use the cos function in APL.'
+---
+
+Use the `cos` function in APL to compute the cosine of an angle expressed in radians. The function accepts any real number and returns a value in the range [-1, 1].
+
+`cos` is useful in observability and log analysis when you need to encode time-of-day or other cyclic patterns as a continuous numeric feature. For example, you can combine `cos` and `sin` to represent hour-of-day as a pair of cyclic coordinates, which preserves the circular distance between hours for anomaly detection or grouping.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `cos()` is available in the `eval` command with the same behavior: it takes an angle in radians and returns the cosine.
+
+<CodeGroup>
+```sql Splunk example
+| eval cos_val = cos(angle_rad)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cos_val = cos(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `COS()` is a standard mathematical function with identical semantics.
+
+<CodeGroup>
+```sql SQL example
+SELECT COS(angle_rad) AS cos_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cos_val = cos(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+cos(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The angle in radians. |
+
+### Returns
+
+The cosine of `x`, a real number in the range [-1, 1].
+
+## Example
+
+Use `cos` to compute the cosine of an angle in radians.
+
+**Query**
+
+```kusto
+print result = cos(pi())
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20cos%28pi%28%29%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| -1 |
+
+## List of related functions
+
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine. Use `sin` and `cos` together to produce a two-dimensional cyclic encoding of angles.
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent. Use it when you need the ratio of sine to cosine.
+- [acos](/apl/scalar-functions/mathematical-functions/acos): Returns the arc cosine. Use it as the inverse of `cos`.
+- [pi](/apl/scalar-functions/mathematical-functions/pi): Returns the constant π. Use it to compute angle values in radians.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it to prepare angle inputs before calling `cos`.

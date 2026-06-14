@@ -28,7 +28,7 @@ Most of these parameters come from the underlying web runtime configuration item
 
 - `useDevicePixelRatio` - *(optional)* If `true`, the hook will scale the resolution of the animation based on the [devicePixelRatio](https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio). Defaults to `true`. NOTE: Requires the `setContainerRef` ref callback to be passed to an element wrapping a canvas element. If you use the `RiveComponent`, then this will happen automatically
 - `fitCanvasToArtboardHeight` - *(optional)* If `true`, then the canvas will resize based on the height of the artboard. Defaults to `false`
-- `useOffscreenRenderer` - *(optional)* If `true`, the Rive instance will share (or create if one does not exist) an offscreen `WebGL` context. This allows you to display multiple Rive animations on one screen to work around some browser limitations regarding multiple concurrent WebGL contexts. If `false`, each Rive instance will have its own dedicated `WebGL` context and you may need to be cautious of the browser limitations just mentioned. We recommend **not** changing this default prop, so you don't have to manage WebGL contexts. Destroying a React component does not guarantee the browser cleans up the WebGL context that was created when the canvas was mounted. Only relevant when using `@rive-app/react-webgl`. Defaults to `true`
+- `useOffscreenRenderer` - *(optional)* If `true`, the Rive instance will share (or create if one does not exist) an offscreen `WebGL` context. This allows you to display multiple Rive animations on one screen to work around some browser limitations regarding multiple concurrent WebGL contexts. If `false`, each Rive instance will have its own dedicated `WebGL` context and you may need to be cautious of the browser limitations just mentioned. We recommend **not** changing this default prop, so you don't have to manage WebGL contexts. Destroying a React component does not guarantee the browser cleans up the WebGL context that was created when the canvas was mounted. Only relevant when using `@rive-app/react-webgl2`. Defaults to `true`
 
 #### Return Values
 
@@ -44,9 +44,16 @@ Most of these parameters come from the underlying web runtime configuration item
 <Note>
  In most cases, you will just need to grab the `RiveComponent` and `rive` return values from the `useRive` hook. Setting the canvas ref and container ref is only needed if you need to control the canvas/containing element yourself.
 </Note>
+
 ### useStateMachineInput
 
-The `useStateMachineInput` hook is the recommended way to grab references to Rive State Machine inputs, both for reading input values, and setting (or triggering) them. See below for parameters to pass in and the return value.
+<Warning>
+**Deprecated**
+
+State machine inputs are deprecated. For new work, use [Data Binding](/runtimes/web/data-binding). This hook remains available for legacy projects.
+</Warning>
+
+The `useStateMachineInput` hook can be used to grab references to Rive State Machine inputs, both for reading input values, and setting (or triggering) them. See below for parameters to pass in and the return value.
 
 `useStateMachineInput(rive: Rive | null, stateMachineName?: string, inputName?: string, initialValue?: number | boolean): StateMachineInput | null`
 

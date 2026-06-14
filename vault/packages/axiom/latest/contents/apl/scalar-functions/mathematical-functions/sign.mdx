@@ -1,0 +1,98 @@
+---
+title: sign
+description: 'This page explains how to use the sign function in APL.'
+---
+
+Use the `sign` function in APL to return the sign of a numeric expression: +1 for positive values, 0 for zero, and -1 for negative values.
+
+`sign` is useful when you care about the direction of a value rather than its magnitude. For example, you can use `sign` to classify whether a request latency is above or below a baseline, detect whether a metric is trending up or down, or encode deviations as ternary labels for downstream classification.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL uses `signum()` rather than `sign()`. The semantics are identical: it returns +1, 0, or -1.
+
+<CodeGroup>
+```sql Splunk example
+| eval direction = signum(deviation)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend direction = sign(deviation)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `SIGN()` works the same as in APL: it returns +1, 0, or -1 for positive, zero, and negative inputs respectively.
+
+<CodeGroup>
+```sql SQL example
+SELECT SIGN(deviation) AS direction FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend direction = sign(deviation)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+sign(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A real number. |
+
+### Returns
+
+- `+1` if `x` is positive.
+- `0` if `x` is zero.
+- `-1` if `x` is negative.
+
+## Example
+
+Use `sign` to classify each request as faster (-1), on-target (0), or slower (+1) than a 200 ms baseline.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend deviation = req_duration_ms - 200.0
+| extend deviation_sign = sign(deviation)
+| project _time, id, req_duration_ms, deviation_sign
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20deviation%20%3D%20req_duration_ms%20-%20200.0%20%7C%20extend%20deviation_sign%20%3D%20sign%28deviation%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20deviation_sign%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | deviation_sign |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 450.0 | 1 |
+| 2024-11-14 10:01:00 | user-2 | 80.0 | -1 |
+| 2024-11-14 10:02:00 | user-3 | 200.0 | 0 |
+
+## List of related functions
+
+- [abs](/apl/scalar-functions/mathematical-functions/abs): Returns the absolute value. Use it to get magnitude when direction from `sign` is not enough.
+- [round](/apl/scalar-functions/mathematical-functions/round): Rounds a value. Use it to normalize values before comparing signs.
+- [not](/apl/scalar-functions/mathematical-functions/not): Reverses a boolean. Use it alongside `sign` for boolean-style conditions on direction.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use `pow(x, 2)` together with `sign(x)` to keep direction while amplifying magnitude.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Use it to compute magnitude, and `sign` to determine direction, when you need a signed root.

@@ -1,0 +1,162 @@
+---
+title: getyear
+description: 'This page explains how to use the getyear function in APL.'
+---
+
+Use the `getyear` function in APL to extract the year part from a datetime value. The function returns an integer representing the calendar year.
+
+You can use `getyear` to group records by year when analyzing multi-year trends, comparing annual performance, or building year-level summaries. This is useful for dashboards, long-term reporting, and historical analysis.
+
+Use it when you want to:
+
+- Aggregate events by year for trend analysis.
+- Compare metrics across years to detect growth or decline.
+- Create year-level summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%Y` specifier to extract the four-digit year. In APL, the `getyear` function directly returns the year as an integer.
+
+<CodeGroup>
+```sql Splunk example
+... | eval year=strftime(_time, "%Y")
+```
+
+```kusto APL equivalent
+... | extend year = getyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `EXTRACT(YEAR FROM timestamp)` or the `YEAR()` function to get the year. In APL, `getyear` provides the same result.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(YEAR FROM timestamp_column) AS year FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend year = getyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+getyear(datetime)
+```
+
+### Parameters
+
+| Name | Type       | Description               |
+| ---- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` representing the year.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count HTTP requests by year to understand long-term traffic trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend year = getyear(_time)
+| summarize request_count = count() by year
+| sort by year asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20year%20%3D%20getyear(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20year%20%7C%20sort%20by%20year%20asc%22%7D)
+
+**Output**
+
+| year | request_count |
+| ---- | ------------- |
+| 2024 | 52340         |
+| 2025 | 61892         |
+
+This query groups HTTP log entries by year and counts the total requests per year.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Compare trace volume across years by service to track annual growth in observability data.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend year = getyear(_time)
+| summarize trace_count = count() by year, ['service.name']
+| sort by year asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20year%20%3D%20getyear(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20year%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20year%20asc%22%7D)
+
+**Output**
+
+| year | service.name | trace_count |
+| ---- | ------------ | ----------- |
+| 2024 | frontend     | 12450       |
+| 2024 | cart         | 5320        |
+| 2025 | frontend     | 14780       |
+
+This query counts traces per service per year, showing how trace volume changes annually for each service.
+
+</Tab>
+<Tab title="Security logs">
+
+Track yearly error trends to identify whether error rates increase or decrease over time.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend year = getyear(_time)
+| summarize error_count = count() by year
+| sort by year asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20year%20%3D%20getyear(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20year%20%7C%20sort%20by%20year%20asc%22%7D)
+
+**Output**
+
+| year | error_count |
+| ---- | ----------- |
+| 2024 | 1245        |
+| 2025 | 1587        |
+
+This query filters for HTTP errors (status 400 and above) and counts them per year to reveal annual error trends.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [getmonth](/apl/scalar-functions/datetime-functions/getmonth): Extracts the month number from a datetime as an integer.
+- [dayofyear](/apl/scalar-functions/datetime-functions/dayofyear): Returns the day number within the year from a datetime.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime. Equivalent to `getmonth`.
+- [startofyear](/apl/scalar-functions/datetime-functions/startofyear): Returns the start of the year for a datetime, useful for year-level binning.
+- [endofyear](/apl/scalar-functions/datetime-functions/endofyear): Returns the end of the year for a datetime value.

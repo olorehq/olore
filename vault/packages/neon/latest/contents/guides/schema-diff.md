@@ -1,8 +1,17 @@
 ---
 title: Schema diff
 subtitle: Learn how to use Neon's Schema Diff tool to compare branches of your database
+summary: >-
+  Schema Diff is Neon's SQL schema comparison tool that shows differences
+  between any two branches side-by-side. Access it from the Neon Console, the
+  `neon branches schema-diff` CLI command, or the `compare_schema` API endpoint,
+  which supports LSN and timestamp parameters. Use it to verify intended schema
+  changes before a reset-from-parent, branch restore, or migration merge. Also
+  useful for automating schema checks in CI/CD pipelines or AI agent workflows.
+  A Schema Diff GitHub Action is available to post diff comments on pull
+  requests.
 enableTableOfContents: true
-updatedOn: '2026-01-09T15:57:09.721Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 Neon's Schema Diff tool lets you compare an SQL script of the schemas for two selected branches in a side-by-side view (or line-by-line on mobile devices).
@@ -88,7 +97,7 @@ Here is the same command using aliases, with `production` included in `set-conte
 neon branch sd development@0/123456 --db people
 ```
 
-To find out what other comparisons you can make, see [Neon CLI commands — branches](/docs/reference/cli-branches#schema-diff) for full documentation of the command.
+To find out what other comparisons you can make, see [Neon CLI commands — branches](/docs/cli/branches#schema-diff) for full documentation of the command.
 
 ### Using the Neon API
 
@@ -110,7 +119,7 @@ The `compare_schema` endpoint supports the following parameters:
 | Parameter          | Description                                                                   | Required | Example                    |
 | ------------------ | ----------------------------------------------------------------------------- | -------- | -------------------------- |
 | `<project_id>`     | The ID of your Neon project.                                                  | Yes      | `wispy-butterfly-25042691` |
-| `<branch_id>`      | The ID of the target branch to compare — the branch with the modified schema. | Yes      | `br-rough-boat-a54bs9yb`   |
+| `<branch_id>`      | The ID of the target branch to compare (the branch with the modified schema). | Yes      | `br-rough-boat-a54bs9yb`   |
 | `<base_branch_id>` | The ID of the base branch for comparison.                                     | Yes      | `br-royal-star-a54kykl2`   |
 | `<db_name>`        | The name of the database in the target branch.                                | Yes      | `neondb`                   |
 | `lsn`              | The LSN on the target branch for which the schema is retrieved.               | No       | `0/1EC5378`                |

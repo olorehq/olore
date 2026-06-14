@@ -1,8 +1,17 @@
 ---
 title: Migrate from Supabase to Neon
 subtitle: Switch from Supabase Auth and Database to Neon in a few steps
+summary: >-
+  Step-by-step migration from Supabase Auth and Supabase database to Neon Auth
+  and Neon Data API. Replace `@supabase/supabase-js` with `@neondatabase/neon-js`,
+  swap environment variables, and update client initialization while keeping
+  existing auth method calls and `from()` database queries code-compatible.
+  Existing password-based users cannot transfer due to incompatible password
+  hashing algorithms, so this guide targets new projects, early development, or
+  OAuth-only apps. Neon Auth does not support phone authentication (SMS/WhatsApp),
+  SAML SSO, or Web3 wallet sign-in.
 enableTableOfContents: true
-updatedOn: '2026-01-22T15:48:50.614Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -29,7 +38,7 @@ Replace the Supabase SDK with Neon's:
 
 ```bash filename="Terminal"
 npm uninstall @supabase/supabase-js
-npm install @neondatabase/neon-js
+npm install @neondatabase/neon-js@latest
 ```
 
 ## Update environment variables
@@ -184,7 +193,7 @@ ORDER BY "createdAt" DESC;
 
 ## API compatibility
 
-Neon Auth supports most Supabase Auth methods including sign up, sign in (password and OAuth), session management, user updates, and email verification. See the [Neon Auth & Data API TypeScript SDKs](/docs/reference/javascript-sdk) for the complete API.
+Neon Auth supports most Supabase Auth methods including sign up, sign in (password and OAuth), session management, user updates, and email verification. See the [Neon TypeScript SDK](/docs/reference/javascript-sdk) for the complete API.
 
 **Not supported:**
 

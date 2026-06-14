@@ -202,13 +202,13 @@ const [download] = await Promise.all([
 const path = await download.path();
 ```
 
-See our [example on file download](/learn/headless/e2e-file-download/).
+See our [example on file download](/learn/playwright/file-download).
 
 ### File upload
 
 Puppeteer's [elementHandle.uploadFile](https://pptr.dev/#?product=Puppeteer&version=v11.0.0&show=api-elementhandleuploadfilefilepaths) becomes [elementHandle.setInputFiles](https://playwright.dev/docs/api/class-elementhandle#element-handle-set-input-files).
 
-See our [example on file upload](/learn/headless/e2e-account-settings/).
+See our [example on file upload](/learn/playwright/testing-file-uploads).
 
 ### Request interception
 
@@ -233,7 +233,7 @@ await page.route('**/*', (route) => {
 })
 ```
 
-See our [full guide](/learn/headless/request-interception/) on request interception for more examples.
+See our [full guide](/learn/playwright/intercept-requests) on request interception for more examples.
 
 > For many of the points in the list above, variations of the same function exist at [Page](https://playwright.dev/docs/api/class-page/), [Frame](https://playwright.dev/docs/api/class-frame/) and [ElementHandle](https://playwright.dev/docs/api/class-elementhandle/) level. For simplicity, we reported only one.
 
@@ -251,13 +251,13 @@ Playwright brings with it added flexibility when referencing UI elements via sel
 
 You can even create your own [custom selector engine](https://playwright.dev/docs/extensibility#custom-selector-engines).
 
-For more information on selectors and how to use them, see [our dedicated guide](/learn/headless/basics-selectors/).
+For more information on selectors and how to use them, see [our dedicated guide](/learn/playwright/selectors).
 
 ### Saving and reusing state
 
 Playwright makes it easy for you to save the authenticated state (cookies and localStorage) of a given session and reuse it for subsequent script runs.
 
-Reusing state can [save significant amounts of time](/learn/headless/valuable-tests/#keep-tests-independent) on larger suites by skipping the pre-authentication phase in scripts where it is not supposed to be directly tested / monitored.
+Reusing state can [save significant amounts of time](/learn/playwright/writing-tests#keep-tests-independent) on larger suites by skipping the pre-authentication phase in scripts where it is not supposed to be directly tested / monitored.
 
 ### Locator API
 
@@ -308,7 +308,7 @@ This reveals additional information about the check execution, including:
 ## Read More
 
 <div class="cards-list">
-  <Card title="Monitoring as Code" href="/guides/monitoring-as-code/">
+  <Card title="Monitoring as Code" href="/guides/getting-started-with-monitoring-as-code">
   Understand monitoring as code (MaC) via our Checkly CLI.
 </Card>
 
@@ -316,7 +316,7 @@ This reveals additional information about the check execution, including:
   Learn end-to-end monitoring with puppeteer and playwright to test key website flows.
 </Card>
 
-<Card title="OpenAPI/Swagger Monitoring" href="/guides/openapi-swagger/">
+<Card title="OpenAPI/Swagger Monitoring" href="/guides/monitoring-an-openapi-spec">
   OpenAPI and Swagger help users design and document APIs in a way that is readable from both humans and machines.
 </Card>
 </div>

@@ -1,14 +1,14 @@
 ---
-title: Encryption
+title: BYOK Encryption
 ---
 
 All databases are encrypted-at-rest at the volume level in the Turso Cloud, as part of our SOC2 standards. See [our trust center](https://trust.turso.tech) for details.
 
-For Enterprise customers, there is the option to encrypt the databases with a key that you provide (Native Encryption), as described below.
+For Pro, and Enterprise customers, there is the option to encrypt the databases with a key that you provide (Bring-Your-Own-Key Encryption, or BYOK), as described below.
 
-Native Encryption happens at the server level, making sure that nobody has access to your data at any time. In fact, because it is possible to encrypt different databases with different keys, it is possible for you to use different keys for different customers' databases. If the keys themselves are provided by your customers, Native Encryption offers your customers the guarantee that not even you can have access to their data.
+BYOK Encryption happens at the server level, making sure that nobody has access to your data at any time. In fact, because it is possible to encrypt different databases with different keys, it is possible for you to use different keys for different customers' databases. If the keys themselves are provided by your customers, BYOK Encryption offers your customers the guarantee that not even you can have access to their data.
 
-Turso Cloud native encryption for data at rest uses industry-standard AEAD algorithms. Each database page is encrypted individually, ensuring data integrity and security across all environments. Native encryption is available on the [Enterprise plan](https://tur.so/turso-enterprise-chat).
+Turso Cloud BYOK encryption for data at rest uses industry-standard AEAD algorithms. Each database page is encrypted individually, ensuring data integrity and security across all environments. BYOK encryption is available on Pro, and [Enterprise](https://tur.so/turso-enterprise-chat) plans.
 
 <Info>
   **You hold the keys.** Each database can be encrypted with its own unique key that only you control. Turso never sees or stores your encryption keys. Encryption works seamlessly with both remote queries and sync.
@@ -19,7 +19,7 @@ Turso Cloud native encryption for data at rest uses industry-standard AEAD algor
 - **Data integrity**: Built-in authentication tags prevent tampering and corruption
 - **In-memory keys**: Encryption keys are never stored on disk
 
-Turso Cloud with native encryption is perfect for:
+Turso Cloud with BYOK encryption is perfect for:
 
 <CardGroup cols={2}>
     <Card title="AI Agents" icon="robot">

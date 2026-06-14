@@ -1,8 +1,16 @@
 ---
 title: LlamaIndex
 subtitle: Build AI applications faster with LlamaIndex and Postgres
+summary: >-
+  LlamaIndex integrates with Neon Postgres as a vector store via the pgvector
+  extension, enabling RAG pipelines, semantic search, and AI chatbots backed by
+  serverless Postgres. Use this page to wire up PGVectorStore, generate OpenAI
+  embeddings, and stream chat completions through ContextChatEngine in a
+  Next.js API route. Includes TypeScript code for initialization and streaming,
+  plus links to starter apps for chatbot, RAG, semantic search, reverse image
+  search, and PDF chat.
 enableTableOfContents: true
-updatedOn: '2025-06-04T16:43:36.529Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 LlamaIndex is a popular framework for working with AI, Vectors, and embeddings. LlamaIndex supports using Neon as a vector store, using the `pgvector` extension.

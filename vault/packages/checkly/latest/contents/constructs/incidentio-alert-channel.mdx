@@ -1,0 +1,107 @@
+---
+title: 'IncidentioAlertChannel Construct'
+description: 'Learn how to configure Incident.io alert channels with the Checkly CLI.'
+sidebarTitle: 'Incident.io'
+---
+
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
+
+
+<Tip>
+For general information about alerting, see our docs on [the Incident.io integration](/integrations/incident-management/incidentio) and [alerting with Checkly](/communicate/alerts/overview/).
+</Tip>
+
+Triggers and resolves alerts in Incident.io.
+
+<CodeGroup>
+
+```ts Basic Example
+import { IncidentioAlertChannel } from 'checkly/constructs'
+
+const incidentioChannel = new IncidentioAlertChannel('incidentio-channel-1', {
+  name: 'ACME alerts',
+  url: 'https://api.incident.io/v2/alert_events/checkly/xxxxx',
+  apiKey: 'xxxxx45afe73'
+})
+```
+
+```ts Advanced Example
+import { IncidentioAlertChannel } from 'checkly/constructs'
+
+const incidentioChannel = new IncidentioAlertChannel('incidentio-channel-1', {
+  name: 'ACME alerts',
+  url: 'https://api.incident.io/v2/alert_events/checkly/xxxxx',
+  apiKey: 'xxxxx45afe73',
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+  sslExpiry: true,
+  sslExpiryThreshold: 30,
+})
+```
+
+</CodeGroup>
+
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
+## Configuration
+
+### Incident.io Alert Channel Options
+
+<ResponseField name="name" type="string" required>
+Friendly name to recognise the integration.
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+The target URL created by installing the Checkly integration in Incident.io.
+</ResponseField>
+
+<ResponseField name="apiKey" type="string" required>
+The API key created by installing the Checkly integration in Incident.io.
+</ResponseField>
+
+<ResponseField name="payload" type="string">
+The payload sent to the target URL when an alert is triggered. If this is not specified, we'll send a default payload with a basic title, description, etc.
+
+We have [handlebar helpers and variables](/integrations/alerts/webhooks/#using-variables) available for building custom payloads.
+
+Here's an example payload, using the default one that we provide:
+
+```ts highlight={5-26}
+new IncidentioAlertChannel('incidentio-channel-1', {
+  name: 'ACME alerts',
+  url: 'https://api.incident.io/v2/alert_events/checkly/xxxxx',
+  apiKey: 'xxxxx45afe73',
+  payload: `
+    {
+      "title": "{{ALERT_TITLE}}",
+      "description": "{{ALERT_TITLE}} at {{STARTED_AT}} in {{RUN_LOCATION}} {{RESPONSE_TIME}}ms\\n\\n{{#if AI_ANALYSIS_CLASSIFICATION}}# AI Analysis\\n\\n{{AI_ANALYSIS_CLASSIFICATION}}\\n\\n{{{AI_ANALYSIS_ROOT_CAUSE}}}\\nRead full analysis: {{AI_ANALYSIS_LINK}}{{/if}}",
+      "deduplication_key": "{{CHECK_ID}}",
+      "metadata": {
+        {{#if AI_ANALYSIS_CLASSIFICATION}}
+        "ai_analysis_classification": "{{AI_ANALYSIS_CLASSIFICATION}}",
+        "ai_analysis_root_cause": "{{{AI_ANALYSIS_ROOT_CAUSE}}}",
+        "ai_analysis_link": "{{AI_ANALYSIS_LINK}}",
+        {{/if}}
+        "alertType": "{{ALERT_TYPE}}",
+        "check_result_id": "{{CHECK_RESULT_ID}}",
+        "resultLink": "{{RESULT_LINK}}"
+      },
+      {{#contains ALERT_TYPE "RECOVERY"}}
+      "status": "resolved"
+      {{else}}
+      "status": "firing"
+      {{/contains}}
+    }
+    `
+})
+```
+</ResponseField>
+
+### General Alert Channel Options
+
+<AlertChannelOptionsText />
+
+

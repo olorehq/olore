@@ -4,12 +4,12 @@ description: Getting Started with Fumadocs
 icon: Rocket
 ---
 
+import { CpuIcon, PanelsTopLeftIcon, DatabaseIcon, TerminalIcon } from 'lucide-react';
+
 ## Introduction
 
 Fumadocs <span className='text-fd-muted-foreground text-sm'>(Foo-ma docs)</span> is a **documentation framework**, designed to be fast, flexible,
-and composes seamlessly into your React framework.
-
-Fumadocs has different parts:
+and composes seamlessly into your React framework. It consists of multiple layers:
 
 <Cards>
 
@@ -19,19 +19,19 @@ Handles most of the logic, including document search, content source adapters, a
 
 </Card>
 
-<Card icon={<PanelsTopLeft className="text-blue-300" />} title='Fumadocs UI'  href='/docs/ui'>
+<Card icon={<PanelsTopLeftIcon className="text-blue-300" />} title='Fumadocs UI'  href='/docs/ui'>
 
 The default theme of Fumadocs offers a beautiful look for documentation sites and interactive components.
 
 </Card>
 
-<Card icon={<Database />} title='Content Source'>
+<Card icon={<DatabaseIcon />} title='Content Source'>
 
 The source of your content, can be a CMS or local data layers like [Fumadocs MDX](/docs/mdx) (the official content source).
 
 </Card>
 
-<Card icon={<Terminal />} title='Fumadocs CLI' href='/docs/cli'>
+<Card icon={<TerminalIcon />} title='Fumadocs CLI' href='/docs/cli'>
 
 A command line tool to install UI components and automate things, useful for customizing layouts.
 
@@ -47,28 +47,21 @@ A command line tool to install UI components and automate things, useful for cus
 
 **Markdown/MDX:** Markdown is a markup language for creating formatted text. Fumadocs natively supports Markdown and MDX (superset of Markdown).
 
-**[Bun](https://bun.sh):** A JavaScript runtime, we use it for running scripts.
+**[Bun](https://bun.sh):** A JavaScript runtime, it will be used in our guides for running scripts. If you prefer Node.js, try [unrun](https://gugustinette.github.io/unrun/guide/getting-started.html#cli) instead.
 
-Some basic knowledge of React.js would be useful for further customisations.
+Some basic knowledge of React.js would be useful for further customizations.
+
+<Callout title="Love Fumadocs but not familiar with React?">
+  [Fumapress](https://press.fumadocs.dev) is a site generator that has lower barrier for beginners.
+  It enforces a React framework of its own, and offers a better DX in return.
+</Callout>
 
 ## Automatic Installation
 
 A minimum version of Node.js 22 required.
 
-```bash tab="npm"
+```npm
 npm create fumadocs-app
-```
-
-```bash tab="pnpm"
-pnpm create fumadocs-app
-```
-
-```bash tab="yarn"
-yarn create fumadocs-app
-```
-
-```bash tab="bun"
-bun create fumadocs-app
 ```
 
 It will ask you the built-in template to use:
@@ -76,7 +69,10 @@ It will ask you the built-in template to use:
 - **React.js framework**: Next.js, Waku, React Router, Tanstack Start.
 - **Content source**: Fumadocs MDX.
 
-A new fumadocs app should be initialized. Now you can start hacking!
+A new fumadocs app should be initialized, with following features configured by default:
+
+- [LLM integration](/docs/integrations/llms).
+- [Dynamic metadata image](/docs/integrations/og).
 
 <Callout title='From Existing Codebase?'>
 
@@ -152,7 +148,7 @@ export const source = loader({
   </Accordion>
 
     <Accordion id='multi-docs' title="How to implement multi-docs?">
-        We recommend to use [Sidebar Tabs](/docs/ui/layouts/docs#sidebar-tabs).
+        We recommend using [Layout Tabs](/docs/ui/layouts/docs#layout-tabs).
     </Accordion>
 
 </Accordions>
@@ -195,31 +191,6 @@ export default defineConfig({
     You can [enable Static Exports](/docs/deploying/static) on Next.js to get a static build output.
 
   </Accordion>
-  <Accordion id='webpack' title='Reading from "fumadocs-mdx:collections/server" is not handled by plugins'>
-
-Webpack resolves import namespace **before** your import aliases in `tsconfig.json`. When using Fumadocs MDX, you have to rename your import alias to `collections/*` instead.
-
-```json title="tsconfig.json"
-{
-  "compilerOptions": {
-    "paths": {
-      // [!code ++]
-      "collections/*": [".source/*"]
-    }
-  }
-}
-```
-
-Make sure to update the references as well.
-
-```ts title="lib/source.ts"
-// [!code --]
-import { docs } from 'fumadocs-mdx:collections/server';
-// [!code ++]
-import { docs } from 'collections/server';
-```
-
-</Accordion>
   <Accordion id='custom-layout-docs-page' title='How to create a page in /docs without docs layout?'>
 
     Same as managing layouts in Next.js App Router, remove the original MDX file from content directory (`/content/docs`).
@@ -266,7 +237,7 @@ For authoring docs, make sure to read:
     Fumadocs has some additional features for authoring content.
   </Card>
   <Card href="/docs/navigation" title="Navigation">
-    Learn how to customise navigation structure.
+    Learn how to customize navigation structure.
   </Card>
   <Card href="/docs/page-conventions" title="Page Slugs & Page Tree">
     Learn how to organise content.
@@ -292,5 +263,5 @@ For authoring docs, make sure to read:
     description="Learn how to enable i18n"
   />
   <Card href="/docs/ui/theme" title="Color Themes" description="Add themes to Fumadocs UI" />
-  <Card href="/docs/ui/layouts" title="Layouts" description="Customise your Fumadocs UI layouts" />
+  <Card href="/docs/ui/layouts" title="Layouts" description="Customize your Fumadocs UI layouts" />
 </Cards>

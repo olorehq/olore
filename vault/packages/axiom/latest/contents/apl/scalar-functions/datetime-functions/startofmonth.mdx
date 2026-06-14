@@ -1,0 +1,165 @@
+---
+title: startofmonth
+description: 'This page explains how to use the startofmonth function in APL.'
+---
+
+Use the `startofmonth` function in APL to round a datetime value down to the first day of the month at midnight (00:00:00). You can optionally shift the result by a specified number of months using the offset parameter.
+
+You can use `startofmonth` to bin events into monthly buckets for aggregation, reporting, and trend analysis. This is especially useful for monthly summaries, billing cycle calculations, and long-term trend monitoring.
+
+Use it when you want to:
+
+- Aggregate events or metrics by month.
+- Align timestamps to month boundaries for consistent reporting.
+- Track month-over-month changes in activity or error rates.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `relative_time` with the `@mon` snap-to modifier to round a timestamp to the start of the month. In APL, the `startofmonth` function achieves the same result and supports an optional month offset.
+
+<CodeGroup>
+```sql Splunk example
+... | eval month_start=relative_time(_time, "@mon")
+```
+
+```kusto APL equivalent
+... | extend month_start = startofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `DATE_TRUNC('month', timestamp_column)` to truncate a timestamp to the first day of the month. In APL, `startofmonth` provides the same functionality with an optional offset parameter.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('month', timestamp_column) AS month_start FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend month_start = startofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+startofmonth(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                             |
+| -------- | ---------- | ------------------------------------------------------- |
+| datetime | `datetime` | The input datetime value.                               |
+| offset   | `long`     | Optional: The number of months to offset from the input datetime. Default is `0`. |
+
+### Returns
+
+A `datetime` representing the start of the month (first day at 00:00:00) for the given date value, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests per month to identify monthly traffic trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend month_start = startofmonth(_time)
+| summarize request_count = count() by month_start
+| sort by month_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20month_start%20%3D%20startofmonth(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20month_start%20%7C%20sort%20by%20month_start%20asc%22%7D)
+
+**Output**
+
+| month_start          | request_count |
+| -------------------- | ------------- |
+| 2024-11-01T00:00:00Z | 42350         |
+| 2024-12-01T00:00:00Z | 45120         |
+| 2025-01-01T00:00:00Z | 38900         |
+
+This query bins each HTTP request to the start of its month and counts the total requests per month.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Track the monthly average span duration for each service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend month_start = startofmonth(_time)
+| summarize avg_duration = avg(duration) by month_start, ['service.name']
+| sort by month_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20month_start%20%3D%20startofmonth(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20month_start%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20month_start%20asc%22%7D)
+
+**Output**
+
+| month_start          | service.name | avg_duration     |
+| -------------------- | ------------ | ---------------- |
+| 2024-11-01T00:00:00Z | frontend     | 00:00:01.2340000 |
+| 2024-12-01T00:00:00Z | frontend     | 00:00:01.1750000 |
+| 2025-01-01T00:00:00Z | frontend     | 00:00:01.2890000 |
+
+This query groups trace spans by month and service, then calculates the average span duration for each combination.
+
+</Tab>
+<Tab title="Security logs">
+
+Monitor monthly server error volume to spot months with elevated failure rates.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend month_start = startofmonth(_time)
+| summarize error_count = count() by month_start
+| sort by month_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20month_start%20%3D%20startofmonth(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20month_start%20%7C%20sort%20by%20month_start%20asc%22%7D)
+
+**Output**
+
+| month_start          | error_count |
+| -------------------- | ----------- |
+| 2024-11-01T00:00:00Z | 156         |
+| 2024-12-01T00:00:00Z | 203         |
+| 2025-01-01T00:00:00Z | 134         |
+
+This query filters for server errors and counts them per month to reveal monthly error patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime value.
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime value.
+- [startofweek](/apl/scalar-functions/datetime-functions/startofweek): Returns the start of the week for a datetime value.
+- [startofyear](/apl/scalar-functions/datetime-functions/startofyear): Returns the start of the year for a datetime value.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime value.

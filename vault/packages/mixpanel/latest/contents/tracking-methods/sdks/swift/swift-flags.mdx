@@ -43,19 +43,95 @@ let options = MixpanelOptions(
 Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", options: options)
 ```
 
-If you are using Runtime Targeting in any of the feature flags in your project, then any properties that you use in targeting should be included in a `customProperties` node within the context:
+If you are using Runtime Targeting in any of the feature flags in your project, then any properties that you use in targeting should be included in a `custom_properties` node within the context:
 
 ```swift
 let options = MixpanelOptions(
     featureFlagOptions: FeatureFlagOptions(enabled: true, context: [
         "company_id": "X",
-        "customProperties": [
+        "custom_properties": [
             "platform": "ios"
         ]
     ])
 )
 Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", options: options)
 ```
+
+## Flag Persistence
+
+Minimum supported SDK version: [`v6.4.0`](https://github.com/mixpanel/mixpanel-swift/releases/tag/v6.4.0)
+
+By default (`networkOnly`), the SDK fetches fresh flag assignments and waits for the network response before variant calls complete. You can enable persistence to persist assignments to UserDefaults so they are available immediately on subsequent launches.
+
+Configure a `variantLookupPolicy` on `FeatureFlagOptions`:
+
+**`networkFirst`** — The SDK waits for the network on every launch. If the network call fails, the persisted value is returned as a fallback. Async getter calls block until the fetch completes (or the fallback is resolved).
+
+```swift
+Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", options: MixpanelOptions(
+    featureFlagOptions: FeatureFlagOptions(
+        enabled: true,
+        variantLookupPolicy: .networkFirst()
+    )
+))
+
+// getVariantValue waits for the network. Falls back to persisted value if network fails.
+Mixpanel.mainInstance().flags.getVariantValue("my-feature-flag", fallbackValue: "control") { value in
+    // value is from the network response, or from persistence if the network was unavailable
+}
+```
+
+**`persistenceUntilNetworkSuccess`** — Persisted variants are returned immediately on launch. Each getter call while serving persisted data triggers a background network fetch (deduplicated — only one fetch runs at a time). If the fetch fails, persisted data continues to be served and the next getter call retries the fetch. Once a fetch succeeds, the in-memory state updates and subsequent calls no longer trigger background fetches.
+
+```swift
+Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", options: MixpanelOptions(
+    featureFlagOptions: FeatureFlagOptions(
+        enabled: true,
+        variantLookupPolicy: .persistenceUntilNetworkSuccess()
+    )
+))
+
+// getVariantValue returns immediately from persistence. Each call triggers a background fetch
+// until a network response succeeds and replaces the persisted state.
+Mixpanel.mainInstance().flags.getVariantValue("my-feature-flag", fallbackValue: "control") { value in
+    // value is from persistence; background fetch retries on each call until network succeeds
+}
+```
+
+To customize the TTL (default: 24 hours), pass a `TimeInterval`:
+
+```swift
+Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", options: MixpanelOptions(
+    featureFlagOptions: FeatureFlagOptions(
+        enabled: true,
+        variantLookupPolicy: .networkFirst(persistenceTtl: 12 * 3600) // 12 hours
+    )
+))
+```
+
+### Variant source
+
+Every `MixpanelFlagVariant` carries a `source` property indicating where the value came from: `.network`, `.persistence(persistedAt:)`, or `.fallback`. Use `getVariant()` to receive the full variant object.
+
+```swift
+let fallback = MixpanelFlagVariant(key: "control", value: "control")
+Mixpanel.mainInstance().flags.getVariant("my-feature-flag", fallback: fallback) { variant in
+    let value = variant.value
+    let source = variant.source // .network, .persistence(persistedAt:), or .fallback
+}
+```
+
+### `$experiment_started` properties
+
+When a variant is served, the `$experiment_started` exposure event includes:
+
+- `$variant_source` — `"network"` or `"persistence"`
+- `$persisted_at_in_ms` — epoch ms when the variant set was persisted *(persistence only)*
+- `$ttl_in_ms` — the configured TTL in ms *(persistence only)*
+
+<Callout type="info">
+Persisted variants are tied to the current `distinct_id`. Calling `identify()` with a new ID or calling `reset()` clears persisted data and triggers a fresh fetch.
+</Callout>
 
 ## Flag Reload
 
@@ -72,6 +148,26 @@ Mixpanel.mainInstance().identify(distinctId: updatedDistinctId)
 
 ```swift
 Mixpanel.mainInstance().flags.loadFlags()
+```
+
+3) To update the feature flags context after initialization and trigger a reload with the new values, use `setContext`. This completely replaces the previously set custom context.
+
+```swift
+Mixpanel.mainInstance().flags.setContext([
+    "company_id": "Y",
+    "custom_properties": [
+        "platform": "ios"
+    ]
+]) {
+    // Flags have been re-fetched with the new context
+}
+```
+
+4) Calling `reset()` clears all feature flag assignments from memory and triggers a new fetch for the updated `distinct_id`. Requires SDK version [`v6.4.0`](https://github.com/mixpanel/mixpanel-swift/releases/tag/v6.4.0) or later.
+
+```swift
+Mixpanel.mainInstance().reset()
+// Flags are cleared immediately. A new fetch begins for the anonymous distinct_id.
 ```
 
 ## Deferred Flag Loading
@@ -207,7 +303,7 @@ Mixpanel.mainInstance().flags.getAllVariants { allFlags in
 3. **Review SDK parameters**:
   - Ensure `FeatureFlagOptions(enabled: true)` is passed to `MixpanelOptions` via the `featureFlagOptions` parameter
   - If using a custom Variant Assignment Key, ensure it is included in the `FeatureFlagOptions` `context` parameter
-  - If using Runtime Targeting, ensure all properties used in targeting are included in the `customProperties` object within the `FeatureFlagOptions` context
+  - If using Runtime Targeting, ensure all properties used in targeting are included in the `custom_properties` object within the `FeatureFlagOptions` context
 
 4. **Check flags readiness**: Use `areFlagsReady()` to check if flags have been loaded before making synchronous calls
 5. **Enable debug mode**: Set up logging to see detailed information about flag requests and responses

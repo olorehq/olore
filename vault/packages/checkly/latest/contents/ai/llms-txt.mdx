@@ -1,0 +1,41 @@
+---
+title: 'llms.txt'
+description: 'Use the Checkly llms.txt file to discover and crawl all available documentation pages as markdown.'
+sidebarTitle: 'llms.txt'
+---
+
+The [llms.txt standard](https://llmstxt.org/) provides a machine-readable index of all available documentation pages. Checkly publishes an `llms.txt` file at [`checklyhq.com/llms.txt`](https://www.checklyhq.com/llms.txt) that lists every documentation page with its markdown URL and a short description.
+
+```txt llms.txt (first 15 lines)
+# Checkly Docs
+
+## Docs
+
+- [Changing your email or password in Checkly](https://checklyhq.com/docs/admin/changing-your-email-password.md): Learn how to change your email address or password in your Checkly account
+- [Creating an API key in Checkly](https://checklyhq.com/docs/admin/creating-api-key.md): Learn how to create and manage user and service API keys for the Checkly API and CLI
+- [Adding team members to your Checkly account](https://checklyhq.com/docs/admin/team-management/adding-team-members.md): Learn how to invite team members to join your Checkly account and manage team collaboration
+- [Using Microsoft Entra ID for Single Sign-on in Checkly](https://checklyhq.com/docs/admin/team-management/microsoft-azure-ad.md): This page illustrates the standard procedure to follow in order to get started with Microsoft Entra ID SSO (formerly Azure AD) on Checkly.
+- [Multi-Factor Authentication in Checkly](https://checklyhq.com/docs/admin/team-management/multi-factor-authentication.md): Learn how to set up and manage multi-factor authentication for enhanced account security
+- [Using Okta for Single Sign-on in Checkly](https://checklyhq.com/docs/admin/team-management/okta.md): This page illustrates the standard procedure to follow in order to get started with Okta SSO on Checkly.
+- [Role Based Access Control in Checkly](https://checklyhq.com/docs/admin/team-management/rbac.md): Checkly roles and permissions for team members
+- [Removing team members from your Checkly account](https://checklyhq.com/docs/admin/team-management/removing-team-members.md): Learn how to remove team members from your Checkly account and understand how it affects your billing
+- [Using SAML for Single Sign-On in Checkly](https://checklyhq.com/docs/admin/team-management/saml-sso.md): Learn how to set up SAML-based SSO for your Checkly account with supported identity providers
+- [Using SCIM provisioning in Checkly](https://checklyhq.com/docs/admin/team-management/scim-provisioning.md): Learn how to set up SCIM provisioning for Checkly using your identity provider
+- [Team management in Checkly](https://checklyhq.com/docs/admin/team-management.md): Manage your team and collaborate effectively in Checkly
+```
+
+Use the `llms.txt` file to crawl and index the entire Checkly documentation. Every link in the file points to [the `.md` version of the page](/ai/markdown-access#md-endpoints), so you can fetch each URL directly to get the markdown content.
+
+```bash
+# Fetch the llms.txt index
+curl https://www.checklyhq.com/llms.txt
+
+# Fetch a specific page from the index
+curl https://checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/overview.md
+```
+
+## Additional resources
+
+- [Markdown Access](/ai/markdown-access)
+- [Checkly Skills](/ai/skills)
+- [Checkly Rules](/ai/rules)

@@ -1,0 +1,170 @@
+---
+title: Change Data Capture
+---
+
+Change Data Capture (CDC) tracks all data changes (inserts, updates, deletes) made to your database tables. Changes are recorded in a local table that you can query like any other table. This is useful for building reactive applications, syncing data between systems, auditing, and more.
+
+## Enable CDC
+
+Enable CDC per connection using a PRAGMA:
+
+```sql
+PRAGMA capture_data_changes_conn('full');
+```
+
+To disable:
+
+```sql
+PRAGMA capture_data_changes_conn('off');
+```
+
+<Warning>
+  CDC cannot be used together with [MVCC](/tursodb/concurrent-writes). They are mutually exclusive on the same connection.
+</Warning>
+
+## Capture Modes
+
+| Mode | Description |
+| --- | --- |
+| `id` | Capture only the primary key/rowid of changed rows |
+| `before` | Capture row state before changes (for updates/deletes) |
+| `after` | Capture row state after changes (for inserts/updates) |
+| `full` | Capture both before and after states, plus per-column update details |
+
+## CDC Table
+
+Changes are stored in the `turso_cdc` table by default. You can specify a custom table name:
+
+```sql
+PRAGMA capture_data_changes_conn('full,my_changes_table');
+```
+
+The CDC table has the following schema:
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `change_id` | INTEGER | Auto-incrementing unique identifier |
+| `change_time` | INTEGER | Timestamp (Unix epoch) |
+| `change_txn_id` | INTEGER | Transaction ID (groups rows into transactions) |
+| `change_type` | INTEGER | `1` = INSERT, `0` = UPDATE, `-1` = DELETE, `2` = COMMIT |
+| `table_name` | TEXT | Name of the table that was changed |
+| `id` | varies | Primary key/rowid of the changed row |
+| `before` | BLOB | Row data before the change (modes: `before`, `full`) |
+| `after` | BLOB | Row data after the change (modes: `after`, `full`) |
+| `updates` | BLOB | Per-column change details (mode: `full`) |
+
+## Querying Changes
+
+```sql
+-- All changes
+SELECT * FROM turso_cdc;
+
+-- Only inserts
+SELECT * FROM turso_cdc WHERE change_type = 1;
+
+-- Only updates
+SELECT * FROM turso_cdc WHERE change_type = 0;
+
+-- Only deletes
+SELECT * FROM turso_cdc WHERE change_type = -1;
+
+-- Changes for a specific table
+SELECT * FROM turso_cdc WHERE table_name = 'users';
+
+-- Changes in the last hour
+SELECT * FROM turso_cdc WHERE change_time > unixepoch() - 3600;
+```
+
+## Decoding Binary Records
+
+The `before`, `after`, and `updates` columns store data in a binary format. Use the built-in helper functions to decode them:
+
+```sql
+SELECT
+  change_type,
+  table_name,
+  id,
+  bin_record_json_object(table_columns_json_array('users'), after) AS after_state,
+  bin_record_json_object(table_columns_json_array('users'), before) AS before_state
+FROM turso_cdc
+WHERE table_name = 'users' AND change_type != 2;
+```
+
+| Function | Description |
+| --- | --- |
+| `table_columns_json_array(table_name)` | Returns a JSON array of column names for a table (e.g. `["id","name","email"]`) |
+| `bin_record_json_object(columns_json, blob)` | Decodes a binary record into a JSON object using the given column names |
+
+## Transactions
+
+CDC respects transaction boundaries. Changes are only recorded when a transaction commits. If a transaction rolls back, no CDC entries are created.
+
+All rows from the same transaction share the same `change_txn_id`, with a single COMMIT record (`change_type = 2`) at the end:
+
+```sql
+BEGIN;
+INSERT INTO users VALUES (1, 'Alice', 'alice@example.com');
+INSERT INTO users VALUES (2, 'Bob', 'bob@example.com');
+UPDATE users SET name = 'Charles' WHERE id = 1;
+COMMIT;
+-- All 3 changes + 1 COMMIT record share the same change_txn_id
+```
+
+## Schema Changes
+
+CDC also tracks DDL operations (CREATE TABLE, DROP TABLE, CREATE INDEX, etc.) as changes to the `sqlite_schema` table:
+
+```sql
+PRAGMA capture_data_changes_conn('full');
+
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);
+-- Recorded in turso_cdc as a change to sqlite_schema
+```
+
+## Multiple Connections
+
+Each connection has its own independent CDC configuration. Different connections can capture to different tables:
+
+```sql
+-- Connection 1: Capture to 'audit_log'
+PRAGMA capture_data_changes_conn('full,audit_log');
+
+-- Connection 2: Capture to 'sync_queue'
+PRAGMA capture_data_changes_conn('id,sync_queue');
+```
+
+## Example
+
+```sql
+-- Create a table
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    email TEXT
+);
+
+-- Enable full CDC
+PRAGMA capture_data_changes_conn('full');
+
+-- Make some changes
+INSERT INTO users VALUES (1, 'Alice', 'alice@example.com');
+INSERT INTO users VALUES (2, 'Bob', 'bob@example.com');
+UPDATE users SET email = 'alice@newdomain.com' WHERE id = 1;
+DELETE FROM users WHERE id = 2;
+
+-- View the captured changes with decoded data
+SELECT
+  change_id,
+  CASE change_type
+    WHEN 1 THEN 'INSERT'
+    WHEN 0 THEN 'UPDATE'
+    WHEN -1 THEN 'DELETE'
+    WHEN 2 THEN 'COMMIT'
+  END AS operation,
+  table_name,
+  id,
+  bin_record_json_object(table_columns_json_array('users'), after) AS after_state
+FROM turso_cdc
+WHERE change_type != 2
+ORDER BY change_id;
+```

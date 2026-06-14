@@ -2,8 +2,15 @@
 title: Connect a JavaScript/Node.js application to Neon Postgres
 subtitle: Learn how to run SQL queries in Neon from JavaScript using pg, postgres.js, or
   the Neon serverless driver
+summary: >-
+  Connect a Node.js application to Neon Postgres using node-postgres (pg),
+  Postgres.js, or the Neon serverless driver (@neondatabase/serverless). Each
+  driver section includes working CRUD examples covering table creation, insert,
+  select, update, and delete. The Neon serverless driver connects over HTTP and
+  suits serverless and edge runtimes. Bun and Deno users are directed to
+  separate guides.
 enableTableOfContents: true
-updatedOn: '2025-09-30T00:26:10.496Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/javascript-prompt.md" 
@@ -18,7 +25,7 @@ This guide describes how to create a Neon project and connect to it from a Node.
 You'll learn how to connect to your Neon database from a JavaScript application and perform basic Create, Read, Update, and Delete (CRUD) operations.
 
 <Admonition type="important" title="Connect from the Server-Side Only">
-Your database connection string contains sensitive credentials and must **never** be exposed in client-side javascript code (e.g., in a browser). All database operations should be handled in a secure, server-side environment like a Node.js backend or a serverless function.
+Your database connection string contains sensitive credentials and must **never** be exposed in client-side javascript code (for example, in a browser). All database operations should be handled in a secure, server-side environment like a Node.js backend or a serverless function.
 </Admonition>
 
 ## Prerequisites
@@ -49,7 +56,7 @@ For your Node.js project, create a project directory, initialize it with `npm`, 
     cd neon-nodejs-quickstart
     ```
 
-    > Open the directory in your preferred code editor (e.g., VS Code).
+    > Open the directory in your preferred code editor (for example, VS Code).
 
 2.  Initialize a new Node.js project. The `-y` flag accepts all the default settings.
 
@@ -685,11 +692,7 @@ You can find the source code for the applications described in this guide on Git
 
 <DetailIconCards>
 
-<a href="https://github.com/neondatabase/examples/tree/main/with-node-postgres" description="Get started with Node.js and Neon using node-postgres (pg)" icon="github">Get started with node-postgres (pg)</a>
-
 <a href="https://github.com/neondatabase/examples/tree/main/with-neon-serverless" description="Get started with Node.js and the Neon Serverless Driver" icon="github">Get started with the Neon Serverless Driver</a>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-node-postgres-js" description="Get started with Node.js and Neon using postgres.js" icon="github">Get started with postgres.js</a>
 
 </DetailIconCards>
 

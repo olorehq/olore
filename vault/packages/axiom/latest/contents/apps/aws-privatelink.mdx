@@ -8,26 +8,29 @@ sidebarTitle: AWS PrivateLink
 
 ## Cross-region support
 
-The Axiom service is hosted in the `us-east-1` region. Axiom supports native cross-region PrivateLink for the following regions:
+Axiom supports native cross-region PrivateLink for the following regions:
 
-US regions:
-- `us-east-2`
-- `us-west-1`
-- `us-west-2`
+| Axiom edge deployment | Supported PrivateLink regions |
+| :--- | :--- |
+| `US East 1 (AWS)` | `us-east-1`<br />`us-east-2`<br />`us-west-1`<br />`us-west-2`<br />`eu-west-1`<br />`eu-west-2`<br />`eu-west-3`<br />`eu-central-1`<br />`ca-central-1` |
+| `EU Central 1 (AWS)` | `eu-central-1`<br />`eu-north-1` |
 
-EU regions:
-- `eu-west-1`
-- `eu-west-2`
-- `eu-west-3`
-- `eu-central-1`
+To connect to a region that isn't listed above, [contact Axiom](https://axiom.co/contact).
 
-To connect to a region that isn’t listed above, [contact Axiom](https://axiom.co/contact).
+For more information, see [Edge deployments](/reference/edge-deployments).
 
 ## Setup
 
+Use the service details for your edge deployment to set up the VPC endpoint.
+
+| Axiom edge deployment | PrivateLink service name | PrivateLink service region |
+| :--- | :--- | :--- |
+| `US East 1 (AWS)` | `com.amazonaws.vpce.us-east-1.vpce-svc-05a64735cdf68866b` | `us-east-1` |
+| `EU Central 1 (AWS)` | `com.amazonaws.vpce.eu-central-1.vpce-svc-00e8d47e8c60784f7` | `eu-central-1` |
+
 1. In your VPC Console, go to **PrivateLink and Lattice > Endpoints**, and then click **Create endpoint**.
-1. Select **PrivateLink ready partner services**, and then enter `com.amazonaws.vpce.us-east-1.vpce-svc-05a64735cdf68866b` as the service name.
-1. Under **Service Region**, turn on **Cross-region endpoint**, and then select the `us-east-1` region. This is the region where the Axiom service is hosted, and it’s independent of your VPC’s region.
+1. Select **PrivateLink ready partner services**, and then enter the service name for your edge deployment.
+1. Under **Service Region**, turn on **Cross-region endpoint**, and then select the service region for your edge deployment. This is the region where the Axiom service is hosted, and it's independent of your VPC's region.
 1. Click **Verify service**.
-1. Select the VPC and subnets that you want to connect to the Axiom VPC service endpoint. Ensure that **Enable DNS name** is turned on and the security group accepts inbound traffic on TCP port `443`.
+1. Select the VPC and subnets that you want to connect to the Axiom VPC service endpoint. Ensure that **Enable DNS name** is turned on and the security group accepts inbound traffic on TCP port `443`.
 1. Finish the setup and wait for the VPC endpoint to become available. This usually takes 10 minutes.

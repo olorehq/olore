@@ -16,7 +16,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Establishing performance baselines
@@ -31,7 +31,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - SLA monitoring and compliance
@@ -46,7 +46,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Understanding worst-case user experience
@@ -60,7 +60,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Understanding typical user experience
@@ -75,7 +75,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Understanding best-case performance
@@ -90,7 +90,7 @@ Response time metrics measure how quickly your services respond to requests, pro
 
 **Unit:** Milliseconds  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, TCP, DNS, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Identifying performance spikes
@@ -109,7 +109,7 @@ Success rate metrics measure the reliability and availability of your services.
 
 **Unit:** Percentage (0-100%)  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, Heartbeat, ICMP, TCP, Multistep, URL checks
 
 <Accordion title="Use cases">
 - SLA compliance monitoring
@@ -124,7 +124,7 @@ Success rate metrics measure the reliability and availability of your services.
 
 **Unit:** Percentage (0-100%)  
 **Precision:** 2 decimal places  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, Heartbeat, ICMP, TCP, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Error monitoring and alerting
@@ -137,8 +137,8 @@ Success rate metrics measure the reliability and availability of your services.
 
 **What it measures:** The total number of check executions performed during the selected time period.
 
-**Unit:** Count  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Unit:** Count    
+**Available for:** API, Browser, Heartbeat, ICMP, TCP, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Volume analysis and capacity planning
@@ -151,8 +151,8 @@ Success rate metrics measure the reliability and availability of your services.
 
 **What it measures:** The total number of check executions that completed successfully according to the defined success criteria.
 
-**Unit:** Count  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Unit:** Count
+**Available for:** API, Browser, Heartbeat, ICMP, TCP, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Availability reporting
@@ -166,7 +166,7 @@ Success rate metrics measure the reliability and availability of your services.
 **What it measures:** The total number of check executions that failed to meet the defined success criteria.
 
 **Unit:** Count  
-**Available for:** API, Browser, Heartbeat, TCP, Multistep, URL checks
+**Available for:** API, Browser, Heartbeat, ICMP, TCP, Multistep, URL checks
 
 <Accordion title="Use cases">
 - Error analysis and troubleshooting
@@ -188,7 +188,7 @@ Core Web Vitals are a set of metrics defined by Google that measure real-world u
 **Available for:** Browser, Multistep checks only
 
 **Google's thresholds:**
-- Good: d 1.8 seconds
+- Good: ≤ 1.8 seconds
 - Needs improvement: 1.8 - 3.0 seconds
 - Poor: > 3.0 seconds
 
@@ -378,6 +378,86 @@ These metrics are specific to heartbeat checks, which monitor the availability a
 - Setting performance benchmarks
 </Accordion>
 
+## ICMP-Specific Metrics
+
+These metrics are specific to ICMP monitors, which verify host reachability and measure network performance using ICMP Echo Requests (pings).
+
+### Average Ping Latency
+
+**What it measures:** The average round-trip time (RTT) across all received ICMP Echo Reply packets within a check run.
+
+**Unit:** Milliseconds
+
+<Accordion title="Use cases">
+- Establishing network latency baselines
+- Detecting latency degradation over time
+- Comparing latency across regions
+</Accordion>
+
+### Minimum Ping Latency
+
+**What it measures:** The fastest round-trip time recorded across all received packets within a check run.
+
+**Unit:** Milliseconds
+
+<Accordion title="Use cases">
+- Understanding best-case network performance
+</Accordion>
+
+### Maximum Ping Latency
+
+**What it measures:** The slowest round-trip time recorded across all received packets within a check run.
+
+**Unit:** Milliseconds
+
+<Accordion title="Use cases">
+- Identifying latency spikes
+- Setting timeout and alerting thresholds
+</Accordion>
+
+### Ping Latency Standard Deviation
+
+**What it measures:** The variability of round-trip times across all received packets within a check run. Higher values indicate less consistent network performance (jitter).
+
+**Unit:** Milliseconds
+
+<Accordion title="Use cases">
+- Measuring network stability and jitter
+</Accordion>
+
+### Packet Loss
+
+**What it measures:** The percentage of ICMP Echo Request packets that did not receive a reply.
+
+**Unit:** Percentage (0-100%)
+
+<Accordion title="Use cases">
+- Detecting network degradation
+- Triggering degraded or failed states via [packet loss thresholds](/detect/uptime-monitoring/icmp-monitors/configuration#packet-loss-limits)
+</Accordion>
+
+### P95 Ping Latency
+
+**What it measures:** The 95th percentile of average ping latency across check runs within the selected time period.
+
+**Unit:** Milliseconds
+
+<Accordion title="Use cases">
+- SLA monitoring for network latency
+- Filtering out outlier spikes for a realistic performance view
+</Accordion>
+
+### P95 Packet Loss
+
+**What it measures:** The 95th percentile of packet loss across check runs within the selected time period.
+
+**Unit:** Percentage (0-100%)
+
+<Accordion title="Use cases">
+- SLA monitoring for packet delivery
+- Identifying persistent vs. intermittent packet loss
+</Accordion>
+
 ## Additional Metrics by Check Type
 
 ### TCP Connection Time
@@ -400,8 +480,8 @@ These metrics are specific to heartbeat checks, which monitor the availability a
 **What it measures:** The time required to resolve the hostname to an IP address via DNS lookup.
 
 **Unit:** Milliseconds  
-**Precision:** 2 decimal places  
-**Available for:** API, Browser, URL, TCP checks (when hostname is used)
+**Precision:** 2 decimal places
+**Available for:** API, Browser, URL, TCP, DNS, ICMP checks (when hostname is used)
 
 <Accordion title="Use cases">
 - DNS performance monitoring
@@ -428,5 +508,5 @@ These metrics are specific to heartbeat checks, which monitor the availability a
 ---
 
 <Note>
-For complete metric definitions and API response formats, see the [Analytics API Reference](/api-reference/analytics/metrics).
+For all available metrics see the [Analytics API Reference](/api-reference/analytics/list-all-available-reporting-metrics).
 </Note>

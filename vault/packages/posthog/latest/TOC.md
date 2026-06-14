@@ -4,288 +4,384 @@
 
 ```
 contents/
-├── getting-started/          # Installation and onboarding (14 files)
-├── new-to-posthog/           # Beginner guides (8 files)
-├── integrate/                # SDK integration code (113 files)
-│   ├── _snippets/            # Reusable code snippets (55 files)
-│   ├── feature-flags-code/   # Feature flag integration code (35 files)
-│   └── send-events/          # Event capture code (22 files)
-├── libraries/                # SDK reference by language (110 files)
-│   ├── js/                   # JavaScript SDK (7 files)
-│   ├── next-js/              # Next.js SDK (7 files)
-│   ├── python/               # Python SDK (6 files)
-│   ├── ios/                  # iOS SDK (6 files)
-│   ├── react-router/         # React Router SDK (14 files)
-│   ├── vue-js/               # Vue.js SDK (5 files)
-│   ├── node/                 # Node.js SDK (3 files)
-│   ├── dotnet/               # .NET SDK (3 files)
-│   ├── go/                   # Go SDK (3 files)
-│   ├── php/                  # PHP SDK (3 files)
-│   ├── ruby/                 # Ruby SDK (3 files)
-│   ├── react-native/         # React Native SDK (3 files)
-│   ├── flutter/              # Flutter SDK (2 files)
-│   ├── android/              # Android SDK (2 files)
-│   └── curl/                 # REST/curl examples (2 files)
-├── product-analytics/        # Analytics features (76 files)
-│   ├── _snippets/            # Code snippets (20 files)
-│   ├── installation/         # Setup guides (21 files)
-│   └── trends/               # Trends analysis (8 files)
-├── feature-flags/            # Feature flags docs (69 files)
-│   ├── installation/         # SDK setup (20 files)
-│   ├── local-evaluation/     # Local evaluation (6 files)
-│   └── snippets/             # Code snippets (17 files)
-├── experiments/              # A/B testing docs (59 files)
-│   └── installation/         # SDK setup (33 files)
-├── session-replay/           # Session replay docs (62 files)
-│   ├── _snippets/            # Code snippets (23 files)
-│   └── installation/         # SDK setup (21 files)
-├── error-tracking/           # Error tracking docs (77 files)
-│   ├── _snippets/            # Code snippets (15 files)
-│   ├── installation/         # SDK setup (22 files)
-│   └── upload-source-maps/   # Source map upload (17 files)
-├── llm-analytics/            # LLM/AI analytics (86 files)
-│   ├── _snippets/            # Code snippets (7 files)
-│   ├── installation/         # SDK setup by provider (42 files)
-│   ├── integrations/         # Third-party integrations (5 files)
-│   └── user-feedback/        # User feedback (2 files)
-├── surveys/                  # Surveys feature (33 files)
-├── cdp/                      # Customer Data Platform (106 files)
-│   ├── destinations/         # CDP destinations (41 files)
-│   ├── sources/              # CDP sources (42 files)
-│   ├── batch-exports/        # Batch export configs (8 files)
-│   └── transformations/      # Data transformations (3 files)
-├── data-warehouse/           # Data warehouse docs (21 files)
-├── data/                     # Data management (17 files)
-├── web-analytics/            # Web analytics (39 files)
-├── api/                      # REST API reference (19 files)
-├── endpoints/                # PostHog endpoints feature (30 files)
-│   └── start-here/           # Getting started with endpoints (10 files)
-├── self-host/                # Self-hosting guides (28 files)
-├── advanced/                 # Advanced configuration (23 files)
-├── migrate/                  # Migration guides (15 files)
-├── privacy/                  # Privacy and compliance (18 files)
-├── how-posthog-works/        # Architecture internals (6 files)
-├── sql/                      # HogQL/SQL reference (6 files)
-├── hog/                      # Hog scripting language (1 file)
-├── model-context-protocol/   # MCP integration (19 files)
-├── posthog-ai/               # PostHog AI features (17 files)
-├── ai-engineering/           # AI engineering guides (3 files)
-├── logs/                     # Log capture (19 files)
-├── workflows/                # Workflow automation (16 files)
-├── customer-analytics/       # Customer analytics (14 files)
-├── revenue-analytics/        # Revenue analytics (12 files)
-├── integrations/             # Third-party integrations (4 files)
-├── site-apps/                # Site apps (3 files)
-├── alerts/                   # Alerting (1 file)
-├── billing/                  # Billing docs (5 files)
-├── settings/                 # Account settings (7 files)
-├── support/                  # Support resources (8 files)
-├── toolbar/                  # PostHog toolbar (5 files)
-├── product-tours/            # Product tours feature (13 files)
-├── product-os/               # Product OS (1 file)
-├── notebooks/                # Notebooks feature (1 file)
-├── discussion/               # Discussions feature (1 file)
-└── _snippets/                # Shared code snippets (21 files)
+├── getting-started/        # Install, identify users, send events (6 files)
+├── integrate/              # SDK setup snippets and framework guides (22 files)
+├── libraries/              # Per-SDK reference docs (60+ files)
+│   ├── js/                 # JavaScript/Web SDK
+│   ├── next-js/            # Next.js SDK
+│   ├── python/             # Python SDK
+│   ├── node/               # Node.js SDK
+│   ├── react/              # React SDK
+│   ├── react-native/       # React Native SDK
+│   ├── ios/                # iOS SDK
+│   ├── android/            # Android SDK
+│   ├── flutter/            # Flutter SDK
+│   ├── go/                 # Go SDK
+│   ├── ruby/               # Ruby SDK
+│   ├── php/                # PHP SDK
+│   ├── dotnet/             # .NET SDK
+│   ├── java/               # Java SDK
+│   ├── rust/               # Rust SDK
+│   └── ...                 # 20+ more frameworks
+├── product-analytics/      # Events, funnels, trends, cohorts (40+ files)
+├── feature-flags/          # Flag creation, evaluation, local eval (30+ files)
+├── experiments/            # A/B testing, statistical methods (30+ files)
+├── session-replay/         # Recording setup, privacy, network (30+ files)
+├── surveys/                # Survey creation and implementation (20+ files)
+├── error-tracking/         # Error capture, source maps, stack traces (40+ files)
+├── ai-observability/       # LLM tracing, AI SDK integrations (40+ files)
+├── ai-evals/               # Evaluation datasets and taggers (3 files)
+├── ai-engineering/         # AI wizard, llms.txt (3 files)
+├── distributed-tracing/    # Distributed tracing setup (10 files)
+├── logs/                   # Log capture and search (15 files)
+├── data-warehouse/         # SQL querying, joins, views (15 files)
+├── web-analytics/          # Web analytics dashboard (25+ files)
+├── revenue-analytics/      # Revenue tracking and Stripe (10 files)
+├── customer-analytics/     # B2B mode, customer journeys (10 files)
+├── endpoints/              # Managed API endpoints (20 files)
+├── cdp/                    # Data pipelines, destinations, sources (150+ files)
+│   ├── destinations/       # Export to 30+ destinations
+│   ├── sources/            # Import from 100+ sources
+│   ├── batch-exports/      # Batch export to S3, BigQuery, etc.
+│   └── transformations/    # Event transformations
+├── api/                    # REST API reference (15 files)
+├── data/                   # Events, persons, cohorts, sessions (15 files)
+├── advanced/               # Proxy setup, CSP, CDPs (15 files)
+├── privacy/                # GDPR, HIPAA, CCPA, data masking (10 files)
+├── self-host/              # Self-hosted deployment (15 files)
+├── migrate/                # Migrations from GA, Amplitude, Mixpanel (12 files)
+├── settings/               # Access control, SSO, organizations (7 files)
+├── model-context-protocol/ # MCP server integration (10 files)
+├── mcp-analytics/          # PostHog MCP analytics SDK (12 files)
+├── sql/                    # HogQL/ClickHouse SQL reference (6 files)
+├── workflows/              # Workflow automation (10 files)
+├── integrations/           # Lovable, Replit, v0, Vercel (4 files)
+├── vscode-extension/       # VS Code extension docs (6 files)
+├── slack/                  # Slack integration (4 files)
+├── alerts/                 # Metric alerts (1 file)
+├── toolbar/                # PostHog toolbar (4 files)
+├── how-posthog-works/      # ClickHouse internals, data model (5 files)
+└── libraries.mdx           # SDK overview
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New to PostHog | `contents/getting-started/` |
-| Install an SDK | `contents/libraries/` or `contents/integrate/` |
-| Event tracking | `contents/integrate/send-events/` |
-| Feature flags | `contents/feature-flags/` |
-| A/B testing | `contents/experiments/` |
-| Session replay | `contents/session-replay/` |
-| Product analytics | `contents/product-analytics/` |
-| Error tracking | `contents/error-tracking/` |
-| LLM analytics | `contents/llm-analytics/` |
-| Surveys | `contents/surveys/` |
-| Data pipeline / CDP | `contents/cdp/` |
-| Data warehouse | `contents/data-warehouse/` |
-| REST API | `contents/api/` |
-| Self-hosting | `contents/self-host/` |
-| Privacy/compliance | `contents/privacy/` |
-| SQL / HogQL | `contents/sql/` |
+| Install PostHog | `contents/getting-started/install.mdx` |
+| Identify users | `contents/getting-started/identify-users.mdx` |
+| Capture events | `contents/getting-started/send-events.mdx` |
+| JavaScript SDK | `contents/libraries/js/index.mdx` |
+| Next.js SDK | `contents/libraries/next-js/index.mdx` |
+| Python SDK | `contents/libraries/python/index.mdx` |
+| Node.js SDK | `contents/libraries/node/index.mdx` |
+| React SDK | `contents/libraries/react/index.mdx` |
+| Feature flags | `contents/feature-flags/creating-feature-flags.mdx` |
+| Experiments (A/B) | `contents/experiments/creating-an-experiment.mdx` |
+| Session replay | `contents/session-replay/installation/index.mdx` |
+| Error tracking | `contents/error-tracking/installation/index.mdx` |
+| AI observability | `contents/ai-observability/basics.mdx` |
+| REST API | `contents/api/index.mdx` |
+| HogQL/SQL | `contents/sql/index.mdx` |
+| Privacy/GDPR | `contents/privacy/gdpr-compliance.mdx` |
+| Self-hosting | `contents/self-host/index.mdx` |
+| MCP integration | `contents/model-context-protocol/index.mdx` |
 
 ## Detailed Structure
 
-### getting-started/ (14 files)
+### getting-started/ (6 files)
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Getting started overview |
-| Other files | Installation and onboarding guides |
+| `install.mdx` | SDK installation guide |
+| `identify-users.mdx` | User identification |
+| `send-events.mdx` | Capturing events |
+| `next-steps.mdx` | After setup next steps |
+| `data-import-export.mdx` | Data import/export |
+| `enable-betas.mdx` | Enabling beta features |
 
-### new-to-posthog/ (8 files)
-
-| File | Description |
-|------|-------------|
-| Various | Beginner guides and first steps |
-
-### integrate/ (113 files)
+### libraries/ (60+ files across frameworks)
 
 | Directory | Description |
 |-----------|-------------|
-| `send-events/` (22 files) | How to capture events with each SDK |
-| `feature-flags-code/` (35 files) | Feature flag usage code per SDK |
-| `_snippets/` (55 files) | Reusable MDX code snippets |
+| `js/index.mdx` | JS Web SDK config, usage, persistence |
+| `js/config.mdx` | All JS config options |
+| `js/usage.mdx` | JS SDK usage patterns |
+| `next-js/index.mdx` | Next.js App/Pages Router setup |
+| `python/index.mdx` | Python SDK reference |
+| `node/index.mdx` | Node.js SDK reference |
+| `react/index.mdx` | React hooks and components |
+| `react-native/index.mdx` | React Native mobile setup |
+| `ios/index.mdx` | iOS Swift setup |
+| `ios/configuration.mdx` | iOS configuration options |
+| `ios/usage.mdx` | iOS SDK usage |
+| `android/index.mdx` | Android Kotlin/Java setup |
+| `flutter/index.mdx` | Flutter/Dart setup |
+| `go/index.mdx` | Go SDK reference |
+| `ruby/index.mdx` | Ruby SDK reference |
+| `php/index.mdx` | PHP SDK reference |
+| `dotnet/index.mdx` | .NET/C# SDK reference |
+| `java/index.mdx` | Java SDK reference |
+| `rust/index.mdx` | Rust SDK reference |
+| `angular.mdx` | Angular setup |
+| `astro.mdx` | Astro setup |
+| `svelte.mdx` | Svelte/SvelteKit setup |
+| `vue-js/index.mdx` | Vue.js setup |
+| `nuxt-js.mdx` | Nuxt.js 3.x setup |
+| `remix.mdx` | Remix setup |
+| `gatsby.mdx` | Gatsby setup |
+| `django.mdx` | Django setup |
+| `flask.mdx` | Flask setup |
+| `laravel.md` | Laravel PHP setup |
+| `nestjs.mdx` | NestJS setup |
+| `shopify.mdx` | Shopify setup |
+| `webflow.mdx` | Webflow setup |
+| `wordpress.md` | WordPress setup |
+| `cloudflare-workers.mdx` | Cloudflare Workers |
+| `google-tag-manager.mdx` | Google Tag Manager |
+| `segment.md` | Segment integration |
+| `rudderstack.md` | RudderStack integration |
+| `tanstack-start.mdx` | TanStack Start setup |
+| `react-router/index.mdx` | React Router v6/v7 |
 
-### libraries/ (110 files)
+### product-analytics/ (40+ files)
+
+| File | Description |
+|------|-------------|
+| `capture-events.mdx` | Event capture guide |
+| `identify.mdx` | User identification |
+| `autocapture.mdx` | Autocapture configuration |
+| `group-analytics.mdx` | Group analytics setup |
+| `funnels.mdx` | Funnel analysis |
+| `paths.mdx` | User paths analysis |
+| `retention.mdx` | Retention analysis |
+| `stickiness.mdx` | Stickiness charts |
+| `lifecycle.mdx` | User lifecycle |
+| `dashboards.mdx` | Dashboard creation |
+| `correlation.mdx` | Correlation analysis |
+| `person-properties.mdx` | Person properties |
+| `identity-resolution.mdx` | Identity merging |
+| `schema-management.mdx` | Event schema |
+| `best-practices.mdx` | Analytics best practices |
+| `troubleshooting.mdx` | Common issues |
+| `privacy.mdx` | Analytics privacy |
+| `trends/overview.mdx` | Trends/Insights |
+| `installation/` | Per-platform installation |
+
+### feature-flags/ (30+ files)
+
+| File | Description |
+|------|-------------|
+| `creating-feature-flags.mdx` | Create and manage flags |
+| `adding-feature-flag-code.mdx` | Add flags to code |
+| `bootstrapping.mdx` | Bootstrap flags client-side |
+| `local-evaluation/index.mdx` | Server-side local evaluation |
+| `early-access-feature-management.mdx` | Early access features |
+| `remote-config.mdx` | Remote configuration |
+| `testing.mdx` | Testing with flags |
+| `best-practices.mdx` | Flag best practices |
+| `troubleshooting.mdx` | Common issues |
+| `user-and-group-targeting.mdx` | Targeting options |
+| `evaluation-contexts.mdx` | Evaluation contexts |
+| `scheduled-flag-changes.mdx` | Scheduled changes |
+| `dependencies.mdx` | Flag dependencies |
+| `installation/` | Per-platform SDK installation |
+
+### experiments/ (30+ files)
+
+| File | Description |
+|------|-------------|
+| `creating-an-experiment.mdx` | Create A/B experiments |
+| `adding-experiment-code.mdx` | Add experiment code |
+| `analyzing-results.mdx` | Analyze results |
+| `best-practices.mdx` | Experiment best practices |
+| `metrics.mdx` | Defining metrics |
+| `holdouts.mdx` | Holdout groups |
+| `cuped.mdx` | CUPED variance reduction |
+| `statistics-bayesian.mdx` | Bayesian statistics |
+| `statistics-frequentist.mdx` | Frequentist statistics |
+| `testing-and-launching.mdx` | Testing and launch |
+| `troubleshooting.mdx` | Common issues |
+| `installation/` | Per-platform installation |
+
+### session-replay/ (30+ files)
+
+| File | Description |
+|------|-------------|
+| `installation/index.mdx` | Installation overview |
+| `privacy.mdx` | Privacy and masking |
+| `network-recording.mdx` | Network request recording |
+| `console-log-recording.mdx` | Console log capture |
+| `mobile.mdx` | Mobile session replay |
+| `how-to-watch-recordings.mdx` | Viewing recordings |
+| `how-to-control-which-sessions-you-record.mdx` | Session sampling |
+| `sharing.mdx` | Sharing recordings |
+| `iframes.mdx` | iFrame recording |
+| `canvas-recording.mdx` | Canvas recording |
+| `troubleshooting.mdx` | Common issues |
+| `installation/` | Per-platform installation |
+
+### error-tracking/ (40+ files)
+
+| File | Description |
+|------|-------------|
+| `installation/index.mdx` | Installation overview |
+| `capture.mdx` | Capturing exceptions |
+| `stack-traces.mdx` | Stack trace configuration |
+| `upload-source-maps/` | Source map upload guides |
+| `fingerprints.mdx` | Error fingerprinting |
+| `grouping-issues.mdx` | Issue grouping |
+| `managing-issues.mdx` | Issue management |
+| `assigning-issues.mdx` | Assigning issues |
+| `alerts.mdx` | Error alerts |
+| `references.mdx` | API reference |
+| `troubleshooting.mdx` | Common issues |
+| `installation/` | Per-platform installation |
+
+### ai-observability/ (40+ files)
+
+| File | Description |
+|------|-------------|
+| `basics.mdx` | LLM observability overview |
+| `traces.mdx` | Trace events |
+| `generations.mdx` | Generation tracking |
+| `embeddings.mdx` | Embedding tracking |
+| `spans.mdx` | Span tracking |
+| `sessions.mdx` | Session grouping |
+| `calculating-costs.mdx` | Cost calculation |
+| `collect-user-feedback.mdx` | User feedback |
+| `custom-properties.mdx` | Custom properties |
+| `privacy-mode.mdx` | Privacy mode |
+| `errors.mdx` | Error tracking |
+| `troubleshooting.mdx` | Common issues |
+| `installation/anthropic.mdx` | Anthropic SDK |
+| `installation/openai.mdx` | OpenAI SDK |
+| `installation/langchain.mdx` | LangChain |
+| `installation/langgraph.mdx` | LangGraph |
+| `installation/vercel-ai.mdx` | Vercel AI SDK |
+| `installation/litellm.mdx` | LiteLLM |
+| `installation/llamaindex.mdx` | LlamaIndex |
+| `installation/manual-capture.mdx` | Manual event capture |
+| `installation/` | All SDK integrations |
+
+### api/ (15 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | API overview |
+| `capture.mdx` | Capture API |
+| `flags.mdx` | Feature flags API |
+| `queries.mdx` | Query API |
+| `personal-api-keys.mdx` | API key management |
+| `oauth.mdx` | OAuth setup |
+| `persons/` | Persons API endpoints |
+| `events/` | Events API endpoints |
+| `feature-flags/` | Feature flags API endpoints |
+| `session-recordings/` | Session recordings API |
+
+### data/ (15 files)
+
+| File | Description |
+|------|-------------|
+| `events.mdx` | Events overview |
+| `persons.mdx` | Persons data |
+| `cohorts.mdx` | Cohorts |
+| `sessions.mdx` | Sessions |
+| `actions.mdx` | Actions |
+| `annotations.mdx` | Annotations |
+| `property-filters.mdx` | Property filtering |
+| `anonymous-vs-identified-events.mdx` | Identity types |
+| `utm-segmentation.mdx` | UTM tracking |
+| `timestamps.md` | Timestamp handling |
+
+### cdp/ (150+ files)
 
 | Directory | Description |
 |-----------|-------------|
-| `js/` (7 files) | JavaScript/Web SDK |
-| `next-js/` (7 files) | Next.js SDK |
-| `python/` (6 files) | Python SDK |
-| `ios/` (6 files) | iOS Swift SDK |
-| `react-router/` (14 files) | React Router integration |
-| `vue-js/` (5 files) | Vue.js SDK |
-| `node/` (3 files) | Node.js SDK |
-| `dotnet/` (3 files) | .NET SDK |
-| `go/` (3 files) | Go SDK |
-| `php/` (3 files) | PHP SDK |
-| `ruby/` (3 files) | Ruby SDK |
-| `react-native/` (3 files) | React Native SDK |
-| `flutter/` (2 files) | Flutter SDK |
-| `android/` (2 files) | Android SDK |
-| `curl/` (2 files) | cURL / REST API examples |
-| `capacitor/` | Capacitor SDK |
-| `elixir/` | Elixir SDK |
-| `java/` | Java SDK |
-| `react/` | React SDK |
-| `rust/` | Rust SDK |
-| `unity/` | Unity SDK |
+| `index.md` | CDP overview |
+| `batch-exports/` | BigQuery, S3, Snowflake, Postgres exports |
+| `destinations/` | 30+ real-time destinations (HubSpot, Slack, Salesforce, etc.) |
+| `sources/` | 100+ data sources (Stripe, Salesforce, Postgres, etc.) |
+| `transformations/` | Event transformation docs |
+| `fivetran-airbyte.md` | Fivetran/Airbyte integration |
 
-### product-analytics/ (76 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (21 files) | Setup by framework |
-| `trends/` (8 files) | Trends chart docs |
-| Root files | Insights, funnels, paths, cohorts, etc. |
-
-### feature-flags/ (69 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (20 files) | SDK-specific setup |
-| `local-evaluation/` (6 files) | Local flag evaluation |
-| `snippets/` (17 files) | Code snippets |
-| Root files | Flag types, targeting, bootstrapping |
-
-### experiments/ (59 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (33 files) | SDK-specific experiment setup |
-| Root files | Statistical methods, metrics, variants |
-
-### session-replay/ (62 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (21 files) | SDK-specific setup |
-| `_snippets/` (23 files) | Code snippets |
-| Root files | Configuration, privacy, network recording |
-
-### error-tracking/ (77 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (22 files) | SDK-specific setup |
-| `upload-source-maps/` (17 files) | Source map upload guides |
-| `_snippets/` (15 files) | Code snippets |
-| Root files | Error grouping, alerts, issue management |
-
-### llm-analytics/ (86 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `installation/` (42 files) | Provider-specific setup (OpenAI, Anthropic, etc.) |
-| `integrations/` (5 files) | Third-party AI integrations |
-| `user-feedback/` (2 files) | Collecting feedback on LLM responses |
-| `_snippets/` (7 files) | Code snippets |
-
-### surveys/ (33 files)
+### sql/ (6 files)
 
 | File | Description |
 |------|-------------|
-| Root files | Creating surveys, targeting, templates, API |
+| `index.mdx` | HogQL overview |
+| `expressions.mdx` | SQL expressions |
+| `aggregations.mdx` | Aggregation functions |
+| `clickhouse-functions.mdx` | ClickHouse functions reference |
+| `optimizing-queries.mdx` | Query optimization |
 
-### cdp/ (106 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `destinations/` (41 files) | Destination connectors (S3, BigQuery, Salesforce, etc.) |
-| `sources/` (42 files) | Source connectors (Stripe, Zendesk, etc.) |
-| `batch-exports/` (8 files) | Batch export configuration |
-| `transformations/` (3 files) | Data transformation pipelines |
-
-### data-warehouse/ (21 files)
+### self-host/ (15 files)
 
 | File | Description |
 |------|-------------|
-| Root files | Querying, schema, linking, syncing data |
+| `index.mdx` | Self-hosting overview |
+| `configure/environment-variables.md` | Environment variables |
+| `configure/securing-posthog.mdx` | Security configuration |
+| `configure/running-behind-proxy.md` | Proxy setup |
+| `configure/email.md` | Email configuration |
+| `deploy/troubleshooting.md` | Deployment troubleshooting |
 
-### web-analytics/ (39 files)
-
-| File | Description |
-|------|-------------|
-| Root files | Web analytics setup, metrics, cookieless tracking |
-
-### api/ (19 files)
-
-| File | Description |
-|------|-------------|
-| Root files | REST API endpoints, authentication, pagination |
-
-### endpoints/ (30 files)
-
-| Directory | Description |
-|-----------|-------------|
-| `start-here/` (10 files) | Creating and deploying endpoints |
-| Root files | Variables, SQL endpoints, guides |
-
-### self-host/ (28 files)
+### privacy/ (10 files)
 
 | File | Description |
 |------|-------------|
-| Root files | Kubernetes, Docker, configuration, upgrades |
+| `gdpr-compliance.mdx` | GDPR compliance guide |
+| `hipaa-compliance.mdx` | HIPAA compliance |
+| `ccpa-compliance.mdx` | CCPA compliance |
+| `data-collection.mdx` | What data is collected |
+| `data-storage.mdx` | Data storage details |
+| `ad-blockers.md` | Ad blocker handling |
+| `soc2.mdx` | SOC2 compliance |
 
-### advanced/ (23 files)
-
-| File | Description |
-|------|-------------|
-| Root files | Proxy, reverse proxy, custom domains, performance |
-
-### model-context-protocol/ (19 files)
-
-| File | Description |
-|------|-------------|
-| Root files | MCP server integration with PostHog |
-
-### logs/ (19 files)
+### migrate/ (12 files)
 
 | File | Description |
 |------|-------------|
-| Root files | Log capture, filtering, SDK setup |
+| `index.mdx` | Migration overview |
+| `google-analytics.mdx` | Migrate from GA |
+| `migrate-from-amplitude.mdx` | Migrate from Amplitude |
+| `mixpanel.mdx` | Migrate from Mixpanel |
+| `heap.mdx` | Migrate from Heap |
+| `pendo.mdx` | Migrate from Pendo |
+| `launchdarkly.mdx` | Migrate from LaunchDarkly |
+| `migrate-to-cloud.mdx` | Self-host to cloud |
 
-### workflows/ (16 files)
-
-| File | Description |
-|------|-------------|
-| Root files | Workflow automation, triggers, actions |
-
-### migrate/ (15 files)
-
-| File | Description |
-|------|-------------|
-| Root files | Migration guides from Mixpanel, Amplitude, GA, etc. |
-
-### privacy/ (18 files)
+### advanced/ (15 files)
 
 | File | Description |
 |------|-------------|
-| Root files | GDPR, CCPA, data deletion, anonymization |
+| `proxy.mdx` | Reverse proxy setup |
+| `proxy/` | Per-platform proxy guides |
+| `content-security-policy.md` | CSP configuration |
+| `browser-extension.md` | Browser extension |
+| `cdp.md` | CDP overview |
+| `infra-as-code.mdx` | Terraform/IaC |
+
+### model-context-protocol/ (10 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | MCP overview |
+| `tools.mdx` | Available MCP tools |
+| `use-cases.mdx` | MCP use cases |
+| `cursor.mdx` | Cursor setup |
+| `claude-desktop.mdx` | Claude Desktop setup |
+| `vscode.mdx` | VS Code setup |
+| `faq.mdx` | MCP FAQ |
+
+### data-warehouse/ (15 files)
+
+| File | Description |
+|------|-------------|
+| `start-here.mdx` | Data warehouse overview |
+| `query.mdx` | Querying data |
+| `join.mdx` | Joining tables |
+| `sources/` | Data sources |
+| `sql/` | SQL reference |
+| `views/` | Views and materialization |
+| `troubleshooting.mdx` | Common issues |

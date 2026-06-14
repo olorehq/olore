@@ -2,7 +2,11 @@
 title: '@xstate/store-react'
 ---
 
-The `@xstate/store-react` package provides React bindings for [XState Store](/docs/xstate-store). It includes hooks for subscribing to store state and creating local component stores.
+The `@xstate/store-react` package provides React bindings for [XState Store](/docs/xstate-store). It includes hooks for subscribing to store state, creating component-scoped stores, and using atoms.
+
+<Callout>
+These are the docs for `@xstate/store-react` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/react).
+</Callout>
 
 <Callout>
 
@@ -41,7 +45,7 @@ yarn add @xstate/store-react
 ## Quick start
 
 ```tsx
-import { createStore, useSelector } from '@xstate/store-react';
+import { createStore, useSelector } from '@xstate/store-react'; // [!code highlight:1]
 
 const store = createStore({
   context: { count: 0 },
@@ -53,6 +57,7 @@ const store = createStore({
 });
 
 function Counter() {
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 
   return (
@@ -69,16 +74,16 @@ function Counter() {
 
 ### `useSelector(store, selector?, compare?)`
 
-Subscribes to a store and returns a selected value. The component re-renders when the selected value changes.
+Subscribes to a store or atom and returns a selected value. The component re-renders when the selected value changes.
 
 ```tsx
-import { useSelector } from '@xstate/store-react';
+import { useSelector } from '@xstate/store-react'; // [!code highlight:1]
 
 function Counter() {
-  // Select specific value
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 
-  // With custom comparison function
+  // [!code highlight:4]
   const user = useSelector(
     store,
     (state) => state.context.user,
@@ -90,28 +95,33 @@ function Counter() {
 ```
 
 **Parameters:**
-- `store` - The store to subscribe to
-- `selector` - Optional function to select a value from the store snapshot
+
+- `store` - The store or atom to subscribe to
+- `selector` - Optional function to select a value
 - `compare` - Optional comparison function (defaults to strict equality `===`)
 
 **Returns:** The selected value
 
-### `useStore(config)`
+### `useStore(configOrLogic, input?)`
 
-Creates a component-scoped store instance. Useful for local state management similar to `useReducer`.
+Creates a component-scoped store instance. Pass either a store config or store logic created with `createStoreLogic(...)`.
 
 ```tsx
-import { useStore, useSelector } from '@xstate/store-react';
+import { createStoreLogic, useSelector, useStore } from '@xstate/store-react'; // [!code highlight:1]
 
-function Counter({ initialCount = 0 }) {
-  const store = useStore({
-    context: { count: initialCount },
-    on: {
-      inc: (context) => ({ count: context.count + 1 }),
-      dec: (context) => ({ count: context.count - 1 }),
-    },
-  });
+const counterLogic = createStoreLogic({
+  context: (input: { initialCount: number }) => ({
+    count: input.initialCount,
+  }),
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    dec: (context) => ({ count: context.count - 1 }),
+  },
+});
 
+function Counter() {
+  // [!code highlight:1]
+  const store = useStore(counterLogic, { initialCount: 0 });
   const count = useSelector(store, (state) => state.context.count);
 
   return (
@@ -124,22 +134,26 @@ function Counter({ initialCount = 0 }) {
 }
 ```
 
+If the store logic requires input, the `input` argument is required. If the input is optional, `useStore(logic)` is allowed.
+
 **Parameters:**
-- `config` - Store configuration object (same as `createStore`)
 
-**Returns:** A store instance (stable across re-renders)
+- `configOrLogic` - Store configuration object or store logic
+- `input` - Optional or required input for store logic
 
-### `useAtom(atom, selector?, compare?)`
+**Returns:** A store instance, stable across re-renders
 
-Subscribes to an atom and returns its value. Since v3.7.0.
+### `useAtom(atomOrConfig, selectorOrInput?, compare?)`
+
+Subscribes to an atom and returns its value. You can pass an existing atom, or an atom config created with `createAtomConfig(...)`.
 
 ```tsx
-import { createAtom } from '@xstate/store-react';
-import { useAtom } from '@xstate/store-react';
+import { createAtom, useAtom } from '@xstate/store-react'; // [!code highlight:1]
 
 const countAtom = createAtom(0);
 
 function Counter() {
+  // [!code highlight:1]
   const count = useAtom(countAtom);
 
   return (
@@ -151,20 +165,69 @@ function Counter() {
 }
 ```
 
-**Parameters:**
-- `atom` - The atom to subscribe to
-- `selector` - Optional function to select a value from the atom
-- `compare` - Optional comparison function
+With an atom config:
 
-**Returns:** The (selected) atom value
+```tsx
+import { createAtomConfig, useAtom } from '@xstate/store-react'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const count = useAtom(countConfig, { initialCount: 0 });
+
+  return <div>Count: {count}</div>;
+}
+```
+
+**Parameters:**
+
+- `atomOrConfig` - Existing atom or atom config
+- `selectorOrInput` - Selector for existing atoms, or input for atom configs
+- `compare` - Optional comparison function for existing atoms
+
+**Returns:** The selected atom value
+
+### `useAtomState(atomOrConfig, input?)`
+
+Creates or subscribes to an atom for the lifetime of a React component. It returns the current value and the live atom instance.
+
+```tsx
+import { createAtomConfig, useAtomState } from '@xstate/store-react'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const [count, countAtom] = useAtomState(countConfig, { initialCount: 0 });
+
+  return (
+    <button onClick={() => countAtom.set((count) => count + 1)}>
+      {count}
+    </button>
+  );
+}
+```
+
+**Parameters:**
+
+- `atomOrConfig` - Existing atom or atom config
+- `input` - Optional or required input for atom configs
+
+**Returns:** `[value, atom]`
 
 ### `createStoreHook(config)`
 
-Creates a custom React hook that combines `useStore()` and `useSelector()`. Since v3.9.0.
+Creates a custom React hook that combines `useSelector()` with a store created from a config object.
 
 ```tsx
-import { createStoreHook } from '@xstate/store-react';
+import { createStoreHook } from '@xstate/store-react'; // [!code highlight:1]
 
+// [!code highlight:1]
 const useCountStore = createStoreHook({
   context: { count: 0 },
   on: {
@@ -175,19 +238,20 @@ const useCountStore = createStoreHook({
 });
 
 function Counter() {
+  // [!code highlight:1]
   const [count, store] = useCountStore((s) => s.context.count);
 
   return (
     <div>
       <p>Count: {count}</p>
       <button onClick={() => store.trigger.inc({ by: 1 })}>+1</button>
-      <button onClick={() => store.trigger.inc({ by: 5 })}>+5</button>
     </div>
   );
 }
 ```
 
 **Parameters:**
+
 - `config` - Store configuration object
 
 **Returns:** A custom hook that returns `[selectedValue, store]`

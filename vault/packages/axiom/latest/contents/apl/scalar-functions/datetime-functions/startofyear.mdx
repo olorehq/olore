@@ -1,0 +1,163 @@
+---
+title: startofyear
+description: 'This page explains how to use the startofyear function in APL.'
+---
+
+Use the `startofyear` function in APL to round a datetime value down to the first day of the year at midnight (January 1 at 00:00:00). This function is useful for binning events into yearly buckets for long-term trend analysis.
+
+You can use `startofyear` to group records by year when analyzing annual trends, performing year-over-year comparisons, or building yearly aggregate reports across log, trace, and security datasets.
+
+Use it when you want to:
+
+- Aggregate events or metrics by year.
+- Align timestamps to year boundaries for annual reporting.
+- Compare activity or error rates across different years.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `relative_time` with the `@y` snap-to modifier to round a timestamp to the start of the year. In APL, the `startofyear` function achieves the same result directly.
+
+<CodeGroup>
+```sql Splunk example
+... | eval year_start=relative_time(_time, "@y")
+```
+
+```kusto APL equivalent
+... | extend year_start = startofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `DATE_TRUNC('year', timestamp_column)` to truncate a timestamp to the first day of the year. In APL, `startofyear` provides the same functionality.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('year', timestamp_column) AS year_start FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend year_start = startofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+startofyear(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                             |
+| -------- | ---------- | ------------------------------------------------------- |
+| datetime | `datetime` | The input datetime value.                               |
+| offset   | `long`     | Optional: The number of years to offset from the input datetime. Default is `0`. |
+
+### Returns
+
+A `datetime` representing the start of the year (January 1 at 00:00:00) for the given date value, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests per year to understand long-term traffic volume.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend year_start = startofyear(_time)
+| summarize request_count = count() by year_start
+| sort by year_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20year_start%20%3D%20startofyear(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20year_start%20%7C%20sort%20by%20year_start%20asc%22%7D)
+
+**Output**
+
+| year_start           | request_count |
+| -------------------- | ------------- |
+| 2024-01-01T00:00:00Z | 523400        |
+| 2025-01-01T00:00:00Z | 148200        |
+
+This query bins each HTTP request to the start of its year and counts the total requests per year.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Compare yearly trace volume by service to understand long-term usage patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend year_start = startofyear(_time)
+| summarize trace_count = count() by year_start, ['service.name']
+| sort by year_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20year_start%20%3D%20startofyear(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20year_start%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20year_start%20asc%22%7D)
+
+**Output**
+
+| year_start           | service.name | trace_count |
+| -------------------- | ------------ | ----------- |
+| 2024-01-01T00:00:00Z | frontend     | 245000      |
+| 2024-01-01T00:00:00Z | cart         | 132000      |
+| 2025-01-01T00:00:00Z | frontend     | 67000       |
+
+This query groups trace spans by year and service, then counts the total traces for each combination.
+
+</Tab>
+<Tab title="Security logs">
+
+Track yearly error trends to identify year-over-year changes in server error volume.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend year_start = startofyear(_time)
+| summarize error_count = count() by year_start
+| sort by year_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20year_start%20%3D%20startofyear(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20year_start%20%7C%20sort%20by%20year_start%20asc%22%7D)
+
+**Output**
+
+| year_start           | error_count |
+| -------------------- | ----------- |
+| 2024-01-01T00:00:00Z | 1890        |
+| 2025-01-01T00:00:00Z | 534         |
+
+This query filters for server errors and counts them per year to reveal yearly error trends.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [endofyear](/apl/scalar-functions/datetime-functions/endofyear): Returns the end of the year for a datetime value.
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime value.
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime value.
+- [startofweek](/apl/scalar-functions/datetime-functions/startofweek): Returns the start of the week for a datetime value.
+- [getyear](/apl/scalar-functions/datetime-functions/getyear): Returns the year from a datetime value.

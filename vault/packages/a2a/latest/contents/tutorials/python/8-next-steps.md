@@ -26,12 +26,12 @@ Here are some ideas and resources to continue your A2A journey:
     - [Agent Discovery](../../topics/agent-discovery.md): Explore different ways agents can find each other.
 - **Build Your Own Agent:**
     - Try creating a new A2A agent using your favorite Python agent framework (like LangChain, CrewAI, AutoGen, Semantic Kernel, or a custom solution).
-    - Implement the `a2a.server.AgentExecutor` interface to bridge your agent's logic with the A2A protocol.
+    - Implement the `a2a.server.agent_execution.AgentExecutor` interface to bridge your agent's logic with the A2A protocol.
     - Think about what unique skills your agent could offer and how its Agent Card would represent them.
 - **Experiment with Advanced Features:**
     - Implement robust task management with a persistent `TaskStore` if your agent handles long-running or multi-session tasks.
     - Explore implementing push notifications if your agent's tasks are very long-lived.
-    - Consider more complex input and output modalities (e.g., handling file uploads/downloads, or structured data via `DataPart`).
+    - Consider more complex input and output modalities (e.g., handling file uploads/downloads via file Parts, or structured data via data Parts).
 - **Contribute to the A2A Community:**
     - Join the discussions on the [A2A GitHub Discussions page](https://github.com/a2aproject/A2A/discussions).
     - Report issues or suggest improvements via [GitHub Issues](https://github.com/a2aproject/A2A/issues).

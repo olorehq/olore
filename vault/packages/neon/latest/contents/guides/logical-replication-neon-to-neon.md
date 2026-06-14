@@ -2,9 +2,18 @@
 title: Replicate data from one Neon project to another
 subtitle: Replicate data to a different Neon project for cross-region replication,
   version migration, or region migration
+summary: >-
+  Neon-to-Neon logical replication streams data from a publisher project to a
+  subscriber project using Postgres publications and subscriptions, enabling
+  cross-region replication, region migration, and Postgres version upgrades (for
+  example, Postgres 16 to 17). Use this guide when you need to replicate between
+  two separate Neon projects; replicating between databases on the same Neon
+  project branch requires a different configuration. Enabling logical replication
+  changes wal_level from replica to logical on all databases in the source
+  project and the change cannot be reverted.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-02-02T12:37:39.453Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from one Neon project to another. This enables different usage scenarios, including:
@@ -31,6 +40,10 @@ These are some common Neon-to-Neon replication scenarios. There may be others. Y
 
 - A destination Neon project.
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin.
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 For information about creating a Neon project, see [Create a project](/docs/manage/projects#create-a-project).
 

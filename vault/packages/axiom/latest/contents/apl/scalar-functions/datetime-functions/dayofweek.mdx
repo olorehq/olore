@@ -1,0 +1,164 @@
+---
+title: dayofweek
+description: 'This page explains how to use the dayofweek function in APL.'
+---
+
+Use the `dayofweek` function in APL to extract the day of the week from a datetime value as an integer. The function returns the number of days since the preceding Sunday, where 0 represents Sunday, 1 represents Monday, and so on up to 6 for Saturday.
+
+You can use `dayofweek` to group and analyze records by the day of the week. This is especially useful for identifying weekday versus weekend patterns, scheduling-based filtering, and understanding cyclical behavior in your data.
+
+Use it when you want to:
+
+- Group events by day of the week to spot recurring patterns.
+- Compare weekday and weekend activity in logs, traces, or security data.
+- Filter records to specific days for schedule-based analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%w` specifier to extract the day of the week as an integer (0=Sunday). In APL, the `dayofweek` function returns the same convention directly from a datetime value.
+
+<CodeGroup>
+```sql Splunk example
+... | eval day=strftime(_time, "%w")
+````
+
+```kusto APL equivalent
+... | extend day = dayofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you often use `EXTRACT(DOW FROM timestamp)` or `DAYOFWEEK(timestamp)`. The exact numbering convention varies across platforms. APL's `dayofweek` returns 0 for Sunday through 6 for Saturday.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(DOW FROM timestamp_column) AS day FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend day = dayofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+dayofweek(datetime)
+```
+
+### Parameters
+
+| Name | Type       | Description               |
+| ---- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` representing the number of days since the preceding Sunday (0 for Sunday, 1 for Monday, through 6 for Saturday).
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Analyze request volume by day of the week to identify peak traffic days.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend day = dayofweek(_time)
+| summarize request_count = count() by day
+| sort by day asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20day%20%3D%20dayofweek(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20day%20%7C%20sort%20by%20day%20asc%22%7D)
+
+**Output**
+
+| day | request_count |
+| --- | ------------- |
+| 0   | 1204          |
+| 1   | 1587          |
+| 2   | 1632          |
+
+This query groups HTTP log events by the day of the week and counts requests for each day, helping you spot which days see the most traffic.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Compare average span duration across weekdays for a specific service to detect day-of-week performance variations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day = dayofweek(_time)
+| summarize avg_duration = avg(duration) by day, ['service.name']
+| sort by day asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day%20%3D%20dayofweek(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20day%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20day%20asc%22%7D)
+
+**Output**
+
+| day | service.name | avg_duration     |
+| --- | ------------ | ---------------- |
+| 0   | frontend     | 00:00:01.3120000 |
+| 1   | frontend     | 00:00:01.1840000 |
+| 2   | frontend     | 00:00:01.2560000 |
+
+This query reveals how average span duration varies by day of the week for each service, highlighting potential performance differences on specific days.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect anomalous error traffic on specific days of the week by counting client and server errors.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend day = dayofweek(_time)
+| summarize error_count = count() by day
+| sort by day asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20day%20%3D%20dayofweek(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20day%20%7C%20sort%20by%20day%20asc%22%7D)
+
+**Output**
+
+| day | error_count |
+| --- | ----------- |
+| 0   | 42          |
+| 1   | 28          |
+| 2   | 31          |
+
+This query counts HTTP errors by day of the week, helping you identify whether certain days experience more failures than others.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [dayofmonth](/apl/scalar-functions/datetime-functions/dayofmonth): Returns the day number within the month from a datetime.
+- [dayofyear](/apl/scalar-functions/datetime-functions/dayofyear): Returns the day number within the year from a datetime.
+- [datetime_part](/apl/scalar-functions/datetime-functions/datetime-part): Extracts a specific date part (such as day or week) as an integer.
+- [startofweek](/apl/scalar-functions/datetime-functions/startofweek): Returns the start of the week for a datetime, useful for binning events to week boundaries.
+- [endofweek](/apl/scalar-functions/datetime-functions/endofweek): Returns the end of the week for a datetime.

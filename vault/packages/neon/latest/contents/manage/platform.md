@@ -3,7 +3,13 @@ title: Platform overview
 enableTableOfContents: true
 subtitle: Find information about managing all aspects of your database using the Neon
   platform
-updatedOn: '2026-01-27T12:19:44.643Z'
+summary: >-
+  The Neon platform overview organizes all database management topics by area:
+  access and collaboration, projects and resources, monitoring and
+  observability, security and compliance, and operations and maintenance.
+  Use this page to find the right sub-topic when you know the management
+  area but not the specific doc.
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Access & collaboration

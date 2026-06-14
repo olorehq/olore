@@ -1,87 +1,95 @@
-# polly Documentation Structure
+# Polly Documentation Structure
 
 ## Directory Overview
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/strategies/` | Resilience strategies: retry, circuit breaker, timeout, fallback, hedging, rate limiter | 7 |
-| `contents/advanced/` | Advanced topics: DI, telemetry, testing, performance, resilience context | 6 |
-| `contents/chaos/` | Chaos engineering strategies: fault, latency, outcome, behavior injection | 5 |
-| `contents/community/` | HTTP client integrations, contrib libraries, cheat sheets, resources | 5 |
-| `contents/extensibility/` | Custom strategy extensibility: proactive and reactive strategies | 3 |
-| `contents/pipelines/` | Resilience pipelines and pipeline registry | 2 |
-| `contents/v7/` | Polly v7 extensibility docs | 1 |
-| `contents/` (root) | Getting started, general concepts, migration guide, index | 4 |
+| `contents/` (root) | Overview, getting started, general info, migration | 4 |
+| `contents/strategies/` | Resilience strategy API reference and options | 7 |
+| `contents/pipelines/` | Resilience pipeline usage and registry | 2 |
+| `contents/advanced/` | DI, telemetry, testing, performance, context, F#/VB | 6 |
+| `contents/chaos/` | Chaos engineering strategies (fault, latency, outcome, behavior) | 5 |
+| `contents/extensibility/` | Custom proactive and reactive strategy authoring | 3 |
+| `contents/community/` | Community resources, integrations, cheat sheets | 6 |
+| `contents/api/` | API index | 1 |
+| `contents/v7/` | Legacy v7 extensibility docs | 1 |
+
+## Root Files
+
+| File | Description |
+|------|-------------|
+| `index.md` | Polly overview — what it does and links to all major areas |
+| `getting-started.md` | Installation (NuGet) and quick-start pipeline example |
+| `general.md` | Supported targets, async support, cancellation, thread safety |
+| `migration-v8.md` | Migration guide from Polly v7 to v8 |
 
 ## strategies/
 
 | File | Description |
 |------|-------------|
-| `strategies/index.md` | Overview of all resilience strategies |
-| `strategies/retry.md` | Retry strategy: configuration, delay, jitter, callbacks |
-| `strategies/circuit-breaker.md` | Circuit breaker strategy: half-open, sampling, configuration |
-| `strategies/timeout.md` | Timeout strategy: configuration and cancellation |
-| `strategies/fallback.md` | Fallback strategy: providing substitute results on failure |
-| `strategies/hedging.md` | Hedging strategy: parallel/sequential hedged requests |
-| `strategies/rate-limiter.md` | Rate limiter strategy: concurrency and token bucket limiters |
-
-## advanced/
-
-| File | Description |
-|------|-------------|
-| `advanced/dependency-injection.md` | Registering and resolving Polly pipelines with .NET DI |
-| `advanced/telemetry.md` | Built-in telemetry, metrics, and OpenTelemetry integration |
-| `advanced/testing.md` | Unit testing with Polly pipelines and NSubstitute/Moq |
-| `advanced/performance.md` | Performance considerations and optimization tips |
-| `advanced/resilience-context.md` | Passing context data through resilience pipelines |
-| `advanced/use-with-fsharp-and-visual-basic.md` | Using Polly from F# and Visual Basic |
-
-## chaos/
-
-| File | Description |
-|------|-------------|
-| `chaos/index.md` | Overview of Polly chaos engineering (Simmy) |
-| `chaos/fault.md` | Fault injection strategy: injecting exceptions |
-| `chaos/latency.md` | Latency injection strategy: adding artificial delays |
-| `chaos/outcome.md` | Outcome injection strategy: injecting results |
-| `chaos/behavior.md` | Behavior injection strategy: executing custom actions |
-
-## community/
-
-| File | Description |
-|------|-------------|
-| `community/http-client-integrations.md` | Using Polly with HttpClientFactory and IHttpClientBuilder |
-| `community/cheat-sheets.md` | Quick reference cheat sheets for common Polly patterns |
-| `community/libraries-and-contributions.md` | Third-party libraries and community contributions |
-| `community/polly-contrib.md` | Polly-Contrib ecosystem and custom policy templates |
-| `community/resources.md` | Blog posts, courses, videos, and learning resources |
-
-## extensibility/
-
-| File | Description |
-|------|-------------|
-| `extensibility/index.md` | Overview of custom strategy extensibility |
-| `extensibility/proactive-strategy.md` | Building proactive (non-reactive) custom strategies |
-| `extensibility/reactive-strategy.md` | Building reactive custom strategies (fault-handling) |
+| `index.md` | Overview of all resilience strategies and when to use them |
+| `retry.md` | Retry strategy — options, delays, jitter, callbacks |
+| `circuit-breaker.md` | Circuit breaker strategy — sampling duration, thresholds, states |
+| `timeout.md` | Timeout strategy — options and cancellation behavior |
+| `rate-limiter.md` | Rate limiter strategy — concurrency and token bucket limiters |
+| `fallback.md` | Fallback strategy — providing alternative results on failure |
+| `hedging.md` | Hedging strategy — parallel execution to reduce latency |
 
 ## pipelines/
 
 | File | Description |
 |------|-------------|
-| `pipelines/index.md` | ResiliencePipeline: composing and executing strategies |
-| `pipelines/resilience-pipeline-registry.md` | ResiliencePipelineRegistry for named pipeline management |
+| `index.md` | ResiliencePipeline usage, building, and combining strategies |
+| `resilience-pipeline-registry.md` | ResiliencePipelineRegistry for named pipeline management |
+
+## advanced/
+
+| File | Description |
+|------|-------------|
+| `dependency-injection.md` | Integrating Polly with .NET IServiceCollection DI |
+| `telemetry.md` | Telemetry events, meters, and custom listeners |
+| `testing.md` | Testing resilience pipelines with Polly.Testing package |
+| `performance.md` | Performance characteristics and optimization guidance |
+| `resilience-context.md` | ResilienceContext — passing data through pipeline execution |
+| `use-with-fsharp-and-visual-basic.md` | Using Polly from F# and Visual Basic |
+
+## chaos/
+
+| File | Description |
+|------|-------------|
+| `index.md` | Chaos engineering overview and Simmy integration |
+| `fault.md` | Fault chaos strategy — injecting exceptions |
+| `latency.md` | Latency chaos strategy — injecting delays |
+| `outcome.md` | Outcome chaos strategy — injecting faulted results |
+| `behavior.md` | Behavior chaos strategy — injecting custom behaviors |
+
+## extensibility/
+
+| File | Description |
+|------|-------------|
+| `index.md` | Extensibility overview — custom strategy authoring |
+| `proactive-strategy.md` | Authoring proactive (non-result-based) custom strategies |
+| `reactive-strategy.md` | Authoring reactive (result-based) custom strategies |
+
+## community/
+
+| File | Description |
+|------|-------------|
+| `cheat-sheets.md` | Quick-reference cheat sheets for Polly patterns |
+| `http-client-integrations.md` | Using Polly with IHttpClientFactory and HttpClient |
+| `libraries-and-contributions.md` | Third-party libraries built on Polly |
+| `polly-contrib.md` | Polly-Contrib organization and community packages |
+| `resources.md` | Blog posts, videos, and external resources |
+| `git-workflow.md` | Contribution git workflow |
+
+## api/
+
+| File | Description |
+|------|-------------|
+| `index.md` | API documentation index |
 
 ## v7/
 
 | File | Description |
 |------|-------------|
-| `v7/extensibility.md` | Custom policies in Polly v7 (legacy reference) |
-
-## Root files
-
-| File | Description |
-|------|-------------|
-| `index.md` | Polly documentation home and overview |
-| `getting-started.md` | Installation and first steps with Polly v8 |
-| `general.md` | Core concepts: ResilienceStrategy, execution, generics |
-| `migration-v8.md` | Migration guide from Polly v7 to v8 |
+| `extensibility.md` | Legacy v7 extensibility documentation |

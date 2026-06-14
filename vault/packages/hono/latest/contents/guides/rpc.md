@@ -99,7 +99,7 @@ const res = await client.posts.$get({
 
 ## Status code
 
-If you explicitly specify the status code, such as `200` or `404`, in `c.json()`. It will be added as a type for passing to the client.
+If you explicitly specify the status code, such as `200` or `404`, in `c.json()`, it will be added as a type for passing to the client.
 
 ```ts
 // server.ts
@@ -155,6 +155,53 @@ type ResponseType = InferResponseType<typeof client.posts.$get>
 type ResponseType200 = InferResponseType<
   typeof client.posts.$get,
   200
+>
+```
+
+## Global Response
+
+Hono RPC client doesn't automatically infer response types from global error handlers like `app.onError()` or global middleware. You can use the `ApplyGlobalResponse` type helper to merge global error response types into all routes.
+
+```ts
+import type { ApplyGlobalResponse } from 'hono/client'
+
+const app = new Hono()
+  .get('/api/users', (c) => c.json({ users: ['alice', 'bob'] }, 200))
+  .onError((err, c) => c.json({ error: err.message }, 500))
+
+type AppWithErrors = ApplyGlobalResponse<
+  typeof app,
+  {
+    500: { json: { error: string } }
+  }
+>
+
+const client = hc<AppWithErrors>('http://localhost')
+```
+
+Now the client knows about both success and error responses:
+
+```ts
+const res = await client.api.users.$get()
+
+if (res.ok) {
+  const data = await res.json() // { users: string[] }
+}
+
+// InferResponseType includes the global error type
+type ResType = InferResponseType<typeof client.api.users.$get>
+// { users: string[] } | { error: string }
+```
+
+You can also define multiple global error status codes at once:
+
+```ts
+type AppWithErrors = ApplyGlobalResponse<
+  typeof app,
+  {
+    401: { json: { error: string; message: string } }
+    500: { json: { error: string; message: string } }
+  }
 >
 ```
 
@@ -472,6 +519,40 @@ const url = client.api.posts.$url()
 
 This is useful when you want to use the URL as a type-safe key for libraries like SWR.
 
+## `$path()`
+
+`$path()` is similar to `$url()`, but returns a path string instead of a `URL` object. Unlike `$url()`, it does not include the base URL origin, so it works regardless of the base URL you pass to `hc`.
+
+```ts
+const route = app
+  .get('/api/posts', (c) => c.json({ posts }))
+  .get('/api/posts/:id', (c) => c.json({ post }))
+
+const client = hc<typeof route>('http://localhost:8787/')
+
+let path = client.api.posts.$path()
+console.log(path) // `/api/posts`
+
+path = client.api.posts[':id'].$path({
+  param: {
+    id: '123',
+  },
+})
+console.log(path) // `/api/posts/123`
+```
+
+You can also pass query parameters:
+
+```ts
+const path = client.api.posts.$path({
+  query: {
+    page: '1',
+    limit: '10',
+  },
+})
+console.log(path) // `/api/posts?page=1&limit=10`
+```
+
 ## File Uploads
 
 You can upload files using a form body:
@@ -693,7 +774,7 @@ However, we have some tips to mitigate this issue.
 
 #### Hono version mismatch
 
-If your backend is separate from the frontend and lives in a different directory, you need to ensure that the Hono versions match. If you use one Hono version on the backend and another on the frontend, you'll run into issues such as "_Type instantiation is excessively deep and possibly infinite_".
+If your backend is separated from the frontend and lives in a different directory, you need to ensure that the Hono versions match. If you use one Hono version on the backend and another on the frontend, you'll run into issues such as "_Type instantiation is excessively deep and possibly infinite_".
 
 ![](https://github.com/user-attachments/assets/e4393c80-29dd-408d-93ab-d55c11ccca05)
 
@@ -744,7 +825,7 @@ const app = new Hono().get<'foo/:id'>('foo/:id', (c) =>
 )
 ```
 
-Specifying just single type argument make a difference in performance, while it may take you a lot of time and effort if you have a lot of routes.
+Specifying just a single type argument makes a difference in performance, while it may take you a lot of time and effort if you have a lot of routes.
 
 #### Split your app and client into multiple files
 

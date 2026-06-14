@@ -1,0 +1,543 @@
+---
+title: checkly checks
+description: 'List, inspect, and analyze checks in your Checkly account.'
+sidebarTitle: 'checkly checks'
+---
+
+<Note>Available since CLI v7.3.0. Analytics stats available since v7.6.0.</Note>
+
+The `checkly checks` command lets you list, inspect, and analyze checks in your Checkly account directly from the terminal. You can filter, search, and drill into individual check details, recent results, error groups, and analytics stats.
+
+<Accordion title="Prerequisites">
+Before using `checkly checks`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly checks <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all checks in your account. |
+| `get` | Get details of a specific check, including recent results and analytics stats. |
+| `stats` | Show analytics stats for your checks. |
+
+## `checkly checks list`
+
+List all checks in your account with optional filtering by name, tag, check type, or status.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of checks to return (1-100). Default: `25`. |
+| `--page, -p` | - | Page number. Default: `1`. |
+| `--search, -s` | - | Filter checks by name (case-insensitive). |
+| `--tag, -t` | - | Filter by tag. Can be specified multiple times. |
+| `--type` | - | Filter by check type. |
+| `--status` | - | Filter by check status: `passing`, `failing`, or `degraded`. |
+| `--hide-id` | - | Hide check IDs in table output. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Number of checks to return per page, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --limit=50
+npx checkly checks list -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--page, -p" type="number" default="1">
+
+Page number for paginated results.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --page=2
+npx checkly checks list -p 3
+```
+
+</ResponseField>
+
+<ResponseField name="--search, -s" type="string">
+
+Filter checks by name using a case-insensitive search.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --search="homepage"
+npx checkly checks list -s "api"
+```
+
+</ResponseField>
+
+<ResponseField name="--tag, -t" type="string">
+
+Filter checks by tag. Specify multiple times to filter by multiple tags.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --tag=production
+npx checkly checks list -t production -t critical
+```
+
+</ResponseField>
+
+<ResponseField name="--type" type="string">
+
+Filter checks by type. Available types: `API`, `BROWSER`, `MULTI_STEP`, `HEARTBEAT`, `PLAYWRIGHT`, `TCP`, `DNS`, `ICMP`, `URL`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --type=API
+npx checkly checks list --type=BROWSER
+```
+
+</ResponseField>
+
+<ResponseField name="--status" type="string">
+
+Filter checks by current status. Available values: `passing`, `failing`, `degraded`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --status=failing
+npx checkly checks list --status=degraded
+```
+
+</ResponseField>
+
+<ResponseField name="--hide-id" type="boolean">
+
+Hide check IDs in table output for a cleaner view.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --hide-id
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks list --output=json
+npx checkly checks list -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List all checks with default settings
+npx checkly checks list
+
+# Search for checks by name
+npx checkly checks list --search="homepage"
+
+# Filter by tag and type
+npx checkly checks list --tag=production --type=API
+
+# Show only failing checks
+npx checkly checks list --status=failing
+
+# Get results as JSON
+npx checkly checks list --output=json
+
+# Page through results
+npx checkly checks list --limit=10 --page=2
+```
+
+## `checkly checks get`
+
+Get details of a specific check, including recent results and analytics stats. Use `--result` to drill into a specific result, `--error-group` to view error details, or the stats flags to customize the analytics view.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the check to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--result, -r` | - | Show details for a specific result ID. |
+| `--error-group, -e` | - | Show full details for a specific error group ID. |
+| `--results-limit` | - | Number of recent results to show. Default: `10`. |
+| `--results-cursor` | - | Cursor for results pagination (from previous output). |
+| `--stats-range` | - | Time range for stats: `last24Hours`, `last7Days`, `last30Days`, `thisWeek`, `thisMonth`, `lastWeek`, `lastMonth`. Default: `last24Hours`. |
+| `--group-by` | - | Group stats by dimension: `location` or `statusCode`. |
+| `--metrics` | - | Comma-separated list of metrics to show (overrides defaults). |
+| `--filter-status` | - | Only include runs with this status in stats: `success` or `failure`. |
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+### Get Options
+
+<ResponseField name="--result, -r" type="string">
+
+Drill into a specific check result by its result ID. Shows detailed information including logs and timing data.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --result=<result-id>
+npx checkly checks get <check-id> -r <result-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--error-group, -e" type="string">
+
+Show full details for a specific error group, including error messages and affected results.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --error-group=<error-group-id>
+npx checkly checks get <check-id> -e <error-group-id>
+```
+
+<Tip>
+If your account has [Rocky AI Root Cause Analysis](/resolve/ai-root-cause-analysis/overview/) enabled, the returned error group details include the AI-generated root cause analysis for that error group.
+</Tip>
+
+</ResponseField>
+
+<ResponseField name="--results-limit" type="number" default="10">
+
+Number of recent results to display.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --results-limit=20
+```
+
+</ResponseField>
+
+<ResponseField name="--results-cursor" type="string">
+
+Cursor for paginating through results. The cursor value is provided in the output of a previous `checks get` command.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --results-cursor=<cursor>
+```
+
+</ResponseField>
+
+<ResponseField name="--stats-range" type="string" default="last24Hours">
+
+Time range for the analytics stats section. Available ranges: `last24Hours`, `last7Days`, `last30Days`, `thisWeek`, `thisMonth`, `lastWeek`, `lastMonth`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --stats-range=last7Days
+```
+
+</ResponseField>
+
+<ResponseField name="--group-by" type="string">
+
+Group analytics stats by a specific dimension. Use `location` to break down metrics by geographic region, or `statusCode` to group by HTTP status code.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --group-by=location
+npx checkly checks get <check-id> --group-by=statusCode
+```
+
+</ResponseField>
+
+<ResponseField name="--metrics" type="string">
+
+Comma-separated list of metrics to display, overriding the defaults. When omitted, a sensible set of defaults is used based on the check type. You can also retrieve the full list of available metrics from the [List all available reporting metrics](/api-reference/analytics/list-all-available-reporting-metrics) API endpoint.
+
+**Available metrics by check type:**
+
+| Metric | Applies to | Unit |
+|--------|-----------|------|
+| `availability` | All check types | % |
+| `responseTime_avg` | API, Browser, Playwright, Multi-Step, URL | ms |
+| `responseTime_p50` | API, Browser, Playwright, Multi-Step, URL | ms |
+| `responseTime_p95` | API, Browser, Playwright, Multi-Step, URL | ms |
+| `responseTime_p99` | API, Browser, Playwright, Multi-Step, URL | ms |
+| `total_avg` | TCP, DNS | ms |
+| `total_p50` | TCP, DNS | ms |
+| `total_p95` | TCP, DNS | ms |
+| `total_p99` | TCP, DNS | ms |
+| `latencyAvg_avg` | ICMP | ms |
+| `latencyAvg_p50` | ICMP | ms |
+| `latencyAvg_p95` | ICMP | ms |
+| `latencyAvg_p99` | ICMP | ms |
+| `packetLoss_avg` | ICMP | % |
+| `LCP_avg` | Browser, Playwright | ms |
+| `CLS_avg` | Browser, Playwright | score |
+| `TBT_avg` | Browser, Playwright | ms |
+
+**Default metrics per check type:**
+
+| Check type | Default metrics |
+|------------|----------------|
+| API, Multi-Step, URL | `availability`, `responseTime_avg`, `responseTime_p50`, `responseTime_p95`, `responseTime_p99` |
+| Browser, Playwright | `availability`, `LCP_avg`, `CLS_avg`, `TBT_avg`, `responseTime_avg`, `responseTime_p95` |
+| TCP, DNS | `availability`, `total_avg`, `total_p50`, `total_p95`, `total_p99` |
+| ICMP | `availability`, `packetLoss_avg`, `latencyAvg_avg`, `latencyAvg_p50`, `latencyAvg_p95`, `latencyAvg_p99` |
+| Heartbeat | `availability` |
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --metrics=availability,responseTime_avg,responseTime_p95
+```
+
+</ResponseField>
+
+<ResponseField name="--filter-status" type="string">
+
+Only include runs with a specific status in the analytics stats. Use `success` to see stats for passing runs only, or `failure` for failing runs.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --filter-status=failure
+npx checkly checks get <check-id> --filter-status=success
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks get <check-id> --output=json
+npx checkly checks get <check-id> -o md
+```
+
+</ResponseField>
+
+### Get Examples
+
+```bash Terminal
+# View check details, recent results, and stats
+npx checkly checks get 12345
+
+# View stats for the last 7 days
+npx checkly checks get 12345 --stats-range=last7Days
+
+# Break down stats by location
+npx checkly checks get 12345 --group-by=location
+
+# Show only specific metrics
+npx checkly checks get 12345 --metrics=availability,responseTime_avg,responseTime_p95
+
+# Show stats for failed runs only
+npx checkly checks get 12345 --filter-status=failure
+
+# Drill into a specific result
+npx checkly checks get 12345 --result=abc-123
+
+# View an error group
+npx checkly checks get 12345 --error-group=err-456
+
+# Get check details as JSON
+npx checkly checks get 12345 --output=json
+
+# Show more results
+npx checkly checks get 12345 --results-limit=25
+```
+
+## `checkly checks stats`
+
+Show analytics stats for your checks. View availability, response times, and other metrics across multiple checks at once, with filtering by tag, type, or name.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats [checkIds...] [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `checkIds` | One or more check IDs to get stats for. If omitted, stats are shown for all checks. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--range, -r` | - | Time range for stats: `last24Hours`, `last7Days`, `thisWeek`, `lastWeek`, `lastMonth`. Default: `last24Hours`. |
+| `--limit, -l` | - | Number of checks to return (1-100). Default: `25`. |
+| `--page, -p` | - | Page number. Default: `1`. |
+| `--search, -s` | - | Filter checks by name (case-insensitive). |
+| `--tag, -t` | - | Filter by tag. Can be specified multiple times. |
+| `--type` | - | Filter by check type. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Stats Options
+
+<ResponseField name="--range, -r" type="string" default="last24Hours">
+
+Time range for the analytics stats. Available ranges: `last24Hours`, `last7Days`, `thisWeek`, `lastWeek`, `lastMonth`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --range=last7Days
+npx checkly checks stats -r lastMonth
+```
+
+</ResponseField>
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Number of checks to return per page, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --limit=50
+npx checkly checks stats -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--page, -p" type="number" default="1">
+
+Page number for paginated results.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --page=2
+npx checkly checks stats -p 3
+```
+
+</ResponseField>
+
+<ResponseField name="--search, -s" type="string">
+
+Filter checks by name using a case-insensitive search.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --search="homepage"
+npx checkly checks stats -s "api"
+```
+
+</ResponseField>
+
+<ResponseField name="--tag, -t" type="string">
+
+Filter checks by tag. Specify multiple times to filter by multiple tags.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --tag=production
+npx checkly checks stats -t production -t critical
+```
+
+</ResponseField>
+
+<ResponseField name="--type" type="string">
+
+Filter checks by type. Available types: `API`, `BROWSER`, `MULTI_STEP`, `HEARTBEAT`, `PLAYWRIGHT`, `TCP`, `DNS`, `ICMP`, `URL`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --type=API
+npx checkly checks stats --type=BROWSER
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly checks stats --output=json
+npx checkly checks stats -o md
+```
+
+</ResponseField>
+
+### Stats Examples
+
+```bash Terminal
+# Show stats for all checks (last 24 hours)
+npx checkly checks stats
+
+# Show stats for specific checks
+npx checkly checks stats 12345 67890
+
+# Show stats for the last 7 days
+npx checkly checks stats --range=last7Days
+
+# Filter by tag and type
+npx checkly checks stats --tag=production --type=API
+
+# Search by name and output as JSON
+npx checkly checks stats --search="homepage" --output=json
+
+# Page through results
+npx checkly checks stats --limit=10 --page=2
+```
+
+## Related Commands
+
+- [`checkly status-pages`](/cli/checkly-status-pages) - List and inspect status pages
+- [`checkly trigger`](/cli/checkly-trigger) - Trigger checks on-demand
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information

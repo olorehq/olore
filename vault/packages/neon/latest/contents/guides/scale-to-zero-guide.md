@@ -1,10 +1,19 @@
 ---
 title: Configuring Scale to Zero for Neon computes
 subtitle: Learn how to configure Neon's Scale to Zero feature
+summary: >-
+  Scale to Zero for Neon computes suspends idle compute instances after a
+  configurable inactivity period, defaulting to 5 minutes, to eliminate costs
+  when the database is unused. Use this page to enable, disable, or tune the
+  suspend threshold per compute or project-wide. Disabling scale to zero
+  requires a paid plan, and threshold adjustment is available only on the Scale
+  plan. Computes larger than 16 CU are always active and cannot scale to zero.
+  When Neon acts as a logical replication publisher, a connected subscriber also
+  prevents suspension.
 redirectFrom:
   - /docs/guides/auto-suspend-guide
 enableTableOfContents: true
-updatedOn: '2026-01-19T20:49:16.571Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's [Scale to Zero](/docs/introduction/scale-to-zero) feature controls whether a Neon compute transitions to an idle state due to inactivity. For example, if scale to zero is enabled, your compute will transition to an idle state after it's been inactive for 5 minutes. Neon's paid plans allow you to disable scale to zero to keep your compute active. On the Scale plan, you can configure the scale to zero threshold.
@@ -44,7 +53,7 @@ To enable or disable scale to zero:
 
 On the Scale plan, you can configure "Scale to zero after" time to increase or decrease the amount of time after which a compute scales to zero. For example, decreasing the time to 1 minute means that your compute will scale to zero faster (after the compute is inactive for 1 minute), or increasing the value to an hour means that your compute will only scale to zero after being inactive for an hour.
 
-Initial configuration of the scale to zero time is only supported via an [Update compute endpoint](https://api-docs.neon.tech/reference/updateprojectendpoint#/) or [Update project](https://api-docs.neon.tech/reference/updateproject#/) API call. Use the `Update compute endpoint` API to change the setting for an existing compute. The `Update project` API sets a default for all compute endpoints created in the future — it does not change the configuration of existing computes.
+Initial configuration of the scale to zero time is only supported via an [Update compute endpoint](https://api-docs.neon.tech/reference/updateprojectendpoint#/) or [Update project](https://api-docs.neon.tech/reference/updateproject#/) API call. Use the `Update compute endpoint` API to change the setting for an existing compute. The `Update project` API sets a default for all compute endpoints created in the future; it does not change the configuration of existing computes.
 
 <CodeTabs labels={["Update compute endpoint", "Update project"]}>
 
@@ -125,6 +134,10 @@ The Neon API includes a [Start endpoint](https://api-docs.neon.tech/reference/st
 </Admonition>
 
 You can try any of these methods and watch the status of your compute as it transitions from an **Idle** to an **Active** state.
+
+## Logical replication and scale to zero
+
+When you [replicate data from Neon](/docs/guides/logical-replication-guide#replicate-data-from-neon) (Neon as the publisher), a connected logical replication subscriber keeps the database active, so the compute will not scale to zero and you will have ongoing compute usage. This applies only when Neon is the publisher, not when replicating data into Neon from an external source. For details and other replication notices, see [Logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
 
 ## Session context considerations
 

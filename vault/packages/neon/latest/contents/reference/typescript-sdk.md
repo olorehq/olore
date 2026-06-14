@@ -2,8 +2,15 @@
 title: Neon API TypeScript SDK
 subtitle: Programmatically manage Neon projects, branches, databases, and other platform
   resources
+summary: >-
+  The Neon TypeScript SDK (`@neondatabase/api-client` on npm) is a typed
+  wrapper around the Neon REST API. It lets you programmatically create,
+  update, and delete projects, branches, databases, endpoints, roles,
+  organizations, and consumption metrics. It provides TypeScript type safety,
+  IDE autocompletion, and structured Axios error handling. Install via npm,
+  yarn, or pnpm and authenticate with a Neon API key.
 enableTableOfContents: true
-updatedOn: '2026-01-22T15:48:50.620Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>
@@ -41,9 +48,7 @@ The Neon TypeScript SDK allows you to manage:
 - [**Organizations:**](/docs/manage/orgs-api) Manage organization settings, API keys, and members (for Neon organizational accounts).
 - [**Consumption Metrics:**](/docs/guides/consumption-metrics) Retrieve usage metrics for your account and projects to monitor resource consumption.
 
-<Admonition type="tip" title="AI Rules available">
-Working with AI coding assistants? Check out our [AI rules for the Neon TypeScript SDK](/docs/ai/ai-rules-neon-typescript-sdk) to help your AI assistant generate better code when managing Neon resources programmatically.
-</Admonition>
+<AgentSkillsTip skill_topic="the Neon TypeScript SDK for managing resources programmatically" />
 
 ## Quick Start
 
@@ -76,7 +81,7 @@ Authentication with the Neon API is handled through API keys. Follow these steps
 - Log in to the [Neon Console](https://console.neon.tech/)
 - Navigate to [Account settings > API keys](https://console.neon.tech/app/settings/api-keys).
 - Click Generate new API key.
-- Enter a descriptive Name (e.g., "neon-typescript-sdk-demo") for your key and click Create.
+- Enter a descriptive Name (for example, "neon-typescript-sdk-demo") for your key and click Create.
 
 For this quick start, we'll set the API key as an environment variable:
 
@@ -92,7 +97,7 @@ Let's create a simple TypeScript file to list your Neon projects using the SDK.
 
 ### List Projects
 
-Create a new file named `list-projects.ts` in your project directory and add the following code:
+All Neon accounts are organization-based. To list projects, first retrieve the user's organization, then pass `org_id`:
 
 ```typescript
 import { createApiClient } from '@neondatabase/api-client';
@@ -103,7 +108,12 @@ const apiClient = createApiClient({
 
 async function listNeonProjects() {
   try {
-    const response = await apiClient.listProjects({});
+    // Get the user's organizations
+    const orgsResponse = await apiClient.getCurrentUserOrganizations();
+    const orgId = orgsResponse.data.organizations[0].id;
+
+    // List projects within the org
+    const response = await apiClient.listProjects({ org_id: orgId });
     console.log(response.data.projects);
   } catch (error) {
     console.error('Error listing projects:', error);
@@ -318,7 +328,7 @@ createNeonDatabase('your-project-id', 'your-branch-id', 'mydatabase', 'neondb_ow
 ```
 
 - The `owner_name` parameter specifies the owner of the database. Ensure this role exists in the branch beforehand.
-- Branch & Project IDs: You can obtain these IDs from the [Neon Console](/docs/manage/branches#view-branches) or using SDK methods (e.g., [listProjectBranches](#list-branches), [listProjects](#list-projects)).
+- Branch & Project IDs: You can obtain these IDs from the [Neon Console](/docs/manage/branches#view-branches) or using SDK methods (for example, [listProjectBranches](#list-branches), [listProjects](#list-projects)).
 
 ### Create a Role
 
@@ -352,16 +362,16 @@ createNeonRole('your-project-id', 'your-branch-id', 'new_user_role').catch((erro
 #### Key points:
 
 - `role.name`: Specifies the name of the Postgres role to be created.
-- Branch & Project IDs: You can obtain these IDs from the [Neon Console](/docs/manage/branches#view-branches) or using SDK methods (e.g., [listProjectBranches](#list-branches), [listProjects](#list-projects))
+- Branch & Project IDs: You can obtain these IDs from the [Neon Console](/docs/manage/branches#view-branches) or using SDK methods (for example, [listProjectBranches](#list-branches), [listProjects](#list-projects))
 
 ## TypeScript Types
 
 The Neon TypeScript SDK provides comprehensive type definitions for all request and response objects, enums, and interfaces. Leveraging these types enhances your development experience by enabling:
 
 - **Type Safety**: TypeScript types ensure that you are using the SDK methods and data structures correctly, catching type-related errors during development rather than at runtime.
-- **Improved Code Completion**: Modern IDEs and code editors utilize TypeScript types to provide intelligent code completion and suggestions, making it easier to discover and use SDK features.
+- **Improved Code Completion**: Modern IDEs and code editors use TypeScript types to provide intelligent code completion and suggestions, making it easier to discover and use SDK features.
 
-### Utilizing SDK Types
+### Using SDK Types
 
 The `@neondatabase/api-client` package exports all the TypeScript types you need to interact with the Neon API in a type-safe manner. You can import these types directly into your TypeScript files.
 
@@ -377,7 +387,10 @@ const apiClient = createApiClient({
 
 async function listNeonProjects(): Promise<void> {
   try {
-    const response: AxiosResponse<ProjectsResponse> = await apiClient.listProjects({});
+    const orgsResponse = await apiClient.getCurrentUserOrganizations();
+    const orgId = orgsResponse.data.organizations[0].id;
+
+    const response: AxiosResponse<ProjectsResponse> = await apiClient.listProjects({ org_id: orgId });
     const projects = response.data.projects;
     console.log('Projects:', projects);
   } catch (error) {
@@ -395,7 +408,7 @@ In this example:
 
 Similarly, when creating a project, you can use types like `ProjectCreateRequest` for the request body and `ProjectResponse` for the expected response:
 
-By using TypeScript types, you ensure that your code interacts with the Neon API in a predictable and type-safe manner, reducing potential errors and improving code quality. You can explore all available types in the `@neondatabase/api-client` package to fully leverage the benefits of TypeScript in your Neon SDK integrations.
+By using TypeScript types, you ensure that your code interacts with the Neon API in a predictable and type-safe manner, reducing potential errors and improving code quality. You can explore all available types in the `@neondatabase/api-client` package to get the full benefits of TypeScript in your Neon SDK integrations.
 
 ## Key SDK Method Signatures
 
@@ -462,6 +475,8 @@ To give you a better overview of the SDK, here are some of the key methods avail
 
 ### Retrieve Consumption Metrics
 
+<ConsumptionAccountApiDeprecation/>
+
 - `getConsumptionHistoryPerAccount(query: GetConsumptionHistoryPerAccountParams)`: Retrieves account consumption metrics.
 - `getConsumptionHistoryPerProject(query: GetConsumptionHistoryPerProjectParams)`: Retrieves project consumption metrics.
 
@@ -515,7 +530,7 @@ When an error occurs during an API request, the SDK throws an `AxiosError` objec
 
 **`error.response`**: This property (if present) is an Axios response object containing details from the API error response.
 
-- **`error.response.status`**: The HTTP status code of the error response (e.g., 400, 401, 404, 500).
+- **`error.response.status`**: The HTTP status code of the error response (for example, 400, 401, 404, 500).
 - **`error.response.data`**: The response body, which, for Neon API errors, often follows a consistent structure, including an `error` object with `code` and `message` properties.
 
 ### Common Error Scenarios and Debugging

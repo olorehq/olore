@@ -1,0 +1,61 @@
+---
+title: 'SlackAppAlertChannel Construct'
+description: 'Learn how to configure Slack alert channels with the Checkly CLI.'
+sidebarTitle: 'Slack'
+tag: new
+---
+
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
+
+<Tip>
+Slack App alert channels require the [Checkly Slack App](/integrations/alerts/slack) to be installed in your Slack workspace.
+</Tip>
+
+Sends alert notifications to Slack channels and as DMs.
+
+<CodeGroup>
+
+```ts Basic Example
+import { SlackAppAlertChannel } from 'checkly/constructs'
+
+const slackAppChannel = new SlackAppAlertChannel('slack-channel-1', {
+  slackChannels: ['#ops', '@John Doe']
+})
+```
+
+```ts Advanced Example
+import { SlackAppAlertChannel } from 'checkly/constructs'
+
+const slackAppChannel = new SlackAppAlertChannel('slack-channel-1', {
+  slackChannels: ['#ops', '@John Doe'],
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+  sslExpiry: true,
+  sslExpiryThreshold: 30,
+})
+```
+
+</CodeGroup>
+
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
+## Configuration
+
+### Slack Alert Channel Options
+
+<ResponseField name="slackChannels" type="string[]" required>
+The Slack channels to alert. Can also include DM handles, e.g. "@John Doe"
+
+```ts highlight={2}
+new SlackAppAlertChannel('slack-channel-1', {
+  slackChannels: ['#ops','@John Doe']
+})
+```
+</ResponseField>
+
+### General Alert Channel Options
+
+<AlertChannelOptionsText />

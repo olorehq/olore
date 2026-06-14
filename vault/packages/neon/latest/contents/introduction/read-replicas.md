@@ -2,8 +2,16 @@
 title: Neon Read Replicas
 subtitle: Scale your app, run ad-hoc queries, and provide read-only access without
   duplicating data
+summary: >-
+  Neon read replicas are independent read-only compute instances that serve
+  requests from the same storage as the primary compute. No data is duplicated
+  or replicated, and replicas spin up in seconds. Use read replicas to offload
+  analytics queries, distribute read traffic, or grant read-only access without
+  affecting write performance. Read replicas are asynchronous and support
+  Autoscaling and Scale to Zero. Cross-region replicas require logical
+  replication to a separate Neon project.
 enableTableOfContents: true
-updatedOn: '2025-12-03T13:07:33.038Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 Neon read replicas are independent computes designed to perform read operations on the same data as your primary read-write compute. Neon's read replicas do not replicate or duplicate data. Instead, read requests are served from the same storage, as shown in the diagram below. While your read-write queries are directed through your primary compute, read queries can be offloaded to one or more read replicas.
@@ -21,7 +29,7 @@ You can instantly create read replicas for any branch in your Neon project and c
 
 ## How do you create read replicas?
 
-You can create read replicas using the Neon Console, [Neon CLI](/docs/reference/neon-cli), or [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api), providing the flexibility required to integrate read replicas into your workflow or CI/CD processes.
+You can create read replicas using the Neon Console, [Neon CLI](/docs/cli), or [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api), providing the flexibility required to integrate read replicas into your workflow or CI/CD processes.
 
 From the Neon Console, it's a simple **Add Read Replica** action on a branch.
 
@@ -61,7 +69,7 @@ For more details and how to connect to a read replica, see [Create and manage Re
 
 ## Read Replica architecture
 
-The following diagram shows how your primary compute and read replicas send read requests to the same Pageserver, which is the component of the [Neon architecture](/docs/introduction/architecture-overview) that is responsible for serving read requests.
+The following diagram shows how your primary compute and read replicas send read requests to the same Pageserver, which is the component of the [lakebase architecture](/docs/introduction/architecture-overview) that is responsible for serving read requests.
 
 ![read replica computes](/docs/introduction/read_replicas.png)
 

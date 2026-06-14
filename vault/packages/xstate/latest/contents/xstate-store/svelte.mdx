@@ -2,7 +2,11 @@
 title: '@xstate/store-svelte'
 ---
 
-The `@xstate/store-svelte` package provides Svelte bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Svelte readable stores.
+The `@xstate/store-svelte` package provides Svelte bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Svelte readable stores and creating component-scoped stores.
+
+<Callout>
+These are the docs for `@xstate/store-svelte` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/svelte).
+</Callout>
 
 <Callout>
 
@@ -42,7 +46,7 @@ yarn add @xstate/store-svelte
 
 ```svelte
 <script lang="ts">
-  import { createStore, useSelector } from '@xstate/store-svelte';
+  import { createStore, useSelector } from '@xstate/store-svelte'; // [!code highlight:1]
 
   const store = createStore({
     context: { count: 0 },
@@ -53,6 +57,7 @@ yarn add @xstate/store-svelte
     },
   });
 
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 </script>
 
@@ -70,33 +75,48 @@ yarn add @xstate/store-svelte
 Creates a Svelte readable store that subscribes to an XState store and returns a selected value.
 
 ```svelte
-<script>
-  import { useSelector } from '@xstate/store-svelte';
+<script lang="ts">
+  import { useSelector } from '@xstate/store-svelte'; // [!code highlight:1]
 
-  // Select specific value
+  // [!code highlight:2]
   const count = useSelector(store, (state) => state.context.count);
-
-  // With custom comparison function
-  const user = useSelector(
-    store,
-    (state) => state.context.user,
-    (prev, next) => prev.id === next.id
-  );
-
-  // Without selector (returns full snapshot)
   const snapshot = useSelector(store);
 </script>
 
-<!-- Use the $ prefix to access store value -->
 <div>Count: {$count}</div>
 ```
 
-**Parameters:**
-- `store` - The store to subscribe to
-- `selector` - Optional function to select a value from the store snapshot. If not provided, returns the full snapshot.
-- `compare` - Optional comparison function (defaults to strict equality `===`)
+### `useStore(configOrLogic, input?)`
 
-**Returns:** A Svelte readable store containing the selected value
+Creates a component-scoped store instance from a store config or store logic.
+
+```svelte
+<script lang="ts">
+  // [!code highlight:4]
+  import {
+    createStoreLogic,
+    useSelector,
+    useStore,
+  } from '@xstate/store-svelte';
+
+  const counterLogic = createStoreLogic({
+    context: (input: { initialCount: number }) => ({
+      count: input.initialCount,
+    }),
+    on: {
+      inc: (context) => ({ count: context.count + 1 }),
+    },
+  });
+
+  // [!code highlight:1]
+  const store = useStore(counterLogic, { initialCount: 0 });
+  const count = useSelector(store, (state) => state.context.count);
+</script>
+
+<button on:click={() => store.trigger.inc()}>{$count}</button>
+```
+
+If the store logic requires input, the `input` argument is required.
 
 ## Full documentation
 

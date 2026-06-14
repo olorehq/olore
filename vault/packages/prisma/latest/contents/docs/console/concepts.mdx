@@ -1,0 +1,90 @@
+---
+title: Concepts
+description: 'Understand the core concepts of the Prisma Console: user accounts, workspaces, projects, and resources'
+metaTitle: Prisma Console Concepts | Workspaces, Projects & Resources
+metaDescription: 'Learn Prisma Console hierarchy: user accounts, workspaces (billing level), projects (apps), and resources (databases, environments). Connection strings scoped per resource.'
+url: /console/concepts
+---
+
+The Console workflows are based on five main concepts:
+
+- [**User account**](#user-account): In order to use Prisma products, you need to have a Console user account. A _user_ will typically create one user account to manage all their workspaces, projects and resources. The _user_ can also be invited to join other workspaces to collaborate on the projects in that workspace.
+- [**Workspaces**](#workspace): A user account can belong to multiple workspaces. A workspace typically represents a _team_ of individuals working together on one or more projects. **Billing is on a workspace level**, i.e. the invoice for a workspace at the end of the month captures all costs associated with the projects in that workspace.
+- [**Projects**](#project): A project belongs to a workspace. It typically represents the _application_ or _service_ a team is working on.
+- [**Branches**](#branch): For projects that use [Prisma Compute](/compute), resources are grouped into branches. A branch is an isolated infrastructure boundary for one line of work, usually mapping to a Git branch.
+- [**Resources**](#resources): Resources represent the actual services or databases within a project. For example, in Prisma Postgres, each project can contain multiple databases. For Prisma Compute, each branch contains apps and their deployments. For Accelerate, resources might correspond to different environments (like `Development`, `Staging`, or `Production`). **Connection strings are provisioned at the resource level**, and products are configured per resource as well (e.g., the database connection string used for Accelerate).
+
+Here is a visual illustration of how these concepts relate to each other:
+
+![How the concepts of the Console (user account, workspaces, projects, and resources) relate to each other](/img/platform/pdp-concepts.png)
+
+## User account
+
+A user account is the prerequisite for any interactions with Prisma products. You can use it to manage your workspaces (and their projects). A user account can be invited to collaborate on workspaces created by other users as well.
+
+If you need to delete your user account, go [here](/console/more/support#deleting-your-pdp-account).
+
+## Workspace
+
+You can create several workspaces. A workspace is an isolated space to host projects. A workspace can have multiple user accounts associated with it so that multiple users can collaborate on the projects in the workspace.
+
+In each workspace, you can:
+
+- view and manage all projects (and their resources) in that workspace.
+- manage billing, i.e. select a [subscription plan](https://www.prisma.io/pricing?utm_source=docs&utm_medium=platform-docs), configure payment methods, or view the invoice history.
+- view the usage of your enabled Prisma products across all projects in that workspace.
+- invite other users to collaborate in the workspace.
+- access [Query Insights](/query-insights) to measure query performance and receive AI-powered recommendations (available with Prisma Postgres).
+
+## Project
+
+In each workspace, you can create several projects. A project typically represents an application (a product or service). You typically have one [Prisma schema](/orm/prisma-schema/overview) per project.
+
+In each project, you can:
+
+- view and manage all resources (like databases) in that project.
+
+The number of projects you can create in a workspace depends on the [subscription plan](https://www.prisma.io/pricing?utm_source=docs&utm_medium=platform-docs) configured in that workspace.
+
+## Branch
+
+For projects that use [Prisma Compute](/compute), a branch groups the resources for one line of work:
+
+```text
+workspace → project → branch → { apps, databases }
+```
+
+A branch usually maps to a Git branch, but it's a real resource that owns the apps and databases for that work:
+
+- The **first branch** in a project is the production branch, usually `main`. It's protected and durable.
+- **Every other branch** is a preview branch by default: disposable infrastructure for testing changes before they merge.
+- [Environment variables](/compute/environment-variables) are scoped to production, to preview, or to a single preview branch.
+
+Learn more in [Branching](/compute/branching).
+
+## Resources
+
+Resources represent the actual services or databases within a project. The type of resources available depends on the Prisma products you're using:
+
+- **For Prisma Postgres**: Each project can contain multiple databases. These databases are the primary resources you'll manage.
+- **For Prisma Compute**: Each branch contains apps. An app is an HTTP service, and each built version of an app is a deployment. See [Prisma Compute](/compute).
+- **For Accelerate**: Resources typically correspond to different deployment stages (like `Development`, `Staging`, or `Production`).
+
+In each project, you can:
+
+- Create and manage multiple resources (databases or environments)
+- Generate connection strings specific to each resource
+- Configure product-specific settings:
+  - **For Prisma Postgres databases**:
+    - View database metrics and performance
+    - Configure connection settings
+    - Manage database users and permissions
+  - **For Accelerate resources**:
+    - Set your database connection string
+    - Configure the region for connection pooling
+    - Adjust connection pool size and performance settings
+    - Set query duration and response size limits
+    - Enable static IP for secure connections
+
+The number of resources you can create in a project depends on your [subscription plan](https://www.prisma.io/pricing?utm_source=docs&utm_medium=platform-docs).
+

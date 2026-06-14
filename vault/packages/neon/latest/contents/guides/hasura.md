@@ -1,11 +1,18 @@
 ---
 title: Connect from Hasura Cloud to Neon
 subtitle: Learn how to connect a Hasura Cloud project to a new or existing Neon database
+summary: >-
+  Hasura Cloud connects to Neon Postgres either by OAuth (creating a new Neon
+  project automatically) or by pasting an existing connection string into the
+  Hasura Console. Connection limits depend on compute size and pooling settings,
+  so tuning both Neon and Hasura values is required when hitting limits. Hasura
+  event triggers, cron triggers, and source health checks can prevent Neon's
+  scale-to-zero suspension.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/hasura
   - /docs/integrations/hasura
-updatedOn: '2025-12-03T13:07:33.030Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Hasura Cloud is an open source GraphQL engine that provides a scalable, highly available, globally distributed, secure GraphQL API for your data sources.
@@ -61,7 +68,7 @@ The following steps describe how to navigate to Hasura Cloud and connect to your
 5. Paste your connection string into the **Database URL** field.
 
    <Admonition type="tip">
-   To enhance security and manageability, consider using environment variables in Hasura instead of hardcoding the connection string. To do this, navigate to **Hasura Project settings** > **Env vars** > **New env var** and create a new variable (e.g., `NEON_DATABASE_URL`) with your connection string as its value.
+   To enhance security and manageability, consider using environment variables in Hasura instead of hardcoding the connection string. To do this, navigate to **Hasura Project settings** > **Env vars** > **New env var** and create a new variable (for example, `NEON_DATABASE_URL`) with your connection string as its value.
      
      ![Create Environment Variable](/docs/guides/hasura/create-env-var.png)
 

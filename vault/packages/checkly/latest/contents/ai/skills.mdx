@@ -1,0 +1,175 @@
+---
+title: 'Checkly Skills'
+description: 'Official Checkly skills to give any AI agent on-demand best practices, context, and product capabilities.'
+sidebarTitle: 'Agent Skills'
+---
+
+import AgentExamples from "/snippets/agent-example.mdx"
+
+[Agent Skills](https://agentskills.io) are an open standard supported by many AI agents and coding assistants including Claude Code, Cursor, OpenAI Codex, and others. Skills are reusable and modular capabilities for AI agents. They provide procedural knowledge that helps agents accomplish Checkly tasks more effectively. 
+
+Think of Checkly Skills as an extension of your AI agent that enhances it with Checkly specific best practices and capabilities.
+
+### Installation
+
+Use [the Checkly CLI `skills` command](/cli/checkly-skills#checkly-skills-install) to install [Checkly skills](https://github.com/checkly/checkly-cli/tree/main/skills/checkly) globally or in your project:
+
+```bash
+npx checkly skills install
+
+# or if you prefer the `skills` CLI
+
+npx skills add checkly/checkly-cli
+```
+
+After installation, restart your AI agent to load the skills.
+
+## Usage
+
+Now when your agent needs to perform a Checkly-related task, it can automatically pull in the relevant context and use the provided instructions and resources to execute the task effectively.
+
+```txt Claude Code Example highlight={3-4, 8-9}
+❯ Can you create a new URLMonitor with Checkly for example.com?
+
+⏺ Skill(checkly)
+  ⎿ Successfully loaded skill · 3 tools allowed
+
+⏺ Let me read more references and check the existing project structure
+
+⏺ Bash(npx checkly skills configure)
+⏺ Bash(npx checkly skills configure url-monitors)
+
+⏺ Searched for 1 pattern, executed 2 commands
+
+⏺ I'll create a new URLMonitor for example.com!
+```
+
+### Examples
+
+**The Monitoring as Code workflow is by default AI-native** because LLMs are excellent at writing and editing Checkly constructs code and modern AI agents can execute CLI commands easily.
+
+Provide the necessary Checkly context and let your AI agent of choice do the rest.
+
+<AgentExamples />
+
+Using Checkly, you can now control your monitoring setup with AI agents without needing a specific MCP server or API for your monitoring. Tell your agent what you want to do and it will access the necessary context and use the CLI to manage your monitoring setup effectively.
+
+## Skill Details
+
+<Accordion title="Configure">
+  Create and manage monitoring checks, alert channels, dashboards, status pages, and other Checkly constructs using the CLI.
+
+  **Invoke explicitly:**
+
+  ```bash
+  npx checkly skills configure
+  ```
+
+  **Example prompts:**
+
+  - "Create a URL monitor for api.example.com that checks every 5 minutes"
+  - "Set up a browser check that logs into my app and verifies the dashboard loads"
+  - "Add a Slack alert channel for my production check group"
+
+  **CLI usage:**
+
+  ```bash
+  # List all configure sub-actions
+  npx checkly skills configure
+
+  # Get reference for a specific check type
+  npx checkly skills configure api-checks
+  npx checkly skills configure browser-checks
+  npx checkly skills configure url-monitors
+
+  # Other constructs
+  npx checkly skills configure alert-channels
+  npx checkly skills configure check-groups
+  npx checkly skills configure supporting-constructs
+  ```
+</Accordion>
+
+<Accordion title="Investigate">
+  Access check status, analyze failures, trigger on-demand runs, and debug errors across your monitoring setup.
+
+  **Invoke explicitly:**
+
+  ```bash
+  npx checkly skills investigate
+  ```
+
+  **Example prompts:**
+
+  - "Show me which checks are currently failing"
+  - "Investigate why the login browser check started failing yesterday"
+  - "Trigger an on-demand run of my API health check"
+
+  **CLI usage:**
+
+  ```bash
+  # Get full investigate reference
+  npx checkly skills investigate
+
+  # Check inspection and on-demand runs
+  npx checkly skills investigate checks
+  ```
+</Accordion>
+
+<Accordion title="Communicate">
+  Open and manage incidents and lead customer communications via status pages.
+
+  **Invoke explicitly:**
+
+  ```bash
+  npx checkly skills communicate
+  ```
+
+  **Example prompts:**
+
+  - "Create a new incident for the API outage and post it to the status page"
+  - "Update the current incident with a resolution message"
+  - "List all open incidents"
+
+  **CLI usage:**
+
+  ```bash
+  # Get full communicate reference
+  npx checkly skills communicate
+
+  # Incident lifecycle management
+  npx checkly skills communicate incidents
+  ```
+</Accordion>
+
+<Accordion title="Manage">
+  Understand your account plan, entitlements, feature limits, and available monitoring locations.
+
+  **Invoke explicitly:**
+
+  ```bash
+  npx checkly skills manage
+  ```
+
+  **Example prompts:**
+
+  - "What features are available on my current Checkly plan?"
+  - "Which monitoring locations can I use?"
+  - "Check if my plan supports private locations"
+
+  **CLI usage:**
+
+  ```bash
+  # Get full manage reference
+  npx checkly skills manage
+
+  # Check plan details and entitlements
+  npx checkly skills manage plan
+  ```
+</Accordion>
+
+## Additional resources
+
+- [`checkly skills` CLI Reference](/cli/checkly-skills)
+- [Checkly CLI Documentation](/cli/overview/)
+- [Checkly Constructs Reference](/constructs/overview/)
+- [Agent Skills Specification](https://agentskills.io/specification.md)

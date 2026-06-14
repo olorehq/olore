@@ -1,0 +1,251 @@
+---
+title: Vercel
+description: Use Turso with Vercel serverless and edge functions.
+---
+
+Turso offers two approaches for database access from Vercel serverless and edge functions:
+
+- **SQL over HTTP** — Every query is sent over the network to the database. Simple to set up and works in any runtime, including edge functions, without filesystem access. This is the model you already know from every other database.
+
+- **In-Function SQLite** — Database pages are replicated into the serverless function. Reads execute locally with no network round-trips; writes go directly to the remote database for durability. If you've used Turso's embedded replicas or Cloudflare's Durable Objects with SQLite, this model will feel familiar. See [Bringing SQLite to Vercel Functions](https://turso.tech/blog/serverless) for a deep dive.
+
+| | SQL over HTTP | In-Function SQLite |
+| --- | --- | --- |
+| **Packages** | `@tursodatabase/serverless`, `@libsql/client` | `@tursodatabase/vercel-experimental` |
+| **Best for** | Write-heavy workloads, edge runtimes without filesystem | Read-heavy workloads, per-tenant databases |
+| **Read latency** | Network round-trip per query | In-process SQLite read (zero network hops) |
+| **Write latency** | Network round-trip | Network round-trip (same) |
+| **Multi-tenant** | Shared database | Database-per-tenant with automatic on-demand provisioning |
+| **Runtime requirements** | `fetch` API only | Ephemeral filesystem (`/tmp`) |
+| **ORM support** | Drizzle, Prisma, and others (`@libsql/client`) | Not yet supported |
+
+## SQL over HTTP
+
+Connect to Turso databases from Vercel serverless and edge environments. Configure your Vercel environment with the following variables:
+
+- `TURSO_DATABASE_URL` — Your Turso database URL
+- `TURSO_AUTH_TOKEN` — Your Turso auth token
+
+| | `@tursodatabase/serverless` | `@libsql/client` |
+| --- | --- | --- |
+| **Status** | Production-ready | Production-ready |
+| **Dependencies** | Uses only `fetch` — zero native dependencies | Requires Node.js or `/web` subpath |
+| **Concurrent writes** | Planned | Will not be supported |
+| **ORM support** | Not yet supported | Drizzle, Prisma, and others |
+
+**`@tursodatabase/serverless`** is the lightest option with zero native dependencies — and will be the driver to later support concurrent writes. Use **`@libsql/client`** if you need a battle-tested driver today with ORM integration.
+
+### Quickstart
+
+<Tabs>
+  <Tab title="@tursodatabase/serverless">
+
+  The `@tursodatabase/serverless` package connects to Turso using only the `fetch` API — no native dependencies, making it the smallest option for edge and serverless runtimes.
+
+  ```bash
+  npm install @tursodatabase/serverless
+  ```
+
+  ```typescript
+  import { connect } from "@tursodatabase/serverless";
+
+  const conn = connect({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+
+  const stmt = conn.prepare("SELECT * FROM users WHERE id = ?");
+  const row = await stmt.get([123]);
+  ```
+
+  For compatibility with the libSQL client API, use the compat module:
+
+  ```typescript
+  import { createClient } from "@tursodatabase/serverless/compat";
+
+  const client = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+
+  const result = await client.execute("SELECT * FROM users WHERE id = ?", [123]);
+  ```
+
+  </Tab>
+  <Tab title="@libsql/client">
+
+  The `@libsql/client` package is the production-ready libSQL driver used across the Turso ecosystem. Use the `/web` import for Vercel serverless and edge runtimes:
+
+  ```bash
+  npm install @libsql/client
+  ```
+
+  ```typescript
+  import { createClient } from "@libsql/client/web";
+
+  const client = createClient({
+    url: process.env.TURSO_DATABASE_URL!,
+    authToken: process.env.TURSO_AUTH_TOKEN!,
+  });
+
+  const result = await client.execute({
+    sql: "SELECT * FROM users WHERE id = ?",
+    args: [123],
+  });
+  ```
+
+  <Note>
+  Use `@libsql/client/web` instead of `@libsql/client` for Vercel deployments. The `/web` import uses the HTTP protocol, which is compatible with edge and serverless runtimes.
+  </Note>
+
+  </Tab>
+</Tabs>
+
+## In-Function SQLite
+
+<Warning>
+The `@tursodatabase/vercel-experimental` package is in beta. It may still contain bugs and unexpected behavior. Use caution with production data and ensure you have backups.
+</Warning>
+
+The `@tursodatabase/vercel-experimental` package replicates SQLite database pages into the serverless function itself. Reads execute against the local copy with no network round-trips. Writes go directly to the remote database for durability and consistency. This approach is ideal for read-heavy workloads where per-query network latency is the dominant cost.
+
+- **Per-tenant isolation and sharding** — Each agent, workspace, or session can have its own database with independent storage limits
+- **Colocation of compute and data** — Business logic runs next to the database, enabling zero-hop reads and many queries per request
+- **Automatic on-demand provisioning** — Databases are created implicitly when `createDb()` is called, no redeploy or binding management needed
+
+If you have used Turso's embedded replicas or Cloudflare’s Durable Objects with SQLite, this model will feel familiar.
+
+### Quickstart
+
+Install the package:
+
+```bash
+npm install @tursodatabase/vercel-experimental
+```
+
+Get your Turso API token and organization slug:
+
+```bash
+turso auth api-tokens mint my-vercel-token
+turso org list
+```
+
+Add environment variables to your Vercel project:
+
+```
+TURSO_API_TOKEN=your-api-token
+TURSO_ORG=your-org-slug
+TURSO_GROUP=your-group-name
+TURSO_DATABASE=your-database-name
+```
+
+<Note>
+The `TURSO_GROUP` environment variable scopes all database access to a single group. Even though the API token grants access to the entire organization, an attacker who controls the database name can only access databases within the configured group. The database name is still recommended to be stored as a secret environment variable when possible.
+</Note>
+
+Use `createDb()` to open a database and start querying:
+
+```ts
+import { createDb } from "@tursodatabase/vercel-experimental";
+
+const db = await createDb(process.env.TURSO_DATABASE!);
+try {
+  // Create tables
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE
+    )
+  `);
+
+  // Insert data
+  await db.execute(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    ["Alice", "alice@example.com"]
+  );
+
+  // Query data
+  const result = await db.query("SELECT * FROM users");
+  console.log(result.rows);
+} finally {
+  await db.close(); // Syncs and closes the connection
+}
+```
+
+### Per-tenant databases
+
+The auto-provisioning makes it straightforward to implement a database-per-tenant pattern. Instead of routing all tenants through a single shared database, each user or session gets its own isolated SQLite database. Simply derive the database name from a tenant identifier:
+
+```ts
+// Per-user database
+const db = await createDb(`user-${userId}`);
+
+// Per-agent-session database
+const db = await createDb(`session-${sessionId}`);
+```
+
+Because the driver creates databases on demand, there is no provisioning step, no migration to run, and no connection routing to configure. Each tenant's data is fully isolated at the SQLite level, and every database independently benefits from partial-sync reads.
+
+### API Reference
+
+**`createDb(name, options?)`**
+
+Creates or retrieves a database instance. If the database does not exist, it is created automatically within the configured group (`TURSO_GROUP`). Calling `createDb()` with the same name within a single function invocation returns the existing instance.
+
+```ts
+const db = await createDb(process.env.TURSO_DATABASE!, {
+  remoteWrites: false,     // Batch writes locally and push on close() (optional, default: true)
+});
+```
+
+When `remoteWrites` is `true` (the default), write statements (`INSERT`, `UPDATE`, `DELETE`) are sent directly to the remote Turso database for immediate durability. When set to `false`, writes are applied to the local SQLite copy and pushed in a single batch when `db.push()` or `db.close()` is called. This can be useful for bulk ingestion or background tasks where eventual visibility is acceptable.
+
+**`db.query(sql, params?)`**
+
+Execute a SELECT query and return results.
+
+```ts
+const result = await db.query("SELECT * FROM users WHERE id = ?", [1]);
+
+console.log(result.columns); // ["id", "name", "email"]
+console.log(result.rows);    // [[1, "Alice", "alice@example.com"]]
+```
+
+**`db.execute(sql, params?)`**
+
+Execute an INSERT, UPDATE, DELETE, or DDL statement. By default, writes are sent directly to the remote Turso database. If `remoteWrites: false` is set, writes are applied locally and pushed on `close()`.
+
+```ts
+await db.execute("UPDATE users SET name = ? WHERE id = ?", ["Bob", 1]);
+```
+
+**`db.close()`**
+
+Close the connection. If `remoteWrites: false` is set, this also pushes any pending local writes to the remote Turso database. Always call this in a `finally` block. As a safety net, the package registers a callback with Vercel's [`waitUntil()`](https://vercel.com/docs/functions/functions-api-reference#waituntil) API to push pending changes if `close()` is not called within 5 seconds of function completion.
+
+```ts
+const db = await createDb(process.env.TURSO_DATABASE!);
+try {
+  await db.execute("INSERT INTO users (name) VALUES (?)", ["Charlie"]);
+} finally {
+  await db.close();
+}
+```
+
+**`db.push()`**
+
+Manually push local changes to the remote Turso database without closing the connection. Only applicable when using `remoteWrites: false`.
+
+```ts
+await db.execute("INSERT INTO users (name) VALUES (?)", ["Charlie"]);
+await db.push(); // Sync without closing
+```
+
+**`db.pull()`**
+
+Pull latest changes from the remote Turso database.
+
+```ts
+await db.pull();
+```

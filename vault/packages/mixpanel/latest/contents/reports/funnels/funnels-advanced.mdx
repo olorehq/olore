@@ -210,7 +210,7 @@ You have a variety of options to measure your funnel behavior.
 | Counting Method | Description  |
 |-----------------|--------------|
 | Uniques         | Users will enter the funnel the first time that they track Step 1 in the time period selected. When a breakdown is applied, they can enter up to once per segment. |
-| Totals          | Users can re-enter a totals funnel after they have exited their previous attempt through the funnel. Users exit in three ways: successful conversion through the funnel, time out of the [conversion window](/docs/reports/funnels/funnels-advanced#conversion-window), or track an [exclusion step](http://localhost:3000/docs/reports/funnels/funnels-advanced#exclusion-steps-exclude-users-who-did).          |
+| Totals          | Users can re-enter a totals funnel after they have exited their previous attempt through the funnel. Users exit in three ways: successful conversion through the funnel, time out of the [conversion window](/docs/reports/funnels/funnels-advanced#conversion-window), or track an [exclusion step](/docs/reports/funnels/funnels-advanced#exclusion-steps-exclude-users-who-did).          |
 | Sessions        | Users can enter the funnel in each session that qualifies.             |
 
 ### Measurements
@@ -233,6 +233,8 @@ When measuring “Unique Users”, “Total Conversions” or “Total Sessions�
 ![step selection](/step-selection.png)
 
 ## Time to Convert
+
+Time to Convert is a feature within the Funnels report that measures how long it takes users to move through the steps of a funnel, from the first event to the last (or between any two specific steps).
 
 ### Time to Convert Measurement
 
@@ -302,7 +304,7 @@ To do this, click on the ”…” menu and select “Event Comparison”
 
 ### User Count in Breakdown
 
-Users will count in each breakdown segment in which they qualify. In order to qualify for a new segment, the user must have exited their previous funnel attempt unless the funnel is [holding a property constant](https://docs.mixpanel.com/docs/reports/funnels#hold-property-constant). The breakdown segment value is determined by the selected [property attribution.](https://docs.mixpanel.com/docs/reports/funnels#property-attribution)
+Users will count in each breakdown segment in which they qualify. In order to qualify for a new segment, the user must have exited their previous funnel attempt unless the funnel is [holding a property constant](/docs/reports/funnels/funnels-advanced#hold-property-constant). The breakdown segment value is determined by the selected [property attribution.](/docs/reports/funnels/funnels-advanced#property-attribution)
 
 For example, let's say a user tracks the following:
 
@@ -368,7 +370,7 @@ If we were to take it further and place an inline filter on each and every step 
 
 ### Global Filtering (Post-Query)
 
-Global filters apply your selected filters to the entire report after the Funnels query has been run. Since Funnels will calculate conversions first and then apply your global filters, entire conversions that do not meet the filter requirements will be excluded from the report's results. The filter value is determined based on the [property attribution](https://docs.mixpanel.com/docs/reports/funnels#property-attribution) selected.
+Global filters apply your selected filters to the entire report after the Funnels query has been run. Since Funnels will calculate conversions first and then apply your global filters, entire conversions that do not meet the filter requirements will be excluded from the report's results. The filter value is determined based on the [property attribution](/docs/reports/funnels/funnels-advanced#property-attribution) selected.
 
 For example, let's use the same three-step funnel where a user must View Item → Add to Cart → Purchase, all within a one-hour conversion window. This time, we apply a **global filter of "Browser = Safari", filtering on "First Step Defined".**
 

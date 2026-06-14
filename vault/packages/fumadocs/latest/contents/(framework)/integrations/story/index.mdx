@@ -3,7 +3,7 @@ title: Story
 description: Display components with controls.
 ---
 
-import { story } from './index';
+import { story } from './client.story';
 
 <story.WithControl />
 
@@ -41,7 +41,7 @@ You can provide multiple variants of the component with `args`:
 import { defineStory } from '@/lib/story';
 import { Callout } from '@/components/callout';
 
-export const story = defineStory(import.meta.url, {
+export const story = defineStory({
   Component: Callout,
   args: [
     {
@@ -66,13 +66,13 @@ export const story = defineStory(import.meta.url, {
 
 ### `controls`
 
-You can further customise on how the controls are generated:
+You can further customize on how the controls are generated:
 
 ```tsx
-import { defineStory } from '@fumadocs/story';
+import { defineStory } from '@/lib/story';
 import { GraphView } from '@/components/graph-view';
 
-export const story = defineStory(import.meta.url, {
+export const story = defineStory({
   Component: GraphView,
   args: {
     // specify the control nodes
@@ -83,10 +83,40 @@ export const story = defineStory(import.meta.url, {
       },
     },
 
-    // or customise the generated controls
+    // or customize the generated controls
     controls: {
       transform: (node) => node,
     },
   },
 });
 ```
+
+### Internationalization
+
+Assuming you have configured [Internationalization](/docs/internationalization) at UI level:
+
+```tsx title="layout.shared.tsx"
+import { defineI18n } from 'fumadocs-core/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+import { storyTranslations } from '@fumadocs/story/i18n';
+
+const i18n = defineI18n({
+  languages: ['en', 'cn'],
+  defaultLanguage: 'en',
+});
+
+export const translations = i18n
+  .translations()
+  .extend(uiTranslations())
+  // [!code ++]
+  .extend(storyTranslations())
+  .add({
+    cn: {
+      displayName: 'Chinese',
+      // [!code ++]
+      'New Item(story arguments form)': '新增項目',
+    },
+  });
+```
+
+See [Translations](/docs/ui/translations) for more details.

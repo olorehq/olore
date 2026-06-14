@@ -1,0 +1,96 @@
+---
+title: abs
+description: 'This page explains how to use the abs function in APL.'
+---
+
+Use the `abs` function in APL to compute the absolute value of a numeric expression or timespan. The function removes the sign from the input, so it always returns a non-negative result.
+
+`abs` is useful whenever you care about the magnitude of a deviation rather than its direction. For example, you can use it to measure how far a request latency strays from a baseline, or how large a fluctuation in a metric is regardless of whether it's above or below the expected value.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `abs()` function works identically: it takes a single numeric argument and returns its absolute value.
+
+<CodeGroup>
+```sql Splunk example
+| eval deviation = abs(req_duration_ms - 100)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend deviation = abs(req_duration_ms - 100)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `ABS()` is a standard built-in function with the same semantics as in APL.
+
+<CodeGroup>
+```sql SQL example
+SELECT ABS(req_duration_ms - 100) AS deviation FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend deviation = abs(req_duration_ms - 100)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+abs(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | int, real, or timespan | Yes | The value to compute the absolute value of. |
+
+### Returns
+
+The absolute value of `x`. The return type matches the input type.
+
+## Example
+
+Use `abs` to find how far each request's duration deviates from a 200 ms baseline.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend deviation = abs(req_duration_ms - 200)
+| project _time, id, req_duration_ms, deviation
+| order by deviation desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20deviation%20%3D%20abs%28req_duration_ms%20-%20200%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20deviation%20%7C%20order%20by%20deviation%20desc%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | deviation |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 450.0 | 250.0 |
+| 2024-11-14 10:01:00 | user-2 | 80.0 | 120.0 |
+| 2024-11-14 10:02:00 | user-3 | 205.0 | 5.0 |
+
+## List of related functions
+
+- [round](/apl/scalar-functions/mathematical-functions/round): Rounds a value to a specified number of decimal places. Use it when you want to reduce precision rather than compute magnitude.
+- [sign](/apl/scalar-functions/mathematical-functions/sign): Returns the sign of a numeric value (+1, 0, or -1). Use it when you want to know direction rather than magnitude.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Use it to compute the root-mean-square of deviations for standard deviation calculations.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use it to square deviations when computing variance.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it when you need to work on a logarithmic scale rather than with raw magnitudes.

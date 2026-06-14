@@ -1,8 +1,15 @@
 ---
 title: Connect a .NET (C#) application to Neon Postgres
 subtitle: Learn how to run SQL queries in Neon from .NET using the Npgsql library
+summary: >-
+  Npgsql is the .NET data provider for PostgreSQL that lets a C# application
+  connect to a Neon Postgres database and run SQL queries directly, without an
+  ORM. Use this guide for raw SQL access to Neon via NpgsqlConnection and
+  NpgsqlCommand, covering CRUD operations, parameterized queries to prevent SQL
+  injection, and credential storage in appsettings.json. For ORM-based
+  alternatives, see the Entity Framework guide.
 enableTableOfContents: true
-updatedOn: '2025-09-30T00:26:10.491Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/dotnet-prompt.md" 
@@ -45,7 +52,7 @@ For your .NET project, you will create a project directory and add the required 
     cd NeonLibraryExample
     ```
 
-    > Open this directory in your preferred code editor (e.g., VS Code, Visual Studio).
+    > Open this directory in your preferred code editor (for example, VS Code, Visual Studio).
 
 2.  Add the required NuGet packages using `dotnet add package`.
     - `Npgsql`: The .NET data provider for PostgreSQL.
@@ -435,14 +442,6 @@ While this guide demonstrates how to connect to Neon using raw SQL queries, for 
 Explore the following resources to learn how to integrate ORMs with Neon:
 
 - [Connect an Entity Framework application to Neon](/docs/guides/dotnet-entity-framework)
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-<a href="https://github.com/neondatabase/examples/tree/main/with-dotnet-npgsql/NeonLibraryExample" description="Get started with .NET (C#) and Neon" icon="github">Get started with .NET (C#) and Neon</a>
-</DetailIconCards>
 
 ## Resources
 

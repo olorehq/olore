@@ -1,36 +1,37 @@
 ---
 name: olore-msw-latest
-description: Local msw documentation reference (latest). MSW (Mock Service Worker) documentation. Use for API mocking, request interception, REST/GraphQL handlers, browser/Node.js testing, and network-level mocking.
+description: Local MSW (Mock Service Worker) documentation reference (latest). Use for API mocking, request interception, REST/GraphQL handlers, browser/Node.js testing, and network-level mocking.
 ---
 
-# msw Documentation
+# MSW (Mock Service Worker) Documentation
 
-MSW (Mock Service Worker) is an API mocking library for browser and Node.js. It intercepts outgoing requests using Service Workers (browser) or Node.js module augmentation, enabling seamless request/response mocking across test environments and development.
+MSW is an API mocking library for browser and Node.js that intercepts outgoing requests at the network level using Service Workers (browser) or class extension (Node.js). It supports HTTP, GraphQL, WebSocket, and Server-Sent Events mocking.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/quick-start.mdx` |
+| HTTP mocking | `contents/http/index.mdx` |
+| GraphQL mocking | `contents/graphql/index.mdx` |
+| WebSocket mocking | `contents/websocket/index.mdx` |
+| Server-Sent Events | `contents/sse/index.mdx` |
+| API reference | `contents/api/http.mdx`, `contents/api/graphql.mdx` |
 | Browser setup | `contents/integrations/browser.mdx` |
 | Node.js setup | `contents/integrations/node.mdx` |
-| HTTP API reference | `contents/api/http.mdx` |
-| GraphQL API reference | `contents/api/graphql.mdx` |
-| WebSocket API reference | `contents/api/ws.mdx` |
-| setupServer API | `contents/api/setup-server/` |
-| setupWorker API | `contents/api/setup-worker/` |
-| Troubleshooting | `contents/runbook.mdx` |
+| Debugging | `contents/runbook.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Setting up and configuring MSW for browser or Node.js
-- Intercepting HTTP, REST, or GraphQL requests
-- Mocking WebSocket or Server-Sent Events (SSE) connections
-- Response resolvers, HttpResponse, delay, passthrough, bypass
-- setupServer and setupWorker APIs and their methods
-- Testing with MSW in Jest, Vitest, or other frameworks
-- Recipes, patterns, and advanced network mocking techniques
+- Setting up MSW for browser or Node.js environments
+- Intercepting and mocking HTTP REST requests
+- Intercepting and mocking GraphQL queries and mutations
+- Mocking WebSocket connections and Server-Sent Events
+- Request handlers, response mocking, and network behavior
+- Testing with MSW (Jest, Vitest, React Testing Library)
+- MSW API reference (`http`, `graphql`, `ws`, `sse`, `setupServer`, `setupWorker`)
+- Best practices and recipes for API mocking
 
 ## How to find information
 

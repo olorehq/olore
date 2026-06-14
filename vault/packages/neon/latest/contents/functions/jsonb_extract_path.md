@@ -1,11 +1,20 @@
 ---
 title: Postgres jsonb_extract_path() function
 subtitle: Extracts a JSONB sub-object at the specified path
+summary: >-
+  `jsonb_extract_path(from_json, path_elems...)` extracts a nested value from a
+  JSONB document by following a variadic text key path and returns the result as
+  JSONB, making it faster than fetching and parsing the full document in
+  application code. Use it instead of `jsonb_extract_path_text` when the
+  extracted value must stay JSONB for further JSON operators or functions, and
+  instead of `json_extract_path` when your column is JSONB rather than JSON.
+  Invalid paths return NULL rather than an error, and GIN indexes on the JSONB
+  column can improve performance when filtering on extracted values.
 enableTableOfContents: true
-updatedOn: '2024-06-14T07:55:54.376Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-You can use the `jsonb_extract_path` function to extract the value at a specified path within a `JSONB` document. This approach is more performant compared to querying the entire `JSONB` payload and processing it on the application side. It is particularly useful when dealing with nested `JSONB` structures.
+You can use the `jsonb_extract_path` function to extract the value at a specified path within a `JSONB` document. This approach is more performant compared to querying the entire `JSONB` payload and processing it on the application side. Use it when dealing with nested `JSONB` structures.
 
 <CTA />
 

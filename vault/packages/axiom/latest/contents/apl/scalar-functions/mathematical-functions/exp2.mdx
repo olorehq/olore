@@ -1,0 +1,96 @@
+---
+title: exp2
+description: 'This page explains how to use the exp2 function in APL.'
+---
+
+Use the `exp2` function in APL to compute the base-2 exponential of a value: 2^x. It's the inverse of the base-2 logarithm function `log2`.
+
+`exp2` is useful when you work with data measured on a binary scale, such as memory sizes, network bandwidths, or binary tree depths. You can also use it to reverse a `log2` transformation and recover values on the original scale.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `exp2()` function. You compute it as `pow(2, x)`.
+
+<CodeGroup>
+```sql Splunk example
+| eval result = pow(2, x)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp2(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define `EXP2()`. You compute it using `POWER(2, x)`.
+
+<CodeGroup>
+```sql SQL example
+SELECT POWER(2, x) AS result FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp2(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+exp2(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The exponent value. |
+
+### Returns
+
+The base-2 exponential of `x`: 2^x.
+
+## Example
+
+Use `exp2` to recover the geometric mean of request durations from a log2-transformed average.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| summarize geometric_mean = exp2(avg(log2(req_duration_ms))) by bin(_time, 1h)
+| project _time, geometric_mean
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20summarize%20geometric_mean%20%3D%20exp2%28avg%28log2%28req_duration_ms%29%29%29%20by%20bin%28_time%2C%201h%29%20%7C%20project%20_time%2C%20geometric_mean%22%7D)
+
+**Output**
+
+| _time | geometric_mean |
+|---|---|
+| 2024-11-14 10:00:00 | 85.3 |
+| 2024-11-14 11:00:00 | 92.7 |
+| 2024-11-14 12:00:00 | 78.1 |
+
+## List of related functions
+
+- [log2](/apl/scalar-functions/mathematical-functions/log2): Returns the base-2 logarithm. Use it as the inverse of `exp2`.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it for natural-log-scale transformations instead of base-2.
+- [exp10](/apl/scalar-functions/mathematical-functions/exp10): Returns 10^x. Use it for base-10 (order-of-magnitude) scales.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises any base to a power. Use it when neither e, 2, nor 10 is the intended base.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it together with `exp` for natural-log-scale analysis.

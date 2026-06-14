@@ -1,0 +1,189 @@
+---
+title: Local Sync Server
+description: Use the Turso CLI as a local sync server for development and testing without Turso Cloud.
+---
+
+The `tursodb` CLI includes a built-in sync server that you can run locally. This lets you develop and test sync workflows entirely on your machine — no Turso Cloud account required.
+
+<Info>
+The local sync server implements the same sync protocol as Turso Cloud, so your application code works the same way in both environments.
+</Info>
+
+## Starting the server
+
+Pass `--sync-server` with an address to start the sync server. The database argument specifies where the server stores its data:
+
+```bash
+tursodb ./server.db --sync-server 0.0.0.0:8080
+```
+
+This starts a sync server listening on port `8080`, backed by `./server.db`.
+
+## Connecting clients
+
+Point your sync client at `http://localhost:8080`. No auth token is needed for the local server.
+
+<CodeGroup>
+
+```ts TypeScript
+import { connect } from '@tursodatabase/sync';
+
+const db = await connect({
+  path: './local-replica.db',
+  url: 'http://localhost:8080',
+});
+```
+
+```py Python
+import turso.sync
+
+conn = turso.sync.connect(
+    path="./local-replica.db",
+    remote_url="http://localhost:8080",
+)
+```
+
+```go Go
+package main
+
+import (
+	"turso"
+)
+
+db, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
+    Path:      "./local-replica.db",
+    RemoteUrl: "http://localhost:8080",
+})
+```
+
+</CodeGroup>
+
+Once connected, all sync operations (`push`, `pull`, `checkpoint`, `stats`) work exactly as described in the [Usage](/sync/usage) guide.
+
+## Example: full local sync workflow
+
+This example walks through a complete workflow — starting the server, writing data from one client, and syncing it to another.
+
+<Steps>
+
+<Step title="1. Start the sync server">
+
+Open a terminal and start the server:
+
+```bash
+tursodb ./server.db --sync-server 0.0.0.0:8080
+```
+
+</Step>
+
+<Step title="2. Write and push from Client A">
+
+<CodeGroup>
+
+```ts TypeScript
+import { connect } from '@tursodatabase/sync';
+
+const clientA = await connect({
+  path: './client-a.db',
+  url: 'http://localhost:8080',
+});
+
+await clientA.exec("CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, body TEXT)");
+await clientA.exec("INSERT INTO notes VALUES ('n1', 'hello from client A')");
+
+await clientA.push();
+```
+
+```py Python
+import turso.sync
+
+client_a = turso.sync.connect(
+    path="./client-a.db",
+    remote_url="http://localhost:8080",
+)
+
+client_a.execute("CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, body TEXT)")
+client_a.commit()
+client_a.execute("INSERT INTO notes VALUES ('n1', 'hello from client A')")
+client_a.commit()
+
+client_a.push()
+```
+
+```go Go
+clientA, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
+    Path:      "./client-a.db",
+    RemoteUrl: "http://localhost:8080",
+})
+if err != nil {
+    return err
+}
+connA, _ := clientA.Connect(ctx)
+
+connA.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, body TEXT)")
+connA.ExecContext(ctx, "INSERT INTO notes VALUES ('n1', 'hello from client A')")
+
+clientA.Push(ctx)
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="3. Pull from Client B">
+
+<CodeGroup>
+
+```ts TypeScript
+import { connect } from '@tursodatabase/sync';
+
+const clientB = await connect({
+  path: './client-b.db',
+  url: 'http://localhost:8080',
+});
+
+const changed = await clientB.pull();
+console.log('changes pulled:', changed);
+
+const rows = await clientB.query("SELECT * FROM notes");
+console.log(rows);
+// [{ id: 'n1', body: 'hello from client A' }]
+```
+
+```py Python
+import turso.sync
+
+client_b = turso.sync.connect(
+    path="./client-b.db",
+    remote_url="http://localhost:8080",
+)
+
+changed = client_b.pull()
+print("changes pulled:", changed)
+
+rows = client_b.execute("SELECT * FROM notes").fetchall()
+print(rows)
+# [('n1', 'hello from client A')]
+```
+
+```go Go
+clientB, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
+    Path:      "./client-b.db",
+    RemoteUrl: "http://localhost:8080",
+})
+if err != nil {
+    return err
+}
+
+changed, _ := clientB.Pull(ctx)
+log.Println("changes pulled:", changed)
+
+connB, _ := clientB.Connect(ctx)
+rows, _ := connB.QueryContext(ctx, "SELECT * FROM notes")
+```
+
+</CodeGroup>
+
+</Step>
+
+</Steps>

@@ -277,7 +277,7 @@ The `assign(...)` action is a special action that assigns data to the state cont
 Assignments can be an object of key-value pairs where the keys are `context` keys and the values are either static values or expressions that return the new value:
 
 ```ts
-import { setup } from 'xstate';
+import { setup, assign } from 'xstate';
 
 const countMachine = setup({
   types: {
@@ -314,7 +314,7 @@ countActor.send({ type: 'increment', value: 2 });
 For more dynamic assignments, the argument passed to `assign(...)` may also be a function that returns the partial or full `context` value:
 
 ```ts
-import { setup } from 'xstate';
+import { setup, assign } from 'xstate';
 
 const countMachine = setup({
   types: {
@@ -773,7 +773,7 @@ const machine = createMachine({
 If you only need to execute actions in response to events, you can create a [self-transition](/docs/transitions#self-transitions) that only has `actions: [ ... ]` defined. For example, a machine that only needs to assign to `context` in transitions may look like this:
 
 ```ts
-import { createMachine } from 'xstate';
+import { createMachine, assign } from 'xstate';
 
 const countMachine = createMachine({
   context: {

@@ -1,0 +1,237 @@
+---
+title: 'IcmpMonitor Construct'
+description: 'Learn how to configure ICMP monitors with the Checkly CLI.'
+sidebarTitle: 'ICMP Monitor'
+---
+
+import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
+
+<Tip>
+Learn more about ICMP Monitors in [the ICMP monitor overview](/detect/uptime-monitoring/icmp-monitors/overview).
+</Tip>
+
+ICMP monitors check if a host is reachable by sending ICMP Echo Requests (pings). Use them to monitor network connectivity and latency.
+
+<Accordion title="Prerequisites">
+Before creating ICMP Monitors, ensure you have:
+
+- An initialized Checkly CLI project
+- A hostname or IP address you want to ping
+- Basic understanding of network connectivity (ICMP / ping)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```ts Basic Example
+import { Frequency, IcmpMonitor } from "checkly/constructs"
+
+new IcmpMonitor('icmp-welcome', {
+  name: 'Welcome Site Reachability',
+  description: "Pings `welcome.checklyhq.com` to verify **host reachability**.",
+  frequency: Frequency.EVERY_1M,
+  request: {
+    hostname: 'welcome.checklyhq.com',
+  },
+  degradedPacketLossThreshold: 20, // percentage
+  maxPacketLossThreshold: 30, // percentage
+})
+```
+
+```ts Advanced Example
+import { Frequency, IcmpAssertionBuilder, IcmpMonitor } from "checkly/constructs"
+
+new IcmpMonitor('cloudflare-dns-icmp', {
+  name: 'Cloudflare DNS ICMP Monitor',
+  description: "Cloudflare DNS reachability and latency check.",
+  activated: true,
+  frequency: Frequency.EVERY_1M,
+  maxPacketLossThreshold: 20, // percentage
+  degradedPacketLossThreshold: 10,
+  request: {
+    hostname: '1.1.1.1',
+    pingCount: 20,
+    assertions: [
+      IcmpAssertionBuilder.latency('avg').lessThan(100),
+      IcmpAssertionBuilder.latency('max').lessThan(200),
+    ]
+  }
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+ICMP monitors have their own ICMP-specific settings, plus the standard monitor options shared across all check types.
+
+<Tabs>
+<Tab title="ICMP Monitor Settings">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `request` | `object` | ✅ | - | ICMP request configuration object |
+| `degradedPacketLossThreshold` | `number` | ❌ | `10` | Packet loss percentage at which the monitor is marked as degraded |
+| `maxPacketLossThreshold` | `number` | ❌ | `20` | Packet loss percentage at which the monitor is marked as failed |
+
+</Tab>
+<Tab title="General Monitor Settings">
+
+  <GeneralMonitorOptionsTable />
+
+</Tab>
+</Tabs>
+
+### `IcmpMonitor` Options
+
+<ResponseField name="request" type="object" required >
+
+ICMP request configuration, including ping settings and response validation.
+
+**Usage:**
+
+```ts
+new IcmpMonitor('icmp-monitor', {
+  name: 'ICMP Latency Monitor',
+  request: {
+    hostname: 'api.checklyhq.com',
+    pingCount: 15,
+    assertions: [
+      IcmpAssertionBuilder.latency('avg').lessThan(100),
+    ]
+  }
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `hostname` | `string` | ✅ | - | The target host (domain name or IP address) |
+| `pingCount` | `number` | ❌ | `10` | Number of ICMP Echo Request packets to send per check run (1-50, default: 10) |
+| `assertions` | `IcmpAssertion[]` | ❌ | `[]` | Response assertions using the `IcmpAssertionBuilder` |
+| `ipFamily` | `string` | ❌ | `IPv4` | IP family selection (IPv4, IPv6) |
+
+</ResponseField>
+
+<ResponseField name="degradedPacketLossThreshold" type="number" default="10">
+Packet loss percentage at which the monitor is marked as degraded (warning state).
+
+**Usage:**
+
+```ts highlight={3}
+new IcmpMonitor("icmp-performance-tiers", {
+  name: "ICMP Performance Tiers",
+  degradedPacketLossThreshold: 15, // Warn at 15%
+  request: {
+    hostname: '1.1.1.1',
+    pingCount: 20,
+  }
+})
+```
+</ResponseField>
+
+<ResponseField name="maxPacketLossThreshold" type="number" default="20">
+Packet loss percentage at which the monitor is marked as failed
+
+**Usage:**
+
+```ts highlight={3}
+new IcmpMonitor("icmp-performance-tiers", {
+  name: "ICMP Performance Tiers",
+  maxPacketLossThreshold: 25, // Fail at 25%
+  request: {
+    hostname: '1.1.1.1',
+    pingCount: 20,
+  }
+})
+```
+
+</ResponseField>
+
+### `IcmpMonitor` Assertions
+
+Assertions for ICMP monitors can be defined using the `IcmpAssertionBuilder`. The following sources are available:
+
+- `latency(property)`: Validate round-trip time (RTT) for ICMP pings. The property parameter is required and must be one of: `avg`, `min`, `max`, or `stdDev`
+- `jsonResponse(property?)`: Assert against the [JSON response structure](/detect/uptime-monitoring/icmp-monitors/configuration#json-response-schemas). This allows you to target specific fields using JSON path assertions
+
+Here are some examples:
+
+- Assert the average latency is below a threshold
+
+```ts
+IcmpAssertionBuilder.latency('avg').lessThan(100)
+// Equivalent to:
+{ source: 'LATENCY', property: 'avg', comparison: 'LESS_THAN', target: '100' }
+```
+
+- Assert against specific JSON fields in the response
+
+```ts
+IcmpAssertionBuilder.jsonResponse('$.packetsReceived').equals(10)
+// Equivalent to:
+{ source: 'JSON_RESPONSE', property: '$.packetsReceived', comparison: 'EQUALS', target: '10' }
+```
+
+Learn more in our docs on [Assertions](/detect/assertions).
+
+### General Monitor Options
+
+<ResponseField name="name" type="string" required>
+Friendly name for your ICMP Monitor that will be displayed in the Checkly dashboard and used in notifications.
+
+**Usage:**
+
+```ts highlight={2}
+new IcmpMonitor("my-monitor", {
+  name: "ICMP Ping Monitor",
+  /* More options ... */
+})
+```
+
+</ResponseField>
+
+<ResponseField name="frequency" type="Frequency">
+How often the ICMP Monitor should run. Use the `Frequency` enum to set the check interval.
+
+**Usage:**
+
+```ts highlight={3}
+new IcmpMonitor("my-monitor", {
+  name: "ICMP Ping Monitor",
+  frequency: Frequency.EVERY_1M,
+  /* More options ... */
+})
+```
+
+**Available frequencies**: `EVERY_10S`, `EVERY_20S`, `EVERY_30S`, `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_3H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="locations" type="string[]" default="[]">
+Array of [public location codes](/concepts/locations/#public-locations) where the ICMP Monitor should run from. Multiple locations provide geographic coverage and help detect regional network issues.
+
+**Usage:**
+
+```ts highlight={3}
+new IcmpMonitor("global-icmp-monitor", {
+  name: "ICMP Ping Monitor",
+  locations: ["us-east-1", "eu-central-1", "ap-southeast-1"]
+})
+```
+</ResponseField>
+
+<ResponseField name="activated" type="boolean" default="true">
+Whether the ICMP Monitor is enabled and will run according to its schedule.
+
+**Usage:**
+
+```ts highlight={3}
+new IcmpMonitor("my-monitor", {
+  name: "ICMP Ping Monitor",
+  activated: false // Disabled monitor
+})
+```
+
+</ResponseField>

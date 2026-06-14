@@ -11,10 +11,6 @@ import { Apple } from "/snippets/constants.mdx"
 
 <Demos examples={['dataBindingQuickStart']} runtime="apple" />
 
-<Note>
-    A new runtime is available as part of the existing Apple runtime package. The new runtime is experimental and may be subject to breaking changes. The legacy runtime is still supported and will continue to be supported in the near future, but is now considered to be in maintenance mode. It is recommended to begin using the new API in new projects and provide feedback, and to investigate migrating existing projects to the new API when feasible.
-</Note>
-
 ## Overview
 
 This guide documents how to get started using the Apple runtime library. Rive runtime libraries are open-source. The source is available in its [GitHub repository](https://github.com/rive-app/rive-ios).
@@ -67,10 +63,10 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                 ```
             </Step>
             <Step title="Import Rive">
-                The new API types are behind the `RiveExperimental` SPI, so the standard runtime import must be prefixed with `@_spi(RiveExperimental)`.
+                The new Apple runtime is available in the same Swift package and CocoaPods pod as the legacy runtime. Both runtime APIs are available in the same package, so you can import the runtime using the same import statement.
 
                 ```swift
-                @_spi(RiveExperimental) import RiveRuntime
+                import RiveRuntime
                 ```
             </Step>
             <Step title="Create a Worker">
@@ -81,8 +77,6 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                 ```swift
                 // In an async context
                 let worker = try await Worker()
-                // In a sync context
-                let worker = try Worker()
                 ```
 
                 For more information on threading, see [Threading](#threading).
@@ -97,24 +91,19 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                 <CodeGroup>
                     ```swift Local File
                     let worker = try await Worker()
-                    // In a sync context
-                    let worker = try Worker()
-                    let file = File(source: .local("my_file", Bundle.main), worker: worker)
+                    let file = try await File(source: .local("my_file", Bundle.main), worker: worker)
                     ```
 
                     ```swift Remote URL
                     let worker = try await Worker()
-                    // In a sync context
-                    let worker = try Worker()
-                    let file = File(source: .url(URL(string: "https://example.com/my_file.riv")!, worker: worker))
+                    let url: URL = URL(string: "https://example.com/my_file.riv")!
+                    let file = try await File(source: .url(url), worker: worker)
                     ```
 
                     ```swift Data
                     let worker = try await Worker()
-                    // In a sync context
-                    let worker = try Worker()
                     let data: Data = ...
-                    let file = File(source: .data(data), worker: worker)
+                    let file = try await File(source: .data(data), worker: worker)
                     ```
                 </CodeGroup>
             </Step>
@@ -127,9 +116,7 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                     ```swift UIKit
                     let riveView = RiveUIView({
                         let worker = try await Worker()
-                        // In a sync context
-                        let worker = try Worker()
-                        let file = File(source: .local("my_file", Bundle.main))
+                        let file = try await File(source: .local("my_file", Bundle.main), worker: worker)
                         return try await Rive(file: file)
                     })
                     view.addSubview(riveView)
@@ -146,7 +133,7 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                         // After having created a `Rive` object, you can initialize your view.
                         AsyncRiveUIViewRepresentable {
                             let worker = try await Worker()
-                            let file = File(source: .local("my_file", Bundle.main))
+                            let file = try await File(source: .local("my_file", Bundle.main), worker: worker)
                             return try await Rive(file: file)
                         }
                     }
@@ -167,7 +154,7 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                     ```swift Auto Bind
                     let file = try await File(...)
                     // Automaically find the (editor) default view model instance to bind to the Rive object's artboard.
-                    // Below, the default artboard and state machine will be used, and the default view model instance will be bound to to the state machine.
+                    // Below, the default artboard and state machine will be used, and the default view model instance will be bound to the state machine.
                     // This is the default value, if you do not pass in a dataBind argument.
                     let rive = try await Rive(file: file, dataBind: .auto)
 
@@ -227,11 +214,11 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
                 </CodeGroup>
             </Step>
             <Step title="Examples">
-                For basic usage, see the [Marty](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Experimental/MartyView.swift) example in our Example app.
+                For basic usage, see the [Marty](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Concurrency/MartyView.swift) example in our Example app.
 
-                For a more complete example, see the [Quick Start](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Experimental/QuickStartView.swift) example in our Example app, which demonstrates how to use data binding.
+                For a more complete example, see the [Quick Start](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Concurrency/QuickStartView.swift) example in our Example app, which demonstrates how to use data binding.
 
-                For examples on how to pause and resume animations, as well as set frame rate, see the [Player](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Experimental/PlayerView.swift) example in our Example app.
+                For examples on how to pause and resume animations, as well as set frame rate, see the [Player](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/Concurrency/PlayerView.swift) example in our Example app.
             </Step>
         </Steps>
     </Tab>
@@ -421,8 +408,6 @@ Follow the steps below for a quick start on integrating Rive into your Apple app
         ```swift
         // In an async context
         let worker = try await Worker()
-        // In a sync context
-        let worker = try Worker()
         let file = try await File(source: ..., worker: worker)
         ```
 

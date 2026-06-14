@@ -4,129 +4,131 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/api/` | Core API reference (Hono, Context, routing) | 6 |
-| `contents/concepts/` | Core concepts (middleware, routers, web standards) | 4 |
+| `contents/` | Root index and overview | 1 |
+| `contents/api/` | Core API reference (Hono class, routing, context, request, exception, presets) | 7 |
+| `contents/concepts/` | Conceptual guides (routers, middleware, web standards, stacks, DX) | 5 |
 | `contents/getting-started/` | Platform-specific setup guides | 18 |
-| `contents/guides/` | Usage guides and best practices | 11 |
-| `contents/helpers/` | Helper utilities reference | 15 |
-| `contents/middleware/` | Built-in and third-party middleware | 24 |
-| `contents/` | Main documentation entry | 1 |
+| `contents/guides/` | How-to guides (JSX, RPC, validation, testing, middleware, best practices) | 10 |
+| `contents/helpers/` | Built-in helper utilities | 15 |
+| `contents/middleware/builtin/` | Built-in middleware reference | 23 |
+| `contents/middleware/` | Third-party middleware list | 1 |
+
+## contents/ (root)
+
+| File | Description |
+|------|-------------|
+| `index.md` | Hono overview, features, quick start, and platform support |
 
 ## api/
 
 | File | Description |
 |------|-------------|
-| `context.md` | Context object API |
-| `exception.md` | Exception handling |
-| `hono.md` | Main Hono class API |
-| `presets.md` | Preset configurations |
-| `request.md` | Request handling |
-| `routing.md` | Routing API |
+| `index.md` | API section overview |
+| `hono.md` | Hono class — constructor, methods, app composition |
+| `routing.md` | Routing API — path params, wildcards, grouping |
+| `context.md` | Context object — req, res, env, executionCtx, helpers |
+| `request.md` | HonoRequest API — body parsing, headers, query params |
+| `exception.md` | HTTPException — creating and handling HTTP errors |
+| `presets.md` | Preset bundles (hono/tiny, etc.) |
 
 ## concepts/
 
 | File | Description |
 |------|-------------|
-| `middleware.md` | Middleware concepts |
-| `routers.md` | Router architecture |
-| `stacks.md` | Stack concepts |
-| `web-standard.md` | Web Standards compliance |
+| `routers.md` | Router types — RegExpRouter, SmartRouter, LinearRouter, PatternRouter |
+| `middleware.md` | Middleware concept — how middleware works in Hono |
+| `web-standard.md` | Web Standards approach and platform compatibility |
+| `stacks.md` | Hono Stacks — RPC-based full-stack pattern with Zod |
+| `developer-experience.md` | TypeScript types, type inference, and DX features |
 
 ## getting-started/
 
 | File | Description |
 |------|-------------|
-| `ali-function-compute.md` | Alibaba Cloud Function Compute setup |
-| `aws-lambda.md` | AWS Lambda setup |
-| `azure-functions.md` | Azure Functions setup |
-| `basic.md` | Basic setup guide |
-| `bun.md` | Bun runtime setup |
-| `cloudflare-pages.md` | Cloudflare Pages setup |
-| `cloudflare-workers.md` | Cloudflare Workers setup |
-| `deno.md` | Deno runtime setup |
-| `fastly.md` | Fastly Compute setup |
-| `google-cloud-run.md` | Google Cloud Run setup |
-| `lambda-edge.md` | Lambda@Edge setup |
-| `netlify.md` | Netlify setup |
-| `nextjs.md` | Next.js integration |
-| `nodejs.md` | Node.js setup |
-| `service-worker.md` | Service Worker setup |
-| `supabase-functions.md` | Supabase Functions setup |
-| `vercel.md` | Vercel setup |
-| `webassembly-wasi.md` | WebAssembly/WASI setup |
+| `basic.md` | Basic setup and project structure |
+| `cloudflare-workers.md` | Setup for Cloudflare Workers |
+| `cloudflare-pages.md` | Setup for Cloudflare Pages |
+| `deno.md` | Setup for Deno runtime |
+| `bun.md` | Setup for Bun runtime |
+| `nodejs.md` | Setup for Node.js with adapter |
+| `aws-lambda.md` | Setup for AWS Lambda |
+| `lambda-edge.md` | Setup for AWS Lambda@Edge |
+| `vercel.md` | Setup for Vercel (Edge Functions) |
+| `netlify.md` | Setup for Netlify Edge Functions |
+| `fastly.md` | Setup for Fastly Compute |
+| `nextjs.md` | Setup for Next.js API routes |
+| `supabase-functions.md` | Setup for Supabase Edge Functions |
+| `azure-functions.md` | Setup for Azure Functions |
+| `google-cloud-run.md` | Setup for Google Cloud Run |
+| `ali-function-compute.md` | Setup for Alibaba Cloud Function Compute |
+| `service-worker.md` | Setup for Service Worker environment |
+| `webassembly-wasi.md` | Setup for WebAssembly/WASI runtime |
 
 ## guides/
 
 | File | Description |
 |------|-------------|
-| `best-practices.md` | Best practices guide |
-| `create-hono.md` | Project creation guide |
+| `best-practices.md` | Best practices for Hono app development |
+| `create-hono.md` | CLI tool create-hono — options, templates, flags |
 | `faq.md` | Frequently asked questions |
-| `helpers.md` | Using helpers guide |
-| `jsx-dom.md` | JSX DOM integration |
-| `jsx.md` | JSX usage guide |
-| `middleware.md` | Middleware usage guide |
-| `others.md` | Other guides |
-| `rpc.md` | RPC functionality |
-| `testing.md` | Testing guide |
-| `validation.md` | Request validation guide |
+| `helpers.md` | Overview of available helpers |
+| `jsx.md` | JSX support in Hono — rendering, components |
+| `jsx-dom.md` | JSX DOM mode — client-side JSX |
+| `middleware.md` | Writing and using middleware |
+| `rpc.md` | RPC mode — type-safe client with hc and Zod |
+| `testing.md` | Testing Hono apps |
+| `validation.md` | Request validation with Zod and other validators |
 
 ## helpers/
 
 | File | Description |
 |------|-------------|
-| `accepts.md` | Content negotiation helper |
-| `adapter.md` | Runtime adapter helper |
-| `conninfo.md` | Connection info helper |
-| `cookie.md` | Cookie handling helper |
-| `css.md` | CSS helper |
-| `dev.md` | Development helpers |
-| `factory.md` | Factory helper |
-| `html.md` | HTML helper |
-| `jwt.md` | JWT helper |
-| `proxy.md` | Proxy helper |
-| `route.md` | Route helper |
-| `ssg.md` | Static site generation helper |
-| `streaming.md` | Streaming helper |
-| `testing.md` | Testing helper |
-| `websocket.md` | WebSocket helper |
+| `accepts.md` | Accept header negotiation helper |
+| `adapter.md` | Platform adapter helpers (env, getRuntimeKey) |
+| `conninfo.md` | Connection info helper (IP address, etc.) |
+| `cookie.md` | Cookie get/set/delete helpers |
+| `css.md` | CSS-in-JS helper for styled components |
+| `dev.md` | Dev helper — showRoutes, getRouterName |
+| `factory.md` | Factory helper — createFactory, createMiddleware |
+| `html.md` | HTML helper — html tagged template literal |
+| `jwt.md` | JWT sign/verify helpers |
+| `proxy.md` | Proxy helper for forwarding requests |
+| `route.md` | Route helper for typed route definitions |
+| `ssg.md` | Static Site Generation helper |
+| `streaming.md` | Streaming response helpers |
+| `testing.md` | Testing helper — testClient |
+| `websocket.md` | WebSocket upgrade helper |
 
 ## middleware/builtin/
 
 | File | Description |
 |------|-------------|
 | `basic-auth.md` | Basic authentication middleware |
-| `bearer-auth.md` | Bearer token authentication |
-| `body-limit.md` | Body size limit middleware |
-| `cache.md` | Caching middleware |
-| `combine.md` | Middleware combination |
-| `compress.md` | Response compression |
-| `context-storage.md` | Context storage middleware |
+| `bearer-auth.md` | Bearer token authentication middleware |
+| `body-limit.md` | Request body size limit middleware |
+| `cache.md` | Cache-Control / CDN caching middleware |
+| `combine.md` | Middleware combinator (some, every, except) |
+| `compress.md` | Response compression (gzip, deflate) middleware |
+| `context-storage.md` | AsyncLocalStorage-based context storage |
 | `cors.md` | CORS middleware |
-| `csrf.md` | CSRF protection |
-| `etag.md` | ETag middleware |
-| `ip-restriction.md` | IP restriction middleware |
-| `jsx-renderer.md` | JSX rendering middleware |
-| `jwk.md` | JWK middleware |
+| `csrf.md` | CSRF protection middleware |
+| `etag.md` | ETag response caching middleware |
+| `ip-restriction.md` | IP address allow/block list middleware |
+| `jsx-renderer.md` | JSX renderer middleware for layout/template support |
+| `jwk.md` | JWK (JSON Web Key) authentication middleware |
 | `jwt.md` | JWT authentication middleware |
-| `language.md` | Language detection |
-| `logger.md` | Request logging |
-| `method-override.md` | HTTP method override |
-| `pretty-json.md` | JSON formatting |
-| `request-id.md` | Request ID middleware |
-| `secure-headers.md` | Security headers |
-| `timeout.md` | Request timeout |
-| `timing.md` | Server timing |
-| `trailing-slash.md` | Trailing slash handling |
+| `language.md` | Language/locale detection middleware |
+| `logger.md` | HTTP request logger middleware |
+| `method-override.md` | HTTP method override middleware |
+| `pretty-json.md` | Pretty-print JSON response middleware |
+| `request-id.md` | Request ID generation middleware |
+| `secure-headers.md` | Security headers middleware (CSP, HSTS, etc.) |
+| `timeout.md` | Request timeout middleware |
+| `timing.md` | Server-Timing header middleware |
+| `trailing-slash.md` | Trailing slash redirect/strip middleware |
 
-## middleware/
-
-| File | Description |
-|------|-------------|
-| `third-party.md` | Third-party middleware overview |
-
-## Root Files
+## middleware/ (root)
 
 | File | Description |
 |------|-------------|
-| `index.md` | Main documentation entry point |
+| `third-party.md` | Index of community third-party middleware packages |

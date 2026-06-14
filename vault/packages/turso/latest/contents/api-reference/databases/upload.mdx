@@ -1,0 +1,86 @@
+---
+title: Upload Database
+sidebarTitle: Upload
+api: "POST https://{database_hostname}/v1/upload"
+---
+
+Upload a SQLite database file to a database created with `seed.type = "database_upload"`.
+
+<Note>
+This endpoint is on the **database hostname** (e.g., `my-db-my-org.turso.io`), not `api.turso.tech`.
+</Note>
+
+<Note>
+You must first [create a database](/api-reference/databases/create) with `seed.type = "database_upload"`.
+</Note>
+
+<Note>
+This endpoint requires a **database token**, not a platform API token. You can [create a database token](/api-reference/databases/create-token) after creating the database.
+</Note>
+
+## Headers
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer token for the database |
+| `Content-Length` | Yes | Size of the database file in bytes |
+| `x-turso-encryption-key` | No | Base64-encoded encryption key (32 bytes for 256-bit ciphers, 16 bytes for 128-bit ciphers) |
+| `x-turso-encryption-cipher` | No | Encryption cipher. See table below for options. |
+
+## Request Body
+
+The raw binary SQLite database file.
+
+## Database File Requirements
+
+The SQLite database file must meet these requirements:
+
+- **Journal mode**: WAL (`PRAGMA journal_mode = WAL`)
+- **Page size**: 4096 bytes (`PRAGMA page_size = 4096`)
+- **Auto vacuum**: Disabled (`PRAGMA auto_vacuum = 0`)
+- **Encoding**: UTF-8 (`PRAGMA encoding = 'UTF-8'`)
+
+For encrypted databases, you must also set the reserved bytes to match the cipher:
+
+| Cipher | Reserved Bytes |
+| --- | --- |
+| `aes256gcm` | 28 |
+| `aes128gcm` | 28 |
+| `chacha20poly1305` | 28 |
+| `aegis128l` | 32 |
+| `aegis128x2` | 32 |
+| `aegis128x4` | 32 |
+| `aegis256` | 48 |
+| `aegis256x2` | 48 |
+| `aegis256x4` | 48 |
+
+## Responses
+
+### Success
+
+Returns an empty response with status `200 OK` on success.
+
+### Errors
+
+| Status | Description |
+| --- | --- |
+| `400` | Invalid database file (wrong format, settings, or corruption) |
+| `401` | Invalid or missing authorization token |
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://{database_hostname}/v1/upload' \
+  -H 'Authorization: Bearer DATABASE_TOKEN' \
+  -H 'Content-Length: FILE_SIZE' \
+  --data-binary '@/path/to/database.db'
+```
+
+```bash cURL (with encryption)
+curl -X POST 'https://{database_hostname}/v1/upload' \
+  -H 'Authorization: Bearer DATABASE_TOKEN' \
+  -H 'Content-Length: FILE_SIZE' \
+  -H 'x-turso-encryption-key: BASE64_ENCRYPTION_KEY' \
+  -H 'x-turso-encryption-cipher: aes256gcm' \
+  --data-binary '@/path/to/database.db'
+```
+</RequestExample>

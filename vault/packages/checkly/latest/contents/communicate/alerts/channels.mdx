@@ -4,6 +4,8 @@ description: 'Configure notification channels to receive alerts when checks fail
 sidebarTitle: 'Channels'
 ---
 
+import AlertChannelSecrets from '/snippets/alert-channel-secrets-callout.mdx';
+
 Alert channels determine **how** alert notifications reach your team when checks fail, degrade, or recover. Checkly supports a wide range of notification methods to fit your team's communication preferences and operational workflows.
 
 ## Available Alert Channels
@@ -58,6 +60,12 @@ Verify the channel works correctly with test notifications
 </Step>
 </Steps>
 
+
+## Using variables and secrets in channel configs
+
+Any literal-secret field in an alert-channel configuration — webhook URL, API key, bearer token, PagerDuty service key, and so on — accepts a reference to an account [environment variable](/platform/variables) or [secret](/platform/secrets) using `{{NAME}}` syntax. The channel UI also lets you promote an inline value to a secret without leaving the page.
+
+<AlertChannelSecrets />
 
 <Tip>
 Use Checkly's alert notification log to track delivery success rates and identify any channels that frequently fail to deliver notifications.

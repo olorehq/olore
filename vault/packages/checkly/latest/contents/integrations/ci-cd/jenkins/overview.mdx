@@ -10,11 +10,11 @@ We've optimized the [Checkly CLI](/cli/overview/) to work in any CI/CD workflow.
 1. For **authentication**, make sure to set the `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` parameters as environment variables
 in your CI/CD platform.
 2. Set the **reporter** you want to use for the `test` command using the `--reporter` flag, i.e. `--reporter=dot`.
-3. To store a **test session** with full logging, traces and vides, set the `--record` flag for the `test` command.
+3. Use `npx checkly test` to validate your checks before deploying. Test results, traces, and videos are available in Checkly as a **test session**.
 4. Use the `--force` flag on the `deploy` and / or `destroy` commands to skip the normal confirmation steps.
 
-When using the `--record` flag, the CLI will attempt to parse `git` specific information from
-the environment to display in the recorded test session as metadata. However, you can also set these data items specifically by using environment variables.
+The CLI will attempt to parse `git` specific information from the environment to display in the test session as metadata.
+You can also set these data items specifically by using environment variables.
 
 <CliEnvVars />
 
@@ -63,7 +63,7 @@ should look as follows:
 pipeline {
     agent any
 
-    tools {nodejs "Node 18"}
+    tools {nodejs "Node 20"}
     environment {
         CHECKLY_API_KEY = credentials('checkly-api-key')
         CHECKLY_ACCOUNT_ID = credentials('checkly-account-id')
@@ -83,7 +83,7 @@ pipeline {
         }
         stage('checkly test') {
             steps {
-                sh 'npx checkly test --record'
+                sh 'npx checkly test'
             }
         }
         stage('checkly deploy') {

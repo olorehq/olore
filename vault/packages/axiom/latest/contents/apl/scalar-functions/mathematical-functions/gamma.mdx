@@ -1,0 +1,102 @@
+---
+title: gamma
+description: 'This page explains how to use the gamma function in APL.'
+---
+
+Use the `gamma` function in APL to compute the [gamma function](https://en.wikipedia.org/wiki/Gamma_function) of a numeric value. For positive integers, `gamma(n)` equals `(n-1)!`. The gamma function generalizes the factorial to real and complex numbers.
+
+`gamma` is useful in statistical calculations such as computing combinatorial coefficients, probability distributions, and Bayesian models. In observability, you might use it in custom anomaly scoring or when implementing statistical tests directly in APL.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `gamma()` function. You need to implement the gamma function using external lookup tables or the Machine Learning Toolkit.
+
+<CodeGroup>
+```sql Splunk example
+| eval gamma_val = null()
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend gamma_val = gamma(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define a `GAMMA()` function. You typically implement it in application code or through database-specific extensions.
+
+<CodeGroup>
+```sql SQL example
+-- No standard SQL equivalent; use application code
+SELECT NULL AS gamma_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend gamma_val = gamma(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+gamma(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The input value. Must not be zero or a negative integer. |
+
+### Returns
+
+- The gamma function of `x`.
+- Returns `null` when `x` is zero or a negative integer.
+- For large inputs, the result may overflow to infinity.
+
+## Example
+
+Use `gamma` to compute the gamma function value for a request duration in seconds.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| extend duration_s = req_duration_ms / 1000.0
+| where duration_s < 5
+| extend gamma_val = gamma(duration_s)
+| where isfinite(gamma_val)
+| project _time, id, req_duration_ms, gamma_val
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20extend%20duration_s%20%3D%20req_duration_ms%20/%201000.0%20%7C%20where%20duration_s%20%3C%205%20%7C%20extend%20gamma_val%20%3D%20gamma%28duration_s%29%20%7C%20where%20isfinite%28gamma_val%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20gamma_val%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | gamma_val |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1000.0 | 1.0000 |
+| 2024-11-14 10:01:00 | user-2 | 2000.0 | 1.0000 |
+| 2024-11-14 10:02:00 | user-3 | 3000.0 | 2.0000 |
+
+## List of related functions
+
+- [loggamma](/apl/scalar-functions/mathematical-functions/loggamma): Returns the natural log of the absolute gamma function value. Use it to avoid numeric overflow when working with large inputs.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it when you want to work in log space rather than applying `gamma` directly.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it to exponentiate log-space results from `loggamma` back to the original scale.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use it for simpler power calculations that don't require the general gamma function.
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns whether a value is finite. Use it to filter out overflow results from `gamma` on large inputs.

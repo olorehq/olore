@@ -1,0 +1,186 @@
+import { Callout } from "nextra/components";
+
+# OpenFeature Provider (Java)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Java OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Java)](/docs/tracking-methods/sdks/java/java-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Java 8 or higher
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>com.mixpanel</groupId>
+    <artifactId>mixpanel-java-openfeature</artifactId>
+    <version>0.1.0</version>
+</dependency>
+<dependency>
+    <groupId>dev.openfeature</groupId>
+    <artifactId>sdk</artifactId>
+    <version>1.20.1</version>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'com.mixpanel:mixpanel-java-openfeature:0.1.0'
+implementation 'dev.openfeature:sdk:1.20.1'
+```
+
+## Quick Start
+
+```java
+import com.mixpanel.openfeature.MixpanelProvider;
+import com.mixpanel.mixpanelapi.featureflags.config.LocalFlagsConfig;
+import dev.openfeature.sdk.OpenFeatureAPI;
+import dev.openfeature.sdk.Client;
+
+// 1. Create and register the provider with local evaluation
+MixpanelProvider provider = new MixpanelProvider(
+    "YOUR_PROJECT_TOKEN",
+    new LocalFlagsConfig("YOUR_PROJECT_TOKEN")
+);
+OpenFeatureAPI api = OpenFeatureAPI.getInstance();
+api.setProvider(provider);
+
+// 2. Get a client and evaluate flags
+Client client = api.getClient();
+boolean showNewFeature = client.getBooleanValue("new-feature-flag", false);
+
+if (showNewFeature) {
+    System.out.println("New feature is enabled!");
+}
+```
+
+## Initialization
+
+### Local Evaluation (Recommended)
+
+<Callout type="warning">
+Targeting by Mixpanel cohorts and sticky variants are not supported in Local Evaluation mode.
+</Callout>
+
+```java
+MixpanelProvider provider = new MixpanelProvider(
+    "YOUR_PROJECT_TOKEN",
+    new LocalFlagsConfig("YOUR_PROJECT_TOKEN")
+);
+```
+
+### Remote Evaluation
+
+```java
+MixpanelProvider provider = new MixpanelProvider(
+    "YOUR_PROJECT_TOKEN",
+    new RemoteFlagsConfig("YOUR_PROJECT_TOKEN")
+);
+```
+
+### Using an Existing MixpanelAPI Instance
+
+```java
+MixpanelAPI mixpanel = new MixpanelAPI(new LocalFlagsConfig("YOUR_PROJECT_TOKEN"));
+LocalFlagsProvider localFlags = mixpanel.getLocalFlags();
+localFlags.startPollingForDefinitions();
+
+MixpanelProvider provider = new MixpanelProvider(localFlags);
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `getBooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `getBooleanValue()`, `getStringValue()`, `getIntegerValue()`, `getDoubleValue()`, or `getObjectValue()` |
+| Dynamic Config | JSON object | `getObjectValue()` |
+
+```java
+Client client = api.getClient();
+
+// Feature Gate
+boolean isFeatureOn = client.getBooleanValue("new-checkout", false);
+
+// Experiment with string variants
+String buttonColor = client.getStringValue("button-color-test", "blue");
+
+// Experiment with numeric variants
+int maxItems = client.getIntegerValue("max-items", 10);
+double threshold = client.getDoubleValue("score-threshold", 0.5);
+
+// Dynamic Config
+Value featureConfig = client.getObjectValue("homepage-layout", new Value("default"));
+```
+
+### Evaluation Context
+
+```java
+MutableContext context = new MutableContext();
+context.setTargetingKey("user-123");
+context.add("email", "user@example.com");
+context.add("plan", "premium");
+context.add("beta_tester", true);
+
+boolean value = client.getBooleanValue("premium-feature", false, context);
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```java
+FlagEvaluationDetails<Boolean> details = client.getBooleanDetails("my-feature", false);
+
+System.out.println(details.getValue());
+System.out.println(details.getVariant());
+System.out.println(details.getReason());
+System.out.println(details.getErrorCode());
+```
+
+### Accessing the Underlying MixpanelAPI
+
+```java
+MixpanelAPI mixpanel = provider.getMixpanel();
+```
+
+### Shutdown
+
+```java
+provider.shutdown();
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the local provider has finished loading definitions |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Provider not ready:** Flag definitions are polled asynchronously. Allow time for the initial fetch.
+2. **Invalid project token:** Verify the token matches your Mixpanel project.
+3. **Flag not configured:** Verify the flag exists and is enabled.
+
+### Type Mismatch Errors
+
+1. Verify the flag's value type matches your evaluation method.
+2. Use `getObjectValue()` for JSON objects.
+3. Integer evaluation accepts `Long` and whole-number `Double` values within `Integer` bounds. Double evaluation accepts any numeric type.

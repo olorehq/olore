@@ -248,13 +248,22 @@ Complete the following steps to get your Databricks connector up and running:
 
 ### Step 1: Set up authentication
 
-You can authenticate with either a personal access token or a service principal. We recommend using a **service principal** for production use cases.
+Mixpanel connects to Databricks using a service principal. You can authenticate with either a personal access token or OAuth (recommended).
 
-**Option A: Personal Access Token**
+**Option A: Service Principal OAuth (Recommended)**
 
-Create a personal access token by following the [Databricks instructions](https://docs.databricks.com/aws/en/dev-tools/auth/pat#create-personal-access-tokens-for-workspace-users). Save this token — you'll need it when connecting in Mixpanel.
+OAuth M2M (machine-to-machine) authentication uses a client ID and client secret instead of a token. OAuth secrets can be managed and rotated without affecting other integrations.
 
-**Option B: Service Principal (Recommended)**
+1. [Create the service principal](https://docs.databricks.com/en/admin/users-groups/service-principals.html#manage-service-principals-in-your-account) in your Databricks account if it doesn't already exist.
+2. Generate an OAuth secret for the service principal:
+    - In your Databricks workspace, navigate to **Settings** → **Identity and access** → **Service principals**.
+    - Click on the service principal you want to use.
+    - Go to the **Secrets** tab.
+    - Click **Generate secret**.
+    - Copy the **Client ID** and **Secret** immediately — the secret won't be shown again.
+3. Save both the Client ID and Secret — you'll need them when connecting in Mixpanel.
+
+**Option B: Personal Access Token**
 
 1. [Create the service principal](https://docs.databricks.com/en/admin/users-groups/service-principals.html#manage-service-principals-in-your-account) in your Databricks account if it doesn't already exist.
 2. Generate a token for the service principal using the Databricks CLI:
@@ -296,7 +305,9 @@ GRANT MODIFY ON ANY FILE TO `<application_id_or_username>`;
 2. Click on `+ Add Connection` and select **Databricks**.
 3. Fill out the following fields, then click **Create Source**:
     - **Server Hostname** — The hostname of your Databricks workspace. Find this in your workspace URL, or under your cluster's [JDBC/ODBC settings](https://docs.databricks.com/en/integrations/jdbc-odbc-bi.html#step).
-    - **Access Token** — The personal access token or service principal token you created above.
+    - **Authentication** — Choose one of the following:
+        - **Personal Access Token** — The service principal token from Option A above.
+        - **OAuth Client ID** and **OAuth Client Secret** — The client credentials from Option B above.
     - **Compute Type** — Select your preferred compute option:
         - **All-Purpose Compute** — Uses an existing cluster. Faster sync start times, but the cluster stays running after the sync completes until it times out. Best for development.
         - **Jobs Compute (Beta)** — Creates a dedicated job for each sync. You're only billed for the exact job duration, making it more cost-effective. Syncs take ~5-6 minutes longer to start due to cluster spin-up, and data preview in the Mixpanel UI is not supported. Best for production.
@@ -403,10 +414,6 @@ If you are using [AWS PrivateLink](https://docs.aws.amazon.com/redshift/latest/m
 ```
 </Tabs.Tab>
 <Tabs.Tab>
-
-<Callout type="info">
-The Postgres connector is currently in beta.
-</Callout>
 
 Complete the following steps to get your Postgres connector up and running:
 
@@ -912,7 +919,9 @@ Billing varies by operation type and connector mode. The tables below explain ho
 |                                           | Append        | ❌            | ❌          |
 |                                           | Mirror        | ✅            | ✅          |
 
-The above table applies if your account uses ingestion time billing. If your account is on legacy event timestamp billing, only events sent in with timestamps in the current month will be included in billing. More details on ingestion time vs. event timestamp billing can be found in [this section](/docs/pricing#are-monthly-events-calculated-based-on-ingestion-time-or-event-timestamp).
+The above table applies if your account uses ingestion time billing. If your account is on legacy event timestamp billing:
+- **Event inserts** are billed only if the event timestamp is in the current billing month. Events with timestamps in previous months are not billed.
+- **Updates and deletes** are always billed at ingestion time, regardless of the event timestamp on the original event. More details on ingestion time vs. event timestamp billing can be found in [this section](/docs/pricing#are-monthly-events-calculated-based-on-ingestion-time-or-event-timestamp).
 
 If you’re planning on backfilling a significant amount of historical events and need help understanding how it will impact your costs, please reach out to your Mixpanel account manager or [contact support](https://mixpanel.com/get-support).
 

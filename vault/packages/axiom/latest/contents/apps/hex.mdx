@@ -47,7 +47,7 @@ Verify that your data has been ingested correctly by running an APL query in the
 ## Set up your Hex project
 
 1. Create a new Hex project. For more information, see the [Hex documentation](https://learn.hex.tech/docs/getting-started/create-your-first-project).
-1. Save your Axiom API token as a secret in Hex. This example uses the secret name `AXIOM_API_TOKEN`. For more information, see the [Hex documentation](https://learn.hex.tech/docs/explore-data/projects/environment-configuration/environment-views#secrets).
+1. Save your Axiom API token as a secret in Hex. This example uses the secret name `AXIOM_TOKEN`. For more information, see the [Hex documentation](https://learn.hex.tech/docs/explore-data/projects/environment-configuration/environment-views#secrets).
 
 ## Query data from Axiom
 
@@ -60,10 +60,10 @@ from datetime import datetime, timedelta
 import os
 
 # Retrieve the API token from Hex secrets
-axiom_token = os.environ.get("AXIOM_API_TOKEN")
+axiom_token = os.environ.get("AXIOM_TOKEN")
 
 # Define Axiom API endpoint and headers
-base_url = "https://AXIOM_DOMAIN/v1/datasets/_apl"
+base_url = "https://AXIOM_DOMAIN/v1/query/_apl"
 headers = {
     'Authorization': f'Bearer {axiom_token}',
     'Content-Type': 'application/json',

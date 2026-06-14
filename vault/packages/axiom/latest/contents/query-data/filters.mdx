@@ -163,4 +163,61 @@ The default option of a select filter is the option chosen when the dashboard lo
 
 ## Handle empty values
 
-The examples on this page assume that you use the default setting where the **All** key means an empty value, and the empty value in a filter means that the data isn’t filtered in the chart. The example chart queries above handle this empty (null) value in the `where` clause. For example, `where isempty(country_filter) or ['geo.country'] == country_filter` means that if no option is chosen in the country filter, `isempty(country_filter)` is true and the data isn’t filtered. If any other option is chosen with a non-null value, the chart only displays data where the `geo.country` field’s value is the same as the value chosen in the filter.
+The examples on this page assume that you use the default setting where the **All** key means an empty value, and the empty value in a filter means that the data isn’t filtered in the chart. The example chart queries above handle this empty (null) value in the `where` clause. For example, `where isempty(country_filter) or [‘geo.country’] == country_filter` means that if no option is chosen in the country filter, `isempty(country_filter)` is true and the data isn’t filtered. If any other option is chosen with a non-null value, the chart only displays data where the `geo.country` field’s value is the same as the value chosen in the filter.
+
+## Use filters with metrics queries
+
+Filter bars work with MPL metrics queries as well as APL queries.
+
+### Reference filter variables
+
+In an MPL query, reference a filter by prefixing its ID with `$`. For example, a filter with ID `service_filter` is referenced as `$service_filter`.
+
+Use `$filter_id` in a `where` clause to filter metric series by the selected value:
+
+```kusto
+dataset:metric
+| where tag_name == $filter_id
+| align to $__interval using avg
+```
+
+**Example:**
+
+The query below filters `http.server.request.duration` to a specific service chosen in the filter bar with ID `service_filter`:
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| where `service.name` == $service_filter
+| align to $__interval using avg
+```
+
+### Optional filters
+
+By default, a filter must have a value selected for the query to run. To make a filter optional — so the query returns all data when no value is selected — use the **Unset** default and an `ifdef` block.
+
+**Configure the filter bar:**
+
+1. Create a select filter as described in [Create select filters](#create-select-filters).
+1. In the filter options, check the **Unset** box for the default value.
+
+Checking **Unset** tells Axiom to treat the variable as optional. When no option is selected, the variable is not passed to the query.
+
+**Write the query:**
+
+Wrap the `where` clause in an `ifdef` block so it only runs when the variable is set:
+
+```kusto
+dataset:metric
+| ifdef($filter_id) { where tag_name == $filter_id }
+| align to $__interval using avg
+```
+
+**Example:**
+
+The query below filters by `service.name` only when a value is selected. When the filter is unset, the query returns data for all services.
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| ifdef($service_filter) { where `service.name` == $service_filter }
+| align to $__interval using avg
+```

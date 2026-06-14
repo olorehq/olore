@@ -1,0 +1,163 @@
+---
+title: endofyear
+description: 'This page explains how to use the endofyear function in APL.'
+---
+
+Use the `endofyear` function in APL to return the end of the year containing a given datetime value. The function returns a datetime representing the last moment of that year (December 31, 23:59:59.9999999).
+
+You can use `endofyear` to align events to year-end boundaries, which is useful for annual aggregation, fiscal year analysis, and year-over-year comparisons in dashboards.
+
+Use it when you want to:
+
+- Group events by year-end boundaries for annual reporting.
+- Compare activity or metrics across calendar years.
+- Align timestamps to the end of the year for time-series bucketing.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there is no direct equivalent to `endofyear`. You typically need to extract the year and manually construct the year-end timestamp. In APL, the `endofyear` function returns the last moment of the year in a single call.
+
+<CodeGroup>
+```sql Splunk example
+... | eval year=strftime(_time, "%Y") | eval year_end=year."-12-31T23:59:59"
+```
+
+```kusto APL equivalent
+... | extend year_end = endofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you can calculate the end of the year by truncating to the year and adding an interval. Different SQL platforms offer varying syntax for this. In APL, `endofyear` provides this in a single function call.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('year', timestamp_column) + INTERVAL '1 year' - INTERVAL '1 second' AS year_end FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend year_end = endofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+endofyear(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                             |
+| -------- | ---------- | ------------------------------------------------------- |
+| datetime | `datetime` | The input datetime value.                               |
+| offset   | `long`     | Optional: The number of years to offset from the input datetime. Default is `0`. |
+
+### Returns
+
+A `datetime` representing the end of the year for the given date, shifted by the offset if specified. The return value is December 31 at 23:59:59.9999999 of the input year.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count total HTTP requests per year to understand annual traffic volume.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend year_end = endofyear(_time)
+| summarize total_requests = count() by year_end
+| sort by year_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20year_end%20%3D%20endofyear(_time)%20%7C%20summarize%20total_requests%20%3D%20count()%20by%20year_end%20%7C%20sort%20by%20year_end%20asc%22%7D)
+
+**Output**
+
+| year_end                        | total_requests |
+| ------------------------------- | -------------- |
+| 2024-12-31T23:59:59.9999999Z   | 1523           |
+| 2025-12-31T23:59:59.9999999Z   | 2841           |
+
+This query groups each HTTP log entry by its year-end boundary and counts the total number of requests per year.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Track yearly trace volume by service to compare annual activity across services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend year_end = endofyear(_time)
+| summarize trace_count = count() by year_end, ['service.name']
+| sort by year_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20year_end%20%3D%20endofyear(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20year_end%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20year_end%20asc%22%7D)
+
+**Output**
+
+| year_end                        | service.name | trace_count |
+| ------------------------------- | ------------ | ----------- |
+| 2024-12-31T23:59:59.9999999Z   | frontend     | 5320        |
+| 2024-12-31T23:59:59.9999999Z   | cart         | 2150        |
+| 2025-12-31T23:59:59.9999999Z   | frontend     | 6100        |
+
+This query counts traces per service per year, using year-end boundaries for grouping.
+
+</Tab>
+<Tab title="Security logs">
+
+Summarize yearly error totals to identify years with elevated server error rates.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend year_end = endofyear(_time)
+| summarize error_count = count() by year_end
+| sort by year_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20year_end%20%3D%20endofyear(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20year_end%20%7C%20sort%20by%20year_end%20asc%22%7D)
+
+**Output**
+
+| year_end                        | error_count |
+| ------------------------------- | ----------- |
+| 2024-12-31T23:59:59.9999999Z   | 187         |
+| 2025-12-31T23:59:59.9999999Z   | 342         |
+
+This query filters for server errors and groups them by year-end boundary to reveal annual error totals.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [startofyear](/apl/scalar-functions/datetime-functions/startofyear): Returns the start of the year for a datetime value.
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime, useful for monthly boundary calculations.
+- [endofweek](/apl/scalar-functions/datetime-functions/endofweek): Returns the end of the week for a datetime value.
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime value.
+- [getyear](/apl/scalar-functions/datetime-functions/getyear): Extracts the year part from a datetime as an integer.

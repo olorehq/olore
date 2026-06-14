@@ -12,7 +12,7 @@ Doing this involves sending impression events from LaunchDarkly to Mixpanel and 
 
 In order to perform its analyses, Mixpanel needs impression events. These events tell Mixpanel which user was exposed to which variant at which time. 
 
-These events must be called `$experiment_started` and must have the `Experiment name` and `Variant name` properties -- Mixpanel recognizes these events and uses them to autopopulate the Experiments report(/docs/reports/apps/experiments).
+These events must be called `$experiment_started` and must have the `Experiment name` and `Variant name` properties -- Mixpanel recognizes these events and uses them to autopopulate the [Experiments report](/docs/experiments).
 ```json
 {
   "event": "$experiment_started",
@@ -73,7 +73,7 @@ function checkFeatureEnabled(experimentKey, defaultValue) {
 It is possible that an engineer on your team could call this new function before showing the new feature to the user. Be sure that the assignment event is only sent once the user experiences the feature you are experimenting on.
 
 ## Using the events in Mixpanel
-If you track events according to the above spec, you can use the [Experiments report](/docs/reports/apps/experiments) to get a bird's eye view of all experiments you have running.
+If you track events according to the above spec, you can use the [Experiments report](/docs/experiments) to get a bird's eye view of all experiments you have running.
 
 You can also build [cohorts](/docs/users/cohorts) of users in each variant, and then filter/breakdown by those cohorts in any report in Mixpanel.
 

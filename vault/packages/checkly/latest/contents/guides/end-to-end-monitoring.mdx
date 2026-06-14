@@ -152,7 +152,7 @@ Unlike headful tools, headless ones tend to not be very resource-hungry, which m
 
 ![checkly check creation screenshot](/images/guides/images/guides-checkly-check.png "Check creation on Checkly")
 
-We can move our scripts to separate checks to keep them [independent](/learn/headless/valuable-tests/#keep-tests-independent) - we want to optimise for parallelisation and clarity of feedback.
+We can move our scripts to separate checks to keep them [independent](/learn/playwright/writing-tests#keep-tests-independent) - we want to optimise for parallelisation and clarity of feedback.
 
 ![checkly dashboard screenshot](/images/guides/images/guides-checkly-dashboard.png "Checkly's dashboard")
 
@@ -220,11 +220,11 @@ The best way to do this is to adopt Monitoring as Code (MaC), and implement your
 
 We learned things the hard way so you do not have to. When starting out, keep an eye out for the following pitfalls:
 
-* Non-independent tests: tests that rely on one another in any way (e.g. order of execution, test data) are hard to parallelise, resulting in longer execution times and potentially higher flakiness. [Keep your tests independent](/learn/headless/valuable-tests/#keep-tests-independent).
+* Non-independent tests: tests that rely on one another in any way (e.g. order of execution, test data) are hard to parallelise, resulting in longer execution times and potentially higher flakiness. [Keep your tests independent](/learn/playwright/writing-tests#keep-tests-independent).
 
-* Long, unfocused tests: checking too much in a single test will make failures harder to debug. [Break it up instead](/learn/headless/valuable-tests/#keep-tests-focused), and enjoy the added parallelisation.
+* Long, unfocused tests: checking too much in a single test will make failures harder to debug. [Break it up instead](/learn/playwright/writing-tests#keep-tests-focused), and enjoy the added parallelisation.
 
-* Messing up your own metrics, KPIs: remember, if you are not running against production, you want to make sure your E2E monitoring checks or tests are filtered out of your analytics. This is [rather easy to do](/monitoring/allowlisting/), with most headless browser tools normally identifying themselves as such from the start.
+* Messing up your own metrics, KPIs: remember, if you are not running against production, you want to make sure your E2E monitoring checks or tests are filtered out of your analytics. This is [rather easy to do](/platform/allowlisting-traffic), with most headless browser tools normally identifying themselves as such from the start.
 
 ## How to deploy end-to-end monitoring with Checkly
 
@@ -233,7 +233,7 @@ Step 1: Setting Up a Checkly Account
 Ensure you have an active Checkly account. If not, sign up. The default free Team trial lasts for 14 days. To access advanced features beyond the trial, subscribe to a pricing plan based on your needs. 
 Step 2: Setting Up Checkly in Repository
 After completing the installation steps, open a terminal in the directory of your project and run the following command:
-`npm create checkly@latest`
+`npx checkly init`
 This command will bootstrap your repository with the basics needed to start using Checkly MaC in your project.
 
 ![Checkly CLI project setup screenshot](/images/guides/images/guides-checkly-install.png "Creating a project in the Checkly CLI")
@@ -275,9 +275,9 @@ Then we use the `expect` function to assert that the HTTP status code of the res
 `page.title()` retrieves the title of the page and compares it with the expected title ('Introduction to Checkly | Checkly') using the `expect` function. This ensures that the page title matches the expected value.
 Finally, we take a screenshot of the page and save it as 'homepage.jpg'.
 Step 4: Running Test Sessions
-Now that we have our test scripts ready, let’s execute them. We can use the Check CLI command to execute our monitoring pipeline in our staging environment, recording the results for inspection if something fails. Run the following command in the terminal of your project repository to execute the test:
-`npx checkly test --record`
-The `--record` flag is optional, you can use it if you want to record a test session with git info, full logging, videos and traces. `--record` sessions can be reviewed within the Checkly web interface.
+Now that we have our test scripts ready, let's execute them. Run the following command in the terminal of your project repository to test your checks against Checkly's infrastructure:
+`npx checkly test`
+You can review the test session with full logging, videos and traces in the Checkly web interface.
 Here is the result of the test we just executed:
 
 ![Running tests from the CLI](/images/guides/images/guides-checkly-cli-check-run.jpg "Running tests from the CLI")
@@ -323,15 +323,15 @@ Implementing end-to-end monitoring is crucial for maintaining system health, enh
 ## Read More
 
 <div class="cards-list">
-<Card title="Monitoring as code" href="/guides/monitoring-as-code/">
+<Card title="Monitoring as code" href="/guides/getting-started-with-monitoring-as-code">
   Why should the way we manage monitoring be any different?
 </Card>
 
-<Card title="Checkly CLI" href="/guides/monitoring-as-code-cli/">
+<Card title="Checkly CLI" href="/cli/overview">
   Understand monitoring as code (MaC) via our Checkly CLI.
 </Card>
 
-<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts/">
+<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts-for-apis">
   Setup scripts are a fundamental tool to tailor API checks to your own target endpoints.
 </Card>
 </div>

@@ -3,8 +3,14 @@ title: Quickstart
 ---
 
 
-
 This quickstart demonstrates how to build a calculator agent using the LangGraph Graph API or the Functional API.
+
+<Tip>
+    **Using an AI coding assistant?**
+
+    - Install the [LangChain Docs MCP server](/use-these-docs) to give your agent access to up-to-date LangChain documentation and examples.
+    - Install [LangChain Skills](https://github.com/langchain-ai/langchain-skills) to improve your agent's performance on LangChain ecosystem tasks.
+</Tip>
 
 - [Use the Graph API](#use-the-graph-api) if you prefer to define your agent as a graph of nodes and edges.
 - [Use the Functional API](#use-the-functional-api) if you prefer to define your agent as a single function.
@@ -29,7 +35,7 @@ from langchain.chat_models import init_chat_model
 
 
 model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-6",
     temperature=0
 )
 
@@ -82,7 +88,7 @@ import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
 const model = new ChatAnthropic({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   temperature: 0,
 });
 
@@ -393,7 +399,9 @@ for (const message of result.messages) {
 :::
 
 <Tip>
-    To learn how to trace your agent with LangSmith, see the [LangSmith documentation](/langsmith/trace-with-langgraph).
+Trace and debug your agent with [LangSmith](https://smith.langchain.com). Follow the [tracing quickstart](/langsmith/trace-with-langgraph) to get set up. When ready for production, see [Deploy](/langsmith/deployment) for hosting options.
+
+We recommend you also set up [LangSmith Engine](/langsmith/engine) which monitors your traces, detects issues, and proposes fixes.
 </Tip>
 
 Congratulations! You've built your first agent using the LangGraph Graph API.
@@ -409,7 +417,7 @@ from langchain.chat_models import init_chat_model
 
 
 model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-6",
     temperature=0
 )
 
@@ -468,7 +476,7 @@ class MessagesState(TypedDict):
 from langchain.messages import SystemMessage
 
 
-def llm_call(state: dict):
+def llm_call(state: MessagesState):
     """LLM decides whether to call a tool or not"""
 
     return {
@@ -491,7 +499,7 @@ def llm_call(state: dict):
 from langchain.messages import ToolMessage
 
 
-def tool_node(state: dict):
+def tool_node(state: MessagesState):
     """Performs the tool call"""
 
     result = []
@@ -566,7 +574,7 @@ import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
 const model = new ChatAnthropic({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   temperature: 0,
 });
 
@@ -727,7 +735,7 @@ from langchain.chat_models import init_chat_model
 
 
 model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-6",
     temperature=0
 )
 
@@ -790,7 +798,7 @@ import { tool } from "@langchain/core/tools";
 import * as z from "zod";
 
 const model = new ChatAnthropic({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   temperature: 0,
 });
 
@@ -975,7 +983,9 @@ for (const message of result) {
 :::
 
 <Tip>
-    To learn how to trace your agent with LangSmith, see the [LangSmith documentation](/langsmith/trace-with-langgraph).
+Trace and debug your agent with [LangSmith](https://smith.langchain.com). Follow the [tracing quickstart](/langsmith/trace-with-langgraph) to get set up. When ready for production, see [Deploy](/langsmith/deployment) for hosting options.
+
+We recommend you also set up [LangSmith Engine](/langsmith/engine) which monitors your traces, detects issues, and proposes fixes.
 </Tip>
 
 Congratulations! You've built your first agent using the LangGraph Functional API.
@@ -991,7 +1001,7 @@ from langchain.chat_models import init_chat_model
 
 
 model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-6",
     temperature=0
 )
 
@@ -1118,7 +1128,7 @@ import * as z from "zod";
 // Step 1: Define tools and model
 
 const model = new ChatAnthropic({
-  model: "claude-sonnet-4-5-20250929",
+  model: "claude-sonnet-4-6",
   temperature: 0,
 });
 

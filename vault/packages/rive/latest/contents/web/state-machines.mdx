@@ -13,7 +13,7 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
 
 <PlayingStateMachines />
 
-#### Autoplay the State Machine
+### Autoplay the State Machine
 
 To autoplay a state machine immediately after it loads, simply set `autoplay` to `true`.
 
@@ -27,7 +27,7 @@ const r = new rive.Rive({
 });
 ```
 
-#### Controlling State Machine Playback
+### Controlling State Machine Playback
 
 You can manually play and pause the State Machine using the `play`, `pause`, and `stop` methods.
 
@@ -50,4 +50,15 @@ const handlePause = () => {
 const handleStop = () => {
   r.stop()
 }
+```
+
+### reset()
+
+To dispose the current artboard / animation / state machine instances and create fresh ones (optionally changing artboard or `stateMachines`), use **`reset()`**. Pass the same kinds of options you use on the constructor. See [Rive Parameters](/runtimes/web/rive-parameters) for the full **`RiveResetParameters`** fields (`artboard`, `stateMachines`, `autoplay`, `autoBind`).
+
+```js
+r.reset({
+  stateMachines: 'bumpy',
+  autoplay: true,
+});
 ```

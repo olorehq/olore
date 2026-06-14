@@ -1,0 +1,164 @@
+---
+title: hourofday
+description: 'This page explains how to use the hourofday function in APL.'
+---
+
+Use the `hourofday` function in APL to extract the hour of the day from a datetime value. The function returns an integer from 0 to 23, where 0 represents midnight and 23 represents 11 PM.
+
+You can use `hourofday` to group records by hour for time-of-day analysis, peak traffic identification, and intraday pattern detection. This is useful for operational dashboards, capacity planning, and anomaly detection.
+
+Use it when you want to:
+
+- Identify peak traffic hours in your services.
+- Analyze hourly patterns in request volume or error rates.
+- Create time-of-day summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%H` specifier to extract the hour of the day. In APL, the `hourofday` function directly returns the hour as an integer.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hour=strftime(_time, "%H")
+```
+
+```kusto APL equivalent
+... | extend hour = hourofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `EXTRACT(HOUR FROM timestamp)` or the `HOUR()` function to get the hour. In APL, `hourofday` provides the same result.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(HOUR FROM timestamp_column) AS hour FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend hour = hourofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hourofday(datetime)
+```
+
+### Parameters
+
+| Name | Type       | Description               |
+| ---- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` from 0 to 23 representing the hour of the day.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Analyze HTTP request volume by hour to identify peak traffic periods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hour = hourofday(_time)
+| summarize request_count = count() by hour
+| sort by hour asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20hour%20%3D%20hourofday(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20hour%20%7C%20sort%20by%20hour%20asc%22%7D)
+
+**Output**
+
+| hour | request_count |
+| ---- | ------------- |
+| 0    | 312           |
+| 1    | 287           |
+| 14   | 1523          |
+
+This query groups HTTP log entries by hour and counts the requests per hour, revealing peak and off-peak periods.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Find peak hours for trace activity by service to understand when services experience the highest load.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hour = hourofday(_time)
+| summarize trace_count = count() by hour, ['service.name']
+| sort by hour asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20hour%20%3D%20hourofday(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20hour%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20hour%20asc%22%7D)
+
+**Output**
+
+| hour | service.name | trace_count |
+| ---- | ------------ | ----------- |
+| 9    | frontend     | 2450        |
+| 10   | frontend     | 2780        |
+| 14   | cart         | 1340        |
+
+This query shows the hourly distribution of traces per service, helping you identify when each service is busiest.
+
+</Tab>
+<Tab title="Security logs">
+
+Detect after-hours error spikes by analyzing the hourly distribution of HTTP errors.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend hour = hourofday(_time)
+| summarize error_count = count() by hour
+| sort by hour asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20hour%20%3D%20hourofday(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20hour%20%7C%20sort%20by%20hour%20asc%22%7D)
+
+**Output**
+
+| hour | error_count |
+| ---- | ----------- |
+| 2    | 87          |
+| 3    | 92          |
+| 15   | 34          |
+
+This query reveals the hourly pattern of HTTP errors, helping you detect unusual activity during off-peak hours.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [dayofweek](/apl/scalar-functions/datetime-functions/dayofweek): Returns the day of the week as a timespan, complementing hourly analysis with day-level detail.
+- [dayofmonth](/apl/scalar-functions/datetime-functions/dayofmonth): Returns the day of the month from a datetime.
+- [datetime-part](/apl/scalar-functions/datetime-functions/datetime-part): Extracts a specific date part (such as hour) as an integer.
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime, useful for daily binning.
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime value.

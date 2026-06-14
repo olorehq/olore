@@ -1,15 +1,23 @@
 ---
 title: Claimable database integration guide
 subtitle: Manage Neon projects for users with the project database claim API
+summary: >-
+  The Neon project transfer API lets you provision a Postgres database,
+  generate a time-limited transfer request, and send the user a claim URL.
+  The user takes full ownership without losing the original connection
+  string. Use this pattern for SaaS onboarding flows, agency handoffs, or
+  demo environments where instant database access must precede account
+  creation. The feature is in private preview and does not support
+  transferring projects into Vercel-managed Neon organizations.
 enableTableOfContents: true
-updatedOn: '2025-11-17T20:56:53.511Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Overview
 
-The project transfer functionality enables you to provision fully-configured Postgres databases on behalf of your users and seamlessly transition ownership. This capability eliminates the technical overhead of database setup while ensuring your users maintain complete control of their database resources.
+The project transfer functionality enables you to provision fully-configured Postgres databases on behalf of your users and transfer ownership when ready. This capability eliminates the technical overhead of database setup while ensuring your users maintain complete control of their database resources.
 
-<CTA title="Availability Status" description="This feature is available in private preview only. To enable this functionality for your account, <a href='https://neon.com/partners#partners-apply'>contact our partnership team</a>." isIntro></CTA>
+<CTA title="Availability Status" description="This feature is available in private preview only. To enable this functionality for your account, <a href='https://neon.com/partners#partners-apply'>contact our partnership team</a>."></CTA>
 
 ## Simplified workflow
 
@@ -211,7 +219,7 @@ Without the `org_id` parameter, the project transfers to the user's personal acc
 - **Expiration**: Requests expire after the specified `ttl_seconds` (default: 24 hours). Once expired, you must create a new transfer request
 - **One-time use**: Each transfer request can only be used once
 - **Already claimed**: If a project has already been claimed, subsequent attempts will fail with an error
-- **Vercel orgs not supported**: Transferring a project into a Vercel-managed Neon [organization](/docs/reference/glossary#organization) via the claim flow is not supported, meaning that if you created your Neon account through the [Vercel-managed integration](/docs/guides/vercel-managed-integration), you cannot claim projects into the Neon organizaton created by that integration.
+- **Vercel orgs not supported**: Transferring a project into a Vercel-managed Neon [organization](/docs/reference/glossary#organization) via the claim flow is not supported, meaning that if you created your Neon account through the [Vercel-managed integration](/docs/guides/vercel-managed-integration), you cannot claim projects into the Neon organization created by that integration.
 
 ### Security considerations
 
@@ -223,7 +231,7 @@ Without the `org_id` parameter, the project transfers to the user's personal acc
 
 - **Connection persistence**: Database connection strings remain valid after transfer
 - **Organization transfers**: Users must be members of the target organization
-- **Organization ID format**: `org-[descriptive-term]-[numeric-id]` (e.g., `org-cool-breeze-12345678`)
+- **Organization ID format**: `org-[descriptive-term]-[numeric-id]` (for example, `org-cool-breeze-12345678`)
 - **Vercel organization limitation**: Projects cannot be claimed into Vercel organizations
 
 ## Example use cases
@@ -234,7 +242,7 @@ Without the `org_id` parameter, the project transfers to the user's personal acc
 - **Demo environments** - Create ready-to-use demo databases that prospects can claim
 - **Team environments** - Provision project databases for team members to claim into their organization
 
-For a working implementation of claimable databases, try [Instagres](https://neon.new/). This service demonstrates the complete flow: users receive a Postgres connection string immediately without creating an account, and databases remain active for 72 hours. To retain the database beyond this period, users claim it by creating a Neon account using the provided transfer URL. See the [Instagres documentation](/docs/reference/instagres) for implementation details. This same pattern enables SaaS providers to offer instant database provisioning while allowing users to take ownership when ready.
+For a working implementation of claimable databases, try [Claimable Postgres by Neon](https://neon.new/). This service demonstrates the complete flow: users receive a Postgres connection string immediately without creating an account, and databases remain active for 72 hours. To retain the database beyond this period, users claim it by creating a Neon account using the provided transfer URL. See the [Claimable Postgres documentation](/docs/reference/claimable-postgres) for implementation details. This same pattern enables SaaS providers to offer instant database provisioning while allowing users to take ownership when ready.
 
 ## Troubleshooting
 

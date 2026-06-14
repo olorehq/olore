@@ -37,7 +37,7 @@ Though the rest of this guide will refer to our developer as the person we're en
 First off, our developer may not be very excited to log into a web interface to create new monitors. Since developers are used to running and deploying code from the command line, we want to make available the Checkly CLI to our developers. A [full guide to the Checkly CLI](https://www.checklyhq.com/cli/overview) is on our documentation site, but in general the process would look like:
 
 1. Set up the CLI on the developer's machine - install is easy with npm, then the developer can authenticate their cli with `npx checkly login`.
-2. Create a new project - developers can either grab an existing repository with the team's checks, or use `npm create checkly@latest` to make a new project.
+2. Create a new project - developers can either grab an existing repository with the team's checks, or use `npx checkly init` to make a new project.
 3. Run your checks - rather than running new Playwright checks from the developer's laptop, they can run checks through the whole Checkly system with `npx checkly test`, the tool will scan the project for tests, run them as configured from the real geographic locations, and give a local report on results.
 4. Deploy your checks - Once the developer is happy with their checks, they can deploy them with `npx checkly deploy`, and they'll show up for all users in the web interface.
 
@@ -86,11 +86,9 @@ So group settings will override global settings, and individual settings will ov
 * While groups are a useful feature of Checkly, and will make sense for some applications, you may also be served by using Javascript and Typescript's native features for [inheritance](https://www.typescriptlang.org/docs/handbook/2/classes.html). Since files can inherit modules from others, it's possible to share configuration very cleanly, is as complex a heirarchy as you'd like, using these native features. This especially may make sense if you're going deep into [Monitoring as Code](https://docs.checklyhq.com/guides/getting-started-with-monitoring-as-code/) and want to set up a complex repository for all monitoring. Native features also help support the next section on using fixtures to share code blocks.
 
 ## Sharing code for repeated tasks
-While there are sophisticated ways to share authentication across checks discussed in other guides, it's good to know how to share code with fixtures for common repeated tasks. Let's imagine an example where we've got a web shop with a login modal that we need to fill out before doing further account actions. The goal of my check isn't really to test this modal, it just needs to be filled out before my *real* testing, where I look at my demo user's recent orders:
+While there are sophisticated ways to share authentication across checks discussed in other guides, it's good to know how to share code with fixtures for common repeated tasks. Let's imagine an example where we've got a web shop with a login modal that we need to fill out before doing further account actions. The goal of my check isn't really to test this modal, it just needs to be filled out before my *real* testing, where I look at my demo user's recent orders.
 
-![A web shop login dialog](/images/samples/images/webshop-login.png)
-
-To open this modal and log in, we might use some lines like the following:
+To open a modal and log in, we might use some lines like the following:
 
 ```ts RecentOrders.test.ts
 import { test, expect } from '@playwright/test';

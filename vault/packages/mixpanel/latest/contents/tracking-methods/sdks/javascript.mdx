@@ -84,6 +84,8 @@ The [Full API Reference](https://github.com/mixpanel/mixpanel-js/blob/master/doc
 
 ### Library Configuration
 
+<Callout type="warning">For projects with EU or India data residency, you must configure the SDK to use the correct regional endpoint. Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/javascript#privacy-friendly-tracking).</Callout>
+
 The Mixpanel object can be initialized with different configurations. See a complete list of the configuration options and default values [here](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelset_config).
 
 You can override the default configuration using the `config` argument when initializing the library.
@@ -956,9 +958,6 @@ There are two steps: setting up a proxy server and pointing our JavaScript SDK a
 
 Below is a complete nginx reference configuration that proxies all Mixpanel traffic — tracking, Session Replay, and CDN assets — through your own domain. Adapt the path prefix and domain to your environment.
 
-<Callout type="info">
-  **Why different upstream hosts?** Most Mixpanel endpoints use `api.mixpanel.com`, but Session Replay's `/record` endpoint uses `api-js.mixpanel.com`. Your proxy must route each to the correct host or recordings will fail.
-</Callout>
 ```nginx
 # -------------------------------------------------------------------
 # Mixpanel Proxy – nginx reference config
@@ -971,96 +970,57 @@ Below is a complete nginx reference configuration that proxies all Mixpanel traf
 # -------------------------------------------------------------------
 
 # Tracking endpoints → api.mixpanel.com
-location ~* ^/_mp/(track|engage|groups|import)(/.*)?$ {
-    set $mixpanel_upstream "api.mixpanel.com";
-    proxy_pass https://$mixpanel_upstream/$1$2$is_args$args;
-    proxy_set_header Host $mixpanel_upstream;
+# If you have EU or IN residency enabled, use api-eu.mixpanel.com or api-in.mixpanel.com respectively
+location /_mp/api/ {
+    proxy_ssl_server_name on;
+    proxy_set_header Host api.mixpanel.com;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_http_version 1.1;
-    proxy_set_header Connection "";
-    proxy_buffering off;
+    proxy_set_header X-Forwarded-Host $server_name;
     client_max_body_size 10m;
+    proxy_pass https://api.mixpanel.com/;
 }
 
-# Session Replay → api-js.mixpanel.com
-# The SDK posts gzipped application/octet-stream payloads to /record/.
-# You MUST forward Authorization, Content-Type, and Content-Encoding
-# headers exactly as-is or recordings will corrupt / fail.
-location ~* ^/_mp/record(/.*)?$ {
-    set $mixpanel_upstream "api-js.mixpanel.com";
-    proxy_pass https://$mixpanel_upstream/record$1$is_args$args;
-    proxy_set_header Host $mixpanel_upstream;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_http_version 1.1;
-    proxy_set_header Connection "";
-    proxy_buffering off;
-    client_max_body_size 10m;
-}
-
-# CDN assets (JS SDK, Session Replay recorder, targeting scripts)
-# Proxying these prevents blockers from targeting cdn.mxpnl.com.
-location /_mp/lib.min.js {
-    set $mixpanel_cdn "cdn.mxpnl.com";
-    proxy_pass https://$mixpanel_cdn/libs/mixpanel-2-latest.min.js;
-    proxy_set_header Host $mixpanel_cdn;
-}
-
-location /_mp/lib.js {
-    set $mixpanel_cdn "cdn.mxpnl.com";
-    proxy_pass https://$mixpanel_cdn/libs/mixpanel-2-latest.js;
-    proxy_set_header Host $mixpanel_cdn;
-}
-
-location /_mp/recorder.min.js {
-    set $mixpanel_cdn "cdn.mxpnl.com";
-    proxy_pass https://$mixpanel_cdn/libs/mixpanel-recorder.min.js;
-    proxy_set_header Host $mixpanel_cdn;
-}
-
-location /_mp/targeting.min.js {
-    set $mixpanel_cdn "cdn.mxpnl.com";
-    proxy_pass https://$mixpanel_cdn/libs/mixpanel-targeting.min.js;
-    proxy_set_header Host $mixpanel_cdn;
+# Proxy all async module files (recorder, targeting, etc.) to cdn.mxpnl.com/libs/
+location /_mp/libs/ {
+    proxy_ssl_server_name on;
+    proxy_set_header Host cdn.mxpnl.com;
+    proxy_pass https://cdn.mxpnl.com/libs/;
 }
 ```
 
 ### Step 2: Point the JavaScript SDK at your proxy
 
-Define your proxy host and set `MIXPANEL_CUSTOM_LIB_URL` **before** the Mixpanel JS snippet (not required if you load the SDK via npm/yarn):
+Set `MIXPANEL_CUSTOM_LIB_URL` **before** the Mixpanel JS snippet to load the SDK itself through your proxy (not required if you load the SDK via npm/yarn):
 ```javascript
 const MIXPANEL_PROXY_HOST = "https://your-domain.com/_mp";
-const MIXPANEL_CUSTOM_LIB_URL = MIXPANEL_PROXY_HOST + "/lib.min.js";
+const MIXPANEL_CUSTOM_LIB_URL = MIXPANEL_PROXY_HOST + "/libs/mixpanel-2-latest.min.js";
 ```
 
-Then pass the proxy host and CDN asset paths in `mixpanel.init`:
+Then pass the proxy paths in `mixpanel.init`:
 ```javascript
 mixpanel.init("YOUR_PROJECT_TOKEN", {
-    api_host: MIXPANEL_PROXY_HOST,
-    recorder_src: MIXPANEL_PROXY_HOST + "/recorder.min.js",
-    targeting_src: MIXPANEL_PROXY_HOST + "/targeting.min.js",
+    api_host: MIXPANEL_PROXY_HOST + "/api",
+    lib_base_path: MIXPANEL_PROXY_HOST + "/libs/",
 });
 ```
 
 | Init option | Purpose |
 |---|---|
 | `api_host` | Routes all tracking & Session Replay API calls through your proxy |
-| `recorder_src` | Loads the Session Replay recorder script from your proxy instead of `cdn.mxpnl.com` |
-| `targeting_src` | Loads the targeting script from your proxy instead of `cdn.mxpnl.com` |
+| `lib_base_path` | Base path for all async SDK modules (recorder, targeting, etc.) — loads them from your proxy instead of `cdn.mxpnl.com` |
 
 <Callout type="warning">
-  If you use Session Replay but only set `api_host` without proxying the CDN assets, ad-blockers may still block the recorder and targeting scripts loaded from `cdn.mxpnl.com`.
+  If you use Session Replay but only set `api_host` without setting `lib_base_path`, ad-blockers may still block the async module scripts loaded from `cdn.mxpnl.com`.
 </Callout>
 
 ### Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| Session Replay recordings missing or corrupted | `/record` not routed to `api-js.mixpanel.com`, or `Authorization` / `Content-Encoding` headers stripped by the proxy |
-| CORS errors on `/record` | Proxy is rewriting the `Host` header or not forwarding it correctly |
+| Session Replay recordings missing or corrupted | Proxy is not forwarding `Authorization` / `Content-Encoding` headers correctly |
 | 4xx/5xx on tracking calls | Proxy path prefix not stripped properly — verify `proxy_pass` rewrites match your location blocks |
-| Ad-blocker still blocks requests | CDN assets (`lib.min.js`, `recorder.min.js`, `targeting.min.js`) are still loaded directly from `cdn.mxpnl.com` — set `MIXPANEL_CUSTOM_LIB_URL`, `recorder_src`, and `targeting_src` |
+| Ad-blocker still blocks requests | CDN assets are still loaded directly from `cdn.mxpnl.com` — set `MIXPANEL_CUSTOM_LIB_URL` and `lib_base_path` |
+| Feature flag requests `/flags` failing with 401 | The `/flags` endpoint requires an `Authorization` header, unlike `/track` which only needs the project token. Ensure your proxy explicitly forwards the `Authorization` header to Mixpanel and does not strip it. |
 
 ## Session Replay
 

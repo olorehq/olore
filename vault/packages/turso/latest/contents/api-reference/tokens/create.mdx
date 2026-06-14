@@ -9,11 +9,46 @@ The `token` in the response is never revealed again. Store this somewhere safe, 
 
 </Warning>
 
+<Warning>
+
+**Unrestricted (cross-org) tokens are deprecated and will be removed in a future release.** Always include at least `organization` in the request body.
+
+</Warning>
+
 <RequestExample>
 
-```bash cURL
+```bash cURL (org-scoped)
+curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"organization": "my-org"}'
+```
+
+```bash cURL (deprecated, unrestricted)
 curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
   -H 'Authorization: Bearer TOKEN'
+```
+
+```bash cURL (group-scoped, presets)
+curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "organization": "my-org",
+    "group": "default",
+    "scopes": ["read-only"]
+  }'
+```
+
+```bash cURL (group-scoped, fine-grained)
+curl -L -X POST https://api.turso.tech/v1/auth/api-tokens/{tokenName} \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "organization": "my-org",
+    "group": "default",
+    "scopes": ["db:create", "db:configure", "db:mint-token"]
+  }'
 ```
 
 ```ts Node.js

@@ -79,13 +79,15 @@ Calculate the total cost of a GenAI API call based on model and token usage.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend model = ['attributes.gen_ai.response.model']
 | extend input_tokens = tolong(['attributes.gen_ai.usage.input_tokens'])
 | extend output_tokens = tolong(['attributes.gen_ai.usage.output_tokens'])
 | extend api_cost = genai_cost(model, input_tokens, output_tokens)
 | summarize total_cost = sum(api_cost), avg_cost = avg(api_cost)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20model%20%3D%20%5B%27attributes.gen_ai.response.model%27%5D%20%7C%20extend%20input_tokens%20%3D%20tolong(%5B%27attributes.gen_ai.usage.input_tokens%27%5D)%20%7C%20extend%20output_tokens%20%3D%20tolong(%5B%27attributes.gen_ai.usage.output_tokens%27%5D)%20%7C%20extend%20api_cost%20%3D%20genai_cost(model%2C%20input_tokens%2C%20output_tokens)%20%7C%20summarize%20total_cost%20%3D%20sum(api_cost)%2C%20avg_cost%20%3D%20avg(api_cost)%22%7D)
 
 **Output**
 

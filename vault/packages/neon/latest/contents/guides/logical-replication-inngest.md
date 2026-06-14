@@ -1,9 +1,17 @@
 ---
 title: Replicate data with Inngest
 subtitle: Learn how to replicate data from Neon with Inngest
+summary: >-
+  Inngest's native Neon integration uses Postgres logical replication to convert
+  row-level database changes into typed events (such as db/users.updated) that
+  trigger durable, serverless TypeScript workflows. Choose this approach when you
+  need to forward Neon Postgres changes to third-party destinations like
+  Amplitude or S3 without writing a custom replication consumer. Setup requires
+  enabling logical replication in the Neon console and supplying admin
+  credentials to the Inngest integration wizard (credentials are not stored).
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-02-03T20:41:57.321Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from your Neon Postgres database to external destinations.
@@ -17,6 +25,10 @@ In this guide, you will learn how to configure your Inngest account for ingestin
 - A [Inngest account](https://www.inngest.com?utm_source=neon&utm_medium=logical-replication-guide)
 - A [Neon account](https://console.neon.tech/)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Enabling Logical Replication on your database
 

@@ -1,10 +1,17 @@
 ---
 title: Security overview
+summary: >-
+  Neon enforces SSL/TLS encryption (verify-full mode), 60-bit entropy
+  passwords, AES-256 data-at-rest encryption, IP allowlists (Scale plan),
+  and AWS PrivateLink private networking. A connection proxy blocks
+  unauthorized login attempts. The page also covers GitHub secret scanning,
+  protected branches, vulnerability management, and the HackerOne bug
+  bounty program.
 enableTableOfContents: true
 redirectFrom:
   - /docs/security/security
   - /docs/security
-updatedOn: '2025-08-20T10:56:24.959Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 At Neon, security is our highest priority. We are committed to implementing best practices and earning the trust of our users. A key aspect of earning this trust is by ensuring that every touchpoint in our system, from connections, to data storage, to our internal processes, adheres to the highest security standards.
@@ -13,17 +20,17 @@ At Neon, security is our highest priority. We are committed to implementing best
 
 Neon supports a variety of protections related to database connections:
 
-- **SSL/TLS encryption** — Neon requires that all connections use SSL/TLS encryption to ensure that data sent over the Internet cannot be viewed or manipulated by third parties.
+- **SSL/TLS encryption**: Neon requires that all connections use SSL/TLS encryption to ensure that data sent over the Internet cannot be viewed or manipulated by third parties.
 
   Neon supports the `verify-full` SSL mode for client connections, which is the strictest SSL mode provided by PostgreSQL. When set to `verify-full`, a PostgreSQL client verifies that the server's certificate is issued by a trusted certificate authority (CA), and that the server host name matches the name stored in the certificate. This helps prevent man-in-the-middle attacks. For information about configuring `verify-full` SSL mode for your connections, see [Connect securely](/docs/connect/connect-securely).
 
-- **Secure password enforcement** — Neon requires a 60-bit entropy password for all Postgres roles. This degree of entropy ensures that passwords have a high level of randomness. Assuming a perfect distribution of choices for every bit of entropy, a password with 60 bits of entropy has 2^60 (or about 1.15 quintillion) possible combinations, which makes it computationally infeasible for attackers to guess the password through brute-force methods. For Postgres roles created via the Neon Console, API, and CLI, passwords are generated with 60-bit entropy. For Postgres roles created via SQL, user-defined passwords are validated at creation time to ensure 60-bit entropy.
+- **Secure password enforcement**: Neon requires a 60-bit entropy password for all Postgres roles. This degree of entropy ensures that passwords have a high level of randomness. Assuming a perfect distribution of choices for every bit of entropy, a password with 60 bits of entropy has 2^60 (or about 1.15 quintillion) possible combinations, which makes it computationally infeasible for attackers to guess the password through brute-force methods. For Postgres roles created via the Neon Console, API, and CLI, passwords are generated with 60-bit entropy. For Postgres roles created via SQL, user-defined passwords are validated at creation time to ensure 60-bit entropy.
 
-- **The Neon Proxy** — Neon places a proxy in front of your database, which helps safeguard it from unauthorized login attempts. For example, in Postgres, each login attempt spawns a new process, which can pose a security risk. The [Neon Proxy](/docs/reference/glossary#neon-proxy) mitigates this by monitoring connection attempts and preventing misuse. The Neon Proxy also allows us to authenticate connections before they ever reach your Postgres database.
+- **The Neon Proxy**: Neon places a proxy in front of your database, which helps safeguard it from unauthorized login attempts. For example, in Postgres, each login attempt spawns a new process, which can pose a security risk. The [Neon Proxy](/docs/reference/glossary#neon-proxy) mitigates this by monitoring connection attempts and preventing misuse. The Neon Proxy also allows us to authenticate connections before they ever reach your Postgres database.
 
-- **IP Allow** — For additional connection security, the Neon Scale plan offers [IP allowlist support](#ip-allowlist-support), which lets you to limit access to trusted IPs.
+- **IP Allow**: For additional connection security, the Neon Scale plan offers [IP allowlist support](#ip-allowlist-support), which lets you to limit access to trusted IPs.
 
-- **Private Networking** — This feature enables connections to your Neon databases via AWS PrivateLink, bypassing the open internet entirely. See [Private Networking](/docs/guides/neon-private-networking).
+- **Private Networking**: This feature enables connections to your Neon databases via AWS PrivateLink, bypassing the open internet entirely. See [Private Networking](/docs/guides/neon-private-networking).
 
 ## IP allowlist support
 
@@ -93,7 +100,7 @@ All systems are hosted on AWS and Azure, where we have implemented specific secu
 
 - **Vulnerability Management with Orca and Oligo**
 
-  Our vulnerability management program, integrated with Orca and Oligo, continuously scans all AWS and Azure environments for security issues, including misconfigurations, unpatched software, and exposed credentials. We leverage tagging to classify certain data types, enabling focused monitoring and scanning based on the sensitivity of the data. Automated alerts allow us to address vulnerabilities before they pose a risk to PII or other sensitive information. The vulnerabilities are remediated according to the defined SLAs to reduce the risk.
+  Our vulnerability management program, integrated with Orca and Oligo, continuously scans all AWS and Azure environments for security issues, including misconfigurations, unpatched software, and exposed credentials. We use tagging to classify certain data types, enabling focused monitoring and scanning based on the sensitivity of the data. Automated alerts allow us to address vulnerabilities before they pose a risk to PII or other sensitive information. The vulnerabilities are remediated according to the defined SLAs to reduce the risk.
 
 - **Annual Audits and Continuous Penetration Testing**
 
@@ -115,11 +122,19 @@ To avoid leaking secrets, follow these security best practices:
 
 If you have questions about this integration or need help securing your credentials, contact us at `security@neon.tech`.
 
+## Abuse of resources
+
+Users must not engage in activities that result in unintended or non-permitted use of Neon resources, or that disrupt or degrade the service for other users. Prohibited activities include, but are not limited to, intentional or unintentional denial-of-service attacks, exceeding [rate limits](/docs/reference/api-reference#rate-limiting), using Neon for distributed computing projects, using Neon as general-purpose file storage, or other usage that falls outside the intended resource usage and limits of the applicable [Neon plan](/docs/introduction/plans).
+
+## Unauthorized modifications
+
+Tampering with Neon's infrastructure, configurations, or any restricted settings is prohibited. Doing so will be considered a violation of our terms. This includes attempts to alter Neon-managed serverless configurations or storage settings without proper authorization.
+
 ## Security reporting
 
 Neon adheres to the [securitytxt.org](https://securitytxt.org/) standard for transparent and efficient security reporting. For details on how to report potential vulnerabilities, please visit our [Security reporting](/docs/security/security-reporting) page or refer to our [security.txt](/security.txt) file.
 
-Neon also has a [private bug bounty program with Hackerone](/docs/security/security-reporting#bug-bounty-program-with-hackerone).
+Neon also has a [public bug bounty program with HackerOne](/docs/security/security-reporting#bug-bounty-program-with-hackerone).
 
 ## Questions about our security measures?
 

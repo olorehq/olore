@@ -1,0 +1,50 @@
+---
+title: Query metrics skill
+description: "This page explains how to use the Query metrics skill to give AI coding agents the ability to query and explore OpenTelemetry metrics in Axiom's MetricsDB."
+sidebarTitle: Query metrics
+keywords: ["skills", "ai agents", "query-metrics", "amp", "claude code", "cursor", "codex", "metrics", "opentelemetry", "otel", "metricsdb"]
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
+
+The Query metrics skill turns AI agents into metrics exploration experts:
+
+- **Metrics query specification**: Self-describing query endpoint that teaches the agent how to write metrics queries on demand
+- **Metrics discovery**: Explore available metrics, tags, and tag values in any OTel metrics dataset
+- **Query execution**: Compose and run metrics queries with filtering, aggregation, and grouping
+- **Error handling**: Structured error reporting with trace IDs for backend debugging
+
+<Prerequisites />
+
+<Note>
+The target dataset must be an OTel metrics dataset.
+</Note>
+
+<SkillsCredentials />
+
+## Use Query metrics skill
+
+The Query metrics skill activates automatically when you ask your AI agent to:
+
+- Query metrics data from Axiom MetricsDB
+- Explore available metrics, tags, and tag values in a dataset
+- Investigate OTel metrics data
+- Check metric values for debugging or monitoring
+
+Example prompts:
+
+- "Query the CPU usage metric from the app.metrics dataset"
+- "What metrics are available in the dataset?"
+- "Show the tag values for the service.name tag"
+- "Find metrics related to HTTP requests"
+
+## How it works
+
+The Query metrics skill uses a structured workflow:
+
+1. **Learn the query specification**: The agent calls the self-describing query endpoint to fetch the full metrics query specification.
+1. **Discover metrics**: The agent searches for metrics matching relevant terms or lists available metrics in the target dataset using the discovery endpoints.
+1. **Explore tags**: The agent lists tags and tag values to understand the available filtering options.
+1. **Write and execute query**: The agent composes a metrics query and runs it against MetricsDB.
+1. **Iterate**: The agent refines filters, aggregations, and groupings based on results.

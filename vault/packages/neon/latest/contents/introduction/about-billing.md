@@ -2,10 +2,13 @@
 title: Plans and billing
 enableTableOfContents: true
 subtitle: Learn about Neon's pricing plans and how to manage billing
+summary: >-
+  Neon's pricing plans, how to manage billing, monitor usage, and strategies
+  for cost optimization.
 redirectFrom:
   - /docs/introduction/billing-overview
   - /docs/introduction/how-billing-works
-updatedOn: '2025-11-27T14:20:46.132Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Neon plans
@@ -13,8 +16,6 @@ updatedOn: '2025-11-27T14:20:46.132Z'
 <DetailIconCards>
 
 <a href="/docs/introduction/plans" description="Learn about Neon's usage-based pricing plans and what's included" icon="cards">Plans</a>
-
-<a href="/docs/introduction/legacy-plans" description="A reference for users currently on these plans — not available for new signups" icon="cards">Legacy plans</a>
 
 </DetailIconCards>
 
@@ -26,7 +27,11 @@ updatedOn: '2025-11-27T14:20:46.132Z'
 
 <a href="/docs/introduction/monitor-usage" description="Learn how to monitor billing and usage in Neon" icon="setup">Monitor billing and usage</a>
 
-<a href="/docs/introduction/cost-optimization" description="Strategies to manage and reduce your Neon costs across compute, storage, and data transfer" icon="setup">Cost optimization</a>
+<a href="/docs/introduction/usage-calculations" description="Convert raw API metrics into billing units and calculate your costs" icon="setup">Usage and cost calculations</a>
+
+<a href="/docs/introduction/cost-optimization" description="Strategies to manage and reduce your Neon costs" icon="setup">Cost optimization</a>
+
+<a href="/docs/introduction/network-transfer" description="Monitor and reduce network transfer costs" icon="setup">Network transfer costs</a>
 
 </DetailIconCards>
 
@@ -35,7 +40,5 @@ updatedOn: '2025-11-27T14:20:46.132Z'
 <DetailIconCards>
 
 <a href="/enterprise" description="Find out how Enterprises are maximizing engineering efficiency with Neon" icon="handshake">Neon for the Enterprise</a>
-
-<a href="/docs/introduction/enterprise-sales-process" description="Learn about Neon's Enterprise sales process and what to expect" icon="import">Neon Enterprise Sales Process</a>
 
 </DetailIconCards>

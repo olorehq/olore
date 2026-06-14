@@ -1,10 +1,17 @@
 ---
 title: Query with Neon's SQL Editor
 subtitle: Query your database from the Neon Console using the Neon SQL Editor
+summary: >-
+  The Neon SQL Editor is a browser-based query interface built into the Neon
+  Console that runs SQL against any database branch without installing a client.
+  Use it to run EXPLAIN and EXPLAIN ANALYZE, query historical data with Time
+  Travel, and generate SQL from natural language. Query history entries are
+  capped at 9 KB. AI features are rate-limited, and results export as CSV,
+  JSON, or XLSX.
 enableTableOfContents: true
 redirectFrom:
   - /docs/get-started/tutorials
-updatedOn: '2026-02-04T13:28:35.599Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The Neon SQL Editor allows you to run queries on your Neon databases directly from the Neon Console. In addition, the editor keeps a query history, permits saving queries, and provides [**Explain**](https://www.postgresql.org/docs/current/sql-explain.html) and [**Analyze**](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE) features.
@@ -71,7 +78,7 @@ Understanding the information provided by the **Explain** and **Analyze** featur
 
 ## Time Travel
 
-You can toggle Time Travel in the SQL Editor to switch from querying your current data to querying against a selected point within your [restore window](/docs/introduction/restore-window).
+You can toggle Time Travel in the SQL Editor to switch from querying your current data to querying against a selected point within your [history window](/docs/introduction/history-window).
 
 ![time travel in SQL Editor](/docs/get-started/time_travel_sql_editor.png)
 
@@ -102,9 +109,9 @@ Meta-commands can significantly speed up your workflow by providing quick access
 
 Here are some of the meta-commands that you can use within the Neon SQL Editor:
 
-- `\dt` — List all tables in the current database.
-- `\d [table_name]` — Describe a table's structure.
-- `\l` — List all databases.
+- `\dt`: List all tables in the current database.
+- `\d [table_name]`: Describe a table's structure.
+- `\l`: List all databases.
 - `\?` - A cheat sheet of available meta-commands
 - `\h [NAME]` - Get help for any Postgres command. For example, try `\h SELECT`.
 
@@ -192,7 +199,7 @@ The Neon SQL Editor offers three AI-driven features:
 - **SQL generation**: Easily convert natural language requests to SQL. Press the ✨ button or **Cmd/Ctrl+Shift+M**, type your request, and the AI assistant will generate the corresponding SQL for you. It’s schema-aware, meaning you can reference any table names, functions, or other objects in your schema.
   ![SQL generation](/docs/get-started/sql_editor_ai.png)
 - **Fix with AI**: If your query returns an error, simply click **Fix with AI** next to the error message. The AI assistant will analyze the error, suggest a fix, and update the SQL Editor so you can run the query again.
-  ![Fix withn AI](/docs/get-started/fix_with_ai.png)
+  ![Fix with AI](/docs/get-started/fix_with_ai.png)
 - **AI-generated query names**: Descriptive names are automatically assigned to your queries in the Neon SQL Editor's **History**. This feature helps you quickly identify and reuse previously executed queries.
   ![AI-generated query names](/docs/get-started/query_names.png)
 

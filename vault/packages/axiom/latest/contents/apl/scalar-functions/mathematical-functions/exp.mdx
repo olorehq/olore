@@ -1,0 +1,96 @@
+---
+title: exp
+description: 'This page explains how to use the exp function in APL.'
+---
+
+Use the `exp` function in APL to compute the base-e exponential of a value: e^x. It's the inverse of the natural logarithm function `log`.
+
+`exp` is useful when you work with log-transformed data and need to recover the original scale. For example, if you have computed the average of log-transformed latencies and want the geometric mean on the original scale, apply `exp` to the result. You can also use `exp` to model exponential growth or decay in metric data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `exp()` works the same way: it computes e^x for a numeric argument.
+
+<CodeGroup>
+```sql Splunk example
+| eval result = exp(log_value)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp(log_value)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `EXP()` is a standard function with identical semantics.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXP(log_value) AS result FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp(log_value)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+exp(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The exponent value. |
+
+### Returns
+
+The base-e exponential of `x`: e^x.
+
+## Example
+
+Use `exp` to compute the geometric mean of request durations from log-transformed values.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| summarize geometric_mean = exp(avg(log(req_duration_ms))) by bin(_time, 1h)
+| project _time, geometric_mean
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20summarize%20geometric_mean%20%3D%20exp%28avg%28log%28req_duration_ms%29%29%29%20by%20bin%28_time%2C%201h%29%20%7C%20project%20_time%2C%20geometric_mean%22%7D)
+
+**Output**
+
+| _time | geometric_mean |
+|---|---|
+| 2024-11-14 10:00:00 | 85.3 |
+| 2024-11-14 11:00:00 | 92.7 |
+| 2024-11-14 12:00:00 | 78.1 |
+
+## List of related functions
+
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it as the inverse of `exp` or to apply log transformations before aggregating.
+- [exp2](/apl/scalar-functions/mathematical-functions/exp2): Returns 2^x. Use it instead of `exp` when working with binary (base-2) scales.
+- [exp10](/apl/scalar-functions/mathematical-functions/exp10): Returns 10^x. Use it instead of `exp` when working with base-10 (decibel or order-of-magnitude) scales.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises any base to a power. Use it when the base is not e, 2, or 10.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Use it for simpler power-of-0.5 calculations rather than `exp(0.5 * log(x))`.

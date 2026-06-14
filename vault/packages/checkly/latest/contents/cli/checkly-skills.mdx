@@ -1,0 +1,216 @@
+---
+title: checkly skills
+description: 'Print Checkly project, CLI and workflow context as Markdown for AI agents and LLMs.'
+sidebarTitle: 'checkly skills'
+---
+
+<Note>Available since CLI v7.5.0.</Note>
+
+The `checkly skills` command outputs Markdown-formatted context about your Checkly project, describing monitoring capabilities and how to use them programmatically. **This context is designed to be discovered and consumed by AI agents and LLMs**, giving them the information they need to work with your monitoring setup.
+
+You can also install [Checkly Skills as an agent skill](/ai/skills) to let your AI agent automatically discover and use the `checkly skills` command.
+
+<Accordion title="Prerequisites">
+Before using `checkly skills`, ensure you have:
+
+- Checkly CLI installed
+
+No existing Checkly account is required to access Checkly skills and documentation.
+</Accordion>
+
+## Usage
+
+`checkly skills` provides your agent with all the required information to manage your Checkly monitoring setup. All resources and workflows are discoverable to provide your agent the right information at the right time.
+
+```bash Terminal
+npx checkly skills
+npx checkly skills <action> [resource]
+```
+
+## Actions
+
+| Action | Description |
+|--------|-------------|
+| `install` | Install [the Checkly agent skill (SKILL.md)](/ai/skills) into your project. |
+| `initialize` | Let your agent initialize [a new Checkly project](/constructs/project). |
+| `configure` | Let your agent configure [Checkly constructs](/constructs/overview). |
+| `investigate` | Access check status, analyze failures, and investigate errors. |
+| `communicate` | Open incidents and lead customer communications via status pages. |
+| `manage` | Understand your account plan, entitlements, and feature limits. |
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `install` | Install the Checkly agent skill (SKILL.md) into your project. |
+
+## `checkly skills initialize` (experimental)
+
+The `initialize` action outputs LLM-optimized Markdown with all the context an agent needs to set up a new Checkly project from scratch. The context will instruct your agent to install required packages, create config files and scan your current project for resources to monitor.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills initialize
+```
+
+<Tip>
+You can prompt your agent with **"run `npx checkly skills initialize` and follow the instructions"** and the agent will have everything it needs to scaffold your Checkly monitoring setup.
+</Tip>
+
+## `checkly skills configure [resource]`
+
+The `configure` action is an umbrella command that provides Markdown context about all available Checkly resources. The CLI outputs everything your agent needs to configure [Checkly constructs](/constructs/overview) directly — no additional docs fetching or file reading required.
+
+Run `configure` without arguments to see all available resources, or pass a specific resource name to get targeted context.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills configure
+npx checkly skills configure api-checks
+npx checkly skills configure browser-checks
+# ...and more
+```
+
+## `checkly skills investigate [resource]`
+
+The `investigate` action provides context for inspecting check status, analyzing failures, and investigating errors across your Checkly account.
+
+Run `investigate` without arguments to see all available resources, or pass a specific resource name for targeted context.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills investigate
+npx checkly skills investigate checks
+```
+
+**Available resources:**
+
+| Resource | Description |
+|----------|-------------|
+| `checks` | Inspecting checks (`checks list`, `checks get`) and triggering on-demand runs. |
+
+## `checkly skills communicate [resource]`
+
+The `communicate` action provides context for managing incidents and customer communications through status pages. Write commands like `incidents create`, `incidents update`, and `incidents resolve` follow a confirmation protocol — the CLI returns a JSON envelope for agent review before execution.
+
+Run `communicate` without arguments to see all available resources, or pass a specific resource name for targeted context.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills communicate
+npx checkly skills communicate incidents
+```
+
+**Available resources:**
+
+| Resource | Description |
+|----------|-------------|
+| `incidents` | Incident lifecycle (`incidents create`, `update`, `resolve`, `list`) and status pages. |
+
+## `checkly skills manage [resource]`
+
+The `manage` action provides context about your account's plan, entitlements, and limits. Use this to understand what features and locations are available before configuring checks.
+
+Run `manage` without arguments to see all available resources, or pass a specific resource name for targeted context.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills manage
+npx checkly skills manage plan
+```
+
+**Available resources:**
+
+| Resource | Description |
+|----------|-------------|
+| `plan` | Check account plan, entitlements, feature limits, and available locations ([`account plan`](/cli/checkly-account)). |
+
+<Tip>
+The `manage plan` resource documents the [`checkly account plan`](/cli/checkly-account) command. Your agent can use the `account plan` command to query entitlements and available locations before writing check configurations.
+</Tip>
+
+## `checkly skills install`
+
+The `install` command installs the Checkly agent skill file (SKILL.md) into your project. This file lets your AI agent automatically discover and use the `checkly skills` command.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills install
+npx checkly skills install --target <platform>
+npx checkly skills install --path <directory>
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--target, -t` | - | Platform to install the skill for. |
+| `--path, -p` | - | Custom target directory to install the skill into. |
+| `--force, -f` | - | Overwrite existing SKILL.md without confirmation. |
+
+### Install Options
+
+<ResponseField name="--target, -t" type="string">
+
+The target platform determines where and how the skill file is installed. Available platforms: `amp`, `claude`, `cline`, `codex`, `continue`, `cursor`, `gemini-cli`, `github-copilot`, `goose`, `opencode`, `roo`, `windsurf`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills install --target=claude
+npx checkly skills install -t cursor
+```
+
+</ResponseField>
+
+<ResponseField name="--path, -p" type="string">
+
+Custom target directory to install the skill file into. Use this when the default location for your platform does not match your project structure.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills install --path=./my-agent-config
+```
+
+</ResponseField>
+
+<ResponseField name="--force, -f" type="boolean">
+
+Overwrite an existing SKILL.md without asking for confirmation.
+
+**Usage:**
+
+```bash Terminal
+npx checkly skills install --force
+```
+
+</ResponseField>
+
+### Install Examples
+
+```bash Terminal
+# Install for Claude Code
+npx checkly skills install --target=claude
+
+# Install for Cursor
+npx checkly skills install --target=cursor
+
+# Install to a custom directory
+npx checkly skills install --path=./agents
+
+# Overwrite an existing skill file
+npx checkly skills install --target=claude --force
+```
+
+## Related Commands
+
+- [`checkly account`](/cli/checkly-account) - View and manage your Checkly account
+- [`checkly checks`](/cli/checkly-checks) - List, inspect, and analyze checks
+- [`checkly incidents`](/cli/checkly-incidents) - Create, update, and resolve incidents

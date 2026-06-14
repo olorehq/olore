@@ -10,8 +10,7 @@ sidebarTitle: Go
 Add the Turso package to your Go project:
 
 ```bash
-go get github.com/tursodatabase/turso-go
-go install github.com/tursodatabase/turso-go
+go get turso.tech/database/tursogo
 ```
 
 </Step>
@@ -26,12 +25,15 @@ package main
 import (
     "database/sql"
     "fmt"
-    _ "github.com/tursodatabase/turso-go"
+    _ "turso.tech/database/tursogo"
 )
 
 func main() {
-    conn, _ := sql.Open("turso", "sqlite.db")
-    defer conn.Close()
+    db, err := sql.Open("turso", "sqlite.db")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
 }
 ```
 
@@ -42,7 +44,7 @@ func main() {
 Create a table for users:
 
 ```go
-_, err := conn.Exec(`
+_, err = db.Exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL
@@ -60,12 +62,12 @@ if err != nil {
 Insert some data into the users table:
 
 ```go
-_, err = conn.Exec("INSERT INTO users (username) VALUES (?)", "alice")
+_, err = db.Exec("INSERT INTO users (username) VALUES (?)", "alice")
 if err != nil {
     panic(err)
 }
 
-_, err = conn.Exec("INSERT INTO users (username) VALUES (?)", "bob")
+_, err = db.Exec("INSERT INTO users (username) VALUES (?)", "bob")
 if err != nil {
     panic(err)
 }
@@ -78,14 +80,18 @@ if err != nil {
 Query all users from the table:
 
 ```go
-stmt, _ := conn.Prepare("SELECT * FROM users")
-defer stmt.Close()
+rows, err := db.Query("SELECT * FROM users")
+if err != nil {
+    panic(err)
+}
+defer rows.Close()
 
-rows, _ := stmt.Query()
 for rows.Next() {
     var id int
     var username string
-    _ = rows.Scan(&id, &username)
+    if err := rows.Scan(&id, &username); err != nil {
+        panic(err)
+    }
     fmt.Printf("User: ID: %d, Username: %s\n", id, username)
 }
 ```

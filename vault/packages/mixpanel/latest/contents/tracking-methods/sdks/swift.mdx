@@ -6,13 +6,18 @@ import { Callout, Tabs } from 'nextra/components'
 
 Please refer to our [Quickstart Guide](/docs/quickstart/connect-your-data?sdk=swift).
 
-The [Full API Reference](https://mixpanel.github.io/mixpanel-swift/), [Library Source Code](https://github.com/mixpanel/mixpanel-swift), and an [Example Application](https://github.com/mixpanel/mixpanel-swift/tree/master/MixpanelDemo/MixpanelDemo) is documented in our GitHub repo.
+The [Full API Reference](https://mixpanel.github.io/mixpanel-swift/), [Library Source Code](https://github.com/mixpanel/mixpanel-swift), and an [Example Application](https://github.com/mixpanel/mixpanel-swift/tree/master/MixpanelDemo/MixpanelDemo) are documented in our GitHub repo.
 
 ## Installing the Library
 
 You can install the Swift library by using CocoaPods, Carthage, or Swift Package Manager.
 
-<Tabs items={['CocoaPods', 'Carthage', 'Swift Package Manager']}>
+<Tabs items={['Swift Package Manager', 'CocoaPods', 'Carthage']}>
+  <Tabs.Tab>
+    1. In Xcode, select File \> Add Packages...
+
+    2. Enter the package URL for [this repository](https://github.com/mixpanel/mixpanel-swift) and select version v2.8.0 or above.
+  </Tabs.Tab>
   <Tabs.Tab>
     1. Install CocoaPods by typing the following in your command line:
 
@@ -21,7 +26,7 @@ You can install the Swift library by using CocoaPods, Carthage, or Swift Package
     gem install cocoapods
     ```
 
-    2. After install CocoaPods, create a local CocoaPods spec mirror by running the following:
+    2. After installing CocoaPods, create a local CocoaPods spec mirror by running the following:
 
     ```bash
     # Create CocoaPods spec mirror
@@ -57,11 +62,6 @@ You can install the Swift library by using CocoaPods, Carthage, or Swift Package
     github "mixpanel/mixpanel-swift"
     ```
   </Tabs.Tab>
-  <Tabs.Tab>
-    1. In Xcode, select File \> Add Packages...
-
-    2. Enter the package URL for [this repository](https://github.com/mixpanel/mixpanel-swift) and select version v2.8.0 or above.
-  </Tabs.Tab>
 </Tabs>
 
 After installing the library, import `Mixpanel` into `AppDelegate.swift` and initialize Mixpanel within [`application:didFinishLaunchingWithOptions:`](https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622921-application) using your [project token](/docs/orgs-and-projects/managing-projects#find-your-project-tokens).
@@ -74,38 +74,69 @@ func application(_ application: UIApplication,
                  didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
     ...
     /// initialize Mixpanel using your project token
-    Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", 
-        trackAutomaticEvents: false
-        )
+    let options = MixpanelOptions(token: "YOUR_PROJECT_TOKEN")
+    Mixpanel.initialize(options: options)
     ...
 }
 ```
 
-### Library Configuration
+<span id="library-configuration"></span>
 
-The Mixpanel instance can be customized with different configurations. The [.initialize()](https://mixpanel.github.io/mixpanel-swift/Classes/Mixpanel.html) method accepts arguments that sets some configurations on your instance upon initialization. 
+### SDK Configuration Using MixpanelOptions
 
-After initialization, you can further customize the instance using the configuration options [here](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html).
+<Callout type="warning">
+ **Data Residency:** For projects with EU or India data residency, you must configure the SDK to use the correct [regional endpoint](#data-residency). 
+Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/swift#privacy-friendly-tracking)
+</Callout>
 
-**Example Usage**
+Configure the Mixpanel SDK using [`MixpanelOptions`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) to customize tracking behavior, data residency, privacy settings, and more.
+
+#### Configuration Reference
+
+| Config Option | Description | Default |
+|--------|-------------|---------|
+| `token` | Your Mixpanel project token (required) | N/A |
+| `serverURL` | Custom API endpoint. **Required** for [EU](#eu-data-residency) or [India](#india-data-residency) data residency. Takes precedence over `proxyServerConfig.serverUrl` | US (`https://api.mixpanel.com`) |
+| `flushInterval` | Interval in seconds between automatic flush operations. Set to `0` to disable. See [Flushing Events](#flushing-events) | `60` |
+| `trackAutomaticEvents` | Auto-track app lifecycle events. **Not recommended** — see [Legacy Automatically Tracked Events](#legacy-automatically-tracked-events) | `false` |
+| `optOutTrackingByDefault` | Start with tracking disabled for GDPR compliance. See [Opt Out of Tracking](#opt-out-of-tracking) | `false` |
+| `useIPAddressForGeoLocation` | Enable IP-based geolocation. See [Disable Geolocation](#disable-geolocation) | `true` |
+| `useUniqueDistinctId` | Use device IDFV instead of random UUID. See [Custom Device ID Generation](#custom-device-id-generation) | `false` |
+| `instanceName` | Unique identifier for multi-instance setups | Project token |
+| `deviceIdProvider` | Custom closure for device ID generation (requires v5.2.0+). See [Custom Device ID Generation](#custom-device-id-generation) | `nil` |
+| `superProperties` | Properties automatically added to all events. Can also be set at runtime. See [Setting Super Properties](#setting-super-properties) | `nil` |
+| `featureFlagOptions` | Feature flags configuration (prefetch behavior and custom context). See [Feature Flags Initialization](/docs/tracking-methods/sdks/swift/swift-flags#flag-initialization) | `FeatureFlagOptions(enabled: false)` |
+| `proxyServerConfig` | Proxy configuration with headers and query params | `nil` |
+| `useGzipCompression` | Enable gzip compression for network requests | `true` |
+
+<Callout type="info">
+  **Best Practice:** Configure all settings (especially `serverURL` for data residency) during initialization using `MixpanelOptions`. This ensures all SDK components (events, profiles, feature flags) use the correct configuration from the start, avoiding potential race conditions.
+</Callout>
+
+After initialization, you can further customize the instance using methods on [`MixpanelInstance`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html).
+
+**Common Configuration Example**
 ```swift Swift
-/// import Mixpanel class from the library
 import Mixpanel
 
 func application(_ application: UIApplication,
                  didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
     ...
-    /// set instance name to "currentInstance" at initialization
-    Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN",
-        trackAutomaticEvents: false,
-        instanceName: "currentInstance"
-        )
+    /// Configure Mixpanel for EU data residency
+    let options = MixpanelOptions(
+        token: "YOUR_PROJECT_TOKEN",
+        serverURL: "https://api-eu.mixpanel.com",
+        flushInterval: 15
+    )
+    Mixpanel.initialize(options: options)
 
-    //enable debug log after initialization
+    /// Enable debug logging after initialization
     Mixpanel.mainInstance().loggingEnabled = true
     ...
 }
 ```
+
+See detailed explanations of each option in the sections below.
 
 ## Sending Events
 
@@ -138,6 +169,7 @@ Mixpanel.mainInstance().track(event: "Image Upload")
 ```
 
 ### Flushing Events
+
 To preserve battery life and customer bandwidth, the Mixpanel library doesn't send the events you record immediately. Instead, it sends batches to the Mixpanel servers every 60 seconds while your application is running, as well as when the application transitions to the background. 
 
 Call [`.flush()`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC5flush16performFullFlush10completionySb_yycSgtF) manually if you want to force a flush at a particular moment.
@@ -148,13 +180,25 @@ Call [`.flush()`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInst
 Mixpanel.mainInstance().flush()
 ```
 
-**Flush Interval**
+#### Configuring Flush Interval
 
-You can update the default flush interval from 60 seconds to another interval using [`flushInterval`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC13flushIntervalSdvp).
+The default flush interval is 60 seconds. You can customize this using the [`flushInterval`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option in `MixpanelOptions` (see [Configuration Reference](#configuration-reference)). Set to `0` to disable automatic flushing entirely (requires manual `.flush()` calls).
 
-**Example Usage**
+**Recommended: Configure During Initialization**
 ```swift Swift
-/// set the flush interval to every 120 seconds
+/// Set flush interval to 120 seconds during initialization
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    flushInterval: 120  // Flush every 2 minutes
+)
+Mixpanel.initialize(options: options)
+```
+
+**Alternative: Update After Initialization**
+You can also update the flush interval dynamically using [`flushInterval`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC13flushIntervalSdvp).
+
+```swift Swift
+/// Change flush interval at runtime
 Mixpanel.mainInstance().flushInterval = 120
 ```
 
@@ -166,9 +210,31 @@ For bulk import of historical events older than 5 days, we will need to use the 
 
 ## Setting Super Properties
 
-Super properties are global event properties that you define once and apply to all events.
+Super properties are global event properties that you define once and apply to all events. You can set super properties during SDK initialization or at runtime.
 
-To register super properties, call [`.registerSuperProperties(_:)`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC23registerSuperPropertiesyySDySSAA0A4Type_pGF).
+### Setting Super Properties During Initialization
+
+You can set initial super properties using the [`superProperties`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option in `MixpanelOptions` (see [Configuration Reference](#configuration-reference)).
+
+**Example Usage**
+```swift Swift
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    superProperties: [
+        "app_version": "1.2.3",
+        "platform": "iOS"
+    ]
+)
+Mixpanel.initialize(options: options)
+
+/// track "some_event"
+/// "app_version" and "platform" are automatically added as event props
+Mixpanel.mainInstance().track(event: "some_event")
+```
+
+### Setting Super Properties at Runtime
+
+To register super properties at runtime, call [`.registerSuperProperties(_:)`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC23registerSuperPropertiesyySDySSAA0A4Type_pGF).
 
 Use [`.registerSuperPropertiesOnce(_:)`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC27registerSuperPropertiesOnce_12defaultValueySDySSAA0A4Type_pG_AaF_pSgtF) to register super properties without overwriting existing values.
 
@@ -182,22 +248,22 @@ Mixpanel.mainInstance().registerSuperProperties(["name": "Sam"])
 Mixpanel.mainInstance().track(event: "some_event")
 ```
 
-Our mobile libraries store your super properties in local storage. They will persist so long as the app is installed (between launches and updates). Uninstalling the app will remove that customers super properties.
+**Best Practice: Batch Multiple Properties**
 
-**Note**
-As creating properties involves an async operation to local storage, if you will create multiple properties at once, it's best to send a single call to the register function with all properties at once, to avoid possible issues with race conditions overwriting each other. This is just in case you will create multiple properties all in the same block of code.
+Creating properties involves an async operation to local storage. If you need to create multiple properties at once, it's best to send a single call to the register function with all properties at once, to avoid possible issues with race conditions overwriting each other.
 
 **Example Usage**
 ```swift Swift
 Mixpanel.mainInstance().registerSuperProperties([
-            "superProp0": "value1",
-            "superProp1": "value2",
-            "superProp2": "value3",
-            "superProp3": 1,
-            "superProp4": 2,
-            "superProp5": 3])
+    "superProp0": "value1",
+    "superProp1": "value2",
+    "superProp2": "value3",
+    "superProp3": 1,
+    "superProp4": 2,
+    "superProp5": 3
+])
 
-Mixpanel.mainInstance().(event:"test")
+Mixpanel.mainInstance().track(event: "test")
 ```
 
 See more methods related to super properties in the complete library reference [here](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html).
@@ -240,20 +306,46 @@ Mixpanel.mainInstance().reset()
 ```
 
 <Callout type="info">
-    Since v2.7.7, Mixpanel stopped using the IFA(ID for Advertisers) as a distinct_id, meaning calls to reset will generate a new random UUID.
-
-    If you want to use IFV(identifierForVendor) as the distinct_id, you can set `MIXPANEL_UNIQUE_DISTINCT_ID` in build settings `Active Compilation Conditions` on the Mixpanel framework target. The IFV will not change when you call `reset`, but will change upon app uninstalls/reinstalls.
+    Since v2.7.7, Mixpanel stopped using the IFA (ID for Advertisers) as a distinct_id. Calls to `.reset()` will generate a new random UUID unless you've configured custom device ID behavior. See [Custom Device ID Generation](#custom-device-id-generation) for details on using IDFV or implementing custom device ID logic.
 </Callout>
 
 ### Custom Device ID Generation
 
-The Swift SDK provides a [`deviceIdProvider`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) closure in `MixpanelOptions` for implementing custom device ID generation logic. This allows you to control where device IDs are stored and whether they persist across `.reset()` calls.
+The Swift SDK provides two ways to customize device ID generation (see [Configuration Reference](#configuration-reference)):
+
+1. **`useUniqueDistinctId`** - Use device IDFV (Identifier for Vendor) instead of random UUID
+2. **`deviceIdProvider`** - Custom closure for implementing your own device ID generation logic
 
 <Callout type="warning">
-    Using a custom device ID provider is an architectural decision that should be made at project inception. Changing this after deployment can cause user identity management issues.
+    Customizing device ID generation is an architectural decision that should be made at project inception. Changing this after deployment can cause user identity management issues.
 </Callout>
 
-Configure the device ID provider using `MixpanelOptions` when initializing the SDK. If the provider returns `nil` or an empty string, the SDK will fall back to generating a default device ID (UUID or IDFV).
+#### Using Device IDFV
+
+Set [`useUniqueDistinctId`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) to `true` to use the device's IDFV instead of a random UUID. The IDFV persists across app updates but changes when the app is uninstalled and reinstalled.
+
+**Example Usage**
+```swift Swift
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    useUniqueDistinctId: true  // Use IDFV instead of UUID
+)
+Mixpanel.initialize(options: options)
+```
+
+<Callout type="info">
+    You can also enable IDFV by setting `MIXPANEL_UNIQUE_DISTINCT_ID` in build settings `Active Compilation Conditions` on the Mixpanel framework target. When using IDFV, the ID will not change when you call `.reset()`, but will change upon app uninstalls/reinstalls.
+</Callout>
+
+#### Custom Device ID Provider
+
+<Callout type="info">
+    The `deviceIdProvider` option requires Swift SDK [v5.2.0](https://github.com/mixpanel/mixpanel-swift/releases/tag/v5.2.0) or later.
+</Callout>
+
+For advanced use cases, use the [`deviceIdProvider`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) closure to implement custom device ID generation logic. This allows you to control where device IDs are stored and whether they persist across `.reset()` calls.
+
+If the provider returns `nil` or an empty string, the SDK will fall back to generating a default device ID (UUID or IDFV based on `useUniqueDistinctId`).
 
 **Example Usage**
 ```swift Swift
@@ -344,7 +436,7 @@ A few commonly used people methods are highlighted below:
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    The [`append(properties:)`](https://mixpanel.github.io/mixpanel-swift/Classes/People.html#/s:8Mixpanel6PeopleC6append10propertiesySDySSAA0A4Type_pG_tF) method append values to a list profile property.
+    The [`append(properties:)`](https://mixpanel.github.io/mixpanel-swift/Classes/People.html#/s:8Mixpanel6PeopleC6append10propertiesySDySSAA0A4Type_pG_tF) method appends values to a list profile property.
 
     Use this method to add additional values to an existing list property instead of redefining the entire list.
 
@@ -372,7 +464,7 @@ A few commonly used people methods are highlighted below:
 
   </Tabs.Tab>
   <Tabs.Tab>
-    The [`union(properties:)`](https://mixpanel.github.io/mixpanel-swift/Classes/People.html#/s:8Mixpanel6PeopleC5union10propertiesySDySSAA0A4Type_pG_tF) method append new values to a list property, excluding duplicates.
+    The [`union(properties:)`](https://mixpanel.github.io/mixpanel-swift/Classes/People.html#/s:8Mixpanel6PeopleC5union10propertiesySDySSAA0A4Type_pG_tF) method appends new values to a list property, excluding duplicates.
 
     Use this method to create a list profile property that only contains unique values without duplicates.
 
@@ -390,7 +482,7 @@ A few commonly used people methods are highlighted below:
         ])
     
     /// add "legal" to "roles"
-    /// "roles" = ['sales','engineer','engineer']
+    /// "roles" = ['sales','engineer','legal']
     Mixpanel.mainInstance().people.union(properties: [
         "roles":"legal"
         ])
@@ -430,7 +522,7 @@ A group is identified by the `group_key` and `group_id`.
 * `group_key` is the event property that connects event data to a group. (e.g. `company`)
 * `group_id` is the identifier for a specific group. (e.g. `mixpanel`,`company_a`,`company_b`, etc.)
 
-The Swift SDK provides a few method for adding individual users to a group and setting group profile properties.
+The Swift SDK provides a few methods for adding individual users to a group and setting group profile properties.
 
 ### Adding Users to a Group
 
@@ -527,7 +619,7 @@ A few commonly used group methods are highlighted below:
     Mixpanel.mainInstance().getGroup(groupKey: "company", groupID: “mixpanel”).set(properties: [
         "name": "Mixpanel"])
 
-    /// ignored since "name" is already exists
+    /// ignored since "name" already exists
     Mixpanel.mainInstance().getGroup(groupKey: "company", groupID: “mixpanel”).setOnce(properties: [
         "name": "mp"])
     
@@ -575,7 +667,7 @@ A few commonly used group methods are highlighted below:
     ])
 
     /// add "data pipeline" to "features" prop
-    /// ignore "alert" since it is a duplicate value
+    /// ignore "alerts" since it is a duplicate value
     Mixpanel.mainInstance().getGroup(groupKey: "company", groupID: “mixpanel”).union(key: "features",
         values: ["data pipeline","alerts"])
     ```
@@ -621,7 +713,7 @@ Mixpanel.mainInstance().loggingEnabled = true
 Learn more about [debugging](/docs/tracking-best-practices/debugging).
 
 ## Privacy-Friendly Tracking
-You have control over the data you send to Mixpanel. The Swift SDK provide methods to help you protect user data.
+You have control over the data you send to Mixpanel. The Swift SDK provides methods to help you protect user data.
 
 Learn more about [Privacy](/docs/privacy/overview).
 
@@ -642,78 +734,92 @@ Mixpanel.mainInstance().optOutTracking()
 Mixpanel.mainInstance().track(event: "some_event")
 ```
 
-**Opt Out by Default**
+#### Opt Out by Default
 
-You can initialize the library with users opted out of tracking by default using the `optOutTrackingByDefault` configuration in [`initialize()`](https://mixpanel.github.io/mixpanel-swift/Classes/Mixpanel.html). Once the user is ready to be tracked, call [`optInTracking()`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC13optInTracking10distinctId10propertiesySSSg_SDySSAA0A4Type_pGSgtF) to start tracking.
+For GDPR compliance, you can initialize the SDK with users opted out of tracking by default using the [`optOutTrackingByDefault`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option (see [Configuration Reference](#configuration-reference)). Once the user consents to tracking, call [`optInTracking()`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC13optInTracking10distinctId10propertiesySSSg_SDySSAA0A4Type_pGSgtF) to start tracking.
 
 **Example Usage**
 ```swift Swift
-/// create Mixpanel instance with users opt out of tracking by default
+/// create Mixpanel instance with users opted out of tracking by default
 /// SDK is prevented from sending data
-Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN", 
-    optOutTrackingByDefault: true)
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    optOutTrackingByDefault: true
+)
+Mixpanel.initialize(options: options)
 
 /// this track call will not work
 Mixpanel.mainInstance().track(event: "some_event")
 
-///opt user into tracking
+/// opt user into tracking
 Mixpanel.mainInstance().optInTracking()
 
 /// send "some_event"
 Mixpanel.mainInstance().track(event: "some_event")
 ```
 
-### EU Data Residency
+### Data Residency
 
-Route data to Mixpanel's EU servers by setting the `serverURL` property after initializing the client. 
+<Callout type="info">
+  Setting `serverURL` during initialization ensures all requests (events, profiles, and feature flags) use the correct endpoint from the start.
+</Callout>
+
+#### EU Data Residency
+
+Route data to Mixpanel's EU servers by setting the [`serverURL`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option to `https://api-eu.mixpanel.com` during initialization (see [Configuration Reference](#configuration-reference)).
 
 **Example Usage**
 ```swift Swift
-/// initialize Mixpanel
-Mixpanel.initialize(token: "MIXPANEL_TOKEN")
-
-/// Set request URL to Mixpanel's EU domain
-Mixpanel.mainInstance().serverURL = "https://api-eu.mixpanel.com"
+/// Initialize Mixpanel with EU data residency
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    serverURL: "https://api-eu.mixpanel.com"
+)
+Mixpanel.initialize(options: options)
 ```
 
-### India Data Residency
+#### India Data Residency
 
-Route data to Mixpanel's India servers by setting the `serverURL` property after initializing the client. 
+Route data to Mixpanel's India servers by setting the [`serverURL`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option to `https://api-in.mixpanel.com` during initialization (see [Configuration Reference](#configuration-reference)).
 
 **Example Usage**
 ```swift Swift
-/// initialize Mixpanel
-Mixpanel.initialize(token: "MIXPANEL_TOKEN")
-
-/// Set request URL to Mixpanel's India domain
-Mixpanel.mainInstance().serverURL = "https://api-in.mixpanel.com"
+/// Initialize Mixpanel with India data residency
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    serverURL: "https://api-in.mixpanel.com"
+)
+Mixpanel.initialize(options: options)
 ```
 
 ### Disable Geolocation
 
-The Swift SDK parse the request IP address to generate geolocation properties for events and profiles. To disable geolocation, set the [`useIPAddressForGeoLocation`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelInstance.html#/s:8Mixpanel0A8InstanceC26useIPAddressForGeoLocationSbvp) flag to `false`.
+The Swift SDK parses the request IP address to generate geolocation properties for events and profiles. To disable geolocation and prevent IP-based tracking, set [`useIPAddressForGeoLocation`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) to `false` (see [Configuration Reference](#configuration-reference)).
 
-**Example Usage**
+You can configure this during initialization or change it after:
+
+**Recommended: Configure During Initialization**
 ```swift Swift
-/// initialize Mixpanel
-Mixpanel.initialize(token: "MIXPANEL_TOKEN")
+let options = MixpanelOptions(
+    token: "YOUR_PROJECT_TOKEN",
+    useIPAddressForGeoLocation: false
+)
+Mixpanel.initialize(options: options)
+```
 
-/// Set request URL to Mixpanel's EU domain
+**Alternative: Update After Initialization**
+```swift Swift
+/// Disable IP-based geolocation at runtime
 Mixpanel.mainInstance().useIPAddressForGeoLocation = false
 ```
 
 ## Legacy Automatically Tracked Events
 
-Mixpanel's SDKs have a legacy feature to automatically collect common mobile events. We don't recommend enabling this, as these events rely on client-side state and can be unreliable.
+Mixpanel's SDKs have a legacy feature to automatically collect common mobile events. **We don't recommend enabling this**, as these events rely on client-side state and can be unreliable.
 
-Ensure autotracked mobile events are disabled by setting `trackAutomaticEvents` to `false` during initialization.
+The [`trackAutomaticEvents`](https://mixpanel.github.io/mixpanel-swift/Classes/MixpanelOptions.html) option is set to `false` by default (see [Configuration Reference](#configuration-reference)). You only need to explicitly set this if you want to enable automatic event tracking.
 
-**Example Usage**
-```swift Swift
-// initialize Mixpanel with autotrack disabled
-Mixpanel.initialize(token: "YOUR_PROJECT_TOKEN",
-        trackAutomaticEvents: false,)
-```
+See below table for automatic events tracked by the Swift SDK when `trackAutomaticEvents` is enabled:
 
 | Raw Name | Display Name | Description |
 | --- | --- | --- |

@@ -1,0 +1,98 @@
+---
+title: format_sql
+description: 'This page explains how to use the format_sql function in APL.'
+---
+
+## Introduction
+
+The `format_sql` function converts the structured dictionary produced by [`parse_sql`](/apl/scalar-functions/sql-functions/parse-sql) back into a SQL string. Use it to normalize SQL formatting, validate that a parsed query round-trips correctly, or reconstruct a SQL statement after modifying its parsed representation.
+
+`format_sql` is most useful as the second step in a parse-then-reconstruct pipeline: first parse a SQL string into a structured dictionary with `parse_sql`, optionally inspect or transform the result, and then call `format_sql` to produce a clean, normalized SQL string.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk has no equivalent to `format_sql`. There is no native way in SPL to reconstruct a SQL string from a parsed representation. In APL, `format_sql` takes the output of `parse_sql` and reconstructs the original SQL statement.
+
+<CodeGroup>
+```sql Splunk example
+-- No direct Splunk equivalent
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| take 1
+| extend parsed = parse_sql('SELECT id, status FROM logs WHERE status = 500')
+| project formatted = format_sql(parsed)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no built-in function to reconstruct a SQL string from a parsed representation. `format_sql` is unique to APL and works as the inverse of `parse_sql`.
+
+<CodeGroup>
+```sql SQL example
+-- No direct SQL equivalent
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| take 1
+| extend parsed = parse_sql('SELECT id, status FROM logs WHERE status = 500')
+| project formatted = format_sql(parsed)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+format_sql(parsed_sql_model)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ---------------- | ---------- | -------- | ----------- |
+| parsed_sql_model | dictionary | Yes | The structured data model returned by `parse_sql`. |
+
+### Returns
+
+A string containing the SQL statement reconstructed from the provided data model.
+
+## Example
+
+Parse a SQL query representing a slow-query log entry and reconstruct it to verify the round-trip.
+
+**Query**
+
+```kusto wrap
+print formatted = format_sql(parse_sql('SELECT id, status, uri FROM requests WHERE req_duration_ms > 1000 ORDER BY req_duration_ms DESC'))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20formatted%20%3D%20format_sql%28parse_sql%28%27SELECT%20id%2C%20status%2C%20uri%20FROM%20requests%20WHERE%20req_duration_ms%20%3E%201000%20ORDER%20BY%20req_duration_ms%20DESC%27%29%29%22%7D)
+
+**Output**
+
+```json wrap
+{
+    "formatted": "select id, status, uri from requests where req_duration_ms > 1000 order by req_duration_ms desc"
+}
+```
+
+The query parses the SQL string and then reconstructs it with `format_sql`, confirming that the parse-and-reconstruct pipeline preserves the original statement's structure.
+
+## List of related functions
+
+- [parse_sql](/apl/scalar-functions/sql-functions/parse-sql): Parses a SQL statement string into a structured dictionary. `format_sql` is the inverse of `parse_sql`.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses a JSON string into a dynamic dictionary. Use `parse_json` when your data contains JSON rather than SQL.

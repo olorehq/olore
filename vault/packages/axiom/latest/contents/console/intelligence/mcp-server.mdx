@@ -2,6 +2,7 @@
 title: Axiom MCP Server
 description: "This page explains how to get deeper insights with Axiom MCP Server."
 sidebarTitle: MCP Server
+keywords: ["MCP", "Model Context Protocol", "MCP server", "Axiom MCP", "Claude MCP", "Cursor MCP", "AI agent"]
 ---
 
 import Prerequisites from "/snippets/minimal-prerequisites.mdx"
@@ -19,14 +20,24 @@ For guidance on when to use Axiom MCP Server and Axiom Skills, see [AI agents](/
 
 Axiom MCP Server supports the following MCP [tools](https://modelcontextprotocol.io/docs/concepts/tools):
 
+- `createDashboard`: Create a dashboard from a JSON document
+- `deleteDashboard`: Delete a dashboard by UID
+- `exportDashboard`: Export a dashboard as JSON
 - `getDashboard`: Get dashboard details
 - `getDatasetSchema`: Get dataset schema
+- `getMetricTagValues`: Get values for a specific tag in a dataset
 - `getMonitors`: List monitoring configurations
 - `getMonitorsHistory`: Get monitor execution history
 - `getSavedQueries`: Retrieve saved APL queries
 - `listDashboards`: List dashboards
 - `listDatasets`: List available Axiom datasets
+- `listMetricTags`: List tags available for filtering in a dataset
+- `listMetrics`: List available metric names in a dataset
 - `queryApl`: Execute APL queries against Axiom datasets
+- `queryMetrics`: Execute MPL queries against Axiom datasets
+- `searchMetrics`: Search for metrics matching a known tag value
+- `updateDashboard`: Update a dashboard by UID
+- `updateDashboardChart`: Patch a single chart in an existing dashboard by chart ID
 
 ### Supported MCP prompts
 
@@ -42,6 +53,10 @@ Axiom MCP Server supports the following MCP [prompts](https://modelcontextprotoc
 Axiom plans to support MCP [resources](https://modelcontextprotocol.io/docs/concepts/resources) in the future.
 
 Axiom MCP Server works with all AI agents that support MCP.
+
+### Query results routing
+
+The Axiom-hosted MCP Server is located in the US. When you query your data using the Axiom MCP Server using a remote MCP connection, query results are routed through US infrastructure.
 
 <Prerequisites />
 

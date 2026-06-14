@@ -6,7 +6,7 @@ sidebarTitle: 'checkly trigger'
 
 import CliCommandPrerequisites from '/snippets/cli-command-prerequisites.mdx';
 
-The `checkly trigger` command executes checks that are already deployed in your Checkly account. Unlike the `test` command, `trigger` works with any checks in your account regardless of how they were created - via CLI constructs, the web UI, or Terraform.
+The `checkly trigger` command executes checks that are already deployed in your Checkly account as [a test session](/detect/testing/overview/). Unlike the `test` command, `trigger` works with any checks in your account regardless of how they were created - via CLI constructs, the web UI, or Terraform.
 
 <CliCommandPrerequisites command="checkly trigger" />
 
@@ -18,25 +18,28 @@ The basic command triggers all checks in your account that are already deployed.
 npx checkly trigger [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
-| `--env, -e` | Env vars to be passed to the check run. Default: empty. Multiple values can be passed. |
-| `--env-file` | dotenv file path to be passed. For example `--env-file="./.env"` |
-| `--fail-on-no-matching` | Exit with a failing status code when there are no matching tests. |
-| `--location, -l` | The location to run the checks at. |
-| `--private-location` | The private location to run checks at. |
-| `--record` | Record check results in Checkly as a test session with full logs, traces and videos. |
-| `--reporter, -r` | A list of custom reporters for the test output. |
-| `--retries` | How many times to retry a check run. |
-| `--tags, -t` | Filter the checks to be run using a comma separated list of tags. |
-| `--test-session-name, -n` | A name to use when storing results in Checkly with `--record`. |
-| `--timeout` | A timeout (in seconds) to wait for checks to complete. |
-| `--verbose, -v` | Always show the full logs of the checks. |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--config, -c` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
+| `--check-id` | - | Trigger specific checks by ID. Supports comma-separated values and repeated flags. |
+| `--detach, -d` | - | Keep checks running in the cloud when you stop the CLI with Ctrl+C, instead of cancelling the run. |
+| `--env, -e` | - | Env vars to be passed to the check run. Default: empty. Multiple values can be passed. |
+| `--env-file` | - | dotenv file path to be passed. For example `--env-file="./.env"` |
+| `--fail-on-no-matching` | - | Exit with a failing status code when there are no matching tests. |
+| `--location, -l` | - | The location to run the checks at. |
+| `--private-location` | - | The private location to run checks at. |
+| `--[no-]record` | - | Record test session results in Checkly with full logs, traces and videos. Records by default since CLI v8.0.0. |
+| `--refresh-cache` | - | Force a fresh install of dependencies and update the cached version. |
+| `--reporter, -r` | - | One or more custom reporters for the test output. Supports comma-separated values and repeated flags. |
+| `--retries` | - | How many times to retry a check run. |
+| `--tags, -t` | - | Filter the checks to be run using a comma separated list of tags. |
+| `--test-session-name, -n` | - | A name to use when recording results in Checkly. |
+| `--timeout` | - | A timeout (in seconds) to wait for checks to complete. |
+| `--verbose, -v` | - | Always show the full logs of the checks. |
 
 ## Command Options
 
-<ResponseField name="--config" type="string" alias="-c">
+<ResponseField name="--config, -c" type="string">
 
 Specify a configuration file to use instead of the `checkly.config.ts` or `checkly.config.js` in the current directory.
 
@@ -49,7 +52,35 @@ npx checkly trigger -c="./checkly.staging.config.ts"
 
 </ResponseField>
 
-<ResponseField name="--env">
+<ResponseField name="--check-id" type="string[]">
+
+<Note>Available since CLI v8.4.0.</Note>
+
+Trigger specific checks by ID. You can pass a comma-separated list or repeat the flag. Combine `--check-id` with `--tags` to further filter the matching checks.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --check-id=<check-id>
+npx checkly trigger --check-id=<check-id-1>,<check-id-2>
+npx checkly trigger --check-id=<check-id-1> --check-id=<check-id-2>
+```
+
+</ResponseField>
+
+<ResponseField name="--detach, -d" type="boolean" default="false">
+
+By default, pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> during a recorded run cancels the test session. With `--detach`, <kbd>Ctrl</kbd>+<kbd>C</kbd> exits the CLI immediately instead, leaving the checks running in the cloud.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --detach
+```
+
+</ResponseField>
+
+<ResponseField name="--env, -e" type="string[]">
 
 [Environment variables](/cli/environment-variables) to be passed to the check run. Multiple values can be passed and passed variables overwrite any existing variables stored in your Checkly account.
 
@@ -99,7 +130,7 @@ The dotenv file should contain KEY=value pairs, one per line.
 
 </ResponseField>
 
-<ResponseField name="--location" type="string" alias="-l">
+<ResponseField name="--location, -l" type="string">
 The location to run the checks at.
 
 **Usage:**
@@ -138,7 +169,7 @@ npx checkly trigger --private-location"vpc-location" --config="internal.config.j
 Private locations must be configured in your Checkly account before use.
 </ResponseField>
 
-<ResponseField name="--tags">
+<ResponseField name="--tags, -t" type="string[]">
 Filter checks using tags. Checks run if they contain all specified tags in a single --tags flag. Multiple --tags flags create OR conditions.
 
 **Usage:**
@@ -165,21 +196,23 @@ npx checkly trigger --tags="production,webapp" --tags="production,backend"
 Tags are comma-separated within a single flag for AND logic, multiple flags for OR logic.
 </ResponseField>
 
-<ResponseField name="--test-session-name" type="string" >
+<ResponseField name="--test-session-name, -n" type="string">
 
-A name to use when storing results in Checkly with `--record`.
+A name to use when recording results in Checkly.
 
 **Usage:**
 
 ```bash Terminal
-npx checkly trigger --record --test-session-name="Custom session name"
+npx checkly trigger --test-session-name="Custom session name"
 ```
 
 </ResponseField>
 
-<ResponseField name="--reporter" type="string">
+<ResponseField name="--reporter, -r" type="string[]">
 
-Custom reporters for test output formatting.
+One or more custom reporters for the test output. Options: `list`, `dot`, `ci`, `github`, `json`.
+
+You can combine multiple reporters by passing multiple `--reporter` flags or using a comma-separated list.
 
 **Usage:**
 
@@ -205,12 +238,20 @@ npx checkly trigger --reporter github
 
 # JSON output for programmatic use
 npx checkly trigger --reporter json > results.json
+
+# Multiple reporters using comma-separated values
+npx checkly trigger --reporter list,json
+
+# Multiple reporters using repeated flags
+npx checkly trigger --reporter list --reporter json
+
+# Short form with multiple reporters
+npx checkly trigger -r github -r json
 ```
 
-Available options: `list`, `dot`, `ci`, `github`, `json`. Each provides different output formatting.
 </ResponseField>
 
-<ResponseField name="--verbose" type="boolean">
+<ResponseField name="--verbose, -v" type="boolean">
 
 Always show the full logs of the checks.
 
@@ -248,30 +289,48 @@ npx checkly trigger --no-fail-on-no-matching --tags optional-tag
 Enabled by default. Use `--no-fail-on-no-matching` to allow zero matches without failure.
 </ResponseField>
 
-<ResponseField name="--record" type="boolean">
+<ResponseField name="--[no-]record" type="boolean" default="true">
 
-Record check results in Checkly as a test session with full logs, traces and videos.
+Record check results in Checkly as a test session with full logs, traces and videos. Recording is enabled by default; use `--no-record` to disable it.
+
+<Note>Recording defaults to enabled since CLI v8.0.0. In earlier versions, recording was opt-in via `--record`.</Note>
 
 **Usage:**
 
 ```bash Terminal
-npx checkly trigger --record
+npx checkly trigger
+npx checkly trigger --no-record
 ```
 
 **Examples:**
 
 ```bash Terminal
-# Basic recording
-npx checkly trigger --record
+# Run with a custom session name
+npx checkly trigger --test-session-name "Deploy validation"
 
-# Record with custom name
-npx checkly trigger --record --test-session-name "Deploy validation"
+# Run specific checks
+npx checkly trigger --tags critical
 
-# Record specific checks
-npx checkly trigger --record --tags critical
+# Run selected checks by ID
+npx checkly trigger --check-id=<check-id>
+
+# Run without recording
+npx checkly trigger --no-record
 ```
 
 Records provide full visibility including logs, traces, and videos for debugging failed checks.
+</ResponseField>
+
+<ResponseField name="--refresh-cache" type="boolean" default="false">
+
+Force a fresh install of dependencies and update the cached version. Use this when you've changed your project's dependencies and need Checkly to pick up the latest versions instead of using the cache from a previous run.
+
+**Usage:**
+
+```bash Terminal
+npx checkly trigger --refresh-cache
+```
+
 </ResponseField>
 
 <ResponseField name="--retries" type="number" default="0">
@@ -344,10 +403,22 @@ Default: 600 seconds (10 minutes). Adjust based on your longest-running checks.
 Run your deployed checks before promoting code to production:
 
 ```bash Terminal
-npx checkly trigger --tags staging --record --test-session-name "Pre-prod validation"
+npx checkly trigger --tags staging --test-session-name "Pre-prod validation"
 ```
 
 <Tip>If your production deployment includes monitoring changes and updates, [use `npx checkly test`](/cli/checkly-test) to validate your preview environment with the updated monitoring configuration.</Tip>
+
+## Cancelling a run
+
+<Note>Available in CLI v8.0.0+.</Note>
+
+`checkly trigger` records a test session by default, so pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> cancels it. Cancellation applies only to Playwright Check Suite runs inside the session; other check types finish normally. Runs started with `--no-record` cannot be cancelled.
+
+The CLI keeps running after the first <kbd>Ctrl</kbd>+<kbd>C</kbd> to report the cancelled results. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> again to exit immediately without waiting.
+
+Pass the `--detach` flag to keep the checks running in the cloud instead — <kbd>Ctrl</kbd>+<kbd>C</kbd> then exits the CLI immediately without cancelling.
+
+See [Cancellation](/concepts/cancellation) for the full flow.
 
 ## Related Commands
 

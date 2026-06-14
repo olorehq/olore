@@ -1,12 +1,24 @@
 ---
 title: Use Neon Auth with React (API methods)
 subtitle: Build your own auth UI
+summary: >-
+  Neon Auth with React for Vite apps, using the `@neondatabase/neon-js` SDK's
+  programmatic API methods (`signUp()`, `signIn.email()`, `getSession()`) instead
+  of pre-built UI components. Use this page when you need full control over your
+  own auth UI rather than dropping in ready-made components. Registered users are
+  automatically synced to the `neon_auth.user` table in your Neon Postgres
+  database.
 enableTableOfContents: true
-updatedOn: '2025-11-12T00:00:00.000Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 layout: wide
+redirectFrom:
+  - /docs/auth/quick-start/react-router-components
+  - /docs/auth/quick-start/react-router-components/
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
+
+<AuthAISetupTip />
 
 <TwoColumnLayout>
 
@@ -33,9 +45,9 @@ You can then find your Auth **Base URL** on the Configuration tab. Copy this URL
 Create a React app using Vite.
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 npm create vite@latest my-app -- --template react
 ```
 
@@ -48,11 +60,11 @@ npm create vite@latest my-app -- --template react
 The Neon SDK provides authentication methods like `signUp()`, `getSession()`, and `signOut()` for your React app.
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 cd my-app
-npm install @neondatabase/neon-js
+npm install @neondatabase/neon-js@latest
 ```
 
 </TwoColumnLayout.Block>
@@ -68,9 +80,9 @@ Replace the URL with your actual Auth Base URL from the Neon Console.
 </Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label=".env">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename=".env"
 VITE_NEON_AUTH_URL=https://ep-xxx.neonauth.us-east-2.aws.neon.build/neondb/auth
 ```
 
@@ -83,9 +95,9 @@ VITE_NEON_AUTH_URL=https://ep-xxx.neonauth.us-east-2.aws.neon.build/neondb/auth
 Create a `src/auth.js` file to configure your auth client:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/auth.js">
+<TwoColumnLayout.Block>
 
-```javascript
+```javascript filename="src/auth.js"
 import { createAuthClient } from '@neondatabase/neon-js/auth';
 
 export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL);
@@ -102,9 +114,9 @@ Neon JS uses a programmatic approach for managing auth state. You'll use React h
 Replace the contents of `src/App.jsx` with the following code to implement [sign-up](/docs/reference/javascript-sdk#auth-signup), [sign-in](/docs/reference/javascript-sdk#auth-signinwithpassword), and [sign-out](/docs/reference/javascript-sdk#auth-signout):
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/App.jsx">
+<TwoColumnLayout.Block>
 
-```jsx
+```jsx filename="src/App.jsx"
 import { useState, useEffect } from 'react';
 import { authClient } from './auth';
 import './App.css';
@@ -225,9 +237,9 @@ Start the development server:
 Open your browser to `http://localhost:5173` and create a test user.
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 npm run dev
 ```
 
@@ -242,9 +254,9 @@ As users sign up, their profiles are synced to your Neon database in the `neon_a
 Query your users table in the SQL Editor to see your new users:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="SQL Editor">
+<TwoColumnLayout.Block>
 
-```sql
+```sql filename="SQL Editor"
 SELECT * FROM neon_auth.user;
 ```
 
@@ -256,5 +268,6 @@ SELECT * FROM neon_auth.user;
 ## Next steps
 
 - [Learn about Neon Auth concepts](/docs/auth/overview)
+- [More example apps](/docs/auth/overview#example-applications) in the **neon-js** `examples/` directory
 - [Explore the Neon Data API](/docs/data-api/get-started) to build a REST API for your data
 - [View complete SDK reference](/docs/reference/javascript-sdk)

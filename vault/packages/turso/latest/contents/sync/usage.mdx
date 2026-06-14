@@ -243,3 +243,105 @@ log.Printf("stats: cdc=%v, main=%d revert=%d rx=%d tx=%d pull=%d push=%d revisio
 </Step>
 
 </Steps>
+
+## Offline-first writes
+
+If your app needs to accept writes without internet connectivity, write locally and call `push()` when the connection is available. All changes are safely stored in the local database file until they can be synced.
+
+<CodeGroup>
+
+```ts TypeScript
+import { connect } from '@tursodatabase/sync';
+
+// bootstrapIfEmpty: false lets the app start offline without
+// needing to reach the remote on first launch
+const db = await connect({
+  path: './local.db',
+  url: process.env.TURSO_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+  bootstrapIfEmpty: false,
+});
+
+async function syncWhenOnline(db) {
+  try {
+    await db.push();
+  } catch (e) {
+    // No connectivity — changes are safe in the local file
+    // and will sync on the next push() call
+  }
+}
+
+// On app launch, pull the latest state if online
+try {
+  await db.pull();
+} catch (e) {
+  // Offline — local data is still available for reads and writes
+}
+
+// On a timer or connectivity event
+await syncWhenOnline(db);
+```
+
+```py Python
+import os
+import turso.sync
+
+# bootstrap_if_empty=False lets the app start offline without
+# needing to reach the remote on first launch
+conn = turso.sync.connect(
+    path="./local.db",
+    remote_url=os.environ["TURSO_URL"],
+    remote_auth_token=os.environ["TURSO_AUTH_TOKEN"],
+    bootstrap_if_empty=False,
+)
+
+def sync_when_online(conn):
+    try:
+        conn.push()
+    except Exception:
+        # No connectivity — changes are safe in the local file
+        # and will sync on the next push() call
+        pass
+
+# On app launch, pull the latest state if online
+try:
+    conn.pull()
+except Exception:
+    # Offline — local data is still available for reads and writes
+    pass
+
+# On a timer or connectivity event
+sync_when_online(conn)
+```
+
+```go Go
+// BootstrapIfEmpty: false lets the app start offline without
+// needing to reach the remote on first launch
+db, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
+	Path:             "./local.db",
+	RemoteUrl:        os.Getenv("TURSO_URL"),
+	RemoteAuthToken:  os.Getenv("TURSO_AUTH_TOKEN"),
+	BootstrapIfEmpty: false,
+})
+
+func syncWhenOnline(ctx context.Context, db *turso.TursoSyncDb) {
+	if err := db.Push(ctx); err != nil {
+		// No connectivity — changes are safe in the local file
+		// and will sync on the next Push() call
+		log.Println("push deferred:", err)
+	}
+}
+
+// On app launch, pull the latest state if online
+if _, err := db.Pull(ctx); err != nil {
+	// Offline — local data is still available for reads and writes
+	log.Println("pull deferred:", err)
+}
+
+// On a timer or connectivity event
+syncWhenOnline(ctx, db)
+```
+
+</CodeGroup>
+
+This is the modern equivalent of the `offline: true` flag from [`@libsql/client` Embedded Replicas](/features/embedded-replicas/introduction). With Turso Sync, all reads and writes happen locally by default — you control when to sync with explicit `push()` and `pull()` calls.

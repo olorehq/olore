@@ -1,36 +1,41 @@
 ---
 name: olore-agentskills-latest
-description: Local Agent Skills documentation reference (latest). Use when asked about the Agent Skills format, creating skills, SKILL.md specification, or integrating skills into agents.
+description: Local agentskills documentation reference (latest). Agent Skills format documentation — use for creating SKILL.md files, understanding the specification, integrating skills support into AI coding agents, and following best practices for skill creation and evaluation.
 ---
 
-# Agent Skills Documentation
+# agentskills Documentation
 
-Agent Skills are a simple, open format for giving AI agents new capabilities and expertise through folders of instructions, scripts, and resources that agents can discover and use.
+Agent Skills is a lightweight, open format for extending AI agent capabilities with specialized knowledge and workflows. A skill is a folder containing a `SKILL.md` file with YAML frontmatter (`name` and `description`) plus Markdown instructions. Skills can bundle scripts, references, templates, and other resources.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/home.mdx` | Overview | Introduction to Agent Skills format and its benefits for skill authors, compatible agents, and teams |
-| `contents/what-are-skills.mdx` | What are skills? | Core concepts: folder structure, progressive disclosure, and how skills work |
-| `contents/specification.mdx` | Specification | Complete format specification including SKILL.md format, frontmatter fields, and optional directories |
-| `contents/integrate-skills.mdx` | Integrate skills | Guide for adding Agent Skills support to agents and tools (filesystem-based vs tool-based approaches) |
-| `contents/README.md` | Documentation Dev Guide | Development instructions for the Mintlify documentation site |
-| `contents/CLAUDE.md` | Claude Code Guidance | Repository-specific instructions for Claude Code when working with Agent Skills docs |
+| `contents/home.mdx` | Agent Skills Overview | What Agent Skills are, why they exist, and how the format works |
+| `contents/specification.mdx` | Specification | Complete SKILL.md format spec — frontmatter fields, directory structure, progressive disclosure |
+| `contents/clients.mdx` | Client Showcase | Agent products that support the Agent Skills format |
+| `contents/skill-creation/quickstart.mdx` | Quickstart | Step-by-step tutorial to create and test your first skill |
+| `contents/skill-creation/best-practices.mdx` | Best Practices | How to write well-scoped skills grounded in real domain expertise |
+| `contents/skill-creation/evaluating-skills.mdx` | Evaluating Skills | Eval-driven iteration — designing test cases and measuring skill output quality |
+| `contents/skill-creation/optimizing-descriptions.mdx` | Optimizing Descriptions | How to write descriptions that trigger reliably on the right prompts |
+| `contents/skill-creation/using-scripts.mdx` | Using Scripts | Bundling and running shell commands and scripts inside a skill |
+| `contents/client-implementation/adding-skills-support.mdx` | Adding Skills Support | How to implement Agent Skills support in an agent or dev tool |
+| `contents/CLAUDE.md` | CLAUDE.md | Claude Code guidance for the agentskills repo |
+| `contents/README.md` | README | Documentation site setup and publishing instructions |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Creating or authoring Agent Skills
-- SKILL.md file format and specification
-- Agent Skills frontmatter and metadata fields
-- Integrating skills support into AI agents or tools
-- Progressive disclosure and skill activation
-- Skills directory structure and optional folders
-- Differences between filesystem-based and tool-based agents
+- Creating or writing a SKILL.md file
+- The Agent Skills specification or format requirements
+- Best practices for skill descriptions, scoping, and structure
+- Evaluating and testing skill quality with evals
+- Optimizing skill descriptions for reliable triggering
+- Using scripts inside skills
+- Adding Agent Skills support to an AI agent or development tool
+- Which agents or clients support the Agent Skills format
 
 ## How to find information
 
-1. Check Quick Reference above for specific topics
-2. Read `TOC.md` for complete file listing
-3. Read specific files from `contents/{filename}` for detailed information
+1. Check Quick Reference above for the relevant file
+2. Read specific files from `contents/{filename}`

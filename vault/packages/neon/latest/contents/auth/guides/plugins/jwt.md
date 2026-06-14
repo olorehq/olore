@@ -1,8 +1,17 @@
 ---
 title: JWT
 subtitle: Authenticate using JSON Web Tokens (JWT) for external services
+summary: >-
+  Neon Auth's JWT plugin lets backend services, CLI tools, and cross-domain API
+  requests retrieve raw JSON Web Tokens via `authClient.token()` or the
+  `set-auth-jwt` response header, rather than relying on HTTP-only session
+  cookies. Tokens are signed with EdDSA (Ed25519) and expire in 15 minutes;
+  verify them using the JWKS endpoint at
+  `<YOUR_NEON_AUTH_URL>/.well-known/jwks.json`. This plugin is not a substitute
+  for session management in browser-based apps, and custom JWT claims are not
+  supported.
 enableTableOfContents: true
-updatedOn: '2026-01-07T15:07:19.158Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -41,7 +50,7 @@ export async function getJwtToken() {
 
   if (error) throw error;
 
-  // The token string (e.g., "eyJhbGciOiJFZ...")
+  // The token string (for example, "eyJhbGciOiJFZ...")
   return data.token;
 }
 ```
@@ -317,7 +326,7 @@ Because Neon Auth is a managed service, certain server-side configurations avail
 
 If a token is rejected during verification, check the following:
 
-1. Verify that you are using the correct JWKS endpoint for your Neon Auth instance. The issuer of the token must match the origin of your Neon Auth URL. (e.g., if your Neon Auth URL is `https://ep-xx.aws.neon.tech/neondb/auth`, the issuer should be `https://ep-xx.aws.neon.tech`).
+1. Verify that you are using the correct JWKS endpoint for your Neon Auth instance. The issuer of the token must match the origin of your Neon Auth URL. (for example, if your Neon Auth URL is `https://ep-xx.aws.neon.tech/neondb/auth`, the issuer should be `https://ep-xx.aws.neon.tech`).
 2. Confirm that your verification library supports **EdDSA** (Ed25519).
 3. Make sure the token has not expired.
 4. Check that the `kid` in the JWT header matches one of the keys in the JWKS response. If not, fetch the latest keys from the JWKS endpoint.

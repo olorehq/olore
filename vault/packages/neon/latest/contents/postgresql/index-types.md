@@ -1,11 +1,21 @@
 ---
 title: Postgres indexes
 subtitle: Optimize query performance with indexes in Postgres
+summary: >-
+  Postgres supports several index types, each targeting different query
+  patterns: B-tree for equality and range queries, Hash for exact-match
+  lookups, GiST for spatial and full-text data, GIN for arrays and inverted
+  indexes, and BRIN for ordered large tables. Use this page to choose the
+  right index type and learn CREATE INDEX syntax, trade-offs for write
+  overhead and storage, and advanced strategies such as multicolumn, partial,
+  and expression indexes.
 enableTableOfContents: true
-updatedOn: '2024-08-09T20:46:35.871Z'
+redirectFrom:
+  - /docs/postgres/indexes
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-Indexes are a powerful tool to optimize query performance in relational databases like Neon Postgres. They allow the database engine to quickly locate and retrieve specific rows, significantly speeding up data access. In the absence of an index, Postgres must scan the entire table to find the rows that satisfy the query conditions.
+Indexes speed up query performance in relational databases like Neon Postgres by allowing the database engine to quickly locate and retrieve specific rows. In the absence of an index, Postgres must scan the entire table to find the rows that satisfy the query conditions.
 
 <CTA />
 
@@ -47,7 +57,7 @@ CREATE INDEX idx_users_timestamp ON users (created_at);
 
 ### Use B-tree Indexes in Postgres
 
-B-tree indexes are efficient for both equality and range queries on sortable data. They are particularly useful for columns frequently used in `WHERE` clauses, `JOIN` conditions, and `ORDER BY` clauses.
+B-tree indexes are efficient for both equality and range queries on sortable data. Use them for columns frequently appearing in `WHERE` clauses, `JOIN` conditions, and `ORDER BY` clauses.
 
 ```sql
 -- Equality search
@@ -129,7 +139,7 @@ While highly versatile, especially for spatial and full-text search data, GiST i
 
 ## GIN Indexes
 
-Generalized Inverted Indexes (GIN) are useful for indexing composite values, such as arrays or full-text search documents. GIN indexes store a separate entry for each component value (e.g., each array element or each word in a text document). This is similar to an `inverted index` typically used in text search engines, except that it can be extended to handle data types other than text.
+Generalized Inverted Indexes (GIN) are useful for indexing composite values, such as arrays or full-text search documents. GIN indexes store a separate entry for each component value (for example, each array element or each word in a text document). This is similar to an `inverted index` typically used in text search engines, except that it can be extended to handle data types other than text.
 
 ### Create a GIN Index in Postgres
 
@@ -274,7 +284,7 @@ This is useful when you frequently query based on some computation or function o
 
 ## Conclusion
 
-Indexes are powerful tools for optimizing query performance in Postgres. By understanding the different types of indexes and their appropriate use cases, you can significantly enhance the efficiency of your database queries. However, remember to monitor the impact of indexes on your overall database performance, as they do introduce some overhead for write operations and storage.
+Understanding the different index types and their use cases can significantly improve the efficiency of your database queries. However, remember to monitor the impact of indexes on your overall database performance, as they do introduce some overhead for write operations and storage.
 
 ## Resources
 

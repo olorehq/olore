@@ -1,83 +1,203 @@
 import { Callout } from 'nextra/components'
 
+{/*
+=============================================================================
+REVIEWER NOTES FOR PR — remove this block before merging
+=============================================================================
+Sections marked [UPDATED] have changed content from the current live doc.
+Sections marked [NEW] are entirely new and need to be inserted.
+Sections marked [UNCHANGED] can be copied as-is from the live doc.
+
+Suggested page structure (in order):
+  1. Overview                        [UPDATED]
+  2. Create an Alert                 [UPDATED]
+  3. Notification Windows            [NEW] ← insert after step 6 in Create an Alert
+  4. Test Alert                      [NEW] ← insert after Notification Windows
+  5. Alert Status & Validity         [NEW] ← insert after Test Alert
+  6. Webhook Alerts                  [UNCHANGED — minor nav note added]
+  7. View & Manage Alerts            [UPDATED]
+  8. Alert Criteria Types            [UNCHANGED]
+  9. Root Cause Analysis             [UPDATED] ← one-paragraph tease linking to the new top-level RCA page
+=============================================================================
+*/}
+
 # Alerts: Get notified about anomalies in your data
 
 <Callout type="info">
     Users with a paid plan can access Alerts. Growth plan users can set up to 5 alerts per project. Enterprise plan users can set an unlimited number of alerts. See our [pricing page](https://mixpanel.com/pricing/) for more details.
 </Callout>
 
+{/* ============================================================ */}
+{/* SECTION 1: OVERVIEW — [UPDATED] */}
+{/* Changes: added mention of bell icon, scheduling windows, test alerts, validity states */}
+{/* ============================================================ */}
+
 ## Overview
 
-Mixpanel provides the ability to create alerts for your Insights and Funnels reports, allowing you to monitor custom report conditions or automatically detect anomalies and receive email notifications when those conditions are met. Additionally, Mixpanel offers a Root Cause Analysis feature that helps you investigate and understand the underlying data behind alerts, enabling you to identify the user segments affected and address any issues quickly.
+Mixpanel provides the ability to create alerts for your Insights and Funnels reports, allowing you to monitor custom report conditions or automatically detect anomalies and receive notifications when those conditions are met.
+
+Alerts are accessible directly from the **bell icon** in any report header, and can be delivered via email, Slack, or webhook. You can also control *when* alerts fire by setting notification windows restricted to specific days and times, so you only get notified when it matters.
+
+When an alert is active, Mixpanel continuously monitors its validity — surfacing warnings if report changes could affect it — and sends a one-time email if an alert ever becomes invalid. Additionally, Mixpanel's Root Cause Analysis feature helps you investigate and understand the underlying data behind any triggered alert.
+
+{/* ============================================================ */}
+{/* SECTION 2: CREATE AN ALERT — [UPDATED] */}
+{/* Changes: entry point is now bell icon (not 3-dots menu); new steps for notification */}
+{/* windows and Test Alert added inline. Note re: unsaved changes kept. */}
+{/* ============================================================ */}
 
 ## Create an Alert
 
 <Callout type="info">
- To create and manage alerts, you will need an analyst, admin, or owner project role. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
+    To create and manage alerts, you will need an analyst, admin, or owner project role. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
 </Callout>
 
-Create an alert for your Insights and Funnels reports and be notified when report conditions reach certain thresholds. Alerts are sent as an email or Slack message and can be sent to multiple users.
+Create an alert for your Insights and Funnels reports and be notified when report conditions reach certain thresholds. Alerts can be delivered via email, Slack, or webhook, and can be sent to multiple recipients.
+
 **To create an alert, follow these steps:**
 
-1. **Save your report**, click the 3 dots icon, go to Alerts, and select Create Alert.
-*Note: You won't be able to create alerts if the report has unsaved changes. Save your report before setting up the alert.*
+1. Open a saved report and click the **bell icon** in the report header.
 
-![](/246672717-c15123a9-d73e-4c7f-84b9-3891731fc708.png)
+   *Note: You won't be able to create an alert if the report has unsaved changes. Save your report before setting up an alert.*
+
+   If no alerts exist on the report, the modal will show *"No alerts for this report."* Click **Create Alert** in the bottom right of the modal.
 
 2. **Enter a name** for your alert.
-3. If your report has more than one event, select an event to track. If your report has a breakdown applied, either select a segment to alert on, or select any segment to be alerted when any segment matches the alert criteria.
-4. **Set your alert criteria.** Depending on the report you’re working from, choose between anomaly detection or custom alert types. More details on each criterion type can be found below.
-5. **Set your notification frequency.** Depending on your alert criteria, you can choose a notification frequency spanning from an hour to at most a month. This frequency informs how often *at most* you’ll receive an alert.
-    *Note:*
-    - *For time-series reports, alert query frequency (how often we check if your data matches your alert condition) is determined by the time bucket of your report visualization. For instance, if your chart is hourly, the alert will be checked for at an hourly interval.*
-    - *If you have an hourly chart, but set the alert frequency to daily, we’ll check your report for an alert condition match every hour. If we find a match, we’ll send you the alert message and will stop checking your report for a match until the next day.*
-6. **Set your notification delivery preferences.** When alert conditions are met, we can send a notification via email or Slack.
-    - For email, enter the email of the recipient. You can enter any email here, not just Mixpanel users.
-    - For Slack, select any Slack channels you want to send this alert. Private Slack channels are not supported.
 
-<Callout type="info">
-    In order to send alerts to Slack, you may need to configure the Mixpanel Slack app if you haven’t before. Click "Add Mixpanel to Slack" and follow the prompts on the following screens. You will be brought back to this page when you have added Mixpanel to Slack.
-</Callout>
+3. If your report has more than one event, select an event to track. If your report has a breakdown applied, either select a specific segment to alert on, or select **Any segment** to be alerted when any segment matches the alert criteria.
+
+4. **Set your alert criteria.** Depending on the report type, choose between Anomaly Detection or Custom Threshold. See [Alert Criteria Types](#alert-criteria-types) below for details on each.
+
+5. **Set your notification frequency.** Choose how often *at most* you'll receive an alert — from hourly up to monthly.
+
+   *Note:*
+   - *For time-series reports, how often Mixpanel checks your data is determined by the time bucket of your report visualization. For example, if your chart is hourly, the alert will be evaluated at an hourly interval.*
+   - *If you have an hourly chart but set the alert frequency to daily, Mixpanel checks for a match every hour. If a match is found, the alert fires and won't check again until the next day.*
+
+6. **Set your notification timing.** Choose when the alert is allowed to fire:
+   - **Any time** — the alert fires whenever the condition is met, regardless of day or time.
+   - **During Selected Windows** — restrict the alert to specific days and/or time ranges. See [Notification Windows](#notification-windows) below.
+
+7. **Set your notification delivery preferences.** When alert conditions are met, Mixpanel can notify you via email, Slack, or webhook.
+   - **Email** — enter the recipient's email address. You can enter any email, not just Mixpanel users.
+   - **Slack** — select the Slack channels to notify. Private Slack channels are not supported. You may need to configure the Mixpanel Slack app first — click **Add Mixpanel to Slack** and follow the prompts.
+   - **Webhook** — select a configured webhook from the dropdown. See [Webhook Alerts](#webhook-alerts) for setup instructions.
 
 ![](/255713687-91a2bb99-3a79-43d4-9d97-3b397aab0305.png)
 
+8. Optionally, click **Test Alert** to send a test notification before saving. See [Test Alert](#test-alert) below.
+
+9. **Save** the alert.
+
+{/* ============================================================ */}
+{/* SECTION 3: NOTIFICATION WINDOWS — [NEW] */}
+{/* Insert this as a new subsection after the Create an Alert steps */}
+{/* ============================================================ */}
+
+## Notification Windows
+
+When you select **During Selected Windows** in step 6 of alert creation, a day-by-day schedule appears. Each row represents a day and supports an optional time range, letting you restrict when the alert is allowed to fire.
+
+**Adding windows:**
+- **Add Single Day Window** — adds a row for a specific day with an optional time range.
+- **Weekdays** — quick-adds rows for Monday through Friday.
+- **Weekends** — quick-adds rows for Saturday and Sunday.
+
+**Managing individual rows:**
+
+Each day row has a `...` overflow menu with:
+- **Duplicate Day Window** — copies the row's time window to a new row.
+- **Remove Time Window** — clears the time range from that row but keeps the day active (alert can fire any time on that day).
+- **Delete Day Window** — removes the entire day row from the schedule.
+
+*Note: Notification windows restrict when the alert fires, not when Mixpanel checks your data. Mixpanel will still evaluate the alert condition according to its frequency — it just won't send a notification outside your defined windows.*
+
+{/* ============================================================ */}
+{/* SECTION 4: TEST ALERT — [NEW] */}
+{/* Insert this as a new subsection after Notification Windows */}
+{/* ============================================================ */}
+
+## Test Alert
+
+The **Test Alert** button is available in both the Create and Edit alert flows. Clicking it sends a test notification to all configured recipients (email, Slack, and/or webhook) immediately — without saving the alert.
+
+Test notifications are identical in format to live alert notifications, but the alert name is prefixed with **[TEST]** so recipients know it isn't a real firing.
+
+Use Test Alert to confirm your delivery settings are correct before saving.
+
+{/* ============================================================ */}
+{/* SECTION 5: ALERT STATUS & VALIDITY — [NEW] */}
+{/* Insert this as a new subsection after Test Alert */}
+{/* ============================================================ */}
+
+## Alert Status & Validity
+
+Mixpanel actively tracks whether each alert is in a valid state and surfaces this information directly in the report.
+
+### Bell icon status
+
+When a report has one or more alerts, the **bell icon** in the report header shows each alert's name and current status:
+- **✅ Valid** — the alert is active and monitoring as expected.
+- **Invalid** — the alert's configuration no longer matches the current report (for example, the event or breakdown it was tracking has changed). Invalid alerts will not fire until corrected.
+
+Click any alert name in the bell icon modal to open it and edit.
+
+### Warning banner for unsaved changes
+
+If you've made unsaved changes to a report that has active alerts, an **orange warning banner** appears in the bell icon modal. This is a preemptive notice — it means your current unsaved changes *could* affect the alert if saved. The alert's status will still show ✅ Valid until you actually save the report.
+
+### Save Report Changes modal
+
+When you save a report that has active alerts, a **Save Report Changes** modal appears listing the affected alerts (name, creator, creation date). This gives you a chance to review the impact before confirming. You can choose to:
+- **Save changes** — saves the report and potentially invalidates the listed alerts.
+- **Save as new report** — creates a new copy of the report with your changes, leaving the original report and its alerts untouched.
+
+> **Tip:** If you want to update a report without breaking existing alerts, use **Save as new report** and recreate the alert on the new version.
+
+### Invalid alert notification email
+
+When an alert first becomes invalid, Mixpanel sends a **one-time email** to the alert's creator notifying them. This email is sent only once — if the alert remains invalid, no further emails are sent. Open the alert from the bell icon modal to see the reason for invalidation and how to fix it.
+
+{/* ============================================================ */}
+{/* SECTION 6: WEBHOOK ALERTS — [UNCHANGED] */}
+{/* No content changes needed. Only addition: note that webhooks can also */}
+{/* be managed from Project Settings > Alerts (see View & Manage section). */}
+{/* ============================================================ */}
+
 ## Webhook Alerts
+
 Webhook Alerts allow you to send alert notifications from Mixpanel to third-party platforms via HTTP webhooks. When a configured alert is triggered, Mixpanel will automatically send a payload containing alert details to your specified endpoint.
 
 **Creating a Webhook:**
 
-1. Navigate to **Gear Icon** > **Integrations** > **Notification Webhook**. Note this is separate to [Custom Webhooks](/docs/cohort-sync/webhooks) (meant to sync cohorts)
-
-2. Under Project Webhooks, click **"+ Add Webhook"**
-
+1. Navigate to **Gear Icon** > **Integrations** > **Notification Webhook**. Note this is separate from [Custom Webhooks](/docs/cohort-sync/webhooks) (which are used to sync cohorts).
+2. Under Project Webhooks, click **"+ Add Webhook"**.
 3. Complete the webhook configuration:
-    - **Name** - Enter a descriptive name for this webhook (e.g., "Production Alerts")
-    - **URL** - Enter the HTTPS endpoint where alert payloads will be sent (e.g., `https://example.com/webhooks/mixpanel`)
-    - **Username** - If your endpoint requires HTTP Basic Authentication, enter the username
-    - **Password**  - Enter the corresponding password for authentication
-4. Click **Test connection** to verify connectivity to your endpoint
-5. Click **Submit** to save the webhook
+   - **Name** — enter a descriptive name (e.g., "Production Alerts").
+   - **URL** — enter the HTTPS endpoint where alert payloads will be sent.
+   - **Username** — if your endpoint requires HTTP Basic Authentication, enter the username.
+   - **Password** — enter the corresponding password for authentication.
+4. Click **Test connection** to verify connectivity.
+5. Click **Submit** to save the webhook.
+
+You can also manage webhooks directly from **Project Settings > Alerts** via the **Manage Webhooks** button in the table toolbar.
 
 **Configuring Webhook Delivery for an Alert:**
 
-Once you've created a webhook, you can use it to receive alert notifications:
-
-1. When creating or editing an alert, scroll to the **Notify** section
-2. Locate the **via Webhook** dropdown
-3. Select your webhook from the available options
+1. When creating or editing an alert, scroll to the **Notify** section.
+2. Locate the **via Webhook** dropdown.
+3. Select your webhook from the available options.
 
 ![image.png](/webhookalert2.png)
 
-4. Complete the rest of your alert configuration and save
+4. Complete the rest of your alert configuration and save.
 
-**Sample payload received from the Webhook**
+**Sample payload received from the Webhook:**
 
-You'll receive a POST request to your endpoint, containing a payload with the following structure:
 ```json
 {
     "event_type": "custom_alert_triggered",
-    "alert":
-    {
+    "alert": {
         "id": 123123,
         "name": "Webhook Test",
         "creator": "Last Name, First Name",
@@ -88,8 +208,7 @@ You'll receive a POST request to your endpoint, containing a payload with the fo
         "workspace_id": 12345,
         "workspace_name": "All Project Data"
     },
-    "condition":
-    {
+    "condition": {
         "type": "absolute",
         "operator": ">",
         "threshold": 0,
@@ -97,14 +216,12 @@ You'll receive a POST request to your endpoint, containing a payload with the fo
         "formatted_value": "20,000",
         "sentence": "above 0"
     },
-    "report":
-    {
+    "report": {
         "name": "Custom Alert Insights Report",
         "type": "insights",
         "url": "https://mixpanel.com/project/9876543/view/12345/app/insights?mp_source=webhook&alert_id=123123#report/BOOKMARKID"
     },
-    "links":
-    {
+    "links": {
         "report_url": "https://mixpanel.com/project/9876543/view/12345/app/insights?mp_source=webhook&alert_id=123123#report/BOOKMARKID",
         "edit_alert_url": "https://mixpanel.com/settings/account/alert-settings/alert/123123?mp_source=webhook",
         "root_cause_analysis_url": "https://mixpanel.com/project/9876543/view/12345/app/boards/?mp_source=webhook#rca=123123&time=1770404010"
@@ -112,38 +229,93 @@ You'll receive a POST request to your endpoint, containing a payload with the fo
 }
 ```
 
+{/* ============================================================ */}
+{/* SECTION 7: VIEW & MANAGE ALERTS — [UPDATED] */}
+{/* Changes: primary location is now Project Settings > Alerts (not Personal Settings). */}
+{/* New table columns, filters, overflow menu, capacity banner, alert history. */}
+{/* Permissions model updated (edit access to report = can edit all alerts on it). */}
+{/* ============================================================ */}
 
 ## View & Manage Alerts
 
-You can view and manage all alerts under your personal settings.
+### Alerts table (Project Settings)
 
-1. Click on **the gear icon** in the top right of Mixpanel and under "Organization Settings" **select "Personal Settings".
-2. Within your personal settings, select the **Alerts** tab to view your custom alerts and automatic insights.
+To view and manage all alerts across a project, navigate to **Project Settings > Alerts**. This table gives you full visibility into every alert in the project, with the following columns:
 
-    **to delete:** If you hover over an alert you have created, you can see a **trash icon** which you can click to delete the alert.
-    **to modify:** Click on the title of the alert to edit details.
+| Column | Description |
+|---|---|
+| **Creator** | Avatar/initials of the user who created the alert |
+| **Last Modified** | Relative timestamp of the most recent edit |
+| **Report** | The linked report the alert is monitoring |
+| **Triggers** | Total number of times the alert has fired |
+| **Last Triggered** | Date of the most recent firing (or `–` if never triggered) |
+| **Status** | ✅ Valid or invalid |
 
-![image](https://github.com/mixpanel/docs/assets/130006730/be35a381-b090-4fd4-86e0-7281dd291d64)
+**Filtering the table:**
 
-You can view the details of another user’s alert, but you are not able to edit or delete it unless you're a project owner.
+Use the filters in the toolbar to narrow the list:
+- **All Creators** — filter by alert creator
+- **Report** — filter by associated report
+- **All Statuses** — filter by valid or invalid
+- **Search** — free-text search by alert name
+- **Reset Filter** — clears all active filters
 
-<Callout type="info">
-    If you need to modify alerts you didn't create, contact the project owner.
-</Callout>
+**Row actions:**
+
+Each alert row has a `...` overflow menu with:
+- **RCA** — opens a Root Cause Analysis board for that alert
+- **Alert History** — opens a side panel with a timestamped log of created, edited, and fired events for the alert
+- **Edit Alert** — opens the alert configuration
+- **Delete Alert** — permanently removes the alert
+
+**Anomaly Detection capacity warning:**
+
+If your organization is approaching the 50 active Anomaly Detection Alert limit, a blue info banner appears at the top of the table:
+
+> *"Your organization is approaching the limit for active anomaly detection alerts. Delete old anomaly detection alerts to make space for new ones. X/50 alerts used. Y% capacity."*
+
+This banner appears when your org reaches 90% of the limit (45 of 50 alerts). Delete old anomaly detection alerts from this table to free up capacity.
+
+**Managing webhooks:**
+
+Click the **Manage Webhooks** button in the table toolbar to add or edit webhook configurations for alert delivery.
+
+### Editing and deleting alerts
+
+- **To edit** an alert you created, click its name from the bell icon modal in any report, or use the **Edit Alert** option in the `...` menu in Project Settings > Alerts.
+- **To delete** an alert, hover over it in the Alerts table and click the **trash icon**, or use the **Delete Alert** option in the `...` overflow menu.
+
+### Alert History
+
+Click **Alert History** from any row's `...` menu to view a side panel showing a full timestamped log of activity for that alert — including when it was created, edited, and each time it fired. This is useful for auditing unexpected behavior or understanding alert patterns over time.
+
+### Permissions
+
+| Scenario | What you can do |
+|---|---|
+| You have **Edit access** to a report | You can create, edit, and delete all alerts on that report — even alerts created by others |
+| You **lack Edit access** to a report | You cannot create alerts on that report |
+| You **lack Edit access** to a report where someone else created an alert | The alert is view-only; an explanatory banner appears in the UI |
+
+*Note: Permissions are evaluated at the **report level**, not just the project level. If a user can't edit an alert, confirm their access to the underlying report first.*
+
+{/* ============================================================ */}
+{/* SECTION 8: ALERT CRITERIA TYPES — [UNCHANGED] */}
+{/* No content changes. Copy as-is from live doc. */}
+{/* ============================================================ */}
 
 ## Alert Criteria Types
 
 Alerts can be configured to trigger based on a metric reaching above or below a custom threshold you defined, or through our Anomaly Detection model.
 
 ### Custom Threshold
+
 Custom Threshold alerts monitor your metrics and notify you when the metric reaches above or below the threshold that you defined.
 
-- **Above**: The alert will check if the current value is above a set threshold value and if it is, you will be sent an alert.
-- **Below**: The alert will check if the current value is below a set threshold value and if it is, you will be sent an alert.
-- **Increases by more than**: Available in line chart reports. The alert will compare the current value with the previous value (frequency set by the report time-series setting). If the new value has increased by the custom amount or percentage over the previous value, you will be sent an alert.
-- **Decreases by more than**: Available in line chart reports. The alert will compare the current value with the previous value (frequency set by the report time-series setting). If the new value has decreased by the custom amount or percentage below the previous value, you will be sent an alert.
-
-![](/255714489-2a4921bb-0fd7-44f9-a6ba-5a88ee14358a.png)
+- **Above** — the alert fires if the current value is above the set threshold.
+- **Below** — the alert fires if the current value is below the set threshold.
+- **Increases by more than** — available in line chart reports. Compares the current value with the previous value (based on the report's time-series setting). Fires if the new value has increased by the specified amount or percentage.
+- **Decreases by more than** — available in line chart reports. Fires if the new value has decreased by the specified amount or percentage below the previous value.
 
 ### Anomaly Detection
 
@@ -151,65 +323,50 @@ Custom Threshold alerts monitor your metrics and notify you when the metric reac
     Users on the Enterprise plan can create Anomaly Detection alerts. See our [pricing page](https://mixpanel.com/pricing/) for more details.
 </Callout>
 
-Anomaly Detection alerts automatically monitor your metrics and notify you when significant anomalies occur. With advanced forecasting algorithms, Mixpanel calculates thresholds based on the expected range of your metrics. If a data point falls outside of the calculated confidence interval, you'll receive an alert, allowing you to address the issue promptly. No manual threshold configuration is required, making it an effortless way to stay informed about potential problems.
+Anomaly Detection alerts automatically monitor your metrics and notify you when significant anomalies occur. Mixpanel uses advanced forecasting algorithms to calculate expected ranges for your metrics. If a data point falls outside the calculated confidence interval, you'll receive an alert — no manual threshold configuration required.
 
-**Before you begin, there are some important details to note about Anomaly Detection Alerts:**
+**Before you begin:**
 
-- While custom alerts are available on any insights or funnel report, at the moment, anomaly detection alerts are only available on insights reports using a time series visualization.
-- Anomaly detection is only supported on line charts without comparisons, rolling ranges, cumulative types, or cohorts over time. To access all alerting options, change the report chart type to a line chart and remove unsupported options.
-- Currently, anomaly detection alerts with hourly notification settings may result in more false positives due to a reduction in forecast accuracy.
+- Anomaly detection alerts are only available on Insights reports using a time series visualization.
+- Anomaly detection is only supported on line charts without comparisons, rolling ranges, cumulative types, or cohorts over time.
+- Hourly anomaly detection alerts may produce more false positives due to reduced forecast accuracy at that granularity.
 
-**To set up anomaly detection alerts in a report, follow these steps:**
+**To set up an Anomaly Detection alert:**
 
-1. Click the **3 dots icon**, go to **Alerts** and select **Create Alert**
-2. In the alert creation modal, select **Anomaly Detection** as the alert type.
-    *Note: If Anomaly Detection is not available, it means it is not supported for your report or chart type. Please refer to the "Before you begin" section of this help doc for more information.*
-
-3. Optionally, adjust the settings to tune the sensitivity of your alert. Higher confidence intervals typically result in a wider expected range and thus fewer alerts triggered. Use the alert preview to fine-tune the settings based on the context and confidence required.
-4. Configure the alert delivery settings and save.
+1. Click the **bell icon** in the report header, then click **Create Alert**.
+2. Select **Anomaly Detection** as the alert type.
+   *If Anomaly Detection is unavailable, it is not supported for your current report or chart type.*
+3. Optionally adjust the confidence interval to tune sensitivity. Higher confidence intervals produce a wider expected range and fewer alerts.
+4. Use the alert preview to fine-tune settings, then configure delivery and save.
 
 ### Additional information
 
-**Forecasting Tool**
+**Forecasting tool**
 
-The Anomaly Detection feature in Mixpanel utilizes a powerful and proven open-source forecasting tool called [Prophet](https://facebook.github.io/prophet/). Prophet is designed to forecast time series data and is able to effectively identify missing data points, trend shifts, and large outliers.
+Anomaly Detection uses an LLM forecasting tool designed for time series data. This handles missing data points, trend shifts, and large outliers effectively.
 
-**Confidence Interval**
+**Confidence interval**
 
-The confidence interval reflects our level of confidence that the anomalous data point represents an unexpected change. Generally, higher confidence levels result in fewer anomalies detected.
+The confidence interval reflects the level of certainty that a detected anomaly represents an unexpected change. Higher confidence levels generally result in fewer anomalies detected.
 
-**Anomaly Detection Limit**
+**Anomaly Detection limit**
 
-Currently, each organization has a limit of 50 active Anomaly Detection Alerts. If you reach the limit, delete old alerts to create space for new ones.
-
-By setting up Anomaly Detection Alerts in Mixpanel, you can gain valuable insights into unusual patterns in your metrics and take proactive actions based on detected anomalies. Stay ahead of potential issues and leverage data-driven decision-making with Anomaly Detection Alerts.
+Each organization has a limit of 50 active Anomaly Detection Alerts. A warning banner appears in Project Settings > Alerts when your org reaches 90% capacity (45/50). Delete old alerts to create space for new ones.
 
 **Rounding in alert messages**
 
-When displaying decimal values, the current value shown in alert messages is rounded to 2 decimal places.  This can make it appear to be outside the alert range when it is very close to the boundary.  However, the actual alert is always checked against the full unrounded value.
+When displaying decimal values, the current value shown in alert messages is rounded to 2 decimal places. This can make it appear to be outside the alert range when it is very close to the boundary. The actual alert is always checked against the full unrounded value.
+
+{/* ============================================================ */}
+{/* SECTION 9: ROOT CAUSE ANALYSIS — [UPDATED] */}
+{/* RCA lives on its own top-level page under MIXPANEL AI at */}
+{/* /docs/root-cause-analysis. This section is now just a */}
+{/* one-paragraph tease so users on the Alerts page know the */}
+{/* feature exists. The H2 anchor #root-cause-analysis is preserved */}
+{/* for inbound deep links. Keep this section short — alert↔RCA */}
+{/* mechanics belong on the RCA page, not here. */}
+{/* ============================================================ */}
 
 ## Root Cause Analysis
 
-Mixpanel's Root Cause Analysis (RCA) feature analyzes the properties of unexpected events and automatically generates a Board with reports broken down by relevant properties so you can search for the underlying cause of any unexpected data point or fired alert.
-
-RCA Boards can be generated from alert trigger messages delivered via Slack or email. Each alert is uniquely tied to one Root Cause Analysis Board that can be accessed and edited by anyone in your organization. With this one-to-one pairing, it is easier to collaborate since edits made by one teammate can be seen by others. 
-
-![alert_rca](/alert_rca.png)
-
-<Callout type="info">
-    Each alert is tied to one Root Cause Analysis Board that can be accessed and edited by anyone in your organization. Duplicate the board if you wish to make independent edits. If the original Board is deleted, another can be generated from the alert trigger message.
-</Callout>
-
-### Root Cause Analysis Board
-
-The RCA Board provides a comprehensive view of the data related to the triggered alert or selected data point. Mixpanel scans the top properties of the original event and will generate a report for each property so you can visually explore the relationship between properties and the anomalous data point to uncover connections. 
-
-Here are the key features and components of the RCA Board:
-
-- We generate 12 segmented reports on the RCA Board, showing the triggered event broken down by its top relevant properties. This breakdown helps you explore the data from different angles and identify any patterns or insights that contributed to the data point.
-- Each segmented report is filtered by a date range to enable point-in-time exploration of the data surrounding the data point. For example, if you set an alert on a last 30-day report, the reports on the RCA board will be filtered by a custom date range spanning 30 days. Using a custom date range instead of a fixed number of days ensures that the time range remains consistent for future explorations.
-- To provide additional context, we include links to the original report where you ran RCA. In the case where you ran RCA from an alert, we include a link to the report where the alert was initially set up and a link to the custom alert settings. This allows you to refer back to the report, make adjustments to the alert criteria if necessary, and compare the data with the RCA Board.
-
-![alert_rca_board](/alert_rca_board.gif)
-
-By leveraging the Root Cause Analysis feature in Mixpanel, you can gain in-depth insights to quickly understand the factors driving anomalies. This empowers you to take targeted actions, resolve issues, and capitalize on opportunities effectively.
+When an alert fires, you can launch AI-powered [Root Cause Analysis](/docs/root-cause-analysis) directly from the trigger notification to automatically diagnose what drove the change. See the [Root Cause Analysis](/docs/root-cause-analysis) page for the full feature.

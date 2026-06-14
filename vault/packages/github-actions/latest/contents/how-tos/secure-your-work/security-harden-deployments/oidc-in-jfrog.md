@@ -5,14 +5,13 @@ intro: Use OpenID Connect within your workflows to authenticate with JFrog.
 versions:
   fpt: '*'
   ghec: '*'
-type: tutorial
-topics:
-  - Security
-  - Actions
 redirect_from:
   - /actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-jfrog
   - /actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-jfrog
   - /actions/how-tos/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-jfrog
+contentType: how-tos
+category:
+  - Secure your workflows
 ---
 
 ## Overview
@@ -41,7 +40,7 @@ For an example {% data variables.product.prodname_actions %} workflow using the 
 
 ## Adding the identity provider to JFrog
 
-To use OIDC with JFrog, establish a trust relationship between {% data variables.product.prodname_actions %} and the JFrog platform. For more information about this process, see [OpenID Connect Integration](https://jfrog.com/help/r/jfrog-platform-administration-documentation/openid-connect-integration) in the JFrog documentation.
+To use OIDC with JFrog, establish a trust relationship between {% data variables.product.prodname_actions %} and the JFrog platform. For more information about this process, see [OpenID Connect Integration](https://docs.jfrog.com/administration/docs/openid-connect-integration) in the JFrog documentation.
 
 1. Sign in to your JFrog Platform.
 1. Configure trust between JFrog and your {% data variables.product.prodname_actions %} workflows.
@@ -97,6 +96,6 @@ jobs:
 
 ## Further reading
 
-* [OpenID Connect Integration](https://jfrog.com/help/r/jfrog-platform-administration-documentation/openid-connect-integration) in the JFrog documentation
+* [OpenID Connect Integration](https://docs.jfrog.com/administration/docs/openid-connect-integration) in the JFrog documentation
 * [Identity Mappings](https://jfrog.com/help/r/jfrog-platform-administration-documentation/identity-mappings) in the JFrog documentation
 * [AUTOTITLE](/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)

@@ -23,8 +23,7 @@ They use this header by default `s-maxage=YOUR_REVALIDATION_TIME, stale-while-re
 
 When you manually revalidate the Next.js cache for a specific page, the ISR cache files stored on S3 will be updated. However, it is still necessary to invalidate the CloudFront cache:
 
-```ts
-// pages/api/revalidate.js
+```js filename="pages/api/revalidate.js"
 export default async function handler(req, res) {
   await res.revalidate("/foo");
   await invalidateCloudFrontPaths(["/foo"]);

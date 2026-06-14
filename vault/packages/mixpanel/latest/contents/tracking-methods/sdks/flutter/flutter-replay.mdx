@@ -1,0 +1,599 @@
+import { Callout } from 'nextra/components'
+
+# Implement Session Replay (Flutter)
+
+## Overview
+
+This developer guide will assist you in configuring your Flutter app for [Session Replay](/docs/session-replay) using the [Session Replay SDK (Flutter)](https://github.com/mixpanel/mixpanel-flutter-session-replay). Learn more about [viewing captured Replays in your project here](/docs/session-replay).
+
+<Callout type="warning">
+  Flutter Session Replay is currently in **Public Beta**. Please reach out to your Account Manager for any questions about Session Replay or the beta.
+</Callout>
+
+## Best Practices
+
+Session Replay provides powerful insights into user behavior, but it also introduces risks, especially on mobile. These risks are not unique to Mixpanel; they are common across the entire session replay product category. Because SDKs run on end-user devices and screen content may include sensitive data, we recommend implementing / testing Session Replay carefully. Be especially cautious with masking, edge-case testing, and rollout strategies. For more information on risk categories and best practices, read more [here](/docs/session-replay#best-practices).
+
+## Prerequisites
+
+* You are already a Mixpanel customer.
+* [Optional] We recommend having the latest [Mixpanel Flutter SDK](/docs/tracking-methods/sdks/flutter) installed. The Mixpanel Flutter SDK provides a `distinctId` (via `mixpanel.distinctId`) that you can pass to Session Replay during initialization to associate replays with your Mixpanel analytics identity.
+
+| Platform | Minimum Version |
+| --- | --- |
+| Flutter | 3.38+ |
+| Dart | 3.8+ |
+| iOS | 13.0+ |
+| Android | API 24 (7.0+) |
+| macOS | 10.15+ |
+
+## Installation
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  mixpanel_flutter_session_replay: VERSION
+```
+
+Replace `VERSION` with the latest version available on [pub.dev](https://pub.dev/packages/mixpanel_flutter_session_replay/versions).
+
+Then run `flutter pub get` to install the package.
+
+### Initialize
+
+Session Replay requires initializing an instance and wrapping your app with `MixpanelSessionReplayWidget`. The SDK does not use a singleton — store the instance using State, Provider, or whichever state management fits your app.
+
+Pass the instance to `MixpanelSessionReplayWidget` to begin capturing. Initialize asynchronously to avoid delaying your app's first frame — the widget handles transitioning from a `null` instance to an initialized one.
+
+```dart
+import 'package:mixpanel_flutter_session_replay/mixpanel_flutter_session_replay.dart';
+
+class _MyAppState extends State<MyApp> {
+  MixpanelSessionReplay? _sessionReplay;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSessionReplay();
+  }
+
+  Future<void> _initSessionReplay() async {
+    final result = await MixpanelSessionReplay.initialize(
+      token: 'YOUR_MIXPANEL_TOKEN',
+      distinctId: 'user_123', // or mixpanel.distinctId
+      options: SessionReplayOptions(
+        autoRecordSessionsPercent: 100.0,
+      ),
+    );
+    if (result.success) {
+      setState(() => _sessionReplay = result.instance);
+    } else {
+      debugPrint('Session Replay init failed: ${result.errorMessage}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MixpanelSessionReplayWidget(
+      instance: _sessionReplay, // null until initialization completes
+      child: MaterialApp(home: HomeScreen()),
+    );
+  }
+}
+```
+
+## Quick Start
+
+Here's a quick overview of some available controls. For a more in-depth guide, continue reading.
+
+```dart
+// start recording manually (with optional sampling rate)
+sessionReplay.startRecording(sessionsPercent: 100.0);
+
+// stop recording
+sessionReplay.stopRecording();
+
+// update user identity
+sessionReplay.identify('new_distinct_id');
+
+// mask a sensitive widget
+MixpanelMask(child: Text('Sensitive text'))
+
+// unmask a safe widget
+MixpanelUnmask(child: Text('Public text'))
+
+// flush queued events
+await sessionReplay.flush();
+```
+
+See [Masking Behavior](/docs/tracking-methods/sdks/flutter/flutter-replay#masking-behavior) for detailed examples of how `MixpanelMask`, `MixpanelUnmask`, and auto-masking interact.
+
+## Capturing Replays
+
+<Callout type="warning">
+	Test in a sandbox project and start with a 100% sample rate. This allows you to monitor performance, usage, and ensure your privacy rules align with your company policies.
+</Callout>
+
+By default, recording begins automatically upon initialization, configurable via the `autoRecordSessionsPercent` option.
+
+### Sampling
+
+We recommend using automatic sampling for most use cases. Use [manual capture](/docs/tracking-methods/sdks/flutter/flutter-replay#manual-capture) if you need control over exactly when recording starts and stops.
+
+To enable Session Replay, set `autoRecordSessionsPercent` between 0.0 and 100.0. At 0.0, no sessions are recorded. At 100.0, all sessions are recorded.
+
+To start, we recommend using a 100% sampling rate to ensure replay capture is behaving as expected, then adjust according to your specific analytics needs.
+
+```dart
+// records 100% of all sessions
+options: SessionReplayOptions(
+  autoRecordSessionsPercent: 100.0,
+)
+```
+
+### Manual Capture
+
+To programmatically start and stop replay capture, use the `.startRecording()` and `.stopRecording()` methods.
+
+**Start capturing replay**
+
+When calling `.startRecording()`, recording will begin with the sample rate that was passed to `sessionsPercent` (100% default).
+
+```dart
+// start recording (100%)
+sessionReplay.startRecording();
+
+// start recording with a specified sampling rate (10%)
+sessionReplay.startRecording(sessionsPercent: 10.0);
+```
+
+`.startRecording()` has no effect if recording is already in progress.
+
+**Stop capturing replay data**
+
+Call `.stopRecording()` to stop any active replay data collection. The SDK automatically stops recording when the app loses focus.
+
+```dart
+// manually end a replay capture
+sessionReplay.stopRecording();
+```
+
+**Example use cases for manual capture**
+
+| Scenario | Guidance |
+| --- | --- |
+| We have a sensitive screen we don't want to capture | When user is about to access the sensitive screen, call `.stopRecording()`. To resume recording once they leave this screen, you can resume recording with `.startRecording()` |
+| We only want to record certain types of users (e.g. Free plan users only) | Using your application code, determine if current user meets the criteria of users you wish to capture. If they do, then call `.startRecording()` to begin recording |
+| We only want to record users utilizing certain features | When user is about to access the feature you wish to capture replays for, call `.startRecording()` to begin recording |
+
+### Additional Configuration Options
+
+Upon initialization you can provide a `SessionReplayOptions` object to customize your replay capture.
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `autoMaskedViews` | Set of enum options for view types that will be automatically masked by the SDK. See [Masking Behavior](/docs/tracking-methods/sdks/flutter/flutter-replay#masking-behavior) | `{text, image}` |
+| `autoRecordSessionsPercent` | Value between 0.0 and 100.0 that controls the sampling rate for session replay recording | `100.0` |
+| `flushInterval` | Specifies the flush interval at which session replay events are sent to the Mixpanel server | `10 seconds` |
+| `logLevel` | Controls the level of debugging logs printed to the console | `LogLevel.none` |
+| `storageQuotaMB` | Maximum MB for the local event queue | `50` |
+| `remoteSettingsMode` | Setting for handling remote configuration during SDK initialization. Can be `RemoteSettingsMode.disabled`, `RemoteSettingsMode.fallback`, or `RemoteSettingsMode.strict`. See [Remote Configuration](/docs/tracking-methods/sdks/flutter/flutter-replay#remote-configuration) | `RemoteSettingsMode.disabled` |
+| `debugOptions` | Debug configuration for mask overlay visualization. See [Debug Options](/docs/tracking-methods/sdks/flutter/flutter-replay#debug-options) | `null` (disabled) |
+| `platformOptions` | Platform-specific options. See [Platform Options](/docs/tracking-methods/sdks/flutter/flutter-replay#platform-options-mobile-only) | `PlatformOptions()` |
+
+**Example usage:**
+
+```dart
+final result = await MixpanelSessionReplay.initialize(
+  token: 'YOUR_MIXPANEL_TOKEN',
+  distinctId: 'user_123',
+  options: SessionReplayOptions(
+    autoRecordSessionsPercent: 100.0,
+    autoMaskedViews: {AutoMaskedView.image, AutoMaskedView.text},
+    logLevel: LogLevel.debug,
+    flushInterval: Duration(seconds: 10),
+    platformOptions: PlatformOptions(
+      mobile: MobileOptions(wifiOnly: true),
+    ),
+  ),
+);
+```
+
+#### Platform Options (mobile only)
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `mobile` | Mobile-specific options (iOS/Android). See properties below | `MobileOptions()` |
+| `mobile.wifiOnly` | When `true`, replay events will only be flushed when the device has WiFi. When `false`, replay events will be flushed with any network connection including cellular | `true` |
+
+#### Debug Options
+
+When non-null, enables debug features such as colored overlays showing masked, auto-masked, and unmasked regions.
+
+<img src="/Tracking/flutter-session-replay/flutter_debug_overlay.png" alt="Debug overlay demo showing orange auto-mask, red MixpanelMask, and green MixpanelUnmask regions" />
+
+The overlay is a development tool only and is not visible in the captured replay. A few specifics worth knowing:
+
+- **Debug builds only.** The overlay is gated on Flutter's `kDebugMode`, so it only renders in debug builds and is a no-op in profile and release builds.
+- **Visible on the device, never in the replay.** The colored rectangles are painted on top of the boundary the SDK captures, so they sit outside the recorded screenshot. The replay sees the SDK's own opaque masks applied to the captured image, not the debug colors. The overlay is also non-interactive — it sits behind an `IgnorePointer`, so taps still reach your app.
+- **Refreshes per capture, not per frame.** Mask region detection runs as part of the screenshot pipeline, so the overlay updates each time a new capture completes — at most once every ~500ms while the UI is active, not on every Flutter frame. During fast interactions or animations you may briefly see overlay rectangles in stale positions until the next capture catches up.
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `overlayColors` | Color configuration for mask overlay visualization. When null, overlay is disabled. See properties below | `DebugOverlayColors()` |
+| `overlayColors.maskColor` | Color for manually masked regions (`MixpanelMask` and security-enforced) | `Colors.red` |
+| `overlayColors.autoMaskColor` | Color for auto-masked regions (text and images) | `Colors.orange` |
+| `overlayColors.unmaskColor` | Color for `MixpanelUnmask` regions | `Colors.green` |
+| `overlayColors.opacity` | Opacity of the overlay layer (0.0 = transparent, 1.0 = opaque) | `0.5` |
+
+```dart
+options: SessionReplayOptions(
+  debugOptions: DebugOptions(
+    overlayColors: DebugOverlayColors(
+      maskColor: Colors.red,       // MixpanelMask and security-enforced regions
+      autoMaskColor: Colors.orange, // Auto-masked text and image regions
+      unmaskColor: Colors.green,    // MixpanelUnmask regions
+      opacity: 0.5,
+    ),
+  ),
+)
+```
+
+## Identity Management
+
+The Mixpanel distinct ID for the current user can be passed into the initializer and changed at runtime by calling the `.identify()` method:
+
+```dart
+// initialize the main Mixpanel tracking SDK
+final mixpanel = await Mixpanel.init('YOUR_MIXPANEL_TOKEN', trackAutomaticEvents: true);
+
+// initialize the session replay SDK with the project token and distinct ID from above
+final result = await MixpanelSessionReplay.initialize(
+  token: 'YOUR_MIXPANEL_TOKEN',
+  distinctId: mixpanel.distinctId,
+);
+```
+
+To change the distinct ID later:
+
+```dart
+// for example when the user logs out
+void logout() {
+  // reset the main Mixpanel tracking SDK to generate a new distinct ID
+  mixpanel.reset();
+  final newDistinctId = mixpanel.distinctId;
+  // change session replay distinct ID
+  sessionReplay.identify(newDistinctId);
+}
+```
+
+## Manual Flushing
+
+You can flush any currently queued session replay events at any time by calling `.flush()`:
+
+```dart
+await sessionReplay.flush();
+```
+
+## Remote Configuration
+
+<Callout type="info">
+  Available only for customers with a paid session replay add-on.
+</Callout>
+
+By setting `remoteSettingsMode` you can quickly set SDK options for your project in Mixpanel under `Settings > Organization Settings > Session Replay`.
+
+Three modes are available:
+
+- `RemoteSettingsMode.disabled` (default): Do not use remote configuration and proceed to use the SDK initialization config provided in `MixpanelSessionReplay.initialize`.
+- `RemoteSettingsMode.fallback`: Attempt to retrieve remote configuration and proceed with those settings. If there is a failure or timeout, will use previously cached remote settings (from last successful fetch) or the SDK initialization config.
+- `RemoteSettingsMode.strict`: Requires a successful remote configuration fetch. If the fetch fails, recording is disabled and no replays will be sent.
+
+Use this setting to quickly update and adjust configurations to your liking.
+
+```dart
+final result = await MixpanelSessionReplay.initialize(
+  token: 'YOUR_MIXPANEL_TOKEN',
+  distinctId: 'user_123',
+  options: SessionReplayOptions(
+    remoteSettingsMode: RemoteSettingsMode.fallback,
+  ),
+);
+```
+
+List of currently supported remote settings:
+- `autoRecordSessionsPercent`
+
+Settings that are not yet supported will not appear in the remote configuration. These non-included options will use the value from the SDK initialization config.
+
+## Replay ID
+
+When a replay capture begins, a Replay ID is generated by the SDK and is attached as an event property (`$mp_replay_id`) to events tracked by the Mixpanel SDK during the capture session. Events containing the same `$mp_replay_id` will appear in the same Replay.
+
+If you are sending any events not coming from the Mixpanel SDK, add the `$mp_replay_id` event property to attribute the event to a specific Replay.
+
+You can read the active Replay ID from the `replayId` property on your `MixpanelSessionReplay` instance. The property will be `null` if there is no active replay capture in progress.
+
+```dart
+final activeReplayId = sessionReplay.replayId;
+```
+
+## Server-Side Stitching
+
+Server-Side Stitching allows you to easily watch Replays for events that were not fired from the SDK.
+
+It works by inferring the Replay that an event belongs to using the Distinct ID and time property attached to the event. This is especially useful if you have events coming in from multiple sources.
+
+For example, let's say a user with Distinct ID "ABC" has a Replay recorded from 1-2pm. Two hours later, an event was sent from your warehouse with a timestamp of 1:35pm with Distinct ID "ABC". Server-Side Stitching will infer that the event should belong in the same Replay.
+
+To ensure Server-Side Stitching works, call [`identify()`](/docs/tracking-methods/sdks/flutter#identify) from the client-side using our SDK with the user's `$user_id`. This guarantees that events generated from both the client-side and server-side share the same Distinct ID. Learn more about [identifying users](/docs/tracking-methods/id-management).
+
+## Logging
+
+Developers can enable or disable logging with the `logLevel` option of the `SessionReplayOptions` object.
+
+```dart
+final result = await MixpanelSessionReplay.initialize(
+  token: 'YOUR_MIXPANEL_TOKEN',
+  distinctId: distinctId,
+  options: SessionReplayOptions(
+    logLevel: LogLevel.debug,
+  ),
+);
+```
+
+## Debugging
+
+<Callout type="info">
+`$mp_session_record` is exempt from your plan data allowance.
+</Callout>
+
+To check your implementation, select **Session Replay** from the side navigation in your Mixpanel project to see whether replays are being captured and appearing as expected. When a capture begins, a "Session Recording Checkpoint" event (`$mp_session_record`) also appears in your project; you can use this to verify that Session Replay is implemented correctly.
+
+If you are using the [recommended sampling method](/docs/tracking-methods/sdks/flutter/flutter-replay#sampling) to capture your Replays but having trouble finding the Replays in your project, try calling `.startRecording()` manually and see if the `$mp_session_record` event appears. If it does appear but you are still struggling to locate your Replays, you may want to increase your sampling rate.
+
+## Troubleshooting
+
+If you are still struggling with either of the following common issues:
+
+- Replays are not showing up in my project
+- Replays are not displaying my UI correctly
+
+Please [submit a request to our Support team](https://mixpanel.com/get-support) and include the following information:
+
+- Whether your issue is with iOS, Android, macOS, or all platforms
+- Your Session Replay code snippet
+- Where you initialize the Session Replay SDK
+- Any relevant logs (enable with `logLevel: LogLevel.debug`)
+- (If applicable) A link to a replay showing the issue
+- (If applicable) A screenshot of the UI or a description of the expected behavior
+
+## Privacy
+
+Mixpanel offers a privacy-first approach to Session Replay, including features such as data masking. Mixpanel's Session Replay privacy controls were designed to assist customers in protecting end user privacy. Read more [here](/docs/session-replay/session-replay-privacy-controls).
+
+### User Data
+
+The Mixpanel SDK will always mask all detected text inputs. To protect end-user privacy, input text fields cannot be unmasked.
+
+By default, we attempt to identify all text and image views.
+
+You can unmask these elements at your own discretion using the [`autoMaskedViews` config option](/docs/tracking-methods/sdks/flutter/flutter-replay#additional-configuration-options). See [Masking Behavior](/docs/tracking-methods/sdks/flutter/flutter-replay#masking-behavior) for detailed examples of how masking directives interact.
+
+### Mark Widget Sensitivity
+
+All text input widgets (`TextField`, `TextFormField`, `CupertinoTextField`) are masked by default. Text inputs cannot be unmasked.
+
+Wrap any widget with `MixpanelMask` to force masking, or `MixpanelUnmask` to prevent auto-masking. These directives apply to the entire subtree.
+
+```dart
+Column(
+  children: [
+    // This entire card and its contents will be masked
+    MixpanelMask(
+      child: Card(
+        child: Column(
+          children: [
+            Text('Account Number: 1234-5678'),
+            Text('Balance: \$10,000'),
+          ],
+        ),
+      ),
+    ),
+
+    // This section will not be auto-masked (except text inputs)
+    MixpanelUnmask(
+      child: Row(
+        children: [
+          Image.asset('logo.png'), // visible, even if images are auto-masked
+          Text('Public info'),     // visible, even if text is auto-masked
+          TextField(),             // still masked — text inputs are always masked
+        ],
+      ),
+    ),
+  ],
+)
+```
+
+For detailed scenarios showing how masking directives interact (nesting, overflow, security), see [Masking Behavior](/docs/tracking-methods/sdks/flutter/flutter-replay#masking-behavior).
+
+## Masking Behavior
+
+This section documents how `MixpanelMask`, `MixpanelUnmask`, auto-masking, and security masking (text entry) interact during view tree traversal. All examples below use `autoMaskedViews: {image}` — text is **not** auto-masked, image **is** auto-masked.
+
+### Sensitive Container
+
+```
+MixpanelMask                  ← container rect + context=mask
+  └─ Column
+    ├─ Text("Name")            ← MASKED (context=mask)
+    ├─ Image(avatar)           ← MASKED (context=mask)
+    └─ TextField(email)        ← MASKED (security)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_mask_container.png" alt="Sensitive container" />
+
+`MixpanelMask` masks all descendants — auto-masking config is irrelevant.
+
+### Insensitive Container
+
+```
+MixpanelUnmask                 context=unmask
+  └─ Column
+    └─ Container
+      ├─ Text("Public label")   ← visible (unmask overrides auto-masking)
+      ├─ Row
+      │   ├─ Image(logo.png)    ← visible (auto-masked normally, but unmask overrides)
+      │   └─ Text("caption")    ← visible
+      └─ TextField(password)    ← MASKED (security override)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_unmask_container.png" alt="Insensitive container" />
+
+`MixpanelUnmask` overrides auto-masking. Text entry is always masked regardless.
+
+### Sensitive Container with Overflow
+
+```
+MixpanelMask (150x80)          ← container rect + context=mask
+  └─ Column
+    └─ Stack(clip: none)
+      ├─ Text("Inside")        ← MASKED (context=mask)
+      └─ Positioned(right: -120)
+        └─ Text("Outside")     ← MASKED (leaf rect covers overflow)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_overflow_masked.png" alt="Overflow masked" />
+
+Leaf rects ensure overflow children are masked even outside container bounds.
+
+### MixpanelMask > MixpanelUnmask
+
+```
+MixpanelMask                   ← container rect + context=mask
+  └─ Column
+    ├─ Text("Header")          ← MASKED (context=mask)
+    ├─ MixpanelUnmask            context=unmask (inner override)
+    │   └─ Row
+    │     └─ Text("Public")    ← no leaf rect, but container rect still covers it
+    └─ Text("Footer")         ← MASKED (context=mask)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_mask_then_unmask.png" alt="MixpanelMask then MixpanelUnmask" />
+
+The inner unmask is tracked but visually covered by the outer container rect unless the child overflows.
+
+### MixpanelMask > MixpanelUnmask with Overflow
+
+```
+MixpanelMask (150x80)            ← container rect + context=mask
+  └─ Column
+    └─ Stack(clip: none)
+      ├─ Text("Inside")          ← MASKED (context=mask)
+      └─ MixpanelUnmask            context=unmask (inner override)
+        └─ Positioned(right: -120, top: 15)
+          └─ Text("Unmasked")    ← visible (unmask context, outside container rect)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_mask_unmask_overflow.png" alt="MixpanelMask with MixpanelUnmask overflow" />
+
+Unmasked children that overflow the container rect bounds are visible.
+
+### MixpanelUnmask > MixpanelMask
+
+```
+MixpanelUnmask                 context=unmask
+  └─ Column
+    ├─ Text("Public")          ← visible (unmask context)
+    └─ MixpanelMask            ← container rect + context=mask
+      └─ Row
+        └─ Text("Private")    ← MASKED (context=mask)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_unmask_then_mask.png" alt="MixpanelUnmask then MixpanelMask" />
+
+Innermost directive wins — the inner `MixpanelMask` overrides the outer unmask for its subtree.
+
+### Text Entry Security
+
+```
+MixpanelUnmask                        context=unmask
+  └─ Column
+    ├─ Text("Username")               ← visible (unmask context)
+    ├─ TextField("tyler@example.com") ← MASKED (security, always)
+    ├─ Text("Password")               ← visible (unmask context)
+    └─ TextField("••••••••")          ← MASKED (security, always)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_text_entry_security.png" alt="Text entry security" />
+
+Text entry fields (`TextField`, `CupertinoTextField`, `EditableText`) are **always** masked regardless of directives or auto-masking config.
+
+### Auto-masking (no explicit directive)
+
+```
+Column                    context=none (default)
+  ├─ Text("Hello World")  ← visible (text not in autoMaskedViews)
+  ├─ Image(photo.jpg)     ← MASKED (image in autoMaskedViews)
+  └─ TextField(search)    ← MASKED (security, always)
+```
+
+<img src="/Tracking/flutter-session-replay/proposal_auto_masking.png" alt="Auto-masking" />
+
+Without any masking directive, auto-masking applies based on `autoMaskedViews` config. Text entry is always masked regardless.
+
+## Retention
+
+By default, Mixpanel retains Session Replays for 30 days from the date the replay is ingested and becomes available for viewing within Mixpanel. Customers on our [Enterprise plan](https://mixpanel.com/pricing/) can customize this retention period between 7 days and 360 days. Once a replay is expired, there is no way to view that replay.
+
+## Legal (Beta Terms)
+
+Our Session Replay Beta Service Addendum can be found [here](https://mixpanel.com/legal/session-replay-beta-service-addendum/).
+
+## FAQ
+
+#### How does Session Replay work in Flutter?
+
+Session Replay observes user interactions within your app, capturing UI hierarchy changes and storing them as images, which are then sent to Mixpanel. Mixpanel reconstructs these images, applying recorded events as an end-user completes them.
+
+Within Mixpanel's platform, you can view a reconstruction of your end-user's screen as they navigate your app.
+
+However, Session Replay is not a literal video recording of your end-user's screen; end-user actions are not video-recorded.
+
+#### Can I prevent Session Replay from recording sensitive content?
+
+The Mixpanel SDK will always mask identifiable text inputs. By default, all text and images on a page are also masked.
+
+Additionally, you can customize how you leverage our SDK to fully control (1) where to record and (2) whom to record. Consider the [manual capture example scenarios](/docs/tracking-methods/sdks/flutter/flutter-replay#manual-capture), [SDK configuration options](/docs/tracking-methods/sdks/flutter/flutter-replay#additional-configuration-options), and [manual widget masking](/docs/tracking-methods/sdks/flutter/flutter-replay#mark-widget-sensitivity) provided above to customize the replay capture of your implementation. See [Masking Behavior](/docs/tracking-methods/sdks/flutter/flutter-replay#masking-behavior) for detailed examples.
+
+#### How can I estimate how many Replays I will generate?
+
+If you already use Mixpanel, the [Session Start events](/docs/features/sessions) are a way to estimate the rough amount of replays you might expect. This is especially true if you use timeout-based query sessions. However, because our sessions are defined at query time, we cannot guarantee these metrics will be directly correlated.
+
+When you enable Session Replay, use the above proxy metric to determine a starting sampling percentage, which will determine how many replays will be sent. You can always adjust this as you go to calibrate to the right level.
+
+#### How does Session Replay affect my app's bandwidth consumption?
+
+The bandwidth impact of Session Replay depends on the setting of the [`wifiOnly` parameter](/docs/tracking-methods/sdks/flutter/flutter-replay#platform-options-mobile-only).
+
+By default, `wifiOnly` is set to `true`, which means replay events are only flushed to the server when the device has a wifi connection. If there is no wifi, flushes are skipped, and the events remain in the local disk queue until WiFi is restored. This ensures no additional cellular data is used, preventing users from incurring additional data charges.
+
+When `wifiOnly` is set to `false`, replay events are flushed with any available network connection, including cellular. In this case, the amount of cellular data consumed depends on the intensity of user interactions and the typical session length of your app. Users may incur additional data charges if large amounts of data are transmitted over cellular connections.
+
+#### How does Session Replay for mobile work if my app is offline?
+
+Session Replay events are saved to a local disk queue when no network connection is available (or when `wifiOnly` is `true` and there is no WiFi). The SDK will automatically flush queued events once a suitable connection is restored. However, the queue is **not** persisted across app restarts — any events that have not been flushed before the app is terminated will be lost.
+
+#### Does Mobile Session Replay work with my CDP?
+
+Yes — but only if the Mixpanel Session Replay SDK is installed client-side.
+
+Mobile Session Replay is compatible with CDPs like Segment and mParticle, but you must integrate the Mixpanel Flutter Session Replay SDK directly in your app. Without it, replays won't be captured.
+
+Key Considerations:
+- If you're using Segment server-side, session replays will not be recorded, since the SDK isn't running in the app.
+- The Mixpanel Session Replay SDK is separate from the standard Mixpanel tracking SDK. You do not need the regular SDK, but the Replay SDK must be configured with a `distinctId` and project token.
+- Events can be linked to replays either by:
+    - Manually attaching the current replay ID (`$mp_replay_id`) to each event
+    - Using server-side stitching after the fact

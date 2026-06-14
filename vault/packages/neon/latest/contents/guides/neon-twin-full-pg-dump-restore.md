@@ -1,15 +1,28 @@
 ---
-title: Full Twin
+title: pg_dump / pg_restore — Full Twin
 subtitle: Create a full Twin of your production database
+summary: >-
+  Full Neon Twin workflow that copies a complete production database into a Neon
+  development database using `pg_dump` (custom `-Fc` format) and `pg_restore`
+  inside a GitHub Actions job scheduled daily via cron or triggered on merged
+  pull requests. Choose this workflow over schema-only or incremental approaches
+  when you need a full data refresh and GitHub Actions is your CI platform.
+  Requires unpooled connection strings for both source and target databases;
+  GitHub Actions enforces a 6-hour per-job limit, so very large databases may
+  require self-hosted runners.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-08-02T10:33:29.285Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This workflow will create a full Neon Twin using `pg_dump` and `pg_restore`.
 
 <Admonition type="note">
 To use this workflow, you'll need the Postgres connection string for your Neon database. Follow our [Getting Started Guide](/docs/get-started/signing-up#sign-up) to learn how.
+</Admonition>
+
+<Admonition type="important">
+Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) for `PROD_DATABASE_URL` and `DEV_DATABASE_URL` when they point to Neon.
 </Admonition>
 
 ## Create the workflow
@@ -110,13 +123,13 @@ Before running the Action, ensure that both `PROD_DATABASE_URL` and `DEV_DATABAS
 
 In your repository, go to **Settings** > **Secrets and variables** > **Actions** to add them.
 
-![github repository secrects](/docs/guides/twin_diagram_github_secrets.png)
+![GitHub repository secrets](/docs/guides/twin_diagram_github_secrets.png)
 
 ## Testing the workflow
 
 To manually trigger your workflow go to **Actions** > **Create Neon Twin** then click **Run workflow**. From the dropdown, click the **Run workflow** button.
 
-![github actions run workflow](/docs/guides/twin_diagram_test_workflow.png)
+![GitHub Actions run workflow](/docs/guides/twin_diagram_test_workflow.png)
 
 ## Syncing with migration changes
 

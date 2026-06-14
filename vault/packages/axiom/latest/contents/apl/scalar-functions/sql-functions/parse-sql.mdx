@@ -1,0 +1,257 @@
+---
+title: parse_sql
+description: 'This page explains how to use the parse_sql function in APL.'
+---
+
+## Introduction
+
+The `parse_sql` function parses a SQL statement string and returns a structured dictionary representing its components, such as tables, columns, conditions, and clauses. Use it to analyze SQL queries stored in your observability data, validate query structure, or extract specific parts of a SQL statement for further processing.
+
+`parse_sql` is useful in database monitoring scenarios where SQL queries are captured as strings in audit logs or trace attributes, and you want to understand query patterns, detect anomalies, or inspect query structure at scale.
+
+<Note>
+`parse_sql` supports simple SQL queries. It doesn't support stored procedures, window functions, common table expressions (CTEs), recursive queries, advanced statistical functions, or special join types.
+</Note>
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk doesn't have a native SQL parser function. You would typically use `rex` with regular expressions to extract parts of a SQL query string. APL's `parse_sql` provides structured access to every clause of the SQL statement in a single call.
+
+<CodeGroup>
+```sql Splunk example
+... | rex field=sql_query "FROM\s+(?<table_name>\w+)"
+```
+
+```kusto APL equivalent
+... | project parsed = parse_sql('SELECT id, status FROM logs WHERE status = 500')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no built-in SQL parsing functions. `parse_sql` is unique to APL: it accepts a SQL string as input and returns a dictionary of its parsed components, enabling you to inspect and transform SQL statements using APL operators.
+
+<CodeGroup>
+```sql SQL example
+-- No direct SQL equivalent; you would use application-level string parsing
+```
+
+```kusto APL equivalent
+... | project parsed = parse_sql('SELECT id, status FROM logs WHERE status = 500')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_sql(sql_statement)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ------------- | ------ | -------- | ----------- |
+| sql_statement | string | Yes | The SQL statement to parse. |
+
+### Returns
+
+A dictionary representing the structured data model of the SQL statement, including the statement type, selected columns, source tables, conditions, and ordering clauses.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Parse a SQL query that represents a slow-query log entry to inspect its structure.
+
+**Query**
+
+```kusto wrap
+print parsed_query = parse_sql('SELECT id, status, uri FROM requests WHERE req_duration_ms > 1000 ORDER BY req_duration_ms DESC')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20parsed_query%20%3D%20parse_sql%28%27SELECT%20id%2C%20status%2C%20uri%20FROM%20requests%20WHERE%20req_duration_ms%20%3E%201000%20ORDER%20BY%20req_duration_ms%20DESC%27%29%22%7D)
+
+**Output**
+
+```json
+{
+    "parsed_query": {
+        "columns": [
+            {
+                "colname": "id"
+            },
+            {
+                "colname": "status"
+            },
+            {
+                "colname": "uri"
+            }
+        ],
+        "from": [
+            {
+                "table": "requests"
+            }
+        ],
+        "order": [
+            {
+                "direction": "desc",
+                "expr": {
+                    "colname": "req_duration_ms"
+                }
+            }
+        ],
+        "statement": "select",
+        "where": {
+            "operator": ">",
+            "params": [
+                {
+                    "colname": "req_duration_ms"
+                },
+                {
+                    "value": "1000",
+                    "valtype": "integer"
+                }
+            ]
+        }
+    }
+}
+```
+
+The query parses a slow-query SQL string and returns its structured representation, letting you extract specific clauses with `parsed_query.from` or `parsed_query.columns`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Parse a SQL query that represents a database span to inspect which tables and columns a service queries.
+
+**Query**
+
+```kusto wrap
+print parsed_query = parse_sql('SELECT trace_id, span_id, duration FROM traces ORDER BY duration DESC')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20parsed_query%20%3D%20parse_sql%28%27SELECT%20trace_id%2C%20span_id%2C%20duration%20FROM%20traces%20ORDER%20BY%20duration%20DESC%27%29%22%7D)
+
+**Output**
+
+```json
+{
+    "parsed_query": {
+        "columns": [
+            {
+                "colname": "trace_id"
+            },
+            {
+                "colname": "span_id"
+            },
+            {
+                "colname": "duration"
+            }
+        ],
+        "from": [
+            {
+                "table": "traces"
+            }
+        ],
+        "order": [
+            {
+                "direction": "desc",
+                "expr": {
+                    "colname": "duration"
+                }
+            }
+        ],
+        "statement": "select"
+    }
+}
+```
+
+The query parses a database span's SQL string and returns its structured representation so you can programmatically inspect which tables and columns the trace's database operations access.
+
+</Tab>
+<Tab title="Security logs">
+
+Parse a SQL statement that contains an authorization filter to verify that the expected WHERE clause is present.
+
+**Query**
+
+```kusto wrap
+print parsed_query = parse_sql('SELECT id, status FROM logs WHERE status = 401 OR status = 403')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22print%20parsed_query%20%3D%20parse_sql%28%27SELECT%20id%2C%20status%20FROM%20logs%20WHERE%20status%20%3D%20401%20OR%20status%20%3D%20403%27%29%22%7D)
+
+**Output**
+
+```json
+{
+    "parsed_query": {
+        "columns": [
+            {
+                "colname": "id"
+            },
+            {
+                "colname": "status"
+            }
+        ],
+        "from": [
+            {
+                "table": "logs"
+            }
+        ],
+        "statement": "select",
+        "where": {
+            "operator": "or",
+            "params": [
+                {
+                    "params": [
+                        {
+                            "colname": "status"
+                        },
+                        {
+                            "value": "401",
+                            "valtype": "integer"
+                        }
+                    ],
+                    "operator": "="
+                },
+                {
+                    "operator": "=",
+                    "params": [
+                        {
+                            "colname": "status"
+                        },
+                        {
+                            "valtype": "integer",
+                            "value": "403"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+```
+
+The query parses a SQL string with an OR condition in its WHERE clause. You can then inspect the `where` field to confirm that the expected authorization filters are present.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [format_sql](/apl/scalar-functions/sql-functions/format-sql): Converts the dictionary produced by `parse_sql` back into a SQL string. Use `format_sql` to normalize or round-trip a parsed query.
+- [parse_json](/apl/scalar-functions/string-functions/parse-json): Parses a JSON string into a dynamic dictionary. Use `parse_json` when your data contains JSON rather than SQL.
+- [extract](/apl/scalar-functions/string-functions/extract): Extracts a substring matching a regular expression from a string. Use `extract` for simple pattern matching when you don't need full SQL parsing.

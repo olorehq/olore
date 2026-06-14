@@ -1,9 +1,15 @@
 ---
 title: Replicate data with Airbyte
 subtitle: Learn how to replicate data from Neon with Airbyte
+summary: >-
+  Configure Neon as an Airbyte source for Change Data Capture using Postgres
+  WAL and the pgoutput plugin over a direct, non-pooled connection. Covers
+  wal_level promotion to logical, replication slot creation, publication setup,
+  and Airbyte source configuration. Enabling logical replication permanently
+  sets wal_level to logical for all databases in the project.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-11-07T12:28:56.609Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from your Neon Postgres database to external destinations.
@@ -17,6 +23,10 @@ In this guide, you will learn how to define your Neon Postgres database as a dat
 - An [Airbyte account](https://airbyte.com/)
 - A [Neon account](https://console.neon.tech/)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Prepare your source Neon database
 
@@ -77,10 +87,10 @@ To create a role in the Neon Console:
 
 <TabItem>
 
-The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](/docs/reference/cli-roles).
+The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](https://api-docs.neon.tech/reference/createprojectbranchrole).
 
 ```bash
-curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-blue-tooth-671580/roles' \
+curl 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/roles' \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H 'Content-Type: application/json' \
@@ -90,6 +100,8 @@ curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-b
   }
 }' | jq
 ```
+
+> Replace `{project_id}` and `{branch_id}` with your actual Neon project and branch IDs, and set the `NEON_API_KEY` environment variable with your Neon API key.
 
 </TabItem>
 

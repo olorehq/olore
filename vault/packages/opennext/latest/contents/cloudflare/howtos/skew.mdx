@@ -16,8 +16,7 @@ The Cloudflare adapter has _experimental support_ for skew protection based on [
 
 Set `cloudflare.skewProtection.enabled` to `true` to enable skew protection:
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 export default {
   // ...
   cloudflare: {
@@ -26,7 +25,7 @@ export default {
       // Maximum number of previous versions to use.
       // Optional, default to 20.
       maxNumberOfVersions: 20,
-      // Age of the oldest version to use (from the last deplyment date)
+      // Age of the oldest version to use (from the last deployment date)
       // Optional, default to 7 days.
       maxVersionAgeDays: 7,
     },
@@ -38,8 +37,7 @@ export default {
 
 The Worker needs to serve the correct version of the app assets. For that it need be be executed before incoming requests are matched against the assets. Set [`run_worker_first`](https://developers.cloudflare.com/workers/static-assets/binding/#run_worker_first) to `true` in your wrangler configuration to enable this behavior:
 
-```jsonc
-// wrangler.jsonc
+```jsonc filename="wrangler.jsonc"
 {
   "name": "my-app",
   // ...
@@ -68,15 +66,15 @@ and the process' environment variables. If a variable is set in both places, the
 
 **Next config**
 
-You must set a different `deploymentId` in your next config each time your app is deployed. You will get an error if the `deployementId` has already been used by a previous deployment.
+You must set a different `deploymentId` in your next config each time your app is deployed. You will get an error if the `deploymentId` has already been used by a previous deployment.
 
 The cloudflare adapter exports a `getDeploymentId()` function that can be used to generate a unique deployment id.
 
-```ts
-// next.config.ts
+```ts filename="next.config.ts"
+import type { NextConfig } from "next";
 import { getDeploymentId } from "@opennextjs/cloudflare";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   // ...
   deploymentId: getDeploymentId(),
 };

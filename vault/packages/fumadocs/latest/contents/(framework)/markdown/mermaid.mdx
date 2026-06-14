@@ -3,14 +3,18 @@ title: Mermaid
 description: Rendering diagrams in your docs
 ---
 
+## Setup
+
 Fumadocs doesn't have a built-in Mermaid wrapper provided, we recommend using `mermaid` directly.
 
-## Setup
+You can decide the Mermaid renderer to configure:
+
+### Official Renderer
 
 Install the required dependencies, `next-themes` is used with Fumadocs to manage the light/dark mode.
 
-```package-install
-mermaid next-themes
+```npm
+npm install mermaid next-themes
 ```
 
 Create the Mermaid component:
@@ -19,27 +23,57 @@ Create the Mermaid component:
   ./components/mdx/mermaid.tsx
 </include>
 
-> This is originally inspired by [remark-mermaid](https://github.com/the-guild-org/docs/blob/main/packages/remark-mermaid/src/mermaid.tsx).
+### Beautiful Mermaid
 
-Add the component as a MDX component:
+[`beautiful-mermaid`](https://github.com/lukilabs/beautiful-mermaid) is a 3rd party Mermaid renderer.
 
-```tsx title="mdx-components.tsx"
-import defaultMdxComponents from 'fumadocs-ui/mdx';
-import { Mermaid } from '@/components/mdx/mermaid'; // [!code ++]
-import type { MDXComponents } from 'mdx/types';
+```npm
+npm install beautiful-mermaid
+```
 
-export function getMDXComponents(components?: MDXComponents): MDXComponents {
-  return {
-    ...defaultMdxComponents,
-    Mermaid, // [!code ++]
-    ...components,
-  };
+```tsx title="components/mdx/mermaid.tsx"
+import { CodeBlock, Pre } from 'fumadocs-ui/components/codeblock';
+import { renderMermaidSVG } from 'beautiful-mermaid';
+
+export async function Mermaid({ chart }: { chart: string }) {
+  try {
+    const svg = renderMermaidSVG(chart, {
+      bg: 'var(--color-fd-background)',
+      fg: 'var(--color-fd-foreground)',
+      interactive: true,
+      transparent: true,
+    });
+
+    return <div dangerouslySetInnerHTML={{ __html: svg }} />;
+  } catch {
+    return (
+      <CodeBlock title="Mermaid">
+        <Pre>{chart}</Pre>
+      </CodeBlock>
+    );
+  }
 }
 ```
 
 ## Usage
 
-Use it in MDX files.
+Add the component as a MDX component:
+
+```tsx title="components/mdx.tsx"
+import defaultMdxComponents from 'fumadocs-ui/mdx';
+import { Mermaid } from '@/components/mdx/mermaid'; // [!code ++]
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents) {
+  return {
+    ...defaultMdxComponents,
+    Mermaid, // [!code ++]
+    ...components,
+  } satisfies MDXComponents;
+}
+```
+
+Then, use it in MDX files.
 
 ```mdx
 <Mermaid

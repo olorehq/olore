@@ -1,9 +1,15 @@
 ---
 title: Postgres data types
+summary: >-
+  Postgres data types hub for Neon, linking to dedicated guides for array,
+  boolean, date and time, character, JSON, decimal, floating point, integer,
+  tsvector, and UUID types. Use this page to find the right type guide when
+  choosing column types or troubleshooting type-specific behavior in a Neon
+  Postgres database.
 enableTableOfContents: false
 redirectFrom:
   - /docs/postgres/data-types-intro
-updatedOn: '2024-06-30T17:25:28.125Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Get started with commonly-used Postgres data types with Neon's data type guides. For other data types that Postgres supports, visit the official Postgres [Data Types](https://www.postgresql.org/docs/current/datatype.html) documentation.

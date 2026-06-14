@@ -1,0 +1,167 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Node.js)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Node.js OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Node.js)](/docs/tracking-methods/sdks/nodejs/nodejs-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Node.js 10 or higher
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+```bash
+npm install @mixpanel/openfeature-server-provider @openfeature/server-sdk mixpanel
+```
+
+## Quick Start
+
+```typescript
+import { OpenFeature } from "@openfeature/server-sdk";
+import { MixpanelProvider } from "@mixpanel/openfeature-server-provider";
+
+// 1. Create and register the provider with local evaluation
+const provider = MixpanelProvider.createLocal("YOUR_PROJECT_TOKEN");
+await OpenFeature.setProviderAndWait(provider);
+
+// 2. Get a client and evaluate flags
+const client = OpenFeature.getClient();
+const showNewFeature = await client.getBooleanValue("new-feature-flag", false, {
+  distinct_id: "user-123",
+});
+
+if (showNewFeature) {
+  console.log("New feature is enabled!");
+}
+```
+
+## Initialization
+
+### Local Evaluation (Recommended)
+
+<Callout type="warning">
+Targeting by Mixpanel cohorts and sticky variants are not supported in Local Evaluation mode.
+</Callout>
+
+```typescript
+const provider = MixpanelProvider.createLocal("YOUR_PROJECT_TOKEN");
+```
+
+### Remote Evaluation
+
+```typescript
+const provider = MixpanelProvider.createRemote("YOUR_PROJECT_TOKEN");
+```
+
+### Using an Existing Mixpanel Instance
+
+```typescript
+import Mixpanel from "mixpanel";
+
+const mixpanel = Mixpanel.init("YOUR_PROJECT_TOKEN", {
+  local_flags_config: {},
+});
+const localFlags = mixpanel.local_flags!;
+localFlags.startPollingForDefinitions();
+
+const provider = new MixpanelProvider(localFlags);
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `getBooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `getBooleanValue()`, `getStringValue()`, `getNumberValue()`, or `getObjectValue()` |
+| Dynamic Config | JSON object | `getObjectValue()` |
+
+```typescript
+const client = OpenFeature.getClient();
+const context = { distinct_id: "user-123" };
+
+// Feature Gate
+const isFeatureOn = await client.getBooleanValue("new-checkout", false, context);
+
+// Experiment with string variants
+const buttonColor = await client.getStringValue("button-color-test", "blue", context);
+
+// Experiment with number variants
+const maxItems = await client.getNumberValue("max-items", 10, context);
+
+// Dynamic Config
+const featureConfig = await client.getObjectValue("homepage-layout", {}, context);
+```
+
+### Evaluation Context
+
+```typescript
+// Global context
+OpenFeature.setContext({ environment: "production" });
+
+// Per-evaluation context (merged with and overrides global context)
+const value = await client.getBooleanValue("premium-feature", false, {
+  distinct_id: "user-123",
+  email: "user@example.com",
+  plan: "premium",
+});
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```typescript
+const details = await client.getBooleanDetails("my-feature", false, {
+  distinct_id: "user-123",
+});
+
+console.log(details.value);
+console.log(details.variant);
+console.log(details.reason);
+console.log(details.errorCode);
+```
+
+### Accessing the Underlying Mixpanel Instance
+
+```typescript
+const mixpanel = provider.mixpanel;
+if (mixpanel) {
+  mixpanel.track("button_clicked", { distinct_id: "user-123" });
+}
+```
+
+### Shutdown
+
+```typescript
+await OpenFeature.close();
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the local provider has finished loading definitions |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Provider not ready:** Use `setProviderAndWait()` to ensure flags are ready before evaluation.
+2. **Invalid project token:** Verify the token matches your Mixpanel project.
+3. **Flag not configured:** Verify the flag exists and is enabled.
+
+### Type Mismatch Errors
+
+Verify the flag's value type matches your evaluation method. Use `getObjectValue()` for JSON objects.

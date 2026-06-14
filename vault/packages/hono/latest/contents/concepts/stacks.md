@@ -1,8 +1,7 @@
 # Hono Stacks
 
 Hono makes easy things easy and hard things easy.
-It is suitable for not just only returning JSON.
-But it's also great for building the full-stack application including REST API servers and the client.
+It is suitable for not just only returning JSON, but it's also great for building the full-stack application including REST API servers and the client.
 
 ## RPC
 
@@ -94,14 +93,14 @@ export type AppType = typeof route
 
 ## Client
 
-Next. The client-side implementation.
+Next, The client-side implementation.
 Create a client object by passing the `AppType` type to `hc` as generics.
 Then, magically, completion works and the endpoint path and request type are suggested.
 
 ![](/images/sc03.gif)
 
 ```ts
-import { AppType } from './server'
+import type { AppType } from './server'
 import { hc } from 'hono/client'
 
 const client = hc<AppType>('/api')
@@ -178,7 +177,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { AppType } from '../functions/api/[[route]]'
+import type { AppType } from '../functions/api/[[route]]'
 import { hc, InferResponseType, InferRequestType } from 'hono/client'
 
 const queryClient = new QueryClient()

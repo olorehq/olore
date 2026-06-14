@@ -10,19 +10,18 @@ Checkly integrates with [Rootly](https://rootly.com/) and can deliver failure, d
 - Close incidents automatically when a failing check recovers.
 - Alert when SSL certificates are about to expire.
 
-1. First, create a **Webhook integration**. Log in to your Rootly account, go to "Integrations" and search for the *Webhook* integration.
 
-2. Add the **Webhook** integration and click "Enable Integration" on the next screen. Now **copy the URL**.
+1. Log in to Rootly and navigate to **Alerts > Alert Sources**, click **Add Alert Source** and select "Checkly"."
 
-3. Log in to Checkly and navigate to [Alert Settings](https://app.checklyhq.com/alert-settings/).
-   Click the "Add more channels" button, find Rootly on the list, and click "Add channel".
+2. Take note of the following:
+   - The **Secret** that Rootly.io provides you with.
+   - The **type** you want to target: either **Service**, **Group** or **Escalation Policy**.
+   - The **ID** of the target.
+  Now head over to [Checkly > Alerts](https://app.checklyhq.com/alerts/settings), click **Add more channels** and select **Rootly**.
 
-4. Give the alert channel a name and **paste the URL** in the dedicated URL input field. You can now also tweak
-   which alerts you want to be notified of and which checks or check groups should be subscribed to this channel.
+3. Copy and paste in the API key, select the type and paste in the ID.
+4. Hit **Test Rootly alert** to verify the connection. On the Incident.io side, you should now see a test alert pop up!
+5. Now you are all set up! When an alert is triggered, an incident will be created in Rootly.
 
-   <Callout type="note">
-   Note that we provide a preconfigured message payload but you are free to edit the payload and add more or different
-   variables. Just click the "Edit payload" button and reference the "Help & variables tab".
-   </Callout>
 
-Congratulations! You have successfully integrated Checkly with Rootly!
+You now have successfully integrated Checkly with Rootly.

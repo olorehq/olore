@@ -1,0 +1,217 @@
+---
+title: Translations
+description: Adding Translations to UI
+---
+
+## Overview
+
+All official Fumadocs packages use English by default, you can add translations for other languages.
+
+> This page mainly covers details for adding UI translations, you may be interested in the full [Internationalization](/docs/internationalization) guide instead.
+
+### Singular
+
+**Singular** refers to adding translations for only one language:
+
+```ts title="lib/layout.shared.tsx"
+import { defineTranslations } from 'fumadocs-core/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+
+export const translations = defineTranslations().extend(uiTranslations()).add({
+  // [label]: [translation]
+  'Search(search trigger)': '搜尋文檔',
+});
+```
+
+> `.add()` should only be called **after** all `.extend()` calls.
+
+Pass the translations to `<RootProvider />`.
+
+```tsx
+import { RootProvider } from 'fumadocs-ui/provider/<framework>';
+import { i18nProvider } from 'fumadocs-ui/i18n';
+import { translations } from '@/lib/layout.shared';
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <RootProvider
+      // [!code ++]
+      i18n={i18nProvider(translations)}
+    >
+      {children}
+    </RootProvider>
+  );
+}
+```
+
+### Multilingual
+
+Define translations for multiple languages, this requires a standard [i18n](/docs/internationalization) setup.
+
+```ts title="lib/layout.shared.tsx"
+import { defineTranslations } from 'fumadocs-core/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+import { i18n } from '@/lib/i18n';
+
+export const translations = i18n
+  .translations()
+  .extend(uiTranslations())
+  .add({
+    // [locale code]: [translations]
+    cn: {
+      // [label]: [translation]
+      'Search(search trigger)': '搜尋文檔',
+    },
+  });
+```
+
+Pass the translations to `<RootProvider />`.
+
+```tsx
+import { RootProvider } from 'fumadocs-ui/provider/<framework>';
+import { i18nProvider } from 'fumadocs-ui/i18n';
+import { translations } from '@/lib/layout.shared';
+
+export function Layout({ locale, children }: { locale: string; children: React.ReactNode }) {
+  return (
+    <RootProvider
+      // [!code ++]
+      i18n={i18nProvider(translations, locale)}
+    >
+      {children}
+    </RootProvider>
+  );
+}
+```
+
+## Language Packs
+
+Language packs provide translations for `fumadocs-ui` and several other integrations like Fumadocs OpenAPI.
+
+```npm
+npm i @fumadocs/language
+```
+
+> If your desired language is missing in the official language packs, we welcome contributions to [our repository](https://github.com/fuma-nama/fumadocs).
+
+Use `preset()` to consume language packs:
+
+```ts tab="Singular"
+import { defineTranslations } from 'fumadocs-core/i18n';
+import { openapiTranslations } from 'fumadocs-openapi/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+import { zhTW } from '@fumadocs/language/zh-tw';
+
+export const translations = defineTranslations()
+  .extend(uiTranslations())
+  // add extensions according to the integrations you configured, e.g. Fumadocs OpenAPI:
+  .extend(openapiTranslations())
+  // Traditional Chinese
+  .preset(zhTW());
+```
+
+```ts tab="Multilingual"
+import { defineTranslations } from 'fumadocs-core/i18n';
+import { openapiTranslations } from 'fumadocs-openapi/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+import { zhTW } from '@fumadocs/language/zh-tw';
+import { i18n } from '@/lib/i18n';
+
+export const translations = i18n
+  .translations()
+  .extend(uiTranslations())
+  // add extensions according to the integrations you configured, e.g. Fumadocs OpenAPI:
+  .extend(openapiTranslations())
+  // add Traditional Chinese translations to the "cn" locale code
+  .preset('cn', zhTW());
+```
+
+### Custom Packs
+
+You can also create & publish your own language packs.
+
+For example, the structure of `zh-TW` language pack looks like:
+
+```ts twoslash
+import type { TranslationPreset } from 'fumadocs-core/i18n';
+import * as OpenAPI from 'fumadocs-openapi/i18n';
+import * as UI from 'fumadocs-ui/i18n';
+import * as Story from '@fumadocs/story/i18n';
+
+const translations = {
+  displayName: '繁體中文',
+  'loading...(playground server select)': '載入中...',
+  'No Variant(story controls)': '沒有變體',
+  // ...
+} satisfies Partial<UI.Translations & OpenAPI.Translations & Story.Translations>;
+
+export function zhTW(): TranslationPreset<keyof typeof translations> {
+  return {
+    name: 'zh-TW',
+    value: translations,
+  };
+}
+```
+
+## Extensions
+
+Extensions declare the available labels for translations, only registered labels will be sent to client payload.
+
+### Custom Extension
+
+If you are building community packages for Fumadocs, you can create extensions to register your own translations.
+
+To begin, install the translations toolkit Fumadocs use:
+
+```npm
+npm i @fuma-translate/react
+```
+
+```ts tab="i18n.ts" twoslash
+import type { TranslationExtension } from 'fumadocs-core/i18n';
+
+const keys = [
+  // key format: "your label(additional context)"
+  'Hello {user}(welcome screen)',
+] as const;
+
+export function myTranslations(): TranslationExtension<(typeof keys)[number]> {
+  return { keys };
+}
+```
+
+```tsx tab="Reference"
+'use client';
+import { useTranslations } from '@fuma-translate/react';
+
+export function Comp() {
+  const t = useTranslations();
+
+  return (
+    <div>
+      {t('Hello {user}', {
+        note: 'welcome screen',
+        variables: {
+          user: '...',
+        },
+      })}
+    </div>
+  );
+}
+```
+
+> While skipped for simplicity, you can see the docs of [Fuma Translate](https://fuma-translate.vercel.app) to learn how to compile translation keys & types, rather than hardcoding it.
+
+Consumers can use your extension like:
+
+```ts
+import { defineTranslations } from 'fumadocs-core/i18n';
+import { myTranslations } from 'my-package/i18n';
+
+export const translations = defineTranslations()
+  // [!code ++]
+  .extend(myTranslations())
+  .add({
+    'Hello {user}(welcome screen)': '你好 {user}',
+  });
+```

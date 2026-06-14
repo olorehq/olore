@@ -15,6 +15,68 @@ curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/data
   }'
 ```
 
+```bash cURL (for upload)
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default",
+      "seed": {
+        "type": "database_upload"
+      }
+  }'
+```
+
+```bash cURL (for encrypted upload)
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default",
+      "seed": {
+        "type": "database_upload"
+      },
+      "remote_encryption": {
+        "encryption_key": "BASE64_ENCRYPTION_KEY",
+        "encryption_cipher": "aes256gcm"
+      }
+  }'
+```
+
+```bash cURL (new encrypted database)
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default",
+      "remote_encryption": {
+        "encryption_key": "BASE64_ENCRYPTION_KEY",
+        "encryption_cipher": "aes256gcm"
+      }
+  }'
+```
+
+```bash cURL (fork encrypted database)
+curl -L -X POST 'https://api.turso.tech/v1/organizations/{organizationSlug}/databases' \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "name": "new-database",
+      "group": "default",
+      "seed": {
+        "type": "database",
+        "name": "source-encrypted-db"
+      },
+      "remote_encryption": {
+        "encryption_key": "BASE64_ENCRYPTION_KEY",
+        "encryption_cipher": "aes256gcm"
+      }
+  }'
+```
+
 ```ts Node.js
 import { createClient } from "@tursodatabase/api";
 

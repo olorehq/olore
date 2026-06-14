@@ -1,8 +1,16 @@
 ---
 title: Postgres json_to_record() function
 subtitle: Converts a JSON object to a record
+summary: >-
+  The `json_to_record` function expands a single JSON object into a typed
+  PostgreSQL row using an inline column definition list supplied via the `AS`
+  clause. Use it when you need to parse a JSON payload from an API or file
+  upload into strongly typed columns without pre-defining a named composite
+  type. Missing keys become NULL, nested objects map via custom composite types,
+  and it differs from `json_populate_record` (requires a pre-existing record
+  type) and `jsonb_to_record` (accepts JSONB input).
 enableTableOfContents: true
-updatedOn: '2024-06-14T07:55:54.375Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 You can use the `json_to_record` function to convert a top-level `JSON` object into a row, with the type specified by the `AS` clause.

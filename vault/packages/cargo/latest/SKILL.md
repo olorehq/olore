@@ -1,57 +1,54 @@
 ---
 name: olore-cargo-latest
-description: Local Cargo documentation reference (latest). Official Cargo package manager documentation for Rust.
+description: Local Cargo documentation reference (latest). Cargo package manager documentation for Rust. Use for dependency management, build configuration, and publishing crates.
 ---
 
-# Cargo Documentation
+# cargo Documentation
 
-Cargo is Rust's package manager - it downloads dependencies, compiles packages, and publishes to crates.io. This skill provides complete Cargo documentation including guides, command reference, and technical specifications.
+Cargo package manager documentation for Rust. Use for dependency management, build configuration, and publishing crates.
 
 ## Documentation Structure
 
 ```
 contents/
-├── getting-started/  # Installation and first steps (3 files)
-├── guide/            # Core usage guide (11 files)
-├── commands/         # Command-line reference (47 files)
-├── reference/        # Technical reference (31 files)
-├── appendix/         # Additional resources (2 files)
-└── *.md              # Index, FAQ, summary (3 files)
+├── commands/      # Full CLI command reference for all cargo subcommands (40 files)
+├── reference/     # Detailed reference: manifest, workspaces, features, config, registries (30 files)
+├── guide/         # Cargo usage guide: dependencies, tests, CI, build performance (11 files)
+├── getting-started/ # Installation and first steps (2 files)
+└── appendix/      # Glossary and git authentication reference (2 files)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Getting Started | `contents/getting-started/installation.md`, `contents/getting-started/first-steps.md` |
-| Project Setup | `contents/guide/creating-a-new-project.md`, `contents/guide/project-layout.md` |
-| Dependencies | `contents/guide/dependencies.md`, `contents/reference/specifying-dependencies.md` |
-| Manifest Format | `contents/reference/manifest.md`, `contents/guide/cargo-toml-vs-cargo-lock.md` |
-| Building | `contents/commands/cargo-build.md`, `contents/commands/cargo-check.md`, `contents/reference/profiles.md` |
+| Dependency management | `contents/guide/dependencies.md`, `contents/reference/specifying-dependencies.md`, `contents/reference/overriding-dependencies.md`, `contents/reference/resolver.md` |
+| Cargo.toml manifest | `contents/reference/manifest.md`, `contents/reference/cargo-targets.md` |
+| Building and compiling | `contents/commands/cargo-build.md`, `contents/commands/cargo-check.md`, `contents/commands/cargo-rustc.md`, `contents/reference/profiles.md` |
+| Features and conditional compilation | `contents/reference/features.md`, `contents/reference/features-examples.md` |
 | Testing | `contents/guide/tests.md`, `contents/commands/cargo-test.md`, `contents/commands/cargo-bench.md` |
-| Publishing | `contents/reference/publishing.md`, `contents/commands/cargo-publish.md` |
+| Publishing crates | `contents/reference/publishing.md`, `contents/commands/cargo-publish.md`, `contents/commands/cargo-package.md` |
 | Workspaces | `contents/reference/workspaces.md` |
-| Build Scripts | `contents/reference/build-scripts.md`, `contents/reference/build-script-examples.md` |
-| Features | `contents/reference/features.md`, `contents/reference/features-examples.md` |
 | Configuration | `contents/reference/config.md`, `contents/reference/environment-variables.md` |
-| Registries | `contents/reference/registries.md`, `contents/reference/running-a-registry.md` |
-| Performance | `contents/guide/build-performance.md`, `contents/reference/build-cache.md` |
+| Build scripts (build.rs) | `contents/reference/build-scripts.md`, `contents/reference/build-script-examples.md` |
+| Registries | `contents/reference/registries.md`, `contents/reference/registry-authentication.md`, `contents/reference/running-a-registry.md` |
+| CLI commands | `contents/commands/` (all cargo-*.md files) |
+| Getting started | `contents/getting-started/installation.md`, `contents/getting-started/first-steps.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Installing or configuring Cargo
-- Creating or managing Rust projects
-- Managing dependencies (adding, updating, vendoring)
-- Building, testing, or running Rust code
-- Cargo.toml manifest format
-- Publishing packages to crates.io
-- Workspaces and multi-package projects
+- Cargo commands (cargo build, cargo test, cargo publish, cargo add, etc.)
+- Cargo.toml manifest fields and configuration
+- Managing dependencies and the lockfile
+- Cargo workspaces and multi-crate projects
 - Build scripts (build.rs)
-- Conditional compilation with features
-- Custom registries
-- Cargo commands and CLI usage
-- Build optimization and performance
+- Publishing crates to crates.io or a private registry
+- Cargo features and conditional compilation
+- Cargo profiles (dev, release, custom)
+- Build performance and caching
+- Environment variables used by Cargo
+- Setting up CI for Rust projects
 
 ## How to find information
 

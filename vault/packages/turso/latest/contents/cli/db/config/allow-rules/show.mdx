@@ -1,0 +1,26 @@
+---
+title: db config allow-rules show
+sidebarTitle: show
+---
+
+Print the access allow rules for a database.
+
+```bash
+turso db config allow-rules show <database-name>
+```
+
+When no rules are configured, all connections are accepted and the command reports:
+
+```
+Access allow rules are empty: connections from any source are accepted
+```
+
+When rules are set, each list is printed:
+
+```
+Allowed IPs:
+  203.0.113.7
+  10.0.0.0/8
+Allowed AWS VPC endpoint IDs:
+  vpce-0fe6c8807461bba49
+```

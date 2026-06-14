@@ -2,7 +2,12 @@
 title: AWS Marketplace
 enableTableOfContents: true
 subtitle: Paying for Neon via your AWS Billing account
-updatedOn: '2025-11-27T14:20:46.135Z'
+summary: >-
+  AWS Marketplace billing for Neon is deprecated; Neon self-service pricing
+  plans can no longer be purchased through the AWS Marketplace. Users who
+  previously paid via AWS Marketplace must now purchase plans directly through
+  Neon.
+updatedOn: '2026-06-05T17:20:32.620Z'
 isDraft: false
 ---
 

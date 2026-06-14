@@ -1,281 +1,85 @@
 ---
 title: Querying consumption metrics
-subtitle: Learn how to query project and account consumption metrics using the Neon API
+subtitle: Learn how to query project consumption metrics for usage-based plans using the
+  Neon API
+summary: >-
+  The Neon consumption metrics API (/consumption_history/v2) returns
+  invoice-aligned usage metrics per project (compute units, storage types, data
+  transfer, extra branches) and per-branch metrics, available on Launch, Scale,
+  Agent, and Enterprise plans. Use the project endpoint for billing-aligned
+  totals and invoicing; use the branch endpoint to attribute compute and storage
+  costs to individual branches, CI environments, or development workflows.
+  Consumption history starts March 1, 2024. Granularity options are hourly,
+  daily, and monthly. Calls do not wake suspended compute endpoints.
 redirectFrom:
   - /docs/guides/metrics-api
   - /docs/guides/partner-consumption-metrics
 enableTableOfContents: true
-updatedOn: '2026-01-23T18:24:22.655Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-<Admonition type="note">
-Consumption metrics apply to Scale and Enterprise plan accounts, and to [Neon's legacy Scale, Business, and Enterprise accounts](/docs/introduction/legacy-plans).
+Using the Neon API, you can query consumption metrics to track your resource usage. This page covers the two v2 metrics endpoints for usage-based plans. To monitor usage in the Console instead, see [Monitor billing and usage](/docs/introduction/monitor-usage).
 
-**Important:** The consumption APIs do not retrieve all billable metrics for Neon's current [usage-based Scale plan](https://neon.com/docs/introduction/about-billing). See [Usage-based pricing limitations](#usage-based-pricing-limitations) for details.
-</Admonition>
-
-Using the Neon API, you can query a range of account-level and project-level metrics to help you track your resource consumption. Issuing calls to these APIs does not wake a project's compute endpoints.
-
-Here are the different ways to retrieve these metrics:
-
-| Endpoint                                                                                                         | Description                                                                                                           | Plan availability                                              |
-| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [Get account consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperaccount)          | Aggregates all metrics from all projects in an account into a single cumulative number for each metric                | Scale, Enterprise and legacy Scale, Business, Enterprise plans |
-| [Get consumption metrics for each project](https://api-docs.neon.tech/reference/getconsumptionhistoryperproject) | Provides detailed metrics for each project in an account at a specified granularity level (hourly, daily, or monthly) | Scale, Enterprise and legacy Scale, Business, Enterprise plans |
-
-<Admonition type="info">
-**Date format:** Both endpoints require timestamps in RFC 3339 format, which looks like `2024-06-30T15:30:00Z`. This format includes the date, time, and timezone (the `Z` indicates UTC). You can use this [timestamp converter](https://it-tools.tech/date-converter) to generate RFC 3339 formatted timestamps.
-
-**Important:** Consumption history is available starting from March 1, 2024, at 00:00:00 UTC. You cannot query consumption data before this date.
-</Admonition>
-
-## Get account-level aggregated metrics
-
-Using the [Get account consumption metrics API](https://api-docs.neon.tech/reference/getconsumptionhistoryperaccount), you can find total usage across all projects in your organization. This provides a comprehensive view of consumption metrics accumulated for the billing period.
-
-API endpoint:
-
-```bash
-GET https://console.neon.tech/api/v2/consumption_history/account
-```
+| API                               | Endpoint                           | Description                                                                                                                                      | Plan availability                |
+| --------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| **Project metrics (usage-based)** | `/consumption_history/v2/projects` | Returns metrics aligned with usage-based billing: compute units, storage (root, child, instant restore, snapshot), data transfer, extra branches | Launch, Scale, Agent, Enterprise |
+| **Branch metrics** (beta)         | `/consumption_history/v2/branches` | Returns the same usage-based metrics broken down by branch, across one or more projects                                                          | Launch, Scale, Agent, Enterprise |
 
 <Admonition type="tip">
-You can run this endpoint interactively in the [Neon API Reference](https://api-docs.neon.tech/reference/getconsumptionhistoryperaccount)—just fill in the required parameters and add your API key to see live results.
+**Which API should I use?**
+
+- For invoice-aligned usage totals per project, use the [project metrics API](#request-overview). It's the only endpoint that returns all eight usage-based metrics including `snapshot_storage_bytes_month` and `extra_branches_month`.
+- To attribute usage to individual branches within a project — for example, to see which CI or development branches are driving compute or storage — use the [branch metrics API](#branch-metrics).
+- For legacy metrics on older plans, see the [legacy APIs](/docs/guides/consumption-metrics-legacy).
+
 </Admonition>
 
-This endpoint accepts the following query parameters:
+<Admonition type="note" title="API reference: legacy vs v2">
+On [api-docs.neon.tech](https://api-docs.neon.tech), two similarly named pages cover different paths. **Retrieve project consumption metrics (legacy plans)** is **`GET /consumption_history/projects`** and lists older metrics such as `active_time_seconds` and `compute_time_seconds`. **Retrieve project consumption metrics** (no "legacy plans" in the title) is **`GET /consumption_history/v2/projects`** and documents usage-based metrics, including **`snapshot_storage_bytes_month`**, in the **`metrics`** parameter. That v2 page matches this guide; see **[Retrieve project consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperprojectv2)**.
+</Admonition>
+
+## Request overview
+
+Retrieves consumption metrics for Launch, Scale, Agent, and Enterprise plan projects. Returns metrics that align with usage-based billing. History begins at the time of upgrade. Results are ordered by time in ascending order (oldest to newest). Issuing a call to this API does not wake a project's compute endpoint.
+
+**Endpoint:**
+
+```bash
+GET https://console.neon.tech/api/v2/consumption_history/v2/projects
+```
+
+### Metrics
+
+The response includes metrics that map directly to usage-based billing line items:
+
+| Metric                           | Raw unit     | Billing unit  | Description                                                                                                                                                                                                    |
+| -------------------------------- | ------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compute_unit_seconds`           | CU-seconds   | CU-hours      | CPU time weighted by compute size                                                                                                                                                                              |
+| `root_branch_bytes_month`        | byte-hours   | GB-months     | Storage consumed by root branches                                                                                                                                                                              |
+| `child_branch_bytes_month`       | byte-hours   | GB-months     | Storage consumed by child branches (delta from parent)                                                                                                                                                         |
+| `instant_restore_bytes_month`    | byte-hours   | GB-months     | Instant restore (PITR) history storage                                                                                                                                                                         |
+| `snapshot_storage_bytes_month`   | byte-hours   | GB-months     | Storage for [branch snapshots](/docs/guides/backup-restore): manual snapshots are full; scheduled snapshots are full for the first snapshot, then incremental (delta) for subsequent snapshots in the schedule |
+| `public_network_transfer_bytes`  | bytes        | GB            | Data transfer over the public internet                                                                                                                                                                         |
+| `private_network_transfer_bytes` | bytes        | GB            | Data transfer over private networks (for example, AWS PrivateLink)                                                                                                                                             |
+| `extra_branches_month`           | branch-hours | branch-months | All child branches per hour (subtract plan allowance before billing)                                                                                                                                           |
+
+Use `snapshot_storage_bytes_month` for invoice-aligned, time-windowed snapshot storage reporting.
+
+To convert these raw values into human-readable billing units and calculate costs, see [Usage and cost calculations](/docs/introduction/usage-calculations).
 
 ### Required parameters
 
-- **`from`** (date-time, required) — Start date-time for the consumption period in [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) format. The value is rounded according to the specified granularity.
+- **`from`** (date-time, required): Start date-time for the consumption period in RFC 3339 format. The value is rounded according to the specified granularity. Consumption history is available from March 1, 2024, at 00:00:00 UTC. The range must respect the granularity limits (hourly: last 168 hours; daily: last 60 days; monthly: last year).
+- **`to`** (date-time, required): End date-time for the consumption period in RFC 3339 format. The value is rounded according to the specified granularity. The range must respect the same granularity limits as `from`.
+- **`granularity`** (string, required): Granularity of consumption metrics. Hourly, daily, and monthly metrics are available for the last 168 hours, 60 days, and 1 year, respectively.
+- **`org_id`** (string, required): Organization for which the project consumption metrics should be returned.
+- **`metrics`** (array of strings, required): List of metrics to include in the response. Possible values: `compute_unit_seconds`, `root_branch_bytes_month`, `child_branch_bytes_month`, `instant_restore_bytes_month`, `snapshot_storage_bytes_month`, `public_network_transfer_bytes`, `private_network_transfer_bytes`, `extra_branches_month`. Can be an array of parameter values or a comma-separated list in a single parameter value.
 
-- **`to`** (date-time, required) — End date-time for the consumption period in RFC 3339 format. The value is rounded according to the specified granularity.
+### Date format, range, and granularity
 
-- **`granularity`** (string, required) — The granularity of consumption metrics. Options:
-  - `hourly` — Limited to the last 168 hours (7 days)
-  - `daily` — Limited to the last 60 days
-  - `monthly` — Limited to the past year
+The API requires timestamps in RFC 3339 format (for example, `2024-06-30T15:30:00Z`), including date, time, and timezone; the `Z` indicates UTC. You can use a [timestamp converter](https://it-tools.tech/date-converter) to generate RFC 3339 formatted timestamps. Consumption history is available starting from March 1, 2024, at 00:00:00 UTC; you cannot query data before this date.
 
-### Optional parameters
-
-- **`org_id`** (string, required) — Specify the organization for which consumption metrics should be returned.
-
-- **`metrics`** (array of strings) — Specify which metrics to include in the response. If omitted, `active_time_seconds`, `compute_time_seconds`, `written_data_bytes`, and `synthetic_storage_size_bytes` are returned.
-
-  Available metrics:
-  - `active_time_seconds`
-  - `compute_time_seconds`
-  - `written_data_bytes`
-  - `synthetic_storage_size_bytes`
-  - `data_storage_bytes_hour`
-  - `logical_size_bytes`
-  - `logical_size_bytes_hour`
-
-  You can specify metrics as an array or as a comma-separated list:
-
-  ```
-  # As an array
-  metrics=active_time_seconds&metrics=compute_time_seconds
-
-  # As a comma-separated list
-  metrics=active_time_seconds,compute_time_seconds
-  ```
-
-### Example request
-
-```bash shouldWrap
-curl --request GET \
-  --url 'https://console.neon.tech/api/v2/consumption_history/account?from=2024-06-30T00:00:00Z&to=2024-07-02T00:00:00Z&granularity=daily&org_id=org-ocean-art-12345678' \
-  --header 'accept: application/json' \
-  --header 'authorization: Bearer $NEON_API_KEY'
-```
-
-<details>
-<summary>Response body</summary>
-
-For attribute definitions, see the [Retrieve account consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperaccount) endpoint in the [Neon API Reference](https://api-docs.neon.tech/reference/getting-started-with-neon-api).
-
-```json
-{
-  "periods": [
-    {
-      "period_id": "random-period-abcdef",
-      "period_plan": "scale",
-      "period_start": "2024-06-01T00:00:00Z",
-      "period_end": "2024-07-01T00:00:00Z",
-      "consumption": [
-        {
-          "timeframe_start": "2024-06-30T00:00:00Z",
-          "timeframe_end": "2024-07-01T00:00:00Z",
-          "active_time_seconds": 147452,
-          "compute_time_seconds": 43215,
-          "written_data_bytes": 111777920,
-          "synthetic_storage_size_bytes": 41371988928
-        },
-        {
-          "timeframe_start": "2024-07-01T00:00:00Z",
-          "timeframe_end": "2024-07-02T00:00:00Z",
-          "active_time_seconds": 147468,
-          "compute_time_seconds": 43223,
-          "written_data_bytes": 110483584,
-          "synthetic_storage_size_bytes": 41467955616
-        }
-      ]
-    }
-  ]
-}
-```
-
-</details>
-
-## Get project-level metrics
-
-Using the [Retrieve project consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperproject) endpoint, you can get detailed metrics for each project in your account, broken down by the specified granularity level.
-
-API endpoint:
-
-```bash
-GET https://console.neon.tech/api/v2/consumption_history/projects
-```
-
-<Admonition type="tip">
-You can run this endpoint interactively in the [Neon API Reference](https://api-docs.neon.tech/reference/getconsumptionhistoryperproject)—just fill in the required parameters and add your API key to see live results.
-</Admonition>
-
-This endpoint accepts the following query parameters:
-
-### Required parameters
-
-- **`from`** (date-time, required) — Start date-time for the consumption period in [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) format. The value is rounded according to the specified granularity.
-
-- **`to`** (date-time, required) — End date-time for the consumption period in RFC 3339 format. The value is rounded according to the specified granularity.
-
-- **`granularity`** (string, required) — The granularity of consumption metrics. Options:
-  - `hourly` — Limited to the last 168 hours (7 days)
-  - `daily` — Limited to the last 60 days
-  - `monthly` — Limited to the past year
-
-### Optional parameters
-
-- **`project_ids`** (array of strings, 0-100 items) — Filter the response to specific project IDs. If omitted, all projects are included. Can be specified as an array or comma-separated list:
-
-  ```
-  # As an array
-  project_ids=cold-poetry-09157238&project_ids=quiet-snow-71788278
-
-  # As a comma-separated list
-  project_ids=cold-poetry-09157238,quiet-snow-71788278
-  ```
-
-- **`org_id`** (string, required) — Specify the organization for which project consumption metrics should be returned.
-
-- **`metrics`** (array of strings) — Specify which metrics to include. If omitted, `active_time_seconds`, `compute_time_seconds`, `written_data_bytes`, and `synthetic_storage_size_bytes` are returned.
-
-  Available metrics:
-  - `active_time_seconds`
-  - `compute_time_seconds`
-  - `written_data_bytes`
-  - `synthetic_storage_size_bytes`
-  - `data_storage_bytes_hour`
-  - `logical_size_bytes`
-  - `logical_size_bytes_hour`
-
-- **`limit`** (integer, 1-100) — Number of projects to include in the response. Default: `10`.
-
-- **`cursor`** (string) — Cursor value from the previous response to get the next batch of projects. See [Pagination](#pagination) for details.
-
-### Example request
-
-```shouldWrap
-curl --request GET \
-  --url 'https://console.neon.tech/api/v2/consumption_history/projects?from=2024-06-30T00:00:00Z&to=2024-07-02T00:00:00Z&granularity=daily&org_id=org-ocean-art-12345678&limit=10' \
-  --header 'accept: application/json' \
-  --header 'authorization: Bearer $NEON_API_KEY'
-```
-
-<details>
-<summary>Response body</summary>
-
-For attribute definitions, see the [Retrieve project consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperproject) endpoint in the [Neon API Reference](https://api-docs.neon.tech/reference/getting-started-with-neon-api).
-
-```json
-{
-  "projects": [
-    {
-      "project_id": "random-project-123456",
-      "periods": [
-        {
-          "period_id": "random-period-abcdef",
-          "period_plan": "scale",
-          "period_start": "2024-06-01T00:00:00Z",
-          "period_end": "2024-07-01T00:00:00Z",
-          "consumption": [
-            {
-              "timeframe_start": "2024-06-30T00:00:00Z",
-              "timeframe_end": "2024-07-01T00:00:00Z",
-              "active_time_seconds": 147472,
-              "compute_time_seconds": 43222,
-              "written_data_bytes": 112730864,
-              "synthetic_storage_size_bytes": 37000959232
-            },
-            {
-              "timeframe_start": "2024-07-01T00:00:00Z",
-              "timeframe_end": "2024-07-02T00:00:00Z",
-              "active_time_seconds": 1792,
-              "compute_time_seconds": 533,
-              "written_data_bytes": 0,
-              "synthetic_storage_size_bytes": 0
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "pagination": {
-    "cursor": "random-project-123456"
-  }
-}
-```
-
-</details>
-
-## Metric definitions
-
-### Default metrics
-
-- **active_time_seconds** — Seconds. The amount of time the compute endpoints have been active.
-- **compute_time_seconds** — Seconds. The number of CPU seconds used by compute endpoints, including compute endpoints that have been deleted. For example:
-  - A compute that uses 1 CPU for 1 second equals `compute_time=1`
-  - A compute that uses 2 CPUs simultaneously for 1 second equals `compute_time=2`
-- **written_data_bytes** — Bytes. The total amount of data written to all of a project's branches.
-- **synthetic_storage_size_bytes** — Bytes. The space occupied in storage. Synthetic storage size combines the logical data size and Write-Ahead Log (WAL) size for all branches.
-
-### Additional metrics
-
-- **data_storage_bytes_hour** — Bytes-Hour. The amount of storage consumed hourly.
-- **logical_size_bytes** — Bytes. The amount of logical size consumed.
-- **logical_size_bytes_hour** — Bytes-Hour. The amount of logical size consumed hourly.
-
-## Pagination
-
-The project consumption metrics endpoint uses cursor-based pagination. The response includes a `pagination` object with a `cursor` value (the project ID of the last project in the list).
-
-To retrieve the next page of results, include the cursor value in your next request:
-
-```bash shouldWrap
-curl --request GET \
-     --url 'https://console.neon.tech/api/v2/consumption_history/projects?cursor=divine-tree-77657175&limit=10&from=2024-06-30T00%3A00%3A00Z&to=2024-07-02T00%3A00%3A00Z&granularity=daily' \
-     --header 'accept: application/json' \
-     --header 'authorization: Bearer $NEON_API_KEY'
-```
-
-<Admonition type="note">
-To learn more about cursor-based pagination, see [Keyset pagination](https://learn.microsoft.com/en-us/ef/core/querying/pagination#keyset-pagination) in the Microsoft documentation.
-</Admonition>
-
-## Date range and granularity guidelines
-
-When setting the `from` and `to` parameters, keep these limits in mind based on your chosen granularity:
+When setting `from` and `to`, keep these limits in mind based on your chosen granularity:
 
 | Granularity | Maximum time range      | Rounding behavior                |
 | ----------- | ----------------------- | -------------------------------- |
@@ -285,70 +89,240 @@ When setting the `from` and `to` parameters, keep these limits in mind based on 
 
 Date-time values are automatically rounded according to the specified granularity. For example, `2024-03-15T15:30:00Z` with daily granularity becomes `2024-03-15T00:00:00Z`.
 
-## Consumption polling FAQ
+### Optional parameters
 
-### How often can you poll consumption data?
+- **`project_ids`** (array of strings, 0-100 items): Filter to specific project IDs. If omitted, the response contains all projects. Can be an array of parameter values or a comma-separated list in a single parameter value.
+- **`limit`** (integer, 1-100): Number of projects in the response. Default: `10`.
+- **`cursor`** (string): Cursor value from the previous response to get the next batch of projects.
 
-Neon's consumption data is updated approximately every 15 minutes, so a minimum interval of 15 minutes between API calls is recommended.
+## Example request and response
 
-### What is the rate limit for consumption APIs?
+Replace `$ORG_ID` and `$NEON_API_KEY` with your organization ID and API key, then run the following to retrieve daily metrics for a date range.
 
-Both consumption API endpoints share the same rate limiter and are limited to approximately 50 requests per minute per account.
-
-Neon uses a **token bucket** rate-limiting approach, which refills at a steady rate while allowing short bursts within the bucket size. This behaves more like a sliding window rather than a fixed reset every minute. For more details, see [Token bucket](https://en.wikipedia.org/wiki/Token_bucket).
-
-### How often should consumption data be polled for reporting or invoicing?
-
-Usage data can be pulled every 15 minutes, but integrators and customers are free to choose their own reporting and billing intervals based on their requirements. Neon does not dictate how integrators bill their users.
-
-### Does consumption polling wake up computes?
-
-No. Neon's consumption APIs do not wake computes that have been suspended due to inactivity. Therefore, calls to these APIs will not increase consumption.
-
-### Do the consumption APIs provide all the metrics for usage-based Scale plan billing?
-
-No. These consumption APIs were designed for Neon's legacy billing model and do not fully align with the current usage-based Scale plan pricing structure. The APIs return aggregate storage metrics (like `synthetic_storage_size_bytes`) rather than separate metrics for root branch storage, child branch storage, and instant restore storage. They also don't provide metrics for extra branches or network transfer (public/private).
-
-For detailed information about these limitations and what the APIs are best used for, see [Usage-based pricing limitations](#usage-based-pricing-limitations).
-
-## Usage-based pricing limitations
-
-These consumption APIs were designed for Neon's legacy billing plans and do not fully align with the current [usage-based plan](/docs/introduction/plans) structure introduced in August 2025.
-
-### Storage metrics differences
-
-**Legacy billing model:**
-
-Neon's legacy plans use `synthetic_storage_size_bytes`, which combines logical data size and Write-Ahead Log (WAL) data for all branches into a single metric
-
-**Current usage-based pricing:**
-
-The current usage based pricing plans use these billable storage metrics:
-
-- **Storage (root branches)** — Billed based on logical data size only
-- **Storage (child branches)** — Billed based on the delta (changes made) up to the logical data size limit
-- **Instant restore storage** — Change history (WAL data) billed separately
-
-The consumption APIs return the legacy storage metric that doesn't map directly to these separate billing line items on current usage-based plan invoices.
-
-### Missing billable metrics
-
-The consumption APIs do not provide the following metrics that appear on usage-based plan invoices:
-
-- **Extra branches** — Branches beyond your plan's included allowance
-- **Instant restore storage** — Separately billed change history for point-in-time restore
-- **Public network transfer** — Data egress over the public internet
-- **Private network transfer** — Data transfer over AWS PrivateLink
+```bash shouldWrap
+curl --request GET \
+  --url 'https://console.neon.tech/api/v2/consumption_history/v2/projects?from=2026-02-01T00:00:00Z&to=2026-02-06T00:00:00Z&granularity=daily&org_id=$ORG_ID&metrics=compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,instant_restore_bytes_month,snapshot_storage_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes,extra_branches_month' \
+  --header 'Accept: application/json' \
+  --header 'Authorization: Bearer $NEON_API_KEY' | jq
+```
 
 <Admonition type="note">
-We plan to enhance the consumption APIs in future releases to provide metrics that align with the current usage-based billing plan structure.
+`snapshot_storage_bytes_month` reflects snapshot storage for billing over the selected time window. Manual snapshots are billed as full snapshots. Scheduled snapshots are billed as full snapshots for the first scheduled snapshot, then as incremental (delta) storage for subsequent scheduled snapshots.
 </Admonition>
+
+<details>
+<summary>Response body</summary>
+
+```json
+{
+  "projects": [
+    {
+      "project_id": "delicate-dawn-54854667",
+      "periods": [
+        {
+          "period_id": "90c7f107-3fe7-4652-b1da-c61f71043128",
+          "period_plan": "launch",
+          "period_start": "2026-02-02T18:04:52Z",
+          "consumption": [
+            {
+              "timeframe_start": "2026-02-04T00:00:00Z",
+              "timeframe_end": "2026-02-05T00:00:00Z",
+              "metrics": [
+                {
+                  "metric_name": "compute_unit_seconds",
+                  "value": 84
+                },
+                {
+                  "metric_name": "root_branch_bytes_month",
+                  "value": 758513664
+                },
+                {
+                  "metric_name": "instant_restore_bytes_month",
+                  "value": 98344
+                },
+                {
+                  "metric_name": "snapshot_storage_bytes_month",
+                  "value": 0
+                },
+                {
+                  "metric_name": "public_network_transfer_bytes",
+                  "value": 1414
+                }
+              ]
+            },
+            {
+              "timeframe_start": "2026-02-05T00:00:00Z",
+              "timeframe_end": "2026-02-06T00:00:00Z",
+              "metrics": [
+                {
+                  "metric_name": "compute_unit_seconds",
+                  "value": 236
+                },
+                {
+                  "metric_name": "root_branch_bytes_month",
+                  "value": 758611968
+                },
+                {
+                  "metric_name": "instant_restore_bytes_month",
+                  "value": 983488
+                },
+                {
+                  "metric_name": "snapshot_storage_bytes_month",
+                  "value": 0
+                },
+                {
+                  "metric_name": "public_network_transfer_bytes",
+                  "value": 2184
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "cursor": "delicate-dawn-54854667"
+  }
+}
+```
+
+</details>
+
+<Admonition type="tip">
+You can also query individual metrics by specifying only the ones you need in the `metrics` parameter. Metrics with a value of zero for a given timeframe may be omitted from the response.
+</Admonition>
+
+For full API details including all parameters and response schema, see [Retrieve project consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperprojectv2). To build a request for a custom time range, use the prompt below with an AI assistant.
+
+<CopyPrompt src="/prompts/consumption-api-prompt.md" description="Copy this prompt to have an AI assistant help you build the curl command for your desired time period." />
+
+The following sections cover paging through many projects, polling behavior, and handling errors.
+
+## Pagination
+
+The project consumption metrics endpoint uses cursor-based pagination. The response includes a `pagination` object with a `cursor` value (the project ID of the last project in the list). To get the next page, send another request with that `cursor` in the query string and the same `from`, `to`, `granularity`, `org_id`, and `metrics` as your first request.
+
+Example request for the next page (using the `cursor` from the previous response):
+
+```bash shouldWrap
+curl --request GET \
+     --url 'https://console.neon.tech/api/v2/consumption_history/v2/projects?cursor=divine-tree-77657175&limit=10&from=2024-06-30T00%3A00%3A00Z&to=2024-07-02T00%3A00%3A00Z&granularity=daily&org_id=$ORG_ID&metrics=compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,instant_restore_bytes_month,snapshot_storage_bytes_month,public_network_transfer_bytes,private_network_transfer_bytes,extra_branches_month' \
+     --header 'accept: application/json' \
+     --header 'authorization: Bearer $NEON_API_KEY'
+```
+
+In the URL above, the **`cursor`** parameter is `cursor=divine-tree-77657175`. Replace that value with the `cursor` from your previous response's `pagination` object.
+
+## Consumption polling
+
+Neon's consumption data is updated approximately every 15 minutes. A minimum interval of 15 minutes between API calls is recommended. For reporting or invoicing, you can pull usage data at that interval or choose your own; Neon does not dictate how often you poll or how you bill your users.
+
+The consumption API endpoints share a single rate limiter of approximately 50 requests per minute per account. Neon uses a **token bucket** approach, which refills at a steady rate and allows short bursts within the bucket size, so the limit behaves like a sliding window rather than a fixed reset every minute. For more details, see [Token bucket](https://en.wikipedia.org/wiki/Token_bucket).
+
+Calling the consumption APIs does not wake computes that have been suspended due to inactivity, so polling will not increase your consumption.
+
+The [project metrics endpoint](#request-overview) on this page returns metrics that align directly with usage-based billing (including storage and network transfer metrics that match your invoice). The legacy APIs return different metrics that don't map to usage-based line items; see [Query consumption metrics (legacy)](/docs/guides/consumption-metrics-legacy) for those endpoints.
 
 ## Error responses
 
 Common error responses you may encounter:
 
-- **403 Forbidden** — This endpoint is only available for Scale and Enterprise plan accounts, and for legacy Scale, Business, and Enterprise plan accounts.
-- **404 Not Found** — Account is not a member of the organization specified by `org_id`.
-- **406 Not Acceptable** — The specified date-time range is outside the boundaries of the specified granularity. Adjust your `from` and `to` values or select a different granularity.
-- **429 Too Many Requests** — You've exceeded the rate limit. Wait before retrying.
+- **403 Forbidden**: This endpoint is not available for your plan. It is only supported with Launch, Scale, Agent, and Enterprise plan accounts.
+- **404 Not Found**: Account is not a member of the organization specified by `org_id`.
+- **406 Not Acceptable**: The specified date-time range is outside the boundaries of the specified granularity. Adjust your `from` and `to` values or select a different `granularity`.
+- **429 Too Many Requests**: Too many requests. Wait before retrying.
+
+## Build a usage dashboard
+
+For a full example that uses this API to build a usage dashboard with Next.js (including charts, project filtering, and reporting), see [Building a Usage Dashboard with Neon's Consumption API](/guides/usage-dashboard-consumption-api). The guide includes a [sample application on GitHub](https://github.com/dhanushreddy291/neon-usage-dashboard) that you can clone and run to visualize your usage-based metrics.
+
+## Branch metrics
+
+The branch metrics endpoint returns per-branch consumption data across one or more projects. Use it when you need to see which branches within a project are driving usage — for example, attributing compute costs across CI branches, development environments, or feature branches.
+
+**Endpoint:**
+
+```bash
+GET https://console.neon.tech/api/v2/consumption_history/v2/branches
+```
+
+### Metrics
+
+Six of the eight project metrics are available on this endpoint:
+
+| Metric                           | Description                            |
+| -------------------------------- | -------------------------------------- |
+| `compute_unit_seconds`           | CPU time weighted by compute size      |
+| `root_branch_bytes_month`        | Storage consumed by root branches      |
+| `child_branch_bytes_month`       | Storage consumed by child branches     |
+| `instant_restore_bytes_month`    | Instant restore (PITR) history storage |
+| `public_network_transfer_bytes`  | Data transfer over the public internet |
+| `private_network_transfer_bytes` | Data transfer over private networks    |
+
+`extra_branches_month` and `snapshot_storage_bytes_month` are not available on this endpoint. Use the [project metrics endpoint](#request-overview) for those.
+
+### Required parameters
+
+- **`project_ids`** (array of strings, 1-100, required): Projects to include. Unlike the project endpoint, `project_ids` is always required here.
+- **`from`** (date-time, required): Start of the consumption period in RFC 3339 format.
+- **`to`** (date-time, required): End of the consumption period in RFC 3339 format.
+- **`granularity`** (string, required): `hourly`, `daily`, or `monthly`. Subject to the same window limits as the project endpoint.
+- **`org_id`** (string, required): Organization ID.
+- **`metrics`** (array of strings, required): One or more of the six supported metrics above.
+
+### Optional parameters
+
+- **`branch_ids`** (array of strings, up to 100): Filter to specific branches. If omitted, all branches in the specified projects are returned.
+- **`limit`** (integer, 1-1000): Branches per page. Default: 100.
+- **`cursor`** (string): Pagination cursor from the previous response.
+
+### Example request and response
+
+```bash shouldWrap
+curl --request GET \
+  --url 'https://console.neon.tech/api/v2/consumption_history/v2/branches?project_ids=$PROJECT_ID&org_id=$ORG_ID&from=2026-05-01T00:00:00Z&to=2026-05-29T00:00:00Z&granularity=daily&metrics=compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month' \
+  --header 'Authorization: Bearer $NEON_API_KEY' \
+  --header 'Accept: application/json' | jq
+```
+
+<details>
+<summary>Response body</summary>
+
+```json
+{
+  "branches": [
+    {
+      "branch_id": "br-young-sky-a1b2c3d4",
+      "project_id": "calm-night-03860858",
+      "periods": [
+        {
+          "period_id": "7f3a1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+          "period_plan": "launch",
+          "period_start": "2026-05-01T00:00:00Z",
+          "consumption": [
+            {
+              "timeframe_start": "2026-05-01T00:00:00Z",
+              "timeframe_end": "2026-05-02T00:00:00Z",
+              "metrics": [
+                { "metric_name": "compute_unit_seconds", "value": 1440 },
+                { "metric_name": "root_branch_bytes_month", "value": 875309056 },
+                { "metric_name": "child_branch_bytes_month", "value": 0 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "cursor": "br-young-sky-a1b2c3d4"
+  }
+}
+```
+
+</details>
+
+For full API details, see [Retrieve branch consumption metrics](https://api-docs.neon.tech/reference/getconsumptionhistoryperbranchv2).
+
+<NeedHelp/>

@@ -12,26 +12,31 @@ Clerk authentication documentation. Use for user authentication, session managem
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/getting-started/quickstart.mdx` |
-| Next.js integration | `contents/reference/nextjs/overview.mdx` |
+| Framework quickstarts | `contents/getting-started/quickstart.{framework}.mdx` |
+| Core concepts | `contents/getting-started/core-concepts.mdx` |
+| Next.js SDK reference | `contents/reference/nextjs/overview.mdx` |
 | React hooks | `contents/reference/hooks/overview.mdx` |
-| Backend SDK | `contents/reference/backend/` |
-| UI components | `contents/reference/components/overview.mdx` |
-| TypeScript types | `contents/reference/types/overview.mdx` |
-| Auth strategies (OAuth/SAML) | `contents/guides/configure/auth-strategies/` |
+| Backend SDK (Node) | `contents/reference/backend/overview.mdx` |
+| UI components | `contents/reference/components/` |
+| Custom sign-in/sign-up flows | `contents/guides/development/custom-flows/` |
+| OAuth / social login config | `contents/guides/configure/auth-strategies/social-connections/` |
 | Organizations | `contents/guides/organizations/` |
-| Billing | `contents/guides/billing/overview.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- User authentication, sign-in, sign-up, and session management with Clerk
-- Integrating Clerk into Next.js, React, Vue, Astro, Expo, Express, or other frameworks
-- Organizations, multi-tenancy, roles, and permissions
-- OAuth, social login, SAML, enterprise SSO, and Web3 authentication
-- Clerk UI components, React hooks, and JavaScript SDK APIs
-- Backend SDK operations (user management, invitations, sessions via server)
-- Billing, subscriptions, and payment management
-- Webhooks, machine-to-machine auth, and API keys
+- Authentication and sign-in/sign-up flows (email, password, social, passkeys, SSO)
+- Session management and JWT tokens
+- Organizations, roles, and permissions (RBAC)
+- Clerk SDK integration (Next.js, React, Astro, Expo, Express, Vue, Nuxt, Ruby, Go, etc.)
+- UI components (`<SignIn>`, `<SignUp>`, `<UserButton>`, `<ClerkProvider>`, etc.)
+- React hooks (`useAuth`, `useUser`, `useSession`, `useOrganization`, etc.)
+- Backend SDK methods (user CRUD, sessions, invitations, organizations)
+- Webhooks from Clerk
+- Custom flows and headless UI (Elements)
+- Machine-to-machine (M2M) authentication and API keys
+- Billing and subscription management
+- Appearance customization and theming
 
 ## How to find information
 

@@ -11,50 +11,46 @@ description: Local dotnet-aspire documentation reference (latest). .NET Aspire d
 
 ```
 contents/
-├── compatibility/    # Breaking changes by version (9.0–13.0), API removal policy, categories (48 files)
-├── deployment/       # Deployment guides: Azure Container Apps via azd and Aspire Deploy (9 files)
-├── troubleshooting/  # Common errors and fixes (7 files)
-└── get-started/      # Upgrade guides (2 files)
+├── deployment/       # Deployment guides for Azure Container Apps and azd (16 files)
+├── fundamentals/     # Setup, tooling, and template installation (2 files)
+├── get-started/      # Upgrade guides (1 file)
+├── includes/         # Shared reusable content snippets (16 files)
+└── troubleshooting/  # Common error resolution guides (7 files)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Upgrading to Aspire 13 | `contents/get-started/upgrade-to-aspire-13.md` |
-| Breaking changes overview | `contents/compatibility/breaking-changes.md` |
-| API removal policy | `contents/compatibility/api-removal.md` |
-| Compatibility categories | `contents/compatibility/categories.md` |
-| Breaking changes in 9.0 | `contents/compatibility/9.0/index.md` |
-| Breaking changes in 9.1 | `contents/compatibility/9.1/index.md` |
-| Breaking changes in 9.2 | `contents/compatibility/9.2/index.md` |
-| Breaking changes in 9.3 | `contents/compatibility/9.3/index.md` |
-| Breaking changes in 9.4 | `contents/compatibility/9.4/index.md` |
-| Breaking changes in 9.5 | `contents/compatibility/9.5/index.md` |
-| Breaking changes in 13.0 | `contents/compatibility/13.0/index.md` |
-| Azure managed identity changes | `contents/compatibility/9.2/managed-identity-per-app.md`, `contents/compatibility/13.0/defaultazurecredential-managedidentity-default.md` |
-| Azure auth / local auth disabled | `contents/compatibility/9.4/local-auth-disabled-for-azure-resources.md` |
-| Deploying with azd | `contents/deployment/azd/aca-deployment.md`, `contents/deployment/azd/aca-deployment-azd-in-depth.md` |
-| CI/CD deployment (GitHub Actions) | `contents/deployment/azd/aca-deployment-github-actions.md` |
-| Deploy from Visual Studio | `contents/deployment/aspire-deploy/aca-deployment-visual-studio.md` |
-| Customizing deployments | `contents/deployment/azd/customize-deployments.md`, `contents/deployment/aspire-deploy/customize-deployments.md` |
-| SQL Server deployment | `contents/deployment/aspire-deploy/sql-server-integration-deployment.md` |
-| Application Insights setup | `contents/deployment/aspire-deploy/application-insights.md` |
-| Container runtime errors | `contents/troubleshooting/container-runtime-unhealthy.md` |
-| Certificate and transport issues | `contents/troubleshooting/untrusted-localhost-certificate.md`, `contents/troubleshooting/allow-unsecure-transport.md` |
-| Connection string errors | `contents/troubleshooting/connection-string-missing.md` |
-| Podman/WSL issues | `contents/troubleshooting/podman-wsl-not-found.md` |
+| Deploy to Azure Container Apps (azd) | `contents/deployment/azd/aca-deployment.md`, `contents/deployment/azd/aca-deployment-azd-in-depth.md` |
+| Deploy via GitHub Actions | `contents/deployment/azd/aca-deployment-github-actions.md` |
+| Deploy with Visual Studio | `contents/deployment/aspire-deploy/aca-deployment-visual-studio.md` |
+| Customize deployments | `contents/deployment/azd/customize-deployments.md`, `contents/deployment/aspire-deploy/customize-deployments.md` |
+| SQL Server integration deployment | `contents/deployment/aspire-deploy/sql-server-integration-deployment.md` |
+| Caching integration deployment | `contents/deployment/aspire-deploy/caching-integrations-deployment.md` |
+| Application Insights | `contents/deployment/aspire-deploy/application-insights.md` |
+| Prerequisites and setup | `contents/includes/aspire-prereqs.md`, `contents/fundamentals/includes/install-templates.md` |
+| Creating a new project | `contents/includes/dotnet-cli-file-new.md`, `contents/includes/visual-studio-file-new.md`, `contents/includes/vscode-file-new.md` |
+| Upgrade to Aspire 13.0 | `contents/get-started/upgrade-to-aspire-13.md` |
+| Health checks | `contents/includes/client-integration-health-checks.md` |
+| Observability and telemetry | `contents/includes/integration-observability-and-telemetry.md` |
+| Connection strings | `contents/includes/connection-strings-alert.md` |
+| Volumes and bind mounts | `contents/includes/data-bind-mount-vs-volumes.md` |
+| Troubleshooting container runtime | `contents/troubleshooting/container-runtime-unhealthy.md`, `contents/troubleshooting/podman-wsl-not-found.md` |
+| Troubleshooting connection issues | `contents/troubleshooting/connection-string-missing.md`, `contents/troubleshooting/allow-unsecure-transport.md` |
+| Troubleshooting certificates | `contents/troubleshooting/untrusted-localhost-certificate.md` |
+| Troubleshooting startup errors | `contents/troubleshooting/hosting-startup-not-supported.md`, `contents/troubleshooting/name-is-already-in-use.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Upgrading .NET Aspire versions (9.x, 13.0)
-- Breaking changes or API removals in .NET Aspire
-- Deploying Aspire apps to Azure Container Apps
-- Using azd (Azure Developer CLI) with .NET Aspire
-- Deployment customization, integrations, or Application Insights setup
-- Troubleshooting common Aspire errors (container runtime, certificates, connection strings)
-- Azure managed identity, Bicep, or Azure resource configuration in Aspire
+- Deploying .NET Aspire apps to Azure Container Apps with azd or Visual Studio
+- Setting up CI/CD for Aspire with GitHub Actions
+- Integrating SQL Server, Redis, or Application Insights in Aspire deployments
+- Installing Aspire templates and setting up a new Aspire project
+- Upgrading an existing project to Aspire 13.0
+- Health checks, observability, and telemetry in Aspire integrations
+- Troubleshooting container runtime, connection, or certificate errors in Aspire
 
 ## How to find information
 

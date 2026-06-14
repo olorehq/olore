@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components'
+
 # Implement Session Replay (React Native)
 
 Mixpanel's React Native Session Replay SDK enables you to capture and analyze user interactions in your mobile applications. Built as a Turbo Module for React Native's New Architecture, it provides native implementations for both iOS and Android with a unified JavaScript API.
@@ -106,6 +108,7 @@ const config = new MPSessionReplayConfig({
 | `autoMaskedViews`          | MPSessionReplayMask[] | All types | View types to automatically mask                |
 | `flushInterval`            | number                | `10`      | Interval in seconds to flush recordings         |
 | `enableLogging`            | boolean               | `false`   | Enable debug logging                            |
+| `remoteSettingsMode`       | MPSessionReplayRemoteSettingsMode | `Disabled`   | Setting for handling remote configuration during SDK initialization. Can be `Disabled`/ `Fallback`/ `Strict`.                    |
 
 ### Auto-Masked View Types
 
@@ -241,6 +244,27 @@ identify(distinctId: string): Promise<void>
 // Update user ID after authentication
 await MPSessionReplay.identify("authenticated-user-456");
 ```
+
+## Remote Configuration
+
+<Callout type="info">
+  Available in React Native Session Replay SDK version `1.2.0` and later. Requires a paid Session Replay add-on. 
+</Callout>
+
+You can set the `remote_settings_mode` for your project in Mixpanel under `Settings > Organization Settings > Session Replay`. Using this, you can quickly set SDK options remotely without needing to update your app. This allows you to adjust recording settings, such as sampling rates, on the fly based on your needs.
+
+Three modes are available:
+
+- `Disabled`: Do not use remote configuration and proceed to use the hardcoded initial options provided by the user during initialization. This is the default behavior. 
+- `Fallback`: Attempt to retrieve remote configuration and proceed with those settings. If there is failure or timeout (500 ms), we will use the previously cached remote settings (if one exists from the last successful fetch). If no existing remote settings are cached, we will use the values from the SDK initialization config.
+- `Strict`: Requires successful remote configuration fetch for SDK initialization. If there is failure or timeout (500 ms), SDK initialization will fail and the Session Replay features will be unavailable for that app launch.
+
+You can use this setting to quickly update and adjust configurations to your liking.
+
+List of currently supported remote settings:
+- `recordingSessionsPercent`
+
+Settings not yet supported by remote configuration will use the value provided during initialization, or the default value if none was provided
 
 ## Privacy & Data Masking
 

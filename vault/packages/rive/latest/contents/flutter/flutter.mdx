@@ -78,11 +78,12 @@ Follow the steps below to integrate Rive into your Flutter apps.
 
   </Step>
   <Step title="Add a Rive widget">
-    There are several ways to render Rive graphics in Flutter. We recommend using the `RiveWidget`, and optionally the `RiveWidgetBuilder`, or `RivePanel`.
+    There are several ways to render Rive graphics in Flutter. We recommend using the `RiveWidget` and optionally the `RiveWidgetBuilder`, `RivePanel`, or a manually managed shared texture.
 
     - `RiveWidget` is responsible for rendering the graphic and exposing common view configuration.
     - `RiveWidgetBuilder` handles file loading, error states, and resource management automatically.
     - `RivePanel` is a higher-level inherited widget that creates a shared texture to paint multiple `RiveWidget`s to. Only usable when using the Rive Renderer (`Factory.rive`). This can drastically improve performance when showing many Rive graphics at once by reducing the number of textures and avoiding WebGL context limitations on the web.
+    - `SharedRenderTexture.create()` and `RiveSurface` let you create and place a shared texture yourself, then pass it to `RiveWidget.sharedTexture`. Use this when the widgets drawing to the texture do not share a common `RivePanel` ancestor, such as siblings, overlays, or separate routes.
 
     <Tabs>
       <Tab title="Using RiveWidgetBuilder">
@@ -245,6 +246,79 @@ Follow the steps below to integrate Rive into your Flutter apps.
         }
         ```
       </Tab>
+      <Tab title="Using a manual shared texture">
+        Steps:
+
+        1. Create a `SharedRenderTexture` with `SharedRenderTexture.create()`.
+        2. Place its native surface in the widget tree with `RiveSurface`.
+        3. Pass the same texture to each `RiveWidget` with `sharedTexture`.
+        4. Dispose the texture when you are done with it.
+
+        ```dart
+        class ExampleManualSharedTexture extends StatefulWidget {
+          const ExampleManualSharedTexture({super.key});
+
+          @override
+          State<ExampleManualSharedTexture> createState() =>
+              _ExampleManualSharedTextureState();
+        }
+
+        class _ExampleManualSharedTextureState
+            extends State<ExampleManualSharedTexture> {
+          late final SharedRenderTexture sharedTexture = SharedRenderTexture.create(
+            backgroundColor: Colors.transparent,
+          );
+
+          late final fileLoader = FileLoader.fromAsset(
+            'assets/rating.riv',
+            riveFactory: Factory.rive,
+          );
+
+          @override
+          void dispose() {
+            fileLoader.dispose();
+            sharedTexture.dispose();
+            super.dispose();
+          }
+
+          @override
+          Widget build(BuildContext context) {
+            return Stack(
+              children: [
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Expanded(
+                      child: RiveWidgetBuilder(
+                        fileLoader: fileLoader,
+                        builder: (context, state) => switch (state) {
+                          RiveLoading() => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          RiveFailed() => ErrorWidget.withDetails(
+                              message: state.error.toString(),
+                              error: FlutterError(state.error.toString()),
+                            ),
+                          RiveLoaded() => RiveWidget(
+                              controller: state.controller,
+                              fit: Fit.contain,
+                              sharedTexture: sharedTexture,
+                              drawOrder: index,
+                            ),
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: RiveSurface(sharedTexture: sharedTexture),
+                ),
+              ],
+            );
+          }
+        }
+        ```
+      </Tab>
     </Tabs>
 
   </Step>
@@ -301,8 +375,9 @@ Follow the steps below to integrate Rive into your Flutter apps.
 - `hitTestBehavior`: How pointer events should be handled (default: `opaque`)
 - `cursor`: The cursor to display when hovering over the widget (default: `defer`)
 - `layoutScaleFactor`: Scale factor when using `Fit.layout` (default: `1.0`)
-- `useSharedTexture`: Whether to use a shared texture ([RivePanel](#rivepanel)) to draw the artboard to. Defaults to false. When set to true, it draws to nearest inherited widget of type [RivePanel](#rivepanel).
-- `drawOrder`: The draw order of the artboard. This is only used when `useSharedTexture` is true when drawing to a [RivePanel](#rivepanel), and using `Factory.rive`. Defaults to 1.
+- `useSharedTexture`: Whether to use the nearest inherited shared texture from a [RivePanel](#rivepanel). Defaults to false. Ignored when `sharedTexture` is provided.
+- `sharedTexture`: An explicit `SharedRenderTexture` to draw into, bypassing the ancestor-based `RivePanel` lookup. Use this with [`SharedRenderTexture` and `RiveSurface`](#sharedrendertexture-and-rivesurface) to share a texture across arbitrary parts of the widget tree.
+- `drawOrder`: The draw order of the artboard. This is only used when drawing to a shared texture, either through `useSharedTexture` and [RivePanel](#rivepanel) or through `sharedTexture`, and using `Factory.rive`. Defaults to 1.
 
 ### `RiveWidgetBuilder`
 
@@ -321,12 +396,12 @@ Follow the steps below to integrate Rive into your Flutter apps.
 
 ### `RivePanel`
 
-`RivePanel` is a widget that creates a shared texture to paint multiple `RiveWidget` s to. This is useful when using `Factory.rive` and can significantly improve performance under certain conditions.
+`RivePanel` is a widget that creates a shared texture to paint multiple `RiveWidget`s to. This is useful when using `Factory.rive` and can significantly improve performance under certain conditions.
 
 **When to use RivePanel:**
 
 - When displaying multiple `RiveWidget`s in your app and they can be drawn to the same texture
-- When you want to programatically composit a scene that includes multiple Rive graphics (from multiple Rive files/artboards)
+- When you want to programmatically composite a scene that includes multiple Rive graphics (from multiple Rive files/artboards)
 - When using `Factory.rive` (will report errors with `Factory.flutter`) and want to improve performance
 - When you want to reduce the number of textures being drawn to
 - When targeting web platforms to avoid WebGL context limitations through `Factory.rive`
@@ -353,6 +428,46 @@ RivePanel(
 - Set `useSharedTexture: true` in your `RiveWidget`s to enable shared texture rendering
 - If you need to interleave Rive content with Flutter content, consider using separate `RivePanel`s or `Factory.flutter`
 - For complex scenarios, benchmark both approaches to determine the best performance strategy
+
+### `SharedRenderTexture` and `RiveSurface`
+
+`SharedRenderTexture.create()` creates a user-owned shared texture that can be passed directly to `RiveWidget.sharedTexture`. Unlike `RivePanel`, this does not rely on inherited widget lookup, so it works when the `RiveWidget`s are siblings, live in separate subtrees, or are mounted through an `OverlayEntry`, dialog, bottom sheet, or another route.
+
+Use `RiveSurface` to place the native texture in the widget tree. The `RiveWidget`s that receive the same `SharedRenderTexture` draw into that surface, even if they are not descendants of the surface.
+
+```dart
+late final SharedRenderTexture sharedTexture = SharedRenderTexture.create(
+  backgroundColor: Colors.transparent,
+);
+
+@override
+void dispose() {
+  sharedTexture.dispose();
+  super.dispose();
+}
+
+@override
+Widget build(BuildContext context) {
+  return Stack(
+    children: [
+      RiveWidget(
+        controller: controller,
+        sharedTexture: sharedTexture,
+      ),
+      Positioned.fill(
+        child: RiveSurface(sharedTexture: sharedTexture),
+      ),
+    ],
+  );
+}
+```
+
+**Important notes:**
+
+- This API is experimental and only works with `Factory.rive`.
+- `RiveWidget.sharedTexture` takes precedence over `useSharedTexture` when both are set.
+- You must call `dispose()` on textures created with `SharedRenderTexture.create()` to release the native texture.
+- `RiveSurface` is wrapped in `IgnorePointer` by default so pointer events are handled by the individual `RiveWidget`s. Set `ignorePointer: false` if pointer events should reach the native texture widget directly.
 
 ### `RiveWidgetController`
 

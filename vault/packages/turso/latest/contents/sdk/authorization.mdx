@@ -1,0 +1,58 @@
+---
+title: Authorization
+sidebarTitle: Overview
+---
+
+Turso uses scoped, JWT-based tokens to control access to your databases. Every token can be restricted by database, permission level, and expiration — giving you full control over what each client can and cannot do.
+
+## Scoping Levels
+
+Tokens are scoped at multiple levels, from broad to narrow:
+
+| Level | Scope | How to create |
+| --- | --- | --- |
+| **Group** | Access all databases in a group | `turso group tokens create <group>` |
+| **Database** | Access a single database | `turso db tokens create <database>` |
+| **Read-only** | Queries only, no writes | Add `--read-only` flag |
+| **Table + Action** | Specific tables and operations | Add `-p <table>:<actions>` flag |
+| **Time-limited** | Auto-expires after a duration | Add `--expiration 7d` flag |
+
+These can be combined. For example, a read-only token scoped to a single database that expires in 7 days:
+
+```bash
+turso db tokens create mydb --read-only --expiration 7d
+```
+
+Or a token that only allows reading from all tables and inserting into `comments`:
+
+```bash
+turso db tokens create mydb \
+  -p all:data_read \
+  -p comments:data_add
+```
+
+## Issuing Tokens
+
+There are two ways to issue tokens:
+
+- **[Platform Tokens](/sdk/authorization/tokens)** — Create tokens directly via the Turso CLI or Platform API.
+- **[External Auth Providers](/sdk/authorization/jwks)** — Let your authentication provider (e.g., Clerk, Auth0) issue tokens using JWKS.
+
+Both approaches support [fine-grained permissions](/sdk/authorization/fine-grained-permissions) to control access at the table and action level.
+
+## Using Tokens
+
+All tokens are passed as the `authToken` when creating a database client:
+
+```javascript
+import { createClient } from "@tursodatabase/serverless";
+
+const db = createClient({
+  url: "<your-database-url>",
+  authToken: "<your-token>",
+});
+```
+
+<Note>
+  You can get your database URL with `turso db show <database-name> --url`.
+</Note>

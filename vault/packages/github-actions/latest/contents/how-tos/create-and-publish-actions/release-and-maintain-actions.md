@@ -2,10 +2,6 @@
 title: Releasing and maintaining actions
 shortTitle: Release and maintain actions
 intro: You can leverage automation and open source best practices to release and maintain actions.
-topics:
-  - Action development
-  - Actions
-  - Community
 versions:
   fpt: '*'
   ghec: '*'
@@ -15,6 +11,9 @@ redirect_from:
   - /actions/sharing-automations/creating-actions/releasing-and-maintaining-actions
   - /actions/how-tos/sharing-automations/creating-actions/releasing-and-maintaining-actions
   - /actions/how-tos/creating-and-publishing-actions/releasing-and-maintaining-actions
+category:
+  - Reuse and share automations
+contentType: how-tos
 ---
 
 {% data reusables.actions.enterprise-github-hosted-runners %}

@@ -45,7 +45,7 @@ import { trace } from '@opentelemetry/api';
 import { instrument, ResolveConfigFn } from '@microlabs/otel-cf-workers';
 
 export interface Env {
-  AXIOM_API_TOKEN: string,
+  AXIOM_TOKEN: string,
   AXIOM_DATASET: string
 }
 
@@ -64,7 +64,7 @@ const config: ResolveConfigFn = (env: Env, _trigger) => {
     exporter: {
       url: 'https://AXIOM_DOMAIN/v1/traces',
       headers: {
-        'Authorization': `Bearer ${env.AXIOM_API_TOKEN}`,
+        'Authorization': `Bearer ${env.AXIOM_TOKEN}`,
         'X-Axiom-Dataset': `${env.AXIOM_DATASET}`
       },
     },
@@ -94,7 +94,7 @@ main = "index.ts"
 
 # Define environment variables here
 [vars]
-AXIOM_API_TOKEN = "API_TOKEN"
+AXIOM_TOKEN = "API_TOKEN"
 AXIOM_DATASET = "DATASET_NAME"
 ```
 
@@ -275,7 +275,7 @@ Wrap your Cloudflare Workers script with the `instrument` function from the **`@
       exporter: {
         url: 'https://AXIOM_DOMAIN/v1/traces',
         headers: {
-          'Authorization': `Bearer ${env.AXIOM_API_TOKEN}`,
+          'Authorization': `Bearer ${env.AXIOM_TOKEN}`,
           'X-Axiom-Dataset': `${env.AXIOM_DATASET}`
         },
       },

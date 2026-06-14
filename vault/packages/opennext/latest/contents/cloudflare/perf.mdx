@@ -22,7 +22,7 @@ The Incremental cache is the store containing all the cached data (i.e. pages, `
 
 You should use the Workers Static Assets based cache if your site is SSG. It is the fastest available option. Note that as Workers Static Assets are read-only, this option can not be used with revalidation.
 
-When your app uses re-validation, use the R2 based store instead. We recommend the following settings to get the best perfomance:
+When your app uses re-validation, use the R2 based store instead. We recommend the following settings to get the best performance:
 
 - use regional cache by wrapping the handler into `withRegionalCache(...)`
   - use the `long-lived` mode
@@ -62,9 +62,7 @@ You can profile the code to troubleshoot performance issues.
 
 Code profiles are much easier to read when the code is not minified, you can use the following settings to generate unminified code
 
-**next.config.ts**
-
-```ts
+```ts filename="next.config.ts"
 const nextConfig = {
   // ...
   experimental: {
@@ -81,7 +79,7 @@ const nextConfig = {
 
 Use the `--noMinify` option when building the app:
 
-```bash
+```sh
 opennextjs-cloudflare build --noMinify
 ```
 
@@ -89,7 +87,7 @@ opennextjs-cloudflare build --noMinify
 
 You should first launch a local version of your application by running
 
-```bash
+```sh
 opennextjs-cloudflare preview
 ```
 

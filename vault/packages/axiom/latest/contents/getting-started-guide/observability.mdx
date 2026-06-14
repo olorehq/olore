@@ -1,57 +1,29 @@
 ---
 title: "Axiom for observability"
-description: "This page explains how Axiom helps you leverage timestamped event data for observability purposes."
+description: "This page explains how Axiom helps you leverage timestamped machine data for observability purposes."
 sidebarTitle: Observability
 ---
 
-Axiom helps you leverage the power of timestamped event data. A common use case of event data is observability (o11y) in the field of software engineering. Observability is the ability to explain what’s happening inside a software system by observing it from the outside. It allows you to understand the behavior of systems based on their outputs such as telemetry data, which is a type of event data.
+Axiom helps you leverage the power of timestamped machine data. A common use case of machine data is observability (o11y) in the field of software engineering. Observability is the ability to explain what’s happening inside a software system by observing it from the outside. It allows you to understand the behavior of systems based on their outputs such as telemetry data, which is a type of machine data.
 
-Software engineers most often work with timestamped event data in the form of logs or metrics. However, Axiom believes that event data reflects a much broader range of interactions, crossing boundaries from engineering to product management, security, and beyond. For a more general explanation of event data in Axiom and its use cases, see [Use cases](/getting-started-guide/use-cases).
+Software engineers most often work with timestamped machine data in the form of logs, metrics, and traces. However, Axiom believes that machine data reflects a much broader range of interactions, crossing boundaries from engineering to product management, security, and beyond.
 
-## Types of event data in observability
+## Types of machine data in observability
 
-Traditionally, observability has been associated with three pillars, each effectively a specialized view of event data:
+Traditionally, observability has been associated with three pillars, each effectively a specialized view of machine data:
 
 - **Logs**: Logs record discrete events, such as error messages or access requests, typically associated with engineering or security.
 - **Traces**: Traces track the path of requests through a system, capturing each step’s duration. By linking related spans within a trace, developers can identify bottlenecks and dependencies.
 - **Metrics**: Metrics quantify state over time, recording data like CPU usage or user count at intervals. Product or engineering teams can then monitor and aggregate these values for performance insights.
 
-In Axiom, these observability elements are stored as event data, allowing for fine-grained, efficient tracking across all three pillars.
+Axiom supports all three types of data, allowing for fine-grained, efficient tracking across the three pillars.
 
-## Logs and traces support
+## Logs, traces, and events
 
 Axiom excels at collecting, storing, and analyzing timestamped event data.
 
-For logs and traces, Axiom offers unparalleled efficiency and query performance. You can send logs and traces to Axiom from a wide range of popular sources. For information, see [Send data to Axiom
-](/send-data/methods).
+For logs and traces, Axiom offers unparalleled efficiency and query performance. You can send logs and traces to Axiom from a wide range of popular sources. For more information, see [Send data to Axiom](/send-data/methods).
 
-## Metrics support
+## Metrics
 
-For metrics data, Axiom is well-suited for event-level metrics that behave like logs, with each data point representing a discrete event.
-
-For example, you have the following timestamped data in Axiom:
-
-```json
-{
-  "job_id": "train_123",
-  "user_name": "acme",
-  "timestamp": "2024-10-08T15:30:00Z",
-  "node_host": "worker-01",
-  "metric_name": "gpu_utilization",
-  "metric_value": 87.5,
-  "training_type": "image_classification"
-}
-```
-
-You can easily query and analyze this type of metrics data in Axiom. The query below computes the average GPU utilization across nodes:
-
-```kusto
-dataset
-| summarize avg(metric_value) by node_host, bin_auto(_time)
-```
-
-Axiom’s support for metrics data currently comes with the following limitations:
-- Axiom doesn’t support pre-aggregated metrics such as scrape samples.
-- Axiom isn’t optimized for high-dimensional metric time series with a very large number of metric/label combinations.
-
-Support for these types of metrics data is coming soon. If you’re interested, [contact Axiom](https://axiom.co/contact).
+For metrics, Axiom offers a dedicated metrics datastore with query performance optimized for high-cardinality time-series data. You can send OpenTelemetry metrics to Axiom and query them using MPL (Metrics Processing Language). For more information, see [Metrics](/query-data/metrics).

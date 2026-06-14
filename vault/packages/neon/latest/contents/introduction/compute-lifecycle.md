@@ -1,9 +1,18 @@
 ---
 title: Compute lifecycle
+summary: >-
+  Neon compute runs as a stateless Postgres process with two states, Active and
+  Idle, and automatically suspends after 5 minutes of inactivity (scale to
+  zero), which paid plans can disable. Activation from idle takes a few hundred
+  milliseconds under normal conditions but may be longer after 7 or more days
+  without connections. Cold memory buffers also slow the first queries after
+  wakeup. Session-scoped objects such as temporary tables, prepared statements,
+  advisory locks, and NOTIFY/LISTEN subscriptions are lost when the compute
+  suspends.
 enableTableOfContents: true
 redirectFrom:
   - /docs/conceptual-guides/compute-lifecycle
-updatedOn: '2025-12-17T14:37:40.661Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 A compute in Neon is a stateless Postgres process due to the separation of storage and compute. It has two main states: `Idle` and `Active`.

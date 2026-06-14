@@ -2,12 +2,21 @@
 title: Authenticate Neon Postgres application users with Clerk
 subtitle: Learn how to add authentication to a Neon Postgres database application using
   Clerk
+summary: >-
+  Clerk authentication integration with Neon Postgres in a Next.js app uses
+  Clerk user IDs as primary keys in a Drizzle ORM schema to associate database
+  rows with authenticated users, supporting social login, email, and
+  multi-factor auth without building auth infrastructure. Choose this guide
+  when Clerk is your identity provider and you need clerkMiddleware to protect
+  routes and server actions for per-user Postgres data. The walkthrough covers
+  Drizzle-kit migration commands, ClerkProvider setup, and Next.js server
+  actions backed by the Neon serverless driver.
 enableTableOfContents: true
-updatedOn: '2026-01-13T18:46:54.021Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-<Admonition type="note">
-Neon also provides [Neon Auth](/docs/auth/overview), a managed authentication service built on Better Auth that stores users, sessions, and auth configuration directly in your Neon database. Neon Auth branches with your database, letting you test authentication workflows in preview environments.
+<Admonition type="tip" title="Building on Neon?">
+Neon provides [Neon Auth](/docs/auth/overview), a managed authentication service built on Better Auth that stores users, sessions, and auth configuration directly in your Neon database. Auth state **branches with your data**, so preview and CI environments get isolated users and sessions.
 </Admonition>
 
 User authentication is a critical requirement for web applications. Modern applications require advanced features like social login and multi-factor authentication besides the regular login flow. Additionally, managing personally identifiable information (PII) requires a secure solution compliant with data protection regulations.
@@ -332,7 +341,7 @@ export default async function Home() {
 
 This implements a form with a single text field that lets the user input a quote, and submit it, whereby it gets stored in the database, associated with their `Clerk` user ID. If a quote is already stored, it displays it and provides a button to delete it.
 
-The `currentuser` hook from `@clerk/nextjs/server` provides the current user's information, which we use to interact with the database on their behalf.
+The `currentUser` hook from `@clerk/nextjs/server` provides the current user's information, which we use to interact with the database on their behalf.
 
 ## Running the application
 

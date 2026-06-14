@@ -1,0 +1,96 @@
+---
+title: exp10
+description: 'This page explains how to use the exp10 function in APL.'
+---
+
+Use the `exp10` function in APL to compute the base-10 exponential of a value: 10^x. It's the inverse of the common (base-10) logarithm function `log10`.
+
+`exp10` is useful when you work with data on a logarithmic scale expressed in powers of ten, such as decibel values, orders of magnitude, or `log10`-transformed metrics. Apply `exp10` to reverse a `log10` transformation and return to the original scale.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `exp10()` function. You compute it using `pow(10, x)`.
+
+<CodeGroup>
+```sql Splunk example
+| eval result = pow(10, x)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp10(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define `EXP10()`. You compute it using `POWER(10, x)`.
+
+<CodeGroup>
+```sql SQL example
+SELECT POWER(10, x) AS result FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend result = exp10(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+exp10(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The exponent value. |
+
+### Returns
+
+The base-10 exponential of `x`: 10^x.
+
+## Example
+
+Use `exp10` to recover the geometric mean of request durations from a log10-transformed average.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| summarize geometric_mean = exp10(avg(log10(req_duration_ms))) by bin(_time, 1h)
+| project _time, geometric_mean
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20summarize%20geometric_mean%20%3D%20exp10%28avg%28log10%28req_duration_ms%29%29%29%20by%20bin%28_time%2C%201h%29%20%7C%20project%20_time%2C%20geometric_mean%22%7D)
+
+**Output**
+
+| _time | geometric_mean |
+|---|---|
+| 2024-11-14 10:00:00 | 85.3 |
+| 2024-11-14 11:00:00 | 92.7 |
+| 2024-11-14 12:00:00 | 78.1 |
+
+## List of related functions
+
+- [log10](/apl/scalar-functions/mathematical-functions/log10): Returns the base-10 logarithm. Use it as the inverse of `exp10`.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it for natural-log-scale transformations.
+- [exp2](/apl/scalar-functions/mathematical-functions/exp2): Returns 2^x. Use it for binary-scale transformations.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises any base to a power. Use it when the base is not 10.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it together with `exp` for natural-log-scale analysis.

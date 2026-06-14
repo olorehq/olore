@@ -1,40 +1,42 @@
 ---
 name: olore-prisma-latest
-description: Local Prisma documentation reference. Use when asked about Prisma ORM, Prisma Client, Prisma Schema, migrations, database queries, Prisma Accelerate, or Prisma Postgres.
+description: Local Prisma documentation reference (latest). Prisma ORM documentation. Use for Prisma Client, Schema, migrations, database queries, Prisma Accelerate, and Prisma Postgres.
 ---
 
 # Prisma Documentation
 
-Prisma is a next-generation ORM for Node.js and TypeScript. It provides type-safe database access, declarative data modeling, and automated migrations. Prisma also offers managed services including Prisma Postgres, Accelerate (connection pooling & caching), and Optimize (query performance analysis).
+Prisma ORM documentation. Use for Prisma Client, Schema, migrations, database queries, Prisma Accelerate, and Prisma Postgres.
 
 ## Quick Reference
 
-| Topic | Entry Point |
-|-------|-------------|
-| Getting started | `contents/100-getting-started/` |
-| Schema definition | `contents/200-orm/100-prisma-schema/` |
-| Client queries | `contents/200-orm/200-prisma-client/` |
-| Migrations | `contents/200-orm/300-prisma-migrate/` |
-| Prisma Postgres | `contents/250-postgres/` |
-| Connection pooling | `contents/300-accelerate/` |
-| Query optimization | `contents/700-optimize/` |
-| Guides | `contents/800-guides/` |
+| Task | Entry Point |
+|------|-------------|
+| Getting started | `contents/docs/(index)/getting-started.mdx` |
+| CRUD queries | `contents/docs/orm/prisma-client/queries/crud.mdx` |
+| Schema reference | `contents/docs/orm/reference/prisma-schema-reference.mdx` |
+| Client API reference | `contents/docs/orm/reference/prisma-client-reference.mdx` |
+| Migrations | `contents/docs/orm/prisma-migrate/getting-started.mdx` |
+| Relations | `contents/docs/orm/prisma-schema/data-model/relations/index.mdx` |
+| Error reference | `contents/docs/orm/reference/error-reference.mdx` |
+| Connection pooling | `contents/docs/orm/prisma-client/setup-and-configuration/databases-connections/connection-pool.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Prisma schema definition and data modeling
-- Prisma Client queries, relations, transactions
-- Database migrations with Prisma Migrate
-- Prisma Postgres managed database
-- Accelerate connection pooling and caching
-- Query optimization and performance
-- Prisma CLI and tooling
+- Prisma Client setup, instantiation, and configuration
+- CRUD operations, filtering, sorting, pagination, and aggregations
+- Prisma Schema — models, relations, datasources, generators
+- Prisma Migrate — creating and running migrations
+- Prisma Accelerate — connection pooling and caching
+- Prisma Postgres — managed PostgreSQL database
+- Deploying Prisma to serverless, edge, or traditional environments
+- Type safety, extensions, raw SQL, and advanced query patterns
+- CLI commands (prisma generate, migrate, db push, etc.)
 
 ## How to find information
 
-1. **First**, read `TOC.md` to see all available documentation files
-2. Identify the relevant section/files based on the user's question
-3. Read specific files for detailed information
+1. **First**, read `TOC.md` for complete file listing organized by directory
+2. Identify relevant section based on user's question
+3. Read specific files for details
 
-**TOC.md contains a complete file listing organized by directory - always check it first before searching.**
+**TOC.md contains all files organized by directory - always check it first.**

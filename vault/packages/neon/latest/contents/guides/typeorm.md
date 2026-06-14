@@ -1,8 +1,15 @@
 ---
 title: Connect from TypeORM to Neon
 subtitle: Learn how to connect to Neon from TypeORM
+summary: >-
+  TypeORM connects to Neon Postgres by setting `DataSource` type to `postgres`,
+  supplying the Neon connection string via `DATABASE_URL`, and enabling `ssl:
+  true`. Serverless deployments should use a pooled connection string (add
+  `-pooler` to the endpoint ID) to handle high concurrency without exhausting
+  connections. To prevent timeouts from Neon's idle-compute cold start (default
+  5 minutes), add `connect_timeout=10` to the connection string.
 enableTableOfContents: true
-updatedOn: '2025-10-24T12:53:27.791Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/typeorm-prompt.md" 

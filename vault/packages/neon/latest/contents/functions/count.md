@@ -1,8 +1,17 @@
 ---
 title: Postgres COUNT() function
 subtitle: Count rows or non-null values in a result set
+summary: >-
+  The Postgres `COUNT()` aggregate function counts rows or non-null values in a
+  result set, returning a `bigint` via `COUNT(*)`, `COUNT(column)`, or
+  `COUNT(DISTINCT column)`. Use it to tally total records, skip NULL values, or
+  find unique values within a column, and combine it with `GROUP BY`, `HAVING`,
+  `FILTER`, and `CASE` for conditional counts. `COUNT(*)` is faster on large
+  tables because it skips null-checking; for approximate distinct counts at
+  scale, use extensions like `postgresql-hll` or estimate from
+  `pg_class.reltuples`.
 enableTableOfContents: true
-updatedOn: '2024-06-29T12:27:47.894Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The Postgres `COUNT()` function counts the number of rows in a result set or the number of non-null values in a specific column.

@@ -1,0 +1,162 @@
+---
+title: datetime_add
+description: 'This page explains how to use the datetime_add function in APL.'
+---
+
+Use the `datetime_add` function in APL to calculate a new datetime by adding a specified number of date parts to a base datetime value. You can add years, months, weeks, days, hours, minutes, seconds, or smaller units. Use negative values to subtract.
+
+You can use `datetime_add` to shift timestamps forward or backward for time-window comparisons, expiration calculations, and timezone adjustments.
+
+Use it when you want to:
+
+- Project future or past timestamps relative to an event.
+- Define time ranges around a known incident or deadline.
+- Shift trace or log timestamps for timezone normalization.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `relative_time(_time, "+1mon")` to shift a timestamp by a calendar unit. In APL, the `datetime_add` function takes the date part as a string, the number of units, and the base datetime as separate arguments.
+
+<CodeGroup>
+```sql Splunk example
+... | eval new_time=relative_time(_time, "+1mon")
+````
+
+```kusto APL equivalent
+... | extend new_time = datetime_add('month', 1, _time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `DATEADD(month, 1, timestamp_column)` or equivalent interval arithmetic to shift a timestamp. In APL, `datetime_add` uses the same conceptual pattern with a string-based part name.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATEADD(month, 1, timestamp_column) AS new_time FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend new_time = datetime_add('month', 1, _time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+datetime_add(part, value, datetime)
+```
+
+### Parameters
+
+| Name     | Type       | Description                                                                                                                                  |
+| -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| part     | `string`   | The unit of time to add: `'year'`, `'quarter'`, `'month'`, `'week'`, `'day'`, `'hour'`, `'minute'`, `'second'`, `'millisecond'`, `'microsecond'`. |
+| value    | `int`      | The number of units to add. Use a negative value to subtract.                                                                                |
+| datetime | `datetime` | The base datetime value.                                                                                                                     |
+
+### Returns
+
+A `datetime` value after adding the specified interval to the base datetime.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Project what the time is 1 hour after each request to estimate cache expiration windows.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend future_time = datetime_add('hour', 1, _time)
+| project _time, future_time, method, status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20future_time%20%3D%20datetime_add('hour'%2C%201%2C%20_time)%20%7C%20project%20_time%2C%20future_time%2C%20method%2C%20status%22%7D)
+
+**Output**
+
+| _time                | future_time          | method | status |
+| -------------------- | -------------------- | ------ | ------ |
+| 2025-01-15T10:00:00Z | 2025-01-15T11:00:00Z | GET    | 200    |
+| 2025-01-15T10:05:00Z | 2025-01-15T11:05:00Z | POST   | 201    |
+| 2025-01-15T10:12:00Z | 2025-01-15T11:12:00Z | GET    | 404    |
+
+This query adds 1 hour to each request timestamp, which is useful for estimating when cached responses expire.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Shift trace timestamps forward by 30 minutes to simulate a timezone adjustment.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend adjusted_time = datetime_add('minute', 30, _time)
+| project _time, adjusted_time, ['service.name'], duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20adjusted_time%20%3D%20datetime_add('minute'%2C%2030%2C%20_time)%20%7C%20project%20_time%2C%20adjusted_time%2C%20%5B'service.name'%5D%2C%20duration%22%7D)
+
+**Output**
+
+| _time                | adjusted_time        | ['service.name'] | duration         |
+| -------------------- | -------------------- | ----------------- | ---------------- |
+| 2025-01-15T08:00:00Z | 2025-01-15T08:30:00Z | frontend          | 00:00:01.2340000 |
+| 2025-01-15T08:01:00Z | 2025-01-15T08:31:00Z | cart              | 00:00:00.5670000 |
+| 2025-01-15T08:02:00Z | 2025-01-15T08:32:00Z | checkout          | 00:00:02.1000000 |
+
+This query shifts each trace timestamp forward by 30 minutes, useful for aligning traces from systems that report in different time offsets.
+
+</Tab>
+<Tab title="Security logs">
+
+Find requests that occurred within 1 day before a known incident time.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where _time between (datetime_add('day', -1, datetime(2025-01-15)) .. datetime(2025-01-15))
+| summarize count() by status, method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20_time%20between%20(datetime_add('day'%2C%20-1%2C%20datetime(2025-01-15))%20..%20datetime(2025-01-15))%20%7C%20summarize%20count()%20by%20status%2C%20method%22%7D)
+
+**Output**
+
+| status | method | count_ |
+| ------ | ------ | ------ |
+| 200    | GET    | 1204   |
+| 500    | POST   | 37     |
+| 404    | GET    | 89     |
+
+This query uses `datetime_add` to define a 1-day window before a known incident, helping you investigate the activity that preceded it.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [datetime_diff](/apl/scalar-functions/datetime-functions/datetime-diff): Calculates the difference between two datetime values. Use when you need to measure elapsed time rather than shift a timestamp.
+- [ago](/apl/scalar-functions/datetime-functions/ago): Subtracts a timespan from the current UTC time. Use for simple relative time filters based on `now()`.
+- [now](/apl/scalar-functions/datetime-functions/now): Returns the current UTC time.
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime, useful for month-boundary calculations.
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime.

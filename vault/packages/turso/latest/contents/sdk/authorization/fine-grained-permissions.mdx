@@ -1,0 +1,55 @@
+---
+title: Fine-Grained Permissions
+sidebarTitle: Fine-Grained Permissions
+---
+
+Fine-grained permissions let you control access at the table and action level. They work with both [CLI-generated tokens](/sdk/authorization/tokens) and [JWKS-issued tokens](/sdk/authorization/jwks).
+
+## Permission Format
+
+Permissions follow the format `<table-name|all>:<action1>,<action2>`:
+
+```bash
+# Read-only access to all tables
+turso db tokens create mydb -p all:data_read
+
+# Specific actions on a specific table
+turso db tokens create mydb -p users:data_read,data_update
+
+# Multiple permission rules
+turso db tokens create mydb \
+  -p all:data_read \
+  -p comments:data_add,data_update \
+  -p posts:data_add,data_update,data_delete
+```
+
+Use `all` as the table name to apply permissions to every table.
+
+## Available Actions
+
+| Action | Description |
+| --- | --- |
+| `data_read` | Read data from tables |
+| `data_add` | Insert new rows |
+| `data_update` | Update existing rows |
+| `data_delete` | Delete rows |
+| `schema_add` | Create new tables |
+| `schema_update` | Modify table schemas |
+| `schema_delete` | Drop tables |
+
+<Note>
+  `data_read` is allowed on SQLite system tables (e.g., `sqlite_master`,
+  `sqlite_schema`) by default, allowing users to query database metadata.
+</Note>
+
+## Role-Based Access Example
+
+You can configure your JWT template to grant different permissions based on user roles:
+
+| Role | Permissions |
+| --- | --- |
+| Admin | `all:data_read,data_add,data_update,data_delete,schema_add,schema_update,schema_delete` |
+| Moderator | `all:data_read,data_update` |
+| User | `all:data_read` |
+
+With JWKS, these permissions are embedded in the JWT token based on user metadata (e.g., role, group membership) from your auth provider.

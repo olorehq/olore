@@ -1,8 +1,16 @@
 ---
 title: The cube extension
 subtitle: Store and query multidimensional points and cubes in Postgres
+summary: >-
+  The cube extension adds a native `cube` data type to Postgres for storing and
+  querying n-dimensional points and hyperrectangles as 64-bit floating-point
+  values. Use it when you need containment checks, overlap detection, or
+  distance calculations (Euclidean, Manhattan, Chebyshev) across multiple
+  numeric dimensions such as GIS coordinates or scientific parameter spaces.
+  GiST indexes on `cube` columns enable fast nearest-neighbor ORDER BY queries
+  using the `<->`, `<#>`, and `<=>` distance operators.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.230Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The cube extension for Postgres provides a specialized data type for representing multidimensional "cubes", which are, more generally, n-dimensional boxes or points. This makes it useful for applications dealing with multidimensional data, such as geographic information systems (GIS) storing coordinates (latitude, longitude, altitude), business intelligence (BI) applications analyzing data across various dimensions, or scientific computing tasks involving vector operations.
@@ -329,10 +337,10 @@ LIMIT 3;
     - Storing latitude/longitude/altitude points.
     - Defining bounding boxes for map features.
 2.  **Business Intelligence (BI) / OLAP**:
-    - Representing data points in a multidimensional space (e.g., sales by `product_category_id`, `region_id`, `time_id`).
+    - Representing data points in a multidimensional space (for example, sales by `product_category_id`, `region_id`, `time_id`).
     - Filtering data based on ranges in multiple dimensions.
 3.  **Scientific computing**: Storing points or regions in n-dimensional parameter spaces for experiments or simulations.
-4.  **Time-series data with multidimensional attributes**: Storing sensor readings where each reading has multiple values (e.g., temperature, humidity, pressure) at a specific time.
+4.  **Time-series data with multidimensional attributes**: Storing sensor readings where each reading has multiple values (for example, temperature, humidity, pressure) at a specific time.
 
     **Example:**
 
@@ -340,7 +348,7 @@ LIMIT 3;
     CREATE TABLE sensor_log (
       ts TIMESTAMPTZ NOT NULL,
       device_id INT,
-      metrics CUBE -- e.g., (temperature, humidity, pressure)
+      metrics CUBE -- for example, (temperature, humidity, pressure)
     );
 
     INSERT INTO sensor_log (ts, device_id, metrics) VALUES
@@ -354,7 +362,7 @@ LIMIT 3;
 
 ## Conclusion
 
-The `cube` extension provides a powerful and versatile data type for handling multidimensional data within Postgres. Its specialized operators and functions, combined with GiST indexing, enable efficient storage, querying, and analysis of n-dimensional points and regions. This makes it a valuable tool for a wide range of applications, from GIS to scientific computing and beyond.
+The `cube` extension adds a data type for multidimensional data in Postgres. Its operators and functions, combined with GiST indexing, enable efficient storage, querying, and analysis of n-dimensional points and regions, with applications ranging from GIS to scientific computing.
 
 ## Resources
 

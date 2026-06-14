@@ -1,0 +1,97 @@
+---
+title: log2
+description: 'This page explains how to use the log2 function in APL.'
+---
+
+Use the `log2` function in APL to compute the base-2 logarithm of a positive numeric value. The function is the inverse of `exp2`.
+
+`log2` is useful when working with data measured on a binary scale, such as memory sizes, network packet lengths, or binary tree structures. Because each unit increase in `log2(x)` corresponds to a doubling of `x`, `log2` is a natural choice for analyzing values that grow or shrink by factors of two. You can also use it to compute geometric means in base-2 space.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `log2()` function. You compute it as `ln(x) / ln(2)` or `log(x) / log(2)`.
+
+<CodeGroup>
+```sql Splunk example
+| eval log2_duration = ln(req_duration_ms) / ln(2)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend log2_duration = log2(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define a `LOG2()` function. In SQL Server you compute it as `LOG(x) / LOG(2)`. PostgreSQL offers `LOG(2, x)` for base-2 logarithms.
+
+<CodeGroup>
+```sql SQL example
+SELECT LOG(req_duration_ms) / LOG(2) AS log2_duration FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend log2_duration = log2(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+log2(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A positive real number (x > 0). |
+
+### Returns
+
+- The base-2 logarithm of `x`.
+- `null` if `x` is negative, zero, or cannot be converted to a real value.
+
+## Example
+
+Use `log2` to express request durations on a binary log scale where each unit represents a doubling.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| extend log2_duration = log2(req_duration_ms)
+| project _time, id, req_duration_ms, log2_duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20extend%20log2_duration%20%3D%20log2%28req_duration_ms%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20log2_duration%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | log2_duration |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1.0 | 0.000 |
+| 2024-11-14 10:01:00 | user-2 | 64.0 | 6.000 |
+| 2024-11-14 10:02:00 | user-3 | 1024.0 | 10.000 |
+
+## List of related functions
+
+- [exp2](/apl/scalar-functions/mathematical-functions/exp2): Returns 2^x. Use it as the inverse of `log2`.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it when you prefer the natural base rather than base-2.
+- [log10](/apl/scalar-functions/mathematical-functions/log10): Returns the base-10 logarithm. Use it for order-of-magnitude analysis instead of binary analysis.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use it to compute powers of two directly as an alternative to `exp2`.
+- [round](/apl/scalar-functions/mathematical-functions/round): Rounds a value. Use it after `log2` to bucket data into binary power groups.

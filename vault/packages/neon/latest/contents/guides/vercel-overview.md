@@ -1,11 +1,20 @@
 ---
 title: Integrating Neon with Vercel
 subtitle: Choose the right connection path in seconds
+summary: >-
+  Neon-Vercel integration decision guide covering three connection paths:
+  Vercel-Managed (new users, billing through Vercel), Neon-Managed (existing
+  Neon account, billing through Neon), and Manual (custom CI/CD via env vars).
+  Both managed integrations auto-provision Neon database branches for Vercel
+  preview deployments and support Neon Auth; they differ in branch cleanup
+  timing, where Vercel-Managed follows deployment retention policy and
+  Neon-Managed triggers on Git branch deletion. Choose this page to select the
+  right integration before following the path-specific setup guide.
 redirectFrom:
   - /docs/guides/vercel-postgres
   - /docs/guides/vercel
 enableTableOfContents: true
-updatedOn: '2026-01-13T14:45:42.241Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Overview
@@ -31,12 +40,16 @@ Choose the **Neon-Managed Integration** if you already have a Neon account or pr
 | **Branch cleanup**      | Automatic (deployment-based)                                                                          | Automatic (Git-branch-based)                                                                                 | N/A                                             |
 | **Implementation type** | [Native Integration](https://vercel.com/docs/integrations/install-an-integration/product-integration) | [Connectable Account](https://vercel.com/docs/integrations/install-an-integration/add-a-connectable-account) | N/A                                             |
 
+<Admonition type="note" title="Branch cleanup timing">
+Branch cleanup behavior differs between the two integrations. Vercel-Managed cleanup depends on Vercel's deployment retention policy, which can delay branch deletion by months. Neon-Managed cleanup is triggered by Git branch deletion. See [Managing Vercel preview branch cleanup](/docs/guides/vercel-branch-cleanup) for details, workarounds, and recommendations.
+</Admonition>
+
 ---
 
 ## Choose your integration path
 
 <Admonition type="important" title="Do you need custom CI/CD control?">
-**If you want to build preview branching into your own CI/CD pipelines (e.g., via GitHub Actions)**, use a **[manual connection](/docs/guides/vercel-manual)** instead of the automated integrations below.
+**If you want to build preview branching into your own CI/CD pipelines (for example, via GitHub Actions)**, use a **[manual connection](/docs/guides/vercel-manual)** instead of the automated integrations below.
 </Admonition>
 
 For automated integrations, follow this simple flow:

@@ -75,7 +75,8 @@ follow the [Convex React Quickstart](/quickstart/react.mdx) first. Then:
   </Step>
 
   <Step title="Set up the CONVEX_DEPLOY_KEY environment variable">
-    Go to the [Project Settings](https://dashboard.convex.dev/project/settings#production-deploy-keys) page in the Convex Dashboard. Click the _Generate Production Deploy Key_ button to generate a **Production** deploy key.
+    On your [Convex Dashboard](https://dashboard.convex.dev/), create a production deployment for your project if one does not exist already. Go to the _General_ tab on the _Deployment Settings_ page for the production deployment.
+    Click the _Generate Production Deploy Key_ button to generate a **Production** deploy key.
     Then click the copy button to copy the key.
 
     In Vercel, click _Environment Variables_.
@@ -101,9 +102,8 @@ functions and publish your site changes.
 
 <Admonition type="info" title="Using a Custom Domain?">
   If you're using a custom domain to serve your Convex functions, you'll need
-  additional configuration. See [Custom
-  Domains](/production/hosting/custom.mdx#hosting-with-a-custom-domain) for more
-  information.
+  additional configuration. See [Custom Domains](/production/custom-domains.mdx)
+  for more information.
 </Admonition>
 
 ### How it works
@@ -134,16 +134,17 @@ npx convex deploy --cmd-url-env-var-name CUSTOM_CONVEX_URL --cmd 'npm run build'
 
 ### Authentication
 
-You will want to configure your [authentication](/auth.mdx) provider (Clerk,
-Auth0 or other) to accept your production URL. Note that Clerk does not support
-`https://<site-name>.vercel.app`, so you'll have to configure a custom domain.
+You will want to configure your [authentication](/auth/overview.mdx) provider
+(Clerk, Auth0 or other) to accept your production URL. Note that Clerk does not
+support `https://<site-name>.vercel.app`, so you'll have to configure a custom
+domain.
 
 ## Preview Deployments
 
 Vercel Preview Deployments allow you to preview changes to your app before
 they're merged in. In order to preview both changes to frontend code and Convex
 functions, you can set up
-[Convex preview deployments](/production/hosting/preview-deployments.mdx).
+[Convex preview deployments](/production/multiple-deployments.mdx#preview).
 
 This will create a fresh Convex backend for each preview and leave your
 production and development deployments unaffected.
@@ -169,9 +170,10 @@ This assumes you have already followed the steps in
   <Step title="(optional) Set up default environment variables">
     If your app depends on certain Convex environment variables, you can set up [default
     environment variables](/production/environment-variables.mdx#project-environment-variable-defaults) for preview and development deployments in your project.
-    <div className="screenshot-border">
-      ![Project Default Environment Variables](/screenshots/project_default_environment_variables.png)
-    </div>
+    <Screenshot
+      story="docs/components/ProjectDefaultEnvironmentVariables"
+      alt="Project default environment variables"
+    />
   </Step>
 
 <Step title="(optional) Run a function to set up initial data">

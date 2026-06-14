@@ -1,10 +1,16 @@
 ---
 title: Manage API Keys
+summary: >-
+  Neon API keys are bearer tokens required to authenticate Neon REST API
+  requests, available in personal, organization, and project-scoped variants.
+  Use this page to create, list, or revoke keys via the Console or API. Each
+  key's secret is shown only once at creation; losing it requires revoking and
+  replacing the key, since revocation is immediate and permanent.
 enableTableOfContents: true
 redirectFrom:
   - /docs/get-started/using-api-keys
   - /docs/get-started/api-keys
-updatedOn: '2025-09-05T12:26:43.311Z'
+updatedOn: '2026-06-12T12:32:37.482Z'
 ---
 
 Most actions performed in the Neon Console can also be performed using the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api). You'll need an API key to validate your requests. Each key is a randomly-generated 64-bit token that you must include when calling Neon API methods. All keys remain valid until deliberately revoked.
@@ -17,7 +23,7 @@ Neon supports three types of API keys:
 | ---------------------- | --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
 | Personal API Key       | Any user                    | All organization projects where the user is a member | Valid until revoked; org project access ends if user leaves organization |
 | Organization API Key   | Organization administrators | All projects within the organization                 | Valid until revoked                                                      |
-| Project-scoped API Key | Any organization member     | Single specified project                             | Valid until revoked or project leaves organization                       |
+| Project-scoped API Key | Organization administrators | Single specified project                             | Valid until revoked or project leaves organization                       |
 
 While there is no strict limit on the number of API keys you can create, we recommend keeping it under 10,000 per Neon account.
 
@@ -25,7 +31,7 @@ While there is no strict limit on the number of API keys you can create, we reco
 
 You'll need to create your first API key from the Neon Console, where you are already authenticated. You can then use that key to generate new keys from the API.
 
-> When creating API keys from the Neon Console, the secret token will be displayed only once. Copy it immediately and store it securely in a credential manager (like AWS Key Management Service or Azure Key Vault) — you won't be able to retrieve it later. If you lose an API key, you'll need to revoke it and create a new one.
+> When creating API keys from the Neon Console, the secret token will be displayed only once. Copy it immediately and store it securely in a credential manager (like AWS Key Management Service or Azure Key Vault); you won't be able to retrieve it later. If you lose an API key, you'll need to revoke it and create a new one.
 
 <Admonition type="important">
 You are responsible for maintaining the records and associations of any API keys in your environment and systems.
@@ -55,7 +61,7 @@ curl https://console.neon.tech/api/v2/api_keys
 
 **Parameters:**
 
-- `key_name`: A descriptive name for the API key (e.g., "development", "staging", "ci-pipeline")
+- `key_name`: A descriptive name for the API key (for example, "development", "staging", "ci-pipeline")
 
 **Response:**
 
@@ -88,7 +94,7 @@ Navigate to your organization's **Settings** > **API keys** to view a list of ex
 
 <TabItem>
 
-To create an organization API key via the API, you need to use your personal API key. You also need to have admin-level permissions in the specified organization.
+To create an organization API key via the API, you need to use your personal API key. You also need to have admin-level permissions in the specified organization. This endpoint is rate limited to 10 requests per second; if you create many keys, throttle your requests or use retries with backoff.
 
 ```bash shouldWrap
 curl --request POST \
@@ -132,7 +138,7 @@ In your organization's **Settings** > **API keys**, click **Create new** and sel
 </TabItem>
 
 <TabItem>
-Any organization member can create an API key for any organization-owned project using the following command:
+Organization administrators can create an API key for any organization-owned project using the following command:
 
 ```bash shouldWrap
 curl --request POST \
@@ -247,7 +253,7 @@ You should revoke API keys that are no longer needed or if you suspect a key may
 
 - The action is immediate and permanent
 - All API requests using the revoked key will fail with a 401 Unauthorized error
-- The key cannot be reactivated — you'll need to create a new key if access is needed again
+- The key cannot be reactivated; you'll need to create a new key if access is needed again
 
 ### Who can revoke keys
 

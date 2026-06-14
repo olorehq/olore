@@ -1,0 +1,231 @@
+---
+title: checkly rca
+description: 'Trigger and retrieve AI-powered root cause analyses for error groups.'
+sidebarTitle: 'checkly rca'
+---
+
+<Note>Available since CLI v7.8.0.</Note>
+
+The `checkly rca` command lets you trigger and retrieve [AI-powered root cause analyses (RCA)](/resolve/ai-root-cause-analysis/overview/) for error groups directly from the terminal. An RCA examines an error group and returns a classification, root cause explanation, user impact assessment, and suggested code fixes when available.
+
+<Accordion title="Prerequisites">
+Before using `checkly rca`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- A Checkly plan that includes root cause analysis
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<Tip>
+Existing root cause analysis results are also available via [`checkly checks get`](/cli/checkly-checks/#checkly-checks-get). Use `checkly rca run` to trigger a new analysis for an error group that doesn't have one yet.
+</Tip>
+
+## Usage
+
+```bash Terminal
+npx checkly rca <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `run` | Trigger a root cause analysis for a check or test session error group. |
+| `get` | Retrieve a root cause analysis by ID. |
+
+## `checkly rca run`
+
+Trigger a new root cause analysis for a check or test session error group. The analysis runs asynchronously — use `--watch` to wait for the result in your terminal.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--error-group, -e` | yes* | The check error group ID to analyze. |
+| `--test-session-error-group, -te` | yes* | The test session error group ID to analyze. |
+| `--user-context` | - | Extra context to pass into the root cause analysis. |
+| `--watch, -w` | - | Wait for the analysis to complete and display the result. |
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+*Pass either `--error-group` or `--test-session-error-group`.
+
+### Run Options
+
+<ResponseField name="--error-group, -e" type="string">
+
+The check error group ID to trigger the analysis for. You can find error group IDs in the output of [`checkly checks get`](/cli/checkly-checks) when viewing a check with errors.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run --error-group=<error-group-id>
+npx checkly rca run -e <error-group-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--test-session-error-group, -te" type="string">
+
+<Note>Available since CLI v8.0.0.</Note>
+
+The test session error group ID to trigger the analysis for. You can find these IDs in the output of [`checkly test-sessions get`](/cli/checkly-test-sessions).
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run --test-session-error-group=<error-group-id>
+npx checkly rca run -te <error-group-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--user-context" type="string">
+
+<Note>Available in CLI v8.5.0+.</Note>
+
+Extra context to pass into the root cause analysis. Use this to add details the error group does not contain, such as recent deploy changes or known service incidents.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run --error-group=<error-group-id> --user-context="Started after the checkout deploy"
+```
+
+</ResponseField>
+
+<ResponseField name="--watch, -w" type="boolean" default="false">
+
+Wait for the analysis to complete and display the full result. Without this flag, the command returns immediately with the RCA ID and a pending status.
+
+Only works with `--output detail`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run --error-group=<error-group-id> --watch
+npx checkly rca run -e <error-group-id> -w
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca run --error-group=<error-group-id> --output=json
+npx checkly rca run -e <error-group-id> -o md
+```
+
+</ResponseField>
+
+### Run Examples
+
+```bash Terminal
+# Trigger an RCA and wait for the result
+npx checkly rca run --error-group=err-abc-123 --watch
+
+# Trigger an RCA without waiting
+npx checkly rca run --error-group=err-abc-123
+
+# Trigger an RCA for a test session error group
+npx checkly rca run --test-session-error-group=err-abc-123
+
+# Add extra context for the analysis
+npx checkly rca run --error-group=err-abc-123 --user-context="Started after the checkout deploy"
+
+# Get the result as JSON
+npx checkly rca run --error-group=err-abc-123 --output=json
+```
+
+## `checkly rca get`
+
+Retrieve an existing root cause analysis by its ID. If the analysis is still generating, use `--watch` to wait for completion.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca get <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The RCA ID to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--watch, -w` | - | Wait for the analysis to complete if still generating. |
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+### Get Options
+
+<ResponseField name="--watch, -w" type="boolean" default="false">
+
+Wait for the analysis to complete if it is still generating. Without this flag, the command returns the current status immediately.
+
+Only works with `--output detail`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca get <id> --watch
+npx checkly rca get <id> -w
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly rca get <id> --output=json
+npx checkly rca get <id> -o md
+```
+
+</ResponseField>
+
+### Get Examples
+
+```bash Terminal
+# Retrieve a completed RCA
+npx checkly rca get rca-xyz-789
+
+# Wait for a pending RCA to complete
+npx checkly rca get rca-xyz-789 --watch
+
+# Get the result as JSON
+npx checkly rca get rca-xyz-789 --output=json
+```
+
+## RCA Output
+
+A completed root cause analysis includes:
+
+- **Classification** — the category of the error
+- **Root cause** — explanation of what caused the error
+- **User impact** — how the error affects end users
+- **Code fix** — suggested fix when available
+- **Evidence** — supporting artifacts from the analysis
+- **Reference links** — relevant external resources
+
+## Related Commands
+
+- [`checkly checks`](/cli/checkly-checks) - List, inspect, and analyze checks (includes error groups)
+- [`checkly test-sessions`](/cli/checkly-test-sessions) - Inspect recorded test sessions and test session error groups

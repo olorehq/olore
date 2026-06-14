@@ -1,13 +1,13 @@
 ---
 title: libSQL
-description: libSQL is SQLite for modern applications.
+description: libSQL is a production-ready fork of SQLite, maintained by Turso.
 ---
 
-Turso is a distributed database built on [libSQL](https://github.com/tursodatabase/libsql/), a fork of SQLite. It's optimized for low query latency, making it suitable for global applications.
+libSQL is a fork of SQLite, created because SQLite is [open-source but not open-contribution](https://www.sqlite.org/copyright.html). libSQL is production-ready, fully backwards compatible with SQLite, and adds features like native vector search.
 
-Postgres and MySQL have long vied for SQL dominance, while SQLite remains a favored choice due to its simplicity and reliability, often dubbed the "hello world" of databases.
-
-libSQL is a fork of SQLite that aims to be a modern database, with a focus on low query latency and high availability. It's designed to be a drop-in replacement for SQLite, and scales globally with Turso over HTTP.
+<Note>
+  libSQL represents where we started. Today, our focus is [Turso Database](/tursodb/quickstart), a full rewrite of SQLite built from scratch, designed for the highest density of databases with no need for servers or connectivity. If you're starting a new project, we recommend [Turso Database](/tursodb/quickstart). For mission-critical workloads that need a battle-tested foundation today, libSQL is the right choice.
+</Note>
 
 <CardGroup cols={2}>
 
@@ -25,43 +25,20 @@ Join the community on Discord to talk about the development of libSQL.
 
 </CardGroup>
 
-## Why fork SQLite?
+## libSQL vs. Turso Database
 
-SQLite is [open-source, not open-contribution](https://www.sqlite.org/copyright.html), which makes it difficult to innovate and evolve with it.
+libSQL is a fork of SQLite. It maintains the same file format, the same API, and full backwards compatibility. It extends SQLite with features the ecosystem has long needed but couldn't contribute upstream.
 
-Turso is committed to the open-source community, and we welcome contributions to libSQL. We're also committed to keeping libSQL free and open-source, as well rejoining core SQLite if their policy changes.
+[Turso Database](/tursodb/quickstart) is a different approach: a ground-up rewrite of SQLite. It reimplements SQLite's semantics with a modern architecture designed for concurrent writes, async I/O, and the highest database density in the industry.
 
-Read the [libSQL Manifesto](https://turso.tech/libsql-manifesto) for more details.
+| | libSQL | Turso Database |
+|---|---|---|
+| Approach | Fork of SQLite | Full rewrite of SQLite |
+| Maturity | Production-ready | Evolving (beta) |
+| SQLite compatibility | Full (same file format and API) | Backwards compatible |
+| Best for | Mission-critical workloads today | New projects, agents, smart devices, high-density use cases |
 
-## Turso vs. libSQL
-
-Turso manages the distribution of libSQL instances, and provides a global HTTP API for querying and managing databases. It also provides a CLI, Web UI and HTTP API for managing databases, and team management.
-
-When you use Turso, you don't need to worry about managing libSQL instances, or configuring replication. You can focus on building your application, and let Turso handle the rest.
-
-[SDKs](/sdk) are fully compatible with libSQL, whether you use self-hosted or Turso-hosted libSQL.
-
-## SQLite Compatibility
-
-libSQL will remain SQLite compatible by providing the same API and file format, but with additional features and optimizations.
-
-## Encryption at rest
-
-libSQL introduces an essential feature for production environments: **encryption at rest**. This feature enhances data security by encrypting database files, making them inaccessible without the correct encryption key.
-
-libSQL's encryption leverages existing, proven encryption solutions, integrating them directly into the fork of SQLite. The encryption is page-based, allowing for efficient data access without decrypting the entire file. Supported encryption standards include SQLCipher (default) and wxSQLite3's AES 256 Bit, with further options for customization per database.
-
-<CodeGroup>
-
-<Snippet file="encryption-at-rest-typescript.mdx" />
-<Snippet file="encryption-at-rest-golang.mdx" />
-<Snippet file="encryption-at-rest-rust.mdx" />
-<Snippet file="encryption-at-rest-python.mdx" />
-<Snippet file="encryption-at-rest-flutter.mdx" />
-
-</CodeGroup>
-
-<Note>The encryption key used should be generated and managed by you.</Note>
+Both are open-contribution and maintained by Turso. [Turso Cloud](/turso-cloud) currently runs on libSQL and will integrate the Turso Database engine in the future.
 
 ## Extensions
 

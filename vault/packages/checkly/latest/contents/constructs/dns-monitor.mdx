@@ -29,6 +29,7 @@ import { Frequency, DnsAssertionBuilder, DnsMonitor } from "checkly/constructs"
 
 new DnsMonitor("dns-monitor", {
   name: "DNS A Record Monitor",
+  description: "Asserts `example.com` A record resolves to the **expected IP**.",
   activated: true,
   maxResponseTime: 1000,
   degradedResponseTime: 500,
@@ -49,6 +50,7 @@ import { Frequency, DnsAssertionBuilder, DnsMonitor } from "checkly/constructs"
 
 new DnsMonitor("advanced-dns-monitor", {
   name: "Advanced DNS Monitor",
+  description: "Asserts `api.example.com` A record resolves to the **expected IP**.",
   activated: true,
   frequency: Frequency.EVERY_5M,
   locations: ["us-east-1", "eu-central-1"],
@@ -171,7 +173,7 @@ To define `assertions` for the `request` of an `DnsMonitor` you should use the `
 - `responseTime()`: Assert the total response time of the DNS request in milliseconds. Use this to set thresholds for failed lookups
 - `responseCode()`: By default, DNS monitors pass when the return code is NOERROR and fail on error codes (FORMERR, SERVFAIL, NXDOMAIN, etc.). You can override this behavior by defining a custom return code assertion
 - `textAnswer()`: The raw DNS response as plain text. Use this to check for specific strings in the response
-- `jsonAnswer(property?)`: The DNS response in JSON format. This allows you to target specific fields using JSON path assertions. The response structure varies by record type. [Learn more about using JSON path](/detect/assertions/#json-responses-with-json-path).
+- `jsonAnswer(property?)`: The [DNS response in JSON format](/detect/uptime-monitoring/dns-monitors/configuration#json-response-schemas). This allows you to target specific fields using JSON path assertions. The response structure varies by record type. [Learn more about using JSON path](/detect/assertions/#json-responses-with-json-path).
 
 Here are some examples:
 

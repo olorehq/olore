@@ -36,13 +36,13 @@ import { Demos } from "/snippets/demos.jsx";
     const { riveFile } = useRiveFile(require('./my_file.riv'));
 
     // Get reference by name
-    const namedVM = riveFile?.viewModelByName('My View Model');
+    const namedVM = await riveFile?.viewModelByNameAsync('My View Model');
 
-    // Get reference by index
-    const indexVM = riveFile?.viewModelByIndex(0);
+    // Get all view model names
+    const vmNames = await riveFile?.getViewModelNamesAsync(); // ['My View Model', ...]
 
     // Get reference to the default artboard view model
-    const defaultVM = riveFile?.defaultArtboardViewModel();
+    const defaultVM = await riveFile?.defaultArtboardViewModelAsync();
     ```
     </Tab>
     <Tab title="Legacy Runtime">
@@ -64,28 +64,28 @@ import { Demos } from "/snippets/demos.jsx";
     const { riveFile } = useRiveFile(require('./my_file.riv'));
 
     // From RiveFile — default artboard's ViewModel, default instance
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     // Specify artboard or ViewModel name (mutually exclusive)
-    const instance = useViewModelInstance(riveFile, { artboardName: 'MainArtboard' });
-    const instance = useViewModelInstance(riveFile, { viewModelName: 'Settings' });
+    const { instance } = useViewModelInstance(riveFile, { artboardName: 'MainArtboard' });
+    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings' });
 
     // instanceName can be combined with any of the above to pick a specific instance
-    const instance = useViewModelInstance(riveFile, { instanceName: 'PersonInstance' });
-    const instance = useViewModelInstance(riveFile, { viewModelName: 'Settings', instanceName: 'UserSettings' });
+    const { instance } = useViewModelInstance(riveFile, { instanceName: 'PersonInstance' });
+    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings', instanceName: 'UserSettings' });
 
     // From a ViewModel object
     const viewModel = riveFile?.viewModelByName('My View Model');
-    const namedInstance = useViewModelInstance(viewModel, { name: 'My Instance' });
-    const newInstance = useViewModelInstance(viewModel, { useNew: true });
+    const { instance: namedInstance } = useViewModelInstance(viewModel, { name: 'My Instance' });
+    const { instance: newInstance } = useViewModelInstance(viewModel, { useNew: true });
 
     // With required: true (throws if null, use with Error Boundary)
-    const instance = useViewModelInstance(riveFile, { required: true });
+    const { instance } = useViewModelInstance(riveFile, { required: true });
 
     // With onInit to set initial values synchronously
-    const instance = useViewModelInstance(riveFile, {
+    const { instance } = useViewModelInstance(riveFile, {
         onInit: (vmi) => {
-            vmi.numberProperty('health')!.value = 100;
+            vmi.numberProperty('health')?.set(100);
         },
     });
 
@@ -100,7 +100,7 @@ import { Demos } from "/snippets/demos.jsx";
     import { useRive, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveViewRef, setHybridRef } = useRive();
-    const instance = useViewModelInstance(riveViewRef);
+    const { instance } = useViewModelInstance(riveViewRef);
     ```
 
     </Tab>
@@ -179,7 +179,7 @@ import { Demos } from "/snippets/demos.jsx";
     import { RiveView, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     return (
         <RiveView
@@ -227,7 +227,7 @@ import { Demos } from "/snippets/demos.jsx";
     Or bind a specific instance:
 
     ```tsx
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
     <RiveView
         file={riveFile}
         dataBind={instance}
@@ -308,7 +308,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     // Boolean
     const { value: isActive, setValue: setIsActive, error: boolError } = useRiveBoolean(
@@ -442,7 +442,7 @@ import { Demos } from "/snippets/demos.jsx";
     import { useRiveString, useRiveNumber, useRiveFile, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     // Accessing 'settings/theme/name' (String)
     const { value: themeName, setValue: setThemeName } = useRiveString(
@@ -504,7 +504,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     const { value: boolValue, setValue: setBoolValue } = useRiveBoolean('My Boolean Property', instance);
     const { value: stringValue, setValue: setStringValue } = useRiveString('My String Property', instance);
@@ -585,7 +585,7 @@ import { Demos } from "/snippets/demos.jsx";
 
     const { riveViewRef, setHybridRef } = useRive();
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
     const riveViewRef = useRef<RiveViewRef>(undefined);
 
     const handleLoadImage = async () => {
@@ -665,7 +665,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     // Get the list property with manipulation functions
     const {
@@ -680,10 +680,10 @@ import { Demos } from "/snippets/demos.jsx";
     } = useRiveList('todos', instance);
 
     // Add a new todo item
-    const handleAddItem = () => {
-        const todoItemViewModel = riveFile?.viewModelByName('TodoItem');
+    const handleAddItem = async () => {
+        const todoItemViewModel = await riveFile?.viewModelByNameAsync('TodoItem');
         if (todoItemViewModel) {
-            const newTodoItem = todoItemViewModel.createInstance();
+            const newTodoItem = await todoItemViewModel.createBlankInstanceAsync();
             if (newTodoItem) {
                 // Set some initial values
                 newTodoItem.stringProperty('description')?.set('Buy groceries');
@@ -693,10 +693,10 @@ import { Demos } from "/snippets/demos.jsx";
     };
 
     // Insert item at specific index
-    const handleInsertItem = () => {
-        const todoItemViewModel = riveFile?.viewModelByName('TodoItem');
+    const handleInsertItem = async () => {
+        const todoItemViewModel = await riveFile?.viewModelByNameAsync('TodoItem');
         if (todoItemViewModel) {
-            const newTodoItem = todoItemViewModel.createInstance();
+            const newTodoItem = await todoItemViewModel.createBlankInstanceAsync();
             if (newTodoItem) {
                 addInstanceAt(newTodoItem, 0); // Insert at beginning
             }
@@ -786,7 +786,7 @@ import { Demos } from "/snippets/demos.jsx";
     } from '@rive-app/react-native';
 
     const { riveFile } = useRiveFile(require('./my_file.riv'));
-    const instance = useViewModelInstance(riveFile);
+    const { instance } = useViewModelInstance(riveFile);
 
     const { value: category, setValue: setCategory, error } = useRiveEnum(
         'category',

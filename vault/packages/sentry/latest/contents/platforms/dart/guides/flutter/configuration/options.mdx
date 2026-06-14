@@ -34,7 +34,7 @@ Enabling `debug` mode makes the SDK generate as much diagnostic data as possible
 
 - `debug`: The most verbose mode
 - `info`: Informational messages
-- `warning`:  **default** Warning that something might not be right
+- `warning`: **default** Warning that something might not be right
 - `error`: Only SDK internal errors are printed
 - `fatal`: Only critical errors are printed
 
@@ -272,6 +272,8 @@ If <PlatformIdentifier name="tracePropagationTargets" /> is not provided, trace 
 
 Controls whether the SDK should propagate the W3C `traceparent` HTTP header alongside the `sentry-trace` and `baggage` headers for outgoing HTTP requests.
 
+<Include name="platforms/configuration/options/propagate-traceparent-tail-sampling.mdx" />
+
 </SdkOption>
 
 ## Experimental Features
@@ -316,6 +318,14 @@ Set this boolean to `false` to disable the scope sync from Java to NDK on Androi
 
 </SdkOption>
 
+<SdkOption name="enableTombstone" type="bool" defaultValue="false">
+
+Set this boolean to `true` to enable [Tombstone-based native crash reporting](/platforms/android/configuration/tombstones/) on Android 12+ (API level 30+). When enabled, uses Android's `ApplicationExitInfo.REASON_CRASH_NATIVE` to capture native crashes with more detailed thread information.
+
+This provides improved stack traces and richer crash context compared to the standard NDK integration alone. The SDK will merge reports from both integrations when applicable.
+
+</SdkOption>
+
 <SdkOption name="attachThreads" type="bool" defaultValue="false">
 
 Set this boolean to `true` to automatically attach all threads to all logged events on Android.
@@ -324,7 +334,7 @@ Set this boolean to `true` to automatically attach all threads to all logged eve
 
 <SdkOption name="enableAutoPerformanceTracing" type="bool" defaultValue="true">
 
-Set this boolean to `false` to disable auto [tracing](/product/insights/overview/) tracking.
+Set this boolean to `false` to disable auto [tracing](/product/dashboards/sentry-dashboards/) tracking.
 
 </SdkOption>
 
@@ -353,7 +363,7 @@ Set this boolean to `false` to disable reporting all the package dependencies.
 
 <SdkOption name="anrEnabled" type="bool" defaultValue="true">
 
-Set this boolean to `true` to enable ANR (Application Not Responding) detection on Android.
+Set this boolean to `true` to enable ANR (Application Not Responding) detection on Android. Learn more in <PlatformLink to="/configuration/anr-app-hangs/">ANR and App Hangs</PlatformLink>.
 
 </SdkOption>
 

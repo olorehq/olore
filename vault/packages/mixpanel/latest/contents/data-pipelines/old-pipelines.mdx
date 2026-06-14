@@ -10,8 +10,8 @@ import { Callout } from 'nextra/components'
 
 <Callout type="warning">
   This version of managing pipelines via API is Deprecated going forward.
-  For the customers who earlier used these apis to create and manage can continue using it.
-  Otherwise Go to Integrations page in mixpanel to create and manage pipelines via UI and
+  For the customers who earlier used these APIs to create and manage can continue using it.
+  Otherwise, go to the Integrations page in Mixpanel to create and manage pipelines via UI and
   go to [docs](/docs/data-pipelines) for more info.
 </Callout>
 
@@ -22,7 +22,7 @@ Using Data Pipelines requires 2 steps:
 1. Configuring your destination to allow Mixpanel to write to it.
 2. Telling Mixpanel to start exporting your data to that destination using the Pipelines API.
 
-We offer a 30-day free trial of the Data Pipelines add-on. See the [FAQ](#how-does-the-free-trial-work) for how to enable it.
+We offer a 30-day free trial of the Data Pipelines add-on. See the [FAQ](#free-trial) for how to enable it.
 
 ## Step 1: Configuring your destination
 
@@ -60,7 +60,7 @@ See our configuration guides for each schematized destination:
 - [Google Cloud Storage](/docs/data-pipelines/old-pipelines/integrations/schematized-gcs-pipeline)
 - [Azure Blob Storage](/docs/data-pipelines/old-pipelines/integrations/schematized-azure-pipeline)
 
-The [Schematized Pipeline reference](/docs/data-pipelines/old-pipelines/schematized-export-pipeline) goes the details of schematization and the output format.
+The [Schematized Pipeline reference](/docs/data-pipelines/old-pipelines/schematized-export-pipeline) goes into the details of schematization and the output format.
 
 ## Step 2: Creating the Pipeline
 
@@ -81,14 +81,14 @@ Limits:
 
 **1. Why are some events or properties not exported to the destination?**
 
-This normally happens when you have thousands of unique event names or property names, which is usually an implementation mistake (eg: including a UUID in the event or property name). This causes the export process to exceed table or column limits in the destination. Mixpanel itself imposes a limit of 10K unique properties in your schema after transformation rules have been applied. Any projects exceeding this limit will have their pipelines paused until the issue can be remediated. If you notice an error in your pipelines around exceeding this limitation please try to identify a regex selector that selects some properties you would like to filter out of your schema and reach out to our support team for assistance.
+This normally happens when you have thousands of unique event names or property names, which is usually an implementation mistake (eg: including a UUID in the event or property name). This causes the export process to exceed table or column limits in the destination. Mixpanel itself imposes a limit of 10K unique properties in your schema after transformation rules have been applied. Any projects exceeding this limit will have their pipelines paused until the issue can be remediated. If you notice an error in your pipelines around exceeding this limitation, please try to identify a regex selector that selects some properties you would like to filter out of your schema and reach out to our support team for assistance.
 
 **2. Why does the number of events in Mixpanel not match the number of exported events to my destination?**
 
 This can happen for a few reasons:
 
 - [Data Sync](/docs/data-pipelines/old-pipelines/schematized-export-pipeline#data-sync) is not enabled or not supported for your pipeline.
-- Data Delay: it can take up to 1 day for late arriving data to be synced from Mixpanel to your destination.
+- Data Delay: It can take up to 1 day for late arriving data to be synced from Mixpanel to your destination.
 - Hidden Events: Mixpanel exports all events to your destination, even ones that are hidden in the UI via Lexicon. We recommend checking whether the count in your destination is mostly due to events that have been hidden in the Mixpanel UI.
 
 **3. What timezone is used for my event exports?**

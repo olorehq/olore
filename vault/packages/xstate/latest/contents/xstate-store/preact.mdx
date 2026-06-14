@@ -2,7 +2,11 @@
 title: '@xstate/store-preact'
 ---
 
-The `@xstate/store-preact` package provides Preact bindings for [XState Store](/docs/xstate-store). It includes hooks for subscribing to store state, similar to the React bindings.
+The `@xstate/store-preact` package provides Preact bindings for [XState Store](/docs/xstate-store). It includes hooks for subscribing to store state, creating component-scoped stores, and using atoms.
+
+<Callout>
+These are the docs for `@xstate/store-preact` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/preact).
+</Callout>
 
 <Callout>
 
@@ -41,7 +45,7 @@ yarn add @xstate/store-preact
 ## Quick start
 
 ```tsx
-import { createStore, useSelector } from '@xstate/store-preact';
+import { createStore, useSelector } from '@xstate/store-preact'; // [!code highlight:1]
 
 const store = createStore({
   context: { count: 0 },
@@ -53,6 +57,7 @@ const store = createStore({
 });
 
 function Counter() {
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 
   return (
@@ -69,32 +74,76 @@ function Counter() {
 
 ### `useSelector(store, selector?, compare?)`
 
-Subscribes to a store and returns a selected value. The component re-renders when the selected value changes.
+Subscribes to a store or atom and returns a selected value. The component re-renders when the selected value changes.
+
+### `useStore(configOrLogic, input?)`
+
+Creates a component-scoped store instance from a store config or store logic.
 
 ```tsx
-import { useSelector } from '@xstate/store-preact';
+import { createStoreLogic, useSelector, useStore } from '@xstate/store-preact'; // [!code highlight:1]
+
+const counterLogic = createStoreLogic({
+  context: (input: { initialCount: number }) => ({
+    count: input.initialCount,
+  }),
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+});
 
 function Counter() {
-  // Select specific value
+  // [!code highlight:1]
+  const store = useStore(counterLogic, { initialCount: 0 });
   const count = useSelector(store, (state) => state.context.count);
 
-  // With custom comparison function
-  const user = useSelector(
-    store,
-    (state) => state.context.user,
-    (prev, next) => prev.id === next.id
-  );
+  return <button onClick={() => store.trigger.inc()}>{count}</button>;
+}
+```
+
+If the store logic requires input, the `input` argument is required.
+
+### `useAtom(atomOrConfig, selectorOrInput?, compare?)`
+
+Subscribes to an atom and returns its value. You can pass an existing atom, or an atom config created with `createAtomConfig(...)`.
+
+```tsx
+import { createAtomConfig, useAtom } from '@xstate/store-preact'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const count = useAtom(countConfig, { initialCount: 0 });
 
   return <div>Count: {count}</div>;
 }
 ```
 
-**Parameters:**
-- `store` - The store to subscribe to
-- `selector` - Optional function to select a value from the store snapshot
-- `compare` - Optional comparison function (defaults to strict equality `===`)
+### `useAtomState(atomOrConfig, input?)`
 
-**Returns:** The selected value
+Creates or subscribes to an atom for the lifetime of a Preact component. It returns the current value and the live atom instance.
+
+```tsx
+import { createAtomConfig, useAtomState } from '@xstate/store-preact'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const [count, countAtom] = useAtomState(countConfig, { initialCount: 0 });
+
+  return (
+    <button onClick={() => countAtom.set((count) => count + 1)}>
+      {count}
+    </button>
+  );
+}
+```
 
 ## Full documentation
 

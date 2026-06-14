@@ -1,8 +1,16 @@
 ---
 title: Connect from Kysely to Neon
 subtitle: Learn how to connect to Neon from Kysely
+summary: >-
+  Connect Kysely to Neon Postgres using the Neon HTTP serverless driver for
+  edge environments, the Neon WebSocket driver for serverless workloads that
+  need transactions, or node-postgres for long-running servers. Choose this
+  guide when you want full SQL control with TypeScript type-checking and need
+  to pick the right Neon driver dialect for your deployment target. Covers
+  interface-based schema definitions, client initialization per driver,
+  optional migrations via FileMigrationProvider, and CRUD query examples.
 enableTableOfContents: true
-updatedOn: '2025-12-12T13:14:07.926Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/kysely-prompt.md" 
@@ -102,7 +110,7 @@ Install the Kysely core package and the necessary driver dependencies. Choose on
 
 <TabItem>
 
-Use the Neon serverless HTTP driver for serverless/edge environments (e.g., Vercel Edge, Cloudflare Workers). This requires the `kysely-neon` dialect.
+Use the Neon serverless HTTP driver for serverless/edge environments (for example, Vercel Edge, Cloudflare Workers). This requires the `kysely-neon` dialect.
 
 <Admonition type="note" title="Note">
 The Neon serverless driver over HTTP is stateless and does not support persistent connections or interactive transactions. If your application requires transactions, we recommend using the Neon WebSocket driver or `node-postgres`.

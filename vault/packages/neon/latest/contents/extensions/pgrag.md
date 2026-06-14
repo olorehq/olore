@@ -1,8 +1,16 @@
 ---
 title: The pgrag extension
 subtitle: Create end-to-end Retrieval-Augmented Generation (RAG) pipelines
+summary: >-
+  pgrag is an experimental Postgres extension that runs a complete
+  Retrieval-Augmented Generation (RAG) pipeline in SQL, covering text extraction
+  from PDF, DOCX, and HTML, chunking, local embedding, reranking, and OpenAI
+  chat completion, with pgvector handling vector storage. Use pgrag when you need
+  a full RAG pipeline inside Postgres without Python or external services. Because
+  it is experimental, enable it with `SET neon.allow_unstable_extensions='true'`
+  and use a dedicated Neon project.
 enableTableOfContents: true
-updatedOn: '2025-06-23T15:24:08.758Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>

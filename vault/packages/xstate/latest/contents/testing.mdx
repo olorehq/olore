@@ -108,6 +108,12 @@ test('actor transitions correctly', () => {
 });
 ```
 
+## Testing machines with eventless transitions
+
+When you use `waitFor()`, or assert on `getSnapshot().value`, `getSnapshot().matches(...)`, or `getSnapshot().hasTag(...)`, be aware that **states that are only entered and left via [eventless (`always`) transitions](eventless-transitions) in the same step are not observable**. The actor only emits the final snapshot after all eventless transitions are applied, so those intermediate states never appear to subscribers or in the current snapshot.
+
+If your test needs to wait for or assert on such a state, either use the [inspection API](inspection) and listen for `@xstate.microstep` events, or change the machine to use a zero-delay delayed transition (`after: { 0: 'nextState' }`) instead of `always` so that a snapshot is emitted. See [Eventless transitions – Observability and transient states](eventless-transitions#observability-and-transient-states) for details.
+
 ## Mocking effects
 
 When testing state machines that have side effects (like API calls, logging, or other external interactions), you should mock these effects to make your tests deterministic and isolated.

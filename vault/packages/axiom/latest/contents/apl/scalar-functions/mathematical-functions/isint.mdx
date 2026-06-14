@@ -1,0 +1,91 @@
+---
+title: isint
+description: 'This page explains how to use the isint function in APL.'
+---
+
+Use the `isint` function in APL to check whether a numeric value is an integer, meaning it has no fractional component. The function returns `true` for both positive and negative integer values and `false` for floating-point values, NaN, or infinity.
+
+`isint` is useful for data validation and type-checking in observability queries. For example, you can use it to verify that computed fields or imported values are whole numbers before performing integer-specific operations such as array indexing or factorial-based calculations.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't have a direct `isint()` function, but you can approximate the check by comparing a value to its floored counterpart.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_int = if(floor(value) == value, 1, 0)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_int = isint(value)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define an `ISINT()` function. You typically compare a value to its floored equivalent to determine whether it is a whole number.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN FLOOR(value) = value THEN 1 ELSE 0 END AS is_int FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_int = isint(value)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isint(expression)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `expression` | real | Yes | The numeric value to check. |
+
+### Returns
+
+`true` if the value is a positive or negative integer (no fractional part). `false` for non-integer real numbers, NaN, and infinity.
+
+## Example
+
+Use `isint` to check whether a value is of integer type.
+
+**Query**
+
+```kusto
+print a = isint(42), b = isint(4.2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20a%20%3D%20isint%2842%29%2C%20b%20%3D%20isint%284.2%29%22%7D)
+
+**Output**
+
+| a | b |
+|---|---|
+| true | false |
+
+## List of related functions
+
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns `true` for values that are neither infinite nor NaN. Use it for a broader check covering all valid float states.
+- [isinf](/apl/scalar-functions/mathematical-functions/isinf): Returns `true` only for infinite values. Use it to detect overflow results specifically.
+- [isnan](/apl/scalar-functions/mathematical-functions/isnan): Returns `true` only for NaN values. Use it to detect undefined computation results.
+- [round](/apl/scalar-functions/mathematical-functions/round): Rounds a value to a given precision. Use it to produce integer-valued results before applying `isint`.
+- [sign](/apl/scalar-functions/mathematical-functions/sign): Returns the sign of a value. Use it alongside `isint` when you need both the sign and the integer-status of a value.

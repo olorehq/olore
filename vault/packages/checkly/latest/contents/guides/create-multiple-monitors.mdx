@@ -74,7 +74,7 @@ const sitemapUrls = [
     'https://www.checklyhq.com/docs/',
     'https://www.checklyhq.com/learn/playwright/codegen/',
     'https://www.checklyhq.com/guides/using-pw-test-command/',
-    'https://developers.checklyhq.com/reference/postv1incidents',
+    'https://www.checklyhq.com/docs/api-reference/incidents/create-an-incident/',
     'https://www.checklyhq.com/customers/'
 ]
 // Loop through each URL and create a monitor
@@ -133,7 +133,7 @@ const sitemapUrls = [
     'https://www.checklyhq.com/docs/',
     'https://www.checklyhq.com/learn/playwright/codegen/',
     'https://www.checklyhq.com/guides/using-pw-test-command/',
-    'https://developers.checklyhq.com/reference/postv1incidents',
+    'https://www.checklyhq.com/docs/api-reference/incidents/create-an-incident/',
     'https://www.checklyhq.com/customers/'
 ]
 ```
@@ -145,7 +145,7 @@ Rather than having to edit this check’s code every time we update our list of 
     "https://www.checklyhq.com/docs/",
     "https://www.checklyhq.com/learn/playwright/codegen/",
     "https://www.checklyhq.com/guides/using-pw-test-command/",
-    "https://developers.checklyhq.com/reference/postv1incidents",
+    "https://www.checklyhq.com/docs/api-reference/incidents/create-an-incident/",
     "https://www.checklyhq.com/customers/"
 ]}
 ```
@@ -169,7 +169,7 @@ Let’s continue to increase the sophistication of our group of monitors. Right 
 | [https://www.checklyhq.com/docs/](https://www.checklyhq.com/docs/,) | docs-1 | url monitor docs-1 |
 | [https://www.checklyhq.com/learn/playwright/codegen/](https://www.checklyhq.com/learn/playwright/codegen/,) | codegen-1 | url monitor codegen-1 |
 | [https://www.checklyhq.com/guides/using-pw-test-command/](https://www.checklyhq.com/guides/using-pw-test-command/,) | pw-test-1 | url monitor pw-test-1 |
-| [https://developers.checklyhq.com/reference/postv1incidents](https://developers.checklyhq.com/reference/postv1incidents,) | incidents-1 | url monitor incidents-1 |
+| [https://www.checklyhq.com/docs/api-reference/incidents/create-an-incident/](https://www.checklyhq.com/docs/api-reference/incidents/create-an-incident/,) | incidents-1 | url monitor incidents-1 |
 
 And this version of the URL monitor fetches the CSV and parses the three values for each check from the row before creating a monitor.
 
@@ -236,7 +236,7 @@ With these methods we could continue to extend the dynamic capabilities of this 
 
 As you handle monitors for multiple sites and environments, inevitably you'll want to manage the configuration for a number of monitors all at once. Currently, by creating many monitors from a single file we're giving each one the same configuration, and any configuration not specified will take the default values in `checkly.config.ts` in the project's root directory. We can create specific groups to receive configuration by adding the monitor to a [group with Checkly constructs](https://www.checklyhq.com/docs/cli/constructs-reference/#checkgroupv2). Groups offer a convenient interface to configure your monitors, setting their retry strategy, alert thresholds, and where the group's alerts will be sent. Groups also [show up as folders in your Checkly web UI](https://www.checklyhq.com/docs/groups/); making it easier to see the status of every check in the group.
 
-![image.png](/guides/images/monitor-creation-01.png)
+![Checkly dashboard showing a check group with multiple monitors](/images/guides/images/monitor-creation-01.png)
 
 We can create a group with constructs:
 

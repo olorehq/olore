@@ -1,8 +1,16 @@
 ---
 title: The pg_session_jwt extension
 subtitle: Handle authenticated sessions through JWTs in Postgres
+summary: >-
+  The `pg_session_jwt` Postgres extension validates JWT tokens using a JWK and
+  exposes `auth.user_id()`, `auth.session()`, and `auth.uid()` to extract the
+  `sub` claim for use in Row-Level Security policies. It powers the Neon Data
+  API, which installs and configures the extension automatically; without a JWK
+  it falls back to PostgREST-compatible `request.jwt.claims`. Use this page
+  when building custom auth setups outside the Data API or writing RLS policies
+  that filter rows by authenticated user identity.
 enableTableOfContents: true
-updatedOn: '2025-12-12T17:42:01.028Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>
@@ -10,7 +18,7 @@ updatedOn: '2025-12-12T17:42:01.028Z'
 <DocsList title="Related resources" theme="docs">
   <a href="/docs/data-api/overview">Neon Data API</a>
   <a href="/docs/data-api/custom-authentication-providers">Custom authentication providers</a>
-  <a href="/docs/guides/neon-rls">Row-Level Security (RLS)</a>
+  <a href="/docs/guides/row-level-security">Row-Level Security (RLS)</a>
 </DocsList>
 
 <DocsList title="Source code" theme="repo">
@@ -19,6 +27,10 @@ updatedOn: '2025-12-12T17:42:01.028Z'
 
 </InfoBlock>
 
+<Admonition type="important">
+The `pg_session_jwt` extension is automatically installed when you enable the [Neon Data API](/docs/data-api/overview) for a branch. Do not install this extension manually.
+</Admonition>
+
 The `pg_session_jwt` extension is a Postgres extension designed to handle authenticated sessions through JSON Web Tokens (JWTs). When configured with a JWK (JSON Web Key), it verifies JWT authenticity. When operating without a JWK, it falls back to using PostgREST-compatible JWT claims.
 
 This extension powers the [Neon Data API](/docs/data-api/overview), enabling secure session management and Row-Level Security (RLS) based on user identity.
@@ -26,7 +38,7 @@ This extension powers the [Neon Data API](/docs/data-api/overview), enabling sec
 ## Features
 
 - **JWT session initialization** using a JWK (JSON Web Key) for secure JWT validation
-- **Flexible authentication modes** — use either JWK-validated JWTs or PostgREST-compatible JWT claims
+- **Flexible authentication modes**: use either JWK-validated JWTs or PostgREST-compatible JWT claims
 - **User ID retrieval** directly from the database for use in RLS policies
 - **JSONB-based storage** and retrieval of session information
 
@@ -139,6 +151,6 @@ When using the fallback mode without JWK validation, `request.jwt.claims` is a r
 - [pg_session_jwt on GitHub](https://github.com/neondatabase/pg_session_jwt)
 - [Neon Data API documentation](/docs/data-api/overview)
 - [Custom authentication providers](/docs/data-api/custom-authentication-providers)
-- [Row-Level Security guide](/docs/guides/neon-rls)
+- [Row-Level Security guide](/docs/guides/row-level-security)
 
 <NeedHelp/>

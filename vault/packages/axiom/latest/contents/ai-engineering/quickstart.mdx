@@ -117,20 +117,19 @@ To send data to Axiom, configure a tracer. For example, use a dedicated instrume
     // Wrap your logic in the AxiomEvalInstrumentationHook function
     export const setupAppInstrumentation: AxiomEvalInstrumentationHook = async ({
       dataset,
-      url,
+      edgeUrl,
       token,
     }) => {
       if (provider) {
         return { provider };
       }
 
-      if (!dataset || !url || !token) {
+      if (!dataset || !edgeUrl || !token) {
         throw new Error('Missing environment variables');
       }
 
-      // Replace the environment variables with the parameters passed to the function
       const exporter = new OTLPTraceExporter({
-        url: `${url}/v1/traces`,
+        url: `${edgeUrl}/v1/traces`,
         headers: {
           Authorization: `Bearer ${token}`,
           'X-Axiom-Dataset': dataset,
@@ -147,7 +146,7 @@ To send data to Axiom, configure a tracer. For example, use a dedicated instrume
           // Info: https://opentelemetry.io/docs/specs/semconv/
           schemaUrl: 'https://opentelemetry.io/schemas/1.37.0',
         }),
-        spanProcessor: new BatchSpanProcessor(exporter),
+        spanProcessors: [new BatchSpanProcessor(exporter)],
       });
 
       // Register the provider
@@ -174,23 +173,22 @@ import { setupAppInstrumentation } from './src/instrumentation';
 
 export default defineConfig({
   eval: {
-    url: process.env.AXIOM_URL,
+    edgeUrl: process.env.AXIOM_URL,
     token: process.env.AXIOM_TOKEN,
     dataset: process.env.AXIOM_DATASET,
-    
+
     // Optional: customize which files to run
     include: ['**/*.eval.{ts,js}'],
-    
+
     // Optional: exclude patterns
     exclude: [],
-    
+
     // Optional: timeout for eval execution
     timeoutMs: 60_000,
-    
+
     // Optional: instrumentation hook for OpenTelemetry
     // (created this in the "Create instrumentation setup" step)
-    instrumentation: ({ url, token, dataset }) => 
-      setupAppInstrumentation({ url, token, dataset }),
+    instrumentation: (options) => setupAppInstrumentation(options),
   },
 });
 ```
@@ -200,7 +198,7 @@ export default defineConfig({
 Store environment variables in an `.env` file in the root of your project:
 
 ```bash .env
-AXIOM_URL="AXIOM_DOMAIN"
+AXIOM_URL="https://AXIOM_DOMAIN"
 AXIOM_TOKEN="API_TOKEN"
 AXIOM_DATASET="DATASET_NAME"
 OPENAI_API_KEY=""
@@ -217,7 +215,7 @@ Enter the API keys for the LLMs you want to work with.
 </Info>
 
 <Note>
-To run evaluations, you’ll need to authenticate the Axiom CLI. See [Setup and authentication](/ai-engineering/evaluate/setup) for details on using `axiom auth login`.
+To run offline evaluations, you can authenticate using OAuth instead of using environment variables. For more information, see [Set up and authenticate offline evaluations](/ai-engineering/evaluate/write-evaluations#prerequisites).
 </Note>
 
 ## What’s next?

@@ -2,10 +2,19 @@
 title: Migrate from Supabase to Neon Postgres
 subtitle: Learn how to migrate your database from Supabase to Neon Postgres using
   pg_dump and pg_restore
+summary: >-
+  Step-by-step guide to moving a Supabase Postgres database to Neon using
+  `pg_dump` and `pg_restore`, with `--no-owner` and `--no-acl` flags required
+  because Supabase ties object ownership to its own authentication system. Use
+  this page when you need a full offline dump-and-restore migration; for
+  near-zero downtime, the guide points to logical replication from Supabase
+  instead. Also covers connection string retrieval, schema selection with
+  `--schema` for public and non-public schemas (auth, storage), and
+  post-restore verification.
 redirectFrom:
   - /docs/import/import-from-supabase
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.294Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This guide describes how to migrate a database from Supabase to Neon Postgres.
@@ -91,7 +100,7 @@ pg_dump: dumping contents of table "public.lego_themes"
 ```
 
 <Admonition type="important">
-Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string) (see PgBouncer issues [452](https://github.com/pgbouncer/pgbouncer/issues/452) & [976](https://github.com/pgbouncer/pgbouncer/issues/976) for details). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
+Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
 </Admonition>
 
 ## Prepare your Neon destination database

@@ -1,0 +1,56 @@
+---
+title: Create Invite
+openapi: "POST /v2/organizations/{organizationSlug}/invites"
+---
+
+<Warning>Invites are limited to scaler plan and above.</Warning>
+
+<Info>
+
+You can invite by **email** or by **username** — provide exactly one. When inviting by username, the invite is sent to that user's registered email.
+
+</Info>
+
+<Info>
+
+You must be an `owner` or `admin` to invite other users. **You can only invite users to a team and not your personal account.**
+
+</Info>
+
+<Info>
+
+If a pending invite already exists for the same email, it will be replaced with a new one.
+
+</Info>
+
+<RequestExample>
+
+```bash Invite by email
+curl -L -X POST https://api.turso.tech/v2/organizations/{organizationSlug}/invites \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "user@example.com", "role": "member"}'
+```
+
+```bash Invite by username
+curl -L -X POST https://api.turso.tech/v2/organizations/{organizationSlug}/invites \
+  -H 'Authorization: Bearer TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"username": "turso-user", "role": "member"}'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "mycompany",
+  token: "",
+});
+
+const invite = await turso.organizations.inviteUser(
+  "user@example.com",
+  "member"
+);
+```
+
+</RequestExample>

@@ -2,8 +2,20 @@
 title: Connect MCP clients to Neon
 subtitle: Learn how to connect MCP clients such as Cursor, Claude Code, VS Code,
   ChatGPT, and other tools to your Neon Postgres database.
+summary: >-
+  Connection guide for wiring MCP clients (Cursor, Claude Code, VS Code with
+  GitHub Copilot, ChatGPT, Cline, Windsurf, Zed, Claude Desktop, and more via
+  the add-mcp CLI) to the Neon MCP Server so AI assistants can query and manage
+  Neon Postgres databases using natural language. Use this page when you need
+  per-client setup instructions for `npx neonctl@latest init`, OAuth, or local
+  API key authentication with `@neondatabase/mcp-server-neon`. Also covers
+  troubleshooting OAuth errors (invalid redirect URI, stale ~/.mcp-auth cache)
+  and the deprecated SSE endpoint for clients that do not support Streamable
+  HTTP.
+redirectFrom:
+  - /guides/neon-mcp-server-github-copilot-vs-code
 enableTableOfContents: true
-updatedOn: '2026-02-04T14:57:09.215Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 This guide covers connecting MCP clients to the Neon MCP Server for natural language interaction with your Neon Postgres databases.
@@ -12,7 +24,7 @@ This guide covers connecting MCP clients to the Neon MCP Server for natural lang
 The Neon MCP Server is intended for **development and testing only**. Always review LLM-requested actions before execution. See [MCP security guidance](/docs/ai/neon-mcp-server#mcp-security-guidance).
 </Admonition>
 
-## Quick setup (Cursor, VS Code, Claude Code)
+## Quick setup (`neonctl init`)
 
 The fastest way to get started:
 
@@ -20,24 +32,65 @@ The fastest way to get started:
 npx neonctl@latest init
 ```
 
-This authenticates via OAuth, creates an API key, configures your editor, and installs [agent skills](https://github.com/neondatabase/agent-skills). Then restart and ask your AI assistant **"Get started with Neon"**.
+**`neonctl init`** (see [`neonctl init` reference](/docs/cli/init)) creates a Neon API key and configures the MCP server with **API key** auth so you can skip OAuth when using the connection. It installs the VS Code/Cursor extension where applicable, wires **Claude Code** and **many other assistants** the wizard supports, and installs Neon's [agent skills](https://github.com/neondatabase/agent-skills). Then restart and ask your AI assistant **"Get started with Neon"**.
 
-For other editors or manual configuration, see the sections below.
+<Admonition type="note">
+Each run of `npx neonctl@latest init` creates a new Neon API key. If you run it multiple times, review your [API keys](https://console.neon.tech/app/settings/api-keys) and revoke any you no longer need.
+</Admonition>
+
+If you only want the MCP server and nothing else, use:
+
+```bash
+npx add-mcp https://mcp.neon.tech/mcp
+```
+
+This adds the MCP config to your editor's configuration files. Add `-g` for global (user-level) setup instead of project-level. Restart your editor (or enable the MCP server in your editor's settings); when you use the connection, an OAuth window will open to authorize. For API key authentication, add `--header "Authorization: Bearer $NEON_API_KEY"`. For more options, see the [add-mcp repository](https://github.com/neondatabase/add-mcp).
+
+## Supported agents (add-mcp)
+
+**add-mcp** is the CLI Neon uses to patch each tool’s MCP config. Use **`npx add-mcp list-agents`** for the live list from your installed version. As of the current [add-mcp](https://github.com/neondatabase/add-mcp) release, **`--agent`** values include:
+
+| Assistant                 | `--agent`            |
+| :------------------------ | :------------------- |
+| Antigravity               | `antigravity`        |
+| Cline (VS Code extension) | `cline`              |
+| Cline CLI                 | `cline-cli`          |
+| Claude Code               | `claude-code`        |
+| Claude Desktop            | `claude-desktop`     |
+| Codex                     | `codex`              |
+| Cursor                    | `cursor`             |
+| Gemini CLI                | `gemini-cli`         |
+| GitHub Copilot CLI        | `github-copilot-cli` |
+| Goose                     | `goose`              |
+| MCPorter                  | `mcporter`           |
+| OpenCode                  | `opencode`           |
+| VS Code                   | `vscode`             |
+| Zed                       | `zed`                |
+
+**Aliases:** `cline-vscode` → `cline`, `gemini` → `gemini-cli`, `github-copilot` → `vscode`. Config paths differ by agent and by project vs global (`-g`); see the [add-mcp README](https://github.com/neondatabase/add-mcp#supported-agents).
 
 ## Setup options
 
-- **Quick Setup:** Cursor, Claude Code, and VS Code support automatic setup with `npx neonctl@latest init`
+- **Quick setup:** `npx neonctl@latest init` (MCP with API key auth, extension where supported, agent skills, and many assistants via the wizard)
 - **OAuth:** Connect to Neon's remote MCP server (no local installation needed)
 - **Local:** Run the MCP server locally with your API key (requires Node.js >= v18)
 
 For Local setup, you'll need a [Neon API key](/docs/manage/api-keys#creating-api-keys).
+
+## Kiro
+
+For manual configuration, Kiro reads **`~/.kiro/settings/mcp.json`** (global) or **`.kiro/settings/mcp.json`** (project). See [Kiro MCP documentation](https://kiro.dev/docs/mcp/).
+
+<Admonition type="tip" title="One-click install for Kiro">
+<a href="https://kiro.dev/launch/mcp/add?name=Neon&config=%7B%22url%22%3A%20%22https%3A//mcp.neon.tech/mcp%22%7D"><img src="https://kiro.dev/images/add-to-kiro.svg" alt="Add Neon MCP server to Kiro" height="32" /></a>
+</Admonition>
 
 ## Cursor
 
 <Tabs labels={["Quick Setup", "OAuth", "Local"]}>
 <TabItem>
 
-Run the [init](/docs/reference/cli-init) command:
+Run the [init](/docs/cli/init) command:
 
 ```bash
 npx neonctl@latest init
@@ -52,7 +105,7 @@ Authenticates via OAuth, creates an API key, installs the [Neon extension](/docs
 npx add-mcp https://mcp.neon.tech/mcp -a cursor
 ```
 
-When the OAuth window opens, click **Authorize** to complete the connection.
+Restart Cursor (or enable the MCP server in settings). When the OAuth window opens, click **Authorize** to complete the connection.
 
 </TabItem>
 <TabItem>
@@ -77,6 +130,10 @@ When the OAuth window opens, click **Authorize** to complete the connection.
 </TabItem>
 </Tabs>
 
+<Admonition type="tip" title="One-click install for Cursor">
+<a href="https://cursor.com/en-US/install-mcp?name=Neon&config=eyJ1cmwiOiJodHRwczovL21jcC5uZW9uLnRlY2gvbWNwIn0%3D"><img src="/docs/local/mcp-install-dark.svg" alt="Add Neon MCP server to Cursor" height="32" /></a>
+</Admonition>
+
 For more, see [Get started with Cursor and Neon Postgres MCP Server](/guides/cursor-mcp-neon).
 
 ## Claude Code
@@ -84,7 +141,7 @@ For more, see [Get started with Cursor and Neon Postgres MCP Server](/guides/cur
 <Tabs labels={["Quick Setup", "OAuth", "Local"]}>
 <TabItem>
 
-Run the [init](/docs/reference/cli-init) command:
+Run the [init](/docs/cli/init) command:
 
 ```bash
 npx neonctl@latest init
@@ -100,7 +157,7 @@ Authenticates via OAuth, creates an API key, configures the MCP Server in `~/.cl
 npx add-mcp https://mcp.neon.tech/mcp -a claude-code
 ```
 
-When the OAuth window opens, click **Authorize** to complete the connection.
+Restart Claude Code (or enable the MCP server in settings). When the OAuth window opens, click **Authorize** to complete the connection.
 
 </TabItem>
 
@@ -126,7 +183,7 @@ To use MCP servers with VS Code, you need [GitHub Copilot](https://marketplace.v
 <Tabs labels={["Quick Setup", "OAuth", "Local"]}>
 <TabItem>
 
-Run the [init](/docs/reference/cli-init) command:
+Run the [init](/docs/cli/init) command:
 
 ```bash
 npx neonctl@latest init
@@ -142,7 +199,7 @@ Authenticates via OAuth, creates an API key, installs the [Neon extension](/docs
 npx add-mcp https://mcp.neon.tech/mcp -a vscode
 ```
 
-When the OAuth window opens, click **Authorize** to complete the connection. Then open GitHub Copilot Chat and [switch to Agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode).
+Restart VS Code (or enable the MCP server in settings). When the OAuth window opens, click **Authorize** to complete the connection. Then open GitHub Copilot Chat and [switch to Agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode).
 
 </TabItem>
 
@@ -348,7 +405,7 @@ MCP support in Zed is currently in **preview**. Ensure you're using the Preview 
 npx add-mcp https://mcp.neon.tech/mcp -a zed
 ```
 
-When the OAuth window opens, click **Authorize** to complete the connection.
+Restart Zed (or enable the MCP server in settings). When the OAuth window opens, click **Authorize** to complete the connection.
 
 </TabItem>
 
@@ -369,15 +426,22 @@ When the OAuth window opens, click **Authorize** to complete the connection.
 
 For more details, including workflow examples and troubleshooting, see [Get started with Zed and Neon Postgres MCP Server](/guides/zed-mcp-neon).
 
+## Jules
+
+1. Create a [Neon API key](/docs/manage/api-keys#creating-api-keys) from your Neon Console **Settings**.
+2. Go to [jules.google.com](https://jules.google.com) > **Settings** > **MCP** (or use [this direct link](https://jules.google.com/settings/mcp)).
+3. Click **Connect** on the Neon server and paste your API key when prompted.
+4. Run a task invoking the Neon MCP server to verify the connection.
+
 ## Other MCP clients
 
-**Quick setup with add-mcp:**
+Prefer **`npx neonctl@latest init`** for the full flow (see [Quick setup](#quick-setup-neonctl-init) above). If you **only** want MCP config lines, or you are re-running wiring for one tool, use **add-mcp**:
 
 ```bash
 npx add-mcp https://mcp.neon.tech/mcp
 ```
 
-This tool auto-detects supported clients and configures them. Use `-a <agent>` to target a specific agent (e.g., `-a cursor`). For manual configuration, add one of these to your client's `mcpServers` section:
+This tool auto-detects supported clients and configures them. Use `-a <agent>` to target a specific agent (for example, `-a cursor`). Add `-g` for global (user-level) setup instead of project-level. For more options (including global vs project-level), see the [add-mcp repository](https://github.com/neondatabase/add-mcp). For manual configuration, add one of these to your client's `mcpServers` section:
 
 **OAuth (remote server):**
 

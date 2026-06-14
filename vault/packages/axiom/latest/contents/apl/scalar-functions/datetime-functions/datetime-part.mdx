@@ -1,0 +1,165 @@
+---
+title: datetime_part
+description: 'This page explains how to use the datetime_part function in APL.'
+---
+
+Use the `datetime_part` function in APL to extract a specific date part from a datetime value as an integer. You can extract components such as the year, month, day, hour, minute, second, and more.
+
+You can use `datetime_part` to break down timestamps into individual components for grouping, filtering, or analysis. This is especially useful for time-of-day analysis, seasonal patterns, and partitioning data by calendar units.
+
+Use it when you want to:
+
+- Group events by hour of day to identify peak traffic periods.
+- Extract the month or quarter for seasonal trend analysis.
+- Partition data by year or day for reporting and aggregation.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `strftime` with format specifiers such as `%H` for hour or `%m` for month to extract date parts. In APL, the `datetime_part` function takes a string-based part name and returns the corresponding integer directly.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hour=strftime(_time, "%H")
+````
+
+```kusto APL equivalent
+... | extend hour = datetime_part('hour', _time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `EXTRACT(HOUR FROM timestamp_column)` or `DATEPART(HOUR, timestamp_column)`. In APL, `datetime_part` follows a similar pattern with a string-based part name as the first argument.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(HOUR FROM timestamp_column) AS hour FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend hour = datetime_part('hour', _time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+datetime_part(part, datetime)
+```
+
+### Parameters
+
+| Name     | Type       | Description                                                                                                                                                          |
+| -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| part     | `string`   | The date part to extract: `'year'`, `'quarter'`, `'month'`, `'week_of_year'`, `'day'`, `'dayOfYear'`, `'hour'`, `'minute'`, `'second'`, `'millisecond'`, `'microsecond'`, `'nanosecond'`. |
+| datetime | `datetime` | The datetime value to extract the part from.                                                                                                                         |
+
+### Returns
+
+An `int` representing the value of the extracted date part.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Analyze request volume by hour of day to find peak traffic periods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hour = datetime_part('hour', _time)
+| summarize request_count = count() by hour
+| sort by hour asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20hour%20%3D%20datetime_part('hour'%2C%20_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20hour%20%7C%20sort%20by%20hour%20asc%22%7D)
+
+**Output**
+
+| hour | request_count |
+| ---- | ------------- |
+| 0    | 312           |
+| 1    | 287           |
+| 2    | 198           |
+
+This query extracts the hour from each request timestamp and counts requests per hour, revealing daily traffic patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Break down trace counts by day of month and service name to identify daily patterns.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day_of_week = datetime_part('day', _time)
+| summarize trace_count = count() by day_of_week, ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day_of_week%20%3D%20datetime_part('day'%2C%20_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20day_of_week%2C%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| day_of_week | ['service.name'] | trace_count |
+| ----------- | ----------------- | ----------- |
+| 1           | frontend          | 1540        |
+| 1           | cart              | 870         |
+| 2           | frontend          | 1620        |
+
+This query groups traces by the day of the month and service name, helping you spot services with uneven daily load.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify which months have the most server error responses.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend month = datetime_part('month', _time)
+| summarize error_count = count() by month
+| sort by error_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20month%20%3D%20datetime_part('month'%2C%20_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20month%20%7C%20sort%20by%20error_count%20desc%22%7D)
+
+**Output**
+
+| month | error_count |
+| ----- | ----------- |
+| 3     | 142         |
+| 7     | 118         |
+| 11    | 97          |
+
+This query extracts the month from each error event and ranks months by error frequency, useful for identifying seasonal reliability issues.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [hourofday](/apl/scalar-functions/datetime-functions/hourofday): Returns the hour of the day from a datetime. Use as a shorthand when you only need the hour.
+- [dayofmonth](/apl/scalar-functions/datetime-functions/dayofmonth): Returns the day of the month from a datetime.
+- [dayofweek](/apl/scalar-functions/datetime-functions/dayofweek): Returns the day of the week as a timespan.
+- [dayofyear](/apl/scalar-functions/datetime-functions/dayofyear): Returns the day of the year as an integer.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime.
+- [getyear](/apl/scalar-functions/datetime-functions/getyear): Returns the year from a datetime.

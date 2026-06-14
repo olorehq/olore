@@ -1,0 +1,430 @@
+---
+title: checkly incidents
+description: 'Create, update, and resolve incidents on your status pages from the CLI.'
+sidebarTitle: 'checkly incidents'
+---
+
+<Note>Available since CLI v7.5.0.</Note>
+
+The `checkly incidents` command lets you manage incidents on your status pages directly from the terminal. You can list, create, update, and resolve incidents, and optionally notify subscribers with each action.
+
+<Accordion title="Prerequisites">
+Before using `checkly incidents`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- At least one status page configured in your Checkly account
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly incidents <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List incidents, optionally filtered by status page or status. |
+| `create` | Declare a new incident on a status page. |
+| `update` | Post a progress update to an incident. |
+| `resolve` | Resolve an incident. |
+
+## `checkly incidents list`
+
+List incidents, optionally filtered by status page or status.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents list [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of incidents to return (1-100). Default: `25`. |
+| `--status-page-id` | - | Filter incidents by status page ID. |
+| `--status` | - | Filter by incident status: `open`, `resolved`, or `all`. Default: `open`. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Number of incidents to return, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents list --limit=50
+npx checkly incidents list -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--status-page-id" type="string">
+
+Filter incidents to only those associated with a specific status page.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents list --status-page-id=<status-page-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--status" type="string" default="open">
+
+Filter incidents by status. Available values: `open`, `resolved`, `all`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents list --status=open
+npx checkly incidents list --status=resolved
+npx checkly incidents list --status=all
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents list --output=json
+npx checkly incidents list -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List all open incidents (default)
+npx checkly incidents list
+
+# List resolved incidents
+npx checkly incidents list --status=resolved
+
+# Filter by status page
+npx checkly incidents list --status-page-id=<status-page-id>
+
+# Get results as JSON
+npx checkly incidents list --output=json
+```
+
+## `checkly incidents create`
+
+Declare a new incident on a status page. By default, all services on the status page are affected. Use `--services` to specify individual services.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--status-page-id` | yes | Target status page ID. |
+| `--title` | yes | Incident title. |
+| `--services` | - | Affected service IDs. Repeat the flag for multiple services. |
+| `--severity` | - | Incident severity: `minor`, `medium`, `major`, or `critical`. Default: `minor`. |
+| `--message` | - | Initial incident update message. |
+| `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Create Options
+
+<ResponseField name="--status-page-id" type="string" required>
+
+The ID of the status page to create the incident on. You can find status page IDs using `checkly status-pages list`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..."
+```
+
+</ResponseField>
+
+<ResponseField name="--title" type="string" required>
+
+The title of the incident.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="API degraded performance"
+```
+
+</ResponseField>
+
+<ResponseField name="--services" type="string">
+
+Specify affected service IDs. Repeat the flag to affect multiple services. If omitted, all services on the status page are affected.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..." --services=<service-id-1> --services=<service-id-2>
+```
+
+</ResponseField>
+
+<ResponseField name="--severity" type="string" default="minor">
+
+Set the incident severity. Available values: `minor`, `medium`, `major`, `critical`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..." --severity=major
+```
+
+</ResponseField>
+
+<ResponseField name="--message" type="string">
+
+Provide an initial incident update message. If omitted, a default message is used.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..." --message="We are investigating elevated error rates."
+```
+
+</ResponseField>
+
+<ResponseField name="--notify-subscribers" type="boolean" default="true">
+
+Notify status page subscribers about this incident. Use `--no-notify-subscribers` to suppress notifications.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..." --no-notify-subscribers
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents create --status-page-id=<id> --title="..." --output=json
+```
+
+</ResponseField>
+
+### Create Examples
+
+```bash Terminal
+# Create a minor incident affecting all services
+npx checkly incidents create --status-page-id=<id> --title="Elevated error rates"
+
+# Create a major incident with a custom message
+npx checkly incidents create --status-page-id=<id> --title="API outage" --severity=major --message="Our API is currently unavailable."
+
+# Create an incident affecting specific services without notifying subscribers
+npx checkly incidents create --status-page-id=<id> --title="Degraded performance" --services=<service-id> --no-notify-subscribers
+```
+
+## `checkly incidents update`
+
+Post a progress update to an existing incident. You can change the status and severity of the incident at the same time.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the incident to update. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--message` | yes | Update message. |
+| `--status` | - | Incident progress status: `investigating`, `identified`, or `monitoring`. Default: `investigating`. |
+| `--severity` | - | Update the overall incident severity: `minor`, `medium`, `major`, or `critical`. |
+| `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Update Options
+
+<ResponseField name="--message" type="string" required>
+
+The progress update message.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> --message="We have identified the root cause."
+```
+
+</ResponseField>
+
+<ResponseField name="--status" type="string" default="investigating">
+
+Set the incident progress status. Available values: `investigating`, `identified`, `monitoring`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> --message="..." --status=identified
+npx checkly incidents update <id> --message="..." --status=monitoring
+```
+
+</ResponseField>
+
+<ResponseField name="--severity" type="string">
+
+Update the overall incident severity. Available values: `minor`, `medium`, `major`, `critical`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> --message="..." --severity=critical
+```
+
+</ResponseField>
+
+<ResponseField name="--notify-subscribers" type="boolean" default="true">
+
+Notify status page subscribers about this update. Use `--no-notify-subscribers` to suppress notifications.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> --message="..." --no-notify-subscribers
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents update <id> --message="..." --output=json
+```
+
+</ResponseField>
+
+### Update Examples
+
+```bash Terminal
+# Post an investigating update
+npx checkly incidents update <id> --message="We are looking into the issue."
+
+# Mark the root cause as identified
+npx checkly incidents update <id> --message="Root cause identified: database connection pool exhaustion." --status=identified
+
+# Escalate severity and post an update
+npx checkly incidents update <id> --message="Impact is wider than initially assessed." --severity=critical
+
+# Post a monitoring update without notifying subscribers
+npx checkly incidents update <id> --message="Fix deployed, monitoring for stability." --status=monitoring --no-notify-subscribers
+```
+
+## `checkly incidents resolve`
+
+Resolve an incident. This posts a final update with status `RESOLVED`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents resolve <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the incident to resolve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--message` | - | Optional closing note. If omitted, a default message is used. |
+| `--notify-subscribers` | - | Notify status page subscribers. Default: `true`. Use `--no-notify-subscribers` to disable. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Resolve Options
+
+<ResponseField name="--message" type="string">
+
+Provide a closing note for the incident. If omitted, a default resolution message is used.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents resolve <id> --message="Root cause fixed and deployed. No further action needed."
+```
+
+</ResponseField>
+
+<ResponseField name="--notify-subscribers" type="boolean" default="true">
+
+Notify status page subscribers about the resolution. Use `--no-notify-subscribers` to suppress notifications.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents resolve <id> --no-notify-subscribers
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly incidents resolve <id> --output=json
+```
+
+</ResponseField>
+
+### Resolve Examples
+
+```bash Terminal
+# Resolve an incident with default message
+npx checkly incidents resolve <id>
+
+# Resolve with a custom closing note
+npx checkly incidents resolve <id> --message="Database connection pool issue resolved. Monitoring confirms normal operations."
+
+# Resolve without notifying subscribers
+npx checkly incidents resolve <id> --no-notify-subscribers
+```
+
+## Related Commands
+
+- [`checkly status-pages`](/cli/checkly-status-pages) - List and inspect status pages
+- [`checkly checks`](/cli/checkly-checks) - List and inspect checks
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information

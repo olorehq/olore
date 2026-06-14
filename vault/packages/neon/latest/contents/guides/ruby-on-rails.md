@@ -1,8 +1,14 @@
 ---
 title: Connect a Ruby on Rails application to Neon Postgres
 subtitle: Set up a Neon project in seconds and connect from a Ruby on Rails application
+summary: >-
+  Ruby on Rails connection guide that shows how to configure DATABASE_URL in a
+  .env file so a Rails app connects to a Neon Postgres database, covering
+  project creation, role CREATEDB privileges, and running db:create. Use this
+  page when setting up a new or existing Rails project against Neon. A separate
+  sibling page covers Rails schema migrations.
 enableTableOfContents: true
-updatedOn: '2025-10-24T12:53:27.790Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/ruby-on-rails-prompt.md" 
@@ -125,5 +131,9 @@ For schema migration with Ruby on Rails, see our guide:
 <a href="/docs/guides/rails-migrations" description="Schema migration with Neon Postgres and Ruby on Rails" icon="app-store" icon="app-store">Ruby on Rails Migrations</a>
 
 </DetailIconCards>
+
+## Next steps
+
+- [Set up Neon Auth](/docs/auth/overview): Add managed authentication that branches with your database.
 
 <NeedHelp/>

@@ -28,6 +28,7 @@ import { ApiCheck } from "checkly/constructs"
 
 new ApiCheck("hello-api-1", {
   name: "Hello API Check",
+  description: "Verifies the `/hello` endpoint returns a **successful** response.",
   request: {
     method: "GET",
     url: "https://api.checklyhq.com/hello",
@@ -40,6 +41,7 @@ import { ApiCheck, AssertionBuilder, Frequency } from "checkly/constructs"
 
 new ApiCheck("advanced-api-check", {
   name: "Advanced API Check",
+  description: "User creation succeeds (201) with valid ID.",
   activated: true,
   frequency: Frequency.EVERY_5M,
   locations: ["us-east-1", "eu-west-1"],
@@ -90,6 +92,7 @@ The API Check configuration consists of specific API Check options and inherited
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
+| `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -104,6 +107,7 @@ The API Check configuration consists of specific API Check options and inherited
 | `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
 | `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
 | `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+| `triggerIncident` | `IncidentTrigger` | ❌ | - | Create and resolve an incident based on the check's alert configuration |
 
 </Tab>
 </Tabs>

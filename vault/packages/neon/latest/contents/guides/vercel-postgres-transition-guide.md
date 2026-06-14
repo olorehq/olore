@@ -1,9 +1,19 @@
 ---
 title: Vercel Postgres Transition Guide
 subtitle: Your complete guide to the transition from Vercel Postgres to Neon
+summary: >-
+  Vercel Postgres Transition Guide explains what changed when Vercel migrated
+  all Postgres stores to Neon's native integration in Q4 2024 - Q1 2025,
+  covering plan limits, billing, SDK compatibility, and new features. Use this
+  page to understand the plan changes and how to migrate from `@vercel/postgres`
+  to `@neondatabase/serverless` or the drop-in
+  `@neondatabase/vercel-postgres-compat` package. Existing environment
+  variables, Drizzle, Prisma, and Kysely integrations continue to work;
+  features like branching, instant restore, and autoscaling require a paid
+  Neon plan.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-12-03T13:07:33.033Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 <InfoBlock>
@@ -73,7 +83,7 @@ Pro Plan users can stay on legacy limits or upgrade to a Neon plan to access bra
 
 ### Enterprise customers
 
-Neon is working with the Vercel team to transition Enterprise customers. If you want to speak to us about an Enterprise-level Neon plan, you can [get in touch with our sales team](/contact-sales).
+Neon is working with the Vercel team to transition Enterprise customers.
 
 ---
 
@@ -82,7 +92,7 @@ Neon is working with the Vercel team to transition Enterprise customers. If you 
 ### Immediate access (all users)
 
 - **Neon Console** - Dedicated database management interface
-- **CLI support** - Full [Neon CLI](/docs/reference/neon-cli) (Vercel CLI didn't support Postgres)
+- **CLI support** - Full [Neon CLI](/docs/cli) (Vercel CLI didn't support Postgres)
 - **Terraform support** - [Neon Terraform provider](/docs/reference/terraform)
 - **Multiple Postgres roles** - No longer limited to single role
 - **Larger computes** - Up to 2 CU (8 GB RAM) on Free plan, more on paid plans
@@ -168,7 +178,6 @@ Try database branching for development environments
 ## Questions or issues?
 
 - **General questions**: Visit our [Discord #vercel-postgres-transition](https://discord.com/channels/1176467419317940276/1306544611157868544) channel
-- **Enterprise customers**: [Contact our sales team](/contact-sales) for transition support
 - **Technical support**: Use the standard Neon support channels
 
 <NeedHelp/>

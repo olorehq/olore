@@ -1,8 +1,16 @@
 ---
 title: Connect a GUI application
 subtitle: Learn how to connect a GUI application to Neon
+summary: >-
+  Connect a GUI application or IDE (pgAdmin, DBeaver, DataGrip, TablePlus) to
+  Neon using a hostname, port 5432, role, password, and database name from the
+  Neon Console Connect modal. Per-tool SSL configuration and SNI compatibility
+  are addressed, with a tested compatibility table that includes SNI
+  workarounds for Segment, Azure Data Studio, and older Postico versions. For
+  BI tools such as Metabase, Tableau, and Power BI, Neon recommends connecting
+  to a read replica to avoid performance impact on the primary branch.
 enableTableOfContents: true
-updatedOn: '2026-01-27T16:55:52.442Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This topic describes how to connect to a Neon database from a GUI application or IDE. Most GUI applications and IDEs that support connecting to a Postgres database also support connecting to Neon.
@@ -67,7 +75,8 @@ Some applications require an Server Name Indication (SNI) workaround. Neon uses 
 | [CLion](https://www.jetbrains.com/clion/)                                                                                     |                                                                                                                                                                                                                                                                                                                                                                         |
 | [Datagran](https://www.datagran.io/)                                                                                          | Requires [SNI workaround D](/docs/connect/connection-errors#d-specify-the-endpoint-id-in-the-password-field) connection workaround                                                                                                                                                                                                                                      |
 | [DataGrip](https://www.jetbrains.com/datagrip/)                                                                               |                                                                                                                                                                                                                                                                                                                                                                         |
-| [DBeaver](https://dbeaver.io/)                                                                                                |                                                                                                                                                                                                                                                                                                                                                                         |
+| [DBConvert Streams](https://streams.dbconvert.com/docs/connections/neon-database)                                             |                                                                                                                                                                                                                                                                                                                                                                         |
+| [DBeaver](https://dbeaver.io/)                                                                                                | To prevent scale-to-zero from interrupting an idle connection, go to **Edit Connection** > **Connection Settings** > **Initialization** and set **Keep-Alive (seconds)** to `60`.                                                                                                                                                                                       |
 | [dbForge](https://www.devart.com/dbforge/)                                                                                    |                                                                                                                                                                                                                                                                                                                                                                         |
 | [DbVisualizer](https://www.dbvis.com/)                                                                                        |                                                                                                                                                                                                                                                                                                                                                                         |
 | [DBX](https://getdbx.com/)                                                                                                    |                                                                                                                                                                                                                                                                                                                                                                         |

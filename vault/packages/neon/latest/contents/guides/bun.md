@@ -1,8 +1,15 @@
 ---
 title: Connect a Bun application to Neon
 subtitle: Set up a Neon project in seconds and connect from a Bun application
+summary: >-
+  Connecting a Bun application to a Neon Postgres database requires either
+  Bun's built-in `sql` client (no extra dependencies) or the
+  `@neondatabase/serverless` driver installed via `bun add`. Choose this page
+  when setting up Bun, Hono, or Elysia with Neon, covering project creation,
+  `POSTGRES_URL` credential storage in `.env.local`, and a working TypeScript
+  query to verify the connection.
 enableTableOfContents: true
-updatedOn: '2025-06-30T11:30:21.895Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This guide describes how to create a Neon project and connect to it from a Bun application. Examples are provided for using [Bun's built-in SQL client](https://bun.sh/docs/api/sql) and the [@neondatabase/serverless](/docs/serverless/serverless-driver) driver. Use the client you prefer.
@@ -105,14 +112,6 @@ $ bun run index.ts
 ```
 
 </Steps>
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-<a href="https://github.com/neondatabase/examples/tree/main/with-bun" description="Get started with Bun and Neon" icon="github">Get started with Bun and Neon</a>
-</DetailIconCards>
 
 ## References
 

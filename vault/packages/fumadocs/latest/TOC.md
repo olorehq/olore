@@ -4,283 +4,335 @@
 
 ```
 contents/
-├── (framework)/             # Core framework docs (41 files)
-│   ├── index.mdx            # Quick start & installation
-│   ├── navigation.mdx       # Navigation structure
-│   ├── page-conventions.mdx # Page slugs & routing
-│   ├── deploying/           # Deployment guides (1 file)
-│   ├── guides/              # How-to guides (3 files)
-│   ├── integrations/        # Integrations (15 files)
-│   │   ├── (docgen)/        # Doc generation (obsidian, python, typescript)
-│   │   ├── (og-image)/      # OG image generation (next-og, takumi)
-│   │   ├── content/         # Content sources (custom, mdx-remote)
-│   │   ├── openapi/         # OpenAPI integration (4 files)
-│   │   └── story/           # Fumadocs Story (3 files)
-│   ├── internationalization/ # i18n (3 files)
-│   ├── manual-installation/ # Manual setup (4 files)
-│   ├── markdown/            # MDX authoring (4 files)
-│   └── search/              # Search configuration (6 files)
-├── cli/                     # CLI tool docs (2 files)
-├── headless/                # Fumadocs Core / headless (25 files)
-│   ├── components/          # Headless components (3 files)
-│   ├── content-collections/ # Content Collections integration (1 file)
-│   ├── index.mdx            # Core introduction
-│   ├── internationalization/ # i18n config & middleware (2 files)
-│   ├── mdx/                 # MDX plugins (8 files)
-│   ├── page-conventions.mdx
-│   ├── page-tree.mdx
-│   ├── search/              # Search backends (5 files)
-│   ├── source-api/          # Source API (3 files)
-│   └── utils/               # Utilities (4 files)
-├── mdx/                     # Fumadocs MDX content source (17 files)
-│   ├── index.mdx            # Getting started
-│   ├── collections.mdx      # Collections API
-│   ├── async.mdx
-│   ├── global.mdx
-│   ├── include.mdx
-│   ├── mdx.mdx
-│   ├── typegen.mdx
-│   ├── workspace.mdx
-│   ├── (integrations)/      # Loader integrations (5 files)
-│   └── entry/               # Entry types (5 files)
-└── ui/                      # Fumadocs UI theme (24 files)
-    ├── component-library.mdx
-    ├── search.mdx
-    ├── theme.mdx
-    ├── components/          # UI components (13 files)
-    └── layouts/             # Layout components (8 files)
+├── (framework)/              # Framework-level docs (59 files)
+│   ├── guides/               # How-to guides
+│   ├── integrations/         # Third-party integrations
+│   │   ├── (docgen)/         # Doc generators (Obsidian, Python, TypeScript)
+│   │   ├── asyncapi/         # AsyncAPI integration
+│   │   ├── content/          # Content source adapters
+│   │   ├── og/               # OG image generation
+│   │   ├── openapi/          # OpenAPI integration
+│   │   └── story/            # Component story viewer
+│   ├── internationalization/ # i18n support
+│   ├── manual-installation/  # Manual setup guides
+│   ├── markdown/             # MDX/markdown extensions
+│   ├── search/               # Search backends
+│   └── deploying/            # Deployment guides
+├── cli/                      # CLI tool docs (3 files)
+├── headless/                 # Fumadocs Core / headless (38 files)
+│   ├── components/           # Headless UI components
+│   ├── internationalization/ # i18n config
+│   ├── mdx/                  # MDX/remark/rehype plugins
+│   ├── search/               # Search integrations
+│   ├── source-api/           # Loader/source API
+│   └── utils/                # Utilities
+├── mdx/                      # Fumadocs MDX (content source) (20 files)
+│   ├── (integrations)/       # Bundler integrations (Next.js, Vite, loaders)
+│   └── entry/                # Collection entry files
+└── ui/                       # Fumadocs UI theme (23 files)
+    ├── components/           # UI components
+    └── layouts/              # Layout components
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New project setup | `contents/(framework)/index.mdx` |
-| Manual installation | `contents/(framework)/manual-installation/` |
-| MDX authoring | `contents/(framework)/markdown/index.mdx` |
-| Search setup | `contents/(framework)/search/` |
-| UI layouts & components | `contents/ui/` |
-| Headless/Core API | `contents/headless/` |
-| Content source (MDX) | `contents/mdx/` |
-| OpenAPI integration | `contents/(framework)/integrations/openapi/` |
-| i18n | `contents/(framework)/internationalization/` |
-| CLI tool | `contents/cli/` |
+| Getting started | `contents/(framework)/index.mdx` |
+| What is Fumadocs | `contents/(framework)/what-is-fumadocs.mdx` |
+| Quick installation (CLI) | `contents/cli/index.mdx` |
+| Headless core overview | `contents/headless/index.mdx` |
+| Fumadocs MDX setup | `contents/mdx/index.mdx` |
+| UI theme overview | `contents/ui/index.mdx` |
+| Search setup | `contents/(framework)/search/index.mdx` |
+| OpenAPI docs | `contents/(framework)/integrations/openapi/index.mdx` |
 
 ## Detailed Structure
 
-### (framework)/ - Core Framework (41 files)
+### (framework)/ - Framework docs (59 files)
 
 | File | Description |
 |------|-------------|
-| `(framework)/index.mdx` | Quick start, installation, FAQ |
-| `(framework)/navigation.mdx` | Navigation structure and configuration |
-| `(framework)/page-conventions.mdx` | Page slugs, routing conventions |
-| `(framework)/deploying/static.mdx` | Static export / CDN deployment |
+| `index.mdx` | Quick start / getting started |
+| `what-is-fumadocs.mdx` | Overview of Fumadocs |
+| `comparisons.mdx` | Comparison with other frameworks (Nextra, etc.) |
+| `navigation.mdx` | Navigation configuration |
+| `page-conventions.mdx` | File/routing conventions |
 
-### (framework)/guides/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `(framework)/guides/access-control.mdx` | Access control and authentication |
-| `(framework)/guides/export-pdf.mdx` | Export docs as PDF |
-| `(framework)/guides/rss.mdx` | RSS feed generation |
-
-### (framework)/integrations/ (15 files)
+### (framework)/deploying/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `(framework)/integrations/(docgen)/obsidian.mdx` | Obsidian vault integration |
-| `(framework)/integrations/(docgen)/python.mdx` | Python doc generation |
-| `(framework)/integrations/(docgen)/typescript.mdx` | TypeScript doc generation |
-| `(framework)/integrations/(og-image)/next-og.mdx` | OG images with next/og |
-| `(framework)/integrations/(og-image)/takumi.mdx` | OG images with Takumi |
-| `(framework)/integrations/content/custom.mdx` | Custom content sources |
-| `(framework)/integrations/content/mdx-remote.mdx` | MDX Remote integration |
-| `(framework)/integrations/feedback.mdx` | User feedback integration |
-| `(framework)/integrations/llms.mdx` | LLMs/AI integration |
-| `(framework)/integrations/openapi/api-page.mdx` | OpenAPI API page |
-| `(framework)/integrations/openapi/generate-files.mdx` | Generate OpenAPI files |
-| `(framework)/integrations/openapi/index.mdx` | OpenAPI overview |
-| `(framework)/integrations/openapi/server.mdx` | OpenAPI server setup |
-| `(framework)/integrations/story/index.mdx` | Fumadocs Story intro |
-| `(framework)/integrations/story/next.mdx` | Story with Next.js |
-| `(framework)/integrations/story/vite.mdx` | Story with Vite |
-| `(framework)/integrations/validate-links.mdx` | Link validation |
+| `index.mdx` | Deployment overview |
+| `static.mdx` | Static site export |
 
-### (framework)/internationalization/ (3 files)
+### (framework)/guides/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `(framework)/internationalization/next.mdx` | i18n with Next.js |
-| `(framework)/internationalization/react-router.mdx` | i18n with React Router |
-| `(framework)/internationalization/tanstack-start.mdx` | i18n with TanStack Start |
+| `access-control.mdx` | Access control for docs pages |
+| `customize-ui.mdx` | UI customization guide |
+| `export-epub.mdx` | Exporting docs to EPUB |
+| `export-pdf.mdx` | Exporting docs to PDF |
+| `rss.mdx` | RSS feed generation |
+
+### (framework)/integrations/(docgen)/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `obsidian.mdx` | Render Obsidian vaults in Fumadocs |
+| `python.mdx` | Python doc generation |
+| `typescript.mdx` | TypeScript doc generation |
+
+### (framework)/integrations/asyncapi/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | AsyncAPI integration setup |
+| `api-page.mdx` | AsyncAPI page configuration |
+| `generate-files.mdx` | Auto-generate AsyncAPI doc files |
+| `server.mdx` | Server configuration |
+
+### (framework)/integrations/content/ (5 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Content source adapters overview |
+| `custom.mdx` | Custom content source |
+| `local-md.mdx` | Local markdown files |
+| `mdx-remote.mdx` | Remote MDX content |
+| `sanity.mdx` | Sanity CMS integration |
+
+### (framework)/integrations/og/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | OG image generation overview |
+| `next.mdx` | Next.js OG image setup |
+| `takumi.mdx` | Takumi OG image setup |
+
+### (framework)/integrations/openapi/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | OpenAPI integration setup |
+| `api-page.mdx` | OpenAPI page configuration |
+| `generate-files.mdx` | Auto-generate OpenAPI doc files |
+| `server.mdx` | Server configuration |
+
+### (framework)/integrations/story/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Story (component showcase) overview |
+| `next.mdx` | Story with Next.js |
+| `vite.mdx` | Story with Vite |
+
+### (framework)/integrations/ (top-level, 2 files)
+
+| File | Description |
+|------|-------------|
+| `feedback.mdx` | User feedback integration |
+| `llms.mdx` | LLM / AI integration |
+| `validate-links.mdx` | Link validation setup |
+
+### (framework)/internationalization/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | i18n overview |
+| `next.mdx` | Next.js i18n setup |
+| `react-router.mdx` | React Router i18n setup |
+| `tanstack-start.mdx` | TanStack Start i18n setup |
 
 ### (framework)/manual-installation/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `(framework)/manual-installation/next.mdx` | Manual setup for Next.js |
-| `(framework)/manual-installation/react-router.mdx` | Manual setup for React Router |
-| `(framework)/manual-installation/tanstack-start.mdx` | Manual setup for TanStack Start |
-| `(framework)/manual-installation/waku.mdx` | Manual setup for Waku |
+| `next.mdx` | Manual install for Next.js |
+| `react-router.mdx` | Manual install for React Router |
+| `tanstack-start.mdx` | Manual install for TanStack Start |
+| `waku.mdx` | Manual install for Waku |
 
 ### (framework)/markdown/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `(framework)/markdown/index.mdx` | MDX syntax overview |
-| `(framework)/markdown/math.mdx` | Math/LaTeX support |
-| `(framework)/markdown/mermaid.mdx` | Mermaid diagrams |
-| `(framework)/markdown/twoslash.mdx` | Twoslash TypeScript annotations |
+| `index.mdx` | MDX/markdown writing guide |
+| `math.mdx` | Math rendering with KaTeX |
+| `mermaid.mdx` | Mermaid diagrams |
+| `twoslash.mdx` | TypeScript Twoslash support |
 
-### (framework)/search/ (6 files)
-
-| File | Description |
-|------|-------------|
-| `(framework)/search/index.mdx` | Search overview |
-| `(framework)/search/algolia.mdx` | Algolia search |
-| `(framework)/search/custom.mdx` | Custom search implementation |
-| `(framework)/search/mixedbread.mdx` | Mixedbread AI search |
-| `(framework)/search/orama-cloud.mdx` | Orama Cloud search |
-| `(framework)/search/orama.mdx` | Orama (local) search |
-
-### cli/ (2 files)
+### (framework)/search/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `cli/index.mdx` | CLI user guide |
-| `cli/create-fumadocs-app.mdx` | create-fumadocs-app scaffolding |
+| `index.mdx` | Search overview and configuration |
+| `algolia.mdx` | Algolia search integration |
+| `custom.mdx` | Custom search implementation |
+| `flexsearch.mdx` | FlexSearch integration |
+| `mixedbread.mdx` | Mixedbread AI search |
+| `orama.mdx` | Orama search integration |
+| `orama-cloud.mdx` | Orama Cloud integration |
+| `typesense.mdx` | Typesense integration |
 
-### headless/ - Fumadocs Core (25 files)
+### cli/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `headless/index.mdx` | Core introduction and installation |
-| `headless/page-conventions.mdx` | Page conventions |
-| `headless/page-tree.mdx` | Page tree structure |
+| `index.mdx` | CLI user guide |
+| `create-fumadocs-app.mdx` | Create new Fumadocs app |
+| `preview.mdx` | Local preview command |
+
+### headless/ (38 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Fumadocs Core introduction |
+| `page-conventions.mdx` | Page conventions for headless usage |
+| `page-tree.mdx` | Page tree structure |
 
 ### headless/components/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `headless/components/breadcrumb.mdx` | Breadcrumb component |
-| `headless/components/link.mdx` | Link component |
-| `headless/components/toc.mdx` | Table of contents component |
+| `breadcrumb.mdx` | Breadcrumb component |
+| `link.mdx` | Link component |
+| `toc.mdx` | Table of contents component |
 
 ### headless/content-collections/ (1 file)
 
 | File | Description |
 |------|-------------|
-| `headless/content-collections/index.mdx` | Content Collections integration |
+| `index.mdx` | Content Collections integration |
 
 ### headless/internationalization/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `headless/internationalization/config.mdx` | i18n configuration |
-| `headless/internationalization/middleware.mdx` | i18n middleware |
+| `config.mdx` | i18n configuration |
+| `middleware.mdx` | i18n middleware setup |
 
-### headless/mdx/ (8 files)
-
-| File | Description |
-|------|-------------|
-| `headless/mdx/install.mdx` | MDX installation |
-| `headless/mdx/headings.mdx` | Heading extraction |
-| `headless/mdx/rehype-code.mdx` | rehype-code plugin |
-| `headless/mdx/remark-admonition.mdx` | remark-admonition plugin |
-| `headless/mdx/remark-image.mdx` | remark-image plugin |
-| `headless/mdx/remark-mdx-files.mdx` | remark-mdx-files plugin |
-| `headless/mdx/remark-npm.mdx` | remark-npm plugin |
-| `headless/mdx/remark-ts2js.mdx` | remark-ts2js plugin |
-| `headless/mdx/structure.mdx` | Document structure extraction |
-
-### headless/search/ (5 files)
+### headless/mdx/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `headless/search/algolia.mdx` | Algolia search (headless) |
-| `headless/search/mixedbread.mdx` | Mixedbread search (headless) |
-| `headless/search/orama-cloud.mdx` | Orama Cloud (headless) |
-| `headless/search/orama.mdx` | Orama local search (headless) |
-| `headless/search/trieve.mdx` | Trieve search (headless) |
+| `install.mdx` | MDX plugin installation |
+| `headings.mdx` | Heading processing |
+| `rehype-code.mdx` | Code block highlighting (rehype) |
+| `remark-admonition.mdx` | Admonition/callout syntax |
+| `remark-image.mdx` | Image optimization plugin |
+| `remark-llms.mdx` | LLM-friendly content plugin |
+| `remark-mdx-files.mdx` | MDX file includes plugin |
+| `remark-npm.mdx` | npm package install code blocks |
+| `remark-steps.mdx` | Numbered steps plugin |
+| `remark-ts2js.mdx` | TypeScript to JavaScript conversion |
+| `structure.mdx` | Document structure extraction |
+
+### headless/search/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `algolia.mdx` | Algolia search (headless) |
+| `flexsearch.mdx` | FlexSearch (headless) |
+| `mixedbread.mdx` | Mixedbread AI search (headless) |
+| `orama.mdx` | Orama search (headless) |
+| `orama-cloud.mdx` | Orama Cloud (headless) |
+| `trieve.mdx` | Trieve search integration |
+| `typesense.mdx` | Typesense (headless) |
 
 ### headless/source-api/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `headless/source-api/index.mdx` | Source API overview |
-| `headless/source-api/plugins.mdx` | Source API plugins |
-| `headless/source-api/source.mdx` | Source API reference |
+| `index.mdx` | Loader API overview |
+| `plugins.mdx` | Source API plugins |
+| `source.mdx` | Source configuration |
 
-### headless/utils/ (4 files)
-
-| File | Description |
-|------|-------------|
-| `headless/utils/get-toc.mdx` | getTOC utility |
-| `headless/utils/git-last-edit.mdx` | Git last edit utility |
-| `headless/utils/negotiation.mdx` | Language negotiation utility |
-| `headless/utils/page-tree.mdx` | Page tree utilities |
-
-### mdx/ - Fumadocs MDX (17 files)
+### headless/utils/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `mdx/index.mdx` | Getting started with Fumadocs MDX |
-| `mdx/collections.mdx` | Collections API |
-| `mdx/async.mdx` | Async collections |
-| `mdx/global.mdx` | Global configuration |
-| `mdx/include.mdx` | Include directive |
-| `mdx/last-modified.mdx` | Last modified tracking |
-| `mdx/mdx.mdx` | MDX configuration |
-| `mdx/performance.mdx` | Performance optimization |
-| `mdx/typegen.mdx` | Type generation |
-| `mdx/workspace.mdx` | Workspace setup |
-| `mdx/(integrations)/next.mdx` | Next.js integration |
-| `mdx/(integrations)/vite.mdx` | Vite integration |
-| `mdx/(integrations)/loader/index.mdx` | Loader overview |
-| `mdx/(integrations)/loader/bun.mdx` | Bun loader |
-| `mdx/(integrations)/loader/node.mdx` | Node.js loader |
-| `mdx/entry/index.mdx` | Entry types overview |
-| `mdx/entry/browser.mdx` | Browser entry |
-| `mdx/entry/dynamic.mdx` | Dynamic entry |
-| `mdx/entry/import.mdx` | Import entry |
-| `mdx/entry/server.mdx` | Server entry |
+| `get-toc.mdx` | Extract table of contents |
+| `git-last-edit.mdx` | Last git edit timestamp |
+| `negotiation.mdx` | Content negotiation utilities |
+| `page-tree.mdx` | Page tree utilities |
+| `shiki.mdx` | Shiki syntax highlighter utilities |
 
-### ui/ - Fumadocs UI (24 files)
+### mdx/ (20 files)
 
 | File | Description |
 |------|-------------|
-| `ui/component-library.mdx` | Component library overview |
-| `ui/search.mdx` | UI search configuration |
-| `ui/theme.mdx` | Theming and color customization |
+| `index.mdx` | Fumadocs MDX getting started |
+| `collections.mdx` | Defining content collections |
+| `mdx.mdx` | MDX processing configuration |
+| `async.mdx` | Async data loading |
+| `global.mdx` | Global configuration |
+| `include.mdx` | File includes/partials |
+| `last-modified.mdx` | Last modified timestamp |
+| `performance.mdx` | Performance optimization |
+| `typegen.mdx` | TypeScript type generation |
+| `workspace.mdx` | Monorepo workspace setup |
 
-### ui/components/ (13 files)
-
-| File | Description |
-|------|-------------|
-| `ui/components/accordion.mdx` | Accordion component |
-| `ui/components/auto-type-table.mdx` | AutoTypeTable component |
-| `ui/components/banner.mdx` | Banner component |
-| `ui/components/codeblock.mdx` | CodeBlock component |
-| `ui/components/dynamic-codeblock.mdx` | DynamicCodeBlock component |
-| `ui/components/files.mdx` | Files/Folder components |
-| `ui/components/github-info.mdx` | GitHubInfo component |
-| `ui/components/graph-view.mdx` | GraphView component |
-| `ui/components/image-zoom.mdx` | ImageZoom component |
-| `ui/components/inline-toc.mdx` | InlineTOC component |
-| `ui/components/steps.mdx` | Steps component |
-| `ui/components/tabs.mdx` | Tabs component |
-| `ui/components/type-table.mdx` | TypeTable component |
-
-### ui/layouts/ (8 files)
+### mdx/(integrations)/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `ui/layouts/docs.mdx` | DocsLayout component |
-| `ui/layouts/flux.mdx` | Flux layout |
-| `ui/layouts/home-layout.mdx` | HomeLayout component |
-| `ui/layouts/links.mdx` | Links configuration |
-| `ui/layouts/nav.mdx` | Navigation layout |
-| `ui/layouts/notebook.mdx` | Notebook layout |
-| `ui/layouts/page.mdx` | DocsPage component |
-| `ui/layouts/root-provider.mdx` | RootProvider component |
+| `next.mdx` | Next.js integration |
+| `vite.mdx` | Vite integration |
+| `loader/index.mdx` | Runtime loader overview |
+| `loader/bun.mdx` | Bun runtime loader |
+| `loader/node.mdx` | Node.js runtime loader |
+
+### mdx/entry/ (5 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Accessing collections overview |
+| `browser.mdx` | Browser entry file |
+| `dynamic.mdx` | Dynamic imports |
+| `import.mdx` | Static imports |
+| `server.mdx` | Server entry file |
+
+### ui/ (23 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Fumadocs UI overview |
+| `component-library.mdx` | Component library reference |
+| `search.mdx` | Search UI customization |
+| `theme.mdx` | Theme and styling |
+| `translations.mdx` | UI translations/i18n |
+
+### ui/components/ (15 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Components overview |
+| `accordion.mdx` | Accordion component |
+| `auto-type-table.mdx` | Auto-generated type table |
+| `banner.mdx` | Banner/announcement component |
+| `codeblock.mdx` | Code block component |
+| `dynamic-codeblock.mdx` | Dynamic/interactive code block |
+| `files.mdx` | File tree component |
+| `github-info.mdx` | GitHub repository info component |
+| `graph-view.mdx` | Graph/network view component |
+| `image-zoom.mdx` | Zoomable image component |
+| `inline-toc.mdx` | Inline table of contents |
+| `steps.mdx` | Step-by-step component |
+| `tabs.mdx` | Tabs component |
+| `type-table.mdx` | Type/props table component |
+
+### ui/layouts/ (9 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Layouts overview |
+| `docs.mdx` | Docs layout |
+| `flux.mdx` | Flux layout |
+| `home-layout.mdx` | Home/landing page layout |
+| `links.mdx` | Navigation links configuration |
+| `nav.mdx` | Navbar component |
+| `notebook.mdx` | Notebook layout |
+| `page.mdx` | Page layout |
+| `root-provider.mdx` | Root provider configuration |

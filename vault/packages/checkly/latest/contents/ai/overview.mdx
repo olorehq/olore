@@ -1,0 +1,165 @@
+---
+title: 'AI Agents & Coding Assistants'
+description: 'Use AI agents and coding assistants to create, update, and deploy your Checkly monitoring setup with skills and rules.'
+sidebarTitle: 'Agents & Checkly'
+keywords: ['mcp', 'ai', 'rules', 'generate checks', 'agents', 'context']
+---
+
+import AgentExamples from "/snippets/agent-example.mdx"
+
+From the beginning, Checkly has bet on [Monitoring as Code](/concepts/monitoring-as-code) which lets you create and control your monitoring infrastructure entirely using code.
+
+By default, [Checkly constructs](/constructs/overview) reflect all your monitoring properties.
+
+```ts api.check.ts
+import { ApiCheck, AssertionBuilder } from "checkly/constructs"
+
+new ApiCheck("api-health-check", {
+  name: "API Health Check",
+  request: {
+    url: "https://danube-web.shop/api/books",
+    method: "GET",
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+    ],
+  },
+})
+```
+
+All your monitoring resources can be updated, tested and deployed via [the Checkly CLI](/cli/overview).
+
+```bash
+# test your monitoring configuration
+npx checkly test
+
+# deploy and update your monitoring setup
+npx checkly deploy
+```
+
+**The Monitoring as Code workflow is by default AI-native** because LLMs are excellent at writing and editing Checkly constructs code and modern AI agents can execute CLI commands easily.
+
+Provide the necessary Checkly context and let your AI agent of choice do the rest.
+
+<AgentExamples />
+
+## Add Checkly context to your AI agent conversation
+
+Install [Checkly Skills](/ai/skills) or add the [Checkly Rules](/ai/rules) to your AI conversation to give your AI agent enough context to perform Checkly-related tasks.
+
+<Columns cols={2}>
+<Card title="Checkly Skills" href="/ai/skills" cta="Get started">
+Let your agents pull in all required Checkly context on demand.
+</Card>
+
+<Card title="Checkly Rules" href="/ai/rules" cta="Get started">
+Include the entire Checkly context in commands or documentation.
+</Card>
+</Columns>
+
+### Skills vs Rules
+
+**Use Skills** when your AI agent supports the [Agent Skills](https://agentskills.io) standard. Skills load context on demand, keeping your agent's context window lean until Checkly-related tasks arise. This is the recommended approach for compatible agents.
+
+**Use Rules** when your agent doesn't support skills or when you want the Checkly context always available. Rules files are loaded at session start and provide consistent context throughout your conversation.
+
+
+## Why is there no Checkly MCP server (yet)?
+
+The MCP concept is often used to enable LLMs to interact with external systems. It acts as a bridge between the AI model and the target system, translating natural language commands into actionable API calls or code snippets.
+
+**With Monitoring as Code and agent-friendly CLI commands, Checkly already provides a native way to control your monitoring infrastructure via code and access monitoring results via the command line.**
+
+Whether you need to configure your monitoring setup, access check data or declare incidents, AI can write and update the necessary construct files and execute the Checkly CLI commands autonomously.
+
+<Tip>
+We are researching additional AI-native workflows. [Let us know in the public roadmap](https://feedback.checklyhq.com/p/checkly-mcp) if you are interested in more agent-friendly integrations.
+</Tip>
+
+## Markdown access
+
+Every page in the Checkly documentation is available as markdown. This makes it easy to feed specific documentation pages into AI assistants like Claude, ChatGPT, Cursor, or any other AI tool.
+
+<Tip>
+Use [Checkly Skills](/ai/skills) to automatically provide your agent with up-to-date, agent-optimized documentation.
+</Tip>
+
+### .md endpoints
+
+Append `.md` to any documentation URL to get the markdown version of that page.
+
+**Example:**
+
+- **HTML:** `https://www.checklyhq.com/docs/what-is-checkly/`
+- **Markdown:** `https://www.checklyhq.com/docs/what-is-checkly.md`
+
+The markdown version includes the full page content in plain markdown, code blocks, links preserved as markdown links, and tables formatted as markdown tables.
+
+```bash
+# Fetch documentation content with curl
+curl https://www.checklyhq.com/docs/what-is-checkly.md
+
+# Pipe directly to your clipboard
+curl https://www.checklyhq.com/docs/what-is-checkly.md | pbcopy
+```
+
+### Content negotiation
+
+You can also request markdown by setting the `Accept` header to `text/markdown`:
+
+```bash
+curl -H "Accept: text/markdown" https://www.checklyhq.com/docs/what-is-checkly/
+```
+
+This is useful when integrating with tools or scripts that set request headers programmatically.
+
+<Tip>
+Modern coding agents set [these headers automatically when querying documentation](https://www.checklyhq.com/blog/state-of-ai-agent-content-negotation/).
+</Tip>
+
+### Copy as Markdown button
+
+Every documentation page includes a **Copy as Markdown** button at the top of the page. Click it to copy the full page content as markdown to your clipboard.
+
+This is the fastest way to grab documentation for a specific topic and paste it into your AI assistant's context.
+
+```text
+Here is the Checkly Browser Checks documentation:
+
+[paste markdown content]
+
+Based on this, how do I set up a browser check with a custom user agent?
+```
+
+
+## LLMs.txt 
+
+
+The [llms.txt standard](https://llmstxt.org/) provides a machine-readable index of all available documentation pages. Checkly publishes an `llms.txt` file at [`checklyhq.com/llms.txt`](https://www.checklyhq.com/llms.txt) that lists every documentation page with its markdown URL and a short description.
+
+```txt llms.txt (first 15 lines)
+# Checkly Docs
+
+## Docs
+
+- [Changing your email or password in Checkly](https://checklyhq.com/docs/admin/changing-your-email-password.md): Learn how to change your email address or password in your Checkly account
+- [Creating an API key in Checkly](https://checklyhq.com/docs/admin/creating-api-key.md): Learn how to create and manage user and service API keys for the Checkly API and CLI
+- [Adding team members to your Checkly account](https://checklyhq.com/docs/admin/team-management/adding-team-members.md): Learn how to invite team members to join your Checkly account and manage team collaboration
+- [Using Microsoft Entra ID for Single Sign-on in Checkly](https://checklyhq.com/docs/admin/team-management/microsoft-azure-ad.md): This page illustrates the standard procedure to follow in order to get started with Microsoft Entra ID SSO (formerly Azure AD) on Checkly.
+- [Multi-Factor Authentication in Checkly](https://checklyhq.com/docs/admin/team-management/multi-factor-authentication.md): Learn how to set up and manage multi-factor authentication for enhanced account security
+- [Using Okta for Single Sign-on in Checkly](https://checklyhq.com/docs/admin/team-management/okta.md): This page illustrates the standard procedure to follow in order to get started with Okta SSO on Checkly.
+- [Role Based Access Control in Checkly](https://checklyhq.com/docs/admin/team-management/rbac.md): Checkly roles and permissions for team members
+- [Removing team members from your Checkly account](https://checklyhq.com/docs/admin/team-management/removing-team-members.md): Learn how to remove team members from your Checkly account and understand how it affects your billing
+- [Using SAML for Single Sign-On in Checkly](https://checklyhq.com/docs/admin/team-management/saml-sso.md): Learn how to set up SAML-based SSO for your Checkly account with supported identity providers
+- [Using SCIM provisioning in Checkly](https://checklyhq.com/docs/admin/team-management/scim-provisioning.md): Learn how to set up SCIM provisioning for Checkly using your identity provider
+- [Team management in Checkly](https://checklyhq.com/docs/admin/team-management.md): Manage your team and collaborate effectively in Checkly
+```
+
+Use the `llms.txt` file to crawl and index the entire Checkly documentation. Every link in the file points to [the `.md` version of the page](/ai/markdown-access#md-endpoints), so you can fetch each URL directly to get the markdown content.
+
+```bash
+# Fetch the llms.txt index
+curl https://www.checklyhq.com/llms.txt
+
+# Fetch a specific page from the index
+curl https://checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/overview.md
+```

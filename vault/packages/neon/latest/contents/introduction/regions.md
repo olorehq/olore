@@ -1,13 +1,21 @@
 ---
 title: Regions
+summary: >-
+  Neon projects deploy to multiple AWS and Azure regions. The region is fixed at
+  project creation and cannot be changed afterward. Use this page to choose a
+  region close to your application server, or to find NAT gateway IP addresses
+  for outbound connection allowlists. To move data to a different region, create
+  a new project there and migrate.
 enableTableOfContents: true
 isDraft: false
 redirectFrom:
   - /docs/conceptual-guides/regions
-updatedOn: '2026-01-30T19:25:14.190Z'
+updatedOn: '2026-06-05T15:04:23.889Z'
 ---
 
 Neon offers project deployment in multiple AWS and Azure regions. To minimize latency between your Neon database and application, we recommend choosing the region closest to your application server.
+
+Each Neon **project** exists in exactly one region. Your database runs in that region. **You cannot change the region** for an existing project. If you need your **data** in a different region, you **create a new Neon project** in that region and **migrate your database** there. You are not moving the project; region is fixed when the project is created.
 
 ## AWS regions
 
@@ -22,13 +30,7 @@ Neon offers project deployment in multiple AWS and Azure regions. To minimize la
 
 ## Azure regions
 
-- 🇺🇸 Azure East US 2 region (Virginia) &mdash; `azure-eastus2`
-- 🇺🇸 Azure West US 3 region (Arizona) &mdash; `azure-westus3`
-- 🇩🇪 Azure Germany West Central region (Frankfurt) &mdash; `azure-gwc`
-
-<Admonition type="note" title="Deployment options on azure">
-For information about Neon deployment options on Azure, see [Neon on Azure](/docs/manage/azure).
-</Admonition>
+<AzureRegionsDeprecation/>
 
 ## Request a region
 
@@ -43,27 +45,27 @@ All branches and databases created in a Neon project are created in the region s
 ![Select region image](/docs/introduction/project_creation_regions.png)
 
 <Admonition type="note">
-After you select a region for a Neon project, it cannot be changed for that project. To use a different region, create a new project in your desired region and [move your data to the new project](/docs/introduction/regions#move-project-data-to-a-new-region).
+After you select a region for a Neon project, it cannot be changed for that project. To run your database in a different region, create a **new** project there and migrate your data. See [Region migration](/docs/import/region-migration).
 </Admonition>
 
 ## NAT Gateway IP addresses
 
-A NAT gateway has a public IP address that external systems see when private resources initiate outbound connections. Neon uses 3 to 6 IP addresses per region for this outbound communication, corresponding to each availability zone in the region. To ensure proper connectivity for setups such as replicating data to Neon, you should allow access to all the NAT gateway IP addresses associated with your Neon project's region.
+A NAT gateway has a public IP address that external systems see when private resources initiate outbound connections. Neon uses multiple IP addresses per region for this outbound communication, with the number varying by region. To ensure proper connectivity for setups such as replicating data to Neon, you should allow access to all the NAT gateway IP addresses associated with your Neon project's region.
 
 If you are unsure of your project's region, you can find this information in the **Settings** widget on the **Project Dashboard**.
 
 ### AWS NAT Gateway IP Addresses
 
-| Region               | NAT Gateway IP Addresses                                                                                                                                                                                                      |
-| :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aws-us-east-1`      | 100.26.142.14, 13.219.161.141, 23.23.0.232, 3.213.105.99, 3.222.32.110, 34.202.217.219, 34.233.170.231, 34.235.208.71, 34.239.66.10, 35.168.244.148, 52.73.235.120, 54.160.39.37, 54.205.208.153, 54.88.155.118, 98.88.212.99 |
-| `aws-us-east-2`      | 16.58.110.124, 16.58.110.255, 16.58.110.55, 18.116.233.216, 18.117.39.4, 18.217.181.229, 3.128.125.142, 3.128.6.252, 3.129.145.179, 3.139.195.115, 3.139.7.20, 3.16.227.37, 52.15.165.218                                     |
-| `aws-us-west-2`      | 34.213.87.149, 35.164.221.218, 35.83.202.11, 44.235.241.217, 44.236.56.140, 52.32.22.241, 52.37.48.254, 52.40.99.9, 54.186.210.201, 54.213.57.47                                                                              |
-| `aws-eu-central-1`   | 18.158.63.175, 18.194.181.241, 3.125.234.79, 3.125.57.42, 3.66.63.165, 52.58.17.95                                                                                                                                            |
-| `aws-eu-west-2`      | 18.133.205.39, 3.10.42.8, 52.56.191.86                                                                                                                                                                                        |
-| `aws-ap-southeast-1` | 54.254.50.26, 54.254.92.70, 54.255.161.23                                                                                                                                                                                     |
-| `aws-ap-southeast-2` | 13.237.134.148, 13.55.152.144, 54.153.185.87                                                                                                                                                                                  |
-| `aws-sa-east-1`      | 18.230.1.215, 52.67.202.176, 54.232.117.41                                                                                                                                                                                    |
+| Region               | NAT Gateway IP Addresses                                                                                                                                                                                                                                                                                                                                                                                            |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `aws-us-east-1`      | 100.26.142.14, 100.30.82.73, 100.51.56.234, 13.219.161.141, 18.211.255.174, 18.215.104.21, 23.23.0.232, 3.213.105.99, 3.220.225.247, 3.222.32.110, 3.93.203.54, 32.193.167.21, 34.199.194.48, 34.202.217.219, 34.224.137.41, 34.233.170.231, 34.235.208.71, 34.239.66.10, 35.168.244.148, 44.195.6.75, 44.206.76.236, 44.209.63.35, 44.212.197.226, 52.203.31.78, 52.205.172.123, 52.205.179.214, 52.4.26.44, 52.6.163.215, 52.70.189.141, 52.73.235.120, 54.156.66.192, 54.160.39.37, 54.173.116.247, 54.197.227.141, 54.205.208.153, 54.86.178.17, 54.88.155.118, 98.88.203.121, 98.88.212.99 |
+| `aws-us-east-2`      | 16.58.110.124, 16.58.110.255, 16.58.110.55, 18.116.233.216, 18.117.39.4, 18.217.181.229, 3.128.125.142, 3.128.6.252, 3.129.145.179, 3.139.195.115, 3.139.7.20, 3.16.227.37, 52.15.165.218                                                                                                                                                                                                                           |
+| `aws-us-west-2`      | 34.213.87.149, 35.164.221.218, 35.83.202.11, 44.235.241.217, 44.236.56.140, 52.32.22.241, 52.37.48.254, 52.40.99.9, 54.186.210.201, 54.213.57.47                                                                                                                                                                                                                                                                    |
+| `aws-eu-central-1`   | 18.156.24.144, 18.158.63.175, 18.194.181.241, 18.198.137.195, 3.123.76.138, 3.125.234.79, 3.125.57.42, 3.66.63.165, 52.58.17.95, 54.93.82.216, 63.181.53.159, 63.184.85.228                                                                                                                                                                                                                                         |
+| `aws-eu-west-2`      | 18.133.205.39, 3.10.42.8, 52.56.191.86                                                                                                                                                                                                                                                                                                                                                                              |
+| `aws-ap-southeast-1` | 3.1.239.32, 47.131.90.115, 52.76.51.78, 54.254.50.26, 54.254.92.70, 54.255.161.23                                                                                                                                                                                                                                                                                                                                   |
+| `aws-ap-southeast-2` | 13.237.134.148, 13.55.152.144, 54.153.185.87                                                                                                                                                                                                                                                                                                                                                                        |
+| `aws-sa-east-1`      | 18.230.1.215, 52.67.202.176, 54.232.117.41                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### Azure NAT Gateway IP Addresses
 
@@ -73,21 +75,10 @@ If you are unsure of your project's region, you can find this information in the
 | `azure-gwc`     | 20.52.100.129, 20.52.100.208, 20.52.187.150    |
 | `azure-westus3` | 20.38.38.171, 20.168.0.32, 20.168.0.77         |
 
-## Move project data to a new region
+<a id="move-project-data-to-a-new-region" aria-hidden="true"></a>
 
-Moving a project to a different region requires moving your data using one of the following options:
+## Move your database to another region
 
-### Option 1: Dump and restore
-
-Using the dump and restore method involves the following steps:
-
-1. Creating a new project in the desired region. For project creation instructions, see [Create a project](/docs/manage/projects#create-a-project).
-1. Moving your data from the old project to the new project. For instructions, see [Import data from Postgres](/docs/import/migrate-from-postgres).
-
-Moving data to a new Neon project using this method may take some time depending on the size of your data. To prevent the loss of data during the import operation, consider disabling writes from your applications before initiating the import operation. You can re-enable writes when the import is completed. Neon does not currently support disabling database writes. Writes must be disabled at the application level.
-
-### Option 2: Logical replication
-
-As an alternative to the dump and restore method described above, you can use **logical replication** to replicate data from one Neon project to another for a near-zero downtime data migration. For more information, see [Replicate data from one Neon project to another](/docs/guides/logical-replication-neon-to-neon).
+A Neon project's region does not change after creation. To use another region, create a **new** project there and migrate your data. See **[Region migration](/docs/import/region-migration)** for paths, prerequisites, and steps.
 
 <NeedHelp/>

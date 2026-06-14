@@ -1,11 +1,19 @@
 ---
 title: Media storage with Uploadcare
 subtitle: Store files via Uploadcare and track metadata in Neon
+summary: >-
+  Uploadcare and Neon integration pattern stores uploaded files on Uploadcare's
+  CDN while persisting each file's UUID, CDN URL, and user ID as metadata rows
+  in a Neon Postgres table. Use this guide when you need a dedicated CDN for
+  images, videos, and documents but want queryable, structured metadata in
+  Postgres rather than in Uploadcare alone. Code examples cover a Node.js/Hono
+  server and a Python Flask server, both writing to an uploadcare_files table
+  with optional Row Level Security.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.291Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-[Uploadcare](https://uploadcare.com/) provides an cloud platform designed to simplify file uploading, processing, storage, and delivery via a fast CDN. It offers tools that manage and optimize media like images, videos, and documents for your applications.
+[Uploadcare](https://uploadcare.com/) provides a cloud platform designed to simplify file uploading, processing, storage, and delivery via a fast CDN. It offers tools that manage and optimize media like images, videos, and documents for your applications.
 
 This guide demonstrates how to integrate Uploadcare with Neon by storing file metadata in your Neon database while using Uploadcare for file uploads and storage.
 
@@ -15,7 +23,7 @@ This guide demonstrates how to integrate Uploadcare with Neon by storing file me
 
 ## Create a Neon project
 
-1. Navigate to [pg.new](https://pg.new) to create a new Neon project.
+1. Navigate to the [Neon Console](https://console.neon.tech) to create a new Neon project.
 2. Copy the connection string by clicking the **Connect** button on your **Project Dashboard**. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 ## Create an Uploadcare account and project
@@ -276,7 +284,7 @@ curl -X POST http://localhost:3000/upload \
   }
   ```
 
-You can now integrate calls to this `/upload` endpoint from various parts of your application (e.g., web clients, mobile apps, backend services) to handle file uploads.
+You can now integrate calls to this `/upload` endpoint from various parts of your application (for example, web clients, mobile apps, backend services) to handle file uploads.
 
 ## Accessing file metadata and files
 
@@ -305,7 +313,7 @@ WHERE
 
 - The query returns rows containing the file metadata stored in Neon.
 - The crucial piece of information is the `file_url`. This is the direct link (CDN URL) to the file stored on Uploadcare.
-- You can use this `file_url` in your application (e.g., in frontend `<img>` tags, API responses, download links) wherever you need to display or provide access to the file.
+- You can use this `file_url` in your application (for example, in frontend `<img>` tags, API responses, download links) wherever you need to display or provide access to the file.
 
 This pattern separates file storage and delivery (handled by Uploadcare) from structured metadata management (handled by Neon).
 
@@ -315,6 +323,5 @@ This pattern separates file storage and delivery (handled by Uploadcare) from st
 
 - [Uploadcare documentation](https://uploadcare.com/docs/)
 - [Uploadcare access control with signed URLs](https://uploadcare.com/docs/security/secure-delivery/)
-- [Neon RLS](/docs/guides/neon-rls)
 
 <NeedHelp/>

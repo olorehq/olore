@@ -18,75 +18,74 @@ This guide documents how to get started using the Rive web runtime library. The 
 - Provides a base API to build other web-based Rive runtime wrappers (React, Svelte, etc.)
 - Support advanced use cases by controlling the render loop (web-based game engines)
 
-
 ## Getting started
 
 Follow the steps below to integrate Rive into your web app.
 
-<Note>
-  The following instructions describe using the `@rive-app/canvas` package. Rive provides web-based packages like WebGL, Canvas, and Lite versions.
+The following instructions describe using the `@rive-app/webgl2` package. Rive provides web-based packages like WebGL2, Canvas, and Lite versions.
 
-  See [Canvas vs WebGL](/runtimes/web/canvas-vs-webgl) for guidance on which package is the correct choice for your use case.
-</Note>
+See [Canvas vs WebGL2](/runtimes/web/canvas-vs-webgl) for guidance on which package is the correct choice for your use case.
 
 <Steps>
   <Step title="Install the dependency">
-    <Warning>
-      We recommend always using the [latest version](https://www.npmjs.com/package/@rive-app/canvas). The versions listed below and in the examples may differ from the latest.
-    </Warning>
+    <Tip>
+      We recommend always using the [latest version](https://www.npmjs.com/package/@rive-app/webgl2) when possible. The versions listed below and in the examples may differ from the latest. You van find the latest
+      version on [npmjs](https://www.npmjs.com/package/@rive-app/webgl2?activeTab=versions).
+    </Tip>
     <Tabs>
       <Tab title="Script Tag">
+        **(Recommended) Load v2 of the web runtime**
+
+        Add the following script tag to your web page to load v2 of the web runtime, which will get the latest patches/minor updates on major version 2:
         ```html
-        // Add the following script tag to your web page to get the latest version:
-
-
-        <script src="https://unpkg.com/@rive-app/canvas"></script>
-
-        // You can also pin to a specific version (See [here](https://www.npmjs.com/package/@rive-app/canvas) for the latest):
-
-
-        <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
-
-        // This will make a global `rive` object available, allowing you to access the Rive API via the `rive` entry point:
-
-        new rive.Rive({});
+        <script src="https://unpkg.com/@rive-app/webgl2@2"></script>
         ```
+        If you see a newer major version to upgrade to, ensure your code accounts for breaking changes in the migration guide
+
+        **Load a pinned version of the web runtime**
+
+        Alternatively, pin to a specific version for more control over what is loaded in your app. As Rive's feature set grows, you'll want to manually update this version to a newer one to ensure best compatibility.
+        ```html
+        <script src="https://unpkg.com/@rive-app/webgl2@2.38.0"></script>
+        ```
+
+        This will make a global `rive` object available, allowing you to access the Rive API via the `rive` entry point. Follow the next steps below.
       </Tab>
       <Tab title="Package Manager">
         ```bash npm
-        npm install @rive-app/canvas
+        npm install @rive-app/webgl2
         ```
 
         ```bash pnpm
-        pnpm add @rive-app/canvas
+        pnpm add @rive-app/webgl2
         ```
 
         ```bash yarn
-        yarn add @rive-app/canvas
+        yarn add @rive-app/webgl2
         ```
 
         ```bash bun
-        bun add @rive-app/canvas
+        bun add @rive-app/webgl2
         ```
 
         ```javascript Importing
         // Import the entire module under the global identifier `rive`
-        import * as rive from "@rive-app/canvas";
+        import * as rive from "@rive-app/webgl2";
 
         // Alternatively, import only the specific parts you need
-        import { Rive } from "@rive-app/canvas";
+        import { Rive } from "@rive-app/webgl2";
 
         ```
       </Tab>
     </Tabs>
-    <Note>
-      Not using [Rive Text](/editor/text/) and [Rive Audio](/editor/events/audio-events)? Consider using [@rive-app/canvas-lite](/runtimes/web/canvas-vs-webgl#rive-app-canvas-lite) which is a smaller package variant.
-    </Note>
+    <Tip>
+      Not using [Rive Text](/editor/text/), [Rive Layouts](/editor/layouts/), [Rive Scripting](/scripting/), or [Rive Audio](/editor/events/audio-events)? Consider using [@rive-app/canvas-lite](/runtimes/web/canvas-vs-webgl#rive-app-webgl2-lite) instead, which is a smaller package variant of our canvas runtime.
+    </Tip>
   </Step>
   <Step title="Create a Canvas">
     Add a canvas element to your HTML where you want the Rive graphic to be displayed:
 
-    ```json
+    ```html
     <canvas id="canvas" width="500" height="500"></canvas>
     ```
   </Step>
@@ -94,10 +93,11 @@ Follow the steps below to integrate Rive into your web app.
     To create a new instance of a Rive object, provide the following properties:
 
     - `src`: A string representing the URL of the hosted `.riv` file (as shown in the example below) or the path to the public asset `.riv` file. For more details, refer to [Rive Parameters](/runtimes/web/rive-parameters) on how to properly use this property.
-    - `artboard` - (Optional) A string representing the artboard you want to display. If not supplied the default is selected.
-    - `stateMachines` - A string representing the name of the state machine you wish to play.
+    - `artboard` - (Optional) A string representing the artboard you want to display. If not supplied, the default artboard from the `.riv` file is selected.
+    - `stateMachines` - A string representing the name of the state machine you wish to play. This must be supplied, or the Rive instance may only play the first linear animation it finds. In the next major version, the default behavior will be to play the default state machine of the artboard.
     - `canvas` - The canvas element where the animation will be rendered.
     - `autoplay` - A boolean indicating whether the animation should play automatically.
+    - `autoBind` - A boolean indicating whether to automatically data-bind the default `ViewModelInstance` if one is found. We recommend setting this to `true`.
 
     ```javascript
     <script>
@@ -107,6 +107,7 @@ Follow the steps below to integrate Rive into your web app.
             // src: '/public/example.riv',
             canvas: document.getElementById("canvas"),
             autoplay: true,
+            autoBind: true,
             // artboard: "Artboard", // Optional. If not supplied the default is selected
             stateMachines: "bumpy",
             onLoad: () => {
@@ -116,15 +117,12 @@ Follow the steps below to integrate Rive into your web app.
     </script>
     ```
 
-    <Note>
-      The `resizeDrawingSurfaceToCanvas` method ensures that the Rive animation is correctly scaled to fit the dimensions of the specified canvas element. By default, the canvas rendering surface might not match the exact size of the `<canvas>` element defined in your HTML, which can lead to blurry or incorrectly scaled graphics, especially on high-DPI or retina displays.
+    The `resizeDrawingSurfaceToCanvas` method ensures that the Rive animation is correctly scaled to fit the dimensions of the specified canvas element. By default, the canvas rendering surface might not match the exact size of the `<canvas>` element defined in your HTML, which can lead to blurry or incorrectly scaled graphics, especially on high-DPI or retina displays.
 
       Calling this method adjusts the internal drawing surface so that the animation is rendered with crisp detail, matching the pixel density of the canvas. This is particularly important when:
 
       - The size of the canvas changes dynamically (e.g., if it is resized due to responsive layouts).
       - You want to ensure the animation remains sharp, regardless of device or screen resolution.
-
-      <br />
 
       **Best practices:**
 
@@ -138,7 +136,6 @@ Follow the steps below to integrate Rive into your web app.
       ```
 
       This way, the Rive animation will continue to look sharp and correctly scaled as the canvas size changes.
-    </Note>
   </Step>
 </Steps>
 
@@ -157,12 +154,13 @@ Bringing it all together, here's how to load a Rive graphic in a single HTML fil
   <body>
     <canvas id="canvas" width="500" height="500"></canvas>
 
-    <script src="https://unpkg.com/@rive-app/canvas"></script>
+    <script src="https://unpkg.com/@rive-app/webgl2@2"></script>
     <script>
       const r = new rive.Rive({
         src: "https://cdn.rive.app/animations/vehicles.riv",
         canvas: document.getElementById("canvas"),
         autoplay: true,
+        autoBind: true,
         // artboard: "Arboard", // Optional. If not supplied the default is selected
         stateMachines: "bumpy",
         onLoad: () => {
@@ -186,7 +184,7 @@ Bringing it all together, here's how to load a Rive graphic in a single HTML fil
 
 For more details, refer to the [Rive Parameters](/runtimes/web/rive-parameters) section on the `src` property.
 
-## 4. Clean up Rive
+## Clean up Rive
 
 When working with a Rive instance, it's important to properly clean it up when it's no longer needed. This is especially necessary in scenarios where:
 
@@ -214,7 +212,7 @@ More in-depth Rive web documentation and advanced use cases.
   <Card title="Rive Parameters" icon={<svg xmlns="http://www.w3.org/2000/svg" height="100%" fill="none" viewBox="0 0 16 16" class="size-4 text-gray-500/80 dark:text-gray-400" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8.036 1v4.178c0 1.034.839 1.873 1.873 1.873h4.003v6.178a1.77 1.77 0 0 1-1.77 1.77H3.858a1.77 1.77 0 0 1-1.771-1.77V2.771A1.77 1.77 0 0 1 3.857 1zm1.25.145v4.033c0 .345.279.624.623.624h3.889a1.8 1.8 0 0 0-.377-.597L11.618 3.32 9.842 1.525a1.8 1.8 0 0 0-.557-.38" clip-rule="evenodd"></path></svg>} href="/runtimes/web/rive-parameters">
     API docs for the Rive instance.
   </Card>
-  <Card title="Canvas vs WebGL" icon={<svg xmlns="http://www.w3.org/2000/svg" height="100%" fill="none" viewBox="0 0 16 16" class="size-4 text-gray-500/80 dark:text-gray-400" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8.036 1v4.178c0 1.034.839 1.873 1.873 1.873h4.003v6.178a1.77 1.77 0 0 1-1.77 1.77H3.858a1.77 1.77 0 0 1-1.771-1.77V2.771A1.77 1.77 0 0 1 3.857 1zm1.25.145v4.033c0 .345.279.624.623.624h3.889a1.8 1.8 0 0 0-.377-.597L11.618 3.32 9.842 1.525a1.8 1.8 0 0 0-.557-.38" clip-rule="evenodd"></path></svg>} href="/runtimes/web/canvas-vs-webgl">
+  <Card title="Canvas vs WebGL2" icon={<svg xmlns="http://www.w3.org/2000/svg" height="100%" fill="none" viewBox="0 0 16 16" class="size-4 text-gray-500/80 dark:text-gray-400" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8.036 1v4.178c0 1.034.839 1.873 1.873 1.873h4.003v6.178a1.77 1.77 0 0 1-1.77 1.77H3.858a1.77 1.77 0 0 1-1.771-1.77V2.771A1.77 1.77 0 0 1 3.857 1zm1.25.145v4.033c0 .345.279.624.623.624h3.889a1.8 1.8 0 0 0-.377-.597L11.618 3.32 9.842 1.525a1.8 1.8 0 0 0-.557-.38" clip-rule="evenodd"></path></svg>} href="/runtimes/web/canvas-vs-webgl">
     A guide to the different Rive web packages
   </Card>
   <Card title="FAQ" icon={<svg xmlns="http://www.w3.org/2000/svg" height="100%" fill="none" viewBox="0 0 16 16" class="size-4 text-gray-500/80 dark:text-gray-400" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8.036 1v4.178c0 1.034.839 1.873 1.873 1.873h4.003v6.178a1.77 1.77 0 0 1-1.77 1.77H3.858a1.77 1.77 0 0 1-1.771-1.77V2.771A1.77 1.77 0 0 1 3.857 1zm1.25.145v4.033c0 .345.279.624.623.624h3.889a1.8 1.8 0 0 0-.377-.597L11.618 3.32 9.842 1.525a1.8 1.8 0 0 0-.557-.38" clip-rule="evenodd"></path></svg>} href="/runtimes/web/faq">

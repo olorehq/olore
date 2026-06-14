@@ -1,0 +1,98 @@
+---
+title: pow
+description: 'This page explains how to use the pow function in APL.'
+---
+
+Use the `pow` function in APL to raise a base value to a given exponent: base^exponent. The function accepts any real base and exponent.
+
+`pow` is useful whenever you need to apply a power function to a metric, such as squaring deviations for variance calculations, computing exponential growth factors, scaling values by a fractional power, or inverting a power transformation. It's more flexible than `exp`, `exp2`, or `exp10` because you can specify any base.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `pow(base, exponent)` works identically to APL's `pow`. You can also use the `^` operator for the same purpose.
+
+<CodeGroup>
+```sql Splunk example
+| eval squared = pow(req_duration_ms, 2)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend squared = pow(req_duration_ms, 2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `POWER(base, exponent)` provides the same functionality as APL's `pow`.
+
+<CodeGroup>
+```sql SQL example
+SELECT POWER(req_duration_ms, 2) AS squared FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend squared = pow(req_duration_ms, 2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+pow(base, exponent)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `base` | real | Yes | The base value. |
+| `exponent` | real | Yes | The exponent to raise the base to. |
+
+### Returns
+
+`base` raised to the power `exponent`: base^exponent.
+
+## Example
+
+Use `pow` to square the deviation of each request's duration from a 200 ms baseline.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend deviation = req_duration_ms - 200.0
+| extend squared_deviation = pow(deviation, 2)
+| project _time, id, req_duration_ms, squared_deviation
+| order by squared_deviation desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20deviation%20%3D%20req_duration_ms%20-%20200.0%20%7C%20extend%20squared_deviation%20%3D%20pow%28deviation%2C%202%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20squared_deviation%20%7C%20order%20by%20squared_deviation%20desc%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | squared_deviation |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1200.0 | 1000000.0 |
+| 2024-11-14 10:01:00 | user-2 | 80.0 | 14400.0 |
+| 2024-11-14 10:02:00 | user-3 | 205.0 | 25.0 |
+
+## List of related functions
+
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root of a value. This is equivalent to `pow(x, 0.5)` and is more readable for the square-root case.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it when the base is e rather than an arbitrary number.
+- [exp2](/apl/scalar-functions/mathematical-functions/exp2): Returns 2^x. Use it when the base is always 2.
+- [exp10](/apl/scalar-functions/mathematical-functions/exp10): Returns 10^x. Use it when the base is always 10.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it to undo a `pow` transformation in log space.

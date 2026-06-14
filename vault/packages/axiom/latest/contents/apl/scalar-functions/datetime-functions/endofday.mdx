@@ -1,0 +1,165 @@
+---
+title: endofday
+description: 'This page explains how to use the endofday function in APL.'
+---
+
+Use the `endofday` function in APL to calculate the end of the day for a given datetime value. The function returns a datetime set to the last moment of the day (23:59:59.9999999), with an optional offset to shift forward or backward by a specified number of days.
+
+You can use `endofday` to create daily time boundaries for aggregation, reporting, and filtering. This is especially useful when you need to bucket events into daily intervals or determine how much time remains until the end of a given day.
+
+Use it when you want to:
+
+- Define end-of-day boundaries for daily reports and dashboards.
+- Aggregate events up to the end of each day.
+- Calculate the remaining time in a day for each event.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there is no direct equivalent to `endofday`. You typically use `relative_time` with snap-to syntax such as `@d+1d-1s` to approximate the end of the day. In APL, the `endofday` function handles this directly.
+
+<CodeGroup>
+```sql Splunk example
+... | eval end=relative_time(_time, "@d+1d-1s")
+````
+
+```kusto APL equivalent
+... | extend end = endofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically combine `DATE_TRUNC` with interval arithmetic to get the end of the day. In APL, the `endofday` function provides this directly and supports an optional day offset.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('day', timestamp_column) + INTERVAL '1 day' - INTERVAL '1 second' AS end_of_day FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend end_of_day = endofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+endofday(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                                                                                          |
+| -------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| datetime     | `datetime` | The input datetime value.                                                                                            |
+| offset   | `long`     | Optional: The number of days to offset from the input date. Use negative values for past dates and positive values for future dates. Default is 0. |
+
+### Returns
+
+A `datetime` representing the end of the day (23:59:59.9999999) for the given date, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Calculate how far each request is from the end of the day to understand the distribution of traffic within daily windows.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend end = endofday(_time)
+| extend remaining_ms = datetime_diff('millisecond', end, _time)
+| project _time, end, remaining_ms, method
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20end%20%3D%20endofday(_time)%20%7C%20extend%20remaining_ms%20%3D%20datetime_diff('millisecond'%2C%20end%2C%20_time)%20%7C%20project%20_time%2C%20end%2C%20remaining_ms%2C%20method%22%7D)
+
+**Output**
+
+| _time                        | end                          | remaining_ms | method |
+| ---------------------------- | ---------------------------- | ------------ | ------ |
+| 2024-11-14T10:22:31Z         | 2024-11-14T23:59:59.9999999Z | 49048000     | GET    |
+| 2024-11-14T18:45:12Z         | 2024-11-14T23:59:59.9999999Z | 18888000     | POST   |
+| 2024-11-14T23:01:44Z         | 2024-11-14T23:59:59.9999999Z | 3496000      | GET    |
+
+This query computes the time remaining until the end of the day for each request, useful for understanding traffic distribution across daily windows.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Aggregate trace counts to end-of-day boundaries for each service to create daily summaries.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day_end = endofday(_time)
+| summarize trace_count = count() by day_end, ['service.name']
+| sort by day_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day_end%20%3D%20endofday(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20day_end%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20day_end%20asc%22%7D)
+
+**Output**
+
+| day_end                      | service.name | trace_count |
+| ---------------------------- | ------------ | ----------- |
+| 2024-11-14T23:59:59.9999999Z | frontend     | 1523        |
+| 2024-11-15T23:59:59.9999999Z | frontend     | 1487        |
+| 2024-11-16T23:59:59.9999999Z | frontend     | 1601        |
+
+This query groups traces by end-of-day boundaries for each service, giving you a daily count of trace activity.
+
+</Tab>
+<Tab title="Security logs">
+
+Count error requests grouped by end-of-day boundaries to track daily error volumes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend day_end = endofday(_time)
+| summarize error_count = count() by day_end
+| sort by day_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20day_end%20%3D%20endofday(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20day_end%20%7C%20sort%20by%20day_end%20asc%22%7D)
+
+**Output**
+
+| day_end                      | error_count |
+| ---------------------------- | ----------- |
+| 2024-11-14T23:59:59.9999999Z | 67          |
+| 2024-11-15T23:59:59.9999999Z | 43          |
+| 2024-11-16T23:59:59.9999999Z | 89          |
+
+This query counts HTTP errors by end-of-day boundaries, helping you monitor daily error trends and detect spikes.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime, useful for defining the beginning of daily intervals.
+- [endofweek](/apl/scalar-functions/datetime-functions/endofweek): Returns the end of the week for a datetime.
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime.
+- [endofyear](/apl/scalar-functions/datetime-functions/endofyear): Returns the end of the year for a datetime.
+- [now](/apl/scalar-functions/datetime-functions/now): Returns the current datetime, useful for calculating time until end of day.

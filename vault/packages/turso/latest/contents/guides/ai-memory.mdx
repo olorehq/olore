@@ -1,0 +1,147 @@
+---
+title: AI Memory
+---
+
+AI agents start every session from scratch. A persistent memory system lets agents store lessons and retrieve relevant context via vector search. Turso's embedded database with built-in vector functions makes this possible in a single local file.
+
+This guide covers the schema and queries for building a memory system with vector similarity search.
+
+## Schema
+
+At its simplest, a memory system needs just two tables: one for memories and one for tracking which memories were used in which tasks.
+
+```sql
+CREATE TABLE IF NOT EXISTS memories (
+    id              TEXT PRIMARY KEY,
+    content         TEXT NOT NULL,
+    embedding       F8_BLOB(384),
+    category        TEXT NOT NULL,
+    created_at      INTEGER NOT NULL,
+    last_retrieved  INTEGER,
+    retrieval_count INTEGER DEFAULT 0,
+    source_task     TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id               TEXT PRIMARY KEY,
+    description      TEXT,
+    embedding        F8_BLOB(384),
+    started_at       INTEGER,
+    finished_at      INTEGER
+);
+```
+
+- **`memories`** stores each lesson with its vector embedding and a category (e.g. `correction`, `insight`, `user`, `discovery`). The embedding is a 384-dimensional int8-quantized vector (`F8_BLOB(384)`).
+- **`tasks`** records each task the agent worked on, linking task descriptions to their embeddings for retrieval.
+
+## Connecting
+
+```javascript
+import { connect } from "@tursodatabase/database";
+
+const db = await connect(".memory/agent.db");
+await db.exec(SCHEMA);
+```
+
+## Storing a memory
+
+When the agent learns something — a correction, a user preference, an insight — store it with an embedding. Use `vector8()` to convert a JSON float array into an int8-quantized vector:
+
+```sql
+INSERT INTO memories (id, content, embedding, category, created_at, source_task)
+VALUES (?, ?, vector8(?), ?, ?, ?);
+```
+
+The parameter for `vector8()` is a JSON-stringified float array (e.g. 384 dimensions from a model like `all-MiniLM-L6-v2`). Turso handles the quantization internally:
+
+```javascript
+db.prepare(`
+  INSERT INTO memories (id, content, embedding, category, created_at)
+  VALUES (?, ?, vector8(?), ?, ?)
+`).run(id, content, JSON.stringify(Array.from(embedding)), "correction", Date.now());
+```
+
+## Retrieving relevant memories
+
+When a new task starts, find the most relevant memories using Turso's `vector_distance_cos()` function:
+
+```sql
+SELECT id, content, category, created_at, retrieval_count,
+       vector_distance_cos(embedding, vector8(?)) AS distance
+FROM memories
+WHERE embedding IS NOT NULL
+ORDER BY distance ASC
+LIMIT ?;
+```
+
+<Info>
+
+`vector_distance_cos()` returns cosine **distance** (0 = identical, 2 = opposite). Lower is better. To convert to similarity: `1.0 - distance`.
+
+</Info>
+
+After retrieval, update the memory's metadata:
+
+```sql
+UPDATE memories SET last_retrieved = ?, retrieval_count = retrieval_count + 1
+WHERE id = ?;
+```
+
+## Correcting wrong memories
+
+When a memory turns out to be wrong, delete it and store a corrected version:
+
+```sql
+DELETE FROM memories WHERE id = ?;
+
+INSERT INTO memories (id, content, embedding, category, created_at)
+VALUES (?, ?, vector8(?), 'correction', ?);
+```
+
+## Task tracking
+
+Record tasks to understand what the agent has been working on:
+
+```sql
+-- Start a task
+INSERT INTO tasks (id, description, embedding, started_at)
+VALUES (?, ?, vector8(?), ?);
+
+-- Complete a task
+UPDATE tasks SET finished_at = ? WHERE id = ?;
+```
+
+## Purging old memories
+
+Remove memories that have been around a long time but are never retrieved:
+
+```sql
+DELETE FROM memories
+WHERE retrieval_count = 0 AND created_at < ?;
+```
+
+## Key design points
+
+- **Vector search** uses Turso's `vector8()` and `vector_distance_cos()` for cosine similarity directly in SQL. Int8 quantization reduces storage by 75% compared to float32 with minimal impact on search quality.
+- For small per-project datasets, a full table scan with `ORDER BY distance LIMIT k` is fast enough without a vector index.
+- Everything runs in a single embedded database file with no external services.
+
+## Going further
+
+The schema above is deliberately minimal. In practice you will want to experiment with strategies for keeping the memory store useful as it grows. Some ideas:
+
+- **Weighted memories** — add a `weight REAL` column and boost or penalize memories based on whether the agent found them useful after retrieval. Use an exponential moving average to update weights over time.
+- **Time decay** — multiply a recency factor into the retrieval ranking so that stale memories rank lower. For example: `(1.0 - distance) * POWER(0.95, days_since_last_retrieved)`.
+- **Garbage collection** — periodically remove memories with low weight and high retrieval count (retrieved often, never useful), or memories that have never been retrieved after a threshold period.
+- **Task scoring** — track outcome metrics (tokens used, errors, corrections) per task and use them to compute a credit signal for the memories that were retrieved during that task.
+- **Retrieval attribution** — add a join table `(memory_id, task_id, similarity, credit)` to record exactly which memories were used in each task and how they were rated.
+
+<Warning>
+
+There is no single best approach — the right strategy depends on your agent's workload, how often memories are created, and how aggressively you want to prune. Start simple and iterate.
+
+</Warning>
+
+## Example
+
+[memelord](https://github.com/glommer/memelord) is an MCP server and hooks system that implements this pattern with reinforcement learning and weight decay as a persistent memory layer for AI coding agents.

@@ -11,7 +11,7 @@ There are cases in which you might have to allowlist Checkly traffic in your fir
 
 All of Checkly's monitoring traffic comes from a fixed source of IP addresses. Allowlisting Checkly traffic by IP address is possible by configuring your network to only allow traffic from these IPs.
 
-To get the current list of IP addresses, you can use the following endpoints ([API spec](https://api.checklyhq.com/#/Static%20IPs)):
+Fetch the current list of Checkly IP addresses:
 
 1. A JSON array of all IPv4s currently used
 
@@ -63,9 +63,9 @@ You can make the header and/or user agent specific to your own Checkly user acco
 
 To allowlist API checks, allow traffic that contains a cookie in the shape of `Cookie: "checkly-account:<UUID>"`, with `<UUID>` being your shortened Checkly ID or other chosen value.
 
-You can then [set the Cookie header](/api-checks/request-settings/#headers) while editing your check.
+You can then [set the Cookie header](/detect/synthetic-monitoring/api-checks/configuration#headers) while editing your check.
 
-> You can set the header at group-level using [API check defaults](/groups/api-check-defaults/#headers--query-parameters) to have it applied to every API check in the group.
+> You can set the header at group-level using [API check defaults](/platform/groups#headers--query-parameters) to have it applied to every API check in the group.
 
 ### Allowlisting browser checks with user agents
 

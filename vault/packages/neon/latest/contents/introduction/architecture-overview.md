@@ -1,18 +1,28 @@
 ---
-title: Neon architecture
-subtitle: Serverless Postgres with decoupled compute and durable storage
+title: Neon's lakebase architecture
+subtitle: 'Inside Neon Postgres: decoupled compute and durable storage'
+summary: >-
+  Neon's lakebase architecture splits Postgres into an ephemeral compute layer
+  and a durable storage layer connected by WAL, so compute nodes can scale,
+  restart, or fail without data loss. The storage layer uses Paxos-based WAL
+  quorum across safekeepers to define commit correctness, a pageserver to
+  reconstruct page versions on demand, and object storage for immutable
+  long-term history. None of those components sit on the hot query path. This
+  design enables copy-on-write branching, instant point-in-time restores, and
+  serverless autoscaling including scale-to-zero, all as metadata operations
+  rather than data copies.
 redirectFrom:
   - /docs/storage-engine/architecture-overview
   - /docs/conceptual-guides/architecture-overview
   - /docs/guides/neon-features
-updatedOn: '2026-02-04T16:31:12.751Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 ## Top level overview
 
 Instead of running Postgres as a single stateful system tied to a VM and its filesystem, Neon is a serverless database that splits the system into two independent layers: compute and storage. These layers communicate over the network, with a stream of write-ahead log (WAL) records connecting them.
 
-This separation is what allows Neon to behave like a serverless database. Compute can scale up, scale down, go idle, and be restarted instantly without risking data loss or requiring data movement.
+This separation is what puts Neon in the [lakebase category](https://www.databricks.com/blog/what-is-a-lakebase) of OLTP databases. Compute can scale up, scale down, go idle, and be restarted instantly without risking data loss or requiring data movement.
 
 - **Ephemeral compute layer**: optimized for latency and execution. This layer runs Postgres, executing queries and transactions using RAM and local NVMe for performance. Compute nodes do not own durable state and can be replaced freely.
 - **Durable storage layer**: optimized for correctness, history, and scale. This layer defines durability by replicating WAL via quorum, materializes Postgres pages on demand, and stores long-term, immutable history in object storage.
@@ -20,6 +30,26 @@ This separation is what allows Neon to behave like a serverless database. Comput
 Neon’s design intentionally keeps object storage off the critical path. Object storage provides durability and scale, but never sits in front of query execution. Latency-sensitive work stays close to compute, while durability and history are handled asynchronously and independently.
 
 ![Neon architecture overview](/docs/introduction/neon-architecture-overview.png)
+
+<Admonition type="note" title="What is the difference between Neon and Lakebase?">
+Both products share the same architectural foundation but Lakebase comes with additional features integrating it with the rest of the Databricks Data and AI platform. For a full comparison, see [Neon and Lakebase](/docs/introduction/neon-and-lakebase).
+</Admonition>
+
+## Resource hierarchy
+
+While the sections below describe Neon's physical architecture, the platform organizes resources into a logical hierarchy:
+
+| Concept          | Description                                                           | Relationship              |
+| ---------------- | --------------------------------------------------------------------- | ------------------------- |
+| Organization     | Highest-level container for billing, users, and projects              | Contains Projects         |
+| Project          | Primary container for all database resources for an application       | Contains Branches         |
+| Branch           | Lightweight, copy-on-write clone of database state                    | Contains Databases, Roles |
+| Compute Endpoint | Running PostgreSQL instance (CPU/RAM for queries)                     | Attached to a Branch      |
+| Database         | Logical container for data (tables, schemas, views)                   | Exists within a Branch    |
+| Role             | PostgreSQL role for authentication and authorization                  | Belongs to a Branch       |
+| Operation        | Async action by the control plane (creating branch, starting compute) | Associated with Project   |
+
+For details on each concept, see the [glossary](/docs/reference/glossary).
 
 ## Compute layer
 
@@ -139,7 +169,7 @@ This layering is what allows Neon to tolerate failures intrinsically:
 
 ## In short
 
-Neon is a serverless Postgres engine that treats:
+Neon Postgres, the database service in the Neon backend, is a serverless engine that treats:
 
 - compute as ephemeral and replaceable;
 - storage as durable, replicated, and shared;

@@ -45,7 +45,7 @@ This way, the user does not need to worry about initialization; just ensure that
 
 ### Custom Initialization Options
 
-To add initialization options for capabilities like [Session Replay](/docs/tracking-methods/sdks/javascript#implementation--sampling) (`record_sessions_percent`), [Heatmaps](/docs/tracking-methods/sdks/javascript#heatmaps) (`record_heatmap_data`), routing data to [EU Servers for EU Data Residency](/docs/tracking-methods/sdks/javascript#eu-data-residency), or routing data to [IN Servers for India Data Residency](/docs/tracking-methods/sdks/javascript#india-data-residency) to Google Tag Manager:
+To add initialization options for capabilities like [Session Replay](/docs/tracking-methods/sdks/javascript#implementation--sampling) (`record_sessions_percent`), [Heatmaps](/docs/tracking-methods/sdks/javascript#heatmaps) (`record_heatmap_data`), [Feature Flags](/docs/featureflags), routing data to [EU Servers for EU Data Residency](/docs/tracking-methods/sdks/javascript#eu-data-residency), or routing data to [IN Servers for India Data Residency](/docs/tracking-methods/sdks/javascript#india-data-residency) to Google Tag Manager:
 
 1. Add a new tag in GTM and choose the Mixpanel tag type
 
@@ -116,6 +116,49 @@ This approach allows for customized autocapture options beyond the simple enable
 
 </Steps>
 
+### Google Tag Manager with Feature Flag Configuration
+
+Feature Flags allow you to control feature rollout, conduct A/B testing, and manage application behavior without deploying new code. Since the GTM integration wraps the [Mixpanel JavaScript SDK](/docs/tracking-methods/sdks/javascript), feature flags are implemented using the same JS SDK methods. For a full reference, see the [Feature Flags overview](/docs/featureflags) and [JavaScript SDK flags guide](/docs/tracking-methods/sdks/javascript/javascript-flags).
+
+#### Flag Initialization
+
+1. Open your Mixpanel `init` tag in GTM
+2. Under Feature Flags,
+   - a) Select Enabled to enable feature flag fetching.
+   - b) If your flags use a data group key as a custom Variant Assignment Key (e.g., `company_id`) or Runtime Targeting, you'll need to pass a context object.
+      - You can create a **Custom JavaScript Variable** that returns the flags config object:
+
+        ```javascript Javascript
+        function() {
+          return {
+            context: {
+              company_id: "your_company_id",
+              custom_properties: {
+                platform: "web",
+              },
+            },
+          };
+        }
+        ```
+      - You can create a **Data Layer Variable** in GTM whose value is set by your application to return the flags config object, and then reference that variable in your Mixpanel init tag.
+
+#### Flag Evaluation
+
+There are multiple ways to evaluate feature flags after initialization of the Mixpanel tag in GTM.
+
+The most flexible way would be to direct use in your application by referencing `window.mixpanel` which is available once GTM loads the Mixpanel tag
+
+```javascript Javscript
+// Check if a Feature Gate flag is enabled
+await window.mixpanel.flags.is_enabled("flag_key", false)
+
+// Get the variant value for an Experiment or Dynamic Configuration flag
+await window.mixpanel.flags.get_variant_value("flag_key", "control")
+```
+Alternatively, you can implement this logic in GTM directly such as in Custom HTML tags or in Custom Javascript variables to evaluate flags and push the results to the data layer for use by your implementation.
+
+If the current user is in your feature flag rollout, evaluation will trigger tracking an exposure event, `$experiment_started`, to Mixpanel.
+
 ## Sending Mixpanel Commands
 
 After adding the **Project Token** to its respective field, you need to choose what **type** of tag to use. Each type corresponds with some command you can use with the Mixpanel Javascript API.
@@ -128,6 +171,17 @@ The more complex tag types (`group`, `people`, and `track`) are elevated to the 
 
 Once you select a tag type, **additional options may appear.** Please have a look at the SDK reference for details on how to configure these options.
 
+### GTM Template Default Overrides vs. JS SDK
+
+As of October 2025, the GTM template sets two initialization defaults that differ from the JS SDK. This applies to anyone who installed the template fresh or opted into new versions of the template update.
+
+| Option | GTM Template Default | JS SDK Default |
+|---|---|---|
+| `persistence` | `localStorage` | `cookie` |
+| `stop_utm_persistence` | `true` | `false` |
+
+Switching between template versions and/or the JS SDK without accounting for these can change how persistent user data is stored and whether UTM parameters persist across subsequent events. To override either, add them as [Custom Initialization Options](#custom-initialization-options).
+
 ### Tag to Function Mapping
 
 **Essential Tags**
@@ -139,7 +193,7 @@ These are tags you will likely need in any Mixpanel-GTM implementation:
 | - Track          | [`track`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack)                   | Tracks an event. This is the most important and frequently used Mixpanel function.                                                                                                                                   |
 | - Track Pageview | [`track_pageview`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpaneltrack_pageview) | Tracks a default Mixpanel page view event, which can include extra default event properties to improve page view data                                                                                                |
 | init             | [`init`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelinit)                     | Initializes a new instance of Mixpanel                                                                                                                                                                               |
-| identify         | [`identify`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelidentify)             | Identifies a user with a unique ID to track user activity across devices and ties a user to their events                                                                                                             |
+| identify         | [`identify`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelidentify)             | Identifies a user with a unique ID to track user activity across devices and ties a user to their events. If using feature flags, this will also trigger a reload of flags with the new user id                      |
 | register         | [`register`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelregister)             | Registers a set of [super properties](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript#setting-super-properties), which are included with all events. Overwrites existing super properties if present |
 | reset            | [`reset`](https://github.com/mixpanel/mixpanel-js/blob/master/doc/readme.io/javascript-full-api-reference.md#mixpanelreset)                   | Clears super properties and generates a new random distinct_id                                                                                                                                                       |
 

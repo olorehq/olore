@@ -1,16 +1,18 @@
 ---
 title: 'WebhookAlertChannel Construct'
 description: 'Learn how to configure webhook alert channels with the Checkly CLI.'
-sidebarTitle: 'Webhook Alert Channel'
+sidebarTitle: 'Webhook'
 ---
 
-import AlertChannelOptionsTable from '/snippets/alert-channel-options-table.mdx';
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
 
 <Tip>
-Learn more about Webhook alerts in [the webhook alert documentation](/integrations/alerts/webhooks).
+For general information about alerting, see our docs on [webhook alerts](/integrations/alerts/webhooks) and [alerting with Checkly](/communicate/alerts/overview/).
 </Tip>
 
-Use Webhook Alert Channels to send HTTP requests to any URL when checks fail or recover. This is the most flexible alert channel type, allowing integration with any service that accepts HTTP webhooks.
+Sends alert notifications as HTTP requests to any URL. This is the most flexible alert channel type, allowing integration with any service that accepts webhooks. 
+
+You can customize the payload with our [Handlebars-style variables and helpers](/integrations/alerts/webhooks#using-variables).
 
 <CodeGroup>
 
@@ -29,815 +31,114 @@ const webhookChannel = new WebhookAlertChannel("webhook-channel-1", {
 ```
 
 ```ts Advanced Example
-import { WebhookAlertChannel } from "checkly/constructs"
+import { WebhookAlertChannel } from 'checkly/constructs'
 
-const webhookChannel = new WebhookAlertChannel("advanced-webhook", {
-  name: "Advanced Webhook Channel",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks/alerts"),
-  headers: [
-    { key: "Authorization", value: "Bearer {{API_TOKEN}}" },
-    { key: "Content-Type", value: "application/json" },
-    { key: "X-Source", value: "Checkly" },
-  ],
-  queryParameters: [
-    { key: "source", value: "checkly" },
-    { key: "version", value: "v1" },
-  ],
-  template: JSON.stringify({
-    alert: {
-      title: "{{ALERT_TITLE}}",
-      type: "{{ALERT_TYPE}}",
-      status: "{{ALERT_TYPE}}",
-      started_at: "{{STARTED_AT}}",
-      response_time: "{{RESPONSE_TIME}}ms",
-      result_link: "{{RESULT_LINK}}",
-      check: {
-        name: "{{CHECK_NAME}}",
-        type: "{{CHECK_TYPE}}",
-        location: "{{RUN_LOCATION}}",
-      },
-    },
-  }),
+const webhookChannel = new WebhookAlertChannel('webhook-channel-1', {
+  name: 'Pushover webhook',
+  method: 'POST',
+  url: new URL('https://api.pushover.net/1/messages.json'),
+  headers: [{ key: 'X-My-Header', value: 'myToken' }],
+  queryParameters: [{ key: 'source', value: 'checkly' }],
+  template: `{
+    "token":"FILL_IN_YOUR_SECRET_TOKEN_FROM_PUSHOVER",
+    "user":"FILL_IN_YOUR_USER_FROM_PUSHOVER",
+    "title":"{{ALERT_TITLE}}",
+    "html":1,
+    "priority":2,
+    "retry":30,
+    "expire":10800,
+    "message":"{{ALERT_TYPE}} {{STARTED_AT}} ({{RESPONSE_TIME}}ms) {{RESULT_LINK}}"
+  }`,
   sendRecovery: true,
   sendFailure: true,
   sendDegraded: true,
+  sslExpiry: true,
+  sslExpiryThreshold: 30,
 })
 ```
 
 </CodeGroup>
 
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
 ## Configuration
-
-<Tabs>
-<Tab title="Webhook Alert Channel">
-
-Configure webhook-specific settings:
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `url` | `URL` | ✅ | - | Target URL for the webhook request |
-| `method` | `string` | ✅ | - | HTTP method: `GET` \| `POST` \| `PUT` \| `PATCH` \| `HEAD` \| `DELETE` |
-| `name` | `string` | ❌ | - | Friendly name for the webhook channel |
-| `template` | `string` | ❌ | - | Request body template with Handlebars-style variables |
-| `headers` | `array` | ❌ | `[]` | Array of `{ key, value }` objects for HTTP headers |
-| `queryParameters` | `array` | ❌ | `[]` | Array of `{ key, value }` objects for query parameters |
-| `webhookSecret` | `string` | ❌ | `''` | Value to use as secret for the webhook |
-
-</Tab>
-<Tab title="General Alert Channel">
-
-  <AlertChannelOptionsTable />
-
-</Tab>
-</Tabs>
 
 ### Webhook Alert Channel Options
 
 <ResponseField name="url" type="URL" required>
-Target URL for the webhook request. This is where Checkly will send the HTTP request when alerts are triggered.
-
-**Usage:**
+Target URL for the webhook request.
 
 ```ts highlight={4}
-new WebhookAlertChannel("webhook-channel", {
-  name: "API Integration",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks/checkly"),
+new WebhookAlertChannel('webhook-channel-1', {
+  name: 'Pushover webhook',
+  method: 'POST',
+  url: new URL('https://api.pushover.net/1/messages.json'),
 })
 ```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Direct URL
-const directWebhook = new WebhookAlertChannel("direct-webhook", {
-  name: "Direct API",
-  method: "POST",
-  url: new URL("https://api.example.com/alerts/webhooks"),
-})
-```
-
-```ts Environment Variable
-const secureWebhook = new WebhookAlertChannel("secure-webhook", {
-  name: "Secure Webhook",
-  method: "POST",
-  url: new URL(process.env.WEBHOOK_URL!), // Store securely
-})
-```
-
-```ts Service-Specific URLs
-// Discord
-const discordWebhook = new WebhookAlertChannel("discord-webhook", {
-  name: "Discord",
-  method: "POST",
-  url: new URL("https://discord.com/api/webhooks/123456789/abcdef"),
-})
-
-// Pushover
-const pushoverWebhook = new WebhookAlertChannel("pushover-webhook", {
-  name: "Pushover",
-  method: "POST",
-  url: new URL("https://api.pushover.net/1/messages.json"),
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Service integration, webhook endpoints, secure URL storage, API communication.
 </ResponseField>
 
 <ResponseField name="method" type="string" required>
-HTTP method for the webhook request. Supported methods: `GET`, `POST`, `PUT`, `PATCH`, `HEAD`, `DELETE`.
-
-**Usage:**
-
-```ts highlight={3}
-new WebhookAlertChannel("webhook-channel", {
-  name: "API Integration",
-  method: "POST", // Most common for webhooks
-  url: new URL("https://api.example.com/webhooks"),
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts POST Method (Most Common)
-const postWebhook = new WebhookAlertChannel("post-webhook", {
-  name: "POST Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks"),
-  template: JSON.stringify({
-    message: "{{ALERT_TITLE}}",
-    status: "{{ALERT_TYPE}}",
-  }),
-})
-```
-
-```ts GET Method
-const getWebhook = new WebhookAlertChannel("get-webhook", {
-  name: "GET Webhook",
-  method: "GET",
-  url: new URL("https://api.example.com/notify"),
-  queryParameters: [
-    { key: "alert_type", value: "{{ALERT_TYPE}}" },
-    { key: "check_name", value: "{{CHECK_NAME}}" },
-  ],
-})
-```
-
-```ts PUT Method
-const putWebhook = new WebhookAlertChannel("put-webhook", {
-  name: "PUT Webhook",
-  method: "PUT",
-  url: new URL("https://api.example.com/alerts/update"),
-  template: JSON.stringify({
-    alert_id: "checkly-{{CHECK_NAME}}",
-    status: "{{ALERT_TYPE}}",
-    timestamp: "{{STARTED_AT}}",
-  }),
-})
-```
-
-</CodeGroup>
-
-**Use cases**: RESTful API integration, service-specific requirements.
+The HTTP method, either `GET`, `POST`, `PUT`, `PATCH`, `HEAD` or `DELETE`.
 </ResponseField>
 
 <ResponseField name="name" type="string">
-Friendly name for the webhook channel to identify it in your Checkly dashboard.
-
-**Usage:**
-
-```ts highlight={2}
-new WebhookAlertChannel("webhook-channel", {
-  name: "Custom API Integration",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks"),
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Service-Based Names
-const pushoverWebhook = new WebhookAlertChannel("pushover-webhook", {
-  name: "Pushover Notifications",
-  method: "POST",
-  url: new URL("https://api.pushover.net/1/messages.json"),
-})
-
-const discordWebhook = new WebhookAlertChannel("discord-webhook", {
-  name: "Discord Notifications",
-  method: "POST",
-  url: new URL(
-    "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
-  ),
-})
-```
-
-```ts Purpose-Based Names
-const monitoringWebhook = new WebhookAlertChannel("monitoring-webhook", {
-  name: "Monitoring System Integration",
-  method: "POST",
-  url: new URL("https://monitoring.example.com/alerts"),
-})
-
-const securityWebhook = new WebhookAlertChannel("security-webhook", {
-  name: "Security Incident System",
-  method: "POST",
-  url: new URL("https://security.example.com/incidents"),
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Integration identification, operational clarity.
+Friendly name for the webhook channel.
 </ResponseField>
 
 <ResponseField name="template" type="string">
-Request body template (commonly JSON) with Handlebars-style variables that are replaced with alert data.
+The request body template, usually JSON. You can use [Handlebars-style template variables](/integrations/alerts/webhooks#using-variables) to further customize the template.
 
-**Usage:**
-
-```ts highlight={5-8}
-new WebhookAlertChannel("template-webhook", {
-  name: "Templated Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks"),
-  template: JSON.stringify({
-    message: "Check {{CHECK_NAME}} is {{ALERT_TYPE}}",
-    timestamp: "{{STARTED_AT}}",
-  }),
+```ts highlight={5-14}
+new WebhookAlertChannel('webhook-channel-1', {
+  name: 'Pushover webhook',
+  method: 'POST',
+  url: new URL('https://api.pushover.net/1/messages.json'),
+  template: `{
+    "token":"FILL_IN_YOUR_SECRET_TOKEN_FROM_PUSHOVER",
+    "user":"FILL_IN_YOUR_USER_FROM_PUSHOVER",
+    "title":"{{ALERT_TITLE}}",
+    "html":1,
+    "priority":2,
+    "retry":30,
+    "expire":10800,
+    "message":"{{ALERT_TYPE}} {{STARTED_AT}} ({{RESPONSE_TIME}}ms) {{RESULT_LINK}}"
+  }`
 })
 ```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Basic Template
-const basicWebhook = new WebhookAlertChannel("basic-webhook", {
-  name: "Basic Template",
-  method: "POST",
-  url: new URL("https://api.example.com/alerts"),
-  template: JSON.stringify({
-    title: "{{ALERT_TITLE}}",
-    type: "{{ALERT_TYPE}}",
-    check: "{{CHECK_NAME}}",
-    location: "{{RUN_LOCATION}}",
-  }),
-})
-```
-
-```ts Rich Template
-const richWebhook = new WebhookAlertChannel("rich-webhook", {
-  name: "Rich Template",
-  method: "POST",
-  url: new URL("https://api.example.com/notifications"),
-  template: JSON.stringify({
-    alert: {
-      title: "{{ALERT_TITLE}}",
-      type: "{{ALERT_TYPE}}",
-      started_at: "{{STARTED_AT}}",
-      response_time: "{{RESPONSE_TIME}}ms",
-      check: {
-        name: "{{CHECK_NAME}}",
-        type: "{{CHECK_TYPE}}",
-        location: "{{RUN_LOCATION}}",
-      },
-      links: {
-        result: "{{RESULT_LINK}}",
-      },
-    },
-  }),
-})
-```
-
-```ts Plain Text Template
-const textWebhook = new WebhookAlertChannel("text-webhook", {
-  name: "Text Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/simple"),
-  template:
-    "Check {{CHECK_NAME}} is {{ALERT_TYPE}} - Response time: {{RESPONSE_TIME}}ms - {{RESULT_LINK}}",
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Custom message formatting, service-specific payloads, data transformation.
 </ResponseField>
 
 <ResponseField name="headers" type="array">
-Array of HTTP headers to include in the webhook request. Each header is an object with `key` and `value` properties.
+An array of `{ key, value }` objects to define HTTP headers.
 
-**Usage:**
-
-```ts highlight={5-8}
-new WebhookAlertChannel("headers-webhook", {
-  name: "Headers Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks"),
-  headers: [
-    { key: "Authorization", value: "Bearer {{API_TOKEN}}" },
-    { key: "Content-Type", value: "application/json" },
-  ],
+```ts highlight={5}
+new WebhookAlertChannel('webhook-channel-1', {
+  name: 'Pushover webhook',
+  method: 'POST',
+  url: new URL('https://api.pushover.net/1/messages.json'),
+  headers: [{ key: 'X-My-Header', value: '123' }],
 })
 ```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Authentication Headers
-const authWebhook = new WebhookAlertChannel("auth-webhook", {
-  name: "Authenticated Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/secure"),
-  headers: [
-    { key: "Authorization", value: "Bearer {{API_SECRET}}" },
-    { key: "X-API-Key", value: "{{API_KEY}}" },
-    { key: "Content-Type", value: "application/json" },
-  ],
-})
-```
-
-```ts Custom Headers
-const customWebhook = new WebhookAlertChannel("custom-webhook", {
-  name: "Custom Headers",
-  method: "POST",
-  url: new URL("https://api.example.com/alerts"),
-  headers: [
-    { key: "X-Source", value: "Checkly" },
-    { key: "X-Alert-Version", value: "v1" },
-    { key: "X-Severity", value: "{{ALERT_TYPE}}" },
-    { key: "User-Agent", value: "Checkly-Webhook/1.0" },
-  ],
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Authentication, content type specification, custom metadata, service requirements.
 </ResponseField>
 
 <ResponseField name="queryParameters" type="array">
-Array of query parameters to include in the webhook URL. Each parameter is an object with `key` and `value` properties.
+An array of `{ key, value }` objects to define query parameters.
 
-**Usage:**
-
-```ts highlight={5-8}
-new WebhookAlertChannel("query-webhook", {
-  name: "Query Webhook",
-  method: "GET",
-  url: new URL("https://api.example.com/notify"),
-  queryParameters: [
-    { key: "source", value: "checkly" },
-    { key: "alert_type", value: "{{ALERT_TYPE}}" },
-  ],
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts GET Request with Parameters
-const getWebhook = new WebhookAlertChannel("get-params-webhook", {
-  name: "GET with Parameters",
-  method: "GET",
-  url: new URL("https://api.example.com/notify"),
-  queryParameters: [
-    { key: "alert_type", value: "{{ALERT_TYPE}}" },
-    { key: "check_name", value: "{{CHECK_NAME}}" },
-    { key: "location", value: "{{RUN_LOCATION}}" },
-    { key: "response_time", value: "{{RESPONSE_TIME}}" },
-  ],
-})
-```
-
-```ts Metadata Parameters
-const metadataWebhook = new WebhookAlertChannel('metadata-webhook', {
-  name: 'Metadata Webhook',
+```ts highlight={5}
+new WebhookAlertChannel('webhook-channel-1', {
+  name: 'Pushover webhook',
   method: 'POST',
-  url: new URL('https://api.example.com/webhooks'),
-  queryParameters: [
-    { key: 'version', value: 'v1' },
-    { key: 'source', value: 'monitoring' },
-    { key: 'team', value: 'platform' },
-    { key: 'severity', value: 'high' }
-  ]
+  url: new URL('https://api.pushover.net/1/messages.json'),
+  queryParameters: [{ key: 'my-param', value: '123' }],
 })
 ```
+</ResponseField>
 
-```ts Dynamic Parameters
-const dynamicWebhook = new WebhookAlertChannel('dynamic-webhook', {
-  name: 'Dynamic Parameters',
-  method: 'GET',
-  url: new URL('https://api.example.com/alerts'),
-  queryParameters: [
-    { key: 'check_id', value: '{{CHECK_NAME}}' },
-    { key: 'alert_status', value: '{{ALERT_TYPE}}' },
-    { key: 'timestamp', value: '{{STARTED_AT}}' },
-    { key: 'tags', value: '{{TAGS}}' }
-  ]
-})
-```
-
-</CodeGroup>
-
-**Use cases**: API requirements, metadata passing, GET request data, service routing.
+<ResponseField name="webhookSecret" type="string">
+Secret token that you can use to validate the authenticity of the webhook and its payload. [Learn more about webhook secrets.](/integrations/alerts/webhooks#webhook-secrets)
 </ResponseField>
 
 ### General Alert Channel Options
 
-<ResponseField name="sendRecovery" type="boolean">
-Whether to send webhook requests when checks recover from failure or degraded state.
-
-**Usage:**
-
-```ts highlight={5}
-new WebhookAlertChannel("recovery-webhook", {
-  name: "Recovery Notifications",
-  method: "POST",
-  url: new URL(process.env.WEBHOOK_URL!),
-  sendRecovery: true, // Send webhooks for recovery notifications
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Recovery Notifications
-const opsWebhook = new WebhookAlertChannel("ops-webhook", {
-  name: "Operations Webhook",
-  method: "POST",
-  url: new URL(process.env.OPS_WEBHOOK_URL!),
-  sendRecovery: true, // Get notified when issues are resolved
-  sendFailure: true,
-})
-```
-
-```ts Failure Only
-const alertsWebhook = new WebhookAlertChannel("alerts-only", {
-  name: "Critical Alerts Only",
-  method: "POST",
-  url: new URL(process.env.CRITICAL_WEBHOOK_URL!),
-  sendRecovery: false, // Only failures, no recovery notifications
-  sendFailure: true,
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Recovery confirmation, operational awareness, noise reduction.
-</ResponseField>
-
-<ResponseField name="sendFailure" type="boolean">
-Whether to send webhook requests when checks fail.
-
-**Usage:**
-
-```ts highlight={5}
-new WebhookAlertChannel("failure-webhook", {
-  name: "Failure Notifications",
-  method: "POST",
-  url: new URL(process.env.WEBHOOK_URL!),
-  sendFailure: true, // Send webhooks for failure notifications
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Critical Failures Only
-const criticalWebhook = new WebhookAlertChannel("critical-webhook", {
-  name: "Critical Alerts",
-  method: "POST",
-  url: new URL(process.env.CRITICAL_WEBHOOK_URL!),
-  sendFailure: true, // Critical failures
-  sendRecovery: true,
-  sendDegraded: false, // No degraded alerts
-})
-```
-
-```ts All Notifications
-const comprehensiveWebhook = new WebhookAlertChannel("all-notifications", {
-  name: "All Monitoring Alerts",
-  method: "POST",
-  url: new URL(process.env.MONITORING_WEBHOOK_URL!),
-  sendFailure: true, // All failures
-  sendRecovery: true,
-  sendDegraded: true,
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Incident response, failure monitoring, operational alerting.
-</ResponseField>
-
-<ResponseField name="sendDegraded" type="boolean">
-Whether to send webhook requests when API checks degrade (performance thresholds exceeded but not failed).
-
-**Usage:**
-
-```ts highlight={5}
-new WebhookAlertChannel("performance-webhook", {
-  name: "Performance Monitoring",
-  method: "POST",
-  url: new URL(process.env.PERFORMANCE_WEBHOOK_URL!),
-  sendDegraded: true, // Send webhooks for degraded performance
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Performance Monitoring
-import { ApiCheck, WebhookAlertChannel } from "checkly/constructs"
-
-const performanceWebhook = new WebhookAlertChannel("performance-webhook", {
-  name: "Performance Team",
-  method: "POST",
-  url: new URL(process.env.PERFORMANCE_WEBHOOK_URL!),
-  sendRecovery: true,
-  sendFailure: true,
-  sendDegraded: true, // Alert on degraded performance
-})
-
-new ApiCheck("performance-check", {
-  name: "API Performance Check",
-  maxResponseTime: 5000,
-  degradedResponseTime: 2000, // Triggers degrade alerts
-  alertChannels: [performanceWebhook],
-  request: {
-    method: "GET",
-    url: "https://api.example.com/slow-endpoint",
-  },
-})
-```
-
-```ts Critical Only
-const criticalOnlyWebhook = new WebhookAlertChannel("critical-only", {
-  name: "Critical Alerts Only",
-  method: "POST",
-  url: new URL(process.env.CRITICAL_WEBHOOK_URL!),
-  sendFailure: true,
-  sendRecovery: true,
-  sendDegraded: false, // Only complete failures, not performance issues
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Performance monitoring, early warning systems, SLA tracking.
-</ResponseField>
-
-<ResponseField name="sslExpiry" type="boolean">
-Whether to send webhook requests for SSL certificate expiry warnings.
-
-**Usage:**
-
-```ts highlight={5}
-new WebhookAlertChannel("security-webhook", {
-  name: "Security Team",
-  method: "POST",
-  url: new URL(process.env.SECURITY_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 30, // Alert 30 days before expiry
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Security Team Alerts
-import { ApiCheck, WebhookAlertChannel } from "checkly/constructs"
-
-const securityWebhook = new WebhookAlertChannel("security-webhook", {
-  name: "Security Team Alerts",
-  method: "POST",
-  url: new URL(process.env.SECURITY_WEBHOOK_URL!),
-  sendRecovery: false,
-  sendFailure: true,
-  sslExpiry: true,
-  sslExpiryThreshold: 14, // Alert 14 days before expiry
-})
-
-new ApiCheck("ssl-cert-check", {
-  name: "SSL Certificate Check",
-  alertChannels: [securityWebhook],
-  request: {
-    method: "GET",
-    url: "https://secure.example.com",
-  },
-})
-```
-
-```ts Early Warning System
-const earlyWarningWebhook = new WebhookAlertChannel("ssl-early-warning", {
-  name: "SSL Early Warning",
-  method: "POST",
-  url: new URL(process.env.DEVOPS_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 60, // Alert 60 days before expiry for planning
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Certificate management, security compliance, proactive maintenance.
-</ResponseField>
-
-<ResponseField name="sslExpiryThreshold" type="number">
-Number of days before SSL certificate expiry to send webhook requests. Only relevant when `sslExpiry` is enabled.
-
-**Usage:**
-
-```ts highlight={6}
-new WebhookAlertChannel("ssl-monitoring", {
-  name: "SSL Monitoring",
-  method: "POST",
-  url: new URL(process.env.DEVOPS_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 30, // Alert 30 days before expiry
-})
-```
-
-**Examples:**
-
-<CodeGroup>
-
-```ts Conservative Warning
-// Give plenty of time for certificate renewal
-new WebhookAlertChannel("ssl-conservative", {
-  name: "SSL Conservative Warning",
-  method: "POST",
-  url: new URL(process.env.DEVOPS_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 60, // 60 days notice
-})
-```
-
-```ts Last Minute Alert
-// Alert close to expiry for urgent action
-new WebhookAlertChannel("ssl-urgent", {
-  name: "SSL Urgent Alert",
-  method: "POST",
-  url: new URL(process.env.SECURITY_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 7, // 7 days notice
-})
-```
-
-```ts Multiple Thresholds
-// Create multiple channels with different thresholds
-const earlyWarning = new WebhookAlertChannel("ssl-early", {
-  name: "SSL Planning Notification",
-  method: "POST",
-  url: new URL(process.env.PLANNING_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 90, // Planning notification
-})
-
-const urgentWarning = new WebhookAlertChannel("ssl-urgent", {
-  name: "SSL Urgent Notification",
-  method: "POST",
-  url: new URL(process.env.ONCALL_WEBHOOK_URL!),
-  sslExpiry: true,
-  sslExpiryThreshold: 7, // Urgent notification
-})
-```
-
-</CodeGroup>
-
-**Use cases**: Certificate renewal planning, compliance management, operational scheduling.
-</ResponseField>
-
-## Template Configuration
-
-Learn more about using environment and predefined variables in your webhook template in [the webhook documentation](/integrations/alerts/webhooks#template-variables).
-
-
-## Examples
-
-<CodeGroup>
-```ts Pushover Notifications
-const pushoverWebhook = new WebhookAlertChannel("pushover-webhook", {
-  name: "Pushover Notifications",
-  method: "POST",
-  url: new URL("https://api.pushover.net/1/messages.json"),
-  template: JSON.stringify({
-    token: "{{PUSHOVER_APP_TOKEN}}",
-    user: "{{PUSHOVER_USER_KEY}}",
-    title: "{{ALERT_TITLE}}",
-    message:
-      "{{CHECK_NAME}} is {{ALERT_TYPE}} ({{RESPONSE_TIME}}ms) - {{RESULT_LINK}}",
-    html: 1,
-    priority: 2,
-    retry: 30,
-    expire: 10800,
-  }),
-})
-```
-
-```ts Discord Webhook
-const discordWebhook = new WebhookAlertChannel("discord-webhook", {
-  name: "Discord Notifications",
-  method: "POST",
-  url: new URL(
-    "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
-  ),
-  headers: [{ key: "Content-Type", value: "application/json" }],
-  template: JSON.stringify({
-    content: null,
-    embeds: [
-      {
-        title: "{{ALERT_TITLE}}",
-        description:
-          "Check: {{CHECK_NAME}}\nLocation: {{RUN_LOCATION}}\nResponse Time: {{RESPONSE_TIME}}ms",
-        timestamp: "{{STARTED_AT}}",
-        footer: {
-          text: "Checkly Monitoring",
-        },
-        fields: [
-          {
-            name: "View Result",
-            value: "[Open in Checkly]({{RESULT_LINK}})",
-            inline: false,
-          },
-        ],
-      },
-    ],
-  }),
-})
-```
-
-```ts Custom API Integration
-const customApiWebhook = new WebhookAlertChannel("custom-api-webhook", {
-  name: "Custom API Integration",
-  method: "POST",
-  url: new URL("https://api.mycompany.com/alerts"),
-  headers: [
-    { key: "Authorization", value: "Bearer {{API_SECRET}}" },
-    { key: "Content-Type", value: "application/json" },
-    { key: "X-Checkly-Source", value: "monitoring" },
-  ],
-  queryParameters: [
-    { key: "severity", value: "high" },
-    { key: "team", value: "platform" },
-  ],
-  template: JSON.stringify({
-    event: {
-      type: "monitoring_alert",
-      title: "{{ALERT_TITLE}}",
-      description: "{{CHECK_NAME}} monitoring alert",
-      timestamp: "{{STARTED_AT}}",
-      metadata: {
-        check_name: "{{CHECK_NAME}}",
-        check_type: "{{CHECK_TYPE}}",
-        location: "{{RUN_LOCATION}}",
-        response_time_ms: "{{RESPONSE_TIME}}",
-        tags: "{{TAGS}}",
-        result_url: "{{RESULT_LINK}}",
-      },
-    },
-  }),
-  sendFailure: true,
-  sendRecovery: true,
-  sendDegraded: false,
-})
-```
-
-</CodeGroup>
-
-## Environment Variables in Templates
-
-Use environment variables in your webhook templates for sensitive data:
-
-```ts
-const webhookChannel = new WebhookAlertChannel("secure-webhook", {
-  name: "Secure Webhook",
-  method: "POST",
-  url: new URL("https://api.example.com/webhooks"),
-  headers: [{ key: "Authorization", value: "Bearer {{API_TOKEN}}" }],
-  template: JSON.stringify({
-    api_key: "{{SECRET_API_KEY}}",
-    alert: "{{ALERT_TITLE}}",
-  }),
-})
-```
-
-<Warning>
-**Security**: Be careful with sensitive data in webhook templates. Use environment variables for API tokens and secrets.
-</Warning>
+<AlertChannelOptionsText />

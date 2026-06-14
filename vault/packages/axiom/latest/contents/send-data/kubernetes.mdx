@@ -78,8 +78,8 @@ data:
     processors:
       - add_cloud_metadata:
     output.elasticsearch:
-      hosts: ['${AXIOM_HOST}/v1/datasets/${AXIOM_DATASET_NAME}/elastic']
-      api_key: 'axiom:${AXIOM_API_TOKEN}'
+      hosts: ['${AXIOM_HOST}/v1/datasets/${AXIOM_DATASET}/elastic']
+      api_key: 'axiom:${AXIOM_TOKEN}'
     setup.ilm.enabled: false
 kind: ConfigMap
 metadata:
@@ -114,9 +114,9 @@ spec:
           env:
             - name: AXIOM_HOST
               value: AXIOM_DOMAIN
-            - name: AXIOM_DATASET_NAME
+            - name: AXIOM_DATASET
               value: DATASET_NAME
-            - name: AXIOM_API_TOKEN
+            - name: AXIOM_TOKEN
               value: API_TOKEN
             - name: NODE_NAME
               valueFrom:
@@ -244,8 +244,8 @@ data:
         inputs:
           - kubernetes_logs
         compression: zstd
-        dataset: ${AXIOM_DATASET_NAME}
-        token: ${AXIOM_API_TOKEN}
+        dataset: ${AXIOM_DATASET}
+        token: ${AXIOM_TOKEN}
         healthcheck:
           enabled: true
           log_level: debug
@@ -277,9 +277,9 @@ spec:
           env:
             - name: AXIOM_HOST
               value: AXIOM_DOMAIN
-            - name: AXIOM_DATASET_NAME
+            - name: AXIOM_DATASET
               value: DATASET_NAME
-            - name: AXIOM_API_TOKEN
+            - name: AXIOM_TOKEN
               value: API_TOKEN
             - name: VECTOR_SELF_NODE_NAME
               valueFrom:
@@ -426,8 +426,8 @@ data:
         Match           *
         Host            ${AXIOM_HOST}
         Port            443
-        URI             /v1/ingest/${AXIOM_DATASET_NAME}
-        Header          Authorization Bearer ${AXIOM_API_TOKEN}
+        URI             /v1/ingest/${AXIOM_DATASET}
+        Header          Authorization Bearer ${AXIOM_TOKEN}
         Format          json
         Json_date_key   time
         Json_date_format iso8601
@@ -465,9 +465,9 @@ spec:
           env:
             - name: AXIOM_HOST
               value: AXIOM_DOMAIN
-            - name: AXIOM_DATASET_NAME
+            - name: AXIOM_DATASET
               value: DATASET_NAME
-            - name: AXIOM_API_TOKEN
+            - name: AXIOM_TOKEN
               value: API_TOKEN
           volumeMounts:
             - name: config

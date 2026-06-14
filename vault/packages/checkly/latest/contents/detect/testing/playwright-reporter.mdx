@@ -119,8 +119,11 @@ export default defineConfig({
       // Skip upload, create local files only
       dryRun: false,
 
+      // Forward worker stdout/stderr to the terminal
+      verbose: true,
+
       // Enable debug logging
-      verbose: false,
+      debug: false,
 
       // Show real-time test progress
       showProgress: true,
@@ -140,10 +143,12 @@ export default defineConfig({
 | `outputDir` | `string` | Playwright's `outputDir` | Directory for output files |
 | `sessionName` | `string \| function` | Auto-generated | Custom session name or function returning name |
 | `dryRun` | `boolean` | `false` | Skip upload, create local files only |
-| `verbose` | `boolean` | `false` | Enable debug logging |
+| `verbose` | `boolean` | `true` | Forward worker `stdout`/`stderr` to the terminal |
+| `debug` | `boolean` | `false` | Enable debug logging |
 | `showProgress` | `boolean` | `true` | Display real-time test progress |
 | `printSteps` | `boolean` | `false` | Display individual test steps |
 | `showSummaryTable` | `boolean` | `true` | Display per-project results table |
+| `scrubbing` | `boolean \| object` | See [Secret Scrubbing](#secret-scrubbing) | Control sensitive data removal from reports and traces |
 
 **Output files** (written to `outputDir`):
 - `checkly-report.json` - JSON test report
@@ -161,6 +166,84 @@ export default defineConfig({
 **Security Note**: Always use environment variables for credentials. Never commit API keys to version control.
 </Warning>
 
+## Secret Scrubbing
+
+The reporter automatically removes sensitive values from reports, trace files, and logs before upload. Scrubbing is enabled by default.
+
+### What Gets Scrubbed
+
+| Category | What is redacted | Default behavior |
+|----------|-----------------|------------------|
+| **Secret env vars** | Values of environment variables you specify | Requires explicit `envVars` list |
+| **Auto-detected env vars** | Values of env vars matching common patterns (`SECRET`, `KEY`, `TOKEN`, `PASSWORD`, `CREDENTIAL`, `AUTH`, `PRIVATE`, `API`) | Disabled by default; opt in with `autoDetect: true` |
+| **Prefixed env vars** | Values of env vars starting with `CHECKLY_SECRET_` | Enabled by default |
+| **Sensitive HTTP headers** | `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `X-API-Key`, `X-Auth-Token` in network requests | Enabled by default |
+
+### Configuration
+
+```ts playwright.config.ts
+import { defineConfig } from '@playwright/test';
+import { createChecklyReporter } from '@checkly/playwright-reporter';
+
+export default defineConfig({
+  reporter: [
+    ['list'],
+    createChecklyReporter({
+      scrubbing: {
+        // Explicitly list env var names to scrub
+        envVars: ['API_KEY', 'DB_PASSWORD'],
+
+        // Auto-detect secrets from env vars matching common patterns
+        // (SECRET, KEY, TOKEN, PASSWORD, CREDENTIAL, AUTH, PRIVATE, API)
+        autoDetect: true,
+
+        // Scrub env vars starting with this prefix (set to false to disable)
+        prefix: 'CHECKLY_SECRET_',
+
+        // Redact sensitive HTTP headers — omit to use the defaults,
+        // or pass an array of header names to customize the list
+        // sensitiveHeaders: ['Authorization', 'X-Custom-Token'],
+
+        // Custom replacement string
+        replacement: '*********',
+      },
+    }),
+  ],
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `envVars` | `string[]` | `[]` | Env var names whose values should be scrubbed |
+| `autoDetect` | `boolean` | `false` | Auto-detect secrets from env vars matching common patterns |
+| `prefix` | `string \| false` | `'CHECKLY_SECRET_'` | Scrub env vars with this prefix; set `false` to disable |
+| `sensitiveHeaders` | `string[] \| false` | Built-in list | Redact sensitive HTTP headers; pass an array for a custom list, or `false` to disable |
+| `replacement` | `string` | `'*********'` | Replacement text for scrubbed values |
+
+### Disabling Scrubbing
+
+Disable all scrubbing:
+
+```ts playwright.config.ts
+createChecklyReporter({
+  scrubbing: false,
+})
+```
+
+Disable only sensitive header scrubbing:
+
+```ts playwright.config.ts
+createChecklyReporter({
+  scrubbing: {
+    sensitiveHeaders: false,
+  },
+})
+```
+
+<Tip>
+Secret scrubbing applies to the JSON report, trace files, and reporter log entries. Values are replaced before upload and never appear in Checkly.
+</Tip>
+
 ## What Gets Uploaded
 
 - Test results and status (passed/failed/flaky)
@@ -173,6 +256,10 @@ export default defineConfig({
 
 <Tip>
 If your Checkly reports don't include traces or videos, ensure that your `playwright.config.ts` enables these Playwright features. The reporter only uploads what your Playwright test run creates.
+</Tip>
+
+<Tip>
+**Using UI mode?** The reporter uploads results from UI mode runs, too. Enable [`dryRun`](#dry-run-mode) to skip uploads during local development.
 </Tip>
 
 ## Understanding Test Sessions
@@ -244,7 +331,7 @@ createChecklyReporter({
 })
 ```
 
-Both approaches create `checkly-report.json` and `checkly-report.zip` in your output directory for local inspection.
+Dry runs will create a `checkly-report.zip` in your output directory for local inspection.
 
 ## CI/CD Integration
 

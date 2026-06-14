@@ -151,14 +151,13 @@ mixpanel.close();
 
 ### Evaluating All Flags
 
-You can evaluate all flags at once using the `getAllVariants()` method:
+You can evaluate all flags at once using the `getAllVariantsByFlag()` method, which returns a map keyed by flag key:
 
 ```java
 import com.mixpanel.mixpanelapi.MixpanelAPI;
 import com.mixpanel.mixpanelapi.featureflags.config.LocalFlagsConfig;
 import com.mixpanel.mixpanelapi.featureflags.model.SelectedVariant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 LocalFlagsConfig config = LocalFlagsConfig.builder()
@@ -171,13 +170,13 @@ mixpanel.getLocalFlags().startPollingForDefinitions();
 Map<String, Object> userContext = new HashMap<>();
 userContext.put("distinct_id", "user-123");
 
-// Evaluate all flags at once
-List<SelectedVariant<Object>> allVariants = mixpanel.getLocalFlags().getAllVariants(userContext, true);
+// Evaluate all flags at once, keyed by flag key
+Map<String, SelectedVariant<Object>> allVariants = mixpanel.getLocalFlags().getAllVariantsByFlag(userContext, true);
 
-for (SelectedVariant<Object> variant : allVariants) {
-    if (variant.isSuccess()) {
-        System.out.println("Flag: " + variant.getVariantKey() + " = " + variant.getVariantValue());
-    }
+for (Map.Entry<String, SelectedVariant<Object>> entry : allVariants.entrySet()) {
+    String flagKey = entry.getKey();
+    SelectedVariant<Object> variant = entry.getValue();
+    System.out.println("Flag: " + flagKey + " = " + variant.getVariantValue());
 }
 
 // Clean up resources when done

@@ -1,0 +1,165 @@
+---
+title: "Rendering Loop"
+description: "What happens between beginFrame and flush — and how to drive it."
+---
+
+Each frame goes through three phases:
+
+1. **Advance.** `sm->advanceAndApply(dt)` updates state machines, animations, layout, and data bindings.
+2. **Record.** `RiveRenderer` records draw commands into the active `RenderContext`.
+3. **Submit.** `renderContext->flush(...)` builds the GPU work and lets the
+   backend submit it.
+
+```cpp
+// 1. Advance.
+sm->advanceAndApply(dt);
+
+// 2. Record draws.
+RenderContext::FrameDescriptor frame{};
+frame.renderTargetWidth  = w;
+frame.renderTargetHeight = h;
+frame.clearColor         = 0xff202020;
+renderContext->beginFrame(frame);
+
+RiveRenderer renderer(renderContext.get());
+renderer.save();
+renderer.align(Fit::contain, Alignment::center,
+               AABB(0, 0, w, h), artboard->bounds());
+sm->draw(&renderer);
+renderer.restore();
+
+// 3. Submit.
+RenderContext::FlushResources flush{};
+flush.renderTarget = renderTarget.get();
+renderContext->flush(flush);
+```
+
+## `FrameDescriptor`
+
+Configures the upcoming frame. Values are reset every `beginFrame`.
+
+| Field | Default | Purpose |
+| ----- | ------- | ------- |
+| `renderTargetWidth` / `renderTargetHeight` | 0 | Must match your render target. |
+| `loadAction` | `clear` | `clear` / `preserveRenderTarget` / `dontCare`. |
+| `clearColor` | 0 | ARGB; only used with `loadAction == clear`. |
+| `msaaSampleCount` | 0 | Nonzero forces MSAA mode. |
+| `disableRasterOrdering` | false | Forces atomic mode even when raster-ordering is supported. |
+| `ditherMode` | `interleavedGradientNoise` | `none` to disable. |
+| `virtualTileWidth` / `virtualTileHeight` | 0 | Vulkan-only frame tiling for pre-emption. |
+
+## `FlushResources`
+
+Carries everything the backend needs to submit the recorded work.
+
+| Field | Use |
+| ----- | --- |
+| `renderTarget` | The `RenderTarget*` you bound this frame's backbuffer to. |
+| `externalCommandBuffer` | Backend command buffer — `VkCommandBuffer` (Vulkan), `id<MTLCommandBuffer>` (Metal), `WGPUCommandEncoder` (WebGPU). Unused on D3D11 / GL. |
+| `currentFrameNumber` | Monotonic frame ID for resource lifetime tracking. |
+| `safeFrameNumber` | Most recent frame whose GPU work has retired (i.e. fence has signaled). Resources last used on or before this frame can be recycled. |
+
+On D3D12, Vulkan, and Metal you must update `currentFrameNumber` and
+`safeFrameNumber` every frame against your fence values. Otherwise the
+renderer can't safely recycle staging buffers and you'll either see
+overwrites mid-flight or unbounded memory growth.
+
+## Fixed-Timestep Accumulator
+
+State machines and animations are deterministic at fixed `dt`s. Wrap your
+real-elapsed-time delta in an accumulator so playback is reproducible across
+frame rates:
+
+```cpp
+constexpr float kFixedSimDt = 1.f / 120.f;
+constexpr float kMaxFrameDt = 0.25f;   // cap after stalls
+
+void tick(float realDt) {
+    if (realDt > kMaxFrameDt) realDt = kMaxFrameDt;
+    accumulator += realDt;
+    while (accumulator >= kFixedSimDt) {
+        sm->advanceAndApply(kFixedSimDt);
+        accumulator -= kFixedSimDt;
+    }
+    drawFrame();
+}
+```
+
+The cap (`kMaxFrameDt`) prevents catch-up storms after the app gets paused
+in a debugger or backgrounded by the OS.
+
+## Resize Handling
+
+Three things have to happen on a resize:
+
+1. Resize your swap-chain / framebuffer.
+2. Re-create the `RenderTarget`.
+3. Either feed the new size into the artboard (for `Fit::layout`) or call
+   `resetSize()`, then run `advanceAndApply(0)` so layout solves before the
+   next draw.
+
+```cpp
+void onResize(uint32_t w, uint32_t h) {
+    swapChain->ResizeBuffers(0, w, h, DXGI_FORMAT_UNKNOWN, 0);
+
+    auto* impl = renderContext->static_impl_cast<RenderContextD3DImpl>();
+    renderTarget = impl->makeRenderTarget(w, h);
+
+    if (fit == Fit::layout) {
+        artboard->width(static_cast<float>(w));
+        artboard->height(static_cast<float>(h));
+    } else {
+        artboard->resetSize();
+    }
+    sm->advanceAndApply(0.f);
+}
+```
+
+## Aligning Artboard to Viewport
+
+Use `computeAlignment` (or `Renderer::align`) to map artboard-space into the
+viewport. Stash the matrix — you'll need its inverse to convert pointer
+coordinates back into artboard-space.
+
+```cpp
+#include "rive/renderer.hpp"
+
+Mat2D align = computeAlignment(
+    Fit::contain, Alignment::center,
+    AABB(0, 0, w, h),
+    artboard->bounds());
+
+renderer.save();
+renderer.transform(align);
+sm->draw(&renderer);
+renderer.restore();
+
+// Later, on input:
+Vec2D pt = align.invertOrIdentity() * Vec2D{(float)mx, (float)my};
+sm->pointerMove(pt);
+```
+
+## When to Skip a Frame
+
+`advanceAndApply` returns `true` if the state machine has more work; `false` if
+everything has settled. For animations that have looped to rest, you can
+skip both the advance step and the draw call, dropping CPU/GPU usage to
+zero between user inputs.
+
+Pointer events and external view-model writes can wake the state machine back up —
+re-draw at least once after each.
+
+## Tear-Down
+
+```cpp
+sm.reset();
+artboard.reset();
+file = nullptr;
+renderTarget = nullptr;
+renderContext.reset();   // last
+```
+
+Always destroy Rive objects **before** the `RenderContext` and the
+underlying GPU device. Rive objects hold reference-counted GPU resources;
+killing the device first leaves them with dangling handles and crashes on
+release.

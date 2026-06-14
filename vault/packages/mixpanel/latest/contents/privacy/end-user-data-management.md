@@ -57,7 +57,7 @@ You must submit a deletion request to delete end user data. This is done to sati
 - Select a project in the "Project" dropdown.
 - Select to delete data for a single user or multiple users.
    - For a single user, provide the distinct_id of the user.
-   - For multiple users, upload a list of distinct_ids as a CSV file. There is a limit of 500 users per request.
+   - For multiple users, upload a list of distinct_ids as a CSV file. There is a limit of 2000 users per request, which may be lower if your project uses Group Analytics.
  3. Click Submit Request. Note that requests can take up to several weeks to process.
 
 ![Data & Privacy](/delete-user-data-form.png)

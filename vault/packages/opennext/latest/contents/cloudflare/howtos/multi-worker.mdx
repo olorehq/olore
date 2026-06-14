@@ -30,7 +30,7 @@ This multi-worker approach is beneficial when you need:
 
 Here we assume a configuration like that:
 
-```ts
+```ts filename="open-next.config.ts"
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
 import { withRegionalCache } from "@opennextjs/cloudflare/overrides/incremental-cache/regional-cache";
@@ -65,11 +65,11 @@ export default defineCloudflareConfig({
 
 You'll need 2 custom workers in order for this to work:
 
-```js
-// middleware.js
+```js filename="middleware.js"
 import { WorkerEntrypoint } from "cloudflare:workers";
+```
 
-// ./.open-next/cloudflare/init.js
+```js filename="/.open-next/cloudflare/init.js"
 import { runWithCloudflareRequestContext } from "./.open-next/cloudflare/init.js";
 
 import { handler as middlewareHandler } from "./.open-next/middleware/handler.mjs";
@@ -107,9 +107,7 @@ export default class extends WorkerEntrypoint {
 }
 ```
 
-```js
-// server.js
-
+```js filename="server.js"
 // Replace with your actual build output directory, typically:
 // ./.open-next/cloudflare/init.js
 import { runWithCloudflareRequestContext } from "./.open-next/cloudflare/init.js";
@@ -128,7 +126,7 @@ export default {
 
 ### Wrangler configurations
 
-```jsonc
+```jsonc filename="wrangler.jsonc"
 // Middleware wrangler file
 {
   "main": "middleware.js",
@@ -184,7 +182,7 @@ export default {
 }
 ```
 
-```jsonc
+```jsonc filename="wrangler.jsonc"
 // Server wrangler file
 {
   "main": "server.js",
@@ -246,7 +244,7 @@ The steps to deploy without causing downtime to the already deployed ones are as
 9. You then deploy the middleware at 100% `wrangler versions deploy <NEW_MIDDLEWARE_ID>@100% -y --config ./path-to/middlewareWrangler.jsonc`. At this stage you are already serving the new version of the website in production.
 10. To finish it off you deploy the server at 100% `wrangler versions deploy <NEW_SERVER_VERSION_ID>@100% -y --config ./path-to/server-wrangler.jsonc`.
 
-You can find actual implementations of such a deployment in the GitBook repo using Github actions [here](https://github.com/GitbookIO/gitbook/blob/main/.github/composite/deploy-cloudflare/action.yaml).
+You can find actual implementations of such a deployment in the GitBook repo using GitHub actions [here](https://github.com/GitbookIO/gitbook/blob/main/.github/composite/deploy-cloudflare/action.yaml).
 
 #### Version Affinity Explained
 

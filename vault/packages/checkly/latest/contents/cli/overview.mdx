@@ -1,13 +1,13 @@
 ---
-title: Overview
-description: 'Complete guide to the Checkly CLI for monitoring as code'
+title: Checkly CLI
+description: 'Code, test, and deploy synthetic monitoring at scale with the Checkly CLI.'
 sidebarTitle: 'Overview'
 ---
 
 import MainCicdCards from "/snippets/main-cicd-cards.mdx"
 
 The Checkly CLI gives you a JavaScript/TypeScript-native workflow for coding, testing and deploying synthetic
-monitoring at scale, from your code base. The Checkly CLI comes with **native `@playwright/test` support.** No lock-in, 
+monitoring at scale, from your code base. The Checkly CLI comes with **native `@playwright/test` support.** No lock-in,
 just write standard `*.spec.ts` files.
 
 ## Starting your first project
@@ -16,7 +16,7 @@ Get started by installing the CLI using the following command which will guide y
 set up a fully working example.
 
 ```bash Terminal
-npm create checkly@latest
+npx checkly init
 ```
 
 Now, login to your Checkly account or sign up for a new account right from the terminal.
@@ -31,7 +31,7 @@ After this, let's dry run the Checks in your new project against the global Chec
 npx checkly test
 ```
 
-This should report the following output to your terminal 
+This should report the following output to your terminal
 
 ```
 Running 4 checks in eu-west-1.
@@ -53,25 +53,22 @@ Lastly, you deploy your Checks and related alert channels to Checkly, so we run 
 npx checkly deploy
 ```
 
-You just created your entire synthetic monitoring setup with API and Playwright-based Browser Checks from your code base! 
+You just created your entire synthetic monitoring setup with API and Playwright-based Browser Checks from your code base!
 Open up [your Checkly dashboard](https://app.checklyhq.com) and you should see your check, ready to start monitoring around the clock.
 
 For a custom installation check out [our installation docs](/cli/installation/).
 
-## Using AI IDEs and Copilots
+## Using Agents, AI IDEs and Copilots
 
-Checkly is designed to work with AI IDEs and Copilots. You can use your preferred provider to generate code for API 
+Checkly is designed to work with Agents, AI IDEs, and Copilots. You can use your preferred provider to generate code for API
 Checks, Browser Checks and all other constructs.
 
-<Columns cols={3}>
-  <Card title="GitHub Copilot" icon="/images/github-copilot-icon.svg" href="/integrations/ai/copilot">
-    Download the Checkly instructions file and let copilot generate Checkly CLI code for you.
+<Columns cols={2}>
+  <Card title="Checkly Skills" href="/ai/skills">
+    Install Checkly Skills and let AI agents generate Checkly monitoring code for you.
   </Card>
-  <Card title="Cursor" icon="/images/cursor-icon.svg" href="/integrations/ai/cursor">
-    Download the Checkly `.mdc` rules file and let Cursor generate Checkly CLI code for you.
-  </Card>
-  <Card title="Claude Code" icon="/images/claude-icon.svg" href="/integrations/ai/claude">
-    Download the Checkly rules file and let Claude generate Checkly CLI code for you.
+  <Card title="Checkly Rules" href="/ai/rules">
+    Include the Checkly Rules in your conversations to generate Checkly monitoring code for you.
   </Card>
 </Columns>
 

@@ -384,7 +384,7 @@ import { Demos } from "/snippets/demos.jsx";
       }
       ```
 
-      For more information on image assets, see [Loading Assets](./loading-assets).
+    For more information on image assets, see [Loading Assets](/runtimes/android/loading-assets).
     </Tab>
     <Tab title="Legacy">
       ```kotlin
@@ -506,6 +506,27 @@ import { Demos } from "/snippets/demos.jsx";
 
     // Clean up external file when done
     externalFile.dispose()
+    ```
+
+    You can also create a bindable artboard with a view model instance to control its state.
+
+    ```kotlin
+    // Create the view model instance for the child artboard.
+    val childVmi = childFile.getViewModelByName("ChildVM").createBlankInstance()
+    val bindableArtboard = childFile.createBindableArtboardByName("Child", childVmi)
+
+    // Get the artboard property from the main artboard.
+    val vmi = rive.file!!.firstArtboard.viewModelInstance!!
+    val artboardProperty = vmi.getArtboardProperty("Artboard property")
+
+    // Set the bound artboard VMIs state.
+    childVmi.getNumberProperty("rotation").value = 90f
+
+    // Set the bound artboard on the main artboard.
+    artboardProperty.set(bindableArtboard)
+    
+    // Release the reference we hold from creation.
+    bindableArtboard.release() 
     ```
     </Tab>
 </Tabs>

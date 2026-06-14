@@ -1,0 +1,172 @@
+---
+title: "External Renderer"
+description: "Plug Rive into your own GPU backend or 2D engine."
+---
+
+`RiveRenderer` and `rive::gpu::RenderContext` are one possible backend. The
+core runtime is renderer-agnostic — anything you pass to
+`StateMachineInstance::draw` only has to implement two interfaces:
+
+- **`rive::Renderer`** — receives draw / clip / save / restore commands.
+- **`rive::Factory`** — creates `RenderPath`, `RenderPaint`, `RenderImage`,
+  `RenderShader`, `RenderBuffer`, `Font`, `AudioSource` from raw bytes or
+  parameters during file import.
+
+Implement both and Rive will route everything through them.
+
+## Use Cases
+
+- You already have a 2D vector engine (Skia, Direct2D, custom) and want
+  Rive to render through it.
+- You're targeting a platform Rive doesn't ship a backend for.
+- You want CPU-side hit-testing or analytics — render into a no-op
+  `Renderer` that records command counts.
+
+If you only need Rive on Windows / macOS / iOS / Linux / Web / Android,
+prefer the [built-in renderers](/runtimes/cpp/renderers) — they're
+faster and feature-complete.
+
+## The `Renderer` Interface
+
+```cpp
+class Renderer {
+public:
+    virtual void save() = 0;
+    virtual void restore() = 0;
+    virtual void transform(const Mat2D&) = 0;
+
+    virtual void drawPath(RenderPath*, RenderPaint*) = 0;
+    virtual void clipPath(RenderPath*) = 0;
+
+    virtual void drawImage(const RenderImage*,
+                           ImageSampler, BlendMode,
+                           float opacity) = 0;
+    virtual void drawImageMesh(const RenderImage*, ImageSampler,
+                               rcp<RenderBuffer> verts_f32,
+                               rcp<RenderBuffer> uvs_f32,
+                               rcp<RenderBuffer> indices_u16,
+                               uint32_t vertexCount,
+                               uint32_t indexCount,
+                               BlendMode, float opacity) = 0;
+
+    virtual void modulateOpacity(float opacity) = 0;
+};
+```
+
+A few constraints worth knowing up front:
+
+- `save` / `restore` form a stack and must capture: the current transform,
+  clip stack, and the modulated opacity.
+- `clipPath` adds to the current clip — never replaces it.
+- `modulateOpacity` is multiplicative; `0.5` then `0.2` ⇒ `0.1` effective
+  opacity until the next `restore`.
+- `drawImageMesh` indices are 16-bit; vertex / UV buffers are
+  tightly-packed `float` pairs.
+
+## The `Factory` Interface
+
+```cpp
+class Factory {
+public:
+    virtual rcp<RenderBuffer> makeRenderBuffer(
+        RenderBufferType, RenderBufferFlags, size_t sizeInBytes) = 0;
+
+    virtual rcp<RenderShader> makeLinearGradient(
+        float sx, float sy, float ex, float ey,
+        const ColorInt colors[], const float stops[], size_t count) = 0;
+
+    virtual rcp<RenderShader> makeRadialGradient(
+        float cx, float cy, float radius,
+        const ColorInt colors[], const float stops[], size_t count) = 0;
+
+    virtual rcp<RenderPath> makeRenderPath(RawPath&, FillRule) = 0;
+    virtual rcp<RenderPath> makeEmptyRenderPath() = 0;
+    virtual rcp<RenderPaint> makeRenderPaint() = 0;
+
+    virtual rcp<RenderImage> decodeImage(Span<const uint8_t>) = 0;
+    rcp<Font>        decodeFont (Span<const uint8_t>);   // non-virtual helper
+    rcp<AudioSource> decodeAudio(Span<const uint8_t>);   // non-virtual helper
+};
+```
+
+Things to keep in mind:
+
+- Gradient `colors[]` are packed ARGB ints; `stops[]` are normalized 0..1.
+- `makeRenderPath(RawPath&, FillRule)` may **steal** the path's storage —
+  treat the input as moved-from after the call.
+- `decodeImage` is called with raw PNG / JPEG / WebP bytes, etc. Decode in
+  whatever pixel format your renderer prefers and wrap the result in a
+  subclass of `RenderImage`.
+- `decodeFont` / `decodeAudio` are non-virtual helpers that fan out to
+  Rive's built-in HarfBuzz / miniaudio paths. They are not subclass
+  override points; use the actual virtual `Factory` extension points for
+  custom font shaping or audio integration.
+
+## RenderPath / RenderPaint Subclasses
+
+Each holds the state your backend reads during drawing:
+
+```cpp
+class MyPath : public RenderPath {
+public:
+    void rewind() override { /* clear */ }
+    void moveTo(float x, float y) override { /* … */ }
+    void lineTo(float x, float y) override { /* … */ }
+    void cubicTo(float ox, float oy,
+                 float ix, float iy,
+                 float x,  float y) override { /* … */ }
+    void close() override { /* … */ }
+    void addRenderPath(RenderPath*, const Mat2D&) override { /* … */ }
+    void addRawPath(const RawPath&) override { /* … */ }
+};
+
+class MyPaint : public RenderPaint {
+public:
+    void style(RenderPaintStyle) override;
+    void color(unsigned int)     override;
+    void thickness(float)        override;
+    void join(StrokeJoin)        override;
+    void cap(StrokeCap)          override;
+    void blendMode(BlendMode)    override;
+    void shader(rcp<RenderShader>) override;
+    void invalidateStroke()      override;
+};
+```
+
+(Method signatures match `rive/command_path.hpp` (for `CommandPath`) and
+`rive/renderer.hpp` (for `RenderPath` and `RenderPaint`) — read those for
+the full set.)
+
+## Wiring It Up
+
+```cpp
+class MyFactory : public rive::Factory { /* ... */ };
+
+MyFactory factory;
+rcp<File> file = File::import(bytes, &factory);
+
+auto artboard = file->artboardDefault();
+auto sm       = artboard->defaultStateMachine();
+
+MyRenderer renderer;
+sm->advanceAndApply(dt);
+sm->draw(&renderer);
+```
+
+There's no `RenderContext` in this path — your `Renderer` is responsible
+for making the GPU calls (or buffering them, or counting them, or whatever
+you want).
+
+## Reference Implementations
+
+All paths below are in the [rive-runtime](https://github.com/rive-app/rive-runtime) repo.
+
+| Project | Uses | Where |
+| ------- | ---- | ----- |
+| `rive::gpu::RenderContext` | Pixel-local-storage GPU renderer | `renderer/src/` |
+| `SkiaFactory` / `SkiaRenderer` | Skia | `skia/renderer/` |
+| `CGFactory` / `CGRenderer` | CoreGraphics | `cg_renderer/` |
+| `SokolFactory` | Sokol (tessellation) | `tess/src/sokol/` |
+
+The Skia and CoreGraphics implementations are the most direct templates for
+a "forward to an existing 2D engine" `Renderer`.

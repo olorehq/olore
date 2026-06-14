@@ -1,13 +1,28 @@
 ---
 title: Updates
+summary: >-
+  Neon compute updates deliver Postgres minor version upgrades, security
+  patches, and OS changes by restarting the compute, typically in seconds,
+  with automatic cache prewarming to avoid cold-cache performance loss after
+  restart. Paid plan users can schedule a preferred update window via the
+  console or API. Free plan updates are scheduled by Neon with advance notice.
+  Computes above the 8 CU autoscale ceiling are excluded from automatic
+  updates and must be restarted manually. Configure connection retry logic
+  to handle the brief disruption.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-08-19T17:01:24.239Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-To keep your Neon [computes](/docs/reference/glossary#compute) and Postgres instances up to date with the latest patches and features, Neon applies updates to your project's computes. We notify you of updates in advance so that you can plan for them if necessary. On Neon's paid plans, you can select an update window — a specific day and hour for updates.
+To keep your Neon [computes](/docs/reference/glossary#compute) and Postgres instances up to date with the latest patches and features, Neon applies updates to your project's computes. We notify you of updates in advance so that you can plan for them if necessary. On Neon's paid plans, you can select an update window (a specific day and hour for updates).
 
-Neon briefly restarts a compute to apply an update. The entire process takes just a few seconds, minimizing any potential disruption.
+## How Neon applies updates
+
+To apply updates to your compute (Postgres upgrades, security patches, and similar changes), Neon restarts the compute where Postgres runs. On paid plans, this happens within the [update window](#updates-on-paid-plans) you choose. On the Free plan, Neon schedules updates for you. The restart itself typically takes only a few seconds.
+
+To protect performance, Neon **prewarms** your compute's cache during the update process, without adding time to the restart. Prewarming means repopulating Postgres's in-memory buffer cache from storage before your workload continues, so frequently used data is already in memory instead of being read cold from storage after the restart. Prewarming runs automatically. You do not configure it. There are no additional compute or storage costs associated with this behavior.
+
+For technical details, see [Zero-Downtime Patching Part 1: Prewarming](https://neon.com/blog/prewarming).
 
 <Admonition type="important">
 Brief connection drops are expected during compute updates. Verify that your application has a retry policy configured to handle these brief interruptions. For guidance on implementing retry logic, see [Building resilient applications with Postgres](/guides/building-resilient-applications-with-postgres).
@@ -33,8 +48,8 @@ Neon applies updates to computes based on the following rules:
 
 - Computes that have been active for 30 days or more receive updates.
 - Computes that are restarted receive available updates immediately.
-- Computes in a transition state (e.g., shutting down or restarting) at the time of an update are not updated.
-- Computes larger than 8 CU or that can scale past 8 CU are not updated automatically. See [Updating large computes](#updating-large-computes).
+- Computes in a transition state (for example, shutting down or restarting) at the time of an update are not updated.
+- Computes whose **maximum** autoscale size is **greater than 8 CU** are not updated automatically. If your maximum is **exactly 8 CU**, your compute is **not** treated as a large compute and receives scheduled updates like smaller sizes. See [Updating large computes](#updating-large-computes).
 
 If a compute is excluded from an update, Neon will apply the missed update with the next update, assuming the compute meets the update criteria mentioned above.
 
@@ -153,13 +168,15 @@ For compute restart instructions, see [Restart a compute](/docs/manage/computes#
 
 ## Updating large computes
 
-Computes larger than 8 CU or set to scale beyond 8 CU are not updated automatically (_scheduled updates do not apply_). To apply updates, you'll need to restart them manually. A restart may occur automatically due to [scale to zero](/docs/introduction/scale-to-zero), but if scale to zero is disabled or your compute runs continuously, please plan for manual restarts.
+Computes whose **maximum** autoscale size is **greater than 8 CU** are not updated automatically (_scheduled updates do not apply_). Computes capped at **exactly 8 CU** follow the usual [automatic update rules](#how-often-are-updates-applied) above. To apply updates on a large compute, you'll need to restart it manually. A restart may occur automatically due to [scale to zero](/docs/introduction/scale-to-zero), but if scale to zero is disabled or your compute runs continuously, please plan for manual restarts.
 
 Neon typically releases compute updates weekly, so we recommend scheduling weekly compute restarts.
 
 For restart instructions, see [Restart a compute](/docs/manage/computes#restart-a-compute).
 
 ## Handling connection disruptions during compute updates
+
+Prewarming helps keep the cache warm through the update, so query performance is not affected by a cold cache, but you may still experience a brief connection drop due to the compute restart.
 
 Most Postgres connection drivers include built-in retry mechanisms that automatically handle short-lived connection interruptions. This means that for most applications, a brief restart should result in minimal disruption, as the driver will reconnect automatically.
 
@@ -169,7 +186,7 @@ If your application or integration uses the [Neon API](https://api-docs.neon.tec
 
 ## See also
 
-- [Building resilient applications with Postgres](/guides/building-resilient-applications-with-postgres) — Best practices for handling connection drops with retry logic, connection pooling, and idempotency
-- [Connection latency and timeouts](/docs/connect/connection-latency) — Strategies for managing connection latencies and timeouts
+- [Building resilient applications with Postgres](/guides/building-resilient-applications-with-postgres): Best practices for handling connection drops with retry logic, connection pooling, and idempotency
+- [Connection latency and timeouts](/docs/connect/connection-latency): Strategies for managing connection latencies and timeouts
 
 <NeedHelp/>

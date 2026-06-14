@@ -1,0 +1,96 @@
+---
+title: isfinite
+description: 'This page explains how to use the isfinite function in APL.'
+---
+
+Use the `isfinite` function in APL to check whether a numeric value is finite, meaning it's neither positive infinity, negative infinity, nor NaN (Not a Number). The function returns `true` for any real number that has a well-defined, bounded value.
+
+`isfinite` is essential for data quality checks. Division by zero, logarithm of a non-positive number, or other edge cases can produce infinity or NaN in your computed columns. Use `isfinite` to identify or filter these invalid values before aggregating or visualizing data.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't have a direct `isfinite()` function. You typically check for null or use `isnum()` to verify that a value is a valid number, but these checks don't cover infinity.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_valid = if(isnum(value) AND value != 'Infinity', 1, 0)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_valid = isfinite(value)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define an `ISFINITE()` function. You typically check for `IS NOT NULL` and whether the value falls within a valid range, but you cannot directly detect infinity in most SQL dialects.
+
+<CodeGroup>
+```sql SQL example
+SELECT CASE WHEN value IS NOT NULL AND value BETWEEN -1e308 AND 1e308 THEN 1 ELSE 0 END AS is_valid FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_valid = isfinite(value)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isfinite(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The numeric value to check. |
+
+### Returns
+
+`true` if `x` is a finite real number (not infinity and not NaN). `false` otherwise.
+
+## Example
+
+Use `isfinite` to check whether a computed value is finite before using it in aggregations.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend log_duration = log(req_duration_ms)
+| extend is_valid = isfinite(log_duration)
+| project _time, id, req_duration_ms, log_duration, is_valid
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20log_duration%20%3D%20log%28req_duration_ms%29%20%7C%20extend%20is_valid%20%3D%20isfinite%28log_duration%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20log_duration%2C%20is_valid%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | log_duration | is_valid |
+|---|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 120.0 | 4.7875 | true |
+| 2024-11-14 10:01:00 | user-2 | 0.0 | -inf | false |
+| 2024-11-14 10:02:00 | user-3 | 80.0 | 4.3820 | true |
+
+## List of related functions
+
+- [isinf](/apl/scalar-functions/mathematical-functions/isinf): Returns `true` only for infinite values. Use it when you want to distinguish infinity from NaN.
+- [isnan](/apl/scalar-functions/mathematical-functions/isnan): Returns `true` only for NaN values. Use it when you want to detect only Not-a-Number results.
+- [isint](/apl/scalar-functions/mathematical-functions/isint): Returns `true` for integer values. Use it to check whether a numeric value is an integer rather than a floating-point result.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Combine with `isfinite` to validate log computations on potentially non-positive inputs.
+- [gamma](/apl/scalar-functions/mathematical-functions/gamma): Returns the gamma function. Use `isfinite` to filter out overflow results when computing `gamma` on large values.

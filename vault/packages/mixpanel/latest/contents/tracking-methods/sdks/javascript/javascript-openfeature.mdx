@@ -1,0 +1,198 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Web)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Web OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Web)](/docs/tracking-methods/sdks/javascript/javascript-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+```bash
+npm install @mixpanel/openfeature-web-provider @openfeature/web-sdk mixpanel-browser
+```
+
+## Quick Start
+
+```typescript
+import mixpanel from 'mixpanel-browser';
+import { OpenFeature } from '@openfeature/web-sdk';
+import { MixpanelProvider } from '@mixpanel/openfeature-web-provider';
+
+// 1. Initialize Mixpanel with feature flags
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+  flags: {
+    context: { plan: 'premium' }
+  }
+});
+
+// 2. Create and register the Mixpanel provider
+const provider = new MixpanelProvider(mixpanel.flags);
+await OpenFeature.setProviderAndWait(provider);
+
+// 3. Get a client and evaluate flags
+const client = OpenFeature.getClient();
+const showNewFeature = client.getBooleanValue('new-feature-flag', false);
+
+if (showNewFeature) {
+  console.log('New feature is enabled!');
+}
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `getBooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `getBooleanValue()`, `getStringValue()`, `getNumberValue()`, or `getObjectValue()` |
+| Dynamic Config | JSON object | `getObjectValue()` |
+
+```typescript
+const client = OpenFeature.getClient();
+
+// Feature Gate
+const isFeatureOn = client.getBooleanValue('new-checkout', false);
+
+// Experiment with string variants
+const buttonColor = client.getStringValue('button-color-test', 'blue');
+
+// Experiment with number variants
+const maxItems = client.getNumberValue('max-items', 10);
+
+// Dynamic Config
+const featureConfig = client.getObjectValue('homepage-layout', {
+  layout: 'grid',
+  itemsPerRow: 3
+});
+```
+
+### Evaluation Context
+
+Context must be set globally via `OpenFeature.setContext()`:
+
+```typescript
+await OpenFeature.setContext({
+  email: 'user@example.com',
+  plan: 'premium'
+});
+```
+
+<Callout type="warning">
+Per-evaluation context (the optional third argument to evaluation methods) is **not supported** by this provider. Context must be set globally via `OpenFeature.setContext()`, which triggers a re-fetch of flag values from Mixpanel.
+</Callout>
+
+### Runtime Properties
+
+Pass `custom_properties` in the evaluation context for runtime targeting:
+
+```typescript
+await OpenFeature.setContext({
+  custom_properties: {
+    tier: 'enterprise',
+    seats: 50,
+    industry: 'technology'
+  }
+});
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```typescript
+const details = client.getBooleanDetails('my-feature', false);
+
+console.log(details.value);
+console.log(details.variant);
+console.log(details.reason);
+console.log(details.errorCode);
+```
+
+### React Integration
+
+```tsx
+import { OpenFeatureProvider, useBooleanFlagValue } from '@openfeature/react-sdk';
+import { OpenFeature } from '@openfeature/web-sdk';
+import mixpanel from 'mixpanel-browser';
+import { MixpanelProvider } from '@mixpanel/openfeature-web-provider';
+
+// Initialize outside of component
+mixpanel.init('YOUR_PROJECT_TOKEN', {
+  flags: {
+    context: { plan: 'premium' }
+  }
+});
+const provider = new MixpanelProvider(mixpanel.flags);
+OpenFeature.setProvider(provider);
+
+function App() {
+  return (
+    <OpenFeatureProvider>
+      <MyComponent />
+    </OpenFeatureProvider>
+  );
+}
+
+function MyComponent() {
+  const showBanner = useBooleanFlagValue('show-banner', false);
+
+  return (
+    <div>
+      {showBanner && <Banner message="Welcome to our new feature!" />}
+    </div>
+  );
+}
+```
+
+### User Identity
+
+This provider does **not** call `mixpanel.identify()`. Manage identity through Mixpanel directly:
+
+```typescript
+mixpanel.identify('user-123');
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the provider has finished initializing |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+To avoid `PROVIDER_NOT_READY`, use `setProviderAndWait`:
+
+```typescript
+await OpenFeature.setProviderAndWait(provider);
+```
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Feature flags not enabled:** Ensure Mixpanel was initialized with `flags` enabled:
+   ```typescript
+   mixpanel.init('YOUR_TOKEN', { flags: { context: { plan: 'premium' } } });
+   ```
+2. **Provider not ready:** Use `setProviderAndWait` to ensure initialization.
+3. **Network issues:** Check the browser console for failed requests.
+4. **Flag not configured:** Verify the flag exists and is enabled.
+
+### Flags Not Updating After Context Change
+
+Update context and the provider will re-fetch flags:
+
+```typescript
+await OpenFeature.setContext({ plan: 'premium' });
+```

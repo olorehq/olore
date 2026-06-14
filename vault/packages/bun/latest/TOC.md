@@ -4,118 +4,159 @@
 
 ```
 contents/
-├── runtime/                     # Core runtime APIs and features (48 files)
-│   ├── http/                    # HTTP server (7 files)
-│   ├── networking/              # DNS, fetch, TCP, UDP (4 files)
-│   └── templating/              # bun create, bun init (2 files)
-├── bundler/                     # Bundler API and features (13 files)
-├── test/                        # Test runner docs (11 files)
-├── pm/                          # Package manager docs (12 files)
-│   └── cli/                     # PM CLI commands (8 files)
-└── guides/                      # How-to guides and code samples
-    ├── binary/                  # Binary data conversions (22 files)
-    ├── deployment/              # Deployment guides (6 files)
-    ├── ecosystem/               # Framework integrations (28 files)
-    ├── html-rewriter/           # HTMLRewriter usage (2 files)
-    ├── http/                    # HTTP examples (13 files)
-    ├── install/                 # Package install examples (19 files)
-    ├── process/                 # Process/subprocess guides (9 files)
-    ├── read-file/               # File reading examples (9 files)
-    ├── runtime/                 # Runtime usage guides (20 files)
-    ├── streams/                 # Stream conversion guides (12 files)
-    ├── util/                    # Utility function guides (17 files)
-    ├── websocket/               # WebSocket guides (4 files)
-    └── write-file/              # File writing examples (10 files)
+├── index.mdx                   # Welcome / overview
+├── installation.mdx            # Installation guide
+├── quickstart.mdx              # Quick start
+├── typescript.mdx              # TypeScript support
+├── typescript-6.mdx            # TypeScript 6 notes
+├── bundler/                    # Bundler (13 files)
+├── runtime/                    # Runtime APIs (53 files)
+│   ├── http/                   # HTTP server (7 files)
+│   ├── networking/             # DNS, fetch, TCP, UDP (4 files)
+│   └── templating/             # bun create / bun init (2 files)
+├── test/                       # Test runner (12 files)
+├── pm/                         # Package manager (14 files)
+│   └── cli/                    # PM CLI commands (12 files)
+├── guides/                     # How-to guides (171 files)
+│   ├── binary/                 # Binary data conversions (22 files)
+│   ├── deployment/             # Deploy to cloud platforms (6 files)
+│   ├── ecosystem/              # Framework integrations (28 files)
+│   ├── html-rewriter/          # HTMLRewriter examples (2 files)
+│   ├── http/                   # HTTP server patterns (13 files)
+│   ├── install/                # Package install patterns (17 files)
+│   ├── process/                # Process / subprocess (9 files)
+│   ├── read-file/              # File reading patterns (9 files)
+│   ├── runtime/                # Runtime patterns (20 files)
+│   ├── streams/                # Stream conversions (12 files)
+│   ├── util/                   # Utility patterns (19 files)
+│   ├── websocket/              # WebSocket patterns (4 files)
+│   └── write-file/             # File writing patterns (10 files)
+└── snippets/cli/               # CLI reference snippets (13 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| Run scripts / runtime overview | `contents/runtime/index.mdx` |
+| New user | `contents/quickstart.mdx` |
+| Installation | `contents/installation.mdx` |
 | HTTP server | `contents/runtime/http/server.mdx` |
-| Bundler | `contents/bundler/index.mdx` |
-| Package manager | `contents/pm/` |
-| Test runner | `contents/test/index.mdx` |
 | SQLite | `contents/runtime/sqlite.mdx` |
-| File I/O | `contents/runtime/file-io.mdx` |
+| SQL (PostgreSQL/MySQL) | `contents/runtime/sql.mdx` |
+| Redis | `contents/runtime/redis.mdx` |
+| S3 | `contents/runtime/s3.mdx` |
 | WebSockets | `contents/runtime/http/websockets.mdx` |
-| Configuration | `contents/runtime/bunfig.mdx` |
-| Ecosystem integrations | `contents/guides/ecosystem/` |
+| File I/O | `contents/runtime/file-io.mdx` |
+| Package manager | `contents/pm/cli/install.mdx` |
+| Bundler | `contents/bundler/index.mdx` |
+| Test runner | `contents/test/index.mdx` |
+| Node.js compat | `contents/runtime/nodejs-compat.mdx` |
+| FFI (C/native) | `contents/runtime/ffi.mdx` |
+| Shell scripting | `contents/runtime/shell.mdx` |
 
 ## Detailed Structure
 
-### runtime/ (48 files)
+### Root (5 files)
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Runtime overview, bun run |
-| `bun-apis.mdx` | Bun global API overview |
-| `globals.mdx` | Global variables and APIs |
-| `web-apis.mdx` | Web-standard APIs (fetch, crypto, etc.) |
-| `nodejs-compat.mdx` | Node.js compatibility |
+| `index.mdx` | Welcome to Bun overview |
+| `installation.mdx` | Installation guide |
+| `quickstart.mdx` | Quick start tutorial |
 | `typescript.mdx` | TypeScript support |
-| `jsx.mdx` | JSX support |
-| `file-io.mdx` | File reading/writing with Bun.file() |
-| `file-types.mdx` | Supported file types |
-| `file-system-router.mdx` | FileSystemRouter API |
-| `sqlite.mdx` | Built-in SQLite (bun:sqlite) |
-| `sql.mdx` | SQL client |
-| `redis.mdx` | Redis client |
-| `s3.mdx` | S3 client |
-| `streams.mdx` | Web Streams API |
-| `binary-data.mdx` | ArrayBuffer, TypedArray, Buffer |
-| `workers.mdx` | Web Workers |
-| `hashing.mdx` | Hashing APIs (SHA, MD5, etc.) |
-| `html-rewriter.mdx` | HTMLRewriter API |
-| `shell.mdx` | Shell scripting (Bun.$ API) |
-| `glob.mdx` | Glob pattern matching |
-| `ffi.mdx` | Foreign Function Interface |
-| `plugins.mdx` | Bundler/runtime plugins |
-| `module-resolution.mdx` | Module resolution |
-| `debugger.mdx` | Bun debugger |
-| `transpiler.mdx` | Bun transpiler API |
-| `watch-mode.mdx` | Watch mode |
+| `typescript-6.mdx` | TypeScript 6 migration notes |
+
+### bundler/ (13 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Bundler overview and Bun.build() API |
+| `bytecode.mdx` | Bytecode compilation |
+| `css.mdx` | CSS bundling |
+| `esbuild.mdx` | esbuild compatibility |
+| `executables.mdx` | Standalone executables |
+| `fullstack.mdx` | Fullstack bundling |
+| `hot-reloading.mdx` | Hot module reloading |
+| `html-static.mdx` | Static HTML bundling |
+| `loaders.mdx` | Custom loaders |
+| `macros.mdx` | Bun macros |
+| `minifier.mdx` | Minification |
+| `plugins.mdx` | Bundler plugins |
+| `standalone-html.mdx` | Standalone HTML output |
+
+### runtime/ (37 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Runtime overview and bun run |
+| `archive.mdx` | Archive (zip/tar) support |
 | `auto-install.mdx` | Auto-install packages |
-| `environment-variables.mdx` | Environment variables, .env |
-| `secrets.mdx` | Secrets API |
+| `binary-data.mdx` | Binary data APIs |
+| `bun-apis.mdx` | Bun global API overview |
 | `bunfig.mdx` | bunfig.toml configuration |
-| `child-process.mdx` | Child process / Bun.spawn() |
+| `c-compiler.mdx` | C compiler integration |
+| `child-process.mdx` | Child processes / subprocess |
+| `color.mdx` | Color output |
 | `console.mdx` | Console API |
-| `color.mdx` | Bun.color() |
-| `cron.mdx` | Cron scheduling |
-| `cookies.mdx` | Cookies API |
+| `cookies.mdx` | Cookie handling |
+| `cron.mdx` | Cron jobs |
 | `csrf.mdx` | CSRF protection |
-| `semver.mdx` | Semver comparison |
-| `toml.mdx` | TOML parsing |
-| `yaml.mdx` | YAML parsing |
-| `json5.mdx` | JSON5 parsing |
-| `jsonl.mdx` | JSONL parsing |
-| `markdown.mdx` | Markdown parsing |
-| `archive.mdx` | Archive/zip handling |
-| `c-compiler.mdx` | C compiler (Bun.cc) |
+| `debugger.mdx` | Debugger |
+| `environment-variables.mdx` | Environment variables |
+| `ffi.mdx` | Foreign function interface (C/native) |
+| `file-io.mdx` | File I/O (Bun.file, Bun.write) |
+| `file-system-router.mdx` | File system routing |
+| `file-types.mdx` | Supported file types |
+| `glob.mdx` | Glob matching |
+| `globals.mdx` | Global variables |
+| `hashing.mdx` | Hashing utilities |
+| `html-rewriter.mdx` | HTMLRewriter API |
+| `image.mdx` | Image processing |
+| `json5.mdx` | JSON5 support |
+| `jsonl.mdx` | JSONL support |
+| `jsx.mdx` | JSX/TSX support |
+| `markdown.mdx` | Markdown support |
+| `module-resolution.mdx` | Module resolution |
 | `node-api.mdx` | Node-API (napi) |
+| `nodejs-compat.mdx` | Node.js compatibility |
+| `plugins.mdx` | Runtime plugins |
+| `redis.mdx` | Redis client |
 | `repl.mdx` | REPL |
-| `utils.mdx` | Utility functions |
+| `s3.mdx` | S3 client |
+| `secrets.mdx` | Secrets management |
+| `semver.mdx` | Semver utilities |
+| `shell.mdx` | Bun Shell scripting |
+| `sql.mdx` | SQL (PostgreSQL/MySQL) |
+| `sqlite.mdx` | SQLite (bun:sqlite) |
+| `streams.mdx` | Streams API |
+| `toml.mdx` | TOML support |
+| `transpiler.mdx` | Transpiler API |
+| `typescript.mdx` | TypeScript runtime support |
+| `utils.mdx` | Bun utility functions |
+| `watch-mode.mdx` | Watch mode |
+| `web-apis.mdx` | Web APIs (fetch, Request, etc.) |
+| `webview.mdx` | WebView |
+| `workers.mdx` | Web Workers |
+| `yaml.mdx` | YAML support |
 
 ### runtime/http/ (7 files)
 
 | File | Description |
 |------|-------------|
 | `server.mdx` | HTTP server (Bun.serve) |
-| `websockets.mdx` | WebSocket server |
+| `cookies.mdx` | HTTP cookies |
+| `error-handling.mdx` | HTTP error handling |
+| `metrics.mdx` | Server metrics |
 | `routing.mdx` | Request routing |
 | `tls.mdx` | TLS/HTTPS |
-| `cookies.mdx` | Cookie handling |
-| `error-handling.mdx` | Error handling |
-| `metrics.mdx` | Server metrics |
+| `websockets.mdx` | WebSockets |
 
 ### runtime/networking/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `fetch.mdx` | fetch() API |
 | `dns.mdx` | DNS resolution |
+| `fetch.mdx` | Fetch API |
 | `tcp.mdx` | TCP sockets |
 | `udp.mdx` | UDP sockets |
 
@@ -123,62 +164,45 @@ contents/
 
 | File | Description |
 |------|-------------|
-| `create.mdx` | bun create |
-| `init.mdx` | bun init |
+| `create.mdx` | bun create (project templates) |
+| `init.mdx` | bun init (scaffold project) |
 
-### bundler/ (13 files)
-
-| File | Description |
-|------|-------------|
-| `index.mdx` | Bundler overview, Bun.build() |
-| `loaders.mdx` | File loaders |
-| `plugins.mdx` | Bundler plugins |
-| `macros.mdx` | Bun macros |
-| `executables.mdx` | Standalone executables |
-| `fullstack.mdx` | Fullstack bundling |
-| `css.mdx` | CSS bundling |
-| `html-static.mdx` | Static HTML bundling |
-| `standalone-html.mdx` | Standalone HTML apps |
-| `bytecode.mdx` | Bytecode compilation |
-| `minifier.mdx` | Minification |
-| `hot-reloading.mdx` | Hot reloading |
-| `esbuild.mdx` | esbuild compatibility |
-
-### test/ (11 files)
+### test/ (12 files)
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Test runner overview (bun test) |
-| `writing-tests.mdx` | Writing tests, expect, describe |
-| `mocks.mdx` | Mocking, spyOn, mock() |
-| `snapshots.mdx` | Snapshot testing |
+| `index.mdx` | Test runner overview |
+| `writing-tests.mdx` | Writing tests |
 | `code-coverage.mdx` | Code coverage |
 | `configuration.mdx` | Test configuration |
-| `lifecycle.mdx` | beforeAll, afterEach, etc. |
-| `discovery.mdx` | Test discovery |
-| `reporters.mdx` | Test reporters |
-| `runtime-behavior.mdx` | Runtime behavior |
-| `dom.mdx` | DOM testing |
 | `dates-times.mdx` | Date/time mocking |
+| `discovery.mdx` | Test discovery |
+| `dom.mdx` | DOM testing |
+| `lifecycle.mdx` | Test lifecycle hooks |
+| `mocks.mdx` | Mocking |
+| `reporters.mdx` | Test reporters |
+| `runtime-behavior.mdx` | Runtime behavior in tests |
+| `snapshots.mdx` | Snapshot testing |
 
-### pm/ (12 files)
+### pm/ (14 files)
 
 | File | Description |
 |------|-------------|
-| `bunx.mdx` | bunx command |
-| `workspaces.mdx` | Workspaces |
-| `lockfile.mdx` | Lockfile |
-| `lifecycle.mdx` | Lifecycle scripts |
-| `global-cache.mdx` | Global package cache |
-| `scopes-registries.mdx` | Scopes and registries |
-| `overrides.mdx` | Dependency overrides |
-| `npmrc.mdx` | .npmrc support |
-| `catalogs.mdx` | Catalogs |
-| `filter.mdx` | Filter |
+| `bunx.mdx` | bunx (package runner) |
+| `catalogs.mdx` | Dependency catalogs |
+| `filter.mdx` | Workspace filter |
+| `global-cache.mdx` | Global cache |
+| `global-store.mdx` | Global store |
 | `isolated-installs.mdx` | Isolated installs |
+| `lifecycle.mdx` | Lifecycle scripts |
+| `lockfile.mdx` | Lockfile (bun.lock) |
+| `npmrc.mdx` | .npmrc support |
+| `overrides.mdx` | Dependency overrides |
+| `scopes-registries.mdx` | Scoped registries |
 | `security-scanner-api.mdx` | Security scanner |
+| `workspaces.mdx` | Workspaces |
 
-### pm/cli/ (8 files)
+### pm/cli/ (12 files)
 
 | File | Description |
 |------|-------------|
@@ -186,29 +210,82 @@ contents/
 | `add.mdx` | bun add |
 | `remove.mdx` | bun remove |
 | `update.mdx` | bun update |
-| `publish.mdx` | bun publish |
 | `link.mdx` | bun link |
-| `pm.mdx` | bun pm |
-| `audit.mdx` | bun audit |
-| `why.mdx` | bun why |
-| `info.mdx` | bun info |
-| `patch.mdx` | bun patch |
 | `outdated.mdx` | bun outdated |
+| `patch.mdx` | bun patch |
+| `pm.mdx` | bun pm |
+| `publish.mdx` | bun publish |
+| `audit.mdx` | bun audit |
+| `info.mdx` | bun info |
+| `why.mdx` | bun why |
 
-### guides/ (subdirectory overview)
+### guides/binary/ (22 files)
 
-| Directory | Description |
-|-----------|-------------|
-| `guides/binary/` | Binary data type conversions (22 guides) |
-| `guides/deployment/` | Deploy to Railway, Vercel, AWS Lambda, etc. (6 guides) |
-| `guides/ecosystem/` | Framework integrations: Next.js, React, Hono, Elysia, etc. (28 guides) |
-| `guides/html-rewriter/` | HTMLRewriter usage examples (2 guides) |
-| `guides/http/` | HTTP server examples (13 guides) |
-| `guides/install/` | Package install patterns (19 guides) |
-| `guides/process/` | Child process and subprocess guides (9 guides) |
-| `guides/read-file/` | File reading patterns (9 guides) |
-| `guides/runtime/` | Runtime usage patterns (20 guides) |
-| `guides/streams/` | Stream conversion guides (12 guides) |
-| `guides/util/` | Utility function guides (17 guides) |
-| `guides/websocket/` | WebSocket guides (4 guides) |
-| `guides/write-file/` | File writing patterns (10 guides) |
+Binary data conversion recipes: ArrayBuffer, Blob, Buffer, TypedArray, DataView, ReadableStream conversions.
+
+### guides/deployment/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `aws-lambda.mdx` | Deploy to AWS Lambda |
+| `digital-ocean.mdx` | Deploy to DigitalOcean |
+| `google-cloud-run.mdx` | Deploy to Google Cloud Run |
+| `railway.mdx` | Deploy to Railway |
+| `render.mdx` | Deploy to Render |
+| `vercel.mdx` | Deploy to Vercel |
+
+### guides/ecosystem/ (28 files)
+
+Framework/library integration guides: Astro, Discord.js, Docker, Drizzle, Elysia, Express, Gel, Hono, Mongoose, Neon, Next.js, Nuxt, PM2, Prisma, Qwik, React, Remix, Sentry, SolidStart, SSR React, Stric, SvelteKit, systemd, TanStack Start, Upstash, Vite.
+
+### guides/http/ (13 files)
+
+HTTP server patterns: basic server, file uploads, fetch, Unix socket, hot reload, proxy, SSE, streaming, TLS, cluster.
+
+### guides/install/ (17 files)
+
+Package install patterns: add dev/optional/peer/git/tarball, CI/CD, custom registry, Azure Artifacts, JFrog, npm alias, scopes, workspaces, yarn lockfile migration.
+
+### guides/process/ (9 files)
+
+Process patterns: argv, ctrl-c, IPC, nanoseconds, OS signals, spawn (stdout, stderr), stdin.
+
+### guides/read-file/ (9 files)
+
+File reading patterns: ArrayBuffer, Buffer, check exists, JSON, MIME type, stream, string, Uint8Array, watch.
+
+### guides/runtime/ (20 files)
+
+Runtime patterns: build-time constants, CI/CD, macOS code signing, define constants, delete files/dirs, heap snapshot, import HTML/JSON/JSON5/TOML/YAML, read/set env, shell, timezone, tsconfig paths, TypeScript, VS Code debugger, web debugger.
+
+### guides/streams/ (12 files)
+
+Stream conversion recipes: Node Readable to ArrayBuffer, Blob, JSON, string, Uint8Array; ReadableStream to array, ArrayBuffer, Blob, Buffer, JSON, string, TypedArray.
+
+### guides/util/ (19 files)
+
+Utility patterns: base64, deep equals, deflate, detect Bun, entrypoint, escape HTML, file URL, gzip, password hashing, import.meta (dir/file/path), UUID, main check, path to file URL, sleep, upgrade, version, which.
+
+### guides/websocket/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `simple.mdx` | Basic WebSocket server |
+| `compression.mdx` | WebSocket compression |
+| `context.mdx` | WebSocket context data |
+| `pubsub.mdx` | Pub/sub messaging |
+
+### guides/write-file/ (10 files)
+
+File writing patterns: append, basic write, Blob, cat, copy, FileSink (incremental), Response, stdout, stream, unlink.
+
+### guides/html-rewriter/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `extract-links.mdx` | Extract links with HTMLRewriter |
+| `extract-social-meta.mdx` | Extract social meta tags |
+
+### snippets/cli/ (13 files)
+
+CLI reference snippets for: add, build, bunx, init, install, link, outdated, patch, publish, remove, run, test, update.

@@ -1,0 +1,133 @@
+---
+title: hash_sha256
+description: 'This page explains how to use the hash_sha256 function in APL.'
+---
+
+## Introduction
+
+The `hash_sha256` function returns the SHA-256 hash of a scalar value as a 64-character hexadecimal string. Use it for security-sensitive hashing, compliance requirements, data integrity checks, or any scenario where cryptographic strength is needed.
+
+SHA-256 produces a 256-bit digest and is the current industry standard for secure hashing. Unlike MD5 and SHA-1, SHA-256 isn't practically vulnerable to collision attacks, making it appropriate for use in security workflows such as verifying log integrity, fingerprinting malware indicators, or hashing credentials. For even longer digests, use [`hash_sha512`](/apl/scalar-functions/hash-functions/hash-sha512).
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk provides the `sha256(X)` function that returns a 64-character hex string. APL's `hash_sha256` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hashed = sha256(id)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha256(id)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no standard SHA-256 function. PostgreSQL provides `encode(digest(value, 'sha256'), 'hex')`. APL's `hash_sha256` returns the same 64-character lowercase hex digest.
+
+<CodeGroup>
+```sql SQL example
+SELECT encode(digest(id, 'sha256'), 'hex') AS hashed FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha256(id)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hash_sha256(source)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ------ | ------ | -------- | ----------- |
+| source | scalar | Yes | The value to hash. APL converts it to a string before hashing. |
+
+### Returns
+
+The SHA-256 hash of `source` as a 64-character lowercase hexadecimal string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Anonymize user IDs with a cryptographically strong hash before publishing usage summaries.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hashed_id = hash_sha256(id)
+| summarize request_count = count() by hashed_id
+| top 5 by request_count
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20hashed_id%20%3D%20hash_sha256%28id%29%20%7C%20summarize%20request_count%20%3D%20count%28%29%20by%20hashed_id%20%7C%20top%205%20by%20request_count%22%7D)
+
+**Output**
+
+| hashed_id | request_count |
+| --------- | ------------- |
+| bb4770ff4ac5b7d2be41a088cb27d8bcaad53b574b6f27941e8e48e9e10fc25a | 128 |
+| 2c624232cdd221771294dfbb310acbc8c12eb62dd7a3b4bfc41de8dd73d7a7c | 97 |
+| 19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7 | 85 |
+| 4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb5bda0e1b1b68a2a3e | 74 |
+| ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d | 69 |
+
+The query replaces user IDs with SHA-256 hashes before aggregating, producing a privacy-safe summary of the most active users.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Fingerprint trace IDs with SHA-256 for use in external security or compliance systems.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hashed_trace = hash_sha256(trace_id)
+| project _time, ['service.name'], hashed_trace, duration
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20hashed_trace%20%3D%20hash_sha256%28trace_id%29%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20hashed_trace%2C%20duration%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time | service.name | hashed_trace | duration |
+| ----- | ------------ | ------------ | -------- |
+| 2024-01-15 10:23:01 | frontend | bb4770ff4ac5b7d2be41a088cb27d8bcaad53b574b6f27941e8e48e9e10fc25a | 320ms |
+| 2024-01-15 10:23:02 | checkout | 2c624232cdd221771294dfbb310acbc8c12eb62dd7a3b4bfc41de8dd73d7a7c | 875ms |
+| 2024-01-15 10:23:03 | cart | 19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7 | 140ms |
+
+The query outputs hashed trace IDs that can be shared with external audit or compliance tools without exposing internal identifiers.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [hash_sha512](/apl/scalar-functions/hash-functions/hash-sha512): Returns a 128-character SHA-512 hex digest. Use `hash_sha512` when your security policy requires a longer digest than SHA-256.
+- [hash_sha1](/apl/scalar-functions/hash-functions/hash-sha1): Returns a 40-character SHA-1 hex digest. SHA-1 is deprecated for security use; prefer `hash_sha256`.
+- [hash_md5](/apl/scalar-functions/hash-functions/hash-md5): Returns a 32-character MD5 hex digest. MD5 is not cryptographically safe; use `hash_sha256` for security contexts.
+- [hash](/apl/scalar-functions/hash-functions/hash): Returns a signed 64-bit integer hash. Use `hash` when you need a compact numeric key rather than a hex string.

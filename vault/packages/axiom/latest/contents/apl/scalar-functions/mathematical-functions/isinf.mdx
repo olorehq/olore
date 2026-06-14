@@ -1,0 +1,74 @@
+---
+title: isinf
+description: 'This page explains how to use the isinf function in APL.'
+---
+
+Use the `isinf` function in APL to check whether a numeric value is positive or negative infinity. The function returns `true` only when the value is ±∞ and `false` for all finite values and NaN.
+
+`isinf` is useful for detecting overflow conditions or division-by-zero results in computed columns. Unlike `isfinite`, which also catches NaN values, `isinf` specifically targets infinite results, allowing you to distinguish overflow from undefined computations.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't have a direct `isinf()` function. You typically check whether a value equals a specific infinity representation, which isn't directly available in most SPL expressions.
+
+<CodeGroup>
+```sql Splunk example
+| eval is_inf = if(value = 'Infinity' OR value = '-Infinity', 1, 0)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_inf = isinf(value)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define an `ISINF()` function. Most SQL databases raise an error on division by zero rather than producing infinity, so there is no direct equivalent.
+
+<CodeGroup>
+```sql SQL example
+-- Division by zero raises an error in most SQL dialects; no direct ISINF() equivalent
+SELECT CASE WHEN value > 1e308 OR value < -1e308 THEN 1 ELSE 0 END AS is_inf FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend is_inf = isinf(value)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+isinf(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The numeric value to check. |
+
+### Returns
+
+`true` if `x` is positive or negative infinity. `false` for finite values and NaN.
+
+## List of related functions
+
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns `true` for values that are neither infinite nor NaN. Use it for a broader check covering all invalid float states.
+- [isnan](/apl/scalar-functions/mathematical-functions/isnan): Returns `true` only for NaN values. Use it alongside `isinf` to detect the other class of invalid float.
+- [isint](/apl/scalar-functions/mathematical-functions/isint): Returns `true` for integer values. Use it when you need to validate that a value is a whole number.
+- [not](/apl/scalar-functions/mathematical-functions/not): Reverses a boolean value. Use `not(isinf(x))` as a shorthand for `isfinite(x)` when NaN values are not a concern.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Compute `log` on potentially zero or negative values and use `isinf` to detect the resulting `-inf`.

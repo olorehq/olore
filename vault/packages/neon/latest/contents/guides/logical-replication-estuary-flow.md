@@ -1,9 +1,17 @@
 ---
 title: Replicate Data with Estuary Flow
 subtitle: Learn how to replicate data from Neon with Estuary Flow
+summary: >-
+  Estuary Flow's Neon PostgreSQL source connector streams CDC events from a
+  Neon Postgres database to any Estuary materialization destination at
+  sub-100ms latency. Use this guide when you need continuous, low-latency
+  replication of inserts, updates, and deletes from Neon to an external system.
+  Setup requires enabling logical replication (permanently sets wal_level to
+  logical project-wide), a direct non-pooled connection string, and IP
+  allowlisting for Estuary's egress addresses.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-11-07T12:28:56.610Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from your Neon Postgres database to external destinations.
@@ -17,6 +25,10 @@ In this guide, you will learn how to configure a Postgres source connector in Es
 - An [Estuary Flow account](https://dashboard.estuary.dev/register) (start free, no credit card required)
 - A [Neon account](https://console.neon.tech/)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Enable Logical Replication in Neon
 
@@ -66,17 +78,17 @@ To create a role in the Neon Console:
 4. Select the branch where you want to create the role.
 5. Select the **Roles & Databases** tab.
 6. Click **Add Role**.
-7. In the role creation dialog, specify a role name (e.g., `cdc_role`).
+7. In the role creation dialog, specify a role name (for example, `cdc_role`).
 8. Click **Create**. The role is created, and you are provided with the password for the role.
 
 </TabItem>
 
 <TabItem>
 
-The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](/docs/reference/cli-roles).
+The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](https://api-docs.neon.tech/reference/createprojectbranchrole).
 
 ```bash
-curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-blue-tooth-671580/roles' \
+curl 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/roles' \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H 'Content-Type: application/json' \
@@ -86,6 +98,8 @@ curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-b
   }
 }' | jq
 ```
+
+> Replace `{project_id}` and `{branch_id}` with your actual Neon project and branch IDs, and set the `NEON_API_KEY` environment variable with your Neon API key.
 
 </TabItem>
 

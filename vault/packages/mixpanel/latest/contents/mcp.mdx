@@ -1,0 +1,485 @@
+---
+title: MCP Server
+tags: [mcp, model context protocol, ai, agents, cursor, anthropic, chatgpt, openai, claude, codex, codex cli, cli, claude code, gemini, natural language, mixpanel, llm]
+---
+
+import { Callout } from 'nextra/components'
+
+# Mixpanel MCP Server
+
+## Overview
+
+Mixpanel provides a hosted [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants direct access to your Mixpanel data. Once connected, you can query events, funnels, flows, retention, session replays, and more using natural language — no dashboard navigation required.
+
+A typical workflow looks like:
+1. **Discover**: Find your projects, events, and properties
+2. **Query**: Run insights, funnels, flows, or retention analyses
+3. **Create**: Build dashboards, organize Lexicon, or manage data quality issues
+4. **Iterate**: Refine with follow-up questions in the same conversation
+
+## Available Tools
+
+| Category | Tool | Description |
+| -------- | ---- | ----------- |
+| **Analytics** | `Run-Query` | Execute insights, funnels, flows, and retention queries |
+| | `Get-Query-Schema` | Get the full JSON schema for building a query |
+| | `Get-Report` | Retrieve a saved report, optionally including results |
+| | `Display-Query` | Display an interactive chart widget for a previously-run query |
+| **Dashboards** (Boards) | `Create-Dashboard` | Create a new dashboard with text cards and reports |
+| | `List-Dashboards` | Browse dashboards in a project |
+| | `Get-Dashboard` | Retrieve a dashboard's metadata, text cards, and reports |
+| | `Update-Dashboard` | Modify a dashboard's metadata, rows, and layout |
+| | `Duplicate-Dashboard` | Create a copy of an existing dashboard |
+| | `Delete-Dashboard` | Delete a dashboard |
+| **Data Discovery** | `Get-Business-Context` | Get org- and project-specific business context, vocabulary, and query instructions |
+| | `Get-Projects` | List your projects and workspaces |
+| | `List-Organizations` | List organizations the current user belongs to |
+| | `Get-Events` | Browse and search events in a project, optionally including full metadata |
+| | `List-Properties` | List and search event or user properties in a project |
+| | `Get-Property-Values` | Discover values for a specific property |
+| | `Search-Entities` | Search across dashboards, reports, experiments, feature flags, and more |
+| | `Get-Issues` | Get data quality issues filtered by event, property, type, or date |
+| | `Get-Lexicon-URL` | Get a direct link to an event or property in Lexicon |
+| **Data Management** | `Edit-Event` | Update event description, display name, tags, or visibility |
+| | `Edit-Property` | Update property description, display name, hidden status, or PII classification |
+| | `Bulk-Edit-Events` | Edit multiple events at once (up to 50) with uniform or per-event fields |
+| | `Bulk-Edit-Properties` | Edit multiple properties at once (up to 50) with uniform or per-property fields |
+| | `Create-Tag` | Create a new tag in Lexicon |
+| | `Rename-Tag` | Rename an existing tag across all associated events and properties |
+| | `Delete-Tag` | Remove a tag from your project |
+| | `Dismiss-Issues` | Bulk-dismiss data quality issues by event, property, or type |
+| | `Update-Business-Context` | Update business context at the project or organization level |
+| **Metrics** | `Create-Metric` | Create a saved metric (behavior or formula) for reuse across experiments |
+| | `Get-Metric` | Get the full definition of a saved metric |
+| | `List-Metrics` | List all saved metrics in a project |
+| | `Update-Metric` | Update a saved metric's name, definition, or description |
+| **Session Replays** | `Get-User-Replays-Data` | Analyze a specific user's replays alongside their event data |
+| **Experiments** *(Beta)* | `List-Experiments` | List and search experiments in a project |
+| | `Get-Experiment` | Retrieve experiment details, configuration, and results |
+| | `Create-Experiment` | Create a new experiment |
+| | `Update-Experiment` | Modify an experiment's configuration or manage its lifecycle |
+| | `Get-Experiment-Setup-Guidance` | Get best-practice guidance for designing an experiment |
+| | `Get-Experiment-Results-Interpretation-Guidance` | Get best-practice guidance for interpreting experiment results |
+| **Feature Flags** *(Beta)* | `List-Feature-Flags` | List and search feature flags in a project |
+| | `Get-Feature-Flag` | Retrieve feature flag details and targeting rules |
+| | `Create-Feature-Flag` | Create a new feature flag |
+| | `Update-Feature-Flag` | Modify a feature flag's configuration or targeting |
+| | `Get-Feature-Flag-Setup-Guidance` | Get best-practice guidance for creating and configuring a feature flag |
+| | `Get-Feature-Flag-Lifecycle-Guidance` | Get best-practice guidance for rollout, kill-switch, and cleanup of a feature flag |
+
+<Callout type="warning">
+  **Experiments and Feature Flags tools are in open beta** and available to all users. Audience targeting and cohort editing are not yet supported via MCP — use the Mixpanel UI instead.
+</Callout>
+
+## MCP Server URLs
+
+| Region | URL |
+| ------ | --- |
+| US | `https://mcp.mixpanel.com/mcp` |
+| EU | `https://mcp-eu.mixpanel.com/mcp` |
+| IN | `https://mcp-in.mixpanel.com/mcp` |
+
+## Permissions & Access
+
+<Callout type="info">
+  **Admin setup required.** An organization admin must enable MCP in **Settings → Org → Overview** before anyone can connect. Changes can take up to 15 minutes to take effect.
+</Callout>
+
+Once enabled, any Mixpanel user in your organization can connect. Users authenticate with their own Mixpanel credentials, so all existing project permissions and roles apply — users can only see data from projects they already have access to.
+
+## Connecting to the MCP Server
+
+Mixpanel's MCP server supports two authentication methods:
+
+- **OAuth** — Users sign in through a browser with their Mixpanel credentials. Best for interactive use in AI assistants like Claude, ChatGPT, or Cursor.
+- **Service Accounts** *(Beta)* — A static credential header with no browser login required. Best for CI/CD pipelines, automated agents, and shared team setups.
+
+Choose the method that fits your use case below.
+
+## Connecting with OAuth
+
+### Claude
+
+[Add Mixpanel to Claude](https://claude.ai/directory/connectors/29d60a67-6f16-489b-8a1e-efdcece8d1f6) and complete the Mixpanel OAuth flow.
+
+For EU or IN regions, use **Settings → Connectors → Add Custom Connector** instead, and enter your [MCP Server URL](#mcp-server-urls).
+
+### Claude Code
+
+[Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
+
+```bash
+claude mcp add --transport http mixpanel https://mcp.mixpanel.com/mcp
+```
+
+Then authenticate by running `/mcp` inside Claude Code and completing the Mixpanel OAuth flow in your browser.
+
+### ChatGPT
+
+[Add Mixpanel to ChatGPT](https://chatgpt.com/apps/mixpanel/asdk_app_69b2e9aed45c8191b254b207dfcc2bb4) and complete the Mixpanel OAuth flow.
+
+For EU or IN regions, or to publish the connector to your workspace so teammates can use it:
+1. Go to **Settings → Connectors → Advanced** and enable Developer Mode
+2. Add a new connector — set the [MCP Server URL](#mcp-server-urls) to your regional endpoint and Authentication to **OAuth**
+3. Complete the Mixpanel OAuth flow
+4. Optionally publish the connector to your workspace so teammates can use it
+
+### Codex
+
+1. Go to **Settings → MCP Servers → + Add Server**
+2. Provide a name (e.g. Mixpanel) and select **Streamable HTTP**
+3. Enter your [MCP Server URL](#mcp-server-urls) and click **Save**
+
+### Codex CLI
+
+Add the following to `~/.codex/config.toml` (use the EU or IN URL if needed):
+
+```toml
+[mcp_servers.mixpanel]
+url = "https://mcp.mixpanel.com/mcp"
+```
+
+Then authorize:
+
+```bash
+codex mcp login mixpanel
+```
+
+### Notion
+
+1. Create a new Agent from the **Agents** section in the Notion sidebar
+2. In the Agent's **Settings**, go to **Tools and Access → + Add Connection**
+3. Select **Mixpanel** and complete the OAuth flow
+ 
+
+### Gemini CLI
+
+```bash
+gemini mcp add mixpanel npx -y mcp-remote https://mcp.mixpanel.com/mcp
+```
+
+Or edit `~/.gemini/settings.json` manually and add:
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.mixpanel.com/mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+1. Go to **Settings → Tools & MCP → New MCP Server** to open `~/.cursor/mcp.json`
+2. Add the following (use the EU or IN URL if needed):
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.mixpanel.com/mcp"]
+    }
+  }
+}
+```
+
+3. Save the file — Cursor will prompt you to authorize with Mixpanel on first connect
+
+### Microsoft Copilot (JSON-configured clients)
+
+Any client that supports the MCP JSON config format, including Microsoft Copilot, can connect using the same JSON snippet from the Cursor section above. The first time it connects it will prompt you to authorize with Mixpanel.
+
+## Connecting with Service Accounts
+
+<Callout type="warning">
+  **Beta.** Service account authentication for MCP is in beta. The interface may change.
+</Callout>
+
+[Service accounts](/reference/Mixpanel%20APIs/authentication/service-accounts) are non-human Mixpanel users designed for scripts, back-end services, and automated workflows. They authenticate via a static header — no browser-based login is required.
+
+Use service accounts when you need a headless MCP connection, such as CI/CD pipelines, automated agents, or shared team setups. The service account's project permissions apply: it can only access projects it has been added to.
+
+### Prerequisites
+
+1. **Create a service account** in your [Organization settings](https://mixpanel.com/settings/org#serviceaccounts) or [Project settings](https://mixpanel.com/settings/project#serviceaccounts). You need Owner or Admin permissions to do this.
+2. **Save the username and secret** — you won't be able to view the secret again after creation.
+3. **Ensure the service account has access** to the projects you want to query via MCP.
+4. **MCP must be enabled** by an org admin in **Settings → Org → Overview**.
+
+### Generating the Authorization Header
+
+Encode the service account credentials as a base64 string and construct the authorization header:
+
+```bash
+echo -n "<username>:<secret>" | base64
+```
+
+This outputs a base64-encoded string. The full header value is:
+
+```
+Authorization: Bearer Basic <base64-encoded-credentials>
+```
+
+For example, if your username is `my-sa.abc123.mp-service-account` and your secret is `my-secret`, run:
+
+```bash
+echo -n "my-sa.abc123.mp-service-account:my-secret" | base64
+# Output: bXktc2EuYWJjMTIzLm1wLXNlcnZpY2UtYWNjb3VudDpteS1zZWNyZXQ=
+```
+
+The header would be: `Authorization: Bearer Basic bXktc2EuYWJjMTIzLm1wLXNlcnZpY2UtYWNjb3VudDpteS1zZWNyZXQ=`
+
+<Callout type="warning">
+  Treat the base64-encoded credentials like a password. Use environment variables or secret managers instead of hardcoding them in config files.
+</Callout>
+
+### Claude
+
+[Claude Desktop MCP docs](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
+
+Open your config file via **Settings → Developer → Edit Config** and add the following (use the EU or IN URL if needed):
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "url": "https://mcp.mixpanel.com/mcp",
+      "headers": {
+        "Authorization": "Bearer Basic <base64-encoded-credentials>"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after saving the file.
+
+### Claude Code
+
+[Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
+
+```bash
+claude mcp add --transport http mixpanel https://mcp.mixpanel.com/mcp \
+  --header "Authorization: Bearer Basic <base64-encoded-credentials>"
+```
+
+Or add it to your `.mcp.json` file using an environment variable:
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "type": "http",
+      "url": "https://mcp.mixpanel.com/mcp",
+      "headers": {
+        "Authorization": "Bearer Basic ${MIXPANEL_SA_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Set `MIXPANEL_SA_TOKEN` to your base64-encoded credentials before starting Claude Code.
+
+### Codex
+
+1. Go to **Settings → MCP Servers → + Add Server**
+2. Provide a name (e.g. Mixpanel) and select **Streamable HTTP**
+3. Enter your [MCP Server URL](#mcp-server-urls)
+4. Add the [authorization header](#generating-the-authorization-header) and click **Save**
+
+### Codex CLI
+
+Add the following to `~/.codex/config.toml` (use the EU or IN URL if needed):
+
+```toml
+[mcp_servers.mixpanel]
+url = "https://mcp.mixpanel.com/mcp"
+headers = { Authorization = "Bearer Basic <base64-encoded-credentials>" }
+```
+
+### Notion
+
+Service accounts are not supported through the Notion agent connector. Use [Cursor](#cursor-1) or another client that supports custom headers instead.
+
+### Gemini CLI
+
+```bash
+gemini mcp add mixpanel npx -y mcp-remote https://mcp.mixpanel.com/mcp \
+  --header "Authorization:Bearer Basic <base64-encoded-credentials>"
+```
+
+Or edit `~/.gemini/settings.json` manually and add (use the EU or IN URL if needed):
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://mcp.mixpanel.com/mcp",
+        "--header", "Authorization:${AUTH_HEADER}"
+      ],
+      "env": {
+        "AUTH_HEADER": "Bearer Basic <base64-encoded-credentials>"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+[Cursor MCP docs](https://cursor.com/docs/mcp)
+
+1. Go to **Settings → Tools & MCP → New MCP Server** to open `~/.cursor/mcp.json`
+2. Add the following (use the EU or IN URL if needed):
+
+```json
+{
+  "mcpServers": {
+    "mixpanel": {
+      "url": "https://mcp.mixpanel.com/mcp",
+      "headers": {
+        "Authorization": "Bearer Basic ${env:MIXPANEL_SA_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+3. Set the `MIXPANEL_SA_TOKEN` environment variable to your base64-encoded credentials
+
+### Microsoft Copilot (JSON-configured clients)
+
+Any client that supports the MCP JSON config format, including Microsoft Copilot, can connect using the same JSON snippet from the Cursor section above — adding the `headers` object with the [authorization header](#generating-the-authorization-header).
+
+## Example Queries
+
+Once connected, try asking your AI assistant:
+
+**Understand your data**
+- "What projects do I have access to?"
+- "What are the most fired events this week?"
+- "Which properties on `checkout_completed` are marked as PII?"
+
+**Query & analyze**
+- "How many sign ups did we have in February?"
+- "What's our signup-to-purchase conversion rate this month vs last month?"
+- "Show 7-day retention for users who completed onboarding in Q1"
+- "Which acquisition channels have the best 30-day retention?"
+
+**Create & build**
+- "Create a board of purchase metrics"
+- "Build a weekly growth dashboard with signups, activations, and churn"
+
+**Automate Lexicon work**
+- "Add descriptions to any events that don't have one"
+- "Tag all checkout-related events with 'Checkout'"
+- "Hide any events that haven't fired in the last 90 days"
+- "Find all properties that look like PII but aren't flagged yet"
+
+**Triage data quality**
+- "Show me all open data quality issues for the Signup event"
+- "Dismiss all issues for events we deprecated last quarter"
+
+**Test & ship**
+- "Create an experiment to test whether showing a progress indicator during onboarding increases activation rate"
+- "Create a feature flag for our new AI-powered search"
+- "How did our checkout experiment perform? Did it reach significance?"
+
+**Investigate users**
+- "This user reported a bug — what happened in their last 3 sessions?"
+- "Walk me through what [user ID] did before they churned"
+
+## Security Considerations
+
+<Callout type="warning">
+  The MCP server does not currently support HIPAA requirements. Mixpanel's Business Associate Agreement (BAA) does not cover this feature.
+</Callout>
+
+When connected, the AI assistant can both **read and write** to Mixpanel on your behalf. Your Mixpanel data is also sent to whichever AI provider you're using (Claude, ChatGPT, etc.), so review that provider's data handling policies before connecting.
+
+**Access controls**
+- MCP must be explicitly enabled by an org admin. It is off by default
+- Users can only access projects they already have permission to view in Mixpanel
+- All existing roles and project-level permissions remain in effect
+
+**Other considerations**
+- Check applicable compliance requirements (GDPR, CCPA, etc.) before connecting to projects with personal data
+- If using a shared AI environment (e.g., a team workspace), be aware that conversation history may be visible to others
+
+## Troubleshooting
+
+- **"MCP access is not enabled for this project"**: Ask your org admin to enable MCP in **Settings → Org → Overview**.
+- **"Missing scope" error**: Your cached auth token was created with an outdated scope list. Delete the `.mcp-auth` folder in the directory where you ran the authorization command, then re-authorize.
+- **Authorization fails**: Ensure your Mixpanel account has access to at least one project and that MCP is enabled at the org level.
+- **Desktop app doesn't pick up config changes**: Restart the application after editing the config file.
+
+## Rate Limits
+- A maximum of 600 MCP requests/hour per user
+
+## Building Custom Integrations (OAuth)
+
+If you're building a third-party MCP client or custom integration, use the following OAuth configuration.
+
+### OAuth Discovery
+
+Mixpanel's MCP server supports OAuth discovery via two well-known endpoints, following RFC 8414 and RFC 9728:
+
+**Protected Resource Metadata (RFC 9728):**
+Discover which authorization servers can issue tokens for this resource:
+```
+https://mcp.mixpanel.com/.well-known/oauth-protected-resource/mcp
+```
+
+**Authorization Server Metadata (RFC 8414):**
+Discover authorization, token, and registration endpoints:
+```
+https://mcp.mixpanel.com/.well-known/oauth-authorization-server/mcp
+```
+
+The following endpoints are deprecated but still available:
+```
+/.well-known/oauth-protected-resource
+/.well-known/oauth-authorization-server
+```
+
+### Dynamic Client Registration
+
+| Region | Registration Endpoint |
+| ------ | --------------------- |
+| US     | `https://mixpanel.com/oauth/mcp/register/` |
+| EU     | `https://eu.mixpanel.com/oauth/mcp/register/` |
+| IN     | `https://in.mixpanel.com/oauth/mcp/register/` |
+
+### Authorization Code Flow with PKCE
+
+Mixpanel uses **Authorization Code + PKCE (S256)**:
+
+- **Authorization endpoint:** `https://{mixpanel_domain}/oauth/authorize`
+- **Token endpoint:** `https://{mixpanel_domain}/oauth/token/`
+- **Grant types:** `authorization_code`, `refresh_token`
+- **Code challenge method:** `S256`
+- **Token endpoint auth methods:** `none`, `client_secret_basic`, `client_secret_post`
+
+### Required OAuth Scopes
+
+**Mandatory:**
+```
+projects analysis events insights segmentation retention data:read funnels flows data_definitions
+```
+
+**Optional:**
+```
+dashboard_reports bookmarks user_details business_context
+```
+
+<Callout type="info">
+  To request a specific subset of scopes, pass `--static-oauth-client-metadata '{ "scope": "..." }'` to `npx mcp-remote`. Otherwise all available scopes are requested automatically.
+</Callout>

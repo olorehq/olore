@@ -1,9 +1,18 @@
 ---
 title: Replicate data with Kafka (Confluent) and Debezium
 subtitle: Learn how to replicate data from Neon with Kafka (Confluent) and Debezium
+summary: >-
+  Confluent Cloud CDC pipeline from Neon Postgres streams WAL change events
+  (inserts, updates, deletes) to a Kafka topic using the PostgreSQL CDC Source
+  Connector (Debezium) with pgoutput or wal2json decoding. Use this guide when
+  you need real-time Kafka replication from Neon to Confluent Cloud. You'll
+  need to configure a logical replication slot, publication, and dedicated
+  replication role before connecting. The connector takes an initial snapshot
+  then streams all subsequent row-level changes; active subscriber connections
+  prevent scale-to-zero and may increase billing.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-11-07T12:28:56.611Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's logical replication feature allows you to replicate data from your Neon Postgres database to external destinations.
@@ -21,6 +30,10 @@ Confluent Cloud Connectors can be set up using the [Confluent Cloud UI](https://
 - A [Confluent Cloud](https://www.confluent.io/confluent-cloud) account
 - A [Neon account](https://console.neon.tech/)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Enable logical replication in Neon
 
@@ -99,10 +112,10 @@ To create a role in the Neon Console:
 
 <TabItem>
 
-The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](/docs/reference/cli-roles).
+The following Neon API method creates a role. To view the API documentation for this method, refer to the [Neon API reference](https://api-docs.neon.tech/reference/createprojectbranchrole).
 
 ```bash
-curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-blue-tooth-671580/roles' \
+curl 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/roles' \
   -H 'Accept: application/json' \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H 'Content-Type: application/json' \
@@ -112,6 +125,8 @@ curl 'https://console.neon.tech/api/v2/projects/hidden-cell-763301/branches/br-b
   }
 }' | jq
 ```
+
+> Replace `{project_id}` and `{branch_id}` with your actual Neon project and branch IDs, and set the `NEON_API_KEY` environment variable with your Neon API key.
 
 </TabItem>
 
@@ -251,7 +266,7 @@ To set up a Postgres CDC source connector for Confluent Cloud:
    }
    ```
 
-   Click **Continue** to provision the connector, which may take a few monents to complete.
+   Click **Continue** to provision the connector, which may take a few moments to complete.
 
 ## Verify your Kafka stream
 

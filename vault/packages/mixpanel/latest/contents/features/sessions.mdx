@@ -1,3 +1,6 @@
+import { Callout } from 'nextra/components'
+
+
 # Sessions: Compute sessions based on existing event data
 
 Use Sessions in Mixpanel to answer questions like:
@@ -113,6 +116,10 @@ Be sure to exclude API-related events in your funnel to ensure that your convers
 Exclude events that don’t denote an action made by the user from your funnel to ensure that your conversion time is accurate. For example, if a user is receiving notifications from you every 25 minutes, and session timeout is every 30 minutes, then session length will be 24 hours.
 
 #### Excluded Events
+<Callout icon="🚧" theme="warn">
+    Events hidden in Lexicon are excluded from session calculations by default so you may notice session numbers change if you change an events status in Lexicon.
+    
+</Callout>   
 
 Exclude events from being tracked as part of a session (such as backend API events that don’t denote an action made by the user on the site), to ensure the validity of session metrics. [Mixpanel API events](/docs/features/sessions#what-mixpanel-api-events-are-by-default-excluded-from-session-calculations) will be excluded by default, but external API events, such as a message sent through another program, will not be excluded. You can exclude events by going under Project Settings to Session Settings and selecting the events you wish to exclude.
 

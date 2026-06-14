@@ -1,0 +1,90 @@
+---
+title: "Analyze results"
+description: "Monitor production quality, investigate score drops, and feed insights back to offline evaluations."
+keywords: ["ai engineering", "console", "results", "analysis", "comparison", "baseline", "online evaluations"]
+---
+
+The Axiom Console displays results from evaluations. Online evaluation results stream in continuously from production traffic scored by `onlineEval`.
+
+Each `onlineEval` call creates spans tagged with `eval.tags: ["online"]` that appear alongside your production traces in the Console. The evaluation interface helps you answer three core questions about production quality:
+
+1. How well is your capability performing on real traffic?
+1. Is quality improving or regressing across deployments?
+1. Which production edge cases need attention?
+
+## Find online evaluation scores
+
+Online evaluation scores appear in the Console as spans linked to the originating generation span. To view only online evaluation results, filter spans by `eval.tags: ["online"]`.
+
+For details on all emitted attributes, see [Scorers](/ai-engineering/evaluate/scorers#telemetry).
+
+## Monitor score trends
+
+Use online evaluation scores to track production quality over time. Look for:
+
+- **Score drops** that correlate with deployments, prompt changes, or upstream API updates.
+- **Scorer disagreement** where heuristic scorers pass but LLM judges flag quality issues, or vice versa. This often reveals that a heuristic is too coarse or that a judge prompt needs refinement.
+- **Sampling gaps** where low sampling rates on expensive scorers leave blind spots in coverage. If a scorer runs on only 1% of traffic, a brief quality regression could go undetected.
+
+For teams running online evaluations across multiple capabilities, compare score distributions between capabilities to identify which areas of your product need the most attention.
+
+## Investigate score drops
+
+When a scorer's average drops, click into the failing spans to see:
+- The exact input that triggered the low score
+- What your capability returned
+- The full trace of LLM calls and tool executions that produced the output
+- Any metadata the scorer attached to explain the result
+
+Look for patterns:
+- Do failures cluster around specific input types or user segments?
+- Are certain scorers failing consistently while others pass?
+- Did a deployment or model update coincide with the drop?
+- Is high token usage or latency correlated with lower scores?
+
+Use these insights to prioritize fixes and add targeted test cases to your [offline evaluations](/ai-engineering/evaluate/write-evaluations).
+
+## Compare across deployments
+
+Because online evaluations run continuously, you can compare score distributions before and after a deployment to understand its impact on production quality.
+
+1. Note the timestamp of your deployment.
+1. In the Console, filter online evaluation spans to a time window before the deployment and note the average scores.
+1. Compare against the same time window after the deployment.
+
+Example: Switching from `gpt-4o-mini` to `gpt-4o` in production might show:
+- Relevance score: 0.82 → 0.94
+- Format score: 0.97 → 0.95
+- Latency: 800 ms → 1.6 s
+
+This data helps you decide whether the quality improvement justifies the cost and latency increase for your use case.
+
+<Note>
+For controlled experiments where you test changes against a fixed collection of test cases before deploying, use [offline evaluations](/ai-engineering/evaluate/analyze-results). Online evaluations complement offline evaluations by confirming that improvements hold on real traffic.
+</Note>
+
+## Adjust sampling based on results
+
+Review your sampling rates periodically as your system matures:
+
+- **Increase sampling** on scorers that have recently detected regressions. More data points help you understand the scope and severity of an issue.
+- **Decrease sampling** on scorers that consistently pass. A scorer at 100% pass rate over weeks of traffic may not need to run on every request.
+- **Add conditional sampling** for scorers that should focus on specific traffic segments. For example, sample more aggressively on long inputs where your capability is more likely to struggle.
+
+For details on configuring sampling, see [Sampling](/ai-engineering/evaluate/online-evaluations/write-run-evaluations#sampling).
+
+## Feed insights back to offline evaluations
+
+Online evaluations often surface edge cases that your offline test collections don't cover. When you spot a pattern of failures in production:
+
+1. Add the failing inputs to your offline collection as new test cases with expected outputs.
+1. Run offline evaluations to reproduce the issue and verify your fix.
+1. Deploy the fix and confirm that online evaluation scores recover.
+
+This feedback loop between online and offline evaluations is where the two approaches reinforce each other. Online evaluations catch problems you didn't anticipate; offline evaluations let you systematically fix and prevent them from recurring.
+
+## What's next?
+
+- Set up [user feedback](/ai-engineering/observe/user-feedback) for human-in-the-loop signals that complement automated scoring.
+- Write [offline evaluations](/ai-engineering/evaluate/write-evaluations) to test against known-good answers before shipping.
+- To iterate on your capability based on evaluation results, see [Iterate](/ai-engineering/iterate).

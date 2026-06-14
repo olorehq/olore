@@ -1,8 +1,15 @@
 ---
 title: Schema migrations with Prisma and Neon
 subtitle: Learn how to manage database schema changes using Prisma Migrate with Neon
+summary: >-
+  Prisma Migrate schema migrations on Neon require two connection strings: a
+  pooled URL for application runtime and a direct URL so the Prisma CLI can
+  apply DDL changes without going through PgBouncer. This tutorial builds a
+  Node.js Express API, runs `prisma migrate dev` to generate and apply SQL
+  migration files, then shows how iterative schema changes work and when to
+  switch to `prisma migrate deploy` for production.
 enableTableOfContents: true
-updatedOn: '2026-02-01T11:47:48.275Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/prisma-prompt.md" 
@@ -265,11 +272,11 @@ Restart your server and check `http://localhost:3000/authors`. Each author now h
 
 The typical workflow for schema changes with Prisma and Neon:
 
-1. **Modify your schema** — Update models in `prisma/schema.prisma`
-2. **Generate migration** — Run `npx prisma migrate dev --name descriptive-name`
-3. **Review the migration** — Check the generated SQL in `prisma/migrations/`
-4. **Test locally** — Verify your application works with the changes
-5. **Deploy** — In production, use `npx prisma migrate deploy`
+1. **Modify your schema**: Update models in `prisma/schema.prisma`
+2. **Generate migration**: Run `npx prisma migrate dev --name descriptive-name`
+3. **Review the migration**: Check the generated SQL in `prisma/migrations/`
+4. **Test locally**: Verify your application works with the changes
+5. **Deploy**: In production, use `npx prisma migrate deploy`
 
 <Admonition type="tip">
 For production deployments, always use `prisma migrate deploy` instead of `prisma migrate dev`. The `deploy` command only applies pending migrations without generating new ones.
@@ -285,8 +292,8 @@ Find the complete source code for this tutorial on GitHub:
 
 ## Next steps
 
-- [Connect from Prisma to Neon](/docs/guides/prisma) — Connection setup reference
-- [Prisma Migrate documentation](https://www.prisma.io/docs/concepts/components/prisma-migrate) — Deep dive into Prisma migrations
-- [Neon branching](/docs/introduction/branching) — Use database branches to test migrations safely
+- [Connect from Prisma to Neon](/docs/guides/prisma): Connection setup reference
+- [Prisma Migrate documentation](https://www.prisma.io/docs/concepts/components/prisma-migrate): Deep dive into Prisma migrations
+- [Neon branching](/docs/introduction/branching): Use database branches to test migrations safely
 
 <NeedHelp/>

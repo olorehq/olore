@@ -77,12 +77,14 @@ Get the content of the first user message in a GenAI conversation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend first_message = genai_get_content_by_index(['attributes.gen_ai.input.messages'], 1)
 | where isnotempty(first_message)
 | project _time, first_message
 | limit 3
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20first_message%20%3D%20genai_get_content_by_index(%5B%27attributes.gen_ai.input.messages%27%5D%2C%201)%20%7C%20where%20isnotempty(first_message)%20%7C%20project%20_time%2C%20first_message%20%7C%20limit%203%22%7D)
 
 **Output**
 

@@ -5,23 +5,27 @@ description: Local opencode documentation reference (latest). OpenCode AI coding
 
 # opencode Documentation
 
-OpenCode is an open source AI coding agent available as a terminal-based interface (TUI), desktop app, IDE extension, and web interface. It supports any LLM provider, MCP servers, custom tools, plugins, and agent skills.
+OpenCode is an open source AI coding agent available as a terminal interface (TUI), desktop app, IDE extension, or web app. This package contains the full official documentation.
 
 ## Documentation Structure
 
 ```
-contents/          # All docs (flat, 35 files)
-├── index.mdx      # Introduction and getting started
-├── config.mdx     # JSON configuration reference
-├── cli.mdx        # CLI commands and options
-├── tui.mdx        # Terminal UI usage
-├── agents.mdx     # Agent configuration
-├── models.mdx     # LLM providers and models
-├── providers.mdx  # Provider setup
-├── mcp-servers.mdx # MCP tool integration
-├── plugins.mdx    # Plugin development
-├── skills.mdx     # Agent skill definitions
-└── ...            # 25 more topic files
+contents/          # All 36 docs in flat structure
+├── index.mdx      # Getting started
+├── cli.mdx        # CLI reference
+├── config.mdx     # Configuration
+├── tui.mdx        # Terminal UI
+├── agents.mdx     # Sub-agents
+├── skills.mdx     # Skills system
+├── tools.mdx      # Built-in tools
+├── mcp-servers.mdx # MCP servers
+├── providers.mdx  # AI providers
+├── models.mdx     # Model selection
+├── rules.mdx      # Agent rules
+├── permissions.mdx # Permissions
+├── plugins.mdx    # Plugin system
+├── sdk.mdx        # JS/TS SDK
+└── ...            # (36 files total, see TOC.md)
 ```
 
 ## Topic Guide
@@ -29,44 +33,48 @@ contents/          # All docs (flat, 35 files)
 | Topic | Key Files |
 |-------|-----------|
 | Getting started / installation | `contents/index.mdx` |
-| Configuration (JSON config) | `contents/config.mdx` |
 | CLI commands and flags | `contents/cli.mdx`, `contents/commands.mdx` |
-| TUI usage and keybinds | `contents/tui.mdx`, `contents/keybinds.mdx` |
-| Agents and modes | `contents/agents.mdx`, `contents/modes.mdx` |
-| LLM providers and models | `contents/providers.mdx`, `contents/models.mdx` |
-| MCP servers | `contents/mcp-servers.mdx` |
-| Custom tools | `contents/custom-tools.mdx`, `contents/tools.mdx` |
-| Plugins | `contents/plugins.mdx` |
-| Agent skills (SKILL.md) | `contents/skills.mdx` |
-| Rules and instructions | `contents/rules.mdx` |
-| Permissions and security | `contents/permissions.mdx` |
-| IDE integration (VS Code, Cursor) | `contents/ide.mdx`, `contents/acp.mdx` |
-| GitHub / GitLab integration | `contents/github.mdx`, `contents/gitlab.mdx` |
-| HTTP server and SDK | `contents/server.mdx`, `contents/sdk.mdx` |
+| Configuration (opencode.json) | `contents/config.mdx` |
+| Terminal UI (TUI) | `contents/tui.mdx`, `contents/keybinds.mdx` |
 | Web interface | `contents/web.mdx` |
-| Themes and formatting | `contents/themes.mdx`, `contents/formatters.mdx` |
+| IDE / editor integration | `contents/ide.mdx`, `contents/acp.mdx` |
+| Agents and sub-agents | `contents/agents.mdx` |
+| Skills system | `contents/skills.mdx` |
+| Tools (built-in and custom) | `contents/tools.mdx`, `contents/custom-tools.mdx` |
+| MCP servers | `contents/mcp-servers.mdx` |
+| AI providers and models | `contents/providers.mdx`, `contents/models.mdx`, `contents/zen.mdx` |
+| Rules / agent instructions | `contents/rules.mdx` |
+| Permissions and policies | `contents/permissions.mdx`, `contents/policies.mdx` |
+| Project references | `contents/references.mdx` |
+| Plugin development | `contents/plugins.mdx` |
+| SDK (JavaScript/TypeScript) | `contents/sdk.mdx` |
+| Server / headless mode | `contents/server.mdx` |
+| Sharing sessions | `contents/share.mdx` |
 | LSP integration | `contents/lsp.mdx` |
-| Network / proxy config | `contents/network.mdx` |
-| Windows / WSL | `contents/windows-wsl.mdx` |
-| Sharing conversations | `contents/share.mdx` |
-| Subscriptions (Go, Zen) | `contents/go.mdx`, `contents/zen.mdx` |
-| Enterprise deployment | `contents/enterprise.mdx` |
-| Ecosystem and community | `contents/ecosystem.mdx` |
+| Formatters | `contents/formatters.mdx` |
+| Themes | `contents/themes.mdx` |
+| Network / proxy | `contents/network.mdx` |
+| GitHub / GitLab integration | `contents/github.mdx`, `contents/gitlab.mdx` |
+| Windows / WSL setup | `contents/windows-wsl.mdx` |
 | Troubleshooting | `contents/troubleshooting.mdx` |
+| Enterprise (SSO, gateway) | `contents/enterprise.mdx` |
+| Ecosystem / community plugins | `contents/ecosystem.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Installing, configuring, or running OpenCode
-- CLI flags, TUI navigation, or keybindings
-- Setting up LLM providers, models, or MCP servers
-- Writing plugins, custom tools, or agent skills
-- Integrating OpenCode with GitHub, GitLab, or IDEs
-- Permissions, rules, network/proxy settings
-- The OpenCode HTTP server or JS SDK
+- OpenCode configuration, setup, or installation
+- CLI or TUI usage and keyboard shortcuts
+- Agents, skills, rules, or tools in OpenCode
+- MCP server configuration or custom tools
+- AI provider or model setup
+- IDE/editor integration (ACP, VSCode, etc.)
+- Plugins, SDK, or headless server mode
+- Troubleshooting OpenCode issues
+- Enterprise deployment or permissions
 
 ## How to find information
 
 1. Use Topic Guide above to identify relevant files
-2. Read `TOC.md` for the complete file listing
+2. Read `TOC.md` for complete file listing
 3. Read specific files from `contents/{filename}.mdx`

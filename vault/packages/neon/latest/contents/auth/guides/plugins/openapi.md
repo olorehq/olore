@@ -1,8 +1,15 @@
 ---
 title: Open API
 subtitle: Interactive API documentation and client generation
+summary: >-
+  The OpenAPI plugin for Neon Auth ships enabled by default and exposes a
+  Scalar-powered interactive API reference UI at /reference and an OpenAPI 3.x
+  JSON schema endpoint at /open-api/generate-schema. Use it to browse and
+  live-test auth endpoints (session, user, organization, admin) directly against
+  your database, or to import the spec into Postman, Insomnia, or a Scalar SDK
+  generator for type-safe clients in languages without a dedicated Neon Auth SDK.
 enableTableOfContents: true
-updatedOn: '2026-01-05T20:19:10.005Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -61,7 +68,7 @@ One of the most powerful use cases for the OpenAPI plugin is generating type-saf
 
 ### Using Scalar SDK generator
 
-If you're using Next.js, you can access the OpenAPI reference page at `/api/auth/reference` in your application, once Neon Auth is set up according to the [Next.js guide](/docs/auth/quick-start/nextjs). Unlike the default Neon Auth reference page, this version can be fully customized to match your application's theme. It also provides additional options, such as generating SDK clients in multiple languages using Scalar's [built‑in tools](https://guides.scalar.com/scalar/scalar-sdks/getting-started).
+If you're using Next.js, you can access the OpenAPI reference page at `/api/auth/reference` in your application, once Neon Auth is set up according to the [Next.js quick start](/docs/auth/quick-start/nextjs-api-only). Unlike the default Neon Auth reference page, this version can be fully customized to match your application's theme. It also provides additional options, such as generating SDK clients in multiple languages using Scalar's [built‑in tools](https://guides.scalar.com/scalar/scalar-sdks/getting-started).
 
 ## Limitations
 

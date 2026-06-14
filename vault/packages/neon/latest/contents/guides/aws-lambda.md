@@ -1,8 +1,14 @@
 ---
 title: Connect from AWS Lambda
 subtitle: Learn how to set up a Neon database and connect from an AWS Lambda function
+summary: >-
+  Connecting a Neon serverless Postgres database to AWS Lambda lets you query
+  Postgres from event-driven Node.js functions without managing persistent
+  infrastructure. Use this guide when you need to wire a Lambda function to a
+  Neon database using the pg library, the Serverless Framework CLI, and
+  DATABASE_URL with SSL enabled via sslmode=require.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.262Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 AWS Lambda is a serverless, event-driven compute service that allows you to run code without provisioning or managing servers. It is a convenient and cost-effective solution for running various types of workloads, including those that require a database.
@@ -299,4 +305,4 @@ You can find your `api-id` on the API Gateway dashboard:
 
 ## Conclusion
 
-In this guide, you have learned how to set up a Postgres database using Neon and connect to it from an AWS Lambda function using Node.js as the runtime environment. You have also learned how to use Serverless Framework to create and deploy the Lambda function, and how to use the `pg` library to perform a basic database read operations.
+In this guide, you have learned how to set up a Postgres database using Neon and connect to it from an AWS Lambda function using Node.js as the runtime environment. You have also learned how to use Serverless Framework to create and deploy the Lambda function, and how to use the `pg` library to perform basic database read operations.

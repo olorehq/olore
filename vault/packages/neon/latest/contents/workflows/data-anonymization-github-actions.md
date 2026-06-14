@@ -1,8 +1,17 @@
 ---
 title: Data anonymization with GitHub Actions
 subtitle: Automate anonymized branch creation in your CI/CD pipeline
+summary: >-
+  The Neon Create Branch GitHub Action (`neondatabase/create-branch-action`)
+  creates an anonymized Postgres branch in a single step by accepting a
+  `masking_rules` JSON array that maps columns to PostgreSQL Anonymizer
+  masking functions. Use this when you need to provision a masked branch
+  automatically on pull request events, rather than configuring masking
+  rules manually in the Neon Console. The workflow requires `NEON_PROJECT_ID`
+  and `NEON_API_KEY` secrets, and a companion `delete-branch-action`
+  workflow can clean up anonymized branches when PRs close.
 enableTableOfContents: true
-updatedOn: '2026-01-13T19:28:54.352Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This page shows how to automate data anonymization with GitHub Actions. For conceptual overview and usage instructions, see [Data Anonymization](/docs/workflows/data-anonymization).
@@ -81,7 +90,7 @@ The `masking_rules` input accepts a JSON array where each rule specifies:
 
 | Field              | Description                             |
 | ------------------ | --------------------------------------- |
-| `database_name`    | Target database (e.g., `neondb`)        |
+| `database_name`    | Target database (for example, `neondb`) |
 | `schema_name`      | Target schema (typically `public`)      |
 | `table_name`       | Table containing sensitive data         |
 | `column_name`      | Column to mask                          |

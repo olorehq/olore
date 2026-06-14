@@ -39,18 +39,18 @@ The raw and JSON responses are shown on the results page of a DNS monitor run an
 
 * **Text answer:** The raw DNS response as plain text. Use this to check for specific strings in the response
 
-* **JSON answer:** The DNS response parsed as JSON. This allows you to target specific fields using JSON path assertions. The response structure varies by record type. See [JSON response schemas](#json-response-schemas) below for all supported record types
+* **JSON answer:** The DNS response parsed as JSON. This allows you to target specific fields using JSON path assertions. The response structure varies by record type. See [JSON response schemas](#json-response-schemas) below for all supported record types.
 
-With JSON path assertions, you can:
+  With JSON path assertions, you can:
 
-* `$.Answer[0].TTL` → validate TTL values are within expected ranges
-* `$.Answer[0].data` → check specific IP addresses or record values
-* `$.Answer.length` → check how many records were returned
-* `$.Status` → verify the DNS response status code
+  * `$.Answer[0].TTL` → validate TTL values are within expected ranges
+  * `$.Answer[0].data` → check specific IP addresses or record values
+  * `$.Answer.length` → check how many records were returned
+  * `$.Status` → verify the DNS response status code
 
-Learn more about JSON path assertions: [JSON responses with JSON path](/detect/assertions/#json-responses-with-json-path).
+  Learn more about JSON path assertions: [JSON responses with JSON path](/detect/assertions/#json-responses-with-json-path).
 
-### JSON Response Schemas
+### JSON Response Schema
 
 The DNS response is parsed into a structured JSON format. All responses share a common structure:
 
@@ -317,13 +317,14 @@ Set how often the monitor runs (every 10 seconds to 24 hours):
   <img className="hidden dark:block" src="/images/dns-monitors/scheduling-dark.png" alt="DNS monitor scheduling strategy and location selection interface" />
 </Frame>
 
-* **Strategy:** Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/monitoring/global-locations#scheduling-strategies)
-* **Locations:** Select one or more [public](/monitoring/global-locations/) locations to run the monitor from
-* **Private locations**: DNS monitors do not currently support private locations
+* **Strategy:** Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/concepts/scheduling)
+* **Locations:** Select [public](/concepts/locations/#public-locations) or [private](/platform/private-locations/overview) locations to run the monitor from
+
 ### Additional Settings
 
 * **Name:** Give your monitor a clear name to identify it in dashboards and alerts
-* **Tags:** Use tags to organize monitors across dashboards and [maintenance windows](/communicate/maintenance-windows/overview)
+* **Description:** Add context about what this monitor does and why it matters. Supports markdown, max 500 characters. When a failure occurs, [Rocky AI](/ai/rocky-ai) uses the description to provide more accurate [root cause and user impact analysis](/resolve/ai-root-cause-analysis/overview)
+* **Tags:** Use tags to organize monitors across [dashboards](/communicate/dashboards/overview/) and [maintenance windows](/communicate/maintenance-windows/overview)
 * **Retries:** Define how failed runs should be retried. See [retry strategies](/communicate/alerts/retries)
 * **Alerting:** Configure your [alert settings](/communicate/alerts/configuration), [alert channels](/communicate/alerts/channels), or set up [webhooks](/integrations/alerts/webhooks) for custom integrations
 

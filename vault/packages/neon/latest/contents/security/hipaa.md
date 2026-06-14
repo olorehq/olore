@@ -1,7 +1,13 @@
 ---
 title: HIPAA Compliance
+summary: >-
+  HIPAA compliance on Neon is a self-serve feature on the Scale plan.
+  Customers can accept a Business Associate Agreement (BAA) and enable PHI
+  protection at the organization and project level via the Console, API, or
+  CLI. Enabling HIPAA on a project is irreversible and triggers a compute
+  restart. Breach notifications are issued within five business days.
 enableTableOfContents: true
-updatedOn: '2026-02-04T20:00:07.519Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 Neon offers HIPAA compliance as a self-serve feature available to customers on the [Scale](/docs/introduction/plans) plan.
@@ -40,10 +46,6 @@ Once HIPAA is enabled for your organization, you can proceed to enable HIPAA com
 
 <Admonition type="important">
 Once HIPAA compliance is enabled on a project, it cannot be disabled. Enabling HIPAA will also restart all computes, temporarily interrupting database connections.
-</Admonition>
-
-<Admonition type="note">
-HIPAA support for Postgres 18 is currently available in AWS regions only. You cannot create a Postgres 18 HIPAA-compliant project in Azure regions.
 </Admonition>
 
 <Tabs labels={["New project", "Existing project", "API", "CLI"]}>
@@ -90,7 +92,7 @@ curl --request POST \
 '
 ```
 
-To enable HIPAA for an existing project, set `hippa` to `true` in the `project settings` object using the [Update project API](https://api-docs.neon.tech/reference/updateproject):
+To enable HIPAA for an existing project, set `hipaa` to `true` in the `project settings` object using the [Update project API](https://api-docs.neon.tech/reference/updateproject):
 
 ```bash
 curl --request PATCH \
@@ -117,7 +119,7 @@ Enabling HIPAA on an existing project will force a restart of all computes to ap
 
 <TabItem>
 
-To create a new HIPAA-compliant Neon project via the [Neon CLI](/docs/reference/neon-cli), use the `--hipaa` option with the `neon projects create` command, as shown below.
+To create a new HIPAA-compliant Neon project via the [Neon CLI](/docs/cli), use the `--hipaa` option with the `neon projects create` command, as shown below.
 
 ```bash
 neon projects create --hipaa
@@ -137,7 +139,7 @@ Enabling HIPAA on an existing project will force a restart of all computes to ap
 
 </Tabs>
 
-If you have trouble enabling HIPAA, contact `hipaa@neon.tech`.
+If you have trouble enabling HIPAA, [raise a Support request](https://console.neon.tech/app/projects?modal=support).
 
 <Admonition type="note">
 For information about disabling HIPAA compliance, see [Disabling HIPAA](#disabling-hipaa).
@@ -177,7 +179,7 @@ For information about disabling HIPAA compliance, see [Disabling HIPAA](#disabli
    - Customers need to avoid including PHI in support tickets or metadata fields.
 
 6. PHI access and amendments
-   - Customers can request access to audit logs by contacting `hipaa@neon.tech`.
+   - Customers can request access to audit logs by [raising a Support request](https://console.neon.tech/app/projects?modal=support).
    - Any updates or corrections to PHI need to be carried out by the customer.
 
 ## Your rights and what to expect
@@ -197,7 +199,7 @@ Neon maintains a comprehensive audit trail to support HIPAA compliance. This inc
 1. [Neon Console and API audit logs](#neon-console-and-api-audit-logs): Captures user actions in the Neon Console and via the Neon API.
 2. [Postgres audit logs](#postgres-audit-logs-pgaudit): Logged using the [pgAudit](https://www.pgaudit.org/) extension (`pgaudit`) for Postgres.
 
-> Self-serve access to HIPAA audit logs is currently not supported. Access to audit logs can be requested by contacting `hipaa@neon.tech`.
+> Self-serve access to HIPAA audit logs is currently not supported. Access to audit logs can be requested by [raising a Support request](https://console.neon.tech/app/projects?modal=support).
 
 ### Neon console and API audit logs
 
@@ -210,7 +212,7 @@ Neon logs operations performed via the Neon Console interface and the Neon API. 
 
 To protect sensitive information, Neon filters data in audit logs using the following approach:
 
-- Sensitive fields (such as `connection_uri` and `password`) are excluded from logs whereever possible.
+- Sensitive fields (such as `connection_uri` and `password`) are excluded from logs wherever possible.
 - `GET` requests: Only query parameters are logged; response payloads are not recorded.
 - Mutation requests (`PATCH`, `PUT`, `POST`, `DELETE`): Request and response bodies are logged with sensitive fields redacted.
 
@@ -250,14 +252,14 @@ fb7c2e2f-cb09-4405-b543-dbe1b88614b6 2025-05-25 10:18:45.340 +0000 `{ "changes":
 
 When HIPAA audit logging is enabled for a Neon project, Neon configures pgAudit with the following settings by default:
 
-| Setting                      | Value        | Description                                                                                   |
-| ---------------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `pgaudit.log`                | `all, -misc` | Logs all classes of SQL statements except low-risk miscellaneous commands.                    |
-| `pgaudit.log_parameter`      | `off`        | Parameters passed to SQL statements are not logged to avoid capturing sensitive values.       |
-| `pgaudit.log_catalog`        | `off`        | Queries on system catalog tables (e.g., `pg_catalog`) are excluded from logs to reduce noise. |
-| `pgaudit.log_statement`      | `on`         | The full SQL statement text is included in the log.                                           |
-| `pgaudit.log_relation`       | `off`        | Only a single log entry is generated per statement, not per table or view.                    |
-| `pgaudit.log_statement_once` | `off`        | SQL statements are logged with every entry, not just once per session.                        |
+| Setting                      | Value        | Description                                                                                          |
+| ---------------------------- | ------------ | ---------------------------------------------------------------------------------------------------- |
+| `pgaudit.log`                | `all, -misc` | Logs all classes of SQL statements except low-risk miscellaneous commands.                           |
+| `pgaudit.log_parameter`      | `off`        | Parameters passed to SQL statements are not logged to avoid capturing sensitive values.              |
+| `pgaudit.log_catalog`        | `off`        | Queries on system catalog tables (for example, `pg_catalog`) are excluded from logs to reduce noise. |
+| `pgaudit.log_statement`      | `on`         | The full SQL statement text is included in the log.                                                  |
+| `pgaudit.log_relation`       | `off`        | Only a single log entry is generated per statement, not per table or view.                           |
+| `pgaudit.log_statement_once` | `off`        | SQL statements are logged with every entry, not just once per session.                               |
 
 #### What does `pgaudit.log = 'all, -misc'` include?
 
@@ -267,15 +269,15 @@ This configuration enables logging for all major classes of SQL activity while e
 - **WRITE**: `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, and `COPY` commands that write to tables.
 - **FUNCTION**: Function calls and `DO` blocks.
 - **ROLE**: Role and permission changes, including `GRANT`, `REVOKE`, `CREATE ROLE`, `ALTER ROLE`, and `DROP ROLE`.
-- **DDL**: Schema and object changes like `CREATE TABLE`, `ALTER INDEX`, `DROP VIEW` — all DDL operations not included in the `ROLE` class.
-- **MISC_SET**: Miscellaneous `SET` commands, e.g. `SET ROLE`.
+- **DDL**: Schema and object changes like `CREATE TABLE`, `ALTER INDEX`, `DROP VIEW` (all DDL operations not included in the `ROLE` class).
+- **MISC_SET**: Miscellaneous `SET` commands, for example `SET ROLE`.
 
 Excluded:
 
 - **MISC**: Low-impact commands such as `DISCARD`, `FETCH`, `CHECKPOINT`, `VACUUM`, and `SET`.
 
 <Admonition type="note">
-In some cases, audit logs may include SQL statements that contain plain-text passwords—for example, in a `CREATE ROLE ... LOGIN PASSWORD` command. This is due to limitations in the Postgres `pgaudit` extension, which may log full statements without redacting sensitive values.
+In some cases, audit logs may include SQL statements that contain plain-text passwords (for example, in a `CREATE ROLE ... LOGIN PASSWORD` command). This is due to limitations in the Postgres `pgaudit` extension, which may log full statements without redacting sensitive values.
 
 This behavior is a known issue. We recommend avoiding the inclusion of raw credentials in SQL statements where possible.
 </Admonition>
@@ -286,11 +288,11 @@ For more details, see the [pgAudit documentation](https://github.com/pgaudit/pga
 
 - Logs are written using the standard [PostgreSQL logging facility](https://www.postgresql.org/docs/current/runtime-config-logging.html).
 - Logs are sent to a dedicated Neon audit collector endpoint and securely stored.
-- Each log entry includes metadata such as the timestamp of the activity, the Neon compute ID (`endpoint_id`), Neon project ID (`project_id`), the Postgres role, the database accessed, and the method of access (e.g.,`neon-internal-sql-editor`), etc. See the following log record example and field descriptions:
+- Each log entry includes metadata such as the timestamp of the activity, the Neon compute ID (`endpoint_id`), Neon project ID (`project_id`), the Postgres role, the database accessed, and the method of access (for example, `neon-internal-sql-editor`), etc. See the following log record example and field descriptions:
 
 #### Postgres audit log example
 
-The following example shows how a simple SQL command—`CREATE SCHEMA IF NOT EXISTS healthcare`—is captured in Neon’s audit logs. The table provides a description of the log record's parts.
+The following example shows how a simple SQL command (`CREATE SCHEMA IF NOT EXISTS healthcare`) is captured in Neon’s audit logs. The table provides a description of the log record's parts.
 
 **Query:**
 
@@ -304,35 +306,35 @@ The following example shows how a simple SQL command—`CREATE SCHEMA IF NOT EXI
 
 **Field descriptions:**
 
-| **Field position** | **Example value**                       | **Description**                                                                   |
-| ------------------ | --------------------------------------- | --------------------------------------------------------------------------------- |
-| 1                  | 2025-05-05 20:23:01.277                 | Timestamp when the log was received by the logging system.                        |
-| 2                  | `<134>`                                 | Syslog priority code (facility + severity).                                       |
-| 3                  | May 6 00:23:01                          | Syslog timestamp (when the message was generated on the source host).             |
-| 4                  | vm-compute-shy-waterfall-w2cn1o3t-b6vmn | Hostname or compute instance where the event occurred.                            |
-| 5                  | young-recipe-29421150/ep-calm-da        | Project and endpoint name in the format `<project>/<endpoint>`.                   |
-| 6                  | 2025-05-06 00:23:01.277 GMT             | Timestamp of the database event in UTC.                                           |
-| 7                  | neondb_owner                            | Database role (user) that executed the statement.                                 |
-| 8                  | neondb                                  | Database name.                                                                    |
-| 9                  | 1405                                    | Process ID (PID) of the PostgreSQL backend.                                       |
-| 10                 | 10.6.42.155:13702                       | Client IP address and port that issued the query.                                 |
-| 11                 | 68195665.57d                            | PostgreSQL virtual transaction ID.                                                |
-| 12                 | 1                                       | Backend process number.                                                           |
-| 13                 | CREATE SCHEMA                           | Command tag.                                                                      |
-| 14                 | 2025-05-06 00:23:01 GMT                 | Statement start timestamp.                                                        |
-| 15                 | 16/2                                    | Log sequence number (LSN).                                                        |
-| 16                 | 767                                     | Statement duration in milliseconds.                                               |
-| 17                 | 00000                                   | SQLSTATE error code (00000 = success).                                            |
-| 18                 | SESSION                                 | Log message level.                                                                |
-| 19                 | 1                                       | Session ID.                                                                       |
-| 20                 | 1                                       | Subsession or transaction ID.                                                     |
-| 21                 | DDL                                     | Statement type: Data Definition Language.                                         |
-| 22                 | CREATE SCHEMA                           | Statement tag/type.                                                               |
-| 23–26              | _(empty)_                               | Reserved/unused fields.                                                           |
-| 27                 | CREATE SCHEMA IF NOT EXISTS healthcare  | Full SQL text of the statement.                                                   |
-| 28                 | `<not logged>`                          | Parameter values (redacted or disabled by settings like `pgaudit.log_parameter`). |
-| 29–35              | _(empty)_                               | Reserved/unused fields.                                                           |
-| 36                 | neon-internal-sql-editor                | Application name or source of the query (e.g., SQL Editor in the Neon Console).   |
+| **Field position** | **Example value**                       | **Description**                                                                        |
+| ------------------ | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| 1                  | 2025-05-05 20:23:01.277                 | Timestamp when the log was received by the logging system.                             |
+| 2                  | `<134>`                                 | Syslog priority code (facility + severity).                                            |
+| 3                  | May 6 00:23:01                          | Syslog timestamp (when the message was generated on the source host).                  |
+| 4                  | vm-compute-shy-waterfall-w2cn1o3t-b6vmn | Hostname or compute instance where the event occurred.                                 |
+| 5                  | young-recipe-29421150/ep-calm-da        | Project and endpoint name in the format `<project>/<endpoint>`.                        |
+| 6                  | 2025-05-06 00:23:01.277 GMT             | Timestamp of the database event in UTC.                                                |
+| 7                  | neondb_owner                            | Database role (user) that executed the statement.                                      |
+| 8                  | neondb                                  | Database name.                                                                         |
+| 9                  | 1405                                    | Process ID (PID) of the PostgreSQL backend.                                            |
+| 10                 | 10.6.42.155:13702                       | Client IP address and port that issued the query.                                      |
+| 11                 | 68195665.57d                            | PostgreSQL virtual transaction ID.                                                     |
+| 12                 | 1                                       | Backend process number.                                                                |
+| 13                 | CREATE SCHEMA                           | Command tag.                                                                           |
+| 14                 | 2025-05-06 00:23:01 GMT                 | Statement start timestamp.                                                             |
+| 15                 | 16/2                                    | Log sequence number (LSN).                                                             |
+| 16                 | 767                                     | Statement duration in milliseconds.                                                    |
+| 17                 | 00000                                   | SQLSTATE error code (00000 = success).                                                 |
+| 18                 | SESSION                                 | Log message level.                                                                     |
+| 19                 | 1                                       | Session ID.                                                                            |
+| 20                 | 1                                       | Subsession or transaction ID.                                                          |
+| 21                 | DDL                                     | Statement type: Data Definition Language.                                              |
+| 22                 | CREATE SCHEMA                           | Statement tag/type.                                                                    |
+| 23–26              | _(empty)_                               | Reserved/unused fields.                                                                |
+| 27                 | CREATE SCHEMA IF NOT EXISTS healthcare  | Full SQL text of the statement.                                                        |
+| 28                 | `<not logged>`                          | Parameter values (redacted or disabled by settings like `pgaudit.log_parameter`).      |
+| 29–35              | _(empty)_                               | Reserved/unused fields.                                                                |
+| 36                 | neon-internal-sql-editor                | Application name or source of the query (for example, SQL Editor in the Neon Console). |
 
 #### Extension configuration
 
@@ -344,8 +346,6 @@ The following features are not currently HIPAA-compliant and should not be used 
 
 - [Neon Auth](/docs/neon-auth/overview) – Uses an authentication provider that is not covered under Neon’s HIPAA compliance.
 - [Data API](/docs/data-api/get-started) – Hosted outside Neon’s HIPAA-compliant infrastructure.
-
-For updates on HIPAA support for these features, contact [hipaa@neon.tech](mailto:hipaa@neon.tech).
 
 ## Security incidents
 
@@ -359,9 +359,19 @@ If a security breach occurs, Neon will:
 
 Once HIPAA compliance is enabled for a Neon project, it cannot be disabled.
 
-If you want to disable HIPAA for your Neon organization entirely, you need to [submit a support request](https://console.neon.tech/app/projects?modal=support). This can only be done after all HIPAA-enabled projects have been deleted.
+### Delete a HIPAA-compliant project
 
-To delete a HIPAA-compliant project, submit a [support request](https://console.neon.tech/app/projects?modal=support). Before deleting a HIPAA project, make sure to export any audit logs or data you may need. Neon retains audit logs for the duration specified in your Business Associate Agreement (BAA).
+You can delete a HIPAA-compliant project using the same self-serve flow as any other Neon project—in the Console (**Settings** → **Delete**), via the [Neon API](/docs/manage/projects#delete-a-project-with-the-api), or with the [Neon CLI](/docs/cli/projects#delete). Deleting a project is permanent and removes all computes, branches, databases, and roles in that project.
+
+<Admonition type="important">
+Before deleting a HIPAA project, export any audit logs or data you may need. Neon retains audit logs for the duration specified in your Business Associate Agreement (BAA).
+</Admonition>
+
+For step-by-step instructions, see [Delete a project](/docs/manage/projects#delete-a-project).
+
+### Disable HIPAA for your organization
+
+If you want to disable HIPAA for your Neon organization entirely, you need to [submit a support request](https://console.neon.tech/app/projects?modal=support). This can only be done after all HIPAA-enabled projects have been deleted.
 
 ## Frequently Asked Questions
 
@@ -376,6 +386,6 @@ A: Contact our security team immediately at security@neon.tech.
 
 ## Contact information
 
-For any questions regarding our HIPAA compliance or to report an issue, please reach out to `hipaa@neon.tech`.
+For any questions regarding our HIPAA compliance or to report an issue, please [raise a Support request](https://console.neon.tech/app/projects?modal=support).
 
 _This guide provides a high-level overview of Neon's HIPAA compliance efforts. For more details, please refer to your Business Associate Agreement (BAA) or contact us directly via our [support channels](/docs/introduction/support)._

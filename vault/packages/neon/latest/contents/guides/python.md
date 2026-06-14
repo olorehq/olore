@@ -2,8 +2,15 @@
 title: Connect a Python application to Neon Postgres
 subtitle: Learn how to run SQL queries in Neon from Python using psycopg, psycopg2, or
   asyncpg
+summary: >-
+  Connecting Python to Neon Postgres requires choosing between three drivers:
+  psycopg (v3, synchronous), psycopg2 (legacy synchronous), and asyncpg
+  (asyncio-based async). The guide covers project setup, .env connection string
+  configuration, and full CRUD examples for all three drivers. Pick this over
+  the SQLAlchemy or Django guides when you need raw SQL driver code rather than
+  an ORM.
 enableTableOfContents: true
-updatedOn: '2025-09-30T00:26:10.497Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/python-prompt.md" 
@@ -41,7 +48,7 @@ For your Python project, create a project directory, set up a virtual environmen
     cd neon-python-quickstart
     ```
 
-    > Open the directory in your preferred code editor (e.g., VS Code, PyCharm).
+    > Open the directory in your preferred code editor (for example, VS Code, PyCharm).
 
 2.  Create and activate a Python virtual environment. This isolates your project's dependencies from your system's Python environment.
 
@@ -714,20 +721,6 @@ Explore the following resources to learn how to integrate ORMs with Neon:
 
 - [Connect an SQLAlchemy application to Neon](/docs/guides/sqlalchemy)
 - [Connect a Django application to Neon](/docs/guides/django)
-
-## Source code
-
-You can find the source code for the applications described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-python-psycopg" description="Get started with Python and Neon using psycopg (v3)" icon="github">Get started with Python and Neon using psycopg (v3)</a>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-python-psycopg2" description="Get started with Python and Neon using psycopg2" icon="github">Get started with Python and Neon using psycopg2</a>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-python-asyncpg" description="Get started with Python and Neon using asyncpg" icon="github">Get started with Python and Neon using asyncpg</a>
-
-</DetailIconCards>
 
 ## Resources
 

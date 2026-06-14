@@ -3,9 +3,15 @@ title: Embedded Replicas
 sidebarTitle: Introduction
 ---
 
-Turso's embedded replicas are a game-changer for SQLite, making it more flexible and suitable for various environments. This feature shines especially for those using VMs or VPS, as it lets you replicate a Turso database right within your applications without needing to relying on Turso's [edge network](/features/data-edge). For mobile applications, where stable connectivity is a challenge, embedded replicas are invaluable as they allow uninterrupted access to the local database.
+<Info>
+  Embedded Replicas keep a local read replica of a Turso Cloud database: reads run locally from the file in microseconds, and writes are sent to the cloud primary and then reflected back to the replica. Embedded Replicas are fully supported in production.
 
-Embedded replicas provide a smooth switch between local and remote database operations, allowing the same database to adapt to various scenarios effortlessly. They also ensure speedy data access by syncing local copies with the remote database, enabling microsecond-level read operations &mdash; a significant advantage for scenarios demanding quick data retrieval.
+  For new projects that need sync, we recommend [Turso Sync](/sync/usage). Sync is built on the Turso Database engine and uses logical change-data-capture, providing local-first writes, explicit `push()` / `pull()`, and [significantly less bandwidth and lower latency](https://turso.tech/blog/sync-benchmark) than the page-level replication Embedded Replicas use.
+</Info>
+
+Turso Cloud's embedded replicas let you replicate a database right within your application. This is especially useful for VMs or VPS deployments, and for mobile applications where stable connectivity is a challenge, since they allow uninterrupted access to the local database.
+
+Embedded replicas provide a smooth switch between local and remote database operations, allowing the same database to adapt to various scenarios. They also ensure fast data access by syncing local copies with the remote database, enabling microsecond-level read operations.
 
 ## How it works
 
@@ -23,10 +29,10 @@ Embedded replicas provide a smooth switch between local and remote database oper
 
 4. You write to a database:
 
-   - Writes are sent to the remote primary database configured at `syncUrl` by default.
+   - **Writes are sent to the remote primary database** configured at `syncUrl` by default. They are NOT written to the local file first.
    - You can write locally if you set the `offline` config option to `true`.
    - Any write transactions with reads are also sent to the remote primary database.
-   - Once the write is successful, the local database is updated with the changes automatically (read your own writes &mdash; can be disabled).
+   - Once the write is successful, the local database is updated with the changes automatically (read your own writes, can be disabled).
 
 ### Periodic sync
 
@@ -70,7 +76,7 @@ Embedded Replicas support encryption at rest with one of the libSQL client SDKs.
 
 ## Usage
 
-To use embedded replicas, you need to create a client with a `syncUrl` parameter. This parameter specifies the URL of the remote Turso database that the client will sync with:
+To use embedded replicas, you need to create a client with a `syncUrl` parameter. This parameter specifies the URL of the remote Turso Cloud database that the client will sync with:
 
 <CodeGroup>
 

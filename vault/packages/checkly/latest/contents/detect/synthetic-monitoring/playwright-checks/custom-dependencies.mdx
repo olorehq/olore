@@ -7,15 +7,14 @@ sidebarTitle: 'Custom Dependencies'
 Use the [Checkly CLI](/cli/) to turn your Playwright tests into globally distributed monitors. Checkly uses your existing `package.json` dependencies and Playwright configuration.
 
 <Info>
-**Runtime Environment**: Playwright Check Suites run in a Node.js runtime containing your custom dependencies. See the [runtime specification](/platform/runtimes/runtime-specification) for further details.
+Playwright Check Suites do not use Checkly runtimes. Browser Checks and Multistep Checks use `runtimeId` to select a managed runtime with fixed Checkly-provided dependencies. Playwright Check Suites install your project dependencies and use `engine` to select the JavaScript engine version.
 </Info>
 
 ## Using JavaScript/Node.js dependencies
 
 Checkly installs dependencies from your `package.json` and lock files. It works with [npm](https://www.npmjs.com/), [yarn](https://yarnpkg.com/), and [pnpm](https://pnpm.io/).
 
-By default, Checkly installs all dependencies (both `dependencies` and `devDependencies`). You can change this setting to install only `devDependencies` in your [account settings](https://app.checklyhq.com/accounts/settings/account/playwright).
-
+By default, Checkly installs all dependencies (both `dependencies` and `devDependencies`).
 
 ```json package.json
 {
@@ -31,31 +30,38 @@ By default, Checkly installs all dependencies (both `dependencies` and `devDepen
 
 Checkly detects your package manager from your lock file:
 
-| Available lock file | Package manager |
+| Lock file           | Package manager |
 |---------------------|-----------------|
 | `package-lock.json` | npm             |
-| `pnpm-lock.json`    | pnpm            |
+| `pnpm-lock.yaml`    | pnpm            |
 | `yarn.lock`         | yarn            |
 
-To override the [playwright account setting](https://app.checklyhq.com/accounts/settings/account/playwright) for a specific check suite, use the `installCommand` property in your `checkly.config.ts`:
+### Workspace support
 
-```typescript checkly.config.ts
-import { defineConfig } from 'checkly'
+Starting from [Checkly CLI 7.1.](https://github.com/checkly/checkly-cli/releases/tag/7.1.0), Checkly supports `npm` and `pnpm` workspaces in Playwright Check Suites, while Yarn workspaces remain unsupported.
 
-export default defineConfig({
-  checks: {
-    playwrightChecks: [
-      {
-        name: 'My Check Suite',
-        logicalId: 'my-check-suite',
-        installCommand: 'npm install --dev',
-      }
-    ]
-  }
-})
+If your Playwright tests are stored in a monorepo, Checkly automatically recognizes and manages dependencies based on your workspace configuration.
+When using workspaces, packages in your workspace can depend on other packages in the same workspace, including those from the root package. See the [pnpm workspaces docs](https://pnpm.io/workspaces) or [npm workspaces docs](https://docs.npmjs.com/cli/v8/using-npm/workspaces) to learn how workspaces work.
+
+**Requirements:**
+- Place your lock file (`package-lock.json` or `pnpm-lock.yaml`) at the workspace root
+- Include both root and workspace `package.json` files in your project
+
+**Example workspace structure:**
+
+```
+my-monorepo/
+├── package.json              # Root workspace config
+├── package-lock.json         # or pnpm-lock.yaml
+├── packages/
+│   └── e2e-tests/
+│       ├── package.json      # Can depend on other workspace packages
+│       └── playwright.config.ts
 ```
 
-Learn more about [customizing install commands](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands).
+Checkly supports the `exports` and `imports` features in `package.json`.
+
+No additional configuration is needed in `checkly.config.ts` for workspace support.
 
 ## Using private dependencies
 
@@ -136,29 +142,92 @@ export default defineConfig({
 })
 ```
 
+#### Using lifecycle scripts
+
+Some npm packages define lifecycle scripts (such as `prepare`, `postinstall`, or `preinstall`) that run during installation and may require access to files not automatically included in the CLI's code bundle.
+
+
+If you're confident your dependencies work without lifecycle scripts, you can use the [`installCommand`](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands) property to pass the `--ignore-scripts` flag to your package manager:
+
+```typescript checkly.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  checks: {
+    playwrightChecks: [
+      {
+        name: 'My Check Suite',
+        logicalId: 'my-check-suite',
+        installCommand: 'npm install --ignore-scripts',
+      }
+    ]
+  }
+})
+```
+
+If a dependency does require its install hooks to function correctly, use the [`include`](/constructs/playwright-check#param-include) option to add any required files to the code bundle:
+
+```typescript checkly.config.ts
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  checks: {
+    include: ['scripts/**/*', 'config/**/*'],
+    playwrightChecks: [
+      // ...
+    ]
+  }
+})
+```
+
+
+Learn more about [customizing install commands](/detect/synthetic-monitoring/playwright-checks/configuration#customize-install-and-test-commands).
+
 ## Dependency Caching
 
-Checkly caches installed packages between check runs to speed up execution and reduce installation time. Dependencies are installed once and reused for subsequent runs until your lock files (`package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`) change.
+Checkly caches installed packages between check runs to speed up execution and reduce installation time. Dependencies are installed once and reused for subsequent runs until your lock files (`package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`), your `installCommand`, your working directory, or your [`engine`](/constructs/playwright-check#param-engine) change.
 
 ### How caching works
 
 When dependency caching is enabled:
 
 1. On the first run, Checkly installs all packages from your lock file and stores them in cache
-2. On subsequent runs, Checkly checks if your lock file has changed
+2. On subsequent runs, Checkly checks if your lock file, `package.json` files, `installCommand`, working directory, or `engine` have changed
 3. If unchanged, Checkly uses the cached packages, skipping the installation step
 4. If changed, Checkly installs packages again and updates the cache
 
-This significantly reduces check execution time, especially for projects with many or large dependencies.
+Caching significantly reduces check execution time, especially for projects with many or large dependencies.
 
-### Cache behavior by location type
+The dependency cache uses a least-recently-used (LRU) policy. Active Playwright Check Suites automatically refresh their cache entry, so caches only expire for check suites that have not run in the last 30 days.
+
+### Automatic retries
+
+Checkly automatically retries transient failures during setup steps. Cache downloads retry up to 3 times with exponential backoff. If all attempts fail, the run falls back to a clean install.
+
+### Dependency Cache behavior by location type
 
 **Public Locations**: Dependency caching is **Always ON**.
 
 **Private Locations**: Dependency caching is **OFF by default**. To enable caching and speed up check runs, set `DEPENDENCY_CACHE=CHECKLY_S3` in your [agent configuration](/platform/private-locations/agent-configuration).
 
+## Playwright browser caching
 
-## Troubleshooting
+Checkly caches Playwright browsers so that runs don't download them every time. How caching works depends on which location your checks run.
+
+### Browser caching on Public Locations
+
+Checkly caches Playwright browsers across all public regions to reduce startup time. When a new Playwright version is available, runs download browsers until Checkly updates the shared cache.
+
+### Browser caching on Private Locations
+Checkly caches Playwright browsers on each Private Location agent, grouped by Playwright version. 
+When a matching version exists in cache, Checkly skips the download — reducing startup time and making runs more reliable.
+
+<Info>
+Browser caching requires Private Location agent v8.2.0 or later.
+</Info>
+
+
+## Troubleshooting Dependency Installation
 
 ### Package not found
 
@@ -190,3 +259,18 @@ If package installation exceeds time limits:
 
 - Check for large dependencies that can be optimized
 - Consider using a custom `installCommand` to install only required packages
+
+### Memory usage exceeded
+
+If you see errors indicating that memory limits were exceeded during installation:
+
+- Optimize your dependencies to reduce memory consumption
+- Consider using a custom `installCommand` to install only necessary packages
+
+### General installation failures
+
+If you encounter general installation errors:
+
+- Review the full error logs for specific issues
+- Ensure all dependencies are compatible with the Node.js version used by Checkly
+- Consider using a custom `installCommand` to handle complex installations
