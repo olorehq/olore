@@ -1,115 +1,106 @@
-# tanstack-start Documentation Structure
+# TanStack Start Documentation Structure
 
 ## Directory Overview
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/framework/react/` | React framework root docs (overview, quickstart, migration) | 6 |
-| `contents/framework/react/guide/` | React guides (SSR, server functions, middleware, routing, auth, etc.) | 27 |
-| `contents/framework/react/tutorial/` | React tutorials (fetching APIs, file I/O) | 2 |
-| `contents/framework/solid/` | Solid framework root docs (overview, quickstart, build from scratch) | 4 |
-| `contents/framework/solid/guide/` | Solid guides (SSR, server functions, middleware, routing, auth, etc.) | 27 |
-| `contents/framework/solid/tutorial/` | Solid tutorials (fetching APIs, file I/O) | 2 |
+| `contents/eslint/` | ESLint plugin rules for TanStack Start | 3 |
+| `contents/framework/react/` | React framework: overview, setup, migration | 4 |
+| `contents/framework/react/guide/` | React in-depth guides (SSR, server functions, auth, deployment, etc.) | 34 |
+| `contents/framework/react/tutorial/` | React step-by-step tutorials | 2 |
+| `contents/framework/solid/` | SolidJS framework: overview and setup | 2 |
+| `contents/framework/solid/guide/` | SolidJS-specific guides | 9 |
+| `contents/framework/solid/tutorial/` | SolidJS step-by-step tutorials | 1 |
+
+## eslint/
+
+| File | Description |
+|------|-------------|
+| `eslint-plugin-start.md` | Overview of the ESLint plugin for TanStack Start |
+| `no-async-client-component.md` | Rule: disallow async components in client context |
+| `no-client-code-in-server-component.md` | Rule: disallow client-only code in server components |
 
 ## framework/react/
 
 | File | Description |
 |------|-------------|
-| `overview.md` | TanStack Start overview: features, dependencies, when to use |
-| `getting-started.md` | Getting started with TanStack Start for React |
-| `quick-start.md` | Quick start guide for React projects |
-| `build-from-scratch.md` | How to build a TanStack Start project from scratch |
-| `comparison.md` | Feature comparison vs Next.js and React Router |
-| `start-vs-nextjs.md` | In-depth comparison of TanStack Start vs Next.js |
+| `overview.md` | TanStack Start overview, features, and when to use |
+| `getting-started.md` | Quick start: CLI scaffolding and initial setup |
+| `build-from-scratch.md` | Step-by-step guide to build a project manually |
 | `migrate-from-next-js.md` | Migration guide from Next.js to TanStack Start |
 
 ## framework/react/guide/
 
 | File | Description |
 |------|-------------|
-| `server-functions.md` | createServerFn, server-only RPCs, type-safe calls |
-| `server-routes.md` | Server routes and API route definitions |
-| `middleware.md` | Request and server function middleware |
 | `routing.md` | File-based routing with TanStack Router |
-| `authentication.md` | Authentication patterns and implementation |
-| `authentication-overview.md` | Overview of authentication strategies |
-| `hosting.md` | Deployment targets: Cloudflare, Netlify, Vercel, Node.js, Bun |
-| `streaming-data-from-server-functions.md` | Streaming server function responses |
-| `static-prerendering.md` | Static prerendering and SSG |
-| `isr.md` | Incremental Static Regeneration (ISR) |
-| `selective-ssr.md` | Selective SSR configuration |
-| `spa-mode.md` | Single Page Application (SPA) mode |
-| `environment-variables.md` | Managing environment variables |
-| `environment-functions.md` | Environment functions and runtime config |
-| `execution-model.md` | Server/client code execution model |
-| `code-execution-patterns.md` | Patterns for running code on server vs client |
-| `error-boundaries.md` | Error boundary handling in Start |
-| `hydration-errors.md` | Diagnosing and fixing hydration errors |
-| `client-entry-point.md` | Configuring the client entry point |
+| `server-functions.md` | Type-safe RPC server functions |
+| `server-routes.md` | API/server route handlers |
 | `server-entry-point.md` | Configuring the server entry point |
-| `import-protection.md` | Protecting server imports from client bundles |
-| `static-server-functions.md` | Static/prerendered server functions |
-| `path-aliases.md` | Configuring path aliases in Vite/TypeScript |
-| `cdn-asset-urls.md` | CDN configuration for asset URLs |
+| `client-entry-point.md` | Configuring the client entry point |
+| `middleware.md` | Request/response middleware |
+| `authentication.md` | Authentication patterns and integrations |
+| `authentication-overview.md` | Overview of authentication approaches |
+| `authentication-server-primitives.md` | Low-level server auth primitives |
+| `environment-variables.md` | Managing environment variables |
+| `environment-functions.md` | Server/client environment helper functions |
+| `execution-model.md` | How code executes on server vs client |
+| `code-execution-patterns.md` | Patterns for controlling execution context |
+| `import-protection.md` | Preventing server code from leaking to client |
+| `hydration-errors.md` | Diagnosing and fixing SSR hydration errors |
+| `deferred-hydration.md` | Streaming and deferred data hydration |
+| `error-boundaries.md` | Error boundary setup and patterns |
+| `static-prerendering.md` | Static site generation (SSG/prerendering) |
+| `isr.md` | Incremental static regeneration |
+| `selective-ssr.md` | Selectively disabling SSR for components |
+| `spa-mode.md` | Running TanStack Start as a pure SPA |
+| `streaming-data-from-server-functions.md` | Streaming responses from server functions |
+| `static-server-functions.md` | Server functions for static/prerendered routes |
+| `server-components.md` | Server Components support and patterns |
+| `hosting.md` | Deployment and hosting providers |
+| `geo.md` | Edge/geo-aware deployments |
+| `css-styling.md` | CSS and styling integration |
+| `tailwind-integration.md` | Tailwind CSS setup |
 | `databases.md` | Database integration patterns |
-| `tailwind-integration.md` | Setting up Tailwind CSS |
-| `rendering-markdown.md` | Rendering markdown in TanStack Start |
-| `observability.md` | Observability, tracing, and monitoring |
-| `seo.md` | SEO configuration and meta tags |
-| `llmo.md` | LLM Optimization (LLMO/AIO) guide |
+| `seo.md` | SEO with meta tags and document head |
+| `observability.md` | Logging, tracing, and monitoring |
+| `early-hints.md` | HTTP 103 Early Hints support |
+| `path-aliases.md` | TypeScript path aliases configuration |
+| `rendering-markdown.md` | Rendering markdown content |
+| `cdn-asset-urls.md` | CDN and asset URL configuration |
 
 ## framework/react/tutorial/
 
 | File | Description |
 |------|-------------|
-| `fetching-external-api.md` | Tutorial: fetch data from external APIs |
+| `fetching-external-api.md` | Tutorial: fetching data from an external API |
 | `reading-writing-file.md` | Tutorial: reading and writing files on the server |
 
 ## framework/solid/
 
 | File | Description |
 |------|-------------|
-| `overview.md` | TanStack Start overview for Solid |
-| `getting-started.md` | Getting started with TanStack Start for Solid |
-| `quick-start.md` | Quick start guide for Solid projects |
-| `build-from-scratch.md` | Build a TanStack Start project from scratch (Solid) |
+| `overview.md` | TanStack Start for SolidJS overview (ref to React with replacements) |
+| `getting-started.md` | Quick start for SolidJS projects |
+| `build-from-scratch.md` | Build a SolidJS project from scratch |
 
 ## framework/solid/guide/
 
 | File | Description |
 |------|-------------|
-| `server-functions.md` | createServerFn, server-only RPCs (Solid) |
-| `server-routes.md` | Server routes and API routes (Solid) |
-| `middleware.md` | Middleware for Solid |
-| `routing.md` | File-based routing (Solid) |
-| `authentication.md` | Authentication patterns (Solid) |
-| `authentication-overview.md` | Authentication overview (Solid) |
-| `hosting.md` | Deployment targets for Solid apps |
-| `streaming.md` | Streaming data from server functions (Solid) |
-| `static-prerendering.md` | Static prerendering (Solid) |
-| `selective-ssr.md` | Selective SSR (Solid) |
-| `spa-mode.md` | SPA mode (Solid) |
-| `environment-variables.md` | Environment variables (Solid) |
-| `environment-functions.md` | Environment functions (Solid) |
-| `execution-model.md` | Execution model (Solid) |
-| `code-execution-patterns.md` | Code execution patterns (Solid) |
-| `error-boundaries.md` | Error boundaries (Solid) |
-| `hydration-errors.md` | Hydration errors (Solid) |
-| `client-entry-point.md` | Client entry point (Solid) |
-| `server-entry-point.md` | Server entry point (Solid) |
-| `import-protection.md` | Import protection (Solid) |
-| `static-server-functions.md` | Static server functions (Solid) |
-| `path-aliases.md` | Path aliases (Solid) |
-| `databases.md` | Database integration (Solid) |
-| `tailwind-integration.md` | Tailwind CSS integration (Solid) |
-| `observability.md` | Observability (Solid) |
-| `seo.md` | SEO (Solid) |
-| `llmo.md` | LLM Optimization (Solid) |
-| `reading-writing-file.md` | Reading and writing files (Solid) |
+| `routing.md` | File-based routing for SolidJS |
+| `server-functions.md` | Server functions in SolidJS |
+| `authentication.md` | Authentication for SolidJS apps |
+| `client-entry-point.md` | Client entry point for SolidJS |
+| `code-execution-patterns.md` | Code execution patterns for SolidJS |
+| `execution-model.md` | Execution model for SolidJS |
+| `hydration-errors.md` | Hydration errors in SolidJS |
+| `observability.md` | Observability for SolidJS |
+| `selective-ssr.md` | Selective SSR for SolidJS |
+| `static-prerendering.md` | Static prerendering for SolidJS |
 
 ## framework/solid/tutorial/
 
 | File | Description |
 |------|-------------|
-| `fetching-external-api.md` | Tutorial: fetch from external APIs (Solid) |
-| `reading-writing-file.md` | Tutorial: reading and writing files (Solid) |
+| `reading-writing-file.md` | Tutorial: reading and writing files (SolidJS) |
