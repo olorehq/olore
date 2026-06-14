@@ -134,7 +134,7 @@ expect(person.greet('Bob')).toBe('mocked')
 expect(spy.mock.calls).toEqual([['Bob']])
 ```
 
-To automatically call this method before each test, enable the [`clearMocks`](/config/#clearmocks) setting in the configuration.
+To automatically call this method before each test, enable the [`clearMocks`](/config/clearmocks) setting in the configuration.
 
 ## mockName
 
@@ -302,7 +302,7 @@ expect(person.greet('Bob')).toBe('Hello Bob')
 expect(spy.mock.calls).toEqual([['Bob']])
 ```
 
-To automatically call this method before each test, enable the [`mockReset`](/config/#mockreset) setting in the configuration.
+To automatically call this method before each test, enable the [`mockReset`](/config/mockreset) setting in the configuration.
 
 ## mockRestore
 
@@ -330,7 +330,7 @@ expect(person.greet('Bob')).toBe('Hello Bob')
 expect(spy.mock.calls).toEqual([])
 ```
 
-To automatically call this method before each test, enable the [`restoreMocks`](/config/#restoremocks) setting in the configuration.
+To automatically call this method before each test, enable the [`restoreMocks`](/config/restoremocks) setting in the configuration.
 
 ## mockResolvedValue
 
@@ -418,6 +418,40 @@ const myMockFn = vi
 console.log(myMockFn(), myMockFn(), myMockFn(), myMockFn())
 ```
 
+## mockThrow <Version>4.1.0</Version> {#mockthrow}
+
+```ts
+function mockThrow(value: unknown): Mock<T>
+```
+
+Accepts a value that will be thrown whenever the mock function is called.
+
+```ts
+const myMockFn = vi.fn()
+myMockFn.mockThrow(new Error('error message'))
+myMockFn() // throws Error<'error message'>
+```
+
+## mockThrowOnce <Version>4.1.0</Version> {#mockthrowonce}
+
+```ts
+function mockThrowOnce(value: unknown): Mock<T>
+```
+
+Accepts a value that will be thrown during the next function call. If chained, every consecutive call will throw the specified value.
+
+```ts
+const myMockFn = vi
+  .fn()
+  .mockReturnValue('default')
+  .mockThrowOnce(new Error('first call error'))
+  .mockThrowOnce('second call error')
+
+expect(() => myMockFn()).toThrow('first call error')
+expect(() => myMockFn()).toThrow('second call error')
+expect(myMockFn()).toEqual('default')
+```
+
 ## mock.calls
 
 ```ts
@@ -439,7 +473,7 @@ fn.mock.calls === [
 ```
 
 :::warning Objects are Stored by Reference
-Note that Vitest always stores objects by reference in all properies of the `mock` state. This means that if the properties were changed by your code, then some assertions like [`.toHaveBeenCalledWith`](/api/expect#tohavebeencalledwith) will not pass:
+Note that Vitest always stores objects by reference in all properties of the `mock` state. This means that if the properties were changed by your code, then some assertions like [`.toHaveBeenCalledWith`](/api/expect#tohavebeencalledwith) will not pass:
 
 ```ts
 const argument = {
@@ -658,7 +692,9 @@ MyClass.mock.instances[0] === a
 If you return a value from the constructor, it will not be in the `instances` array, but instead inside `results`:
 
 ```js
-const Spy = vi.fn(() => ({ method: vi.fn() }))
+const Spy = vi.fn(function () {
+  return { method: vi.fn() }
+})
 const a = new Spy()
 
 Spy.mock.instances[0] !== a

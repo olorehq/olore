@@ -40,7 +40,7 @@ export default defineConfig({
 You can check your coverage report in Vitest UI: see [Vitest UI Coverage](/guide/coverage#vitest-ui) for more details.
 
 ::: warning
-If you still want to see how your tests are running in real time in the terminal, don't forget to add `default` reporter to `reporters` option: `['default', 'html']`.
+If you still want to see how your tests are running in real time in the terminal, add `configDefaults.reporters` to the `reporters` option: `['html', ...configDefaults.reporters]`.
 :::
 
 ::: tip
@@ -50,7 +50,35 @@ To preview your HTML report, you can use the [vite preview](https://vitejs.dev/g
 npx vite preview --outDir ./html
 ```
 
-You can configure output with [`outputFile`](/config/#outputfile) config option. You need to specify `.html` path there. For example, `./html/index.html` is the default value.
+You can configure output with [`outputFile`](/config/outputfile) config option. You need to specify `.html` path there. For example, `./html/index.html` is the default value.
+:::
+
+If you need a portable report that can be opened or shared as one file, see [`singleFile`](/guide/reporters#html-reporter) in the HTML reporter documentation.
+
+::: tip
+To view the HTML report from CI, for example in GitHub Actions, upload the output directory as an artifact:
+
+```yaml
+- uses: actions/upload-artifact@v7
+  id: upload-report
+  with:
+    name: vitest-report
+    path: html/
+
+- name: Viewer link in summary
+  run: echo "[View HTML report](https://viewer.vitest.dev/?url=${{ steps.upload-report.outputs.artifact-url }})" >> $GITHUB_STEP_SUMMARY
+```
+
+This adds a link to the job summary. Click it to open the report in [Vitest Viewer](https://viewer.vitest.dev/) directly in the browser. You can also download the artifact manually and extract it, then run `vite preview` locally as above.
+
+When you use `singleFile: true`, you can upload the report as a single file and it will become viewable directly GitHub artifacts with `archive: false` option:
+
+```yaml
+- uses: actions/upload-artifact@v7
+  with:
+    path: html/index.html
+    archive: false
+```
 :::
 
 ## Module Graph

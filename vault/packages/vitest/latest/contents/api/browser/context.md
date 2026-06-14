@@ -80,6 +80,14 @@ export const page: {
   }>
   screenshot(options?: ScreenshotOptions): Promise<string>
   /**
+   * Add a trace marker when browser tracing is enabled.
+   */
+  mark(name: string, options?: { stack?: string; kind?: BrowserTraceEntryKind }): Promise<void>
+  /**
+   * Group multiple operations under a trace marker when browser tracing is enabled.
+   */
+  mark<T>(name: string, body: () => T | Promise<T>, options?: { stack?: string; kind?: BrowserTraceEntryKind }): Promise<T>
+  /**
    * Extend default `page` object with custom methods.
    */
   extend(methods: Partial<BrowserPage>): BrowserPage
@@ -116,6 +124,44 @@ Note that `screenshot` will always return a base64 string if `save` is set to `f
 The `path` is also ignored in that case.
 :::
 
+### mark
+
+```ts
+function mark(name: string, options?: { stack?: string; kind?: BrowserTraceEntryKind }): Promise<void>
+function mark<T>(
+  name: string,
+  body: () => T | Promise<T>,
+  options?: { stack?: string; kind?: BrowserTraceEntryKind },
+): Promise<T>
+```
+
+Adds a named marker to the trace timeline for the current test.
+
+Pass `options.stack` to override the callsite location in trace metadata. This is useful for wrapper libraries that need to preserve the end-user source location.
+
+Pass `options.kind` to categorize your marker as specific type, for example as `'action'`.
+
+If you pass a callback, Vitest creates a trace group with this name, runs the callback, and closes the group automatically.
+
+```ts
+import { page } from 'vitest/browser'
+
+await page.mark('before submit')
+await page.getByRole('button', { name: 'Submit' }).click()
+await page.mark('after submit')
+
+await page.mark('submit flow', async () => {
+  await page.getByRole('textbox', { name: 'Email' }).fill('john@example.com')
+  await page.getByRole('button', { name: 'Submit' }).click()
+}, { kind: 'action' })
+```
+
+::: tip
+This method is useful only when [`browser.trace`](/config/browser/trace) is enabled.
+
+A server-side equivalent is available on the [`BrowserCommandContext`](/api/browser/commands#recording-trace-markers) so [custom commands](/api/browser/commands#custom-commands) can record markers attributed to the test that triggered them.
+:::
+
 ### frameLocator
 
 ```ts
@@ -136,6 +182,20 @@ await frame.click() // ❌ Not available
 ```
 
 ::: danger IMPORTANT
+By default `frameLocator` does not support querying elements with `expect.element()` in cross-origin iframes. Interactive methods, such as `.click()` work fine. This is different behaviour than Playwright.
+
+```ts
+const frame = page.frameLocator(page.getByTestId('cross-origin-iframe'))
+const button = frame.getByRole('button', { name: 'Submit' })
+
+await button.click() // Interactive methods work fine ✅
+await expect.element(button).toBeVisible() // Querying elements does not work ❌
+```
+
+If you need to work with cross-origin iframes, you'll need to pass `args: ["--disable-web-security"]` in [`launchOptions`](/config/browser/playwright.html#launchoptions). Or alternatively create a custom [browser command](/api/browser/commands.html#custom-commands) that accesses the iframe on server side where it's available.
+:::
+
+::: danger IMPORTANT
 At the moment, the `frameLocator` method is only supported by the `playwright` provider.
 
 The interactive methods (like `click` or `fill`) are always available on elements within the iframe, but assertions with `expect.element` require the iframe to have the [same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy).
@@ -151,6 +211,8 @@ The `cdp` export returns the current Chrome DevTools Protocol session. It is mos
 
 ::: warning
 CDP session works only with `playwright` provider and only when using `chromium` browser. You can read more about it in playwright's [`CDPSession`](https://playwright.dev/docs/api/class-cdpsession) documentation.
+
+CDP is a privileged debugging API. It is available only when browser API write and exec operations are enabled through [`browser.api.allowWrite`](/config/browser/api#api-allowwrite), [`browser.api.allowExec`](/config/browser/api#api-allowexec), [`api.allowWrite`](/config/api#api-allowwrite), and [`api.allowExec`](/config/api#api-allowexec).
 :::
 
 ```ts
@@ -199,7 +261,7 @@ Utility functions useful for custom render libraries.
 ```ts
 export const utils: {
   /**
-   * This is simillar to calling `page.elementLocator`, but it returns only
+   * This is similar to calling `page.elementLocator`, but it returns only
    * locator selectors.
    */
   getElementLocatorSelectors(element: Element): LocatorSelectors
@@ -228,6 +290,17 @@ export const utils: {
    * Creates "Cannot find element" error. Useful for custom locators.
    */
   getElementError(selector: string, container?: Element): Error
+  /**
+   * Utilities for generating and working with ARIA trees and templates.
+   * @experimental
+   */
+  aria: {
+    generateAriaTree(rootElement: Element): AriaNode
+    renderAriaTree(root: AriaNode): string
+    renderAriaTemplate(template: AriaTemplateNode): string
+    parseAriaTemplate(text: string): AriaTemplateNode
+    matchAriaTree(root: AriaNode, template: AriaTemplateNode): { pass: boolean; resolved: string }
+  }
 }
 ```
 
@@ -250,7 +323,7 @@ utils.configurePrettyDOM({
 - **`maxLength`** - Maximum length of the output string (default: `7000`)
 - **`filterNode`** - A CSS selector string or function to filter out nodes from the output. When a string is provided, elements matching the selector will be excluded. When a function is provided, it should return `false` to exclude a node.
 - **`highlight`** - Enable syntax highlighting (default: `true`)
-- And other options from [`pretty-format`](https://www.npmjs.com/package/@vitest/pretty-format)
+- And other options from [`@vitest/pretty-format`](https://npmx.dev/package/@vitest/pretty-format)
 
 #### Filtering with CSS Selectors <Version>4.1.0</Version> {#filtering-with-css-selectors}
 
@@ -298,3 +371,22 @@ utils.configurePrettyDOM({
 ::: tip
 This feature is inspired by Testing Library's [`defaultIgnore`](https://testing-library.com/docs/dom-testing-library/api-configuration/#defaultignore) configuration.
 :::
+
+### aria <Version type="experimental">5.0.0</Version> {#aria}
+
+The `aria` namespace exposes low-level utilities used by Vitest's ARIA snapshot matchers.
+
+```ts
+import { utils } from 'vitest/browser'
+
+document.body.innerHTML = `
+  <h1>Hello, World!</h1>
+  <button aria-hidden="true">Hidden</button>
+  <button>Visible</button>
+`
+const tree = utils.aria.generateAriaTree(document.body)
+const yaml = utils.aria.renderAriaNode(tree)
+console.log(yaml)
+// - heading "Hello, World!" [level=1]
+// - button "Visible""
+```

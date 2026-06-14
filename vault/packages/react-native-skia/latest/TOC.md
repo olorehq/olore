@@ -4,109 +4,109 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/getting-started/` | Installation, setup, web support, headless usage | 5 |
+| `contents/getting-started/` | Installation, setup, web, headless, bundle size | 5 |
 | `contents/canvas/` | Canvas component, rendering modes, contexts | 3 |
-| `contents/shapes/` | Drawing shapes: paths, ellipses, boxes, polygons, vertices, atlas, patch | 7 |
+| `contents/shapes/` | Paths, boxes, ellipses, polygons, atlas, patch, vertices | 8 |
 | `contents/animations/` | Reanimated integration, hooks, gestures, textures | 4 |
-| `contents/shaders/` | Gradients, colors, images, Skia shading language, Perlin noise | 5 |
-| `contents/image-filters/` | Blur, shadows, displacement map, morphology, offset, runtime shader | 7 |
-| `contents/text/` | Text rendering, blobs, glyphs, paragraphs, text on path | 5 |
-| `contents/paint/` | Paint overview and properties | 2 |
-| `contents/` (root) | Core topics: images, SVG, masks, filters, effects, video, animations | 14 |
+| `contents/shaders/` | Shader language, gradients, image shaders, colors, Perlin noise | 5 |
+| `contents/image-filters/` | Blur, shadows, offset, morphology, displacement map, runtime shader | 7 |
+| `contents/text/` | Text, paragraph, glyphs, text on path, text blob | 5 |
+| `contents/paint/` | Paint overview, paint properties | 2 |
+| `contents/` (root) | Images, SVG, group, mask, filters, effects, video, skottie, etc. | 13 |
 
 ## getting-started/
 
 | File | Description |
 |------|-------------|
-| `getting-started/installation.md` | Installing react-native-skia on iOS, Android, and Expo |
-| `getting-started/hello-world.md` | First Skia component walkthrough |
-| `getting-started/web.mdx` | Web support via CanvasKit |
-| `getting-started/headless.md` | Running Skia without a display (Node.js, testing) |
-| `getting-started/bundle-size.md` | Reducing bundle size / tree-shaking |
+| `installation.md` | Installing React Native Skia on iOS, Android, and Expo |
+| `hello-world.md` | Basic hello world example and first canvas |
+| `web.mdx` | Using React Native Skia on the web with React Native Web |
+| `headless.md` | Running React Native Skia in headless/server environments |
+| `bundle-size.md` | App size impact and bundle size details per platform |
 
 ## canvas/
 
 | File | Description |
 |------|-------------|
-| `canvas/canvas.md` | The `<Canvas>` component and its props |
-| `canvas/rendering-modes.md` | CPU vs GPU rendering modes |
-| `canvas/contexts.md` | Canvas contexts and drawing contexts |
+| `canvas.md` | Canvas component props and usage |
+| `rendering-modes.md` | Retained vs immediate mode rendering |
+| `contexts.md` | Canvas contexts and drawing context APIs |
 
 ## shapes/
 
 | File | Description |
 |------|-------------|
-| `shapes/path.md` | Drawing and animating SVG-style paths |
-| `shapes/ellipses.md` | Drawing circles and ellipses |
-| `shapes/box.md` | Drawing rectangles and rounded rectangles |
-| `shapes/polygons.md` | Drawing polygons and lines |
-| `shapes/vertices.md` | Custom mesh/vertex drawing |
-| `shapes/atlas.md` | Atlas sprite drawing |
-| `shapes/patch.md` | Patch/mesh cubic bezier drawing |
+| `path.md` | Path drawing API and PathBuilder |
+| `path-migration.md` | Migration guide from mutable to immutable Path API |
+| `box.md` | Box and RoundedRect shapes |
+| `ellipses.md` | Circle and oval shapes |
+| `polygons.md` | Line and polygon drawing |
+| `atlas.md` | Atlas for efficient sprite/batch rendering |
+| `patch.md` | Bezier patch rendering |
+| `vertices.md` | Vertices and mesh drawing |
 
 ## animations/
 
 | File | Description |
 |------|-------------|
-| `animations/reanimated3.md` | Integration with Reanimated 3 |
-| `animations/hooks.md` | Skia animation hooks (`useValue`, `useTiming`, etc.) |
-| `animations/gestures.md` | Gesture-driven animations with react-native-gesture-handler |
-| `animations/textures.md` | Animated textures and offscreen rendering |
+| `reanimated3.md` | Integration with Reanimated 3 and shared values |
+| `hooks.md` | Animation hooks (useDerivedValue, useComputedValue, etc.) |
+| `gestures.md` | Gesture integration with React Native Gesture Handler |
+| `textures.md` | Animated textures and GPU texture updates |
 
 ## shaders/
 
 | File | Description |
 |------|-------------|
-| `shaders/gradients.md` | Linear, radial, and sweep gradients |
-| `shaders/colors.md` | Color shaders and blending |
-| `shaders/images.md` | Image-based shaders |
-| `shaders/language.md` | Skia Shading Language (SKSL) runtime shaders |
-| `shaders/perlin-noise.md` | Perlin noise and fractal noise shaders |
+| `language.md` | SkSL shader language reference and usage |
+| `gradients.md` | Linear, radial, sweep, and two-point conical gradients |
+| `images.md` | Image shaders and tiling modes |
+| `colors.md` | Color shaders and solid color fills |
+| `perlin-noise.md` | Perlin noise and fractal noise shaders |
 
 ## image-filters/
 
 | File | Description |
 |------|-------------|
-| `image-filters/overview.md` | Image filter overview and composition |
-| `image-filters/blur.md` | Blur filter |
-| `image-filters/shadows.md` | Drop shadow and inner shadow filters |
-| `image-filters/displacement-map.md` | Displacement map filter |
-| `image-filters/morphology.md` | Dilate and erode filters |
-| `image-filters/offset.md` | Offset filter |
-| `image-filters/runtime-shader.md` | Custom runtime shader filters |
+| `overview.md` | Image filter overview and composing filters |
+| `blur.md` | Blur filter (BlurMask, BlurImage) |
+| `shadows.md` | Drop shadow and inner shadow filters |
+| `offset.md` | Offset image filter |
+| `morphology.md` | Erode and dilate morphology filters |
+| `displacement-map.md` | Displacement map filter |
+| `runtime-shader.md` | Runtime shader image filter |
 
 ## text/
 
 | File | Description |
 |------|-------------|
-| `text/text.md` | Basic text rendering with `<Text>` |
-| `text/blob.md` | Text blobs for batch drawing |
-| `text/glyphs.md` | Low-level glyph rendering |
-| `text/paragraph.md` | Rich text paragraphs with layout |
-| `text/path.md` | Text along a path |
+| `text.md` | Text component and font loading |
+| `paragraph.md` | Paragraph layout with rich text and line breaking |
+| `glyphs.md` | Glyph-level text rendering |
+| `path.md` | Text along a path |
+| `blob.md` | Text blob for efficient multi-run text |
 
 ## paint/
 
 | File | Description |
 |------|-------------|
-| `paint/overview.md` | Paint concept and usage |
-| `paint/properties.md` | Paint properties: color, opacity, blend modes, anti-alias |
+| `overview.md` | Paint component and paint propagation |
+| `properties.md` | Paint properties (color, strokeWidth, blendMode, etc.) |
 
-## Root files
+## Root-level files
 
 | File | Description |
 |------|-------------|
-| `image.md` | Loading and rendering images |
-| `image-svg.md` | Loading and rendering SVG images |
-| `animated-images.md` | Animated GIF/WebP images |
-| `mask.md` | Masking with `<Mask>` |
-| `mask-filters.md` | Blur and solid mask filters |
-| `color-filters.md` | Color matrix and blend color filters |
-| `backdrop-filters.md` | Backdrop (background) blur and color filters |
-| `path-effects.md` | Dash, discrete, path-1D, and corner path effects |
-| `group.md` | `<Group>` for transformations, clipping, and paint inheritance |
-| `pictures.md` | Skia Picture recording for performance |
-| `snapshot-views.md` | Taking snapshots of canvas content |
-| `video.md` | Video rendering with Skia |
-| `skottie.md` | Lottie animations via Skottie |
-| `tutorials.md` | Community tutorials and learning resources |
+| `animated-images.md` | Animated GIF and WEBP image support |
+| `backdrop-filters.md` | Backdrop blur and backdrop image filters |
+| `color-filters.md` | Color matrix, blend, HSL, and luma color filters |
+| `group.md` | Group component for paint inheritance and clipping |
+| `image.md` | Image rendering (SkImage) and fit modes |
+| `image-svg.md` | SVG image rendering |
+| `mask.md` | Mask rendering and clip mask |
+| `mask-filters.md` | Blur mask filter for glows and soft edges |
+| `path-effects.md` | Dash, discrete, corner, and 1D/2D path effects |
+| `pictures.md` | Picture API for immediate-mode variable drawing commands |
+| `skottie.md` | Skottie Lottie animation renderer |
+| `snapshot-views.md` | Snapshotting native views as SkImage |
+| `video.md` | Video playback and frame extraction |

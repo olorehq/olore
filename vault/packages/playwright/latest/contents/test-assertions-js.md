@@ -55,6 +55,7 @@ Note that retrying assertions are async, so you must `await` them.
 | [await expect(locator).toHaveValue()](./api/class-locatorassertions.md#locator-assertions-to-have-value) | Input has a value |
 | [await expect(locator).toHaveValues()](./api/class-locatorassertions.md#locator-assertions-to-have-values) | Select has options selected |
 | [await expect(locator).toMatchAriaSnapshot()](./api/class-locatorassertions.md#locator-assertions-to-match-aria-snapshot) | Element matches the Aria snapshot |
+| [await expect(page).toMatchAriaSnapshot()](./api/class-pageassertions.md#page-assertions-to-match-aria-snapshot) | Page matches the Aria snapshot |
 | [await expect(page).toHaveScreenshot()](./api/class-pageassertions.md#page-assertions-to-have-screenshot-1) | Page has a screenshot |
 | [await expect(page).toHaveTitle()](./api/class-pageassertions.md#page-assertions-to-have-title) | Page has a title |
 | [await expect(page).toHaveURL()](./api/class-pageassertions.md#page-assertions-to-have-url) | Page has a URL |
@@ -233,16 +234,24 @@ await expect.poll(async () => {
 }).toBe(200);
 ```
 
-You can combine `expect.configure({ soft: true })` with expect.poll to perform soft assertions in polling logic.
+You can combine `expect.soft` with `expect.poll` to perform soft assertions in polling logic. This allows the test to continue even if the assertion inside poll fails.
+
+```js
+await expect.soft.poll(async () => {
+  const response = await page.request.get('https://api.example.com');
+  return response.status();
+}).toBe(200);
+```
+
+`expect.configure({ soft: true })` also chains with `expect.poll` and is useful when you want to reuse a configured instance.
 
 ```js
 const softExpect = expect.configure({ soft: true });
 await softExpect.poll(async () => {
   const response = await page.request.get('https://api.example.com');
   return response.status();
-}, {}).toBe(200);
+}).toBe(200);
 ```
-This allows the test to continue even if the assertion inside poll fails.
 
 ## expect.toPass
 

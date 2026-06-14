@@ -15,8 +15,13 @@ A workspace supports the following features:
 
 - **[Filesystem](/docs/workspace/filesystem)**: File storage (read, write, list, delete, copy, move, grep)
 - **[Sandbox](/docs/workspace/sandbox)**: Command execution (shell commands) and background processes
+- **[LSP inspection](/docs/workspace/lsp)**: Hover, definition, and implementation queries through language servers
 - **[Search](/docs/workspace/search)**: BM25, vector, or hybrid search over indexed content
 - **[Skills](/docs/workspace/skills)**: Reusable instructions for agents
+
+## When to use workspaces
+
+Use a workspace when your agent needs access to the local filesystem, shell commands, semantic code inspection, indexed search, or reusable skill instructions.
 
 ## How it works
 
@@ -40,7 +45,7 @@ const workspace = new Workspace({
   sandbox: new LocalSandbox({
     workingDirectory: './workspace',
   }),
-  skills: ['/skills'],
+  skills: ['skills'],
 })
 ```
 
@@ -77,10 +82,18 @@ const workspace = new Workspace({
 
 export const myAgent = new Agent({
   id: 'my-agent',
-  model: 'openai/gpt-5.4',
+  model: '__GATEWAY_OPENAI_MODEL__',
   workspace,
 })
 ```
+
+## Lifecycle and cleanup
+
+Mastra registers global and agent workspaces so they can be listed and retrieved at runtime. When you call `mastra.shutdown()`, Mastra destroys registered workspaces that it owns. This closes workspace resources such as language servers, browsers, sandbox processes, and filesystem provider handles.
+
+For manual cleanup, use [`mastra.removeWorkspace()`](/reference/core/removeWorkspace). Pass `{ destroy: true }` when the workspace should be destroyed before it's removed from the registry.
+
+Static providers are owned by the workspace. Resolver-backed providers are owned by your application because the workspace creates them at request time. See [dynamic sandbox lifecycle ownership](/docs/workspace/sandbox#lifecycle-ownership) for the resolver cleanup model.
 
 ## Configuration patterns
 
@@ -159,6 +172,41 @@ const workspace = new Workspace({
 
 The agent receives the `execute_command` tool.
 
+### Dynamic filesystem (per-request)
+
+Pass a resolver function to `filesystem` to return a different filesystem per request. This is useful for multi-tenant applications or multi-role agents where each request needs a different storage root or different permissions.
+
+```typescript
+const workspace = new Workspace({
+  filesystem: ({ requestContext }) => {
+    const role = requestContext.get('agent-role') || 'guest'
+    return new LocalFilesystem({
+      basePath: `/workspaces/${role}`,
+      readOnly: role !== 'admin',
+    })
+  },
+})
+```
+
+One workspace instance serves all requests. The resolver runs at tool execution time, so each request gets its own filesystem. See [dynamic filesystem](/docs/workspace/filesystem#dynamic-filesystem) for details.
+
+### Dynamic sandbox (per-request)
+
+Pass a resolver function to `sandbox` to return a different sandbox per request. This is useful for multi-tenant deployments where each user or role needs an isolated working directory or different execution permissions.
+
+```typescript
+const workspace = new Workspace({
+  sandbox: ({ requestContext }) => {
+    const userId = requestContext.get('user-id') as string
+    return new LocalSandbox({
+      workingDirectory: `/workspaces/${userId}`,
+    })
+  },
+})
+```
+
+The resolver is incompatible with `mounts` and `lsp: true`, since both require a concrete sandbox instance at construction time. See [dynamic sandbox](/docs/workspace/sandbox#dynamic-sandbox) for details.
+
 ### Which pattern should I use?
 
 | Scenario | Pattern |
@@ -168,6 +216,8 @@ The agent receives the `execute_command` tool.
 | Multiple cloud providers in one sandbox | `mounts` + `sandbox` (one mount per provider) |
 | Agent reads/writes files, no command execution needed | `filesystem` only |
 | Agent runs commands, no file tools needed | `sandbox` only |
+| Multi-role or multi-tenant agent with per-request storage | `filesystem` with resolver function |
+| Multi-tenant agent with per-request execution scope | `sandbox` with resolver function |
 
 ## Tool configuration
 
@@ -203,11 +253,39 @@ const workspace = new Workspace({
 
 | Option | Type | Description |
 | - | - | - |
-| `enabled` | `boolean` | Whether the tool is available (default: `true`) |
-| `requireApproval` | `boolean` | Whether the tool requires user approval before execution (default: `false`) |
-| `requireReadBeforeWrite` | `boolean` | For write tools: require reading the file first (default: `false`) |
+| `enabled` | `boolean \| (context) => boolean` | Whether the tool is available (default: `true`). When a function, evaluated at tool-listing time. |
+| `requireApproval` | `boolean \| (context) => boolean` | Whether the tool requires user approval before execution (default: `false`). When a function, evaluated at execution time with access to `args`. |
+| `requireReadBeforeWrite` | `boolean \| (context) => boolean` | For write tools: require reading the file first (default: `false`). When a function, evaluated at execution time with access to `args`. |
 | `name` | `string` | Custom name for the tool. Replaces the default `mastra_workspace_*` name. |
 | `maxOutputTokens` | `number` | Maximum tokens for tool output (default: `2000`). Output exceeding this limit is truncated using tiktoken. |
+
+### Dynamic tool configuration
+
+Tool options that accept functions receive a context object and return a boolean. This enables context-aware tool behavior.
+
+```typescript title="src/mastra/workspaces.ts"
+const workspace = new Workspace({
+  filesystem: new LocalFilesystem({ basePath: './workspace' }),
+  tools: {
+    // Dynamic enabled: disable command execution unless explicitly allowed
+    [WORKSPACE_TOOLS.SANDBOX.EXECUTE_COMMAND]: {
+      enabled: async ({ requestContext }) => {
+        return requestContext['allowExecution'] === 'true'
+      },
+    },
+
+    // Dynamic requireApproval: only require approval for protected paths
+    [WORKSPACE_TOOLS.FILESYSTEM.WRITE_FILE]: {
+      requireApproval: async ({ args }) => {
+        return (args.path as string).startsWith('/protected')
+      },
+      requireReadBeforeWrite: true,
+    },
+  },
+})
+```
+
+Functions for `enabled` receive `{ requestContext, workspace }`. Functions for `requireApproval` and `requireReadBeforeWrite` also receive `args` since they're evaluated when the tool is called.
 
 ### Tool name remapping
 
@@ -219,16 +297,50 @@ import { Workspace, LocalFilesystem, LocalSandbox, WORKSPACE_TOOLS } from '@mast
 const workspace = new Workspace({
   filesystem: new LocalFilesystem({ basePath: './workspace' }),
   sandbox: new LocalSandbox({ workingDirectory: './workspace' }),
+  lsp: true,
   tools: {
     [WORKSPACE_TOOLS.FILESYSTEM.READ_FILE]: { name: 'view' },
     [WORKSPACE_TOOLS.FILESYSTEM.GREP]: { name: 'search_content' },
     [WORKSPACE_TOOLS.FILESYSTEM.LIST_FILES]: { name: 'find_files' },
     [WORKSPACE_TOOLS.SANDBOX.EXECUTE_COMMAND]: { name: 'execute_command' },
+    [WORKSPACE_TOOLS.LSP.LSP_INSPECT]: { name: 'lsp_inspect' },
   },
 })
 ```
 
-The agent sees `view`, `search_content`, `find_files`, and `execute_command` instead of the default `mastra_workspace_*` names. Tool names must be unique — duplicate names or conflicts with other default names throw an error.
+The agent sees `view`, `search_content`, `find_files`, `execute_command`, and `lsp_inspect` instead of the default `mastra_workspace_*` names. Tool names must be unique — duplicate names or conflicts with other default names throw an error.
+
+### Tool hooks
+
+Set `tools.hooks` to run logic before and after every enabled workspace tool call. Hooks run after name remapping, so the hook context includes both the exposed `toolName` and the original `workspaceToolName`:
+
+```typescript title="src/mastra/workspaces.ts"
+import { Workspace, LocalFilesystem } from '@mastra/core/workspace'
+
+const workspace = new Workspace({
+  filesystem: new LocalFilesystem({ basePath: './workspace' }),
+  tools: {
+    hooks: {
+      beforeToolCall: ({ toolName, workspaceToolName, input }) => {
+        console.log(`Running ${toolName} (${workspaceToolName})`, input)
+      },
+      afterToolCall: ({ toolName, output, error }) => {
+        console.log(`Finished ${toolName}`, { output, error })
+      },
+    },
+  },
+})
+```
+
+Return `{ proceed: false, output }` from `beforeToolCall` to skip the tool call and use `output` as its result.
+
+If the owning agent also defines [tool hooks](/docs/agents/using-tools#run-logic-around-tool-calls), workspace hooks run inside the agent hook wrapper: agent `beforeToolCall` first, then workspace `beforeToolCall`, then the tool, then workspace `afterToolCall`, then agent `afterToolCall`.
+
+## LSP inspection
+
+Enable `lsp` on a workspace to add semantic code inspection through language servers. This adds the `mastra_workspace_lsp_inspect` tool by default, which can return hover information, definition locations, and implementations for a symbol at a specific cursor position.
+
+See [LSP inspection](/docs/workspace/lsp) for configuration, examples, and tool name remapping.
 
 ### Output truncation
 
@@ -260,6 +372,21 @@ When `requireReadBeforeWrite` is enabled on write tools, agents must read a file
 - **Existing files**: Must be read first
 - **Externally modified files**: If a file changed since the agent read it, the write fails
 
+File write safety is enforced at two layers:
+
+1. **Tool layer**: Before a write tool runs, the read tracker checks whether the file was modified since it was last read. If it was, the tool throws a `FileReadRequiredError`.
+1. **Filesystem layer**: At write time, `writeFile()` compares the file's current modification time against the expected value (passed via `expectedMtime` in write options). If they don't match, it throws a `StaleFileError`. This catches external modifications (for example, an editor saving the file) that happen between the tool-level check and the actual write.
+
+When `requireReadBeforeWrite` is enabled, workspace tools pass the recorded modification time through automatically. You can also use `expectedMtime` directly when calling `filesystem.writeFile()` outside of tools:
+
+```typescript
+const stat = await filesystem.stat('/docs/file.md')
+// ... later ...
+await filesystem.writeFile('/docs/file.md', newContent, {
+  expectedMtime: stat.modifiedAt,
+})
+```
+
 ## Initialization
 
 Calling `init()` is optional in most cases—some providers initialize on first operation. Call `init()` manually when using a workspace outside of Mastra (standalone scripts, tests) or when you need to pre-provision resources before the first agent interaction.
@@ -290,6 +417,7 @@ External providers may perform additional setup like establishing connections or
 
 - [Filesystem](/docs/workspace/filesystem)
 - [Sandbox](/docs/workspace/sandbox)
+- [LSP inspection](/docs/workspace/lsp)
 - [Skills](/docs/workspace/skills)
 - [Search and indexing](/docs/workspace/search)
 - [Workspace class reference](/reference/workspace/workspace-class)

@@ -1,0 +1,43 @@
+---
+image: /generated/articles-docs-sfx-whoosh.png
+title: 'whoosh'
+crumb: '@remotion/sfx'
+---
+
+# whoosh<AvailableFrom v="4.0.429" />
+
+import {PlayButton} from './PlayButton';
+
+<PlayButton src="https://remotion.media/whoosh.wav" />
+<br />
+
+A URL pointing to a whoosh sound effect WAV file.
+
+## Example
+
+```tsx twoslash title="MyComp.tsx"
+import {whoosh} from '@remotion/sfx';
+import {Audio} from '@remotion/media';
+
+const MyVideo = () => {
+  return <Audio src={whoosh} />;
+};
+```
+
+## Value
+
+```bash
+https://remotion.media/whoosh.wav
+```
+
+## Duration
+
+0.154 seconds (1 channel, 44100 Hz, 16-bit)
+
+## Attribution
+
+Woosh by 1bob - [freesound.org/s/831936](https://freesound.org/s/831936/) - License: Creative Commons 0
+
+## See also
+
+- [`whip`](/docs/sfx/whip)

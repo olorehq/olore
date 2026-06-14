@@ -65,7 +65,7 @@ See [Including and excluding files from coverage report](/guide/coverage.html#in
 - **Available for providers:** `'v8' | 'istanbul'`
 - **CLI:** `--coverage.clean`, `--coverage.clean=false`
 
-Clean coverage results before running tests
+Clean coverage results before running tests.
 
 ## coverage.cleanOnRerun
 
@@ -89,8 +89,6 @@ Vitest will delete this directory before running tests if `coverage.clean` is en
 
 Directory to write coverage report to.
 
-To preview the coverage report in the output of [HTML reporter](/guide/reporters.html#html-reporter), this option must be set as a sub-directory of the html report directory (for example `./html/coverage`).
-
 ## coverage.reporter
 
 - **Type:** `string | string[] | [string, {}][]`
@@ -98,7 +96,7 @@ To preview the coverage report in the output of [HTML reporter](/guide/reporters
 - **Available for providers:** `'v8' | 'istanbul'`
 - **CLI:** `--coverage.reporter=<reporter>`, `--coverage.reporter=<reporter1> --coverage.reporter=<reporter2>`
 
-Coverage reporters to use. See [istanbul documentation](https://istanbul.js.org/docs/advanced/alternative-reporters/) for detailed list of all reporters. See [`@types/istanbul-reporter`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/276d95e4304b3670eaf6e8e5a7ea9e265a14e338/types/istanbul-reports/index.d.ts) for details about reporter specific options.
+Coverage reporters to use. See [istanbul documentation](https://istanbul.js.org/docs/advanced/alternative-reporters/) for detailed list of all reporters. See [`@types/istanbul-reports`](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/276d95e4304b3670eaf6e8e5a7ea9e265a14e338/types/istanbul-reports/index.d.ts) for details about reporter specific options.
 
 The reporter has three different types:
 
@@ -135,6 +133,10 @@ You can also pass custom coverage reporters. See [Guide - Custom Coverage Report
 
 You can check your coverage report in Vitest UI: check [Vitest UI Coverage](/guide/coverage#vitest-ui) for more details.
 
+::: tip AI coding agents
+When Vitest detects it is running inside an AI coding agent, it automatically adds the `text-summary` reporter and sets `skipFull: true` on the `text` reporter to reduce output and minimize token usage.
+:::
+
 ## coverage.reportOnFailure {#coverage-reportonfailure}
 
 - **Type:** `boolean`
@@ -151,7 +153,7 @@ Generate coverage report even when tests fail.
 - **Available for providers:** `'v8' | 'istanbul'`
 - **CLI:** `--coverage.allowExternal`, `--coverage.allowExternal=false`
 
-Collect coverage of files outside the [project `root`](#root).
+Collect coverage of files outside the [project `root`](/config/root).
 
 ## coverage.excludeAfterRemap
 
@@ -231,12 +233,67 @@ Global threshold for statements.
 
 ### coverage.thresholds.perFile
 
-- **Type:** `boolean`
+- **Type:** `boolean | { 100?: boolean, lines?: number, functions?: number, branches?: number, statements?: number }`
 - **Default:** `false`
 - **Available for providers:** `'v8' | 'istanbul'`
 - **CLI:** `--coverage.thresholds.perFile`, `--coverage.thresholds.perFile=false`
 
-Check thresholds per file.
+When `true`, each file is checked against the top-level thresholds instead of the project-wide aggregate. When set to an object, both are checked: the aggregate against the top-level thresholds, and every file against these per-file minimums.
+
+<!-- eslint-skip -->
+```ts
+{
+  coverage: {
+    thresholds: {
+      lines: 80,
+      functions: 80,
+      branches: 80,
+      statements: 80,
+      perFile: {
+        lines: 50,
+        functions: 50,
+        branches: 50,
+        statements: 50,
+      },
+    }
+  }
+}
+```
+
+`{ 100: true }` is also accepted inside the object as a shortcut for setting all four metrics to `100`:
+
+<!-- eslint-skip -->
+```ts
+{
+  coverage: {
+    thresholds: {
+      lines: 80,
+      perFile: {
+        100: true,
+      },
+    }
+  }
+}
+```
+
+`perFile` can also be set on an individual [glob-pattern threshold](/config/coverage#coverage-thresholds-glob-pattern). Glob patterns do **not** inherit the top-level `perFile`; set it on each glob explicitly.
+
+<!-- eslint-skip -->
+```ts
+{
+  coverage: {
+    thresholds: {
+      perFile: true,
+      lines: 80,
+
+      'src/utils/**': {
+        lines: 90,
+        perFile: true,
+      },
+    }
+  }
+}
+```
 
 ### coverage.thresholds.autoUpdate
 
@@ -248,15 +305,18 @@ Check thresholds per file.
 Update all threshold values `lines`, `functions`, `branches` and `statements` to configuration file when current coverage is better than the configured thresholds.
 This option helps to maintain thresholds when coverage is improved.
 
-You can also pass a function for formatting the updated threshold values:
+You can also pass a function for formatting the updated threshold values. The function receives the new threshold as the first argument and the previous threshold as the second:
 
 <!-- eslint-skip -->
 ```ts
 {
   coverage: {
     thresholds: {
-      // Update thresholds without decimals
-      autoUpdate: (newThreshold) => Math.floor(newThreshold),
+      // Log the change and update without decimals
+      autoUpdate: (newThreshold, previousThreshold) => {
+        console.log(`Updated threshold from ${previousThreshold} to ${newThreshold}`)
+        return Math.floor(newThreshold)
+      },
 
       // 95.85 -> 95
       functions: 95,
@@ -277,11 +337,13 @@ Shortcut for `--coverage.thresholds.lines 100 --coverage.thresholds.functions 10
 
 ### coverage.thresholds[glob-pattern]
 
-- **Type:** `{ statements?: number functions?: number branches?: number lines?: number }`
+- **Type:** `{ statements?: number, functions?: number, branches?: number, lines?: number, perFile?: boolean | object }`
 - **Default:** `undefined`
 - **Available for providers:** `'v8' | 'istanbul'`
 
 Sets thresholds for files matching the glob pattern.
+
+Each glob pattern can set its own `perFile` (`boolean | object`), checked exactly like the top-level `perFile` but scoped to the matched files. Glob patterns do not inherit the top-level `perFile` — set it per glob.
 
 ::: tip NOTE
 Vitest counts all files, including those covered by glob-patterns, into the global coverage thresholds.
@@ -303,6 +365,8 @@ This is different from Jest behavior.
         functions: 90,
         branches: 85,
         lines: 80,
+        // each matching file must individually hit the thresholds above
+        perFile: true,
       },
 
       // Files matching this pattern will only have lines thresholds set.
@@ -388,6 +452,46 @@ Watermarks for statements, lines, branches and functions. See [istanbul document
 
 Concurrency limit used when processing the coverage results.
 
+## coverage.instrumenter <Version type="experimental">4.1.5</Version> {#coverage-instrumenter}
+
+- **Type:** `(options: InstrumenterOptions) => CoverageInstrumenter`
+- **Available for providers:** `'istanbul'`
+
+Factory for a custom instrumenter to use in place of the default `istanbul-lib-instrument`. Vitest calls the factory once during initialization and reuses the returned instrumenter for every file. The rest of the Istanbul pipeline (collection, merging, reporting) is unchanged.
+
+The factory receives an `InstrumenterOptions` object with Vitest's runtime coverage settings, and must return an object implementing the `CoverageInstrumenter` interface. Both types are exported from `vitest/node`.
+
+<!-- eslint-skip -->
+```ts
+interface InstrumenterOptions {
+  coverageVariable: string
+  coverageGlobalScope: string
+  coverageGlobalScopeFunc: boolean
+  ignoreClassMethods: string[]
+}
+
+interface CoverageInstrumenter {
+  instrumentSync: (code: string, filename: string, inputSourceMap?: any) => string
+  lastSourceMap: () => any
+  lastFileCoverage: () => any
+}
+```
+
+<!-- eslint-skip -->
+```ts
+import { defineConfig } from 'vitest/config'
+import { createInstrumenter } from '@vitest/some-custom-instrumenter'
+
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'istanbul',
+      instrumenter: options => createInstrumenter(options),
+    }
+  }
+})
+```
+
 ## coverage.customProviderModule
 
 - **Type:** `string`
@@ -395,3 +499,35 @@ Concurrency limit used when processing the coverage results.
 - **CLI:** `--coverage.customProviderModule=<path or module name>`
 
 Specifies the module name or path for the custom coverage provider module. See [Guide - Custom Coverage Provider](/guide/coverage#custom-coverage-provider) for more information.
+
+## coverage.htmlDir
+
+- **Type:** `string`
+- **Default:** Automatically inferred from `html`, `html-spa`, or `lcov` coverage reporters
+- **CLI:** `--coverage.htmlDir=<path>`
+
+Directory of HTML coverage output to be served in [Vitest UI](/guide/ui) and [HTML reporter](/guide/reporters.html#html-reporter).
+
+This is automatically configured when using builtin coverage reporters that produce HTML output (`html`, `html-spa`, and `lcov`). Use this option to override with a custom coverage reporting location when using custom coverage reporters.
+
+Note that setting this option does not change where coverage HTML report is generated. Configure the `coverage.reporter` option to change the directory instead.
+
+## coverage.changed
+
+- **Type:** `boolean | string`
+- **Default:** `false` (inherits from `test.changed`)
+- **Available for providers:** `'v8' | 'istanbul'`
+- **CLI:** `--coverage.changed`, `--coverage.changed=<commit/branch>`
+
+Collect coverage only for files changed since a specified commit or branch. When set to `true`, it uses staged and unstaged changes.
+
+## coverage.autoAttachSubprocess <Version>5.0.0</Version> {#coverage-autoattachsubprocess}
+
+- **Type:** `boolean`
+- **Default:** `false`
+- **Available for providers:** `'v8'`
+- **CLI:** `--coverage.autoAttachSubprocess`
+
+Track coverage of the `node:child_process` and `node:worker_threads` spawned during test run.
+
+Note that this option has some performance overhead as its using [`NODE_V8_COVERAGE`](https://nodejs.org/api/cli.html#node-v8-coveragedir) internally. This triggers Node to write lots of unnecessary files on file system.

@@ -1,12 +1,13 @@
 ---
 title: subscribe
-description: Subscribe to form state update without render
+description: Subscribe to form state changes outside the render cycle.
+metaDescription: Subscribe to React Hook Form state changes outside the render cycle — ideal for analytics, side effects, and non-React integrations.
 sidebar: apiLinks
 ---
 
 ## `subscribe:` <TypeText>`UseFormSubscribe<TFieldValues extends FieldValues>`</TypeText>
 
-Subscribe to [`formState`](/docs/useform/formState) changes and value updates. You can subscribe to individual fields or the entire form, while avoiding unnecessary re-renders caused by form changes.
+Subscribe to [`formState`](/docs/useform/formstate) changes and value updates. You can subscribe to individual fields or the entire form, while avoiding unnecessary re-renders caused by form changes.
 
 ### Props
 
@@ -23,13 +24,6 @@ Subscribe to [`formState`](/docs/useform/formState) changes and value updates. Y
 <Admonition type="important" title="Notes">
 
 <ul>
-  <li>
-    <p>
-      This function is intended for subscribing to changes only; dispatching
-      state updates or triggering re-renders is not allowed. eg `setValue` or
-      `reset`
-    </p>
-  </li>
   <li>
     <p>
       This function shares the same functionality as{" "}

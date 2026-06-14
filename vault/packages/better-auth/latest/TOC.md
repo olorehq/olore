@@ -4,32 +4,37 @@
 
 ```
 contents/
-├── introduction.mdx        # Overview and features
-├── basic-usage.mdx         # Email/password and social auth
-├── authentication/         # Social & OAuth providers (37 files)
-├── concepts/               # Core concepts (14 files)
-├── plugins/                # Official plugins (39 files)
-│   └── api-key/            # API key plugin (3 files)
-├── adapters/               # Database adapters (7 files)
-├── integrations/           # Framework integrations (16 files)
-├── guides/                 # How-to guides (10 files)
-└── infrastructure/         # Infrastructure features (7 files)
+├── installation.mdx            # Installation guide
+├── basic-usage.mdx             # Basic usage overview
+├── adapters/                   # Database adapters (8 files)
+├── authentication/             # Social/OAuth providers (37 files)
+├── concepts/                   # Core concepts (13 files)
+├── examples/                   # Framework examples (5 files)
+├── guides/                     # How-to guides (11 files)
+├── infrastructure/             # Better Auth Infrastructure paid service (8 files)
+│   ├── plugins/                # Infrastructure plugins
+│   └── services/               # Infrastructure services
+├── integrations/               # Framework integrations (19 files)
+├── plugins/                    # Auth plugins (38 files)
+│   └── api-key/                # API key plugin (3 files)
+└── reference/                  # Reference docs (26 files)
+    └── errors/                 # Error reference (20 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| Get started | `contents/basic-usage.mdx` |
+| Install | `contents/installation.mdx` |
+| Basic usage | `contents/basic-usage.mdx` |
 | Email/password auth | `contents/authentication/email-password.mdx` |
-| Social OAuth | `contents/authentication/` |
-| Configure client | `contents/concepts/client.mdx` |
+| OAuth/social login | `contents/concepts/oauth.mdx` |
 | Session management | `contents/concepts/session-management.mdx` |
 | Database setup | `contents/concepts/database.mdx` |
-| Plugins overview | `contents/concepts/plugins.mdx` |
-| Two-factor auth | `contents/plugins/2fa.mdx` |
-| Organizations | `contents/plugins/organization.mdx` |
-| Next.js integration | `contents/integrations/next.mdx` |
+| Framework setup | `contents/integrations/` |
+| Plugin overview | `contents/plugins/index.mdx` |
+| Error reference | `contents/reference/errors/index.mdx` |
+| Config options | `contents/reference/options.mdx` |
 
 ## Detailed Structure
 
@@ -37,176 +42,223 @@ contents/
 
 | File | Description |
 |------|-------------|
-| `introduction.mdx` | Library overview, features, AI tooling |
-| `basic-usage.mdx` | Email/password, social sign-in, sign up, sign in, sign out |
+| `installation.mdx` | Installation and initial setup |
+| `basic-usage.mdx` | Basic usage patterns |
+
+### adapters/ (8 files)
+
+| File | Description |
+|------|-------------|
+| `drizzle.mdx` | Drizzle ORM adapter |
+| `mongo.mdx` | MongoDB adapter |
+| `mssql.mdx` | Microsoft SQL Server adapter |
+| `mysql.mdx` | MySQL adapter |
+| `other-relational-databases.mdx` | Other relational database adapters |
+| `postgresql.mdx` | PostgreSQL adapter |
+| `prisma.mdx` | Prisma adapter |
+| `sqlite.mdx` | SQLite adapter |
 
 ### authentication/ (37 files)
 
 | File | Description |
 |------|-------------|
-| `email-password.mdx` | Email and password authentication |
-| `google.mdx` | Google OAuth provider |
-| `github.mdx` | GitHub OAuth provider |
 | `apple.mdx` | Apple Sign In |
-| `discord.mdx` | Discord OAuth provider |
-| `facebook.mdx` | Facebook OAuth provider |
-| `microsoft.mdx` | Microsoft OAuth provider |
-| `twitter.mdx` | Twitter/X OAuth provider |
-| `linkedin.mdx` | LinkedIn OAuth provider |
-| `slack.mdx` | Slack OAuth provider |
-| `spotify.mdx` | Spotify OAuth provider |
-| `twitch.mdx` | Twitch OAuth provider |
-| `gitlab.mdx` | GitLab OAuth provider |
-| `reddit.mdx` | Reddit OAuth provider |
-| `tiktok.mdx` | TikTok OAuth provider |
-| `cognito.mdx` | AWS Cognito OAuth provider |
-| `notion.mdx` | Notion OAuth provider |
-| `linear.mdx` | Linear OAuth provider |
-| `zoom.mdx` | Zoom OAuth provider |
-| `dropbox.mdx` | Dropbox OAuth provider |
-| `figma.mdx` | Figma OAuth provider |
-| `paypal.mdx` | PayPal OAuth provider |
-| `paybin.mdx` | Paybin OAuth provider |
-| `kick.mdx` | Kick OAuth provider |
-| `atlassian.mdx` | Atlassian OAuth provider |
-| `line.mdx` | LINE OAuth provider |
-| `wechat.mdx` | WeChat OAuth provider |
-| `kakao.mdx` | Kakao OAuth provider |
-| `naver.mdx` | Naver OAuth provider |
-| `vercel.mdx` | Vercel OAuth provider |
-| `polar.mdx` | Polar OAuth provider |
-| `salesforce.mdx` | Salesforce OAuth provider |
-| `railway.mdx` | Railway OAuth provider |
-| `roblox.mdx` | Roblox OAuth provider |
-| `vk.mdx` | VK OAuth provider |
-| `huggingface.mdx` | HuggingFace OAuth provider |
-| `other-social-providers.mdx` | Generic OAuth, Auth0, Keycloak, Okta, Entra ID |
+| `atlassian.mdx` | Atlassian OAuth |
+| `cognito.mdx` | AWS Cognito |
+| `discord.mdx` | Discord OAuth |
+| `dropbox.mdx` | Dropbox OAuth |
+| `email-password.mdx` | Email and password authentication |
+| `facebook.mdx` | Facebook OAuth |
+| `figma.mdx` | Figma OAuth |
+| `github.mdx` | GitHub OAuth |
+| `gitlab.mdx` | GitLab OAuth |
+| `google.mdx` | Google OAuth |
+| `huggingface.mdx` | Hugging Face OAuth |
+| `kakao.mdx` | Kakao OAuth |
+| `kick.mdx` | Kick OAuth |
+| `line.mdx` | LINE OAuth |
+| `linear.mdx` | Linear OAuth |
+| `linkedin.mdx` | LinkedIn OAuth |
+| `microsoft.mdx` | Microsoft OAuth |
+| `naver.mdx` | Naver OAuth |
+| `notion.mdx` | Notion OAuth |
+| `other-social-providers.mdx` | Generic OAuth for any provider |
+| `paybin.mdx` | Paybin OAuth |
+| `paypal.mdx` | PayPal OAuth |
+| `polar.mdx` | Polar OAuth |
+| `railway.mdx` | Railway OAuth |
+| `reddit.mdx` | Reddit OAuth |
+| `roblox.mdx` | Roblox OAuth |
+| `salesforce.mdx` | Salesforce OAuth |
+| `slack.mdx` | Slack OAuth |
+| `spotify.mdx` | Spotify OAuth |
+| `tiktok.mdx` | TikTok OAuth |
+| `twitch.mdx` | Twitch OAuth |
+| `twitter.mdx` | Twitter/X OAuth |
+| `vercel.mdx` | Vercel OAuth |
+| `vk.mdx` | VK OAuth |
+| `wechat.mdx` | WeChat OAuth |
+| `zoom.mdx` | Zoom OAuth |
 
-### concepts/ (14 files)
+### concepts/ (13 files)
 
 | File | Description |
 |------|-------------|
-| `client.mdx` | Client setup, createAuthClient, React/Vue/Svelte hooks |
-| `session-management.mdx` | Session expiry, caching, stateless sessions |
-| `database.mdx` | Adapters, migrations, schema, hooks |
-| `oauth.mdx` | OAuth flows, provider configuration |
-| `plugins.mdx` | Plugin system overview, creating plugins |
-| `email.mdx` | Email configuration, templates |
-| `hooks.mdx` | Server-side hooks, before/after hooks |
-| `api.mdx` | API routes, custom endpoints |
-| `cookies.mdx` | Cookie configuration, secure settings |
+| `api.mdx` | API structure and endpoints |
+| `cli.mdx` | CLI tool usage |
+| `client.mdx` | Client-side auth client |
+| `cookies.mdx` | Cookie configuration |
+| `database.mdx` | Database schema and configuration |
+| `email.mdx` | Email sending setup |
+| `hooks.mdx` | Auth hooks and middleware |
+| `oauth.mdx` | OAuth concepts and configuration |
+| `plugins.mdx` | Plugin system overview |
 | `rate-limit.mdx` | Rate limiting configuration |
-| `typescript.mdx` | TypeScript types, type inference |
-| `users-accounts.mdx` | User model, account linking |
-| `cli.mdx` | CLI commands: migrate, generate |
-| `dynamic-base-url.mdx` | Dynamic base URL configuration |
+| `session-management.mdx` | Session lifecycle and management |
+| `typescript.mdx` | TypeScript usage and types |
+| `users-accounts.mdx` | User and account management |
 
-### plugins/ (39 files)
-
-| File | Description |
-|------|-------------|
-| `2fa.mdx` | Two-factor authentication (TOTP, OTP) |
-| `passkey.mdx` | WebAuthn/passkey authentication |
-| `magic-link.mdx` | Passwordless email magic links |
-| `email-otp.mdx` | Email one-time passwords |
-| `phone-number.mdx` | Phone number authentication |
-| `anonymous.mdx` | Anonymous/guest sessions |
-| `username.mdx` | Username-based authentication |
-| `one-tap.mdx` | Google One Tap sign-in |
-| `siwe.mdx` | Sign In With Ethereum |
-| `generic-oauth.mdx` | Generic OAuth provider plugin |
-| `multi-session.mdx` | Multiple concurrent sessions |
-| `last-login-method.mdx` | Track last auth method |
-| `organization.mdx` | Organizations, teams, roles, permissions |
-| `admin.mdx` | Admin panel, user management |
-| `sso.mdx` | Single Sign-On (SSO) |
-| `oidc-provider.mdx` | OpenID Connect provider |
-| `oauth-provider.mdx` | OAuth 2.0 provider |
-| `oauth-proxy.mdx` | OAuth proxy plugin |
-| `jwt.mdx` | JWT token authentication |
-| `bearer.mdx` | Bearer token authentication |
-| `api-key/index.mdx` | API key authentication overview |
-| `api-key/reference.mdx` | API key full reference |
-| `api-key/advanced.mdx` | Advanced API key configuration |
-| `passkey.mdx` | Passkey/WebAuthn plugin |
-| `captcha.mdx` | Captcha integration |
-| `have-i-been-pwned.mdx` | Password breach checking |
-| `device-authorization.mdx` | Device authorization flow |
-| `one-time-token.mdx` | One-time token plugin |
-| `scim.mdx` | SCIM provisioning |
-| `mcp.mdx` | MCP (Model Context Protocol) plugin |
-| `open-api.mdx` | OpenAPI documentation plugin |
-| `test-utils.mdx` | Testing utilities |
-| `stripe.mdx` | Stripe payment integration |
-| `polar.mdx` | Polar payment integration |
-| `creem.mdx` | Creem billing integration |
-| `commet.mdx` | Commet billing integration |
-| `dodopayments.mdx` | Dodo Payments integration |
-| `autumn.mdx` | Autumn billing integration |
-| `dub.mdx` | Dub link tracking |
-| `openfort.mdx` | Openfort Web3 wallet |
-| `i18n.mdx` | Internationalization plugin |
-
-### adapters/ (7 files)
+### examples/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `prisma.mdx` | Prisma ORM adapter |
-| `drizzle.mdx` | Drizzle ORM adapter |
-| `mongo.mdx` | MongoDB adapter |
-| `postgresql.mdx` | PostgreSQL adapter |
-| `mysql.mdx` | MySQL adapter |
-| `sqlite.mdx` | SQLite adapter |
-| `mssql.mdx` | Microsoft SQL Server adapter |
-| `other-relational-databases.mdx` | Kysely and other databases |
+| `astro.mdx` | Astro example |
+| `next-js.mdx` | Next.js example |
+| `nuxt.mdx` | Nuxt example |
+| `react-router.mdx` | React Router example |
+| `svelte-kit.mdx` | SvelteKit example |
 
-### integrations/ (16 files)
+### guides/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `next.mdx` | Next.js integration |
-| `nuxt.mdx` | Nuxt integration |
-| `astro.mdx` | Astro integration |
-| `svelte-kit.mdx` | SvelteKit integration |
-| `solid-start.mdx` | SolidStart integration |
-| `react-router.mdx` | React Router integration |
-| `tanstack.mdx` | TanStack Start integration |
-| `hono.mdx` | Hono integration |
-| `express.mdx` | Express.js integration |
-| `fastify.mdx` | Fastify integration |
-| `elysia.mdx` | Elysia integration |
-| `nestjs.mdx` | NestJS integration |
-| `nitro.mdx` | Nitro integration |
-| `expo.mdx` | Expo/React Native integration |
-| `electron.mdx` | Electron integration |
-| `convex.mdx` | Convex integration |
-| `waku.mdx` | Waku integration |
-| `encore.mdx` | Encore integration |
-| `lynx.mdx` | Lynx integration |
-
-### guides/ (10 files)
-
-| File | Description |
-|------|-------------|
-| `your-first-plugin.mdx` | Building a custom plugin |
-| `create-a-db-adapter.mdx` | Creating a custom database adapter |
-| `saml-sso-with-okta.mdx` | SAML SSO with Okta guide |
-| `browser-extension-guide.mdx` | Browser extension auth guide |
-| `optimizing-for-performance.mdx` | Performance optimization |
-| `next-auth-migration-guide.mdx` | Migrating from Auth.js/NextAuth |
 | `auth0-migration-guide.mdx` | Migrating from Auth0 |
+| `browser-extension-guide.mdx` | Browser extension integration |
 | `clerk-migration-guide.mdx` | Migrating from Clerk |
+| `create-a-db-adapter.mdx` | Creating custom database adapters |
+| `dynamic-base-url.mdx` | Dynamic base URL configuration |
+| `next-auth-migration-guide.mdx` | Migrating from NextAuth |
+| `optimizing-for-performance.mdx` | Performance optimization |
+| `saml-sso-with-okta.mdx` | SAML SSO with Okta setup |
 | `supabase-migration-guide.mdx` | Migrating from Supabase Auth |
 | `workos-migration-guide.mdx` | Migrating from WorkOS |
+| `your-first-plugin.mdx` | Creating your first plugin |
 
-### infrastructure/ (7 files)
+### infrastructure/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `introduction.mdx` | Infrastructure overview |
-| `getting-started.mdx` | Infrastructure setup |
-| `services/email.mdx` | Email service configuration |
-| `services/sms.mdx` | SMS service configuration |
-| `plugins/audit-logs.mdx` | Audit logging plugin |
-| `plugins/dashboard.mdx` | Admin dashboard plugin |
+| `introduction.mdx` | Better Auth Infrastructure overview (paid service) |
+| `getting-started.mdx` | Infrastructure setup guide |
+| `plugins/audit-logs.mdx` | Audit logs plugin |
+| `plugins/dash.mdx` | Dash plugin |
+| `plugins/dashboard.mdx` | Dashboard plugin |
 | `plugins/sentinel.mdx` | Sentinel security plugin |
+| `services/email.mdx` | Managed email service |
+| `services/sms.mdx` | Managed SMS service |
+
+### integrations/ (19 files)
+
+| File | Description |
+|------|-------------|
+| `astro.mdx` | Astro integration |
+| `convex.mdx` | Convex integration |
+| `electron.mdx` | Electron integration |
+| `elysia.mdx` | Elysia integration |
+| `encore.mdx` | Encore integration |
+| `expo.mdx` | Expo/React Native integration |
+| `express.mdx` | Express integration |
+| `fastify.mdx` | Fastify integration |
+| `hono.mdx` | Hono integration |
+| `lynx.mdx` | Lynx integration |
+| `nestjs.mdx` | NestJS integration |
+| `next.mdx` | Next.js integration |
+| `nitro.mdx` | Nitro integration |
+| `nuxt.mdx` | Nuxt integration |
+| `react-router.mdx` | React Router integration |
+| `solid-start.mdx` | SolidStart integration |
+| `svelte-kit.mdx` | SvelteKit integration |
+| `tanstack.mdx` | TanStack Start integration |
+| `waku.mdx` | Waku integration |
+
+### plugins/ (38 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Plugin directory overview |
+| `2fa.mdx` | Two-factor authentication |
+| `admin.mdx` | Admin user management |
+| `agent-auth.mdx` | Agent/bot authentication |
+| `anonymous.mdx` | Anonymous/guest sessions |
+| `api-key/index.mdx` | API key authentication |
+| `api-key/advanced.mdx` | Advanced API key usage |
+| `api-key/reference.mdx` | API key reference |
+| `autumn.mdx` | Autumn billing integration |
+| `bearer.mdx` | Bearer token authentication |
+| `captcha.mdx` | CAPTCHA protection |
+| `chargebee.mdx` | Chargebee billing integration |
+| `commet.mdx` | Commet billing integration |
+| `creem.mdx` | Creem payment integration |
+| `device-authorization.mdx` | Device authorization flow |
+| `dodopayments.mdx` | Dodo Payments integration |
+| `dub.mdx` | Dub link tracking integration |
+| `email-otp.mdx` | Email OTP authentication |
+| `generic-oauth.mdx` | Generic OAuth provider |
+| `have-i-been-pwned.mdx` | HaveIBeenPwned password check |
+| `i18n.mdx` | Internationalization |
+| `jwt.mdx` | JWT token support |
+| `last-login-method.mdx` | Last login method tracking |
+| `magic-link.mdx` | Magic link authentication |
+| `mcp.mdx` | MCP provider authentication |
+| `multi-session.mdx` | Multiple concurrent sessions |
+| `oauth-provider.mdx` | OAuth provider (be an OAuth server) |
+| `oauth-proxy.mdx` | OAuth proxy |
+| `oidc-provider.mdx` | OpenID Connect provider |
+| `one-tap.mdx` | Google One Tap sign-in |
+| `one-time-token.mdx` | One-time token authentication |
+| `open-api.mdx` | OpenAPI reference plugin |
+| `organization.mdx` | Organizations and teams |
+| `passkey.mdx` | WebAuthn/passkey authentication |
+| `phone-number.mdx` | Phone number authentication |
+| `polar.mdx` | Polar billing integration |
+| `scim.mdx` | SCIM directory sync |
+| `siwe.mdx` | Sign In With Ethereum |
+| `sso.mdx` | SSO/SAML authentication |
+| `stripe.mdx` | Stripe billing integration |
+| `test-utils.mdx` | Testing utilities |
+| `username.mdx` | Username authentication |
+
+### reference/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `faq.mdx` | Frequently asked questions |
+| `instrumentation.mdx` | Instrumentation and observability |
+| `options.mdx` | Full configuration options reference |
+| `security.mdx` | Security considerations |
+| `telemetry.mdx` | Telemetry configuration |
+
+### reference/errors/ (20 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Error types overview |
+| `account_already_linked_to_different_user.mdx` | Account linking conflict error |
+| `account_not_linked.mdx` | Account not linked error |
+| `email_doesn't_match.mdx` | Email mismatch error |
+| `email_not_found.mdx` | Email not found error |
+| `internal_server_error.mdx` | Internal server error |
+| `invalid_callback_request.mdx` | Invalid callback request error |
+| `invalid_code.mdx` | Invalid OAuth code error |
+| `no_callback_url.mdx` | Missing callback URL error |
+| `no_code.mdx` | Missing OAuth code error |
+| `oauth_provider_not_found.mdx` | OAuth provider not found error |
+| `signup_disabled.mdx` | Signup disabled error |
+| `state_invalid.mdx` | Invalid OAuth state error |
+| `state_mismatch.mdx` | OAuth state mismatch error |
+| `state_not_found.mdx` | OAuth state not found error |
+| `unable_to_create_session.mdx` | Session creation failure error |
+| `unable_to_create_user.mdx` | User creation failure error |
+| `unable_to_get_user_info.mdx` | User info retrieval failure error |
+| `unable_to_link_account.mdx` | Account linking failure error |
+| `unknown.mdx` | Unknown error |

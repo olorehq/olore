@@ -1,6 +1,6 @@
 ---
 name: olore-remotion-latest
-description: Local remotion documentation reference (latest). Remotion documentation. Use for programmatic video creation in React, compositions, sequences, audio, animations, rendering, server-side rendering, and Lambda deployment.
+description: Local Remotion documentation reference (latest). Remotion documentation. Use for programmatic video creation in React, compositions, sequences, audio, animations, rendering, server-side rendering, and Lambda deployment.
 ---
 
 # remotion Documentation
@@ -12,25 +12,35 @@ Remotion documentation. Use for programmatic video creation in React, compositio
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/getting-started.mdx` |
-| Core concepts | `contents/the-fundamentals.mdx` |
+| Core fundamentals | `contents/the-fundamentals.mdx` |
 | API overview | `contents/api.mdx` |
-| Configuration | `contents/config.mdx` |
-| Lambda rendering | `contents/lambda/setup.mdx` |
-| Node.js SSR | `contents/ssr.mdx` |
-| Player embed | `contents/player/index.mdx` |
-| CLI reference | `contents/cli/cli.mdx` |
+| Rendering video (Node.js) | `contents/renderer.mdx` |
+| Server-side rendering | `contents/ssr.mdx` |
+| AWS Lambda rendering | `contents/lambda/setup.mdx` |
+| Google Cloud Run rendering | `contents/cloudrun/setup.mdx` |
+| CLI commands | `contents/cli/cli.mdx` |
+| Player component | `contents/player/` |
+| Sequences & compositions | `contents/sequence.mdx` |
+| Animation / interpolation | `contents/interpolate.mdx` |
+| Captions / subtitles | `contents/captions/` |
+| Audio integration | `contents/audio/` |
 | Troubleshooting | `contents/troubleshooting/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Creating, rendering, or exporting videos programmatically with React
-- Animations using `interpolate()`, `spring()`, `useCurrentFrame()`
-- Deploying video renders to AWS Lambda or Google Cloud Run
-- Using `@remotion/player` to embed a video player in a web app
-- Server-side rendering with `@remotion/renderer`
-- Audio, captions, transitions, shapes, paths, fonts, and other Remotion packages
-- Remotion Studio, CLI commands, and configuration
+- Creating programmatic videos or animations with React and Remotion
+- Compositions, sequences, series, loops, and frame-based animations
+- `interpolate()`, `spring()`, easing, and animation math
+- Hooks: `useCurrentFrame()`, `useVideoConfig()`, `useAudioData()`
+- Rendering videos with Node.js (`@remotion/renderer`), Lambda, or Cloud Run
+- CLI commands (`npx remotion render`, `npx remotion studio`, etc.)
+- The `<Player>` component for embedding video previews
+- Audio, video, captions, subtitles, and media handling
+- WebCodecs, media-parser, and client-side rendering
+- Visual effects (`@remotion/effects`), transitions, shapes, paths, noise
+- AI/LLM-based video generation with Remotion
+- Integrations: Three.js, Lottie, Skia, Google Fonts, Tailwind, Next.js
 
 ## How to find information
 

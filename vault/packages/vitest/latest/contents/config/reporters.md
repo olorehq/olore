@@ -14,7 +14,7 @@ interface UserConfig {
 type ConfigReporter = string | Reporter | [string, object?]
 ```
 
-- **Default:** [`'default'`](/guide/reporters#default-reporter)
+- **Default:** [`'default'`](/guide/reporters#default-reporter). See [Default Reporters](/guide/reporters#default-reporters) for environment-specific behavior.
 - **CLI:**
   - `--reporter=tap` for a single reporter
   - `--reporter=verbose --reporter=github-actions` for multiple reporters
@@ -42,20 +42,21 @@ Note that the [coverage](/guide/coverage) feature uses a different [`coverage.re
 - [`tap-flat`](/guide/reporters#tap-flat-reporter)
 - [`hanging-process`](/guide/reporters#hanging-process-reporter)
 - [`github-actions`](/guide/reporters#github-actions-reporter)
+- [`minimal`](/guide/reporters#minimal-reporter) (aliased as `agent`)
 - [`blob`](/guide/reporters#blob-reporter)
 
 ## Example
 
 ::: code-group
 ```js [vitest.config.js]
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
     reporters: [
-      'default',
+      ...configDefaults.reporters,
       // conditional reporter
-      process.env.CI ? 'github-actions' : {},
+      ...(process.env.CI ? ['html'] : []),
       // custom reporter from npm package
       // options are passed down as a tuple
       [

@@ -65,3 +65,11 @@ Unhandled error that was thrown.
 - returns: <[string]>
 
 Unhandled error that was thrown.
+
+## method: WebError.location
+* since: v1.60
+- returns: <[Object]>
+  * alias: WebErrorLocation
+  - `url` <[string]> URL of the resource.
+  - `line` <[int]> 0-based line number in the resource.
+  - `column` <[int]> 0-based column number in the resource.

@@ -1,6 +1,7 @@
 ---
 title: Form
-description: Take care of form submission
+description: Form submission component with built-in state management.
+metaDescription: React Hook Form's Form component handles submission to a URL or callback, with built-in loading, error, and success state management.
 sidebar: apiLinks
 ---
 
@@ -46,7 +47,7 @@ All props are optional
 
 <Admonition type="important" title="Rules">
 
-- If want to prepare or omit submission data, please use [`handleSubmit`](/docs/useform/handlesubmit) or `onSubmit`.
+- If you want to prepare or omit submission data, please use [`handleSubmit`](/docs/useform/handlesubmit) or `onSubmit`.
   ```javascript
   const { handleSubmit, control } = useForm();
   const onSubmit =(data) => callback(prepareData(data))
@@ -90,9 +91,7 @@ import { useForm, Form } from "react-hook-form"
 function App() {
   const {
     control,
-
     register,
-
     formState: { isSubmitSuccessful, errors },
   } = useForm({
     // progressive: true, optional prop for progressive enhancement
@@ -111,7 +110,6 @@ function App() {
           alert("error")
         }}
       >
-        {" "}
         <input {...register("name")} />
         {isSubmitSuccessful && <p>Form submit successful.</p>}
         {errors?.root?.server && <p>Form submit failed.</p>}
@@ -122,12 +120,10 @@ function App() {
         onSubmit={async ({ formData, data, formDataJson, event }) => {
           await fetch("api", {
             method: "post",
-
             body: formData,
           })
         }}
       >
-        {" "}
         <input {...register("test")} /> <button>submit</button>
       </Form>
     </div>

@@ -4,146 +4,139 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/main/` | Getting started and core concepts | 6 |
-| `contents/server/` | Server-side API and configuration | 23 |
-| `contents/client/` | Client libraries and integrations | 43 |
-| `contents/migration/` | Migration guides | 1 |
-| `contents/further/` | FAQ and additional resources | 3 |
-| `contents/community/` | Community resources | 1 |
+| `contents/main/` | Introduction, quickstart, and core concepts | 5 |
+| `contents/server/` | Server-side: routers, procedures, middleware, adapters | 19 |
+| `contents/client/` | Client-side: links, React, Next.js, vanilla, TanStack Query | 47 |
+| `contents/migration/` | Migration guides (v10 to v11) | 1 |
+| `contents/further/` | FAQ, troubleshooting, HTTP RPC spec | 2 |
 
 ## main/
 
 | File | Description |
 |------|-------------|
-| `introduction.mdx` | Introduction to tRPC |
-| `quickstart.mdx` | Quick start guide |
-| `getting-started.mdx` | Detailed getting started guide |
-| `concepts.mdx` | Core concepts and architecture |
-| `example-apps.mdx` | Example applications and starter templates |
-| `videos-and-community-resources.mdx` | Video tutorials and community resources |
+| `main/introduction.mdx` | What is tRPC and why use it |
+| `main/quickstart.mdx` | Getting started quickly with tRPC |
+| `main/concepts.mdx` | Core concepts and mental model |
+| `main/example-apps.mdx` | Official and community example apps |
+| `main/tanstack-intent.mdx` | TanStack Intent / AI agent skills setup |
 
 ## server/
 
 | File | Description |
 |------|-------------|
-| `routers.md` | Creating and organizing routers |
-| `procedures.md` | Defining procedures (queries/mutations) |
-| `context.md` | Request context and dependency injection |
-| `middlewares.md` | Middleware for reusable logic |
-| `authorization.md` | Authorization patterns |
-| `validators.md` | Input validation with Zod/etc |
-| `error-handling.md` | Error handling and custom errors |
-| `error-formatting.md` | Customizing error formatting |
-| `merging-routers.md` | Merging multiple routers |
-| `metadata.md` | Adding metadata to procedures |
-| `data-transformers.md` | Data transformation (superjson) |
-| `caching.md` | Server-side caching strategies |
-| `server-side-calls.md` | Calling procedures server-side |
-| `subscriptions.md` | Real-time subscriptions |
-| `websockets.md` | WebSocket configuration |
-| `non-json-content-types.md` | Handling non-JSON responses |
-| `adapters-intro.md` | Overview of server adapters |
-
-### server/adapters/
-
-| File | Description |
-|------|-------------|
-| `nextjs.md` | Next.js adapter |
-| `express.md` | Express adapter |
-| `fastify.md` | Fastify adapter |
-| `fetch.mdx` | Fetch API adapter |
-| `standalone.md` | Standalone HTTP server |
-| `aws-lambda.md` | AWS Lambda adapter |
+| `server/overview.md` | Server overview and initialization |
+| `server/routers.md` | Defining routers |
+| `server/procedures.md` | Defining procedures (query, mutation, subscription) |
+| `server/context.md` | Creating and using context |
+| `server/middlewares.md` | Writing and applying middleware |
+| `server/authorization.md` | Authorization patterns |
+| `server/merging-routers.md` | Merging multiple routers |
+| `server/validators.md` | Input/output validation with Zod and others |
+| `server/metadata.md` | Procedure metadata |
+| `server/data-transformers.md` | Using data transformers (superjson, etc.) |
+| `server/error-handling.md` | Handling errors |
+| `server/error-formatting.md` | Customizing error formats |
+| `server/caching.md` | Response caching |
+| `server/subscriptions.md` | Real-time subscriptions |
+| `server/websockets.md` | WebSocket support |
+| `server/server-side-calls.md` | Making server-side tRPC calls |
+| `server/non-json-content-types.md` | Non-JSON content types |
+| `server/adapters-intro.md` | Adapters overview |
+| `server/adapters/express.md` | Express adapter |
+| `server/adapters/fastify.md` | Fastify adapter |
+| `server/adapters/nextjs.md` | Next.js adapter |
+| `server/adapters/aws-lambda.md` | AWS Lambda adapter |
+| `server/adapters/fetch.mdx` | Fetch/edge runtime adapter |
+| `server/adapters/standalone.md` | Standalone HTTP server adapter |
 
 ## client/
 
-| File | Description |
-|------|-------------|
-| `overview.md` | Client overview |
-| `cors.md` | CORS configuration |
-| `headers.md` | Custom headers |
-
-### client/links/
+### Links
 
 | File | Description |
 |------|-------------|
-| `overview.md` | Links overview |
-| `httpLink.md` | HTTP link for single requests |
-| `httpBatchLink.md` | HTTP batch link for batching |
-| `httpBatchStreamLink.md` | HTTP batch stream link |
-| `httpSubscriptionLink.md` | HTTP subscription link |
-| `wsLink.md` | WebSocket link |
-| `loggerLink.md` | Logger link for debugging |
-| `retryLink.md` | Retry link for failed requests |
-| `splitLink.mdx` | Split link for conditional routing |
-| `localLink.mdx` | Local link for server-side calls |
+| `client/links/overview.md` | Links overview and chain concept |
+| `client/links/httpLink.md` | Standard HTTP link |
+| `client/links/httpBatchLink.md` | HTTP batching link |
+| `client/links/httpBatchStreamLink.md` | HTTP batch streaming link |
+| `client/links/httpSubscriptionLink.md` | HTTP subscription (SSE) link |
+| `client/links/wsLink.md` | WebSocket link |
+| `client/links/localLink.mdx` | Local/in-process link |
+| `client/links/loggerLink.md` | Logger link for debugging |
+| `client/links/retryLink.md` | Retry link |
+| `client/links/splitLink.mdx` | Split link (conditional routing) |
 
-### client/nextjs/
-
-| File | Description |
-|------|-------------|
-| `introduction.mdx` | Next.js client introduction |
-| `setup.mdx` | Setting up tRPC with Next.js |
-| `ssr.md` | Server-side rendering |
-| `ssg.md` | Static site generation |
-| `server-side-helpers.md` | Server-side helper utilities |
-| `aborting-procedures.md` | Aborting requests |
-| `starter-projects.md` | Next.js starter projects |
-
-### client/react/
+### React (TanStack Query v4/v5 via @trpc/react-query)
 
 | File | Description |
 |------|-------------|
-| `introduction.mdx` | React client introduction |
-| `setup.mdx` | Setting up tRPC with React |
-| `useQuery.md` | useQuery hook for queries |
-| `useMutation.md` | useMutation hook for mutations |
-| `useInfiniteQuery.md` | useInfiniteQuery for pagination |
-| `useQueries.md` | useQueries for parallel queries |
-| `useSubscription.md` | useSubscription for real-time data |
-| `useUtils.mdx` | useUtils for cache utilities |
-| `createTRPCQueryUtils.md` | Creating query utilities |
-| `getQueryKey.md` | Getting query keys |
-| `infer-types.md` | Type inference helpers |
-| `suspense.md` | React Suspense support |
-| `disabling-queries.md` | Conditionally disabling queries |
-| `aborting-procedures.md` | Aborting requests |
-| `server-components.mdx` | React Server Components |
+| `client/react/overview.mdx` | React integration overview |
+| `client/react/setup.mdx` | Setting up @trpc/react-query |
+| `client/react/useQuery.md` | useQuery hook |
+| `client/react/useMutation.md` | useMutation hook |
+| `client/react/useSubscription.md` | useSubscription hook |
+| `client/react/useInfiniteQuery.md` | useInfiniteQuery hook |
+| `client/react/useQueries.md` | useQueries hook |
+| `client/react/useUtils.mdx` | useUtils for cache manipulation |
+| `client/react/createTRPCQueryUtils.md` | createTRPCQueryUtils utility |
+| `client/react/getQueryKey.md` | getQueryKey helper |
+| `client/react/infer-types.md` | Inferring types on the client |
+| `client/react/disabling-queries.md` | Disabling queries |
+| `client/react/aborting-procedures.md` | Aborting in-flight requests |
+| `client/react/suspense.md` | React Suspense integration |
+| `client/react/server-components.mdx` | React Server Components support |
 
-### client/tanstack-react-query/
-
-| File | Description |
-|------|-------------|
-| `setup.mdx` | Setting up with TanStack React Query |
-| `usage.mdx` | Usage patterns |
-| `server-components.mdx` | React Server Components |
-| `migrating.mdx` | Migrating from @trpc/react |
-
-### client/vanilla/
+### Next.js
 
 | File | Description |
 |------|-------------|
-| `introduction.md` | Vanilla client introduction |
-| `setup.mdx` | Setting up vanilla client |
-| `infer-types.md` | Type inference |
-| `aborting-procedures.md` | Aborting requests |
+| `client/nextjs/overview.mdx` | Next.js integration overview |
+| `client/nextjs/starter-projects.md` | Starter project templates |
+| `client/nextjs/app-router/setup.mdx` | App Router setup |
+| `client/nextjs/app-router/server-actions.mdx` | Server Actions with tRPC |
+| `client/nextjs/pages-router/setup.mdx` | Pages Router setup |
+| `client/nextjs/pages-router/ssr.md` | Server-side rendering |
+| `client/nextjs/pages-router/ssg.md` | Static site generation |
+| `client/nextjs/pages-router/server-side-helpers.md` | Server-side helpers |
+| `client/nextjs/pages-router/aborting-procedures.md` | Aborting procedures in Pages Router |
+
+### TanStack React Query (Next-gen integration)
+
+| File | Description |
+|------|-------------|
+| `client/tanstack-react-query/overview.md` | TanStack React Query integration overview |
+| `client/tanstack-react-query/setup.mdx` | Setup guide |
+| `client/tanstack-react-query/usage.mdx` | Usage patterns |
+| `client/tanstack-react-query/server-components.mdx` | Server components support |
+| `client/tanstack-react-query/migrating.mdx` | Migrating to TanStack Query integration |
+
+### Vanilla Client
+
+| File | Description |
+|------|-------------|
+| `client/vanilla/overview.md` | Vanilla (framework-agnostic) client overview |
+| `client/vanilla/setup.mdx` | Setting up the vanilla client |
+| `client/vanilla/infer-types.md` | Type inference for vanilla client |
+| `client/vanilla/aborting-procedures.md` | Aborting requests |
+
+### Other Client
+
+| File | Description |
+|------|-------------|
+| `client/overview.md` | Client overview |
+| `client/cors.md` | CORS configuration |
+| `client/headers.md` | Custom headers |
+| `client/openapi.md` | OpenAPI integration |
 
 ## migration/
 
 | File | Description |
 |------|-------------|
-| `migrate-from-v10-to-v11.mdx` | Migration guide from v10 to v11 |
+| `migration/migrate-from-v10-to-v11.mdx` | Migration guide from v10 to v11 |
 
 ## further/
 
 | File | Description |
 |------|-------------|
-| `faq.mdx` | Frequently asked questions |
-| `rpc.md` | Understanding RPC concepts |
-| `further-reading.md` | Additional resources |
-
-## community/
-
-| File | Description |
-|------|-------------|
-| `awesome-trpc.mdx` | Community projects and resources |
+| `further/faq.mdx` | FAQ and troubleshooting |
+| `further/rpc.md` | HTTP RPC specification and method mapping |
