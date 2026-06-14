@@ -32,6 +32,12 @@ export interface VersionInfo {
   size: number;
   integrity: string;
   downloadUrl: string;
+  /**
+   * Direct GitHub asset URL, used as a fallback when downloadUrl (the counting
+   * proxy at olore.dev) is unreachable. Optional for backwards compatibility
+   * with older registry entries that only have downloadUrl.
+   */
+  originUrl?: string;
   releasedAt: string;
 }
 
