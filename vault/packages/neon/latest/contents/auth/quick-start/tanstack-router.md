@@ -1,12 +1,21 @@
 ---
 title: Use Neon Auth with TanStack Router
 subtitle: Set up authentication using pre-built UI components
+summary: >-
+  Neon Auth quick start for TanStack Router (file-router) using the
+  `@neondatabase/neon-js` and `@neondatabase/auth-ui` SDKs. Pre-built components
+  include AuthView, AccountView, SignedIn, and RedirectToSignIn. Use this page
+  when you need sign-in, sign-up, and route protection without writing custom
+  auth UI. User profiles are stored automatically in the `neon_auth.user` table
+  in your Neon Postgres database.
 enableTableOfContents: true
-updatedOn: '2026-01-05T20:32:04.267Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 layout: wide
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
+
+<AuthAISetupTip />
 
 <TwoColumnLayout>
 
@@ -33,9 +42,9 @@ You can then find your Auth URL on the Configuration tab. Copy this URL - you'll
 Create a new TanStack Router app using the file-router template.
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 npx create-tsrouter-app@latest my-app --template file-router --tailwind
 ```
 
@@ -48,10 +57,10 @@ npx create-tsrouter-app@latest my-app --template file-router --tailwind
 Install the Neon Auth SDK and UI library:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
-cd my-app && npm install @neondatabase/neon-js
+```bash filename="Terminal"
+cd my-app && npm install @neondatabase/neon-js@latest @neondatabase/auth-ui
 ```
 
 </TwoColumnLayout.Block>
@@ -67,9 +76,9 @@ Replace the URL with your actual Auth URL from the Neon Console.
 </Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label=".env">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename=".env"
 VITE_NEON_AUTH_URL=https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth
 ```
 
@@ -89,7 +98,7 @@ See [UI Component Styles](/docs/auth/reference/ui-components#styling) for altern
 <TwoColumnLayout.Block label="Add to src/styles.css">
 
 ```css
-@import '@neondatabase/neon-js/ui/tailwind';
+@import '@neondatabase/auth-ui/tailwind';
 ```
 
 </TwoColumnLayout.Block>
@@ -101,9 +110,9 @@ See [UI Component Styles](/docs/auth/reference/ui-components#styling) for altern
 Create a `src/auth.ts` file to initialize the auth client:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/auth.ts">
+<TwoColumnLayout.Block>
 
-```typescript
+```typescript filename="src/auth.ts"
 import { createAuthClient } from '@neondatabase/neon-js/auth';
 import { BetterAuthReactAdapter } from '@neondatabase/neon-js/auth/react';
 
@@ -137,13 +146,13 @@ Pass props to `NeonAuthUIProvider` for any features you want to use. Only the `a
 </details>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/routes/\_\_root.tsx">
+<TwoColumnLayout.Block>
 
-```tsx {4-5,9,22}
+```tsx filename="src/routes/__root.tsx" {4-5,9,22}
 import { Outlet, createRootRoute } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
-import { NeonAuthUIProvider } from '@neondatabase/neon-js/auth/react';
+import { NeonAuthUIProvider } from '@neondatabase/auth-ui';
 import { authClient } from '../auth';
 
 export const Route = createRootRoute({
@@ -175,11 +184,11 @@ export const Route = createRootRoute({
 Create a route to handle authentication views (sign in, sign up, etc.). Create `src/routes/auth.$pathname.tsx`:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/routes/auth.$pathname.tsx">
+<TwoColumnLayout.Block>
 
-```tsx
+```tsx filename="src/routes/auth.$pathname.tsx"
 import { createFileRoute } from '@tanstack/react-router';
-import { AuthView } from '@neondatabase/neon-js/auth/react/ui';
+import { AuthView } from '@neondatabase/auth-ui';
 
 export const Route = createFileRoute('/auth/$pathname')({
   component: Auth,
@@ -211,11 +220,11 @@ function Auth() {
 Create a route to handle account management views. Create `src/routes/account.$pathname.tsx`:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/routes/account.$pathname.tsx">
+<TwoColumnLayout.Block>
 
-```tsx
+```tsx filename="src/routes/account.$pathname.tsx"
 import { createFileRoute } from '@tanstack/react-router';
-import { AccountView } from '@neondatabase/neon-js/auth/react/ui';
+import { AccountView } from '@neondatabase/auth-ui';
 
 export const Route = createFileRoute('/account/$pathname')({
   component: Account,
@@ -249,11 +258,11 @@ You can protect your routes using the `SignedIn` and `RedirectToSignIn` componen
 Update `src/routes/index.tsx` to protect the home page:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="src/routes/index.tsx">
+<TwoColumnLayout.Block>
 
-```tsx
+```tsx filename="src/routes/index.tsx"
 import { createFileRoute } from '@tanstack/react-router';
-import { SignedIn, UserButton, RedirectToSignIn } from '@neondatabase/neon-js/auth/react/ui';
+import { SignedIn, UserButton, RedirectToSignIn } from '@neondatabase/auth-ui';
 import { authClient } from '@/auth';
 
 export const Route = createFileRoute('/')({
@@ -306,9 +315,9 @@ function Home() {
 Start the development server, then open [http://localhost:3000](http://localhost:3000). You'll be redirected to the sign-in page.
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 npm run dev
 ```
 
@@ -323,9 +332,9 @@ As users sign up, their profiles are stored in your Neon database in the `neon_a
 Query your users table in the SQL Editor to see your new users:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="SQL Editor">
+<TwoColumnLayout.Block>
 
-```sql
+```sql filename="SQL Editor"
 SELECT * FROM neon_auth.user;
 ```
 
@@ -338,3 +347,4 @@ SELECT * FROM neon_auth.user;
 
 - [Add email verification](/docs/auth/guides/email-verification)
 - [Learn how to branch your auth](/docs/auth/branching-authentication)
+- [More example apps](/docs/auth/overview#example-applications) in the **neon-js** `examples/` directory

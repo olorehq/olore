@@ -74,9 +74,15 @@ This event is not emitted.
 
 Playwright has ability to mock clock and passage of time.
 
+## property: BrowserContext.credentials
+* since: v1.61
+- type: <[Credentials]>
+
+Virtual WebAuthn authenticator for this context. Lets tests seed credentials and intercept
+`navigator.credentials.create()` / `navigator.credentials.get()` ceremonies.
+
 ## property: BrowserContext.debugger
 * since: v1.59
-* langs: js
 - type: <[Debugger]>
 
 Debugger allows to pause and resume the execution.
@@ -192,6 +198,30 @@ Context.Dialog += async (_, dialog) =>
 When no [`event: Page.dialog`] or [`event: BrowserContext.dialog`] listeners are present, all dialogs are automatically dismissed.
 :::
 
+## event: BrowserContext.download
+* since: v1.60
+- argument: <[Download]>
+
+Emitted when attachment download started in any page belonging to this context. User can access basic file operations on downloaded content via the passed [Download] instance. See also [`event: Page.download`] to receive events about a specific page.
+
+## event: BrowserContext.frameAttached
+* since: v1.60
+- argument: <[Frame]>
+
+Emitted when a frame is attached in any page belonging to this context. See also [`event: Page.frameAttached`] to receive events about a specific page.
+
+## event: BrowserContext.frameDetached
+* since: v1.60
+- argument: <[Frame]>
+
+Emitted when a frame is detached in any page belonging to this context. See also [`event: Page.frameDetached`] to receive events about a specific page.
+
+## event: BrowserContext.frameNavigated
+* since: v1.60
+- argument: <[Frame]>
+
+Emitted when a frame is navigated to a new url in any page belonging to this context. See also [`event: Page.frameNavigated`] to receive events about navigations in a specific page.
+
 ## event: BrowserContext.page
 * since: v1.8
 - argument: <[Page]>
@@ -243,6 +273,18 @@ Console.WriteLine(await popup.EvaluateAsync<string>("location.href"));
 Use [`method: Page.waitForLoadState`] to wait until the page gets to a particular state (you should not need it in most
 cases).
 :::
+
+## event: BrowserContext.pageClose
+* since: v1.60
+- argument: <[Page]>
+
+Emitted when a page in this context is closed. See also [`event: Page.close`] to receive events about a specific page.
+
+## event: BrowserContext.pageLoad
+* since: v1.60
+- argument: <[Page]>
+
+Emitted when the JavaScript [`load`](https://developer.mozilla.org/en-US/docs/Web/Events/load) event is dispatched in any page belonging to this context. See also [`event: Page.load`] to receive events about a specific page.
 
 ## event: BrowserContext.webError
 * since: v1.38
@@ -332,6 +374,7 @@ await context.AddCookiesAsync(new[] { cookie1, cookie2 });
 ### param: BrowserContext.addCookies.cookies
 * since: v1.8
 - `cookies` <[Array]<[Object]>>
+  * alias-java: Cookie
   - `name` <[string]>
   - `value` <[string]>
   - `url` ?<[string]> Either `url` or both `domain` and `path` are required. Optional.
@@ -571,6 +614,8 @@ The default browser context cannot be closed.
 ## async method: BrowserContext.cookies
 * since: v1.8
 - returns: <[Array]<[Object]>>
+  * alias: Cookie
+  * alias-csharp: BrowserContextCookiesResult
   - `name` <[string]>
   - `value` <[string]>
   - `domain` <[string]>
@@ -731,16 +776,9 @@ Name of the function on the window object.
 ### param: BrowserContext.exposeBinding.callback
 * since: v1.8
 - `callback` <[function]>
+  * alias: BindingCallback
 
 Callback function that will be called in the Playwright's context.
-
-### option: BrowserContext.exposeBinding.handle
-* since: v1.8
-* deprecated: This option will be removed in the future.
-- `handle` <[boolean]>
-
-Whether to pass the argument as a handle, instead of passing by value. When passing a handle, only one argument is
-supported. When passing by value, multiple arguments are supported.
 
 ## async method: BrowserContext.exposeFunction
 * since: v1.8
@@ -930,6 +968,7 @@ Name of the function on the window object.
 ### param: BrowserContext.exposeFunction.callback
 * since: v1.8
 - `callback` <[function]>
+  * alias: FunctionCallback
 
 Callback function that will be called in the Playwright's context.
 
@@ -1003,14 +1042,6 @@ named `page`, but it can be a `Page` or `Frame` type.
 - returns: <[Page]>
 
 Creates a new page in the browser context.
-
-## method: BrowserContext.contextOptions
-* since: v1.59
-* langs: js
-- returns: <[Object]>
-
-Returns the context options that were used to create this browser context. The return type matches the options
-accepted by [`method: Browser.newContext`].
 
 ## method: BrowserContext.pages
 * since: v1.8
@@ -1474,6 +1505,7 @@ its geolocation.
 ### param: BrowserContext.setGeolocation.geolocation
 * since: v1.8
 - `geolocation` <[null]|[Object]>
+  * alias: Geolocation
   - `latitude` <[float]> Latitude between -90 and 90.
   - `longitude` <[float]> Longitude between -180 and 180.
   - `accuracy` ?<[float]> Non-negative accuracy value. Defaults to `0`.

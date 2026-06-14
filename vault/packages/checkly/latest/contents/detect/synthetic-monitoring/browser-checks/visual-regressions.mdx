@@ -249,10 +249,9 @@ In a typical scenario, you would follow the steps below:
    The resulting files are stored in a `some-file-prepend.ts-snapshots` folder next to your browser check script.
 3. Commit the browser check script and the golden image / reference snapshot(s) to your version control system.
 4. Push your code to your CI/CD pipeline.
-5. In your CI/CD pipeline, optionally run your checks again. Maybe add the `--record` flag to record the test in 
-Checkly.
+5. In your CI/CD pipeline, test your checks before deploying. Test results will be uploaded to Checkly's test sessions for review.
    ```bash
-   npx checkly test --record 
+   npx checkly test 
    ```
 6. If your tests pass, deploy your checks to production. The CLI will push your snapshot to the
 Checkly cloud automatically.

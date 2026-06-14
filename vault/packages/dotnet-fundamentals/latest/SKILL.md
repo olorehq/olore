@@ -1,37 +1,38 @@
 ---
 name: olore-dotnet-fundamentals-latest
-description: Local dotnet-fundamentals documentation reference (latest). .NET fundamentals documentation. Use for runtime libraries, networking, reflection, code analysis, diagnostics, and .NET standard library APIs.
+description: Local .NET fundamentals documentation reference (latest). .NET fundamentals documentation. Use for runtime libraries, networking, reflection, code analysis, diagnostics, and .NET standard library APIs.
 ---
 
 # dotnet-fundamentals Documentation
 
-.NET fundamentals documentation. Use for runtime libraries, networking, reflection, code analysis, diagnostics, and .NET standard library APIs.
+.NET fundamentals documentation covering runtime libraries, networking, reflection, code analysis (quality and style rules), diagnostics, and .NET standard library APIs including System.* types.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
 | Code analysis overview | `contents/code-analysis/overview.md` |
-| Code quality rules (CA) | `contents/code-analysis/quality-rules/index.md` |
-| Code style rules (IDE) | `contents/code-analysis/style-rules/index.md` |
-| HttpClient usage | `contents/networking/http/httpclient.md` |
-| Reflection overview | `contents/reflection/overview.md` |
-| SYSLIB obsoletions | `contents/syslib-diagnostics/obsoletions-overview.md` |
-| Runtime events/diagnostics | `contents/diagnostics/runtime-events.md` |
-| API compatibility | `contents/apicompat/overview.md` |
+| Quality rule reference (CA####) | `contents/code-analysis/quality-rules/ca{rule-id}.md` |
+| Style rule reference (IDE####) | `contents/code-analysis/style-rules/ide{rule-id}.md` |
+| Configure code analysis | `contents/code-analysis/configuration-options.md` |
+| Runtime library API (System.*) | `contents/runtime-libraries/system-{typename}.md` |
+| Networking / HttpClient | `contents/networking/http/httpclient.md` |
+| Reflection | `contents/reflection/overview.md` |
+| Obsoletion warnings (SYSLIB####) | `contents/syslib-diagnostics/obsoletions-overview.md` |
+| API compatibility validation | `contents/apicompat/overview.md` |
+| Runtime ETW events | `contents/diagnostics/runtime-events.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- .NET code analysis rules: CA-prefixed quality rules or IDE-prefixed style rules
-- Configuring analyzers, .editorconfig, suppressing warnings
-- HttpClient, WebSockets, TCP sockets, QUIC, networking telemetry
-- Reflection, Reflection.Emit, dynamic methods, generic types at runtime
-- SYSLIB0xxx obsoletion diagnostics and workarounds
-- SYSLIB1xxx source-generator diagnostics (RegexGenerator, JsonSourceGen, etc.)
-- Runtime library API supplementary docs (System.Object, System.GC, System.Threading, etc.)
-- .NET runtime ETW/EventPipe diagnostic events (GC, exceptions, threads, JIT)
-- API compatibility tooling and package validation
+- .NET code analysis rules (CA#### quality rules, IDE#### style rules)
+- Configuring or suppressing .NET analyzer warnings
+- System.* runtime library types (String, DateTime, Task, Regex, HttpClient, etc.)
+- .NET networking APIs (HttpClient, Sockets, WebSockets, QUIC)
+- .NET reflection and dynamic code generation (Reflection.Emit)
+- SYSLIB obsoletion warnings and their workarounds
+- .NET runtime diagnostic events (ETW/EventSource)
+- API compatibility and package validation
 
 ## How to find information
 

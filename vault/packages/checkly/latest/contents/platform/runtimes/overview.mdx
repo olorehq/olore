@@ -4,22 +4,24 @@ description: 'How Checkly runtimes work.'
 sidebarTitle: 'Overview'
 ---
 
-Checkly allows you to use JavaScript code in your [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), [MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview) and in the optional [setup & teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) you can add to your API checks.
+Checkly lets you use JavaScript code in your [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), [MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview), and optional [setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) for API checks.
 
-This JavaScript code executes in a runtime environment that is managed by Checkly. This environment has access to specific Node.js versions and NPM packages, like the "latest Playwright version on Node 14". We call these environments **runtimes**.
+This JavaScript code executes in a runtime environment that is managed by Checkly. This environment includes a specific Node.js version, Playwright version, browser binaries, and selected npm packages. We call these managed environments **runtimes**.
+
+Playwright Check Suites use a different model. They do not use Checkly runtimes. They install your project dependencies from your `package.json` and lock file, and use `engine` to select the JavaScript engine version.
 
 ## Using runtimes
 
-It's pretty easy. You don't have to do anything most of the time.
+You do not have to configure runtimes for most checks.
 
 1. View all the available runtimes on the [runtimes tab in the account section](https://app.checklyhq.com/settings/account/runtimes/). See the screenshot below.
 2. There is always one runtime marked as **active**. This is the runtime all checks use, unless you decide to override this at the check or group level.
-4. Runtimes have a simple `YYYY.MM` name, e.g. `2025.04` Newer dates hold newer dependencies.
-3. Pick the runtime you want and click "Save settings". This runtime now applies to all of your checks and any new checks you create.
+3. Runtimes have a simple `YYYY.MM` name, e.g. `2026.04`. Newer dates include newer dependencies.
+4. Pick the runtime you want and click "Save settings". This runtime now applies to all of your checks and any new checks you create.
 
 ![runtimes](/images/docs/images/cli/account_runtimes.png)
 
-Note that one runtime version, e.g. `2025.04` holds all dependencies for all check types. There is no separate runtime for different types of checks.
+Note that one runtime version, e.g. `2026.04`, holds all runtime dependencies for all check types that use Checkly runtimes. There is no separate runtime for different types of checks.
 
 ## Overriding runtimes for specific checks
 
@@ -31,7 +33,9 @@ You can:
 - Select a specific runtime in the "Setup & teardown" tab for each **API check**.
 - Select a specific runtime on the "Runtimes" tab for each **check group**.
 
-> Overriding the global, account level runtime for a handful of checks is **the recommended way to check for any compatibility issues** before committing to a new, global runtime. Note the hierarchy: **check** runtime trumps **group** runtime trumps **global account** runtime.
+Playwright Check Suites do not appear in this hierarchy because they use `engine`, not `runtimeId`.
+
+> Overriding the global, account-level runtime for a few checks is **the recommended way to check for compatibility issues** before committing to a new global runtime. Note the hierarchy: the **check** runtime takes precedence over the **group** runtime, which takes precedence over the **global account** runtime.
 
 ## How we update and release new runtimes
 
@@ -61,4 +65,3 @@ NPM dependencies living in `node_modules`.
 4. Our provided Runtime packages are tested with our sandboxing for extra runtime security.
 
 If you want to see a package included in the Checkly Runtime, [please add a post on our feedback board](https://feedback.checklyhq.com/) with a package name, and your use case.
-

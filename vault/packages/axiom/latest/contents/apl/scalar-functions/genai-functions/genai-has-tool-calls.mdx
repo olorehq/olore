@@ -77,13 +77,15 @@ Check if a GenAI conversation contains any tool calls or function calls.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend has_tools = genai_has_tool_calls(['attributes.gen_ai.input.messages'])
 | summarize 
     conversations_with_tools = countif(has_tools),
     total_conversations = count(),
     adoption_rate = round(100.0 * countif(has_tools) / count(), 2)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20has_tools%20%3D%20genai_has_tool_calls(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20summarize%20conversations_with_tools%20%3D%20countif(has_tools)%2C%20total_conversations%20%3D%20count()%2C%20adoption_rate%20%3D%20round(100.0%20*%20countif(has_tools)%20%2F%20count()%2C%202)%22%7D)
 
 **Output**
 

@@ -117,7 +117,7 @@ If you're using `RiveWidgetController` the binding happens automatically when yo
 viewModelInstance = controller.dataBind(DataBind.auto());
 viewModelInstance = controller.dataBind(DataBind.byName('My View Model'));
 viewModelInstance = controller.dataBind(DataBind.byIndex(0));
-viewModelInstnace = controller.dataBind(someViewModelInstance);
+viewModelInstnace = controller.dataBind(DataBind.byInstance(someViewModelInstance));
 ```
 
 Else, you need to make sure to bind the view model instance to the state machine, or artboard.
@@ -167,7 +167,7 @@ file.dispose();
 <ListingProperties />
 
 ```dart
-// Accesss on a ViewModel object
+// Access on a ViewModel object
 print("Properties: ${viewModel.properties}");
 
 // Access on a ViewModelInstance object
@@ -370,7 +370,7 @@ Artboard properties work with the `BindableArtboard` class, which is different f
 <Enums />
 
 ```dart
-// Accesss on a File object
+// Access on a File object
 print("Data enums: ${file.enums}");
 ```
 

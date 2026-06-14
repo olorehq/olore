@@ -1,0 +1,19 @@
+{
+  "$schema": "../schemas/config.schema.json",
+  "name": "twikit",
+  "description": "Twikit documentation. Async Python wrapper for Twitter/X internal API — no API key required. Covers Client login (auth_info_1/auth_info_2/password/TOTP/cookies), tweets (create/delete/like/retweet/bookmark, search, get_tweet_by_id), users (get_user_by_id/screen_name, follow/block/mute, followers/following), DMs, lists, communities, notifications, trends, media upload, polls, rate limits, and account-protection guidance.",
+  "_source": {
+    "type": "url",
+    "convert": "html",
+    "_reason": "Hybrid source. The full API reference (twikit.html) is Sphinx-generated on ReadTheDocs and only available rendered — the upstream docs/twikit.rst is autodoc directives that need a Sphinx build to be useful. README/ratelimits/account-safety markdown files come from the GitHub root. Built manually with `pandoc -f html -t gfm-raw_html` (the script default `-t markdown` produces noisy pandoc-extended output for Sphinx pages); rebuilds will need the same custom invocation plus a strip pass for the Sphinx U+F0C1 headerlink glyph."
+  },
+  "files": {
+    "api-reference": "https://twikit.readthedocs.io/en/latest/twikit.html",
+    "readme": "https://raw.githubusercontent.com/d60/twikit/main/README.md",
+    "ratelimits": "https://raw.githubusercontent.com/d60/twikit/main/ratelimits.md",
+    "account-safety": "https://raw.githubusercontent.com/d60/twikit/main/ToProtectYourAccount.md"
+  },
+  "versions": {
+    "latest": { "ref": "main" }
+  }
+}

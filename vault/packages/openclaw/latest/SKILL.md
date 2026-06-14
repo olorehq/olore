@@ -1,42 +1,40 @@
 ---
 name: olore-openclaw-latest
-description: Local openclaw documentation reference (latest). OpenClaw documentation. Use for installation, configuration, channels, plugins, providers, hooks, CLI, security, and platform integrations.
+description: Local OpenClaw documentation reference (latest). OpenClaw documentation. Use for installation, configuration, channels, plugins, providers, hooks, CLI, security, and platform integrations.
 ---
 
-# openclaw Documentation
+# OpenClaw Documentation
 
-OpenClaw is a multi-channel AI agent gateway. It connects AI models to messaging platforms (Slack, Telegram, Discord, WhatsApp, iMessage, and more), provides a CLI and web dashboard, and supports plugins, skills, automation hooks, and remote gateway deployments.
+OpenClaw is a universal AI agent gateway that connects LLMs to messaging channels (Slack, Telegram, Discord, WhatsApp, iMessage, and 30+ others), manages tools and plugins, and runs automation workflows. It supports 50+ model providers and runs as a self-hosted gateway on any platform.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/start/getting-started.md` |
+| Quick start | `contents/start/quickstart.md` |
 | Installation | `contents/install/index.md` |
-| Channel setup | `contents/channels/index.md` |
-| Provider/model config | `contents/providers/index.md` |
-| Gateway configuration | `contents/gateway/configuration.md` |
+| Gateway configuration | `contents/gateway/configuration-reference.md` |
+| Channels setup | `contents/channels/index.md` |
+| Plugins overview | `contents/plugins/architecture.md` |
+| Providers / models | `contents/providers/index.md` |
 | CLI reference | `contents/cli/index.md` |
-| Agent tools | `contents/tools/index.md` |
-| Plugin development | `contents/plugins/manifest.md` |
-| Security | `contents/security/README.md` |
 | Troubleshooting | `contents/help/troubleshooting.md` |
+| Security | `contents/gateway/security/index.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
 - Installing, configuring, or running OpenClaw
-- Connecting to messaging channels (Slack, Telegram, Discord, WhatsApp, Signal, etc.)
-- Configuring AI providers (Anthropic, OpenAI, Ollama, Bedrock, OpenRouter, etc.)
-- Gateway setup, remote access, authentication, sandboxing
-- CLI commands (`openclaw config`, `openclaw gateway`, `openclaw agent`, etc.)
-- Agent tools (browser, exec, skills, plugins, slash commands)
-- Plugin manifest and plugin development
-- Automation (webhooks, cron jobs, hooks, polling)
-- Platform-specific setup (macOS, Linux, Windows, Android, iOS, Raspberry Pi)
-- Node capabilities (audio, camera, voice, images)
-- Security, secrets management, sandboxing
-- Multi-agent and sub-agent setup
+- Connecting messaging channels (Slack, Telegram, Discord, WhatsApp, iMessage, Matrix, etc.)
+- Setting up model providers (Anthropic, OpenAI, Google, Bedrock, local models, etc.)
+- Building or installing plugins and extensions
+- CLI commands and gateway management
+- Automation hooks, cron jobs, webhooks, and workflows
+- Security, sandboxing, and permission configuration
+- Platform-specific setup (macOS, Linux, Windows, iOS, Android, Docker, cloud)
+- Agent workspace, memory, sessions, and context management
+- Tools (browser, search, exec, skills, subagents, etc.)
 
 ## How to find information
 

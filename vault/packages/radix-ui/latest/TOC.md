@@ -4,154 +4,191 @@
 
 ```
 contents/
-├── primitives/docs/overview/       # Introduction, getting started, accessibility (3 files)
-├── primitives/docs/components/     # Unstyled primitive components (30 files)
-├── primitives/docs/utilities/      # Slot, Portal, VisuallyHidden, etc. (5 files)
-├── primitives/docs/guides/         # Styling, animation, composition, SSR (4 files)
-├── colors/docs/overview/           # Installation, usage, aliasing, custom palettes (4 files)
-├── colors/docs/palette-composition/ # Scales, palette composition (3 files)
-├── themes/docs/overview/           # Getting started, styling, layout (3 files)
-├── themes/docs/components/         # Pre-styled Radix Themes components (55 files)
-└── themes/docs/theme/              # Color, typography, spacing, dark mode (9 files)
+├── colors/docs/                    # Radix Colors (7 files)
+│   ├── overview/                   # Installation, usage, aliasing, custom palettes
+│   └── palette-composition/        # Scales, understanding the scale, composing a palette
+├── primitives/docs/                # Radix Primitives (49 files)
+│   ├── overview/                   # Introduction, getting started, accessibility
+│   ├── components/                 # Accordion through Tooltip (30 files)
+│   ├── guides/                     # Animation, composition, SSR, styling
+│   └── utilities/                  # AccessibleIcon, Portal, Slot, VisuallyHidden, DirectionProvider
+└── themes/docs/                    # Radix Themes (61 files)
+    ├── overview/                   # Getting started, layout, styling
+    ├── components/                 # Badge, Button, Dialog, etc. (54 files)
+    └── theme/                      # Color, typography, spacing, dark mode, radius, etc.
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| Radix Primitives intro | `contents/primitives/docs/overview/introduction.mdx` |
-| Install Radix Primitives | `contents/primitives/docs/overview/getting-started.mdx` |
-| Install Radix Themes | `contents/themes/docs/overview/getting-started.mdx` |
-| Install Radix Colors | `contents/colors/docs/overview/installation.mdx` |
-| Accessibility overview | `contents/primitives/docs/overview/accessibility.mdx` |
-| Styling guide | `contents/primitives/docs/guides/styling.mdx` |
-| Theme configuration | `contents/themes/docs/theme/overview.mdx` |
+| Primitives - new user | `contents/primitives/docs/overview/getting-started.mdx` |
+| Primitives - component API | `contents/primitives/docs/components/` |
+| Themes - new user | `contents/themes/docs/overview/getting-started.mdx` |
+| Themes - component API | `contents/themes/docs/components/` |
+| Colors - setup | `contents/colors/docs/overview/installation.mdx` |
+| Themes - theming | `contents/themes/docs/theme/overview.mdx` |
 
 ## Detailed Structure
-
-### primitives/docs/overview/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `introduction.mdx` | What Radix Primitives is, key features |
-| `getting-started.mdx` | Installation and quickstart tutorial |
-| `accessibility.mdx` | Accessibility approach and WAI-ARIA compliance |
-
-### primitives/docs/components/ (30 files)
-
-| File | Description |
-|------|-------------|
-| `accordion.mdx` | Accordion primitive API reference |
-| `alert-dialog.mdx` | AlertDialog primitive API reference |
-| `aspect-ratio.mdx` | AspectRatio primitive API reference |
-| `avatar.mdx` | Avatar primitive API reference |
-| `checkbox.mdx` | Checkbox primitive API reference |
-| `collapsible.mdx` | Collapsible primitive API reference |
-| `context-menu.mdx` | ContextMenu primitive API reference |
-| `dialog.mdx` | Dialog primitive API reference |
-| `dropdown-menu.mdx` | DropdownMenu primitive API reference |
-| `form.mdx` | Form primitive API reference |
-| `hover-card.mdx` | HoverCard primitive API reference |
-| `label.mdx` | Label primitive API reference |
-| `menubar.mdx` | Menubar primitive API reference |
-| `navigation-menu.mdx` | NavigationMenu primitive API reference |
-| `one-time-password-field.mdx` | OTPField primitive API reference |
-| `password-toggle-field.mdx` | PasswordToggleField primitive API reference |
-| `popover.mdx` | Popover primitive API reference |
-| `progress.mdx` | Progress primitive API reference |
-| `radio-group.mdx` | RadioGroup primitive API reference |
-| `scroll-area.mdx` | ScrollArea primitive API reference |
-| `select.mdx` | Select primitive API reference |
-| `separator.mdx` | Separator primitive API reference |
-| `slider.mdx` | Slider primitive API reference |
-| `switch.mdx` | Switch primitive API reference |
-| `tabs.mdx` | Tabs primitive API reference |
-| `toast.mdx` | Toast primitive API reference |
-| `toggle.mdx` | Toggle primitive API reference |
-| `toggle-group.mdx` | ToggleGroup primitive API reference |
-| `toolbar.mdx` | Toolbar primitive API reference |
-| `tooltip.mdx` | Tooltip primitive API reference |
-
-### primitives/docs/utilities/ (5 files)
-
-| File | Description |
-|------|-------------|
-| `accessible-icon.mdx` | AccessibleIcon utility API reference |
-| `direction-provider.mdx` | DirectionProvider utility API reference |
-| `portal.mdx` | Portal utility API reference |
-| `slot.mdx` | Slot utility — composition pattern |
-| `visually-hidden.mdx` | VisuallyHidden utility API reference |
-
-### primitives/docs/guides/ (4 files)
-
-| File | Description |
-|------|-------------|
-| `animation.mdx` | Animating Radix primitives |
-| `composition.mdx` | Component composition with asChild |
-| `server-side-rendering.mdx` | SSR support and hydration |
-| `styling.mdx` | Styling approaches for primitives |
 
 ### colors/docs/overview/ (4 files)
 
 | File | Description |
 |------|-------------|
+| `installation.mdx` | Installing Radix Colors |
+| `usage.mdx` | How to use color scales |
 | `aliasing.mdx` | Semantic color aliasing |
 | `custom-palettes.mdx` | Creating custom color palettes |
-| `installation.mdx` | Installing @radix-ui/colors |
-| `usage.mdx` | How to use Radix Colors |
 
 ### colors/docs/palette-composition/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `composing-a-palette.mdx` | How to compose a full color palette |
-| `scales.mdx` | Color scale reference |
+| `scales.mdx` | Overview of all color scales |
 | `understanding-the-scale.mdx` | How the 12-step scale works |
+| `composing-a-palette.mdx` | Building a palette from scales |
+
+### primitives/docs/overview/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `introduction.mdx` | What Radix Primitives are and the vision |
+| `getting-started.mdx` | Installation and first usage |
+| `accessibility.mdx` | Accessibility features and ARIA support |
+
+### primitives/docs/components/ (30 files)
+
+| File | Description |
+|------|-------------|
+| `accordion.mdx` | Accordion component API |
+| `alert-dialog.mdx` | AlertDialog component API |
+| `aspect-ratio.mdx` | AspectRatio component API |
+| `avatar.mdx` | Avatar component API |
+| `checkbox.mdx` | Checkbox component API |
+| `collapsible.mdx` | Collapsible component API |
+| `context-menu.mdx` | ContextMenu component API |
+| `dialog.mdx` | Dialog component API |
+| `dropdown-menu.mdx` | DropdownMenu component API |
+| `form.mdx` | Form component API |
+| `hover-card.mdx` | HoverCard component API |
+| `label.mdx` | Label component API |
+| `menubar.mdx` | Menubar component API |
+| `navigation-menu.mdx` | NavigationMenu component API |
+| `one-time-password-field.mdx` | OTPField component API |
+| `password-toggle-field.mdx` | PasswordToggleField component API |
+| `popover.mdx` | Popover component API |
+| `progress.mdx` | Progress component API |
+| `radio-group.mdx` | RadioGroup component API |
+| `scroll-area.mdx` | ScrollArea component API |
+| `select.mdx` | Select component API |
+| `separator.mdx` | Separator component API |
+| `slider.mdx` | Slider component API |
+| `switch.mdx` | Switch component API |
+| `tabs.mdx` | Tabs component API |
+| `toast.mdx` | Toast component API |
+| `toggle.mdx` | Toggle component API |
+| `toggle-group.mdx` | ToggleGroup component API |
+| `toolbar.mdx` | Toolbar component API |
+| `tooltip.mdx` | Tooltip component API |
+
+### primitives/docs/guides/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `styling.mdx` | Styling unstyled primitives |
+| `animation.mdx` | Adding animations to primitives |
+| `composition.mdx` | Using the `asChild` prop for composition |
+| `server-side-rendering.mdx` | SSR support and hydration |
+
+### primitives/docs/utilities/ (5 files)
+
+| File | Description |
+|------|-------------|
+| `accessible-icon.mdx` | AccessibleIcon utility API |
+| `direction-provider.mdx` | DirectionProvider for RTL support |
+| `portal.mdx` | Portal utility API |
+| `slot.mdx` | Slot utility API |
+| `visually-hidden.mdx` | VisuallyHidden utility API |
 
 ### themes/docs/overview/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `getting-started.mdx` | Install Radix Themes, ThemeProvider setup |
-| `layout.mdx` | Layout system in Radix Themes |
-| `styling.mdx` | Styling and customizing Radix Themes |
+| `getting-started.mdx` | Installing and setting up Radix Themes |
+| `layout.mdx` | Layout system overview |
+| `styling.mdx` | Styling and customization approach |
+
+### themes/docs/components/ (54 files)
+
+| File | Description |
+|------|-------------|
+| `accessible-icon.mdx` | AccessibleIcon in Themes |
+| `alert-dialog.mdx` | AlertDialog in Themes |
+| `aspect-ratio.mdx` | AspectRatio in Themes |
+| `avatar.mdx` | Avatar in Themes |
+| `badge.mdx` | Badge component |
+| `blockquote.mdx` | Blockquote typography component |
+| `box.mdx` | Box layout component |
+| `button.mdx` | Button component |
+| `callout.mdx` | Callout component |
+| `card.mdx` | Card component |
+| `checkbox-cards.mdx` | CheckboxCards component |
+| `checkbox-group.mdx` | CheckboxGroup component |
+| `checkbox.mdx` | Checkbox in Themes |
+| `code.mdx` | Code typography component |
+| `container.mdx` | Container layout component |
+| `context-menu.mdx` | ContextMenu in Themes |
+| `data-list.mdx` | DataList component |
+| `dialog.mdx` | Dialog in Themes |
+| `dropdown-menu.mdx` | DropdownMenu in Themes |
+| `em.mdx` | Em typography component |
+| `flex.mdx` | Flex layout component |
+| `grid.mdx` | Grid layout component |
+| `heading.mdx` | Heading typography component |
+| `hover-card.mdx` | HoverCard in Themes |
+| `icon-button.mdx` | IconButton component |
+| `inset.mdx` | Inset layout component |
+| `kbd.mdx` | Kbd typography component |
+| `link.mdx` | Link component |
+| `popover.mdx` | Popover in Themes |
+| `portal.mdx` | Portal in Themes |
+| `progress.mdx` | Progress in Themes |
+| `quote.mdx` | Quote typography component |
+| `radio-cards.mdx` | RadioCards component |
+| `radio-group.mdx` | RadioGroup in Themes |
+| `radio.mdx` | Radio in Themes |
+| `reset.mdx` | Reset utility component |
+| `scroll-area.mdx` | ScrollArea in Themes |
+| `section.mdx` | Section layout component |
+| `segmented-control.mdx` | SegmentedControl component |
+| `select.mdx` | Select in Themes |
+| `separator.mdx` | Separator in Themes |
+| `skeleton.mdx` | Skeleton loading component |
+| `slider.mdx` | Slider in Themes |
+| `slot.mdx` | Slot in Themes |
+| `spinner.mdx` | Spinner component |
+| `strong.mdx` | Strong typography component |
+| `switch.mdx` | Switch in Themes |
+| `tab-nav.mdx` | TabNav component |
+| `table.mdx` | Table component |
+| `tabs.mdx` | Tabs in Themes |
+| `text-area.mdx` | TextArea component |
+| `text-field.mdx` | TextField component |
+| `text.mdx` | Text typography component |
+| `theme.mdx` | Theme provider component |
+| `tooltip.mdx` | Tooltip in Themes |
+| `visually-hidden.mdx` | VisuallyHidden in Themes |
 
 ### themes/docs/theme/ (9 files)
 
 | File | Description |
 |------|-------------|
-| `breakpoints.mdx` | Responsive breakpoints |
-| `color.mdx` | Color system and theme tokens |
-| `cursors.mdx` | Cursor customization |
-| `dark-mode.mdx` | Dark mode setup |
-| `overview.mdx` | Theme configuration overview |
+| `overview.mdx` | Theming system overview |
+| `color.mdx` | Color system and theme colors |
+| `typography.mdx` | Typography scale and fonts |
+| `spacing.mdx` | Spacing scale |
 | `radius.mdx` | Border radius tokens |
 | `shadows.mdx` | Shadow tokens |
-| `spacing.mdx` | Spacing scale |
-| `typography.mdx` | Typography tokens |
-
-### themes/docs/components/ (55 files)
-
-All Radix Themes pre-styled components. Key files:
-
-| File | Description |
-|------|-------------|
-| `theme.mdx` | Theme component and provider props |
-| `button.mdx` | Button component |
-| `dialog.mdx` | Dialog component |
-| `dropdown-menu.mdx` | DropdownMenu component |
-| `select.mdx` | Select component |
-| `checkbox.mdx` | Checkbox component |
-| `text-field.mdx` | TextField input component |
-| `text-area.mdx` | TextArea component |
-| `flex.mdx` | Flex layout component |
-| `grid.mdx` | Grid layout component |
-| `box.mdx` | Box layout primitive |
-| `container.mdx` | Container layout component |
-| `text.mdx` | Text typography component |
-| `heading.mdx` | Heading typography component |
-| `badge.mdx` | Badge component |
-| `card.mdx` | Card component |
-| `avatar.mdx` | Avatar component |
-| `table.mdx` | Table component |
-| ... | (full list: all files in themes/docs/components/) |
+| `breakpoints.mdx` | Responsive breakpoints |
+| `dark-mode.mdx` | Dark mode implementation |
+| `cursors.mdx` | Cursor styles |

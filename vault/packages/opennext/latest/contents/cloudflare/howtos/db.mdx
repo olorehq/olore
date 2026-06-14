@@ -15,8 +15,7 @@ Instead of creating a global client, you should create a new client for each req
 
 Instead of that :
 
-```ts
-//lib/db.ts
+```ts filename="lib/db.ts"
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema/pg";
 import { Pool } from "pg";
@@ -30,8 +29,7 @@ export const db = drizzle({ client: pool, schema });
 
 You should do this instead:
 
-```ts
-//lib/db.ts
+```ts filename="lib/db.ts"
 import { drizzle } from "drizzle-orm/node-postgres";
 // You can use cache from react to cache the client during the same request
 // this is not mandatory and only has an effect for server components
@@ -51,7 +49,7 @@ export const getDb = cache(() => {
 
 #### D1 example
 
-```ts
+```ts filename="lib/db.ts"
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import { cache } from "react";
@@ -71,7 +69,7 @@ export const getDbAsync = cache(async () => {
 
 #### Hyperdrive example
 
-```ts
+```ts filename="lib/db.ts"
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { cache } from "react";
@@ -112,7 +110,7 @@ You can then use the `getDb` function to get a new client for each request. This
 
 When using prisma in OpenNext, you do not want to provide an output directory for the generated client.
 
-```prisma
+```prisma filename="schema.prisma"
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
@@ -125,7 +123,7 @@ This is because the generated client needs to be patched by OpenNext to work wit
 
 Because prisma has some specific exports for cloudflare workers, you need to add the following to your `next.config.ts` file:
 
-```ts
+```ts filename="next.config.ts"
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
 };
@@ -141,8 +139,7 @@ Instead of creating a global client, you should create a new client for each req
 
 Instead of that :
 
-```ts
-//lib/db.ts
+```ts filename="lib/db.ts"
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { PrismaClient } from "@prisma/client";
 import { PrismaD1 } from "@prisma/adapter-d1";
@@ -154,8 +151,7 @@ export const db = new PrismaClient();
 
 You should do this instead:
 
-```ts
-//lib/db.ts
+```ts filename="lib/db.ts"
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 // You can use cache from react to cache the client during the same request
 // this is not mandatory and only has an effect for server components
@@ -184,7 +180,7 @@ You can then use the `getDb` function to get a new client for each request. This
 
 You can also use Prisma with PostgreSQL. The setup is similar to the D1 setup above, but you need to use the `PrismaPostgres` adapter instead of the `PrismaD1` adapter.
 
-```ts
+```ts filename="lib/db.ts"
 import { cache } from "react";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -203,8 +199,7 @@ You can then use the `getDb` function to get a new client for each request. This
 
 You can also use Prisma with Hyperdrive. The setup is similar to the PostgreSQL setup above.
 
-```ts
-//lib/db.ts
+```ts filename="lib/db.ts"
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 // You can use cache from react to cache the client during the same request
 // this is not mandatory and only has an effect for server components

@@ -16,7 +16,7 @@ Path to config file
 - **CLI:** `-u, --update [type]`
 - **Config:** [update](/config/update)
 
-Update snapshot (accepts boolean, "new" or "all")
+Update snapshot (accepts boolean, "new", "all" or "none")
 
 ### watch
 
@@ -102,7 +102,7 @@ Hide logs for skipped tests
 - **CLI:** `--reporter <name>`
 - **Config:** [reporters](/config/reporters)
 
-Specify reporters (default, blob, verbose, dot, json, tap, tap-flat, junit, tree, hanging-process, github-actions)
+Specify reporters (default, agent, minimal, blob, verbose, dot, json, tap, tap-flat, junit, tree, hanging-process, github-actions)
 
 ### outputFile
 
@@ -165,7 +165,7 @@ Directory to write coverage report to (default: ./coverage)
 - **CLI:** `--coverage.reporter <name>`
 - **Config:** [coverage.reporter](/config/coverage#coverage-reporter)
 
-Coverage reporters to use. Visit [`coverage.reporter`](/config/#coverage-reporter) for more information (default: `["text", "html", "clover", "json"]`)
+Coverage reporters to use. Visit [`coverage.reporter`](/config/coverage#coverage-reporter) for more information (default: `["text", "html", "clover", "json"]`)
 
 ### coverage.reportOnFailure
 
@@ -197,10 +197,10 @@ Shortcut to set all coverage thresholds to 100 (default: `false`)
 
 ### coverage.thresholds.perFile
 
-- **CLI:** `--coverage.thresholds.perFile`
+- **CLI:** `--coverage.thresholds.perFile <boolean>`
 - **Config:** [coverage.thresholds.perFile](/config/coverage#coverage-thresholds-perfile)
 
-Check thresholds per file. See `--coverage.thresholds.lines`, `--coverage.thresholds.functions`, `--coverage.thresholds.branches` and `--coverage.thresholds.statements` for the actual thresholds (default: `false`)
+Check thresholds per file. See `--coverage.thresholds.lines`, `--coverage.thresholds.functions`, `--coverage.thresholds.branches` and `--coverage.thresholds.statements` for the actual thresholds (default: `false`). Object form is available in config files only.
 
 ### coverage.thresholds.autoUpdate
 
@@ -278,12 +278,40 @@ High and low watermarks for branches in the format of `<high>,<low>`
 
 High and low watermarks for functions in the format of `<high>,<low>`
 
+### coverage.changed
+
+- **CLI:** `--coverage.changed <commit/branch>`
+- **Config:** [coverage.changed](/config/coverage#coverage-changed)
+
+Collect coverage only for files changed since a specified commit or branch (e.g., `origin/main` or `HEAD~1`). Inherits value from `--changed` by default.
+
+### coverage.excludeAfterRemap
+
+- **CLI:** `--coverage.excludeAfterRemap`
+- **Config:** [coverage.excludeAfterRemap](/config/coverage#coverage-excludeafterremap)
+
+Apply exclusions again after coverage has been remapped to original sources. (default: false)
+
+### coverage.htmlDir
+
+- **CLI:** `--coverage.htmlDir <path>`
+- **Config:** [coverage.htmlDir](/config/coverage#coverage-htmldir)
+
+Directory of HTML coverage output to be served in UI mode and HTML reporter.
+
+### coverage.autoAttachSubprocess
+
+- **CLI:** `--coverage.autoAttachSubprocess`
+- **Config:** [coverage.autoAttachSubprocess](/config/coverage#coverage-autoattachsubprocess)
+
+Track coverage of the `node:child_process` and `node:worker_threads` spawned during test run. Supported only by `v8` provider. (default: false)
+
 ### mode
 
 - **CLI:** `--mode <name>`
 - **Config:** [mode](/config/mode)
 
-Override Vite mode (default: `test` or `benchmark`)
+Override Vite mode (default: `test`)
 
 ### isolate
 
@@ -408,6 +436,34 @@ Control if Vitest catches uncaught exceptions so they can be reported (default: 
 
 Enable trace view mode. Supported: "on", "off", "on-first-retry", "on-all-retries", "retain-on-failure".
 
+### browser.traceView.enabled
+
+- **CLI:** `--browser.traceView.enabled`
+- **Config:** [browser.traceView.enabled](/config/browser/traceview#traceview-enabled)
+
+Enable Vitest trace-view collection for browser tests (default: `false`)
+
+### browser.traceView.recordCanvas
+
+- **CLI:** `--browser.traceView.recordCanvas`
+- **Config:** [browser.traceView.recordCanvas](/config/browser/traceview#traceview-recordcanvas)
+
+Capture canvas pixels in trace-view snapshots (default: `false`)
+
+### browser.traceView.inlineImages
+
+- **CLI:** `--browser.traceView.inlineImages`
+- **Config:** [browser.traceView.inlineImages](/config/browser/traceview#traceview-inlineimages)
+
+Inline loaded image pixels in trace-view snapshots (default: `false`)
+
+### browser.locators.exact
+
+- **CLI:** `--browser.locators.exact`
+- **Config:** [browser.locators.exact](/config/browser/locators#locators-exact)
+
+Should locators match the text exactly by default (default: `true`)
+
 ### pool
 
 - **CLI:** `--pool <pool>`
@@ -464,6 +520,13 @@ Pass when no tests are found
 
 Show the size of heap for each test when running in node
 
+### detectAsyncLeaks
+
+- **CLI:** `--detectAsyncLeaks`
+- **Config:** [detectAsyncLeaks](/config/detectasyncleaks)
+
+Detect asynchronous resources leaking from the test file (default: `false`)
+
 ### allowOnly
 
 - **CLI:** `--allowOnly`
@@ -511,7 +574,7 @@ Set the randomization seed. This option will have no effect if `--sequence.shuff
 - **CLI:** `--sequence.hooks <order>`
 - **Config:** [sequence.hooks](/config/sequence#sequence-hooks)
 
-Changes the order in which hooks are executed. Accepted values are: "stack", "list" and "parallel". Visit [`sequence.hooks`](/config/#sequence-hooks) for more information (default: `"parallel"`)
+Changes the order in which hooks are executed. Accepted values are: "stack", "list" and "parallel". Visit [`sequence.hooks`](/config/sequence#sequence-hooks) for more information (default: `"parallel"`)
 
 ### sequence.setupFiles
 
@@ -573,6 +636,13 @@ Delay in milliseconds between retry attempts (default: `0`)
 - **Config:** [retry.condition](/config/retry#retry-condition)
 
 Regex pattern to match error messages that should trigger a retry. Only errors matching this pattern will cause a retry (default: retry on all errors)
+
+### repeats
+
+- **CLI:** `--repeats <number>`
+- **Config:** [repeats](/config/repeats)
+
+Repeat every test a specific number of times regardless of the result (default: `0`)
 
 ### diff.aAnnotation
 
@@ -728,6 +798,13 @@ Allow JavaScript files to be typechecked. By default takes the value from tsconf
 
 Ignore type errors from source files
 
+### typecheck.build
+
+- **CLI:** `--typecheck.build`
+- **Config:** [typecheck.build](/config/typecheck#typecheck-build)
+
+Use TypeScript build mode
+
 ### typecheck.tsconfig
 
 - **CLI:** `--typecheck.tsconfig <path>`
@@ -767,7 +844,7 @@ Default timeout of a teardown function in milliseconds (default: `10000`)
 - **CLI:** `--maxConcurrency <number>`
 - **Config:** [maxConcurrency](/config/maxconcurrency)
 
-Maximum number of concurrent tests in a suite (default: `5`)
+Maximum number of concurrent tests and suites during test file execution (default: `5`)
 
 ### expect.requireAssertions
 
@@ -809,7 +886,7 @@ Collect test and suite locations in the `location` property
 - **CLI:** `--attachmentsDir <dir>`
 - **Config:** [attachmentsDir](/config/attachmentsdir)
 
-The directory where attachments from `context.annotate` are stored in (default: `.vitest-attachments`)
+The directory where attachments from `context.annotate` are stored in (default: `.vitest/attachments`)
 
 ### run
 
@@ -839,7 +916,7 @@ Use `bundle` to bundle the config with esbuild or `runner` (experimental) to pro
 
 - **CLI:** `--standalone`
 
-Start Vitest without running tests. Tests will be running only on change. This option is ignored when CLI file filters are passed. (default: `false`)
+Start Vitest without running tests. Tests will be running only on change. If browser mode is enabled, the UI will be opened automatically. This option is ignored when CLI file filters are passed. (default: `false`)
 
 ### listTags
 
@@ -921,3 +998,17 @@ Control whether Vitest uses Vite's module runner to run the code or fallback to 
 - **Config:** [experimental.nodeLoader](/config/experimental#experimental-nodeloader)
 
 Controls whether Vitest will use Node.js Loader API to process in-source or mocked files. This has no effect if `viteModuleRunner` is enabled. Disabling this can increase performance. (default: `true`)
+
+### experimental.vcsProvider
+
+- **CLI:** `--experimental.vcsProvider <path>`
+- **Config:** [experimental.vcsProvider](/config/experimental#experimental-vcsprovider)
+
+Custom provider for detecting changed files. (default: `git`)
+
+### experimental.preParse
+
+- **CLI:** `--experimental.preParse`
+- **Config:** [experimental.preParse](/config/experimental#experimental-preparse)
+
+Parse test specifications before running them. This will apply `.only` flag and test name pattern across all files without running them. (default: `false`)

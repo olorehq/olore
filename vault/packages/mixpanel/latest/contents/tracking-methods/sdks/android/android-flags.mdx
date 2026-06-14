@@ -78,6 +78,86 @@ MixpanelOptions options = new MixpanelOptions.Builder()
 MixpanelAPI mixpanel = MixpanelAPI.getInstance(getApplicationContext(), "YOUR_PROJECT_TOKEN", false, options);
 ```
 
+## Flag Persistence
+
+Minimum supported SDK version: [`v8.7.0`](https://github.com/mixpanel/mixpanel-android/releases/tag/v8.7.0)
+
+By default (`networkOnly`), the SDK fetches fresh flag assignments and waits for the network response before variant calls complete. You can enable persistence to persist assignments to SharedPreferences so they are available immediately on subsequent launches.
+
+Configure a `variantLookupPolicy` on the `FeatureFlagOptions` builder:
+
+**`networkFirst`** — The SDK waits for the network on every launch. If the network call fails, the persisted value is returned as a fallback. Async getter calls block until the fetch completes (or the fallback is resolved).
+
+```java Java
+FeatureFlagOptions featureFlagOptions = new FeatureFlagOptions.Builder()
+    .enabled(true)
+    .variantLookupPolicy(VariantLookupPolicy.networkFirst())
+    .build();
+
+// getVariantValue waits for the network. Falls back to persisted value if network fails.
+mixpanel.flags.getVariantValue("my-feature-flag", "control", new FlagCompletionCallback<Object>() {
+    @Override
+    public void onComplete(Object value) {
+        // value is from the network response, or from persistence if the network was unavailable
+    }
+});
+```
+
+**`persistenceUntilNetworkSuccess`** — Persisted variants are returned immediately on launch. Each getter call while serving persisted data triggers a background network fetch (deduplicated — only one fetch runs at a time). If the fetch fails, persisted data continues to be served and the next getter call retries the fetch. Once a fetch succeeds, the in-memory state updates and subsequent calls no longer trigger background fetches.
+
+```java Java
+FeatureFlagOptions featureFlagOptions = new FeatureFlagOptions.Builder()
+    .enabled(true)
+    .variantLookupPolicy(VariantLookupPolicy.persistenceUntilNetworkSuccess())
+    .build();
+
+// getVariantValue returns immediately from persistence. Each call triggers a background fetch
+// until a network response succeeds and replaces the persisted state.
+mixpanel.flags.getVariantValue("my-feature-flag", "control", new FlagCompletionCallback<Object>() {
+    @Override
+    public void onComplete(Object value) {
+        // value is from persistence; background fetch retries on each call until network succeeds
+    }
+});
+```
+
+To customize the TTL (default: 24 hours), pass the value in milliseconds:
+
+```java Java
+long ttlMs = 12 * 60 * 60 * 1000L; // 12 hours
+FeatureFlagOptions featureFlagOptions = new FeatureFlagOptions.Builder()
+    .enabled(true)
+    .variantLookupPolicy(VariantLookupPolicy.networkFirst(ttlMs))
+    .build();
+```
+
+### Variant source
+
+Every `MixpanelFlagVariant` carries a `source` field indicating where the value came from: `Source.Network`, `Source.Persistence`, or `Source.Fallback`. Use `getVariant()` to receive the full variant object.
+
+```java Java
+MixpanelFlagVariant fallback = new MixpanelFlagVariant("control", "control");
+mixpanel.flags.getVariant("my-feature-flag", fallback, new FlagCompletionCallback<MixpanelFlagVariant>() {
+    @Override
+    public void onComplete(MixpanelFlagVariant variant) {
+        Object value = variant.value;
+        MixpanelFlagVariant.Source source = variant.source; // Network, Persistence, or Fallback
+    }
+});
+```
+
+### `$experiment_started` properties
+
+When a variant is served, the `$experiment_started` exposure event includes:
+
+- `$variant_source` — `"network"` or `"persistence"`
+- `$persisted_at_in_ms` — epoch ms when the variant set was persisted *(persistence only)*
+- `$ttl_in_ms` — the configured TTL in ms *(persistence only)*
+
+<Callout type="info">
+Persisted variants are tied to the current `distinct_id`. Calling `identify()` with a new ID or calling `reset()` clears persisted data and triggers a fresh fetch.
+</Callout>
+
 ## Flag Reload
 
 Following initialization, you can reload feature flag assignments in a couple of ways:
@@ -96,6 +176,32 @@ mixpanel.identify(updatedDistinctId);
 // Manually reload flags if desired
 mixpanel.flags.loadFlags();
 ```
+
+3) To update the feature flags context after initialization and trigger a reload with the new values, use `setContext`. This completely replaces the previously set custom context.
+
+```java
+Map<String, Object> newContext = new HashMap<>();
+newContext.put("company_id", "Y");
+
+Map<String, Object> customProperties = new HashMap<>();
+customProperties.put("platform", "android");
+newContext.put("custom_properties", customProperties);
+
+mixpanel.flags.setContext(newContext, new FlagCompletionCallback<Boolean>() {
+    @Override
+    public void onComplete(Boolean success) {
+        // Flags have been re-fetched with the new context
+    }
+});
+```
+
+4) Calling `reset()` clears all feature flag assignments from memory and triggers a new fetch for the updated `distinct_id`. Requires SDK version [`v8.7.0`](https://github.com/mixpanel/mixpanel-android/releases/tag/v8.7.0) or later.
+
+```java
+mixpanel.reset();
+// Flags are cleared immediately. A new fetch begins for the anonymous distinct_id.
+```
+
 ## Deferred Flag Loading
 
 By default, feature flags are automatically fetched when the app first enters the foreground (`prefetchFlags` defaults to `true`). If your workflow requires calling `identify()` before the first flag fetch — for example, to ensure flags are evaluated against the correct user — you can defer automatic loading by setting `prefetchFlags(false)`:

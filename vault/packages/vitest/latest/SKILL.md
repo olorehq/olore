@@ -1,9 +1,9 @@
 ---
 name: olore-vitest-latest
-description: Local vitest documentation reference (latest). Vitest testing framework documentation. Use for unit testing, mocking, coverage, snapshots, and Vite-native test configuration.
+description: Local Vitest documentation reference (latest). Vitest testing framework documentation. Use for unit testing, mocking, coverage, snapshots, and Vite-native test configuration.
 ---
 
-# Vitest Documentation
+# vitest Documentation
 
 Vitest testing framework documentation. Use for unit testing, mocking, coverage, snapshots, and Vite-native test configuration.
 
@@ -12,35 +12,34 @@ Vitest testing framework documentation. Use for unit testing, mocking, coverage,
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/guide/index.md` |
-| Writing tests | `contents/guide/features.md` |
-| Test API | `contents/api/test.md` |
-| Expect/assertions | `contents/api/expect.md` |
+| Writing tests | `contents/guide/learn/writing-tests.md` |
+| CLI usage | `contents/guide/cli.md` |
+| Configuration | `contents/config/index.md` |
 | Mocking | `contents/guide/mocking.md` |
 | Coverage | `contents/guide/coverage.md` |
-| Configuration | `contents/config/index.md` |
+| Snapshots | `contents/guide/snapshot.md` |
+| API reference (expect) | `contents/api/expect.md` |
 | Browser mode | `contents/guide/browser/index.md` |
+| Troubleshooting | `contents/guide/common-errors.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Writing unit tests with Vitest
-- Test assertions and expectations
-- Mocking functions, modules, dates, timers, requests
-- Code coverage configuration
+- Writing and running unit or integration tests with Vitest
+- Mocking modules, functions, classes, timers, or HTTP requests
+- Code coverage configuration and reporting
 - Snapshot testing
-- Test filtering and execution
-- Browser mode testing
-- IDE integration and debugging
-- Performance optimization
-- Migration from Jest or other test frameworks
+- Configuration options (vitest.config.ts / vite.config.ts)
+- Browser mode and component testing
+- Type-level testing with expectTypeOf
+- CLI flags, watch mode, test filtering
+- Migrating from Jest or upgrading Vitest versions
+- Advanced APIs (custom reporters, runners, programmatic API)
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question:
-   - **API usage**: Check `api/` directory
-   - **How-to guides**: Check `guide/` directory
-   - **Configuration**: Check `config/` directory
+2. Identify relevant section based on user's question
 3. Read specific files for details
 
 **TOC.md contains all files organized by directory - always check it first.**

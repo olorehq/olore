@@ -60,6 +60,8 @@ Add the following snippet to your `web/index.html` inside the `<head></head>` ta
 
 ### Library Configuration
 
+<Callout type="warning">For projects with EU or India data residency, you must configure the SDK to use the correct regional endpoint. Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/flutter#privacy-friendly-tracking).</Callout>
+
 The Mixpanel instance can be customized with different configurations. The [`Mixpanel.init()`](https://mixpanel.github.io/mixpanel-flutter/mixpanel_flutter/Mixpanel/init.html) method accepts arguments that sets some configurations on your instance upon initialization.
 
 After initialization, you can further customize the instance using the configuration options [here](https://mixpanel.github.io/mixpanel-flutter/mixpanel_flutter/Mixpanel-class.html).
@@ -533,7 +535,19 @@ mixpanel.optInTracking();
 ```
 ### EU Data Residency
 
-Route data to Mixpanel's EU servers by setting the `serverURL` property after initializing the client.
+Route data to Mixpanel's EU servers by passing the `serverURL` parameter when initializing the client. This ensures every request is routed to the correct region from the very first event.
+
+**Example Usage**
+```dart
+// route data to Mixpanel's EU domain at initialization
+mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  serverURL: "https://api-eu.mixpanel.com",
+);
+```
+
+Alternatively, you can set the `serverURL` property after initializing the client.
 
 **Example Usage**
 ```dart
@@ -543,7 +557,19 @@ mixpanel.setServerURL("https://api-eu.mixpanel.com");
 
 ### India Data Residency
 
-Route data to Mixpanel's India servers by setting the `serverURL` property after initializing the client.
+Route data to Mixpanel's India servers by passing the `serverURL` parameter when initializing the client. This ensures every request is routed to the correct region from the very first event.
+
+**Example Usage**
+```dart
+// route data to Mixpanel's India domain at initialization
+mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  serverURL: "https://api-in.mixpanel.com",
+);
+```
+
+Alternatively, you can set the `serverURL` property after initializing the client.
 
 **Example Usage**
 ```dart
@@ -579,7 +605,19 @@ There are two steps: setting up a proxy server and pointing the SDK at your serv
 The simplest way is to use our [sample nginx config](https://github.com/mixpanel/tracking-proxy). This config redirects any calls made to your proxy server to Mixpanel.
 
 **Step 2: Point Flutter SDK at your server**
-Add the following line, replacing `YOUR_PROXY_DOMAIN` with your proxy server's domain.
+Pass the `serverURL` parameter when initializing the client, replacing `YOUR_PROXY_DOMAIN` with your proxy server's domain. This ensures every request is routed to your proxy from the very first event.
+
+**Example Usage**
+```dart
+// route data to your proxy server at initialization
+mixpanel = await Mixpanel.init(
+  "YOUR_PROJECT_TOKEN",
+  trackAutomaticEvents: false,
+  serverURL: "https://<YOUR_PROXY_DOMAIN>",
+);
+```
+
+Alternatively, you can set the `serverURL` property after initializing the client.
 
 **Example Usage**
 ```dart

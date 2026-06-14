@@ -1,6 +1,25 @@
 # JWK Auth Middleware
 
-The JWK Auth Middleware authenticates requests by verifying tokens using JWK (JSON Web Key). It checks for an `Authorization` header and other configured sources, such as cookies, if specified. Specifically, it validates tokens using the provided `keys`, retrieves keys from `jwks_uri` if specified, and supports token extraction from cookies if the `cookie` option is set.
+The JWK Auth Middleware authenticates requests by verifying tokens using JWK (JSON Web Key). It checks for an `Authorization` header and other configured sources, such as cookies, if specified. It validates tokens using the provided `keys`, retrieves keys from `jwks_uri` if specified, and supports token extraction from cookies if the `cookie` option is set.
+
+## What this middleware validates
+
+For each token, `jwk()`:
+
+- Parses and validates the JWT header format.
+- Requires a `kid` header and finds a matching key by `kid`.
+- Rejects symmetric algorithms (`HS256`, `HS384`, `HS512`).
+- Requires the header `alg` to be included in the configured `alg` allowlist.
+- If a matched JWK has an `alg` field, requires it to match the JWT header `alg`.
+- Verifies the token signature with the matched key.
+- By default, validates time-based claims: `nbf`, `exp`, and `iat`.
+
+Optional claim validation can be configured with the `verification` option:
+
+- `iss`: validates issuer when provided.
+- `aud`: validates audience when provided.
+
+If you need additional token checks beyond the above (for example, custom application-level authorization rules), add them in your own middleware after `jwk()`.
 
 :::info
 The Authorization header sent from the client must have a specified scheme.
@@ -25,6 +44,7 @@ app.use(
   '/auth/*',
   jwk({
     jwks_uri: `https://${backendServer}/.well-known/jwks.json`,
+    alg: ['RS256'],
   })
 )
 
@@ -42,6 +62,7 @@ app.use(
   '/auth/*',
   jwk({
     jwks_uri: `https://${backendServer}/.well-known/jwks.json`,
+    alg: ['RS256'],
   })
 )
 
@@ -61,6 +82,7 @@ app.use(
   jwk({
     jwks_uri: (c) =>
       `https://${c.env.authServer}/.well-known/jwks.json`,
+    alg: ['RS256'],
     allow_anon: true,
   })
 )
@@ -88,7 +110,38 @@ const id_payload = await verifyWithJwks(
 )
 ```
 
+## Configuring JWKS fetch request options
+
+To configure how JWKS is retrieved from `jwks_uri`, pass fetch request options as the second argument of `jwk()`.
+
+This argument is `RequestInit` and is used only for the JWKS fetch request.
+
+```ts
+const app = new Hono()
+
+app.use(
+  '/auth/*',
+  jwk(
+    {
+      jwks_uri: `https://${backendServer}/.well-known/jwks.json`,
+      alg: ['RS256'],
+    },
+    {
+      headers: {
+        Authorization: 'Bearer TOKEN',
+      },
+    }
+  )
+)
+```
+
 ## Options
+
+### <Badge type="danger" text="required" /> alg: `AsymmetricAlgorithm[]`
+
+An array of allowed asymmetric algorithms used for token verification.
+
+Available types are `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
 
 ### <Badge type="info" text="optional" /> keys: `HonoJsonWebKey[] | (c: Context) => Promise<HonoJsonWebKey[]>`
 
@@ -109,3 +162,11 @@ If this value is set, then the value is retrieved from the cookie header using t
 ### <Badge type="info" text="optional" /> headerName: `string`
 
 The name of the header to look for the JWT token. The default is `Authorization`.
+
+### <Badge type="info" text="optional" /> verification: `VerifyOptions`
+
+Configure claim validation behavior in addition to signature verification:
+
+- `iss`: expected issuer.
+- `aud`: expected audience.
+- `exp`, `nbf`, `iat`: enabled by default, can be disabled if needed.

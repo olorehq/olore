@@ -1,0 +1,97 @@
+---
+title: log10
+description: 'This page explains how to use the log10 function in APL.'
+---
+
+Use the `log10` function in APL to compute the common (base-10) logarithm of a positive numeric value. The function returns `null` for zero or negative inputs.
+
+`log10` is useful for order-of-magnitude analysis. Because each unit increase in `log10(x)` represents a tenfold increase in `x`, you can use it to compare values that span multiple orders of magnitude, build decibel-scale metrics, or bucket data by powers of ten. It's also the basis for recovering values with `exp10`.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `log10()` works identically: it returns the base-10 logarithm.
+
+<CodeGroup>
+```sql Splunk example
+| eval log10_duration = log10(req_duration_ms)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend log10_duration = log10(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `LOG10()` is a standard function in SQL Server and PostgreSQL with the same behavior as APL's `log10`.
+
+<CodeGroup>
+```sql SQL example
+SELECT LOG10(req_duration_ms) AS log10_duration FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend log10_duration = log10(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+log10(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A positive real number (x > 0). |
+
+### Returns
+
+- The base-10 logarithm of `x`.
+- `null` if `x` is negative, zero, or cannot be converted to a real value.
+
+## Example
+
+Use `log10` to express request durations on a base-10 log scale where each integer step represents an order of magnitude.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| extend log10_duration = log10(req_duration_ms)
+| project _time, id, req_duration_ms, log10_duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20extend%20log10_duration%20%3D%20log10%28req_duration_ms%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20log10_duration%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | log10_duration |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1.0 | 0.0000 |
+| 2024-11-14 10:01:00 | user-2 | 100.0 | 2.0000 |
+| 2024-11-14 10:02:00 | user-3 | 10000.0 | 4.0000 |
+
+## List of related functions
+
+- [exp10](/apl/scalar-functions/mathematical-functions/exp10): Returns 10^x. Use it as the inverse of `log10` to recover original values.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it when you want the mathematically natural base rather than base-10.
+- [log2](/apl/scalar-functions/mathematical-functions/log2): Returns the base-2 logarithm. Use it for binary-scale analysis.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use it to compute powers of 10 directly as an alternative to `exp10`.
+- [round](/apl/scalar-functions/mathematical-functions/round): Rounds a value. Use it after `log10` to bucket values by integer order of magnitude.

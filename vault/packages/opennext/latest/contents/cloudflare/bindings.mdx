@@ -43,7 +43,7 @@ Add bindings to your Worker by adding them to your [wrangler configuration file]
 
 To ensure that the `env` object from `getCloudflareContext().env` above has accurate TypeScript types, run the following Wrangler command to [generate types that match your Worker's configuration](https://developers.cloudflare.com/workers/languages/typescript/#generate-types-that-match-your-workers-configuration-experimental):
 
-```
+```sh
 npx wrangler types --env-interface CloudflareEnv
 ```
 
@@ -72,7 +72,7 @@ as documented in the [remote bindings documentation](https://developers.cloudfla
   The remote bindings APIs have been stabilized in wrangler `4.36.0`, so if you're using an earlier version of wrangler in order to use remote
   bindings you need to enabled it in your `next.config.ts` file:
 
-```diff
+```diff filename="next.config.ts"
 - initOpenNextCloudflareForDev();
 + initOpenNextCloudflareForDev({
 +  experimental: { remoteBindings: true }

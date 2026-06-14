@@ -64,6 +64,7 @@ recursive_example = "rr --example recursions"
 space_example = ["run", "--release", "--", "\"command list\""]
 
 [build]
+warnings = "warn"             # adjust the effective lint level for warnings
 jobs = 1                      # number of parallel jobs, defaults to # of CPUs
 rustc = "rustc"               # the rust compiler tool
 rustc-wrapper = "…"           # run this wrapper instead of `rustc`
@@ -149,6 +150,7 @@ rpath = false            # Sets the rpath linking option.
 # Same keys for a normal profile (minus `panic`, `lto`, and `rpath`).
 
 [resolver]
+lockfile-path = "…"  # Overrides the path used for
 incompatible-rust-versions = "allow"  # Specifies how resolver reacts to these
 
 [registries.<name>]  # registries other than crates.io
@@ -457,6 +459,23 @@ recursive_example = "rr --example recursions"
 
 The `[build]` table controls build-time operations and compiler settings.
 
+#### `build.warnings`
+* Type: string
+* Default: `"warn"`
+* Environment: `CARGO_BUILD_WARNINGS`
+
+Adjust the effective level of lint warnings for local packages.
+Allowed levels are:
+* `"warn"`: continue to emit the lints as warnings (default).
+* `"allow"`: hide the lints.
+* `"deny"`: emit an error for a crate that has lint warnings.
+  Use `--keep-going` to see the lint warnings for all dependent crates.
+
+Only warnings that are lints (i.e. level is adjustable) are affected,
+e.g. leaving as-is non-lint warnings or warnings from dependencies visible through `--verbose --verbose`.
+
+> **MSRV:** Respected as of 1.97.
+
 #### `build.jobs`
 * Type: integer or string
 * Default: number of logical CPUs
@@ -605,7 +624,8 @@ order, with the first one being used:
 
 1. `CARGO_ENCODED_RUSTDOCFLAGS` environment variable.
 2. `RUSTDOCFLAGS` environment variable.
-3. All matching `target.<triple>.rustdocflags` config entries joined together.
+3. All matching `target.<triple>.rustdocflags` and `target.<cfg>.rustdocflags`
+  config entries joined together.
 4. `build.rustdocflags` config value.
 
 Additional flags may also be passed with the [`cargo rustdoc`] command.
@@ -1100,6 +1120,18 @@ See [strip](profiles.md#strip).
 
 The `[resolver]` table overrides [dependency resolution behavior](resolver.md) for local development (e.g. excludes `cargo install`).
 
+#### `resolver.lockfile-path`
+* Type: string (path)
+* Default: `<workspace_root>/Cargo.lock`
+* Environment: `CARGO_RESOLVER_LOCKFILE_PATH`
+
+Specifies the path to the lockfile to use when resolving dependencies.
+This option is useful when working with read-only source directories.
+
+The path must end with `Cargo.lock`.
+
+> **MSRV:** Requires 1.97+
+
 #### `resolver.incompatible-rust-versions`
 * Type: string
 * Default: See [`resolver`](resolver.md#resolver-versions) docs
@@ -1345,9 +1377,9 @@ Specifies the linker which is passed to `rustc` (via [`-C linker`]) when the
 
 #### `target.<cfg>.linker`
 This is similar to the [target linker](#targettriplelinker), but using
-a [`cfg()` expression]. If both a [`<triple>`] and `<cfg>` runner match,
+a [`cfg()` expression]. If both a [`<triple>`] and `<cfg>` linker match,
 the `<triple>` will take precedence. It is an error if more than one
-`<cfg>` runner matches the current target.
+`<cfg>` linker matches the current target.
 
 #### `target.<triple>.runner`
 * Type: string or array of strings ([program path with args])
@@ -1393,6 +1425,12 @@ The value may be an array of strings or a space-separated string.
 
 See [`build.rustdocflags`](#buildrustdocflags) for more details on the different
 ways to specific extra flags.
+
+#### `target.<cfg>.rustdocflags`
+
+This is similar to the [target rustdocflags](#targettriplerustdocflags), but
+using a [`cfg()` expression]. If several `<cfg>` and [`<triple>`] entries
+match the current target, the flags are joined together.
 
 #### `target.<triple>.<links>`
 

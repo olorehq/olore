@@ -1,0 +1,116 @@
+---
+title: Query results
+description: 'Learn how to interpret the results of your queries.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'data explorer', 'apl', 'count', 'operator']
+---
+
+The results view adapts to the query. This means that it adds and removes components as necessary to give you the best experience. The toolbar is always visible and gives details on the currently running or last-run query.
+
+<Info>
+The features explained on this page are available for the results of both APL and MPL queries.
+</Info>
+
+{/*
+## Interpret query results
+
+TODO
+*/}
+
+## Configure chart options
+
+Click <Icon icon="sliders-simple" iconType="light"/> to access the following options for each chart:
+
+- In **Null values**, specify how to treat missing or undefined values.
+- In **Variant**, specify the chart type. Select from area, bar, or line charts.
+- In **Y-Axis**, specify the scale of the vertical axis. Select from linear or log scales.
+- In **Annotations**, specify the types of annotations to display in the chart.
+
+For more information on each option, see [Configure dashboard elements](/dashboard-elements/configure).
+
+## Merge charts
+
+When you run a query that produces several visualizations, Axiom displays the charts separately. For example:
+
+```kusto
+['sample-http-logs']
+| summarize percentiles_array(req_duration_ms, 50, 90, 95) by status, bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20percentiles_array(req_duration_ms%2C%2050%2C%2090%2C%2095)%20by%20status%2C%20bin_auto(_time)%22%7D)
+
+To merge the separately displayed charts into a single chart, click <Icon icon="sliders-simple" iconType="light"/>, and then select **Merge charts**.
+
+## APL query results
+
+When you run an APL query without specifying a visualization, Axiom displays a table with the raw query results.
+
+When you run an APL query with visualizations:
+- Axiom displays all the visualizations that you add to the query. Hold the pointer over charts to get extra detail on each result set.
+- Below the charts, Axiom displays a table with the totals from each of the aggregate functions for the visualizations you specify.
+- If the query includes group-by clauses, there is a row for each group. Hold the pointer over a group row to highlight the group’s data on time series charts. Select the checkboxes on the left to display data only for the selected rows.
+
+This section explains how to work with the results of APL queries in Console.
+
+<Info>
+The features explained in this section are only available for the results of APL queries.
+</Info>
+
+### View event details
+
+To view the details for an event, click the event in the table.
+
+To configure the event details view, select one of the following in the top right corner:
+
+- Click <Icon icon="arrow-up" iconType="regular"/> **Navigate up** or <Icon icon="arrow-down" iconType="regular"/> **Navigate down** to display the details of the next or previous event.
+- Click <img src="/doc-assets/icons/fit-to-results.svg" className="inline-icon" alt="Fit panel to results icon" /> **Fit panel to results** or <img src="/doc-assets/icons/fit-to-viewport.svg" className="inline-icon" alt="Fit panel to viewport height icon" /> **Fit panel to viewport height** to change the height of the event details view.
+
+In the event details view, click <Icon icon="ellipsis-vertical" iconType="solid"/> **More** for additional options:
+
+- **View in context** opens the event in the stream of other events in the Stream tab.
+- **Copy link to event**
+- **Copy JSON**
+- **Show nulls** or **Hide nulls** toggles whether to display fields with null values.
+
+### Select displayed fields
+
+To select the fields to be highlighted or displayed in the table, click <Icon icon="sidebar-flip" iconType="light"/> **Toggle fields panel**, and then click the fields in the list.
+
+Select <Icon icon="brackets-curly" iconType="regular"/> **Single column for event** to highlight the selected fields below the raw data for each event. Alternatively, select <Icon icon="table" iconType="light"/> **Column for each field** to display each selected field in a different column without showing the raw event data. In this view, you can resize the width of columns by dragging the borders.
+
+### Configure table options
+
+To configure the table options, click <Icon icon="sliders-simple" iconType="light"/>, and then select one of the following:
+
+- Select **Fit columns** to automatically adjust the width of columns to fit the viewport.
+- Select **Wrap lines** to keep the whole table within the viewport and avoid horizontal scrolling.
+- Select **Show timestamp** to display the time field.
+- Select **Show event** to display the raw event data in a single column and highlight the selected fields below the raw data for each event. Alternatively, clear **Show event** to display each selected field in a different column without showing the raw event data. In this view, you can resize the width of columns by dragging the borders.
+- Select **Hide nulls** to hide empty data points.
+
+### Event timeline
+
+Axiom can also display an event timeline about the distribution of events across the selected time range. In the event timeline, each bar represents the number of events matched within that specific time interval. Holding the pointer over a bar reveals a blue line marking the total events and shows when those events occurred in that particular time range. To display the event timeline, click <Icon icon="sliders-simple" iconType="light"/>, and then click **Show chart**.
+
+### Highlight time range
+
+In the event timeline, line charts, and heat maps, you can drag the pointer over the chart to highlight a specific time range, and then choose one of the following:
+- **Zoom** enlarges the section of the chart you highlighted.
+- **Show events** displays events in the selected time range in the event details view.
+
+The time range of your query automatically updates to match what you selected.
+
+### Search within query results
+
+To quickly search for an expression and highlight its occurrences within the query results:
+
+1. In the query results view, press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>F</kbd>.
+1. Type the expression that you want to search for. Axiom automatically highlights the matches and jumps to the first match.
+1. Press <kbd>Enter</kbd> repeatedly to go forward in the list of matches, and press <kbd>Enter</kbd>&nbsp;<kbd>Shift</kbd> to go backward.
+
+Axiom’s search overrides the browser’s native search. Axiom’s search is more powerful because it highlights matching entries in all results returned by the query (while still respecting automatic limits). In contrast, the browser’s search can only highlight matching entries in the events rendered on your screen.
+
+### Compare time periods
+
+On time series charts, holding the pointer over a specific time shows the same marker on similar charts for easy comparison.
+
+When you run a query with a time series visualization, you can use the **Compare period** menu to select a historical time against which to compare the results of your time range. For example, to compare the last hour’s average response time to the same time yesterday, select `1 hr` in the time range menu, and then select `-1 day` from the **Compare period** menu. The dotted line represents results from the base date, and the totals table includes the comparative totals.

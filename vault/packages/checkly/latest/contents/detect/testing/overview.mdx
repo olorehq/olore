@@ -1,10 +1,10 @@
 ---
 title: "Testing"
-description: "Learn how to create, configure, and manage testing in Checkly. "
+description: "Learn how to create, configure, and manage testing in Checkly."
 sidebarTitle: "Overview"
 ---
 
-Checkly unites testing and monitoring into one unified workflow. Testing is a core component of Checkly's Application Reliability Platform. It allows you to:
+Checkly combines testing and monitoring into one workflow. With Checkly, you can:
 
 <Frame>
   <img
@@ -20,14 +20,14 @@ Checkly unites testing and monitoring into one unified workflow. Testing is a co
   />
 </Frame>
 
-- Run automated tests in the browser that simulate user interactions
+- Run automated browser tests that simulate user interactions
 - Set up API tests to verify endpoints and services
-- Schedule and automate test execution
-- Run tests from different locations around the world
+- Plan recurring test execution on a schedule
+- Run tests from [Checkly's global locations](/concepts/locations)
 
 ## Test Types
 
-Since Checkly combines testing and monitoring, you only need to create a single test for both purposes. You can find more information about the different checks Checkly supports below:
+Create a single test and use it for both pre-production validation and production monitoring:
 
 <AccordionGroup>
   <Accordion title="API Tests">
@@ -51,16 +51,41 @@ Since Checkly combines testing and monitoring, you only need to create a single 
 
     Create a [Playwright test](/detect/synthetic-monitoring/playwright-checks/overview)
   </Accordion>
+  <Accordion title="TCP Monitors">
+    Verify that non-HTTP services are reachable by checking connectivity to a host and port.
+
+    Create a [TCP monitor](/detect/uptime-monitoring/tcp-monitors/overview)
+  </Accordion>
+  <Accordion title="DNS Monitors">
+    Check that your DNS records resolve as expected and catch misconfigurations or propagation issues.
+
+    Create a [DNS monitor](/detect/uptime-monitoring/dns-monitors/overview)
+  </Accordion>
 </AccordionGroup>
 
-<Tip>
-  Use the Playwright Reporter to analyze and store local Playwright test results in Checkly. Learn more in the [Playwright Reporter documentation](/detect/testing/playwright-reporter).
-</Tip>
+## Run Playwright tests on the cloud
 
-## Benefits of Testing with Checkly
+Use `npx checkly pw-test` to run your existing Playwright tests on Checkly's global infrastructure. Tests run from real cloud locations with full observability — traces, videos, screenshots, and logs.
 
-- **Unified Testing and Monitoring**: Eliminate the traditional separation between pre-production testing and production monitoring with a single platform that spans the entire SDLC
-- **Continuous Reliability**: Catch issues at any point in your delivery pipeline, not just during traditional testing phases
-- **Code-First Approach**: Write tests and monitors in code, store them in repositories, and leverage version control for audits and automation
-- **Early Risk Detection**: Identify business-critical issues before they impact users or revenue through continuous monitoring throughout the development process
-- **Continuous Deployment Support**: Keep pace with modern rapid deployment cycles where traditional testing alone can't catch all defects
+```bash Terminal
+npx checkly pw-test --location="eu-west-1" -- --grep="@smoke"
+```
+
+Customize the dependency installation step for the cloud environment:
+
+```bash Terminal
+npx checkly pw-test --install-command='npm install --no-scripts'
+```
+
+Learn more in the [`checkly pw-test` CLI reference](/cli/checkly-pw-test).
+
+## Analyze local test results
+
+Use the [Playwright Reporter](/detect/testing/playwright-reporter) to upload local and CI Playwright test results to Checkly. View screenshots, videos, and traces alongside your monitoring data.
+
+## Benefits of testing with Checkly
+
+- **One platform for testing and monitoring** — Use the same tests for pre-production validation and production monitoring
+- **Catch issues early** — Identify problems at any stage of your delivery pipeline
+- **Code-first approach** — Write tests in code, store them in repositories, and use version control
+- **Global coverage** — Run tests from multiple locations to match your user base

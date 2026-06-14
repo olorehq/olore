@@ -69,6 +69,15 @@ Transitions are selected by checking the deepest child states first. If the tran
 
 A state can transition to itself. This is known as a **self-transition**, and is useful for changing context and/or executing actions without changing the finite state. You can also use self-transitions to restart a state.
 
+There are two kinds of self-transitions, and they behave differently when the state has child states:
+
+- **Targetless self-transitions** have no `target` property. Child states are **preserved**.
+- **Self-transitions with a target** explicitly set `target` to the same state (e.g., `target: 'active'`). Child states are **re-resolved** to their initial state, because XState treats any transition with an explicit target as a new state resolution.
+
+### Targetless self-transitions
+
+A targetless self-transition has no `target`. It executes actions and/or updates context without affecting the current state or any active child states.
+
 **Root self-transitions:**
 
 ```ts
@@ -128,6 +137,63 @@ const machine = createMachine({
 <Callout>
 
 You can easily visualize self-transitions in Stately's editor. [Read more about self-transitions in Stately's editor](/docs/editor-states-and-transitions/#self-transitions).
+
+</Callout>
+
+### Self-transitions with a target and child states
+
+When a self-transition has an explicit `target` — even if it points back to the same state — XState will re-resolve the descendant states. This means **child states reset to their initial state**.
+
+If you want to handle an event on a parent state without resetting child states, use a **targetless transition** (omit `target`) instead.
+
+```ts
+import { createMachine, createActor } from 'xstate';
+
+const machine = createMachine({
+  initial: 'process',
+  states: {
+    process: {
+      initial: 'step1',
+      states: {
+        step1: {
+          on: { next: { target: 'step2' } },
+        },
+        step2: {
+          on: { next: { target: 'step3' } },
+        },
+        step3: {},
+      },
+      on: {
+        // [!code highlight:8]
+        // ✅ Targetless: child states are preserved
+        doSomething: {
+          // No target
+          actions: () => console.log('did something'),
+        },
+        // ❌ Targeted: child states reset to 'step1'
+        reset: {
+          target: '.step1',
+        },
+      },
+    },
+  },
+});
+
+const actor = createActor(machine).start();
+
+actor.send({ type: 'next' }); // step1 → step2
+actor.send({ type: 'next' }); // step2 → step3
+
+actor.send({ type: 'doSomething' });
+// State is still 'process.step3' ✅
+
+actor.send({ type: 'reset' });
+// State is now 'process.step1' (child state re-resolved)
+```
+
+<Callout type="warning">
+
+A common mistake is using `target: 'process'` on a parent state transition when you only want to execute actions. This will re-resolve child states to their initial state. To preserve child states, omit `target` entirely.
 
 </Callout>
 
@@ -200,6 +266,14 @@ const machine = createMachine({
 By default, when a state machine transitions from some state to the same state or from a parent state to a descendent (child, grandchild, etc.) of that parent state, it will not re-enter the state; that is, it will not execute the [`exit` and `entry` actions](actions) of the parent state. It will not stop existing invoked actors or start new invoked actors.
 
 This can be changed with the transition `reenter` property: if you want the parent state to be re-entered, you can set `reenter: true`. This will cause the state to re-enter when transitioning to itself or descendent states, executing the `exit` and `entry` actions of the state. It will stop existing invoked actors, and start new invoked actors.
+
+To summarize the three kinds of self-transitions:
+
+| Transition | Child states | Entry/exit actions | Invocations |
+|---|---|---|---|
+| **Targetless** (no `target`) | Preserved | Not re-executed | Kept running |
+| **Targeted** (`target: 'sameState'`) | Re-resolved to initial | Not re-executed | Kept running |
+| **Re-entering** (`target` + `reenter: true`) | Re-resolved to initial | Re-executed | Restarted |
 
 <Callout>
 
@@ -298,17 +372,23 @@ actor2.send({ type: 'event.thatReenters' });
 
 ## Transitions to any state
 
-Sibling descendent states: `{ target: 'sibling.child.grandchild' }`
+Transitions can target any state in the machine using different path formats depending on the relationship between the source and target states:
 
-Parent to descendent states: `{ target: '.child.grandchild' }`
-
-State to any state: `{ target: '#specificState' }`
+- **Sibling descendant states:** `{ target: 'sibling.child.grandchild' }` — target a nested state within a sibling
+- **Parent to descendant states:** `{ target: '.child.grandchild' }` — target a nested state within the current state
+- **Any state by ID:** `{ target: '#specificState' }` — target any state in the machine by its unique ID
 
 ## Forbidden transitions
 
-- `{ on: { forbidden: {} } }`
-- Different than omitting the transition; transition selection algorithm will stop looking
-- Same as `{ on: { forbidden: { target: undefined } } }`
+A **forbidden transition** is a transition that is explicitly defined but has no target or actions. This is different from omitting the transition entirely — when a forbidden transition is matched, the transition selection algorithm stops looking for transitions in parent states.
+
+```ts
+on: {
+  forbidden: {}
+}
+```
+
+This is equivalent to `{ on: { forbidden: { target: undefined } } }`. Use forbidden transitions when you want to prevent a parent state's transition from being selected for a specific event.
 
 ## Wildcard transitions
 
@@ -443,6 +523,8 @@ In this example:
 - Each region can still be controlled independently through their own events (`toggle` and `change`)
 
 ## Other transitions
+
+XState supports additional transition types beyond event-driven transitions:
 
 - [**Eventless (always) transitions**](eventless-transitions) are transitions without events. These transitions are _always_ taken after any transition in their state is enabled.
 - [**Delayed (after) transitions**](delayed-transitions) are transitions that are enabled after a specified duration.

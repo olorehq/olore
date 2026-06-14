@@ -1,0 +1,145 @@
+---
+title: checkly test-sessions
+description: 'Inspect recorded test sessions and their error groups.'
+sidebarTitle: 'checkly test-sessions'
+---
+
+<Note>Available since CLI v8.4.0.</Note>
+
+The `checkly test-sessions` command lets you inspect recorded [test sessions](/detect/testing/overview/) from the terminal. Use it to review a session, wait for a running session to finish, or inspect a test session error group before starting root cause analysis.
+
+<Accordion title="Prerequisites">
+Before using `checkly test-sessions`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- A recorded test session ID
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly test-sessions <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `get` | Get details of a recorded test session. |
+
+## `checkly test-sessions get`
+
+Get details of a recorded test session, including result error groups for RCA.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the test session to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--error-group` | - | Show details for a test session error group ID from this session. |
+| `--error-groups-limit` | - | Number of error group IDs to show in the session summary. Default: `5`. |
+| `--full-error` | - | Print the complete raw error when showing a test session error group. |
+| `--watch, -w` | - | Watch a running test session until it completes before rendering. |
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+### Get Options
+
+<ResponseField name="--error-group" type="string">
+
+Show details for a test session error group from the selected session. Use this after the session summary shows one or more error group IDs.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --error-group=<error-group-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--error-groups-limit" type="number" default="5">
+
+Set how many error group IDs to show in the session summary.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --error-groups-limit=10
+```
+
+</ResponseField>
+
+<ResponseField name="--full-error" type="boolean" default="false">
+
+Print the complete raw error when you inspect a test session error group.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --error-group=<error-group-id> --full-error
+```
+
+</ResponseField>
+
+<ResponseField name="--watch, -w" type="boolean" default="false">
+
+<Note>Available in CLI v8.5.0+.</Note>
+
+Watch a running test session until it reaches a final state before rendering the result.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --watch
+npx checkly test-sessions get <id> -w
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly test-sessions get <id> --output=json
+npx checkly test-sessions get <id> -o md
+```
+
+</ResponseField>
+
+### Get Examples
+
+```bash Terminal
+# View a recorded test session
+npx checkly test-sessions get <id>
+
+# Wait for a running test session to complete
+npx checkly test-sessions get <id> --watch
+
+# Inspect a test session error group
+npx checkly test-sessions get <id> --error-group=<error-group-id>
+
+# Get the session as JSON
+npx checkly test-sessions get <id> --output=json
+```
+
+## Related Commands
+
+- [`checkly trigger`](/cli/checkly-trigger) - Trigger deployed checks as a test session
+- [`checkly test`](/cli/checkly-test) - Test local checks as a test session
+- [`checkly rca`](/cli/checkly-rca) - Trigger root cause analysis for error groups

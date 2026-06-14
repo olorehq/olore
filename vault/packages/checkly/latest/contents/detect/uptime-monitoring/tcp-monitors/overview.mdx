@@ -18,7 +18,20 @@ For example, use these checks to verify that:
 * Your FTP server responds correctly to commands
 * Your custom TCP-based service returns the expected response when sent a health check message
 
-![TCP monitor interface showing connection status](/images/docs/images/tcp-monitors/tcp-check-overview.png)
+<Frame>
+<img
+  className="block dark:hidden"
+  src="/images/next/tcp-monitor-overview-light.png"
+  alt="TCP monitor overview"
+  style={{width: "100%"}}
+/>
+<img
+  className="hidden dark:block"
+  src="/images/next/tcp-monitor-overview-dark.png"
+  alt="TCP monitor overview"
+  style={{width: "100%"}}
+/>
+</Frame>
 
 ## How TCP Monitoring Works
 
@@ -48,3 +61,18 @@ Select a specific check run to review its results:
   * Data: Time taken to send the payload and receive the response data
 
 Learn more in our documentation on [Results](/concepts/results).
+
+## Troubleshooting
+
+<Accordion title="TCP monitors on port 25 time out">
+TCP monitors to port 25 (SMTP) may fail with a SOCKET_TIMEOUT error from some Checkly locations.
+
+This happens because [AWS blocks outbound traffic on port 25 by default to prevent spam](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html#port-25-throttle). Some Checkly public locations run on AWS, so connections to port 25 cannot be established from those regions.
+
+**Workarounds:**
+
+* Run the check from a [Private Location](/platform/private-locations/overview) where port 25 is allowed
+
+* Use an alternative SMTP port such as 587 or 465 if supported
+
+</Accordion>

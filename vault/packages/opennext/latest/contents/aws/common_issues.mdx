@@ -4,7 +4,7 @@ OpenNext can be executed in debug mode by setting the environment variable `OPEN
 
 This will output **A LOT** of additional logs to the console.This also disable minifying in esbuild, and add source maps to the output. This can result in code that might be up to 2-3X larger than the production build. **Do not enable this in production**
 
-```bash
+```sh
 OPEN_NEXT_DEBUG=true npx open-next@latest build
 ```
 
@@ -16,7 +16,7 @@ You might stumble upon this error inside cloudwatch logs: `Cannot find module 'n
 
 Next might incorrectly include some dependencies in the bundle. To remove them you can use this configuration inside `next.config.js`:
 
-```javascript
+```js filename="next.config.js"
 outputFileTracingExcludes: { // or experimental.outputFileTracingExcludes on Next < 15
   "*": ["node_modules/the-unwanted-package"],
 },
@@ -39,7 +39,7 @@ For example, Sentry does not remove server side sourcemaps, only client ones, ev
 
 You could exclude sourcemaps similarly:
 
-```javascript
+```js filename="next.config.js"
 outputFileTracingExcludes: {
   "*": [
     './**/*.js.map',
@@ -96,9 +96,7 @@ The config recommended by Sentry docs uses dynamic imports in `instrumentation.t
 
 Here's a working Sentry config which resolves the error:
 
-`instrumentation.ts`
-
-```typescript
+```ts filename="instrumentation.ts"
 import * as Sentry from "@sentry/nextjs";
 import { initSentry } from "../sentry.server.config";
 
@@ -109,9 +107,7 @@ export async function register() {
 }
 ```
 
-`sentry.server.config.ts`
-
-```typescript
+```ts filename="sentry.server.config.ts"
 import * as Sentry from "@sentry/nextjs";
 
 export const initSentry = (runtime: "nodejs" | "edge") => {
@@ -141,7 +137,7 @@ If you are not using `yarn` and you see `yarn` related errors it might be solved
 Sometimes there might be a file missing from your server functions bundle. An example could be `sentry.server.config.ts`. It can be any file or directory and it also accept globs. In Next there is an option to include files that were not picked up by tracing.
 Its called `outputFileTracingIncludes`. Here is an example on how to use it in `next.config.ts`:
 
-```ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -162,8 +158,7 @@ To read more about `outputFileTracingIncludes` you can refer to the [Next.js doc
 It works with function splitting in OpenNext aswell. If your key corresponds to a specific route (i.e: `api/test`), it will be included only in the function bundle for that route.
 Using `*` as a key, however, will include it in every function bundle. Here is an example with function splitting:
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next";
 const config = {
   default: {},
@@ -178,8 +173,9 @@ const config = {
     },
   },
 } satisfies OpenNextConfig;
+```
 
-// next.config.ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

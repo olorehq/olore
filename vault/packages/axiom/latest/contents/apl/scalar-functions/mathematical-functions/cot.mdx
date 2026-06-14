@@ -1,0 +1,91 @@
+---
+title: cot
+description: 'This page explains how to use the cot function in APL.'
+---
+
+Use the `cot` function in APL to compute the cotangent of an angle expressed in radians. The cotangent is the reciprocal of the tangent: `cot(x) = cos(x) / sin(x)`. The function is undefined at multiples of π, where the sine is zero.
+
+`cot` is useful when you work with angular or cyclic calculations and need the cotangent as part of a larger formula. In observability, you might use it to transform normalized metric ratios into angular coordinates for signal analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `cot()` function. You compute it as the reciprocal of `tan()`.
+
+<CodeGroup>
+```sql Splunk example
+| eval cot_val = 1 / tan(angle_rad)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cot_val = cot(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL does not define a standard `COT()` function, though SQL Server provides one. In PostgreSQL and other databases, you compute it as `1 / TAN(x)`.
+
+<CodeGroup>
+```sql SQL example
+SELECT 1.0 / TAN(angle_rad) AS cot_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend cot_val = cot(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+cot(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The angle in radians. Must not be a multiple of π. |
+
+### Returns
+
+The cotangent of `x`. Returns infinity or `null` when `sin(x)` equals zero (that is, when `x` is a multiple of π).
+
+## Example
+
+Use `cot` to compute the cotangent of an angle in radians.
+
+**Query**
+
+```kusto
+print result = cot(pi() / 4)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20cot%28pi%28%29%20/%204%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 1.0000 |
+
+## List of related functions
+
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent, the reciprocal of `cot`. Use it as the primary trigonometric ratio when cotangent is not needed.
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine. Use it along with `cos` to compute cotangent manually as `cos(x)/sin(x)`.
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine. Use it in combination with `sin` for manual cotangent calculation.
+- [atan](/apl/scalar-functions/mathematical-functions/atan): Returns the arc tangent. Use it as the inverse of `tan` when you need to recover an angle.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it to prepare degree-based angle inputs before calling `cot`.

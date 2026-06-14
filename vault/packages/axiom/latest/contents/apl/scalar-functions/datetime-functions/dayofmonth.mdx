@@ -1,0 +1,164 @@
+---
+title: dayofmonth
+description: 'This page explains how to use the dayofmonth function in APL.'
+---
+
+Use the `dayofmonth` function in APL to extract the day number of the month from a datetime value. The function returns an integer from 1 to 31 representing the day within the month.
+
+You can use `dayofmonth` to analyze patterns tied to specific days of the month, such as billing cycles, payroll processing windows, or recurring scheduled events.
+
+Use it when you want to:
+
+- Detect traffic or error patterns that repeat on specific days of the month.
+- Group events by day of month for monthly trend analysis.
+- Correlate activity spikes with known monthly schedules such as billing or report generation.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use `strftime(_time, "%d")` to extract the day of the month. In APL, the `dayofmonth` function directly returns the day number as an integer.
+
+<CodeGroup>
+```sql Splunk example
+... | eval day=strftime(_time, "%d")
+````
+
+```kusto APL equivalent
+... | extend day = dayofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `EXTRACT(DAY FROM timestamp_column)` or `DAY(timestamp_column)` to get the day of the month. In APL, `dayofmonth` provides the same result with a single function call.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(DAY FROM timestamp_column) AS day FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend day = dayofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+dayofmonth(datetime)
+```
+
+### Parameters
+
+| Name     | Type       | Description               |
+| -------- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` from 1 to 31 representing the day number of the month.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests by day of month to find recurring traffic patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend day = dayofmonth(_time)
+| summarize request_count = count() by day
+| sort by day asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20day%20%3D%20dayofmonth(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20day%20%7C%20sort%20by%20day%20asc%22%7D)
+
+**Output**
+
+| day | request_count |
+| --- | ------------- |
+| 1   | 1450          |
+| 2   | 1380          |
+| 3   | 1520          |
+
+This query groups HTTP requests by the day of the month, helping you identify days with consistently higher or lower traffic.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Find average span duration by day of month for each service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day = dayofmonth(_time)
+| summarize avg_duration = avg(duration) by day, ['service.name']
+| sort by day asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day%20%3D%20dayofmonth(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20day%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20day%20asc%22%7D)
+
+**Output**
+
+| day | ['service.name'] | avg_duration     |
+| --- | ----------------- | ---------------- |
+| 1   | frontend          | 00:00:01.1200000 |
+| 1   | cart              | 00:00:00.4500000 |
+| 2   | frontend          | 00:00:01.2500000 |
+
+This query shows how average span duration varies by day of the month for each service, useful for detecting performance changes tied to monthly cycles.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify which days of the month have the most failed requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend day = dayofmonth(_time)
+| summarize error_count = count() by day
+| sort by error_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20day%20%3D%20dayofmonth(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20day%20%7C%20sort%20by%20error_count%20desc%22%7D)
+
+**Output**
+
+| day | error_count |
+| --- | ----------- |
+| 15  | 98          |
+| 1   | 87          |
+| 28  | 76          |
+
+This query ranks days of the month by error frequency, helping you correlate failures with recurring monthly events such as billing runs or batch jobs.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [dayofweek](/apl/scalar-functions/datetime-functions/dayofweek): Returns the day of the week as a timespan. Use for weekly pattern analysis rather than monthly.
+- [dayofyear](/apl/scalar-functions/datetime-functions/dayofyear): Returns the day of the year as an integer. Use when you need to track position within the full year.
+- [datetime_part](/apl/scalar-functions/datetime-functions/datetime-part): Extracts a specific date part as an integer. Use when you need flexibility to extract different parts dynamically.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime. Use alongside `dayofmonth` for month-and-day breakdowns.
+- [getmonth](/apl/scalar-functions/datetime-functions/getmonth): Returns the month from a datetime as an integer.

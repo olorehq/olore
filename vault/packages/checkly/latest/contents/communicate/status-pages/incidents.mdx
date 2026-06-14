@@ -43,6 +43,17 @@ From there, you can:
  * Change the incident severity
  * Delete the incident entirely
 
+## Incident duration
+
+Incident duration measures the actual downtime of your service. It is calculated based on the timestamps of your incident updates:
+
+- **Resolved incidents**: Duration is measured from the first update to the first resolved update that closed the incident. If the incident was later re-opened and resolved again, the duration extends to the final resolved update.
+- **Ongoing incidents**: Duration is measured from the first update to the current time.
+
+For example, if an incident was opened at 10:00, resolved at 10:30, then re-opened at 11:00 and resolved again at 11:30, the duration would be 1 hour 30 minutes (10:00 → 11:30). However, if the incident was resolved at 10:30 and a second resolved update was added later without re-opening, the duration remains 30 minutes.
+
+You can adjust the incident duration by editing the public date on incident updates, or by [backfilling an incident](/communicate/status-pages/incidents#backfilling-an-incident) with custom timestamps.
+
 ## Incident notifications
 
 Whenever you post an incident update, Checkly can automatically send email notifications to users subscribed to your Status Page.

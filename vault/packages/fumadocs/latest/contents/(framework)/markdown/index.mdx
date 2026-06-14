@@ -3,6 +3,8 @@ title: Markdown
 description: How to write documents
 ---
 
+import { Building, HomeIcon, Rocket } from 'lucide-react';
+
 ## Introduction
 
 Fumadocs provides many useful extensions to MDX, a markup language. Here is a brief introduction to the default MDX syntax of Fumadocs.
@@ -187,7 +189,7 @@ An anchor is automatically applied to each heading, it sanitizes invalid charact
 
 #### TOC Settings
 
-The table of contents (TOC) will be generated based on headings, you can also customise the effects of headings:
+The table of contents (TOC) will be generated based on headings, you can also customize the effects of headings:
 
 ```md
 # Heading [!toc]
@@ -204,7 +206,7 @@ Like headings rendered in a React component:
 
 #### Custom Anchor
 
-You can add `[#slug]` to customise heading anchors.
+You can add `[#slug]` to customize heading anchors.
 
 ```md
 # heading [#my-heading-id]
@@ -328,6 +330,38 @@ console.log('A');
 console.log('B');
 ```
 
+To add a persist ID, define `tab-group` at the first codeblock:
+
+````mdx
+```ts tab="Tab 1" tab-group="my-custom-group"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+````
+
+```ts tab="Tab 1" tab-group="my-custom-group"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+
+Another group:
+
+```ts tab="Tab 1" tab-group="my-custom-group"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+
+#### MDX in Tab Groups
+
 While disabled by default, you use MDX in tab values by configuring the remark plugin:
 
 ```ts tab="Fumadocs MDX" title="source.config.ts"
@@ -404,6 +438,24 @@ npm i next -D
 ```
 
 See [`remark-npm`](/docs/headless/mdx/remark-npm) for details.
+
+### Steps
+
+Useful for denoting steps for guides, see [`remark-steps`](/docs/headless/mdx/remark-steps) for enable & configure.
+
+```md
+### Installation [step]
+
+### Write Code [step]
+
+### Deploy [step]
+```
+
+#### Installation [step]
+
+#### Write Code [step]
+
+#### Deploy [step]
 
 ### Other Components
 

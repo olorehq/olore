@@ -1,0 +1,223 @@
+---
+title: 'Agentic Check Construct'
+description: 'Learn how to configure Agentic Checks with the Checkly CLI.'
+sidebarTitle: 'Agentic Check'
+---
+
+<Tip>
+Learn more about Agentic Checks in [the Agentic Checks overview](/detect/synthetic-monitoring/agentic-checks/overview).
+</Tip>
+
+Use Agentic Checks to monitor user journeys from a natural-language prompt. The agent discovers the target, creates a reusable check script, and can self-heal when the saved script starts failing.
+
+<Accordion title="Prerequisites">
+Before creating Agentic Checks, ensure you have:
+
+- An initialized Checkly CLI project
+- Access to Agentic Checks on your Checkly account
+- Available Agentic Check active capacity if the check is active
+- Any required test credentials saved as Checkly variables or secrets
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+<CodeGroup>
+
+```typescript Basic Example
+import { AgenticCheck, Frequency } from 'checkly/constructs'
+
+new AgenticCheck('homepage-health', {
+  name: 'Homepage Health Check',
+  prompt: 'Navigate to https://example.com and verify the page loads correctly.',
+  activated: true,
+  frequency: Frequency.EVERY_1H,
+})
+```
+
+```typescript Skills
+import { AgenticCheck, Frequency } from 'checkly/constructs'
+
+new AgenticCheck('login-flow', {
+  name: 'Login Flow',
+  prompt: 'Sign in with {{TEST_USER_EMAIL}} and {{TEST_USER_PASSWORD}}, then verify that the dashboard loads.',
+  activated: true,
+  frequency: Frequency.EVERY_1H,
+  tags: ['agentic', 'critical'],
+  agentRuntime: {
+    skills: ['addyosmani/web-quality-skills'],
+  },
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+The Agentic Check configuration consists of Agentic-specific options and a subset of inherited general check options.
+
+<Tabs>
+<Tab title="Agentic Check">
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `prompt` | `string` | Yes | - | Monitoring goal the agent should verify. Maximum 10,000 characters. |
+| `frequency` | `AgenticCheckFrequency` | No | `Frequency.EVERY_30M` | How often the check should run. Agentic Checks support the same frequency values as other checks, down to `5` minutes. |
+| `agentRuntime` | `object` | No | `{ skills: [] }` | Extra runtime skills the agent is allowed to use during execution. |
+
+</Tab>
+<Tab title="General Check">
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `name` | `string` | Yes | - | Friendly name for your check |
+| `description` | `string` | No | `null` | Description of the check. Supports markdown. Max 500 characters |
+| `activated` | `boolean` | No | `true` | Whether the check is enabled |
+| `alertChannels` | `AlertChannel[]` | No | `[]` | Alert channels for notifications |
+| `alertEscalationPolicy` | `AlertEscalationPolicy` | No | - | Advanced alert settings |
+| `group` | `CheckGroup` | No | - | The CheckGroup this check belongs to |
+| `locations` | `(keyof Region)[]` | No | Project default or `['us-east-1']` | Public Checkly locations where the check runs |
+| `muted` | `boolean` | No | `false` | Whether alert notifications are muted |
+| `tags` | `string[]` | No | `[]` | Tags to organize checks |
+| `testOnly` | `boolean` | No | `false` | Only run with `test`, not during deploy |
+
+</Tab>
+</Tabs>
+
+<Info>
+The Agentic Check construct intentionally does not expose `privateLocations`, `runParallel`, `retryStrategy`, `shouldFail`, `doubleCheck`, or `triggerIncident`. These options are not currently honored for Agentic Checks.
+</Info>
+
+### `prompt`
+
+The monitoring goal the agent should verify. Write the prompt in terms of user-visible behavior and expected outcomes.
+
+See [Prompt best practices](/detect/synthetic-monitoring/agentic-checks/overview#prompt-best-practices) for guidance on scope, strictness, and nondeterministic flows.
+
+A reliable Agentic Check prompt usually states:
+
+- **Goal**: The user journey or system behavior to monitor.
+- **What you are given**: The start URL, test account context, and any required variables or secrets using `{{VARIABLE_NAME}}` notation.
+- **Success looks like**: The exact outcome that should pass.
+- **Failure looks like**: The states that should fail the check.
+- **Strictness**: Whether the agent should assert exact values or evaluate the outcome more flexibly.
+
+```typescript
+new AgenticCheck('checkout-flow', {
+  name: 'Checkout Flow',
+  prompt: `
+    Go to https://shop.example.com.
+    Sign in with the test account.
+    Add one item to the cart and verify the checkout review page loads.
+  `,
+})
+```
+
+Use stricter prompts when the output should be predictable:
+
+```typescript
+new AgenticCheck('login-flow', {
+  name: 'Login Flow',
+  prompt: `
+    ## Goal
+    Sign in to https://app.example.com/login and confirm the dashboard loads.
+
+    ## What you are given
+    Use {{TEST_USER_EMAIL}} and {{TEST_USER_PASSWORD}} from the environment.
+
+    ## Success looks like
+    The authenticated dashboard is visible, the account name appears, and the final URL is inside app.example.com.
+
+    ## Failure looks like
+    The login form rejects valid credentials, the page stays on the login screen, an MFA prompt blocks the flow, or the dashboard shows a 4xx/5xx error.
+  `,
+})
+```
+
+Use outcome-based prompts when the application is intentionally nondeterministic:
+
+```typescript
+new AgenticCheck('support-assistant-flow', {
+  name: 'Support Assistant Flow',
+  prompt: `
+    ## Goal
+    Verify that the support assistant can help a user understand how to update billing details.
+
+    ## What you are given
+    Start at https://app.example.com/support and ask: "How do I update my billing details?"
+
+    ## Success looks like
+    The assistant gives a relevant answer, asks for missing context if needed, and guides the user toward a billing-settings or support handoff path.
+
+    ## Failure looks like
+    The assistant does not respond, answers an unrelated question, loops without progress, or gives instructions that cannot lead to completion.
+  `,
+})
+```
+
+Keep prompts focused on one flow. If you want to monitor navigation, login, and record creation, create separate Agentic Checks for each flow.
+
+### `frequency`
+
+How often the Agentic Check should run. Use one of the supported `Frequency` constants or the equivalent number of minutes.
+
+```typescript
+import { AgenticCheck, Frequency } from 'checkly/constructs'
+
+new AgenticCheck('hourly-agentic-check', {
+  name: 'Hourly Agentic Check',
+  prompt: 'Verify the homepage and pricing page load correctly.',
+  frequency: Frequency.EVERY_1H,
+})
+```
+
+Supported values: `5`, `10`, `15`, `30`, `60`, `120`, `180`, `360`, `720`, and `1440`.
+
+### `locations`
+
+Public Checkly locations where the Agentic Check should run. Accounts can select up to three locations by default. Enterprise accounts can contact sales for unlimited locations.
+
+```typescript
+new AgenticCheck('regional-login-flow', {
+  name: 'Regional Login Flow',
+  prompt: 'Verify that a user can sign in and reach the dashboard.',
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+})
+```
+
+### `agentRuntime`
+
+Controls extra skills the agent can access while executing the check.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `skills` | `string[]` | No | `[]` | Extra skill packages to load into the agent runtime. |
+
+Reference account variables and secrets in the `prompt` with double curly brackets, such as `{{API_TOKEN}}`. This is the only supported way to expose account variables and secrets to an Agentic Check. The `AgenticCheck` construct does not expose a separate environment-variable option.
+
+```typescript
+new AgenticCheck('web-quality-check', {
+  name: 'Web Quality Check',
+  prompt: 'Review the homepage and verify that the main navigation and primary call to action are usable.',
+  agentRuntime: {
+    skills: ['addyosmani/web-quality-skills'],
+  },
+})
+```
+
+<Warning>
+Do not paste secret values into the prompt. Store secrets in Checkly and reference them by name, for example `{{TEST_USER_PASSWORD}}`.
+</Warning>
+
+## Billing behavior
+
+Agentic Checks use active-capacity billing. Active checks consume capacity; inactive checks do not. Use `activated: false` to keep an Agentic Check as a deployed draft without consuming active capacity.
+
+```typescript
+new AgenticCheck('draft-agentic-check', {
+  name: 'Draft Agentic Check',
+  prompt: 'Verify the account settings page loads for a signed-in user.',
+  activated: false,
+})
+```
+
+If an active Agentic Check would exceed your available capacity, deployment fails with a billing entitlement error. Deactivate an existing Agentic Check or purchase additional Agentic Check capacity before deploying.

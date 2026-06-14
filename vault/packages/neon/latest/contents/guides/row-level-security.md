@@ -1,8 +1,14 @@
 ---
 title: Row-Level Security with Neon
 subtitle: How Neon features use Postgres Row-Level Security
+summary: >-
+  Row-Level Security (RLS) in Neon restricts table access to individual rows
+  based on the authenticated user, and is required on every table exposed
+  through the Neon Data API. Use this page when adding RLS policies to a
+  Data API project or using Drizzle ORM's crudPolicy helper to simplify
+  per-user access control in a Postgres database.
 enableTableOfContents: true
-updatedOn: '2025-09-25T14:36:08.173Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>

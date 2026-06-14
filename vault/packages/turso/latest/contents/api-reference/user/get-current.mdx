@@ -1,0 +1,24 @@
+---
+sidebarTitle: Get Current User
+openapi: "GET /v1/user"
+---
+
+<RequestExample>
+
+```bash cURL
+curl -L https://api.turso.tech/v1/user \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+```ts Node.js
+import { createClient } from "@tursodatabase/api";
+
+const turso = createClient({
+  org: "...",
+  token: "",
+});
+
+const user = await turso.users.getCurrent();
+```
+
+</RequestExample>

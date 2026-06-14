@@ -16,15 +16,14 @@ import RunDemo from "!!raw-loader!@site/../demos/convex-test/convex/run.test.ts"
 
 The [`convex-test`](https://www.npmjs.com/package/convex-test) library provides
 a mock implementation of the Convex backend in JavaScript. It enables fast
-automated testing of the logic in your [functions](/functions.mdx).
+automated testing of the logic in your [functions](/functions/overview.mdx).
 
 ## Example
 
-<TSAndJSSnippet
+<Snippet
   title="convex/posts.test.ts"
-  sourceTS={Demo}
-  sourceJS={Demo}
-  highlightPatterns={["t.query", "t.mutation", "convexTest(schema)"]}
+  source={Demo}
+  highlightPatterns={["t.query", "t.mutation", "convexTest\\(schema"]}
 />
 
 You can see more examples in the
@@ -61,9 +60,8 @@ convex-test library.
 
   <Step title="Configure Vitest">
 
-    Add <JSDialectFileName name="vitest.config.ts" /> file to configure the test
-    environment to better match the Convex runtime, and to inline the test library
-    for better dependency tracking.
+    Add `vitest.config.ts` file to configure the test
+    environment to better match the Convex runtime.
 
     <Details summary={<>If your Convex functions are in a directory other than <code>convex</code></>}>
       If your project has a
@@ -104,9 +102,42 @@ convex-test library.
 
     <Details summary="Set up multiple test environments (e.g. Convex + frontend)">
       If you want to use Vitest to test both your Convex functions and your React
-      frontend, you might want to use multiple Vitest environments depending on the
-      test file location via
-      [environmentMatchGlobs](https://vitest.dev/config/#environmentmatchglobs):
+      frontend:
+
+      - With Vitest 4, use the
+        [`projects`](https://vitest.dev/guide/projects) array to define separate
+        configurations per environment:
+
+      ```ts title="vitest.config.ts"
+      import { defineConfig } from "vitest/config";
+
+      export default defineConfig({
+        test: {
+          projects: [
+            {
+              extends: true,
+              test: {
+                name: "convex",
+                include: ["convex/**/*.test.{ts,js}"],
+                environment: "edge-runtime",
+              },
+            },
+            {
+              extends: true,
+              test: {
+                name: "frontend",
+                include: ["**/*.test.{ts,tsx,js,jsx}"],
+                exclude: ["convex/**"],
+                environment: "jsdom",
+              },
+            },
+          ],
+        },
+      });
+      ```
+
+      - With Vitest 3, use
+        [`environmentMatchGlobs`](https://v3.vitest.dev/config/#environmentmatchglobs):
 
       ```ts title="vitest.config.ts"
       import { defineConfig } from "vitest/config";
@@ -119,7 +150,6 @@ convex-test library.
             // all other tests use jsdom
             ["**", "jsdom"],
           ],
-          server: { deps: { inline: ["convex-test"] } },
         },
       });
       ```
@@ -131,7 +161,6 @@ convex-test library.
     export default defineConfig({
       test: {
         environment: "edge-runtime",
-        server: { deps: { inline: ["convex-test"] } },
       },
     });
     ```
@@ -140,7 +169,7 @@ convex-test library.
 
   <Step title="Add a test file">
 
-    In your `convex` folder add a file ending in <JSDialectFileName name=".test.ts" />
+    In your `convex` folder add a file ending in `.test.ts`
 
     The example test calls the `api.messages.send` mutation twice
     and then asserts that the `api.messages.list` query returns
@@ -207,14 +236,14 @@ test("some behavior", async () => {
 
 Passing in the schema is required for the tests to correctly implement schema
 validation and for correct typing of
-[`t.run`](#setting-up-and-inspecting-data-and-storage-with-trun).
+[`t.run`](#modify-data-outside-of-functions).
 
 If you don't have a schema, call `convexTest()` with no argument.
 
 ### Call functions
 
-Your test can call public and internal Convex [functions](/functions.mdx) in
-your project:
+Your test can call public and internal Convex
+[functions](/functions/overview.mdx) in your project:
 
 ```ts title="convex/myFunctions.test.ts"
 import { convexTest } from "convex-test";
@@ -235,27 +264,50 @@ test("functions", async () => {
 ### Modify data outside of functions
 
 Sometimes you might want to directly [write](/database/writing-data.mdx) to the
-mock database or [file storage](/file-storage.mdx) from your test, without
-needing a declared function in your project. You can use the `t.run` method
-which takes a handler that is given a `ctx` that allows reading from and writing
-to the mock backend:
+mock database or [file storage](/file-storage/overview.mdx) from your test,
+without needing a declared function in your project. You can use the `t.run`
+method which takes a handler that is given a `ctx` that allows reading from and
+writing to the mock backend:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/tasks.test.ts"
-  sourceTS={RunDemo}
-  sourceJS={RunDemo}
+  source={RunDemo}
   highlightPatterns={["t.run"]}
 />
+
+### Test helper functions with inline queries, mutations, and actions
+
+Often your code will have helper functions that take in `QueryCtx`,
+`MutationCtx`, and `ActionCtx` as an argument. With version `0.0.42` and later,
+you can pass an inline function to `t.query`, `t.mutation`, and `t.action`,
+similar to `t.run`, but with a `ctx` argument matching the function type.
+
+```ts
+test("helper functions", async () => {
+  const t = convexTest();
+  const threadId = await t.mutation(async (ctx) => {
+    const threadId = await ctx.db.insert("threads", {});
+    // insertThreadMessage takes a MutationCtx argument.
+    await insertThreadMessage(ctx, threadId, "Hello");
+    return threadId;
+  });
+
+  const text = await t.action(async (ctx) => {
+    // searchForMessages takes an ActionCtx argument.
+    const messages = await searchForMessages(ctx, threadId);
+    const response = await promptLLM(ctx, threadId, messages);
+  });
+});
+```
 
 ### HTTP actions
 
 Your test can call [HTTP actions](/functions/http-actions.mdx) registered by
 your router:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/http.test.ts"
-  sourceTS={HttpDemo}
-  sourceJS={HttpDemo}
+  source={HttpDemo}
   highlightPatterns={["t.fetch"]}
 />
 
@@ -271,10 +323,9 @@ implementations relying on
 [Vitest's fake timers](https://vitest.dev/guide/mocking.html#timers) in
 combination with `t.finishInProgressScheduledFunctions`:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/scheduling.test.ts"
-  sourceTS={SchedulingDemo}
-  sourceJS={SchedulingDemo}
+  source={SchedulingDemo}
   highlightPatterns={[]}
 />
 
@@ -283,10 +334,9 @@ schedules an action that schedules another action, you can use
 `t.finishAllScheduledFunctions` to wait for all scheduled functions, including
 recursively scheduled functions, to finish:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/chainedScheduling.test.ts"
-  sourceTS={ChainedSchedulingDemo}
-  sourceJS={ChainedSchedulingDemo}
+  source={ChainedSchedulingDemo}
   highlightPatterns={["finishAllScheduledFunctions"]}
 />
 
@@ -295,16 +345,16 @@ Check out more examples in
 
 ### Authentication
 
-To test functions which depend on the current [authenticated](/auth.mdx) user
-identity you can create a version of the `t` accessor with given
+To test functions which depend on the current
+[authenticated](/auth/overview.mdx) user identity you can create a version of
+the `t` accessor with given
 [user identity attributes](/api/interfaces/server.UserIdentity). If you don't
 provide them, `issuer`, `subject` and `tokenIdentifier` will be generated
 automatically:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/tasks.test.ts"
-  sourceTS={AuthDemo}
-  sourceJS={AuthDemo}
+  source={AuthDemo}
   highlightPatterns={["withIdentity"]}
 />
 
@@ -323,10 +373,9 @@ every object field.
 To assert that a function throws, use
 [`.rejects.toThrowError()`](https://vitest.dev/api/expect.html#tothrowerror):
 
-<TSAndJSSnippet
+<Snippet
   title="convex/messages.test.ts"
-  sourceTS={ErrorDemo}
-  sourceJS={ErrorDemo}
+  source={ErrorDemo}
   highlightPatterns={["toThrowError"]}
 />
 
@@ -335,10 +384,9 @@ To assert that a function throws, use
 You can use Vitest's
 [vi.stubGlobal](https://vitest.dev/guide/mocking.html#globals) method:
 
-<TSAndJSSnippet
+<Snippet
   title="convex/ai.test.ts"
-  sourceTS={MockingFetchDemo}
-  sourceJS={MockingFetchDemo}
+  source={MockingFetchDemo}
   highlightPatterns={["stubGlobal"]}
 />
 
@@ -388,9 +436,9 @@ Some of the ways the mock differs:
   runtime. You should always test new code manually to make sure it doesn't use
   built-ins not available in the Convex runtime.
 - Some features have only simplified semantics, namely:
-  - [Text search](/search.mdx) returns all documents that include a word for
-    which at least one word in the searched string is a prefix. It does not sort
-    the results by relevance.
+  - [Text search](/search/overview.mdx) returns all documents that include a
+    word for which at least one word in the searched string is a prefix. It does
+    not sort the results by relevance.
   - [Vector search](/search/vector-search.mdx) returns results sorted by cosine
     similarity, but doesn't use an efficient vector index in its implementation.
   - There is no support for [cron jobs](/scheduling/cron-jobs.mdx), you should

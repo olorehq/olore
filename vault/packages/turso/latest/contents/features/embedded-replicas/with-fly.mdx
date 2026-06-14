@@ -1,7 +1,7 @@
 ---
 title: Embedded Replicas on Fly
 sidebarTitle: Turso + Fly
-description: Deploy a JavaScript app using [Turso embedded replicas](/features/embedded-replicas) to [Fly.io](https://www.fly.io/).
+description: Deploy a JavaScript app using [Turso Cloud embedded replicas](/features/embedded-replicas) to [Fly.io](https://www.fly.io/).
 ---
 
 ![Koyeb banner](/images/platforms/fly-banner.png)
@@ -11,14 +11,14 @@ description: Deploy a JavaScript app using [Turso embedded replicas](/features/e
 Before you start, make sure you:
 
 - [Install the Turso CLI](/cli/installation)
-- [Sign up or login to Turso](/cli/authentication#signup)
+- [Sign up or login to Turso Cloud](/cli/authentication#signup)
 - [Install the Fly.io CLI](https://fly.io/docs/hands-on/install-flyctl/)
 
 <Steps>
 
   <Step title="Locate your application">
 
-You should have an application ready using your Turso database that you want to deploy to Fly.
+You should have an application ready using your Turso Cloud database that you want to deploy to Fly.
 
   </Step>
 
@@ -74,7 +74,7 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
     <Step title="Configure the libSQL client">
 
-    You will want to change the `url` to point to a local file, and set the `syncUrl` to be your Turso database URL:
+    You will want to change the `url` to point to a local file, and set the `syncUrl` to be your Turso Cloud database URL:
 
 ```ts
 import { createClient } from "@libsql/client";

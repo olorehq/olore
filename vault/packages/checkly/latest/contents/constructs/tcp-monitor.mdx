@@ -30,6 +30,7 @@ import { TcpAssertionBuilder, TcpMonitor } from "checkly/constructs"
 
 new TcpMonitor("database-tcp-1", {
   name: "Database Connection Check",
+  description: "Verifies **PostgreSQL** on `db.example.com:5432` accepts connections.",
   activated: true,
   maxResponseTime: 5000,
   degradedResponseTime: 2000,
@@ -47,6 +48,7 @@ import { Frequency, TcpAssertionBuilder, TcpMonitor } from "checkly/constructs"
 
 new TcpMonitor("redis-tcp-1", {
   name: "Redis Service Check",
+  description: "Verifies **Redis service** is reachable and responsive.",
   activated: true,
   frequency: Frequency.EVERY_5M,
   locations: ["us-east-1", "eu-west-1"],

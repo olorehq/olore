@@ -372,8 +372,6 @@ and certain kinds of change tracking (described below).
 The patterns specified in the `exclude` field identify a set of files that are
 not included, and the patterns in `include` specify files that are explicitly
 included.
-You may run [`cargo package --list`][`cargo package`] to verify which files will
-be included in the package.
 
 ```toml
 [package]
@@ -387,6 +385,9 @@ exclude = ["/ci", "images/", ".*"]
 include = ["/src", "COPYRIGHT", "/examples", "!/examples/big_example"]
 ```
 
+> **Note:** Run [`cargo package --list`][`cargo package`]
+> to verify which files will be included in the package.
+
 The default if neither field is specified is to include all files from the
 root of the package, except for the exclusions listed below.
 
@@ -397,6 +398,9 @@ If `include` is not specified, then the following files will be excluded:
 * If the package is in a git repository, any files that are ignored by the
   [gitignore] rules of the repository and global git configuration will be
   skipped.
+
+If `include` is specified,
+gitignore rules of the repository and global git configuration are not applied.
 
 Regardless of whether `exclude` or `include` is specified, the following files
 are always excluded:

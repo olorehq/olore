@@ -27,11 +27,12 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
   <Tab title={Apple.currentRuntimeName}>
     You can set the fit and layout options on a `Rive` object. The `.fit` can be updated at runtime without creating a new `Rive` object.
 
-    For all possible options, see [Fit.swift](https://github.com/rive-app/rive-ios/blob/main/Source/Experimental/View/Fit.swift)
+    For all possible options, see [Fit.swift](https://github.com/rive-app/rive-ios/blob/main/Source/Concurrency/View/Fit.swift)
 
     ```swift
     // Set a fit and alignment for an artboard that does not use layouts
-    let file = try await File(source: ..., worker: Worker())
+    let worker = try await Worker()
+    let file = try await File(source: ..., worker: worker)
     var rive = try await Rive(file: file, fit: .contain(alignment: .center))
     // Update the fit and alignment at runtime
     rive.fit = .fitWidth(alignment: .topCenter)
@@ -157,7 +158,8 @@ import ResponsiveLayouts from "/snippets/runtimes/layouts/responsive-layouts.mdx
     When creating a new `Rive` object, you can set the fit to layout, with two options for the scale factor: automatic or explicit.
 
     ```swift
-    let file = try await File(source: ..., worker: Worker())
+    let worker = try await Worker()
+    let file = try await File(source: ..., worker: worker)
     // Create a new Rive object with a layout fit that automatically determines the scale factor based on the screen the view is being displayed on
     var rive = try await Rive(file: file, fit: .layout(scaleFactor: .automatic))
     // Or, use an explicit scale factor

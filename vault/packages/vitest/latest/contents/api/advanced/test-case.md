@@ -79,7 +79,7 @@ Don't try to parse the ID. It can have a minus at the start: `-1223128da3_0_0_0`
 
 ## location
 
-The location in the module where the test was defined. Locations are collected only if [`includeTaskLocation`](/config/#includetasklocation) is enabled in the config. Note that this option is automatically enabled if `--reporter=html`, `--ui` or `--browser` flags are used.
+The location in the module where the test was defined. Locations are collected only if [`includeTaskLocation`](/config/includetasklocation) is enabled in the config. Note that this option is automatically enabled if `--reporter=html`, `--ui` or `--browser` flags are used.
 
 The location of this test will be equal to `{ line: 3, column: 1 }`:
 
@@ -300,3 +300,11 @@ function toTestSpecification(): TestSpecification
 ```
 
 Returns a new [test specification](/api/advanced/test-specification) that can be used to filter or run this specific test case.
+
+## logs <Version>5.0.0</Version> {#logs}
+
+```ts
+function logs(): ReadonlyArray<UserConsoleLog>
+```
+
+Console logs recorded during the test execution.

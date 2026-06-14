@@ -1,8 +1,16 @@
 ---
 title: Postgres Floating-point data types
 subtitle: Work with float values in Postgres
+summary: >-
+  Postgres floating-point types `REAL` (4 bytes, ~6 decimal digits) and `DOUBLE
+  PRECISION` (8 bytes, ~15 decimal digits) store approximate numeric values for
+  scientific, sensor, and statistical data. Use `DOUBLE PRECISION` when rounding
+  error accumulation matters, or switch to `NUMERIC`/`DECIMAL` for exact values
+  such as currency. Both types support special values `infinity`, `-infinity`,
+  and `NaN`, but are subject to rounding errors that can compound across
+  operations.
 enableTableOfContents: true
-updatedOn: '2024-02-03T16:07:31.867Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 In Postgres, floating point data types are used to represent numbers that might have a fractional part. These types are essential for situations where precision is key, such as scientific calculations, financial computations, and more.

@@ -1,0 +1,189 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Android)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Android OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Android)](/docs/tracking-methods/sdks/android/android-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Android SDK 21+
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+Add to your `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.mixpanel.android:mixpanel-android-openfeature:<version>")
+    implementation("dev.openfeature:kotlin-sdk-android:0.7.2")
+}
+```
+
+## Quick Start
+
+```kotlin
+import com.mixpanel.android.openfeature.MixpanelProvider
+import com.mixpanel.android.mpmetrics.MixpanelOptions
+import dev.openfeature.kotlin.sdk.OpenFeatureAPI
+
+// 1. Create the provider
+val options = MixpanelOptions.Builder()
+    .featureFlags()
+    .build()
+val provider = MixpanelProvider(context, "YOUR_PROJECT_TOKEN", options)
+
+// 2. Register the provider with OpenFeature
+OpenFeatureAPI.setProviderAndWait(provider)
+
+// 3. Get a client and evaluate flags
+val client = OpenFeatureAPI.getClient()
+val showNewFeature = client.getBooleanValue("new-feature-flag", false)
+
+if (showNewFeature) {
+    // New feature is enabled!
+}
+```
+
+### Using an Existing MixpanelAPI Instance
+
+```kotlin
+import com.mixpanel.android.mpmetrics.MixpanelAPI
+
+val mixpanel = MixpanelAPI.getInstance(context, "YOUR_PROJECT_TOKEN", false, options)
+val provider = MixpanelProvider(mixpanel.getFlags())
+
+OpenFeatureAPI.setProviderAndWait(provider)
+```
+
+<Callout type="warning">
+This provider does **not** call `mixpanel.identify()` or `mixpanel.track()`. If you need to update the logged-in user or use [Runtime Events](/docs/featureflags/runtime-events) for targeting, call these methods on the **same `MixpanelAPI` instance** whose `Flags` object was passed to the provider.
+</Callout>
+
+```kotlin
+val provider = MixpanelProvider(context, "YOUR_PROJECT_TOKEN", options)
+
+// Use the same instance for identity and tracking
+provider.mixpanel?.identify("user-123")
+provider.mixpanel?.track("Purchase Completed")
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `getBooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `getBooleanValue()`, `getStringValue()`, `getIntegerValue()`, `getDoubleValue()`, or `getObjectValue()` |
+| Dynamic Config | JSON object | `getObjectValue()` |
+
+```kotlin
+val client = OpenFeatureAPI.getClient()
+
+// Feature Gate
+val isFeatureOn = client.getBooleanValue("new-checkout", false)
+
+// Experiment with string variants
+val buttonColor = client.getStringValue("button-color-test", "blue")
+
+// Experiment with numeric variants
+val maxItems = client.getIntegerValue("max-items", 10)
+val threshold = client.getDoubleValue("score-threshold", 0.5)
+
+// Dynamic Config
+val featureConfig = client.getObjectValue("homepage-layout", Value.Structure(mapOf(
+    "layout" to Value.String("grid"),
+    "itemsPerRow" to Value.Integer(3)
+)))
+```
+
+### Evaluation Context
+
+Context must be set globally via `OpenFeatureAPI.setContext()`:
+
+```kotlin
+import dev.openfeature.kotlin.sdk.ImmutableContext
+import dev.openfeature.kotlin.sdk.Value
+
+OpenFeatureAPI.setContext(ImmutableContext(
+    attributes = mutableMapOf(
+        "email" to Value.String("user@example.com"),
+        "plan" to Value.String("premium")
+    )
+))
+```
+
+<Callout type="warning">
+Per-evaluation context (the optional `context` parameter on evaluation methods) is **not supported** by this provider. Context must be set globally via `OpenFeatureAPI.setContext()`, which triggers a re-fetch of flag values from Mixpanel.
+</Callout>
+
+### Runtime Properties
+
+Pass `custom_properties` in the evaluation context for runtime targeting:
+
+```kotlin
+OpenFeatureAPI.setContext(ImmutableContext(
+    attributes = mutableMapOf(
+        "custom_properties" to Value.Structure(mapOf(
+            "tier" to Value.String("enterprise"),
+            "seats" to Value.Integer(50),
+        ))
+    )
+))
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```kotlin
+val details = client.getBooleanDetails("my-feature", false)
+
+println(details.value)
+println(details.variant)
+println(details.reason)
+println(details.errorCode)
+```
+
+### User Identity
+
+This provider does **not** call `mixpanel.identify()`. Manage identity through the same Mixpanel instance:
+
+```kotlin
+provider.mixpanel?.identify("user-123")
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the provider has finished initializing |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Feature flags not enabled:** Ensure MixpanelOptions includes `.featureFlags()`.
+2. **Provider not ready:** Use `setProviderAndWait` to ensure initialization.
+3. **Network issues:** Check Logcat for failed requests.
+4. **Flag not configured:** Verify the flag exists and is enabled.
+
+### Flags Not Updating After Context Change
+
+Update context and the provider will re-fetch flags:
+
+```kotlin
+OpenFeatureAPI.setContext(ImmutableContext(
+    attributes = mutableMapOf("plan" to Value.String("premium"))
+))
+```

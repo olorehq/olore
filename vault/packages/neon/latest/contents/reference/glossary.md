@@ -1,10 +1,18 @@
 ---
 title: Glossary
+summary: >-
+  The Neon glossary defines platform-specific and Postgres terms including
+  branch, Compute Unit (CU), WAL, autoscaling, pooled connection string, instant
+  restore, and logical replication. Look up Neon concepts like scale-to-zero,
+  Pageserver, history window, Safekeeper, or GB-month, or distinguish
+  Neon-specific usage from standard Postgres terminology. Billing metrics,
+  organization roles, branch types, and Control Plane operations are all
+  defined here.
 enableTableOfContents: true
 redirectFrom:
   - /docs/conceptual-guides/glossary
   - /docs/cloud/concepts/
-updatedOn: '2026-01-29T16:44:02.632Z'
+updatedOn: '2026-06-12T01:28:52.381Z'
 ---
 
 ## access token
@@ -63,7 +71,7 @@ A branch created by a [instant restore](#branch-restore) operation. When you res
 
 ## branch
 
-An isolated copy of data, similar to a Git branch. Data includes databases, schemas, tables, records, indexes, roles — everything that comprises data in a Postgres instance. Just as a Git branch allows developers to work on separate features or fixes without impacting their main line of code, a Neon branch enables users to modify a copy of their data in isolation from their main line of data. This approach facilitates parallel database development, testing, and other features, similar to Git's code branching system.
+An isolated copy of data, similar to a Git branch. Data includes databases, schemas, tables, records, indexes, roles (everything that comprises data in a Postgres instance). Just as a Git branch allows developers to work on separate features or fixes without impacting their main line of code, a Neon branch enables users to modify a copy of their data in isolation from their main line of data. This enables parallel database development, testing, and other workflows, similar to Git's code branching system.
 
 Each Neon project is created with a root branch, which also serves as the default branch. Projects created in the Console have a root branch named `production`, while projects created via the API or CLI have a root branch named `main`.
 
@@ -86,7 +94,7 @@ A Neon feature that allows you to create an isolated copy of your data for paral
 
 ### Business plan
 
-A [legacy paid plan](/docs/introduction/legacy-plans) designed for mid-to-large enterprises that require higher compute capacity and advanced security and compliance features. See [Neon plans](/docs/introduction/plans).
+A legacy paid plan (no longer available) that was designed for mid-to-large enterprises requiring higher compute capacity and advanced security and compliance features. See [Neon plans](/docs/introduction/plans) for current plan options.
 
 ## check_availability
 
@@ -102,7 +110,7 @@ Continuous integration and continuous delivery or continuous deployment.
 
 ## CIDR notation
 
-CIDR (Classless Inter-Domain Routing) notation is a method used to define ranges of IP addresses in network management. It is presented in the format of an IP address, followed by a slash, and then a number (e.g., 203.0.113.0/24). The number after the slash represents the size of the address block, providing a compact way to specify a large range of IP addresses. In Neon's IP Allow feature, CIDR notation allows for efficiently specifying a block of IP addresses, especially useful for larger networks or subnets. This can be advantageous when managing access to branches with numerous potential users, such as in a large development team or a company-wide network. For related information, see [Configure IP Allow](/docs/manage/projects#configure-ip-allow).
+CIDR (Classless Inter-Domain Routing) notation is a method used to define ranges of IP addresses in network management. It is presented in the format of an IP address, followed by a slash, and then a number (for example, 203.0.113.0/24). The number after the slash represents the size of the address block, providing a compact way to specify a large range of IP addresses. In Neon's IP Allow feature, CIDR notation allows for efficiently specifying a block of IP addresses, especially useful for larger networks or subnets. This can be advantageous when managing access to branches with numerous potential users, such as in a large development team or a company-wide network. For related information, see [Configure IP Allow](/docs/manage/projects#configure-ip-allow).
 
 ## cgroups
 
@@ -158,7 +166,7 @@ A string containing details for connecting to a Neon Postgres database. The deta
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.c-2.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
 ```
 
-The compute hostname includes an `endpoint_id` (`ep-cool-darkness-123456`), a region slug (`c-2.us-east-2`), the cloud platform (`aws`), and Neon domain (`neon.tech`). Connection strings in some AWS regions may include a cell identifier (e.g., `c-2`) in the region slug to support scalability in Neon's high-demand regions.
+The compute hostname includes an `endpoint_id` (`ep-cool-darkness-123456`), a region slug (`c-2.us-east-2`), the cloud platform (`aws`), and Neon domain (`neon.tech`). Connection strings in some AWS regions may include a cell identifier (for example, `c-2`) in the region slug to support scalability in Neon's high-demand regions.
 
 Connection strings for a Neon databases can be obtained by clicking the **Connect** button on your **Project Dashboard**. For information about connecting to Neon, see [Connect from any application](/docs/connect/connect-from-any-app).
 
@@ -185,7 +193,7 @@ Example context file contents:
 }
 ```
 
-For more information, see [Neon CLI commands — set-context](/docs/reference/cli-set-context).
+For more information, see [Neon CLI commands — set-context](/docs/cli/set-context).
 
 ## copy-on-write
 
@@ -257,15 +265,15 @@ Deleting data will reduce the rate at which GB-month usage increases from that p
 
 ## History
 
-The history of data changes for all branches in your Neon project. This history is retained to support [instant restore](/docs/introduction/branch-restore), [Time Travel](/docs/guides/time-travel-assist), and other data recovery features. See [Restore window](/docs/introduction/restore-window) to learn how Neon retains and manages this history.
+The history of data changes for all branches in your Neon project. This history is retained to support [instant restore](/docs/introduction/branch-restore), [Time Travel](/docs/guides/time-travel-assist), and other data recovery features. See [History window](/docs/introduction/history-window) for how long Neon retains that history for **instant restore** and related features.
 
 ## Instant restore
 
-Restoration of data to a state that existed at an earlier time. Neon retains a history of changes in the form of Write-Ahead-Log (WAL) records within your configured [restore window](/docs/introduction/restore-window), which allows you to restore data to any point in time within that window. For more information, see [Instant restore](/docs/introduction/branch-restore).
+Restoration of data to a state that existed at an earlier time. Neon retains a history of changes in the form of Write-Ahead-Log (WAL) records; your project's **[history window](/docs/introduction/history-window)** setting controls how long that history is kept, which defines how far back **instant restore** can go. For more information, see [Instant restore](/docs/introduction/branch-restore).
 
 ## IP Allow
 
-A Neon feature used to control which IP addresses can access databases in a Neon project, often utilized to restrict public internet access. See [IP Allow](/docs/introduction/ip-allow).
+A Neon feature used to control which IP addresses can access databases in a Neon project, often used to restrict public internet access. See [IP Allow](/docs/introduction/ip-allow).
 
 ## IP allowlist
 
@@ -329,7 +337,7 @@ An [Organizations](#organization) role in Neon with access to all projects withi
 
 ## Neon
 
-A serverless Postgres platform designed to help developers build reliable and scalable applications faster. We separate compute and storage to offer modern developer features such as autoscaling, branching, instant restore, and more. For more information, see [Why Neon?](/docs/introduction).
+The backend for apps and agents. Includes Neon Postgres, Neon Auth, and Data API today, with Storage, Compute, and AI Gateway coming soon. Neon Postgres is serverless, with autoscaling, branching, instant restore, and scale-to-zero. For more information, see [Why Neon?](/docs/introduction).
 
 ## Neon API
 
@@ -369,7 +377,7 @@ A feature in Neon that enables teams to collaborate on projects under a shared a
 
 Admins oversee all aspects of the organization, including managing members, permissions, billing, and projects. Members have access to all organizational projects but cannot manage billing or members. Collaborators have limited access to specific projects shared with them and do not have access to the organization dashboard.
 
-You get one Org with a Free plan account. Additional organizations are available on paid plans and can be created from scratch or by converting a personal account into an organization. For more, see [Organizations](/docs/manage/organizations).
+Neon organizations can be free or paid. You can create new organizations at any time. For more, see [Organizations](/docs/manage/organizations).
 
 ## Page
 
@@ -381,7 +389,7 @@ A paid Neon service plan. See [Neon plans](/docs/introduction/plans).
 
 ## Pageserver
 
-A Neon architecture component that reads WAL records from Safekeepers to identify modified pages. The Pageserver accumulates and indexes incoming WAL records in memory and writes them to disk in batches. Each batch is written to an immutable file that is never modified after creation. Using these files, the Pageserver can quickly reconstruct any version of a page dating back to the defined [restore window](/docs/introduction/restore-window). Neon retains a history for all branches.
+A Neon architecture component that reads WAL records from Safekeepers to identify modified pages. The Pageserver accumulates and indexes incoming WAL records in memory and writes them to disk in batches. Each batch is written to an immutable file that is never modified after creation. Using these files, the Pageserver can quickly reconstruct any version of a page dating back to the limit set by your project's [history window](/docs/introduction/history-window). Neon retains a history for all branches.
 
 The Pageserver uploads immutable files to cloud storage, which is the final, highly durable destination for data. After a file is successfully uploaded to cloud storage, the corresponding WAL records can be removed from the Safekeepers.
 
@@ -443,7 +451,7 @@ When you run a Neon CLI command without specifying an organization (via `--org-i
 
 Since the CLI walks up the directory tree to find context files, a `.neon` file in your project root serves as the default organization for that project and all its subdirectories. You can also set it explicitly using `neon set-context --org-id <org-id>`.
 
-For more information, see [Neon CLI commands — set-context](/docs/reference/cli-set-context).
+For more information, see [Neon CLI commands — set-context](/docs/cli/set-context).
 
 ## Project
 
@@ -511,9 +519,9 @@ On the publisher database in a logical replication setup, replication slots trac
 
 Selling the Neon service as part of another service offering.
 
-## restore window
+## History window
 
-The period of time for which Neon retains a history of changes for your branches. The restore window determines how far back you can restore data, create branches from past states, and run Time Travel queries. The restore window is configurable per project and affects instant restore storage costs. For detailed information, see [Restore window](/docs/introduction/restore-window).
+The Neon Console setting (under **Settings → Instant restore**) that controls how long Neon retains change history for your branches. It defines how far back **[instant restore](#instant-restore)** can reach and how far back you can run [Time Travel](#time-travel) queries or branch from past states. It is configurable per project and affects **History** usage (instant restore storage) on your bill. See [History window](/docs/introduction/history-window).
 
 ## root branch
 
@@ -548,7 +556,7 @@ See [Schema-only branches](/docs/guides/branching-schema-only).
 
 ## Schema Diff
 
-A Neon feature that lets you compare database schemas between different branches for better debugging, code review, and team collobration. See [Schema Diff](/docs/guides/schema-diff).
+A Neon feature that lets you compare database schemas between different branches for better debugging, code review, and team collaboration. See [Schema Diff](/docs/guides/schema-diff).
 
 ## Concurrently active compute limit
 
@@ -630,7 +638,7 @@ You can obtain an unpooled connection string for your database by clicking the *
 
 ## Time Travel
 
-A Neon feature that lets you connect to any selected point in time within your [restore window](/docs/introduction/restore-window) and run queries against that connection. See [Time Travel](/docs/guides/time-travel-assist).
+A Neon feature that lets you connect to any selected point in time still covered by your [history window](/docs/introduction/history-window) for **instant restore**, and run queries against that connection. See [Time Travel](/docs/guides/time-travel-assist).
 
 ## user
 

@@ -2,11 +2,17 @@
 title: Connect a Java application to Neon Postgres
 subtitle: Learn how to run SQL queries in Neon from Java using the PostgreSQL JDBC
   driver
+summary: >-
+  Connect a Java application to Neon Postgres using the PostgreSQL JDBC driver
+  with Apache Maven. Covers complete CRUD examples including PreparedStatement
+  inserts, batch operations, and transaction control with setAutoCommit,
+  commit, and rollback. Also covers dotenv-java for credential management.
+  Focuses on raw JDBC without an ORM, unlike Spring Boot or Hibernate guides.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/java
   - /docs/integrations/java
-updatedOn: '2025-09-30T00:26:10.495Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/java-prompt.md" 
@@ -56,7 +62,7 @@ Create a project using the Maven `archetype:generate` command. This sets up a st
     cd neon-java-jdbc
     ```
 
-    > Open this directory in your preferred code editor (e.g., VS Code, IntelliJ IDEA).
+    > Open this directory in your preferred code editor (for example, VS Code, IntelliJ IDEA).
 
 3.  Add the `postgresql` driver and `dotenv-java` libraries as dependencies in your `pom.xml` file. There may be other dependencies already present (e.g, `junit`), so ensure you add these within the `<dependencies>` section.
 
@@ -399,7 +405,92 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: true
 
 > You can see that the book '1984' has been successfully deleted from the `books` table.
 
+### Using transactions
+
+The examples above execute each operation independently. For production code where multiple operations must succeed or fail together, wrap them in a transaction. Use `setAutoCommit(false)` to start a transaction, `commit()` on success, and `rollback()` in the catch block on failure.
+
+```java title="src/main/java/com/neon/quickstart/TransactionExample.java"
+package com.neon.quickstart;
+
+import io.github.cdimascio.dotenv.Dotenv;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class TransactionExample {
+    public static void main(String[] args) {
+        Dotenv dotenv = Dotenv.load();
+        String connString = dotenv.get("DATABASE_URL");
+
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(connString);
+            conn.setAutoCommit(false); // Begin transaction
+
+            // Insert
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO books (title, author, publication_year) VALUES (?, ?, ?)")) {
+                pstmt.setString(1, "Brave New World");
+                pstmt.setString(2, "Aldous Huxley");
+                pstmt.setInt(3, 1932);
+                pstmt.executeUpdate();
+                System.out.println("Inserted book.");
+            }
+
+            // Update
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "UPDATE books SET in_stock = ? WHERE title = ?")) {
+                pstmt.setBoolean(1, false);
+                pstmt.setString(2, "Brave New World");
+                pstmt.executeUpdate();
+                System.out.println("Updated stock status.");
+            }
+
+            conn.commit(); // Commit transaction
+            System.out.println("Transaction committed successfully.");
+
+        } catch (SQLException e) {
+            System.err.println("Transaction failed. Rolling back.");
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
+```
+
+Run with:
+
+```bash
+mvn exec:java -Dexec.mainClass="com.neon.quickstart.TransactionExample"
+```
+
 </Steps>
+
+<details>
+<summary>**Notes for AI-assisted setup**</summary>
+
+- Always use `PreparedStatement` (with `?` placeholders) for INSERT, UPDATE, and DELETE operations. Do not use `Statement` for queries with user-provided data, as this is vulnerable to SQL injection.
+- Add dependencies to the `<dependencies>` section of `pom.xml`, not `<dependencyManagement>`. The `<dependencyManagement>` section declares versions but does not include libraries in the build.
+- Wrap related database operations in a transaction (`setAutoCommit(false)` / `commit()` / `rollback()`). Always call `rollback()` in a catch block to ensure atomicity on failure.
+- Close JDBC connections and statements using `try-with-resources` or explicit `finally` blocks to prevent connection leaks.
+- Do not hardcode credentials in `.java` files. Use environment variables via `dotenv-java`. For more information, see [Security overview](/docs/security/security-overview).
+
+</details>
 
 ## Next steps: Using an ORM or framework
 
@@ -408,16 +499,6 @@ While this guide demonstrates how to connect to Neon using raw SQL queries, for 
 Explore the following resources to learn how to integrate ORMs with Neon:
 
 - [Database Schema Changes with Hibernate, Spring Boot, and Neon](/guides/spring-boot-hibernate)
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-java-jdbc" description="Get started with Java and Neon using standard JDBC." icon="github">Get started with Java and Neon using JDBC</a>
-
-</DetailIconCards>
 
 ## Resources
 

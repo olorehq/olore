@@ -24,13 +24,13 @@ Every backend is a separate module. The following backends are available:
 - Warmer
 - Initializer
 
-All these backends can be overrided to fit your needs. They share some common ground for the configuration and the way they are used.
+All these backends can be overridden to fit your needs. They share some common ground for the configuration and the way they are used.
 
 ### Common Overrides
 
 Every custom overrides (not `string`) share a `BaseOverride` types and needs to be wrapped this way:
 
-```typescript
+```ts
 type BaseOverride = {
   name: string;
 };
@@ -43,7 +43,7 @@ type LazyLoadedOverride<T extends BaseOverride> = () => Promise<T>;
 
 The wrapper is the main entrypoint for the backend. This is the type of the wrapper:
 
-```typescript
+```ts
 type WrapperHandler<
   E extends BaseEventOrResult = InternalEvent,
   R extends BaseEventOrResult = InternalResult,
@@ -77,7 +77,7 @@ Be aware that you might encounter some unexpected behaviors when using streaming
 
 The converter is used to convert the event and the result. This is the type of the converter:
 
-```typescript
+```ts
 export type Converter<
   E extends BaseEventOrResult = InternalEvent,
   R extends BaseEventOrResult = InternalResult,

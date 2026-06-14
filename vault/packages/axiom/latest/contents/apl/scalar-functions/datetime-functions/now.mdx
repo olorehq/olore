@@ -1,0 +1,164 @@
+---
+title: now
+description: 'This page explains how to use the now function in APL.'
+---
+
+Use the `now` function in APL to return the current UTC clock time as a `datetime` value, optionally offset by a given timespan. `now` is evaluated once at the start of the query and returns the same fixed value for the entire duration of the query, regardless of how long the query takes to run. This means all uses of `now` within a query refer to the same point in time.
+
+You can use `now` to calculate relative times, filter events by recency, and compute the age of records in your dataset.
+
+Use it when you want to:
+
+- Filter events to a recent time window.
+- Calculate how long ago an event occurred.
+- Add the current timestamp to query output for audit or comparison purposes.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `now()` returns the current time as a Unix timestamp. In APL, `now()` returns a `datetime` value in UTC and supports an optional timespan offset to shift the returned time forward or backward.
+
+<CodeGroup>
+```sql Splunk example
+... | eval current_time=now()
+```
+
+```kusto APL equivalent
+... | extend current_time = now()
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `CURRENT_TIMESTAMP` or `NOW()` to retrieve the current date and time. In APL, `now()` behaves similarly but also accepts an optional timespan offset to shift the returned time.
+
+<CodeGroup>
+```sql SQL example
+SELECT CURRENT_TIMESTAMP AS current_time;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend current_time = now()
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+now([offset])
+```
+
+### Parameters
+
+| Name   | Type       | Description                                                     |
+| ------ | ---------- | --------------------------------------------------------------- |
+| offset | `timespan` | Optional: A timespan added to the current UTC clock time. Default is `0`. |
+
+### Returns
+
+The current UTC clock time as a `datetime`. All references to `now()` within a single statement return the same value.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Calculate the age of each request in hours to understand how recent events are.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend age_hours = datetime_diff('hour', now(), _time)
+| project _time, age_hours, method, status
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20age_hours%20%3D%20datetime_diff('hour'%2C%20now()%2C%20_time)%20%7C%20project%20_time%2C%20age_hours%2C%20method%2C%20status%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time                | age_hours | method | status |
+| -------------------- | --------- | ------ | ------ |
+| 2025-01-15T10:00:00Z | 48        | GET    | 200    |
+| 2025-01-15T10:05:00Z | 47        | POST   | 201    |
+| 2025-01-15T10:10:00Z | 47        | GET    | 500    |
+
+This query calculates how many hours ago each HTTP request occurred by comparing the event time to the current time.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Find traces from the last 5 minutes to monitor recent activity by service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where _time > now(-5m)
+| summarize trace_count = count() by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20_time%20%3E%20now(-5m)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name | trace_count |
+| ------------ | ----------- |
+| frontend     | 120         |
+| cart         | 85          |
+| checkout     | 42          |
+
+This query filters traces to those generated in the last 5 minutes and counts them by service name.
+
+</Tab>
+<Tab title="Security logs">
+
+Show the current time alongside each failed request to calculate how many minutes have passed since the event.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend current_time = now()
+| extend time_since = datetime_diff('minute', current_time, _time)
+| project _time, current_time, time_since, status, uri
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20current_time%20%3D%20now()%20%7C%20extend%20time_since%20%3D%20datetime_diff('minute'%2C%20current_time%2C%20_time)%20%7C%20project%20_time%2C%20current_time%2C%20time_since%2C%20status%2C%20uri%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time                | current_time         | time_since | status | uri        |
+| -------------------- | -------------------- | ---------- | ------ | ---------- |
+| 2025-01-15T10:00:00Z | 2025-01-17T10:00:00Z | 2880       | 403    | /admin     |
+| 2025-01-15T10:05:00Z | 2025-01-17T10:00:00Z | 2875       | 500    | /api/users |
+| 2025-01-15T10:10:00Z | 2025-01-17T10:00:00Z | 2870       | 404    | /missing   |
+
+This query adds the current timestamp to each record and calculates the elapsed time in minutes since each failed request occurred.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [ago](/apl/scalar-functions/datetime-functions/ago): Subtracts a given timespan from the current UTC clock time.
+- [datetime_add](/apl/scalar-functions/datetime-functions/datetime-add): Adds a specified amount to a datetime value.
+- [datetime_diff](/apl/scalar-functions/datetime-functions/datetime-diff): Calculates the difference between two datetime values.
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime value.
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime value.

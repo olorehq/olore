@@ -82,10 +82,12 @@ Extract common phrases from GenAI conversation text to identify trending topics 
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend conversation_text = genai_concat_contents(['attributes.gen_ai.input.messages'], ' | ')
 | summarize common_phrases = phrases(conversation_text, 20)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20conversation_text%20%3D%20genai_concat_contents(%5B%27attributes.gen_ai.input.messages%27%5D%2C%20%27%20%7C%20%27)%20%7C%20summarize%20common_phrases%20%3D%20phrases(conversation_text%2C%2020)%22%7D)
 
 **Output**
 | Count | common_phrases |

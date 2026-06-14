@@ -1,0 +1,144 @@
+---
+title: "File & Artboard"
+description: "Importing .riv data and instancing artboards."
+---
+
+A Rive `.riv` file is a binary container of **artboards**, **animations**,
+**state machines**, **view models**, and **assets**. The C++ API gives you
+read-only access to that container (`File`, `Artboard`) and mutable instances
+you can advance and draw (`ArtboardInstance`, `StateMachineInstance`).
+
+## Importing a File
+
+```cpp
+#include "rive/file.hpp"
+
+ImportResult result;
+rcp<File> file = File::import(
+    Span<const uint8_t>{bytes.data(), bytes.size()},
+    factory,        // a Factory* — usually your RenderContext
+    &result,        // optional
+    assetLoader);   // optional rcp<FileAssetLoader>
+
+switch (result) {
+    case ImportResult::success:           break;
+    case ImportResult::unsupportedVersion: /* runtime is older than file */ break;
+    case ImportResult::malformed:          /* bad bytes */                  break;
+}
+```
+
+`File` is reference-counted (`rcp<File>`). It owns the parsed object graph and
+the assets imported in-band. Keep it alive for as long as any artboard
+instance derived from it is alive.
+
+<Warning>
+  The `Factory*` you pass in is responsible for constructing every
+  `RenderPath`, `RenderPaint`, `RenderImage`, font, and audio source the
+  file produces. When using Rive's GPU renderer, this is your
+  `RenderContext`. When using a custom renderer, it is your `Factory`
+  implementation.
+</Warning>
+
+## Determinism
+
+```cpp
+File::deterministicMode = true;
+```
+
+A static flag that forces a fixed RNG seed and timestamp-driven scrolling for
+all subsequent loads. Useful for golden-image tests and frame-by-frame
+captures.
+
+## Querying Artboards
+
+```cpp
+size_t count = file->artboardCount();
+std::string name = file->artboardNameAt(0);
+
+Artboard* byName = file->artboard("Hero");          // by name
+Artboard* byIndex = file->artboard(size_t{0});      // by index
+Artboard* first = file->artboard();                 // file's first artboard
+```
+
+`Artboard*` returned by these accessors is **read-only metadata** — do not
+advance or draw it. To play an artboard, create an instance.
+
+## Instancing
+
+```cpp
+// Most common: copy of the file's default artboard.
+std::unique_ptr<ArtboardInstance> ab = file->artboardDefault();
+
+// Or by name / index:
+auto namedAb = file->artboardNamed("Hero");
+auto indexedAb = file->artboardAt(2);
+```
+
+Each call returns a **fresh, independent copy**. You can have many instances of
+the same artboard playing at once — each with its own state machine, its own
+data bindings, and its own layout.
+
+```cpp
+size_t   anims  = ab->animationCount();
+size_t   states = ab->stateMachineCount();
+std::string animName = ab->animationNameAt(0);
+std::string smName   = ab->stateMachineNameAt(0);
+
+// Designer-marked default state machine, if any.
+int defaultIdx = ab->defaultStateMachineIndex();   // -1 if none
+```
+
+## Creating a State Machine
+
+`StateMachineInstance` is the unit of playback in C++ — what you advance
+each frame, draw, and forward pointer events to.
+
+```cpp
+#include "rive/animation/state_machine_instance.hpp"
+
+std::unique_ptr<StateMachineInstance> sm = ab->defaultStateMachine();
+if (!sm && ab->stateMachineCount() > 0) {
+    sm = ab->stateMachineAt(0);
+}
+```
+
+## Sizing & Layout
+
+Artboards have an intrinsic size set in the editor, plus an optional layout
+mode (Yoga-driven). For non-layout fits the artboard stays at its intrinsic
+size; for `Fit::layout` you drive width and height yourself:
+
+```cpp
+#include "rive/layout.hpp"
+
+if (fit == Fit::layout) {
+    ab->width(static_cast<float>(windowWidth));
+    ab->height(static_cast<float>(windowHeight));
+} else {
+    ab->resetSize();   // back to intrinsic
+}
+
+// Re-evaluate layout before the next draw.
+sm->advanceAndApply(0.f);
+```
+
+`Artboard::bounds()` returns the current 'rect' — feed it to `computeAlignment`
+to map artboard-space into your viewport.
+
+## File Lifetime
+
+Reference-counted ownership keeps lifetimes simple:
+
+```cpp
+rcp<File> file = File::import(...);
+auto ab = file->artboardDefault();   // unique_ptr<ArtboardInstance>
+auto sm = ab->defaultStateMachine(); // unique_ptr<StateMachineInstance>
+
+// Tear down in reverse order:
+sm.reset();
+ab.reset();
+file = nullptr;     // last rcp drops the File
+```
+
+Always destroy Rive objects **before** tearing down your `RenderContext` —
+they hold references to GPU resources owned by the context.

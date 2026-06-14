@@ -10,9 +10,7 @@ The custom worker re-uses the generated fetch handler.
 
 The following custom worker re-uses the generated fetch handler and adds a scheduled handler:
 
-```ts
-// custom-worker.ts
-
+```ts filename="custom-worker.ts"
 // @ts-ignore `.open-next/worker.ts` is generated at build time
 import { default as handler } from "./.open-next/worker.js";
 
@@ -34,8 +32,7 @@ See [an example in the adapter repository](https://github.com/opennextjs/opennex
 
 ### Update the entry point in your wrangler configuration
 
-```diff
-// wrangler.jsonc
+```diff filename="wrangler.jsonc"
 {
 -  "main": "./.open-next/worker.js"
 +  "main": "./path/to/custom-worker.ts",

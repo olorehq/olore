@@ -1,8 +1,15 @@
 ---
 title: Migrate to Neon Auth with Better Auth
 subtitle: Update from the legacy Stack Auth-based implementation
+summary: >-
+  Migration guide for upgrading from legacy Neon Auth (Stack Auth) to Neon Auth
+  with Better Auth. Replace Stack Auth environment variables with a single
+  `NEON_AUTH_BASE_URL` and swap the `@stackframe/stack` SDK for
+  `@neondatabase/auth`. Use this page when moving an existing Next.js or React
+  SPA project off Stack Auth, or when ejecting to a self-managed Stack Auth
+  project.
 enableTableOfContents: true
-updatedOn: '2026-01-30T14:03:06.270Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 redirectFrom:
   - /docs/neon-auth/quick-start/nextjs
   - /docs/neon-auth/quick-start/react
@@ -26,7 +33,7 @@ If you're using legacy Neon Auth with Stack Auth, you can continue using it. We'
 
 - **Native Branching Support**
 
-  Authentication branches automatically with your database. Each branch gets isolated users, sessions, and auth configuration—perfect for preview environments and testing.
+  Authentication branches automatically with your database. Each branch gets isolated users, sessions, and auth configuration, perfect for preview environments and testing.
 
 - **Database as Source of Truth**
 
@@ -72,7 +79,7 @@ Uninstall Stack Auth packages and install `@neondatabase/auth`
 
 ```bash filename="Terminal"
 npm uninstall @stackframe/stack
-npm install @neondatabase/auth
+npm install @neondatabase/auth@latest @neondatabase/auth-ui
 ```
 
 **What changed**  
@@ -131,7 +138,7 @@ export default function SignInPage() {
 ```
 
 ```tsx
-import { AuthView } from '@neondatabase/auth/react';
+import { AuthView } from '@neondatabase/auth-ui';
 
 export default function SignInPage() {
   return <AuthView pathname="sign-in" />;
@@ -156,7 +163,7 @@ export default function SignUpPage() {
 ```
 
 ```tsx
-import { AuthView } from '@neondatabase/auth/react';
+import { AuthView } from '@neondatabase/auth-ui';
 
 export default function SignUpPage() {
   return <AuthView pathname="sign-up" />;
@@ -181,7 +188,7 @@ export function Header() {
 ```
 
 ```tsx
-import { UserButton } from '@neondatabase/auth/react';
+import { UserButton } from '@neondatabase/auth-ui';
 
 export function Header() {
   return <UserButton />;
@@ -243,8 +250,8 @@ export default function RootLayout({ children }) {
 
 ```tsx
 'use client';
-import { NeonAuthUIProvider } from '@neondatabase/auth/react';
-import '@neondatabase/auth/ui/css';
+import { NeonAuthUIProvider } from '@neondatabase/auth-ui';
+import '@neondatabase/auth-ui/css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
@@ -319,7 +326,7 @@ export default function ProtectedPage() {
 
 ```tsx
 'use client';
-import { SignedIn, RedirectToSignIn } from '@neondatabase/auth/react';
+import { SignedIn, RedirectToSignIn } from '@neondatabase/auth-ui';
 
 export default function ProtectedPage() {
   return (
@@ -337,6 +344,8 @@ export default function ProtectedPage() {
 You switch from hook-based redirects to declarative UI helpers that show content only when the user is signed in.
 
 #### Middleware-based protection
+
+<NextjsProxyNote/>
 
 ```tsx filename="proxy.ts (new)"
 import { auth } from '@/lib/auth/server';
@@ -399,7 +408,7 @@ Uninstall Stack Auth packages and install `@neondatabase/auth`
 
 ```bash filename="Terminal"
 npm uninstall @stackframe/stack
-npm install @neondatabase/auth
+npm install @neondatabase/auth@latest @neondatabase/auth-ui
 ```
 
 **What changed**  
@@ -488,8 +497,8 @@ function App() {
 ```
 
 ```tsx
-import { NeonAuthUIProvider } from '@neondatabase/auth/react';
-import '@neondatabase/auth/ui/css';
+import { NeonAuthUIProvider } from '@neondatabase/auth-ui';
+import '@neondatabase/auth-ui/css';
 import { authClient } from './auth';
 
 function App() {
@@ -511,7 +520,7 @@ To learn more about applying styles to the Auth UI components, including plain C
 Delete any `StackHandler` routes. Create custom pages for sign-in and sign-up using `<AuthView>`.
 
 ```tsx filename="src/pages/SignIn.tsx"
-import { AuthView } from '@neondatabase/auth/react';
+import { AuthView } from '@neondatabase/auth-ui';
 
 export default function SignIn() {
   return <AuthView pathname="sign-in" />;
@@ -526,7 +535,7 @@ Routing is fully controlled by your SPA, and the `AuthView` component just rende
 If you're using React Router, pass navigation helpers to the provider.
 
 ```tsx filename="src/App.tsx (React Router)"
-import { NeonAuthUIProvider } from '@neondatabase/auth/react';
+import { NeonAuthUIProvider } from '@neondatabase/auth-ui';
 import { useNavigate, Link } from 'react-router-dom';
 import { authClient } from './auth';
 

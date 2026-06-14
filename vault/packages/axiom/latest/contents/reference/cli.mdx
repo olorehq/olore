@@ -66,7 +66,38 @@ axiom
 
 ## Authentication
 
-The easiest way to start using Axiom CLI is by logging in through the command line. Simply run `axiom auth login` or simply `axiom` if no prior configuration exists. This will guide you through a straightforward login process.
+The recommended way to authenticate Axiom CLI is with a personal access token. A personal access token starts with `xapt-` and lets you do everything you can do in the Axiom Console, including querying and streaming data.
+
+1. In the Axiom Console, go to **Settings → Profile → Personal Tokens** and create a token. Copy the token value (it starts with `xapt-`).
+2. Log in with the token. Use one of the following methods.
+
+Interactive login (you’re prompted for your token and organization ID):
+
+```bash
+axiom auth login --auto-login=false
+```
+
+Non-interactive login (useful for scripts and CI). When you pipe the token, both `--alias` (a local name for the deployment) and `--org-id` are required:
+
+```bash
+echo "xapt-your-token" | axiom auth login --alias "axiom" --org-id "your-org-id" -f
+```
+
+Alternatively, skip `axiom auth login` entirely and set environment variables. `AXIOM_ORG_ID` is optional with a personal access token—the token resolves to your default organization, so set it only when your account belongs to more than one organization and you want to target a specific one:
+
+```bash
+export AXIOM_TOKEN="xapt-your-token"
+export AXIOM_URL="https://api.axiom.co"
+export AXIOM_ORG_ID="your-org-id" # optional; only needed to target a specific organization
+```
+
+To confirm you’re authenticated, run `axiom dataset list`.
+
+<Warning>
+  Running `axiom auth login` without `--auto-login=false` starts a browser-based login flow. This flow is currently affected by a known issue: after you authorize the application, the login can fail with an OAuth error (`oauth2: "invalid_request"`). Until this is resolved, use the personal access token method described above.
+</Warning>
+
+For more information about tokens, see [Tokens](/reference/tokens).
 
 ## Managing multiple organizations
 

@@ -91,11 +91,11 @@ Another type of service you’ll want to monitor is one that doesn’t accept an
 
 There’s really not much to getting one to work, just set up a heartbeat in the Checkly UI or with the Checkly CLI. For example, the following code 
 
-```tsx UptimeMonitoring.check.ts      
+```tsx UptimeMonitoring.check.ts
 //heartbeat.check.ts
-import { HeartbeatCheck } from 'checkly/constructs'
+import { HeartbeatMonitor } from 'checkly/constructs'
 
-new HeartbeatCheck('heartbeat-check-1', {
+new HeartbeatMonitor('heartbeat-check-1', {
   name: 'Send weekly newsletter job',
   period: 7,
   periodUnit: 'days',

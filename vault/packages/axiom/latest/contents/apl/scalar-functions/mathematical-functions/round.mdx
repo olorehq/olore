@@ -1,0 +1,97 @@
+---
+title: round
+description: 'This page explains how to use the round function in APL.'
+---
+
+Use the `round` function in APL to round a numeric value to a specified number of decimal places. When no precision is provided, the function rounds to the nearest integer.
+
+`round` is useful for reducing noise in aggregated metrics, normalizing reported values to a readable precision, and comparing floating-point results that are intended to be equal but differ by tiny rounding errors. For example, you can round average latencies to two decimal places for display, or round computed percentages to integers for bucketing.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `round(X, Y)` rounds `X` to `Y` decimal places, just like APL's `round`.
+
+<CodeGroup>
+```sql Splunk example
+| eval avg_duration_rounded = round(avg_duration, 2)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend avg_duration_rounded = round(avg_duration, 2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `ROUND(x, precision)` works the same as APL's `round`.
+
+<CodeGroup>
+```sql SQL example
+SELECT ROUND(avg_duration, 2) AS avg_duration_rounded FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend avg_duration_rounded = round(avg_duration, 2)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+round(source [, Precision])
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `source` | real | Yes | The value to round. |
+| `Precision` | int | No | Number of decimal places to round to. Defaults to 0. |
+
+### Returns
+
+The `source` value rounded to the specified number of decimal places.
+
+## Example
+
+Use `round` to round the average request duration to two decimal places per hour.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize avg_duration = avg(req_duration_ms) by bin(_time, 1h)
+| extend avg_rounded = round(avg_duration, 2)
+| project _time, avg_duration, avg_rounded
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20summarize%20avg_duration%20%3D%20avg%28req_duration_ms%29%20by%20bin%28_time%2C%201h%29%20%7C%20extend%20avg_rounded%20%3D%20round%28avg_duration%2C%202%29%20%7C%20project%20_time%2C%20avg_duration%2C%20avg_rounded%22%7D)
+
+**Output**
+
+| _time | avg_duration | avg_rounded |
+|---|---|---|
+| 2024-11-14 10:00:00 | 123.4567 | 123.46 |
+| 2024-11-14 11:00:00 | 98.1234 | 98.12 |
+| 2024-11-14 12:00:00 | 200.0001 | 200.00 |
+
+## List of related functions
+
+- [abs](/apl/scalar-functions/mathematical-functions/abs): Returns the absolute value. Use it to remove sign before rounding if direction is irrelevant.
+- [sign](/apl/scalar-functions/mathematical-functions/sign): Returns the sign of a value. Use it to check direction after rounding.
+- [log10](/apl/scalar-functions/mathematical-functions/log10): Returns the base-10 logarithm. Use `round(log10(x))` to bucket values by integer order of magnitude.
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to a power. Use it to scale values before rounding when working with non-unit precision.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Combine with `round` to produce a rounded standard deviation or root value.

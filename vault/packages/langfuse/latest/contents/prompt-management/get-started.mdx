@@ -1,5 +1,5 @@
 ---
-title: Get Started with Open Source Prompt Management
+title: Get Started
 sidebarTitle: Get Started
 description: Get started with Langfuse Prompt Management.
 ---
@@ -8,77 +8,126 @@ description: Get started with Langfuse Prompt Management.
 
 This guide walks you through creating and using a prompt with Langfuse. If you're looking to understand what prompt management is and why it matters, check out the [Prompt Management Overview](/docs/prompt-management/overview) first. For details on how prompts are structured in Langfuse and how it works in the background, see [Core Concepts](/docs/prompt-management/data-model).
 
+import { Details, Summary } from "@/components/Details";
 import PromptCreate from "@/components-mdx/prompt-create.mdx";
 import PromptUse from "@/components-mdx/prompt-use.mdx";
-import GetStartedAutoInstall from "@/components-mdx/get-started/auto-install.mdx";
+import { FaqPreview } from "@/components/faq/FaqPreview";
+import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 
-<LangTabs items={["Use AI", "Do it yourself"]}>
+<div className="rounded-lg border bg-muted-blue/5 px-6 pb-6 [&>h2]:mt-6 [&>h2]:mb-4">
+
+## Agentic installation [#agentic-installation]
+
+Install the [Langfuse Agent Skill](https://github.com/langfuse/skills) to let your coding agent access all Langfuse features.
+
+<Tabs items={["Ask your coding agent", "Cursor plugin", "Manual installation"]}>
+
 <Tab>
-<div style={{marginTop: "-3.5rem"}}>
-<Steps>
-## Get API keys
 
-1.  [Create Langfuse account](https://cloud.langfuse.com/auth/sign-up) or [self-host Langfuse](/self-hosting).
-2.  Create new API credentials in the project settings.
+Ask your coding agent to install the skill by pointing to the [GitHub repository](https://github.com/langfuse/skills) and instruct it to migrate your prompts.
 
-## Set up your AI agent
-
-Use the [Langfuse Skill](https://github.com/langfuse/skills) in your editor’s agent mode to automatically create, edit, and use prompts.
-
-> What is a Skill? A reusable instruction package for AI coding agents. It gives your agent Langfuse-specific workflows and best practices out of the box.
-
-<GetStartedAutoInstall />
-
-## Create a prompt [#create-update-prompt]
-
-Start a new agent session, then prompt it to create your prompt:
-
-```
-"Create a prompt in Langfuse called 'movie-critic' that takes a movie name 
-and critic level as variables."
+```txt filename="Agent instruction"
+Install the Langfuse Agent Skill from github.com/langfuse/skills
+and use it to migrate the prompts in this codebase to Langfuse.
 ```
 
-Or prompt it to migrate your existing prompts to Langfuse:
-
-```
-"Migrate the hardcoded prompts in this codebase to Langfuse."
-```
-
-## Use the prompt in your code [#use-prompt]
-
-If you haven't started a new agent session yet, start one and prompt it to integrate prompt fetching:
-
-```
-"Fetch the 'movie-critic' prompt, production version, from Langfuse 
-and use it in my application."
-```
-
-</Steps>
-</div>
 </Tab>
-<Tab>
-<div style={{marginTop: "-3.5rem"}}>
-<Steps>
-## Get API keys
 
-1.  [Create Langfuse account](https://cloud.langfuse.com/auth/sign-up) or [self-host Langfuse](/self-hosting).
+<Tab>
+
+Langfuse has a [Cursor Plugin](https://cursor.com/docs/plugins) that includes the skill automatically.
+
+<div className="flex gap-2 mt-3 mb-6">
+  <Button asChild>
+    <Link
+      href="https://cursor.com/marketplace/langfuse"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Install Plugin in Cursor
+    </Link>
+  </Button>
+</div>
+
+Then prompt your agent:
+
+```txt filename="Agent instruction"
+Migrate the prompts in this codebase to Langfuse.
+```
+
+</Tab>
+
+<Tab>
+
+Install via npm ([skills CLI](https://www.npmjs.com/package/skills)):
+
+```bash
+npx skills add langfuse/skills --skill "langfuse"
+```
+
+If you want to target a specific agent directly:
+
+```bash
+npx skills add langfuse/skills --skill "langfuse" --agent "<agent-id>"
+```
+
+<Details>
+<Summary>Alternatively you can manually clone the skill</Summary>
+
+1. Clone repo somewhere stable
+
+```bash
+git clone https://github.com/langfuse/skills.git /path/to/langfuse-skills
+```
+
+2. Make sure your agent's skills dir exists
+
+```bash
+mkdir -p /path/to/<agent-skill-root>/skills
+```
+
+3. Symlink the skill folder
+
+```bash
+ln -s /path/to/langfuse-skills/skills/langfuse /path/to/<agent-skill-root>/skills/langfuse
+```
+
+</Details>
+
+Then prompt your agent:
+
+```txt filename="Agent instruction"
+Migrate the prompts in this codebase to Langfuse.
+```
+
+</Tab>
+
+</Tabs>
+
+</div>
+
+## Manual installation [#manual-installation]
+
+This guide helps you get started with Langfuse Prompt Management manually.
+
+<Steps>
+### Get API keys
+
+1.  [Create Langfuse account](https://langfuse.com/cloud) or [self-host Langfuse](/self-hosting).
 2.  Create new API credentials in the project settings.
 
-## Create a prompt [#create-update-prompt]
+### Create a prompt [#create-update-prompt-diy]
 
 <PromptCreate />
 
-## Use the prompt in your code [#use-prompt]
+### Use the prompt in your code [#use-prompt-diy]
 
 <PromptUse />
 
 </Steps>
-</div>
-</Tab>
-</LangTabs>
 
-#### Not seeing what you expected?
-import { FaqPreview } from "@/components/faq/FaqPreview";
+## Not seeing what you expected?
 
 <FaqPreview tags={["prompt-management-get-started"]} />
 

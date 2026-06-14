@@ -43,9 +43,9 @@ Anthropic retains Claude Code data based on your account type and preferences.
 
 * Standard: 30-day retention period
 * [Zero data retention](/en/zero-data-retention): available for Claude Code on Claude for Enterprise. ZDR is enabled on a per-organization basis; each new organization must have ZDR enabled separately by your account team
-* Local caching: Claude Code clients may store sessions locally for up to 30 days to enable session resumption (configurable)
+* Local caching: Claude Code clients store session transcripts locally in plaintext under `~/.claude/projects/` for 30 days by default to enable session resumption. Adjust the period with `cleanupPeriodDays`. See [application data](/en/claude-directory#application-data) for what's stored and how to clear it.
 
-You can delete individual Claude Code on the web sessions at any time. Deleting a session permanently removes the session's event data. For instructions on how to delete sessions, see [Managing sessions](/en/claude-code-on-the-web#managing-sessions).
+You can delete individual Claude Code on the web sessions at any time. Deleting a session permanently removes the session's event data. For instructions on how to delete sessions, see [Delete sessions](/en/claude-code-on-the-web#delete-sessions).
 
 Learn more about data retention practices in our [Privacy Center](https://privacy.anthropic.com/).
 
@@ -59,11 +59,20 @@ For all first party users, you can learn more about what data is logged for [loc
 
 The diagram below shows how Claude Code connects to external services during installation and normal operation. Solid lines indicate required connections, while dashed lines represent optional or user-initiated data flows.
 
-<img src="https://mintcdn.com/claude-code/c5r9_6tjPMzFdDDT/images/claude-code-data-flow.svg?fit=max&auto=format&n=c5r9_6tjPMzFdDDT&q=85&s=b3f71c69d743bff63343207dfb7ad6ce" alt="Diagram showing Claude Code's external connections: install/update connects to NPM, and user requests connect to Anthropic services including Console auth, public-api, and optionally Statsig, Sentry, and bug reporting" width="720" height="520" data-path="images/claude-code-data-flow.svg" />
+<img src="https://mintcdn.com/claude-code/YcBW2H7CArGcduPb/images/claude-code-data-flow.svg?fit=max&auto=format&n=YcBW2H7CArGcduPb&q=85&s=b600a89f84fc86f9ff7be00a466c0635" alt="Diagram showing Claude Code's external connections: install/update connects to the distribution server, and user requests connect to Anthropic services including Console auth, public-api, and optionally Statsig, Sentry, and bug reporting" width="720" height="520" data-path="images/claude-code-data-flow.svg" />
 
-Claude Code is installed from [NPM](https://www.npmjs.com/package/@anthropic-ai/claude-code). Claude Code runs locally. In order to interact with the LLM, Claude Code sends data over the network. This data includes all user prompts and model outputs. The data is encrypted in transit via TLS and is not encrypted at rest. Claude Code is compatible with most popular VPNs and LLM proxies.
+Claude Code runs locally. To interact with the LLM, Claude Code sends data over the network. This data includes all user prompts and model outputs, encrypted in transit via TLS 1.2+. Claude Code is compatible with most popular VPNs and LLM proxies.
 
-Claude Code is built on Anthropic's APIs. For details regarding our API's security controls, including our API logging procedures, please refer to compliance artifacts offered in the [Anthropic Trust Center](https://trust.anthropic.com).
+Encryption at rest depends on your model provider:
+
+| Provider               | Encryption at rest                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Anthropic API          | Infrastructure-level disk encryption (AES-256). Enable [Zero Data Retention](/en/zero-data-retention) for no server-side persistence. |
+| Amazon Bedrock         | AES-256 with AWS-managed keys. Customer-managed keys available via AWS KMS.                                                           |
+| Google Cloud Vertex AI | Google-managed encryption keys. CMEK available.                                                                                       |
+| Microsoft Foundry      | Requests route to Anthropic infrastructure with AES-256 disk encryption.                                                              |
+
+Claude Code is built on Anthropic's APIs. For details on API security controls, including API logging procedures, see the compliance artifacts in the [Anthropic Trust Center](https://trust.anthropic.com).
 
 ### Cloud execution: Data flow and dependencies
 
@@ -82,17 +91,24 @@ Claude Code connects from users' machines to the Statsig service to log operatio
 
 Claude Code connects from users' machines to Sentry for operational error logging. The data is encrypted in transit using TLS and at rest using 256-bit AES encryption. Read more in the [Sentry security documentation](https://sentry.io/security/). To opt out of error logging, set the `DISABLE_ERROR_REPORTING` environment variable.
 
-When users run the `/feedback` command, a copy of their full conversation history including code is sent to Anthropic. The data is encrypted in transit and at rest. Optionally, a Github issue is created in our public repository. To opt out, set the `DISABLE_FEEDBACK_COMMAND` environment variable.
+When users run the `/feedback` command, a copy of their full conversation history including code is sent to Anthropic. The data is encrypted in transit via TLS. Optionally, a GitHub issue is created in the public repository. To opt out, set the `DISABLE_FEEDBACK_COMMAND` environment variable to `1`.
 
 ## Default behaviors by API provider
 
-By default, error reporting, telemetry, and bug reporting are disabled when using Bedrock, Vertex, or Foundry. Session quality surveys are the exception and appear regardless of provider. You can opt out of all non-essential traffic, including surveys, at once by setting `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`. Here are the full default behaviors:
+By default, error reporting, telemetry, and bug reporting are disabled when using Bedrock, Vertex, or Foundry. Session quality surveys and the WebFetch domain safety check are exceptions and run regardless of provider. You can opt out of all non-essential traffic, including surveys, at once by setting `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`. This variable does not affect the WebFetch check, which has its own opt-out. Here are the full default behaviors:
 
-| Service                              | Claude API                                                           | Vertex API                                                           | Bedrock API                                                          | Foundry API                                                          |
-| ------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Statsig (Metrics)**                | Default on.<br />`DISABLE_TELEMETRY=1` to disable.                   | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
-| **Sentry (Errors)**                  | Default on.<br />`DISABLE_ERROR_REPORTING=1` to disable.             | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
-| **Claude API (`/feedback` reports)** | Default on.<br />`DISABLE_FEEDBACK_COMMAND=1` to disable.            | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.               | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.               |
-| **Session quality surveys**          | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable. |
+| Service                              | Claude API                                                                             | Vertex API                                                                             | Bedrock API                                                                            | Foundry API                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **Statsig (Metrics)**                | Default on.<br />`DISABLE_TELEMETRY=1` to disable.                                     | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                                  | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.                                 | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.                                 |
+| **Sentry (Errors)**                  | Default on.<br />`DISABLE_ERROR_REPORTING=1` to disable.                               | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                                  | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.                                 | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.                                 |
+| **Claude API (`/feedback` reports)** | Default on.<br />`DISABLE_FEEDBACK_COMMAND=1` to disable.                              | Default off.<br />`CLAUDE_CODE_USE_VERTEX` must be 1.                                  | Default off.<br />`CLAUDE_CODE_USE_BEDROCK` must be 1.                                 | Default off.<br />`CLAUDE_CODE_USE_FOUNDRY` must be 1.                                 |
+| **Session quality surveys**          | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable.                   | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable.                   | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable.                   | Default on.<br />`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1` to disable.                   |
+| **WebFetch domain safety check**     | Default on.<br />`skipWebFetchPreflight: true` in [settings](/en/settings) to disable. | Default on.<br />`skipWebFetchPreflight: true` in [settings](/en/settings) to disable. | Default on.<br />`skipWebFetchPreflight: true` in [settings](/en/settings) to disable. | Default on.<br />`skipWebFetchPreflight: true` in [settings](/en/settings) to disable. |
 
-All environment variables can be checked into `settings.json` ([read more](/en/settings)).
+All environment variables can be checked into `settings.json` (see [settings reference](/en/settings)).
+
+### WebFetch domain safety check
+
+Before fetching a URL, the WebFetch tool sends the requested hostname to `api.anthropic.com` to check it against a safety blocklist maintained by Anthropic. Only the hostname is sent, not the full URL, path, or page contents. Results are cached per hostname for five minutes.
+
+This check runs regardless of which model provider you use and is not affected by `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`. If your network blocks `api.anthropic.com`, WebFetch requests fail until you either allowlist the domain or set `skipWebFetchPreflight: true` in [settings](/en/settings). Disabling the check means WebFetch attempts to retrieve any URL without consulting the blocklist, so combine it with [`WebFetch` permission rules](/en/permissions#webfetch) if you need to restrict which domains Claude can reach.

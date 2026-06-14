@@ -12,31 +12,33 @@ Storybook UI component development documentation. Use for component stories, add
 | Task | Entry Point |
 |------|-------------|
 | Install Storybook | `contents/get-started/install.mdx` |
+| Framework setup | `contents/get-started/frameworks/` |
 | Write stories | `contents/writing-stories/index.mdx` |
+| Test components | `contents/writing-tests/index.mdx` |
+| Write docs | `contents/writing-docs/index.mdx` |
 | Configure Storybook | `contents/configure/index.mdx` |
-| API reference | `contents/api/index.mdx` |
-| Testing with Storybook | `contents/writing-tests/index.mdx` |
-| Write documentation | `contents/writing-docs/index.mdx` |
-| Install/write addons | `contents/addons/index.mdx` |
-| Migrate to v10 | `contents/releases/migration-guide.mdx` |
-| FAQ | `contents/faq.mdx` |
+| main.js API reference | `contents/api/main-config/main-config.mdx` |
+| Addons | `contents/addons/index.mdx` |
+| Upgrade / migrate | `contents/releases/upgrading.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Writing component stories (CSF, args, decorators, play functions)
-- Configuring Storybook (main.js, preview.js, addons, frameworks)
-- Testing with Storybook (interaction tests, visual tests, accessibility, CI)
-- Writing Storybook documentation (MDX, doc blocks, autodocs)
-- Installing or developing Storybook addons
-- Framework-specific setup (React, Vue, Angular, Svelte, Next.js)
-- Storybook API (ArgTypes, parameters, CSF format, portable stories)
-- Publishing and sharing Storybook
+- Writing, organizing, or composing component stories (CSF, args, decorators, loaders, play functions)
+- Setting up Storybook for React, Next.js, Angular, Vue, Svelte, or other frameworks
+- Component testing (interaction tests, visual tests, accessibility tests, snapshot tests)
+- Writing MDX documentation, autodocs, or doc blocks
+- Configuring Storybook (main.js, preview.js, environment variables, TypeScript)
+- Installing or building custom addons and presets
+- Publishing, embedding, or sharing Storybook
+- Using Storybook's CLI, API (argTypes, parameters, portable stories)
+- Upgrading or migrating between Storybook versions
+- AI/MCP integration with Storybook
 
 ## How to find information
 
-1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question
+1. **First**, read `TOC.md` for the complete file listing organized by directory
+2. Identify the relevant section based on the user's question
 3. Read specific files for details
 
-**TOC.md contains all files organized by directory - always check it first.**
+**TOC.md contains all 171 files organized by directory - always check it first.**

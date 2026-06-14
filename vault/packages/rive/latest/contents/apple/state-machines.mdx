@@ -44,7 +44,7 @@ import { Apple } from "/snippets/constants.mdx"
 
     ```swift
     let worker = try await Worker()
-    let file = try await File(source: .local("my_file", Bundle.main))
+    let file = try await File(source: .local("my_file", Bundle.main), worker: worker)
     let artboardByName = try await file.createArtboard("Artboard")
     let stateMachine = try await artboardByName.createStateMachine("StateMachine")
     let rive = try await Rive(file: file, artboard: artboardByName, stateMachine: stateMachine)

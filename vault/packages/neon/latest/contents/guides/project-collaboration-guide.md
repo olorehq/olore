@@ -1,16 +1,23 @@
 ---
 title: Project collaboration
 subtitle: Learn how to invite people to collaborate on your Neon project
+summary: >-
+  Project collaboration lets Neon project owners invite external users by email
+  to access a project through the Console, API, and CLI. Invited users don't
+  receive deletion rights or organization membership. Use this page when sharing
+  a single project with a contractor or external contributor rather than adding
+  a full organization member. Collaborator usage counts against the project
+  owner's plan allowances, and all costs are billed to the owning account.
 enableTableOfContents: true
 redirectFrom:
   - /docs/guides/project-sharing-guide
-updatedOn: '2025-08-02T10:33:29.288Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 You can invite other users to collaborate with you on a Neon project. Project collaboration lets other users access and contribute to your project from all supported Neon interfaces, including the Neon Console, Neon API, and Neon CLI. Follow this guide to learn how.
 
 <Admonition type="note">
-Use project collaboration to work with people outside your organization. If you're working with team members, create an [Organization](/docs/manage/organizations) instead. Organization members get automatic access to all projects within that organization. Organizations can still use project collaboration when needed — for example, to allow an external contractor to contribute to a specific project without making them a full organization member.
+Use project collaboration to work with people outside your organization. If you're working with team members, create an [Organization](/docs/manage/organizations) instead. Organization members get automatic access to all projects within that organization. Organizations can still use project collaboration when needed (for example, to allow an external contractor to contribute to a specific project without making them a full organization member).
 </Admonition>
 
 ## Set up Neon accounts
@@ -50,11 +57,11 @@ When you invite a user to your project, they operate under _your_ project allowa
 
 ### Access for collaborators via the Neon API or CLI
 
-Collaborators you invite to a project can access it from all supported Neon interfaces, including the Neon Console, [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api), and [Neon CLI](/docs/reference/neon-cli).
+Collaborators you invite to a project can access it from all supported Neon interfaces, including the Neon Console, [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api), and [Neon CLI](/docs/cli).
 
 Collaborators can use their own API key to access the project via the Neon API. See [Manage API keys](/docs/manage/api-keys) for details on generating an API key.
 
-When using the Neon CLI, collaborators authenticate as they normally would. They can access both their own Neon projects and any projects they are collaborating on. See [Neon CLI — Connect](/docs/reference/cli-install#connect) for authentication instructions.
+When using the Neon CLI, collaborators authenticate as they normally would. They can access both their own Neon projects and any projects they are collaborating on. See [Neon CLI — Connect](/docs/cli/install#connect) for authentication instructions.
 
 ## Billing for projects with collaborators
 

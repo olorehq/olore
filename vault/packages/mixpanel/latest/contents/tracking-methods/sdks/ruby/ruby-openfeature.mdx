@@ -1,0 +1,203 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Ruby)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Ruby OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Ruby)](/docs/tracking-methods/sdks/ruby/ruby-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Ruby 3.1.0 or higher
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+Add to your `Gemfile`:
+
+```ruby
+gem 'mixpanel-ruby-openfeature'
+gem 'openfeature-sdk'
+gem 'mixpanel-ruby'
+```
+
+Then run:
+
+```bash
+bundle install
+```
+
+## Quick Start
+
+```ruby
+require 'mixpanel-ruby'
+require 'mixpanel/openfeature'
+
+# 1. Create the provider with local evaluation
+provider = Mixpanel::OpenFeature::Provider.from_local(
+  'YOUR_PROJECT_TOKEN',
+  { poll_interval: 300 }
+)
+
+# 2. Register the provider with OpenFeature
+OpenFeature::SDK.configure do |config|
+  config.set_provider(provider)
+end
+
+# 3. Get a client and evaluate flags
+client = OpenFeature::SDK.build_client
+
+show_new_feature = client.fetch_boolean_value(flag_key: 'new-feature-flag', default_value: false)
+
+if show_new_feature
+  puts 'New feature is enabled!'
+end
+```
+
+## Initialization
+
+### Local Evaluation (Recommended)
+
+Downloads flag definitions and evaluates them locally with no per-evaluation network requests.
+
+<Callout type="warning">
+Targeting by Mixpanel cohorts and sticky variants are not supported in Local Evaluation mode.
+</Callout>
+
+```ruby
+provider = Mixpanel::OpenFeature::Provider.from_local(
+  'YOUR_PROJECT_TOKEN',
+  { poll_interval: 300 }
+)
+```
+
+### Remote Evaluation
+
+Sends each flag check to Mixpanel's servers.
+
+```ruby
+provider = Mixpanel::OpenFeature::Provider.from_remote(
+  'YOUR_PROJECT_TOKEN',
+  {}
+)
+```
+
+### Using an Existing Tracker
+
+```ruby
+tracker = Mixpanel::Tracker.new('YOUR_PROJECT_TOKEN', nil, local_flags_config: { poll_interval: 300 })
+tracker.local_flags.start_polling_for_definitions!
+
+provider = Mixpanel::OpenFeature::Provider.new(tracker.local_flags)
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `fetch_boolean_value` |
+| Experiment | boolean, string, number, or JSON object | `fetch_boolean_value`, `fetch_string_value`, `fetch_number_value`, or `fetch_object_value` |
+| Dynamic Config | JSON object | `fetch_object_value` |
+
+```ruby
+client = OpenFeature::SDK.build_client
+
+# Feature Gate
+is_feature_on = client.fetch_boolean_value(flag_key: 'new-checkout', default_value: false)
+
+# Experiment with string variants
+button_color = client.fetch_string_value(flag_key: 'button-color-test', default_value: 'blue')
+
+# Experiment with number variants
+max_items = client.fetch_number_value(flag_key: 'max-items', default_value: 10)
+
+# Dynamic Config
+feature_config = client.fetch_object_value(
+  flag_key: 'homepage-layout',
+  default_value: { 'layout' => 'grid', 'items_per_row' => 3 }
+)
+```
+
+### Evaluation Context
+
+```ruby
+context = OpenFeature::SDK::EvaluationContext.new(
+  targeting_key: 'user-123',
+  email: 'user@example.com',
+  plan: 'premium'
+)
+
+value = client.fetch_boolean_value(
+  flag_key: 'premium-feature',
+  default_value: false,
+  evaluation_context: context
+)
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```ruby
+details = client.fetch_boolean_details(flag_key: 'my-feature', default_value: false)
+
+puts details.value
+puts details.variant
+puts details.reason
+puts details.error_code
+```
+
+### Accessing the Mixpanel Tracker
+
+```ruby
+provider.mixpanel.track('user-123', 'Page View', { 'page' => '/home' })
+```
+
+### Rails Integration
+
+```ruby
+# config/initializers/openfeature.rb
+provider = Mixpanel::OpenFeature::Provider.from_local(
+  ENV['MIXPANEL_TOKEN'],
+  { poll_interval: 300 }
+)
+
+OpenFeature::SDK.configure do |config|
+  config.set_provider(provider)
+end
+
+at_exit { provider.shutdown }
+```
+
+### Shutdown
+
+```ruby
+provider.shutdown
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the provider has finished initializing |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Provider not ready:** Flag definitions are fetched asynchronously. Allow time for the initial fetch.
+2. **Invalid project token:** Verify the token matches your Mixpanel project.
+3. **Flag not configured:** Verify the flag exists and is enabled.
+
+### Type Mismatch Errors
+
+Verify the flag's value type matches your evaluation method. Use `fetch_object_value` for JSON objects.

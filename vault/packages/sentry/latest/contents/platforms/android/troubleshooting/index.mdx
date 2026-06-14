@@ -10,7 +10,7 @@ sidebar_section: configuration
 If stack traces don't get deobfuscated properly, even though <PlatformLink to="/enhance-errors/proguard/">mapping files are uploaded correctly</PlatformLink>, or if Android context information is missing from events, a possible reason is that the SDK is initialized with `Sentry.init` instead of `SentryAndroid.init`.
 
 <Alert level="warning">
-For manual initialization on Android, <PlatformLink to="/configuration/manual-init/#manual-initialization">always use `SentryAndroid.init`</PlatformLink>.
+For manual initialization on Android, <PlatformLink to="/manual-setup/#configuration-via-sentryoptions">always use `SentryAndroid.init`</PlatformLink>.
 </Alert>
 
 From SDK version `8.0.0` on, using `Sentry.init` on Android will throw an `IllegalArgumentException`.
@@ -34,7 +34,7 @@ android {
 The Sentry Android SDK may trigger ANRs or StrictMode violations due to minimal file I/O operations required for event processing and context collection. 
 Since version `6.1.1` of the Sentry SDK for Android you can reduce violations by disabling additional context collection:
 
-```xml {tabTitle:AndroidManifest.xml}
+```xml {tabTitle:AndroidManifest.xml} {mdExpandTabs}
 <application>
   <meta-data android:name="io.sentry.additional-context" android:value="false" />
 </application>

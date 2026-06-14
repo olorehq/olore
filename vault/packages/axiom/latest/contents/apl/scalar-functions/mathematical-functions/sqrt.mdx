@@ -1,0 +1,126 @@
+---
+title: sqrt
+description: 'This page explains how to use the sqrt function in APL.'
+---
+
+Use the `sqrt` function in APL to compute the square root of a non-negative numeric value.
+
+`sqrt` is useful whenever you want to compress large numeric ranges, compute root-mean-square values, normalize metrics, or undo a squared transformation. It's equivalent to `pow(x, 0.5)` but is more concise for the square-root case.
+
+If the input is negative, `sqrt` returns NaN (Not a Number). APL represents NaN as `null` in query results. Use [isnan](/apl/scalar-functions/mathematical-functions/isnan) to filter these values before aggregating or charting.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `sqrt()` works identically: it takes a single numeric argument and returns its square root.
+
+<CodeGroup>
+```sql Splunk example
+| eval root_duration = sqrt(req_duration_ms)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend root_duration = sqrt(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `SQRT()` is a standard built-in function with the same semantics as in APL.
+
+<CodeGroup>
+```sql SQL example
+SELECT SQRT(req_duration_ms) AS root_duration FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend root_duration = sqrt(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+sqrt(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The value to compute the square root of. Must be non-negative for a defined result. |
+
+### Returns
+
+Returns the square root of `x`.
+
+If `x` is negative, the function returns NaN, which APL represents as `null` in query results. Use [isnan](/apl/scalar-functions/mathematical-functions/isnan) to check for this condition.
+
+## Examples
+
+### Compute the square root of request duration
+
+Use `sqrt` to normalize request durations by taking their square root, compressing the range of large values.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend root_duration = sqrt(req_duration_ms)
+| project _time, id, req_duration_ms, root_duration
+| order by root_duration desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20root_duration%20%3D%20sqrt(req_duration_ms)%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20root_duration%20%7C%20order%20by%20root_duration%20desc%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | root_duration |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1600.0 | 40.0 |
+| 2024-11-14 10:01:00 | user-2 | 400.0 | 20.0 |
+| 2024-11-14 10:02:00 | user-3 | 25.0 | 5.0 |
+
+### Detect NaN from negative inputs
+
+When input values are negative, `sqrt` returns NaN. APL displays NaN as `null`. Use `isnan` to identify and handle these rows.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend shifted = req_duration_ms - 500
+| extend root_shifted = sqrt(shifted)
+| extend is_invalid = isnan(root_shifted)
+| project _time, id, shifted, root_shifted, is_invalid
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20shifted%20%3D%20req_duration_ms%20-%20500%20%7C%20extend%20root_shifted%20%3D%20sqrt(shifted)%20%7C%20extend%20is_invalid%20%3D%20isnan(root_shifted)%20%7C%20project%20_time%2C%20id%2C%20shifted%2C%20root_shifted%2C%20is_invalid%22%7D)
+
+**Output**
+
+| _time | id | shifted | root_shifted | is_invalid |
+|---|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 700.0 | 26.46 | false |
+| 2024-11-14 10:01:00 | user-2 | -200.0 | null | true |
+| 2024-11-14 10:03:00 | user-3 | -50.0 | null | true |
+
+## List of related functions
+
+- [pow](/apl/scalar-functions/mathematical-functions/pow): Raises a value to an arbitrary power. `sqrt(x)` is equivalent to `pow(x, 0.5)`.
+- [isnan](/apl/scalar-functions/mathematical-functions/isnan): Returns `true` when a value is NaN. Use it to detect `null` results from `sqrt` on negative inputs.
+- [abs](/apl/scalar-functions/mathematical-functions/abs): Returns the absolute value. Use it to ensure inputs are non-negative before passing them to `sqrt`.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it when the inverse operation of `log` is needed rather than a root.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it alongside `sqrt` when working in log space.

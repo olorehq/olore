@@ -321,10 +321,12 @@ await castMembers.create({
 Cypress uses a custom matcher signature and a route handler function to intercept and handle requests. It utilizes custom methods like `req.reply()`, `req.continue()` or `req.redirect()` for more detailed request control.
 
 ```js
-cy.intercept('POST', '/users', {
-  statusCode: 201,
-  body: req.body,
-  delay: 100,
+cy.intercept('POST', '/users', (req) => {
+  req.reply({
+    statusCode: 201,
+    body: req.body,
+    delay: 100,
+  })
 })
 ```
 
@@ -336,15 +338,13 @@ MSW models its interception API after server-side routing and handles requests a
 import { http, delay } from 'msw'
 
 http.post('/users', async ({ request }) => {
-  // Read the request body as you would normally.
-  const user = await request.json()
-
   // Control the response resolver execution flow
   // via Promises, like this "delay" Promise below.
   await delay(100)
 
   // Construct a response as you would normally.
-  return HttpResponse.json(user, { status: 201 })
+  // Pass the request body ReadableStream as the response body,
+  return HttpResponse.json(request.body, { status: 201 })
 })
 ```
 

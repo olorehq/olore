@@ -77,10 +77,12 @@ Get the role of the first message in a GenAI conversation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend first_role = genai_get_role(['attributes.gen_ai.input.messages'], 0)
 | summarize conversations_with_system = countif(first_role == 'system'), total_conversations = count()
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20first_role%20%3D%20genai_get_role(%5B%27attributes.gen_ai.input.messages%27%5D%2C%200)%20%7C%20summarize%20conversations_with_system%20%3D%20countif(first_role%20%3D%3D%20%27system%27)%2C%20total_conversations%20%3D%20count()%22%7D)
 
 **Output**
 

@@ -2,7 +2,11 @@
 title: '@xstate/store-solid'
 ---
 
-The `@xstate/store-solid` package provides Solid bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Solid signals.
+The `@xstate/store-solid` package provides Solid bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Solid accessors, creating owner-scoped stores, and using atoms.
+
+<Callout>
+These are the docs for `@xstate/store-solid` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/solid).
+</Callout>
 
 <Callout>
 
@@ -41,7 +45,7 @@ yarn add @xstate/store-solid
 ## Quick start
 
 ```tsx
-import { createStore, useSelector } from '@xstate/store-solid';
+import { createStore, useSelector } from '@xstate/store-solid'; // [!code highlight:1]
 
 const store = createStore({
   context: { count: 0 },
@@ -53,6 +57,7 @@ const store = createStore({
 });
 
 function Counter() {
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 
   return (
@@ -67,41 +72,87 @@ function Counter() {
 
 ## API
 
-### `useSelector(store, selector?, compare?)`
+### `useSelector(store, selector, compare?)`
 
-Creates a Solid signal that subscribes to a store and returns a selected value.
+Creates a Solid accessor that subscribes to a store or atom and returns a selected value.
 
 ```tsx
-import { useSelector } from '@xstate/store-solid';
+import { useSelector } from '@xstate/store-solid'; // [!code highlight:1]
 
 function Counter() {
-  // Select specific value
+  // [!code highlight:1]
   const count = useSelector(store, (state) => state.context.count);
 
-  // With custom comparison function
-  const user = useSelector(
-    store,
-    (state) => state.context.user,
-    (prev, next) => prev.id === next.id
-  );
-
-  // Call the signal to get the value (Solid's reactivity model)
   return <div>Count: {count()}</div>;
 }
 ```
 
-**Parameters:**
-- `store` - The store to subscribe to
-- `selector` - Optional function to select a value from the store snapshot
-- `compare` - Optional comparison function (defaults to strict equality `===`)
+### `useStore(configOrLogic, input?)`
 
-**Returns:** A read-only Solid signal containing the selected value
+Creates a store instance for the current Solid owner. Pass either a store config or store logic created with `createStoreLogic(...)`.
 
-<Callout>
+```tsx
+import { createStoreLogic, useSelector, useStore } from '@xstate/store-solid'; // [!code highlight:1]
 
-Remember to call the signal as a function (e.g., `count()`) to access its value. This is how Solid's reactivity system tracks dependencies.
+const counterLogic = createStoreLogic({
+  context: (input: { initialCount: number }) => ({
+    count: input.initialCount,
+  }),
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+});
 
-</Callout>
+function Counter() {
+  // [!code highlight:1]
+  const store = useStore(counterLogic, { initialCount: 0 });
+  const count = useSelector(store, (state) => state.context.count);
+
+  return <button onClick={() => store.trigger.inc()}>{count()}</button>;
+}
+```
+
+### `useAtom(atomOrConfig, selectorOrInput?, compare?)`
+
+Subscribes to an atom and returns a Solid accessor. You can pass an existing atom, or an atom config created with `createAtomConfig(...)`.
+
+```tsx
+import { createAtomConfig, useAtom } from '@xstate/store-solid'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const count = useAtom(countConfig, { initialCount: 0 });
+
+  return <div>Count: {count()}</div>;
+}
+```
+
+### `useAtomState(atomOrConfig, input?)`
+
+Creates or subscribes to an atom for the lifetime of the current Solid owner. It returns the current accessor and the live atom instance.
+
+```tsx
+import { createAtomConfig, useAtomState } from '@xstate/store-solid'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+function Counter() {
+  // [!code highlight:1]
+  const [count, countAtom] = useAtomState(countConfig, { initialCount: 0 });
+
+  return (
+    <button onClick={() => countAtom.set((count) => count + 1)}>
+      {count()}
+    </button>
+  );
+}
+```
 
 ## Full documentation
 

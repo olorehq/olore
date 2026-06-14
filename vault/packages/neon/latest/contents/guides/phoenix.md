@@ -1,8 +1,15 @@
 ---
 title: Connect from Phoenix to Neon
 subtitle: Set up a Neon project in seconds and connect from Phoenix
+summary: >-
+  Connecting a Phoenix (Elixir) application to Neon requires configuring Ecto
+  with SSL certificate verification, which recent Postgrex releases enforce by
+  default using the `:cacerts` or `:cacertfile` option. Use this page when
+  setting up a new or existing Phoenix project with Neon, covering project
+  creation, DATABASE_URL credential storage, and config updates for dev, test,
+  and runtime environments.
 enableTableOfContents: true
-updatedOn: '2026-02-04T19:25:39.221Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/phoenix-prompt.md"
@@ -142,15 +149,5 @@ mix phx.server
 ```
 
 </Steps>
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with_phoenix" description="Get started with Phoenix and Neon" icon="github">Get started with Phoenix and Neon</a>
-
-</DetailIconCards>
 
 <NeedHelp/>

@@ -4,7 +4,7 @@ description: Access and manage authentication state in your application with Cle
 sdk: astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start
 ---
 
-The `useAuth()` hook provides access to the current user's authentication state and methods to manage the active session. You can use this hook to get the user's authentication and organization information, like their ID, session ID, session token, organization ID, and organization role, and to check if the user is authenticated or [authorized to access a specific resource](!authorization-check).
+The `useAuth()` hook provides access to the current user's authentication state and methods to manage the active session. You can use this hook to get the user's authentication and Organization information, like their ID, session ID, session token, Organization ID, and Organization Role, and to check if the user is authenticated or [authorized to access a specific resource](!authorization-check).
 
 > [!NOTE]
 > To access auth data server-side, see the [`Auth` object reference doc](/docs/reference/backend/types/auth-object).
@@ -13,9 +13,9 @@ The `useAuth()` hook provides access to the current user's authentication state 
   By default, Next.js opts all routes into static rendering. If you need to opt a route or routes into dynamic rendering because you need to access the authentication data at request time, you can create a boundary by passing the `dynamic` prop to `<ClerkProvider>`. See the [guide on rendering modes](/docs/guides/development/rendering-modes) for more information, including code examples.
 </If>
 
-<Typedoc src="clerk-react/use-auth-params" />
+<Typedoc src="react/use-auth-params" />
 
-<Typedoc src="clerk-react/use-auth-return" />
+<Typedoc src="react/use-auth-return" />
 
 ## Example
 
@@ -23,7 +23,7 @@ The following example demonstrates how to use the `useAuth()` hook to access the
 
 <If sdk="react">
   ```tsx {{ filename: 'src/pages/ExternalDataPage.tsx' }}
-  import { useAuth } from '@clerk/clerk-react'
+  import { useAuth } from '@clerk/react'
 
   export default function ExternalDataPage() {
     const { userId, sessionId, getToken, isLoaded, isSignedIn } = useAuth()
@@ -267,8 +267,8 @@ The following example demonstrates how to use the `useAuth()` hook to access the
 </If>
 
 <If sdk="expo">
-  ```tsx {{ filename: 'app/external-data.tsx' }}
-  import { useAuth } from '@clerk/clerk-expo'
+  ```tsx {{ filename: 'src/app/external-data.tsx' }}
+  import { useAuth } from '@clerk/expo'
   import { Text, View, TouchableOpacity } from 'react-native'
 
   export default function ExternalData() {

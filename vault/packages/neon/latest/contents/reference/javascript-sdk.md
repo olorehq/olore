@@ -1,18 +1,31 @@
 ---
-title: Neon Auth & Data API TypeScript SDKs
-subtitle: Reference documentation for building applications with Neon Auth and Data API
+title: Neon TypeScript SDK
+subtitle: Reference documentation for authentication and Data API database queries
+summary: >-
+  The `@neondatabase/neon-js` TypeScript SDK combines Neon Auth and the Neon
+  Data API in one client, covering auth methods (email/password, OAuth, OTP,
+  password reset) alongside a PostgREST-style query builder (select, insert,
+  update, delete, rpc, filters) with automatic JWT forwarding. Choose this page
+  over the standalone `@neondatabase/postgrest-js` or `@neondatabase/auth`
+  packages when you need the full combined API reference in one place. Three
+  adapters are documented: BetterAuthVanillaAdapter (default, Promise-based),
+  BetterAuthReactAdapter (React hooks), and SupabaseAuthAdapter
+  (Supabase-compatible migration path).
 enableTableOfContents: true
 layout: wide
-updatedOn: '2026-01-22T15:48:50.618Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-The Neon TypeScript SDK (`@neondatabase/neon-js`) provides authentication and database operations for your applications.
+This page documents `@neondatabase/neon-js`, which combines Neon Auth and the Data API in a single client. Neon also publishes standalone packages:
+
+- [`@neondatabase/postgrest-js`](/docs/data-api/get-started#any-authentication-provider): Data API with any authentication provider
+- [`@neondatabase/auth`](https://www.npmjs.com/package/@neondatabase/auth): Neon Auth without the Data API
 
 Authentication is provided through an adapter-based architecture, letting you work more easily with your existing code or preferred framework. Available adapters:
 
-- **BetterAuthVanillaAdapter** (default) — Promise-based authentication methods like `client.auth.signIn.email()`. Used in all examples on this page.
-- **BetterAuthReactAdapter** — Similar API but with React hooks like `useSession()`. See the [React quickstart](/docs/auth/quick-start/react).
-- **SupabaseAuthAdapter** — Supabase-compatible API for easy migration. See the [migration guide](/docs/auth/migrate/from-supabase).
+- **BetterAuthVanillaAdapter** (default): Promise-based authentication methods like `client.auth.signIn.email()`. Used in all examples on this page.
+- **BetterAuthReactAdapter**: Similar API but with React hooks like `useSession()`. See the [React quickstart](/docs/auth/quick-start/react).
+- **SupabaseAuthAdapter**: Supabase-compatible API for easy migration. See the [migration guide](/docs/auth/migrate/from-supabase).
 
 Database query methods (`client.from()`, `.select()`, etc.) work the same regardless of which adapter you use.
 
@@ -50,7 +63,7 @@ Use this when you only need authentication (no database queries). You get:
 - Auth methods like `auth.signIn.email()` and `auth.signUp.email()`
 - No database query methods
 
-The auth methods are identical—only the access path differs. `client.auth.signIn.email()` and `auth.signIn.email()` do the same thing.
+The auth methods are identical; only the access path differs. `client.auth.signIn.email()` and `auth.signIn.email()` do the same thing.
 
 </TwoColumnLayout.Block>
 <TwoColumnLayout.Block>
@@ -940,7 +953,7 @@ const { data, error } = await client.from('todos').select('*').is('completed_at'
 <TwoColumnLayout.Block>
 
 Filters rows where the column value matches any value in the provided array.
-Useful for filtering by multiple possible values (e.g., status in ['pending', 'active']).
+Useful for filtering by multiple possible values (for example, status in ['pending', 'active']).
 
 </TwoColumnLayout.Block>
 <TwoColumnLayout.Block>
@@ -993,3 +1006,15 @@ const { data, error } = await client
 </TwoColumnLayout.Item>
 
 </TwoColumnLayout>
+
+## Auth method differences by adapter
+
+Each adapter exposes a different API surface for authentication. Using the wrong method for your adapter is a common source of errors.
+
+| Adapter                  | Sign in                                        | Sign up                                  |
+| ------------------------ | ---------------------------------------------- | ---------------------------------------- |
+| BetterAuthVanillaAdapter | `auth.signIn.email({ email, password })`       | `auth.signUp.email({ email, password })` |
+| BetterAuthReactAdapter   | `auth.signIn.email({ email, password })`       | `auth.signUp.email({ email, password })` |
+| SupabaseAuthAdapter      | `auth.signInWithPassword({ email, password })` | `auth.signUp({ email, password })`       |
+
+For common authentication troubleshooting (missing environment variables, CSS conflicts, wrong imports), see [Auth troubleshooting](/docs/auth/troubleshooting).

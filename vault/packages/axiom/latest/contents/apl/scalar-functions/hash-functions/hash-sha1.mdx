@@ -1,0 +1,133 @@
+---
+title: hash_sha1
+description: 'This page explains how to use the hash_sha1 function in APL.'
+---
+
+## Introduction
+
+The `hash_sha1` function returns the SHA-1 hash of a scalar value as a 40-character hexadecimal string. Use it to generate consistent identifiers, detect duplicates across datasets, or fingerprint values for comparison.
+
+SHA-1 produces a 160-bit digest that's faster to compute than SHA-256 while producing a larger output than MD5. SHA-1 is deprecated for cryptographic security use cases, but remains appropriate for non-security tasks such as data deduplication, fingerprinting, and consistent grouping. For security-sensitive hashing, use [`hash_sha256`](/apl/scalar-functions/hash-functions/hash-sha256) or [`hash_sha512`](/apl/scalar-functions/hash-functions/hash-sha512).
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk provides the `sha1(X)` function that returns a 40-character hex string. APL's `hash_sha1` works the same way.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hashed = sha1(id)
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha1(id)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL has no standard SHA-1 function. PostgreSQL provides `encode(digest(value, 'sha1'), 'hex')`. APL's `hash_sha1` returns the same 40-character lowercase hex digest.
+
+<CodeGroup>
+```sql SQL example
+SELECT encode(digest(id, 'sha1'), 'hex') AS hashed FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend hashed = hash_sha1(id)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+hash_sha1(source)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ------ | ------ | -------- | ----------- |
+| source | scalar | Yes | The value to hash. APL converts it to a string before hashing. |
+
+### Returns
+
+The SHA-1 hash of `source` as a 40-character lowercase hexadecimal string.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Anonymize user IDs and count requests per hashed user to protect PII while tracking usage patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hashed_id = hash_sha1(id)
+| summarize request_count = count() by hashed_id
+| top 5 by request_count
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20hashed_id%20%3D%20hash_sha1%28id%29%20%7C%20summarize%20request_count%20%3D%20count%28%29%20by%20hashed_id%20%7C%20top%205%20by%20request_count%22%7D)
+
+**Output**
+
+| hashed_id | request_count |
+| --------- | ------------- |
+| 9f9af029585ba014e07cd3910ca976cf56160616 | 128 |
+| a94a8fe5ccb19ba61c4c0873d391e987982fbbd3 | 97 |
+| 356a192b7913b04c54574d18c28d46e6395428ab | 85 |
+| da4b9237bacccdf19c0760cab7aec4a8359010b0 | 74 |
+| 77de68daecd823babbb58edb1c8e14d7106e83bb | 69 |
+
+The query replaces raw user IDs with SHA-1 hashes before aggregating, so the busiest users are visible without exposing their original identifiers.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Hash span IDs to create stable surrogate keys for cross-dataset joins or external reporting.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend hashed_span = hash_sha1(span_id)
+| project _time, ['service.name'], hashed_span, duration
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20hashed_span%20%3D%20hash_sha1%28span_id%29%20%7C%20project%20_time%2C%20%5B%27service.name%27%5D%2C%20hashed_span%2C%20duration%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time | service.name | hashed_span | duration |
+| ----- | ------------ | ----------- | -------- |
+| 2024-01-15 10:23:01 | frontend | 9f9af029585ba014e07cd3910ca976cf56160616 | 320ms |
+| 2024-01-15 10:23:02 | checkout | a94a8fe5ccb19ba61c4c0873d391e987982fbbd3 | 875ms |
+| 2024-01-15 10:23:03 | cart | 356a192b7913b04c54574d18c28d46e6395428ab | 140ms |
+
+The query projects the hashed span ID alongside service name and duration so you can work with span fingerprints in downstream pipelines.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [hash_md5](/apl/scalar-functions/hash-functions/hash-md5): Returns a 32-character MD5 hex digest. Use `hash_md5` when a shorter digest is sufficient and speed is the priority.
+- [hash_sha256](/apl/scalar-functions/hash-functions/hash-sha256): Returns a 64-character SHA-256 hex digest. Use `hash_sha256` for security-sensitive hashing.
+- [hash_sha512](/apl/scalar-functions/hash-functions/hash-sha512): Returns a 128-character SHA-512 hex digest for maximum hash strength.
+- [hash](/apl/scalar-functions/hash-functions/hash): Returns a signed 64-bit integer hash. Use `hash` when you need a compact numeric key rather than a hex string.

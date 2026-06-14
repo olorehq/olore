@@ -86,11 +86,12 @@ npx playwright test --ui
 | `--fully-parallel` | Run all tests in parallel (default: false). |
 | `--global-timeout <timeout>` | Maximum time this test suite can run in milliseconds (default: unlimited). |
 | `-g <grep>` or `--grep <grep>` | Only run tests matching this regular expression (default: ".*"). |
-| `--grep-invert <grep>` | Only run tests that do not match this regular expression. |
+| `-G <grep>` or `--grep-invert <grep>` | Only run tests that do not match this regular expression. |
 | `--headed` | Run tests in headed browsers (default: headless). |
 | `--ignore-snapshots` | Ignore screenshot and snapshot expectations. |
 | `-j <workers>` or `--workers <workers>` | Number of concurrent workers or percentage of logical CPU cores, use 1 to run in a single worker (default: 50%). |
 | `--last-failed` | Only re-run the failures. |
+| `--last-failed-file <file>` | Override the default last-run JSON path for `--last-failed` (default: `<outputDir>/.last-run.json`). Same as `PLAYWRIGHT_LAST_RUN_OUTPUT_FILE` environment variable. |
 | `--list` | Collect all the tests and report them, but do not run. |
 | `--max-failures <N>` or `-x` | Stop after the first `N` failures. Passing `-x` stops after the first failure. |
 | `--no-deps` | Do not run project dependencies. |
@@ -223,7 +224,7 @@ npx playwright install --with-deps
 
 | Option | Description |
 | :--- | :--- |
-| `--dry-run` | Don't perform installation, just print information |
+| `--dry-run` | Don't modify the system. On Linux, simulates the install via apt-get and exits with a non-zero code if any required packages are missing — useful for non-interactive verification scripts. On Windows, prints the install command. |
 
 ## Generation & Debugging Tools
 

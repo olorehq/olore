@@ -27,6 +27,8 @@ mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN")
 
 ### Library Configuration
 
+<Callout type="warning">For projects with EU or India data residency, you must configure the SDK to use the correct regional endpoint. Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/go#privacy-friendly-tracking).</Callout>
+
 The library can be initialized with different configurations. See a complete list of the configuration options[here](https://pkg.go.dev/github.com/mixpanel/mixpanel-go#Options).
 
 You can override the default configuration using the `options` argument when initializing the library.
@@ -529,6 +531,16 @@ ctx := context.Background()
 
 //Initialize Mixpanel with request URL set to Mixpanel's EU domain
 mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.EuResidency())
+```
+
+### IN Data Residency
+
+Route data to Mixpanel's IN servers by using the [`InResidency`](https://github.com/mixpanel/mixpanel-go/blob/2d7b4a098b47064e7ae5874472368e8699232a96/mixpanel.go#L138) option during the library initialization.
+```go
+ctx := context.Background()
+
+//Initialize Mixpanel with request URL set to Mixpanel's IN domain
+mp := mixpanel.NewApiClient("YOUR_PROJECT_TOKEN", mixpanel.InResidency())
 ```
 
 ### Disable Geolocation

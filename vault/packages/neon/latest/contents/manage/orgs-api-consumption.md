@@ -1,8 +1,18 @@
 ---
 title: Query organization usage metrics with the Neon API
+summary: >-
+  The Neon API provides two organization-scoped consumption endpoints on the
+  Scale plan: `/consumption_history/account` for org-wide totals and
+  `/consumption_history/projects` for per-project breakdowns. Both return
+  usage metrics at hourly, daily, or monthly granularity. Use this page to
+  audit cross-project usage, build chargeback reports, or monitor billing
+  trends. To find your org_id before querying, use GET
+  `/users/me/organizations` with a personal API key.
 enableTableOfContents: true
-updatedOn: '2025-09-05T12:26:43.315Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
+
+<ConsumptionAccountApiDeprecation/>
 
 You can use the Neon API to retrieve two types of consumption history metrics for your organization:
 
@@ -218,9 +228,9 @@ See more details about using this endpoint on the [Manage billing with consumpti
 
 ## Metric definitions
 
-- **active_time_seconds** — The number of seconds the project’s computes have been active during the period.
-- **compute_time_seconds** — The number of CPU seconds used by the project's computes, including computes that have been deleted; for example:
+- **active_time_seconds**: The number of seconds the project’s computes have been active during the period.
+- **compute_time_seconds**: The number of CPU seconds used by the project's computes, including computes that have been deleted; for example:
   - A compute that uses 1 CPU for 1 second is equal to `compute_time=1`.
   - A compute that uses 2 CPUs simultaneously for 1 second is equal to `compute_time=2`.
-- **written_data_bytes** — The total amount of data written to all of a project's branches.
-- **synthetic_storage_size_bytes** — The total space occupied in storage. Synthetic storage size combines the logical data size and Write-Ahead Log (WAL) size for all branches.
+- **written_data_bytes**: The total amount of data written to all of a project's branches.
+- **synthetic_storage_size_bytes**: The total space occupied in storage. Synthetic storage size combines the logical data size and Write-Ahead Log (WAL) size for all branches.

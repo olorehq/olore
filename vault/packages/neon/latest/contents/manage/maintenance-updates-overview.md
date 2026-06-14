@@ -1,8 +1,15 @@
 ---
 title: Maintenance & updates overview
+summary: >-
+  Neon performs two distinct update types: platform maintenance and compute
+  updates. Platform maintenance covers infrastructure, resource management, and
+  critical security patches; track it via the Neon Status page by region.
+  Compute updates cover Postgres version upgrades, OS patches, and new Neon
+  features; view them in the Console under Settings > Updates. Paid plans can
+  select a preferred update window.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-07-04T12:47:21.310Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon performs two types of updates: **platform maintenance** and **updates** to your Neon [computes](/docs/reference/glossary#compute). While both are essential for maintaining a stable, secure, and optimized environment, they serve different purposes.

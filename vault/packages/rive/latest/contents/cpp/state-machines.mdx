@@ -1,0 +1,104 @@
+---
+title: "State Machines"
+description: "Advance state machines and forward pointer events."
+---
+
+`StateMachineInstance` is the unit of playback in C++:
+
+```cpp
+class StateMachineInstance {
+public:
+    bool advanceAndApply(float elapsedSeconds);
+    void draw(Renderer*);
+
+    HitResult pointerDown(Vec2D, int pointerId = 0);
+    HitResult pointerMove(Vec2D, float timeStamp = 0, int pointerId = 0);
+    HitResult pointerUp(Vec2D, int pointerId = 0);
+    HitResult pointerExit(Vec2D, int pointerId = 0);
+};
+```
+
+To drive a state machine — set values, fire triggers, react to changes —
+use **Data Binding**. See [Data Binding](/runtimes/cpp/data-binding).
+
+## Advancing
+
+`advanceAndApply(dt)` runs solvers (state machine, animations, layout, data
+bindings) for `dt` seconds and applies the results to the artboard's
+component graph. Call it before every draw:
+
+```cpp
+sm->advanceAndApply(deltaSeconds);
+sm->draw(&renderer);
+```
+
+A return value of `true` means the state machine is still animating and the next
+frame should re-draw. `false` means everything has settled.
+
+<Tip>
+  Use a **fixed timestep** accumulator. State machines and animations are
+  numerically deterministic at fixed steps, which keeps playback identical
+  across frame rates. See [Rendering Loop](/runtimes/cpp/rendering-loop).
+</Tip>
+
+### Forcing a Layout Pass
+
+Pass `dt = 0` to re-solve layout without advancing time. Useful right after
+resizing the window or changing the artboard's `width()` / `height()`:
+
+```cpp
+artboard->width(newWidth);
+artboard->height(newHeight);
+sm->advanceAndApply(0.f);
+```
+
+## Pointer Events
+
+A state machine listens for pointer events on `Listener` components placed
+in the editor. Map your window-space coordinates into **artboard-local**
+space before forwarding:
+
+```cpp
+#include "rive/renderer.hpp"
+
+Mat2D align = computeAlignment(
+    Fit::contain,
+    Alignment::center,
+    AABB(0, 0, windowWidth, windowHeight),
+    artboard->bounds());
+
+Vec2D toArtboard(int x, int y) {
+    return align.invertOrIdentity() * Vec2D{(float)x, (float)y};
+}
+
+sm->pointerMove(toArtboard(mx, my));
+sm->pointerDown(toArtboard(mx, my));
+sm->pointerUp(toArtboard(mx, my));
+sm->pointerExit(toArtboard(mx, my));
+```
+
+`HitResult` returns one of three values, which tells you how to route the
+same event to other UI behind Rive:
+
+- `none` — the event passed through Rive without firing a listener.
+  Forward it to whatever UI is behind.
+- `hit` — a listener fired, but the shape it's on is transparent. Rive
+  isn't blocking the event; forward it as well.
+- `hitOpaque` — a listener fired and the shape is opaque. Rive consumed
+  the event; don't forward.
+
+## Reading State Changes
+
+After each `advanceAndApply` you can introspect what happened on a
+`StateMachineInstance`. Call directly on your `StateMachineInstance`:
+
+```cpp
+for (size_t i = 0, n = sm->stateChangedCount(); i < n; ++i) {
+    const LayerState* s = sm->stateChangedByIndex(i);
+    // s->name(), s->is<AnimationState>(), etc.
+}
+```
+
+This is the hook you use to react in C++ to states defined in the `.riv`
+file — log analytics, play a sound, fire a callback into your engine.
+

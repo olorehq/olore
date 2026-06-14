@@ -2,14 +2,22 @@
 title: Database versioning with snapshots
 subtitle: How AI agents and codegen platforms implement database version control using
   snapshots and preview branches
+summary: >-
+  Database versioning with Neon snapshots is a pattern for AI agents and codegen
+  platforms that captures point-in-time database states and restores them without
+  changing the connection string, by transferring compute endpoints to a new
+  branch via the `finalize_restore: true` flag. Use this pattern when you need
+  instant rollbacks to a previous version while keeping the active branch
+  connection string stable, or when you need temporary preview branches from any
+  saved version. Snapshot limits and storage pricing vary by plan.
 enableTableOfContents: true
-updatedOn: '2025-12-29T16:46:32.125Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-<Admonition type="note" title="Beta">
-Snapshots are available in Beta. Please give us [Feedback](https://console.neon.tech/app/projects?modal=feedback) from the Neon Console or by connecting with us on [Discord](https://discord.gg/92vNTzKDGp).
+<Admonition type="note">
+Please give us [Feedback](https://console.neon.tech/app/projects?modal=feedback) from the Neon Console or by connecting with us on [Discord](https://discord.gg/92vNTzKDGp).
 
-**Limits and pricing:** The Free plan includes 1 snapshot, and paid plans (including the [Agent plan](https://neon.com/use-cases/ai-agents)) include 10 snapshots. Snapshots are provided free of charge during beta, and will be charged based on GB-month storage at a rate lower than standard project storage after GA. If you need higher limits, please reach out to [Neon support](/docs/introduction/support).
+**Limits and pricing:** The Free plan includes 1 manual snapshot, and paid plans (including the [Agent plan](https://neon.com/use-cases/ai-agents)) include 100 manual snapshots. On paid plans, snapshots created by backup schedules do not count toward this limit. Snapshot storage is billed at $0.09/GB-month. If you need higher limits, please reach out to [Neon support](/docs/introduction/support).
 </Admonition>
 
 ## Overview
@@ -55,7 +63,7 @@ Every agent project maps to one Neon project with a designated [root branch](/do
 **The active branch:**
 
 - Gets its data replaced during finalized rollbacks
-- Maintains a consistent database connection string through Neon's restore mechanism — see [How restore works](#how-restore-works) for details
+- Maintains a consistent database connection string through Neon's restore mechanism; see [How restore works](#how-restore-works) for details
 - Must be a root branch for snapshot creation
 
 **The snapshots:**
@@ -96,6 +104,8 @@ curl --request POST \
      --url 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/snapshot?name=version-session-1&expires_at=2025-08-13T00:00:00Z' \
      --header 'authorization: Bearer $NEON_API_KEY'
 ```
+
+**Response:** The JSON body includes a `snapshot` object. It may include optional **`full_size`** and **`diff_size`** (bytes) for storage size; the same fields appear when you [list](https://api-docs.neon.tech/reference/listsnapshots) or [update](https://api-docs.neon.tech/reference/updatesnapshot) snapshots. See [Snapshot size fields in API responses](/docs/guides/backup-restore#snapshot-size-fields-in-api-responses).
 
 **When to create snapshots:**
 
@@ -142,10 +152,10 @@ Understanding the restore mechanism explains why the connection string remains s
 
 3. **Settings migration**: All branch settings, including its name, are copied to the new active branch, making it appear identical to the old one. Only the branch ID is different.
 
-4. **Branch orphan**: Your original branch becomes "orphaned." It is disconnected from the compute endpoint and renamed by adding an "(old)" suffix (e.g., `main (old)`) to the branch name.
+4. **Branch orphan**: Your original branch becomes "orphaned." It is disconnected from the compute endpoint and renamed by adding an "(old)" suffix (for example, `main (old)`) to the branch name.
 
 <Admonition type="info" title="Branch ID changes after restore">
-The connection string remains stable, but the branch ID changes with every `finalize_restore: true` operation. If you store the branch ID for use in subsequent API calls (e.g., to create the next snapshot), you must retrieve and store the new branch ID after the restore operation completes.
+The connection string remains stable, but the branch ID changes with every `finalize_restore: true` operation. If you store the branch ID for use in subsequent API calls (for example, to create the next snapshot), you must retrieve and store the new branch ID after the restore operation completes.
 </Admonition>
 
 #### Rollback workflow
@@ -165,7 +175,7 @@ Restore any snapshot to your active branch, preserving the connection string:
 1. Extract the array of operation IDs from the API response.
 2. For each operation ID, poll the operations endpoint until its status reaches a terminal state (finished, failed, cancelled, or skipped).
 3. Do not attempt to connect to the database until all operations are complete. Connections made before completion will point to the old, pre-restore database state.
-4. After verifying a successful restore, delete the orphaned branch (e.g., `main (old)`) to avoid incurring storage costs.
+4. After verifying a successful restore, delete the orphaned branch (for example, `main (old)`) to avoid incurring storage costs.
 
 > See the [poll operation status](/docs/manage/operations#poll-operation-status) documentation for related information.
 > **Polling operations example:**
@@ -213,7 +223,7 @@ for (const id of operationIds) {
 - **Connection to old state**: Ensure all operations completed
 - **Target branch not found**: Verify branch exists
 - **Operation timeout**: Retry with longer timeout
-- **Accumulating orphaned branches**: Delete orphaned branches (e.g., `production (old)`) after successful restore verification
+- **Accumulating orphaned branches**: Delete orphaned branches (for example, `production (old)`) after successful restore verification
 
 #### Preview environments
 
@@ -339,8 +349,8 @@ Proper cleanup reduces costs and keeps your project manageable:
 - **Snapshot production before promotion**: Take a snapshot of your production branch before promoting changes to provide a rollback point if needed.
 - **Differential retention**: Keep production snapshots longer for potential rollback, and development snapshots briefly (hours max) for promotion cycles only.
 - **Implement connection retry logic**: Design application code to retry queries automatically, as restore operations briefly drop active connections (typically milliseconds, occasionally up to a second).
-- **Keep backup branches briefly**: After restore, keep the automatically-created backup branch (e.g., `prod (old)`) for sanity checks before deletion, or assign a [time to live](/docs/guides/branch-expiration) for automatic cleanup.
-- **Cleanup strategy**: Set `expires_at` on temporary snapshots and preview branches. Delete orphaned branches (e.g., `production (old)`) created during restores.
+- **Keep backup branches briefly**: After restore, keep the automatically-created backup branch (for example, `prod (old)`) for sanity checks before deletion, or assign a [time to live](/docs/guides/branch-expiration) for automatic cleanup.
+- **Cleanup strategy**: Set `expires_at` on temporary snapshots and preview branches. Delete orphaned branches (for example, `production (old)`) created during restores.
 - **Version metadata**: Keep version metadata separate to preserve audit trail across restores.
 
 ## FAQ

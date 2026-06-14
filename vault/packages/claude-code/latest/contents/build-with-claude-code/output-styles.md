@@ -6,9 +6,9 @@
 
 > Adapt Claude Code for uses beyond software engineering
 
-Output styles allow you to use Claude Code as any type of agent while keeping
-its core capabilities, such as running local scripts, reading/writing files, and
-tracking TODOs.
+Output styles change how Claude responds, not what Claude knows. They modify the system prompt to set role, tone, and output format while keeping core capabilities like running scripts, reading and writing files, and tracking TODOs. Use one when you keep re-prompting for the same voice or format every turn, or when you want Claude to act as something other than a software engineer.
+
+For instructions about your project, conventions, or codebase, use [CLAUDE.md](/en/memory) instead.
 
 ## Built-in output styles
 
@@ -31,14 +31,19 @@ codebase and how Claude operates:
 
 Output styles directly modify Claude Code's system prompt.
 
-* All output styles exclude instructions for efficient output (such as
-  responding concisely).
 * Custom output styles exclude instructions for coding (such as verifying code
   with tests), unless `keep-coding-instructions` is true.
 * All output styles have their own custom instructions added to the end of the
   system prompt.
 * All output styles trigger reminders for Claude to adhere to the output style
   instructions during the conversation.
+
+Token usage depends on the style. Adding instructions to the system prompt
+increases input tokens, though prompt caching reduces this cost after the first
+request in a session. The built-in Explanatory and Learning styles produce
+longer responses than Default by design, which increases output tokens. For
+custom styles, output token usage depends on what your instructions tell Claude
+to produce.
 
 ## Change your output style
 
@@ -49,7 +54,7 @@ selection is saved to `.claude/settings.local.json` at the
 To set a style without the menu, edit the `outputStyle` field directly in a
 settings file:
 
-```json  theme={null}
+```json theme={null}
 {
   "outputStyle": "Explanatory"
 }
@@ -65,7 +70,7 @@ cost.
 Custom output styles are Markdown files with frontmatter and the text that will
 be added to the system prompt:
 
-```markdown  theme={null}
+```markdown theme={null}
 ---
 name: My Custom Style
 description:
@@ -83,7 +88,8 @@ tasks. [Your custom instructions here...]
 ```
 
 You can save these files at the user level (`~/.claude/output-styles`) or
-project level (`.claude/output-styles`).
+project level (`.claude/output-styles`). [Plugins](/en/plugins-reference) can
+also ship output styles in an `output-styles/` directory.
 
 ### Frontmatter
 

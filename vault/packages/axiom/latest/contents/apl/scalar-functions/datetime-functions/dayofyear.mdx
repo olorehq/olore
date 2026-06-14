@@ -1,0 +1,164 @@
+---
+title: dayofyear
+description: 'This page explains how to use the dayofyear function in APL.'
+---
+
+Use the `dayofyear` function in APL to extract the day number within the year from a datetime value. The function returns an integer from 1 to 365 (or 1 to 366 in a leap year) representing how far into the year the given date falls.
+
+You can use `dayofyear` to perform year-over-year comparisons by day, analyze seasonal trends, and track how metrics evolve throughout the year. This is especially useful for time-series analysis where you want to align data across multiple years by day number.
+
+Use it when you want to:
+
+- Compare activity or metrics on the same day across different years.
+- Identify seasonal trends and patterns in log, trace, or security data.
+- Track progress through the year for cumulative reporting.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%j` specifier to extract the day of the year. In APL, the `dayofyear` function directly returns the day number within the year from a datetime value.
+
+<CodeGroup>
+```sql Splunk example
+... | eval doy=strftime(_time, "%j")
+````
+
+```kusto APL equivalent
+... | extend day_of_year = dayofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you often use `EXTRACT(DOY FROM timestamp)` or `DAYOFYEAR(timestamp)`. The APL `dayofyear` function provides the same result, returning an integer from 1 to 366.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(DOY FROM timestamp_column) AS day_of_year FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend day_of_year = dayofyear(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+dayofyear(datetime)
+```
+
+### Parameters
+
+| Name | Type       | Description               |
+| ---- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` from 1 to 366 representing the day number within the year.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Track daily request counts across the year to spot high-traffic and low-traffic periods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend day_of_year = dayofyear(_time)
+| summarize request_count = count() by day_of_year
+| sort by day_of_year asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20day_of_year%20%3D%20dayofyear(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20day_of_year%20%7C%20sort%20by%20day_of_year%20asc%22%7D)
+
+**Output**
+
+| day_of_year | request_count |
+| ----------- | ------------- |
+| 1           | 482           |
+| 2           | 531           |
+| 3           | 497           |
+
+This query counts the total number of HTTP requests for each day of the year, helping you identify seasonal traffic patterns.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Monitor trace volume trends by day of the year for each service to detect seasonal performance shifts.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day_of_year = dayofyear(_time)
+| summarize trace_count = count() by day_of_year, ['service.name']
+| sort by day_of_year asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day_of_year%20%3D%20dayofyear(_time)%20%7C%20summarize%20trace_count%20%3D%20count()%20by%20day_of_year%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20day_of_year%20asc%22%7D)
+
+**Output**
+
+| day_of_year | service.name | trace_count |
+| ----------- | ------------ | ----------- |
+| 1           | frontend     | 312         |
+| 2           | frontend     | 287         |
+| 3           | frontend     | 345         |
+
+This query tracks how trace volume changes day by day throughout the year for each service, revealing seasonal trends.
+
+</Tab>
+<Tab title="Security logs">
+
+Find the busiest days of the year for server errors to identify recurring problem periods.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend day_of_year = dayofyear(_time)
+| summarize error_count = count() by day_of_year
+| sort by error_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20day_of_year%20%3D%20dayofyear(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20day_of_year%20%7C%20sort%20by%20error_count%20desc%22%7D)
+
+**Output**
+
+| day_of_year | error_count |
+| ----------- | ----------- |
+| 142         | 87          |
+| 98          | 64          |
+| 215         | 53          |
+
+This query ranks days of the year by server error count, helping you pinpoint recurring high-error periods.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [dayofmonth](/apl/scalar-functions/datetime-functions/dayofmonth): Returns the day number within the month from a datetime.
+- [dayofweek](/apl/scalar-functions/datetime-functions/dayofweek): Returns the day of the week as an integer, useful for weekday versus weekend analysis.
+- [datetime_part](/apl/scalar-functions/datetime-functions/datetime-part): Extracts a specific date part (such as day or year) as an integer.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime, useful for monthly grouping.
+- [getyear](/apl/scalar-functions/datetime-functions/getyear): Returns the year from a datetime, useful for year-level aggregation.

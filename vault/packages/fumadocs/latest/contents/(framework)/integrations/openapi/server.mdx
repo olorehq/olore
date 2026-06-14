@@ -15,7 +15,7 @@ The OpenAPI schemas to read from.
 
 - File Paths
 - External URLs
-- A function (see below)
+- Functions (see below)
 
 ```ts tab="Basic"
 import { createOpenAPI } from 'fumadocs-openapi/server';
@@ -25,17 +25,16 @@ export const openapi = createOpenAPI({
 });
 ```
 
-```ts tab="Function"
+```ts tab="Functions"
 import { createOpenAPI } from 'fumadocs-openapi/server';
 
 export const openapi = createOpenAPI({
-  async input() {
-    return {
-      // [id]: downloaded OpenAPI Schema
-      my_schema: await fetch(
-        'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
-      ).then((res) => res.json()),
-    };
+  input: {
+    // [id]: downloaded OpenAPI Schema
+    my_schema: async () => {
+      const res = await fetch('https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json');
+      return res.json();
+    },
   },
 });
 ```
@@ -54,7 +53,7 @@ We can use it for executing HTTP requests on the OpenAPI playground, when the ta
 
 Create a route handler for proxy server.
 
-```ts title="/api/proxy/route.ts"
+```ts tab="Next.js" title="app/api/proxy/route.ts"
 import { openapi } from '@/lib/openapi';
 
 export const { GET, HEAD, PUT, POST, PATCH, DELETE } = openapi.createProxy({
@@ -63,7 +62,35 @@ export const { GET, HEAD, PUT, POST, PATCH, DELETE } = openapi.createProxy({
 });
 ```
 
-> Follow the [Getting Started](/docs/openapi) guide if `openapi` instance is not yet configured.
+```ts tab="Tanstack Start" title="app/routes/api/proxy.ts"
+import { openapi } from '@/lib/openapi';
+import { createFileRoute } from '@tanstack/react-router';
+
+const proxy = openapi.createProxy({
+  // optional, we recommend to set a list of allowed origins for proxied requests
+  allowedOrigins: ['https://example.com'],
+});
+
+export const Route = createFileRoute('/api/proxy')({
+  server: {
+    handlers: {
+      // Handles all methods by default, or specify individual methods (GET, POST, etc.)
+      '*': async ({ request }) => {
+        return proxy.handle(request);
+      },
+    },
+  },
+});
+```
+
+```ts tab="Waku" title="src/pages/_api/api/proxy.ts"
+import { openapi } from '@/lib/openapi';
+
+export const { GET, HEAD, PUT, POST, PATCH, DELETE } = openapi.createProxy({
+  // optional, we recommend to set a list of allowed origins for proxied requests
+  allowedOrigins: ['https://example.com'],
+});
+```
 
 And set the proxy URL in `createOpenAPI`.
 

@@ -11,41 +11,37 @@ Clerk authentication documentation. Use for user authentication, session managem
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/getting-started/quickstart/overview.mdx` |
-| Framework quickstarts | `contents/getting-started/` |
-| Authentication strategies | `contents/guides/configure/auth-strategies/` |
-| User management | `contents/guides/users/` |
+| Getting started | `contents/getting-started/quickstart.mdx` |
+| Framework quickstarts | `contents/getting-started/quickstart.{framework}.mdx` |
+| Core concepts | `contents/getting-started/core-concepts.mdx` |
+| Next.js SDK reference | `contents/reference/nextjs/overview.mdx` |
+| React hooks | `contents/reference/hooks/overview.mdx` |
+| Backend SDK (Node) | `contents/reference/backend/overview.mdx` |
+| UI components | `contents/reference/components/` |
+| Custom sign-in/sign-up flows | `contents/guides/development/custom-flows/` |
+| OAuth / social login config | `contents/guides/configure/auth-strategies/social-connections/` |
 | Organizations | `contents/guides/organizations/` |
-| JavaScript/React API | `contents/reference/javascript/` |
-| Backend SDK | `contents/reference/backend/` |
-| Webhooks | `contents/guides/development/webhooks/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- User authentication and sign-in flows
+- Authentication and sign-in/sign-up flows (email, password, social, passkeys, SSO)
 - Session management and JWT tokens
-- User management (CRUD, metadata, profiles)
-- Organization features (multi-tenancy, roles, permissions)
-- Social login (Google, GitHub, Microsoft, etc.)
-- Enterprise SSO (SAML, OIDC)
-- OAuth integration
-- React/Next.js/Remix integration
-- Clerk components and hooks
-- Backend authentication with Node.js, Go, Ruby
-- Webhooks and event handling
-- Migration from other auth providers
+- Organizations, roles, and permissions (RBAC)
+- Clerk SDK integration (Next.js, React, Astro, Expo, Express, Vue, Nuxt, Ruby, Go, etc.)
+- UI components (`<SignIn>`, `<SignUp>`, `<UserButton>`, `<ClerkProvider>`, etc.)
+- React hooks (`useAuth`, `useUser`, `useSession`, `useOrganization`, etc.)
+- Backend SDK methods (user CRUD, sessions, invitations, organizations)
+- Webhooks from Clerk
+- Custom flows and headless UI (Elements)
+- Machine-to-machine (M2M) authentication and API keys
+- Billing and subscription management
+- Appearance customization and theming
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify relevant section based on user's question:
-   - **New users**: Start with `getting-started/`
-   - **Authentication setup**: Check `guides/configure/auth-strategies/`
-   - **User operations**: Look in `guides/users/`
-   - **Organizations**: Check `guides/organizations/`
-   - **API usage**: Browse `reference/{framework}/`
-   - **Integration**: Check `guides/development/integrations/`
+2. Identify relevant section based on user's question
 3. Read specific files for details
 
-**TOC.md contains all 679 files organized by directory - always check it first.**
+**TOC.md contains all files organized by directory - always check it first.**

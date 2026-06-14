@@ -1,0 +1,59 @@
+---
+title: 'Reset'
+---
+
+The `reset` extension adds a `reset` trigger that returns the store context to its initial state.
+
+```ts
+import { createStore } from '@xstate/store';
+import { reset } from '@xstate/store/reset'; // [!code highlight:1]
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+// [!code highlight:1]
+}).with(reset());
+
+store.trigger.inc();
+store.trigger.inc();
+store.getSnapshot().context.count; // 2
+
+// [!code highlight:1]
+store.trigger.reset();
+store.getSnapshot().context.count; // 0
+```
+
+## Partial reset
+
+Pass a `to` function to selectively reset fields while preserving others:
+
+```ts
+const store = createStore({
+  context: { count: 0, user: null as string | null },
+  on: {
+    inc: (context) => ({ ...context, count: context.count + 1 }),
+    login: (context, event: { user: string }) => ({
+      ...context,
+      user: event.user,
+    }),
+  },
+}).with(
+  reset({
+    // [!code highlight:1]
+    to: (initial, current) => ({ ...initial, user: current.user }),
+  }),
+);
+
+store.trigger.login({ user: 'Alice' });
+store.trigger.inc();
+store.trigger.reset();
+// count = 0, user = 'Alice'
+```
+
+## Options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `to` | `(initialContext, currentContext) => TContext` | Custom reset function. Defaults to returning the initial context (full reset). |

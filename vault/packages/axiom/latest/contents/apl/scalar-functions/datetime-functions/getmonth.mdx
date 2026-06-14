@@ -1,0 +1,164 @@
+---
+title: getmonth
+description: 'This page explains how to use the getmonth function in APL.'
+---
+
+Use the `getmonth` function in APL to extract the month number from a datetime value. The function returns an integer from 1 to 12, where 1 represents January and 12 represents December.
+
+You can use `getmonth` to group records by month when analyzing seasonal patterns, monthly trends, or periodic fluctuations in your data. This is useful for dashboards, monthly reporting, and cohort analysis.
+
+Use it when you want to:
+
+- Aggregate events by month for trend analysis.
+- Compare metrics across months to detect seasonal patterns.
+- Create monthly summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically use the `strftime` function with the `%m` specifier to extract the month number. In APL, the `getmonth` function directly returns the month number as an integer.
+
+<CodeGroup>
+```sql Splunk example
+... | eval month=strftime(_time, "%m")
+```
+
+```kusto APL equivalent
+... | extend month = getmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `EXTRACT(MONTH FROM timestamp)` or the `MONTH()` function to get the month number. In APL, `getmonth` provides the same result.
+
+<CodeGroup>
+```sql SQL example
+SELECT EXTRACT(MONTH FROM timestamp_column) AS month FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend month = getmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+getmonth(datetime)
+```
+
+### Parameters
+
+| Name | Type       | Description               |
+| ---- | ---------- | ------------------------- |
+| datetime | `datetime` | The input datetime value. |
+
+### Returns
+
+An `int` from 1 to 12 representing the month number.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Analyze HTTP request volume by month to identify traffic patterns throughout the year.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend month = getmonth(_time)
+| summarize request_count = count() by month
+| sort by month asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20month%20%3D%20getmonth(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20month%20%7C%20sort%20by%20month%20asc%22%7D)
+
+**Output**
+
+| month | request_count |
+| ----- | ------------- |
+| 1     | 4521          |
+| 2     | 4187          |
+| 3     | 4893          |
+
+This query groups HTTP log entries by month number and counts the requests in each month.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Compare monthly average span durations by service to spot performance changes across months.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend month = getmonth(_time)
+| summarize avg_duration = avg(duration) by month, ['service.name']
+| sort by month asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20month%20%3D%20getmonth(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20month%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20month%20asc%22%7D)
+
+**Output**
+
+| month | service.name | avg_duration     |
+| ----- | ------------ | ---------------- |
+| 1     | frontend     | 00:00:01.2340000 |
+| 2     | frontend     | 00:00:01.1890000 |
+| 3     | frontend     | 00:00:01.3020000 |
+
+This query calculates the average span duration per month for each service, helping you track monthly performance trends.
+
+</Tab>
+<Tab title="Security logs">
+
+Find which months have the most server errors to uncover seasonal reliability patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend month = getmonth(_time)
+| summarize error_count = count() by month
+| sort by error_count desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20month%20%3D%20getmonth(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20month%20%7C%20sort%20by%20error_count%20desc%22%7D)
+
+**Output**
+
+| month | error_count |
+| ----- | ----------- |
+| 7     | 89          |
+| 12    | 76          |
+| 3     | 54          |
+
+This query identifies the months with the highest number of server errors, sorted by error count in descending order.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime. Equivalent to `getmonth`.
+- [getyear](/apl/scalar-functions/datetime-functions/getyear): Extracts the year part from a datetime as an integer.
+- [dayofmonth](/apl/scalar-functions/datetime-functions/dayofmonth): Returns the day of the month from a datetime.
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime, useful for monthly binning.
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime value.

@@ -1,5 +1,5 @@
 ---
-title: "Canvas vs WebGL"
+title: "Canvas vs WebGL2"
 description: "Choose between `@rive-app/webgl2` and `@rive-app/canvas`, with guidance on performance, package size, and when to use canvas-lite."
 ---
 
@@ -20,7 +20,7 @@ Use `@rive-app/webgl2` if you want the best rendering quality and performance in
 npm install @rive-app/webgl2
 ```
 
-- Uses the [Rive Renderer](https://rive.app/renderer) for the best rendering performance
+- Uses the [Rive Renderer](https://rive.app/renderer?utm_source=docs&utm_medium=content) for the best rendering performance
 - Supports Rive Renderer-only features (for example, vector feathering)
 
 <Note>
@@ -45,30 +45,29 @@ npm install @rive-app/canvas
 ```
 
 - Uses the browser's built-in [CanvasRenderingContext2D](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) renderer
-- Smaller package size than WebGL renderer options
+- Smaller package size than the WebGL2 renderer option
 - Good for simpler vector/raster graphics
 
 ### More options after your runtime choice
 
-After choosing `@rive-app/webgl2` or `@rive-app/canvas`, you can use these variants based on packaging needs.
+For the canvas-based runtime option, you can alternatively use these variants based on packaging needs.
 
-#### `*-light` variants
+#### `@rive-app/canvas-lite` variant
 
-Some runtimes provide a `-lite` variant for smaller package size.
+The canvas version of our runtime supports a `-lite` variant for smaller package size.
 
 - Example: [`@rive-app/canvas-lite`](https://www.npmjs.com/package/@rive-app/canvas-lite)
-- Use `-lite` when you want the smallest runtime footprint
-- `-lite` variants remove some features (for example, text, layout, audio, and scripting engines)
+- Use this package when you want the smallest runtime footprint
+- This package variant removes some features (for example, text, layout, audio, and scripting engines)
 
-#### `*-single` variants
+#### `@rive-app/canvas-single` variant
 
-Some runtime packages also provide a `-single` variant, which bundles `rive.wasm` directly into the JavaScript file.
+The canvas version of our runtime supports a `-single` variant, which bundles `rive.wasm` directly into the JavaScript file.
 
 - Example: [`@rive-app/canvas-single`](https://www.npmjs.com/package/@rive-app/canvas-single)
-- Use `-single` if you want to avoid a separate WASM network request
+- Use this package if you want to avoid a separate WASM network request
 - Expect a larger JS bundle compared to the standard package
-- ⚠️ Non-`single` variants can cache better across pages, since the WASM is fetched separately
 
 ### Deprecated package
 
-`@rive-app/webgl` is deprecated. Prefer `@rive-app/webgl2`.
+`@rive-app/webgl` is deprecated and will no longer receive updates after `v2.37.0`. Prefer `@rive-app/webgl2`.

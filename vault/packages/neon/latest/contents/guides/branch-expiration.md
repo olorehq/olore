@@ -2,8 +2,17 @@
 title: Branch expiration
 subtitle: Learn how to use Neon's branch expiration feature to automatically delete
   temporary branches
+summary: >-
+  Branch expiration automatically deletes Neon branches at a scheduled time
+  using a TTL model, with expiration set via the Console, CLI (--expires-at
+  flag), or API (expires_at) using RFC 3339 timestamps up to 30 days in the
+  future. Use this feature to prevent storage accumulation from CI/CD test
+  branches, ephemeral AI workflows, or time-boxed feature branches that would
+  otherwise require manual cleanup. Expiration cannot be set on protected,
+  default, or parent branches, and deletion is permanent and also removes
+  associated compute endpoints.
 enableTableOfContents: true
-updatedOn: '2025-12-12T17:42:01.029Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 ## Overview
@@ -13,9 +22,9 @@ Branch expiration allows you to set automatic deletion timestamps on branches. W
 <Admonition type="tip" title="Quick guide">
 **Console:** When creating a branch, **Automatically delete branch after** is checked by default with 1 day selected. You can choose 1 hour, 1 day, or 7 days, or uncheck to disable. When updating an existing branch, you can select a custom date and time.
 
-**CLI:** Use `--expires-at` with [RFC 3339 format](#timestamp-format-requirements) (e.g., `2025-07-15T18:02:16Z`). Note: Expiration must be explicitly set; there is no default.
+**CLI:** Use `--expires-at` with [RFC 3339 format](#timestamp-format-requirements) (for example, `2025-07-15T18:02:16Z`). Note: Expiration must be explicitly set; there is no default.
 
-**API:** Use `expires_at` with [RFC 3339 format](#timestamp-format-requirements) (e.g., `2025-07-15T18:02:16Z`). Note: Expiration must be explicitly set; there is no default.
+**API:** Use `expires_at` with [RFC 3339 format](#timestamp-format-requirements) (for example, `2025-07-15T18:02:16Z`). Note: Expiration must be explicitly set; there is no default.
 </Admonition>
 
 <InfoBlock>
@@ -57,7 +66,7 @@ When you set an expiration timestamp on a branch:
 
 1. The system stores both:
    - **Expiration timestamp** (`expires_at`) - The scheduled date and time when the branch will be deleted
-   - **TTL interval** (`ttl_interval_seconds`) - The duration between creation/update and expiration (e.g., 24 hours = 86400 seconds), a read-only value
+   - **TTL interval** (`ttl_interval_seconds`) - The duration between creation/update and expiration (for example, 24 hours = 86400 seconds), a read-only value
 
 2. A background process monitors branches and deletes them after their expiration time is reached
 
@@ -117,7 +126,8 @@ To maintain system integrity, expiration timestamps cannot be added to:
 Branch expiration is not supported with these Neon features:
 
 - **Data API**
-- **[Legacy Neon Auth](/docs/auth/legacy/overview)** (the new [Neon Auth](/docs/auth/overview) is supported)
+
+Branch expiration is supported with [Neon Auth](/docs/auth/overview).
 
 <Admonition type="note">
 When a branch expires and is deleted, all associated compute endpoints are also deleted. Ensure any critical workloads are migrated before expiration.
@@ -292,7 +302,7 @@ Check expiration status of your branches:
 <TabItem>
 
 ```bash
-neon branches info <branch_id> --project-id <project_id>
+neon branches get <branch_id> --project-id <project_id>
 ```
 
 </TabItem>

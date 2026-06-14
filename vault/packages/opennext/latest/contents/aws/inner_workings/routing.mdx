@@ -22,7 +22,9 @@ The Next middleware in OpenNext is not running in the same way as in Next.js. In
 
 On latest Next 15(works with latest OpenNext aswell) you can now add an `experimental` setting in `next.config.ts` to enable `nodejs` as the runtime for the middleware:
 
-```ts
+```ts filename="next.config.ts"
+import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
   experimental: {
     nodeMiddleware: true,

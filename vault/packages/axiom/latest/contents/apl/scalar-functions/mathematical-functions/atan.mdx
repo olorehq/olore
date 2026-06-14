@@ -1,0 +1,91 @@
+---
+title: atan
+description: 'This page explains how to use the atan function in APL.'
+---
+
+Use the `atan` function in APL to compute the arc tangent (inverse tangent) of a numeric expression. The function returns the angle, in radians, whose tangent equals the input value. Unlike `asin` and `acos`, `atan` accepts any real number as input.
+
+`atan` is useful when you want to map a numeric value from an unbounded range to a bounded angular range (-π/2, π/2). For example, you can use `atan` to normalize latency deviations, scores, or ratios into a smooth angle scale for comparison or encoding.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `atan()` is available in the `eval` command with the same behavior: it returns the arc tangent in radians for any real number input.
+
+<CodeGroup>
+```sql Splunk example
+| eval angle = atan(normalized)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = atan(normalized)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `ATAN()` is a standard mathematical function with identical semantics. It accepts any real number and returns the arc tangent in radians.
+
+<CodeGroup>
+```sql SQL example
+SELECT ATAN(normalized) AS angle FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = atan(normalized)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+atan(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A real number. |
+
+### Returns
+
+The arc tangent of `x` in radians, in the range (-π/2, π/2).
+
+## Example
+
+Use `atan` to compute the arctangent of a value and return the angle in radians.
+
+**Query**
+
+```kusto
+print result = atan(1)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20atan%281%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 0.7854 |
+
+## List of related functions
+
+- [atan2](/apl/scalar-functions/mathematical-functions/atan2): Returns the arc tangent using two arguments (y, x). Use it when you have separate numerator and denominator values.
+- [asin](/apl/scalar-functions/mathematical-functions/asin): Returns the arc sine. Use it when the input is bounded to [-1, 1].
+- [acos](/apl/scalar-functions/mathematical-functions/acos): Returns the arc cosine. Use it when you need the inverse cosine instead.
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent. Use it to apply the forward transformation before using `atan` as the inverse.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it when your angle data is in degrees.

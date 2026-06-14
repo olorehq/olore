@@ -3,7 +3,7 @@ name: olore-convex-latest
 description: Local Convex documentation reference (latest). Convex backend documentation. Use for real-time database, serverless functions, file storage, authentication, scheduling, search, AI agents, and full-stack TypeScript development.
 ---
 
-# Convex Documentation
+# convex Documentation
 
 Convex backend documentation. Use for real-time database, serverless functions, file storage, authentication, scheduling, search, AI agents, and full-stack TypeScript development.
 
@@ -11,30 +11,31 @@ Convex backend documentation. Use for real-time database, serverless functions, 
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/quickstart/nextjs.mdx` (or other framework) |
-| Core database | `contents/database.mdx`, `contents/database/reading-data/reading-data.mdx` |
-| Functions | `contents/functions/query-functions.mdx`, `contents/functions/mutation-functions.mdx` |
-| Authentication | `contents/auth.mdx`, `contents/auth/clerk.mdx` |
-| AI agents | `contents/agents/getting-started.mdx` |
-| File storage | `contents/file-storage.mdx` |
-| Real-time updates | `contents/realtime.mdx` |
-| Production deployment | `contents/production.mdx` |
-| Client libraries | `contents/client/react.mdx`, `contents/client/nextjs/` |
-| API reference | `contents/generated-api/` |
+| Getting started | `contents/quickstart/react.mdx` or `contents/quickstart/nextjs.mdx` |
+| Functions (query/mutation/action) | `contents/functions/overview.mdx` |
+| Database read/write | `contents/database/overview.mdx` |
+| AI agent framework | `contents/agents/overview.mdx` |
+| Authentication | `contents/auth/overview.mdx` |
+| Scheduling / crons | `contents/scheduling/overview.mdx` |
+| Search | `contents/search/overview.mdx` |
+| File storage | `contents/file-storage/overview.mdx` |
+| CLI commands | `contents/cli/overview.mdx` |
+| Production deployment | `contents/production/overview.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Convex database queries, mutations, and schemas
-- Real-time data synchronization and reactive queries
-- Serverless functions (queries, mutations, actions)
-- Authentication with Clerk, Auth0, or custom JWT
-- File storage and serving
-- Scheduled jobs and cron tasks
-- Text search and vector search
-- AI agents and chatbot functionality
-- Client libraries (React, Next.js, Vue, Python, etc.)
-- Production deployment and hosting
+- Writing Convex query, mutation, or action functions
+- Defining database schemas, reading/writing data, indexes
+- Setting up authentication (Clerk, Auth0, WorkOS, custom JWT)
+- Building AI agents or agentic workflows with Convex
+- Scheduling cron jobs or delayed functions
+- Full-text or vector search
+- File upload and storage
+- Deploying Convex apps to production (Vercel, Netlify, custom)
+- Client integration (React, Next.js, Vue, Node.js, Python, mobile)
+- Testing Convex functions
+- CLI usage and configuration
 
 ## How to find information
 

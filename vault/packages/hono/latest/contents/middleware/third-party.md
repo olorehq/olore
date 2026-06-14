@@ -51,11 +51,12 @@ Most of this middleware leverages external libraries.
 - [OpenTelemetry](https://github.com/honojs/middleware/tree/main/packages/otel)
 - [Prometheus Metrics](https://github.com/honojs/middleware/tree/main/packages/prometheus)
 - [Sentry](https://github.com/honojs/middleware/tree/main/packages/sentry)
+- [Pino logger](https://github.com/maou-shonen/hono-pino)
 
 ### Server / Adapter
 
 - [GraphQL Server](https://github.com/honojs/middleware/tree/main/packages/graphql-server)
-- [Node WebSocket Helper](https://github.com/honojs/middleware/tree/main/packages/node-ws)
+- [oRPC](https://orpc.dev/docs/adapters/hono)
 - [tRPC Server](https://github.com/honojs/middleware/tree/main/packages/trpc-server)
 
 ### Transpiler
@@ -69,6 +70,14 @@ Most of this middleware leverages external libraries.
 - [React Compatibility](https://github.com/honojs/middleware/tree/main/packages/react-compat)
 - [React Renderer](https://github.com/honojs/middleware/tree/main/packages/react-renderer)
 
+### Queue / Job Processing
+
+- [GlideMQ (Message Queue REST API + SSE)](https://github.com/avifenesh/glidemq-hono)
+
+### Internationalization
+
+- [Intlayer i18n](https://intlayer.org/doc/environment/hono)
+
 ### Utilities
 
 - [Bun Compress](https://github.com/honojs/middleware/tree/main/packages/bun-compress)
@@ -76,7 +85,11 @@ Most of this middleware leverages external libraries.
 - [Event Emitter](https://github.com/honojs/middleware/tree/main/packages/event-emitter)
 - [Geo](https://github.com/ktkongtong/hono-geo-middleware/tree/main/packages/middleware)
 - [Hono Rate Limiter](https://github.com/rhinobase/hono-rate-limiter)
+- [Hono Problem Details (RFC 9457)](https://github.com/paveg/hono-problem-details)
 - [Hono Simple DI](https://github.com/maou-shonen/hono-simple-DI)
+- [InferDI](https://github.com/inferdi/inferdi/tree/main/packages/hono)
+- [Idempotency (Stripe-style idempotency keys)](https://github.com/paveg/hono-idempotency)
+- [idempot-js](https://js.idempot.dev) - spec-compliant middleware, supporting multiple storage backends (redis, postgres, mysql, sqlite)
 - [jsonv-ts (Validator, OpenAPI, MCP)](https://github.com/dswbx/jsonv-ts)
 - [MCP](https://github.com/honojs/middleware/tree/main/packages/mcp)
 - [RONIN (Database)](https://github.com/ronin-co/hono-client)

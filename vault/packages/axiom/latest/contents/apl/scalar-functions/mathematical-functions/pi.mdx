@@ -1,0 +1,93 @@
+---
+title: pi
+description: 'This page explains how to use the pi function in APL.'
+---
+
+Use the `pi` function in APL to return the mathematical constant π (pi), approximately equal to 3.14159265358979. The function takes no arguments and always returns the same double-precision floating-point value.
+
+`pi` is most commonly used to construct radian angle values for trigonometric functions. For example, you can encode the hour of day as a cyclic coordinate using `(hour * 2 * pi()) / 24`, or convert between degrees and radians using `radians = degrees * pi() / 180`.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `pi()` returns the same constant and works identically.
+
+<CodeGroup>
+```sql Splunk example
+| eval angle = 2 * pi()
+````
+
+```kusto APL equivalent
+print angle = 2 * pi()
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `PI()` is a standard function in SQL Server and PostgreSQL that returns π.
+
+<CodeGroup>
+```sql SQL example
+SELECT PI() AS pi_value
+```
+
+```kusto APL equivalent
+print pi_value = pi()
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+pi()
+```
+
+### Parameters
+
+None.
+
+### Returns
+
+The double-precision value of π: approximately 3.14159265358979.
+
+## Example
+
+Use `pi` to encode the hour of day as a cyclic angle for time-based analysis.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hour_angle = (hourofday(_time) * 2 * pi()) / 24
+| extend sin_hour = sin(hour_angle)
+| extend cos_hour = cos(hour_angle)
+| project _time, id, sin_hour, cos_hour
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20hour_angle%20%3D%20%28hourofday%28_time%29%20%2A%202%20%2A%20pi%28%29%29%20/%2024%20%7C%20extend%20sin_hour%20%3D%20sin%28hour_angle%29%20%7C%20extend%20cos_hour%20%3D%20cos%28hour_angle%29%20%7C%20project%20_time%2C%20id%2C%20sin_hour%2C%20cos_hour%22%7D)
+
+**Output**
+
+| _time | id | sin_hour | cos_hour |
+|---|---|---|---|
+| 2024-11-14 00:00:00 | user-1 | 0.0000 | 1.0000 |
+| 2024-11-14 06:00:00 | user-2 | 1.0000 | 0.0000 |
+| 2024-11-14 12:00:00 | user-3 | 0.0000 | -1.0000 |
+
+## List of related functions
+
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine of an angle in radians. Combine with `pi` to encode cyclic signals.
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine of an angle in radians. Use together with `sin` and `pi` for cyclic coordinate encoding.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it as an alternative to manually multiplying by `pi() / 180`.
+- [degrees](/apl/scalar-functions/mathematical-functions/degrees): Converts radians to degrees. Use it to express results from inverse trig functions in degrees instead of radians.
+- [atan2](/apl/scalar-functions/mathematical-functions/atan2): Returns the angle in radians between two coordinates. Its output range is (-π, π], so `pi` is a natural companion.

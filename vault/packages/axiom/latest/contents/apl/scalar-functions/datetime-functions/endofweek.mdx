@@ -1,0 +1,165 @@
+---
+title: endofweek
+description: 'This page explains how to use the endofweek function in APL.'
+---
+
+Use the `endofweek` function in APL to calculate the end of the week for a given datetime value. The function returns a datetime set to the last moment of Saturday (23:59:59.9999999), with an optional offset to shift forward or backward by a specified number of weeks.
+
+You can use `endofweek` to create weekly time boundaries for aggregation, reporting, and trend analysis. This is especially useful when you need to bucket events into weekly intervals or define weekly reporting windows.
+
+Use it when you want to:
+
+- Define end-of-week boundaries for weekly reports and dashboards.
+- Aggregate events to weekly intervals for trend analysis.
+- Build weekly summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there is no direct equivalent to `endofweek`. You typically use manual date arithmetic with `eval` and `relative_time` to calculate the end of the week. In APL, the `endofweek` function handles this directly and supports an optional week offset.
+
+<CodeGroup>
+```sql Splunk example
+... | eval week_end=relative_time(now(), "@w7+6d@d+86399")
+````
+
+```kusto APL equivalent
+... | extend week_end = endofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically combine `DATE_TRUNC` with interval arithmetic to calculate the end of the week. The exact behavior depends on how each platform defines the start of the week. In APL, `endofweek` returns the end of the week as Saturday 23:59:59.9999999.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('week', timestamp_column) + INTERVAL '7 days' - INTERVAL '1 second' AS week_end FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend week_end = endofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+endofweek(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                                                                      |
+| -------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| datetime     | `datetime` | The input datetime value.                                                                        |
+| offset   | `long`     | Optional: The number of weeks to offset from the input date. Default is 0.                                 |
+
+### Returns
+
+A `datetime` representing the end of the week (Saturday 23:59:59.9999999) for the given date, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Summarize total requests per week to track weekly traffic volume.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend week_end = endofweek(_time)
+| summarize total_requests = count() by week_end
+| sort by week_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20week_end%20%3D%20endofweek(_time)%20%7C%20summarize%20total_requests%20%3D%20count()%20by%20week_end%20%7C%20sort%20by%20week_end%20asc%22%7D)
+
+**Output**
+
+| week_end                     | total_requests |
+| ---------------------------- | -------------- |
+| 2024-11-16T23:59:59.9999999Z | 4521           |
+| 2024-11-23T23:59:59.9999999Z | 4837           |
+| 2024-11-30T23:59:59.9999999Z | 4392           |
+
+This query groups HTTP log events by end-of-week boundaries and counts the total requests in each week.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Track weekly average span duration for each service to monitor performance trends over time.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend week_end = endofweek(_time)
+| summarize avg_duration = avg(duration) by week_end, ['service.name']
+| sort by week_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20week_end%20%3D%20endofweek(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20week_end%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20week_end%20asc%22%7D)
+
+**Output**
+
+| week_end                     | service.name | avg_duration     |
+| ---------------------------- | ------------ | ---------------- |
+| 2024-11-16T23:59:59.9999999Z | frontend     | 00:00:01.2430000 |
+| 2024-11-23T23:59:59.9999999Z | frontend     | 00:00:01.1870000 |
+| 2024-11-30T23:59:59.9999999Z | frontend     | 00:00:01.3010000 |
+
+This query shows how average span duration changes week by week for each service, helping you spot performance regressions.
+
+</Tab>
+<Tab title="Security logs">
+
+Monitor weekly error trends to detect sustained increases in server failures.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend week_end = endofweek(_time)
+| summarize error_count = count() by week_end
+| sort by week_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20week_end%20%3D%20endofweek(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20week_end%20%7C%20sort%20by%20week_end%20asc%22%7D)
+
+**Output**
+
+| week_end                     | error_count |
+| ---------------------------- | ----------- |
+| 2024-11-16T23:59:59.9999999Z | 52          |
+| 2024-11-23T23:59:59.9999999Z | 78          |
+| 2024-11-30T23:59:59.9999999Z | 41          |
+
+This query counts server errors by week to help you identify weeks with elevated failure rates.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [startofweek](/apl/scalar-functions/datetime-functions/startofweek): Returns the start of the week for a datetime, useful for defining the beginning of weekly intervals.
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime.
+- [endofmonth](/apl/scalar-functions/datetime-functions/endofmonth): Returns the end of the month for a datetime.
+- [endofyear](/apl/scalar-functions/datetime-functions/endofyear): Returns the end of the year for a datetime.
+- [week_of_year](/apl/scalar-functions/datetime-functions/week-of-year): Returns the ISO 8601 week number, useful for week-based grouping.

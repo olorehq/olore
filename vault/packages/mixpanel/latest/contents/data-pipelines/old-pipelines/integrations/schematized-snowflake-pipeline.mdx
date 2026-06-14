@@ -10,7 +10,50 @@ This guide describes how Mixpanel data is exported into a [Snowflake](https://do
 
 ## Design
 
-Mixpanel exports data to its own Snowflake account and gives your Snowflake account access to read the data. As a result, you will need a Snowflake account to be able to use the exported data. For more information on how to use your shared data, see [Sharing Data in Snowflake](https://docs.snowflake.net/manuals/user-guide-data-share.html). 
+<Callout type="warning">
+  Mixpanel exports data into customer-managed Snowflake. Mixpanel-hosted Snowflake (Data Sharing) is no longer supported for new pipelines. Only password-based authentication is supported via the API; key-pair authentication is not available.
+</Callout>
+
+Mixpanel stages exported data in a GCS bucket before loading it into your Snowflake warehouse. You need to set up a role, storage integration, and user in your Snowflake account before creating a pipeline.
+
+## Set Export Permissions
+
+### Step 1: Create a Role and Grant Permissions
+
+Create a role (`MIXPANEL_EXPORT_ROLE` as an example) and grant access on your database, schema, warehouse to the role. Replace `<database name>`, `<schema name>`, `<warehouse name>` with actual names.
+
+```sql
+CREATE ROLE MIXPANEL_EXPORT_ROLE;
+GRANT ALL ON DATABASE <database name> TO ROLE MIXPANEL_EXPORT_ROLE;
+GRANT ALL ON SCHEMA <database name>.<schema name> TO ROLE MIXPANEL_EXPORT_ROLE;
+GRANT USAGE ON WAREHOUSE <warehouse name> TO ROLE MIXPANEL_EXPORT_ROLE;
+GRANT OPERATE ON WAREHOUSE <warehouse name> TO ROLE MIXPANEL_EXPORT_ROLE;
+GRANT MONITOR ON WAREHOUSE <warehouse name> TO ROLE MIXPANEL_EXPORT_ROLE;
+```
+
+### Step 2: Create a Storage Integration
+
+Mixpanel stages exported data in a GCS bucket (`gcs://mixpanel-export-pipelines-<project-id>`) before loading it into your warehouse. This bucket is created and managed by Mixpanel - you do *not* need to create it yourself. To allow Mixpanel to load data from this bucket into your Snowflake warehouse, create a GCS storage integration and grant it to the role. Replace `<project-id>` with your Mixpanel project ID.
+
+```sql
+CREATE STORAGE INTEGRATION MIXPANEL_EXPORT_STORAGE_INTEGRATION
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'GCS'
+  ENABLED = TRUE
+  STORAGE_ALLOWED_LOCATIONS = ("gcs://mixpanel-export-pipelines-<project-id>");
+GRANT USAGE ON INTEGRATION MIXPANEL_EXPORT_STORAGE_INTEGRATION TO MIXPANEL_EXPORT_ROLE;
+```
+
+### Step 3: Authenticate the User
+
+Create a user with a password and grant the role to the user. If you already have a user, change the fields and grant the role.
+
+```sql
+CREATE USER MIXPANEL_EXPORT_USER PASSWORD='<password you provided>' DEFAULT_ROLE=MIXPANEL_EXPORT_ROLE;
+
+ALTER USER MIXPANEL_EXPORT_USER SET PASSWORD='<password you provided>';
+GRANT ROLE MIXPANEL_EXPORT_ROLE TO USER MIXPANEL_EXPORT_USER;
+```
 
 For Snowflake export, we first load the data into a single-column raw (VARIANT type) data table. This data will be a [transformed version](/docs/data-pipelines/old-pipelines/schematized-export-pipeline#section-transformation-rules) of the raw data stored in Mixpanel. Then, we create a view to expose all properties as columns. The view name is the cleaned version of the event name and the raw table name is always the view name suffixed with `_raw`. For example, for `signup` event, you will have a `signup_raw` table and a `signup` view. Please see [Schema](/docs/data-pipelines/old-pipelines/schematized-export-pipeline#schema) for general information about the schemas in Schematized Export Pipelines. 
 

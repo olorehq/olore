@@ -1,0 +1,170 @@
+---
+title: checkly status-pages
+description: 'List and inspect status pages in your Checkly account.'
+sidebarTitle: 'checkly status-pages'
+---
+
+<Note>Available since CLI v7.3.0.</Note>
+
+The `checkly status-pages` command lets you list and inspect status pages in your Checkly account directly from the terminal. You can view status page configurations, cards, and services.
+
+<Accordion title="Prerequisites">
+Before using `checkly status-pages`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly status-pages <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all status pages in your account. |
+| `get` | Get details of a status page, including its cards and services. |
+
+## `checkly status-pages list`
+
+List all status pages in your account.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages list [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of status pages to return (1-100). Default: `25`. |
+| `--cursor` | - | Cursor for next page (from previous output). |
+| `--compact` | - | Show one row per status page instead of per service. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Number of status pages to return per page, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages list --limit=50
+npx checkly status-pages list -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--cursor" type="string">
+
+Cursor for paginating through results. The cursor value is provided in the output of a previous `status-pages list` command.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages list --cursor=<cursor>
+```
+
+</ResponseField>
+
+<ResponseField name="--compact" type="boolean">
+
+Show one row per status page instead of expanding services. Displays the number of cards and whether the status page is private.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages list --compact
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages list --output=json
+npx checkly status-pages list -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List all status pages with services expanded
+npx checkly status-pages list
+
+# Compact view with one row per status page
+npx checkly status-pages list --compact
+
+# Get results as JSON
+npx checkly status-pages list --output=json
+
+# Page through results
+npx checkly status-pages list --limit=10 --cursor=<cursor>
+```
+
+## `checkly status-pages get`
+
+Get details of a specific status page, including its cards and services.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages get <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the status page to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+### Get Options
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly status-pages get <id> --output=json
+npx checkly status-pages get <id> -o md
+```
+
+</ResponseField>
+
+### Get Examples
+
+```bash Terminal
+# View status page details with cards and services
+npx checkly status-pages get 12345
+
+# Get status page details as JSON
+npx checkly status-pages get 12345 --output=json
+```
+
+## Related Commands
+
+- [`checkly checks`](/cli/checkly-checks) - List and inspect checks
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information

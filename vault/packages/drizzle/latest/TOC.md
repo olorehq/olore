@@ -1,327 +1,280 @@
-# Drizzle ORM Table of Contents
+# drizzle Table of Contents
 
 ## Directory Map
 
 ```
 contents/
-├── get-started/         # Database-specific setup guides (52 files)
-│   ├── postgresql-new.mdx / postgresql-existing.mdx
-│   ├── mysql-new.mdx / mysql-existing.mdx
-│   ├── sqlite-new.mdx / sqlite-existing.mdx
-│   ├── neon-*, turso-*, supabase-*, vercel-*, etc.
-│   └── cloudflare-d1, expo, bun, effect, and more
-├── guides/              # How-to guides and patterns (25 files)
-│   ├── pagination, full-text-search, upsert
-│   ├── conditional-filters, incrementing-a-value
-│   └── postgresql-local-setup, vector-similarity-search
-├── column-types/        # Column type references (6 files)
-│   ├── pg.mdx, mysql.mdx, sqlite.mdx
-│   └── cockroach.mdx, mssql.mdx, singlestore.mdx
-├── extensions/          # Database extensions (4 files)
-│   └── pg.mdx, mysql.mdx, sqlite.mdx, singlestore.mdx
-├── migrate/             # Migration guides (4 files)
-│   └── from Prisma, TypeORM, Sequelize, Components
-├── tutorials/           # Integration tutorials (11 files)
-│   ├── drizzle-on-the-edge/ (Netlify, Vercel, Supabase Edge)
-│   ├── drizzle-with-db/ (Neon, Nile, Turso, Xata, etc.)
-│   └── drizzle-with-frameworks/ (Next.js)
-├── latest-releases/     # Release notes (37 files)
-│   └── drizzle-orm-v0.x.x.mdx versions
-└── Root files           # Core docs (101 files)
-    ├── Core queries: select, insert, update, delete
-    ├── Schema: sql-schema-declaration, relations
-    ├── Drizzle Kit: generate, migrate, push, pull, studio
-    ├── Advanced: transactions, joins, operators, rls
-    └── Connections: connect-*.mdx (30+ providers)
+├── (root)                         # Core docs: queries, schema, migrations (101 files)
+├── column-types/                  # Column type references per dialect (6 files)
+├── extensions/                    # Dialect-specific extensions (4 files)
+├── get-started/                   # Per-database quickstart guides (54 files)
+├── guides/                        # How-to recipes and patterns (25 files)
+├── migrate/                       # Migration from other ORMs (4 files)
+└── tutorials/                     # Full integration tutorials (14 files)
+    ├── drizzle-on-the-edge/       # Edge runtime tutorials (4 files)
+    ├── drizzle-with-db/           # Database provider tutorials (6 files)
+    ├── drizzle-with-frameworks/   # Framework integration tutorials (2 files)
+    └── drizzle-with-railway/      # Railway deployment tutorials (2 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New project setup | `contents/get-started.mdx` |
-| Choose your database | `contents/get-started/{database}-new.mdx` |
-| Existing project | `contents/get-started/{database}-existing.mdx` |
-| Schema definition | `contents/sql-schema-declaration.mdx` |
-| Querying data | `contents/select.mdx` |
-| Generate migrations | `contents/drizzle-kit-generate.mdx` |
-| Column types reference | `contents/column-types/{dialect}.mdx` |
-| Common patterns | `contents/guides/` |
+| Overview | `contents/overview.mdx` |
+| Quick start | `contents/quick.mdx` |
+| Get started (new project) | `contents/get-started.mdx` |
+| SQL schema declaration | `contents/sql-schema-declaration.mdx` |
+| Select queries | `contents/select.mdx` |
+| Insert / Update / Delete | `contents/insert.mdx`, `contents/update.mdx`, `contents/delete.mdx` |
+| Relational queries (RQB) | `contents/rqb.mdx` |
+| Migrations (Drizzle Kit) | `contents/kit-overview.mdx` |
+| Column types (PostgreSQL) | `contents/column-types/pg.mdx` |
+| Configuration file | `contents/drizzle-config-file.mdx` |
 
 ## Detailed Structure
 
-### Root directory (101 files)
+### Root-level core docs (101 files)
 
-**Getting started**
 | File | Description |
 |------|-------------|
-| `get-started.mdx` | Main entry point for new users |
-| `overview.mdx` | Drizzle overview |
-| `quick.mdx` | Quick start guide |
-| `why-drizzle.mdx` | Why use Drizzle |
-
-**Schema and queries**
-| File | Description |
-|------|-------------|
-| `sql-schema-declaration.mdx` | Define database schema in TypeScript |
-| `select.mdx` | Select queries |
-| `insert.mdx` | Insert queries |
-| `update.mdx` | Update queries |
-| `delete.mdx` | Delete queries |
-| `data-querying.mdx` | Query patterns overview |
-| `rqb.mdx` | Relational query builder |
-| `rqb-v2.mdx` | Relational query builder v2 |
-
-**Relations**
-| File | Description |
-|------|-------------|
-| `relations.mdx` | Drizzle soft relations |
-| `relations-schema-declaration.mdx` | Define relations in schema |
-| `relations-v2.mdx` | Relations v2 |
-| `relations-v1-v2.mdx` | Migration from v1 to v2 |
-
-**Advanced queries**
-| File | Description |
-|------|-------------|
-| `joins.mdx` | Join queries |
-| `operators.mdx` | SQL operators |
-| `transactions.mdx` | Database transactions |
-| `batch-api.mdx` | Batch operations |
-| `set-operations.mdx` | Union, intersect, except |
-| `dynamic-query-building.mdx` | Build queries dynamically |
-| `query-utils.mdx` | Query utility functions |
-
-**Drizzle Kit**
-| File | Description |
-|------|-------------|
-| `drizzle-kit-generate.mdx` | Generate migrations |
-| `drizzle-kit-migrate.mdx` | Apply migrations |
-| `drizzle-kit-push.mdx` | Push schema changes |
-| `drizzle-kit-pull.mdx` | Pull schema from database |
-| `drizzle-kit-studio.mdx` | Database browser UI |
-| `drizzle-kit-check.mdx` | Check migration consistency |
-| `drizzle-kit-up.mdx` | Upgrade migrations format |
-| `drizzle-kit-export.mdx` | Export schema |
-| `drizzle-config-file.mdx` | Drizzle config reference |
-| `kit-overview.mdx` | Drizzle Kit overview |
-| `kit-migrations-for-teams.mdx` | Team migration workflows |
-| `kit-custom-migrations.mdx` | Custom migration files |
-| `kit-seed-data.mdx` | Seed data with Drizzle Kit |
-| `kit-web-mobile.mdx` | Web and mobile migrations |
-
-**Seeding**
-| File | Description |
-|------|-------------|
-| `seed-overview.mdx` | Seed data overview |
-| `seed-functions.mdx` | Seed function utilities |
-| `seed-versioning.mdx` | Version-controlled seeding |
-| `seed-limitations.mdx` | Seeding limitations |
-
-**Migrations**
-| File | Description |
-|------|-------------|
-| `migrations.mdx` | Migration fundamentals |
-
-**Schema features**
-| File | Description |
-|------|-------------|
-| `indexes-constraints.mdx` | Indexes and constraints |
-| `views.mdx` | Database views |
-| `sequences.mdx` | Sequences |
-| `generated-columns.mdx` | Generated columns |
-| `schemas.mdx` | Multi-schema support |
+| `overview.mdx` | Drizzle ORM overview |
+| `quick.mdx` | Quick start |
+| `get-started.mdx` | Getting started hub |
+| `get-started-postgresql.mdx` | PostgreSQL setup |
+| `get-started-mysql.mdx` | MySQL setup |
+| `get-started-sqlite.mdx` | SQLite setup |
+| `get-started-cockroach.mdx` | CockroachDB setup |
+| `get-started-mssql.mdx` | MSSQL setup |
+| `get-started-singlestore.mdx` | SingleStore setup |
+| `get-started-gel.mdx` | Gel setup |
+| `sql-schema-declaration.mdx` | Schema declaration with drizzle-orm |
+| `relations-schema-declaration.mdx` | Relations schema declaration |
 | `custom-types.mdx` | Custom column types |
-| `rls.mdx` | Row-level security |
-
-**Database connections** (30+ providers)
-| File | Description |
-|------|-------------|
-| `connect-overview.mdx` | Connection overview |
-| `connect-neon.mdx` | Neon serverless Postgres |
-| `connect-turso.mdx` | Turso SQLite |
-| `connect-supabase.mdx` | Supabase Postgres |
-| `connect-planetscale.mdx` | PlanetScale MySQL |
-| `connect-vercel-postgres.mdx` | Vercel Postgres |
-| `connect-cloudflare-d1.mdx` | Cloudflare D1 |
-| `connect-cloudflare-do.mdx` | Cloudflare Durable Objects |
-| `connect-xata.mdx` | Xata |
-| `connect-pglite.mdx` | PGlite embedded Postgres |
-| `connect-bun-sqlite.mdx` | Bun SQLite |
-| `connect-bun-sql.mdx` | Bun SQL |
-| `connect-expo-sqlite.mdx` | Expo SQLite |
-| `connect-react-native-sqlite.mdx` | React Native SQLite |
-| `connect-op-sqlite.mdx` | OP SQLite |
-| `connect-sqlite-cloud.mdx` | SQLite Cloud |
-| `connect-aws-data-api-mysql.mdx` | AWS Data API (MySQL) |
-| `connect-aws-data-api-pg.mdx` | AWS Data API (PostgreSQL) |
-| `connect-effect-postgres.mdx` | Effect Postgres |
-| `connect-tidb.mdx` | TiDB |
-| `connect-nile.mdx` | Nile |
-| `connect-planetscale-postgres.mdx` | PlanetScale Postgres |
-| `connect-prisma-postgres.mdx` | Prisma Postgres |
-| `connect-drizzle-proxy.mdx` | Drizzle Proxy |
-
-**Database-specific guides**
-| File | Description |
-|------|-------------|
-| `get-started-postgresql.mdx` | PostgreSQL overview |
-| `get-started-mysql.mdx` | MySQL overview |
-| `get-started-sqlite.mdx` | SQLite overview |
-| `get-started-cockroach.mdx` | CockroachDB overview |
-| `get-started-mssql.mdx` | Microsoft SQL Server overview |
-| `get-started-singlestore.mdx` | SingleStore overview |
-| `get-started-gel.mdx` | GEL overview |
-
-**Performance and optimization**
-| File | Description |
-|------|-------------|
-| `perf-queries.mdx` | Query performance optimization |
-| `perf-serverless.mdx` | Serverless performance |
+| `generated-columns.mdx` | Generated columns |
+| `sequences.mdx` | Sequences |
+| `views.mdx` | Database views |
+| `indexes-constraints.mdx` | Indexes and constraints |
+| `schemas.mdx` | Schema namespacing |
+| `select.mdx` | SELECT queries |
+| `insert.mdx` | INSERT queries |
+| `update.mdx` | UPDATE queries |
+| `delete.mdx` | DELETE queries |
+| `joins.mdx` | JOINs |
+| `operators.mdx` | SQL operators |
+| `sql.mdx` | Raw SQL escape hatch |
+| `set-operations.mdx` | UNION, INTERSECT, EXCEPT |
+| `batch-api.mdx` | Batch API |
+| `transactions.mdx` | Transactions |
+| `rqb.mdx` | Relational Query Builder (v1) |
+| `rqb-v2.mdx` | Relational Query Builder v2 |
+| `relations.mdx` | Relations definition |
+| `relations-v2.mdx` | Relations v2 |
+| `relations-v1-v2.mdx` | Migrating from relations v1 to v2 |
+| `data-querying.mdx` | Data querying overview |
+| `dynamic-query-building.mdx` | Dynamic query building |
+| `query-utils.mdx` | Query utilities |
+| `migrations.mdx` | Migrations overview |
+| `kit-overview.mdx` | Drizzle Kit overview |
+| `drizzle-config-file.mdx` | drizzle.config.ts reference |
+| `drizzle-kit-generate.mdx` | drizzle-kit generate command |
+| `drizzle-kit-migrate.mdx` | drizzle-kit migrate command |
+| `drizzle-kit-push.mdx` | drizzle-kit push command |
+| `drizzle-kit-pull.mdx` | drizzle-kit pull command |
+| `drizzle-kit-check.mdx` | drizzle-kit check command |
+| `drizzle-kit-up.mdx` | drizzle-kit up command |
+| `drizzle-kit-export.mdx` | drizzle-kit export command |
+| `drizzle-kit-studio.mdx` | Drizzle Studio |
+| `kit-custom-migrations.mdx` | Custom migrations |
+| `kit-migrations-for-teams.mdx` | Team migrations workflow |
+| `kit-seed-data.mdx` | Seeding data with Kit |
+| `kit-web-mobile.mdx` | Kit for web/mobile |
+| `seed-overview.mdx` | Seeding overview |
+| `seed-functions.mdx` | Seed functions |
+| `seed-limitations.mdx` | Seed limitations |
+| `seed-versioning.mdx` | Seed versioning |
+| `connect-overview.mdx` | Database connection overview |
+| `connect-neon.mdx` | Connect to Neon |
+| `connect-supabase.mdx` | Connect to Supabase |
+| `connect-turso.mdx` | Connect to Turso |
+| `connect-turso-database.mdx` | Connect to Turso (database SDK) |
+| `connect-planetscale.mdx` | Connect to PlanetScale |
+| `connect-planetscale-postgres.mdx` | Connect to PlanetScale Postgres |
+| `connect-vercel-postgres.mdx` | Connect to Vercel Postgres |
+| `connect-nile.mdx` | Connect to Nile |
+| `connect-xata.mdx` | Connect to Xata |
+| `connect-tidb.mdx` | Connect to TiDB |
+| `connect-aws-data-api-pg.mdx` | Connect to AWS Data API (PG) |
+| `connect-aws-data-api-mysql.mdx` | Connect to AWS Data API (MySQL) |
+| `connect-netlify-db.mdx` | Connect to Netlify DB |
+| `connect-prisma-postgres.mdx` | Connect to Prisma Postgres |
+| `connect-pglite.mdx` | Connect to PGlite |
+| `connect-bun-sql.mdx` | Connect with Bun SQL |
+| `connect-bun-sqlite.mdx` | Connect with Bun SQLite |
+| `connect-cloudflare-d1.mdx` | Connect to Cloudflare D1 |
+| `connect-cloudflare-do.mdx` | Connect to Cloudflare DO |
+| `connect-drizzle-proxy.mdx` | Drizzle HTTP Proxy |
+| `connect-expo-sqlite.mdx` | Connect to Expo SQLite |
+| `connect-op-sqlite.mdx` | Connect to OP SQLite |
+| `connect-node-sqlite.mdx` | Connect to Node.js SQLite |
+| `connect-react-native-sqlite.mdx` | Connect to React Native SQLite |
+| `connect-sqlite-cloud.mdx` | Connect to SQLite Cloud |
+| `connect-effect-postgres.mdx` | Connect with Effect Postgres |
+| `rls.mdx` | Row-Level Security |
+| `read-replicas.mdx` | Read replicas |
 | `cache.mdx` | Query caching |
-| `read-replicas.mdx` | Read replicas configuration |
-
-**Validation and integrations**
-| File | Description |
-|------|-------------|
-| `zod.mdx` | Zod schema validation |
-| `valibot.mdx` | Valibot validation |
-| `typebox.mdx` | TypeBox validation |
-| `arktype.mdx` | ArkType validation |
+| `perf-queries.mdx` | Query performance |
+| `perf-serverless.mdx` | Serverless performance |
+| `zod.mdx` | Zod schema integration |
+| `valibot.mdx` | Valibot schema integration |
+| `typebox.mdx` | TypeBox schema integration |
+| `typebox-legacy.mdx` | TypeBox legacy (drizzle-typebox pkg) |
+| `arktype.mdx` | ArkType schema integration |
+| `effect-schema.mdx` | Effect Schema integration |
 | `graphql.mdx` | GraphQL integration |
-| `prisma.mdx` | Prisma integration |
+| `prisma.mdx` | Prisma extension |
 | `eslint-plugin.mdx` | ESLint plugin |
-
-**Utilities and tools**
-| File | Description |
-|------|-------------|
-| `sql.mdx` | Raw SQL operator |
-| `goodies.mdx` | Helper utilities |
-
-**Documentation**
-| File | Description |
-|------|-------------|
+| `goodies.mdx` | Type helpers and utilities |
+| `gotchas.mdx` | Common pitfalls |
 | `faq.mdx` | Frequently asked questions |
-| `gotchas.mdx` | Common gotchas and pitfalls |
-| `upgrade-21.mdx` | Upgrade to 2.1 guide |
-| `upgrade-v1.mdx` | Upgrade to v1 guide |
-
-### get-started/ (52 files)
-
-Database-specific setup guides for new and existing projects:
-
-| Database/Platform | New Project | Existing Project |
-|-------------------|-------------|------------------|
-| PostgreSQL | `postgresql-new.mdx` | `postgresql-existing.mdx` |
-| MySQL | `mysql-new.mdx` | `mysql-existing.mdx` |
-| SQLite | `sqlite-new.mdx` | `sqlite-existing.mdx` |
-| Neon | `neon-new.mdx` | `neon-existing.mdx` |
-| Turso | `turso-new.mdx` | `turso-existing.mdx` |
-| Turso Database | `turso-database-new.mdx` | `turso-database-existing.mdx` |
-| Supabase | `supabase-new.mdx` | `supabase-existing.mdx` |
-| PlanetScale | `planetscale-new.mdx` | `planetscale-existing.mdx` |
-| PlanetScale Postgres | `planetscale-postgres-new.mdx` | `planetscale-postgres-existing.mdx` |
-| Vercel Postgres | `vercel-new.mdx` | `vercel-existing.mdx` |
-| Cloudflare D1 | `d1-new.mdx` | `d1-existing.mdx` |
-| Cloudflare DO | `do-new.mdx` | `do-existing.mdx` |
-| Xata | `xata-new.mdx` | `xata-existing.mdx` |
-| PGlite | `pglite-new.mdx` | `pglite-existing.mdx` |
-| Bun SQLite | `bun-sqlite-new.mdx` | `bun-sqlite-existing.mdx` |
-| Bun SQL | `bun-sql-new.mdx` | `bun-sql-existing.mdx` |
-| Expo SQLite | `expo-new.mdx` | `expo-existing.mdx` |
-| OP SQLite | `op-sqlite-new.mdx` | `op-sqlite-existing.mdx` |
-| SQLite Cloud | `sqlite-cloud-new.mdx` | `sqlite-cloud-existing.mdx` |
-| Effect PostgreSQL | `effect-postgresql-new.mdx` | `effect-postgresql-existing.mdx` |
-| TiDB | `tidb-new.mdx` | `tidb-existing.mdx` |
-| Nile | `nile-new.mdx` | `nile-existing.mdx` |
-| CockroachDB | `cockroach-new.mdx` | `cockroach-existing.mdx` |
-| MSSQL | `mssql-new.mdx` | `mssql-existing.mdx` |
-| SingleStore | `singlestore-new.mdx` | `singlestore-existing.mdx` |
-| GEL | `gel-new.mdx` | `gel-existing.mdx` |
-
-### guides/ (25 files)
-
-| File | Description |
-|------|-------------|
-| `conditional-filters-in-query.mdx` | Dynamic query filtering |
-| `count-rows.mdx` | Count table rows |
-| `cursor-based-pagination.mdx` | Cursor pagination |
-| `d1-http-with-drizzle-kit.mdx` | D1 HTTP with Drizzle Kit |
-| `decrementing-a-value.mdx` | Decrement numeric values |
-| `empty-array-default-value.mdx` | Default array values |
-| `full-text-search-with-generated-columns.mdx` | Full-text search |
-| `gel-ext-auth.mdx` | GEL external auth |
-| `include-or-exclude-columns.mdx` | Column selection patterns |
-| `incrementing-a-value.mdx` | Increment numeric values |
-| `limit-offset-pagination.mdx` | Offset-based pagination |
-| `mysql-local-setup.mdx` | MySQL local development |
-| `point-datatype-psql.mdx` | PostgreSQL point type |
-| `postgis-geometry-point.mdx` | PostGIS geometry types |
-| `postgresql-full-text-search.mdx` | PostgreSQL full-text search |
-| `postgresql-local-setup.mdx` | PostgreSQL local development |
-| `seeding-using-with-option.mdx` | Seed with advanced options |
-| `seeding-with-partially-exposed-schema.mdx` | Partial schema seeding |
-| `select-parent-rows-with-at-least-one-related-child-row.mdx` | Join filtering |
-| `timestamp-default-value.mdx` | Timestamp defaults |
-| `toggling-a-boolean-field.mdx` | Toggle boolean values |
-| `unique-case-insensitive-email.mdx` | Case-insensitive unique |
-| `update-many-with-different-value.mdx` | Batch updates |
-| `upsert.mdx` | Insert or update pattern |
-| `vector-similarity-search.mdx` | Vector search |
+| `upgrade-21.mdx` | Upgrade guide to v0.21 |
+| `upgrade-v1.mdx` | Upgrade guide to v1 |
 
 ### column-types/ (6 files)
 
 | File | Description |
 |------|-------------|
-| `pg.mdx` | PostgreSQL column types |
-| `mysql.mdx` | MySQL column types |
-| `sqlite.mdx` | SQLite column types |
-| `cockroach.mdx` | CockroachDB column types |
-| `mssql.mdx` | Microsoft SQL Server column types |
-| `singlestore.mdx` | SingleStore column types |
+| `column-types/pg.mdx` | PostgreSQL column types |
+| `column-types/mysql.mdx` | MySQL column types |
+| `column-types/sqlite.mdx` | SQLite column types |
+| `column-types/cockroach.mdx` | CockroachDB column types |
+| `column-types/mssql.mdx` | MSSQL column types |
+| `column-types/singlestore.mdx` | SingleStore column types |
 
 ### extensions/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `pg.mdx` | PostgreSQL extensions |
-| `mysql.mdx` | MySQL extensions |
-| `sqlite.mdx` | SQLite extensions |
-| `singlestore.mdx` | SingleStore extensions |
+| `extensions/pg.mdx` | PostgreSQL extensions (pgvector, postgis, etc.) |
+| `extensions/mysql.mdx` | MySQL extensions |
+| `extensions/sqlite.mdx` | SQLite extensions |
+| `extensions/singlestore.mdx` | SingleStore extensions |
+
+### get-started/ (54 files)
+
+Per-database getting-started guides, each with `-new` (new project) and `-existing` (existing database) variants.
+
+| File | Description |
+|------|-------------|
+| `get-started/postgresql-new.mdx` | PostgreSQL — new project |
+| `get-started/postgresql-existing.mdx` | PostgreSQL — existing DB |
+| `get-started/mysql-new.mdx` | MySQL — new project |
+| `get-started/mysql-existing.mdx` | MySQL — existing DB |
+| `get-started/sqlite-new.mdx` | SQLite — new project |
+| `get-started/sqlite-existing.mdx` | SQLite — existing DB |
+| `get-started/neon-new.mdx` | Neon — new project |
+| `get-started/neon-existing.mdx` | Neon — existing DB |
+| `get-started/supabase-new.mdx` | Supabase — new project |
+| `get-started/supabase-existing.mdx` | Supabase — existing DB |
+| `get-started/turso-new.mdx` | Turso — new project |
+| `get-started/turso-existing.mdx` | Turso — existing DB |
+| `get-started/turso-database-new.mdx` | Turso (database SDK) — new project |
+| `get-started/turso-database-existing.mdx` | Turso (database SDK) — existing DB |
+| `get-started/d1-new.mdx` | Cloudflare D1 — new project |
+| `get-started/d1-existing.mdx` | Cloudflare D1 — existing DB |
+| `get-started/do-new.mdx` | Cloudflare DO — new project |
+| `get-started/do-existing.mdx` | Cloudflare DO — existing DB |
+| `get-started/planetscale-new.mdx` | PlanetScale — new project |
+| `get-started/planetscale-existing.mdx` | PlanetScale — existing DB |
+| `get-started/planetscale-postgres-new.mdx` | PlanetScale Postgres — new project |
+| `get-started/planetscale-postgres-existing.mdx` | PlanetScale Postgres — existing DB |
+| `get-started/cockroach-new.mdx` | CockroachDB — new project |
+| `get-started/cockroach-existing.mdx` | CockroachDB — existing DB |
+| `get-started/pglite-new.mdx` | PGlite — new project |
+| `get-started/pglite-existing.mdx` | PGlite — existing DB |
+| `get-started/nile-new.mdx` | Nile — new project |
+| `get-started/nile-existing.mdx` | Nile — existing DB |
+| `get-started/xata-new.mdx` | Xata — new project |
+| `get-started/xata-existing.mdx` | Xata — existing DB |
+| `get-started/tidb-new.mdx` | TiDB — new project |
+| `get-started/tidb-existing.mdx` | TiDB — existing DB |
+| `get-started/vercel-new.mdx` | Vercel Postgres — new project |
+| `get-started/vercel-existing.mdx` | Vercel Postgres — existing DB |
+| `get-started/bun-sql-new.mdx` | Bun SQL — new project |
+| `get-started/bun-sql-existing.mdx` | Bun SQL — existing DB |
+| `get-started/bun-sqlite-new.mdx` | Bun SQLite — new project |
+| `get-started/bun-sqlite-existing.mdx` | Bun SQLite — existing DB |
+| `get-started/expo-new.mdx` | Expo SQLite — new project |
+| `get-started/expo-existing.mdx` | Expo SQLite — existing DB |
+| `get-started/op-sqlite-new.mdx` | OP SQLite — new project |
+| `get-started/op-sqlite-existing.mdx` | OP SQLite — existing DB |
+| `get-started/node-sqlite-new.mdx` | Node.js SQLite — new project |
+| `get-started/node-sqlite-existing.mdx` | Node.js SQLite — existing DB |
+| `get-started/sqlite-cloud-new.mdx` | SQLite Cloud — new project |
+| `get-started/sqlite-cloud-existing.mdx` | SQLite Cloud — existing DB |
+| `get-started/gel-new.mdx` | Gel — new project |
+| `get-started/gel-existing.mdx` | Gel — existing DB |
+| `get-started/mssql-new.mdx` | MSSQL — new project |
+| `get-started/mssql-existing.mdx` | MSSQL — existing DB |
+| `get-started/singlestore-new.mdx` | SingleStore — new project |
+| `get-started/singlestore-existing.mdx` | SingleStore — existing DB |
+| `get-started/effect-postgresql-new.mdx` | Effect Postgres — new project |
+| `get-started/effect-postgresql-existing.mdx` | Effect Postgres — existing DB |
+
+### guides/ (25 files)
+
+| File | Description |
+|------|-------------|
+| `guides/conditional-filters-in-query.mdx` | Conditional WHERE filters |
+| `guides/count-rows.mdx` | Counting rows |
+| `guides/cursor-based-pagination.mdx` | Cursor-based pagination |
+| `guides/limit-offset-pagination.mdx` | Limit/offset pagination |
+| `guides/include-or-exclude-columns.mdx` | Selecting specific columns |
+| `guides/upsert.mdx` | Upsert patterns |
+| `guides/update-many-with-different-value.mdx` | Bulk update with different values |
+| `guides/incrementing-a-value.mdx` | Incrementing a field |
+| `guides/decrementing-a-value.mdx` | Decrementing a field |
+| `guides/toggling-a-boolean-field.mdx` | Toggling a boolean |
+| `guides/timestamp-default-value.mdx` | Timestamp default values |
+| `guides/empty-array-default-value.mdx` | Empty array default values |
+| `guides/unique-case-insensitive-email.mdx` | Case-insensitive unique email |
+| `guides/select-parent-rows-with-at-least-one-related-child-row.mdx` | Filtering by related rows |
+| `guides/postgresql-full-text-search.mdx` | PostgreSQL full-text search |
+| `guides/full-text-search-with-generated-columns.mdx` | Full-text search with generated columns |
+| `guides/postgis-geometry-point.mdx` | PostGIS geometry point |
+| `guides/point-datatype-psql.mdx` | PostgreSQL POINT data type |
+| `guides/vector-similarity-search.mdx` | Vector similarity search |
+| `guides/postgresql-local-setup.mdx` | Local PostgreSQL setup |
+| `guides/mysql-local-setup.mdx` | Local MySQL setup |
+| `guides/d1-http-with-drizzle-kit.mdx` | D1 HTTP with Drizzle Kit |
+| `guides/gel-ext-auth.mdx` | Gel external auth |
+| `guides/seeding-using-with-option.mdx` | Seeding with `with` option |
+| `guides/seeding-with-partially-exposed-schema.mdx` | Seeding with partial schema |
 
 ### migrate/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `migrate-from-prisma.mdx` | Migrate from Prisma |
-| `migrate-from-typeorm.mdx` | Migrate from TypeORM |
-| `migrate-from-sequelize.mdx` | Migrate from Sequelize |
-| `components.mdx` | Migration components |
+| `migrate/migrate-from-prisma.mdx` | Migrate from Prisma |
+| `migrate/migrate-from-sequelize.mdx` | Migrate from Sequelize |
+| `migrate/migrate-from-typeorm.mdx` | Migrate from TypeORM |
+| `migrate/components.mdx` | Migration components reference |
 
-### tutorials/ (11 files)
+### tutorials/ (14 files)
 
-**drizzle-on-the-edge/**
 | File | Description |
 |------|-------------|
-| `drizzle-with-netlify-edge-functions-neon.mdx` | Netlify Edge + Neon |
-| `drizzle-with-netlify-edge-functions-supabase.mdx` | Netlify Edge + Supabase |
-| `drizzle-with-supabase-edge-functions.mdx` | Supabase Edge Functions |
-| `drizzle-with-vercel-edge-functions.mdx` | Vercel Edge Functions |
-
-**drizzle-with-db/**
-| File | Description |
-|------|-------------|
-| `drizzle-with-neon.mdx` | Drizzle + Neon tutorial |
-| `drizzle-with-nile.mdx` | Drizzle + Nile tutorial |
-| `drizzle-with-supabase.mdx` | Drizzle + Supabase tutorial |
-| `drizzle-with-turso.mdx` | Drizzle + Turso tutorial |
-| `drizzle-with-vercel.mdx` | Drizzle + Vercel tutorial |
-| `drizzle-with-xata.mdx` | Drizzle + Xata tutorial |
-
-**drizzle-with-frameworks/**
-| File | Description |
-|------|-------------|
-| `drizzle-nextjs-neon.mdx` | Next.js + Neon tutorial |
-
-### latest-releases/ (37 files)
-
-Release notes for Drizzle ORM versions from v0.1.1.0 to v0.32.2 and Drizzle Kit v0.23.2.
+| `tutorials/drizzle-with-db/drizzle-with-neon.mdx` | Full tutorial: Drizzle + Neon |
+| `tutorials/drizzle-with-db/drizzle-with-supabase.mdx` | Full tutorial: Drizzle + Supabase |
+| `tutorials/drizzle-with-db/drizzle-with-turso.mdx` | Full tutorial: Drizzle + Turso |
+| `tutorials/drizzle-with-db/drizzle-with-vercel.mdx` | Full tutorial: Drizzle + Vercel |
+| `tutorials/drizzle-with-db/drizzle-with-nile.mdx` | Full tutorial: Drizzle + Nile |
+| `tutorials/drizzle-with-db/drizzle-with-xata.mdx` | Full tutorial: Drizzle + Xata |
+| `tutorials/drizzle-on-the-edge/drizzle-with-vercel-edge-functions.mdx` | Drizzle on Vercel Edge |
+| `tutorials/drizzle-on-the-edge/drizzle-with-supabase-edge-functions.mdx` | Drizzle on Supabase Edge |
+| `tutorials/drizzle-on-the-edge/drizzle-with-netlify-edge-functions-neon.mdx` | Drizzle on Netlify Edge (Neon) |
+| `tutorials/drizzle-on-the-edge/drizzle-with-netlify-edge-functions-supabase.mdx` | Drizzle on Netlify Edge (Supabase) |
+| `tutorials/drizzle-with-frameworks/drizzle-nextjs-neon.mdx` | Drizzle + Next.js + Neon |
+| `tutorials/drizzle-with-frameworks/drizzle-with-encore.mdx` | Drizzle + Encore |
+| `tutorials/drizzle-with-railway/bun-railway-pg.mdx` | Drizzle + Bun + Railway (PG) |
+| `tutorials/drizzle-with-railway/node-railway-pg.mdx` | Drizzle + Node + Railway (PG) |

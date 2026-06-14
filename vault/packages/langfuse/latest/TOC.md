@@ -1,135 +1,144 @@
-# langfuse Documentation Structure
+# Langfuse Documentation Structure
 
 ## Directory Overview
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/administration/` | Admin settings, auth, RBAC, data management | 10 |
-| `contents/api-and-data-platform/` | Public API, data export, CLI, SDK queries | 8 |
-| `contents/evaluation/` | Evaluation methods, scores, experiments, datasets | 12 |
-| `contents/metrics/` | Analytics dashboards, metrics API | 3 |
-| `contents/observability/` | Tracing, SDK instrumentation, features | 33 |
-| `contents/prompt-management/` | Prompt versioning, variables, caching, features | 19 |
-| `contents/` | Root index and security guide | 2 |
+| `contents/` (root) | Platform overview, v4 migration, security | 3 |
+| `contents/observability/` | LLM tracing, SDK instrumentation, features | 35 |
+| `contents/prompt-management/` | Prompt versioning, caching, CI/CD | 19 |
+| `contents/evaluation/` | Scores, datasets, experiments, LLM-as-a-judge | 16 |
+| `contents/api-and-data-platform/` | Public API, data export, MCP server | 10 |
+| `contents/administration/` | Auth, SSO, RBAC, data retention | 9 |
+| `contents/metrics/` | Dashboards and metrics API | 3 |
 
-## administration/
+## contents/ (root)
 
 | File | Description |
 |------|-------------|
-| `audit-logs.mdx` | Audit log access and configuration |
-| `authentication-and-sso.mdx` | SSO and authentication setup |
-| `billable-units.mdx` | Billable usage units explained |
-| `data-deletion.mdx` | Data deletion policies and API |
-| `data-retention.mdx` | Data retention configuration |
-| `llm-connection.mdx` | Configuring LLM provider connections |
-| `rbac.mdx` | Role-based access control |
-| `scim-and-org-api.mdx` | SCIM provisioning and org management API |
-| `spend-alerts.mdx` | Spend alert configuration |
-| `troubleshooting-and-faq.mdx` | Admin troubleshooting and FAQ |
+| `index.mdx` | Platform overview — all Langfuse features at a glance |
+| `v4.mdx` | Fast Preview migration: observations-first data model, SDK upgrade steps |
+| `security-and-guardrails.mdx` | LLM security guardrails, PII protection, monitoring |
+
+## observability/
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Observability feature overview |
+| `get-started.mdx` | Getting started with LLM tracing |
+| `data-model.mdx` | Traces, spans, generations data model |
+| `troubleshooting-and-faq.mdx` | Observability troubleshooting and FAQ |
+| `sdk/overview.mdx` | SDK overview and supported languages |
+| `sdk/instrumentation.mdx` | Python/JS SDK instrumentation guide |
+| `sdk/advanced-features.mdx` | Advanced SDK features |
+| `sdk/troubleshooting-and-faq.mdx` | SDK troubleshooting and FAQ |
+| `sdk/upgrade-path/index.mdx` | SDK upgrade path overview |
+| `sdk/upgrade-path/python-v2-to-v3.mdx` | Python SDK v2 to v3 migration |
+| `sdk/upgrade-path/python-v3-to-v4.mdx` | Python SDK v3 to v4 migration |
+| `sdk/upgrade-path/js-v3-to-v4.mdx` | JS SDK v3 to v4 migration |
+| `sdk/upgrade-path/js-v4-to-v5.mdx` | JS SDK v4 to v5 migration |
+| `features/observation-types.mdx` | Traces, spans, generations, events |
+| `features/agent-graphs.mdx` | Agent graph visualization |
+| `features/sessions.mdx` | Multi-turn conversation sessions |
+| `features/users.mdx` | User tracking |
+| `features/token-and-cost-tracking.mdx` | Token usage and cost tracking |
+| `features/metadata.mdx` | Custom metadata on traces |
+| `features/tags.mdx` | Tagging traces and observations |
+| `features/environments.mdx` | Environment separation (dev/prod) |
+| `features/releases-and-versioning.mdx` | Release and version tracking |
+| `features/sampling.mdx` | Trace sampling configuration |
+| `features/masking.mdx` | PII masking for inputs/outputs |
+| `features/multi-modality.mdx` | Images and multi-modal traces |
+| `features/mcp-tracing.mdx` | MCP server tracing |
+| `features/log-levels.mdx` | Log level support |
+| `features/comments.mdx` | Comments on traces |
+| `features/corrections.mdx` | Human corrections on traces |
+| `features/trace-ids-and-distributed-tracing.mdx` | Trace IDs and distributed tracing |
+| `features/queuing-batching.mdx` | SDK queuing and batching behavior |
+| `features/full-text-search.mdx` | Full-text search across traces |
+| `features/url.mdx` | Trace URLs and sharing |
+| `features/user-feedback.mdx` | Collecting user feedback on traces |
+| `features/web-callouts.mdx` | HTTP web callouts from UI |
+
+## prompt-management/
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Prompt management feature overview |
+| `get-started.mdx` | Getting started with prompt management |
+| `data-model.mdx` | Prompt data model and versioning |
+| `troubleshooting-and-faq.mdx` | Prompt management FAQ |
+| `features/prompt-version-control.mdx` | Version control for prompts |
+| `features/variables.mdx` | Prompt variables and templating |
+| `features/message-placeholders.mdx` | Message placeholder syntax |
+| `features/composability.mdx` | Composing prompts from partials |
+| `features/caching.mdx` | Client-side prompt caching |
+| `features/guaranteed-availability.mdx` | Fallback for offline/CDN scenarios |
+| `features/a-b-testing.mdx` | A/B testing prompts |
+| `features/playground.mdx` | In-UI prompt playground |
+| `features/config.mdx` | Prompt config (model params, temperature) |
+| `features/folders.mdx` | Organizing prompts into folders |
+| `features/link-to-traces.mdx` | Linking prompt versions to traces |
+| `features/github-integration.mdx` | GitHub sync for prompts |
+| `features/mcp-server.mdx` | Prompt management MCP server |
+| `features/webhooks-slack-integrations.mdx` | Webhooks and Slack notifications |
+| `features/n8n-node.mdx` | n8n integration for prompts |
+
+## evaluation/
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Evaluation feature overview |
+| `core-concepts.mdx` | Core evaluation concepts |
+| `troubleshooting-and-faq.mdx` | Evaluation troubleshooting and FAQ |
+| `scores/overview.mdx` | Scores overview |
+| `scores/data-model.mdx` | Score data model |
+| `scores/score-analytics.mdx` | Score analytics and aggregation |
+| `evaluation-methods/llm-as-a-judge.mdx` | Automated LLM-as-a-judge evaluation |
+| `evaluation-methods/code-evaluators.mdx` | Custom code-based evaluators |
+| `evaluation-methods/annotation-queues.mdx` | Human annotation queues |
+| `evaluation-methods/scores-via-sdk.mdx` | Submitting scores via SDK |
+| `evaluation-methods/scores-via-ui.mdx` | Submitting scores via UI |
+| `experiments/overview.mdx` | Experiments overview |
+| `experiments/datasets.mdx` | Creating and managing datasets |
+| `experiments/data-model.mdx` | Experiment data model |
+| `experiments/experiments-via-sdk.mdx` | Running experiments via SDK |
+| `experiments/experiments-via-ui.mdx` | Running experiments via UI |
+| `experiments/experiments-ci-cd.mdx` | CI/CD integration for experiments |
 
 ## api-and-data-platform/
 
 | File | Description |
 |------|-------------|
 | `overview.mdx` | API and data platform overview |
-| `features/cli.mdx` | CLI tool usage and commands |
-| `features/export-from-ui.mdx` | Exporting data from the Langfuse UI |
-| `features/export-to-blob-storage.mdx` | Blob storage export configuration |
-| `features/mcp-server.mdx` | Authenticated MCP server for data platform |
-| `features/observations-api.mdx` | Observations API reference |
-| `features/public-api.mdx` | Public REST API reference |
+| `features/public-api.mdx` | REST public API reference |
+| `features/observations-api.mdx` | Observations ingestion API |
 | `features/query-via-sdk.mdx` | Querying data via SDK |
+| `features/export-from-ui.mdx` | Exporting data from the UI |
+| `features/export-to-blob-storage.mdx` | Blob storage export (S3, GCS) |
+| `features/blob-storage-export-fields.mdx` | Exported data schema and fields |
+| `features/cli.mdx` | Langfuse CLI reference |
+| `features/mcp-server.mdx` | Authenticated MCP server |
+| `features/agent-skill.mdx` | Langfuse agent skill for coding agents |
 
-## evaluation/
+## administration/
 
 | File | Description |
 |------|-------------|
-| `core-concepts.mdx` | Core concepts for evaluation |
-| `overview.mdx` | Evaluation feature overview |
-| `troubleshooting-and-faq.mdx` | Evaluation troubleshooting and FAQ |
-| `evaluation-methods/annotation-queues.mdx` | Human annotation queue setup |
-| `evaluation-methods/llm-as-a-judge.mdx` | LLM-as-a-judge evaluation setup |
-| `evaluation-methods/score-analytics.mdx` | Score analytics and reporting |
-| `evaluation-methods/scores-via-sdk.mdx` | Submitting scores via SDK |
-| `evaluation-methods/scores-via-ui.mdx` | Submitting scores via UI |
-| `experiments/data-model.mdx` | Experiment data model |
-| `experiments/datasets.mdx` | Dataset creation and management |
-| `experiments/experiments-via-sdk.mdx` | Running experiments via SDK |
-| `experiments/experiments-via-ui.mdx` | Running experiments via UI |
+| `authentication-and-sso.mdx` | Authentication and SSO setup |
+| `rbac.mdx` | Role-based access control |
+| `scim-and-org-api.mdx` | SCIM provisioning and org API |
+| `audit-logs.mdx` | Audit log access |
+| `llm-connection.mdx` | LLM connection configuration |
+| `data-retention.mdx` | Data retention policies |
+| `data-deletion.mdx` | Data deletion and GDPR compliance |
+| `spend-alerts.mdx` | Spend alerts and cost monitoring |
+| `troubleshooting-and-faq.mdx` | Admin troubleshooting and FAQ |
 
 ## metrics/
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Metrics feature overview |
-| `features/custom-dashboards.mdx` | Custom dashboard creation |
-| `features/metrics-api.mdx` | Metrics API reference |
-
-## observability/
-
-| File | Description |
-|------|-------------|
-| `data-model.mdx` | Observability data model (traces, spans, generations) |
-| `get-started.mdx` | Getting started with observability |
-| `overview.mdx` | Observability feature overview |
-| `troubleshooting-and-faq.mdx` | Observability troubleshooting and FAQ |
-| `features/agent-graphs.mdx` | Agent graph visualization |
-| `features/comments.mdx` | Trace comments |
-| `features/corrections.mdx` | Trace corrections |
-| `features/environments.mdx` | Environment tracking |
-| `features/log-levels.mdx` | Log level configuration |
-| `features/masking.mdx` | PII masking configuration |
-| `features/mcp-tracing.mdx` | MCP tool call tracing |
-| `features/metadata.mdx` | Metadata on traces and spans |
-| `features/multi-modality.mdx` | Multi-modal input/output tracking |
-| `features/observation-types.mdx` | Observation types (span, generation, event) |
-| `features/queuing-batching.mdx` | SDK queuing and batching behavior |
-| `features/releases-and-versioning.mdx` | Release and version tracking |
-| `features/sampling.mdx` | Trace sampling configuration |
-| `features/sessions.mdx` | Session tracking for multi-turn conversations |
-| `features/tags.mdx` | Tag traces and observations |
-| `features/token-and-cost-tracking.mdx` | Token and cost tracking |
-| `features/trace-ids-and-distributed-tracing.mdx` | Trace IDs and distributed tracing |
-| `features/url.mdx` | Trace URL generation |
-| `features/user-feedback.mdx` | Collecting user feedback on traces |
-| `features/users.mdx` | User tracking |
-| `sdk/advanced-features.mdx` | Advanced SDK features |
-| `sdk/instrumentation.mdx` | SDK instrumentation guide |
-| `sdk/overview.mdx` | SDK overview (Python and JS) |
-| `sdk/troubleshooting-and-faq.mdx` | SDK troubleshooting and FAQ |
-| `sdk/upgrade-path/index.mdx` | SDK upgrade path overview |
-| `sdk/upgrade-path/js-v3-to-v4.mdx` | JS SDK v3 to v4 migration |
-| `sdk/upgrade-path/js-v4-to-v5.mdx` | JS SDK v4 to v5 migration |
-| `sdk/upgrade-path/python-v2-to-v3.mdx` | Python SDK v2 to v3 migration |
-| `sdk/upgrade-path/python-v3-to-v4.mdx` | Python SDK v3 to v4 migration |
-
-## prompt-management/
-
-| File | Description |
-|------|-------------|
-| `data-model.mdx` | Prompt data model |
-| `get-started.mdx` | Getting started with prompt management |
-| `overview.mdx` | Prompt management overview |
-| `troubleshooting-and-faq.mdx` | Prompt management troubleshooting and FAQ |
-| `features/a-b-testing.mdx` | A/B testing prompts |
-| `features/caching.mdx` | Prompt caching configuration |
-| `features/composability.mdx` | Composing prompts |
-| `features/config.mdx` | Prompt config (model parameters) |
-| `features/folders.mdx` | Organizing prompts into folders |
-| `features/github-integration.mdx` | GitHub integration for prompts |
-| `features/guaranteed-availability.mdx` | Guaranteed prompt availability |
-| `features/link-to-traces.mdx` | Linking prompts to traces |
-| `features/mcp-server.mdx` | MCP server for prompt management |
-| `features/message-placeholders.mdx` | Message placeholder syntax |
-| `features/n8n-node.mdx` | n8n workflow integration |
-| `features/playground.mdx` | Prompt playground |
-| `features/prompt-version-control.mdx` | Prompt version control |
-| `features/variables.mdx` | Prompt variable syntax and usage |
-| `features/webhooks-slack-integrations.mdx` | Webhook and Slack integrations |
-
-## Root Files
-
-| File | Description |
-|------|-------------|
-| `index.mdx` | Langfuse overview and feature summary |
-| `security-and-guardrails.mdx` | LLM security, guardrails, and PII protection |
+| `overview.mdx` | Metrics and dashboards overview |
+| `features/custom-dashboards.mdx` | Building custom dashboards |
+| `features/metrics-api.mdx` | Metrics API for custom queries |

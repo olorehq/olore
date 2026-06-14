@@ -63,6 +63,81 @@ mixpanel.init("YOUR_PROJECT_TOKEN", {
 });
 ```
 
+## Flag Persistence
+
+Minimum supported SDK version: [`v2.79.0`](https://github.com/mixpanel/mixpanel-js/releases/tag/v2.79.0)
+
+By default, the SDK is in `networkOnly` persistence mode, where the network call for flag assignments are made and then we wait for the network response before async variant calls complete. You can enable persistence to store assignments in IndexedDB so they are available immediately on subsequent page loads.
+
+Configure a `variantLookupPolicy` in the `flags` init options:
+
+**`networkFirst`** — The SDK waits for the network on every launch. If the network call fails, the persisted value is returned as a fallback. Async getter calls block until the fetch completes (or the fallback is resolved).
+
+```javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  flags: {
+    persistence: {
+      variantLookupPolicy: "networkFirst",
+    },
+  },
+});
+
+// The async get_variant_value waits for the call to succeed and falls back to persisted value if it exists. 
+const variant_value = await mixpanel.flags.get_variant_value("my-feature-flag", "control");
+```
+
+**`persistenceUntilNetworkSuccess`** — Persisted variants are returned immediately on page load if they exist and are valid. Once a network call for flags succeeds, it will overwrite previously loaded persisted values.
+
+```javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  flags: {
+    persistence: {
+      variantLookupPolicy: "persistenceUntilNetworkSuccess",
+    },
+  },
+});
+
+// get_variant_value returns immediately from persistence even if the network call is still in progress.
+const variant_value = await mixpanel.flags.get_variant_value("my-feature-flag", "control");
+```
+
+To customize the TTL, add `persistenceTtlMs` alongside `variantLookupPolicy`. By default, the TTL is 24 hours.
+
+```javascript
+mixpanel.init("YOUR_PROJECT_TOKEN", {
+  flags: {
+    persistence: {
+      variantLookupPolicy: "networkFirst",
+      persistenceTtlMs: 12 * 60 * 60 * 1000, // 12 hours
+    },
+  },
+});
+```
+
+### Variant source
+
+Every variant carries a `variant_source` field indicating where the value came from: `"network"`, `"persistence"`, or `"fallback"`. Use `get_variant` to receive the full variant object including this metadata.
+
+```javascript
+const fallback = { key: "control", value: "control" };
+const variant = await mixpanel.flags.get_variant("my-feature-flag", fallback);
+
+const value = variant.value;
+const source = variant.variant_source; // "network", "persistence", or "fallback"
+```
+
+### `$experiment_started` properties
+
+When a variant is served, the `$experiment_started` exposure event includes:
+
+- `$variant_source` — `"network"` or `"persistence"`
+- `$persisted_at_in_ms` — epoch ms from when the persisted variant set was first stored.
+- `$ttl_in_ms` — the configured TTL in ms, if the variant was from persistence
+
+<Callout type="info">
+Persisted variants are tied to the current `distinct_id`. Calling `identify()` with a new ID or calling `reset()` clears persisted data and triggers a fresh fetch.
+</Callout>
+
 ## Flag Reload
 
 Following initialization, you can reload feature flag assignments in a couple of ways:
@@ -83,6 +158,13 @@ mixpanel.flags.update_context({
     platform: "mobile",
   },
 });
+```
+
+3) Calling `reset()` clears all feature flag assignments from memory and triggers a new fetch for the updated `distinct_id`. Requires SDK version [`v2.79.0`](https://github.com/mixpanel/mixpanel-js/releases/tag/v2.79.0) or later.
+
+```javascript
+mixpanel.reset();
+// Flags are cleared immediately. A new fetch begins for the anonymous distinct_id.
 ```
 
 ## Flag Evaluation
@@ -152,7 +234,7 @@ if (isEnabled) {
 } else {
   showOldFeature();
 }
-
+```
 
 ## Frequently Asked Questions
 

@@ -6,7 +6,7 @@
 
 > Connect Claude Code to your Chrome browser to test web apps, debug with console logs, automate form filling, and extract data from web pages.
 
-Claude Code integrates with the Claude in Chrome browser extension to give you browser automation capabilities from the CLI or the [VS Code extension](/en/vs-code#automate-browser-tasks-with-chrome). Build your code, then test and debug in the browser without switching contexts.
+Claude Code integrates with the [Claude in Chrome browser extension](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) to give you browser automation capabilities from the CLI or the [VS Code extension](/en/vs-code#automate-browser-tasks-with-chrome). Build your code, then test and debug in the browser without switching contexts.
 
 Claude opens new tabs for browser tasks and shares your browser's login state, so it can access any site you're already signed into. Browser actions run in a visible Chrome window in real time. When Claude encounters a login page or CAPTCHA, it pauses and asks you to handle it manually.
 
@@ -33,7 +33,7 @@ Before using Claude Code with Chrome, you need:
 * [Google Chrome](https://www.google.com/chrome/) or [Microsoft Edge](https://www.microsoft.com/edge) browser
 * [Claude in Chrome extension](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) version 1.0.36 or higher, available in the Chrome Web Store for both browsers
 * [Claude Code](/en/quickstart#step-1-install-claude-code) version 2.0.73 or higher
-* A direct Anthropic plan (Pro, Max, Teams, or Enterprise)
+* A direct Anthropic plan (Pro, Max, Team, or Enterprise)
 
 <Note>
   Chrome integration is not available through third-party providers like Amazon Bedrock, Google Cloud Vertex AI, or Microsoft Foundry. If you access Claude exclusively through a third-party provider, you need a separate claude.ai account to use this feature.
@@ -45,7 +45,7 @@ Before using Claude Code with Chrome, you need:
   <Step title="Launch Claude Code with Chrome">
     Start Claude Code with the `--chrome` flag:
 
-    ```bash  theme={null}
+    ```bash theme={null}
     claude --chrome
     ```
 
@@ -55,7 +55,7 @@ Before using Claude Code with Chrome, you need:
   <Step title="Ask Claude to use the browser">
     This example navigates to a page, interacts with it, and reports what it finds, all from your terminal or editor:
 
-    ```text  theme={null}
+    ```text theme={null}
     Go to code.claude.com/docs, click on the search box,
     type "hooks", and tell me what results appear
     ```
@@ -88,7 +88,7 @@ These examples show common ways to combine browser actions with coding tasks. Ru
 
 When developing a web app, ask Claude to verify your changes work correctly:
 
-```text  theme={null}
+```text theme={null}
 I just updated the login form validation. Can you open localhost:3000,
 try submitting the form with invalid data, and check if the error
 messages appear correctly?
@@ -100,7 +100,7 @@ Claude navigates to your local server, interacts with the form, and reports what
 
 Claude can read console output to help diagnose problems. Tell Claude what patterns to look for rather than asking for all console output, since logs can be verbose:
 
-```text  theme={null}
+```text theme={null}
 Open the dashboard page and check the console for any errors when
 the page loads.
 ```
@@ -111,7 +111,7 @@ Claude reads the console messages and can filter for specific patterns or error 
 
 Speed up repetitive data entry tasks:
 
-```text  theme={null}
+```text theme={null}
 I have a spreadsheet of customer contacts in contacts.csv. For each row,
 go to the CRM at crm.example.com, click "Add Contact", and fill in the
 name, email, and phone fields.
@@ -123,7 +123,7 @@ Claude reads your local file, navigates the web interface, and enters the data f
 
 Use Claude to write directly in your documents without API setup:
 
-```text  theme={null}
+```text theme={null}
 Draft a project update based on the recent commits and add it to my
 Google Doc at docs.google.com/document/d/abc123
 ```
@@ -134,7 +134,7 @@ Claude opens the document, clicks into the editor, and types the content. This w
 
 Pull structured information from websites:
 
-```text  theme={null}
+```text theme={null}
 Go to the product listings page and extract the name, price, and
 availability for each item. Save the results as a CSV file.
 ```
@@ -145,7 +145,7 @@ Claude navigates to the page, reads the content, and compiles the data into a st
 
 Coordinate tasks across multiple websites:
 
-```text  theme={null}
+```text theme={null}
 Check my calendar for meetings tomorrow, then for each meeting with
 an external attendee, look up their company website and add a note
 about what they do.
@@ -157,7 +157,7 @@ Claude works across tabs to gather information and complete the workflow.
 
 Create shareable recordings of browser interactions:
 
-```text  theme={null}
+```text theme={null}
 Record a GIF showing how to complete the checkout flow, from adding
 an item to the cart through to the confirmation page.
 ```
@@ -224,6 +224,7 @@ These are the most frequently encountered errors and how to resolve them:
 
 ## See also
 
+* [Computer use](/en/computer-use): control native macOS apps when a task can't be done in a browser
 * [Use Claude Code in VS Code](/en/vs-code#automate-browser-tasks-with-chrome): browser automation in the VS Code extension
 * [CLI reference](/en/cli-reference): command-line flags including `--chrome`
 * [Common workflows](/en/common-workflows): more ways to use Claude Code

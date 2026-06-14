@@ -45,7 +45,7 @@ e2e-staging:
     CHECKLY_TEST_ENVIRONMENT: review/$CI_COMMIT_REF_SLUG
   script:
     - npm ci
-    - npx checkly test --record
+    - npx checkly test
   except:
     - main
 
@@ -61,7 +61,7 @@ e2e-production:
     CHECKLY_TEST_ENVIRONMENT: "production"
   script:
     - npm ci
-    - npx checkly test --record
+    - npx checkly test
   only:
     - main
 

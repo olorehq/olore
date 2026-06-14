@@ -1,12 +1,9 @@
 ---
 title: '`create()`'
-description: Use Clerk's JS Backend SDK to create an API key.
-sdk: js-backend
+description: Use the create() method to create an API key.
 ---
 
-<Include src="_partials/machine-auth/api-keys-beta-callout" />
-
-Creates a new [API key](/docs/guides/development/machine-auth/api-keys). Returns an [`APIKeyResource`](/docs/reference/javascript/types/api-key) object.
+Creates a new [API key](/docs/guides/development/machine-auth/api-keys). Returns the created [`APIKey`](/docs/reference/backend/types/backend-api-key) object.
 
 ```ts
 function create(params: CreateAPIKeyParams): Promise<APIKeyResource>
@@ -25,7 +22,7 @@ function create(params: CreateAPIKeyParams): Promise<APIKeyResource>
   - `subject`
   - `string`
 
-  The user ID (`user_xxx`) or organization ID (`org_xxx`) to associate the API key with.
+  The user ID (`user_xxx`) or Organization ID (`org_xxx`) to associate the API key with.
 
   ---
 
@@ -97,4 +94,4 @@ const apiKey = await clerkClient.apiKeys.create({
 
 ## Backend API (BAPI) endpoint
 
-This method in the SDK is a wrapper around the BAPI endpoint `POST/api_keys`. See the [BAPI reference](/docs/reference/backend-api/tag/api-keys/post/api_keys){{ target: '_blank' }} for more information.
+This method in the SDK is a wrapper around the BAPI endpoint `POST/api_keys`. See the [BAPI reference](/docs/reference/backend-api/tag/api-keys/POST/api_keys){{ target: '_blank' }} for more information.

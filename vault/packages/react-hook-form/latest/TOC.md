@@ -1,84 +1,79 @@
-# React Hook Form Documentation Structure
+# react-hook-form Documentation Structure
 
 ## Directory Overview
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/` | Getting started and general guides | 4 |
-| `contents/docs/` | Core hooks API reference | 7 |
-| `contents/docs/useform/` | useForm hook methods | 18 |
-| `contents/docs/useformstate/` | useFormState utilities | 2 |
-| `contents/docs/usewatch/` | useWatch hook methods | 1 |
-| `contents/docs/usecontroller/` | useController components | 1 |
+| `contents/` | Top-level guides | 5 |
+| `contents/docs/` | API reference (top-level hooks and components) | 8 |
+| `contents/docs/useform/` | useForm API sub-methods | 16 |
+| `contents/docs/usecontroller/` | Controller component | 1 |
+| `contents/docs/useformstate/` | Form state subscriptions | 2 |
+| `contents/docs/usewatch/` | Watch utilities | 1 |
 
-## Root Files
+## contents/ (top-level)
 
 | File | Description |
 |------|-------------|
-| `get-started.mdx` | Installation and basic usage example |
-| `advanced-usage.mdx` | Accessibility, performance, and advanced patterns |
-| `faqs.mdx` | Frequently asked questions |
+| `get-started.mdx` | Installation, quickstart, and first form example |
+| `advanced-usage.mdx` | Advanced patterns: dynamic fields, schema validation, integrations |
+| `faqs.mdx` | Frequently asked questions and troubleshooting |
 | `ts.mdx` | TypeScript usage and type definitions |
+| `migrate-v7-to-v8.mdx` | Migration guide from v7 to v8 (React Compiler, flat field arrays) |
 
-## docs/
-
-Core API hooks and components.
-
-| File | Description |
-|------|-------------|
-| `useform.mdx` | Main hook for form management |
-| `useformcontext.mdx` | Access form context in nested components |
-| `useformstate.mdx` | Subscribe to form state |
-| `usewatch.mdx` | Watch form input values |
-| `uselens.mdx` | Lens-based form state management |
-| `formprovider.mdx` | Context provider for forms |
-| `createFormControl.mdx` | Create controlled form components |
-
-## docs/useform/
-
-Methods returned by the useForm hook.
+## contents/docs/ (core API)
 
 | File | Description |
 |------|-------------|
-| `register.mdx` | Register input fields |
-| `unregister.mdx` | Unregister input fields |
-| `formstate.mdx` | Form state properties (errors, isDirty, etc.) |
-| `watch.mdx` | Watch input values |
-| `subscribe.mdx` | Subscribe to form state changes |
-| `handlesubmit.mdx` | Handle form submission |
-| `reset.mdx` | Reset form to default values |
-| `resetfield.mdx` | Reset individual field |
-| `setvalue.mdx` | Set input value programmatically |
-| `getvalues.mdx` | Get current form values |
-| `getfieldstate.mdx` | Get individual field state |
-| `seterror.mdx` | Set field errors manually |
-| `clearerrors.mdx` | Clear field errors |
-| `setfocus.mdx` | Set focus to specific field |
-| `trigger.mdx` | Trigger validation manually |
-| `control.mdx` | Control object for controlled components |
-| `form.mdx` | Form instance and utilities |
+| `useform.mdx` | `useForm` hook — primary hook for form management |
+| `usecontroller.mdx` | `useController` hook for controlled components |
+| `usefieldarray.mdx` | `useFieldArray` hook for dynamic field arrays |
+| `usewatch.mdx` | `useWatch` hook for subscribing to form values |
+| `useformstate.mdx` | `useFormState` hook for subscribing to form state |
+| `useformcontext.mdx` | `useFormContext` hook for consuming form context |
+| `formprovider.mdx` | `FormProvider` component for context sharing |
+| `createFormControl.mdx` | `createFormControl` for framework-agnostic form control |
+| `uselens.mdx` | `useLens` hook for scoped form subscriptions |
 
-## docs/useformstate/
-
-Utilities for the useFormState hook.
+## contents/docs/useform/ (useForm sub-API)
 
 | File | Description |
 |------|-------------|
-| `errormessage.mdx` | Display error messages |
-| `formstatesubscribe.mdx` | Subscribe to specific form state properties |
+| `register.mdx` | `register` — connect inputs to the form |
+| `handlesubmit.mdx` | `handleSubmit` — form submission handler |
+| `watch.mdx` | `watch` — observe input values |
+| `formstate.mdx` | `formState` — access form state object |
+| `getvalues.mdx` | `getValues` — read form values |
+| `setvalue.mdx` | `setValue` — programmatically set a value |
+| `setvalues.mdx` | `setValues` — programmatically set multiple values |
+| `reset.mdx` | `reset` — reset form to default values |
+| `resetfield.mdx` | `resetField` — reset a single field |
+| `resetdefaultvalues.mdx` | `resetDefaultValues` — asynchronously update default values |
+| `seterror.mdx` | `setError` — manually set field errors |
+| `clearerrors.mdx` | `clearErrors` — manually clear field errors |
+| `trigger.mdx` | `trigger` — manually trigger validation |
+| `unregister.mdx` | `unregister` — unregister fields |
+| `setfocus.mdx` | `setFocus` — programmatically focus a field |
+| `getfieldstate.mdx` | `getFieldState` — get individual field state |
+| `control.mdx` | `control` object for controlled components |
+| `subscribe.mdx` | `subscribe` — subscribe to form state changes |
+| `form.mdx` | `Form` component for form submission |
 
-## docs/usewatch/
-
-Methods for the useWatch hook.
+## contents/docs/usecontroller/
 
 | File | Description |
 |------|-------------|
-| `watch.mdx` | Watch specific form fields |
+| `controller.mdx` | `Controller` component — wrapper for controlled inputs |
 
-## docs/usecontroller/
-
-Controller components for custom inputs.
+## contents/docs/useformstate/
 
 | File | Description |
 |------|-------------|
-| `controller.mdx` | Controller component for controlled inputs |
+| `errormessage.mdx` | `ErrorMessage` component for displaying field errors |
+| `formstatesubscribe.mdx` | `formState.subscribe` for external form state subscriptions |
+
+## contents/docs/usewatch/
+
+| File | Description |
+|------|-------------|
+| `watch.mdx` | `watch` utility for observing values outside a component |

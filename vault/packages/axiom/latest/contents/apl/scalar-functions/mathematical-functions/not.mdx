@@ -1,0 +1,97 @@
+---
+title: not
+description: 'This page explains how to use the not function in APL.'
+---
+
+Use the `not` function in APL to reverse the boolean value of an expression. It returns `true` when the input is `false`, and `false` when the input is `true`.
+
+`not` is useful for inverting filter conditions, flagging events that fail a specific test, and building readable logical expressions. It makes queries easier to understand than using `== false` or `!= true` directly.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `NOT` is a keyword used in `search` or `where` clauses. In APL, `not()` is a function that wraps a boolean expression and can be used in `extend`, `where`, and `project` operators.
+
+<CodeGroup>
+```sql Splunk example
+| where NOT status='500'
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| where not(status == '500')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `NOT` is a keyword that negates a boolean expression. In APL, `not()` is a function with the same effect.
+
+<CodeGroup>
+```sql SQL example
+SELECT * FROM logs WHERE NOT status = '500'
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| where not(status == '500')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+not(expr)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `expr` | bool | Yes | The boolean expression to reverse. |
+
+### Returns
+
+`true` if `expr` is `false`. `false` if `expr` is `true`.
+
+## Example
+
+Use `not` to identify requests using non-standard HTTP methods, which can be a sign of reconnaissance or abuse.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_safe_method = (method == 'GET' or method == 'HEAD')
+| where not(is_safe_method)
+| project _time, id, status, method, uri
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20is_safe_method%20%3D%20%28method%20%3D%3D%20%27GET%27%20or%20method%20%3D%3D%20%27HEAD%27%29%20%7C%20where%20not%28is_safe_method%29%20%7C%20project%20_time%2C%20id%2C%20status%2C%20method%2C%20uri%22%7D)
+
+**Output**
+
+| _time | id | status | method | uri |
+|---|---|---|---|---|
+| 2024-11-14 10:00:00 | user-9 | 200 | POST | /api/data |
+| 2024-11-14 10:01:00 | user-5 | 403 | DELETE | /admin/users |
+
+POST, PUT, DELETE, and other non-GET/HEAD methods appear here. Unexpected DELETE or PUT requests to sensitive endpoints may warrant investigation.
+
+## List of related functions
+
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns `true` for finite values. Combine with `not` as `not(isfinite(x))` to filter out invalid numeric results.
+- [isinf](/apl/scalar-functions/mathematical-functions/isinf): Returns `true` for infinite values. Use `not(isinf(x))` as an alternative to `isfinite` when NaN values are not a concern.
+- [isnan](/apl/scalar-functions/mathematical-functions/isnan): Returns `true` for NaN. Use `not(isnan(x))` to keep only valid numeric rows.
+- [isint](/apl/scalar-functions/mathematical-functions/isint): Returns `true` for integers. Use `not(isint(x))` to keep only non-integer values.
+- [sign](/apl/scalar-functions/mathematical-functions/sign): Returns the sign of a value. Use it when you need a numeric result rather than a boolean negation.

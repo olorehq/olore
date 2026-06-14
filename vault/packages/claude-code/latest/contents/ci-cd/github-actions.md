@@ -9,11 +9,11 @@
 Claude Code GitHub Actions brings AI-powered automation to your GitHub workflow. With a simple `@claude` mention in any PR or issue, Claude can analyze your code, create pull requests, implement features, and fix bugs - all while following your project's standards. For automatic reviews posted on every PR without a trigger, see [GitHub Code Review](/en/code-review).
 
 <Note>
-  Claude Code GitHub Actions is built on top of the [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview), which enables programmatic integration of Claude Code into your applications. You can use the SDK to build custom automation workflows beyond GitHub Actions.
+  Claude Code GitHub Actions is built on top of the [Claude Agent SDK](/en/agent-sdk/overview), which enables programmatic integration of Claude Code into your applications. You can use the SDK to build custom automation workflows beyond GitHub Actions.
 </Note>
 
 <Info>
-  **Claude Opus 4.6 is now available.** Claude Code GitHub Actions default to Sonnet. To use Opus 4.6, configure the [model parameter](#breaking-changes-reference) to use `claude-opus-4-6`.
+  **Claude Opus 4.7 is now available.** Claude Code GitHub Actions default to Sonnet. To use Opus 4.7, configure the [model parameter](#breaking-changes-reference) to use `claude-opus-4-7`.
 </Info>
 
 ## Why use Claude Code GitHub Actions?
@@ -106,7 +106,7 @@ All beta users must make these changes to their workflow files in order to upgra
 
 **Beta version:**
 
-```yaml  theme={null}
+```yaml theme={null}
 - uses: anthropics/claude-code-action@beta
   with:
     mode: "tag"
@@ -119,7 +119,7 @@ All beta users must make these changes to their workflow files in order to upgra
 
 **GA version (v1.0):**
 
-```yaml  theme={null}
+```yaml theme={null}
 - uses: anthropics/claude-code-action@v1
   with:
     prompt: "Review this PR for security issues"
@@ -140,7 +140,7 @@ Claude Code GitHub Actions can help you with a variety of tasks. The [examples d
 
 ### Basic workflow
 
-```yaml  theme={null}
+```yaml theme={null}
 name: Claude Code
 on:
   issue_comment:
@@ -159,7 +159,7 @@ jobs:
 
 ### Using skills
 
-```yaml  theme={null}
+```yaml theme={null}
 name: Code Review
 on:
   pull_request:
@@ -177,7 +177,7 @@ jobs:
 
 ### Custom automation with prompts
 
-```yaml  theme={null}
+```yaml theme={null}
 name: Daily Report
 on:
   schedule:
@@ -197,7 +197,7 @@ jobs:
 
 In issue or PR comments:
 
-```text  theme={null}
+```text theme={null}
 @claude implement this feature based on the issue description
 @claude how should I implement user authentication for this endpoint?
 @claude fix the TypeError in the user dashboard component
@@ -256,7 +256,7 @@ When using Claude Code GitHub Actions, be aware of the associated costs:
 
 The Claude Code Action v1 simplifies configuration with unified parameters:
 
-```yaml  theme={null}
+```yaml theme={null}
 - uses: anthropics/claude-code-action@v1
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -471,7 +471,7 @@ Before setting up Claude Code GitHub Actions with cloud providers, you need:
         | `APP_ID`             | Your GitHub App ID (from app settings)            |
         | `APP_PRIVATE_KEY`    | The private key you generated for your GitHub App |
 
-        ```yaml  theme={null}
+        ```yaml theme={null}
         name: Claude PR Action
 
         permissions:
@@ -542,7 +542,7 @@ Before setting up Claude Code GitHub Actions with cloud providers, you need:
         | `APP_ID`                         | Your GitHub App ID (from app settings)            |
         | `APP_PRIVATE_KEY`                | The private key you generated for your GitHub App |
 
-        ```yaml  theme={null}
+        ```yaml theme={null}
         name: Claude PR Action
 
         permissions:
@@ -589,11 +589,11 @@ Before setting up Claude Code GitHub Actions with cloud providers, you need:
                   github_token: ${{ steps.app-token.outputs.token }}
                   trigger_phrase: "@claude"
                   use_vertex: "true"
-                  claude_args: '--model claude-sonnet-4@20250514 --max-turns 10'
+                  claude_args: '--model claude-sonnet-4-5@20250929 --max-turns 10'
                 env:
                   ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.auth.outputs.project_id }}
                   CLOUD_ML_REGION: us-east5
-                  VERTEX_REGION_CLAUDE_3_7_SONNET: us-east5
+                  VERTEX_REGION_CLAUDE_4_5_SONNET: us-east5
         ```
 
         <Tip>
@@ -641,7 +641,7 @@ The Claude Code Action v1 uses a simplified configuration:
 
 The `claude_args` parameter accepts any Claude Code CLI arguments:
 
-```yaml  theme={null}
+```yaml theme={null}
 claude_args: "--max-turns 5 --model claude-sonnet-4-6 --mcp-config /path/to/config.json"
 ```
 
@@ -650,7 +650,7 @@ Common arguments:
 * `--max-turns`: Maximum conversation turns (default: 10)
 * `--model`: Model to use (for example, `claude-sonnet-4-6`)
 * `--mcp-config`: Path to MCP configuration
-* `--allowed-tools`: Comma-separated list of allowed tools
+* `--allowedTools`: Comma-separated list of allowed tools. The `--allowed-tools` alias also works.
 * `--debug`: Enable debug output
 
 ### Alternative integration methods

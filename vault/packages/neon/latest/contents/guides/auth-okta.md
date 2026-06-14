@@ -2,15 +2,23 @@
 title: Authenticate Neon Postgres application users with Okta
 subtitle: Learn how to add authentication to a Neon Postgres database application with
   Okta
+summary: >-
+  Okta Workforce Identity Cloud SSO integration for a Next.js app backed by Neon
+  Postgres, wiring Auth.js (next-auth v5) with the built-in Okta OIDC provider
+  and Drizzle ORM migrations to store per-user data keyed by the Okta sub claim.
+  Choose this guide for organization-internal SSO login rather than Auth0 or
+  Neon Auth. The tutorial covers creating an Okta OIDC web application, setting
+  issuer URI and client credentials, defining a user_messages schema, and
+  running drizzle-kit push:pg migrations against a Neon database.
 enableTableOfContents: true
-updatedOn: '2026-01-13T18:46:54.022Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-<Admonition type="note">
-Neon also provides [Neon Auth](/docs/auth/overview), a managed authentication service built on Better Auth that stores users, sessions, and auth configuration directly in your Neon database. Neon Auth branches with your database, letting you test authentication workflows in preview environments.
+<Admonition type="tip" title="Building on Neon?">
+Neon provides [Neon Auth](/docs/auth/overview), a managed authentication service built on Better Auth that stores users, sessions, and auth configuration directly in your Neon database. Auth state **branches with your data**, so preview and CI environments get isolated users and sessions.
 </Admonition>
 
-User authentication is critical for web applications, especially for apps internal to an organization. [Okta Workforce Indentity Cloud](https://www.okta.com/workforce-identity/) is an identity and access management platform for organizations, that provides authentication, authorization, and user management capabilities.
+User authentication is critical for web applications, especially for apps internal to an organization. [Okta Workforce Identity Cloud](https://www.okta.com/workforce-identity/) is an identity and access management platform for organizations, that provides authentication, authorization, and user management capabilities.
 
 In this guide, we'll walk through building a simple Next.js application using [Neon's](https://neon.tech) Postgres database, and add user authentication to it using [Okta](https://www.okta.com/). We will cover how to:
 
@@ -86,13 +94,13 @@ DATABASE_URL=NEON_DB_CONNECTION_STRING
 1. Log in to your Okta developer account and navigate to the **Applications** section. Click the **Create App Integration** button.
 2. Select **OIDC - OpenID Connect** as the sign-in method.
 3. Select **Web Application** as the application type and click **Next**.
-4. Provide a name for your application, e.g., "Neon Next Guide".
+4. Provide a name for your application, for example, "Neon Next Guide".
 5. Set **Sign-in redirect URIs** to `http://localhost:3000/api/auth/callback/okta` and **Sign-out redirect URIs** to `http://localhost:3000`.
 6. Click **Save** to create the application.
 
 ### Retrieve your Okta configuration
 
-From the application's **General** tab, find the **Client ID** and **Client SECRET**. Also note your Okta **Issuer URI**, which is the first part of your Okta account's URL, e.g., `https://dev-12345.okta.com`. If it isn't clear, visit the **Security > API** section from the sidebar in the console to find the **Issuer URI** and remove `/oauth2/default` from the end.
+From the application's **General** tab, find the **Client ID** and **Client SECRET**. Also note your Okta **Issuer URI**, which is the first part of your Okta account's URL, for example, `https://dev-12345.okta.com`. If it isn't clear, visit the **Security > API** section from the sidebar in the console to find the **Issuer URI** and remove `/oauth2/default` from the end.
 
 Add these as environment variables to the `.env.local` file in your Next.js project:
 
@@ -157,7 +165,7 @@ export const UserMessages = pgTable('user_messages', {
 });
 ```
 
-This schema defines a table `user_messages` to store a message for each user, with the `user_id` provided by Auth0 as the primary key.
+This schema defines a table `user_messages` to store a message for each user, with the `user_id` provided by Okta as the primary key.
 
 ### Generate and run migrations
 

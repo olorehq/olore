@@ -9,18 +9,40 @@ After you instrument your app, every LLM call sends a detailed span to your Axio
 
 Key attributes include the following:
 
+## Span identification
+
 - `gen_ai.capability.name`: The high-level capability name you defined in `withSpan`.
 - `gen_ai.step.name`: The specific step within the capability.
+- `gen_ai.operation.name`: The operation type. For example: `chat`, `execute_tool`.
+
+## Model information
+
+- `gen_ai.provider.name`: The model provider. For example: `openai`, `anthropic`.
 - `gen_ai.request.model`: The model requested for the completion.
 - `gen_ai.response.model`: The model that actually fulfilled the request.
+- `gen_ai.output.type`: The output type. For example: `text`, `json`.
+
+## Token usage
+
 - `gen_ai.usage.input_tokens`: The number of tokens in the prompt.
 - `gen_ai.usage.output_tokens`: The number of tokens in the generated response.
-- `gen_ai.prompt`: The full, rendered prompt or message history sent to the model (as a JSON string).
-- `gen_ai.completion`: The full response from the model, including tool calls (as a JSON string).
+
+## Messages
+
+- `gen_ai.input.messages`: The full, rendered prompt or message history sent to the model (as a JSON string).
+- `gen_ai.output.messages`: The full response from the model (as a JSON string).
 - `gen_ai.response.finish_reasons`: The reason the model stopped generating tokens. For example: `stop`, `tool-calls`.
+- `gen_ai.response.id`: The unique identifier for the model response.
+
+## Tool attributes
+
 - `gen_ai.tool.name`: The name of the executed tool.
-- `gen_ai.tool.arguments`: The arguments passed to the tool (as a JSON string).
-- `gen_ai.tool.message`: The result returned by the tool (as a JSON string).
+- `gen_ai.tool.call.arguments`: The arguments passed to the tool (as a JSON string).
+- `gen_ai.tool.call.result`: The result returned by the tool (as a JSON string).
+
+## Additional attributes
+
+For a more thorough list of attributes, see the [OpenTelemetry Semantic Conventions for Generative AI](https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-spans/).
 
 ## What’s next?
 

@@ -4,7 +4,16 @@ enableTableOfContents: true
 isDraft: false
 redirectFrom:
   - /docs/introduction/extra-usage
-updatedOn: '2026-01-07T13:15:53.853Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
+summary: >-
+  Neon legacy plans (Free, Launch, Scale, Business, and Enterprise) are
+  discontinued pricing tiers no longer available to new signups. Existing paid
+  users were automatically migrated to new plans in February 2026. Check this
+  page for your legacy plan's specific allowances and extra usage rates, such
+  as extra compute at $0.16/compute-hour and extra storage from $0.50 to
+  $1.75/GB-month depending on tier. Azure Marketplace users remain on legacy
+  plans. The page also documents how storage, archive storage, compute hours,
+  and project limits are measured under these tiers.
 ---
 
 This page describes Neon's **legacy plans**. These plans are no longer offered to new signups.
@@ -14,7 +23,7 @@ If you're on a legacy paid plan, you will automatically be switched to a new pla
 <Admonition type="important">
 You cannot upgrade or downgrade to a legacy plan. See our [current usage-based plans](/docs/introduction/plans) for options.
 
-If you signed up through **Azure Marketplace**, you remain on a [legacy plan](/docs/introduction/legacy-plans) — for both Free and paid.
+If you signed up through **Azure Marketplace**, you remain on a [legacy plan](/docs/introduction/legacy-plans), including both Free and paid tiers.
 </Admonition>
 
 ---
@@ -198,13 +207,11 @@ Custom-tailored for large teams, SaaS vendors, and fleet-level deployments.
 - Custom domain proxy
 - Security reviews and compliance questionnaires
 - Invoice billing and annual commitments
-- [Enterprise support](/docs/introduction/support#enterprise-support)
-
-To explore an Enterprise plan, [contact sales](https://neon.tech/contact-sales) or [request a trial](https://neon.tech/enterprise#request-trial).
+- Enterprise support
 
 ## Extra usage
 
-Neon legacy plans include monthly **allowances** for storage, compute, and projects. If you're on a paid plan and exceed those allowances, you're automatically billed for extra usage—no manual action required. The types of extra usage available vary by plan.
+Neon legacy plans include monthly **allowances** for storage, compute, and projects. If you're on a paid plan and exceed those allowances, you're automatically billed for extra usage with no manual action required. The types of extra usage available vary by plan.
 
 If your usage exceeds a plan allowance and that type of extra usage is supported, it's automatically allocated and billed on your monthly invoice.
 
@@ -213,7 +220,7 @@ If your usage exceeds a plan allowance and that type of extra usage is supported
 For example, the Launch plan includes 10 GB of storage. If you use more than that, you're charged $1.75 per additional GB-month. The same logic applies to Scale and Business, with lower rates at higher plan tiers.
 
 <Admonition type="note">
-In billing, “allocation” refers to a billable increase in your storage allowance—not physical provisioning of space.
+In billing, “allocation” refers to a billable increase in your storage allowance, not physical provisioning of space.
 </Admonition>
 
 #### Extra projects
@@ -249,7 +256,7 @@ In Neon, storage consists of your total **data size** and **history**.
 
 - **Data size**
 
-  This component of Neon storage is similar to what you might expect from most database services — it's simply the size of your data across all of your Neon projects and branches. You can think of it as a snapshot of your data.
+  This component of Neon storage is similar to what you'd expect from most database services: it's simply the size of your data across all of your Neon projects and branches. You can think of it as a snapshot of your data.
 
 - **History**
 
@@ -257,14 +264,14 @@ In Neon, storage consists of your total **data size** and **history**.
 
   The size of your history depends on a couple of factors:
   - **The volume of changes to your data** &#8212; the volume of inserts, updates, and deletes. For example, a write-heavy workload will generate more history than a read-heavy workload.
-  - **How much history you keep** &#8212; referred to as [restore window](/docs/introduction/branching#restore-window), which can be an hour, a day, a week, or even a month. The restore window is configurable for each Neon project. As you might imagine, 1 day of history would generally require less storage than 30 days of history, but less history limits the features that depend on it. For example, 1 day of history means that your maximum instant restore point is only 1 day in the past.
+  - **How much history you keep** &#8212; referred to as [history window](/docs/introduction/branching#history-window), which can be an hour, a day, a week, or even a month. The history window is configurable for each Neon project. As you might imagine, 1 day of history would generally require less storage than 30 days of history, but less history limits the features that depend on it. For example, 1 day of history means that your maximum instant restore point is only 1 day in the past.
 
 #### How branching affects storage
 
 If you use Neon's branching feature, you should be aware that it can also affect storage. Here are some rules of thumb when it comes to branching:
 
 1. **Creating a branch does not add to storage immediately.** At creation time, a branch is a copy-on-write clone of its parent branch and shares its parent's data. Shared data is not counted more than once.
-2. **A branch shares data with its parent if it's within the restore window.** For example, a Neon project has 7-day restore window, a child branch shares data with its parent branch for 7 days. However, as soon as the child branch ages out of that window, data is no longer shared &#8212; the child branch's data stands on its own.
+2. **A branch shares data with its parent if it's within the history window.** For example, a Neon project has a 7-day history window; a child branch shares data with its parent branch for 7 days. However, as soon as the child branch ages out of that window, data is no longer shared &#8212; the child branch's data stands on its own.
 3. **Making changes to a branch adds to storage.** Data changes on a branch are unique to that branch and counted toward storage. For example, an insert operation on the branch adds a record to the branch's history.
 4. **Branches older than 14 days and not accessed in the past 24-hours are automatically moved to cost-efficient [Archive storage](#archive-storage)**.
 
@@ -279,23 +286,23 @@ Each Neon plan comes with an allowance of **Storage** and **Archive storage** th
 <details>
 <summary>**Do branches add to storage?**</summary>
 
-When branches are created, they initially do not add to storage since they share data with the parent branch. However, as soon as changes are made to a branch, new WAL records are created, adding to your history. Additionally, when a branch ages out of your project's restore window, its data is no longer shared with its parent and is counted independently, thus adding to storage.
+When branches are created, they initially do not add to storage since they share data with the parent branch. However, as soon as changes are made to a branch, new WAL records are created, adding to your history. Additionally, when a branch ages out of your project's history window, its data is no longer shared with its parent and is counted independently, thus adding to storage.
 
-To avoid branches consuming storage unnecessarily, [reset](/docs/guides/reset-from-parent) branches to restart the clock or [delete](/docs/manage/branches) them before they age out of the restore window.
+To avoid branches consuming storage unnecessarily, [reset](/docs/guides/reset-from-parent) branches to restart the clock or [delete](/docs/manage/branches) them before they age out of the history window.
 
 </details>
 
 <details>
 <summary>**Does a delete operation add to storage?**</summary>
 
-Yes. Any data-modifying operation, such as deleting a row from a table in your database, generates a WAL record, so even deletions temporarily increase your history size until those records age out of your restore window.
+Yes. Any data-modifying operation, such as deleting a row from a table in your database, generates a WAL record, so even deletions temporarily increase your history size until those records age out of your history window.
 
 </details>
 
 <details>
 <summary>**What increases the size of history?**</summary>
 
-Any data-modifying operation increases the size of your history. As WAL records age out of your [restore window](/docs/introduction/branching#restore-window), they are removed, reducing your history and potentially decreasing your total storage size.
+Any data-modifying operation increases the size of your history. As WAL records age out of your [history window](/docs/introduction/branching#history-window), they are removed, reducing your history and potentially decreasing your total storage size.
 
 </details>
 
@@ -304,21 +311,21 @@ Any data-modifying operation increases the size of your history. As WAL records 
 
 Here are some strategies to consider:
 
-- **Optimize your restore window**
+- **Optimize your history window**
 
-  Your restore window setting controls how much change history your project retains. Decreasing history reduces the window available for things like instant restore or time-travel. Retaining no history at all would make branches expensive, as a branch can only share data with its parent if history is retained. Your goal should be a balanced restore window configuration; one that supports the features you need but does not consume too much storage. See [Restore window](/docs/introduction/branching#restore-window) for how to configure your restore window.
+  Your history window setting controls how much change history your project retains. Decreasing history reduces how far back **instant restore** and time travel can go. Retaining no history at all would make branches expensive, as a branch can only share data with its parent if history is retained. Your goal should be a balanced history window configuration; one that supports the features you need but does not consume too much storage. See [Configure the history window for instant restore](/docs/manage/projects#configure-the-history-window-for-instant-restore) and [History window](/docs/introduction/history-window).
 
 - **Use branches instead of duplicating data**
 
-  Use short-lived Neon branches for things like testing, previews, and feature development instead of creating separate standalone databases. As long as your branch remains within the restore window, it shares data with its parent, making branches very storage-efficient. Added to that, branches can be created instantly, and they let you work with data that mirrors production.
+  Use short-lived Neon branches for things like testing, previews, and feature development instead of creating separate standalone databases. As long as your branch remains within the history window, it shares data with its parent, making branches very storage-efficient. Added to that, branches can be created instantly, and they let you work with data that mirrors production.
 
 - **Consider the impact of deletions**
 
-  It may seem counterintuitive, but deleting rows from a table temporarily increases storage because delete operations are logged as part of your change history. The records for those deletions remain part of your history until they age out of your [restore window](/docs/introduction/restore-window). For mass deletions, `DELETE TABLE` and `TRUNCATE TABLE` operations are more storage-efficient since they log a single operation rather than a record for each deleted row.
+  It may seem counterintuitive, but deleting rows from a table temporarily increases storage because delete operations are logged as part of your change history. The records for those deletions remain part of your history until they age out of your [history window](/docs/introduction/history-window). For mass deletions, `DELETE TABLE` and `TRUNCATE TABLE` operations are more storage-efficient since they log a single operation rather than a record for each deleted row.
 
 - **Delete or reset branches before they age out**
 
-  [Delete](/docs/manage/branches) old branches or [reset](/docs/guides/reset-from-parent) them before they age out of the restore window. Deleting branches before they age out avoids potentially large increases in storage. Resetting a branch sets the clock back to zero for that branch.
+  [Delete](/docs/manage/branches) old branches or [reset](/docs/guides/reset-from-parent) them before they age out of the history window. Deleting branches before they age out avoids potentially large increases in storage. Resetting a branch sets the clock back to zero for that branch.
 
 </details>
 
@@ -338,11 +345,11 @@ Your storage limit varies depending on your Neon plan.
 These factors could be contributing to your high storage consumption:
 
 - **Frequent data modifications:** If you are performing a lot of writes (inserts, updates, deletes), each operation generates WAL records, which are added to your history. For instance, rewriting your entire database daily can lead to a storage amount that is a multiple of your database size, depending on the number of days of history your Neon project retains.
-- **Restore window:** The length of your restore window plays a significant role. If you perform many data modifications daily and your restore window is set to 7 days, you will accumulate a 7-day history of those changes, which can increase your storage significantly.
+- **History window:** The length of your history window plays a significant role. If you perform many data modifications daily and your history window is set to 7 days, you will accumulate a 7-day history of those changes, which can increase your storage significantly.
 
-To mitigate this issue, consider adjusting your [restore window](/docs/introduction/restore-window) setting. Perhaps you can do with a shorter window for instant restore, for example. Retaining less history should reduce your future storage consumption.
+To mitigate this issue, consider adjusting your [history window](/docs/introduction/history-window) setting. Perhaps you can do with a shorter window for instant restore, for example. Retaining less history should reduce your future storage consumption.
 
-Also, make sure you don't have old branches lying around. If you created a bunch of branches and let those age out of your restore window, that could also explain why your storage is so large.
+Also, make sure you don't have old branches lying around. If you created a bunch of branches and let those age out of your history window, that could also explain why your storage is so large.
 
 </details>
 
@@ -378,10 +385,10 @@ In short, `VACUUM FULL` can help reduce your data size and future storage costs,
 
 **Recommendations**
 
-- **Set a reasonable history window** &#8212; We recommend setting your restore window to balance your data recovery needs and storage costs. Longer history means more data recovery options, but it consumes more storage.
+- **Tune the history window for instant restore** &#8212; We recommend choosing a history window that balances recovery needs (how far back **instant restore** should reach) against storage cost. Longer windows retain more WAL history, which increases **History** usage.
 - **Use VACUUM FULL sparingly** &#8212; Because it locks tables and can temporarily increase storage costs, only run `VACUUM FULL` when there is a significant amount of space to be reclaimed and you're prepared for a temporary spike in storage consumption.
 - **Consider timing** &#8212; Running `VACUUM FULL` near the end of the month can help minimize the time that temporary storage spikes impact your bill, since charges are prorated.
-- **Manual VACUUM for scale to zero users** — In Neon, [autovacuum](https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM) is enabled by default. However, when your compute endpoint suspends due to inactivity, the database activity statistics that autovacuum relies on are lost. If your project uses [scale to zero](/docs/guides/scale-to-zero-guide#considerations), it’s safer to run manual `VACUUM` operations regularly on frequently updated tables rather than relying on autovacuum. This helps avoid potential issues caused by the loss of statistics when your compute endpoint is suspended.
+- **Manual VACUUM for scale to zero users**: In Neon, [autovacuum](https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM) is enabled by default. However, when your compute endpoint suspends due to inactivity, the database activity statistics that autovacuum relies on are lost. If your project uses [scale to zero](/docs/guides/scale-to-zero-guide#considerations), it’s safer to run manual `VACUUM` operations regularly on frequently updated tables rather than relying on autovacuum. This helps avoid potential issues caused by the loss of statistics when your compute endpoint is suspended.
 
   To clean a single table named `playing_with_neon`, analyze it for the optimizer, and print a detailed vacuum activity report:
 
@@ -396,7 +403,7 @@ In short, `VACUUM FULL` can help reduce your data size and future storage costs,
 <details>
 <summary>**What is the maximum data size that Neon supports?**</summary>
 
-Each [Neon plan](/docs/introduction/plans) comes with a specific storage allowance. Beyond this allowance on paid plans, extra usage costs apply. Billing-related allowances aside, paid plans support a logical data size of up to 16 TB per branch. To increase this limit, [contact the Neon Sales team](/contact-sales).
+Each [Neon plan](/docs/introduction/plans) comes with a specific storage allowance. Beyond this allowance on paid plans, extra usage costs apply. Billing-related allowances aside, paid plans support a logical data size of up to 16 TB per branch. When a branch reaches this limit, write performance drops, but you can still drop or delete data to reclaim space. To increase this limit, [request an increase in the feedback form in console](https://console.neon.tech/app/settings?modal=feedback&modalparams=%22Storage%20limit%20increase%22).
 
 </details>
 
@@ -576,7 +583,7 @@ Each of [Neon's plans](/docs/introduction/plans) includes a certain number of co
 <details>
 <summary>**Where can I monitor compute hour usage?**</summary>
 
-You can monitor compute hour usage for a Neon project on the [Project Dashboard](/docs/introduction/monitor-usage#project-dashboard). To monitor compute usage for your Neon account (all compute usage across all projects), refer to your **Billing** page. See [View usage metrics in the Neon Console](/docs/introduction/monitor-usage#view-usage-metrics-in-the-neon-console).
+You can monitor compute hour usage for a Neon project on the [Projects page](/docs/introduction/monitor-usage#projects-page). To monitor compute usage for your Neon account (all compute usage across all projects), refer to your **Billing** page. See [View usage in the Neon Console](/docs/introduction/monitor-usage#view-usage-in-the-neon-console).
 
 </details>
 
@@ -627,7 +634,7 @@ Your project has exceeded the data transfer quota. Upgrade your plan to increase
 
 If you hit the data transfer limit on the Free plan, you can upgrade your plan from the **Billing** page in your Neon account. For details, see [Change your plan](/docs/introduction/manage-billing#change-your-plan).
 
-For paid plans, Neon applies a reasonable usage policy—there’s no fixed limit, but usage should remain within what’s typical for most workloads. If usage is unusually high, Neon may reach out to discuss your use case and plan options.
+For paid plans, Neon applies a reasonable usage policy. There’s no fixed limit, but usage should remain within what’s typical for most workloads. If usage is unusually high, Neon may reach out to discuss your use case and plan options.
 
 You can monitor your data transfer usage on the **Project Dashboard** or **Billing** page.
 

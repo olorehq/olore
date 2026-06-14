@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components';
+
 # Retention: Measure engagement over time
 
 
@@ -6,6 +8,10 @@
 ![/Screen_Shot_2021-05-27_at_7.49.12_AM.png](/Screen_Shot_2021-05-27_at_7.49.12_AM.png)
 
 The Retention report in Mixpanel is designed to assess user engagement over a specified period of time. Retention of your users is critical to achieving product-market fit and sustainable long-term growth, and this report will help you understand how long users continue to come back and find value from your product.
+
+<Callout type="info">
+    The Retention report is available on all free and paid subscription plans.
+</Callout>
 
 ## Use Cases
 
@@ -353,15 +359,13 @@ To generate Frequency reports, click **Reports**, **Retention,** and select t
 
 Mixpanel groups unique users in time-incremented buckets when they first complete an action, and then groups those same users in subsequent buckets when they return and perform the same or different actions.
 
-The buckets measure the number of unique time buckets a user was active. Depending on the interval chosen, this will one of:
+The buckets measure the number of unique time buckets in which a user was active. Depending on the interval chosen, this will one of:
 
 - unique hours in a day
 - unique days in a week
 - unique days in a month
 
-This will show how engaged users are with an action. In the example below, you can see how many users did the event "Complete Purchase" on unique days in a week. For users who did "Complete Purchase" on the week of Jan 9, 2020, 13.04% of them did "Complete Purchase" on 4 unique days that week.
-
-![/Screen_Shot_2022-07-05_at_4.49.46_PM.png](/Screen_Shot_2022-07-05_at_4.49.46_PM.png)
+This will show how engaged users are with an action.
 
 #### Frequency Criteria
 
@@ -426,7 +430,7 @@ Next, we have to get the weighted average of the total profiles that were eligib
 
 **Weighted Average of Total Users = P_March 1 * W_March 1 + P_March 2 * W_March 2
 
-In our sample data, this computes to: ( 1000 * 0.66 ) + ( 500 + 0.33 ) = 833.33
+In our sample data, this computes to: ( 1000 * 0.66 ) + ( 500 * 0.33 ) = 825.00
 
 Finally,
 
@@ -446,7 +450,7 @@ W_March 2 = 500 / 1500 (weight for March 2)
 
 **Weighted Average = C_March 1 * W_March 1 + C_March 2 * W_March 2
 
-In our sample data, this computes to:(500 * (1000 / 1500)) + (400 * (500 / 1500)) = 466
+In our sample data, this computes to:(500 * (1000 / 1500)) + (400 * (500 / 1500)) = 466.67
 
 ### What does the Metric view in the Retention Trends report show?
 

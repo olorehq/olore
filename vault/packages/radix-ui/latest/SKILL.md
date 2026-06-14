@@ -1,6 +1,6 @@
 ---
 name: olore-radix-ui-latest
-description: Local radix-ui documentation reference (latest). Radix UI documentation. Use for accessible React UI primitives, unstyled components, themes, and color system. Foundation for shadcn/ui.
+description: Local Radix UI documentation reference (latest). Radix UI documentation. Use for accessible React UI primitives, unstyled components, themes, and color system. Foundation for shadcn/ui.
 ---
 
 # radix-ui Documentation
@@ -11,23 +11,25 @@ Radix UI documentation. Use for accessible React UI primitives, unstyled compone
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started (Primitives) | `contents/primitives/docs/overview/getting-started.mdx` |
-| Getting started (Themes) | `contents/themes/docs/overview/getting-started.mdx` |
-| Colors installation | `contents/colors/docs/overview/installation.mdx` |
-| Primitive components API | `contents/primitives/docs/components/` |
-| Themes components API | `contents/themes/docs/components/` |
-| Styling / asChild composition | `contents/primitives/docs/guides/styling.mdx` |
-| Theme tokens / dark mode | `contents/themes/docs/theme/` |
+| Primitives - getting started | `contents/primitives/docs/overview/getting-started.mdx` |
+| Primitives - component API | `contents/primitives/docs/components/` |
+| Themes - getting started | `contents/themes/docs/overview/getting-started.mdx` |
+| Themes - component API | `contents/themes/docs/components/` |
+| Colors - installation | `contents/colors/docs/overview/installation.mdx` |
+| Theme customization | `contents/themes/docs/theme/overview.mdx` |
+| Dark mode | `contents/themes/docs/theme/dark-mode.mdx` |
+| Styling primitives | `contents/primitives/docs/guides/styling.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Radix UI primitives (unstyled accessible components)
-- Radix Themes (pre-styled component library)
-- Radix Colors (color system and palette)
+- Radix UI Primitives (unstyled, accessible components like Dialog, Popover, Select, etc.)
+- Radix Themes (styled component library built on Primitives)
+- Radix Colors (color system and palette tooling)
 - shadcn/ui underlying components
-- WAI-ARIA accessible React components
-- Dialog, Dropdown, Select, Popover, Tooltip, and other headless UI patterns
+- Accessible React component patterns (ARIA, keyboard navigation)
+- Component composition with `asChild` / Slot
+- Server-side rendering with Radix components
 
 ## How to find information
 

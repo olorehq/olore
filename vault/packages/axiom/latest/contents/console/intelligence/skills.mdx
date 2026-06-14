@@ -2,8 +2,10 @@
 title: Skills for AI agents
 description: "This page explains how to use Axiom Skills to give AI coding agents structured investigation capabilities for Axiom."
 sidebarTitle: Overview
-keywords: ["skills", "ai agents", "axiom-sre", "amp", "claude code", "cursor", "sre", "incident response", "dashboards", "cost control", "spl", "apl", "splunk migration"]
+keywords: ["skills", "ai agents", "axiom-sre", "axiom-alerting", "amp", "claude code", "cursor", "sre", "incident response", "dashboards", "cost control", "spl", "apl", "splunk migration", "monitors", "notifiers"]
 ---
+
+import SkillsCredentials from "/snippets/skills-credentials.mdx"
 
 Axiom Skills are instruction files that give AI coding agents specialized capabilities. Unlike Axiom MCP Server, which provides a standardized protocol for tool discovery and execution, Axiom Skills work by embedding methodology and context directly into the agent's prompt.
 
@@ -18,8 +20,8 @@ Axiom Skills are open-source and welcome your contributions. For more informatio
 Axiom provides the following skills:
 
 <CardGroup cols={2}>
-  <Card title="System Reliability Engineering (SRE)" icon="magnifying-glass-chart" href="/console/intelligence/skills/sre">
-    Expert SRE investigator for incidents and debugging with hypothesis-driven methodology
+  <Card title="Axiom alerting" icon="bell" href="/console/intelligence/skills/axiom-alerting">
+    Create and manage monitors and notifiers using the Axiom API
   </Card>
   <Card title="Build dashboards" icon="chart-mixed" href="/console/intelligence/skills/build-dashboards">
     Design and build Axiom dashboards via API with chart types, APL patterns, and layouts
@@ -27,19 +29,18 @@ Axiom provides the following skills:
   <Card title="Control costs" icon="coins" href="/console/intelligence/skills/control-costs">
     Analyze query patterns, find unused data, and build cost optimization dashboards
   </Card>
+  <Card title="Query metrics" icon="chart-line" href="/console/intelligence/skills/query-metrics">
+    Query and explore OpenTelemetry metrics in Axiom's MetricsDB using MPL
+  </Card>
+  <Card title="System Reliability Engineering (SRE)" icon="magnifying-glass-chart" href="/console/intelligence/skills/sre">
+    Expert SRE investigator for incidents and debugging with hypothesis-driven methodology
+  </Card>
   <Card title="Translate SPL to APL" icon="language" href="/console/intelligence/skills/translate-spl-to-apl">
     Translate Splunk SPL queries to Axiom APL for migrations
   </Card>
+  <Card title="Write evals" icon="flask-vial" href="/console/intelligence/skills/write-evals">
+    Scaffold evaluation suites for AI capabilities using the Axiom AI SDK
+  </Card>
 </CardGroup>
 
-## Install all skills
-
-Install all Axiom skills at once for Claude Code, Cursor, and other Claude-compatible agents:
-
-```bash
-npx skills add axiomhq/skills
-```
-
-This command automatically detects your agent and installs all available skills to the appropriate location.
-
-To install skills for a specific agent or install individual skills, see the installation instructions on each skill page.
+<SkillsCredentials />

@@ -4,6 +4,8 @@ description: Share data between requests for on-demand rendered pages.
 i18nReady: true
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+import PackageManagerTabs from '~/components/tabs/PackageManagerTabs.astro';
 import Since from '~/components/Since.astro';
 import ReadMore from '~/components/ReadMore.astro';
 
@@ -28,27 +30,93 @@ const cart = await Astro.session?.get('cart');
 
 Sessions require a storage driver to store the session data. The [Node](/en/guides/integrations-guide/node/#sessions), [Cloudflare](/en/guides/integrations-guide/cloudflare/#sessions), and [Netlify](/en/guides/integrations-guide/netlify/#sessions) adapters automatically configure a default driver for you, but other adapters currently require you to [specify a driver manually](/en/reference/configuration-reference/#sessiondriver). 
 
-```js title="astro.config.mjs" ins={4}
-  {
-    adapter: vercel(),
-    session: {
-      driver: "redis",
-    },
+```js title="astro.config.mjs" ins={7-9} ins=" sessionDrivers "
+import { defineConfig, sessionDrivers } from 'astro/config'
+import vercel from '@astrojs/vercel'
+
+export default defineConfig({
+  adapter: vercel()
+  session: {
+    driver: sessionDrivers.lruCache({
+      max: 800,
+    }),
   }
+})
 ```
 
 <ReadMore>
-  See [the `session` configuration option](/en/reference/configuration-reference/#session-options) for more details on setting a storage driver, and other configurable options.
+See [the `session` configuration option](/en/reference/configuration-reference/#session-options) for more details on setting a storage driver, and other configurable options.
 </ReadMore>
 
+### Overriding the configuration at runtime
+
+By default, session drivers are configured at build time, and any [environment variables](/en/guides/environment-variables/) used will be inlined into the build. This means you cannot override the configuration at runtime.
+
+When you need a different configuration (e.g. to connect to an external service), define it in a separate file. Then use that file as the [driver's entrypoint](/en/reference/session-driver-reference/#entrypoint).
+
+The following example takes advantage of [Unstorage compatibility](/en/reference/session-driver-reference/#unstorage-compatibility) to configure the Redis driver in its own entrypoint:
+
+<Steps>
+1. Install the [`unstorage` package](https://unstorage.unjs.io/guide):
+    <PackageManagerTabs>
+      <Fragment slot="npm">
+        ```sh
+        npm install unstorage
+        ```
+      </Fragment>
+      <Fragment slot="pnpm">
+        ```sh
+        pnpm add unstorage
+        ```
+      </Fragment>
+      <Fragment slot="yarn">
+        ```sh
+        yarn add unstorage
+        ```
+      </Fragment>
+    </PackageManagerTabs>
+
+2. Create a file for the driver configuration (e.g. `src/session-driver.ts`) and export a default function that returns the driver instance:
+    ```ts title="src/session-driver.ts"
+    import type { SessionDriver } from "astro";
+    import redisDriver from "unstorage/drivers/redis";
+    import { REDIS_HOST, REDIS_PORT } from "astro:env";
+
+    export default function (): SessionDriver {
+      return redisDriver({
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+      });
+    }
+    ```
+
+3. Use this file as the driver's entrypoint in your Astro configuration:
+    ```js title="astro.config.mjs" {11-13}
+    import { defineConfig, envField, sessionDrivers } from "astro/config";
+    import vercel from "@astrojs/vercel";
+
+    export default defineConfig({
+      adapter: vercel(),
+      env: {
+        REDIS_HOST: envField.string({ context: "server", access: "public", default: "localhost" }),
+        REDIS_PORT: envField.number({ context: "server", access: "public", default: 6379 }),
+      },
+      session: {
+        driver: {
+          entrypoint: new URL('./src/session-driver.ts', import.meta.url),
+        }
+      }
+    });
+    ```
+</Steps>
 
 ## Interacting with session data
 
 The [`session` object](/en/reference/api-reference/#session) allows you to interact with the stored user state (e.g. adding items to a shopping cart) and the session ID (e.g. deleting the session ID cookie when logging out). The object is accessible as `Astro.session` in your Astro components and pages and as `context.session` object in API endpoints, middleware, and actions.
 
-The session is generated automatically when it is first used and can be regenerated at any time with [`session.regenerate()`](/en/reference/api-reference/#regenerate) or destroyed with [`session.destroy()`](/en/reference/api-reference/#destroy).
+The session is generated automatically when it is first used and can be regenerated at any time with [`session.regenerate()`](/en/reference/api-reference/#sessionregenerate) or destroyed with [`session.destroy()`](/en/reference/api-reference/#sessiondestroy).
 
-For many use cases, you will only need to use [`session.get()`](/en/reference/api-reference/#get) and [`session.set()`](/en/reference/api-reference/#set). 
+For many use cases, you will only need to use [`session.get()`](/en/reference/api-reference/#sessionget) and [`session.set()`](/en/reference/api-reference/#sessionset). 
 
 <ReadMore>
 See [the Sessions API reference](/en/reference/api-reference/#session) for more details.

@@ -124,6 +124,50 @@ If `true` is set, the following headers are added:
 
 You can customize the header values by specifying the Record values.
 
+### Function-based Options
+
+You can pass a function that receives a `Context` object instead of a static options object. This allows you to dynamically set options based on the request context, such as environment variables or request parameters.
+
+```tsx
+app.use(
+  '*',
+  jsxRenderer(
+    ({ children }) => {
+      return (
+        <html>
+          <body>{children}</body>
+        </html>
+      )
+    },
+    (c) => ({
+      stream: c.req.header('X-Enable-Streaming') === 'true',
+    })
+  )
+)
+```
+
+As a concrete example, you can use this to disable streaming when generating static sites (SSG) with `<Suspense>`, by using the [`isSSGContext`](/docs/helpers/ssg#isssgcontext) helper:
+
+```tsx
+app.use(
+  '*',
+  jsxRenderer(
+    ({ children }) => {
+      return (
+        <div>
+          <Suspense fallback={'loading...'}>
+            <Component />
+          </Suspense>
+        </div>
+      )
+    },
+    (c) => ({
+      stream: !isSSGContext(c),
+    })
+  )
+)
+```
+
 ## Nested Layouts
 
 The `Layout` component enables nesting the layouts.

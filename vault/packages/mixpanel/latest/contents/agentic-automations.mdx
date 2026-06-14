@@ -1,0 +1,72 @@
+import { Steps, Callout } from 'nextra/components'
+
+# Agentic Automations
+
+## Overview
+
+Mixpanel Agentic Automations are sub-agents of Mixpanel Agent that you configure once to do recurring analysis work for you, and deliver the result where you already work.
+
+<Callout type="info">
+    Agentic Automations are in beta. If you'd like access, please reach out to your Mixpanel account team to join the waitlist.
+</Callout>
+
+## Types of Agentic Automations
+
+- **KPI Monitoring** *(available now)* — Watches a metric you own and ships a personalized digest on the cadence you choose. See [below](#kpi-monitoring) for details.
+
+In the future, we're also exploring Research, Event-Triggered, and Data Governance automations. For early access, please reach out to your Mixpanel account team to join the waitlist.
+
+## KPI Monitoring
+
+A KPI Monitor watches a metric you care about and ships a personalized digest on the cadence you choose. Each digest summarizes what changed in the last window, calls out shifts the agent considers notable, and gives you a way to give feedback so we can improve what the agent surfaces over time.
+
+### Create a KPI Monitor
+
+<Steps>
+
+{<h3>Launch the Automation creation workflow</h3>}
+Click '+ Create New' button in your side navigation bar. At the bottom of the 'Analysis' section, click the Automation button.
+
+<Callout type="info">
+    Don't see this button? Agentic Automations are in beta. If you'd like access, please reach out to your Mixpanel account team to join the waitlist.
+</Callout>
+
+{<h3>Pick a cadence</h3>}
+
+Digests can be delivered daily, weekly, or monthly. Pick the rhythm that matches how your team operates. Weekly is a balanced default cadence for most teams.
+
+{<h3>Pick the metric to monitor</h3>}
+
+Choose any Insights-style event metric — sums, counts, or unique counts over an event you've already instrumented. The agent will use the metric's existing definition as the source of truth for what it watches.
+
+{<h3>Add instructions</h3>}
+
+Use the **Instructions** field to tell the agent how to interpret results and what to call out. For example: "Flag anything that deviates more than 2 standard deviations from the 30-day average" or "Focus on week-over-week change, not absolute values."
+
+Instructions shape the digest's commentary, not the underlying query. The agent runs a single, fixed query based on the metric you selected. It cannot run additional queries, pull in other metrics, or take actions. Instructions guide how the agent frames its summary: which comparisons to emphasize, what thresholds matter to you, and what language to use when describing shifts.
+
+{<h3>Pick a delivery channel</h3>}
+
+Digests can land in Slack or email. Slack delivery requires the [Slack integration](/docs/features/slack-integration) to be configured for your project.
+
+{<h3>Save the Automation</h3>}
+
+The agent runs on schedule — your first digest arrives at the next cadence boundary. You can pause, edit, or delete the Automation at any time.
+
+</Steps>
+
+### What's in a digest
+
+- A short summary of what the metric did in the last window vs. baseline.
+- Any shifts the agent considers notable, with the agent's reasoning.
+
+## Limits
+
+- **Automations per user per project.** Free: 5, Growth: 10, Enterprise: 20.
+- **Metric types.** KPI Monitors today support Insights-style event metrics only. Funnel and retention metrics aren't yet supported.
+- **Delivery channels.** Slack and email are available today
+- **Cadence.** Daily, weekly, or monthly. There's no per-user delivery window control yet (e.g., "weekdays 8–10am local").
+
+<Callout type="info">
+    Interested in early access or helping us shape these features? Reach out to your account manager and ask to be connected with our product team.
+</Callout>

@@ -1,7 +1,14 @@
 ---
 title: Create an S3 bucket to store Postgres backups
+summary: >-
+  Part 1 of a 2-part guide for backing up a Postgres database to AWS S3 using
+  GitHub Actions. Covers creating an OIDC identity provider in IAM, an IAM role
+  with a trusted web identity, an S3 bucket, and a bucket policy granting List,
+  Get, Put, and Delete access. Complete this AWS-side setup before wiring up the
+  GitHub Actions workflow in part 2. Co-locating the bucket with the database
+  region reduces latency and transfer costs.
 enableTableOfContents: true
-updatedOn: '2025-07-04T12:47:21.309Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This guide will walk you through setting up an AWS S3 bucket to store your Postgres backups.
@@ -30,7 +37,7 @@ There are three parts to the AWS setup, they are:
 
 ## Add an Identity provider
 
-An OIDC (OpenID Connect) Identity Provider (IdP) in AWS is a third-party service that handles authentication. To allow GitHub Actions to authenticate with AWS, you must add GitHub as an identity provider..
+An OIDC (OpenID Connect) Identity Provider (IdP) in AWS is a third-party service that handles authentication. To allow GitHub Actions to authenticate with AWS, you must add GitHub as an identity provider.
 
 To create a new Identity Provider, navigate to: **IAM** > **Access Management** > **Identity Providers**, and click **Add provider**.
 
@@ -70,7 +77,7 @@ Select `sts.amazonaws.com` from the **Audience dropdown** menu, then fill out th
 When you’re ready, click **Next**.
 ![AWS Trust Identity 2](/docs/manage/1-s3-backups-github-actions-05-trust-identity-2.jpg)
 
-## Add Permissions — Skip
+## Add Permissions: Skip
 
 You can skip selecting anything from this screen and click **Next** to continue.
 

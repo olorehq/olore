@@ -1,0 +1,91 @@
+---
+title: radians
+description: 'This page explains how to use the radians function in APL.'
+---
+
+Use the `radians` function in APL to convert an angle from degrees to radians. The conversion formula is `radians = (π / 180) × angle_in_degrees`.
+
+`radians` is useful as a preprocessing step before calling trigonometric functions such as `sin`, `cos`, or `tan`, which all expect their input in radians. If you have angle data in degrees, pass it through `radians` before applying any trigonometric operation.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `radians()` function. You compute the conversion manually by multiplying the degree value by `pi() / 180`.
+
+<CodeGroup>
+```sql Splunk example
+| eval angle_rad = angle_deg * (pi() / 180)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle_rad = radians(angle_deg)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In SQL Server and PostgreSQL, `RADIANS()` is a built-in function with identical semantics to the APL version.
+
+<CodeGroup>
+```sql SQL example
+SELECT RADIANS(angle_deg) AS angle_rad FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle_rad = radians(angle_deg)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+radians(a)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `a` | real | Yes | The angle in degrees to convert. |
+
+### Returns
+
+The angle in radians corresponding to the input degree value.
+
+## Example
+
+Use `radians` to convert an angle in degrees to radians.
+
+**Query**
+
+```kusto
+print result = radians(180)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20radians%28180%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 3.1416 |
+
+## List of related functions
+
+- [degrees](/apl/scalar-functions/mathematical-functions/degrees): Converts radians to degrees. Use it for the inverse conversion after trigonometric computations.
+- [pi](/apl/scalar-functions/mathematical-functions/pi): Returns the constant π. Use it when you want to compute radian conversions manually instead of using `radians`.
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine of an angle in radians. Use `radians` to prepare degree inputs before calling `sin`.
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine of an angle in radians. Use `radians` to prepare degree inputs before calling `cos`.
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent of an angle in radians. Use `radians` to prepare degree inputs before calling `tan`.

@@ -2,3 +2,11 @@
 title: Run query
 openapi: "v1 post /datasets/_apl?format=tabular"
 ---
+
+<Warning>
+This endpoint allows you to query data stored in any edge deployment, but query results are routed through the US East 1 (AWS) deployment. This means that if you store data in an edge deployment other than US East 1 (AWS), query results leave the edge deployment where your data is stored. For more information, see [Edge deployments](/reference/edge-deployments).
+
+The base domain for this endpoint is `https://api.axiom.co`, irrespective of your edge deployment.
+
+To query data without results leaving the edge deployment where your data is stored, use the [Run APL query to edge deployment](/restapi/endpoints/queryEdge) or [Run batch query to edge deployment](/restapi/endpoints/queryBatch) endpoints.
+</Warning>

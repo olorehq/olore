@@ -11,10 +11,9 @@ versions:
   fpt: '*'
   ghec: '*'
   ghes: '*'
-type: how_to
-topics:
-  - Workflows
-  - Security
+contentType: how-tos
+category:
+  - Secure your workflows
 ---
 
 {% data reusables.actions.enterprise-github-hosted-runners %}

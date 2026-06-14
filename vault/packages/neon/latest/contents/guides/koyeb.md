@@ -2,8 +2,14 @@
 title: Use Neon with Koyeb
 subtitle: Learn how to connect a Neon Postgres database to an application deployed with
   Koyeb
+summary: >-
+  Connect a Neon Postgres database to a Koyeb-deployed Node.js application
+  using Prisma as the ORM and a DATABASE_URL environment variable. Use this
+  guide when you need a managed Postgres backend on Koyeb without running your
+  own database server. Covers both the Koyeb control panel and CLI deployment
+  paths, including Prisma schema sync and database seeding.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.274Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 [Koyeb](https://www.koyeb.com/) is a developer-friendly, serverless platform designed to easily deploy reliable and scalable applications globally. Koyeb offers native autoscaling, automatic HTTPS (SSL), auto-healing, and global load-balancing across their edge network with zero configuration.

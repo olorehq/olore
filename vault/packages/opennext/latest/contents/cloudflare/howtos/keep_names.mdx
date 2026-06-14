@@ -7,9 +7,9 @@ enables the [`keep-names`](https://esbuild.github.io/api/#keep-names) option. Wh
 cause issues with certain Next.js libraries (e.g. [next-themes](https://www.npmjs.com/package/next-themes)) that convert scripts
 to strings. This happens because `esbuild` introduces a `__name` function at the top of modules, which may inadvertently appear
 in the generated script strings. When these strings are evaluated at runtime, the `__name` function might therefore not be defined,
-leading to errors logged in the developper console:
+leading to errors logged in the developer console:
 
-```
+```plain
 Uncaught ReferenceError: __name is not defined
 ```
 
@@ -22,7 +22,7 @@ Uncaught ReferenceError: __name is not defined
 
 To fix the issue you can simply set the `keep_names` option to `false` in your [`wrangler.jsonc` file](https://developers.cloudflare.com/workers/wrangler/configuration), like in the following example:
 
-```jsonc
+```jsonc filename="wrangler.jsonc"
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",

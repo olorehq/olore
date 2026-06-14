@@ -1,0 +1,165 @@
+---
+title: startofday
+description: 'This page explains how to use the startofday function in APL.'
+---
+
+Use the `startofday` function in APL to round a datetime value down to the start of the day. The function returns midnight (00:00:00) for the date that contains the given datetime value. You can optionally shift the result by a specified number of days using the offset parameter.
+
+You can use `startofday` to bin events into daily buckets for aggregation, reporting, and trend analysis across log, trace, and security datasets.
+
+Use it when you want to:
+
+- Group events by day for daily summaries and dashboards.
+- Align timestamps to day boundaries for consistent aggregation.
+- Compare metrics across different days.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `relative_time` with the `@d` snap-to modifier to round a timestamp to the start of the day. In APL, the `startofday` function achieves the same result and supports an optional day offset.
+
+<CodeGroup>
+```sql Splunk example
+... | eval day_start=relative_time(_time, "@d")
+```
+
+```kusto APL equivalent
+... | extend day_start = startofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `DATE_TRUNC('day', timestamp_column)` to truncate a timestamp to the start of the day. In APL, `startofday` provides the same functionality with an optional offset parameter.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('day', timestamp_column) AS day_start FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend day_start = startofday(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+startofday(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                           |
+| -------- | ---------- | ----------------------------------------------------- |
+| datetime | `datetime` | The input datetime value.                             |
+| offset   | `long`     | Optional: The number of days to offset from the input datetime. Default is `0`. |
+
+### Returns
+
+A `datetime` representing the start of the day (00:00:00) for the given date value, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests per day to identify daily traffic patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend day_start = startofday(_time)
+| summarize request_count = count() by day_start
+| sort by day_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20day_start%20%3D%20startofday(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20day_start%20%7C%20sort%20by%20day_start%20asc%22%7D)
+
+**Output**
+
+| day_start            | request_count |
+| -------------------- | ------------- |
+| 2025-01-13T00:00:00Z | 1523          |
+| 2025-01-14T00:00:00Z | 1687          |
+| 2025-01-15T00:00:00Z | 1445          |
+
+This query bins each HTTP request to the start of its day and counts the total requests per day.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Calculate the daily average span duration for each service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend day_start = startofday(_time)
+| summarize avg_duration = avg(duration) by day_start, ['service.name']
+| sort by day_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20day_start%20%3D%20startofday(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20day_start%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20day_start%20asc%22%7D)
+
+**Output**
+
+| day_start            | service.name | avg_duration     |
+| -------------------- | ------------ | ---------------- |
+| 2025-01-13T00:00:00Z | frontend     | 00:00:01.2340000 |
+| 2025-01-14T00:00:00Z | frontend     | 00:00:01.1750000 |
+| 2025-01-15T00:00:00Z | frontend     | 00:00:01.2890000 |
+
+This query groups trace spans by day and service, then calculates the average span duration for each combination.
+
+</Tab>
+<Tab title="Security logs">
+
+Track daily error counts to identify days with unusual server error activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend day_start = startofday(_time)
+| summarize error_count = count() by day_start
+| sort by day_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20day_start%20%3D%20startofday(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20day_start%20%7C%20sort%20by%20day_start%20asc%22%7D)
+
+**Output**
+
+| day_start            | error_count |
+| -------------------- | ----------- |
+| 2025-01-13T00:00:00Z | 12          |
+| 2025-01-14T00:00:00Z | 27          |
+| 2025-01-15T00:00:00Z | 8           |
+
+This query filters for server errors and counts them per day to reveal daily error patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime value.
+- [startofweek](/apl/scalar-functions/datetime-functions/startofweek): Returns the start of the week for a datetime value.
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime value.
+- [startofyear](/apl/scalar-functions/datetime-functions/startofyear): Returns the start of the year for a datetime value.
+- [bin](/apl/scalar-functions/rounding-functions/bin): Rounds values down to a fixed-size bin, useful for grouping timestamps.

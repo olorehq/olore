@@ -28,6 +28,7 @@ import * as path from "path"
 
 new BrowserCheck("browser-check-1", {
   name: "Browser check #1",
+  description: "Loads the **home page** and asserts key elements are visible.",
   frequency: Frequency.EVERY_10M,
   locations: ["us-east-1", "eu-west-1"],
   code: {
@@ -42,6 +43,7 @@ import * as path from "path"
 
 new BrowserCheck("advanced-browser-check", {
   name: "Advanced Browser Check",
+  description: "Loads the **home page** and asserts key elements are visible.",
   activated: true,
   frequency: Frequency.EVERY_5M,
   locations: ["us-east-1", "eu-west-1"],
@@ -71,11 +73,12 @@ The Browser Check configuration consists of specific Browser Check options and i
 | `code` | `object` | ✅ | - | The Playwright test code |
 
 </Tab>
-<Tab title="General Options">
+<Tab title="General Check">
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
+| `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -90,6 +93,7 @@ The Browser Check configuration consists of specific Browser Check options and i
 | `runParallel` | `boolean` | ❌ | `false` | Whether to run checks in parallel across locations |
 | `tags` | `string[]` | ❌ | `[]` | Tags to organize checks/monitors |
 | `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
+| `triggerIncident` | `IncidentTrigger` | ❌ | - | Create and resolve an incident based on the check's alert configuration |
 
 </Tab>
 </Tabs>
@@ -237,6 +241,26 @@ new BrowserCheck("standard-check", {
 </CodeGroup>
 
 **Available frequencies**: `EVERY_1M`, `EVERY_2M`, `EVERY_5M`, `EVERY_10M`, `EVERY_15M`, `EVERY_30M`, `EVERY_1H`, `EVERY_2H`, `EVERY_6H`, `EVERY_12H`, `EVERY_24H`
+</ResponseField>
+
+<ResponseField name="runtimeId" type="string">
+
+The Checkly runtime version used to execute the Browser Check. Runtimes are managed execution environments for Browser and Multistep Checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
+
+Use `runtimeId` for Browser Checks and Multistep Checks. For Playwright Check Suites, use [`engine`](/constructs/playwright-check#engine) instead to select the JavaScript engine version that runs your own Playwright project.
+
+**Usage:**
+
+```ts highlight={3}
+new BrowserCheck("my-check", {
+  name: "My Browser Check",
+  runtimeId: "2025.04",
+  /* More options... */
+})
+```
+
+<Tip>Learn more about [Checkly runtimes in the general documentation](/platform/runtimes/overview).</Tip>
+
 </ResponseField>
 
 <ResponseField name="locations" type="string[]" default="[]">

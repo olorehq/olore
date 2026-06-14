@@ -80,7 +80,7 @@ Don't try to parse the ID. It can have a minus at the start: `-1223128da3_0_0_0`
 
 ## location
 
-The location in the module where the suite was defined. Locations are collected only if [`includeTaskLocation`](/config/#includetasklocation) is enabled in the config. Note that this option is automatically enabled if `--reporter=html`, `--ui` or `--browser` flags are used.
+The location in the module where the suite was defined. Locations are collected only if [`includeTaskLocation`](/config/includetasklocation) is enabled in the config. Note that this option is automatically enabled if `--reporter=html`, `--ui` or `--browser` flags are used.
 
 The location of this suite will be equal to `{ line: 3, column: 1 }`:
 
@@ -220,6 +220,28 @@ Note that suite metadata will be inherited by tests since Vitest 4.1.
 :::tip
 If metadata was attached during collection (outside of the `test` function), then it will be available in [`onTestModuleCollected`](./reporters#ontestmodulecollected) hook in the custom reporter.
 :::
+
+## logs <Version>5.0.0</Version> {#logs}
+
+```ts
+function logs(): ReadonlyArray<UserConsoleLog>
+```
+
+Console logs recorded during test collection of this suite. For example:
+
+```ts
+describe('suite', () => {
+  console.log('included') // [!code highlight]
+
+  beforeAll(() => {
+    console.log('included') // [!code highlight]
+  })
+
+  test('test', () => {
+    console.log('not included') // [!code error]
+  })
+})
+```
 
 ## toTestSpecification <Version>4.1.0</Version> {#totestspecification}
 

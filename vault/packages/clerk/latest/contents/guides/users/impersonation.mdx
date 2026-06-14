@@ -5,6 +5,8 @@ description: Clerk's user impersonation feature allows you to sign in as differe
 
 Clerk's user impersonation feature allows you to sign in to your application as one of your users, enabling you to directly reproduce and remedy any issues they're experiencing. It's a helpful feature for customer support and debugging.
 
+<Include src="_partials/user-impersonation-callout" />
+
 ## Impersonate a user
 
 The easiest way to impersonate a user is from the [**Users**](https://dashboard.clerk.com/~/users) page in the Clerk Dashboard.
@@ -22,11 +24,11 @@ Clerk allows developers or admins of an application to sign in as different user
 
 ## Actor tokens
 
-Actor tokens are similar to [sign-in tokens](/docs/reference/backend-api/tag/sign-in-tokens/post/sign_in_tokens){{ target: '_blank' }}. They can be used for one-time sign-ins, but they result in impersonated sessions.
+Actor tokens are similar to [sign-in tokens](/docs/reference/backend-api/tag/sign-in-tokens/POST/sign_in_tokens){{ target: '_blank' }}. They can be used for one-time sign-ins, but they result in impersonated sessions.
 
 ### Create an actor token
 
-To create an actor token, you can use the [Backend API](/docs/reference/backend-api/tag/actor-tokens/post/actor_tokens){{ target: '_blank' }}.
+To create an actor token, you can use the [Backend API](/docs/reference/backend-api/tag/actor-tokens/POST/actor_tokens){{ target: '_blank' }}.
 
 The following example demonstrates how to create an actor token by making a request directly to Clerk's Backend API using cURL. Using the generated token will result in user with ID `user_21Ufcy98STcA11s3QckIwtwHIES` (the actor/impersonator) signing in as user with ID `user_1o4qfak5AdI2qlXSXENGL05iei6` (the subject/impersonated).
 
@@ -44,7 +46,7 @@ When creating actor tokens, the object that you pass as the `actor` parameter wi
 
 ### Revoke an actor token
 
-To revoke an actor token, you can use the [Backend API](/docs/reference/backend-api/tag/actor-tokens/post/actor_tokens/\{actor_token_id}/revoke){{ target: '_blank' }}.
+To revoke an actor token, you can use the [Backend API](/docs/reference/backend-api/tag/actor-tokens/POST/actor_tokens/\{actor_token_id}/revoke){{ target: '_blank' }}.
 
 Despite it's expiration date, you can revoke a token at any time. Revoked actor tokens can no longer be used for signing in.
 
@@ -60,7 +62,7 @@ Actor tokens are consumed the same way as sign in tokens.
 
 Once you've successfully created an actor token, you can use the `url` attribute of the response to consume the token and impersonate a user.
 
-The `url` attribute is a Clerk [Frontend API URL](!frontend-api-url) that will use the token to sign out existing users and prepare the [`SignIn`](/docs/reference/javascript/sign-in) object for impersonation. You can directly visit the `url` provided in the response to consume the actor token.
+The `url` attribute is a Clerk [Frontend API URL](!frontend-api-url) that will use the token to sign out existing users and prepare the [`SignIn`](/docs/reference/objects/sign-in) object for impersonation. You can directly visit the `url` provided in the response to consume the actor token.
 
 The [Frontend API](/docs/reference/frontend-api/){{ target: '_blank' }} will redirect you to the `/sign-in` page of your application, where the flow will continue by consuming the `__clerk_ticket` parameter.
 
@@ -100,7 +102,7 @@ To detect impersonated sessions in the frontend, the `actor` object contains the
   </Tab>
 
   <Tab>
-    You can use the [`Clerk`](/docs/reference/javascript/clerk) object to get access to the `session` object, which includes the `actor` object.
+    You can use the [`Clerk`](/docs/reference/objects/clerk) object to get access to the `session` object, which includes the `actor` object.
 
     ```js {{ filename: 'main.js' }}
     import { Clerk } from '@clerk/clerk-js'
@@ -151,7 +153,7 @@ The [`Auth`](/docs/reference/backend/types/auth-object) object is a server-side 
   </Tab>
 
   <Tab>
-    The Astro SDK provides the `locals.auth()` function to access the `Auth` object. [Learn more about using `locals.auth()`](/docs/astro/guides/users/reading#server-side).
+    The Astro SDK provides the `locals.auth()` function to access the `Auth` object. Learn more about [using `locals.auth()`](/docs/astro/guides/users/reading#server-side).
 
     ```astro {{ filename: 'src/pages/example.astro' }}
     ---
@@ -228,7 +230,7 @@ The [`Auth`](/docs/reference/backend/types/auth-object) object is a server-side 
   </Tab>
 
   <Tab>
-    The TanStack React Start SDK provides the `auth()` function to access the `Auth` object. [Learn more about using `auth()`](/docs/tanstack-react-start/guides/users/reading#server-side).
+    The TanStack React Start SDK provides the `auth()` function to access the `Auth` object. Learn more about [using `auth()`](/docs/tanstack-react-start/guides/users/reading#server-side).
 
     ```tsx {{ filename: 'src/routes/api/example.tsx' }}
     import { auth } from '@clerk/tanstack-react-start/server'

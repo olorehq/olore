@@ -2,10 +2,19 @@
 title: Migrate from Digital Ocean Postgres to Neon
 subtitle: Learn how to migrate your Postgres database from Digital Ocean to Neon using
   pg_dump and pg_restore
+summary: >-
+  Complete walkthrough for migrating a Postgres database from Digital Ocean
+  managed Postgres to Neon using `pg_dump` (custom-format `-Fc`) and
+  `pg_restore`, covering connection string retrieval, dump export, Neon database
+  creation, and restore with `--no-owner` and `--no-acl` to avoid privilege
+  conflicts. Choose this guide over the generic pg_dump guide when your source
+  is Digital Ocean and you need provider-specific connection steps and flag
+  guidance. For large databases or near-zero-downtime transfers, the page also
+  references logical replication as an alternative.
 redirectFrom:
   - /docs/import/import-from-digital-ocean
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.292Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This guide describes how to migrate a Postgres database from Digital Ocean to Neon using the `pg_dump` and `pg_restore` utilities, which are part of the Postgres client toolset. `pg_dump` works by dumping both the schema and data in a custom format that is compressed and suitable for input into `pg_restore` to rebuild the database.
@@ -77,7 +86,7 @@ pg_dump: dumping contents of table "public.lego_themes"
 ```
 
 <Admonition type="important">
-Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string) (see PgBouncer issues [452](https://github.com/pgbouncer/pgbouncer/issues/452) & [976](https://github.com/pgbouncer/pgbouncer/issues/976) for details). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
+Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
 </Admonition>
 
 ## Prepare your Neon destination database

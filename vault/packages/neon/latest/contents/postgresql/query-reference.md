@@ -2,10 +2,19 @@
 title: Postgres query reference
 subtitle: Find examples of commonly-used Postgres queries for basic to advanced
   operations
+summary: >-
+  A ready-to-copy Postgres SQL reference covering DDL, DML, SELECT, JOINs,
+  transactions, indexes, views, stored procedures, functions, and performance
+  analysis. Use this page when you need a working SQL snippet without reading
+  full reference docs. Includes performance diagnostics using
+  pg_stat_statements, EXPLAIN, EXPLAIN ANALYZE, pg_stat_user_tables,
+  pg_locks, and connection management with pg_cancel_backend and
+  pg_terminate_backend, plus Neon-specific notes on max_connections and
+  data size.
 enableTableOfContents: true
 redirectFrom:
   - /docs/postgres/query-reference
-updatedOn: '2026-01-06T13:50:10.823Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CTA />
@@ -952,7 +961,6 @@ ORDER BY duration DESC;
 ```
 
 </Admonition>
-
 
 ## Postgres version
 

@@ -1,0 +1,153 @@
+---
+title: Content Caching
+---
+
+Tools and agents frequently re-read files they have already seen, wasting tokens and time. A content-addressed cache backed by an embedded Turso database can detect unchanged files and return diffs instead of full content, dramatically reducing redundant I/O.
+
+This guide walks through the schema and queries needed to build a file content cache with per-session tracking.
+
+## Schema
+
+The cache uses four tables: one for file versions, one for per-session read pointers, and two for statistics.
+
+```sql
+CREATE TABLE IF NOT EXISTS file_versions (
+  path        TEXT NOT NULL,
+  hash        TEXT NOT NULL,
+  content     TEXT NOT NULL,
+  lines       INTEGER NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (path, hash)
+);
+
+CREATE TABLE IF NOT EXISTS session_reads (
+  session_id  TEXT NOT NULL,
+  path        TEXT NOT NULL,
+  hash        TEXT NOT NULL,
+  read_at     INTEGER NOT NULL,
+  PRIMARY KEY (session_id, path)
+);
+
+CREATE TABLE IF NOT EXISTS stats (
+  key   TEXT PRIMARY KEY,
+  value INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS session_stats (
+  session_id  TEXT NOT NULL,
+  key         TEXT NOT NULL,
+  value       INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (session_id, key)
+);
+
+INSERT OR IGNORE INTO stats (key, value) VALUES ('tokens_saved', 0);
+```
+
+### How it fits together
+
+- **`file_versions`** is a content-addressed store. The composite primary key `(path, hash)` means the same file can have multiple versions stored simultaneously. When a file changes and then changes back (e.g. a branch switch), the old version is already cached.
+- **`session_reads`** tracks which version of each file a given session last saw. This is keyed by `(session_id, path)` so each session independently tracks its own read state.
+- **`stats`** and **`session_stats`** track cumulative token savings globally and per session.
+
+## Connecting
+
+```javascript
+import { connect } from "@tursodatabase/database";
+
+const db = await connect(".cache/content.db");
+await db.exec(SCHEMA); // The CREATE TABLE statements above
+```
+
+## Storing a file version
+
+When a file is read for the first time (or has changed), store its content keyed by a hash. `INSERT OR IGNORE` makes this a no-op if the same version already exists:
+
+```sql
+INSERT OR IGNORE INTO file_versions (path, hash, content, lines, created_at)
+VALUES (?, ?, ?, ?, ?);
+```
+
+The hash should be computed from the file content (e.g. a truncated SHA-256). This makes storage content-addressed — identical content is never stored twice for the same path.
+
+## Tracking reads per session
+
+Each session needs to know what it last saw for a given file. On first read, record the session's read pointer:
+
+```sql
+INSERT OR REPLACE INTO session_reads (session_id, path, hash, read_at)
+VALUES (?, ?, ?, ?);
+```
+
+On subsequent reads, check what the session last saw:
+
+```sql
+SELECT hash FROM session_reads WHERE session_id = ? AND path = ?;
+```
+
+If the stored hash matches the current file hash, the file is unchanged — return a short confirmation instead of the full content. If the hash differs, fetch the old content to compute a diff:
+
+```sql
+SELECT content FROM file_versions WHERE path = ? AND hash = ?;
+```
+
+Then update the session's read pointer to the new hash:
+
+```sql
+UPDATE session_reads SET hash = ?, read_at = ? WHERE session_id = ? AND path = ?;
+```
+
+## Tracking token savings
+
+Use an atomic counter for global statistics and an upsert for per-session tracking:
+
+```sql
+-- Global counter
+UPDATE stats SET value = value + ? WHERE key = 'tokens_saved';
+
+-- Per-session counter (upsert)
+INSERT INTO session_stats (session_id, key, value)
+VALUES (?, 'tokens_saved', ?)
+ON CONFLICT(session_id, key) DO UPDATE SET value = value + ?;
+```
+
+## Querying statistics
+
+```sql
+-- Number of distinct files cached
+SELECT COUNT(DISTINCT path) as file_count FROM file_versions;
+
+-- Global tokens saved
+SELECT value FROM stats WHERE key = 'tokens_saved';
+
+-- Tokens saved in the current session
+SELECT value FROM session_stats WHERE session_id = ? AND key = 'tokens_saved';
+```
+
+## Cleanup
+
+When a file is deleted from disk, remove all its versions and read pointers:
+
+```sql
+DELETE FROM file_versions WHERE path = ?;
+DELETE FROM session_reads WHERE path = ?;
+```
+
+To clear the entire cache:
+
+```sql
+DELETE FROM file_versions;
+DELETE FROM session_reads;
+DELETE FROM session_stats;
+UPDATE stats SET value = 0;
+```
+
+## Key design points
+
+- **Content-addressed storage** means branch switches are handled naturally. If you switch from `main` to a feature branch and back, the original file versions are still in the cache.
+- **Session isolation** ensures that each consumer independently tracks what it has seen. Session B gets full file content even if Session A already cached it.
+- **Hash-based change detection** at read time means there is no polling or file watching required for correctness.
+- An embedded Turso database keeps everything in a single file with zero network overhead.
+
+## Example
+
+[cachebro](https://github.com/glommer/cachebro) is an MCP server that implements this pattern as a drop-in file reading cache for AI coding agents.

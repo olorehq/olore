@@ -3,8 +3,31 @@ title: auth api-tokens list
 sidebarTitle: list
 ---
 
-To list all API tokens for the current organization, run the following command:
+To list every API token you have minted across every organization you belong to, run the following command:
 
 ```bash
 turso auth api-tokens list
 ```
+
+The output is a table:
+
+```
+NAME            SCOPE                 PERMISSIONS                                CREATED AT
+ci-bot          all                   —                                          2026-04-12
+deploy-bot      my-org                —                                          2026-05-02
+provisioner     my-org/default        read-only                                  2026-05-21
+schema-bot      my-org/default        db:create, db:configure, db:mint-token     2026-05-23
+admin-bot       my-org/default        full-access                                2026-05-24
+```
+
+- **Scope** shows how the token is bound:
+  - `all` — unrestricted, can act on every organization the caller belongs to.
+  - `<org>` — organization-scoped.
+  - `<org>/<group>` — group-scoped.
+- **Permissions** summarizes the scope grant for group-scoped tokens:
+  - `—` for tokens without an explicit scope set (unrestricted and org-scoped tokens).
+  - `read-only` when the only scope is `read`.
+  - `full-access` when every scope is granted.
+  - Otherwise, the comma-separated scope list.
+
+The list always reflects what the platform stores. Presets passed at creation time (`--read-only`, `--full-access`) are expanded into individual scopes before storage and are surfaced here in expanded form.

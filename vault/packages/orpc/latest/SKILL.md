@@ -5,33 +5,37 @@ description: Local orpc documentation reference (latest). oRPC documentation. Us
 
 # orpc Documentation
 
-oRPC is a TypeScript framework for building end-to-end type-safe RPC APIs with OpenAPI support, middleware, streaming, file handling, and integrations for popular frameworks and query libraries.
+oRPC is a TypeScript library for building type-safe RPC APIs with end-to-end type safety for inputs, outputs, errors, files, and streaming. It supports OpenAPI generation, framework adapters, server actions, and integrations with TanStack Query, AI SDK, and more.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
 | Getting started | `contents/getting-started.md` |
-| Define procedures | `contents/procedure.md` |
+| Define a procedure | `contents/procedure.md` |
+| Build a router | `contents/router.md` |
 | Add middleware | `contents/middleware.md` |
-| OpenAPI setup | `contents/openapi/getting-started.md` |
+| Handle errors | `contents/error-handling.md` |
 | Client usage | `contents/client/client-side.md` |
+| OpenAPI / REST | `contents/openapi/getting-started.md` |
 | Framework adapters | `contents/adapters/` |
-| Error handling | `contents/error-handling.md` |
-| Plugins | `contents/plugins/` |
+| Server actions | `contents/server-action.md` |
+| Streaming | `contents/event-iterator.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Defining oRPC procedures, routers, middleware, or context
-- Setting up RPC servers with Express, Fastify, Hono, Next.js, Nuxt, or other adapters
-- Generating OpenAPI specs and using OpenAPIHandler
-- Client-side usage with RPCLink, TanStack Query, SWR, or Pinia Colada
-- Server actions with React Server Actions
+- Defining procedures, routers, middleware, and context in oRPC
+- Type-safe error handling with ORPCError
+- Server actions and RPC handler setup
+- Client-side usage and RPC links
+- OpenAPI spec generation and REST routing
+- Framework adapters (Next.js, Hono, Express, Fastify, Nuxt, SvelteKit, etc.)
+- TanStack Query, AI SDK, Better Auth, or other integrations
 - Streaming with event iterators
-- Contract-first API development
-- Plugins: CORS, batch requests, rate limiting, CSRF, retry
-- Integrations: AI SDK, Better Auth, OpenTelemetry, Sentry, Pino
+- File upload and download
+- Contract-first development
+- Plugins (CORS, batching, retry, rate limiting, etc.)
 - Migrating from tRPC
 
 ## How to find information

@@ -1,0 +1,165 @@
+---
+title: endofmonth
+description: 'This page explains how to use the endofmonth function in APL.'
+---
+
+Use the `endofmonth` function in APL to calculate the end of the month for a given datetime value. The function returns a datetime set to the last moment of the final day of the month (23:59:59.9999999), with an optional offset to shift forward or backward by a specified number of months.
+
+You can use `endofmonth` to create monthly time boundaries for aggregation, billing cycles, and reporting. This is especially useful when you need to bucket events into monthly intervals or define month-end deadlines.
+
+Use it when you want to:
+
+- Define end-of-month boundaries for monthly reports and dashboards.
+- Aggregate events to monthly intervals for billing or usage analysis.
+- Build monthly summaries across log, trace, or security datasets.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there is no direct equivalent to `endofmonth`. You typically use manual date math with `eval` and `relative_time` to calculate the last day of the month. In APL, the `endofmonth` function handles this directly and supports an optional month offset.
+
+<CodeGroup>
+```sql Splunk example
+... | eval month_end=relative_time(now(), "@mon+1mon-1d@d+86399")
+````
+
+```kusto APL equivalent
+... | extend month_end = endofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you often use `LAST_DAY(timestamp)` or combine `DATE_TRUNC` with interval arithmetic to get the end of the month. In APL, the `endofmonth` function provides this directly and supports an optional month offset.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('month', timestamp_column) + INTERVAL '1 month' - INTERVAL '1 second' AS month_end FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend month_end = endofmonth(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+endofmonth(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                                                                        |
+| -------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| datetime     | `datetime` | The input datetime value.                                                                          |
+| offset   | `long`     | Optional: The number of months to offset from the input date. Default is 0.                                  |
+
+### Returns
+
+A `datetime` representing the last moment of the month for the given date, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests by month boundary to track monthly traffic volume.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend month_end = endofmonth(_time)
+| summarize total_requests = count() by month_end
+| sort by month_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20month_end%20%3D%20endofmonth(_time)%20%7C%20summarize%20total_requests%20%3D%20count()%20by%20month_end%20%7C%20sort%20by%20month_end%20asc%22%7D)
+
+**Output**
+
+| month_end                    | total_requests |
+| ---------------------------- | -------------- |
+| 2024-10-31T23:59:59.9999999Z | 18432          |
+| 2024-11-30T23:59:59.9999999Z | 19871          |
+| 2024-12-31T23:59:59.9999999Z | 17654          |
+
+This query groups HTTP log events by end-of-month boundaries and counts the total requests in each month.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Track monthly average trace durations for each service to identify long-term performance trends.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend month_end = endofmonth(_time)
+| summarize avg_duration = avg(duration) by month_end, ['service.name']
+| sort by month_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20month_end%20%3D%20endofmonth(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20month_end%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20month_end%20asc%22%7D)
+
+**Output**
+
+| month_end                    | service.name | avg_duration     |
+| ---------------------------- | ------------ | ---------------- |
+| 2024-10-31T23:59:59.9999999Z | frontend     | 00:00:01.2150000 |
+| 2024-11-30T23:59:59.9999999Z | frontend     | 00:00:01.2780000 |
+| 2024-12-31T23:59:59.9999999Z | frontend     | 00:00:01.1930000 |
+
+This query shows how average span duration changes month by month for each service, helping you spot long-term performance shifts.
+
+</Tab>
+<Tab title="Security logs">
+
+Identify monthly error spikes to detect months with elevated server failure rates.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend month_end = endofmonth(_time)
+| summarize error_count = count() by month_end
+| sort by month_end asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20month_end%20%3D%20endofmonth(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20month_end%20%7C%20sort%20by%20month_end%20asc%22%7D)
+
+**Output**
+
+| month_end                    | error_count |
+| ---------------------------- | ----------- |
+| 2024-10-31T23:59:59.9999999Z | 187         |
+| 2024-11-30T23:59:59.9999999Z | 234         |
+| 2024-12-31T23:59:59.9999999Z | 162         |
+
+This query counts server errors by month to help you identify months with unusually high failure rates.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime, useful for defining the beginning of monthly intervals.
+- [endofday](/apl/scalar-functions/datetime-functions/endofday): Returns the end of the day for a datetime.
+- [endofweek](/apl/scalar-functions/datetime-functions/endofweek): Returns the end of the week for a datetime.
+- [endofyear](/apl/scalar-functions/datetime-functions/endofyear): Returns the end of the year for a datetime.
+- [monthofyear](/apl/scalar-functions/datetime-functions/monthofyear): Returns the month number from a datetime, useful for month-based grouping.

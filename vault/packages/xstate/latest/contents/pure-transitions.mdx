@@ -189,6 +189,98 @@ console.log(actions);
 // ]
 ```
 
+## Microsteps
+
+The `transition()` function returns the final state after processing an event, but sometimes you need to see every intermediate state along the way. The `getMicrosteps()` and `getInitialMicrosteps()` functions return an array of **microsteps**: each microstep is a `[snapshot, actions]` tuple representing an intermediate state and its associated actions.
+
+This is useful when a single event triggers multiple transitions (e.g., via `always` transitions, raised events, or entry actions that raise events).
+
+### `getMicrosteps(machine, snapshot, event)`
+
+Returns an array of `[snapshot, actions]` tuples for each intermediate step when processing an event.
+
+```ts
+import { createMachine, getMicrosteps, initialTransition } from 'xstate';
+import { raise } from 'xstate/actions';
+
+const machine = createMachine({
+  initial: 'first',
+  states: {
+    first: {
+      on: {
+        TRIGGER: {
+          target: 'second',
+          actions: raise({ type: 'RAISED' })
+        }
+      }
+    },
+    second: {
+      on: {
+        RAISED: 'third'
+      }
+    },
+    third: {
+      always: 'fourth'
+    },
+    fourth: {}
+  }
+});
+
+const [initialState] = initialTransition(machine);
+
+// [!code highlight:3]
+// Get all intermediate states, not just the final one
+const microsteps = getMicrosteps(machine, initialState, { type: 'TRIGGER' });
+
+microsteps.forEach(([snapshot, actions]) => {
+  console.log(snapshot.value, actions);
+});
+// 'second', [{ type: 'xstate.raise', ... }]
+// 'third', []
+// 'fourth', []
+```
+
+### `getInitialMicrosteps(machine, input?)`
+
+Returns an array of `[snapshot, actions]` tuples for each intermediate step during the initial transition.
+
+```ts
+import { createMachine, getInitialMicrosteps } from 'xstate';
+
+const machine = createMachine({
+  initial: 'a',
+  states: {
+    a: {
+      entry: () => {/* ... */},
+      always: {
+        target: 'b',
+        actions: () => {/* ... */}
+      }
+    },
+    b: {
+      entry: () => {}
+    }
+  }
+});
+
+// [!code highlight:2]
+const microsteps = getInitialMicrosteps(machine);
+
+// First microstep: entering 'a' (entry action)
+console.log(microsteps[0][0].value); // 'a'
+console.log(microsteps[0][1].length); // 1 (entry action)
+
+// Second microstep: 'a' -> 'b' (always transition + entry action)
+console.log(microsteps[1][0].value); // 'b'
+console.log(microsteps[1][1].length); // 2 (always action + entry action)
+```
+
+If the machine requires `input`, pass it as the second argument:
+
+```ts
+const microsteps = getInitialMicrosteps(machine, { value: 42 });
+```
+
 ## Resolving Persisted State
 
 When working with persisted state, use `machine.resolveState()` to restore snapshots:

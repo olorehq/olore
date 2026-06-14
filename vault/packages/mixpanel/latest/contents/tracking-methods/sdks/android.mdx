@@ -68,6 +68,9 @@ public class MainActivity extends ActionBarActivity {
 ```
 
 ### Library Configuration
+
+<Callout type="warning">For projects with EU or India data residency, you must configure the SDK to use the correct regional endpoint. Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/android#privacy-friendly-tracking).</Callout>
+
 The library can be initialized with different configurations. See a complete list of the configuration options and methods under [`MPConfig`](https://mixpanel.github.io/mixpanel-android/com/mixpanel/android/mpmetrics/MPConfig.html).
 
 You can set the library configuration by adding `meta-data` entries under the `<application>` of your app's `AndroidManifest.xml`.
@@ -88,7 +91,7 @@ The [`MPConfig`](https://mixpanel.github.io/mixpanel-android/com/mixpanel/androi
 
 ```java Java
 // initialize Mixpanel with automatic events disabled
-trackAutomaticEvents = true;
+trackAutomaticEvents = false;
 MixpanelAPI mixpanel = 
     MixpanelAPI.getInstance(this, "YOUR_PROJECT_TOKEN", trackAutomaticEvents);
 ```
@@ -106,7 +109,7 @@ Use [`.track()`](https://mixpanel.github.io/mixpanel-android/com/mixpanel/androi
 ```java Java
 // initialize Mixpanel
 MixpanelAPI mixpanel = 
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', false);
 
 //Create event properties object
 JSONObject props = new JSONObject();
@@ -126,7 +129,7 @@ You can track the time it took for an action to occur, such as an image upload o
 **Example Usage**
 ```java Java
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, MIXPANEL_TOKEN, true);
+    MixpanelAPI.getInstance(context, MIXPANEL_TOKEN, false);
 
 // start the timer for the event "Image Upload"
 mixpanel.timeEvent("Image Upload");
@@ -177,7 +180,7 @@ Use [`.registerSuperPropertiesOnce()`](https://mixpanel.github.io/mixpanel-andro
 
 ```java Java
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', false);
 
 // register "name" as a super property
 JSONObject props = new JSONObject();
@@ -209,7 +212,7 @@ yourSuperProps.put('city', 'San Francisco');
 
 //create Mixpanel instance with super properties above
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', yourSuperProps, true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', yourSuperProps, false);
 ```
 
 Our mobile libraries store your super properties in local storage. They will persist so long as the app is installed (between launches and updates). Uninstalling the app will remove that customers super properties.
@@ -231,7 +234,7 @@ Call [`.identify()`](https://mixpanel.github.io/mixpanel-android/com/mixpanel/an
 ```java Java
 // create Mixpanel instance
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', false);
 
 // user logs in and tracks a sign in event
 mixpanel.track('sign in');
@@ -319,7 +322,7 @@ If a profile property already exists, it will be overwritten with the latest val
 **Example Usage**
 ```java Java
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', false);
 
 // You must call identify to associate the profile update with the user
 // the first param is for the user ID
@@ -502,7 +505,7 @@ To connect group information to a user profile, include the `group_key` and `gro
 
 ```java Java
 MixpanelAPI mixpanel =
-    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', true);
+    MixpanelAPI.getInstance(context, 'YOUR_PROJECT_TOKEN', false);
 
 mixpanel.identify('12345', true);
 
@@ -700,7 +703,21 @@ mixpanel.track('some_other_event');
 ```
 ### EU Data Residency
 
-Route data to Mixpanel's EU servers by adding these meta-data entries under the `<application>` tag of your app's `AndroidManifest.xml` to set the URLs of the API requests to our EU domain.
+Route data to Mixpanel's EU servers by setting the `serverURL` to `https://api-eu.mixpanel.com` during initialization using `MixpanelOptions`.
+
+<Callout type="info">
+Setting `serverURL` during initialization ensures all requests (events, profiles, and feature flags) use the correct endpoint from the start.
+</Callout>
+
+```java Java
+MixpanelOptions options = new MixpanelOptions.Builder()
+    .serverURL("https://api-eu.mixpanel.com")
+    .build();
+
+MixpanelAPI mixpanel = MixpanelAPI.getInstance(context, "YOUR_PROJECT_TOKEN", trackAutomaticEvents, options);
+```
+
+You can also configure endpoints via `<meta-data>` tags in your `AndroidManifest.xml` under the `<application>` tag:
 
 ```xml Java
 ...
@@ -712,8 +729,8 @@ Route data to Mixpanel's EU servers by adding these meta-data entries under the 
            android:value="https://api-eu.mixpanel.com/engage?ip=1" />
     <meta-data android:name="com.mixpanel.android.MPConfig.GroupsEndpoint"
            android:value="https://api-eu.mixpanel.com/groups" />
-    <meta-data android:name="com.mixpanel.android.MPConfig.DecideEndpoint"
-           android:value="https://api-eu.mixpanel.com/decide" />
+    <meta-data android:name="com.mixpanel.android.MPConfig.FlagsEndpoint"
+           android:value="https://api-eu.mixpanel.com/flags" />
     ...
 </application>
 ...
@@ -721,7 +738,21 @@ Route data to Mixpanel's EU servers by adding these meta-data entries under the 
 
 ### India Data Residency
 
-Route data to Mixpanel's India servers by adding these meta-data entries under the `<application>` tag of your app's `AndroidManifest.xml` to set the URLs of the API requests to our India domain.
+Route data to Mixpanel's India servers by setting the `serverURL` to `https://api-in.mixpanel.com` during initialization using `MixpanelOptions`.
+
+<Callout type="info">
+Setting `serverURL` during initialization ensures all requests (events, profiles, and feature flags) use the correct endpoint from the start.
+</Callout>
+
+```java Java
+MixpanelOptions options = new MixpanelOptions.Builder()
+    .serverURL("https://api-in.mixpanel.com")
+    .build();
+
+MixpanelAPI mixpanel = MixpanelAPI.getInstance(context, "YOUR_PROJECT_TOKEN", trackAutomaticEvents, options);
+```
+
+You can also configure endpoints via `<meta-data>` tags in your `AndroidManifest.xml` under the `<application>` tag:
 
 ```xml Java
 ...
@@ -733,8 +764,8 @@ Route data to Mixpanel's India servers by adding these meta-data entries under t
            android:value="https://api-in.mixpanel.com/engage?ip=1" />
     <meta-data android:name="com.mixpanel.android.MPConfig.GroupsEndpoint"
            android:value="https://api-in.mixpanel.com/groups" />
-    <meta-data android:name="com.mixpanel.android.MPConfig.DecideEndpoint"
-           android:value="https://api-in.mixpanel.com/decide" />
+    <meta-data android:name="com.mixpanel.android.MPConfig.FlagsEndpoint"
+           android:value="https://api-in.mixpanel.com/flags" />
     ...
 </application>
 ...

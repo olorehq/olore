@@ -2,9 +2,17 @@
 title: Stream database changes in real-time with Prisma Pulse
 subtitle: Learn how to create event-driven flows on your backend triggered by changes in
   your Neon Postgres database
+summary: >-
+  Prisma Pulse subscribes to Neon Postgres change events via logical replication
+  and streams inserts, updates, and deletes to your backend in real time using
+  the `@prisma/extension-pulse` package. Use this guide when you need
+  event-driven triggers on database changes, such as firing Inngest workflows
+  or re-indexing search, without polling. Enabling logical replication sets
+  `wal_level=logical` project-wide and is irreversible; Prisma 7 requires the
+  `PrismaNeon` driver adapter.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-02-01T11:47:48.266Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon's Logical Replication feature enables you to subscribe to changes in your database, supporting things like replication or creating event-driven functionality.
@@ -24,6 +32,10 @@ Set up real-time triggers for your Inngest workflows, re-index your TypeSense se
 - A [Neon account](https://console.neon.tech/)
 - A [Prisma Data Platform account](https://pris.ly/pdp?utm_source=neon&utm_medium=pulse-guide)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Enable logical replication in Neon
 

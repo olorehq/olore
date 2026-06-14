@@ -1,13 +1,22 @@
 ---
 title: Schema-only branches
 subtitle: Protect sensitive data with schema-only branches
+summary: >-
+  Schema-only branches in Neon copy only the database structure from a source
+  branch, leaving all row data behind, so teams can develop and test against
+  production schemas without exposing confidential records. Use this feature
+  when you need a compliant development or CI/CD environment with realistic
+  table structure but no sensitive data, distinct from standard Neon branches
+  that copy both schema and data via copy-on-write. Schema-only branches are
+  independent root branches with plan-specific storage limits; reset-from-parent
+  is not supported.
 enableTableOfContents: true
-updatedOn: '2026-01-15T23:54:00.605Z'
+updatedOn: '2026-06-11T23:50:21.258Z'
 ---
 
 <FeatureBeta />
 
-Neon supports creating schema-only branches, letting you create branches that replicate only the database schema from a source branch — without copying any of the actual data. This feature is ideal for working with confidential information. Instead of duplicating this sensitive data, you can now create a branch with just the database structure and populate it with randomized or anonymized data instead. This provides your team with a secure and compliant environment for developing and testing using Neon branches.
+Neon supports creating schema-only branches, letting you create branches that replicate only the database schema from a source branch, without copying any of the actual data. This feature is ideal for working with confidential information. Instead of duplicating this sensitive data, you can now create a branch with just the database structure and populate it with randomized or anonymized data instead. This provides your team with a secure and compliant environment for developing and testing using Neon branches.
 
 ## Creating schema-only branches
 
@@ -19,13 +28,15 @@ You can create schema-only branches in the Neon Console or using the Neon API, i
 
 To create a schema-only branch from the Neon Console:
 
-1. In the console, select your project.
+1. Select your project.
 2. Select **Branches**.
-3. Click **Create branch** to open the branch creation dialog.
-4. Under **Include**, Select the **Schema-only** option.
-5. Provide a name for the branch.
-6. In the **From Branch** field, select the source branch. The schema from the source branch will be copied to your new schema-only branch.
-7. Click **Create branch**.
+3. Click **New branch** to open the branch creation dialog.
+   ![Create branch dialog](/docs/guides/create_schema_only_branch.png)
+4. Select a **Parent branch**. The schema from this branch will be copied to your new schema-only branch. By default, your project's default branch is selected, but you can choose any existing branch in your project.
+5. Specify a branch name, or leave it blank to use the default generated name.
+6. Select the **Schema only** option.
+7. Configure auto-deletion: By default, **Automatically delete branch after** is checked with 1 day selected to help prevent unused branches from accumulating. You can choose 1 hour, 1 day, or 7 days, or uncheck to disable expiration entirely. This is useful for CI/CD pipelines and short-lived development environments. Note: This default only applies when creating branches through the Console; API and CLI branches have no expiration by default. Refer to our [Branch expiration guide](/docs/guides/branch-expiration) for details.
+8. Click **Create** to create your schema-only branch.
 
 </TabItem>
 
@@ -37,7 +48,7 @@ To create a schema-only branch using the Neon CLI:
 neon branch create --schema-only
 ```
 
-If you have more than one project, you'll need to specify the `--project-id` option. See [Neon CLI - branch create](/docs/reference/cli-branches#create).
+If you have more than one project, you'll need to specify the `--project-id` option. See [Neon CLI - branch create](/docs/cli/branches#create).
 
 </TabItem>
 
@@ -112,7 +123,7 @@ To try out schema-only branches:
 
    ![schema-only branch creation](/docs/guides/create_schema_only_branch.png)
 
-4. On the **Tables** page, select your newly created `employees_schema_only` branch from the bread-crumb menu at the top of the console. You can see that the schema-only branch contains the schema, but no data. The same will be true for any table in any database on the schema-only branch — only the schema will be present.
+4. On the **Tables** page, select your newly created `employees_schema_only` branch from the bread-crumb menu at the top of the console. You can see that the schema-only branch contains the schema, but no data. The same will be true for any table in any database on the schema-only branch; only the schema will be present.
 
    ![schema-only branch with only the schema](/docs/guides/schema-only-branch.png)
 
@@ -157,6 +168,6 @@ There are certain allowances associated with schema-only branches:
 | :----- | :-------------------------------- | :----------------------------------------------- |
 | Free   | 3                                 | 0.5 GB                                           |
 | Launch | 5                                 | 3 GB                                             |
-| Scale  | 25                                | 5 GB                                             |
+| Scale  | 25                                | 20 GB                                            |
 
 Once you use up your root branch allowance, you will not be able to create additional schema-only branches. You will be required to remove existing root branches first.

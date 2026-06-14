@@ -1,10 +1,17 @@
 ---
 title: Manage database access
 subtitle: Learn how to manage user access to databases in your Neon project
+summary: >-
+  Database access control in Neon uses Postgres roles to separate
+  administrative neon_superuser privileges from least-privilege read-only,
+  read-write, and developer roles scoped to specific databases and schemas.
+  Use this page for SQL statements covering CREATE ROLE, GRANT, ALTER DEFAULT
+  PRIVILEGES, and REVOKE. Includes guidance on revoking public schema defaults,
+  which differ between Postgres 14 and Postgres 15+.
 enableTableOfContents: true
 redirectFrom:
   - /docs/guides/manage-database-access
-updatedOn: '2025-08-02T10:33:29.299Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Each Neon project is created with a Postgres role that is named for your database. For example, if your database is named `neondb`, the project is created with a role named `neondb_owner`.
@@ -248,7 +255,7 @@ To get started:
 
 5. Connect to the database **on the development branch** with an SQL client. Be mindful that a child branch connection string differs from a parent branch connection string. The branches reside on different hosts. If you need help connecting to your branch, see [Connect from any client](/docs/connect/connect-from-any-app).
 
-6. After connecting the database on your new branch, create a developer user (e.g., `dev_user1`). The password requirements described above apply here as well.
+6. After connecting the database on your new branch, create a developer user (for example, `dev_user1`). The password requirements described above apply here as well.
 
    ```sql
    CREATE ROLE dev_user1 WITH LOGIN PASSWORD '<password>';

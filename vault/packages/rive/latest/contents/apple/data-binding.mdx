@@ -74,20 +74,20 @@ import { Apple } from "/snippets/constants.mdx"
 
         // When using a view model by name:
         // A blank view model instance
-        var blankInstance = try await file.createViewModelInstance(from: .blank(from: .name("ViewModel")))
+        var blankInstance = try await file.createViewModelInstance(.blank(from: .name("ViewModel")))
         // The default instance for the view model
-        var defaultInstance = try await file.createViewModelInstance(from: .name("ViewModel"))
+        var defaultInstance = try await file.createViewModelInstance(.viewModelDefault(from: .name("ViewModel")))
         // An instance by name from the view model
-        var namedInstance = try await file.createViewModelInstance(from: .name("Instance", from: .name("ViewModel")))
+        var namedInstance = try await file.createViewModelInstance(.name("Instance", from: .name("ViewModel")))
 
         // Alternatively, using the default view model for an artboard
         let artboard: Artboard = ...
         // A blank view model instance
-        blankInstance = try await file.createViewModelInstance(from: .blank(from: .artboardDefault(Artboard)))
+        blankInstance = try await file.createViewModelInstance(.blank(from: .artboardDefault(Artboard)))
         // The default instance for the view model
-        defaultInstance = try await file.createViewModelInstance(from: .viewModelDefault(from: .artboardDefault(Artboard)))
+        defaultInstance = try await file.createViewModelInstance(.viewModelDefault(from: .artboardDefault(Artboard)))
         // An instance by name from the view model
-        namedInstance = try await file.createViewModelInstance(from: .name("Instance", from: .artboardDefault(Artboard)))
+        namedInstance = try await file.createViewModelInstance(.name("Instance", from: .artboardDefault(Artboard)))
         ```
     </Tab>
         <Tab title={Apple.legacyRuntimeName}>

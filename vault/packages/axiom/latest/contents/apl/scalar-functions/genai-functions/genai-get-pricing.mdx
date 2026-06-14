@@ -85,13 +85,15 @@ Get pricing information for a GenAI model to understand cost structure.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend model = ['attributes.gen_ai.request.model']
 | extend pricing = genai_get_pricing(model)
 | where isnotnull(pricing)
 | summarize request_count = count() by model, pricing = tostring(pricing)
 | top 3 by request_count
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20model%20%3D%20%5B%27attributes.gen_ai.request.model%27%5D%20%7C%20extend%20pricing%20%3D%20genai_get_pricing(model)%20%7C%20where%20isnotnull(pricing)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20model%2C%20pricing%20%3D%20tostring(pricing)%20%7C%20top%203%20by%20request_count%22%7D)
 
 **Output**
 

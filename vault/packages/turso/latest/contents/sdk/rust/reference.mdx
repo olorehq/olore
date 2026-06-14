@@ -1,157 +1,256 @@
 ---
 title: Reference
-description: libSQL Rust Reference
+description: Rust Reference for Turso
 ---
 
-The libSQL Rust crate contains everything you need to work with Turso and works flawlessly with popular async runtimes like `tokio`.
+Turso offers two Rust crates:
 
-## Installing
+| | `turso` | `libsql` |
+| --- | --- | --- |
+| **Use case** | Local / embedded database, sync | Remote access, existing libSQL codebases |
+| **Engine** | Turso Database (rewrite) | libSQL (SQLite fork) |
+| **Concurrent writes** | Yes (MVCC) | Not supported |
+| **Sync** | push/pull (local-first) | Embedded Replicas (writes go to cloud primary) |
+| **C compiler** | Not required | Required for `core`, `replication`, `encryption` features |
 
-Install the crate in your project using the following command:
+**Starting a new project?** Use `turso` for local/embedded use or sync. Use `libsql` with the `remote` feature for over-the-wire access (no C compiler needed).
+
+## turso
+
+For local and embedded use. Built on the Turso Database engine with concurrent writes (MVCC) and async I/O.
+
+### Installing
 
 ```bash
-cargo add libsql
+cargo add turso tokio --features tokio/full
 ```
 
-### Conditional compilation
-
-The libsql rust client supports [conditionally compiling](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) certain features to reduce compile times depending on what features you would like to use.
-
-The following features are available:
-
-| Feature       | Description                                                                                                                                                                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `remote`      | Enables the HTTP-only client, allowing communication with a remote sqld server using pure Rust. Does not require compiling C code for SQLite. Suitable for projects that only need to interact with a remote database.                               |
-| `core`        | Enables the local database only, incorporating the C SQLite3 code into the build. This is the foundation for local database operations but does not include additional features like replication or encryption.                                      |
-| `replication` | Combines core with additional code required for replication, enabling the embedded replica features.                                                                                                                                                 |
-| `encryption`  | Enables encryption at rest support, adding the necessary code to compile encryption capabilities and expose functions for configuring it. **This is optional and not enabled by default**, catering to projects that require enhanced data security. |
-
-```toml
-[dependencies]
-libsql = { version = "...", features = ["encryption"] }
-```
-
-<Note>
-
-Using `core` and `replication` features require a c compiler. The `encryption` feature requires `cmake` to be installed on your system.
-
-</Note>
-
-## Initializing
-
-Make sure add the crate to your project at the top of your file:
+### Connecting
 
 ```rust
-use libsql::Builder;
+use turso::Builder;
 
-let url = env::var("LIBSQL_URL").expect("LIBSQL_URL must be set");
-let token = env::var("LIBSQL_AUTH_TOKEN").unwrap_or_default();
-
-let mut db = Builder::new_remote_replica("local.db", &url, &token).build().await.unwrap();
-let conn = db.connect().unwrap();
+let db = Builder::new_local("app.db").build().await?;
+let conn = db.connect()?;
 ```
 
-## In-Memory Databases
-
-libSQL supports connecting to [in-memory databases](https://www.sqlite.org/inmemorydb.html) for cases where you don't require persistence:
+In-memory databases are also supported:
 
 ```rust
-use libsql::Builder;
-
-let db = Builder::new_local(":memory:").build().await.unwrap();
-let conn = db.connect().unwrap();
+let db = Builder::new_local(":memory:").build().await?;
 ```
 
-## Local Development
-
-You can work locally using an SQLite file using `new_local`:
+### Querying
 
 ```rust
-use libsql::Builder;
+conn.execute(
+    "CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL
+    )",
+    (),
+).await?;
 
-let mut db = Builder::new_local("local.db").build().await.unwrap();
-let conn = db.connect().unwrap();
+conn.execute("INSERT INTO users (name) VALUES (?)", ("Alice",)).await?;
+
+let mut rows = conn.query("SELECT * FROM users", ()).await?;
+while let Some(row) = rows.next().await? {
+    let id: i64 = row.get(0)?;
+    let name: String = row.get(1)?;
+    println!("User: {} {}", id, name);
+}
 ```
 
-## Embedded Replicas
-
-You can work with embedded replicas using `new_remote_replica` that can sync from the remote URL and delegate writes to the remote primary database:
+### Prepared Statements
 
 ```rust
-use libsql::Builder;
-
-let url = env::var("LIBSQL_URL").expect("LIBSQL_URL must be set");
-let token = env::var("LIBSQL_AUTH_TOKEN").unwrap_or_default();
-
-let mut db = Builder::new_remote_replica("local.db", &url, &token).build().await.unwrap();
-let conn = db.connect().unwrap();
+let mut stmt = conn.prepare("SELECT * FROM users WHERE id = ?1").await?;
+let mut rows = stmt.query([42]).await?;
 ```
 
-### Manual Sync
-
-The `sync` function allows you to sync manually the local database with the remote counterpart:
+### Transactions
 
 ```rust
-use libsql::Builder;
+let tx = conn.transaction().await?;
 
-let url = env::var("LIBSQL_URL").expect("LIBSQL_URL must be set");
-let token = env::var("LIBSQL_AUTH_TOKEN").unwrap_or_default();
+tx.execute("INSERT INTO users (name) VALUES (?1)", ["Alice"]).await?;
+tx.execute("INSERT INTO users (name) VALUES (?1)", ["Bob"]).await?;
 
-let mut db = Builder::new_remote_replica("local.db", &url, &token).build().await.unwrap();
-
-let conn = db.connect().unwrap();
-
-db.sync().await.unwrap(); // Call sync manually to update local database
+tx.commit().await?;
 ```
+
+### Encryption
+
+Encrypt local databases at rest:
+
+```rust
+use turso::{Builder, EncryptionOpts};
+
+let db = Builder::new_local("encrypted.db")
+    .experimental_encryption(true)
+    .with_encryption(EncryptionOpts {
+        cipher: "aegis256".to_string(),
+        hexkey: "b1bbfda4f589dc9daaf004fe21111e00dc00c98237102f5c7002a5669fc76327".to_string(),
+    })
+    .build()
+    .await?;
+```
+
+Supported ciphers: `aegis256`, `aegis256x2`, `aegis128l`, `aegis128x2`, `aegis128x4`, `aes256gcm`, `aes128gcm`.
+
+Encrypted databases cannot be read as standard SQLite databases — you must use the Turso Database engine to open them.
 
 <Info>
 
-If you require full control over how frames get from your instance of `sqld` (libSQL Server), you can do this using `new_local_replica` and `sync_frames`. Reach out to us [on Discord](https://tur.so/discord) if you want to learn more.
+Turso Cloud databases can also be encrypted with bring-your-own-key — [learn more](/cloud/encryption).
 
 </Info>
 
-### Sync Interval
+### Sync (Push and Pull)
 
-The `sync_interval` function allows you to set an interval for automatic synchronization of the database in the background:
+For local database with cloud sync. All reads and writes happen locally; use `push()` to send changes to the cloud and `pull()` to fetch remote changes.
+
+Enable the `sync` feature:
+
+```bash
+cargo add turso --features sync
+```
+
+```rust
+use turso::sync::Builder;
+
+let db = Builder::new_remote("app.db")
+    .with_remote_url(&std::env::var("TURSO_DATABASE_URL")?)
+    .with_auth_token(&std::env::var("TURSO_AUTH_TOKEN")?)
+    .bootstrap_if_empty(true)  // Download schema on first sync (default)
+    .build()
+    .await?;
+
+let conn = db.connect().await?;
+```
+
+On the first run, the local database is automatically bootstrapped from the remote. See [Turso Sync](/sync/usage) for full details.
+
+#### Push and Pull
+
+```rust
+// Push local writes to Turso Cloud
+db.push().await?;
+
+// Pull remote changes (returns true if changes were applied)
+let changed = db.pull().await?;
+```
+
+#### Checkpoint
+
+Compact the local WAL to bound disk usage while preserving sync state:
+
+```rust
+db.checkpoint().await?;
+```
+
+#### Stats
+
+```rust
+let stats = db.stats().await?;
+println!("Network received: {} bytes", stats.network_received_bytes);
+println!("Network sent: {} bytes", stats.network_sent_bytes);
+println!("WAL size: {} bytes", stats.main_wal_size);
+```
+
+## libsql (Remote)
+
+Use the `libsql` crate with the `remote` feature for over-the-wire access to Turso Cloud. This uses pure Rust HTTP — no C compiler needed.
+
+### Installing
+
+```bash
+cargo add libsql --features remote
+```
+
+### Connecting
 
 ```rust
 use libsql::Builder;
+
+let url = std::env::var("TURSO_DATABASE_URL")?;
+let token = std::env::var("TURSO_AUTH_TOKEN")?;
+
+let db = Builder::new_remote(url, token).build().await?;
+let conn = db.connect()?;
+```
+
+### Querying
+
+```rust
+let mut rows = conn.query("SELECT * FROM users WHERE id = ?1", [1]).await?;
+```
+
+## libsql (libSQL)
+
+The `libsql` crate is built on [libSQL](https://github.com/tursodatabase/libsql), the open-source fork of SQLite that powers Turso Cloud today. It is production-ready and battle-tested, and is the right choice when you are working with an existing `libsql`-based codebase.
+
+<Info>
+
+With `libsql` Embedded Replicas, reads are local and writes are sent to the cloud primary, then reflected back to the replica. Embedded Replicas are fully supported. For new projects that need sync, we recommend the `turso` crate with `turso::sync` — see the [quickstart](/sdk/rust/quickstart).
+
+</Info>
+
+### Embedded Replicas
+
+You can work with [Embedded Replicas](/features/embedded-replicas) that sync from a Turso Cloud database to a local SQLite file. Reads run locally; writes are sent to the cloud primary and then reflected back to the replica:
+
+```rust
+use libsql::Builder;
+
+let url = std::env::var("TURSO_DATABASE_URL")?;
+let token = std::env::var("TURSO_AUTH_TOKEN")?;
+
+let db = Builder::new_remote_replica("local.db", url, token)
+    .build()
+    .await?;
+let conn = db.connect()?;
+```
+
+<Snippet file="embedded-replicas-warning.mdx" />
+
+#### Manual Sync
+
+```rust
+db.sync().await?;
+```
+
+#### Sync Interval
+
+```rust
 use std::time::Duration;
 
-let url = env::var("LIBSQL_URL").expect("LIBSQL_URL must be set");
-let token = env::var("LIBSQL_AUTH_TOKEN").unwrap_or_default();
-
-let mut db = Builder::new_remote_replica("local.db", &url, &token)
-  .sync_interval(Duration::from_secs(300)) // Sync every 5 minutes
-  .build()
-  .await.unwrap();
-
-let conn = db.connect().unwrap();
+let db = Builder::new_remote_replica("local.db", url, token)
+    .sync_interval(Duration::from_secs(300))
+    .build()
+    .await?;
 ```
 
-### Read Your Own Writes
+#### Read Your Own Writes
 
-The `read_your_writes` function configures the database connection to ensure that writes are immediately visible to subsequent read operations initiated by the same connection. This is **enabled by default**, and is particularly important in distributed systems to ensure consistency from the perspective of the writing process.
-
-You can disable this behavior by passing `false` to the function:
+By default, after a `push()`, the next `pull()` waits for the server to fully catch up with your changes before returning — guaranteeing you always read your own writes. This is safer but **much slower**, since the server must process all pending changes. If you can tolerate eventually-consistent reads, disable this for significantly faster pulls:
 
 ```rust
-use libsql::Builder;
-
-let url = env::var("LIBSQL_URL").expect("LIBSQL_URL must be set");
-let token = env::var("LIBSQL_AUTH_TOKEN").unwrap_or_default();
-
-let mut db = Builder::new_remote_replica("local.db", &url, &token)
-  .read_your_writes(false) // Disable reading your own writes
-  .build()
-  .await.unwrap();
-
-let conn = db.connect().unwrap();
+let db = Builder::new_remote_replica("local.db", url, token)
+    .read_your_writes(false)
+    .build()
+    .await?;
 ```
 
-## Encryption
+### Encryption
 
-To enable encryption on a SQLite file (`new_local` or `new_remote_replica`), make sure you have the [`encryption` feature enabled](#conditional-compilation), and pass the `encryption_config`:
+<Warning>
+
+For new projects, we recommend the [`turso`](#turso) crate for local encryption — it is built on the Turso Database engine with better performance and concurrent write support.
+
+</Warning>
+
+To enable encryption on a SQLite file, pass the encryption key value as an argument to the constructor:
 
 <Snippet file="encryption-at-rest-rust.mdx" />
 
@@ -161,46 +260,30 @@ Encrypted databases appear as raw data and cannot be read as standard SQLite dat
 
 </Info>
 
-## Simple query
+### Conditional compilation
 
-You can pass a string to `execute()` to invoke a SQL statement, as well as optional arguments:
+The `libsql` crate supports [conditionally compiling](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) features:
 
-<CodeGroup>
+| Feature       | Description                                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `remote`      | HTTP-only client, pure Rust. No C compiler needed.                                                                |
+| `core`        | Local database only. Requires a C compiler.                                                                       |
+| `replication` | Combines `core` with embedded replica support. Requires a C compiler.                                             |
+| `encryption`  | Encryption at rest. Requires `cmake`. Not enabled by default.                                                     |
 
-```rust Query
+### Simple query
+
+```rust
 conn.execute("SELECT * FROM users", ()).await?;
-```
-
-```rust Arguments
 conn.execute("SELECT * FROM users WHERE id = ?1", [1]).await?;
 ```
 
-</CodeGroup>
-
-## Prepared Statements
-
-You can prepare a cached statement using `prepare()` and then execute it with `query()`:
-
-```rust
-let mut stmt = db_conn.prepare("SELECT * FROM users").await?;
-
-db_conn.query(&stmt, [&1]).await?;
-
-// reset state when calling with different parameters
-stmt.reset();
-
-db_conn.query(&stmt, [&2]).await?;
-
-```
-
-## Placeholders
-
-libSQL supports the use of positional and named placeholders within SQL statements:
+### Placeholders
 
 <CodeGroup>
 
 ```rust Positional
-conn.execute("SELECT * FROM users WHERE id = ?1", params![1]).await?;
+conn.execute("SELECT * FROM users WHERE id = ?1", libsql::params![1]).await?;
 ```
 
 ```rust Named
@@ -209,40 +292,23 @@ conn.execute("INSERT INTO users (name) VALUES (:name)", libsql::named_params! { 
 
 </CodeGroup>
 
-## Deserialization
-
-You can use the `de::from_row` function to deserialize a row into a struct:
+### Deserialization
 
 ```rust
 use libsql::{de, Builder};
 
-let mut stmt = conn
-  .prepare("SELECT * FROM users WHERE id = ?1")
-  .await
-  .unwrap();
-let row = stmt
-  .query([1])
-  .await
-  .unwrap()
-  .next()
-  .await
-  .unwrap()
-  .unwrap();
-
 #[derive(Debug, serde::Deserialize)]
 struct User {
-  name: String,
-  age: i64,
-  vision: f64,
-  avatar: Vec<u8>,
+    name: String,
+    age: i64,
 }
 
-let user = de::from_row::<User>(&row).unwrap();
+let mut stmt = conn.prepare("SELECT * FROM users WHERE id = ?1").await?;
+let row = stmt.query([1]).await?.next().await?.unwrap();
+let user = de::from_row::<User>(&row)?;
 ```
 
-## Batch Transactions
-
-A batch consists of multiple SQL statements executed sequentially within an implicit transaction. The backend handles the transaction: success commits all changes, while any failure results in a full rollback with no modifications.
+### Batch Transactions
 
 ```rust
 conn.execute_batch(r#"
@@ -256,35 +322,27 @@ conn.execute_batch(r#"
 "#).await?;
 ```
 
-## Interactive Transactions
-
-Interactive transactions in SQLite ensure the consistency of a series of read and write operations within a transaction's scope. These transactions give you control over when to commit or roll back changes, isolating them from other client activity.
-
-- `transaction()` &mdash; with default transaction behavior (`DEFFERED`)
-- `transaction_with_behavior()` &mdash; with custom transaction behavior
+### Interactive Transactions
 
 <CodeGroup>
 
 ```rust Default
-let mut tx = db_conn.transaction().await?;
+let tx = conn.transaction().await?;
 
-tx.execute("INSERT INTO users (name) VALUES (?1)", ["Iku"]).await?;
-tx.execute("INSERT INTO users (name) VALUES (?1)", ["Iku 2"]).await?;
+tx.execute("INSERT INTO users (name) VALUES (?1)", ["Alice"]).await?;
+tx.execute("INSERT INTO users (name) VALUES (?1)", ["Bob"]).await?;
 
 tx.commit().await?;
 ```
 
 ```rust Advanced control
-let mut tx = db_conn.transaction_with_behavior(TransactionBehavior::Immediate).await?;
+use libsql::TransactionBehavior;
+
+let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).await?;
 
 tx.execute("UPDATE users SET age = age + 1 WHERE id = ?1", [1]).await?;
-tx.execute("DELETE FROM users WHERE id = ?1", [2]).await?;
 
-if operations_successful {
-  tx.commit().await?;
-} else {
-  tx.rollback().await?;
-}
+tx.commit().await?;
 ```
 
 </CodeGroup>

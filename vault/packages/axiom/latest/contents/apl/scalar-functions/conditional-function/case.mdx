@@ -1,0 +1,181 @@
+---
+title: case
+description: 'This page explains how to use the case function in APL.'
+---
+
+## Introduction
+
+The `case` function evaluates a sequence of condition-result pairs and returns the value of the first condition that evaluates to `true`. Use it to map raw values to human-readable labels, define alert severity tiers, or apply multi-way branching in a single expression instead of chaining multiple `iff` calls.
+
+`case` is particularly useful when you need to classify log events into categories, route spans into latency buckets, or assign risk scores to requests based on several attributes at once.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `case()` function inside `eval` takes alternating condition-value pairs. APL's `case` works the same way: provide pairs of `(condition, value)` followed by a fallback value.
+
+<CodeGroup>
+```sql Splunk example
+... | eval severity = case(status==200, "success", status==404, "not found", "other")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend severity = case(status == '200', 'success', status == '404', 'not found', 'other')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+SQL uses `CASE WHEN condition THEN value ... ELSE fallback END`. APL's `case` is functionally equivalent but uses a compact function-call syntax. The last argument serves as the `ELSE` value.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  CASE
+    WHEN status = '200' THEN 'success'
+    WHEN status = '404' THEN 'not found'
+    ELSE 'other'
+  END AS severity
+FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend severity = case(status == '200', 'success', status == '404', 'not found', 'other')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+case(condition1, result1 [, condition2, result2, ...], nothingMatchedResult)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| ---- | ---- | -------- | ----------- |
+| condition*n* | bool | Yes | Expression to evaluate. APL tests conditions in order and returns the result paired with the first `true` condition. |
+| result*n* | scalar | Yes | Value returned when the preceding condition is the first to evaluate to `true`. All result expressions must be of the same type. |
+| nothingMatchedResult | scalar | Yes | Value returned when no condition evaluates to `true`. Must be the same type as the result expressions. |
+
+### Returns
+
+The value paired with the first condition that evaluates to `true`, or `nothingMatchedResult` if no condition is `true`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Classify HTTP responses by status code to summarize request outcomes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend severity = case(
+    status == '200', 'success',
+    status == '404', 'not found',
+    status == '500', 'server error',
+    'other'
+  )
+| summarize count() by severity
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20severity%20%3D%20case%28status%20%3D%3D%20%27200%27%2C%20%27success%27%2C%20status%20%3D%3D%20%27404%27%2C%20%27not%20found%27%2C%20status%20%3D%3D%20%27500%27%2C%20%27server%20error%27%2C%20%27other%27%29%20%7C%20summarize%20count%28%29%20by%20severity%22%7D)
+
+**Output**
+
+| severity | count_ |
+| -------- | ------ |
+| success | 8412 |
+| other | 1203 |
+| not found | 534 |
+| server error | 182 |
+
+The query assigns a human-readable label to each request based on its HTTP status code, then counts how many requests fall into each category.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Classify span durations into latency tiers to surface the slowest services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend priority = case(
+    duration > 1s, 'critical',
+    duration > 500ms, 'high',
+    duration > 100ms, 'medium',
+    'low'
+  )
+| summarize count() by priority, ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20priority%20%3D%20case%28duration%20%3E%201s%2C%20%27critical%27%2C%20duration%20%3E%20500ms%2C%20%27high%27%2C%20duration%20%3E%20100ms%2C%20%27medium%27%2C%20%27low%27%29%20%7C%20summarize%20count%28%29%20by%20priority%2C%20%5B%27service.name%27%5D%22%7D)
+
+**Output**
+
+| priority | service.name | count_ |
+| -------- | ------------ | ------ |
+| low | frontend | 4210 |
+| medium | checkout | 823 |
+| high | cart | 144 |
+| critical | product-catalog | 38 |
+
+The query buckets spans into four latency tiers and shows how many spans each service contributes to each tier.
+
+</Tab>
+<Tab title="Security logs">
+
+Assign risk levels to requests based on HTTP status codes and methods to prioritize investigation.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend risk_level = case(
+    status == '401', 'unauthorized',
+    status == '403', 'forbidden',
+    status == '500', 'server error',
+    method == 'DELETE', 'destructive',
+    'normal'
+  )
+| summarize count() by risk_level
+| sort by count_ desc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20risk_level%20%3D%20case%28status%20%3D%3D%20%27401%27%2C%20%27unauthorized%27%2C%20status%20%3D%3D%20%27403%27%2C%20%27forbidden%27%2C%20status%20%3D%3D%20%27500%27%2C%20%27server%20error%27%2C%20method%20%3D%3D%20%27DELETE%27%2C%20%27destructive%27%2C%20%27normal%27%29%20%7C%20summarize%20count%28%29%20by%20risk_level%20%7C%20sort%20by%20count_%20desc%22%7D)
+
+**Output**
+
+| risk_level | count_ |
+| ---------- | ------ |
+| normal | 9100 |
+| unauthorized | 430 |
+| forbidden | 312 |
+| server error | 182 |
+| destructive | 71 |
+
+The query flags requests that may indicate security issues and summarizes them by risk category so you can see which types of events occur most frequently.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [iff](/apl/scalar-functions/conditional-function/iff): Returns one of two values based on a single Boolean predicate. Use `iff` for binary decisions and `case` when you have three or more outcomes.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null value from a list of expressions. Use `coalesce` to handle missing values rather than branching on conditions.

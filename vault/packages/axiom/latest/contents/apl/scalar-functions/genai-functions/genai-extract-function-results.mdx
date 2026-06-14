@@ -77,12 +77,14 @@ Extract function call results from a GenAI conversation to analyze tool executio
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend function_results = genai_extract_function_results(['attributes.gen_ai.input.messages'])
 | where isnotnull(function_results)
 | project _time, function_results
 | limit 3
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20function_results%20%3D%20genai_extract_function_results(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20where%20isnotnull(function_results)%20%7C%20project%20_time%2C%20function_results%20%7C%20limit%203%22%7D)
 
 **Output**
 

@@ -1,0 +1,92 @@
+---
+title: acos
+description: 'This page explains how to use the acos function in APL.'
+---
+
+Use the `acos` function in APL to compute the arc cosine (inverse cosine) of a numeric expression. The function returns the angle, in radians, whose cosine equals the input value. The input must be in the range [-1, 1]; values outside this range return `null`.
+
+`acos` is useful when you work with normalized ratios or rates that fall in the [-1, 1] range and you need to encode them as angular values. For example, you can use `acos` to convert a normalized success rate into a phase angle for cyclic analysis or signal processing.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `acos()` is available in the `eval` command and works identically: it returns the arc cosine in radians for inputs in [-1, 1].
+
+<CodeGroup>
+```sql Splunk example
+| eval angle = acos(normalized_rate)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = acos(normalized_rate)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `ACOS()` is a standard mathematical function with the same semantics. Pass a value in [-1, 1] to receive the arc cosine in radians.
+
+<CodeGroup>
+```sql SQL example
+SELECT ACOS(normalized_rate) AS angle FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = acos(normalized_rate)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+acos(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A real number in the range [-1, 1]. |
+
+### Returns
+
+- The arc cosine of `x` in radians, in the range [0, π].
+- `null` if `x` < -1 or `x` > 1.
+
+## Example
+
+Use `acos` to compute the arccosine of a value and return the angle in radians.
+
+**Query**
+
+```kusto
+print result = acos(0.5)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20acos%280.5%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 1.0472 |
+
+## List of related functions
+
+- [asin](/apl/scalar-functions/mathematical-functions/asin): Returns the arc sine. Use it when the input value maps to a sine rather than a cosine.
+- [atan](/apl/scalar-functions/mathematical-functions/atan): Returns the arc tangent. Use it when the input is not constrained to [-1, 1].
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine. Use it to apply the forward transformation before using `acos` as the inverse.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it to convert angle output from `acos` into degrees.
+- [degrees](/apl/scalar-functions/mathematical-functions/degrees): Converts radians to degrees. Use it if you need the `acos` result expressed in degrees.

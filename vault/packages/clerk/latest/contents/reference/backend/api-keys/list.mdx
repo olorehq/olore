@@ -1,12 +1,9 @@
 ---
 title: '`list()`'
-description: Use Clerk's JS Backend SDK to list API keys.
-sdk: js-backend
+description: Use the list() method to list API keys.
 ---
 
-<Include src="_partials/machine-auth/api-keys-beta-callout" />
-
-Retrieves a list of API keys for a given user or organization. Returns a [`PaginatedResourceResponse`](/docs/reference/backend/types/paginated-resource-response) object.
+Retrieves a list of API keys for a given user or organization. Returns a [`PaginatedResourceResponse`](/docs/reference/backend/types/paginated-resource-response) object with a `data` property that contains an array of [`APIKey`](/docs/reference/backend/types/backend-api-key) objects, and a `totalCount` property that indicates the total number of API keys in the system.
 
 ```ts
 function list(
@@ -20,7 +17,7 @@ function list(
   - `subject`
   - `string`
 
-  The user or organization ID to query API keys by.
+  The user or Organization ID to query API keys by.
 
   ---
 
@@ -83,4 +80,4 @@ const apiKeys = await clerkClient.apiKeys.list({
 
 ## Backend API (BAPI) endpoint
 
-This method in the SDK is a wrapper around the BAPI endpoint `GET/api_keys`. See the [BAPI reference](/docs/reference/backend-api/tag/api-keys/get/api_keys){{ target: '_blank' }} for more information.
+This method in the SDK is a wrapper around the BAPI endpoint `GET/api_keys`. See the [BAPI reference](/docs/reference/backend-api/tag/api-keys/GET/api_keys){{ target: '_blank' }} for more information.

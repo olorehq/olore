@@ -11,7 +11,7 @@ import Since from '~/components/Since.astro';
 Astro provides two types of image services: Local and External.
 
 - **Local services** handle image transformations directly at build for static sites, or at runtime both in development mode and for on-demand rendering. These are often wrappers around libraries like Sharp, ImageMagick, or Squoosh. In dev mode and in production routes rendered on demand, local services use an API endpoint to do the transformation.
-- **External services** point to URLs and can add support for services such as Cloudinary, Vercel, or any [RIAPI](https://github.com/riapi/riapi)-compliant server.
+- **External services** point to URLs and can add support for services such as Cloudinary, ImageKit, Vercel, or any [RIAPI](https://github.com/riapi/riapi)-compliant server.
 
 ## Building using the Image Services API
 
@@ -247,6 +247,18 @@ export type UnresolvedSrcSetValue = {
 This hook allows you to validate and augment the options passed by the user. This is useful for setting default options, or telling the user that a parameter is required.
 
 [See how `validateOptions()` is used in Astro built-in services](https://github.com/withastro/astro/blob/0ab6bad7dffd413c975ab00e545f8bc150f6a92f/packages/astro/src/assets/services/service.ts#L124).
+
+### `getRemoteSize()`
+
+<p>
+
+**Type:** <code>(url: string, imageConfig: <a href="/en/reference/configuration-reference/#image-options">AstroConfig['image']</a> ) => Omit\<<a href="/en/reference/modules/astro-assets/#imagemetadata-1">ImageMetadata</a>, 'src' | 'fsPath'\> | Promise\<Omit\<<a href="/en/reference/modules/astro-assets/#imagemetadata-1">ImageMetadata</a>, 'src' | 'fsPath'\>\></code>
+<Since v="6.0.0" />
+</p>
+
+**Optional for both local and external services**
+
+This hook allows you to extend the behavior of [`inferRemoteSize()`](/en/reference/modules/astro-assets/#inferremotesize). This is useful for reducing network traffic by caching images, or when you can predict image information from the image URL.
 
 ## User configuration
 

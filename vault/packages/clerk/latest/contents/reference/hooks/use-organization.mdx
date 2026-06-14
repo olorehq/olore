@@ -3,7 +3,7 @@ title: useOrganization()
 description: Access and manage the currently active Organization in your React application with Clerk's useOrganization() hook.
 search:
   rank: 1
-sdk: chrome-extension, expo, nextjs, react, react-router, remix, tanstack-react-start
+sdk: chrome-extension, expo, nextjs, react, react-router, tanstack-react-start
 ---
 
 The `useOrganization()` hook retrieves attributes of the currently [Active Organization](!active-organization).
@@ -26,7 +26,7 @@ Optional properties that are shared across the `invitations`, `membershipRequest
 <Typedoc src="shared/paginated-hook-config" />
 
 > [!NOTE]
-> These attributes are updating automatically and will re-render their respective components whenever you set a different Organization using the [`setActive({ organization })`](/docs/reference/javascript/clerk#set-active) method or update any of the memberships or invitations. No need for you to manage updating anything manually.
+> These attributes are updating automatically and will re-render their respective components whenever you set a different Organization using the [`setActive({ organization })`](/docs/reference/objects/clerk#set-active) method or update any of the memberships or invitations. No need for you to manage updating anything manually.
 
 ## Returns
 
@@ -75,7 +75,7 @@ The following example demonstrates how to use the `infinite` property to fetch a
 
 <If sdk="react">
   ```jsx {{ filename: 'src/components/MemberList.tsx' }}
-  import { useOrganization } from '@clerk/clerk-react'
+  import { useOrganization } from '@clerk/react'
 
   export default function MemberList() {
     const { memberships } = useOrganization({
@@ -276,8 +276,8 @@ The following example demonstrates how to use the `infinite` property to fetch a
 </If>
 
 <If sdk="expo">
-  ```tsx {{ filename: 'screens/MemberList.tsx' }}
-  import { useOrganization } from '@clerk/clerk-expo'
+  ```tsx {{ filename: 'src/screens/MemberList.tsx' }}
+  import { useOrganization } from '@clerk/expo'
   import { Text, View, TouchableOpacity, ScrollView } from 'react-native'
 
   export function MemberListScreen() {
@@ -325,7 +325,7 @@ Notice the difference between this example's pagination and the infinite paginat
 
 <If sdk="react">
   ```jsx {{ filename: 'src/components/MemberList.tsx' }}
-  import { useOrganization } from '@clerk/clerk-react'
+  import { useOrganization } from '@clerk/react'
 
   export default function MemberList() {
     const { memberships } = useOrganization({
@@ -526,8 +526,8 @@ Notice the difference between this example's pagination and the infinite paginat
 </If>
 
 <If sdk="expo">
-  ```tsx {{ filename: 'screens/MemberList.tsx' }}
-  import { useOrganization } from '@clerk/clerk-expo'
+  ```tsx {{ filename: 'src/screens/MemberList.tsx' }}
+  import { useOrganization } from '@clerk/expo'
   import { Text, View, TouchableOpacity, ScrollView } from 'react-native'
 
   export function MemberListScreen() {
@@ -580,8 +580,8 @@ Notice the difference between this example's pagination and the infinite paginat
 
   ---
 
-  - [Manage an Organization's membership requests](/docs/guides/development/custom-flows/organizations/manage-membership-requests)
-  - Learn how to build a custom flow for managing an Organization's membership requests.
+  - [Manage an Organization's Membership Requests](/docs/guides/development/custom-flows/organizations/manage-membership-requests)
+  - Learn how to build a custom flow for managing an Organization's Membership Requests.
 
   ---
 

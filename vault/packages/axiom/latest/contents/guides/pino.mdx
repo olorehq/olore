@@ -21,9 +21,11 @@ npm install @axiomhq/pino
 
 ## Create Pino logger
 
-The example below creates a Pino logger with Axiom configured:
+The example below creates a Pino logger with Axiom configured. Set the `edge` option to the edge domain that matches the region your dataset lives in — see [Configure region](#configure-region) for the full list.
 
-```ts
+<CodeGroup>
+
+```ts EU Central 1
 import pino from 'pino';
 
 const logger = pino(
@@ -33,16 +35,58 @@ const logger = pino(
     options: {
       dataset: process.env.AXIOM_DATASET,
       token: process.env.AXIOM_TOKEN,
+      edge: 'eu-central-1.aws.edge.axiom.co',
     },
   }),
 );
 ```
+
+```ts US East 1
+import pino from 'pino';
+
+const logger = pino(
+  { level: 'info' },
+  pino.transport({
+    target: '@axiomhq/pino',
+    options: {
+      dataset: process.env.AXIOM_DATASET,
+      token: process.env.AXIOM_TOKEN,
+      edge: 'us-east-1.aws.edge.axiom.co',
+    },
+  }),
+);
+```
+
+</CodeGroup>
 
 After setting up the Axiom transport for Pino, use the logger as usual:
 
 ```js
 logger.info('Hello from Pino!');
 ```
+
+## Configure region
+
+Set the `edge` option on the transport to the edge domain for your Axiom deployment.
+
+| Edge deployment      | Base domain for ingest and query        |
+| -------------------- | --------------------------------------- |
+| US East 1 (AWS)      | `us-east-1.aws.edge.axiom.co`           |
+| EU Central 1 (AWS)   | `eu-central-1.aws.edge.axiom.co`        |
+
+<Warning>
+Always use the `edge` option to target a region. Don't put a regional hostname in `url` — `url` is reserved for non-ingest API operations and will not route ingest correctly.
+</Warning>
+
+## Transport options
+
+| Option    | Required | Description                                                                                                       |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `dataset` | yes      | The Axiom dataset to ingest logs into.                                                                            |
+| `token`   | yes      | An Axiom API or personal token with `ingest` permission for the dataset.                                          |
+| `edge`    | no       | Edge domain for ingest, without scheme. Example: `eu-central-1.aws.edge.axiom.co`. Use this to target a region.   |
+| `edgeUrl` | no       | Full edge URL (with scheme). Takes precedence over `edge` if both are set. Useful for self-hosted or proxy setups.|
+| `url`     | no       | Base URL for non-ingest API operations. Only needed if you call other Axiom APIs from the same client.            |
 
 ## Examples
 

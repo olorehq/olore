@@ -1,13 +1,13 @@
 ---
 title: "Evaluation overview"
-description: "Systematically measure and improve your AI capabilities through offline evaluation."
+description: "Systematically measure and improve your AI capabilities through offline and online evaluation."
 sidebarTitle: Overview
 keywords: ["ai engineering", "evaluation", "evals", "testing", "quality"]
 ---
 
 import { definitions } from '/snippets/definitions.mdx'
 
-Evaluation is the systematic process of measuring how well your AI <Tooltip tip={definitions.Capability}>capability</Tooltip> performs against known correct examples. Instead of relying on manual spot-checks or subjective assessments, evaluations provide quantitative, repeatable benchmarks that let you confidently improve your AI systems over time.
+Evaluation is the systematic process of measuring how well your AI <Tooltip tip={definitions.Capability}>capability</Tooltip> performs.
 
 ## Why systematic evaluation matters
 
@@ -20,9 +20,31 @@ Systematic evaluation solves this by:
 - **Enabling experimentation**: Compare different models, prompts, or architectures
 - **Building confidence**: Deploy changes knowing they improve aggregate performance
 
-## The evaluation workflow
+## Evaluation approaches
 
-Axiom's evaluation framework follows a simple pattern:
+Axiom supports two complementary approaches:
+
+- **Offline evaluations** test your capability against a curated collection of inputs with expected outputs (ground truth). Run them before deploying to catch regressions.
+- **Online evaluations** score live production traffic with reference-free scorers. Run them after deploying to monitor quality continuously.
+
+Both approaches use the same `Scorer` API. The scorers you write for one context work in the other.
+
+### Which evaluation approach to use
+
+Use offline evaluations when you need to test against known-good answers before shipping. Use online evaluations when you want to continuously monitor production quality. You can use both approaches together to get the best of both worlds.
+
+| | Offline evaluations | Online evaluations |
+|---|---|---|
+| **When** | Development, before deploy | Production, on live traffic |
+| **Expected values** | Requires expected output per case | No ground truth needed |
+| **Scorers** | Can compare output to expected | Reference-free |
+| **Execution** | CLI runner with vitest | Fire-and-forget inside your app |
+| **Sampling** | Runs every case | Per-scorer sampling rate |
+| **Telemetry** | OTel spans in eval dataset | OTel spans linked to production traces |
+
+## Offline evaluation workflow
+
+Offline evaluations test your capability against a curated dataset before you deploy. Axiom's evaluation framework follows a simple pattern:
 
 <Steps>
 <Step title="Create a collection">
@@ -30,7 +52,7 @@ Build a set of test cases with inputs and expected outputs (ground truth). Start
 </Step>
 
 <Step title="Define scorers">
-Write functions that compare your capability’s output against the expected result. Use custom logic or prebuilt scorers from libraries like `autoevals`.
+Write functions that compare your capability's output against the expected result. Use custom logic or prebuilt scorers from libraries like `autoevals`.
 </Step>
 
 <Step title="Run evaluations">
@@ -42,10 +64,39 @@ Review results in the Axiom Console. Compare against baselines. Identify failure
 </Step>
 </Steps>
 
-## What’s next?
+## Online evaluation workflow
 
-- To set up your environment and authenticate, see [Setup and authentication](/ai-engineering/evaluate/setup).
-- To learn how to write evaluation functions, see [Write evaluations](/ai-engineering/evaluate/write-evaluations).
+Online evaluations score live production traffic continuously after you deploy. They use the same `Scorer` API as offline evaluations, but without expected values.
+
+<Steps>
+<Step title="Write reference-free scorers">
+Create scorers that assess output quality using only the input and output without ground truth required. Use heuristic checks for format and structure, or LLM-as-judge patterns for semantic quality.
+</Step>
+
+<Step title="Attach scorers to your capability">
+Call `onlineEval` inside your capability code to run scorers as fire-and-forget operations that don't affect your response latency.
+</Step>
+
+<Step title="Control sampling">
+Set per-scorer sampling rates to balance coverage and cost. Run cheap heuristic scorers on every request and expensive LLM judges on a fraction of traffic.
+</Step>
+
+<Step title="Monitor and iterate">
+Review online evaluation scores in the Axiom Console alongside your production traces. Use the insights to add targeted offline test cases and refine your capability.
+</Step>
+</Steps>
+
+## What's next?
+
+**Shared:**
+- To set up your environment and authenticate, see [Quickstart](/ai-engineering/quickstart).
+- To learn how to write scoring functions that work in both offline and online evaluations, see [Scorers](/ai-engineering/evaluate/scorers).
+
+**Offline evaluations:**
+- To learn how to write evaluation functions, see [Write offline evaluations](/ai-engineering/evaluate/write-evaluations).
 - To understand flags and experiments, see [Flags and experiments](/ai-engineering/evaluate/flags-experiments).
 - To view results in the Console, see [Analyze results](/ai-engineering/evaluate/analyze-results).
 
+**Online evaluations:**
+- To learn how to write and run online evaluation functions, see [Write and run online evaluations](/ai-engineering/evaluate/online-evaluations/write-run-evaluations).
+- To view results in the Console, see [Analyze online evaluation results](/ai-engineering/evaluate/online-evaluations/analyze-results).

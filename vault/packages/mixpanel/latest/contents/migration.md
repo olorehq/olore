@@ -62,7 +62,7 @@ To perform a successful historical data load, we recommend:
 - Load a limited subset of the data into a test project (for example, a single day or data or a sample of the entire dataset) to get started. This will help you identify any errors in the end to end process before you do a full historical data load.
 - Load a year’s worth (or less) of historical data during your migration. This will allow your team to review year-over-year trends easily and do historical analysis as needed, without sending a bunch of data which is stale and unlikely to be used.
 
-For a more in-depth look into the steps required for a successful project migration, check out our [project migration playbook](/guides/playbooks/project-migration). 
+For a more in-depth look into the steps required for a successful project migration, check out our [project migration playbook](/guides/strategic-playbooks/project-migration). 
 
 Note that backfilling historical data can have significant impact on your billing. Refer to [this section](/docs/pricing#are-monthly-events-calculated-based-on-ingestion-time-or-event-timestamp) for more details.
 

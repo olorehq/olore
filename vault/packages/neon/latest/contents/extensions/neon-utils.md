@@ -1,8 +1,15 @@
 ---
 title: The neon_utils extension
 subtitle: Monitor how Neon's Autoscaling feature allocates compute resources
+summary: >-
+  The `neon_utils` PostgreSQL extension provides a `num_cpus()` function that
+  returns the current number of CPU cores allocated to a Neon compute by the
+  Autoscaling feature. Use it to observe real-time CPU scaling during load
+  tests or to verify that autoscaling is responding to workload as expected.
+  `num_cpus()` rounds fractional CU values up and only returns correct results
+  on autoscaling-enabled computes, not fixed-size computes.
 enableTableOfContents: true
-updatedOn: '2025-12-03T13:07:33.022Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `neon_utils` extension provides a `num_cpus()` function you can use to monitor how Neon's _Autoscaling_ feature allocates CPU resources in response to workload. The function returns the current number of allocated CPU cores.
@@ -21,7 +28,7 @@ For information about using the Neon **SQL Editor**, see [Query with Neon's SQL 
 
 ## Use the `num_cpus()` function
 
-In Neon, computing capacity is measured in _Compute Units (CU)_. Each CU allocates approximately 4 GB of RAM, along with associated CPU and local SSD resources — for example, 1 CU has 4 GB of RAM, 2 CU has 8 GB of RAM, and so on. A Neon compute can have anywhere from .25 to 56 CU, but _Autoscaling_ is only supported up to 16 CU.
+In Neon, computing capacity is measured in _Compute Units (CU)_. Each CU allocates approximately 4 GB of RAM, along with associated CPU and local SSD resources; for example, 1 CU has 4 GB of RAM, 2 CU has 8 GB of RAM, and so on. A Neon compute can have anywhere from .25 to 56 CU, but _Autoscaling_ is only supported up to 16 CU.
 
 Defining a minimum and maximum compute size for your compute, as shown below, enables autoscaling.
 

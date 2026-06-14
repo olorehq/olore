@@ -3,7 +3,7 @@ id: hosting
 title: Hosting
 ---
 
-Hosting is the process of deploying your application to the internet so that users can access it. This is a critical part of any web development project, ensuring your application is available to the world. TanStack Start is built on Vite, a powerful dev/build platform that allows us to make it possible to deploy your application to any hosting provider.
+Hosting is the process of deploying your application to the internet so that users can access it. This is a critical part of any web development project, ensuring your application is available to the world. TanStack Start supports Vite and Rsbuild, giving you flexible build outputs for different hosting providers and runtimes.
 
 ## What should I use?
 
@@ -36,6 +36,7 @@ Once you've chosen a deployment target, you can follow the deployment guidelines
 </a>
 
 When deploying to Cloudflare Workers, you'll need to complete a few extra steps before your users can start using your app.
+The official Cloudflare Workers setup currently uses Vite through `@cloudflare/vite-plugin`.
 
 1. Install `@cloudflare/vite-plugin` and `wrangler`
 
@@ -124,7 +125,7 @@ A full TanStack Start example for Cloudflare Workers is available [here](https:/
   </picture>
 </a>
 
-Install and add the [`@netlify/vite-plugin-tanstack-start`](https://www.npmjs.com/package/@netlify/vite-plugin-tanstack-start) plugin, which configures your build for Netlify deployment and provides full Netlify production platform emulation in local dev:
+The official Netlify setup currently uses Vite through [`@netlify/vite-plugin-tanstack-start`](https://www.npmjs.com/package/@netlify/vite-plugin-tanstack-start), which configures your build for Netlify deployment and provides full Netlify production platform emulation in local dev:
 
 ```bash
 npm install --save-dev @netlify/vite-plugin-tanstack-start
@@ -190,8 +191,8 @@ tool](https://docs.netlify.com/start/quickstarts/deploy-from-ai-code-generation-
 
 <a href="https://railway.com?utm_source=tanstack" alt="Railway Logo">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tanstack/tanstack.com/main/src/images/railway-dark.svg" width="280">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/tanstack/tanstack.com/main/src/images/railway-light.svg" width="280">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tanstack/tanstack.com/main/src/images/railway-white.svg" width="280">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/tanstack/tanstack.com/main/src/images/railway-black.svg" width="280">
     <img alt="Railway logo" src="https://raw.githubusercontent.com/tanstack/tanstack.com/main/src/images/railway-light.svg" width="280">
   </picture>
 </a>
@@ -264,6 +265,12 @@ Deploy your application to Vercel using their one-click deployment process, and 
 
 ### Node.js / Docker
 
+Use the Node.js deployment shape that matches your build tool.
+
+<!-- ::start:tabs variant="bundler" -->
+
+# Vite
+
 Follow the [`Nitro`](#nitro) deployment instructions. Use the `node` command to start your application from the server from the build output files.
 
 Ensure `build` and `start` npm scripts are present in your `package.json` file:
@@ -272,6 +279,33 @@ Ensure `build` and `start` npm scripts are present in your `package.json` file:
     "build": "vite build",
     "start": "node .output/server/index.mjs"
 ```
+
+# Rsbuild
+
+An Rsbuild production build emits client assets in `dist/client` and a server bundle in `dist/server/index.js`. The server bundle exports a fetch-style Start server entry:
+
+```ts
+type ServerEntry = {
+  fetch(request: Request): Response | Promise<Response>
+}
+```
+
+To run it on Node.js, serve `dist/client` as static assets and forward all other requests to the server entry's `fetch` handler. `srvx` is one way to do that:
+
+```sh
+npm install srvx
+```
+
+```json
+    "build": "rsbuild build",
+    "start": "srvx --prod -s dist/client dist/server/index.js"
+```
+
+Express or any other custom Node.js server works too, as long as it serves the client assets and calls the server entry's `fetch` handler for dynamic requests.
+
+If your server entry is emitted as `dist/server/server.js`, use that path instead of `dist/server/index.js`.
+
+<!-- ::end:tabs -->
 
 Then you can run the following command to build your application:
 
@@ -288,7 +322,7 @@ npm run start
 ### Bun
 
 > [!IMPORTANT]
-> Currently, the Bun specific deployment guidelines only work with React 19. If you are using React 18, please refer to the [Node.js](#nodejs--railway--docker) deployment guidelines.
+> Currently, the Bun specific deployment guidelines only work with React 19. If you are using React 18, please refer to the [Node.js](#nodejs--docker) deployment guidelines.
 
 Make sure that your `react` and `react-dom` packages are set to version 19.0.0 or higher in your `package.json` file. If not, run the following command to upgrade the packages:
 
@@ -296,7 +330,7 @@ Make sure that your `react` and `react-dom` packages are set to version 19.0.0 o
 bun install react@19 react-dom@19
 ```
 
-Follow the [`Nitro`](#nitro) deployment instructions.
+For Vite builds, follow the [`Nitro`](#nitro) deployment instructions.
 Depending on how you invoke the build, you might need to set the `'bun'` preset in the Nitro configuration:
 
 ```ts

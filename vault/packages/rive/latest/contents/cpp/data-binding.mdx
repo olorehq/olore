@@ -1,0 +1,185 @@
+---
+title: "Data Binding"
+description: "Drive Rive ViewModels from C++."
+---
+
+Rive's **View Models** expose strongly-typed properties
+(numbers, strings, colors, booleans, enums, triggers, lists, nested view
+models, image and artboard references) that an artboard binds to. From C++
+you instance a view model, mutate properties, and the bound visuals update
+on the next `advanceAndApply`.
+
+## Concepts
+
+- `ViewModelRuntime` — schema for a view model defined in the editor. Lives
+  in the `File`.
+- `ViewModelInstanceRuntime` — typed wrapper around an instance of that
+  schema. Exposes the property API (`propertyNumber`, `propertyString`, etc).
+  You own it via `rcp<>`.
+- `ViewModelInstance` — the underlying bindable instance. `Artboard` and
+  `StateMachineInstance` bind to this type. Get one from a
+  `ViewModelInstanceRuntime` with `.instance()`.
+- `ViewModelInstance*Runtime` — typed handles for individual properties
+  (`…NumberRuntime`, `…StringRuntime`, etc).
+
+## Creating an Instance
+
+The simplest path is to ask the file for the artboard's default view model,
+then create a default instance from it:
+
+```cpp
+#include "rive/file.hpp"
+#include "rive/viewmodel/runtime/viewmodel_runtime.hpp"
+
+ViewModelRuntime* vm = file->defaultArtboardViewModel(artboard.get());
+if (!vm) return;   // artboard has no default view model
+
+rcp<ViewModelInstanceRuntime> instance = vm->createDefaultInstance();
+if (instance) {
+    artboard->bindViewModelInstance(instance->instance());
+    sm     ->bindViewModelInstance(instance->instance());
+}
+```
+
+For full control, look up a specific view model schema by index or name and
+create instances from it:
+
+```cpp
+ViewModelRuntime* vm = file->viewModelByName("Card");
+if (!vm) return;   // no view model with that name
+
+size_t propCount = vm->propertyCount();
+size_t instCount = vm->instanceCount();
+
+rcp<ViewModelInstanceRuntime> instance = vm->createDefaultInstance();
+// alternatives — pick one and replace the line above:
+// rcp<ViewModelInstanceRuntime> instance = vm->createInstanceFromName("Hero");
+// rcp<ViewModelInstanceRuntime> instance = vm->createInstanceFromIndex(0);
+// rcp<ViewModelInstanceRuntime> instance = vm->createInstance();   // no editor preset; properties at type defaults
+
+if (!instance) return;
+artboard->bindViewModelInstance(instance->instance());
+sm     ->bindViewModelInstance(instance->instance());
+```
+
+<Note>
+  Bind the same `ViewModelInstance` to **both** the artboard and the state machine.
+  The artboard binding drives layout-affecting properties; the state-machine binding
+  drives state-machine transitions and listener conditions.
+</Note>
+
+## Reading & Writing Properties
+
+All accessors are path-based — `/`-separated for nested view models.
+
+```cpp
+auto* card = instance.get();
+
+// Number
+if (auto* score = card->propertyNumber("score")) {
+    score->value(42.0f);
+    float v = score->value();
+}
+
+// String
+if (auto* title = card->propertyString("title")) {
+    title->value("Hello");
+}
+
+// Boolean
+if (auto* on = card->propertyBoolean("isOpen")) {
+    on->value(true);
+}
+
+// Color (ARGB packed)
+if (auto* col = card->propertyColor("accent")) {
+    col->value(0xFFE53935);
+}
+
+// Trigger (edge event)
+if (auto* fire = card->propertyTrigger("fire")) {
+    fire->trigger();
+}
+
+// Enum (by string label)
+if (auto* mood = card->propertyEnum("mood")) {
+    mood->value("happy");
+}
+```
+
+### Nested View Models
+
+```cpp
+// Option 1: deep path string.
+auto* headerTitle = card->propertyString("header/title");
+
+// Option 2: walk the tree.
+rcp<ViewModelInstanceRuntime> header = card->propertyViewModel("header");
+auto* title = header->propertyString("title");
+```
+
+You can also **swap** a nested view model wholesale — useful for swapping a
+list cell's data without rebuilding the artboard:
+
+```cpp
+rcp<ViewModelInstanceRuntime> newHeader = vm->createDefaultInstance();
+card->replaceViewModel("header", newHeader.get());
+```
+
+### Lists
+
+```cpp
+auto* items = card->propertyList("items");
+
+// Append, insert, remove, replace, swap, count.
+items->addInstance(rowInstance.get());
+items->addInstanceAt(rowInstance.get(), 0);
+items->removeInstanceAt(2);
+items->swap(0, 1);
+size_t n = items->size();
+
+rcp<ViewModelInstanceRuntime> row = items->instanceAt(0);
+```
+
+List items are themselves `ViewModelInstanceRuntime`s — same property API as
+above.
+
+### Image & Artboard Properties
+
+```cpp
+auto* image = card->propertyImage("avatar");
+image->value(decodedRenderImage.get());   // RenderImage*
+
+auto* artboardRef = card->propertyArtboard("badge");
+artboardRef->value(file->bindableArtboardNamed("Badge"));   // rcp<BindableArtboard>
+```
+
+## Lifecycle
+
+- A `ViewModelInstanceRuntime` is a thin wrapper over a `ViewModelInstance`.
+  Hold the `rcp<>` for as long as anything binds to it.
+- Property handles (`ViewModelInstanceNumberRuntime*`, etc) are owned by
+  the parent instance. Cache the pointer — it stays valid for the
+  instance's lifetime.
+- After mutating properties, the next `sm->advanceAndApply(dt)` propagates
+  the changes through data binds and into rendering.
+
+## When Properties Don't Exist
+
+Every `propertyX(name)` getter returns `nullptr` if the name doesn't
+resolve, so you can probe an instance safely:
+
+```cpp
+if (auto* p = instance->propertyNumber("optional")) {
+    p->value(1.0f);
+}
+```
+
+For introspection, walk the schema:
+
+```cpp
+for (const PropertyData& p : instance->properties()) {
+    // p.name, p.type ∈ { number, string, boolean, color, enum, trigger,
+    //                    list, viewModel, image, artboard, ... }
+}
+```

@@ -39,10 +39,15 @@ To build this in Convex, define a query function that:
 
 1. Takes in a single arguments object with a `paginationOpts` property of type
    [`PaginationOptions`](/api/interfaces/server.PaginationOptions).
-   - `PaginationOptions` is an object with `numItems` and `cursor` fields.
+
    - Use `paginationOptsValidator` exported from `"convex/server"` to
-     [validate](/functions/validation.mdx) this argument
-   - The arguments object may include properties as well.
+     [validate](/functions/validation.mdx) this argument. It includes fields
+     used by the client to manage the gap-less pagination.
+   - To limit how much is read from the database, set `maximumBytesRead` and/or
+     `maximumRowsRead` in `PaginationOptions`. If the page of data would have
+     exceeded these values, it will return a status forcing the client to split
+     the pages.
+
 2. Calls
    [`.paginate(paginationOpts)`](/api/interfaces/server.OrderedQuery#paginate)
    on a [database query](/database/reading-data/reading-data.mdx), passing in
@@ -55,9 +60,8 @@ To build this in Convex, define a query function that:
      [`filter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter)
      it before returning it.
 
-<TSAndJSSnippet
-  sourceTS={Messages}
-  sourceJS={Messages}
+<Snippet
+  source={Messages}
   title="convex/messages.ts"
   highlightPatterns={["paginationOpts"]}
   snippet="list"
@@ -68,9 +72,8 @@ To build this in Convex, define a query function that:
 You can define paginated query functions that take arguments in addition to
 `paginationOpts`:
 
-<TSAndJSSnippet
-  sourceTS={Messages}
-  sourceJS={Messages}
+<Snippet
+  source={Messages}
   snippet="listWithExtraArg"
   title="convex/messages.ts"
 />
@@ -82,9 +85,8 @@ You can apply arbitrary
 to the `page` property of the object returned by `paginate`, which contains the
 array of documents:
 
-<TSAndJSSnippet
-  sourceTS={Messages}
-  sourceJS={Messages}
+<Snippet
+  source={Messages}
   snippet="listWithTransformation"
   title="convex/messages.ts"
 />
@@ -116,9 +118,8 @@ The hook returns an object with:
 - `loadMore(n)`: A callback to fetch more results. This will only fetch more
   results if the status is `"CanLoadMore"`.
 
-<TSAndJSSnippet
-  sourceTS={SimpleCall}
-  sourceJS={SimpleCall}
+<Snippet
+  source={SimpleCall}
   snippet="example"
   title="src/App.tsx"
   highlightPatterns={["usePaginatedQuery\\(", "api.", "{}", "initialNumItems"]}
@@ -127,9 +128,8 @@ The hook returns an object with:
 You can also pass additional arguments in the arguments object if your function
 expects them:
 
-<TSAndJSSnippet
-  sourceTS={CallWithArgs}
-  sourceJS={CallWithArgs}
+<Snippet
+  source={CallWithArgs}
   snippet="example"
   title="src/App.tsx"
   highlightPatterns={["author:"]}
@@ -146,9 +146,20 @@ request a page of 10 items and then one item is removed, this page may "shrink"
 to only have 9 items. Similarly if new items are added, a page may "grow" beyond
 its initial size.
 
+### Experimental: paginated query result object
+
+[`usePaginatedQuery_experimental`](/api/modules/react#usepaginatedquery_experimental)
+introduces a couple of changes that may become standard in the future. First,
+much of the pagination logic has been pushed down into the client layer so the
+hook has fewer responsibilities. Second, there's an overload that accepts an
+object argument and returns a result object with `status`
+(`"pending" | "success" | "error"`), `data`, `error`, and a `canLoadMore`
+boolean. See the
+[API reference](/api/modules/react#usepaginatedquery_experimental) for details.
+
 ## Paginating manually
 
 If you're paginating outside of React, you can manually call your paginated
 function multiple times to collect the items:
 
-<TSAndJSSnippet title="download.ts" sourceTS={Download} sourceJS={Download} />
+<Snippet title="download.ts" source={Download} />

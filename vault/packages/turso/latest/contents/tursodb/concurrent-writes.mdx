@@ -1,0 +1,178 @@
+---
+title: Concurrent Writes
+---
+
+Turso with default configuration only allows one connection to write at a time. With MVCC (Multi-Version Concurrency Control), multiple connections can write simultaneously. If two transactions modify the same data, one will receive a conflict error and must roll back and retry.
+
+## Enable MVCC
+
+Set the journal mode on your database connection:
+
+```sql
+PRAGMA journal_mode = 'mvcc';
+```
+
+## BEGIN CONCURRENT
+
+Use `BEGIN CONCURRENT` instead of `BEGIN` to start a transaction that allows other writers to proceed in parallel:
+
+```sql
+BEGIN CONCURRENT;
+-- your writes here
+COMMIT;
+```
+
+If two transactions touch the same rows, one will receive a conflict error and must roll back and retry. Transactions that write to non-overlapping data proceed without conflict.
+
+## Handling Conflicts
+
+Your application must detect conflict errors and retry the transaction.
+
+## Example
+
+<Tabs>
+  <Tab title="Rust">
+
+```rust
+fn is_retryable(e: &Error) -> bool {
+    matches!(e, Error::Busy(_) | Error::BusySnapshot(_))
+        || matches!(e, Error::Error(msg) if msg.contains("conflict"))
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let tmp = NamedTempFile::new().expect("failed to create temp file");
+    let db = Builder::new_local(tmp.path().to_str().unwrap())
+        .build()
+        .await?;
+
+    let conn = db.connect()?;
+    conn.pragma_update("journal_mode", "'mvcc'").await?;
+    conn.execute("CREATE TABLE hits (val INTEGER)", ()).await?;
+
+    let mut handles = Vec::new();
+    for _ in 0..16 {
+        let db = db.clone();
+        handles.push(tokio::spawn(async move {
+            let val = rand::rng().random_range(1..=100);
+            let conn = db.connect()?;
+            loop {
+                conn.execute("BEGIN CONCURRENT", ()).await?;
+                let result = conn
+                    .execute(&format!("INSERT INTO hits VALUES ({val})"), ())
+                    .await
+                    .and(conn.execute("COMMIT", ()).await);
+                match result {
+                    Ok(_) => return Ok::<_, Error>(val),
+                    Err(ref e) if is_retryable(e) => {
+                        let _ = conn.execute("ROLLBACK", ()).await;
+                        tokio::task::yield_now().await;
+                    }
+                    Err(e) => {
+                        let _ = conn.execute("ROLLBACK", ()).await;
+                        return Err(e);
+                    }
+                }
+            }
+        }));
+    }
+
+    for handle in handles {
+        handle.await.expect("task panicked")?;
+    }
+
+    Ok(())
+}
+```
+
+  </Tab>
+  <Tab title="JavaScript">
+
+```js
+const DB_PATH = join(mkdtempSync(join(tmpdir(), "turso-mvcc-")), "hits.db");
+
+function isRetryable(err) {
+  const msg = (err?.message ?? "").toLowerCase();
+  return msg.includes("conflict") || msg.includes("busy");
+}
+
+async function writeWorker() {
+  const val = Math.floor(Math.random() * 100) + 1;
+  const db = await connect(DB_PATH);
+  try {
+    await db.exec("PRAGMA journal_mode = 'mvcc'");
+    while (true) {
+      await db.exec("BEGIN CONCURRENT");
+      try {
+        await db.exec(`INSERT INTO hits VALUES (${val})`);
+        await db.exec("COMMIT");
+        return val;
+      } catch (err) {
+        try { await db.exec("ROLLBACK"); } catch (_) {}
+        if (!isRetryable(err)) throw err;
+        await new Promise((r) => setImmediate(r));
+      }
+    }
+  } finally {
+    await db.close();
+  }
+}
+
+const setup = await connect(DB_PATH);
+await setup.exec("PRAGMA journal_mode = 'mvcc'");
+await setup.exec("CREATE TABLE hits (val INTEGER)");
+await setup.close();
+
+await Promise.all(Array.from({ length: 16 }, () => writeWorker()));
+```
+
+  </Tab>
+  <Tab title="Python">
+
+```python
+def is_retryable(e: Exception) -> bool:
+    msg = str(e).lower()
+    return "conflict" in msg or "busy" in msg
+
+def write_worker(db_path: str) -> int:
+    val = random.randint(1, 100)
+    conn = turso.connect(db_path)
+    try:
+        conn.execute("PRAGMA journal_mode = 'mvcc'").fetchone()
+        while True:
+            conn.execute("BEGIN CONCURRENT")
+            try:
+                conn.execute("INSERT INTO hits VALUES (?)", (val,))
+                conn.execute("COMMIT")
+                return val
+            except Exception as e:
+                try:
+                    conn.execute("ROLLBACK")
+                except Exception:
+                    pass
+                if not is_retryable(e):
+                    raise
+    finally:
+        conn.close()
+
+async def main() -> None:
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = tmp.name
+
+    setup = turso.connect(db_path)
+    setup.execute("PRAGMA journal_mode = 'mvcc'").fetchone()
+    setup.execute("CREATE TABLE hits (val INTEGER)")
+    setup.commit()
+    setup.close()
+
+    tasks = [asyncio.to_thread(write_worker, db_path) for _ in range(16)]
+    await asyncio.gather(*tasks)
+
+asyncio.run(main())
+```
+
+  </Tab>
+</Tabs>
+
+Try the full example:
+[Rust](https://github.com/tursodatabase/turso/blob/main/bindings/rust/examples/concurrent_writes.rs) · [JavaScript](https://github.com/tursodatabase/turso/blob/main/examples/javascript/concurrent-writes/index.mjs) · [Python](https://github.com/tursodatabase/turso/blob/main/examples/python/concurrent_writes.py)

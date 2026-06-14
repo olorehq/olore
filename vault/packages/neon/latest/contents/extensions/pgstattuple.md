@@ -1,8 +1,18 @@
 ---
 title: The pgstattuple extension
 subtitle: 'Analyze table, index bloat, and fragmentation in Postgres'
+summary: >-
+  The `pgstattuple` extension inspects Postgres physical storage at the tuple
+  level, reporting dead tuple counts, dead tuple percentages, free space, and
+  B-tree leaf density needed to measure table and index bloat. Use it when you
+  need to quantify bloat caused by unvacuumed DELETE or UPDATE operations and
+  decide whether to run VACUUM, VACUUM FULL, or REINDEX. Functions include
+  `pgstattuple()` for exact full-scan stats, `pgstattuple_approx()` for
+  faster visibility-map-based estimates on large tables, and `pgstatindex()`
+  for B-tree fragmentation metrics. GIN and hash index stats are covered by
+  `pgstatginindex()` and `pgstathashindex()`.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.244Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `pgstattuple` extension provides a suite of functions to inspect the physical storage of Postgres tables and indexes at a detailed, tuple (row) level. It offers insights into issues like table and index bloat, fragmentation, and overall space utilization, which are crucial for performance tuning and storage management.
@@ -129,7 +139,7 @@ The `pgstattuple_approx(relation regclass)` function offers a faster way to get 
 SELECT * FROM pgstattuple_approx('your_table_name');
 ```
 
-This function is particularly useful for large tables where a full `pgstattuple()` scan would be too slow or resource-intensive for frequent checks. - Output columns are similar to `pgstattuple()`, but with `approx_` prefixes for estimated values (e.g., `approx_tuple_count`, `approx_free_space`). - `dead_tuple_count` and `dead_tuple_len` are exact.
+Use this function for large tables where a full `pgstattuple()` scan would be too slow or resource-intensive for frequent checks. - Output columns are similar to `pgstattuple()`, but with `approx_` prefixes for estimated values (for example, `approx_tuple_count`, `approx_free_space`). - `dead_tuple_count` and `dead_tuple_len` are exact.
 
 ### Analyzing B-tree index statistics with `pgstatindex()`
 
@@ -267,7 +277,7 @@ LIMIT 10;
 ```
 
 <Admonition type="warning" title="Resource Intensive Query">
-Running `pgstattuple()` for every table can be very resource-intensive. For larger databases, consider using `pgstattuple_approx()` in the `CROSS JOIN LATERAL` subquery or filtering tables by size first (e.g., adding `AND pg_total_relation_size(c.oid) > '1GB'` to the `WHERE` clause).
+Running `pgstattuple()` for every table can be very resource-intensive. For larger databases, consider using `pgstattuple_approx()` in the `CROSS JOIN LATERAL` subquery or filtering tables by size first (for example, adding `AND pg_total_relation_size(c.oid) > '1GB'` to the `WHERE` clause).
 </Admonition>
 
 ### Diagnosing and resolving index bloat and fragmentation
@@ -283,7 +293,7 @@ SELECT
 FROM pgstatindex('idx_customers_first_name');
 ```
 
-If `avg_leaf_density` is low (e.g., < 60-70%) or `leaf_fragmentation` is high (e.g., > 20-30% for frequently scanned indexes), the index might benefit from rebuilding.
+If `avg_leaf_density` is low (for example, < 60-70%) or `leaf_fragmentation` is high (for example, > 20-30% for frequently scanned indexes), the index might benefit from rebuilding.
 
 To rebuild an index:
 
@@ -302,7 +312,7 @@ After reindexing, check `pgstatindex` again; you should see improved `avg_leaf_d
 
 ## Conclusion
 
-The `pgstattuple` extension is a powerful diagnostic tool for understanding the physical storage characteristics of your Postgres database within Neon. It allows you to identify and quantify table and index bloat and fragmentation, leading to more effective maintenance strategies, better autovacuum tuning, and ultimately, improved database performance and storage efficiency.
+The `pgstattuple` extension helps you understand the physical storage characteristics of your Postgres database. Use it to identify and quantify table and index bloat and fragmentation, which informs maintenance strategies, autovacuum tuning, and storage optimization.
 
 ## Resources
 

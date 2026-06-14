@@ -1,0 +1,214 @@
+---
+title: Vector Search
+description: Build semantic search, recommendation systems, and RAG workflows with native vector search in Turso.
+---
+
+Turso supports vector search as a native feature — no extensions required. Store vector embeddings alongside your relational data and query them using built-in distance functions for similarity search.
+
+## Vector Types
+
+Turso supports **dense**, **sparse**, **quantized**, and **binary** vector representations, each suited to different workloads.
+
+### Dense Vectors
+
+Dense vectors store a value for every dimension. Turso provides two precision levels:
+
+| Function | Precision | Storage per dimension | Best for |
+|----------|-----------|----------------------|----------|
+| `vector32` | 32-bit float | 4 bytes | Most ML embeddings (OpenAI, sentence transformers) |
+| `vector64` | 64-bit float | 8 bytes | Applications requiring higher precision |
+
+### Sparse Vectors
+
+Sparse vectors only store non-zero values and their indices, making them memory-efficient for high-dimensional data with many zero values.
+
+| Function | Storage | Best for |
+|----------|---------|----------|
+| `vector32_sparse` | Non-zero values + indices | TF-IDF, bag-of-words, high-dimensional sparse data |
+
+### Quantized Vectors
+
+| Function | Storage per dimension | Best for |
+|----------|----------------------|----------|
+| `vector8` | 1 byte (+8 bytes overhead) | Large-scale search where ~4x compression vs Float32 is worth minimal precision loss |
+
+Values are linearly quantized to the 0-255 range using min/max scaling. Dequantization: `f_i = alpha * q_i + shift`.
+
+### Binary Vectors
+
+| Function | Storage per dimension | Best for |
+|----------|----------------------|----------|
+| `vector1bit` | 1 bit | Binary hashing, approximate nearest neighbor search (~32x compression vs Float32) |
+
+Positive values become 1, non-positive values become 0. Extracted values are displayed as +1/-1.
+
+<Note>
+For most applications, `vector32` is a good starting point. Explore more compact types if your table has a large number of rows.
+</Note>
+
+## Storing Vectors
+
+Create a table with a BLOB column to store embeddings alongside your relational data:
+
+```sql
+CREATE TABLE documents (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    content TEXT,
+    embedding BLOB
+);
+```
+
+Insert rows with vector embeddings using the appropriate conversion function:
+
+```sql
+INSERT INTO documents (title, content, embedding) VALUES
+    ('Machine learning basics', 'An introduction to ML concepts...', vector32('[0.2, 0.5, 0.1, 0.8]')),
+    ('Database fundamentals', 'How relational databases work...', vector32('[0.1, 0.3, 0.9, 0.2]')),
+    ('Neural networks guide', 'Deep learning architectures...', vector32('[0.3, 0.6, 0.2, 0.7]'));
+```
+
+For sparse vectors, zero values are automatically compressed:
+
+```sql
+INSERT INTO documents (title, content, embedding) VALUES
+    ('Sparse example', 'A document with sparse features...', vector32_sparse('[0.0, 1.5, 0.0, 2.3, 0.0]'));
+```
+
+## Similarity Search
+
+Use distance functions to find the most similar vectors. All distance functions require both vectors to have the **same type and dimensionality**. Lower values indicate greater similarity.
+
+### Cosine Distance
+
+Measures the angle between vectors, ignoring magnitude. Returns a value between 0 (identical direction) and 2 (opposite direction).
+
+```sql
+SELECT title,
+       vector_distance_cos(embedding, vector32('[0.25, 0.55, 0.15, 0.75]')) AS distance
+FROM documents
+ORDER BY distance
+LIMIT 5;
+```
+
+Best for text embeddings and document similarity where direction matters more than magnitude.
+
+### Euclidean (L2) Distance
+
+Measures straight-line distance in n-dimensional space. Not supported for `vector1bit` vectors.
+
+```sql
+SELECT title,
+       vector_distance_l2(embedding, vector32('[0.25, 0.55, 0.15, 0.75]')) AS distance
+FROM documents
+ORDER BY distance
+LIMIT 5;
+```
+
+Best for image embeddings, spatial data, and unnormalized embeddings where absolute differences matter.
+
+### Dot Product Distance
+
+Computes the negative dot product: `-sum(v1[i] * v2[i])`. Lower (more negative) values indicate higher similarity.
+
+```sql
+SELECT title,
+       vector_distance_dot(embedding, vector32('[0.25, 0.55, 0.15, 0.75]')) AS distance
+FROM documents
+ORDER BY distance
+LIMIT 5;
+```
+
+Best for normalized embeddings (equivalent to cosine distance when vectors are unit-length) and maximum inner product search (MIPS).
+
+### Jaccard Distance
+
+Computes weighted Jaccard distance based on the ratio of minimum to maximum values across dimensions. For `vector1bit` vectors, computes binary Jaccard distance.
+
+```sql
+SELECT title,
+       vector_distance_jaccard(embedding, vector32_sparse('[0.0, 1.0, 0.0, 2.0]')) AS distance
+FROM documents
+ORDER BY distance
+LIMIT 5;
+```
+
+Best for sparse vectors, set-like comparisons, TF-IDF representations, and binary similarity with `vector1bit`.
+
+## Utility Functions
+
+### vector_extract
+
+Convert a vector BLOB back to a readable JSON representation:
+
+```sql
+SELECT vector_extract(embedding) FROM documents WHERE id = 1;
+-- [0.200000,0.500000,0.100000,0.800000]
+```
+
+### vector_concat
+
+Concatenate two vectors into one:
+
+```sql
+SELECT vector_extract(
+    vector_concat(vector32('[1.0, 2.0]'), vector32('[3.0, 4.0]'))
+);
+-- [1.000000,2.000000,3.000000,4.000000]
+```
+
+### vector_slice
+
+Extract a contiguous portion of a vector (zero-based, end exclusive):
+
+```sql
+SELECT vector_extract(
+    vector_slice(vector32('[1.0, 2.0, 3.0, 4.0, 5.0]'), 1, 4)
+);
+-- [2.000000,3.000000,4.000000]
+```
+
+## Limitations
+
+- Euclidean distance is **not supported** for `vector1bit` vectors
+- Maximum vector dimensionality is 65,536
+- `vector1bit` cosine distance returns Hamming distance (number of differing bits) instead of standard cosine distance
+
+## Example: Semantic Search
+
+A complete end-to-end example combining vector storage and similarity search:
+
+```sql
+-- Create a table with vector embeddings
+CREATE TABLE articles (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT,
+    embedding BLOB
+);
+
+-- Insert articles with precomputed embeddings
+INSERT INTO articles (title, content, embedding) VALUES
+    ('Introduction to Machine Learning', 'ML is a subset of AI...', vector32('[0.12, -0.34, 0.56, 0.78]')),
+    ('Database Design Patterns', 'Relational databases organize...', vector32('[0.82, 0.15, -0.44, 0.23]')),
+    ('Neural Networks Explained', 'Neural networks are computing...', vector32('[0.14, -0.28, 0.62, 0.71]')),
+    ('SQL Query Optimization', 'Efficient queries start with...', vector32('[0.75, 0.22, -0.38, 0.19]'));
+
+-- Find the 3 most similar articles to a query vector
+SELECT
+    title,
+    content,
+    vector_distance_cos(embedding, vector32('[0.10, -0.30, 0.50, 0.80]')) AS distance
+FROM articles
+ORDER BY distance
+LIMIT 3;
+```
+
+<Note>
+Similarity searches use a linear scan over the table. For large datasets, consider limiting the search to a subset of rows with a `WHERE` clause.
+</Note>
+
+## See Also
+
+- [Vector Functions](/sql-reference/functions/vector) — full SQL reference for all vector functions
+- [Data Types](/sql-reference/data-types) — how BLOBs are handled in Turso

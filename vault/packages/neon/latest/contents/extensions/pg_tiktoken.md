@@ -2,8 +2,15 @@
 title: The pg_tiktoken extension
 subtitle: Efficiently tokenize data in your Postgres database using OpenAI's `tiktoken`
   library
+summary: >-
+  The `pg_tiktoken` Postgres extension tokenizes text and counts tokens inside
+  SQL queries using OpenAI's tiktoken library, exposing `tiktoken_encode` and
+  `tiktoken_count`. Use it to enforce OpenAI model token limits in database
+  queries without moving data to application code. Supported encodings include
+  cl100k_base (ChatGPT, text-embedding-ada-002), p50k_base (Codex,
+  text-davinci-002/003), and r50k_base (GPT-3/davinci).
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.240Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `pg_tiktoken` extension enables fast and efficient tokenization of data in your Postgres database using OpenAI's [tiktoken](https://github.com/openai/tiktoken) library.
@@ -16,13 +23,13 @@ This topic provides guidance on installing the extension, utilizing its features
 
 Language models process text in units called tokens. A token can be as short as a single character or as long as a complete word, such as "a" or "apple." In some languages, tokens may comprise less than a single character or even extend beyond a single word.
 
-For example, consider the sentence "Neon is serverless Postgres." It can be divided into seven tokens: ["Ne", "on", "is", "server", "less", "Post", "gres"].
+For example, consider the sentence "Neon is serverless Postgres." It can be divided into seven tokens: `["Ne", "on", "is", "server", "less", "Post", "gres"]`.
 
 ## `pg_tiktoken` functions
 
 The `pg_tiktoken` offers two functions:
 
-- `tiktoken_encode`: Accepts text inputs and returns tokenized output, allowing you to seamlessly tokenize your text data.
+- `tiktoken_encode`: Accepts text inputs and returns tokenized output.
 - `tiktoken_count`: Counts the number of tokens in a given text. This feature helps you adhere to text length limits, such as those set by OpenAI's language models.
 
 ## Install the `pg_tiktoken` extension
@@ -119,7 +126,7 @@ VALUES ('user', 'Hello, how are you?', tiktoken_count('text-davinci-003','Hello,
 
 ## Manage text tokens
 
-When a conversation contains more tokens than a model can process (e.g., over 4096 tokens for `gpt-3.5-turbo`), you will need to truncate the text to fit within the model's limit.
+When a conversation contains more tokens than a model can process (for example, over 4096 tokens for `gpt-3.5-turbo`), you will need to truncate the text to fit within the model's limit.
 
 Additionally, lengthy conversations may result in incomplete replies. For example, if a `gpt-3.5-turbo` conversation spans 4090 tokens, the response will be limited to just six tokens.
 

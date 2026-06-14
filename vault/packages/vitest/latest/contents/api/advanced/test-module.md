@@ -34,6 +34,14 @@ Module id relative to the project. This is the same as `task.name` in the deprec
 'project\\example.test.ts' // ❌
 ```
 
+## viteEnvironment <Version>4.1.0</Version> {#viteenvironment}
+
+This is a Vite's [`DevEnvironment`](https://vite.dev/guide/api-environment) that transforms all files inside of the test module.
+
+::: details History
+- `v4.0.15`: added as experimental
+:::
+
 ## state
 
 ```ts
@@ -109,6 +117,24 @@ interface ModuleDiagnostic {
    * The time spent importing every non-externalized dependency that Vitest has processed.
    */
   readonly importDurations: Record<string, ImportDuration>
+  /**
+   * The id of the worker that ran this file. This value cannot be higher than `maxWorkers`.
+   * If file did not run yet, this will be 0.
+   *
+   * **Warning**: Node.js tests and browser tests run in different pools and do not share `concurrencyId`.
+   * It is possible to have multiple modules with the same `concurrencyId` because of that.
+   * Use `project.isBrowserEnabled()` to distinguish the concurrency.
+   */
+  readonly concurrencyId: number
+  /**
+   * Incremental number of the worker that ran this file. This number increases with each worker.
+   * If file did not run yet, this will be 0.
+   *
+   * **Warning**: Node.js tests and browser tests run in different pools and do not share `workerId`.
+   * It is possible to have multiple modules with the same `workerId` because of that.
+   * Use `project.isBrowserEnabled()` to distinguish the concurrency.
+   */
+  readonly workerId: number
 }
 
 /** The time spent importing & executing a non-externalized file. */
@@ -121,18 +147,32 @@ interface ImportDuration {
 }
 ```
 
-## viteEnvironment <Version>4.1.0</Version> {#viteenvironment}
+## logs <Version>5.0.0</Version> {#logs}
 
-This is a Vite's [`DevEnvironment`](https://vite.dev/guide/api-environment) that transforms all files inside of the test module.
+```ts
+function logs(): ReadonlyArray<UserConsoleLog>
+```
 
-::: details History
-- `v4.0.15`: added as experimental
-:::
+Console logs recorded on top level of the module during test collection.For example:
+
+```ts
+console.log('included') // [!code highlight]
+
+describe('suite', () => {
+  console.log('not included') // [!code error]
+
+  test('test', () => {
+    console.log('not included') // [!code error]
+  })
+})
+```
 
 ## toTestSpecification <Version>4.1.0</Version> {#totestspecification}
 
 ```ts
-function toTestSpecification(): TestSpecification
+function toTestSpecification(testCases?: TestCase[]): TestSpecification
 ```
 
 Returns a new [test specification](/api/advanced/test-specification) that can be used to filter or run this specific test module.
+
+It accepts an optional array of test cases that should be filtered.

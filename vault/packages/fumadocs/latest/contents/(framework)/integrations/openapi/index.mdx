@@ -1,28 +1,15 @@
 ---
 title: OpenAPI
-description: Generating docs for OpenAPI schema
+description: Generating docs for OpenAPI schema.
 ---
 
-<Callout type="warning" title="Before Reading">
-
-- Only OpenAPI 3.0 and 3.1 are supported.
-- It only works under RSC
-  environments.
-
-</Callout>
-
-## Manual Setup
+## Setup
 
 Install the required packages.
 
 ```npm
 npm i fumadocs-openapi shiki
 ```
-
-<Callout title="For Bun PM" type="warning">
-  If you encountered any issues, please check
-  [#2223](https://github.com/fuma-nama/fumadocs/issues/2223).
-</Callout>
 
 ### Generate Styles
 
@@ -38,15 +25,23 @@ Add the following line:
 
 ### Configure Plugin
 
-Create an OpenAPI instance on the server.
+Create the OpenAPI server instance & `<OpenAPIPage />` component.
 
 ```ts tab="lib/openapi.ts"
 import { createOpenAPI } from 'fumadocs-openapi/server';
 
+// note: this is a server-side API
 export const openapi = createOpenAPI({
   // the OpenAPI schema, you can also give it an external URL.
-  input: ['./unkey.json'],
+  input: ['./openapi.json'],
 });
+```
+
+```tsx tab="components/api-page.tsx"
+'use client';
+import { createOpenAPIPage } from 'fumadocs-openapi/ui';
+
+export const OpenAPIPage = createOpenAPIPage();
 ```
 
 ```ts tab="lib/source.ts"
@@ -59,26 +54,7 @@ export const source = loader({
 });
 ```
 
-Create a `APIPage` component:
-
-```tsx tab="components/api-page.tsx"
-import { openapi } from '@/lib/openapi';
-import { createAPIPage } from 'fumadocs-openapi/ui';
-import client from './api-page.client';
-
-export const APIPage = createAPIPage(openapi, {
-  client,
-});
-```
-
-```tsx tab="components/api-page.client.tsx"
-'use client';
-import { defineClientConfig } from 'fumadocs-openapi/ui/client';
-
-export default defineClientConfig({
-  // client-side config
-});
-```
+See [`createOpenAPI()`](/docs/integrations/openapi/server) & [`createOpenAPIPage()`](/docs/integrations/openapi/api-page) for available options.
 
 ### Generate Pages
 
@@ -108,20 +84,62 @@ Generate docs with the script:
 bun ./scripts/generate-docs.ts
 ```
 
-Add the `APIPage` component to your MDX Components.
+Add the `OpenAPIPage` component to your MDX components.
 
-```tsx title="mdx-components.tsx"
-import defaultComponents from 'fumadocs-ui/mdx';
-import { APIPage } from '@/components/api-page';
-import type { MDXComponents } from 'mdx/types';
+```tsx tab="Server Components" title="app/docs/[[...slug]]/page.tsx"
+import { source } from '@/lib/source';
+import { openapi } from '@/lib/openapi';
+import { OpenAPIPage } from '@/components/api-page';
+import { getMDXComponents } from '@/components/mdx';
 
-// make sure you can use it in MDX files
-export function getMDXComponents(components?: MDXComponents): MDXComponents {
+// e.g. in your page renderer
+export default function Page({ slug }) {
+  const page = source.getPage(slug);
+  const MdxContent = page.data.body;
+
+  return (
+    <MdxContent
+      components={getMDXComponents({
+        // [!code ++:3] add the MDX component
+        OpenAPIPage: async (props) => (
+          <OpenAPIPage {...await openapi.preloadOpenAPIPage(page)} {...props} />
+        ),
+      })}
+    />
+  );
+}
+```
+
+```tsx tab="Without Server Components" title="docs/[...slug]"
+import { source } from '@/lib/source';
+import { openapi } from '@/lib/openapi';
+import { OpenAPIPage } from '@/components/api-page';
+import { getMDXComponents } from '@/components/mdx';
+
+// e.g. where you return server payload to client
+export function loader({ slug }) {
+  const page = source.getPage(slug);
+
   return {
-    ...defaultComponents,
-    APIPage,
-    ...components,
+    // [!code ++]
+    openapiData: await openapi.preloadOpenAPIPage(page),
+    // ...
   };
+}
+
+// e.g. in your page renderer
+export default function Page() {
+  // consume loader data
+  const { openapiData } = useLoaderData();
+
+  return (
+    <MdxContent
+      components={getMDXComponents({
+        // [!code ++] add the MDX component
+        OpenAPIPage: (props) => <OpenAPIPage {...openapiData} {...props} />,
+      })}
+    />
+  );
 }
 ```
 
@@ -131,44 +149,65 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
 You can also use it without generating real files by integrating into [Loader API](/docs/headless/source-api/source).
 
 ```ts title="lib/source.ts"
-import { loader, multiple } from 'fumadocs-core/source';
-import { openapiPlugin, openapiSource } from 'fumadocs-openapi/server';
-import { docs } from 'fumadocs-mdx:collections/server';
+import { loader } from 'fumadocs-core/source';
+import { docs } from 'collections/server';
 import { openapi } from '@/lib/openapi';
 
 export const source = loader(
   // [!code ++:6]
-  multiple({
+  {
     docs: docs.toFumadocsSource(),
-    openapi: await openapiSource(openapi, {
+    openapi: await openapi.staticSource({
       baseDir: 'openapi',
     }),
-  }),
+  },
   {
     baseUrl: '/docs',
-    plugins: [openapiPlugin()],
+    plugins: [openapi.loaderPlugin()],
     // ...
   },
 );
 ```
 
-`openapiSource()` is a server-side API that generates pages directly to your `loader()`, hence allowing dynamic generation (e.g. different page tree as schema changes).
+`staticSource()` is a server-side API that generates pages directly to your `loader()`, hence it allows dynamic content generation, such as re-generating page tree as schema changes.
 
-It shares a different type from your original source, explicit handling of OpenAPI pages might be necessary (e.g. in your page component).
+**It will change the type of your pages**, make sure to update all references to your `source`.
+
+For example, where you return text for LLM:
+
+```ts
+import { source } from '@/lib/source';
+
+export async function getLLMText(page: (typeof source)['$inferPage']) {
+  // [!code ++:4]
+  if (page.type === 'openapi') {
+    // e.g. return the stringified OpenAPI schema
+    return JSON.stringify(page.data.getSchema().bundled, null, 2);
+  }
+
+  // your original flow below...
+}
+```
+
+And update your page renderer:
+
+<Tabs items={["Server Components", "Without Server Components"]}>
+
+<Tab>
 
 ```tsx title="docs/[[...slug]]/page.tsx"
-import { APIPage } from '@/components/api-page';
+import { OpenAPIPage } from '@/components/api-page';
 
-function Page() {
-  const page = source.getPage('...');
+export default function Page({ slug }) {
+  const page = source.getPage(slug);
 
   // for OpenAPI pages
-  if (page.data.type === 'openapi') {
+  if (page.type === 'openapi') {
     return (
       <DocsPage full>
         <h1 className="text-[1.75em] font-semibold">{page.data.title}</h1>
         <DocsBody>
-          <APIPage {...page.data.getAPIPageProps()} />
+          <OpenAPIPage {...page.data.getOpenAPIPageProps()} />
         </DocsBody>
       </DocsPage>
     );
@@ -178,22 +217,116 @@ function Page() {
 }
 ```
 
-Or where you return text for LLM:
+</Tab>
 
-```ts
+<Tab>
+
+Pass a client payload from server, then render the page using the `<OpenAPIPage />` component you created above.
+
+For example, in Tanstack Start:
+
+```tsx title="routes/docs/$.tsx"
+import { createFileRoute, notFound } from '@tanstack/react-router';
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { createServerFn } from '@tanstack/react-start';
 import { source } from '@/lib/source';
-import type { InferPageType } from 'fumadocs-core/source';
+import browserCollections from 'collections/browser';
+import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/layouts/docs/page';
+import { useFumadocsLoader } from 'fumadocs-core/source/client';
+import { type ReactNode, Suspense } from 'react';
+import { OpenAPIPage } from '@/components/api-page';
 
-export async function getLLMText(page: InferPageType<typeof source>) {
-  // [!code ++:4]
-  if (page.data.type === 'openapi') {
-    // e.g. return the stringified OpenAPI schema
-    return JSON.stringify(page.data.getSchema().bundled, null, 2);
+export const Route = createFileRoute('/docs/$')({
+  component: Page,
+  loader: async ({ params }) => {
+    const slugs = params._splat?.split('/') ?? [];
+    const data = await serverLoader({ data: slugs });
+
+    // Fumadocs MDX: only preload content for normal pages [!code highlight:3]
+    if (data.type === 'docs') {
+      await clientLoader.preload(data.path);
+    }
+    return data;
+  },
+});
+
+const serverLoader = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((slugs: string[]) => slugs)
+  .handler(async ({ data: slugs }) => {
+    const page = source.getPage(slugs);
+    if (!page) throw notFound();
+
+    const pageTree = await source.serializePageTree(source.getPageTree());
+    // different result for OpenAPI pages [!code ++:9]
+    if (page.type === 'openapi') {
+      return {
+        type: 'openapi',
+        title: page.data.title,
+        description: page.data.description,
+        pageTree,
+        props: page.data.getOpenAPIPageProps(),
+      };
+    }
+
+    return {
+      type: 'docs',
+      path: page.path,
+      pageTree,
+      // ...
+    };
+  });
+
+const clientLoader = browserCollections.docs.createClientLoader({
+  component(pageData, props) {
+    // ...
+  },
+});
+
+function Page() {
+  const page = useFumadocsLoader(Route.useLoaderData());
+  let content: ReactNode;
+
+  // render OpenAPI page content [!code ++:11]
+  if (page.type === 'openapi') {
+    content = (
+      <DocsPage full>
+        <DocsTitle>{page.title}</DocsTitle>
+        <DocsDescription>{page.description}</DocsDescription>
+        <DocsBody>
+          {/* pass the payload data */}
+          <OpenAPIPage {...page.props} />
+        </DocsBody>
+      </DocsPage>
+    );
+  } else {
+    content = clientLoader.useContent(page.path, page);
   }
 
-  // your original flow below...
+  return (
+    <DocsLayout tree={page.pageTree}>
+      <Suspense>{content}</Suspense>
+    </DocsLayout>
+  );
 }
 ```
+
+You can see the full [Tanstack Start example](https://github.com/fuma-nama/fumadocs/blob/dev/examples/tanstack-start-openapi).
+
+</Tab>
+
+</Tabs>
+
+<Callout type='warn' title="Ensure the migration is complete!">
+
+Run a type check to verify before continuing, e.g.
+
+```npm
+npm run types:check
+```
+
+</Callout>
 
 </Tab>
 </Tabs>

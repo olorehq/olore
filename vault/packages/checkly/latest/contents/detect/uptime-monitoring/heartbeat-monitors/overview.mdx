@@ -11,15 +11,17 @@ sidebarTitle: Overview
 Monitor your scheduled jobs, background tasks, and automated processes with Checkly's heartbeat monitoring. Unlike traditional active monitoring, heartbeat monitors work passively—they listen for regular "pings" from your tasks to ensure they're running as expected.
 
 <Frame>
-<img 
-  className="block dark:hidden" 
-  src="/images/next/heartbeat-monitor-overview-light.png" 
-  alt="Heartbeat monitor overview" 
+<img
+  className="block dark:hidden"
+  src="/images/next/heartbeat-monitor-overview-light.png"
+  alt="Heartbeat monitor overview"
+  style={{width: "100%"}}
 />
-<img 
-  className="hidden dark:block" 
-  src="/images/next/heartbeat-monitor-overview-dark.png" 
-  alt="Heartbeat monitor overview" 
+<img
+  className="hidden dark:block"
+  src="/images/next/heartbeat-monitor-overview-dark.png"
+  alt="Heartbeat monitor overview"
+  style={{width: "100%"}}
 />
 </Frame>
 
@@ -77,6 +79,8 @@ Heartbeat monitors provide different metrics and insights than other types of ch
 - **Missed Pings**: Gaps where expected pings didn't arrive
 - **Alert Timeline**: When alerts were triggered and resolved
 - **Source Tracking**: Which systems or processes sent pings
+
+Heartbeat metrics are also available via the [Prometheus V2 integration](/integrations/observability/prometheus-v2#heartbeat-metrics), including dead man's switch gauges for alerting in Grafana when a ping is overdue.
 
 <Warning>
 Remember: Heartbeat monitors detect when jobs fail to complete, but they can't tell you why a job failed. Combine heartbeat monitoring with application logging and error tracking for complete observability.

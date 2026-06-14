@@ -1,0 +1,92 @@
+---
+title: asin
+description: 'This page explains how to use the asin function in APL.'
+---
+
+Use the `asin` function in APL to compute the arc sine (inverse sine) of a numeric expression. The function returns the angle, in radians, whose sine equals the input value. The input must be in the range [-1, 1]; values outside this range return `null`.
+
+`asin` is useful when you work with normalized ratios or rates and need to map them to angular values. For example, you can use `asin` to encode success or error rates as phase angles for cyclic signal analysis.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `asin()` is available in the `eval` command with the same behavior: it returns the arc sine in radians for an input in [-1, 1].
+
+<CodeGroup>
+```sql Splunk example
+| eval angle = asin(normalized_rate)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = asin(normalized_rate)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `ASIN()` is a standard mathematical function. It accepts a value in [-1, 1] and returns the arc sine in radians.
+
+<CodeGroup>
+```sql SQL example
+SELECT ASIN(normalized_rate) AS angle FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = asin(normalized_rate)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+asin(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A real number in the range [-1, 1]. |
+
+### Returns
+
+- The arc sine of `x` in radians, in the range [-π/2, π/2].
+- `null` if `x` < -1 or `x` > 1.
+
+## Example
+
+Use `asin` to compute the arcsine of a value and return the angle in radians.
+
+**Query**
+
+```kusto
+print result = asin(0.5)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20asin%280.5%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 0.5236 |
+
+## List of related functions
+
+- [acos](/apl/scalar-functions/mathematical-functions/acos): Returns the arc cosine. Use it when the cosine encoding is more appropriate for your data.
+- [atan](/apl/scalar-functions/mathematical-functions/atan): Returns the arc tangent. Use it when the input is not bounded to [-1, 1].
+- [sin](/apl/scalar-functions/mathematical-functions/sin): Returns the sine. Use it to apply the forward transformation before using `asin` as the inverse.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it if your angle data is in degrees before passing it to `asin`.
+- [degrees](/apl/scalar-functions/mathematical-functions/degrees): Converts radians to degrees. Use it to convert the `asin` result into degrees.

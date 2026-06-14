@@ -1,0 +1,255 @@
+---
+title: Code Indexing
+---
+
+AI coding agents work better when they can search a codebase semantically ("find the authentication logic") rather than just by filename or grep. A code index backed by Turso can combine full-text search over identifiers with vector similarity search over embeddings, all in a single embedded database.
+
+This guide covers the schema and queries for building a code indexer with both FTS and vector search.
+
+## Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS codebases (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    root_path   TEXT NOT NULL UNIQUE,
+    name        TEXT NOT NULL DEFAULT '',
+    indexed_at  INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS chunks (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    codebase_id     INTEGER NOT NULL REFERENCES codebases(id),
+    file_path       TEXT NOT NULL,
+    chunk_key       TEXT NOT NULL UNIQUE,
+    language        TEXT NOT NULL,
+    kind            TEXT NOT NULL,
+    name            TEXT NOT NULL DEFAULT '',
+    signature       TEXT NOT NULL DEFAULT '',
+    snippet         TEXT NOT NULL,
+    start_line      INTEGER NOT NULL,
+    end_line        INTEGER NOT NULL,
+    file_hash       TEXT NOT NULL,
+    indexed_at      INTEGER NOT NULL,
+    embedding       F8_BLOB(384),
+    embedding_model TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS indexed_files (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    codebase_id INTEGER NOT NULL REFERENCES codebases(id),
+    file_path   TEXT NOT NULL,
+    file_hash   TEXT NOT NULL,
+    chunk_count INTEGER NOT NULL DEFAULT 0,
+    indexed_at  INTEGER NOT NULL,
+    UNIQUE(codebase_id, file_path)
+);
+```
+
+### How it fits together
+
+- **`codebases`** registers each project root. A single database can index multiple codebases.
+- **`chunks`** stores individual semantic units extracted from source files — functions, structs, classes, impl blocks, etc. Each chunk has a `name`, `signature`, code `snippet`, line range, and optionally a vector `embedding`. The `chunk_key` is a unique identifier (e.g. `file_path::kind::name`) for upsert operations.
+- **`indexed_files`** tracks which files have been indexed and their content hashes, enabling incremental re-indexing — only changed files are re-processed.
+
+## Connecting
+
+The FTS index features require an experimental flag at connection time:
+
+```javascript
+import { connect } from "@tursodatabase/database";
+
+const db = await connect(".index/code.db", {
+  experimental: ["index_method"],
+});
+await db.exec(SCHEMA);
+```
+
+<Info>
+
+The `experimental: ["index_method"]` flag enables Turso's `USING fts` index syntax and the `fts_match()` / `fts_score()` functions.
+
+</Info>
+
+## Indexing files
+
+### Upserting chunks
+
+When a file is parsed, upsert its chunks. Setting `embedding = NULL` on conflict forces re-embedding when content changes:
+
+```sql
+INSERT INTO chunks (codebase_id, file_path, chunk_key, language, kind, name,
+                    signature, snippet, start_line, end_line, file_hash, indexed_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(chunk_key) DO UPDATE SET
+  language = excluded.language,
+  kind = excluded.kind,
+  name = excluded.name,
+  signature = excluded.signature,
+  snippet = excluded.snippet,
+  start_line = excluded.start_line,
+  end_line = excluded.end_line,
+  file_hash = excluded.file_hash,
+  indexed_at = excluded.indexed_at,
+  embedding = NULL,
+  embedding_model = '';
+```
+
+### Tracking indexed files
+
+```sql
+INSERT INTO indexed_files (codebase_id, file_path, file_hash, chunk_count, indexed_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(codebase_id, file_path) DO UPDATE SET
+  file_hash = excluded.file_hash,
+  chunk_count = excluded.chunk_count,
+  indexed_at = excluded.indexed_at;
+```
+
+### Skipping unchanged files
+
+Before parsing a file, check if it has changed:
+
+```sql
+SELECT file_hash FROM indexed_files WHERE codebase_id = ? AND file_path = ?;
+```
+
+If the hash matches, skip it entirely.
+
+## Storing embeddings
+
+Embeddings can be stored as int8-quantized vectors using Turso's `vector8()` function, which reduces storage from 1,536 bytes (float32, 384 dims) to 395 bytes:
+
+```sql
+UPDATE chunks SET embedding = vector8(?), embedding_model = ? WHERE chunk_key = ?;
+```
+
+The parameter for `vector8()` is a JSON-stringified float array. Turso handles the quantization internally.
+
+Find chunks that need embedding:
+
+```sql
+SELECT chunk_key, name, signature, file_path, kind, snippet
+FROM chunks
+WHERE codebase_id = ? AND (embedding IS NULL OR embedding_model != ?)
+LIMIT ?;
+```
+
+## Full-text search
+
+Turso provides an FTS index with weighted BM25 scoring that is separate from SQLite's `fts5` virtual tables.
+
+### Creating the FTS index
+
+Create an FTS table per codebase and populate it from the chunks:
+
+```sql
+-- Create the FTS table
+CREATE TABLE IF NOT EXISTS fts_1 (
+    chunk_id    INTEGER NOT NULL REFERENCES chunks(id) ON DELETE CASCADE,
+    name        TEXT NOT NULL DEFAULT '',
+    signature   TEXT NOT NULL DEFAULT ''
+);
+
+-- Populate from chunks
+INSERT INTO fts_1 (chunk_id, name, signature)
+SELECT id, name, signature FROM chunks WHERE codebase_id = 1;
+
+-- Create the FTS index with weighted columns
+CREATE INDEX IF NOT EXISTS idx_fts_1 ON fts_1
+    USING fts (name, signature)
+    WITH (
+        tokenizer = 'default',
+        weights = 'name=5.0,signature=3.0'
+    );
+```
+
+The `weights` parameter controls BM25 scoring — here, matches in the function/type `name` are weighted 5x and `signature` matches 3x.
+
+### Searching with FTS
+
+```sql
+SELECT chunk_id, fts_score(name, signature, ?1) AS score
+FROM fts_1
+WHERE fts_match(name, signature, ?1)
+ORDER BY score DESC
+LIMIT ?;
+```
+
+Then fetch the full chunk data:
+
+```sql
+SELECT chunk_key, file_path, name, kind, signature, snippet, start_line, end_line
+FROM chunks WHERE id = ?;
+```
+
+## Vector search
+
+For semantic/natural language queries, use vector cosine distance:
+
+```sql
+SELECT chunk_key, file_path, name, kind, signature, snippet, start_line, end_line,
+       vector_distance_cos(embedding, vector8(?)) AS distance
+FROM chunks
+WHERE embedding IS NOT NULL
+ORDER BY distance ASC
+LIMIT ?;
+```
+
+The score is `1 - distance` (cosine similarity from cosine distance).
+
+## Hybrid search
+
+For the best results, combine both approaches using Reciprocal Rank Fusion (RRF). Run the FTS and vector queries separately, then merge results in application code:
+
+```javascript
+// Run both searches
+const ftsResults = await ftsSearch(query, limit);
+const vecResults = await vectorSearch(queryEmbedding, limit);
+
+// Reciprocal Rank Fusion
+const k = 60; // RRF constant
+const scores = new Map();
+
+ftsResults.forEach((r, i) => {
+  const key = r.chunk_key;
+  scores.set(key, (scores.get(key) || 0) + 1 / (k + i + 1));
+});
+
+vecResults.forEach((r, i) => {
+  const key = r.chunk_key;
+  scores.set(key, (scores.get(key) || 0) + 1 / (k + i + 1));
+});
+
+// Sort by combined score
+const merged = [...scores.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, limit);
+```
+
+## Removing stale files
+
+When files are deleted from the codebase, clean up their chunks and records:
+
+```sql
+DELETE FROM chunks WHERE codebase_id = ? AND file_path = ?;
+DELETE FROM indexed_files WHERE codebase_id = ? AND file_path = ?;
+```
+
+After removing stale data, rebuild the FTS table to keep the index consistent:
+
+```sql
+DROP TABLE IF EXISTS fts_1;
+-- Then recreate and repopulate as shown above
+```
+
+## Key design points
+
+- **Incremental indexing** via file hashes means only changed files are re-parsed and re-embedded, making updates fast even on large codebases.
+- **Two search modes** — FTS for identifier/keyword lookup and vector search for semantic/natural language queries — cover different use cases. Hybrid search combines both.
+- **Weighted FTS** (`name=5.0, signature=3.0`) biases results toward function and type names, which is what developers usually search for.
+- **Int8 quantized vectors** via `vector8()` reduce storage by 75% compared to float32 with minimal impact on search quality.
+- Everything runs in a single embedded database file with no external services.
+
+## Example
+
+[codemogger](https://github.com/glommer/codemogger) is an MCP server that implements this pattern as a code indexer for AI coding agents.

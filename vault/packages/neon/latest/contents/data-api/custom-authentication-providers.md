@@ -1,8 +1,16 @@
 ---
 title: Custom authentication providers
 subtitle: Configure custom authentication providers with the Data API
+summary: >-
+  The Neon Data API works with any JWT-issuing identity system. Supply a JWKS
+  URL to let the Data API validate tokens and enforce Row-Level Security,
+  without requiring Neon Auth. Provider-specific JWKS URL formats and JWT
+  Audience (aud claim) requirements are given for Auth0, Clerk, AWS Cognito,
+  Azure AD, Firebase, and Keycloak. Use this page when your application already
+  uses an existing auth provider and you need provider-specific configuration
+  details rather than the default Neon Auth setup.
 enableTableOfContents: true
-updatedOn: '2026-01-06T12:00:57.074Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 redirectFrom:
   - /docs/guides/neon-authorize
 ---
@@ -60,7 +68,7 @@ The key steps:
 1. Your auth provider issues [JSON Web Tokens (JWTs)](https://jwt.io/introduction) to authenticated users.
 2. Your application passes these JWTs to the Data API in the `Authorization` header.
 3. Neon validates the tokens using your provider's [JWKS (JSON Web Key Set)](https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-key-sets) URL.
-4. The Data API enforces [Row-Level Security policies](/docs/guides/neon-rls) based on the user identity in the JWT.
+4. The Data API enforces [Row-Level Security policies](/docs/guides/row-level-security) based on the user identity in the JWT.
 
 ## Add your authentication provider
 
@@ -81,10 +89,10 @@ When you configure a JWT Audience value in the Data API:
 
 **When is it required?**
 
-- **Firebase/GCP**: Required — use your Firebase Project ID
-- **Google Identity**: Required — use your OAuth 2.0 Client ID
+- **Firebase/GCP**: Required; use your Firebase Project ID
+- **Google Identity**: Required; use your OAuth 2.0 Client ID
 - **Azure AD, Keycloak**: May be required depending on your configuration
-- **Most other providers**: Optional — only configure if your provider includes an `aud` claim in tokens
+- **Most other providers**: Optional; only configure if your provider includes an `aud` claim in tokens
 
 If you're unsure whether your provider requires it, you can decode a sample JWT from your provider at [jwt.io](https://jwt.io) and check if it includes an `aud` claim.
 

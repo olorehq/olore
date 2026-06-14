@@ -10,8 +10,7 @@ The Cloudflare adapter provides a Next.js-compatible image optimization API usin
 
 The `IMAGES` binding must be defined to enable image optimization:
 
-```jsonc
-// wrangler.jsonc
+```jsonc filename="wrangler.jsonc"
 {
   "images": {
     "binding": "IMAGES",
@@ -37,8 +36,7 @@ You then need to configure your Next application to use a custom loader for Clou
 
 Create an `image-loader.ts` at the root of your application:
 
-```ts
-// image-loader.ts
+```ts filename="image-loader.ts"
 import type { ImageLoaderProps } from "next/image";
 
 const normalizeSrc = (src: string) => {
@@ -67,8 +65,7 @@ export default function cloudflareLoader({ src, width, quality }: ImageLoaderPro
 
 You will then need to update your app configuration to use this loader:
 
-```ts
-// next.config.ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

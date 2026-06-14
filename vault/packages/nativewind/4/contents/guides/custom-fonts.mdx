@@ -1,0 +1,175 @@
+---
+title: Custom Fonts
+description: How to load and use custom fonts with Nativewind v4 and Expo
+---
+
+{/* # Custom Fonts */}
+
+React Native handles fonts differently from the web. There is no `@font-face`, no automatic font discovery, and no fallback font stacks. Every font weight is a separate file, and the file name matters. This guide walks through the full setup.
+
+<Callout type="info">
+  A complete working example is available at [nativewind/custom-fonts-example-v4](https://github.com/nativewind/custom-fonts-example-v4).
+</Callout>
+
+## Prerequisites
+
+- An Expo project with Nativewind v4 installed
+- A custom font you want to use (this guide uses [Inter](https://rsms.me/inter/))
+
+## Step 1: Choose your font files
+
+**Use OTF or TTF format.** OTF files render slightly better and have a smaller file size. Either format works across iOS, Android, and web.
+
+**Variable fonts do not work on React Native.** You must download individual static weight files. For Inter, that means separate files for Regular, Bold, Italic, Medium, etc.
+
+Download the static font files from your font's release page. For Inter, grab the OTF files from the [GitHub releases](https://github.com/rsms/inter/releases).
+
+## Step 2: Name files correctly
+
+Place font files in your project, for example `assets/fonts/`:
+
+```
+assets/
+  fonts/
+    Inter-Regular.otf
+    Inter-Bold.otf
+    Inter-Italic.otf
+    Inter-BoldItalic.otf
+    Inter-Medium.otf
+    Inter-SemiBold.otf
+```
+
+**The file name must match the PostScript name of the font.** iOS uses the PostScript name to look up fonts at runtime. If the names don't match, the font silently fails to load on iOS while appearing to work on Android.
+
+You can check a font's PostScript name by opening it in Font Book (macOS) or using a tool like [fontdrop.info](https://fontdrop.info).
+
+## Step 3: Load fonts with expo-font
+
+The simplest approach is to use the `expo-font` config plugin in `app.json`:
+
+```bash
+bun add expo-font
+```
+
+```json title="app.json"
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Inter-Regular.otf",
+            "./assets/fonts/Inter-Bold.otf",
+            "./assets/fonts/Inter-Italic.otf",
+            "./assets/fonts/Inter-BoldItalic.otf",
+            "./assets/fonts/Inter-Medium.otf",
+            "./assets/fonts/Inter-SemiBold.otf"
+          ]
+        }
+      ]
+    ]
+  }
+}
+```
+
+Alternatively, load fonts at runtime with the `useFonts` hook:
+
+```tsx title="App.tsx"
+import { useFonts } from "expo-font";
+
+export default function App() {
+  const [fontsLoaded] = useFonts({
+    "Inter-Regular": require("./assets/fonts/Inter-Regular.otf"),
+    "Inter-Bold": require("./assets/fonts/Inter-Bold.otf"),
+  });
+
+  if (!fontsLoaded) return null;
+
+  return <>{/* your app */}</>;
+}
+```
+
+The `app.json` approach is preferred because fonts are available immediately without a loading state.
+
+## Step 4: Verify with inline styles
+
+Before touching your Tailwind config, confirm the fonts actually loaded:
+
+```tsx
+<Text style={{ fontFamily: "Inter-Regular" }}>
+  This should render in Inter
+</Text>
+```
+
+If this does not work, the issue is with font loading, not with Nativewind. Check your file names and `app.json` config.
+
+## Step 5: Add to Tailwind config
+
+Map each font to a utility class in `tailwind.config.js`:
+
+```js title="tailwind.config.js"
+module.exports = {
+  content: ["./App.{js,ts,tsx}", "./components/**/*.{js,ts,tsx}"],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {
+      fontFamily: {
+        inter: ["Inter-Regular"],
+        "inter-bold": ["Inter-Bold"],
+        "inter-italic": ["Inter-Italic"],
+        "inter-bold-italic": ["Inter-BoldItalic"],
+        "inter-medium": ["Inter-Medium"],
+        "inter-semibold": ["Inter-SemiBold"],
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+<Callout type="warn">
+  React Native does not support fallback fonts. If you provide an array with multiple fonts, only the first one is used.
+</Callout>
+
+## Step 6: Use in components
+
+```tsx
+<Text className="font-inter">Regular text</Text>
+<Text className="font-inter-bold">Bold text</Text>
+<Text className="font-inter-medium">Medium text</Text>
+<Text className="font-inter-semibold">SemiBold text</Text>
+<Text className="font-inter-italic">Italic text</Text>
+```
+
+## Common pitfalls
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Font works on Android but not iOS | File name doesn't match PostScript name | Rename the file to match exactly |
+| Font doesn't render at all | Font not loaded by expo-font | Check `app.json` plugin config or `useFonts` hook |
+| Using `font-bold` doesn't make Inter bold | `font-bold` sets `fontWeight`, not `fontFamily` | Use `font-inter-bold` to set the bold font family |
+| Variable font doesn't work | React Native doesn't support variable fonts | Download static weight files instead |
+| Font renders as system default | PostScript name mismatch | Open font in Font Book and verify the PostScript name |
+
+## Platform-specific fonts
+
+If you need different fonts per platform, use the `platformSelect` helper:
+
+```js title="tailwind.config.js"
+const { platformSelect } = require("nativewind/theme");
+
+module.exports = {
+  theme: {
+    extend: {
+      fontFamily: {
+        heading: platformSelect({
+          ios: "Inter-Bold",
+          android: "Inter-Bold",
+          default: "ui-sans-serif",
+        }),
+      },
+    },
+  },
+};
+```

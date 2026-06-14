@@ -1,10 +1,9 @@
 ---
 title: '`deleteDomain()`'
-description: Use Clerk's JS Backend SDK to delete a satellite domain for the instance.
-sdk: js-backend
+description: Use the deleteDomain() method to delete a satellite domain for the instance.
 ---
 
-Deletes a satellite domain for the instance. It is currently not possible to delete the instance's primary domain. Returns a [`DeletedObjectResource`](/docs/reference/javascript/types/deleted-object-resource).
+Deletes a satellite domain for the instance. It is currently not possible to delete the instance's primary domain. Returns a [`DeletedObjectResource`](/docs/reference/types/deleted-object-resource).
 
 ```ts
 function deleteDomain(id: string): Promise<DeletedObjectResource>
@@ -31,4 +30,4 @@ const response = await clerkClient.users.deleteDomain(id)
 
 ## Backend API (BAPI) endpoint
 
-This method in the SDK is a wrapper around the BAPI endpoint `DELETE/domains/{domain_id}`. See the [BAPI reference](/docs/reference/backend-api/tag/domains/delete/domains/\{domain_id}){{ target: '_blank' }} for more information.
+This method in the SDK is a wrapper around the BAPI endpoint `DELETE/domains/{domain_id}`. See the [BAPI reference](/docs/reference/backend-api/tag/domains/DELETE/domains/\{domain_id}){{ target: '_blank' }} for more information.

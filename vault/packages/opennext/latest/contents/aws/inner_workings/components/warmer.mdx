@@ -2,7 +2,7 @@ The warmer backend is used to warm up the server lambda in case of serverless. T
 
 ### Special Event and Result
 
-```typescript
+```ts
 interface WarmerEvent {
   type: "warmer";
   warmerId: string;
@@ -23,7 +23,7 @@ interface WarmerResponse {
 
 You can customize the `invoke` function to handle the `warmer` event. By default it uses lambda invoke command. The default invoke needs a `WARM_PARAMS` environment variable that is a stringified version of this
 
-```typescript
+```ts
 {
   concurrency: number;
   function: string;

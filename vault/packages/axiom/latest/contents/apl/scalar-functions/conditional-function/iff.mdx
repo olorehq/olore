@@ -1,0 +1,138 @@
+---
+title: iff
+description: 'This page explains how to use the iff function in APL.'
+---
+
+## Introduction
+
+The `iff` function evaluates a single Boolean predicate and returns one of two values depending on the result. Use it to add binary flag columns, choose between two computed expressions, or conditionally override a value in one step.
+
+The `iif` function is an alias for `iff` and behaves identically. For three or more branches, use [`case`](/apl/scalar-functions/conditional-function/case) instead.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL uses `if(condition, value_if_true, value_if_false)` inside an `eval` command. APL's `iff` takes the same three arguments in the same order.
+
+<CodeGroup>
+```sql Splunk example
+... | eval speed = if(req_duration_ms > 1000, "slow", "fast")
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend speed = iff(req_duration_ms > 1000, 'slow', 'fast')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+SQL Server provides `IIF(condition, value_if_true, value_if_false)`, which maps directly to APL's `iff`. In ANSI SQL you can also write `CASE WHEN condition THEN value_if_true ELSE value_if_false END`, which is equivalent.
+
+<CodeGroup>
+```sql SQL example
+SELECT IIF(req_duration_ms > 1000, 'slow', 'fast') AS speed
+FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend speed = iff(req_duration_ms > 1000, 'slow', 'fast')
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+iff(predicate, ifTrue, ifFalse)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| predicate | bool | Yes | Expression that evaluates to `true` or `false`. |
+| ifTrue | scalar | Yes | Value returned when `predicate` is `true`. |
+| ifFalse | scalar | Yes | Value returned when `predicate` is `false`. Must be the same type as `ifTrue`. |
+
+### Returns
+
+The value of `ifTrue` when `predicate` evaluates to `true`, or `ifFalse` otherwise.
+
+<Note>
+To return a null value from `iff`, use `dynamic(null)`.
+
+```kusto
+iff(condition, dynamic(null), value)
+```
+</Note>
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Flag requests that take longer than one second to identify slow endpoints.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_slow = iff(req_duration_ms > 1000, 'slow', 'fast')
+| summarize count() by is_slow
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20is_slow%20%3D%20iff%28req_duration_ms%20%3E%201000%2C%20%27slow%27%2C%20%27fast%27%29%20%7C%20summarize%20count%28%29%20by%20is_slow%22%7D)
+
+**Output**
+
+| is_slow | count_ |
+| ------- | ------ |
+| fast | 9630 |
+| slow | 501 |
+
+The query adds a `is_slow` column to each request and then counts how many fall into each category.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Label spans as long or short based on their duration to get a quick overview of latency distribution per service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend is_long = iff(duration > 500ms, 'long', 'short')
+| summarize count() by is_long, ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20is_long%20%3D%20iff%28duration%20%3E%20500ms%2C%20%27long%27%2C%20%27short%27%29%20%7C%20summarize%20count%28%29%20by%20is_long%2C%20%5B%27service.name%27%5D%22%7D)
+
+**Output**
+
+| is_long | service.name | count_ |
+| ------- | ------------ | ------ |
+| short | frontend | 4210 |
+| short | cart | 1830 |
+| long | checkout | 423 |
+| long | product-catalog | 182 |
+
+The query shows how many spans per service exceed the 500 ms threshold.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [case](/apl/scalar-functions/conditional-function/case): Multi-branch conditional that evaluates a list of conditions and returns the first matching result. Use `case` when you have three or more outcomes.
+- [coalesce](/apl/scalar-functions/string-functions/coalesce): Returns the first non-null value from a list of expressions. Use `coalesce` when you want to fall back from null rather than branch on a condition.

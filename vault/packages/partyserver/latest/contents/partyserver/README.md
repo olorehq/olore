@@ -129,7 +129,9 @@ These methods can be optionally `async`:
 
 ## Properties
 
-- `.name` - (readonly) this is automatically set to the server's "name", determined by `getServerByName()` or `routePartykitRequest()`.
+- `.name` - (readonly) the server's name. Resolves from the underlying Durable Object's `ctx.id.name`, populated whenever the DO is addressed via `idFromName()` / `getByName()` — which is the supported way to address PartyServer DOs. Available inside every entry point including the constructor, `onStart()`, `onAlarm()`, and hibernating websocket handlers. PartyServer also persists this name to a small `__ps_name` fallback record during initialization so that alarm handlers firing on stale on-disk alarm records (scheduled by older workerd versions that didn't persist `name`) can still recover the name. Legacy DOs bootstrapped via `setName()` use the same fallback.
+
+  DOs addressed via `idFromString()` or `newUniqueId()` without a `setName()` bootstrap are not supported and `.name` will throw.
 
 - `.ctx` - the context object for the Durable Object, containing references to [`storage`](https://developers.cloudflare.com/durable-objects/api/transactional-storage-api/)
 
@@ -167,14 +169,56 @@ export class MyServer extends Server {
 
 ### Utility Methods
 
-- `getServerByName(namespace, name, {locationHint, jurisdiction}): Promise<DurableObjectStub>` - Create a new Server with a specific name. Optionally pass a `locationHint` to specify the [location](https://developers.cloudflare.com/durable-objects/reference/data-location/#provide-a-location-hint) or `jurisdiction` to specify the [jurisdiction](https://developers.cloudflare.com/durable-objects/reference/data-location/#restrict-durable-objects-to-a-jurisdiction) of the server.
+- `getServerByName(namespace, name, {locationHint, jurisdiction, routingRetry}): Promise<DurableObjectStub>` - Create a new Server with a specific name. Optionally pass a `locationHint` to specify the [location](https://developers.cloudflare.com/durable-objects/reference/data-location/#provide-a-location-hint), `jurisdiction` to specify the [jurisdiction](https://developers.cloudflare.com/durable-objects/reference/data-location/#restrict-durable-objects-to-a-jurisdiction), or `routingRetry: false` to disable retries for transient Durable Object infrastructure errors.
 
-- `routePartykitRequest(request, env, {locationHint, jurisdiction, prefix = 'parties', onBeforeConnect, onBeforeRequest}): Promise<Response | null>` - Match a request to a server. Takes a URL of the form `/${prefix}/:server/:name` and matches it with any namespace named `:server` (case insensitive) and a server named `:name`. Optionally pass a `locationHint` to specify the [location](https://developers.cloudflare.com/durable-objects/reference/data-location/#provide-a-location-hint) or `jurisdiction` to specify the [jurisdiction](https://developers.cloudflare.com/durable-objects/reference/data-location/#restrict-durable-objects-to-a-jurisdiction) of the server.
+- `routePartykitRequest(request, env, {locationHint, jurisdiction, prefix = 'parties', routingRetry, onBeforeConnect, onBeforeRequest}): Promise<Response | null>` - Match a request to a server. Takes a URL of the form `/${prefix}/:server/:name` and matches it with any namespace named `:server` (case insensitive) and a server named `:name`. Optionally pass a `locationHint` to specify the [location](https://developers.cloudflare.com/durable-objects/reference/data-location/#provide-a-location-hint), `jurisdiction` to specify the [jurisdiction](https://developers.cloudflare.com/durable-objects/reference/data-location/#restrict-durable-objects-to-a-jurisdiction), or `routingRetry: false` to disable retries for transient Durable Object infrastructure errors.
+  - `routingRetry` - Retry options for transient Durable Object infrastructure errors thrown while routing to the target Durable Object. Enabled by default with 3 attempts and jittered exponential backoff. Only errors with `retryable === true` are retried, and errors with `overloaded === true` are never retried.
   - `onBeforeConnect(request, {party: string, name: string}): Request | Response | void` - A function that can modify the request for a websocket connection before it's passed to the server.
     - If it returns a `Request`, it will be used instead of the original request. Use this to modify headers or other request properties before passing it to the partyserver instance / durable object.
     - If it returns a `Response`, it will be returned instead of the original request. Use this to return a custom response, such as a 404 or 403.
     - If it returns `undefined` or `null`, the request will be passed to the server as normal.
   - `onBeforeRequest` - A function that can modify the request before it's passed to the server. This is exactly the same as `onBeforeConnect`, but for HTTP requests.
+
+### Using PartyServer with Durable Object Facets
+
+[Durable Object Facets](https://developers.cloudflare.com/dynamic-workers/usage/durable-object-facets/) let you spawn a child DO from inside a parent's isolate via `ctx.facets.get(name, factory)`. This is useful for frameworks (e.g. Cloudflare Agents sub-agents) that want isolated SQLite storage per facet without exposing a separate Durable Object namespace.
+
+Facets that extend `Server` work, but **you must pass an explicit `id` in `FacetStartupOptions`**. Otherwise the facet inherits the parent DO's `ctx.id` (including `ctx.id.name`), and `this.name` on the facet will return the _parent's_ name — almost never what you want.
+
+```ts
+import { Server } from "partyserver";
+
+export class FacetChild extends Server {
+  // `this.name` here will report `facetName` (NOT the parent's name)
+  // because we passed an explicit `id` at spawn time below.
+  onStart() {
+    console.log("facet started:", this.name);
+  }
+}
+
+export class ParentServer extends Server {
+  async fetch(request: Request) {
+    const facetName = "child-foo";
+
+    // Recommended: construct the id via `ctx.exports[BoundDOClass]`,
+    // which is also a `DurableObjectNamespace`. Any bound DO class
+    // works — the id is opaque + a name; nothing routes through the
+    // namespace at runtime for facets.
+    const id = this.ctx.exports.ParentServer.idFromName(facetName);
+
+    const facet = this.ctx.facets.get(facetName, () => ({
+      class: this.ctx.exports.FacetChild,
+      id // <-- the critical bit
+    }));
+
+    return facet.fetch(request);
+  }
+}
+```
+
+Without the explicit `id`, the facet's `ctx.id.name` is the parent's name, `this.name` returns the parent's name, and `setName(facetName)` throws (it would mismatch `ctx.id.name`). With the explicit `id`, the facet has its own native `ctx.id.name`, no `setName()` is needed, and cold wakes recover the name automatically (the factory re-runs and `idFromName(facetName)` is deterministic). PartyServer may also persist that native name as an alarm fallback for older compatibility dates.
+
+Plain strings (`id: "child-foo"`) are NOT a substitute for `idFromName(facetName)` — workerd treats a string `id` as `idFromString`-like and the resulting facet has no `ctx.id.name`, so `this.name` will throw.
 
 ## Comparison to Erlang/Elixir
 

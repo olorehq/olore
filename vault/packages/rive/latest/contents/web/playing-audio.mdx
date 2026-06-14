@@ -17,3 +17,14 @@ import ReferencedAssets from "/snippets/runtimes/playing-audio/referenced-assets
 <ReferencedAssets />
 
 For more information, see [Loading Assets](/runtimes/web/loading-assets).
+
+## Volume control
+
+To control volume on the artboard, set the `.volume` property on the Rive instance. The value is a multiplier applied to the default volume level of each audio event on the artboard, allowing you to adjust the overall audio level up or down as needed. The default value is `1.0`, which means the audio plays at its default level.
+To mute the audio, set `.volume` to `0`.
+
+The example below adjusts the volume to be 50% softer than the default level.
+```javascript
+const r = new Rive ({ ... });
+r.volume = 0.5;
+```

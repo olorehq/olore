@@ -59,6 +59,7 @@ Strings provided to `plugins` are ultimately passed to [`import()` expression](h
 
 ## Community Plugins
 
+- [`@poliklot/prettier-plugin-handlebars`](https://github.com/Poliklot/prettier-plugin-handlebars) by [**@Poliklot**](https://github.com/Poliklot)
 - [`prettier-plugin-apex`](https://github.com/dangmai/prettier-plugin-apex) by [**@dangmai**](https://github.com/dangmai)
 - [`prettier-plugin-astro`](https://github.com/withastro/prettier-plugin-astro) by [**@withastro contributors**](https://github.com/withastro/prettier-plugin-astro/graphs/contributors)
 - [`prettier-plugin-bigcommerce-stencil`](https://github.com/phoenix128/prettier-plugin-bigcommerce-stencil) by [**@phoenix128**](https://github.com/phoenix128)
@@ -71,12 +72,15 @@ Strings provided to `plugins` are ultimately passed to [`import()` expression](h
 - [`prettier-plugin-java`](https://github.com/jhipster/prettier-java) by [**@JHipster**](https://github.com/jhipster)
 - [`prettier-plugin-jinja-template`](https://github.com/davidodenwald/prettier-plugin-jinja-template) by [**@davidodenwald**](https://github.com/davidodenwald)
 - [`prettier-plugin-jsonata`](https://github.com/Stedi/prettier-plugin-jsonata) by [**@Stedi**](https://github.com/Stedi)
+- [`prettier-plugin-jte`](https://github.com/sgruendel/prettier-plugin-jte) by [**@sgruendel**](https://github.com/sgruendel)
 - [`prettier-plugin-kotlin`](https://github.com/Angry-Potato/prettier-plugin-kotlin) by [**@Angry-Potato**](https://github.com/Angry-Potato)
+- [`prettier-plugin-markdown-html`](https://github.com/porada/prettier-plugin-markdown-html) by [**@porada**](https://github.com/porada)
 - [`prettier-plugin-marko`](https://github.com/marko-js/prettier) by [**@marko-js**](https://github.com/marko-js)
 - [`prettier-plugin-motoko`](https://github.com/dfinity/prettier-plugin-motoko) by [**@dfinity**](https://github.com/dfinity)
 - [`prettier-plugin-nginx`](https://github.com/joedeandev/prettier-plugin-nginx) by [**@joedeandev**](https://github.com/joedeandev)
 - [`prettier-plugin-prisma`](https://github.com/umidbekk/prettier-plugin-prisma) by [**@umidbekk**](https://github.com/umidbekk)
 - [`prettier-plugin-properties`](https://github.com/eemeli/prettier-plugin-properties) by [**@eemeli**](https://github.com/eemeli)
+- [`prettier-plugin-powershell`](https://github.com/Nick2bad4u/Prettier-Plugin-Powershell) by [**@Nick2bad4u**](https://github.com/Nick2bad4u)
 - [`prettier-plugin-rust`](https://github.com/jinxdash/prettier-plugin-rust) by [**@jinxdash**](https://github.com/jinxdash)
 - [`prettier-plugin-sh`](https://github.com/un-ts/prettier/tree/master/packages/sh) by [**@JounQin**](https://github.com/JounQin)
 - [`prettier-plugin-sql`](https://github.com/un-ts/prettier/tree/master/packages/sql) by [**@JounQin**](https://github.com/JounQin)
@@ -85,6 +89,7 @@ Strings provided to `plugins` are ultimately passed to [`import()` expression](h
 - [`prettier-plugin-svelte`](https://github.com/sveltejs/prettier-plugin-svelte) by [**@sveltejs**](https://github.com/sveltejs)
 - [`prettier-plugin-toml`](https://github.com/un-ts/prettier/tree/master/packages/toml) by [**@JounQin**](https://github.com/JounQin) and [**@so1ve**](https://github.com/so1ve)
 - [`prettier-plugin-xquery`](https://github.com/drrataplan/prettier-plugin-xquery) by [**@DrRataplan**](https://github.com/drrataplan)
+- [`prettier-plugin-yaml`](https://github.com/porada/prettier-plugin-yaml) by [**@porada**](https://github.com/porada)
 
 ## Developing Plugins
 

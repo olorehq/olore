@@ -12,6 +12,16 @@ npm create cloudflare@latest -- my-next-app --framework=next --platform=workers
 
 #### Existing Next.js apps
 
+The easiest way to convert an existing Next.js app is to use the `migrate` command:
+
+```sh
+npx @opennextjs/cloudflare migrate
+```
+
+This command automates all the setup steps below. If R2 is enabled on your account, it also creates an R2 bucket for caching. See the [CLI documentation](/cloudflare/cli#migrate-command) for more details.
+
+Alternatively, you can follow the manual steps below.
+
 ##### 1. Install @opennextjs/cloudflare
 
 First, install [@opennextjs/cloudflare](https://www.npmjs.com/package/@opennextjs/cloudflare):
@@ -44,7 +54,7 @@ application to be previewed and deployed, it is also where you configure your Wo
 
 You can create one yourself in the root directory of your Next.js app with the name `wrangler.jsonc` and the following content:
 
-```jsonc
+```jsonc filename="wrangler.jsonc"
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
@@ -103,7 +113,7 @@ You can create one yourself in the root directory of your Next.js app with the n
 
 Add a [`open-next.config.ts`](https://opennext.js.org/aws/config) file to the root directory of your Next.js app:
 
-```ts
+```ts filename="open-next.config.ts"
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
 
@@ -121,7 +131,7 @@ export default defineCloudflareConfig({
 
 Then, add a [`.dev.vars`](https://developers.cloudflare.com/workers/testing/local-development/#local-only-environment-variables) file to the root directory of your Next.js app:
 
-```text
+```plain filename=".dev.vars"
 NEXTJS_ENV=development
 ```
 
@@ -131,12 +141,14 @@ The `NEXTJS_ENV` variable defines the environment to use when loading Next.js `.
 
 Add the following to the scripts field of your `package.json` file:
 
-```json
-"build": "next build",
-"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-"upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+```json filename="package.json"
+{
+  "build": "next build",
+  "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+  "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+  "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+  "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+}
 ```
 
 - The `build` script must invoke the Next.js build command, it will be invoked by [`opennextjs-cloudflare build`](/cloudflare/cli#build-command).
@@ -149,7 +161,7 @@ Add the following to the scripts field of your `package.json` file:
 
 Add a `public/_headers` file, with at least the following headers:
 
-```txt
+```plain filename="public/_headers"
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable
 ```
@@ -193,8 +205,7 @@ from the `@opennextjs/cloudflare` package. This makes sure that the Next.js dev 
 
 This is an example of a Next.js configuration file calling the utility:
 
-```ts
-// next.config.ts
+```ts filename="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -220,4 +231,4 @@ Either deploy via the command line:
 npm run deploy
 ```
 
-Or [connect a Github or Gitlab repository](https://developers.cloudflare.com/workers/ci-cd/), and Cloudflare will automatically build and deploy each pull request you merge to your production branch.
+Or [connect a GitHub or GitLab repository](https://developers.cloudflare.com/workers/ci-cd/), and Cloudflare will automatically build and deploy each pull request you merge to your production branch.

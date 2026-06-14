@@ -1,10 +1,19 @@
 ---
 title: Neon VS Code Extension
 enableTableOfContents: true
-subtitle: Connect to Neon and manage your database directly in VS Code, Cursor, and other editors
+subtitle: Connect to Neon and manage your database directly in VS Code, Cursor, and
+  other editors
+summary: >-
+  The Neon VS Code Extension connects to any Neon project branch from VS Code,
+  Cursor, or other VS Code-compatible editors. It provides a database explorer,
+  SQL editor, and spreadsheet-style table data editor without leaving the IDE.
+  Use it to browse schemas, run queries, edit rows, manage databases, and copy
+  connection strings. On sign-in, the extension configures the Neon MCP Server,
+  enabling AI-assisted SQL and natural-language database queries from coding
+  agents.
 redirectFrom:
   - /docs/local/neon-local-connect
-updatedOn: '2026-01-07T00:00:00.000Z'
+updatedOn: '2026-06-10T17:55:26.061Z'
 ---
 
 The Neon extension lets you connect to any Neon branch and manage your database directly in your IDE. Available for VS Code, Cursor, and other VS Code-compatible editors, you can browse schemas, run queries, edit table data, and get connection strings, without leaving your editor.
@@ -37,7 +46,7 @@ With the Neon extension, you can:
 
 Click one of the buttons below to install the extension directly, or search for **"Neon - Serverless Postgres"** in your editor's Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X` on Mac).
 
-<div style={{display: 'flex', gap: '12px', alignItems: 'center'}}><a href="vscode:extension/databricks.neon-local-connect"><img src="/docs/local/vscode-install-dark.svg" alt="Add to VS Code" height="32" /></a><a href="cursor:extension/databricks.neon-local-connect"><img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Add to Cursor" height="32" /></a></div>
+<div style={{display: 'flex', gap: '12px', alignItems: 'center'}}><a href="vscode:extension/databricks.neon-local-connect"><img src="/docs/local/vscode-install-dark.svg" alt="Add to VS Code" height="32" /></a><a href="cursor:extension/databricks.neon-local-connect"><img src="/docs/local/cursor-install-dark.svg" alt="Add to Cursor" height="32" /></a></div>
 
 For other VS Code-compatible editors, install from the [Open VSX Registry](https://open-vsx.org/extension/databricks/neon-local-connect).
 
@@ -56,9 +65,9 @@ The extension scans your workspace for existing Neon connection strings and can 
 
 You can also manually select:
 
-1. **Organization** — your Neon organization.
-2. **Project** — the project containing your database.
-3. **Branch** — the branch to connect to.
+1. **Organization**: your Neon organization.
+2. **Project**: the project containing your database.
+3. **Branch**: the branch to connect to.
 
 Click **Connect** to establish the connection.
 
@@ -72,7 +81,7 @@ You can create a new branch for feature development, bug fixes, or collaborative
 
 1. Select your organization and project.
 2. Click **Create new branch...** in the branch dropdown.
-3. Enter a descriptive branch name (e.g., `feature/user-authentication`, `bugfix/login-validation`).
+3. Enter a descriptive branch name (for example, `feature/user-authentication`, `bugfix/login-validation`).
 4. Choose the parent branch you want to branch from.
 
 The extension creates the new branch and connects you immediately.
@@ -125,12 +134,12 @@ The schema view automatically updates when you switch between branches, so you a
 
 Right-click databases, schemas, or tables to access management operations:
 
-- **Create and drop databases and schemas** — Add new databases or remove existing ones.
-- **Table designer** — Create tables with columns, indexes, and constraints.
-- **Foreign key management** — Set up relationships with referential integrity.
-- **View and sequence management** — Create and manage database views and sequences.
-- **User and role management** — Control database access and permissions.
-- **Data import/export** — Transfer data in CSV, JSON, or SQL formats.
+- **Create and drop databases and schemas**: Add new databases or remove existing ones.
+- **Table designer**: Create tables with columns, indexes, and constraints.
+- **Foreign key management**: Set up relationships with referential integrity.
+- **View and sequence management**: Create and manage database views and sequences.
+- **User and role management**: Control database access and permissions.
+- **Data import/export**: Transfer data in CSV, JSON, or SQL formats.
 
 Access these features through the context menu (right-click) in the Database Explorer.
 
@@ -151,11 +160,11 @@ Execute SQL queries directly in your IDE with the integrated SQL Editor:
 1. **From Schema View**: Right-click any table and select "Query Table" for a pre-filled SELECT query.
 2. **From Command Palette**: Use `Ctrl+Shift+P` and search for "Neon: Open SQL Editor".
 
-The SQL Editor integrates seamlessly with your database connection, so you can query any database in your current branch without additional setup.
+The SQL Editor connects directly to your database connection, so you can query any database in your current branch without additional setup.
 
 ## Table data editor
 
-View and edit your table data with a powerful, spreadsheet-like interface:
+View and edit your table data with a spreadsheet-like interface:
 
 ### Viewing data
 
@@ -190,7 +199,7 @@ The Neon extension includes built-in support for AI-powered database features th
 
 ### Features
 
-- **Automatic MCP Server configuration** — enables AI-powered database features with your coding agent.
+- **Automatic MCP Server configuration**: enables AI-powered database features with your coding agent.
 - **Chat with your database** using natural language.
 - **AI-assisted SQL generation** and schema understanding.
 - **View and manage MCP server status** directly in the extension.

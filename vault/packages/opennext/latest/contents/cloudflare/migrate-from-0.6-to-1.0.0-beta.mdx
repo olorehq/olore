@@ -1,0 +1,46 @@
+import { Callout } from "nextra/components";
+
+### Migrate from 0.6 to 1.0.0-beta
+
+The codebase has been refactored with some breaking changes, read-on to update your apps:
+
+#### Name changes
+
+`DurableObjectQueueHandler` was renamed to `DOQueueHandler`. Durable object bindings should be updated in the wrangler configuration file.
+
+#### Environment variables
+
+`NEXT_CACHE_DO_QUEUE_MAX_NUM_REVALIDATIONS` was renamed to `NEXT_CACHE_DO_QUEUE_MAX_RETRIES`.
+
+#### API changes
+
+`D1TagCache` was removed. You should use `D1NextModeTagCache` instead which is more efficient and also based on D1.
+
+The `enableShardReplication` and `shardReplicationOptions` options passed to `ShardedDOTagCache`
+have been folded into `shardReplication`. A value for `shardReplication` must be specified to enable
+replications. The value must be an object with the number of soft and hard replicas.
+
+Before:
+
+```ts
+shardedDOTagCache({
+  baseShardSize: 4,
+  enableShardReplication: true,
+  shardReplicationOptions: {
+    numberOfSoftReplicas: 4,
+    numberOfHardReplicas: 2,
+  },
+});
+```
+
+After:
+
+```ts
+shardedDOTagCache({
+  baseShardSize: 4,
+  shardReplication: {
+    numberOfSoftReplicas: 4,
+    numberOfHardReplicas: 2,
+  },
+});
+```

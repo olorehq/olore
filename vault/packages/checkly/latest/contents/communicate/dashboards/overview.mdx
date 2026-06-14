@@ -26,7 +26,7 @@ Dashboards provide a detailed way to communicate the status of your checks and m
 Dashboards allow you to do the following:
 
 - Show the status of all your checks, or a subset by filtering by `tag`.
-- Show the availability and p95 / p99 response times over the last 24 hours, 7 days and 30 days.
+- Show the availability and p95 / p99 metrics over the last 24 hours, 7 days and 30 days.
 - Communicate custom incident messages and maintenance messages.
 
 You can create multiple, distinct dashboards based on your plan. Edit your dashboard by clicking on
@@ -35,10 +35,15 @@ the **Dashboards** button on the Checkly dashboard page.
 *Check out our [Checkly Production Dashboard](https://status.checkly-dashboards.com) for a live example* 
 
 ## Available metrics
-Dashboards show the following metrics for each check or monitor:
 
-| Metric | Time Period | Description |
-|--------|-------------|-------------|
-| **Availability** | 24h, 7d, 30d | Percentage of successful run results |
-| **P95** | 24h, 7d, 30d | 95th percentile response time |
-| **P99** | 24h, 7d, 30d | 99th percentile response time |
+Dashboards show the following metrics, depending on the check type:
+
+| Metric | Description | Supported check types |
+|--------|-------------|----------------------|
+| **Availability** | Percentage of successful runs | All check types |
+| **P95** | 95th percentile response time | All check types except Heartbeat & ICMP |
+| **P99** | 99th percentile response time | All check types except Heartbeat & ICMP |
+| **P95 Latency** | 95th percentile ping latency | ICMP |
+| **P95 Loss** | 95th percentile packet loss | ICMP |
+
+Metrics can be viewed over 1h, 3h, 24h, 7d, or 30d, based on your selected time range.

@@ -1,6 +1,6 @@
 ---
 title: 'Maintenance Windows'
-description: 'Schedule planned maintenance periods to prevent false alerts.'
+description: 'Schedule planned maintenance periods to prevent false alerts and control check behavior during downtime.'
 sidebarTitle: 'Maintenance Windows'
 ---
 
@@ -8,8 +8,11 @@ sidebarTitle: 'Maintenance Windows'
 **Monitoring as Code**: Learn more about the [Maintenance Window Construct](/constructs/maintenance-window).
 </Tip>
 
-Maintenance windows allow you to schedule planned downtime for your services, preventing false alerts and preserving accurate availability metrics during system updates, deployments, and infrastructure maintenance activities. During these windows, Checkly stops executing checks for the targeted services, eliminating false alerts while preserving historical availability data.
+Maintenance windows allow you to schedule planned downtime for your services, preventing false alerts and preserving accurate availability metrics during system updates, deployments, and infrastructure maintenance activities. During a maintenance window you can pause check execution, silence alert notifications, or both. You can also [show the maintenance on your status pages](/communicate/status-pages/maintenance-windows) to keep your users informed.
 
+<Note>
+Manual and triggered check runs (e.g. via the API or the Checkly UI) always execute, even when check execution is paused. However, if alert silencing is enabled, alerts from these runs will still be suppressed.
+</Note>
 
 ## Creating a maintenance window
 
@@ -21,7 +24,7 @@ After giving your window an appropriate name, the core options you have are:
 
 ![Maintenance window schedule](/images/maintenance-schedule-3.png)
 
-Set your preferred starting date and time for your maintenance window. **Note that all times are in UTC.**
+Set the **start** date and time, then choose how long the window **lasts** by entering a duration in hours and minutes. Quick-duration presets (30m, 1h, 4h, 24h) and a **Now** shortcut are available. **All times are in UTC**. The builder shows the equivalent time in your local timezone underneath as a reference.
 
 #### Setting repeats
 
@@ -34,14 +37,74 @@ If your maintenance window repeats at a certain cadence, toggle the **repeat** o
 > If you schedule a window on the 31st and add a **monthly repeat cycle**, your schedule will also activate on
 > the 30th of the relevant months and the 28th or 29th of February depending on the leap year.
 
-### Adding checks and check groups
+### Check behavior
 
-![Maintenance window checks](/images/maintenance-checks-2.png)
+Each maintenance window lets you configure how checks behave during the maintenance period. Toggle the behaviors you need:
 
-You need to select which checks and/or check groups are targeted by your maintenance window. You do this by:
+#### Pause check execution
 
-- Adding the relevant check tags.
-- Adding the relevant check group tags.
+When enabled, scheduled check runs are skipped for the duration of the window. You can scope which checks are paused:
+
+- **All checks** — every check in the account is paused.
+- **Checks matching tags** — only checks (and check groups) with matching tags are paused.
+
+#### Silence alerts
+
+When enabled, alert channel notifications are suppressed while checks continue to run and collect data. This is useful when you want to keep monitoring but avoid noisy alerts during expected degradation. You can scope which checks are silenced:
+
+- **All checks** — alerts are silenced for every check in the account.
+- **Checks matching tags** — only checks (and check groups) with matching tags have their alerts silenced.
+
+<Warning>
+If a check starts failing during the maintenance window and continues failing after the window ends, Checkly will **not** retroactively send an alert once the window is over — the alert is suppressed. After maintenance, check the **Firewatch** section on the home dashboard — it shows checks that started failing recently. Firewatch can be enabled and configured in your account preferences.
+</Warning>
+
+<Tip>
+You can use different tag sets for pausing and silencing. For example, pause your `api` checks while silencing alerts for `frontend` checks that might be affected by the same deployment.
+</Tip>
+
+### Adding checks via tags
+
+You scope which checks are affected by adding tags to the pause or silence configuration. Any checks or check groups with matching tags will be included.
 
 This way, any checks or check groups created *after* creating your maintenance window can still be made part of the window; no
 need to update the maintenance window configuration. Just set the correct tags.
+
+## Maintenance lifecycle and updates
+
+A maintenance window is a template. Each time it runs it creates a **maintenance**: a single occurrence with its own status and its own timeline of updates. A one-off window has one maintenance, while a recurring window creates one maintenance per cycle, each tracked separately.
+
+A maintenance moves through these statuses:
+
+- **Scheduled**: planned but not started. Checks are not paused or silenced yet.
+- **In progress**: active. The check behavior you configured (pause, silence, or both) is now in effect.
+- **Verifying**: an optional active state for when the work is done but you are still confirming. Check behavior stays in effect.
+- **Completed**: finished. Checks resume and alerts are sent again.
+- **Cancelled**: called off. Like completing, this ends any pausing or silencing.
+
+By default a maintenance **starts and completes automatically** at its scheduled start and end times. You can still act early from the maintenance's page: start it, complete or extend it, cancel it, or reopen a finished one (reopening brings it back to In progress and extends the end time).
+
+Turning *off* automatic start or completion, so a maintenance only advances when you act on it, is available on [status-page windows](/communicate/status-pages/maintenance-windows). Windows that are not shown on a status page always start and complete automatically.
+
+### Updates
+
+Each maintenance has a timeline of **updates**. Posting an update records a message and can move the maintenance to a new status, similar to updating an incident. If the window is [shown on a status page](/communicate/status-pages/maintenance-windows), these updates are what your visitors see or get notified about.
+
+## Showing maintenance on your status page
+
+If you publish a [status page](/communicate/status-pages/overview), you can show a maintenance window on it so visitors and subscribers know what to expect. Enable **Status page visibility** on the window to choose which pages and services it appears on, set a severity, automatically post start and end updates, and notify subscribers ahead of time.
+
+See [Status page maintenance](/communicate/status-pages/maintenance-windows) for the full guide.
+
+<Note>
+Showing maintenance on a status page is part of the Communicate add-on. [View pricing](https://checklyhq.com/pricing).
+</Note>
+
+## Monitoring maintenance status
+
+While a maintenance window is active:
+
+- The **Maintenance Windows page** shows a **banner** at the top summarizing the active maintenance, with a quick link to post an update.
+- The **home dashboard** shows a **Maintenance badge** on each affected check row, with a tooltip showing the maintenance window name and whether the check is paused, silenced, or both.
+- The home dashboard status filter includes an **Under maintenance** option, letting you quickly find all checks currently affected by a maintenance window.
+- The **check overview page** shows a tag if the check is currently affected by a maintenance window.

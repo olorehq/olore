@@ -29,11 +29,7 @@ At their core, fixtures in Playwright are predefined components like `page`, `co
 When writing multiple tests for a single site or service, you're likely to end up performing the same tasks over and over, so we'd like to add fixtures to our Playwright tests that developers can re-use, rather than copying and pasting big blocks of code. This helps us follow the DRY principle: don't repeat yourself when writing code!
 
 ## Why we need custom fixtures
-In our web shop, we've got a login process that we want to simulate and test before doing further account actions:
-
-![A web shop login dialog](/images/samples/images/webshop-login.png)
-
-To open this dialog and log in, we might use some lines like the following:
+In our web shop, we've got a login process that we want to simulate and test before doing further account actions. To open a dialog and log in, we might use some lines like the following:
 
 ```ts
 import { test, expect } from '@playwright/test';

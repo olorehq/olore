@@ -95,7 +95,7 @@ export interface VitestRunner {
   /**
    * Publicly available configuration.
    */
-  config: VitestRunnerConfig
+  config: SerializedConfig
   /**
    * The name of the current pool. Can affect how stack trace is inferred on the server side.
    */
@@ -142,7 +142,7 @@ If you don't have a custom runner or didn't define `runTest` method, Vitest will
 :::
 
 ::: tip
-Snapshot support and some other features depend on the runner. If you don't want to lose it, you can extend your runner from `VitestTestRunner` imported from `vitest/runners`. It also exposes `NodeBenchmarkRunner`, if you want to extend benchmark functionality.
+Snapshot support and some other features depend on the runner. If you don't want to lose it, you can extend your runner from `TestRunner` imported from `vitest`. It also exposes `NodeBenchmarkRunner`, if you want to extend benchmark functionality.
 :::
 
 ## Tasks
@@ -198,7 +198,7 @@ interface Suite extends TaskBase {
 }
 ```
 
-Every task has a `suite` property that references a suite it is located in. If `test` or `describe` are initiated at the top level, they will not have a `suite` property (it will **not** be equal to `file`!). `File` also never has a `suite` property. It is useful to travers the tasks from the bottom up.
+Every task has a `suite` property that references a suite it is located in. If `test` or `describe` are initiated at the top level, they will not have a `suite` property (it will **not** be equal to `file`!). `File` also never has a `suite` property. It is useful to traverse the tasks from the bottom up.
 
 ```ts
 interface Test<ExtraContext = object> extends TaskBase {

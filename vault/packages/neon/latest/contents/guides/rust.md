@@ -2,11 +2,17 @@
 title: Connect a Rust application to Neon Postgres
 subtitle: Learn how to run SQL queries in Neon from Rust using the postgres or
   tokio-postgres crates
+summary: >-
+  Connecting a Rust application to Neon Postgres using either the synchronous
+  `postgres` crate or the async `tokio-postgres` crate with the Tokio runtime.
+  Both options require SSL/TLS via postgres-openssl. Use this page when you need
+  working Rust code for each CRUD operation, including when to use `execute`,
+  `batch_execute`, or `query` for each SQL pattern.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/rust
   - /docs/integrations/rust
-updatedOn: '2025-09-30T00:26:10.497Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/rust-prompt.md" 
@@ -44,7 +50,7 @@ For your Rust project, use `cargo` to create a new project and add the required 
 
     This command creates a new directory named `neon-rust-quickstart` containing a `src/main.rs` file for your code and a `Cargo.toml` file for your project's configuration and dependencies.
 
-    > Open the directory in your preferred code editor (e.g., VS Code, RustRover, etc.) to edit the files.
+    > Open the directory in your preferred code editor (for example, VS Code, RustRover, etc.) to edit the files.
 
 2.  Add the required crates using `cargo add`. Choose the set of commands for either a synchronous or asynchronous setup.
 
@@ -661,18 +667,6 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: true
 > You can see that the book '1984' has been successfully deleted from the `books` table.
 
 </Steps>
-
-## Source code
-
-You can find the source code for the applications described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-rust-postgres" description="Get started with Rust and Neon using the synchronous postgres crate" icon="github">Get started with Rust and Neon using postgres</a>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-rust-tokio-postgres" description="Get started with Rust and Neon using the asynchronous tokio-postgres crate" icon="github">Get started with Rust and Neon using tokio-postgres</a>
-
-</DetailIconCards>
 
 ## Resources
 

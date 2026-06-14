@@ -117,6 +117,12 @@ Example of a snapshot inspection event:
 
 The microstep inspection event (`@xstate.microstep`) is emitted for each individual state transition, including intermediate "microsteps", that occurs during the processing of an event. This is particularly useful for observing eventless transitions (like `always` transitions) and understanding the step-by-step progression through multiple states.
 
+<Callout type="info">
+
+**Observing transient states:** Subscribers to an actor only receive the *final* snapshot after all transitions (including eventless ones) are applied. So states that are only entered and left via `always` transitions in the same step never appear in `subscribe()`, `waitFor()`, or when using `snapshot.matches()` / `snapshot.hasTag()`. To observe those intermediate states, use the `@xstate.microstep` inspection event. For more detail and alternatives (such as `after: { 0: '...' }` when you need observability), see [Eventless (always) transitions – Observability and transient states](eventless-transitions#observability-and-transient-states).
+
+</Callout>
+
 It contains the following properties:
 
 - `type: '@xstate.microstep'`

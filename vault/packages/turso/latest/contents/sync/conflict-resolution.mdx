@@ -1,0 +1,32 @@
+---
+title: Conflict Resolution
+description: How Turso sync handles concurrent changes from multiple clients.
+---
+
+<Note>
+This particular usage uses the Turso Cloud to sync the local Turso databases and assumes that you have an account.
+</Note>
+
+## Last Push Wins
+
+Turso sync uses a **last push wins** strategy. When two clients modify the same data and push, the last push determines the final state on the remote.
+
+| Time | Client A | Client B |
+|------|----------|----------|
+| T1 | `UPDATE users SET name='Alice' WHERE id=1` | |
+| T2 | | `UPDATE users SET name='Bob' WHERE id=1` |
+| T3 | `push()` | |
+| T4 | | `push()` |
+
+**Result**: The name is `'Bob'` because Client B pushed last.
+
+## What Happens During Pull
+
+When you pull and have unpushed local changes:
+
+1. Your local database is rolled back to the last synced state
+2. Remote changes are applied
+3. Your unpushed local changes are **replayed** on top
+
+This rollback-and-replay happens atomically — if anything fails, your database remains in its previous state.
+

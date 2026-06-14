@@ -1,0 +1,59 @@
+---
+title: Platform Tokens
+---
+
+Create tokens for a single database or all databases in a group using the CLI:
+
+```bash
+# Token for a single database
+turso db tokens create <database-name>
+
+# Token for all databases in a group
+turso group tokens create <group-name>
+```
+
+You can control token scope, permissions, and expiration:
+
+| Flag | Description |
+| --- | --- |
+| `-r`, `--read-only` | Create a read-only token (queries only, no writes) |
+| `-p`, `--permissions` | Set [fine-grained permissions](/sdk/authorization/fine-grained-permissions) per table and action |
+| `-e`, `--expiration` | Set token expiration (`never`, `7d`, `30d`, etc.) |
+
+<CodeGroup>
+
+```bash Read-only token
+turso db tokens create mydb --read-only
+```
+
+```bash Token with 7-day expiration
+turso db tokens create mydb --expiration 7d
+```
+
+```bash Fine-grained permissions
+turso db tokens create mydb \
+  -p all:data_read \
+  -p comments:data_add,data_update
+```
+
+```bash Combined scoping
+turso db tokens create mydb \
+  --read-only \
+  --expiration 7d
+```
+
+</CodeGroup>
+
+You can also create tokens using the [Platform API](/api-reference/databases/create-token).
+
+## Invalidating Tokens
+
+You can invalidate all existing tokens for a database or group, which rotates the signing keys:
+
+```bash
+# Invalidate all tokens for a database
+turso db tokens invalidate <database-name>
+
+# Invalidate all tokens for a group (and all its databases)
+turso group tokens invalidate <group-name>
+```

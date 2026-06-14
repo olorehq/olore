@@ -77,12 +77,14 @@ Calculate the cost of output tokens for a GenAI chat operation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend model = ['attributes.gen_ai.response.model']
 | extend output_tokens = tolong(['attributes.gen_ai.usage.output_tokens'])
 | extend output_cost = genai_output_cost(model, output_tokens)
 | summarize total_output_cost = sum(output_cost), avg_output_cost = avg(output_cost)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20model%20%3D%20%5B%27attributes.gen_ai.response.model%27%5D%20%7C%20extend%20output_tokens%20%3D%20tolong(%5B%27attributes.gen_ai.usage.output_tokens%27%5D)%20%7C%20extend%20output_cost%20%3D%20genai_output_cost(model%2C%20output_tokens)%20%7C%20summarize%20total_output_cost%20%3D%20sum(output_cost)%2C%20avg_output_cost%20%3D%20avg(output_cost)%22%7D)
 
 **Output**
 

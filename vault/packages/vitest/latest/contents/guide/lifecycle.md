@@ -5,19 +5,23 @@ outline: deep
 
 # Test Run Lifecycle
 
+::: tip
+Looking for a practical introduction to `beforeEach`, `afterEach`, and other hooks? See the [Setup and Teardown](/guide/learn/setup-teardown) tutorial.
+:::
+
 Understanding the test run lifecycle is essential for writing effective tests, debugging issues, and optimizing your test suite. This guide explains when and in what order different lifecycle phases occur in Vitest, from initialization to teardown.
 
 ## Overview
 
 A typical Vitest test run goes through these main phases:
 
-1. **Initialization** - Configuration loading and project setup
-2. **Global Setup** - One-time setup before any tests run
-3. **Worker Creation** - Test workers are spawned based on the [pool](/config/pool) configuration
-4. **Test File Collection** - Test files are discovered and organized
-5. **Test Execution** - Tests run with their hooks and assertions
-6. **Reporting** - Results are collected and reported
-7. **Global Teardown** - Final cleanup after all tests complete
+1. **Initialization:** Configuration loading and project setup
+2. **Global Setup:** One-time setup before any tests run
+3. **Worker Creation:** Test workers are spawned based on the [pool](/config/pool) configuration
+4. **Test File Collection:** Test files are discovered and organized
+5. **Test Execution:** Tests run with their hooks and assertions
+6. **Reporting:** Results are collected and reported
+7. **Global Teardown:** Final cleanup after all tests complete
 
 Phases 4–6 run once for each test file, so across your test suite they will execute multiple times and may also run in parallel across different files when you use more than [1 worker](/config/maxworkers).
 
@@ -124,17 +128,21 @@ Test files are executed based on your configuration:
 
 The execution follows this order:
 
-1. **File-level code** - All code outside `describe` blocks runs immediately
-2. **Test collection** - `describe` blocks are processed, and tests are registered as side effects of importing the test file
-3. **`beforeAll` hooks** - Run once before any tests in the suite
-4. **For each test:**
+1. **File-level code:** All code outside `describe` blocks runs immediately
+2. **Test collection:** `describe` blocks are processed, and tests are registered as side effects of importing the test file
+3. **[`aroundAll`](/api/hooks#aroundall) hooks:** Wrap around all tests in the suite (must call `runSuite()`)
+4. **[`beforeAll`](/api/hooks#beforeall) hooks:** Run once before any tests in the suite
+5. **For each test:**
+   - [`aroundEach`](/api/hooks#aroundeach) hooks wrap around the test (must call `runTest()`)
    - `beforeEach` hooks execute (in order defined, or based on [`sequence.hooks`](/config/sequence#sequence-hooks))
    - Test function executes
    - `afterEach` hooks execute (reverse order by default with `sequence.hooks: 'stack'`)
+   - Cleanup functions returned from `beforeEach` hooks execute (reverse order by default with `sequence.hooks: 'stack'`)
    - [`onTestFinished`](/api/hooks#ontestfinished) callbacks run (always in reverse order)
    - If test failed: [`onTestFailed`](/api/hooks#ontestfailed) callbacks run
    - Note: if `repeats` or `retry` are set, all of these steps are executed again
-5. **`afterAll` hooks** - Run once after all tests in the suite complete
+6. **[`afterAll`](/api/hooks#afterall) hooks:** Run once after all tests in the suite complete
+7. **Cleanup functions returned from `beforeAll` hooks:** Run once after all tests in the suite complete
 
 **Example execution flow:**
 
@@ -146,14 +154,38 @@ describe('User API', () => {
   // This runs immediately (collection phase)
   console.log('Suite defined')
 
+  aroundAll(async (runSuite) => {
+    // Wraps around all tests in this suite
+    console.log('aroundAll before')
+    await runSuite()
+    console.log('aroundAll after')
+  })
+
   beforeAll(() => {
     // Runs once before all tests in this suite
     console.log('beforeAll')
+
+    return function beforeAllCleanup() {
+      // Runs once afterAll hooks have run
+      console.log('beforeAllCleanup')
+    }
+  })
+
+  aroundEach(async (runTest) => {
+    // Wraps around each test
+    console.log('aroundEach before')
+    await runTest()
+    console.log('aroundEach after')
   })
 
   beforeEach(() => {
     // Runs before each test
     console.log('beforeEach')
+
+    return function beforeEachCleanup() {
+      // Runs after afterEach hooks have run
+      console.log('beforeEachCleanup')
+    }
   })
 
   test('creates user', () => {
@@ -180,29 +212,64 @@ describe('User API', () => {
 // Output:
 // File loaded
 // Suite defined
-// beforeAll
-// beforeEach
-// test 1
-// afterEach
-// beforeEach
-// test 2
-// afterEach
-// afterAll
+// aroundAll before
+//   beforeAll
+//   aroundEach before
+//     beforeEach
+//       test 1
+//     afterEach
+//     beforeEachCleanup
+//   aroundEach after
+//   aroundEach before
+//     beforeEach
+//       test 2
+//     afterEach
+//     beforeEachCleanup
+//   aroundEach after
+//   afterAll
+//   beforeAllCleanup
+// aroundAll after
 ```
 
 #### Nested Suites
 
-When using nested `describe` blocks, hooks follow a hierarchical pattern:
+When using nested `describe` blocks, hooks follow a hierarchical pattern. The `aroundAll` and `aroundEach` hooks wrap around their respective scopes, with parent hooks wrapping child hooks:
 
 ```ts
 describe('outer', () => {
+  aroundAll(async (runSuite) => {
+    console.log('outer aroundAll before')
+    await runSuite()
+    console.log('outer aroundAll after')
+  })
+
   beforeAll(() => console.log('outer beforeAll'))
+
+  aroundEach(async (runTest) => {
+    console.log('outer aroundEach before')
+    await runTest()
+    console.log('outer aroundEach after')
+  })
+
   beforeEach(() => console.log('outer beforeEach'))
 
   test('outer test', () => console.log('outer test'))
 
   describe('inner', () => {
+    aroundAll(async (runSuite) => {
+      console.log('inner aroundAll before')
+      await runSuite()
+      console.log('inner aroundAll after')
+    })
+
     beforeAll(() => console.log('inner beforeAll'))
+
+    aroundEach(async (runTest) => {
+      console.log('inner aroundEach before')
+      await runTest()
+      console.log('inner aroundEach after')
+    })
+
     beforeEach(() => console.log('inner beforeEach'))
 
     test('inner test', () => console.log('inner test'))
@@ -216,18 +283,28 @@ describe('outer', () => {
 })
 
 // Output:
-// outer beforeAll
-// outer beforeEach
-// outer test
-// outer afterEach
-// inner beforeAll
-// outer beforeEach
-// inner beforeEach
-// inner test
-// inner afterEach (with stack mode)
-// outer afterEach (with stack mode)
-// inner afterAll
-// outer afterAll
+// outer aroundAll before
+//   outer beforeAll
+//   outer aroundEach before
+//     outer beforeEach
+//       outer test
+//     outer afterEach
+//   outer aroundEach after
+//   inner aroundAll before
+//     inner beforeAll
+//     outer aroundEach before
+//       inner aroundEach before
+//         outer beforeEach
+//           inner beforeEach
+//             inner test
+//           inner afterEach
+//         outer afterEach
+//       inner aroundEach after
+//     outer aroundEach after
+//     inner afterAll
+//   inner aroundAll after
+//   outer afterAll
+// outer aroundAll after
 ```
 
 #### Concurrent Tests
@@ -278,7 +355,9 @@ Understanding where code executes is crucial for avoiding common pitfalls:
 | Global Setup | Main process | ❌ No (use `provide`/`inject`) | Once per Vitest run |
 | Setup Files | Worker (same as tests) | ✅ Yes | Before each test file |
 | File-level code | Worker | ✅ Yes | Once per test file |
+| `aroundAll` | Worker | ✅ Yes | Once per suite (wraps all tests) |
 | `beforeAll` / `afterAll` | Worker | ✅ Yes | Once per suite |
+| `aroundEach` | Worker | ✅ Yes | Per test (wraps each test) |
 | `beforeEach` / `afterEach` | Worker | ✅ Yes | Per test |
 | Test function | Worker | ✅ Yes | Once (or more with retries/repeats) |
 | Global Teardown | Main process | ❌ No | Once per Vitest run |
@@ -287,7 +366,7 @@ Understanding where code executes is crucial for avoiding common pitfalls:
 
 In watch mode, the lifecycle repeats with some differences:
 
-1. **Initial run** - Full lifecycle as described above
+1. **Initial run:** Full lifecycle as described above
 2. **On file change:**
    - New [test run](/api/advanced/reporters#ontestrunstart) starts
    - Only affected test files are re-run

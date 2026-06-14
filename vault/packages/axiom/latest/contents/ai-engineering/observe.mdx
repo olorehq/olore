@@ -5,7 +5,6 @@ sidebarTitle: Overview
 keywords: ["ai engineering", "observe", "telemetry", "withspan", "opentelemetry"]
 ---
 
-import { Badge } from "/snippets/badge.jsx"
 import AIInstrumentationApproaches from "/snippets/ai-instrumentation-approaches.mdx"
 
 In the Observe stage of the AI engineering lifecycle, the focus is on understanding how your deployed generative AI capabilities perform in the real world. After creating and evaluating a capability, observing its production behavior is crucial for identifying unexpected issues, tracking costs, and gathering the data needed for future improvements.
@@ -13,6 +12,13 @@ In the Observe stage of the AI engineering lifecycle, the focus is on understand
 ## Instrument your app
 
 <AIInstrumentationApproaches />
+
+## Review production conversations
+
+Review and Issues let domain experts inspect production conversations, capture human feedback, and group recurring failures into a tracked backlog.
+
+- Use [Review conversations](/ai-engineering/iterate/review) to work through flagged, recent, feedback-driven, errored, and previously reviewed conversations.
+- Use [Track issues](/ai-engineering/iterate/issues) to consolidate repeated failures, inspect supporting evidence, and manage issue status over time.
 
 ## Visualize traces in Console
 
@@ -27,9 +33,11 @@ Visualizing and making sense of this telemetry data is a core part of the Axiom 
 1. Create an APL query about your GenAI dataset. For example:
 
     ```kusto
-    ['gen-ai-traces']
+    ['otel-demo-genai']
     | where ['attributes.gen_ai.operation.name'] == "chat"
     ```
+
+    [Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-genai'%5D%20%7C%20where%20%5B'attributes.gen_ai.operation.name'%5D%20%3D%3D%20'chat'%22%7D)
 
 1. In the list of trace IDs, click the trace you want to explore.
 1. Explore how spans within the trace are related to each other in the waterfall view. To only display AI spans, click **AI spans** in the top left.
@@ -46,6 +54,8 @@ To access the GenAI dashboard:
 
 1. Click the Dashboards tab.
 1. Click the dashboard **Generative AI Overview (DATASET_NAME)** where `DATASET_NAME` is the name of your GenAI dataset.
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/dashboards/genai.otel-demo-genai)
 
 The GenAI dashboard provides you with important insights about your GenAI app such as:
 - Vitals about requests, broken down by operation, capability, and step.

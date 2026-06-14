@@ -14,17 +14,15 @@ Your first project will be created automatically when you create an Organization
 
 To create a new Mixpanel project:
 
-1. In Organization Settings, click **Projects** at the left-side menu.
-2. Click **Create Project**. A popup will appear.
+1. In Organization Settings, click **Projects** in the left-side menu.
+2. Click **Create Project**. A pop-up will appear.
 3. Enter a name for the project and click **Create Project**.
 4. Choose the residency of your data. **ATTENTION!** This can't be changed once the project is created.
 5. Choose the timezone of your project.
-6. Click on "Create"
+6. Click on "Create".
 6. The new project will appear now in the list of projects.
 
 ![manageprojects 2 Image](/manageprojects2.png)
-
-**IMPORTANT! The data residency of a project can't be changed once the project is created.**
 
 ## Viewing Project Information
 
@@ -47,7 +45,7 @@ This table describes the type of details Mixpanel provides for your project.
 | Organization   | The name of the organization where the project is.                        |
 | Project ID     | The ID number of the project.                                             |
 | Data Residency | Where the data centers hosting the data pool of this project are located. |
-| Timezone       | The time zone you assign the project.                                     |
+| Timezone       | The time zone you assign to the project.                                  |
 | Created By     | The name of the user who created the project.                             |
 | Date Created   | The date when the project was created.                                    |
 | Access URL     | The URL where you can access the project.                                 |
@@ -59,7 +57,7 @@ This table provides the values for the **project token** and the **API secret**.
 <Callout type="warning">
 <strong>API Secret Deprecation</strong>
 
-The project API secret is deprecated and will be retired on **March 3 2027**. For new projects or integrations, use [Service Accounts](https://developer.mixpanel.com/reference/service-accounts) instead. Existing API‑secret workflows will continue to work until retirement but should be migrated when convenient.
+The project API secret is deprecated and will be retired on **March 3rd, 2027**. For new projects or integrations, use [Service Accounts](https://developer.mixpanel.com/reference/service-accounts) instead. Existing API‑secret workflows will continue to work until retirement, but should be migrated when convenient.
 </Callout>
 
 ![manageprojects 4 Image](/manageprojects4.png)
@@ -74,7 +72,7 @@ You can reset the current project in Project Settings. When you reset the projec
 
 ![manageprojects 11 Image](/manageprojects11.png)
 
-A warning indicates this reset deactivates the project and all its data and project settings, then generates a new project.  Mixpanel stores a backup of the deactivated project. Mixpanel will delete the data based on the data retention policy.
+A warning indicates this reset deactivates the project and all its data and project settings, and then generates a new project.  Mixpanel stores a backup of the deactivated project and will delete it based on the data retention policy.
 
 ![manageprojects 12 Image](/manageprojects12.png)
 
@@ -84,14 +82,20 @@ A warning indicates this reset deactivates the project and all its data and proj
 Only project owners and organization owners may delete projects. Learn more about [Roles and Permissions](/docs/orgs-and-projects/roles-and-permissions).
 </Callout>
 
+<Callout type="warning">
+Data will be retained for **60–90 days** before being permanently deleted and unrecoverable. The project will be immediately inaccessible via the Mixpanel interface and API.
+</Callout>
+
 To delete a project:
 
-1. In Organization Settings, click **Projects**.
+1. In **Organization Settings**, click **Projects**.
 2. Select the project you want to delete.
-3. Above the “Project Details” section, click **Delete Project**. A delete box appears and indicates you won’t be able to access the project in the Mixpanel interface or API. Mixpanel will store a backup of the deleted project and will delete the data based on the data retention policy.
-4. Click **Delete Project** to remove the project.
+3. Above the **Project Details** section, click **Delete Project**.
+4. Review the warning, then click **Delete Project** to confirm.
 
 ![manageprojects 5 Image](/manageprojects5.png)
+
+Learn more about our [data retention policy](/docs/privacy/gdpr-compliance#data-retention-policy).
 
 ## Find Your Project Tokens
 
@@ -99,7 +103,7 @@ Each Mixpanel account can contain multiple projects. Each project has its own un
 
 ### Locate Current Project Token
 
-Click the Settings gear in the upper right-hand corner of your Mixpanel project and select Project settings to see your Project Token under the Access Keys table.
+Click the Settings gear in the lower left-hand corner of your Mixpanel project and select Project settings to see your Project Token under the Access Keys table.
 
 ![manageprojects 4 Image](/manageprojects4.png)
 
@@ -119,17 +123,18 @@ You can reset the API Secret and API Keys for any projects you own. To do so, go
 
 #### Reset Project Token
 
-Project Token cannot be reset in a self-served manner. If you need to reset your project token for any reason, please [reach out to our Support team](https://mixpanel.com/get-support).
+Project Token cannot be reset in a self-serve manner. If you need to reset your project token for any reason, please [reach out to our Support team](https://mixpanel.com/get-support).
+After rotating it, the original one becomes invalid, so you will need to replace it with the new one in your implementation's code. Otherwise, no new events will be sent to your Mixpanel project.
 
 ## Manage Timezones for Projects
 
 <Callout type="info">
-For projects created before 1 Jan 2023, Mixpanel converts event timestamps to your project timezone before writing the event to your Mixpanel data stores, meaning that event timestamps are stored based on the project timezone setting at the time of ingestion.
+For projects created before January 1st, 2023, Mixpanel converts event timestamps to your project timezone before writing the event to your Mixpanel data stores, meaning that event timestamps are stored based on the project timezone setting at the time of ingestion.
 </Callout>
 
 Mixpanel records all events in [Coordinated Universal Time (UTC)](https://www.worldtimeserver.com/learn/what-is-utc/) at intake. Changing the timezone for any project under Project Settings only affects the timezone in which Mixpanel outputs results.
 
-Mixpanel sets project timezones by city or region. If a city or region observes Daylight Savings Time, the ingestion offset adjusts appropriately.
+Mixpanel sets project time zones by city or region. If a city or region observes Daylight Saving Time, the ingestion offset adjusts appropriately.
 
 ### Changing your Timezone
 
@@ -141,30 +146,26 @@ By default, Mixpanel sets your timezone to UTC.
 
 Only project owners and admins can change project settings.
 
-To change the project’s timezone:
+To change the project's timezone:
 
-1. In **Project Settings**, select the project.
+1. Navigate to **Settings** -> **Project Settings**.
 
-![manageprojects 9 Image](/manageprojects9.png)
-
-2. 2. In **Overview**, select the pencil icon in the **Timezone** field to display a list of timezones.
-
-![manageprojects 10 Image](/manageprojects10.png)
+2. In **Overview**, select the pencil icon in the **Timezone** field to display a list of timezones.
 
 3. Select a timezone and click **Save**.
 
->Note that changing the timezone will not affect any data, it only affects the timezone in which we output results.
+>Note that changing the timezone will not affect any data; it only affects the timezone in which we output results.
 
 #### Sending Date Properties to Mixpanel
 
-[Date properties are one of the five data types](/docs/data-structure/property-reference/data-type#date) Mixpanel accepts. Mixpanel events should be ingested with timestamps set to Coordinated Universal Time (UTC). If you overwrite the default timestamp, import old data, or set a property that is in date format (e.g. Account Created Date), be sure to send the timestamp or date in UTC.
+[Date properties are one of the five data types](/docs/data-structure/property-reference/data-type#date) Mixpanel accepts. Mixpanel events should be ingested with timestamps set to Coordinated Universal Time (UTC). If you overwrite the default timestamp, import old data, or set a property that is in date format (e.g., Account Created Date), be sure to send the timestamp or date in UTC.
 
-For this type of property, Mixpanel recommends an iso-formatted date string (YYYY-MM-DDTHH:mm:ss) to use in your Mixpanel reports.
+For this type of property, Mixpanel recommends an ISO-formatted date string (YYYY-MM-DDTHH:mm:ss) to use in your Mixpanel reports.
 
 Below are some code examples from Mixpanel's client-side libraries that allow you to send a property to Mixpanel with a correctly formatted UTC timestamp.
 
 ```
-Javascript: new Date().toISOString()
+JavaScript: new Date().toISOString()
 mixpanel.track("Sign Up", {"Account Created Date": new 
 Date().toISOString()});
 iOS: [NSDate date]
@@ -187,15 +188,15 @@ Mixpanel.track("Account Created Date", props);
 For projects created before 1 January 2023, the `from_date` and `to_date` params for the Export API are interpreted using your project's current timezone setting.
 </Callout>
 
-When you’re exporting raw data from Mixpanel using the [Export API](https://developer.mixpanel.com/reference/raw-event-export), your request requires the date parameters `from_date` and `to_date` to determine which date range of data to return. Mixpanel's raw export API interprets the "from_date" and "to_date" param using UTC timezone.
+When you’re exporting raw data from Mixpanel using the [Export API](https://developer.mixpanel.com/reference/raw-event-export), your request requires the date parameters `from_date` and `to_date` to determine which date range of data to return. Mixpanel's raw export API interprets the "from_date" and "to_date" parameters using UTC timezone.
 
-The `$time` property values from your raw event export are Unix timestamps, which represents the number of seconds that have elapsed since 00:00:00 on January 1, 1970. Note that [the timezone of the `$time` property in your exports depends on how your project records time at ingestion](/docs/orgs-and-projects/managing-projects#manage-timezones-for-projects).
+The `$time` property values from your raw event export are Unix timestamps, which represent the number of seconds that have elapsed since 00:00:00 on January 1, 1970. Note that [the timezone of the `$time` property in your exports depends on how your project records time at ingestion](/docs/orgs-and-projects/managing-projects#manage-timezones-for-projects).
 
 #### Importing Data into Mixpanel
 
 Always send imported data to Mixpanel in UTC to ensure it displays correctly in your project.
 
-Mixpanel stores your data in UTC, then use your project timezone setting to output data in your selected timezone. For projects created before 1 January 2023, your UTC timestamps are converted to the project timezone before ingestion meaning that your event data are stored in the project timezone.
+Mixpanel stores your data in UTC, then uses your project timezone setting to output data in your selected timezone. For projects created before January 1st, 2023, your UTC timestamps are converted to the project's timezone before ingestion, meaning that your event data is stored in the project's timezone.
 
 ## Transfer Project to Another Organization
 
@@ -206,7 +207,7 @@ When a user transfers a project to another organization, the project members and
 To transfer a project to another organization:
 
 1. Under **Project Settings**, click a project.
-2. Click **Transfer**.
+2. Click the **Transfer** button on the top right of the page. 
 
 ![manageprojects 13 Image](/manageprojects13.png)
 
@@ -218,9 +219,9 @@ To transfer a project to another organization:
 
 ## Merge Mixpanel Projects
 
-If for any reason you need to combine two or more Mixpanel projects, it is possible to do so. Here are a few things to consider before proceeding with the merge to ensure you maintain data integrity:
+If, for any reason, you need to combine two or more Mixpanel projects, it is possible to do so. Here are a few things to consider before proceeding with the merge to ensure you maintain data integrity:
 
-- If you're using the alias method, bear in mind that aliases are project-specific. As such, before importing data into the new project from the old project, you'd need to recreate the aliases from your old project. Mixpanel does not have the ability to provide a historical table of your project’s aliases.
+- If you're using the 'alias' method, bear in mind that aliases are project-specific. As such, before importing data into the new project from the old project, you'd need to recreate the aliases from your old project. Mixpanel cannot provide a historical table of your project’s aliases.
 
 - Merging projects involves exporting and importing data, so to make sure you only have to go through the process once, ensure you have stopped sending data to the old project(s) before beginning to export.
 

@@ -2,8 +2,17 @@
 title: Connect an Entity Framework application to Neon
 subtitle: Set up a Neon project in seconds and connect from an Entity Framework
   application
+summary: >-
+  Entity Framework Core connection to Neon Postgres uses Npgsql as the EF Core
+  provider, demonstrated through a complete ASP.NET Core Web API project with
+  DbContext setup, connection string configuration, and EF migrations. Use this
+  guide when wiring a .NET application (ASP.NET Core MVC, Blazor, or console
+  app) to a Neon serverless Postgres database for the first time. Covers
+  installing `Npgsql.EntityFrameworkCore.PostgreSQL`,
+  `Microsoft.EntityFrameworkCore.Design`, and `dotnet-ef`, then applying the
+  initial schema with `dotnet ef database update`.
 enableTableOfContents: true
-updatedOn: '2025-10-31T11:07:57.601Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/dotnet-ef-prompt.md"
@@ -193,14 +202,6 @@ If you do not have one already, create a Neon project.
    ```
 
 2. Test the connection by navigating to [`http://localhost:5001/swagger`](http://localhost:5001/swagger) in your browser. You can use the Swagger UI to create and retrieve Todo items.
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-<a href="https://github.com/neondatabase/examples/tree/main/with-dotnet-entity-framework" description="Get started with Entity Framework and Neon" icon="github">Get started with Entity Framework and Neon</a>
-</DetailIconCards>
 
 ## Resources
 

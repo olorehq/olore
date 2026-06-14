@@ -37,6 +37,14 @@ Failure to forward headers or preserve body fields may result in reduced functio
   Claude Code determines which features to enable based on the API format. When using the Anthropic Messages format with Bedrock or Vertex, you may need to set environment variable `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`.
 </Note>
 
+**Request headers**
+
+Claude Code includes the following headers on every API request:
+
+| Header                     | Description                                                                                                                                                         |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `X-Claude-Code-Session-Id` | A unique identifier for the current Claude Code session. Proxies can use this to aggregate all API requests from a single session without parsing the request body. |
+
 ## Configuration
 
 ### Model selection
@@ -47,9 +55,15 @@ If you have configured custom model names in your gateway, use the environment v
 
 ## LiteLLM configuration
 
-<Note>
+<Warning>
+  LiteLLM PyPI versions 1.82.7 and 1.82.8 were compromised with credential-stealing malware. Do not install these versions. If you have already installed them:
+
+  * Remove the package
+  * Rotate all credentials on affected systems
+  * Follow the remediation steps in [BerriAI/litellm#24518](https://github.com/BerriAI/litellm/issues/24518)
+
   LiteLLM is a third-party proxy service. Anthropic doesn't endorse, maintain, or audit LiteLLM's security or functionality. This guide is provided for informational purposes and may become outdated. Use at your own discretion.
-</Note>
+</Warning>
 
 ### Prerequisites
 
@@ -67,7 +81,7 @@ If you have configured custom model names in your gateway, use the environment v
 
 Simplest method using a fixed API key:
 
-```bash  theme={null}
+```bash theme={null}
 # Set in environment
 export ANTHROPIC_AUTH_TOKEN=sk-litellm-static-key
 
@@ -87,7 +101,7 @@ For rotating keys or per-user authentication:
 
 1. Create an API key helper script:
 
-```bash  theme={null}
+```bash theme={null}
 #!/bin/bash
 # ~/bin/get-litellm-key.sh
 
@@ -103,7 +117,7 @@ jwt encode \
 
 2. Configure Claude Code settings to use the helper:
 
-```json  theme={null}
+```json theme={null}
 {
   "apiKeyHelper": "~/bin/get-litellm-key.sh"
 }
@@ -111,7 +125,7 @@ jwt encode \
 
 3. Set token refresh interval:
 
-```bash  theme={null}
+```bash theme={null}
 # Refresh every hour (3600000 ms)
 export CLAUDE_CODE_API_KEY_HELPER_TTL_MS=3600000
 ```
@@ -122,7 +136,7 @@ This value will be sent as `Authorization` and `X-Api-Key` headers. The `apiKeyH
 
 Using LiteLLM's [Anthropic format endpoint](https://docs.litellm.ai/docs/anthropic_unified):
 
-```bash  theme={null}
+```bash theme={null}
 export ANTHROPIC_BASE_URL=https://litellm-server:4000
 ```
 
@@ -138,7 +152,7 @@ export ANTHROPIC_BASE_URL=https://litellm-server:4000
 
 Using [pass-through endpoint](https://docs.litellm.ai/docs/pass_through/anthropic_completion):
 
-```bash  theme={null}
+```bash theme={null}
 export ANTHROPIC_BASE_URL=https://litellm-server:4000/anthropic
 ```
 
@@ -146,7 +160,7 @@ export ANTHROPIC_BASE_URL=https://litellm-server:4000/anthropic
 
 Using [pass-through endpoint](https://docs.litellm.ai/docs/pass_through/bedrock):
 
-```bash  theme={null}
+```bash theme={null}
 export ANTHROPIC_BEDROCK_BASE_URL=https://litellm-server:4000/bedrock
 export CLAUDE_CODE_SKIP_BEDROCK_AUTH=1
 export CLAUDE_CODE_USE_BEDROCK=1
@@ -156,7 +170,7 @@ export CLAUDE_CODE_USE_BEDROCK=1
 
 Using [pass-through endpoint](https://docs.litellm.ai/docs/pass_through/vertex_ai):
 
-```bash  theme={null}
+```bash theme={null}
 export ANTHROPIC_VERTEX_BASE_URL=https://litellm-server:4000/vertex_ai/v1
 export ANTHROPIC_VERTEX_PROJECT_ID=your-gcp-project-id
 export CLAUDE_CODE_SKIP_VERTEX_AUTH=1

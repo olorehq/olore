@@ -8,8 +8,7 @@ This guide shows you how to use the [`<SignIn />`](/docs/reference/components/au
 
 To set up separate sign-in and sign-up pages, follow this guide, and then follow the [custom sign-up page guide](/docs/nextjs/guides/development/custom-sign-up-page).
 
-> [!NOTE]
-> Just getting started with Clerk and Next.js? See the [quickstart tutorial](/docs/nextjs/getting-started/quickstart)!
+<Include src="_partials/see-custom-flow-guides-callout" />
 
 <Steps>
   ## Build a sign-in-or-up page
@@ -53,6 +52,8 @@ To set up separate sign-in and sign-up pages, follow this guide, and then follow
       '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
       // Always run for API routes
       '/(api|trpc)(.*)',
+      // Always run for Clerk-specific frontend API routes
+      '/__clerk/(.*)',
     ],
   }
   ```
@@ -104,9 +105,4 @@ Learn more about Clerk components, how to use them to create custom pages, and h
 
   - [Prebuilt components](/docs/reference/components/overview)
   - Learn how to quickly add authentication to your app using Clerk's suite of components.
-
-  ---
-
-  - [Clerk Next.js SDK Reference](/docs/reference/nextjs/overview)
-  - Learn about the Clerk Next.js SDK and how to integrate it into your app.
 </Cards>

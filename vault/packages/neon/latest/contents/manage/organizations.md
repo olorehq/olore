@@ -1,11 +1,19 @@
 ---
 title: Organizations
 subtitle: Manage your projects and collaborate with team members
+summary: >-
+  Neon Organizations are the top-level containers for all projects, providing
+  centralized billing, member management, and access controls for teams on free
+  and paid plans. Teams use organizations to collaborate across projects, assign
+  Admin or Member roles, and auto-provision users by verified email domain.
+  Current limitations include all users being able to manage protected branches
+  regardless of role, and a permissions model that does not yet support
+  fine-grained access controls.
 enableTableOfContents: true
-updatedOn: '2025-05-23T18:48:33.110Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-In Neon, all projects live within organizations. When you sign up, you automatically get a free organization for your first project. Organizations provide a central place to manage your projects, collaborate with team members, and — for paid plans — handle your billing.
+In Neon, all projects live within organizations. When you sign up, you automatically get a free organization for your first project. Organizations provide a central place to manage your projects and collaborate with team members. You can start inviting teammates as soon as your organization is created. Paid plans also include billing management for your organization.
 
 ## About Neon Organizations
 
@@ -17,10 +25,12 @@ In the Neon Console, the Organizations page gives you a centralized view of all 
 
 Organizations have two main member roles:
 
-- **Admin** — Full control over the organization and all its projects.
-- **Member** — Access to all organization projects, but cannot modify org settings or delete projects.
+- **Admin**: Full control over the organization and all its projects.
+- **Member**: Access to all organization projects, but cannot modify org settings or delete projects.
 
-For a full breakdown of what each role can do, see the [User Permissions](/docs/manage/user-permissions) page.
+For a full breakdown of what each role can do, see the [User Permissions](/docs/manage/user-permissions) page. That page also explains [which roles receive certain organization emails](/docs/manage/user-permissions#email-notifications) (for example, alerts when a project is close to its storage limit).
+
+You can also [auto-provision members by email domain](/docs/manage/orgs-add-members-by-domain) so that users whose email matches a verified domain are added to the organization automatically when they sign up or log in.
 
 ## Creating a new organization
 
@@ -30,8 +40,8 @@ You can create additional organizations at any time. [See how to create an organ
 
 As we continue to refine our organization features, here are some temporary limitations you should be aware of:
 
-- **Branch management** — All users are currently able to manage [protected branches](/docs/guides/protected-branches), regardless of their role or permission level. Granular permissions for this feature are not yet implemented.
-- **Permissions and roles** — The current permissions system may not meet all needs for granular control. Users are encouraged to share their feedback and requirements for more detailed permissions settings.
+- **Branch management**: All users are currently able to manage [protected branches](/docs/guides/protected-branches), regardless of their role or permission level. Granular permissions for this feature are not yet implemented.
+- **Permissions and roles**: The current permissions system may not meet all needs for granular control. Users are encouraged to share their feedback and requirements for more detailed permissions settings.
 
 ## Feedback
 

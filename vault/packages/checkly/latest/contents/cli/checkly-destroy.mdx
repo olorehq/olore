@@ -22,10 +22,11 @@ The basic command destroys all project resources with a confirmation prompt.
 npx checkly destroy [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
-| `--force, -f` | Force mode. Skips the confirmation dialog. |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--config, -c` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts\|js` file in the current directory. |
+| `--force, -f` | - | Force mode. Skips the confirmation dialog. |
+| `--preserve-resources` | - | Delete only the project, detaching its resources so they remain in your Checkly account. |
 
 ## Command Options
 
@@ -62,6 +63,28 @@ npx checkly destroy -f
 <Warning>Use with extreme caution as this command option bypasses safety prompts.</Warning>
 </ResponseField>
 
+<ResponseField name="--preserve-resources" type="boolean">
+
+<Note>Available since CLI version `7.10.0`.</Note>
+
+Delete the project but preserve all of its resources (checks, groups, alert channels, dashboards, etc.) in your Checkly account. The resources are detached from the CLI project and become regular account-level resources that are no longer managed by the CLI.
+
+Use this when you want to stop managing resources as code but keep them running in your account.
+
+**Usage:**
+
+```bash Terminal
+npx checkly destroy --preserve-resources
+```
+
+**Examples:**
+
+```bash Terminal
+$ npx checkly destroy --preserve-resources --force
+```
+
+</ResponseField>
+
 ## What Gets Destroyed
 
 The `destroy` command removes the all the resources managed by the specified project. These resources could include:
@@ -72,6 +95,8 @@ The `destroy` command removes the all the resources managed by the specified pro
 - **Alert Channels** defined in your project
 - **Maintenance Windows** created via CLI
 - **Private Locations** (if managed by the project)
+
+When run with `--preserve-resources`, only the project itself is deleted. All of the above resources remain in your Checkly account as regular account-level resources and are no longer tracked by the CLI.
 
 ## Safety Considerations
 

@@ -1,7 +1,14 @@
 ---
 title: Import data from CSV
+summary: >-
+  Loading CSV data into a Neon Postgres table uses the psql `\copy` meta-command
+  to stream rows directly from a local file into an existing table. Use this page
+  when you need to bulk-load tabular data without application code, using only a
+  psql connection string from the Neon Console. The target table must exist in
+  advance with columns that match the CSV header; `\copy` returns the row count
+  on success.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.291Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This topic shows how to import data into a Neon database table from a CSV file using a simple example.
@@ -28,7 +35,7 @@ For more information about connecting to Neon with `psql`, see [Connect with psq
 
 ## Create the target table
 
-Create the `customer` table — table you are importing to must exist in your database and the columns must match your CSV file.
+Create the `customer` table: the table you are importing to must exist in your database and the columns must match your CSV file.
 
 ```sql
 CREATE TABLE customer (
@@ -46,7 +53,7 @@ You can also create tables using the **SQL Editor** in the Neon Console. See [Qu
 
 ## Prepare the CSV file
 
-Prepare a `customer.csv` file with the following data — note that the columns in the CSV file match the columns in the table you created in the previous step.
+Prepare a `customer.csv` file with the following data. Note that the columns in the CSV file match the columns in the table you created in the previous step.
 
 ```text
 First Name,Last Name,Email

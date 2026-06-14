@@ -1,21 +1,20 @@
-# meta-capi Documentation Map
+# meta-capi Documentation Structure
 
-## Contents
+## Files
 
-```
-contents/
-├── index.md                # Overview, event sources, endpoint, SDKs
-├── get-started.md          # Prerequisites, Pixel ID, access token, setup steps
-├── using-the-api.md        # Endpoint, payload format, batch limits, testing, rate limits
-├── parameters.md           # Server event, user_data, custom_data, app_data parameters
-├── deduplication.md        # Event ID + event name method, FBP method, verification
-├── best-practices.md       # Redundancy, EMQ, data freshness, cookie handling, testing
-├── app-events.md           # Mobile app events, extinfo array, iOS/Android examples
-├── offline-events.md       # Physical store events, timing, order ID deduplication
-├── business-messaging.md   # WhatsApp, Messenger, Instagram Direct events
-├── conversion-leads.md     # CRM integration for Lead Ads optimization
-├── dataset-quality-api.md  # EMQ, ACR, event coverage, freshness metrics at scale
-├── verifying-setup.md      # 4-step verification: receipt, freshness, dedup, EMQ
-├── guides.md               # Integration methods: SDK, Gateway, GTM, Zapier, parameter builder
-└── support.md              # Troubleshooting, HTTP codes, common issues, resources
-```
+| File | Description |
+|------|-------------|
+| `contents/index.md` | Overview of the Conversions API: key benefits, supported event sources, core endpoint, Business SDKs |
+| `contents/get-started.md` | Prerequisites (Pixel ID, Business Manager, access token), setup steps, and go-live checklist |
+| `contents/using-the-api.md` | Endpoint, request payload format, batch limits, testing with test_event_code, rate limiting, US privacy (LDU) |
+| `contents/parameters.md` | Full parameter reference: server event, user_data (hashed/unhashed), custom_data, app_data, standard event names |
+| `contents/deduplication.md` | Deduplication methods (event_id + event_name, FBP/external_id), browser/server examples, verification |
+| `contents/best-practices.md` | Redundant setup, EMQ optimization, data freshness, cookie handling, partner recommendations |
+| `contents/app-events.md` | Mobile app events: action_source=app, extinfo array structure, iOS/Android examples, deduplication |
+| `contents/offline-events.md` | Physical store events: action_source=physical_store, 62-day upload window, order ID deduplication |
+| `contents/business-messaging.md` | WhatsApp, Messenger, Instagram Direct events: permissions, user identifiers, dataset setup |
+| `contents/conversion-leads.md` | CRM Lead Ads optimization: eligibility, implementation timeline, funnel stage uploads |
+| `contents/dataset-quality-api.md` | Programmatic quality monitoring: EMQ scores, ACR metrics, event coverage, freshness, authentication |
+| `contents/verifying-setup.md` | 4-step verification: event receipt, freshness, deduplication rate, Event Match Quality (EMQ) |
+| `contents/guides.md` | Integration methods: direct API, Business SDK, CAPI Gateway, GTM, Zapier, parameter builder library |
+| `contents/support.md` | Troubleshooting: HTTP codes, common issues (missing events, low EMQ, batch rejections), support resources |

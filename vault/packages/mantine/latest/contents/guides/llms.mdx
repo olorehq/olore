@@ -1,0 +1,197 @@
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.LLMDocumentation);
+
+# Mantine with LLMs
+
+Mantine provides LLM-friendly documentation to help AI tools like **Cursor**, **Windsurf**, **GitHub Copilot**, **ChatGPT**, and **Claude** understand and work with the Mantine UI library.
+
+`llms.txt` documentation is updated with every Mantine release.
+
+## Documentation
+
+Links:
+
+- [llms.txt](/llms.txt) – compact
+- [Download](/llms-full.txt) full documentation in single document (~1.8MB)
+
+The LLM documentation includes:
+
+- **Getting Started** - Installation and setup guides
+- **Components** - All Mantine components with props, examples, and usage
+- **Hooks** - Complete hooks documentation with examples
+- **Theming** - Theme customization and MantineProvider setup
+- **Styles** - CSS modules, CSS variables, and styling approaches
+- **Frequently Asked Questions** - Common questions and solutions
+
+## Cursor
+
+In Cursor, you can reference the documentation using the `@Docs` feature:
+
+1. Type `@Docs` in your prompt
+2. Reference the Mantine documentation URL: `https://mantine.dev/llms.txt`
+3. Ask questions about Mantine components, styling, or implementation
+
+## Windsurf
+
+For Windsurf users:
+
+1. Reference the documentation using `@https://mantine.dev/llms.txt`
+2. Or add it to your `.windsurfrules` file for persistent access
+
+## ChatGPT and Claude
+
+When using ChatGPT or Claude:
+
+1. Mention that you're using Mantine v8
+2. Reference the documentation URL: `https://mantine.dev/llms.txt`
+3. The AI will fetch and use the documentation to provide accurate answers
+
+### GitHub Copilot
+
+While Copilot doesn't directly support external documentation, you can:
+
+1. Include relevant documentation snippets in your comments
+2. Reference component names and props accurately for better suggestions
+
+## Skills
+
+Mantine also provides skills for AI coding agents in the
+[`mantinedev/skills`](https://github.com/mantinedev/skills) repository.
+
+Currently available skills:
+
+- `mantine-combobox` – Build custom select/autocomplete/multiselect components with `Combobox`
+- `mantine-form` – Build forms with `@mantine/form`, validation, nested fields, and form context
+- `mantine-custom-components` – Create custom components with Mantine factory APIs and Styles API
+
+### Install skills
+
+Install each skill from the repository:
+
+```bash
+npx skills add https://github.com/mantinedev/skills --skill mantine-combobox
+npx skills add https://github.com/mantinedev/skills --skill mantine-form
+npx skills add https://github.com/mantinedev/skills --skill mantine-custom-components
+```
+
+### Use skills
+
+In your AI prompt, explicitly tell the agent to use one of the installed skills.
+
+Examples:
+
+- "Use `$mantine-form` and build a profile form with validation and nested fields"
+- "Use `$mantine-combobox` and create a searchable multi-select with custom option rendering"
+- "Use `$mantine-custom-components` and scaffold a polymorphic component with Styles API support"
+
+If your agent does not support `$skill-name` mentions, reference the skill name in plain text and ask the agent to follow it.
+
+## MCP server (experimental)
+
+Mantine also provides an MCP server package:
+
+- `@mantine/mcp-server`
+
+The server reads Mantine static MCP data published on `mantine.dev` and exposes tools that AI agents can call directly:
+
+- `list_items`
+- `get_item_doc`
+- `get_item_props`
+- `search_docs`
+
+### MCP server configuration
+
+Most MCP-compatible tools support adding servers with a JSON configuration. Use this server definition:
+
+```json
+{
+  "mcpServers": {
+    "mantine": {
+      "command": "npx",
+      "args": ["-y", "@mantine/mcp-server"]
+    }
+  }
+}
+```
+
+To use a different data source (for example, alpha docs or local static files), add env variables:
+
+```json
+{
+  "mcpServers": {
+    "mantine": {
+      "command": "npx",
+      "args": ["-y", "@mantine/mcp-server"],
+      "env": {
+        "MANTINE_MCP_DATA_URL": "https://mantine.dev/mcp"
+      }
+    }
+  }
+}
+```
+
+### Using MCP server with different tools
+
+#### Claude Desktop
+
+1. Open MCP settings in Claude Desktop
+2. Add the `mantine` server configuration above
+3. Start a new chat and ask for Mantine guidance, for example: "Find Button props and give me a usage example"
+
+#### Cursor
+
+1. Open Cursor MCP/server settings
+2. Add the same `mantine` server config
+3. Use agent mode and ask Mantine-specific questions – Cursor will call MCP tools automatically
+
+#### Windsurf
+
+1. Open Windsurf MCP/server settings
+2. Register `@mantine/mcp-server` with the same config
+3. Ask for component docs, props, and examples directly in chat
+
+#### Other MCP clients (VS Code/Cline and others)
+
+If the client supports custom MCP servers, add the same command and args:
+
+- command: `npx`
+- args: `["-y", "@mantine/mcp-server"]`
+
+Then use prompts like:
+
+- "List Mantine items related to input fields"
+- "Get full docs for Button"
+- "Search Mantine docs for color scheme and dark mode"
+
+## Example prompts
+
+Here are some example prompts you can use with AI tools:
+
+- "Using Mantine v8, how do I create a dark mode toggle?"
+- "Show me how to use the AppShell component with a collapsible navbar"
+- "How can I customize the theme colors in MantineProvider?"
+- "Create a form with validation using Mantine's form hooks"
+- "How to align input with a button in a flex container?"
+
+## Documentation Generation
+
+The LLM documentation is automatically generated from our source files using a compilation script. It includes:
+
+- Component documentation from MDX files
+- Props tables and types
+- Code examples and demos
+- Styles API documentation
+- FAQ content from help.mantine.dev
+
+There are two generated formats:
+
+- `llms.txt` – the default compact index that links to per-page `.md` files under the `/llms` path
+- `llms-full.txt` – a single large file with all documentation content
+
+To ensure you have the latest documentation, we regenerate these files with each release. The files follow the [LLMs.txt](https://llmstxt.org/) standard for better compatibility with AI tools.
+
+## Contributing
+
+If you find any issues with the LLM documentation or have suggestions for improvement, please [open an issue](https://github.com/mantinedev/mantine/issues) on our GitHub repository.

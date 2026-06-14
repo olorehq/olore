@@ -18,7 +18,7 @@ Define the i18n configurations in a file, we will import it with `@/lib/i18n` in
 
 > See [available options](/docs/headless/internationalization/config) for i18n config.
 
-### Middleware
+### Middleware [step]
 
 Create a middleware that redirects users to appropriate locale.
 
@@ -34,7 +34,70 @@ Make sure its behaviour aligns with the [`hidePrefix`](/docs/headless/internatio
 
 </Callout>
 
-### Routing
+### Translations [step]
+
+Define your translations in `lib/layout.shared.tsx`, see [Translations](/docs/ui/translations) for more details (including official language packs).
+
+You can also add `locale` parameter to `baseOptions()` for localized layout options:
+
+```tsx title="lib/layout.shared.tsx"
+import { i18n } from '@/lib/i18n';
+import { uiTranslations } from 'fumadocs-ui/i18n';
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+// [!code ++:11]
+export const translations = i18n
+  .translations()
+  .extend(uiTranslations())
+  .add({
+    en: {
+      displayName: 'English',
+    },
+    cn: {
+      displayName: 'Chinese',
+    },
+  });
+
+// [!code highlight]
+export function baseOptions(locale: string): BaseLayoutProps {
+  return {
+    // different props based on `locale`
+  };
+}
+```
+
+Pass translations to `<RootProvider />`:
+
+```tsx title="app/[lang]/layout.tsx"
+import { RootProvider } from 'fumadocs-ui/provider/next';
+import { translations } from '@/lib/layout.shared';
+import { i18nProvider } from 'fumadocs-ui/i18n';
+
+export default async function RootLayout({
+  params,
+  children,
+}: {
+  params: Promise<{ lang: string }>;
+  children: React.ReactNode;
+}) {
+  const lang = (await params).lang;
+
+  return (
+    <html lang={lang}>
+      <body>
+        <RootProvider
+          // [!code ++]
+          i18n={i18nProvider(translations, lang)}
+        >
+          {children}
+        </RootProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Routing [step]
 
 Create a `/app/[lang]` folder, and move your pages/layouts into it, except route handlers.
 
@@ -54,66 +117,7 @@ Create a `/app/[lang]` folder, and move your pages/layouts into it, except route
   correct!
 </Callout>
 
-Provide UI translations and other config to `<RootProvider />`, the English translations are used when `translations` is not specified.
-
-```tsx title="app/[lang]/layout.tsx"
-import { RootProvider } from 'fumadocs-ui/provider/next';
-import { defineI18nUI } from 'fumadocs-ui/i18n';
-import { i18n } from '@/lib/i18n';
-
-// [!code ++:11]
-const { provider } = defineI18nUI(i18n, {
-  translations: {
-    en: {
-      displayName: 'English',
-    },
-    cn: {
-      displayName: 'Chinese',
-      search: '搜尋文檔',
-    },
-  },
-});
-
-export default async function RootLayout({
-  params,
-  children,
-}: {
-  params: Promise<{ lang: string }>;
-  children: React.ReactNode;
-}) {
-  const lang = (await params).lang;
-
-  return (
-    <html lang={lang}>
-      <body>
-        <RootProvider
-          // [!code ++]
-          i18n={provider(lang)}
-        >
-          {children}
-        </RootProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-### Pass Locale
-
-Add `locale` parameter to `baseOptions()` and add `i18n` into it:
-
-```tsx title="lib/layout.shared.tsx"
-import { i18n } from '@/lib/i18n';
-import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-
-// [!code highlight]
-export function baseOptions(locale: string): BaseLayoutProps {
-  return {
-    i18n, // [!code ++]
-    // different props based on `locale`
-  };
-}
-```
+### Pass Locale [step]
 
 Pass the locale to Fumadocs in your pages and layouts.
 
@@ -201,7 +205,7 @@ export function generateStaticParams() {
 
 </Callout>
 
-### Search
+### Search [step]
 
 Configure i18n on your search solution.
 

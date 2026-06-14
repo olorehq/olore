@@ -1,182 +1,134 @@
-# Cloudflare Documentation Table of Contents
+# Cloudflare Table of Contents
 
 ## Directory Map
 
 ```
 contents/
-├── workers/                    # Cloudflare Workers (392 files)
-│   ├── runtime-apis/           # Runtime APIs: fetch, cache, bindings, streams (85 files)
-│   ├── examples/               # Code examples (49 files)
-│   ├── testing/                # Vitest, unit tests (35 files)
-│   ├── framework-guides/       # Next.js, Remix, Astro, Nuxt (26 files)
-│   ├── configuration/          # Routes, wrangler.toml, integrations (25 files)
-│   ├── observability/          # Logs, traces, OpenTelemetry (24 files)
-│   ├── tutorials/              # Step-by-step tutorials (19 files)
-│   ├── ci-cd/                  # Deployment pipelines (19 files)
-│   ├── wrangler/               # Wrangler CLI (20 files)
-│   ├── languages/              # JS, TS, Python, Rust (15 files)
-│   ├── platform/               # Compatibility dates, limits (12 files)
-│   ├── databases/              # DB integrations (11 files)
-│   ├── static-assets/          # Static assets, routing (17 files)
-│   ├── vite-plugin/            # Vite plugin (12 files)
-│   ├── get-started/            # Quickstart (4 files)
-│   └── best-practices/         # Best practices (1 file)
-├── agents/                     # Cloudflare Agents SDK (68 files)
-│   ├── api-reference/          # Agent API reference (25 files)
-│   ├── guides/                 # How-to guides (12 files)
-│   ├── getting-started/        # Setup and quickstart (6 files)
-│   ├── model-context-protocol/ # MCP integration (7 files)
-│   ├── concepts/               # Core concepts (7 files)
-│   └── x402/                  # x402 payment protocol (5 files)
-├── ai-gateway/                 # AI Gateway (81 files)
-│   ├── usage/                  # Provider integrations (30 files)
-│   ├── features/               # Caching, logging, rate limiting (13 files)
-│   ├── configuration/          # Setup and config (7 files)
-│   ├── evaluations/            # LLM evaluations (5 files)
-│   ├── observability/          # Analytics and logs (6 files)
-│   ├── integrations/           # Third-party integrations (5 files)
-│   └── tutorials/              # Tutorials (4 files)
-├── cloudflare-one/             # Cloudflare Zero Trust (611 files)
-│   └── ...                     # Access, Gateway, WARP, tunnels
-├── realtime/                   # Cloudflare Realtime / Calls (527 files)
-│   └── ...                     # WebRTC, audio/video, WHIP/WHEP
-├── rules/                      # Cloudflare Rules (184 files)
-│   └── ...                     # Page rules, transform rules, redirect rules
-├── ddos-protection/            # DDoS Protection (149 files)
-├── waf/                        # Web Application Firewall (147 files)
-├── ssl/                        # SSL/TLS (125 files)
-├── dns/                        # DNS management (122 files)
-├── pages/                      # Cloudflare Pages (117 files)
-├── fundamentals/               # Platform fundamentals (117 files)
-├── logs/                       # Logpush, log management (94 files)
-├── cloudflare-wan/             # Cloudflare WAN (94 files)
-├── cloudflare-for-platforms/   # For platforms / SaaS (89 files)
-├── analytics/                  # Analytics and metrics (89 files)
-├── r2/                         # R2 Object Storage (87 files)
-│   ├── examples/               # Code examples (20 files)
-│   ├── data-catalog/           # Data catalog (12 files)
-│   ├── buckets/                # Bucket management (8 files)
-│   ├── api/                    # API reference (8 files)
-│   ├── platform/               # Platform info (8 files)
-│   ├── reference/              # Reference docs (8 files)
-│   ├── tutorials/              # Tutorials (6 files)
-│   ├── data-migration/         # Migration (4 files)
-│   ├── get-started/            # Quickstart (4 files)
-│   └── objects/                # Object management (3 files)
-├── email-security/             # Email Security (77 files)
-├── cache/                      # Caching (68 files)
-├── stream/                     # Cloudflare Stream (63 files)
-├── workers-ai/                 # Workers AI inference (59 files)
-│   ├── features/               # AI features (23 files)
-│   ├── guides/                 # Usage guides (15 files)
-│   ├── platform/               # Platform info (8 files)
-│   ├── configuration/          # Config (4 files)
-│   └── get-started/            # Quickstart (3 files)
-├── load-balancing/             # Load Balancing (59 files)
-├── sandbox/                    # Sandbox SDK (54 files)
-├── images/                     # Cloudflare Images (54 files)
-├── hyperdrive/                 # Hyperdrive (54 files)
-├── durable-objects/            # Durable Objects (53 files)
-│   ├── api/                    # DO API reference (11 files)
-│   ├── examples/               # Examples (12 files)
-│   ├── reference/              # Reference (8 files)
-│   ├── best-practices/         # Best practices (5 files)
-│   ├── platform/               # Platform info (4 files)
-│   ├── observability/          # Observability (3 files)
-│   ├── tutorials/              # Tutorials (2 files)
-│   └── concepts/               # Concepts (2 files)
-├── d1/                         # D1 SQLite Database (52 files)
-│   ├── reference/              # SQL reference (8 files)
-│   ├── best-practices/         # Best practices (8 files)
-│   ├── platform/               # Limits, pricing (5 files)
-│   ├── observability/          # Monitoring (4 files)
-│   ├── examples/               # Examples (6 files)
-│   ├── worker-api/             # Worker binding API (4 files)
-│   ├── sql-api/                # SQL API (3 files)
-│   ├── tutorials/              # Tutorials (7 files)
-│   └── configuration/          # Config (2 files)
-├── turnstile/                  # Turnstile CAPTCHA (46 files)
-├── zaraz/                      # Zaraz (45 files)
-├── bots/                       # Bot Management (43 files)
-├── ruleset-engine/             # Ruleset Engine (42 files)
-├── magic-transit/              # Magic Transit (41 files)
-├── speed/                      # Performance/Speed (40 files)
-├── queues/                     # Cloudflare Queues (38 files)
-│   ├── configuration/          # Queue config (9 files)
-│   ├── examples/               # Examples (8 files)
-│   ├── platform/               # Platform info (5 files)
-│   ├── reference/              # Reference (4 files)
-│   ├── event-subscriptions/    # Event subscriptions (3 files)
-│   └── tutorials/              # Tutorials (3 files)
-├── api-shield/                 # API Shield (37 files)
-├── browser-rendering/          # Browser Rendering (36 files)
-├── 1.1.1.1/                    # 1.1.1.1 DNS resolver (36 files)
-├── ai-search/                  # AI Search (32 files)
-├── workflows/                  # Workflows (31 files)
-├── tunnel/                     # Cloudflare Tunnel (30 files)
-├── web3/                       # Web3 gateway (29 files)
-├── pipelines/                  # Pipelines (29 files)
-├── kv/                         # KV Store (29 files)
-│   ├── examples/               # Examples (6 files)
-│   ├── platform/               # Platform info (5 files)
-│   ├── api/                    # KV API (4 files)
-│   ├── reference/              # Reference (4 files)
-│   ├── concepts/               # Concepts (3 files)
-│   └── tutorials/              # Tutorials (1 file)
-├── cloudflare-network-firewall/ # Network Firewall (29 files)
-├── waiting-room/               # Waiting Room (27 files)
-├── terraform/                  # Terraform provider (27 files)
-├── firewall/                   # Firewall (legacy) (27 files)
-├── ai-crawl-control/           # AI Crawl Control (27 files)
-├── containers/                 # Containers (26 files)
-├── page-shield/                # Page Shield (25 files)
-├── email-routing/              # Email Routing (25 files)
-├── radar/                      # Cloudflare Radar (24 files)
-├── data-localization/          # Data Localization (24 files)
-├── vectorize/                  # Vectorize vector DB (23 files)
-│   ├── reference/              # Reference (5 files)
-│   ├── platform/               # Platform info (5 files)
-│   ├── best-practices/         # Best practices (4 files)
-│   ├── examples/               # Examples (3 files)
-│   ├── get-started/            # Quickstart (2 files)
-│   └── tutorials/              # Tutorials (1 file)
-├── security-center/            # Security Center (23 files)
-├── smart-shield/               # Smart Shield (21 files)
-├── network-flow/               # Network Flow (21 files)
-├── byoip/                      # BYOIP (20 files)
-├── registrar/                  # Registrar (19 files)
-├── spectrum/                   # Spectrum (17 files)
-├── cloudflare-challenges/      # Challenges (17 files)
-├── web-analytics/              # Web Analytics (16 files)
-├── billing/                    # Billing (16 files)
-├── automatic-platform-optimization/ # APO (15 files)
-├── workers-vpc/                # Workers VPC (13 files)
-├── warp-client/                # WARP Client (12 files)
-├── r2-sql/                     # R2 SQL (12 files)
-├── version-management/         # Version management (11 files)
-├── notifications/              # Notifications (11 files)
-├── time-services/              # Time services (9 files)
-├── tenant/                     # Tenant management (9 files)
-├── randomness-beacon/          # Randomness Beacon (9 files)
-├── privacy-proxy/              # Privacy Proxy (9 files)
-├── network/                    # Network (9 files)
-├── china-network/              # China Network (9 files)
-├── log-explorer/               # Log Explorer (8 files)
-├── secrets-store/              # Secrets Store (7 files)
-├── pulumi/                     # Pulumi provider (7 files)
-├── health-checks/              # Health Checks (7 files)
-├── security/                   # Security overview (6 files)
-├── privacy-gateway/            # Privacy Gateway (6 files)
-├── multi-cloud-networking/     # Multi-cloud networking (6 files)
-├── network-interconnect/       # Network Interconnect (5 files)
-├── key-transparency/           # Key Transparency (5 files)
-├── dmarc-management/           # DMARC Management (5 files)
-├── network-error-logging/      # Network Error Logging (4 files)
-├── client-ip-geolocation/      # Client IP Geolocation (4 files)
-├── argo-smart-routing/         # Argo Smart Routing (4 files)
-├── moq/                        # MoQ (2 files)
-├── constellation/              # Constellation (deprecated, 2 files)
-└── migration-guides/           # Migration guides (1 file)
+├── workers/                        # Workers runtime, APIs, examples, wrangler (443 files)
+│   ├── runtime-apis/               # Web APIs, bindings, fetch, caches (89 files)
+│   ├── examples/                   # Code examples (49 files)
+│   ├── wrangler/                   # Wrangler CLI docs (41 files)
+│   ├── framework-guides/           # Next.js, SvelteKit, Remix, etc. (31 files)
+│   ├── configuration/              # wrangler.toml, bindings (27 files)
+│   ├── testing/                    # Vitest, unit testing (37 files)
+│   ├── ci-cd/                      # CI/CD integration (21 files)
+│   ├── tutorials/                  # End-to-end tutorials (19 files)
+│   ├── observability/              # Logs, metrics, tracing (26 files)
+│   ├── languages/                  # Python, Rust, WASM (16 files)
+│   ├── vite-plugin/                # Vite plugin docs (13 files)
+│   ├── databases/                  # D1, Hyperdrive, Durable Objects (13 files)
+│   ├── platform/                   # Limits, pricing, compatibility (13 files)
+│   ├── static-assets/              # Static file serving (20 files)
+│   ├── get-started/                # Quickstart (5 files)
+│   └── best-practices/             # Performance, security tips (2 files)
+├── cloudflare-one/                 # Zero Trust / SASE platform (734 files)
+│   ├── networks/                   # Tunnels, WARP, Gateway (197 files)
+│   ├── access-controls/            # Access policies, identity (82 files)
+│   ├── integrations/               # IdP, SCIM, MDM integrations (82 files)
+│   ├── team-and-resources/         # Users, groups, devices (64 files)
+│   ├── traffic-policies/           # Gateway policies, filtering (52 files)
+│   ├── tutorials/                  # Deployment guides (25 files)
+│   ├── insights/                   # Analytics, risk scoring (40 files)
+│   ├── email-security/             # Cloud email security (73 files)
+│   ├── data-loss-prevention/       # DLP policies (18 files)
+│   └── troubleshooting/            # Debug guides (16 files)
+├── realtime/                       # Cloudflare Realtime / RealtimeKit (715 files)
+│   ├── realtimekit/ui-kit/         # UI Kit components and API reference (604 files)
+│   │   └── api-reference/          # React, Angular, iOS, Android APIs (593 files)
+│   ├── realtimekit/core/           # Core SDK concepts (39 files)
+│   ├── realtimekit/recording-guide/# Recording APIs (13 files)
+│   ├── sfu/                        # SFU / WebRTC (15 files)
+│   └── turn/                       # TURN server (8 files)
+├── rules/                          # Cloudflare Rules (transform, page, URL) (192 files)
+│   ├── transform/                  # Transform Rules (46 files)
+│   ├── snippets/                   # Rules Snippets (36 files)
+│   ├── url-forwarding/             # Redirect rules (31 files)
+│   └── compression-rules/          # Compression rules (10 files)
+├── waf/                            # Web Application Firewall (164 files)
+├── learning-paths/                 # Guided tutorials by product (323 files)
+├── fundamentals/                   # Account setup, zones, APIs (140 files)
+├── ssl/                            # SSL/TLS, certificates (138 files)
+├── dns/                            # DNS management (139 files)
+│   ├── zone-setups/                # Partial/full zone setup (44 files)
+│   ├── manage-dns-records/         # CNAME, A, MX records (24 files)
+│   └── dnssec/                     # DNSSEC configuration (9 files)
+├── ddos-protection/                # DDoS protection rules (155 files)
+│   ├── managed-rulesets/           # Managed DDoS rulesets (20 files)
+│   └── advanced-ddos-systems/      # Advanced TCP/DNS protection (23 files)
+├── pages/                          # Pages (static sites, full-stack) (125 files)
+├── cloudflare-wan/                 # WAN services, Magic networking (111 files)
+├── analytics/                      # Analytics, insights (103 files)
+├── agents/                         # AI Agents platform (109 files)
+├── logs/                           # Logpush, Log Retrieval (110 files)
+├── ai-gateway/                     # AI Gateway (LLM proxy, caching) (88 files)
+├── cache/                          # Caching rules and configuration (85 files)
+├── reference-architecture/         # Reference architecture diagrams (84 files)
+├── email-security/                 # Area 1 email security (88 files)
+├── cloudflare-for-platforms/       # Workers for Platforms (98 files)
+├── r2/                             # R2 object storage (104 files)
+├── d1/                             # D1 SQL database (58 files)
+├── durable-objects/                # Durable Objects (59 files)
+├── kv/                             # Workers KV (34 files)
+├── queues/                         # Queues (42 files)
+├── hyperdrive/                     # Hyperdrive DB proxy (64 files)
+├── pipelines/                      # Pipelines data streaming (38 files)
+├── workflows/                      # Workflows orchestration (37 files)
+├── images/                         # Cloudflare Images (65 files)
+├── stream/                         # Stream video (66 files)
+├── workers-ai/                     # Workers AI models (67 files)
+├── vectorize/                      # Vectorize vector DB (28 files)
+├── ai-search/                      # AI Search (62 files)
+├── ai-crawl-control/               # AI crawl control (34 files)
+├── ai/                             # AI overview (13 files)
+├── load-balancing/                 # Load balancing (64 files)
+├── tunnel/                         # Cloudflare Tunnel (35 files)
+├── turnstile/                      # Turnstile CAPTCHA (52 files)
+├── bots/                           # Bot management (52 files)
+├── api-shield/                     # API Shield (38 files)
+├── ruleset-engine/                 # Ruleset engine internals (45 files)
+├── support/                        # Troubleshooting guides (116 files)
+│   ├── troubleshooting/            # Common issues (102 files)
+│   └── third-party-software/       # CMS, forum integrations (14 files)
+├── 1.1.1.1/                        # 1.1.1.1 DNS resolver (39 files)
+├── email-service/                  # Email Routing (50 files)
+├── magic-transit/                  # Magic Transit (48 files)
+├── zaraz/                          # Zaraz (50 files)
+├── speed/                          # Speed / performance (49 files)
+├── sandbox/                        # Sandbox code execution (62 files)
+├── browser-run/                    # Browser Rendering API (50 files)
+├── use-cases/                      # Use case guides (59 files)
+├── firewall/                       # Firewall rules (legacy) (28 files)
+├── security/                       # Security overview (10 files)
+├── spectrum/                       # Spectrum TCP/UDP (20 files)
+├── waiting-room/                   # Waiting Room (31 files)
+├── web3/                           # Web3 gateways (35 files)
+├── terraform/                      # Terraform provider (33 files)
+├── pulumi/                         # Pulumi provider (7 files)
+├── images/                         # Cloudflare Images (65 files)
+├── artifacts/                      # Build artifacts (30 files)
+├── containers/                     # Cloudflare Containers (29 files)
+├── registrar/                      # Domain registrar (23 files)
+├── client-side-security/           # Page Shield (29 files)
+├── cloudflare-challenges/          # CAPTCHA / challenges (20 files)
+├── automatic-platform-optimization/# APO for WordPress (16 files)
+├── data-localization/              # Data localization suite (25 files)
+├── byoip/                          # Bring Your Own IP (21 files)
+├── network/                        # Network overview (9 files)
+├── network-flow/                   # Network flow analytics (23 files)
+├── radar/                          # Cloudflare Radar (28 files)
+├── agents/                         # AI Agents (109 files)
+├── agent-memory/                   # Agent Memory binding (11 files)
+├── agent-setup/                    # Agent setup guides (6 files)
+├── dynamic-workers/                # Dynamic Workers (17 files)
+├── workers-vpc/                    # Workers VPC (20 files)
+├── secrets-store/                  # Secrets Store (9 files)
+├── flagship/                       # Feature flags (16 files)
+├── r2-sql/                         # R2 SQL (15 files)
+├── smart-shield/                   # Smart Shield (23 files)
+├── cloudflare-network-firewall/    # Network firewall (34 files)
+├── version-management/             # Version management (13 files)
+├── migration-guides/               # Migration guides (1 file)
+└── ...additional products...
 ```
 
 ## Key Entry Points
@@ -185,111 +137,108 @@ contents/
 |------|------------|
 | Workers quickstart | `contents/workers/get-started/` |
 | Workers runtime APIs | `contents/workers/runtime-apis/` |
-| Workers wrangler CLI | `contents/workers/wrangler/` |
+| Workers examples | `contents/workers/examples/` |
+| Wrangler CLI | `contents/workers/wrangler/` |
+| D1 SQL database | `contents/d1/` |
 | KV storage | `contents/kv/` |
-| D1 database | `contents/d1/` |
-| Durable Objects | `contents/durable-objects/` |
 | R2 object storage | `contents/r2/` |
+| Durable Objects | `contents/durable-objects/` |
 | Queues | `contents/queues/` |
+| Workflows | `contents/workflows/` |
 | AI Gateway | `contents/ai-gateway/` |
 | Workers AI | `contents/workers-ai/` |
-| Agents SDK | `contents/agents/` |
 | Vectorize | `contents/vectorize/` |
 | Pages deployment | `contents/pages/` |
 | DNS management | `contents/dns/` |
 | SSL/TLS | `contents/ssl/` |
-| WAF | `contents/waf/` |
-| Zero Trust | `contents/cloudflare-one/` |
+| WAF rules | `contents/waf/` |
+| Zero Trust / Access | `contents/cloudflare-one/` |
 | Cloudflare Tunnel | `contents/tunnel/` |
-| Turnstile | `contents/turnstile/` |
+| Troubleshooting | `contents/support/troubleshooting/` |
+| Account fundamentals | `contents/fundamentals/` |
 
 ## Detailed Structure
 
-### workers/runtime-apis/ (85 files)
+### workers/ (443 files)
 
-| Path | Description |
-|------|-------------|
-| `workers/runtime-apis/bindings/` | Service bindings, env bindings |
-| `workers/runtime-apis/handlers/` | fetch, scheduled, queue handlers |
-| `workers/runtime-apis/streams/` | ReadableStream, WritableStream |
-| `workers/runtime-apis/rpc/` | RPC between workers |
-| `workers/runtime-apis/nodejs/` | Node.js compat APIs |
-| `workers/runtime-apis/webassembly/` | WASM |
+| Subdirectory | Description |
+|--------------|-------------|
+| `runtime-apis/` | Web standard APIs, bindings, Cache, Fetch, WebSockets (89 files) |
+| `examples/` | Runnable code examples organized by topic (49 files) |
+| `wrangler/` | Wrangler CLI commands and configuration (41 files) |
+| `testing/` | Vitest integration, unit testing Workers (37 files) |
+| `framework-guides/` | Next.js, SvelteKit, Remix, Nuxt, Astro guides (31 files) |
+| `configuration/` | wrangler.toml reference, environment variables (27 files) |
+| `observability/` | Logs, Tail Workers, analytics (26 files) |
+| `static-assets/` | Serving static files from Workers (20 files) |
+| `tutorials/` | Full-stack app tutorials (19 files) |
+| `ci-cd/` | GitHub Actions, deploy pipelines (21 files) |
+| `languages/` | Python, Rust, WASM Workers (16 files) |
+| `vite-plugin/` | Vite plugin for Workers dev (13 files) |
+| `platform/` | Limits, pricing, compute classes (13 files) |
+| `databases/` | Connecting to databases (13 files) |
+| `get-started/` | Hello World quickstart (5 files) |
+| `best-practices/` | Performance and security tips (2 files) |
 
-### workers/wrangler/ (20 files)
+### cloudflare-one/ (734 files)
 
-| Path | Description |
-|------|-------------|
-| `workers/wrangler/` | Wrangler CLI commands and config |
-| `workers/wrangler/migration/` | Migration guides |
+| Subdirectory | Description |
+|--------------|-------------|
+| `networks/` | WARP, tunnels, private networks, Gateway (197 files) |
+| `access-controls/` | Access applications, policies, identity providers (82 files) |
+| `integrations/` | IdP connectors, SCIM, MDM, device clients (82 files) |
+| `team-and-resources/` | User management, seats, organizations (64 files) |
+| `email-security/` | Area 1 email security integration (73 files) |
+| `insights/` | Risk scores, analytics dashboards (40 files) |
+| `traffic-policies/` | DNS/HTTP/Network Gateway policies (52 files) |
+| `tutorials/` | End-to-end deployment walkthroughs (25 files) |
+| `data-loss-prevention/` | DLP profiles and policies (18 files) |
+| `troubleshooting/` | Debug connectivity and policy issues (16 files) |
+| `remote-browser-isolation/` | Browser isolation (11 files) |
 
-### d1/ (52 files)
+### realtime/ (715 files)
 
-| Path | Description |
-|------|-------------|
-| `d1/worker-api/` | D1Database, prepare, batch, exec |
-| `d1/sql-api/` | SQL API reference |
-| `d1/reference/` | SQL compatibility, limits |
-| `d1/best-practices/` | Query optimization, indexes |
-| `d1/tutorials/` | Northwind example, REST API |
+| Subdirectory | Description |
+|--------------|-------------|
+| `realtimekit/ui-kit/api-reference/react/` | React UI Kit API reference (137 files) |
+| `realtimekit/ui-kit/api-reference/angular/` | Angular UI Kit API reference (137 files) |
+| `realtimekit/ui-kit/api-reference/core/` | Core SDK API reference (137 files) |
+| `realtimekit/ui-kit/api-reference/android/` | Android SDK reference (50 files) |
+| `realtimekit/ui-kit/api-reference/react-native/` | React Native reference (74 files) |
+| `realtimekit/ui-kit/api-reference/ios/` | iOS SDK reference (39 files) |
+| `realtimekit/ui-kit/api-reference/flutter/` | Flutter SDK reference (18 files) |
+| `realtimekit/core/` | Core concepts, sessions, media (39 files) |
+| `realtimekit/recording-guide/` | Recording and playback (13 files) |
+| `sfu/` | SFU / WebRTC integration (15 files) |
+| `turn/` | TURN server configuration (8 files) |
 
-### durable-objects/ (53 files)
+### rules/ (192 files)
 
-| Path | Description |
-|------|-------------|
-| `durable-objects/api/` | DurableObject class, storage API, alarms |
-| `durable-objects/examples/` | Code examples |
-| `durable-objects/best-practices/` | Design patterns |
-| `durable-objects/reference/` | Limits, pricing |
+| Subdirectory | Description |
+|--------------|-------------|
+| `transform/` | Transform Rules (modify requests/responses) (46 files) |
+| `snippets/` | Rules Snippets (JS code in rules) (36 files) |
+| `url-forwarding/` | Redirect Rules (31 files) |
+| `page-rules/` | Legacy Page Rules (12 files) |
+| `origin-rules/` | Override origin settings (14 files) |
+| `compression-rules/` | Compression settings (10 files) |
+| `configuration-rules/` | Per-request config overrides (6 files) |
+| `cloud-connector/` | Connect to cloud storage (10 files) |
 
-### r2/ (87 files)
+### dns/ (139 files)
 
-| Path | Description |
-|------|-------------|
-| `r2/api/` | S3-compatible API, Workers binding |
-| `r2/buckets/` | Bucket configuration |
-| `r2/objects/` | Object operations |
-| `r2/data-catalog/` | Data catalog features |
-| `r2/examples/` | Code examples |
+| Subdirectory | Description |
+|--------------|-------------|
+| `zone-setups/` | Full/partial zone, secondary DNS (44 files) |
+| `manage-dns-records/` | Add/edit/delete records (24 files) |
+| `dnssec/` | DNSSEC setup and validation (9 files) |
+| `dns-firewall/` | DNS firewall configuration (7 files) |
+| `internal-dns/` | Internal/private DNS (9 files) |
+| `nameservers/` | Custom and vanity nameservers (8 files) |
 
-### kv/ (29 files)
+### support/ (116 files)
 
-| Path | Description |
-|------|-------------|
-| `kv/api/` | get, put, delete, list operations |
-| `kv/concepts/` | How KV works, consistency |
-| `kv/reference/` | Limits, pricing |
-
-### queues/ (38 files)
-
-| Path | Description |
-|------|-------------|
-| `queues/configuration/` | Queue setup, consumer config |
-| `queues/reference/` | Message format, limits |
-| `queues/event-subscriptions/` | Event subscriptions |
-
-### ai-gateway/ (81 files)
-
-| Path | Description |
-|------|-------------|
-| `ai-gateway/usage/` | OpenAI, Anthropic, Bedrock integrations |
-| `ai-gateway/features/` | Caching, logging, rate limiting |
-| `ai-gateway/evaluations/` | LLM evaluations |
-| `ai-gateway/observability/` | Logs and analytics |
-
-### agents/ (68 files)
-
-| Path | Description |
-|------|-------------|
-| `agents/api-reference/` | Agent class, state, storage APIs |
-| `agents/getting-started/` | Setup, quickstart |
-| `agents/guides/` | How-to guides |
-| `agents/model-context-protocol/` | MCP integration |
-
-### vectorize/ (23 files)
-
-| Path | Description |
-|------|-------------|
-| `vectorize/get-started/` | Quickstart |
-| `vectorize/reference/` | Index config, metadata |
-| `vectorize/best-practices/` | Embedding strategies |
+| Subdirectory | Description |
+|--------------|-------------|
+| `troubleshooting/` | Error codes, connectivity issues, debugging (102 files) |
+| `third-party-software/` | CMS, forum, ecommerce compatibility (14 files) |

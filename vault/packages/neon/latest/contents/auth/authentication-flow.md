@@ -1,8 +1,16 @@
 ---
 title: Authentication flow
 subtitle: Understanding the complete sign-in and sign-up process
+summary: >-
+  Neon Auth (Better Auth) authentication flow traces every step from SDK
+  call to HTTP-only session cookie, JWT issuance, and writes to the neon_auth
+  schema, covering email sign-in, sign-up, and OAuth providers such as Google
+  and GitHub. Use this page to understand what happens under the hood during
+  login, debug session or token problems, or wire auth.uid() into Row-Level
+  Security policies via the Data API. All auth state lands directly in your
+  Neon database with no sync delay, and each branch holds isolated auth data.
 enableTableOfContents: true
-updatedOn: '2026-01-05T20:32:04.262Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -15,7 +23,7 @@ Anyone can sign up for your application by default. Support for restricted signu
 
 ## Architecture overview
 
-Neon Auth is a managed REST API service built on Better Auth that connects directly to your Neon database. You use the SDK in your application and configure settings in the Console—no servers to manage.
+Neon Auth is a managed REST API service built on Better Auth that connects directly to your Neon database. You use the SDK in your application and configure settings in the Console; no servers to manage.
 
 ```
 Your App (SDK)
@@ -25,7 +33,7 @@ Neon Auth Service (REST API)
 Your Neon Database (neon_auth schema)
 ```
 
-All authentication data—users, sessions, OAuth configurations—lives in your database's `neon_auth` schema. You can query these tables directly with SQL for debugging, analytics, or custom logic.
+All authentication data (users, sessions, OAuth configurations) lives in your database's `neon_auth` schema. You can query these tables directly with SQL for debugging, analytics, or custom logic.
 
 ## Complete sign-in flow
 
@@ -73,13 +81,13 @@ The Auth service sets an HTTP-only cookie (`__Secure-neonauth.session_token`) in
 - Contains an opaque session token (not a JWT)
 - Is automatically sent with every request to the Auth API
 - Is secure (HTTPS only, HttpOnly, SameSite=None)
-- Is managed entirely by the SDK—you never touch it
+- Is managed entirely by the SDK; you never touch it
 
 **Where to see it:** Open DevTools → Application → Cookies → look for `__Secure-neonauth.session_token`
 
 ## JWT token is retrieved
 
-The SDK automatically retrieves a JWT token and stores it in `session.access_token`. You don't need to call `/auth/token` separately—the SDK handles this behind the scenes.
+The SDK automatically retrieves a JWT token and stores it in `session.access_token`. You don't need to call `/auth/token` separately; the SDK handles this behind the scenes.
 
 **What's in the JWT:**
 
@@ -162,7 +170,7 @@ ORDER BY "createdAt" DESC;
 
 ## Data API integration
 
-When you enable the [Data API](/docs/data-api/get-started), JWT tokens from Neon Auth are validated automatically. The user ID is available via the `auth.uid()` function, enabling Row-Level Security policies to grant data access based on the authenticated user.
+When you enable the [Data API](/docs/data-api/get-started), JWT tokens from Neon Auth are validated automatically. The user ID is available via the `auth.uid()` function, enabling Row-Level Security policies to grant data access based on the authenticated user. The Data API also works with [other authentication providers](/docs/data-api/custom-authentication-providers) that issue JWTs, such as Auth0, Clerk, and Firebase.
 
 **Example RLS policy:**
 

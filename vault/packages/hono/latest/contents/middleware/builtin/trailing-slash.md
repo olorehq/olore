@@ -40,6 +40,35 @@ app.use(trimTrailingSlash())
 app.get('/about/me', (c) => c.text('Without Trailing Slash'))
 ```
 
+## Options
+
+### <Badge type="info" text="optional" /> alwaysRedirect: `boolean`
+
+By default, trailing slash middleware only redirects when the response status is `404`. When `alwaysRedirect` is set to `true`, the middleware redirects before executing handlers. This is useful for wildcard routes (`*`) where the default behavior doesn't work.
+
+```ts
+const app = new Hono()
+
+app.use(trimTrailingSlash({ alwaysRedirect: true }))
+app.get('/my-path/*', (c) => c.text('Wildcard route'))
+```
+
+This option is available for both `trimTrailingSlash` and `appendTrailingSlash`.
+
+### <Badge type="info" text="optional" /> skip: `(path: string) => boolean`
+
+A function that determines whether the redirect should be skipped based on the request path. If the function returns `true`, the redirect will be skipped. This is useful when you want to exclude certain paths, such as those with file extensions, from being redirected.
+
+```ts
+app.use(
+  appendTrailingSlash({
+    skip: (path) => /\.\w+$/.test(path),
+  })
+)
+```
+
+This option is available for both `trimTrailingSlash` and `appendTrailingSlash`.
+
 ## Note
 
 It will be enabled when the request method is `GET` and the response status is `404`.

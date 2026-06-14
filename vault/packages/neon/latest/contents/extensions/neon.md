@@ -2,8 +2,17 @@
 title: The neon extension
 subtitle: An extension for Neon-specific statistics including the Local File Cache hit
   ratio
+summary: >-
+  The `neon` PostgreSQL extension exposes the `neon_stat_file_cache` view,
+  which reports Local File Cache (LFC) hit ratio, misses, hits, and writes for
+  a Neon compute instance. Use it to diagnose cache efficiency and determine
+  whether your working set fits in memory. OLTP workloads should target a
+  `file_cache_hit_ratio` of 99% or better; a low ratio signals a need for a
+  larger compute size. LFC statistics reset on compute restart. `EXPLAIN
+  ANALYZE` with the `FILECACHE` and `PREFETCH` options provides per-query LFC
+  and prefetch metrics without requiring the extension.
 enableTableOfContents: true
-updatedOn: '2026-02-02T12:37:39.438Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `neon` extension provides functions and views designed to gather Neon-specific metrics.
@@ -39,7 +48,7 @@ The `neon_stat_file_cache` view includes the following metrics:
   file_cache_hit_ratio = (file_cache_hits / (file_cache_hits + file_cache_misses)) * 100
   ```
 
-  For OLTP workloads, you should aim for a cache hit ratio of 99% or better. However, the ideal cache hit ratio depends on your specific workload and data access patterns. In some cases, a slightly lower ratio might still be acceptable, especially if the workload involves a lot of sequential scanning of large tables where caching might be less effective. If you find that your cache hit ration is quite low, your working set may not be fully or adequately in memory. In this case, consider using a larger compute with more memory. Please keep in mind that the statistics are for the entire compute, not specific databases or tables.
+  For OLTP workloads, you should aim for a cache hit ratio of 99% or better. However, the ideal cache hit ratio depends on your specific workload and data access patterns. In some cases, a slightly lower ratio might still be acceptable, especially if the workload involves a lot of sequential scanning of large tables where caching might be less effective. If you find that your cache hit ratio is quite low, your working set may not be fully or adequately in memory. In this case, consider using a larger compute with more memory. Please keep in mind that the statistics are for the entire compute, not specific databases or tables.
 
 ### Using the neon_stat_file_cache view
 
@@ -74,7 +83,7 @@ Remember that Postgres checks shared buffers first before it checks your compute
 
 ## View LFC metrics with EXPLAIN ANALYZE
 
-You can also use `EXPLAIN ANALYZE` with the `FILECACHE` and `PREFETCH` options to view LFC cache hit and miss data, as well as prefetch statistics. Installing the `neon` extension is not required. For example:
+You can also use `EXPLAIN ANALYZE` with the `FILECACHE` and `PREFETCH` options to view LFC cache hit and miss data, as well as prefetch statistics. Installing the `neon` extension is not required. For example, this query fetches data for a `SELECT COUNT(*)` query.
 
 ```sql {5,6,11,12,15,16,20,21}
 EXPLAIN (ANALYZE,BUFFERS,PREFETCH,FILECACHE) SELECT COUNT(*) FROM pgbench_accounts;
@@ -118,41 +127,6 @@ The `FILECACHE` option provides information about the Local File Cache (LFC) usa
 
 ## Views for Neon internal use
 
-The `neon` extension is installed by default to a system-owned `postgres` database in each Neon project. The `postgres` database includes functions and views owned by the Neon system role (`cloud_admin`) that are used to collect statistics. This data helps the Neon team enhance the Neon service.
-
-**Views**:
-
-```sql
-postgres=> \dv
-                    List of relations
- Schema |            Name            | Type |    Owner
---------+----------------------------+------+-------------
- public | local_cache                | view | cloud_admin
- public | neon_backend_perf_counters | view | cloud_admin
- public | neon_lfc_stats             | view | cloud_admin
- public | neon_perf_counters         | view | cloud_admin
- public | neon_stat_file_cache       | view | cloud_admin
-```
-
-**Functions**:
-
-```sql
-postgres=> \df
-                                                                          List of functions
-Schema |                 Name                 | Result data type |                                             Argument data types                                             | Type
---------+--------------------------------------+------------------+-------------------------------------------------------------------------------------------------------------+------
- public | approximate_working_set_size         | integer          | reset boolean                                                                                               | func
- public | approximate_working_set_size_seconds | integer          | duration integer DEFAULT NULL::integer                                                                      | func
- public | backpressure_lsns                    | record           | OUT received_lsn pg_lsn, OUT disk_consistent_lsn pg_lsn, OUT remote_consistent_lsn pg_lsn                   | func
- public | backpressure_throttling_time         | bigint           |                                                                                                             | func
- public | get_backend_perf_counters            | SETOF record     |                                                                                                             | func
- public | get_local_cache_state                | bytea            | max_chunks integer DEFAULT NULL::integer                                                                    | func
- public | get_perf_counters                    | SETOF record     |                                                                                                             | func
- public | get_prewarm_info                     | record           | OUT total_pages integer, OUT prewarmed_pages integer, OUT skipped_pages integer, OUT active_workers integer | func
- public | local_cache_pages                    | SETOF record     |                                                                                                             | func
- public | neon_get_lfc_stats                   | SETOF record     |                                                                                                             | func
- public | pg_cluster_size                      | bigint           |                                                                                                             | func
- public | prewarm_local_cache                  | void             | state bytea, n_workers integer DEFAULT 1                                                                    | func
-```
+The `neon` extension also includes functions and views owned by the Neon system role (`cloud_admin`) that are used to collect statistics. This data helps the Neon team enhance the Neon service. The extension is installed by default in a system-owned `postgres` database in each Neon project.
 
 <NeedHelp/>

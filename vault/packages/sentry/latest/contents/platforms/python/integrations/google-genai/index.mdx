@@ -7,7 +7,7 @@ This integration connects Sentry with the [Google Gen AI Python SDK](https://git
 
 Once you've installed this SDK, you can use the Sentry AI Agents Monitoring, a Sentry dashboard that helps you understand what's going on with your AI requests.
 
-Sentry AI Monitoring will automatically collect information about prompts, tools, tokens, and models. Learn more about the [AI Agents Dashboard](/product/insights/ai/agents).
+Sentry AI Monitoring will automatically collect information about prompts, tools, tokens, and models. Learn more about the [AI Agents Dashboard](/ai/monitoring/agents).
 
 ## Install
 
@@ -36,6 +36,7 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
     # Add data like inputs and responses;
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    stream_gen_ai_spans=True,
     send_default_pii=True,
     integrations=[
         GoogleGenAIIntegration(),
@@ -67,7 +68,7 @@ def my_llm_stuff():
 
 After running this script, the resulting data should show up in the `"AI Spans"` tab on the `"Explore" > "Traces"` page on Sentry.io.
 
-If you manually created an <PlatformLink to="/tracing/instrumentation/custom-instrumentation/ai-agents-module/#invoke-agent-span">Invoke Agent Span</PlatformLink> (not done in the example above) the data will also show up in the [AI Agents Dashboard](/product/insights/ai/agents).
+If you manually created an <PlatformLink to="/tracing/instrumentation/custom-instrumentation/ai-agents-module/#invoke-agent-span">Invoke Agent Span</PlatformLink> (not done in the example above) the data will also show up in the [AI Agents Dashboard](/ai/monitoring/agents).
 
 It may take a couple of moments for the data to appear in [sentry.io](https://sentry.io).
 
@@ -91,6 +92,7 @@ sentry_sdk.init(
     # ...
     # Add data like inputs and responses;
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    stream_gen_ai_spans=True,
     send_default_pii=True,
     integrations=[
         GoogleGenAIIntegration(
@@ -110,5 +112,5 @@ You can pass the following keyword arguments to `GoogleGenAIIntegration()`:
 
 ## Supported Versions
 
-- google-genai: 1.4.0+
+- google-genai: 1.29.0+
 - Python: 3.9+

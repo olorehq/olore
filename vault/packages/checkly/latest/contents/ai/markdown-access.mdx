@@ -1,0 +1,64 @@
+---
+title: 'Markdown Access'
+description: 'Access Checkly documentation as markdown to use with AI assistants and coding agents.'
+sidebarTitle: 'Markdown Access'
+---
+
+Every page in the Checkly documentation is available as markdown. This makes it easy to feed specific documentation pages into AI assistants like Claude, ChatGPT, Cursor, or any other AI tool.
+
+<Tip>
+Use [Checkly Skills](/ai/skills) to automatically provide your agent with up-to-date, agent-optimized documentation.
+</Tip>
+
+## .md endpoints
+
+Append `.md` to any documentation URL to get the markdown version of that page.
+
+**Example:**
+
+- **HTML:** `https://www.checklyhq.com/docs/what-is-checkly/`
+- **Markdown:** `https://www.checklyhq.com/docs/what-is-checkly.md`
+
+The markdown version includes the full page content in plain markdown, code blocks, links preserved as markdown links, and tables formatted as markdown tables.
+
+```bash
+# Fetch documentation content with curl
+curl https://www.checklyhq.com/docs/what-is-checkly.md
+
+# Pipe directly to your clipboard
+curl https://www.checklyhq.com/docs/what-is-checkly.md | pbcopy
+```
+
+## Content negotiation
+
+You can also request markdown by setting the `Accept` header to `text/markdown`:
+
+```bash
+curl -H "Accept: text/markdown" https://www.checklyhq.com/docs/what-is-checkly/
+```
+
+This is useful when integrating with tools or scripts that set request headers programmatically.
+
+<Tip>
+Modern coding agents set [these headers automatically when querying documentation](https://www.checklyhq.com/blog/state-of-ai-agent-content-negotation/).
+</Tip>
+
+## Copy as Markdown button
+
+Every documentation page includes a **Copy as Markdown** button at the top of the page. Click it to copy the full page content as markdown to your clipboard.
+
+This is the fastest way to grab documentation for a specific topic and paste it into your AI assistant's context.
+
+```text
+Here is the Checkly Browser Checks documentation:
+
+[paste markdown content]
+
+Based on this, how do I set up a browser check with a custom user agent?
+```
+
+
+## Additional resources
+
+- [Checkly Skills](/ai/skills)
+- [Checkly Rules](/ai/rules)

@@ -1,13 +1,22 @@
 ---
 title: Connect from Prisma to Neon
 subtitle: Learn how to connect to Neon from Prisma
+summary: >-
+  Prisma ORM (Node.js/TypeScript) connects to Neon using the
+  `@prisma/adapter-neon` serverless driver adapter, which routes queries over
+  WebSockets for compatibility with serverless environments. The setup requires
+  two connection strings: a pooled URL (`DATABASE_URL`) for application queries
+  and a direct URL (`DIRECT_URL`) for Prisma CLI commands such as migrations and
+  `db push`. Newer Prisma versions configure the direct connection in
+  `prisma.config.ts`; older versions use the `directUrl` property in
+  `schema.prisma`.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/prisma
   - /docs/integrations/prisma
   - /docs/guides/prisma-guide
   - /docs/guides/prisma-migrate
-updatedOn: '2026-02-01T11:47:48.278Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/prisma-prompt.md" 
@@ -27,15 +36,15 @@ Prisma is an open-source, next-generation ORM for Node.js and TypeScript. This g
 
 ```bash
 npm install @prisma/client @prisma/adapter-neon dotenv
-npm install prisma --save-dev
+npm install prisma tsx --save-dev
 ```
 
 ### Step 2: Get your connection strings
 
 From your Neon Console, click **Connect** and copy both connection strings:
 
-- **Pooled connection** (has `-pooler` in the hostname) — for your application
-- **Direct connection** — for Prisma CLI commands (migrations, introspection)
+- **Pooled connection** (has `-pooler` in the hostname): for your application
+- **Direct connection**: for Prisma CLI commands (migrations, introspection)
 
 ![Connection details modal](/docs/connect/connection_details.png)
 
@@ -97,7 +106,7 @@ export default defineConfig({
 
 ### Step 5: Create your Prisma Client
 
-Create a file to instantiate Prisma Client with the Neon adapter (e.g., `src/db.ts`):
+Create a file to instantiate Prisma Client with the Neon adapter (for example, `src/db.ts`):
 
 ```typescript
 import 'dotenv/config'
@@ -124,6 +133,50 @@ You're connected. You can now use Prisma Client in your application:
 import { prisma } from './db'
 
 const users = await prisma.user.findMany()
+```
+
+To verify the full setup, create a `src/main.ts` script that exercises CRUD operations:
+
+```typescript
+import { prisma } from './db'
+
+async function main() {
+  // CREATE
+  const newUser = await prisma.user.create({
+    data: { name: 'Alice', email: `alice-${Date.now()}@example.com` },
+  })
+  console.log('Created user:', newUser)
+
+  // READ
+  const foundUser = await prisma.user.findUnique({ where: { id: newUser.id } })
+  console.log('Found user:', foundUser)
+
+  // UPDATE
+  const updatedUser = await prisma.user.update({
+    where: { id: newUser.id },
+    data: { name: 'Alice Smith' },
+  })
+  console.log('Updated user:', updatedUser)
+
+  // DELETE
+  await prisma.user.delete({ where: { id: newUser.id } })
+  console.log('Deleted user.')
+}
+
+main()
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+```
+
+Run it with:
+
+```bash
+npx tsx src/main.ts
 ```
 
 ## Why two connection strings?
@@ -212,13 +265,24 @@ The `directUrl` property is available in Prisma 4.10.0 and higher.
 
 ## Next steps
 
-- [Schema migrations with Prisma](/docs/guides/prisma-migrations) — Full tutorial for building an app with migrations
-- [Neon serverless driver](/docs/serverless/serverless-driver) — Learn more about the driver powering the adapter
+- [Schema migrations with Prisma](/docs/guides/prisma-migrations): Full tutorial for building an app with migrations
+- [Neon serverless driver](/docs/serverless/serverless-driver): Learn more about the driver powering the adapter
 
 ## Resources
 
 - [Prisma documentation](https://www.prisma.io/docs/)
 - [Prisma connection management](https://www.prisma.io/docs/guides/performance-and-optimization/connection-management)
 - [PostgreSQL connector reference](https://www.prisma.io/docs/concepts/database-connectors/postgresql)
+
+<details>
+<summary>**Notes for AI-assisted setup**</summary>
+
+- Import `PrismaClient` from `./generated/prisma` (or your configured `output` path), not from `@prisma/client`. The import path changed in Prisma 7.
+- Do not install `@neondatabase/serverless` or `ws` as separate packages. The `@prisma/adapter-neon` package bundles everything needed for the Neon connection.
+- In Prisma 7+, do not include a `url` property in the `prisma/schema.prisma` datasource block. The connection is configured via `prisma.config.ts` and the adapter.
+- You need both a pooled connection (`DATABASE_URL`) for your application and a direct connection (`DIRECT_URL`) for Prisma CLI commands.
+- Call `prisma.$disconnect()` in a `.finally()` block when running standalone scripts. Omitting this can leave connections open.
+
+</details>
 
 <NeedHelp/>

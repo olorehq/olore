@@ -151,19 +151,35 @@ Trade-offs:
 
 ### Removing unused dependencies
 
-Recommendation: Periodically review unused dependencies for removal using third-party tools like
-[cargo-machete](https://crates.io/crates/cargo-machete),
-[cargo-udeps](https://crates.io/crates/cargo-udeps),
-[cargo-shear](https://crates.io/crates/cargo-shear).
+Recommendation: periodically review unused dependencies for removal using:
+```console
+$ cargo +nightly check -Zcargo-lints --workspace --all-targets
+```
+This may have false positives from:
+- when a dependency's use is dynamically controlled by a `build.rs` or `RUSTFLAGS`
+
+Also, periodically review hidden [`cargo::unused_dependencies`] results:
+```console
+$ CARGO_LOG=cargo::diagnostics::rules::unused_dependencies=debug cargo +nightly check -Zcargo-lints --workspace --all-targets
+```
+This will show potential unused dependencies for
+- registry and git dependencies
+- when your [`package.rust-version`] is too old to use `[lints.cargo]`
+- when your dependency *might* be used to constrain a version on a transitive dependency (instead use `[target."cfg(false)".dependencies]`)
+- when your dependency *might* be used to activate features on a transitive dependency
+- your `[dev-dependencies]` as there is not a way yet to ensure all consumers of these are built
 
 When changing code,
 it can be easy to miss that a dependency is no longer used and can be removed.
 
-> **Note:** native support for this in Cargo is being tracked in [#15813](https://github.com/rust-lang/cargo/issues/15813).
-
 Trade-offs:
 - ✅ Faster full build and link times
-- ❌ May incorrectly flag dependencies as unused or miss some
+- ❌ **Requires using nightly Rust and an [unstable Cargo feature][cargo-lints] when reviewing unused dependencies**
+- ❌ It takes effort to identify unused dependencies from among the false positives
+
+[cargo-lints]: ../reference/unstable.md#lintscargo
+[`cargo::unused_dependencies`]: ../reference/lints.md#unused_dependencies
+[`package.rust-version`]: ../reference/rust-version.md
 
 ### Removing unused features from dependencies
 

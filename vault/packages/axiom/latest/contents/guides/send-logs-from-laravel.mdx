@@ -72,9 +72,9 @@ return [
             'handler' => App\Logging\AxiomHandler::class,
             'level' => env('LOG_LEVEL', 'debug'),
             'with' => [
-                'apiToken' => env('AXIOM_API_TOKEN'),
+                'apiToken' => env('AXIOM_TOKEN'),
                 'dataset' => env('AXIOM_DATASET'),
-                'axiomUrl' => env('AXIOM_DOMAIN'),
+                'axiomUrl' => env('AXIOM_HOST'),
             ],
         ],
 
@@ -131,9 +131,9 @@ The `default` configuration specifies the primary channel Laravel uses for loggi
 
 ```bash
 LOG_CHANNEL=axiom
-AXIOM_API_TOKEN=API_TOKEN
+AXIOM_TOKEN=API_TOKEN
 AXIOM_DATASET=DATASET_NAME
-AXIOM_DOMAIN=AXIOM_DOMAIN
+AXIOM_HOST=AXIOM_DOMAIN
 LOG_LEVEL=debug
 LOG_DEPRECATIONS_CHANNEL=null
 ```
@@ -171,9 +171,9 @@ The heart of the `logging.php` file lies within the **`channels`** array where y
             'handler' => App\Logging\AxiomHandler::class,
             'level' => env('LOG_LEVEL', 'debug'),
             'with' => [
-                'apiToken' => env('AXIOM_API_TOKEN'),
+                'apiToken' => env('AXIOM_TOKEN'),
                 'dataset' => env('AXIOM_DATASET'),
-                'axiomUrl' => env('AXIOM_DOMAIN'),
+                'axiomUrl' => env('AXIOM_HOST'),
             ],
         ],
 ```

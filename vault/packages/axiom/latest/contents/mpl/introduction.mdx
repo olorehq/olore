@@ -1,0 +1,522 @@
+---
+title: Introduction to MPL
+description: This page explains how to use MPL (Metrics Processing Language) to query metrics.
+sidebarTitle: Language features
+keywords: ["metrics", "opentelemetry", "otel", "mpl", "metricsdb"]
+---
+
+MPL is a metric-focused query language that combines the simplicity of APL with the expressive power of PromQL. It enables effective querying, transformation, and aggregation of metric data, supporting diverse observability use cases.
+
+If you use PromQL, your existing expressions can be translated to MPL for quick onboarding and greater flexibility. For more information, see [Migrate PromQL queries to Axiom](/mpl/migrate-metrics).
+
+<Info>
+Support for MPL (Metrics Processing Language) is currently in public preview. For more information, see [Feature states](/platform-overview/roadmap#feature-states).
+</Info>
+
+## Limitations
+
+The current implementation of MPL comes with the following limitations:
+
+- You can only query one dataset in a query.
+
+## Concepts
+
+- **Dataset:** A group of related metrics.
+- **Metric:** Two-dimensional time series data with a metric name and a set of tags.
+- **Tag:** Key-value pair identifying a series.
+- **Series:** A unique combination of a metric and tag set.
+
+## Query structure
+
+A typical MPL query contains the following:
+
+1. **Source**: Defines dataset, metric, and optional time range
+1. **Filter**: Applies conditions to series via tags
+1. **Transformation** can be the following:
+    - **Map:** Maps the data to a new value.
+    - **Align:** Aggregates the data over time to align to a given time interval.
+    - **Group:** Aggregates the data over tag values.
+    - **Bucket:** A two-dimensional transformation that aggregates along both the time and tag dimensions.
+
+**Example:**
+
+```kusto
+`otel-demo-metrics`:`go.memory.used`
+| where `k8s.deployment.name` == "checkout"
+| align to 5m using avg
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60go.memory.used%60%20%7C%20where%20%60k8s.deployment.name%60%20%3D%3D%20%5C%22checkout%5C%22%20%7C%20align%20to%205m%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+This example queries the `otel-demo-metrics` dataset's `go.memory.used` metric one hour before the current time. It filters results to the `frontend` service and aggregates values over 5-minute time windows into their average.
+
+## Elements of queries
+
+The following explains each element of an MPL query.
+
+To learn more about the language features of MPL, see [Language features](#language-features).
+
+### Directives
+
+Use `set` directives at the start of a query to control query behavior and visualization settings.
+
+Directives must appear before the query body.
+
+**Syntax:**
+
+```kusto
+set <directive_name> = <directive_value>;
+```
+
+#### Supported directives
+
+The following directives are currently supported in Axiom's MPL implementation:
+
+| Directive | Description |
+|-----------|-------------|
+| `custom_unit` | Sets the unit used when visualizing query results in Axiom. |
+
+Use string values for `custom_unit`. Set it to `"1"` to render values as unitless numbers.
+
+**Examples:**
+
+```kusto
+set custom_unit = "ms";
+`otel-demo-metrics`:`http.server.request.duration`
+| align to 5m using avg
+```
+
+```kusto
+set custom_unit = "1";
+`otel-demo-metrics`:`http.server.request.duration`
+| align to 5m using avg
+```
+
+### Source
+
+Specify the dataset, the metric, and optional time bounds.
+
+**Syntax:**
+
+```kusto
+<dataset>:<metric>[<time range>][ as <alias>]
+```
+
+- **dataset**: Name of the dataset.
+- **metric**: Name of the metric.
+- **time range**: Optional: The time range of the query. For more information, see [Time ranges](#time-ranges).
+- **alias**: Optional: Renames the metric for later use.
+
+**Examples:**
+
+```kusto
+`otel-demo-metrics`:`go.memory.used`[1h..]
+`otel-demo-metrics`:`go.memory.used`[2h..5m]
+`otel-demo-metrics`:`go.memory.used`[2025-03-01T13:00:00Z..+1h] as mem_usage
+```
+
+### Filter
+
+Use `where` to filter series based on tag values.
+
+**Syntax:**
+
+```kusto
+| where <filter-expression>
+```
+
+A filter expression can be one of the following:
+
+- `<tag> <operator> <value>` — a single tag filter
+- `<filter-expression> and <filter-expression>` — logical AND of two expressions
+- `<filter-expression> or <filter-expression>` — logical OR of two expressions
+- `not <filter-expression>` — negation of an expression
+- `(<filter-expression>)` — parentheses to control order of evaluation
+
+Available operators for single tag filters:
+
+- Equality: `==`, `!=`
+- Comparisons: `<`, `<=`, `>`, `>=`
+
+The value must be one of the [supported data types](#data-types).
+
+**Examples:**
+
+```kusto
+| where environment == "production" and status_code >= 200 and status_code < 300
+
+| where (environment == "production" or environment == "staging") and not status_code == 500
+```
+
+### Map
+
+Use `map` to transform individual values.
+
+Available functions:
+
+| Function              | Description                                                          |
+|-----------------------|----------------------------------------------------------------------|
+| `rate`                | Computes the per-second rate of change for a metric.                 |
+| `increase`            | Calculates the increase between the data point and the previous one. |
+| `min(arg)`            | Returns the minimum between the argument and the value.              |
+| `max(arg)`            | Returns the maximum between the argument and the value.              |
+| `abs`                 | Returns the absolute value of each data point.                       |
+| `fill::prev`          | Fills missing values using the previous non-null value.              |
+| `fill::const(arg)`    | Fills missing values with a constant.                                |
+| `interpolate::linear` | Linear interpolation of missing values.                              |
+| `+`, `-`, `*`, `/`   | Performs the respective mathematical calculation on each value.      |
+
+**Examples:**
+
+```kusto
+// Calculate rate per second for the metric
+| map rate
+
+// Add 5 to each value
+| map + 5
+
+// Fill empty values with the latest value
+| map fill::prev
+
+// Fill empty values with zeros
+| map fill::const(0)
+```
+
+#### filter:: functions
+
+Use `filter::` functions to remove data points that don't match a condition. Data points that don't match are removed from the series entirely. Unlike `where`, which filters series based on tag values, `filter::` operates on the numeric values of data points within a series.
+
+| Function         | Description                                                 |
+|------------------|-------------------------------------------------------------|
+| `filter::eq(v)`  | Keeps only data points equal to `v`.                        |
+| `filter::neq(v)` | Keeps only data points not equal to `v`.                    |
+| `filter::gt(v)`  | Keeps only data points greater than `v`.                    |
+| `filter::gte(v)` | Keeps only data points greater than or equal to `v`.        |
+| `filter::lt(v)`  | Keeps only data points less than `v`.                       |
+| `filter::lte(v)` | Keeps only data points less than or equal to `v`.           |
+
+**Example:**
+
+```kusto
+// Remove data points where latency exceeds 400ms
+| map filter::lt(0.4)
+```
+
+#### is:: functions
+
+Use `is::` functions to test data points against a condition. Matching data points are set to `1.0` and non-matching data points are set to `0.0`. The series retains all its data points.
+
+Use `is::` instead of `filter::` when you need to preserve the shape of the time series, for example in SLO calculations where gaps in data would produce incorrect results.
+
+| Function      | Description                                                                   |
+|---------------|-------------------------------------------------------------------------------|
+| `is::eq(v)`   | Sets data points equal to `v` to `1.0`, all others to `0.0`.                 |
+| `is::neq(v)`  | Sets data points not equal to `v` to `1.0`, all others to `0.0`.             |
+| `is::gt(v)`   | Sets data points greater than `v` to `1.0`, all others to `0.0`.             |
+| `is::gte(v)`  | Sets data points greater than or equal to `v` to `1.0`, all others to `0.0`. |
+| `is::lt(v)`   | Sets data points less than `v` to `1.0`, all others to `0.0`.                |
+| `is::lte(v)`  | Sets data points less than or equal to `v` to `1.0`, all others to `0.0`.    |
+
+**Example:**
+
+```kusto
+// Set to 1.0 where latency is within SLO (below 400ms), 0.0 otherwise
+| map is::lt(0.4)
+```
+
+### Align
+
+Use `align` to aggregate over time windows. You can specify the time window and the aggregation function to apply.
+If you omit `to <time_window>`, `align` aggregates over the full query range and returns a single value per series.
+
+**Syntax:**
+
+```kusto
+| align to <time_window> using <aggregation_function>
+| align using <aggregation_function>
+```
+
+Available aggregation functions:
+
+| Function | Description                           |
+|----------|---------------------------------------|
+| `avg`    | Averages values in each interval.     |
+| `count`  | Counts non-null values per interval.  |
+| `max`    | Takes the maximum value per interval. |
+| `min`    | Takes the minimum value per interval. |
+| `prom::rate` | PromQL-style rate calculation. |
+| `sum`    | Sums values in each interval.         |
+| `last`   | Takes the last value in each interval.|
+
+**Examples:**
+
+```kusto
+// Calculate the average over 5-minute time windows
+| align to 5m using avg
+
+// Count the data points in the last hour
+| align to 1h using count
+
+// Sum over the full query range
+| align using sum
+```
+
+### Group
+
+Use `group by` to combine series by tags.
+
+**Syntax:**
+
+```kusto
+| group [by <tag1>, <tag2>] using <aggregation_function>
+```
+
+If you don't specify tags, Axiom aggregates all series into one group.
+
+Available aggregation functions:
+
+| Function | Description                           |
+|----------|---------------------------------------|
+| `avg`    | Averages values in each interval.     |
+| `sum`    | Sums values in each interval.         |
+| `min`    | Takes the minimum value per interval. |
+| `max`    | Takes the maximum value per interval. |
+| `count`  | Counts non-null values per interval.  |
+
+**Examples:**
+
+```kusto
+// Calculate the number of series
+| group using count
+
+// Sum all series into a single total
+| group using sum
+
+// Group data by the `service` and `namespace` tags using the `sum` aggregation
+| group by service, namespace using sum
+```
+
+### Bucket
+
+Use `bucket` to aggregate over time and tag dimensions simultaneously.
+If you omit `to <time_window>`, `bucket` aggregates over the full query range and returns a single value per series.
+
+**Syntax:**
+
+```kusto
+| bucket [by <tags>] to <window> using <function>
+| bucket [by <tags>] using <function>
+```
+
+Available functions:
+
+| Function                                        | Description                                                                                                                                                                |
+|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `histogram(specs)`                              | Aggregates non-histogram series into buckets. `specs` is one or more quantile values between 0 and 1, or aggregation functions (`count`, `avg`, `sum`, `min`, `max`).      |
+| `interpolate_cumulative_histogram(mode, specs)` | Aggregates cumulative-temporality histogram series. `mode` is `rate` or `increase`. `specs` is one or more quantile values or aggregation functions.                       |
+| `interpolate_delta_histogram(specs)`            | Aggregates delta-temporality histogram series. `specs` is one or more quantile values or aggregation functions.                                                            |
+
+<Info>
+`interpolate_cumulative_histogram` works on histogram metrics using cumulative temporality. `interpolate_delta_histogram` works on histogram metrics using delta temporality.
+</Info>
+
+**Examples:**
+
+```kusto
+// Bucket over the `service` and `endpoint` tags using the histogram aggregation
+| bucket by service, endpoint to 5m using histogram(max)
+
+// Compute the 50th and 99th percentiles of request duration for histogram data stored using cumulative temporality
+| bucket by service to 1m using interpolate_cumulative_histogram(rate, 0.50, 0.99)
+
+// Compute the 50th and 99th percentiles of request duration for histogram data stored using delta temporality
+| bucket by service to 1m using interpolate_delta_histogram(0.50, 0.99)
+```
+
+### Extend
+
+Use `extend` to add new tags to every series in the query result. `extend` supports `${}` interpolation to reference existing tag values or parameters.
+
+`extend` can only be applied after aggregations (after `align`, `group`, `bucket`, and `map`).
+
+**Syntax:**
+
+```kusto
+| extend <tag1> = <value1> [, <tag2> = <value2> ...]
+```
+
+- The value must be a string, integer, float, or boolean literal.
+- The tag name must be net-new: if any input series already has a tag with the same name, the query fails. To overwrite an existing tag, first drop it with `group by`, then re-add it with `extend`.
+
+**Examples:**
+
+```kusto
+// Add a constant string tag
+| extend environment = "production"
+
+// Reference existing tag values
+`my-metrics`:http_latency
+| where host is string and port is int
+| align to 5m using avg
+| extend url = "http://${host}:${port}"
+```
+
+## Other operations
+
+### Compute
+
+Combine multiple metrics in one query block.
+
+**Syntax:**
+
+```kusto
+(
+  <subquery1>,
+  <subquery2>
+)
+| compute <name> using <operator>
+```
+
+Available operators:
+
+| Operator | Description                       |
+|----------|-----------------------------------|
+| `+`      | Adds subquery results.               |
+| `-`      | Subtracts one subquery from another. |
+| `*`      | Multiplies subquery results.               |
+| `/`      | Divides one subquery by another.     |
+| `min`    | Minimum across result series.     |
+| `max`    | Maximum across result series.     |
+| `avg`    | Average across result series.     |
+
+`compute` uses strict intersection semantics. It only combines series with matching tag sets, and it only emits values for timestamps present on both sides. If you want results for timestamps where only one side has a value, fill missing values using `map` functions.
+
+```kusto
+// Use 0 as the default for addition
+(
+  <subquery1> | map fill::const(0),
+  <subquery2> | map fill::const(0)
+)
+| compute total using +
+
+// Use 1 as the default for multiplication
+(
+  <subquery1> | map fill::const(1),
+  <subquery2> | map fill::const(1)
+)
+| compute product using *
+```
+
+**Example:**
+
+```kusto
+// Return the average error rate over the past 5 minutes
+(
+  `otel-demo-metrics`:`http.server.request.duration`
+  | where `http.response.status_code` >= 500
+  | map rate
+  | align to 5m using avg
+  | group using sum,
+  `otel-demo-metrics`:`http.server.request.duration`
+  | map rate
+  | align to 5m using avg
+  | group using sum
+)
+| compute error_rate using /
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22(%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3E%3D%20500%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%2C%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%20)%20%7C%20compute%20error_rate%20using%20%2F%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+## Language features
+
+### Data types
+
+- Strings: `"string"`
+    <Tip>
+        Use double quotes (`"`) to enclose the string. Don't use single quotes (`'`).
+    </Tip>
+- Integers: `42`
+- Floats: `3.14`
+- Booleans: `true`, `false`
+- Regex: `#/.*metrics.*/`
+
+### Identifier naming rules
+
+Identifiers represent fields, metrics, datasets, function names, and other named entities in your query.
+
+Valid identifier names are case-sensitive and follow these rules:
+
+- Start with an ASCII letter.
+- Followed by zero or more ASCII letters, digits, or underscores (`_`).
+
+### Quote identifiers
+
+Quote an identifier in your MPL query if any of the following is true:
+
+- The identifier name doesn't match the rules for [valid identifier names](#identifier-naming-rules).
+- The identifier name is identical to one of the reserved keywords of the MPL query language. For example, `by` or `where`.
+
+If any of the above is true, you must quote the identifier by enclosing it in backticks (`` ` ``). For example, `` `my-field` ``.
+
+If none of the above is true, you don't need to quote the identifier in your MPL query. For example, `myfield`. In this case, quoting the identifier name is optional.
+
+### Built-in variables
+
+MPL provides the following built-in variables that can be used in queries:
+
+| Variable | Type | Description |
+|---|---|---|
+| `$__interval` | duration | Provides a suitable interval size for charting, depending on the time range of the query. |
+
+**Example:**
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| align to $__interval using avg
+```
+
+### Time ranges
+
+**Syntax:**
+
+```kusto
+[<start>..<end>?]
+```
+
+Define time ranges with the following:
+
+- **Start time:** Inclusive beginning of the time range.
+- **End time:** Optional, exclusive end of the time range. If you don't specify the end time, Axiom uses the current time.
+
+Separate the start and the end times with `..`.
+
+Time can be defined in one of the following ways:
+
+- Relative time. The time unit can be one of the following:
+    - `ms` for milliseconds (will be rounded to seconds)
+    - `s` for seconds
+    - `m` for minutes
+    - `h` for hours
+    - `d` for days
+    - `w` for weeks
+    - `M` for months
+    - `y` for years
+    Examples: `-1h`, `+5m`
+- Unix epoch timestamp in seconds. For example: `1723982394`
+- An RFC3339 timestamp. For example: `2025-03-01T13:00:00Z`
+
+**Examples:**
+
+```kusto
+// One hour ago until the current time
+[1h..]
+
+// One hour after a Unix timestamp
+[1747077736..+1h]
+
+// One hour before a Unix timestamp
+[-1h..1747077736]
+
+// One hour before an RFC3339 date
+[-1h..2025-03-01T13:00:00Z]
+```

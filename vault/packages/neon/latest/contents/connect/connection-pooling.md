@@ -1,10 +1,20 @@
 ---
 title: Connection pooling
 subtitle: Learn how connection pooling works in Neon
+summary: >-
+  Neon connection pooling uses PgBouncer in transaction mode, accepting up to
+  10,000 client connections through per-user, per-database pools sized at 90%
+  of max_connections. Use the pooled connection string (hostname with -pooler
+  suffix) for serverless functions and connection-per-request workloads. Use a
+  direct connection for schema migrations, pg_dump, logical replication, and
+  queries that depend on SET, LISTEN/NOTIFY, or session-level state. In
+  transaction mode, SET, temporary tables, and SQL-level PREPARE/DEALLOCATE
+  are not supported on pooled connections, though protocol-level prepared
+  statements are supported.
 enableTableOfContents: true
 redirectFrom:
   - /docs/get-started/connection-pooling
-updatedOn: '2026-01-24T16:13:09.585Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon uses [PgBouncer](https://www.pgbouncer.org/) to provide connection pooling, enabling up to 10,000 concurrent connections. This guide explains how pooling works, when to use it, and how to avoid common issues.
@@ -63,37 +73,7 @@ You can also view active connections on the [Monitoring page](/docs/introduction
 
 Connection pooling solves the `max_connections` limit by maintaining a pool of reusable connections. Instead of opening a new Postgres connection for each client, PgBouncer routes multiple client connections through a smaller pool of actual Postgres connections.
 
-```mermaid
-graph LR
-    subgraph Clients["Client applications"]
-        C1[user1]
-        C2[user1]
-        C3[user2]
-        C4[user1]
-        C5[...]
-    end
-
-    subgraph PgBouncer["PgBouncer connection pooler"]
-        P1[user1/database1 pool]
-        P2[user2/database1 pool]
-        P3[user1/database2 pool]
-    end
-
-    subgraph Postgres["Postgres (max_connections limit)"]
-        DB1[(database1)]
-        DB2[(database2)]
-    end
-
-    C1 --> P1
-    C2 --> P1
-    C3 --> P2
-    C4 --> P3
-    C5 --> P1
-
-    P1 --> DB1
-    P2 --> DB1
-    P3 --> DB2
-```
+![Connection](/docs/connect/connection.png)
 
 _The diagram shows how multiple client connections from different users route through separate PgBouncer pools (one per user/database combination), which share a limited number of actual Postgres connections to access the databases._
 

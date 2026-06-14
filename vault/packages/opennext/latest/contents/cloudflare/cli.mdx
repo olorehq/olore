@@ -8,7 +8,7 @@ The Cloudflare adapter provides a `opennextjs-cloudflare` CLI to develop, build,
 
 `opennextjs-cloudflare` support multiple commands, invoked via `opennextjs-cloudflare <command>`.
 
-The currently supported commands are `build`, `populateCache`, `preview`, `deploy`, and `upload`.
+The currently supported commands are `build`, `populateCache`, `preview`, `deploy`, `upload`, and `migrate`.
 
 You can list the commands by invoking `pnpm opennextjs-cloudflare` and get help with a given command by invoking `pnpm opennextjs-cloudflare <command> --help`.
 
@@ -36,6 +36,43 @@ The `populateCache` command supports R2 batching to speed up the upload of large
 
 </Callout>
 
+#### Populating remote bindings when Workers are protected by Cloudflare Access
+
+`populateCache remote` (also called implicitly by `deploy` and `upload`) temporarily deploys a helper Worker named `open-next-cache-populate` at `open-next-cache-populate.<account>.workers.dev` and uses it to write to your remote R2 bucket.
+
+If your account's `workers.dev` subdomain — or a parent route on a custom domain — is protected by [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/), the helper Worker is protected by the same policy and the upload fails with either:
+
+```text
+Failed to send request to R2 worker: The operation was aborted due to timeout.
+```
+
+or a `403 Forbidden` returned by the Access edge.
+
+To let the adapter authenticate:
+
+1. Open the **existing** Cloudflare Access application that already covers `open-next-cache-populate.<account>.workers.dev` — typically the wildcard application for `*.<account>.workers.dev` — and attach the policy described below to that application.
+
+   <Callout type="warning">
+     Creating a separate Access application scoped specifically to the `open-next-cache-populate` hostname has
+     been observed to block the upload, even when kept alongside the existing wildcard application (see
+     [#1171](https://github.com/opennextjs/opennextjs-cloudflare/issues/1171)). Prefer attaching the policy to
+     the existing application that already protects the hostname.
+   </Callout>
+
+2. Add a **Service Auth** policy to that application:
+
+   - Set the policy **Action** to "Service Auth".
+   - Add an **Include** rule for "Any Access Service Token", or for a specific service token.
+
+3. Create the service token under Zero Trust → Access → Service Auth → Service Tokens, then expose its credentials to the environment that runs `opennextjs-cloudflare`:
+
+   ```sh
+   export CLOUDFLARE_ACCESS_CLIENT_ID=<id>
+   export CLOUDFLARE_ACCESS_CLIENT_SECRET=<secret>
+   ```
+
+   Then run `opennextjs-cloudflare populateCache remote` (or `deploy` / `upload`). In CI, set the two values as secrets and expose them to the deploy step.
+
 ### `preview` command
 
 It starts by populating the local cache and then launches a local development server (via `wrangler dev`) so that you can preview the application locally.
@@ -46,4 +83,31 @@ It starts by populating the remote cache and then deploys your application to Cl
 
 ### `upload` command
 
-It starts by populating the remote cache and then uploads a version of your application to Cloudflare (via `wrangler upload`). Note that the application will not automatically be served on uploads. See [Gradual deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/gradual-deployments/) to learn more about how to serve an uploaded version.
+It starts by populating the remote cache and then uploads a version of your application to Cloudflare (via `wrangler versions upload`). Note that the application will not automatically be served on uploads. See [Gradual deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/gradual-deployments/) to learn more about how to serve an uploaded version.
+
+### `migrate` command
+
+Converts a standard Next.js project into an OpenNext-compatible one. This command automates the setup steps described in the [Get Started guide](/cloudflare/get-started#existing-nextjs-apps), including:
+
+- Installing required dependencies (`@opennextjs/cloudflare` and `wrangler`)
+- Creating a `wrangler.jsonc` configuration file
+- Creating an `open-next.config.ts` file
+- Adding a `.dev.vars` file
+- Updating the `package.json` scripts
+- Adding static asset caching headers (`public/_headers`)
+- Adding `.open-next` to `.gitignore`
+- Setting up local development with `initOpenNextCloudflareForDev()` in your Next.js config
+
+Additionally, the command creates an R2 bucket and configures it for caching.
+
+<Callout type="info">
+  The R2 bucket for caching is only created if R2 is enabled on your Cloudflare account. If R2 is not enabled,
+  no caching setup is performed by the migrate command. See the [Caching docs](/cloudflare/caching) for
+  information on manually configuring caching.
+</Callout>
+
+Run the command in your existing Next.js project:
+
+```sh
+npx @opennextjs/cloudflare migrate
+```

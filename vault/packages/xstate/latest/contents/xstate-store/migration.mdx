@@ -1,0 +1,123 @@
+---
+title: 'Migrating to v4'
+---
+
+XState Store v4 removes deprecated APIs, introduces schemas, and tightens the public API around framework packages and extensions.
+
+## Removed APIs
+
+**`createStore(context, transitions)`** - Use the config object form:
+
+```diff
+- const store = createStore(
+-   { count: 0 },
+-   {
+-     inc: (context) => ({ count: context.count + 1 })
+-   }
+- );
++ const store = createStore({
++   context: { count: 0 },
++   on: {
++     inc: (context) => ({ count: context.count + 1 })
++   }
++ });
+```
+
+**`createStoreWithProducer`** - Call your producer inside transition handlers:
+
+```diff
+- import { createStoreWithProducer } from '@xstate/store';
++ import { createStore } from '@xstate/store';
+  import { produce } from 'immer';
+
+- const store = createStoreWithProducer(produce, {
++ const store = createStore({
+    context: { count: 0 },
+    on: {
+-     inc: (context) => {
+-       context.count++;
+-     }
++     inc: (context) =>
++       produce(context, (draft) => {
++         draft.count++;
++       })
+    }
+  });
+```
+
+When using Immer, return `undefined` from the transition before calling `produce(...)` when the event should not result in a transition (`store.can.someEvent()` returns `false`). If you need `produce(...)` itself to return `undefined`, return Immer's `nothing` token from the producer.
+
+**`@xstate/store/react` and `@xstate/store/solid`** - Use dedicated framework packages:
+
+```diff
+- import { useSelector } from '@xstate/store/react';
++ import { useSelector } from '@xstate/store-react';
+```
+
+**`undoRedo(config)`** - Use the extension form with `.with(...)`:
+
+```diff
+- const store = createStore(
+-   undoRedo({
+-     context: { count: 0 },
+-     on: {
+-       inc: (context) => ({ count: context.count + 1 })
+-     }
+-   })
+- );
++ const store = createStore({
++   context: { count: 0 },
++   on: {
++     inc: (context) => ({ count: context.count + 1 })
++   }
++ }).with(undoRedo());
+```
+
+**`store._snapshot`** - Use `store.getSnapshot()` or `store.get()`.
+
+## Changed APIs
+
+**`emits` moved to `schemas.emitted`** - The type declaration moved; emitting with `enq.emit` is unchanged:
+
+```diff
+  const store = createStore({
+    context: { count: 0 },
+-   emits: {
+-     increased: (_payload: { by: number }) => {}
+-   },
++   schemas: {
++     emitted: {
++       increased: z.object({ by: z.number() })
++     }
++   },
+    on: {
+      inc: (context, event: { by: number }, enq) => {
+        enq.emit.increased({ by: event.by });
+        return { count: context.count + event.by };
+      }
+    }
+  });
+```
+
+**Computed atom getters no longer receive `read`**. The first argument is now the previous value of the atom. Call other atoms with `.get()` directly:
+
+```diff
+- const doubled = createAtom((read) => read(countAtom) * 2);
++ const doubled = createAtom(() => countAtom.get() * 2);
+
+- const withPrev = createAtom((read, prev) => read(countAtom) + (prev ?? 0));
++ const withPrev = createAtom((prev) => countAtom.get() + (prev ?? 0));
+```
+
+**`store.inspect(...)` emits one event** - Now emits a single `@xstate.transition` event for simplicity instead of separate `@xstate.actor`, `@xstate.event`, and `@xstate.snapshot` events:
+
+```diff
+  store.inspect((inspectionEvent) => {
+-   // '@xstate.actor' | '@xstate.event' | '@xstate.snapshot'
++   // '@xstate.transition'
++   inspectionEvent.event;
++   inspectionEvent.snapshot;
+  });
+```
+
+**`persist(...)` writes snapshots** - `persist(...)` now derives the persisted value from the full store snapshot. `clearStorage(store)` and `flushStorage(store)` may return a `Promise` when the storage adapter is async.

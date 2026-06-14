@@ -1,8 +1,8 @@
 ---
-title: 'Connect Axiom with Terraform'
-description: 'Provision and manage Axiom resources such as datasets and monitors with Terraform.'
-sidebarTitle: Terraform
-keywords: ['axiom documentation', 'documentation', 'axiom', 'terraform', 'provision', 'resources']
+title: "Connect Axiom with Terraform"
+description: "Provision and manage Axiom resources such as datasets and monitors with Terraform."
+sidebarTitle: "Terraform"
+keywords: ["axiom documentation", "documentation", "axiom", "terraform", "provision", "resources"]
 ---
 
 Axiom Terraform Provider lets you provision and manage Axiom resources (datasets, notifiers, monitors, and users) with Terraform. This means that you can programmatically create resources, access existing ones, and perform further infrastructure automation tasks.
@@ -23,21 +23,18 @@ This guide explains how to install the provider and perform some common procedur
 To install the Axiom Terraform Provider from the [Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest), follow these steps:
 
 1. Add the following code to your Terraform configuration file. Replace `API_TOKEN` with the Axiom API token you have generated. For added security, store the API token in an environment variable.
-
-    ```hcl
-    terraform {
-      required_providers {
-        axiom = {
-          source  = "axiomhq/axiom"
-        }
-      }
-    }
-
-    provider "axiom" {
-      api_token = "API_TOKEN"
-    }
-    ```
-
+   ```hcl
+   terraform {
+     required_providers {
+       axiom = {
+         source  = "axiomhq/axiom"
+       }
+     }
+   }
+   provider "axiom" {
+     api_token = "API_TOKEN"
+   }
+   ```
 2. In your terminal, go to the folder of your main Terraform configuration file, and then run the command `terraform init`.
 
 ## Create new resources
@@ -67,9 +64,11 @@ resource "axiom_notifier" "test_slack_notifier" {
   }
 }
 ```
+
 To create a Discord notifier in Axiom using the provider, add the following code to your Terraform configuration file.
-- Replace `DISCORD_CHANNEL` with the webhook URL from your Discord instance. For more information on obtaining this URL, see the [Discord documentation](https://discord.com/developers/resources/webhook).
-- Replace `DISCORD_TOKEN` with your Discord API token. For more information on obtaining this token, see the [Discord documentation](https://discord.com/developers/topics/oauth2).
+
+- Replace `DISCORD_CHANNEL` with the webhook URL from your Discord instance. For more information on obtaining this URL, see the [Discord documentation](https://docs.discord.com/developers/platform/webhooks#webhook-events).
+- Replace `DISCORD_TOKEN` with your Discord API token. For more information on obtaining this token, see the [Discord documentation](https://docs.discord.com/developers/topics/oauth2#oauth2).
 
 ```hcl
 resource "axiom_notifier" "test_discord_notifier" {
@@ -96,7 +95,7 @@ resource "axiom_notifier" "test_email_notifier" {
 }
 ```
 
-For more information on the types of notifier you can create, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/resources/notifier).
+For more information on the types of notifier you can create, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/docs/resources/notifier).
 
 ### Create monitor
 
@@ -141,10 +140,11 @@ resource "axiom_monitor" "test_monitor" {
 ```
 
 This example creates a monitor using the dataset `test_dataset` and the notifier `test_slack_notifier`. These are resources you have created and accessed in the sections above.
+
 - Customize the `name` and the `description` fields.
 - In the `apl_query` field, specify the APL query for the monitor.
 
-For more information on these fields, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/resources/monitor).
+For more information on these fields, see the [documentation in the Terraform Registry](https://registry.terraform.io/providers/axiomhq/axiom/latest/docs/resources/monitor).
 
 ### Create user
 
@@ -166,12 +166,11 @@ To access an existing dataset, follow these steps:
 
 1. Determine the ID of the Axiom dataset by sending a GET request to the [`datasets` endpoint of the Axiom API](/restapi/endpoints/getDatasets).
 2. Add the following code to your Terraform configuration file. Replace `DATASET_ID` with the ID of the Axiom dataset.
-
-    ```hcl
-    data "axiom_dataset" "test_dataset" {
-      id = "DATASET_ID"
-    }
-    ```
+   ```hcl
+   data "axiom_dataset" "test_dataset" {
+     id = "DATASET_ID"
+   }
+   ```
 
 ### Access existing notifier
 
@@ -179,12 +178,11 @@ To access an existing notifier, follow these steps:
 
 1. Determine the ID of the Axiom notifier by sending a GET request to the `notifiers` endpoint of the Axiom API.
 2. Add the following code to your Terraform configuration file. Replace `NOTIFIER_ID` with the ID of the Axiom notifier.
-
-    ```hcl
-    data "axiom_dataset" "test_slack_notifier" {
-      id = "NOTIFIER_ID"
-    }
-    ```
+   ```hcl
+   data "axiom_dataset" "test_slack_notifier" {
+     id = "NOTIFIER_ID"
+   }
+   ```
 
 ### Access existing monitor
 
@@ -192,12 +190,11 @@ To access an existing monitor, follow these steps:
 
 1. Determine the ID of the Axiom monitor by sending a GET request to the `monitors` endpoint of the Axiom API.
 2. Add the following code to your Terraform configuration file. Replace `MONITOR_ID` with the ID of the Axiom monitor.
-
-    ```hcl
-    data "axiom_monitor" "test_monitor" {
-      id = "MONITOR_ID"
-    }
-    ```
+   ```hcl
+   data "axiom_monitor" "test_monitor" {
+     id = "MONITOR_ID"
+   }
+   ```
 
 ### Access existing user
 
@@ -205,9 +202,8 @@ To access an existing user, follow these steps:
 
 1. Determine the ID of the Axiom user by sending a GET request to the `users` endpoint of the Axiom API.
 2. Add the following code to your Terraform configuration file. Replace `USER_ID` with the ID of the Axiom user.
-
-    ```hcl
-    data "axiom_user" "test_user" {
-      id = "USER_ID"
-    }
-    ```
+   ```hcl
+   data "axiom_user" "test_user" {
+     id = "USER_ID"
+   }
+   ```

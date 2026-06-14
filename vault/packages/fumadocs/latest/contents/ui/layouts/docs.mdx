@@ -7,7 +7,7 @@ The layout of documentation pages, it includes a sidebar and **mobile-only** nav
 
 ![preview](./docs.png)
 
-<Customisation />
+<Customization />
 
 ## Usage
 
@@ -50,9 +50,9 @@ import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 
 ### Sidebar Items
 
-Customise sidebar navigation links.
+Customize sidebar navigation links.
 
-<div className='flex justify-center items-center *:max-w-[200px] bg-gradient-to-br from-fd-primary/10 rounded-xl border'>
+<div className='flex justify-center items-center *:max-w-[200px] bg-linear-to-br from-fd-primary/10 rounded-xl border'>
 
     ![Sidebar](/docs/sidebar.png)
 
@@ -100,13 +100,13 @@ export default function Layout({ children }: { children: ReactNode }) {
 }
 ```
 
-### Sidebar Tabs (Dropdown) [#sidebar-tabs]
+### Layout Tabs (Dropdown) [#layout-tabs]
 
-Sidebar Tabs are folders with tab-like behaviours, only the content of opened tab will be visible.
+Layout Tabs are folders with tab-like behaviours, only the content of opened tab will be visible.
 
 <div className='flex justify-center items-center *:max-w-[360px] bg-linear-to-br from-fd-primary/10 rounded-xl border'>
 
-    ![Sidebar Tabs](/docs/sidebar-tabs.png)
+    ![Layout Tabs](/docs/sidebar-tabs.png)
 
 </div>
 
@@ -128,19 +128,17 @@ Or specify them explicitly:
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 
 <DocsLayout
-  sidebar={{
-    tabs: [
-      {
-        title: 'Components',
-        description: 'Hello World!',
-        // active for `/docs/components` and sub routes like `/docs/components/button`
-        url: '/docs/components',
+  tabs={[
+    {
+      title: 'Components',
+      description: 'Hello World!',
+      // active for `/docs/components` and sub routes like `/docs/components/button`
+      url: '/docs/components',
 
-        // optionally, you can specify a set of urls which activates the item
-        // urls: new Set(['/docs/test', '/docs/components']),
-      },
-    ],
-  }}
+      // optionally, you can specify a set of urls which activates the item
+      // urls: new Set(['/docs/test', '/docs/components']),
+    },
+  ]}
 />;
 ```
 
@@ -149,10 +147,10 @@ Set it to `false` to disable:
 ```tsx
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 
-<DocsLayout sidebar={{ tabs: false }} />;
+<DocsLayout tabs={false} />;
 ```
 
-<Callout title="Want further customisations?">
+<Callout title="Want further customizations?">
 
 You can specify a `banner` to the [Docs Layout](/docs/ui/layouts/docs) component.
 
@@ -182,19 +180,17 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 #### Decoration
 
-Change the icon/styles of tabs.
+Change the icon/styles of layout tabs.
 
 ```tsx
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 
 <DocsLayout
-  sidebar={{
-    tabs: {
-      transform: (option, node) => ({
-        ...option,
-        icon: <MyIcon />,
-      }),
-    },
+  tabs={{
+    transform: (option, node) => ({
+      ...option,
+      icon: <MyIcon />,
+    }),
   }}
 />;
 ```
@@ -268,7 +264,7 @@ Handling layout is challenging, Fumadocs UI needed an approach that is:
 - **Flexible:** The system should avoid reliance on fixed values or heights, enabling seamless integration of external components, such as AI chat interfaces.
 - **Cohesive:** Components should respond to changes in others, for instance, by animating sidebar collapses.
 - **Predictable:** Layout properties should remain centralized, allowing the final result to be readily anticipated from the source code.
-- **Compatible:** The solution should work on older browsers by leveraging only Baseline Widly Available CSS features.
+- **Compatible:** The solution should work on older browsers by leveraging only Baseline Widely Available CSS features.
 
 Fumadocs UI does this with a grid system:
 

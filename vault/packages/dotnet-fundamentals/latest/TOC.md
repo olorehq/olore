@@ -4,21 +4,20 @@
 
 ```
 contents/
-├── apicompat/              # API compatibility tooling (8 files)
-│   └── package-validation/ # Package validation validators (4 files)
-├── code-analysis/          # .NET code analysis overview and config (8 files)
-│   ├── quality-rules/      # CA-prefixed code quality rules (~290 files)
-│   └── style-rules/        # IDE-prefixed code style rules (~110 files)
-├── diagnostics/            # Runtime ETW/EventPipe events (11 files)
-├── networking/             # Networking overview and utilities (4 files)
-│   ├── http/               # HttpClient and HTTP APIs (4 files)
-│   ├── quic/               # QUIC protocol (3 files)
-│   ├── sockets/            # TCP/socket programming (3 files)
-│   └── telemetry/          # Networking metrics, tracing, events (5 files)
-├── reflection/             # Reflection and Reflection.Emit (14 files)
-├── runtime-libraries/      # Supplementary API reference docs (~260 files)
-├── syslib-diagnostics/     # SYSLIB obsoletions and source-generator diagnostics (~120 files)
-└── (root)                  # Overview files: languages, implementations, standards (3 files)
+├── apicompat/                      # API compatibility validation (8 files)
+│   └── package-validation/         # Package validation validators (4 files)
+├── code-analysis/                  # .NET code analysis rules and configuration (465 files)
+│   ├── quality-rules/              # CA quality rules (CA1000-CA5405) (337 files)
+│   └── style-rules/                # IDE code style rules (IDE0001-IDE3000) (120 files)
+├── diagnostics/                    # Runtime diagnostic events (11 files)
+├── networking/                     # Networking APIs (19 files)
+│   ├── http/                       # HttpClient and HTTP (4 files)
+│   ├── quic/                       # QUIC protocol (3 files)
+│   ├── sockets/                    # Socket APIs (3 files)
+│   └── telemetry/                  # Networking metrics and tracing (5 files)
+├── reflection/                     # Reflection and dynamic code (14 files)
+├── runtime-libraries/              # .NET runtime library API docs (171 files)
+└── syslib-diagnostics/             # Obsoletion and source generator diagnostics (115 files)
 ```
 
 ## Key Entry Points
@@ -28,189 +27,171 @@ contents/
 | Code analysis overview | `contents/code-analysis/overview.md` |
 | Code quality rules index | `contents/code-analysis/quality-rules/index.md` |
 | Code style rules index | `contents/code-analysis/style-rules/index.md` |
-| HTTP / HttpClient usage | `contents/networking/http/httpclient.md` |
+| Configure code analysis | `contents/code-analysis/configuration-options.md` |
+| Suppress warnings | `contents/code-analysis/suppress-warnings.md` |
 | Networking overview | `contents/networking/overview.md` |
+| HttpClient usage | `contents/networking/http/httpclient.md` |
 | Reflection overview | `contents/reflection/overview.md` |
-| Runtime diagnostics events | `contents/diagnostics/runtime-events.md` |
-| SYSLIB obsoletions overview | `contents/syslib-diagnostics/obsoletions-overview.md` |
-| API compat overview | `contents/apicompat/overview.md` |
+| Runtime library APIs | `contents/runtime-libraries/` |
+| Obsoletion warnings | `contents/syslib-diagnostics/obsoletions-overview.md` |
+| API compatibility | `contents/apicompat/overview.md` |
 
 ## Detailed Structure
 
-### Root (3 files)
+### apicompat/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `languages.md` | .NET language overview (C#, F#, VB) |
-| `implementations.md` | .NET implementations overview (.NET, .NET Framework, Mono) |
-| `standards.md` | .NET standards and specifications |
+| `overview.md` | API compatibility overview |
+| `assembly-validation.md` | Assembly-level API compatibility validation |
+| `diagnostic-ids.md` | Diagnostic IDs for API compatibility |
+| `global-tool.md` | API compatibility global tool usage |
+| `package-validation/overview.md` | Package validation overview |
+| `package-validation/baseline-version-validator.md` | Baseline version validator |
+| `package-validation/compatible-framework-in-package-validator.md` | Framework-in-package validator |
+| `package-validation/compatible-framework-validator.md` | Compatible framework validator |
 
-### apicompat/ (4 files)
-
-| File | Description |
-|------|-------------|
-| `apicompat/overview.md` | API compatibility overview |
-| `apicompat/diagnostic-ids.md` | Diagnostic IDs for API compatibility violations |
-| `apicompat/global-tool.md` | Microsoft.DotNet.ApiCompat global tool |
-| `apicompat/assembly-validation.md` | Assembly-level API validation |
-
-### apicompat/package-validation/ (4 files)
+### code-analysis/ top-level (8 files)
 
 | File | Description |
 |------|-------------|
-| `apicompat/package-validation/overview.md` | Package validation overview |
-| `apicompat/package-validation/baseline-version-validator.md` | Validate against a baseline version |
-| `apicompat/package-validation/compatible-framework-in-package-validator.md` | Validate compatible frameworks within a package |
-| `apicompat/package-validation/compatible-framework-validator.md` | Validate compatible frameworks across packages |
+| `overview.md` | Code analysis overview and enablement |
+| `categories.md` | Rule categories |
+| `configuration-options.md` | All configuration options |
+| `configuration-files.md` | Configuration file formats (.editorconfig, .globalconfig) |
+| `code-quality-rule-options.md` | Options for quality rules |
+| `code-style-rule-options.md` | Options for style rules |
+| `predefined-configurations.md` | Predefined analysis configurations |
+| `suppress-warnings.md` | How to suppress warnings |
 
-### code-analysis/ (8 files)
+### code-analysis/quality-rules/ (337 files)
 
-| File | Description |
-|------|-------------|
-| `code-analysis/overview.md` | .NET source code analysis overview |
-| `code-analysis/categories.md` | Code analysis rule categories |
-| `code-analysis/configuration-files.md` | .editorconfig and global AnalyzerConfig files |
-| `code-analysis/configuration-options.md` | Configuring code analysis rules |
-| `code-analysis/code-quality-rule-options.md` | Options for code quality rules |
-| `code-analysis/code-style-rule-options.md` | Options for code style rules |
-| `code-analysis/predefined-configurations.md` | Predefined AnalysisMode and AnalysisLevel configurations |
-| `code-analysis/suppress-warnings.md` | Suppressing code analysis warnings |
-
-### code-analysis/quality-rules/ (~290 files)
-
-Individual CA-prefixed code quality rule docs. Named by rule ID (e.g., `ca1000.md`, `ca2100.md`). Also includes summary files:
+Individual rule reference files named by rule ID (e.g., `ca1000.md`, `ca2007.md`). Categories:
 
 | File | Description |
 |------|-------------|
-| `code-analysis/quality-rules/index.md` | Index of all code quality rules |
-| `code-analysis/quality-rules/naming-warnings.md` | Naming rule warnings overview |
-| `code-analysis/quality-rules/documentation-warnings.md` | Documentation rule warnings overview |
-| `code-analysis/quality-rules/globalization-warnings.md` | Globalization rule warnings overview |
-| `code-analysis/quality-rules/interoperability-warnings.md` | Interoperability rule warnings overview |
-| `code-analysis/quality-rules/ca{NNNN}.md` | Individual rule: description, when to fix, how to suppress |
+| `index.md` | Complete index of all quality rules |
+| `design-warnings.md` | Design rules (CA1000-CA1070) |
+| `documentation-warnings.md` | Documentation rules (CA1200) |
+| `globalization-warnings.md` | Globalization rules (CA1303-CA1311) |
+| `interoperability-warnings.md` | Interoperability rules (CA1401-CA1422) |
+| `maintainability-warnings.md` | Maintainability rules (CA1501-CA1516) |
+| `naming-warnings.md` | Naming rules (CA1700-CA1727) |
+| `performance-warnings.md` | Performance rules (CA1800-CA1877) |
+| `reliability-warnings.md` | Reliability rules (CA2000-CA2026) |
+| `security-warnings.md` | Security rules (CA2100-CA5405) |
+| `usage-warnings.md` | Usage rules (CA2200-CA2266) |
 
-### code-analysis/style-rules/ (~110 files)
+### code-analysis/style-rules/ (120 files)
 
-Individual IDE-prefixed code style rule docs. Named by rule ID (e.g., `ide0001.md`, `ide0046.md`). Also includes:
+Individual style rule reference files named by rule ID (e.g., `ide0001.md`). Categories:
 
 | File | Description |
 |------|-------------|
-| `code-analysis/style-rules/index.md` | Index of all code style rules |
-| `code-analysis/style-rules/language-rules.md` | Language and unnecessary code rules |
-| `code-analysis/style-rules/naming-rules.md` | Naming convention rules |
-| `code-analysis/style-rules/miscellaneous-rules.md` | Miscellaneous style rules |
-| `code-analysis/style-rules/csharp-formatting-options.md` | C# formatting options |
-| `code-analysis/style-rules/dotnet-formatting-options.md` | .NET formatting options |
-| `code-analysis/style-rules/ide{NNNN}.md` | Individual rule: description, options, code examples |
+| `index.md` | Code style rules overview |
+| `language-rules.md` | Language and unnecessary code rules |
+| `naming-rules.md` | Naming convention rules |
+| `miscellaneous-rules.md` | Miscellaneous style rules |
+| `csharp-formatting-options.md` | C# formatting options |
+| `dotnet-formatting-options.md` | .NET-wide formatting options |
+| `ide0001.md` - `ide3000.md` | Individual style rule docs |
 
 ### diagnostics/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `diagnostics/runtime-events.md` | .NET runtime ETW/EventPipe events overview |
-| `diagnostics/runtime-garbage-collection-events.md` | GC runtime events |
-| `diagnostics/runtime-exception-events.md` | Exception runtime events |
-| `diagnostics/runtime-thread-events.md` | Thread runtime events |
-| `diagnostics/runtime-contention-events.md` | Monitor contention events |
-| `diagnostics/runtime-method-events.md` | JIT method events |
-| `diagnostics/runtime-loader-binder-events.md` | Assembly loader/binder events |
-| `diagnostics/runtime-type-events.md` | Type system events |
-| `diagnostics/runtime-interop-events.md` | COM/P-Invoke interop events |
-| `diagnostics/runtime-tiered-compilation-events.md` | Tiered compilation events |
-| `diagnostics/runtime-wait-handle-events.md` | WaitHandle events |
+| `runtime-events.md` | Runtime ETW events overview |
+| `runtime-contention-events.md` | Thread contention events |
+| `runtime-exception-events.md` | Exception events |
+| `runtime-garbage-collection-events.md` | GC events |
+| `runtime-interop-events.md` | Interop events |
+| `runtime-loader-binder-events.md` | Loader/binder events |
+| `runtime-method-events.md` | Method JIT events |
+| `runtime-thread-events.md` | Thread events |
+| `runtime-tiered-compilation-events.md` | Tiered compilation events |
+| `runtime-type-events.md` | Type events |
+| `runtime-wait-handle-events.md` | Wait handle events |
 
-### networking/ (4 files)
-
-| File | Description |
-|------|-------------|
-| `networking/overview.md` | .NET networking overview |
-| `networking/network-info.md` | NetworkInformation APIs |
-| `networking/ipv6-overview.md` | IPv6 support in .NET |
-| `networking/websockets.md` | WebSocket client/server usage |
-
-### networking/http/ (4 files)
+### networking/ (19 files)
 
 | File | Description |
 |------|-------------|
-| `networking/http/http-overview.md` | HTTP networking overview |
-| `networking/http/httpclient.md` | HttpClient usage guide |
-| `networking/http/httpclient-guidelines.md` | HttpClient best practices and pitfalls |
-| `networking/http/httpclient-migrate-from-httpwebrequest.md` | Migrating from HttpWebRequest to HttpClient |
-
-### networking/quic/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `networking/quic/quic-overview.md` | QUIC protocol support overview |
-| `networking/quic/quic-options.md` | QUIC connection options |
-| `networking/quic/quic-troubleshooting.md` | QUIC troubleshooting |
-
-### networking/sockets/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `networking/sockets/sockets-overview.md` | Socket programming overview |
-| `networking/sockets/socket-services.md` | High-level socket services |
-| `networking/sockets/tcp-classes.md` | TCP-specific classes (TcpClient, TcpListener) |
-
-### networking/telemetry/ (5 files)
-
-| File | Description |
-|------|-------------|
-| `networking/telemetry/overview.md` | Networking telemetry overview |
-| `networking/telemetry/metrics.md` | Networking metrics |
-| `networking/telemetry/tracing.md` | Networking distributed tracing |
-| `networking/telemetry/events.md` | Networking EventSource events |
-| `networking/telemetry/event-counters.md` | Networking EventCounters |
+| `overview.md` | Networking overview |
+| `ipv6-overview.md` | IPv6 support |
+| `network-info.md` | Network information APIs |
+| `websockets.md` | WebSocket APIs |
+| `http/http-overview.md` | HTTP overview |
+| `http/httpclient.md` | HttpClient usage guide |
+| `http/httpclient-guidelines.md` | HttpClient best practices |
+| `http/httpclient-migrate-from-httpwebrequest.md` | Migrating from HttpWebRequest |
+| `quic/quic-overview.md` | QUIC protocol overview |
+| `quic/quic-options.md` | QUIC configuration options |
+| `quic/quic-troubleshooting.md` | QUIC troubleshooting |
+| `sockets/sockets-overview.md` | Sockets overview |
+| `sockets/socket-services.md` | Socket services |
+| `sockets/tcp-classes.md` | TCP networking classes |
+| `telemetry/overview.md` | Networking telemetry overview |
+| `telemetry/metrics.md` | Networking metrics |
+| `telemetry/tracing.md` | Distributed tracing |
+| `telemetry/event-counters.md` | Event counters |
+| `telemetry/events.md` | Networking ETW events |
 
 ### reflection/ (14 files)
 
 | File | Description |
 |------|-------------|
-| `reflection/overview.md` | Reflection overview |
-| `reflection/viewing-type-information.md` | Examining type information at runtime |
-| `reflection/reflection-and-generic-types.md` | Reflection with generic types |
-| `reflection/dynamically-loading-and-using-types.md` | Dynamically loading and using types |
-| `reflection/accessing-custom-attributes.md` | Reading custom attributes via reflection |
-| `reflection/get-type-member-information.md` | Getting type member info |
-| `reflection/specifying-fully-qualified-type-names.md` | Fully qualified type name syntax |
-| `reflection/emitting-dynamic-methods-and-assemblies.md` | Reflection.Emit overview |
-| `reflection/collectible-assemblies.md` | Collectible (unloadable) assemblies |
-| `reflection/how-to-hook-up-a-delegate-using-reflection.md` | Hooking up delegates via reflection |
-| `reflection/how-to-define-and-execute-dynamic-methods.md` | Defining and invoking dynamic methods |
-| `reflection/how-to-define-a-generic-type-with-reflection-emit.md` | Emitting generic types |
-| `reflection/how-to-define-a-generic-method-with-reflection-emit.md` | Emitting generic methods |
-| `reflection/how-to-examine-and-instantiate-generic-types-with-reflection.md` | Instantiating generic types via reflection |
+| `overview.md` | Reflection overview |
+| `viewing-type-information.md` | Viewing type metadata |
+| `accessing-custom-attributes.md` | Reading custom attributes |
+| `get-type-member-information.md` | Getting member info |
+| `dynamically-loading-and-using-types.md` | Dynamic type loading |
+| `collectible-assemblies.md` | Collectible assemblies |
+| `reflection-and-generic-types.md` | Reflection with generics |
+| `specifying-fully-qualified-type-names.md` | Type name syntax |
+| `emitting-dynamic-methods-and-assemblies.md` | Reflection.Emit overview |
+| `how-to-define-and-execute-dynamic-methods.md` | Dynamic method how-to |
+| `how-to-define-a-generic-type-with-reflection-emit.md` | Generic type emit |
+| `how-to-define-a-generic-method-with-reflection-emit.md` | Generic method emit |
+| `how-to-examine-and-instantiate-generic-types-with-reflection.md` | Generic type inspection |
+| `how-to-hook-up-a-delegate-using-reflection.md` | Delegate via reflection |
 
-### runtime-libraries/ (~260 files)
+### runtime-libraries/ (171 files)
 
-Supplementary API remarks for .NET runtime library classes. Each file is named after the type or member it documents (e.g., `system-object.md`, `system-string-ctor.md`). Topics covered include:
-
-- Core types: `System.Object`, `System.String`, `System.Char`, `System.Byte`, `System.Int64`, `System.Single`, `System.Span{T}`, `System.Nullable{T}`
-- Collections: `System.Collections.Generic.List{T}`, `System.Collections.ObjectModel.KeyedCollection`
-- Exceptions: `System.Exception`, `System.InvalidCastException`, `System.InvalidOperationException`, `System.NotSupportedException`, `System.NotImplementedException`
-- Threading: `System.Threading.Thread`, `System.Threading.Monitor`, `System.Threading.ReaderWriterLockSlim`, `System.Threading.Tasks.Task`, `System.Threading.Tasks.TaskScheduler`
-- IO: `System.IO.FileStream`, `System.IO.FileSystemWatcher`
-- Globalization: `System.Globalization.CultureInfo`, `System.Globalization.CompareInfo`, `System.Globalization.DateTimeFormatInfo`
-- Networking: `System.Net.HttpListener`, `System.Net.Http.HttpClientHandler`
-- XML: `System.Xml.XmlReader`, `System.Xml.XmlReaderSettings`, `System.Xml.XmlSerializer`
-- Reflection.Emit: `System.Reflection.Emit.AssemblyBuilder`, `System.Reflection.Emit.DynamicMethod`, `System.Reflection.Emit.PersistedAssemblyBuilder`
-- Regex: `System.Text.RegularExpressions.Regex`
-- Cryptography: `System.Security.Cryptography.RSACryptoServiceProvider`
-- Other: `System.GC`, `System.AppContext`, `System.Console`, `System.Random`, `System.Delegate`
-
-### syslib-diagnostics/ (~120 files)
-
-SYSLIB diagnostic docs explaining .NET obsoletions and source-generator errors. Each file covers one diagnostic code with workarounds.
+API reference docs for .NET runtime library types, named by the fully-qualified type or method (e.g., `system-string.md`, `system-datetime.md`). Key files:
 
 | File | Description |
 |------|-------------|
-| `syslib-diagnostics/obsoletions-overview.md` | Overview of SYSLIB0xxx obsoletion diagnostics |
-| `syslib-diagnostics/source-generator-overview.md` | Overview of SYSLIB1xxx source-generator diagnostics |
-| `syslib-diagnostics/experimental-overview.md` | Overview of experimental API diagnostics |
-| `syslib-diagnostics/syslib-cominterfacegenerator.md` | COM interface source-generator diagnostics |
-| `syslib-diagnostics/syslib0002.md` | SYSLIB0002: PrincipalPermissionAttribute obsolete |
-| `syslib-diagnostics/syslib0{NNN}.md` | Individual obsoletion: what is obsolete and workaround |
-| `syslib-diagnostics/syslib1{NNN}.md` | Individual source-generator error and fix |
-| `syslib-diagnostics/extobs0001.md` | Extension library obsoletion diagnostic |
-| `syslib-diagnostics/syslib5003.md` | SYSLIB5003 diagnostic |
+| `preview-apis.md` | Preview APIs overview |
+| `system-string.md` | System.String |
+| `system-datetime.md` | System.DateTime |
+| `system-exception.md` | System.Exception |
+| `system-object.md` | System.Object |
+| `system-collections-generic-list{t}.md` | List<T> |
+| `system-collections-generic-hashset{t}.md` | HashSet<T> |
+| `system-threading-tasks-task.md` | Task |
+| `system-text-regularexpressions-regex.md` | Regex |
+| `system-text-stringbuilder.md` | StringBuilder |
+| `system-net-http-httpclient.md` | HttpClient |
+| `system-net-sockets-socket.md` | Socket |
+| `system-gc.md` | GC (garbage collector) |
+| `system-idisposable.md` | IDisposable |
+| `system-span{t}.md` | Span<T> |
+| `system-enum.md` | Enum |
+| `system-random.md` | Random |
+| `system-uri.md` | Uri |
+| `system-globalization-cultureinfo.md` | CultureInfo |
+| `system-xml-xmlreader.md` | XmlReader |
+
+### syslib-diagnostics/ (115 files)
+
+Compiler warning reference docs for obsoletions and source generator diagnostics:
+
+| File | Description |
+|------|-------------|
+| `obsoletions-overview.md` | Overview of all SYSLIB0XXX obsoletions |
+| `experimental-overview.md` | Overview of experimental APIs |
+| `source-generator-overview.md` | Source generator diagnostics overview |
+| `syslib-cominterfacegenerator.md` | ComInterfaceGenerator diagnostics |
+| `syslib0001.md` - `syslib0064.md` | Individual obsoletion warnings |
+| `syslib1001.md` - `syslib1230.md` | Source generator diagnostic codes |
+| `extobs0001.md` | Microsoft.Extensions obsoletion warnings |

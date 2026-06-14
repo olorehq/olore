@@ -1,8 +1,15 @@
 ---
 title: Connect from Elixir with Ecto to Neon
 subtitle: Set up a Neon project in seconds and connect from Elixir with Ecto
+summary: >-
+  Elixir Ecto connection guide walks through adding ecto_sql and Postgrex
+  dependencies, configuring SSL with cacerts against a Neon Serverless Postgres
+  database, and running migrations via mix ecto.migrate. Choose this page when
+  setting up a new Elixir project that connects to Neon and needs to account for
+  Postgrex idle_interval defaults that can prevent Neon's scale-to-zero
+  autosuspend from triggering.
 enableTableOfContents: true
-updatedOn: '2026-02-02T12:37:39.447Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/elixir-ecto-prompt.md" 

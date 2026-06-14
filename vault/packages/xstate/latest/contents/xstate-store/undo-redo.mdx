@@ -1,0 +1,114 @@
+---
+title: 'Undo/redo'
+---
+
+The `undoRedo` extension adds `undo` and `redo` triggers to a store with two strategy options.
+
+```ts
+import { createStore } from '@xstate/store';
+import { undoRedo } from '@xstate/store/undo'; // [!code highlight:1]
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+// [!code highlight:1]
+}).with(undoRedo());
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.undo(); // count = 1
+store.trigger.redo(); // count = 2
+```
+
+## Strategies
+
+### Event strategy (default)
+
+Stores the full event log. On undo, events are popped from the log and the store is rebuilt by replaying remaining events from the initial state. Best for deterministic transitions.
+
+```ts
+.with(undoRedo()) // or
+.with(undoRedo({ strategy: 'event' }))
+```
+
+### Snapshot strategy
+
+Stores past/future snapshots directly. Faster undo/redo since no replay is needed, but uses more memory.
+
+```ts
+.with(undoRedo({
+  strategy: 'snapshot', // [!code highlight:1]
+  historyLimit: 50,
+}))
+```
+
+| Option | Type | Default | Strategy | Description |
+| --- | --- | --- | --- | --- |
+| `strategy` | `'event' \| 'snapshot'` | `'event'` | both | History storage strategy |
+| `getTransactionId` | `(event, snapshot) => string \| null` | - | both | Group related events into a single undo step |
+| `skipEvent` | `(event, snapshot) => boolean` | - | both | Exclude events from history |
+| `historyLimit` | `number` | `Infinity` | snapshot | Max snapshots to keep |
+| `compare` | `(past, current) => boolean` | - | snapshot | Skip duplicate snapshots |
+
+## Transactions
+
+Group multiple events into a single undo step by returning the same transaction ID:
+
+```ts
+const store = createStore({
+  context: { items: [] as string[] },
+  on: {
+    addItem: (context, event: { item: string }) => ({
+      items: [...context.items, event.item],
+    }),
+  },
+}).with(
+  undoRedo({
+    // [!code highlight:1]
+    getTransactionId: (event) => event.batchId ?? null,
+  }),
+);
+
+store.trigger.addItem({ item: 'a', batchId: 'batch-1' });
+store.trigger.addItem({ item: 'b', batchId: 'batch-1' });
+store.trigger.addItem({ item: 'c', batchId: 'batch-1' });
+
+// All three are undone in one step
+store.trigger.undo(); // items = []
+```
+
+## Skipping events
+
+Exclude certain events from history so they cannot be undone:
+
+```ts
+const store = createStore({
+  context: { count: 0, theme: 'light' },
+  on: {
+    inc: (context) => ({ ...context, count: context.count + 1 }),
+    setTheme: (context, event: { theme: string }) => ({
+      ...context,
+      theme: event.theme,
+    }),
+  },
+}).with(
+  undoRedo({
+    // [!code highlight:1]
+    skipEvent: (event) => event.type === 'setTheme',
+  }),
+);
+```
+
+## Deduplication (snapshot strategy)
+
+Avoid storing duplicate snapshots when the state didn't actually change:
+
+```ts
+.with(undoRedo({
+  strategy: 'snapshot',
+  // [!code highlight:1]
+  compare: (past, current) => past.context.count === current.context.count,
+}))
+```

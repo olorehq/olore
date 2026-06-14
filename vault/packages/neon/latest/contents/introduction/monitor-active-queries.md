@@ -1,8 +1,15 @@
 ---
 title: Monitor active queries
 subtitle: View and analyze running queries in your database
+summary: >-
+  The Active Queries view in the Neon Console displays up to 100 currently
+  running queries for a selected branch, compute, and database. It is backed by
+  the `pg_stat_activity` Postgres system view. Inspect live query activity
+  without writing SQL, or query `pg_stat_activity` directly via the Neon SQL
+  Editor or psql for custom analysis. Completed queries do not persist in the
+  view, and no active queries appear while a compute is scaled to zero.
 enableTableOfContents: true
-updatedOn: '2025-10-22T15:44:06.423Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 You can monitor active queries for your Neon project from the **Monitoring** page in the Neon Console.

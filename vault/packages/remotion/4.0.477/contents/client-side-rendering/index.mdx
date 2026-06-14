@@ -1,0 +1,87 @@
+---
+image: /generated/articles-docs-client-side-rendering-index.png
+crumb: 'Overview'
+sidebar_label: Overview
+title: Client-side rendering
+---
+
+:::warning
+Experimental feature - expect bugs and breaking changes at any time.  
+[Track progress on GitHub](https://github.com/remotion-dev/remotion/issues/5913) and discuss in the [`#web-renderer`](https://remotion.dev/discord) channel on Discord.
+:::
+
+Client-side rendering is a new additional capability of Remotion that allows you to render videos, images, and audio directly in the browser, without requiring server-side infrastructure.
+
+It is currently released as an experimental alpha under the [`@remotion/web-renderer`](/docs/web-renderer) package.
+
+## Key differences from server-side rendering
+
+Unlike server-side rendering with [`@remotion/renderer`](/docs/renderer), client-side rendering:
+
+- Runs in the browser - No need to setup Node servers or Remotion Lambda
+- Encodes with WebCodecs using [Mediabunny](/docs/mediabunny) instead of FFmpeg
+- Limited to a subset of HTML elements - see [limitations](/docs/client-side-rendering/limitations)
+- No bundling step - takes components and video config directly
+
+## Browser support
+
+Client-side rendering requires the [WebCodecs API](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API), which limits browser support to:
+
+| Browser | Minimum version |
+| ------- | --------------- |
+| Chrome  | 94+             |
+| Firefox | 130+            |
+| Safari  | 26+             |
+
+## APIs
+
+The package provides APIs called [`renderStillOnWeb()`](/docs/web-renderer/render-still-on-web) and [`renderMediaOnWeb()`](/docs/web-renderer/render-media-on-web).
+
+Here is an example of how to use it:
+
+```tsx twoslash title="Tentative API example"
+import {renderMediaOnWeb} from '@remotion/web-renderer';
+
+const Component: React.FC = () => {
+  return (
+    <svg viewBox="0 0 100 100" width="100" height="100" style={{transform: 'rotate(45deg)'}}>
+      <polygon points="50,10 90,90 10,90" fill="orange" />
+    </svg>
+  );
+};
+
+const {getBlob} = await renderMediaOnWeb({
+  composition: {
+    component: Component,
+    durationInFrames: 100,
+    fps: 30,
+    width: 100,
+    height: 100,
+    calculateMetadata: null,
+    id: 'my-composition',
+  },
+  inputProps: {},
+});
+```
+
+## Enable in the Studio
+
+To enable client-side rendering in the Studio, you need to call `Config.setExperimentalClientSideRenderingEnabled(true)` in your `remotion.config.ts` file.
+
+```ts twoslash title="remotion.config.ts"
+import {Config} from '@remotion/cli/config';
+// ---cut---
+Config.setExperimentalClientSideRenderingEnabled(true);
+```
+
+## Status
+
+Client-side rendering is currently in heavy iteration.
+
+[View the current status and progress →](https://github.com/remotion-dev/remotion/issues/5913)
+
+## See also
+
+- [How it works](/docs/client-side-rendering/how-it-works)
+- [Limitations](/docs/client-side-rendering/limitations)
+- [Server-side rendering](/docs/ssr)

@@ -3,8 +3,84 @@ title: auth api-tokens mint
 sidebarTitle: mint
 ---
 
-To create a new API token for the current organization, run the following command:
+To create a new API token, scoped to a single organization, run the following command:
 
 ```bash
-turso auth api-tokens mint <api-token-name>
+turso auth api-tokens mint <api-token-name> --org <organization-slug>
 ```
+
+<Warning>
+
+**Unrestricted (cross-org) tokens — minting without `--org` — are deprecated and will be removed in a future release.** Always pass `--org` for new tokens. Existing unrestricted tokens continue to work for now, but you should rotate them to scoped tokens at your earliest convenience.
+
+</Warning>
+
+## Flags
+
+| Flag | Description |
+| --- | --- |
+| `--org` | Restrict the token to a specific organization. |
+| `--group` | Restrict the token to a specific group inside `--org`. Requires `--org` and at least one scope. |
+| `--scope` | Permission to grant a group-scoped token. Repeatable. |
+| `--read-only` | Shorthand for `--scope read`. |
+| `--full-access` | Shorthand for granting every scope. |
+
+## Organization-scoped tokens
+
+Pass `--org` to restrict a token to a single organization:
+
+```bash
+turso auth api-tokens mint <api-token-name> --org <organization-slug>
+```
+
+An org-scoped token can only manage resources (groups, databases, members) within that organization. Requests to any other organization will be rejected.
+
+## Group-scoped tokens
+
+A group-scoped token is pinned to a single group inside an organization and is restricted to an explicit set of operations. It's the right shape for automations that should be able to provision and manage databases inside one group without being able to touch the rest of the organization.
+
+You must be an admin or owner of the organization to mint a group-scoped token.
+
+```bash
+# Read-only access to one group
+turso auth api-tokens mint deploy-bot --org my-org --group default --read-only
+
+# Full access inside one group, but nothing outside it
+turso auth api-tokens mint deploy-bot --org my-org --group default --full-access
+
+# Fine-grained: provision and configure databases, mint SQL tokens
+turso auth api-tokens mint deploy-bot --org my-org --group default \
+  --scope db:create --scope db:configure --scope db:mint-token
+```
+
+### Available scopes
+
+`--scope` can be repeated and accepts any of the following:
+
+| Scope | Allows |
+| --- | --- |
+| `read` | All GET-style routes: list/retrieve databases and groups, configuration, usage, instances, locations. |
+| `db:create` | Create databases inside the group, seed from a dump, restore. |
+| `db:delete` | Delete a database inside the group. |
+| `db:configure` | Patch database configuration, transfer, wake, add or remove instances. |
+| `db:mint-token` | Issue a SQL-engine token or TLS client certificate for a database inside the group. |
+| `db:rotate-creds` | Rotate the database signing key, invalidating every SQL token previously issued for it. |
+| `group:configure` | Configure, rename, update, unarchive the group, or add and remove locations. |
+| `group:mint-token` | Issue a group-level SQL-engine token. |
+| `group:rotate-creds` | Rotate the group signing key, invalidating every SQL token issued against any database in the group. |
+
+<Warning>
+
+`db:mint-token` and `db:rotate-creds` are deliberately separate scopes. Minting a new SQL credential is additive; rotating invalidates every credential currently in use, which can take down running applications. Grant rotation only to automations that need it.
+
+</Warning>
+
+`--scope`, `--read-only`, and `--full-access` are mutually exclusive — pass one flavor at a time. Unknown scope labels are rejected before the request is sent. Group create, group delete, group transfer, and AWS migration are never reachable from a group-scoped token at any scope.
+
+### Lifecycle
+
+Group-scoped tokens are pinned by the group's UUID, not its name. Deleting a group, or transferring it to another organization, cascades a revoke to every token scoped to it. A new group created with the same name does not inherit tokens from the previous one.
+
+<Warning>
+  The token value is only shown once at creation time. Store it somewhere safe.
+</Warning>

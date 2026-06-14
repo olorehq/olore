@@ -1,0 +1,165 @@
+---
+title: datetime_diff
+description: 'This page explains how to use the datetime_diff function in APL.'
+---
+
+Use the `datetime_diff` function in APL to calculate the calendarian difference between two datetime values in a specified unit. The function computes `datetime1 - datetime2` and returns the result as a count of the specified date part.
+
+You can use `datetime_diff` to measure elapsed time between events, calculate how long ago something occurred, or compare timestamps across records.
+
+Use it when you want to:
+
+- Calculate the number of hours, days, or minutes between two events.
+- Measure how long ago a request or trace occurred relative to the current time.
+- Compare event timestamps to detect delays or gaps in processing.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you typically calculate time differences using arithmetic on epoch timestamps, such as `eval diff=round((_time - relative_time(now(), "-1d@d")) / 3600)`. In APL, the `datetime_diff` function directly computes the difference between two datetime values in a specified unit.
+
+<CodeGroup>
+```sql Splunk example
+... | eval hours_diff=round((_time - relative_time(now(), "-1d@d")) / 3600)
+````
+
+```kusto APL equivalent
+... | extend hours_diff = datetime_diff('hour', now(), _time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use `DATEDIFF(hour, start_time, end_time)` or `TIMESTAMPDIFF(HOUR, start_time, end_time)` to compute the difference between timestamps. In APL, `datetime_diff` follows a similar pattern with the unit as the first argument.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATEDIFF(hour, start_time, end_time) AS hours_diff FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend hours_diff = datetime_diff('hour', end_time, start_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+datetime_diff(part, datetime1, datetime2)
+```
+
+### Parameters
+
+| Name      | Type       | Description                                                                                                                                            |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| part      | `string`   | The unit for the result: `'year'`, `'quarter'`, `'month'`, `'week'`, `'day'`, `'hour'`, `'minute'`, `'second'`, `'millisecond'`, `'microsecond'`, `'nanosecond'`. |
+| datetime1 | `datetime` | The later datetime value (left side of subtraction).                                                                                                   |
+| datetime2 | `datetime` | The earlier datetime value (right side of subtraction).                                                                                                |
+
+### Returns
+
+A `long` representing the number of periods of the specified unit in the result of `datetime1 - datetime2`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Calculate how many hours ago each request occurred.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend hours_ago = datetime_diff('hour', now(), _time)
+| project _time, hours_ago, method, status
+| take 10
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20hours_ago%20%3D%20datetime_diff('hour'%2C%20now()%2C%20_time)%20%7C%20project%20_time%2C%20hours_ago%2C%20method%2C%20status%20%7C%20take%2010%22%7D)
+
+**Output**
+
+| _time                | hours_ago | method | status |
+| -------------------- | --------- | ------ | ------ |
+| 2025-01-15T08:00:00Z | 26        | GET    | 200    |
+| 2025-01-15T09:30:00Z | 25        | POST   | 201    |
+| 2025-01-15T10:15:00Z | 24        | GET    | 404    |
+
+This query computes the number of hours between each request and the current time, giving you a quick sense of how recent each event is.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Measure the number of minutes since each trace for the frontend service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend minutes_since = datetime_diff('minute', now(), _time)
+| where ['service.name'] == 'frontend'
+| project _time, minutes_since, trace_id, duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20minutes_since%20%3D%20datetime_diff('minute'%2C%20now()%2C%20_time)%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'frontend'%20%7C%20project%20_time%2C%20minutes_since%2C%20trace_id%2C%20duration%22%7D)
+
+**Output**
+
+| _time                | minutes_since | trace_id         | duration         |
+| -------------------- | ------------- | ---------------- | ---------------- |
+| 2025-01-15T09:00:00Z | 1560          | abc123           | 00:00:01.2340000 |
+| 2025-01-15T09:05:00Z | 1555          | def456           | 00:00:00.8910000 |
+| 2025-01-15T09:10:00Z | 1550          | ghi789           | 00:00:02.0050000 |
+
+This query calculates how many minutes have elapsed since each frontend trace, useful for understanding the age of trace data.
+
+</Tab>
+<Tab title="Security logs">
+
+Count error requests by how many days ago they occurred.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 400
+| extend days_ago = datetime_diff('day', now(), _time)
+| summarize error_count = count() by days_ago
+| sort by days_ago asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20400%20%7C%20extend%20days_ago%20%3D%20datetime_diff('day'%2C%20now()%2C%20_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20days_ago%20%7C%20sort%20by%20days_ago%20asc%22%7D)
+
+**Output**
+
+| days_ago | error_count |
+| -------- | ----------- |
+| 0        | 23          |
+| 1        | 45          |
+| 2        | 31          |
+
+This query groups error responses by how many days ago they occurred, making it easy to spot whether error rates are increasing or decreasing over recent days.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [datetime_add](/apl/scalar-functions/datetime-functions/datetime-add): Adds a specified number of date parts to a datetime. Use when you need to shift a timestamp rather than measure the gap between two.
+- [ago](/apl/scalar-functions/datetime-functions/ago): Subtracts a timespan from the current UTC time. Use for simple relative time filters.
+- [now](/apl/scalar-functions/datetime-functions/now): Returns the current UTC time.
+- [todatetime](/apl/scalar-functions/conversion-functions/todatetime): Converts a value to a datetime. Use to parse strings into datetime values before computing differences.

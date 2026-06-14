@@ -55,13 +55,13 @@ bun add -D vitest @vitest/browser-preview
 :::
 
 ::: warning
-However, to run tests in CI you need to install either [`playwright`](https://npmjs.com/package/playwright) or [`webdriverio`](https://www.npmjs.com/package/webdriverio). We also recommend switching to either one of them for testing locally instead of using the default `preview` provider since it relies on simulating events instead of using Chrome DevTools Protocol.
+However, to run tests in CI you need to install either [`playwright`](https://npmx.dev/package/playwright) or [`webdriverio`](https://npmx.dev/package/webdriverio). We also recommend switching to either one of them for testing locally instead of using the default `preview` provider since it relies on simulating events instead of using Chrome DevTools Protocol.
 
 If you don't already use one of these tools, we recommend starting with Playwright because it supports parallel execution, which makes your tests run faster.
 
 ::: tabs key:provider
 == Playwright
-[Playwright](https://npmjs.com/package/playwright) is a framework for Web Testing and Automation.
+[Playwright](https://npmx.dev/package/playwright) is a framework for Web Testing and Automation.
 
 ::: code-group
 ```bash [npm]
@@ -78,7 +78,7 @@ bun add -D vitest @vitest/browser-playwright
 ```
 == WebdriverIO
 
-[WebdriverIO](https://www.npmjs.com/package/webdriverio) allows you to run tests locally using the WebDriver protocol.
+[WebdriverIO](https://npmx.dev/package/webdriverio) allows you to run tests locally using the WebDriver protocol.
 
 ::: code-group
 ```bash [npm]
@@ -118,9 +118,7 @@ export default defineConfig({
 ```
 
 ::: info
-Vitest assigns port `63315` to avoid conflicts with the development server, allowing you to run both in parallel. You can change that with the [`browser.api`](/config/#browser-api) option.
-
-The CLI does not print the Vite server URL automatically. You can press "b" to print the URL when running in watch mode.
+Vitest assigns port `63315` to avoid conflicts with the development server, allowing you to run both in parallel. You can change that with the [`browser.api`](/config/browser/api) option.
 :::
 
 If you have not used Vite before, make sure you have your framework's plugin installed and specified in the config. Some frameworks might require extra configuration to work - check their Vite related documentation to be sure.
@@ -328,7 +326,9 @@ npx vitest --browser.headless
 Since Vitest 3.2, if you don't have the `browser` option in your config but specify the `--browser` flag, Vitest will fail because it can't assume that config is meant for the browser and not Node.js tests.
 :::
 
-By default, Vitest will automatically open the browser UI for development. Your tests will run inside an iframe in the center. You can configure the viewport by selecting the preferred dimensions, calling `page.viewport` inside the test, or setting default values in [the config](/config/#browser-viewport).
+By default, Vitest will automatically open the browser UI for development. Your tests will run inside an iframe in the center. You can configure the viewport by selecting the preferred dimensions, calling `page.viewport` inside the test, or setting default values in [the config](/config/browser/viewport).
+
+For an alternative debugging model that captures DOM snapshots for every test instead of showing a live iframe, see [Trace View](/guide/browser/trace-view).
 
 ## Headless
 
@@ -362,7 +362,7 @@ npx vitest --browser.headless
 In this case, Vitest will run in headless mode using the Chrome browser.
 
 ::: warning
-Headless mode is not available by default. You need to use either [`playwright`](https://npmjs.com/package/playwright) or [`webdriverio`](https://www.npmjs.com/package/webdriverio) providers to enable this feature.
+Headless mode is not available by default. You need to use either [`playwright`](https://npmx.dev/package/playwright) or [`webdriverio`](https://npmx.dev/package/webdriverio) providers to enable this feature.
 :::
 
 ## Examples
@@ -402,7 +402,7 @@ Community packages are available for other frameworks:
 
 - [`vitest-browser-lit`](https://github.com/EskiMojo14/vitest-browser-lit) to render [lit](https://lit.dev) components
 - [`vitest-browser-preact`](https://github.com/JoviDeCroock/vitest-browser-preact) to render [preact](https://preactjs.com) components
-- [`vitest-browser-qwik`](https://github.com/kunai-consulting/vitest-browser-qwik) to render [qwik](https://qwik.dev) components
+- [`vitest-browser-qwik`](https://github.com/QwikDev/vitest-browser-qwik) to render [qwik](https://qwik.dev) components
 
 If your framework is not represented, feel free to create your own package - it is a simple wrapper around the framework renderer and `page.elementLocator` API. We will add a link to it on this page. Make sure it has a name starting with `vitest-browser-`.
 
@@ -430,7 +430,7 @@ import { render } from 'vitest-browser-vue'
 import Component from './Component.vue'
 
 test('properly handles v-model', async () => {
-  const screen = render(Component)
+  const screen = await render(Component)
 
   // Asserts initial state.
   await expect.element(screen.getByText('Hi, my name is Alice')).toBeInTheDocument()
@@ -452,7 +452,7 @@ import { expect, test } from 'vitest'
 import Greeter from './greeter.svelte'
 
 test('greeting appears on click', async () => {
-  const screen = render(Greeter, { name: 'World' })
+  const screen = await render(Greeter, { name: 'World' })
 
   const button = screen.getByRole('button')
   await button.click()

@@ -1,8 +1,16 @@
 ---
 title: Branching authentication
 subtitle: How authentication works with Neon database branches
+summary: >-
+  Neon Auth stores users, sessions, and configuration in the database's
+  neon_auth schema, so authentication data is automatically cloned when you
+  create a branch, giving each branch its own fully isolated auth environment.
+  Use this page when you need to safely test OAuth providers, RBAC policy
+  changes, password reset flows, or full application refactors without touching
+  production users. Each branch gets a unique Auth API URL, and sessions and
+  tokens do not cross between branches.
 enableTableOfContents: true
-updatedOn: '2026-01-13T20:57:02.562Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -34,7 +42,7 @@ Production (main)                Preview Branch (preview-pr-123)
 After branching, the environments operate independently:
 
 1.  **Data Isolation:** Changes in one branch don't affect others. Creating a user in a preview branch does not create them in production.
-2.  **Config Isolation:** You can modify auth settings (e.g., email templates, token settings) in the branch without affecting the parent.
+2.  **Config Isolation:** You can modify auth settings (for example, email templates, token settings) in the branch without affecting the parent.
 3.  **Endpoint Isolation:** Each branch gets a unique Auth API URL. Tokens issued in one branch are not valid in another.
 
 ```
@@ -62,7 +70,7 @@ This isolation is intentional and prevents security issues like sessions acciden
 
 ## Common Use Cases
 
-This branch isolation enables several powerful workflows for developers, QA teams, and product managers.
+This branch isolation supports several useful workflows for developers, QA teams, and product managers.
 
 ### 1. Developer isolation
 
@@ -139,7 +147,7 @@ With Neon Auth, you can spin up a complete parallel environment for your new ver
 **The workflow:**
 
 1.  **Branch production:** Create a branch named `v2-beta` from your main production database. This clones your entire application state, including the `neon_auth` schema containing all user identities and hashed passwords.
-2.  **Deploy v2:** Deploy your new application code (e.g., to `beta.myapp.com`) and point it to the `v2-beta` branch's Auth URL.
+2.  **Deploy v2:** Deploy your new application code (for example, to `beta.myapp.com`) and point it to the `v2-beta` branch's Auth URL.
 3.  **Seamless login:** Existing users can visit your new v2 site and **log in immediately using their existing credentials**. They do not need to sign up again or reset their passwords.
 
 This allows you to test radical architectural changes such as renaming database columns, changing table structures, or modifying authentication flows in a live environment. Your v1 application remains completely unaffected, while your v2 beta feels like a production-ready extension of your platform.
@@ -152,7 +160,7 @@ Remember that once branched, the environments are separate. If a user changes th
 
 AI Agents, particularly those designed for coding or QA, require safe, isolated environments to generate code, run migrations, and validate features. Traditionally, giving an agent access to a full authentication stack was complex - you had to mock auth tokens or risk exposing production user pools.
 
-With Neon, an agent can programmatically provision its own "sandbox." Because Neon Auth moves with the data, this branch instantly creates a working Authentication service isolated from production, complete with its own user tables, sessions, and configuration. **This ensures your entire application stack mimics production behavior without risking real user data.**
+With Neon, an agent can programmatically provision its own "sandbox." Because Neon Auth moves with the data, this branch instantly creates a working Authentication service isolated from production, complete with its own user tables, sessions, and configuration. **The branch provides a full production-like environment without touching real user data.**
 
 **The workflow:**
 
@@ -161,7 +169,7 @@ With Neon, an agent can programmatically provision its own "sandbox." Because Ne
 3.  **Validate:** The Agent runs a test suite to verify that the code it generated works correctly with the database schema, RLS policies, and authentication rules.
 4.  **Teardown:** Once the task is complete, the Agent deletes the branch, cleaning up all data and auth state.
 
-This capability allows agents to spin up "full stack" environments (Database + Auth + Compute) in seconds, enabling autonomous testing loops that rigorously test user-facing security without manual setup.
+Agents can spin up full-stack environments (Database + Auth + Compute) in seconds and run autonomous test loops against real user-facing security flows, with no manual setup.
 
 <Admonition type="important">
 An AI agent cannot log in as a real production user in a branch. Although user records are copied, valid session cookies are domain-scoped and remain with the user's browser; they are not sent to the branch URL. Unless the agent explicitly knows a user's password, it must either perform a sign-up flow or use existing test credentials to log in.

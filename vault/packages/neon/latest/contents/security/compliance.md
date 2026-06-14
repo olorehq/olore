@@ -1,9 +1,15 @@
 ---
 title: Compliance
+summary: >-
+  Neon holds SOC 2 Type 1 and Type 2, SOC 3, ISO 27001, ISO 27701, GDPR,
+  CCPA, and HIPAA certifications. Each is validated by independent audits or
+  regulatory adherence. HIPAA compliance is available on the Scale plan.
+  Audit reports for all certifications can be requested through the Neon
+  Trust Center at trust.neon.com.
 enableTableOfContents: false
 redirectFrom:
   - /docs/security/soc2-compliance
-updatedOn: '2026-01-07T16:05:22.643Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 At Neon, we prioritize data security and privacy, and we have achieved several key compliances that validate our efforts. We have completed audits for SOC 2 Type 1 and Type 2, SOC 3, ISO 27001, and ISO 27701, and we adhere to GDPR and CCPA regulations.
@@ -44,4 +50,3 @@ To learn more about how we protect your data and uphold the highest standards of
 
 - For security inquiries, contact us at [security@neon.tech](mailto:security@neon.tech).
 - For privacy-related questions, reach out to [privacy@databricks.com](mailto:privacy@databricks.com).
-- For sales information, please [contact our sales team](/contact-sales).

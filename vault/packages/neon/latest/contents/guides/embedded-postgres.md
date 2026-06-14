@@ -1,25 +1,33 @@
 ---
 title: Embedded Postgres
 subtitle: 'Offer instant, managed Postgres databases to your users with Neon'
+summary: >-
+  Embedded Postgres on Neon lets SaaS platforms and developer tools provision an
+  isolated Postgres database per user in under 1 second via API, with
+  autoscaling, scale-to-zero, and per-project quotas for compute time, storage,
+  and data transfer. Use this page when building a database-per-tenant
+  integration with no Neon sign-up required from end users. It covers the
+  project-per-user model, API key setup, autoscaling parameters, consumption
+  quota enforcement, and usage monitoring via the metrics endpoint.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-01-24T16:13:09.593Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon makes it easy to embed Postgres into your platform with one-second provisioning, autoscaling, and scale-to-zero, so each user gets an isolated database without the overhead. Databases are provisioned via API and fully integrated into your product, with no Neon signup or setup required by your users.
 
-<CTA title="Learn how platforms embed Neon" description="Learn how <a href='https://neon.com/blog/how-retool-uses-retool-and-the-neon-api-to-manage-300k-postgres-databases'>Retool manages 300k+ Postgres databases</a> and <a href='https://www.koyeb.com/blog/serverless-postgres-public-preview'>Koyeb offers serverless Postgres</a> using Neon." isIntro></CTA>
+<CTA title="Learn how platforms embed Neon" description="Learn how <a href='https://neon.com/blog/how-retool-uses-retool-and-the-neon-api-to-manage-300k-postgres-databases'>Retool manages 300k+ Postgres databases</a> and <a href='https://www.koyeb.com/blog/serverless-postgres-public-preview'>Koyeb offers serverless Postgres</a> using Neon."></CTA>
 
 ## Why embed Neon?
 
 Neon is uniquely built to scale Postgres fleets efficiently:
 
-- **Instant provisioning** — Create a new Postgres database in under 1 second via API
-- **Scale to zero** — Inactive databases scale to zero to save on compute cost
-- **True isolation** — Each user gets their own dedicated Neon project with complete data separation
-- **Autoscaling** — Databases scale compute resources automatically based on demand
-- **Set quotas** — Set consumption limits per project to manage usage and costs
-- **Track usage** — Track compute time, storage, and other metrics per project
+- **Instant provisioning**: Create a new Postgres database in under 1 second via API
+- **Scale to zero**: Inactive databases scale to zero to save on compute cost
+- **True isolation**: Each user gets their own dedicated Neon project with complete data separation
+- **Autoscaling**: Databases scale compute resources automatically based on demand
+- **Set quotas**: Set consumption limits per project to manage usage and costs
+- **Track usage**: Track compute time, storage, and other metrics per project
 
 ## The project-per-user model
 
@@ -31,17 +39,17 @@ In Neon, resources such as branches, databases, roles, and computes are organize
 
 ### Why project-per-user?
 
-- **Data isolation** — Each user's data is completely separate, ensuring the highest level of security and privacy. This also helps with compliance standards like GDPR.
+- **Data isolation**: Each user's data is completely separate, ensuring the highest level of security and privacy. This also helps with compliance standards like GDPR.
 
-- **Resource isolation** — One user's usage patterns or actions don't impact others. Each user has dedicated compute resources.
+- **Resource isolation**: One user's usage patterns or actions don't impact others. Each user has dedicated compute resources.
 
-- **Easier limits and billing** — Neon's APIs for setting consumption limits and tracking usage work at the project level, making it straightforward to implement usage-based billing.
+- **Easier limits and billing**: Neon's APIs for setting consumption limits and tracking usage work at the project level, making it straightforward to implement usage-based billing.
 
-- **Regional compliance** — Each project can be deployed in a specific region, making it easy to host customer data closer to their location or meet data residency requirements.
+- **Regional compliance**: Each project can be deployed in a specific region, making it easy to host customer data closer to their location or meet data residency requirements.
 
-- **Independent recovery** — Operations like instant [point-in-time restore](/docs/guides/branch-restore) work at the branch level. In a project-per-user model, you can restore individual customer databases without impacting others.
+- **Independent recovery**: Operations like instant [point-in-time restore](/docs/guides/branch-restore) work at the branch level. In a project-per-user model, you can restore individual customer databases without impacting others.
 
-- **Simpler to manage** — Following Neon's established project-based structure is easier than working against it. The Neon API is designed around this model.
+- **Simpler to manage**: Following Neon's established project-based structure is easier than working against it. The Neon API is designed around this model.
 
 <Admonition type="note">
 The project-per-user model implements a database-per-tenant architecture. For a deeper dive into this approach and how Neon compares to traditional solutions like RDS, read [Data Isolation at Scale](https://neon.com/use-cases/database-per-tenant).
@@ -96,9 +104,9 @@ You can customize the default database and role names when creating a project. S
 
 Configure how computes scale and when they suspend due to inactivity:
 
-- `autoscaling_limit_min_cu` — Minimum compute size (default: 0.25 CU)
-- `autoscaling_limit_max_cu` — Maximum compute size for autoscaling
-- `suspend_timeout_seconds` — Inactivity period before compute suspends
+- `autoscaling_limit_min_cu`: Minimum compute size (default: 0.25 CU)
+- `autoscaling_limit_max_cu`: Maximum compute size for autoscaling
+- `suspend_timeout_seconds`: Inactivity period before compute suspends
 
 Example setting a compute to scale between 1 and 4 CU with a 10-minute suspend timeout:
 
@@ -170,20 +178,14 @@ For real-world examples, see how [Koyeb defines their database instance types an
 
 Query consumption metrics to track usage across your projects and implement billing:
 
-```bash
+```bash shouldWrap
 curl --request GET \
-     --url 'https://console.neon.tech/api/v2/consumption_history/projects?limit=100&from=2024-11-01T00:00:00Z&to=2024-11-30T23:59:59Z&granularity=daily' \
+     --url 'https://console.neon.tech/api/v2/consumption_history/v2/projects?org_id=$ORG_ID&from=2024-11-01T00:00:00Z&to=2024-11-30T23:59:59Z&granularity=daily&metrics=compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,public_network_transfer_bytes' \
      --header 'accept: application/json' \
      --header "authorization: Bearer $NEON_API_KEY"
 ```
 
-The API provides metrics for:
-
-- `active_time_seconds` — Time computes were active
-- `compute_time_seconds` — CPU seconds consumed
-- `written_data_bytes` — Data written to storage
-- `data_transfer_bytes` — Data transferred out (egress)
-- `synthetic_storage_size_bytes` — Total storage used
+The v2 project metrics endpoint returns billing-aligned metrics including compute, storage, and data transfer. To break usage down by branch within a project, use the [branch metrics endpoint](/docs/guides/consumption-metrics#branch-metrics) (`GET /consumption_history/v2/branches`).
 
 For details on querying metrics, see [Query consumption metrics](/docs/guides/consumption-metrics).
 
@@ -208,7 +210,7 @@ Neon reserves certain names for roles and databases. See [Reserved role names](/
 - Rate limit: ~30 requests per minute per account
 - Polling does NOT wake suspended computes
 
-See the [consumption polling FAQ](/docs/guides/consumption-metrics#consumption-polling-faq) for more details.
+See [Consumption polling](/docs/guides/consumption-metrics#consumption-polling) for more details.
 
 ### Staying informed
 

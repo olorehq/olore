@@ -2,7 +2,16 @@
 title: Neon serverless driver
 enableTableOfContents: true
 subtitle: Connect to Neon from serverless environments over HTTP or WebSockets
-updatedOn: '2025-10-10T13:19:39.268Z'
+summary: >-
+  The Neon serverless driver (`@neondatabase/serverless`) is a JavaScript
+  and TypeScript Postgres driver that replaces TCP with HTTP or WebSockets,
+  enabling Postgres queries from serverless and edge runtimes such as Vercel
+  Edge Functions and Cloudflare Workers. Use the `neon()` function over HTTP
+  for single or non-interactive batched queries, or the `Pool`/`Client`
+  constructors over WebSockets when sessions, interactive transactions, or
+  node-postgres drop-in compatibility are required. TypeScript types are
+  bundled; install with `npm install @neondatabase/serverless`.
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/serverless-driver-prompt.md" 
@@ -19,9 +28,7 @@ When to query over HTTP vs WebSockets:
 - **HTTP**: Querying over an HTTP [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) request is faster for single, non-interactive transactions, also referred to as "one-shot queries". Issuing [multiple queries](#issue-multiple-queries-with-the-transaction-function) via a single, non-interactive transaction is also supported. See [Use the driver over HTTP](#use-the-driver-over-http).
 - **WebSockets**: If you require session or interactive transaction support or compatibility with [node-postgres](https://node-postgres.com/) (the popular **npm** `pg` package), use WebSockets. See [Use the driver over WebSockets](#use-the-driver-over-websockets).
 
-<Admonition type="tip" title="AI Rules available">
-Working with AI coding assistants? Check out our [AI rules for the Neon Serverless Driver](/docs/ai/ai-rules-neon-serverless) to help your AI assistant generate better code for serverless database connections.
-</Admonition>
+<AgentSkillsTip skill_topic="the Neon Serverless Driver, general connection advice," />
 
 ## Install the Neon serverless driver
 
@@ -284,7 +291,7 @@ const [authors, tags] = await neon(process.env.DATABASE_URL).transaction((txn) =
 ]);
 ```
 
-The optional second argument to `transaction()`, `options`, has the same keys as the options to the ordinary query function — `arrayMode`, `fullResults` and `fetchOptions` — plus three additional keys that concern the transaction configuration. These transaction-related keys are: `isolationMode`, `readOnly` and `deferrable`.
+The optional second argument to `transaction()`, `options`, has the same keys as the options to the ordinary query function (`arrayMode`, `fullResults` and `fetchOptions`) plus three additional keys that concern the transaction configuration. These transaction-related keys are: `isolationMode`, `readOnly` and `deferrable`.
 
 Note that options **cannot** be supplied for individual queries within a transaction. Query and transaction options must instead be passed as the second argument of the `transaction()` function. For example, this `arrayMode` setting is ineffective (and TypeScript won't compile it): `await sql.transaction([sql('SELECT now()', [], { arrayMode: true })])`. Instead, use `await sql.transaction([sql('SELECT now()')], { arrayMode: true })`.
 
@@ -304,7 +311,7 @@ For additional details, see [transaction(...) function](https://github.com/neond
 
 ### Using transactions with JWT self-verification
 
-When using Row-Level Security (RLS) to secure backend SQL with the Neon serverless driver, you may need to set JWT claims within a transaction context. This is particularly useful for custom JWT verification flows in backend APIs, where you want to ensure user-specific access to rows according to RLS policies.
+When using Row-Level Security (RLS) to secure backend SQL with the Neon serverless driver, you may need to set JWT claims within a transaction context. Use this for custom JWT verification flows in backend APIs, where you want to ensure user-specific access to rows according to RLS policies.
 
 Here's an example of how to use the `transaction()` function with self-verified JWT claims:
 

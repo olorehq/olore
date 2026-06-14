@@ -1,8 +1,15 @@
 ---
 title: Managing your data and schemas in the Neon Console
 subtitle: 'Use the Tables page to easily view, edit, and manage your data and schemas'
+summary: >-
+  The Tables page in the Neon Console is a visual, interactive editor powered
+  by Drizzle Studio. It supports reading, inserting, updating, deleting,
+  filtering, and exporting Postgres table data, plus managing schemas, views,
+  enums, roles, and RLS policies without writing SQL. Choose this page over the
+  SQL Editor when you want point-and-click record editing, column filtering,
+  bulk deletion, or JSON/CSV export.
 enableTableOfContents: true
-updatedOn: '2025-09-25T14:36:08.174Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The **Tables** page in the Neon Console offers a dynamic, visual interface for managing data and schemas. Fully interactive, this view lets you add, update, and delete records, filter data, modify columns, drop or truncate tables, export data in both .json and .csv formats, and manage schemas, tables, views, and enums.
@@ -96,7 +103,7 @@ Create Postgres RLS policies using the templates provided. Templates like "based
 
 ### Database studio view
 
-The **Database studio** view makes it easy to explore your database objects—including schemas, tables, views, roles, and policies—all in one place.
+The **Database studio** view makes it easy to explore your database objects (including schemas, tables, views, roles, and policies) all in one place.
 
 To open the view, select **Database studio** from the **Tables** page:
 
@@ -118,11 +125,11 @@ Please refer to [DNS resolution issues](/docs/connect/connection-errors#dns-reso
 
 If it's not a DNS resolution issue, other troubleshooting steps you can try include:
 
-- **Refreshing the page** — This can resolve temporary glitches.
-- **Clearing browser cache** — Cached files might cause issues, so clearing the cache could help.
-- **Disabling browser extensions** — Extensions may interfere with the page’s functionality.
-- **Using a different browser or device** — Check if the issue occurs on another browser or device.
-- **Trying incognito mode** — Using an incognito window can help bypass issues related to cookies or extensions.
+- **Refreshing the page**: This can resolve temporary glitches.
+- **Clearing browser cache**: Cached files might cause issues, so clearing the cache could help.
+- **Disabling browser extensions**: Extensions may interfere with the page’s functionality.
+- **Using a different browser or device**: Check if the issue occurs on another browser or device.
+- **Trying incognito mode**: Using an incognito window can help bypass issues related to cookies or extensions.
 
 If the issue persists, please follow these steps to report the error:
 

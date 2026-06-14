@@ -1,19 +1,66 @@
 ---
 title: "Write evaluations"
-description: "Learn how to create evaluation functions with collections, tasks, and scorers."
+description: "Learn how to create offline evaluation functions with collections, tasks, and scorers."
 keywords: ["ai engineering", "evals", "evaluation", "scorers", "collections", "ground truth"]
 ---
 
 import { definitions } from "/snippets/definitions.mdx"
 
-An evaluation is a test suite for your AI capability. It runs your capability against a <Tooltip tip={definitions.Collection}>collection</Tooltip> of test cases and scores the results using <Tooltip tip={definitions.Scorer}>scorers</Tooltip>. This page explains how to write evaluation functions using Axiom's `Eval` API.
+An offline evaluation is a test suite for your AI capability. It runs your capability against a <Tooltip tip={definitions.Collection}>collection</Tooltip> of test cases and scores the results using <Tooltip tip={definitions.Scorer}>scorers</Tooltip>. This page explains how to write offline evaluation functions using Axiom's `Eval` API.
 
-## Anatomy of an evaluation
+<Info>
+This page covers writing offline evaluations. For online evaluations, see [Online evaluations](/ai-engineering/evaluate/online-evaluations/write-run-evaluations).
+</Info>
+
+## Prerequisites
+
+- Follow the procedure in [Quickstart](/ai-engineering/quickstart) to set up Axiom AI SDK in your TypeScript project.
+- For offline evaluations, use an API token with permissions to ingest **and query** your dataset. Other AI engineering workflows only require a token with ingest permissions.
+- Wrap your AI model with `wrapAISDKModel` for automatic tracing. See [Instrumentation with Axiom AI SDK](/ai-engineering/observe/axiom-ai-sdk-instrumentation) for details.
+
+Instead of using environment variables explained in the [Quickstart](/ai-engineering/quickstart), you can authenticate using OAuth instead.
+
+<Accordion title="Authenticate with OAuth">
+
+The Axiom AI SDK includes a CLI for authenticating and running offline evaluations. Authenticate so that evaluation runs are recorded in Axiom and attributed to your user account.
+
+### Login
+
+```bash
+npx axiom auth login
+```
+
+This opens your browser and prompts you to authorize the CLI with your Axiom account. Once authorized, the CLI stores your credentials locally.
+
+### Check authentication status
+
+```bash
+npx axiom auth status
+```
+
+### Switch organizations
+
+If you belong to multiple Axiom organizations:
+
+```bash
+npx axiom auth switch
+```
+
+### Logout
+
+```bash
+npx axiom auth logout
+```
+
+</Accordion>
+
+## Anatomy of an offline evaluation
 
 The `Eval` function defines a complete test suite for your capability. Here’s the basic structure:
 
 ```ts
-import { Eval, Scorer } from 'axiom/ai/evals';
+import { Eval } from 'axiom/ai/evals';
+import { Scorer } from 'axiom/ai/scorers';
 
 Eval('evaluation-name', {
   data: [/* test cases */],
@@ -30,13 +77,13 @@ Eval('evaluation-name', {
 - **`scorers`**: An array of scorer functions that evaluate the output against the expected result.
 - **`metadata`**: Optional metadata like a description or tags.
 
-## Creating collections
+## Create collections
 
 The `data` parameter defines your collection of test cases. Start with a small set of examples and grow it over time as you discover edge cases.
 
 ### Inline collections
 
-For small collections, define test cases directly in the evaluation:
+For small collections, define test cases directly in the offline evaluation:
 
 ```ts
 Eval('classify-sentiment', {
@@ -78,7 +125,7 @@ Eval('classify-sentiment', {
 We recommend storing collections in version control alongside your code. This makes it easy to track how your test suite evolves and ensures evaluations are reproducible.
 </Tip>
 
-## Defining the task
+## Define tasks
 
 The `task` function executes your AI capability for each test case. It receives the `input` from the test case and should return the output your capability produces.
 
@@ -109,16 +156,14 @@ Eval('classify-sentiment', {
 The task function should generally be the same code you use in your actual capability. This ensures your evaluations accurately reflect real-world behavior.
 </Note>
 
-## Creating scorers
+## Create scorers
 
-Scorers evaluate your capability's output. They receive the `input`, `output`, and `expected` values, and return a score (a number between 0-1, or boolean).
+Scorers evaluate your capability's output. In offline evaluations, scorers receive `input`, `output`, and `expected` (ground truth), and return a score. For the full `Scorer` API reference including return types, patterns, and third-party integrations, see [Scorers](/ai-engineering/evaluate/scorers).
 
-### Custom scorers
-
-Create custom scorers using the `Scorer` wrapper:
+Here's a quick example of an offline scorer that compares output to expected values:
 
 ```ts
-import { Scorer } from 'axiom/ai/evals';
+import { Scorer } from 'axiom/ai/scorers';
 
 const ExactMatchScorer = Scorer(
   'exact-match',
@@ -128,66 +173,13 @@ const ExactMatchScorer = Scorer(
 );
 ```
 
-Scorers can return just a score, or an object with a score and metadata:
-
-```ts
-const DetailedScorer = Scorer(
-  'detailed-match',
-  ({ output, expected }) => {
-    const match = output.sentiment === expected.sentiment;
-    return {
-      score: match ? true : false,
-      metadata: {
-        outputValue: output.sentiment,
-        expectedValue: expected.sentiment,
-        matched: match,
-      },
-    };
-  }
-);
-```
-
-### Using autoevals
-
-The [`autoevals`](https://github.com/braintrustdata/autoevals) library provides prebuilt scorers for common tasks:
-
-```bash
-npm install autoevals
-```
-
-```ts
-import { Scorer } from 'axiom/ai/evals';
-import { Levenshtein, FactualityScorer } from 'autoevals';
-
-// Wrap autoevals scorers with Axiom's Scorer
-const LevenshteinScorer = Scorer(
-  'levenshtein',
-  ({ output, expected }) => {
-    return Levenshtein({ output: output.text, expected: expected.text });
-  }
-);
-
-const FactualityCheck = Scorer(
-  'factuality',
-  async ({ output, expected }) => {
-    return await FactualityScorer({
-      output: output.text,
-      expected: expected.text,
-    });
-  }
-);
-```
-
-<Tip>
-Use multiple scorers to evaluate different aspects of your capability. For example, check both exact accuracy and semantic similarity to get a complete picture of performance.
-</Tip>
-
 ## Complete example
 
 Here's a complete evaluation for a support ticket classification system:
 
 ```ts src/lib/capabilities/classify-ticket/evaluations/spam-classification.eval.ts expandable
-import { Eval, Scorer } from 'axiom/ai/evals';
+import { Eval } from 'axiom/ai/evals';
+import { Scorer } from 'axiom/ai/scorers';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { wrapAISDKModel } from 'axiom/ai';
@@ -312,5 +304,4 @@ The CLI will find all files matching `**/*.eval.{ts,js,mts,mjs,cts,cjs}` based o
 ## What's next?
 
 - To parameterize your capabilities and run experiments, see [Flags and experiments](/ai-engineering/evaluate/flags-experiments).
-- To run evaluations using the CLI, see [Run evaluations](/ai-engineering/evaluate/run-evaluations).
-
+- To run offline evaluations using the CLI, see [Run offline evaluations](/ai-engineering/evaluate/run-evaluations).

@@ -21,34 +21,42 @@ Playwright recommends using the official [Playwright Pytest plugin](./test-runne
 
 Get started by installing Playwright and running the example test to see it in action.
 
+Install the [Pytest plugin](https://pypi.org/project/pytest-playwright/):
+
 <Tabs
   groupId="package-managers"
-  defaultValue="pypi"
+  defaultValue="pip"
   values={[
-    {label: 'PyPI', value: 'pypi'},
-    {label: 'Anaconda', value: 'anaconda'}
+    {label: 'Pip', value: 'pip'},
+    {label: 'Poetry', value: 'poetry'},
+    {label: 'uv', value: 'uv'}
   ]
 }>
-<TabItem value="pypi">
 
-Install the [Pytest plugin](https://pypi.org/project/pytest-playwright/):
+<TabItem value="pip">
 
 ```bash
 pip install pytest-playwright
 ```
 
 </TabItem>
-<TabItem value="anaconda">
 
-Install the [Pytest plugin](https://anaconda.org/Microsoft/pytest-playwright):
+<TabItem value="poetry">
 
 ```bash
-conda config --add channels conda-forge
-conda config --add channels microsoft
-conda install pytest-playwright
+poetry add pytest-playwright
 ```
 
 </TabItem>
+
+<TabItem value="uv">
+
+```bash
+uv add pytest-playwright
+```
+
+</TabItem>
+
 </Tabs>
 
 Install the required browsers:
@@ -93,16 +101,44 @@ pytest
 
 To update Playwright to the latest version run the following command:
 
+<Tabs
+  groupId="package-managers"
+  defaultValue="pip"
+  values={[
+    {label: 'pip', value: 'pip'},
+    {label: 'Poetry', value: 'poetry'},
+    {label: 'uv', value: 'uv'}
+  ]
+}>
+<TabItem value="pip">
+
 ```bash
 pip install pytest-playwright playwright -U
 ```
+
+</TabItem>
+<TabItem value="poetry">
+
+```bash
+poetry update pytest-playwright playwright
+```
+
+</TabItem>
+<TabItem value="uv">
+
+```bash
+uv add --upgrade pytest-playwright playwright
+```
+
+</TabItem>
+</Tabs>
 
 ## System requirements
 
 - Python 3.8 or higher.
 - Windows 11+, Windows Server 2019+ or Windows Subsystem for Linux (WSL).
-- macOS 14 Ventura, or later.
-- Debian 12, Debian 13, Ubuntu 22.04, Ubuntu 24.04, on x86-64 and arm64 architecture.
+- macOS 14 (Sonoma) or later.
+- Debian 12 / 13, Ubuntu 22.04 / 24.04 / 26.04 (x86-64 or arm64).
 
 ## What's next
 

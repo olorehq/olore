@@ -5,35 +5,9 @@ title: Vitest API
 
 # Vitest
 
-Vitest instance requires the current test mode. It can be either:
+## mode <Deprecated /> {#mode}
 
-- `test` when running runtime tests
-- `benchmark` when running benchmarks <Badge type="warning">experimental</Badge>
-
-::: details New in Vitest 4
-Vitest 4 added several new APIs (they are marked with a "4.0.0+" badge) and removed deprecated APIs:
-
-- `invalidates`
-- `changedTests` (use [`onFilterWatchedSpecification`](#onfilterwatchedspecification) instead)
-- `server` (use [`vite`](#vite) instead)
-- `getProjectsByTestFile` (use [`getModuleSpecifications`](#getmodulespecifications) instead)
-- `getFileWorkspaceSpecs` (use [`getModuleSpecifications`](#getmodulespecifications) instead)
-- `getModuleProjects` (filter by [`this.projects`](#projects) yourself)
-- `updateLastChanged` (renamed to [`invalidateFile`](#invalidatefile))
-- `globTestSpecs` (use [`globTestSpecifications`](#globtestspecifications) instead)
-- `globTestFiles` (use [`globTestSpecifications`](#globtestspecifications) instead)
-- `listFile` (use [`getRelevantTestSpecifications`](#getrelevanttestspecifications) instead)
-:::
-
-## mode
-
-### test
-
-Test mode will only call functions inside `test` or `it`, and throws an error when `bench` is encountered. This mode uses `include` and `exclude` options in the config to find test files.
-
-### benchmark <Badge type="warning">experimental</Badge>
-
-Benchmark mode calls `bench` functions and throws an error, when it encounters `test` or `it`. This mode uses `benchmark.include` and `benchmark.exclude` options in the config to find benchmark files.
+Since Vitest 5, this property is always `'test'`.
 
 ## config
 
@@ -47,13 +21,13 @@ This is Vitest config, it doesn't extend _Vite_ config. It only has resolved val
 
 This is a global [`ViteDevServer`](https://vite.dev/guide/api-javascript#vitedevserver).
 
-## state <Badge type="warning">experimental</Badge>
+## state <Experimental /> {#state}
 
 ::: warning
 Public `state` is an experimental API (except `vitest.state.getReportedEntity`). Breaking changes might not follow SemVer, please pin Vitest's version when using it.
 :::
 
-Global state stores information about the current tests. It uses the same API from `@vitest/runner` by default, but we recommend using the [Reported Tasks API](/api/advanced/reporters#reported-tasks) instead by calling `state.getReportedEntity()` on the `@vitest/runner` API:
+Global state stores information about the current tests. It uses internal serializable Task API by default, but we recommend using the [Reported Tasks API](/api/advanced/reporters#reported-tasks) instead by calling `state.getReportedEntity()`:
 
 ```ts
 const task = vitest.state.idMap.get(taskId) // old API
@@ -202,7 +176,7 @@ This method can be slow because it needs to filter `--changed` flags. Do not use
 function mergeReports(directory?: string): Promise<TestRunResult>
 ```
 
-Merge reports from multiple runs located in the specified directory (value from `--merge-reports` if not specified). This value can also be set on `config.mergeReports` (by default, it will read `.vitest-reports` folder).
+Merge reports from multiple runs located in the specified directory (value from `--merge-reports` if not specified). This value can also be set on `config.mergeReports` (by default, it will read `.vitest/blob/` folder).
 
 Note that the `directory` will always be resolved relative to the working directory.
 
@@ -233,16 +207,18 @@ function start(filters?: string[]): Promise<TestRunResult>
 Initialize reporters, the coverage provider, and run tests. This method accepts string filters to match the test files - these are the same filters that [CLI supports](/guide/filtering#cli).
 
 ::: warning
-This method should not be called if [`vitest.init()`](#init) is also invoked. Use [`runTestSpecifications`](#runtestspecifications) or [`rerunTestSpecifications`](#reruntestspecifications) instead if you need to run tests after Vitest was initialised.
+This method should not be called if [`vitest.standalone()`](#standalone) is also invoked. Use [`runTestSpecifications`](#runtestspecifications) or [`rerunTestSpecifications`](#reruntestspecifications) instead if you need to run tests after Vitest was initialised.
 :::
 
 This method is called automatically by [`startVitest`](/guide/advanced/tests) if `config.mergeReports` and `config.standalone` are not set.
 
-## init
+## standalone <Version type="experimental">4.1.1</Version> {#standalone}
 
 ```ts
-function init(): Promise<void>
+function standalone(): Promise<void>
 ```
+
+- **Alias:** `init` <Deprecated />
 
 Initialize reporters and the coverage provider. This method doesn't run any tests. If the `--watch` flag is provided, Vitest will still run changed tests even if this method was not called.
 
@@ -349,7 +325,7 @@ This makes this method very slow, unless you disable isolation before collecting
 function cancelCurrentRun(reason: CancelReason): Promise<void>
 ```
 
-This method will gracefully cancel all ongoing tests. It will wait for started tests to finish running and will not run tests that were scheduled to run but haven't started yet.
+This method will gracefully cancel all ongoing tests. It will stop the on-going tests and will not run tests that were scheduled to run but haven't started yet.
 
 ## setGlobalTestNamePattern
 
@@ -357,7 +333,7 @@ This method will gracefully cancel all ongoing tests. It will wait for started t
 function setGlobalTestNamePattern(pattern: string | RegExp): void
 ```
 
-This methods overrides the global [test name pattern](/config/#testnamepattern).
+This methods overrides the global [test name pattern](/config/testnamepattern).
 
 ::: warning
 This method doesn't start running any tests. To run tests with updated pattern, call [`runTestSpecifications`](#runtestspecifications).
@@ -377,7 +353,7 @@ Returns the regexp used for the global test name pattern.
 function resetGlobalTestNamePattern(): void
 ```
 
-This methods resets the [test name pattern](/config/#testnamepattern). It means Vitest won't skip any tests now.
+This methods resets the [test name pattern](/config/testnamepattern). It means Vitest won't skip any tests now.
 
 ::: warning
 This method doesn't start running any tests. To run tests without a pattern, call [`runTestSpecifications`](#runtestspecifications).
@@ -452,7 +428,7 @@ function exit(force = false): Promise<void>
 
 Closes all projects and exit the process. If `force` is set to `true`, the process will exit immediately after closing the projects.
 
-This method will also forcefully call `process.exit()` if the process is still active after [`config.teardownTimeout`](/config/#teardowntimeout) milliseconds.
+This method will also forcefully call `process.exit()` if the process is still active after [`config.teardownTimeout`](/config/teardowntimeout) milliseconds.
 
 ## shouldKeepServer
 
@@ -545,10 +521,10 @@ If there is a test run happening, returns a promise that will resolve when the t
 function createCoverageProvider(): Promise<CoverageProvider | null>
 ```
 
-Creates a coverage provider if `coverage` is enabled in the config. This is done automatically if you are running tests with [`start`](#start) or [`init`](#init) methods.
+Creates a coverage provider if `coverage` is enabled in the config. This is done automatically if you are running tests with [`start`](#start) or [`standalone`](#standalone) methods.
 
 ::: warning
-This method will also clean all previous reports if [`coverage.clean`](/config/#coverage-clean) is not set to `false`.
+This method will also clean all previous reports if [`coverage.clean`](/config/coverage#coverage-clean) is not set to `false`.
 :::
 
 ## enableCoverage <Version>4.0.0</Version> {#enablecoverage}
@@ -685,3 +661,122 @@ Returns module's diagnostic. If [`testModule`](/api/advanced/test-module) is not
 ::: warning
 At the moment, the [browser](/guide/browser/) modules are not supported.
 :::
+
+## createReport <Version>5.0.0</Version> {#createreport}
+
+```ts
+function createReport(scope: string): Report
+```
+
+Creates a report that is limited to the given scope. `Report` follows Vitest's rules around [Storing artifacts on file system](/guide/advanced/reporters.html#storing-artifacts-on-file-system).
+
+`Report` provides collection of utilities for writing test results, temporary files and other artifacts on the file system. It's especially intended for third party integrations like custom reporters.
+
+All operations of `Report` are limited to given `scope`. A single report cannot interfere with other reports. Internally Vitest creates `.vitest` directory where each `scope` creates their own directory. This convention of `.vitest` directory reduces the amount of entries end-users need to specify in their `.gitignore`.
+
+```ts
+import type { Report } from 'vitest/node'
+
+const scope = 'example-yaml-reporter'
+
+// Automatically creates `<project-root>/.vitest/example-yaml-reporter/`
+// directory if it does not exist already
+const report: Report = vitest.createReport(scope)
+```
+
+### Report.root
+
+```ts
+const root: string
+```
+
+The root directory for this scope.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Is <project-root>/.vitest/my-json-reporter
+const root = report.root
+```
+
+
+### Report.clean
+
+```ts
+function clean(): Promise<void>
+```
+
+Clean up the report directory for this scope.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Removes everything inside <project-root>/.vitest/my-json-reporter/
+await report.clean()
+```
+
+### Report.writeFile
+
+```ts
+function writeFile(
+  filename: string,
+  content: string | Uint8Array,
+  encoding?: BufferEncoding
+): Promise<void>
+```
+
+Write a file to the report directory for this scope. By default the file will be written with UTF-8 encoding. The filename is relative to the scope directory.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Writes file to .vitest/my-json-reporter/test-report.json
+await report.writeFile('test-report.json', JSON.stringify(results))
+```
+
+### Report.readFile
+
+```ts
+function readFile(filename: string, encoding?: BufferEncoding): Promise<string>
+```
+
+Read a file from the report directory for this scope.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Reads file from .vitest/my-json-reporter/test-report.json
+const content: string = await report.readFile('test-report.json')
+```
+
+### Report.readdir
+
+```ts
+function readdir(): Promise<string[]>
+```
+
+Read contents of the report directory for this scope.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Reads contents from .vitest/my-json-reporter
+const filenames: string[] = await report.readdir()
+```
+
+### Report.delete
+
+<!-- eslint-skip -->
+```ts
+function delete(filename: string): Promise<void>
+```
+
+Delete a file from the report directory for this scope.
+
+```ts
+const report = vitest.createReport('my-json-reporter')
+
+// Deletes file from .vitest/my-json-reporter/test-report.json
+await report.delete('test-report.json')
+```
+

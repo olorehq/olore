@@ -1,0 +1,96 @@
+---
+title: Sample MPL queries
+description: This page gives examples of how to query OTel metrics using MPL.
+sidebarTitle: Sample queries
+---
+
+## Sum rate
+
+Calculate the rate of successful HTTP requests by method and route.
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| where `axiom.histogram` == "count"
+| where `http.response.status_code` < 400
+| align to 5m using prom::rate
+| group by `http.request.method`, `http.route` using sum
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60axiom.histogram%60%20%3D%3D%20%5C%22count%5C%22%20%7C%20where%20%60http.response.status_code%60%20%3C%20400%20%7C%20align%20to%205m%20using%20prom%3A%3Arate%20%7C%20group%20by%20%60http.request.method%60%2C%20%60http.route%60%20using%20sum%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+## Histogram
+
+Calculate the 90th and 99th percentile HTTP request durations by service.
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| where `http.response.status_code` < 400
+| bucket by `service.name` to 5m using interpolate_delta_histogram(0.90, 0.99)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3C%20400%20%7C%20bucket%20by%20%60service.name%60%20to%205m%20using%20interpolate_delta_histogram(0.90%2C%200.99)%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### Cumulative histogram
+
+<Info>
+`interpolate_cumulative_histogram` works on histogram metrics using cumulative temporality. `interpolate_delta_histogram` works on histogram metrics using delta temporality.
+</Info>
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| where `http.response.status_code` < 400
+| bucket by `http.request.method`, `http.route` to 5m using interpolate_cumulative_histogram(rate, 0.90, 0.99)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3C%20400%20%7C%20bucket%20by%20%60http.request.method%60%2C%20%60http.route%60%20to%205m%20using%20interpolate_cumulative_histogram(rate%2C%200.90%2C%200.99)%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+## Compute
+
+### Compute error rate
+
+Calculate the fraction of HTTP requests returning 5xx errors.
+
+```kusto
+(
+  `otel-demo-metrics`:`http.server.request.duration`
+  | where `http.response.status_code` >= 500
+  | map rate
+  | align to 5m using avg
+  | group using sum,
+  `otel-demo-metrics`:`http.server.request.duration`
+  | map rate
+  | align to 5m using avg
+  | group using sum
+)
+| compute error_rate using /
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22(%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3E%3D%20500%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%2C%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%20)%20%7C%20compute%20error_rate%20using%20%2F%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+## Service Level Objectives (SLO)
+
+### SLO compliance over time
+
+Calculate the fraction of time JVM CPU utilization stays below 80% over a 7-day window.
+
+```kusto
+`otel-demo-metrics`:`jvm.cpu.recent_utilization`
+| group using max
+| map is::lt(0.8)
+| align to 7d using avg
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60jvm.cpu.recent_utilization%60%20%7C%20group%20using%20max%20%7C%20map%20is%3A%3Alt(0.8)%20%7C%20align%20to%207d%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### SLO histogram
+
+Calculate the fraction of requests completing within the 400ms latency SLO target, measured weekly.
+
+```kusto
+`otel-demo-metrics`:`http.server.request.duration`
+| bucket to 5m using interpolate_cumulative_histogram(rate, 0.99)
+| map is::lt(0.4)
+| align to 7d using avg
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20bucket%20to%205m%20using%20interpolate_cumulative_histogram(rate%2C%200.99)%20%7C%20map%20is%3A%3Alt(0.4)%20%7C%20align%20to%207d%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)

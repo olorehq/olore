@@ -1,0 +1,100 @@
+\> ## Documentation Index
+\> Fetch the complete documentation index at: https://www.recraft.ai/docs/llms.txt
+\> Use this file to discover all available pages before exploring further.
+
+\# Styles
+
+\*\*Note:\*\* Styles are \*\*not yet supported for V4 models\*\*.
+
+Styles define the visual appearance and aesthetic of generated images, including textures, visual effects, colors, composition, and overall artistic feel. Recraft offers both predefined curated styles and the ability to create custom styles.
+
+Recraft styles are organized into groups: realistic, digital illustrations, vector illustrations, icons, etc. Please refer to the examples below for visual references. To generate an image, you may provide a specific style name, such as \`Recraft V3 Raw\`, \`Photorealism\`, or \`Vector art\`. If a style name is supported by multiple models, the API defaults to Recraft V3 (if supported, to Recraft V2 otherwise). To use a specific version, explicitly pair the style with the model parameter (e.g., \`Photorealism\` with \`recraftv3\` or \`Vector art\` with \`recraftv2\_vector\`).
+
+Refer to the \[List of Styles\](/api-reference/styles#list-of-styles) for compatibility across V2 / V3 models.
+
+Examples:
+
+ Images of style \`Photorealism\` are expected to look like just ordinary photographs made with a digital camera or a smartphone or a film camera.
+
+ ![Photorealism](https://mintcdn.com/recraft/oXUn6pSamjjesh6p/images/photorealism-exp1-1-1.png?fit=max&auto=format&n=oXUn6pSamjjesh6p&q=85&s=8ccc2857cfb0195dfe4f56817659c202)
+ Images of style \`Illustration\` are pictures drawn by hand or using computers - virtually everything except photos and vector illustrations. The most crucial difference from \`Photorealism\` is that illustrations possess simplified textures (like in 3D-rendered or manually drawn images) - or they are stylized in a certain creative way. The difference from \`Vector art\` is that \`Illustration\` allow for more complex color transitions, shades, fine textures.
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b8318c6f6ecaf608531da\_unicorn%20\\(8\\).png)
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b82f54ef9617939df9d8e\_motorcycle--going-fast.png)
+
+ Images of style \`Vector art\` are expected to look like those drawn using vector graphics (see \[Wikipedia\](https://en.wikipedia.org/wiki/Vector\_graphics)). Usually, they use only a few different colors at once, shapes are filled with flat colors or simple color gradients. Shapes of objects can be arbitrarily complex.
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b82fb365f45ed1a743d43\_a-man-working-in-his-workshop--standing-straight-a%20\\(1\\)photorealism-exp1-1.png)
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b830165533469004467d9\_create-a-minimal-character-illustration-of-a-resea.png)
+
+ Images of style \`Icon\` are small digital images or symbols used in the graphical user interface. They are designed to be simple and recognizable at small sizes, often visually summarizing the action or object they stand for, or they can act as the visual identity for an app or a website and are crucial in branding.
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b830d1720fd793595cf40\_Group%204291.png)
+
+ !\[\](https://cdn.prod.website-files.com/655727fe69827d9a402de12c/679b831e6ee14a2f933f112c\_Group%204254.png)
+
+\`Photorealism\` and \`Illustration\` images are generated in raster formats such as PNG, WEBP, or JPG. These formats use pixels to represent details, making them ideal for photos and complex artwork. On the other hand, \`Vector art\` and \`Icon\` are generated in the SVG format. Unlike raster images, SVGs are made of mathematical paths and shapes, allowing them to scale to any size without losing quality.
+
+\### Using of styles
+
+The \`style\` parameter accepts the name of any curated style provided by Recraft. Examples include but not limited to:
+
+\\* Recraft V4, Recraft V4 Vector, Recraft V4 Pro, Recraft V4 Vector Pro: \*\*styles are not supported\*\*
+\\* Recraft V3: \[\`Recraft V3 Raw\`\](https://www.recraft.ai/styles/b9af225b-6b98-43d0-a4b3-16343641e852), \[\`Photorealism\`\](https://www.recraft.ai/styles/6b98805f-9342-4d1e-9b53-bcb6b6d20ea1), \[\`Illustration\`\](https://www.recraft.ai/styles/3eb71874-5e13-4386-a74b-e42119186b0a), \[\`Enterprise\`\](https://www.recraft.ai/styles/e4eb5a3f-1b8b-4f5c-bada-bf6c2451cb17), \[\`Hand-drawn\`\](https://www.recraft.ai/styles/17027120-cf06-465f-a4d0-2e44ad8dee0d), \[\`Punk Graphic\`\](https://www.recraft.ai/styles/84789d26-1153-4faf-a1d1-c3e94d7a0035), etc
+\\* Recraft V3 Vector: \[\`Vector art\`\](https://www.recraft.ai/styles/773902ac-683a-4042-86a3-fe714eee345a), \[\`Line art\`\](https://www.recraft.ai/styles/19942671-ffa4-4867-9bbe-f5e4503dcc93), \[\`Engraving\`\](https://www.recraft.ai/styles/ce1f9161-a8dc-488f-9ff1-3f41082887b5), etc
+\\* Recraft V2: \[\`Photorealism\`\](https://www.recraft.ai/styles/5a99ae89-3f14-433b-abb2-a1d8074b1ab1), \[\`Illustration\`\](https://www.recraft.ai/styles/b8772060-8802-4f3c-b051-73349b1017a5), \[\`3D render\`\](https://www.recraft.ai/styles/4659b2d6-a580-4287-849e-96190d7dbf30), \[\`Kawaii\`\](https://www.recraft.ai/styles/f8f1bc1c-1ae7-43ea-a36f-c81049feee01), etc
+\\* Recraft V2 Vector: \[\`Vector art\`\](https://www.recraft.ai/styles/807ce9bc-7e36-4efa-a6cb-11cda1cecd19), \[\`Icon\`\](https://www.recraft.ai/styles/645cb7ca-4be3-4d90-9f16-e9c26f6812f1), \[\`Doodle\`\](https://www.recraft.ai/styles/a2ba0c04-e40d-4210-8ed2-46d3537c546c), etc
+
+For the complete list of available styles organized by model and category, see the \[List of Styles\](/api-reference/styles#list-of-styles). Some styles with identical names exist across multiple models (e.g., \`Photorealism\` is available in Recraft V2, and Recraft V3 models). Use the \`model\` parameter to explicitly specify which model version to use.
+
+The \`style\_id\` parameter accepts:
+
+\\* style IDs created via the API;
+\\* style IDs from the Recraft web platform, accessible if :
+ \\* you own the style;
+ \\* the style is publicly available;
+ \\* the style was explicitly shared to your account.
+
+To obtain a style ID from the web platform, open any style in the Styles panel and click the three-dot menu to copy the style ID.
+
+The \`style\` and \`style\_id\` parameters cannot be used together. Specify one or the other, not both. If neither parameter is provided, the default style for the selected model will be used:
+
+\\* Recraft V3: \[\`Recraft V3 Raw\`\](https://www.recraft.ai/styles/b9af225b-6b98-43d0-a4b3-16343641e852);
+\\* Recraft V3 Vector: \[\`Vector art\`\](https://www.recraft.ai/styles/773902ac-683a-4042-86a3-fe714eee345a);
+\\* Recraft V2: \[\`Photorealism\`\](https://www.recraft.ai/styles/5a99ae89-3f14-433b-abb2-a1d8074b1ab1);
+\\* Recraft V2 Vector: \[\`Vector art\`\](https://www.recraft.ai/styles/807ce9bc-7e36-4efa-a6cb-11cda1cecd19).
+
+Model compatibility:
+
+\\* custom styles created on the web platform are compatible with the model specified during creation;
+\\* custom styles created via the API are compatible with Recraft V3 and Recraft V3 Vector models only.
+
+\### List of styles
+
+To generate an image, you may provide a specific style name, such as \`Recraft V3 Raw\`, \`Photorealism\`, or \`Vector art\`.
+
+If a style name is supported by multiple models, the API defaults to Recraft V3 (if supported, to Recraft V2 otherwise). To use a specific version, explicitly pair the style with the model parameter (e.g., \`Photorealism\` with \`recraftv3\` or \`Vector art\` with \`recraftv2\_vector\`).
+
+\#### Recraft V3
+
+\\* Photorealistic styles: \[\`Photorealism\`\](https://www.recraft.ai/styles/6b98805f-9342-4d1e-9b53-bcb6b6d20ea1), \[\`Enterprise\`\](https://www.recraft.ai/styles/e4eb5a3f-1b8b-4f5c-bada-bf6c2451cb17), \[\`Natural light\`\](https://www.recraft.ai/styles/90cf050a-5985-4ca8-b255-d370831701ca), \[\`Studio photo\`\](https://www.recraft.ai/styles/b8f16786-5794-47fd-b2b3-5f607d919d1c), \[\`HDR\`\](https://www.recraft.ai/styles/d0c61ed6-5f6c-4332-af27-e6a5fc2bde64), \[\`Hard flash\`\](https://www.recraft.ai/styles/41501ef8-26a6-4d1c-946c-d8b659ff11c3), \[\`Motion blur\`\](https://www.recraft.ai/styles/ca56e01b-a128-477f-b2f3-13a7191c8e91), \[\`Black & white\`\](https://www.recraft.ai/styles/7babd38f-dc87-4ccf-99de-d8834f8900f5), \[\`Evening light\`\](https://www.recraft.ai/styles/d92bef4c-605e-451d-a93f-a8d78f14effa), \[\`Faded Nostalgia\`\](https://www.recraft.ai/styles/889bee89-edce-4104-b572-df38c58e8659), \[\`Forest life\`\](https://www.recraft.ai/styles/51536681-7ee0-4604-bbb3-3a9e45e2b59f), \[\`Mystic Naturalism\`\](https://www.recraft.ai/styles/3ab91eeb-203f-4e00-865b-1e64c7854f08), \[\`Natural Tones\`\](https://www.recraft.ai/styles/45f34903-6da9-4468-966d-11314d845b41), \[\`Organic Calm\`\](https://www.recraft.ai/styles/06401905-a828-4652-a962-7026693c8cf7), \[\`Real-Life Glow\`\](https://www.recraft.ai/styles/336eabc6-da87-4a1e-a567-c3dd17bf5e79), \[\`Retro Realism\`\](https://www.recraft.ai/styles/2a4176f2-be17-49c5-b8b7-7a3bdd11a277), \[\`Retro Snapshot\`\](https://www.recraft.ai/styles/226190a0-5c43-4e0c-98a0-1a4ba63800cd), \[\`Urban Drama\`\](https://www.recraft.ai/styles/c61a727c-a9a8-40a5-a289-fdaf3a59eae1), \[\`Village Realism\`\](https://www.recraft.ai/styles/ba5e9c0c-4a20-492d-924d-a758b52b102d), \[\`Warm Folk\`\](https://www.recraft.ai/styles/db207d41-37bf-46ae-9e12-3201167c4cbe), \[\`Product photo\`\](https://www.recraft.ai/styles/57ed072c-3e0e-4df5-baba-83a6e87048b8);
+\\* Illustration styles: \[\`Illustration\`\](https://www.recraft.ai/styles/3eb71874-5e13-4386-a74b-e42119186b0a), \[\`Hand-drawn\`\](https://www.recraft.ai/styles/17027120-cf06-465f-a4d0-2e44ad8dee0d), \[\`Grain\`\](https://www.recraft.ai/styles/245b724f-8a24-4bde-aba4-21d41295074d), \[\`Bold Sketch\`\](https://www.recraft.ai/styles/6319466c-2bda-4b13-88ba-3e4e82aba55e), \[\`Pencil sketch\`\](https://www.recraft.ai/styles/8a5273c5-12cf-48de-8217-0f879b881398), \[\`Retro Pop\`\](https://www.recraft.ai/styles/a56d7265-ed27-4e0d-827b-2692d0b46fba), \[\`Clay\`\](https://www.recraft.ai/styles/f5145ada-d0d5-46d9-adda-d38fdf0b80d9), \[\`Risograph\`\](https://www.recraft.ai/styles/7be82d9c-ad40-483e-b235-389043675ad2), \[\`Color engraving\`\](https://www.recraft.ai/styles/75ee357c-ff80-4fbe-99ae-44d3310155fe), \[\`Pixel art\`\](https://www.recraft.ai/styles/aa32a571-eeeb-48bc-bc51-5792e9f49eb4), \[\`Antiquarian\`\](https://www.recraft.ai/styles/2b6d8781-7ab6-43dc-b870-891cc072246d), \[\`Bold fantasy\`\](https://www.recraft.ai/styles/1703ae77-b491-47e2-a25d-9dd6c28c2ffa), \[\`Child book\`\](https://www.recraft.ai/styles/ecd1de2b-02b7-43ce-9780-2ea91deb38f4), \[\`Cover\`\](https://www.recraft.ai/styles/6e403112-b52d-408b-8f78-539657229ade), \[\`Crosshatch\`\](https://www.recraft.ai/styles/7cccbbd2-c282-4ef6-a37f-889d1c503b74), \[\`Digital engraving\`\](https://www.recraft.ai/styles/f0999093-d0dc-4718-adba-a038a60ff6b2), \[\`Expressionism\`\](https://www.recraft.ai/styles/e2d8e964-ea62-43f4-a269-a47dd8728fe5), \[\`Freehand details\`\](https://www.recraft.ai/styles/eac001dc-5c63-4e6b-8d1f-390cbe5d2040), \[\`Grain 2.0\`\](https://www.recraft.ai/styles/824645a6-dc5b-4ad2-95c2-90bb6db5fbe1), \[\`Graphic intensity\`\](https://www.recraft.ai/styles/88b9e740-728c-4d00-9725-6d820859f6b7), \[\`Hard Comics\`\](https://www.recraft.ai/styles/98cef725-f770-498b-a90e-2eb4ab03cddb), \[\`Long shadow\`\](https://www.recraft.ai/styles/9a3edce0-424f-49c5-b372-61b0f589426c), \[\`Modern Folk\`\](https://www.recraft.ai/styles/6aa86245-e03f-432d-8b57-5fe5bfdb60cf), \[\`Multicolor\`\](https://www.recraft.ai/styles/da5cc27d-0389-4b5c-8a0d-fe5b76937214), \[\`Neon Calm\`\](https://www.recraft.ai/styles/1feb869d-edcc-4b6b-b6d0-413e9560f2dd), \[\`Noir\`\](https://www.recraft.ai/styles/956a5ac8-401f-4e5f-a034-ec458c371598), \[\`Nostalgic pastel\`\](https://www.recraft.ai/styles/4ce80d17-2e82-4f07-8ee7-c20931174da9), \[\`Outline details\`\](https://www.recraft.ai/styles/87cf0b6b-a495-4436-8598-897a71bf5db6), \[\`Pastel gradient\`\](https://www.recraft.ai/styles/9819278f-d0fe-4331-b7d4-37b0cf69150a), \[\`Pastel sketch\`\](https://www.recraft.ai/styles/149f13db-53ac-4c3e-8eb7-d5d44af04405), \[\`Pop art\`\](https://www.recraft.ai/styles/c5c3026e-66e5-412e-b87a-101512d745ac), \[\`Pop renaissance\`\](https://www.recraft.ai/styles/99c21c89-7de0-46dc-b447-e519be2c47f0), \[\`Street art\`\](https://www.recraft.ai/styles/c42616cd-f2c2-459c-a745-6f0ac86589d7), \[\`Tablet sketch\`\](https://www.recraft.ai/styles/c0c1b91e-8b46-4243-8f0b-fdea56c43701), \[\`Urban Glow\`\](https://www.recraft.ai/styles/acf7c4d0-ac61-4fb4-a3fa-d3a1fde6c014), \[\`Urban sketching\`\](https://www.recraft.ai/styles/ce069e6f-09bc-482b-9a05-fabf6658f27f), \[\`Young adult book\`\](https://www.recraft.ai/styles/e3838b40-dbac-450c-a06c-2c52b3b790c7), \[\`Young adult book 2\`\](https://www.recraft.ai/styles/b2449e5b-6954-453e-a168-c6e743dafd9a), \[\`Seamless Digital\`\](https://www.recraft.ai/styles/a054fca2-259e-449e-9b25-a7b2ec7a9aa3);
+\\* Emblem styles: \[\`Prestige Emblem\`\](https://www.recraft.ai/styles/1c2f96d5-c2cf-4311-909f-44190a8ea153), \[\`Pop Graphic\`\](https://www.recraft.ai/styles/a4681bb8-4e6b-47c6-ae61-d4dcdf9b9dbc), \[\`Stamp\`\](https://www.recraft.ai/styles/dac4f551-db80-4cdd-8778-8d6ad4fa992b), \[\`Punk Graphic\`\](https://www.recraft.ai/styles/84789d26-1153-4faf-a1d1-c3e94d7a0035), \[\`Vintage Emblem\`\](https://www.recraft.ai/styles/7faff2e0-bdce-4a2b-aea5-471f7fb88f5e);
+
+\#### Recraft V3 Vector
+
+\\* Vector styles: \[\`Vector art\`\](https://www.recraft.ai/styles/773902ac-683a-4042-86a3-fe714eee345a), \[\`Line art\`\](https://www.recraft.ai/styles/19942671-ffa4-4867-9bbe-f5e4503dcc93), \[\`Linocut\`\](https://www.recraft.ai/styles/455a5cff-6d70-4d9a-945f-9256f279f50e), \[\`Color blobs\`\](https://www.recraft.ai/styles/7119b64b-b99d-4929-a418-3ead12ca1847), \[\`Engraving\`\](https://www.recraft.ai/styles/ce1f9161-a8dc-488f-9ff1-3f41082887b5), \[\`Bold stroke\`\](https://www.recraft.ai/styles/e33777c2-e1d3-4b16-bcdb-c7335e67a138), \[\`Chemistry\`\](https://www.recraft.ai/styles/e5aeb587-cac5-45ab-887f-bbc933a3d756), \[\`Colored stencil\`\](https://www.recraft.ai/styles/f5907d95-d032-4f70-a035-308bf8326ff3), \[\`Cosmics\`\](https://www.recraft.ai/styles/f14175ea-077f-4d8d-b1cb-e568ed906324), \[\`Cutout\`\](https://www.recraft.ai/styles/9ab9c49c-a934-4c83-af04-de6665a8d992), \[\`Depressive\`\](https://www.recraft.ai/styles/94b499fd-6408-48d1-8160-87661e93767c), \[\`Editorial\`\](https://www.recraft.ai/styles/59133ee8-2fc5-4225-bcd9-6934d21bcac8), \[\`Emotional flat\`\](https://www.recraft.ai/styles/782e2222-dbd8-46e0-bcec-1179d6c0e511), \[\`Marker outline\`\](https://www.recraft.ai/styles/1e018a0b-3299-445d-8812-06fd2f24eafa), \[\`Mosaic\`\](https://www.recraft.ai/styles/6c19cde9-52a6-40b3-9cc9-d81fe1fdd387), \[\`Naivector\`\](https://www.recraft.ai/styles/70192033-8db6-49af-b08b-f0e0043dddb8), \[\`Roundish flat\`\](https://www.recraft.ai/styles/857c6d5e-4039-45c1-8e31-12cfa25fa638), \[\`Segmented Colors\`\](https://www.recraft.ai/styles/8eafc64b-6483-46ca-858c-ef509ded10b5), \[\`Sharp contrast\`\](https://www.recraft.ai/styles/3ddad82f-d3c0-432e-ab7e-d9ed441a73c0), \[\`Thin\`\](https://www.recraft.ai/styles/f8300e4a-1b2f-4ad6-abbe-7e7180b87f30), \[\`Vector Photo\`\](https://www.recraft.ai/styles/b331f7bc-4ef6-4d17-a042-bae020cab91f), \[\`Vivid shapes\`\](https://www.recraft.ai/styles/85243d3e-dfd8-4f8b-83d7-456e72491814), \[\`Seamless Vector\`\](https://www.recraft.ai/styles/2e8f425e-b1a4-4c38-8f07-977bd8c2caf5);
+
+\#### Recraft V2
+
+\\* Photorealistic styles: \[\`Photorealism\`\](https://www.recraft.ai/styles/5a99ae89-3f14-433b-abb2-a1d8074b1ab1), \[\`Enterprise\`\](https://www.recraft.ai/styles/35ceb30e-50f5-46d4-9372-e95d8458a380), \[\`Natural light\`\](https://www.recraft.ai/styles/030886da-f6b9-4730-a1c1-4ce54a610a81), \[\`Studio photo\`\](https://www.recraft.ai/styles/0295270b-e050-45ad-8711-e29d1ac87d10), \[\`HDR\`\](https://www.recraft.ai/styles/07d689f1-ee16-49c4-a103-befb59bd7032), \[\`Hard flash\`\](https://www.recraft.ai/styles/4cb07726-d352-48cf-8f9b-b06eed4e0563), \[\`Motion blur\`\](https://www.recraft.ai/styles/cee8bee7-2085-4aca-91d5-2e3939f11dc8), \[\`Black & white\`\](https://www.recraft.ai/styles/6fefbfcf-9c93-4bce-8b31-bcbd86327d66), \[\`Product photo\`\](https://www.recraft.ai/styles/570c6fb3-1b01-4da0-afc9-0cd9997ffcc2);
+\\* Illustration styles: \[\`Illustration\`\](https://www.recraft.ai/styles/b8772060-8802-4f3c-b051-73349b1017a5), \[\`3D render\`\](https://www.recraft.ai/styles/4659b2d6-a580-4287-849e-96190d7dbf30), \[\`Glow\`\](https://www.recraft.ai/styles/077aeb2b-fca1-49e6-805b-6174bf55ee1a), \[\`Watercolor\`\](https://www.recraft.ai/styles/568daa6a-9631-44e7-a615-ce547146ae52), \[\`Hand-drawn\`\](https://www.recraft.ai/styles/a389a8b9-1209-463f-b816-0c08eb4f93c4), \[\`Kawaii\`\](https://www.recraft.ai/styles/f8f1bc1c-1ae7-43ea-a36f-c81049feee01), \[\`Grain\`\](https://www.recraft.ai/styles/9fe2962e-ac66-4d41-8ff4-38dbdfc79835), \[\`Bold Sketch\`\](https://www.recraft.ai/styles/41ef6ca6-8797-4cf1-87c6-522f425f2059), \[\`Pencil sketch\`\](https://www.recraft.ai/styles/f6e787d5-80cc-415e-b68d-860a0d25dafb), \[\`Retro Pop\`\](https://www.recraft.ai/styles/a28c4388-81fd-497c-a7ea-a44013636071), \[\`Clay\`\](https://www.recraft.ai/styles/c7aaa207-769f-4449-bdc4-c9d8cbcdbb09), \[\`Risograph\`\](https://www.recraft.ai/styles/902997d1-72a5-4951-81b8-042732f32d26), \[\`Psychedelic\`\](https://www.recraft.ai/styles/1f9a9d70-2d71-4b85-9106-646bbddf1fd0), \[\`Seamless Digital\`\](https://www.recraft.ai/styles/655b577f-a89f-4015-8a95-12b8daa2414b), \[\`Color engraving\`\](https://www.recraft.ai/styles/a36fc277-4f70-445b-bc1a-c50412c8c439), \[\`Pixel art\`\](https://www.recraft.ai/styles/7c8c1d97-17c8-44b4-a252-2808d44795a6), \[\`80's\`\](https://www.recraft.ai/styles/5e86f847-766c-4479-a6a0-645a54d77e06), \[\`Voxel art\`\](https://www.recraft.ai/styles/85770603-257a-4588-a9e7-73064991c1b7);
+
+\#### Recraft V2 Vector
+
+\\* Vector styles: \[\`Vector art\`\](https://www.recraft.ai/styles/807ce9bc-7e36-4efa-a6cb-11cda1cecd19), \[\`Line art\`\](https://www.recraft.ai/styles/da8ce568-08d9-4bfb-9ef0-2984ec6391e3), \[\`Linocut\`\](https://www.recraft.ai/styles/3fc31d5e-a4ea-436c-be1a-787ec1cc76d8), \[\`Cartoon\`\](https://www.recraft.ai/styles/6cdae472-693d-478a-91fc-83eaf7c91a0c), \[\`Flat 2.0\`\](https://www.recraft.ai/styles/bcfabc0a-dec4-479b-962f-b306609e90ee), \[\`Color blobs\`\](https://www.recraft.ai/styles/2dc79001-283c-4c1e-ac01-49a95e21175c), \[\`Vector Kawaii\`\](https://www.recraft.ai/styles/6caa7c53-ad06-4d3b-827d-5bb81e782659), \[\`Doodle Line art\`\](https://www.recraft.ai/styles/1eb016d9-46d0-4b4e-bf1d-76296f43b471), \[\`Seamless Vector\`\](https://www.recraft.ai/styles/22e6d2f6-7951-49c4-aaaa-b7db63cb880a), \[\`Engraving\`\](https://www.recraft.ai/styles/100ae2cf-358a-46d2-ab13-dda7079c0460);
+\\* Icon styles: \[\`Icon\`\](https://www.recraft.ai/styles/645cb7ca-4be3-4d90-9f16-e9c26f6812f1), \[\`Outline\`\](https://www.recraft.ai/styles/5cf68b22-c903-48c5-882b-16872ef2d124), \[\`Pictogram\`\](https://www.recraft.ai/styles/be9ebb8f-312a-4d8e-b7ba-8276b05a2108), \[\`Colored outline\`\](https://www.recraft.ai/styles/7513cd33-5b71-4e04-8fed-becdd2672b4a), \[\`Doodle\`\](https://www.recraft.ai/styles/a2ba0c04-e40d-4210-8ed2-46d3537c546c), \[\`Colored shape\`\](https://www.recraft.ai/styles/1c5ca809-1bce-4b1c-8b14-79a5bc6df150), \[\`Gradient outline\`\](https://www.recraft.ai/styles/a7272add-907f-49f0-860d-d8b6d2dd0995), \[\`Offset doodle\`\](https://www.recraft.ai/styles/bdb513fc-cf7f-4e0f-be45-ef18bd693d03), \[\`Gradient shape\`\](https://www.recraft.ai/styles/65dcb522-d206-4561-bf93-9ae650f73136), \[\`Broken line\`\](https://www.recraft.ai/styles/d700cad3-94da-4204-b753-dbb75487edfc), \[\`Offset fill\`\](https://www.recraft.ai/styles/5a905231-9aee-4d4b-a0bb-eda7e79a0e95);
+
+Built with \[Mintlify\](https://mintlify.com).

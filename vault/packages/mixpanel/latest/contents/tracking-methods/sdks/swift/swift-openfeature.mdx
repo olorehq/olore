@@ -1,0 +1,192 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Swift)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Swift OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Swift)](/docs/tracking-methods/sdks/swift/swift-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- iOS 14.0+ / tvOS 14.0+ / macOS 11.0+ / watchOS 7.0+
+- Swift 5.5+
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+Add the following to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/mixpanel/mixpanel-swift-openfeature", from: "0.1.0"),
+]
+```
+
+Then add `MixpanelOpenFeature` as a dependency of your target:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "MixpanelOpenFeature", package: "mixpanel-swift-openfeature"),
+    ]
+),
+```
+
+## Quick Start
+
+```swift
+import Mixpanel
+import MixpanelOpenFeature
+import OpenFeature
+
+// 1. Create and register the provider
+let options = MixpanelOptions(token: "YOUR_PROJECT_TOKEN")
+let provider = MixpanelOpenFeatureProvider(options: options)
+await OpenFeatureAPI.shared.setProviderAndWait(provider: provider)
+
+// 2. Get a client and evaluate flags
+let client = OpenFeatureAPI.shared.getClient()
+let showNewFeature = client.getBooleanValue(key: "new-feature-flag", defaultValue: false)
+
+if showNewFeature {
+    print("New feature is enabled!")
+}
+```
+
+### Using an Existing Mixpanel Instance
+
+```swift
+let flags = Mixpanel.mainInstance().flags
+let provider = MixpanelOpenFeatureProvider(flags: flags)
+await OpenFeatureAPI.shared.setProviderAndWait(provider: provider)
+```
+
+<Callout type="warning">
+This provider does **not** call `mixpanel.identify()` or `mixpanel.track()`. If you need to update the logged-in user or use [Runtime Events](/docs/featureflags/runtime-events) for targeting, call these methods on the **same Mixpanel instance** that was passed to the provider.
+</Callout>
+
+```swift
+// When using init(options:), access via provider.mixpanel
+provider.mixpanel?.identify(distinctId: "user-123")
+provider.mixpanel?.track(event: "Purchase", properties: ["amount": 49.99])
+
+// When using init(flags:), use the original instance
+let mixpanelInstance = Mixpanel.mainInstance()
+let provider = MixpanelOpenFeatureProvider(flags: mixpanelInstance.flags)
+mixpanelInstance.identify(distinctId: "user-123")
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `getBooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `getBooleanValue()`, `getStringValue()`, `getIntegerValue()`, `getDoubleValue()`, or `getObjectValue()` |
+| Dynamic Config | JSON object | `getObjectValue()` |
+
+```swift
+let client = OpenFeatureAPI.shared.getClient()
+
+// Feature Gate
+let isFeatureOn = client.getBooleanValue(key: "new-checkout", defaultValue: false)
+
+// Experiment with string variants
+let buttonColor = client.getStringValue(key: "button-color-test", defaultValue: "blue")
+
+// Experiment with numeric variants
+let maxItems = client.getIntegerValue(key: "max-items", defaultValue: 10)
+let threshold = client.getDoubleValue(key: "score-threshold", defaultValue: 0.5)
+
+// Dynamic Config
+let featureConfig = client.getObjectValue(
+    key: "homepage-layout",
+    defaultValue: Value.structure(["layout": .string("grid"), "itemsPerRow": .integer(3)])
+)
+```
+
+### Evaluation Context
+
+Context must be set globally via `OpenFeatureAPI.shared.setEvaluationContext()`:
+
+```swift
+let ctx = MutableContext(
+    targetingKey: "user-123",
+    structure: MutableStructure(attributes: [
+        "email": .string("user@example.com"),
+        "plan": .string("premium"),
+    ])
+)
+await OpenFeatureAPI.shared.setEvaluationContext(evaluationContext: ctx)
+```
+
+### Runtime Properties
+
+Pass `custom_properties` in the evaluation context for [Runtime Properties](/docs/featureflags) targeting:
+
+```swift
+let ctx = MutableContext(
+    structure: MutableStructure(attributes: [
+        "custom_properties": .structure([
+            "tier": .string("enterprise"),
+            "seats": .integer(50),
+        ]),
+    ])
+)
+await OpenFeatureAPI.shared.setEvaluationContext(evaluationContext: ctx)
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```swift
+let details = client.getBooleanDetails(key: "my-feature", defaultValue: false)
+
+print(details.value)
+print(details.variant)
+print(details.reason)
+print(details.errorCode)
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the provider has finished initializing |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+To avoid `PROVIDER_NOT_READY`, use `setProviderAndWait`:
+
+```swift
+await OpenFeatureAPI.shared.setProviderAndWait(provider: provider)
+```
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Provider not ready:** Use `setProviderAndWait` to ensure initialization completes.
+2. **Network issues:** Check for failed requests to Mixpanel's flags API.
+3. **Flag not configured:** Verify the flag exists and is enabled in your Mixpanel project.
+
+### Flags Not Updating After Context Change
+
+When you update the OpenFeature context, the provider fetches new flag values:
+
+```swift
+let newCtx = MutableContext(
+    structure: MutableStructure(attributes: ["plan": .string("premium")])
+)
+await OpenFeatureAPI.shared.setEvaluationContext(evaluationContext: newCtx)
+```
+
+If flags still aren't updating, verify your targeting rules in Mixpanel use the context properties you're setting.

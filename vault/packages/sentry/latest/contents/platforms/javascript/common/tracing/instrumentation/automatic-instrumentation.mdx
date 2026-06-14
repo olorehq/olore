@@ -118,7 +118,7 @@ Exclude requests from tracing, such as health checks or analytics pings:
 
 <SdkOption name="enableInp" type='boolean' defaultValue='true' availableSince='7.104.0' defaultNote="See note">
 
-Automatically captures [INP](/product/insights/web-vitals/web-vitals-concepts/#interaction-to-next-paint-inp) events to measure responsiveness. Results appear in the [Web Vitals](/product/insights/web-vitals/) module.
+Automatically captures [INP](/product/dashboards/sentry-dashboards/frontend/web-vitals/web-vitals-concepts/#interaction-to-next-paint-inp) events to measure responsiveness. Results appear in the [Web Vitals](/product/dashboards/sentry-dashboards/frontend/web-vitals/) module.
 
 Default: `true` in SDK 8.x+, `false` in 7.x.
 
@@ -197,6 +197,30 @@ Mark pageload/navigation spans as "cancelled" when the tab moves to background. 
 <SdkOption name="enableReportPageLoaded" type='boolean' defaultValue='false' availableSince='10.13.0'>
 
 Enable the <PlatformLink to="/apis/#reportPageLoaded">`Sentry.reportPageLoaded()` function</PlatformLink>.
+
+</SdkOption>
+
+<SdkOption name="traceFetch" type='boolean' defaultValue='true'>
+
+Enable/disable automatic span creation for `fetch` requests.
+
+</SdkOption>
+
+<SdkOption name="traceXHR" type='boolean' defaultValue='true'>
+
+Enable/disable automatic span creation for `XMLHttpRequest` (XHR) requests.
+
+</SdkOption>
+
+<SdkOption name="enableHTTPTimings" type='boolean' defaultValue='true'>
+
+Enable/disable adding detailed HTTP timing data (DNS lookup, TLS handshake, etc.) to fetch/XHR spans via the Performance Resource Timing API.
+
+</SdkOption>
+
+<SdkOption name="linkPreviousTrace" type="'in-memory' | 'session-storage' | false" defaultValue="'in-memory'">
+
+Controls how new pageload spans are linked to the previous trace. Set to `'in-memory'` to link within the same page lifecycle, `'session-storage'` to persist links across page reloads via session storage, or `false` to disable trace linking.
 
 </SdkOption>
 

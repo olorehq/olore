@@ -28,6 +28,7 @@ import { HeartbeatMonitor } from "checkly/constructs"
 
 new HeartbeatMonitor("daily-backup-heartbeat", {
   name: "Daily Backup Job",
+  description: "Expects a ping every **24h** from the nightly DB backup cron.",
   period: 1,
   periodUnit: "days",
   grace: 2,
@@ -40,6 +41,7 @@ import { HeartbeatMonitor } from "checkly/constructs"
 
 new HeartbeatMonitor("newsletter-heartbeat", {
   name: "Weekly Newsletter Job",
+  description: "Weekly newsletter job completes every 7 days.",
   activated: true,
   muted: false,
   period: 7,
@@ -73,6 +75,7 @@ The Heartbeat Monitoring configuration consists of specific heartbeat monitoring
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your monitor |
+| `description` | `string` | ❌ | `null` | A description of the monitor. Supports markdown. Max 500 characters |
 | `activated` | `boolean` | ❌ | `true` | Whether the monitor is enabled |
 | `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |

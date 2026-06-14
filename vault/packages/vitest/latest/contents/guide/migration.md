@@ -5,7 +5,174 @@ outline: deep
 
 # Migration Guide
 
+[Migrating to Vitest 4.0](https://v4.vitest.dev/guide/migration) | [Migrating to Vitest 3.0](https://v3.vitest.dev/guide/migration)
+
+## Migrating to Vitest 5.0 {#vitest-5}
+
+::: warning Work in progress
+Vitest 5.0 is currently in beta. This section tracks breaking changes as they are merged and may change before the stable release.
+:::
+
+### Benchmarking API Rewrite
+
+The benchmarking API has been rewritten. `bench` is no longer a top-level import from `vitest`; it is a [test-context fixture](/guide/test-context#bench) accessed from inside a regular `test()`. See the [Benchmarking guide](/guide/benchmarking) for the new API.
+
+Removed, with replacements where applicable:
+
+- **`bench(name, fn)` at module scope**: destructure `bench` from the test context instead.
+
+```ts
+// v4
+import { bench } from 'vitest' // [!code --]
+
+bench('sort', () => { // [!code --]
+  [3, 1, 2].sort() // [!code --]
+}) // [!code --]
+
+// v5
+import { test } from 'vitest' // [!code ++]
+
+test('sort', async ({ bench }) => { // [!code ++]
+  await bench('sort', () => { [3, 1, 2].sort() }).run() // [!code ++]
+}) // [!code ++]
+```
+
+- **`bench.skip`, `bench.only`, `bench.todo`** are removed. Use the regular `test.skip`, `test.only`, `test.todo` on the surrounding `test()` instead.
+- **`benchmark.reporters` / `benchmark.outputFile`** are removed. Benchmark output is now part of the default reporter and the `json` reporter; configure those at the top level via `test.reporters` instead.
+- **`benchmark.compare` config and the `--compare` CLI flag** are removed. Pass [`writeResult`](/guide/benchmarking#storing-and-replaying-results) as a per-bench option to persist a result, and read it back with [`bench.from()`](/guide/benchmarking#bench-from) inside `bench.compare()`.
+- **`benchmark.outputJson` config and the `--outputJson` CLI flag** are removed. Use `--reporter=json --outputFile=<path>` to capture benchmark results; the JSON reporter now includes a `benchmarks` field on each test case.
+- **`Vitest` instance `mode` property** is now always `'test'`. The previous `'benchmark'` value is no longer used; benchmarks run inside a dedicated project of the same `Vitest` instance.
+
+### Removed `test.sequential`, `describe.sequential`, and `sequential` Options
+
+Vitest 5.0 removes the deprecated `test.sequential`, `describe.sequential`, and `sequential` test options. Use `concurrent: false` when you need a test or suite to opt out of inherited or globally configured concurrency.
+
+```ts
+test.sequential('example', async () => { /* ... */ }) // [!code --]
+test('example', { concurrent: false }, async () => { /* ... */ }) // [!code ++]
+```
+
+```ts
+describe.sequential('suite', () => { /* ... */ }) // [!code --]
+describe('suite', { concurrent: false }, () => { /* ... */ }) // [!code ++]
+```
+
+The same replacement applies to option objects:
+
+```ts
+test('example', { sequential: true }, async () => { /* ... */ }) // [!code --]
+test('example', { concurrent: false }, async () => { /* ... */ }) // [!code ++]
+```
+
+### Locators in Commands are Serialized as Objects
+
+Locators forwarded to [browser commands](/api/browser/commands) are now serialized as a `SerializedLocator` object instead of a bare selector string. The object exposes two fields:
+
+- `selector`: the provider-specific selector string (the same value commands previously received).
+- `locator`: a human-readable representation of the locator (e.g. `getByRole('button')`), used for error messages and tracing.
+
+Update any custom commands that accept a locator to destructure `selector` from the new object:
+
+```ts
+import type { SerializedLocator } from '@vitest/browser'
+import type { BrowserCommandContext } from 'vitest/node'
+
+export async function customClick(
+  context: BrowserCommandContext,
+  selector: string, // [!code --]
+  { selector }: SerializedLocator, // [!code ++]
+) {
+  await context.page.locator(selector).click()
+}
+```
+
+### Locators are Strict by Default
+
+Browser locators now match the text exactly by default, requiring a full, case-sensitive match. To keep the previous behaviour, you can set [`browser.locators.exact`](/config/browser/locators#browser-locators-exact) to `false`.
+
+```ts
+// With exact: true (default), this only matches the string "Hello, World" exactly.
+// With exact: false, this matches "Hello, World!", "Say Hello, World", etc.
+const locator = page.getByText('Hello, World', { exact: true })
+await locator.click()
+```
+
+### Removed Deprecated Entrypoints
+
+Several entry points were marked as deprecated in Vitest 4.1. This release removes them entirely.
+
+- `vitest/coverage`: use `vitest/node` instead
+- `vitest/reporters`: use `vitest/node` instead
+- `vitest/environments`: use `vitest/runtime` instead
+- `vitest/snapshot`: use `vitest/runtime` instead
+- `vitest/runners`: use `TestRunner` from `vitest` instead
+- `vitest/suite`: use static methods on `TestRunner` from vitest instead (for example, `TestRunner.getCurrentTest()`)
+- `vitest/mocker` is removed completely, use `@vitest/mocker` package directly (this was published by accident at one point and never removed)
+- `vitest/internal/module-runner` is removed
+
+### `toHaveTextContent` Now Performs Strict Equality
+
+The browser-mode [`toHaveTextContent`](/api/browser/assertions#tohavetextcontent) matcher now validates that an element's text content is exactly equal to the expected string instead of performing a partial, case-sensitive match. Regular expressions are no longer accepted. The previous behaviour, including `RegExp` support, has moved to the new [`toMatchTextContent`](/api/browser/assertions#tomatchtextcontent) matcher.
+
+```ts
+// Partial or regex matches:
+await expect.element(banner).toHaveTextContent('Error') // [!code --]
+await expect.element(banner).toHaveTextContent(/error/i) // [!code --]
+await expect.element(banner).toMatchTextContent('Error') // [!code ++]
+await expect.element(banner).toMatchTextContent(/error/i) // [!code ++]
+
+// Exact matches stay on `toHaveTextContent`:
+await expect.element(banner).toHaveTextContent('Error!')
+```
+
+### Glob Coverage Thresholds No Longer Inherit `perFile`
+
+`coverage.thresholds.perFile` previously applied to every threshold set, including files matched by glob-pattern thresholds. Glob patterns now control their own per-file checking and no longer inherit the top-level `perFile` — set `perFile` on each glob that needs it.
+
+```ts [vitest.config.ts]
+export default defineConfig({
+  test: {
+    coverage: {
+      thresholds: {
+        'perFile': true,
+
+        'src/utils/**': {
+          lines: 80,
+          perFile: true, // [!code ++]
+        },
+      },
+    },
+  },
+})
+```
+
+### Config Files Are Not Looked Up From Parent Directories
+
+Vitest no longer searches parent directories for config files. If you previously relied on running `vitest` from a subdirectory while using a config file from a parent directory, pass the config explicitly and scope test discovery with `--dir`. For example,
+
+```bash
+$ cd subdir && vitest # [!code --]
+$ cd subdir && vitest --config ../vitest.config.ts # [!code ++]
+```
+
+### DOM Environment Global Assignments Now Update the Underlying Window
+
+Assignments to properties on `globalThis` or `window` in `jsdom` and `happy-dom` environments are now propagated to the underlying DOM implementation. Mutable properties such as `innerWidth` can affect APIs implemented by the DOM environment, for example `happy-dom`'s `matchMedia`.
+
+### Browser Orchestrator URL Requires a Session
+
+Vitest no longer serves the browser orchestrator UI from a bare `/__vitest_test__/` URL. Browser runner URLs are now session-bound and must include the `sessionId` generated by Vitest, for example `/__vitest_test__/?sessionId=...`.
+
+If you manually opened the browser preview by copying the Vite server URL or visiting `/__vitest_test__/` directly, use the URL opened or printed by Vitest instead.
+
 ## Migrating to Vitest 4.0 {#vitest-4}
+
+::: warning Prerequisites
+Vitest 4.0 requires **Vite >= 6.0.0** and **Node.js >= 20.0.0**. Before proceeding
+with any other migration steps, ensure your environment meets these requirements.
+Running Vitest 4.0 on older versions of Vite or Node.js is not supported and may
+result in unexpected errors.
+:::
 
 ### V8 Code Coverage Major Changes
 
@@ -145,7 +312,7 @@ Note that now if you provide an arrow function, you will get [`<anonymous> is no
 Alongside new features like supporting constructors, Vitest 4 creates mocks differently to address several module mocking issues that we received over the years. This release attempts to make module spies less confusing, especially when working with classes.
 
 - `vi.fn().getMockName()` now returns `vi.fn()` by default instead of `spy`. This can affect snapshots with mocks - the name will be changed from `[MockFunction spy]` to `[MockFunction]`. Spies created with `vi.spyOn` will keep using the original name by default for better debugging experience
-- `vi.restoreAllMocks` no longer resets the state of spies and only restores spies created manually with `vi.spyOn`, automocks are no longer affected by this function (this also affects the config option [`restoreMocks`](/config/#restoremocks)). Note that `.mockRestore` will still reset the mock implementation and clear the state
+- `vi.restoreAllMocks` no longer resets the state of spies and only restores spies created manually with `vi.spyOn`, automocks are no longer affected by this function (this also affects the config option [`restoreMocks`](/config/restoremocks)). Note that `.mockRestore` will still reset the mock implementation and clear the state
 - Calling `vi.spyOn` on a mock now returns the same mock
 - `mock.settledResults` are now populated immediately on function invocation with an `'incomplete'` result. When the promise is finished, the type is changed according to the result.
 - Automocked instance methods are now properly isolated, but share a state with the prototype. Overriding the prototype implementation will always affect instance methods unless the methods have a custom mock implementation of their own. Calling `.mockReset` on the mock also no longer breaks that inheritance.
@@ -212,9 +379,9 @@ Module Runner is a successor to `vite-node` implemented directly in Vite. Vitest
 - `vitest/execute` entry point was removed. It was always meant to be internal
 - [Custom environments](/guide/environment) no longer need to provide a `transformMode` property. Instead, provide `viteEnvironment`. If it is not provided, Vitest will use the environment name to transform files on the server (see [`server.environments`](https://vite.dev/guide/api-environment-instances.html))
 - `vite-node` is no longer a dependency of Vitest
-- `deps.optimizer.web` was renamed to [`deps.optimizer.client`](/config/#deps-optimizer-client). You can also use any custom names to apply optimizer configs when using other server environments
+- `deps.optimizer.web` was renamed to [`deps.optimizer.client`](/config/deps#deps-client). You can also use any custom names to apply optimizer configs when using other server environments
 
-Vite has its own externalization mechanism, but we decided to keep using the old one to reduce the amount of breaking changes. You can keep using [`server.deps`](/config/#server-deps) to inline or externalize packages.
+Vite has its own externalization mechanism, but we decided to keep using the old one to reduce the amount of breaking changes. You can keep using [`server.deps`](/config/server#deps) to inline or externalize packages.
 
 This update should not be noticeable unless you rely on advanced features mentioned above.
 
@@ -408,7 +575,7 @@ export default defineConfig({
 ```
 :::
 
-See [Recipes](/guide/recipes) for more examples.
+See [Per-File Isolation Settings](/guide/recipes/disable-isolation) and [Parallel and Sequential Test Files](/guide/recipes/parallel-sequential) for more examples.
 
 ### Reporter Updates
 
@@ -439,7 +606,7 @@ export default defineConfig({
 
 ### Snapshots using Custom Elements Print the Shadow Root
 
-In Vitest 4.0 snapshots that include custom elements will print the shadow root contents. To restore the previous behavior, set the [`printShadowRoot` option](/config/#snapshotformat) to `false`.
+In Vitest 4.0 snapshots that include custom elements will print the shadow root contents. To restore the previous behavior, set the [`printShadowRoot` option](/config/snapshotformat) to `false`.
 
 ```js{15-22}
 // before Vitest 4.0
@@ -500,7 +667,7 @@ Vitest has been designed with a Jest compatible API, in order to make the migrat
 
 ### Globals as a Default
 
-Jest has their [globals API](https://jestjs.io/docs/api) enabled by default. Vitest does not. You can either enable globals via [the `globals` configuration setting](/config/#globals) or update your code to use imports from the `vitest` module instead.
+Jest has their [globals API](https://jestjs.io/docs/api) enabled by default. Vitest does not. You can either enable globals via [the `globals` configuration setting](/config/globals) or update your code to use imports from the `vitest` module instead.
 
 If you decide to keep globals disabled, be aware that common libraries like [`testing-library`](https://testing-library.com/) will not run auto DOM [cleanup](https://testing-library.com/docs/svelte-testing-library/api/#cleanup).
 
@@ -552,7 +719,7 @@ const { cloneDeep } = await vi.importActual('lodash/cloneDeep') // [!code ++]
 
 ### Extends mocking to external libraries
 
-Where Jest does it by default, when mocking a module and wanting this mocking to be extended to other external libraries that use the same module, you should explicitly tell which 3rd-party library you want to be mocked, so the external library would be part of your source code, by using [server.deps.inline](/config/#server-deps-inline).
+Where Jest does it by default, when mocking a module and wanting this mocking to be extended to other external libraries that use the same module, you should explicitly tell which 3rd-party library you want to be mocked, so the external library would be part of your source code, by using [server.deps.inline](/config/server#inline).
 
 ```
 server.deps.inline: ["lib-name"]
@@ -590,7 +757,7 @@ beforeEach(() => setActivePinia(createTestingPinia())) // [!code --]
 beforeEach(() => { setActivePinia(createTestingPinia()) }) // [!code ++]
 ```
 
-In Jest hooks are called sequentially (one after another). By default, Vitest runs hooks in a stack. To use Jest's behavior, update [`sequence.hooks`](/config/#sequence-hooks) option:
+In Jest hooks are called sequentially (one after another). By default, Vitest runs hooks in a stack. To use Jest's behavior, update [`sequence.hooks`](/config/sequence#sequence-hooks) option:
 
 ```ts
 export default defineConfig({
@@ -627,7 +794,7 @@ vi.setConfig({ testTimeout: 5_000 }) // [!code ++]
 
 ### Vue Snapshots
 
-This is not a Jest-specific feature, but if you previously were using Jest with vue-cli preset, you will need to install [`jest-serializer-vue`](https://github.com/eddyerburgh/jest-serializer-vue) package, and specify it in [`snapshotSerializers`](/config/#snapshotserializers):
+This is not a Jest-specific feature, but if you previously were using Jest with vue-cli preset, you will need to install [`jest-serializer-vue`](https://github.com/eddyerburgh/jest-serializer-vue) package, and specify it in [`snapshotSerializers`](/config/snapshotserializers):
 
 ```js [vitest.config.js]
 import { defineConfig } from 'vitest/config'
@@ -640,6 +807,38 @@ export default defineConfig({
 ```
 
 Otherwise your snapshots will have a lot of escaped `"` characters.
+
+### Custom Snapshot Matchers <Experimental /> <Version>4.1.3</Version> {#custom-snapshot-matcher}
+
+Jest imports snapshot composables from `jest-snapshot`. In Vitest, use `Snapshots` from `vitest` instead:
+
+```ts
+const { toMatchSnapshot } = require('jest-snapshot') // [!code --]
+import { Snapshots } from 'vitest' // [!code ++]
+const { toMatchSnapshot } = Snapshots // [!code ++]
+
+expect.extend({
+  toMatchTrimmedSnapshot(received: string, length: number) {
+    return toMatchSnapshot.call(this, received.slice(0, length))
+  },
+})
+```
+
+For inline snapshots, the same applies:
+
+```ts
+const { toMatchInlineSnapshot } = require('jest-snapshot') // [!code --]
+import { Snapshots } from 'vitest' // [!code ++]
+const { toMatchInlineSnapshot } = Snapshots // [!code ++]
+
+expect.extend({
+  toMatchTrimmedInlineSnapshot(received: string, inlineSnapshot?: string) {
+    return toMatchInlineSnapshot.call(this, received.slice(0, 10), inlineSnapshot)
+  },
+})
+```
+
+See [Custom Snapshot Matchers](/guide/snapshot#custom-snapshot-matchers) for the full guide.
 
 ## Migrating from Mocha + Chai + Sinon {#mocha-chai-sinon}
 
@@ -733,8 +932,7 @@ Vitest supports all common sinon-chai assertions:
 | `spy.callCount(n)` | `callCount(n)` | Spy was called n times |
 | `spy.calledWith(...)` | `calledWith(...)` | Spy was called with specific args |
 | `spy.calledOnceWith(...)` | `calledOnceWith(...)` | Spy was called once with specific args |
-| `spy.returned` | `returned` | Spy returned successfully |
-| `spy.returnedWith(value)` | `returnedWith(value)` | Spy returned specific value |
+| `spy.returned(value)` | `returned` | Spy returned specific value |
 
 See the [Chai-Style Spy Assertions](/api/expect#chai-style-spy-assertions) documentation for the complete list.
 
@@ -811,7 +1009,7 @@ vi.useRealTimers()
 
 ### Key Differences
 
-1. **Globals**: Mocha provides globals by default. In Vitest, either import from `vitest` or enable [`globals`](/config/#globals) config
+1. **Globals**: Mocha provides globals by default. In Vitest, either import from `vitest` or enable [`globals`](/config/globals) config
 2. **Assertion style**: You can use both Chai-style (`expect(spy).to.have.been.called`) and Jest-style (`expect(spy).toHaveBeenCalled()`)
 3. **Parallel execution**: Vitest runs tests in parallel by default, Mocha runs sequentially
 

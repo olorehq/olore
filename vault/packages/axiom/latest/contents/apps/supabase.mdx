@@ -1,0 +1,40 @@
+---
+title: 'Connect Axiom with Supabase'
+description: 'This page explains how to integrate Axiom with Supabase.'
+overview: 'Open-source Firebase alternative with a Postgres database'
+sidebarTitle: Supabase
+keywords: ['axiom documentation', 'documentation', 'axiom', 'supabase', 'log drains', 'postgres', 'database monitoring']
+logoId: 'supabase'
+---
+
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
+
+Supabase is an open-source Firebase alternative that provides a Postgres database, authentication, instant APIs, edge functions, real-time subscriptions, storage, and vector embeddings.
+
+Integrating Axiom with Supabase allows you to stream your project's raw log events directly to Axiom using Supabase's log drain feature. With your logs in Axiom, you can query, visualize, and monitor your Supabase projects in real time, giving you full observability over your database operations, authentication events, and edge functions.
+
+<Prerequisites />
+- [Create a Supabase account](https://supabase.com/dashboard) and upgrade to a Pro, Team, or Enterprise plan.
+
+## Setup
+
+1. In Supabase, go to your project's dashboard and navigate to **Project Settings > Log Drains**.
+1. Click **Axiom**, and then create a new destination with the following configuration:
+    - **Dataset name**: Enter the name of the Axiom dataset you created.
+    - **API token**: Enter the Axiom API token you created.
+1. Click **Save destination**.
+
+Supabase sends logs to Axiom as JSON raw log events with timestamps formatted for Axiom's ingestion endpoint.
+
+For more information on log drains, see the [Supabase documentation](https://supabase.com/docs/guides/telemetry/log-drains).
+
+## Explore your Supabase data
+
+After setting up the log drain, your Supabase logs appear in the dataset you specified. Open the [Stream tab](/query-data/stream) in Axiom to watch events arrive in real time.
+
+With your Supabase data in Axiom, you can:
+
+- Track authentication events and detect unusual sign-in patterns.
+- Observe edge function executions and errors.
+- Set up [monitors](/monitor-data/monitors) to get alerted about issues in your Supabase project.
+- Build [custom dashboards](/dashboards/create) tailored to your Supabase workload.

@@ -1,0 +1,108 @@
+---
+title: checkly init
+description: 'Initialize Checkly in your project with interactive or AI-assisted onboarding.'
+sidebarTitle: 'checkly init'
+---
+
+<Note>Available since CLI v7.8.0.</Note>
+
+The `checkly init` command sets up Checkly in your project. It detects your project's existing configuration — package.json, Playwright, and Checkly config files — and walks you through the setup accordingly.
+
+You can set up Checkly manually or let your AI coding agent handle the configuration. The command adapts its behavior based on the environment: interactive terminals get guided prompts, CI environments get non-interactive setup, and AI agents receive structured output.
+
+<Accordion title="Prerequisites">
+Before using `checkly init`, ensure you have:
+
+- Node.js installed
+- A project directory (an existing `package.json` is optional — the command can create one)
+
+No existing Checkly account or configuration is required.
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly init [options]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--target, -t` | - | Install the Checkly skill for a specific AI agent platform. |
+
+## Command Options
+
+<ResponseField name="--target, -t" type="string">
+
+Install the [Checkly agent skill](/ai/skills) for a specific AI agent platform. Available platforms: `claude`, `cursor`, `windsurf`, `github-copilot`, `gemini-cli`, `codex`, `amp`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly init --target=claude
+npx checkly init -t cursor
+```
+
+</ResponseField>
+
+## What to Expect
+
+The `init` command detects your project context and adjusts its flow:
+
+- **No `package.json`** — prompts you to create one before continuing.
+- **No Checkly config** — creates a `checkly.config.ts` and installs `checkly` as a dev dependency.
+- **Playwright detected** — provides context-aware setup that accounts for your existing test infrastructure.
+- **Existing Checkly project** — refreshes your agent skill to the latest version.
+
+### AI-Assisted Setup
+
+When you choose the AI-assisted path (or pass `--target`), the command:
+
+1. Installs the [Checkly agent skill](/ai/skills) for your platform
+2. Creates a `checkly.config.ts` if one doesn't exist
+3. Installs dependencies
+4. Generates a starter prompt you can paste into your AI agent to begin configuring checks
+
+<Tip>The starter prompt gives your AI agent all the context it needs about your project and Checkly's capabilities. Copy it into your agent's chat to start creating checks.</Tip>
+
+### Manual Setup
+
+When you choose the manual path, the command:
+
+1. Creates a `checkly.config.ts` if one doesn't exist
+2. Installs dependencies
+3. Optionally copies example checks (API, browser, heartbeat, URL monitor) into a `__checks__` directory
+
+### CI Mode
+
+In CI environments (when `CI=true`), the command runs non-interactively and outputs setup instructions.
+
+```bash Terminal
+CI=true npx checkly init
+```
+
+## Examples
+
+```bash Terminal
+# Interactive setup
+npx checkly init
+
+# Set up with Claude Code agent skill
+npx checkly init --target=claude
+
+# Non-interactive CI setup
+CI=true npx checkly init
+```
+
+## Next Steps
+
+After initialization, the typical workflow is:
+
+1. **Log in** — `npx checkly login` to authenticate with your Checkly account
+2. **Test** — `npx checkly test` to dry-run your checks
+3. **Deploy** — `npx checkly deploy` to deploy checks to Checkly
+
+## Related Commands
+
+- [`checkly skills`](/cli/checkly-skills) - Print project context and install agent skills
+- [`checkly login`](/cli/checkly-login) - Log in to your Checkly account
+- [`checkly deploy`](/cli/checkly-deploy) - Deploy checks to Checkly

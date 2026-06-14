@@ -25,6 +25,10 @@ Biome uses GritQL for two purposes:
 - The [`biome search`](/reference/cli/#biome-search) command, which we hope to
   extend to our IDE extensions as well.
 
+When GritQL is used in analyzer plugins, patterns can also include rewrites
+(`=>`) to provide fixable diagnostics. See [Linter Plugins](/linter/plugins)
+for details about safe vs unsafe fixes and `fix_kind`.
+
 ## Patterns
 
 GritQL queries work through _patterns_. The most common pattern you will see is
@@ -122,10 +126,21 @@ JsIfStatement() as $stmt where {
 }
 ```
 
-You can discover node names for your code by exploring the syntax tree in the [Biome Playground](https://biomejs.dev/playground/). A complete list of all available nodes is also available in the `.ungram` files in the [`xtask/codegen`](https://github.com/biomejs/biome/tree/main/xtask/codegen) directory of the Biome repository.
+You can also match specific parts of a node by name. For example, this pattern captures the first branch of a ternary expression using Biome's node field names:
+
+```grit
+JsConditionalExpression(consequent = $cons) where {
+  register_diagnostic(
+    span=$cons,
+    message="Found the consequent branch of a conditional expression"
+  )
+}
+```
+
+You can discover node names and field names for your code by exploring the syntax tree in the [Biome Playground](https://biomejs.dev/playground/). A complete list of all available nodes and their fields is also available in the `.ungram` files in the [`xtask/codegen`](https://github.com/biomejs/biome/tree/main/xtask/codegen) directory of the Biome repository.
 
 :::caution
-Biome's grammar can change between versions, especially for new languages. This may cause node names to change, which could break your patterns. Be prepared to update your queries when upgrading Biome.
+Biome's grammar can change between versions, especially for new languages. This may cause node names to change, which could break your patterns. Be prepared to update your queries when upgrading Biome when using node/field names in your patterns.
 :::
 
 ## JSON Patterns

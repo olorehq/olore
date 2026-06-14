@@ -6,7 +6,7 @@ Here's a detailed exampled of how to add OpenNext + SST to an existing Nx worksp
 
 2. Update your `apps/next-site/next.config.js` add `output: ‘standalone’`, and you want to add `experimental.outputFileTracingRoot`, it should look a little like this:
 
-```javascript
+```js filename="next.config.js"
 //@ts-check
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -39,15 +39,15 @@ module.exports = composePlugins(...plugins)(nextConfig);
 
 3. Create `open-next.config.ts` inside your apps root directory, it should look a little something like this:
 
-```javascript
-import type { OpenNextConfig } from '@opennextjs/aws/types/open-next';
+```ts filename="open-next.config.ts"
+import type { OpenNextConfig } from "@opennextjs/aws/types/open-next";
 
 const config = {
   default: {},
-  buildCommand: 'exit 0', // in my example we set up Nx task distribution to handle the order of building.
-  buildOutputPath: '.',
-  appPath: '.',
-  packageJsonPath: '../../', // again, path to the root of your repo (where the package.json is)
+  buildCommand: "exit 0", // in my example we set up Nx task distribution to handle the order of building.
+  buildOutputPath: ".",
+  appPath: ".",
+  packageJsonPath: "../../", // again, path to the root of your repo (where the package.json is)
 } satisfies OpenNextConfig;
 
 export default config;
@@ -134,7 +134,7 @@ but we will not use the SST cli to init this project, because it wants to add a 
 - let's add the sst package with `pnpm add sst@ion`, and the required packages for SST to work with AWS `pnpm add --save-dev aws-cdk-lib constructs @types/aws-lambda`
 - then we want to manually create an `sst.config.ts` file in `apps/next-site` that looks like this:
 
-```typescript
+```ts filename="sst.config.ts"
 /// <reference path="./.sst/platform/config.d.ts" />
 
 export default $config({
@@ -155,11 +155,11 @@ export default $config({
 
 - now, you probably see some type errors, as SST is not initialized yet, but we can resolve this by running
 
-```bash
+```sh
 $ cd apps/next-site && sst install
 ```
 
-this will resolve the type issues and initialise SST.
+this will resolve the type issues and initialize SST.
 
 - next we need to add `sst.config.ts` to our `tsconfig.json`'s excludes array
 
@@ -252,7 +252,7 @@ this will resolve the type issues and initialise SST.
 
 now we can run (or if you want a custom stage, you can simply do `nx deploy next-site --stage this-is-my-stage` and it will be passed directly to the sst command).
 
-```bash
+```sh
 $ nx deploy next-site --configuration dev # using dev configuration (which sets the stage to development)
 # nx deploy next-site -c dev # OR
 # nx deploy next-site --stage my-stage # Custom Stage

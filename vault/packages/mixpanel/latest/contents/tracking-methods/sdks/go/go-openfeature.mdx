@@ -1,0 +1,178 @@
+import { Callout } from 'nextra/components'
+
+# OpenFeature Provider (Go)
+
+## Overview
+
+This guide covers using Mixpanel's [Feature Flags](/docs/featureflags) through the [OpenFeature](https://openfeature.dev/) standard with the Mixpanel Go OpenFeature provider. OpenFeature provides a vendor-agnostic API for feature flag evaluation, allowing you to switch between providers without changing your application code.
+
+For the native Mixpanel SDK approach, see the [Feature Flags (Go)](/docs/tracking-methods/sdks/go/go-flags) guide.
+
+## Prerequisites
+
+- Enterprise subscription plan with Feature Flags enabled
+- Project Token from your [Mixpanel Project Settings](/docs/orgs-and-projects/managing-projects#find-your-project-tokens)
+
+## Installation
+
+```bash
+go get github.com/mixpanel/mixpanel-go/openfeature
+go get github.com/open-feature/go-sdk
+```
+
+## Quick Start
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    mixpanelopenfeature "github.com/mixpanel/mixpanel-go/openfeature"
+    "github.com/mixpanel/mixpanel-go/v2/flags"
+    of "github.com/open-feature/go-sdk/openfeature"
+)
+
+func main() {
+    // 1. Create the Mixpanel OpenFeature provider with local evaluation
+    provider, err := mixpanelopenfeature.NewProviderWithLocalConfig("YOUR_PROJECT_TOKEN", flags.LocalFlagsConfig{})
+    if err != nil {
+        panic(err)
+    }
+
+    // 2. Register the provider with OpenFeature
+    of.SetProvider(provider)
+    client := of.NewClient("my-app")
+
+    // 3. Evaluate flags
+    showNewFeature, _ := client.BooleanValue(context.Background(), "new-feature-flag", false, of.EvaluationContext{})
+
+    if showNewFeature {
+        fmt.Println("New feature is enabled!")
+    }
+}
+```
+
+## Initialization
+
+### Local Evaluation (Recommended)
+
+Flag definitions are fetched from Mixpanel and evaluated locally. This is faster and works offline after the initial fetch.
+
+<Callout type="warning">
+Targeting by Mixpanel cohorts and sticky variants are not supported in Local Evaluation mode.
+</Callout>
+
+```go
+provider, err := mixpanelopenfeature.NewProviderWithLocalConfig("YOUR_PROJECT_TOKEN", flags.LocalFlagsConfig{})
+```
+
+### Remote Evaluation
+
+Each flag evaluation makes a request to Mixpanel's servers.
+
+```go
+provider, err := mixpanelopenfeature.NewProviderWithRemoteConfig("YOUR_PROJECT_TOKEN", flags.RemoteFlagsConfig{})
+```
+
+### Using an Existing Mixpanel Instance
+
+```go
+mp := mixpanel.NewApiClient("YOUR_TOKEN", mixpanel.WithLocalFlags(flags.LocalFlagsConfig{}))
+mp.LocalFlags.StartPollingForDefinitions(context.Background())
+
+provider, err := mixpanelopenfeature.NewProvider(mp.LocalFlags)
+```
+
+## Usage
+
+### Flag Types and Evaluation Methods
+
+| Mixpanel Flag Type | Variant Values | OpenFeature Method |
+|---|---|---|
+| Feature Gate | `true` / `false` | `BooleanValue()` |
+| Experiment | boolean, string, number, or JSON object | `BooleanValue()`, `StringValue()`, `FloatValue()`, `IntValue()`, or `ObjectValue()` |
+| Dynamic Config | JSON object | `ObjectValue()` |
+
+```go
+ctx := context.Background()
+evalCtx := of.EvaluationContext{}
+
+// Feature Gate
+enabled, _ := client.BooleanValue(ctx, "new-checkout", false, evalCtx)
+
+// Experiment with string variants
+buttonColor, _ := client.StringValue(ctx, "button-color-test", "blue", evalCtx)
+
+// Numeric flags
+threshold, _ := client.FloatValue(ctx, "score-threshold", 0.5, evalCtx)
+maxItems, _ := client.IntValue(ctx, "max-items", 10, evalCtx)
+
+// Dynamic Config
+config, _ := client.ObjectValue(ctx, "homepage-layout", map[string]any{
+    "layout": "grid",
+}, evalCtx)
+```
+
+### Evaluation Context
+
+```go
+evalCtx := of.NewEvaluationContext("user-123", map[string]any{
+    "email": "user@example.com",
+    "plan":  "premium",
+})
+
+enabled, _ := client.BooleanValue(ctx, "premium-feature", false, evalCtx)
+```
+
+<Callout type="info">
+Unlike some providers, `targetingKey` is not used as a special bucketing key. It is passed as another context property. Mixpanel's server-side configuration determines which properties are used for targeting and bucketing.
+</Callout>
+
+### Full Resolution Details
+
+```go
+details, _ := client.BooleanValueDetails(ctx, "my-feature", false, of.EvaluationContext{})
+
+fmt.Println(details.Value)
+fmt.Println(details.Variant)
+fmt.Println(details.Reason)
+fmt.Println(details.ErrorCode)
+```
+
+### Accessing the Underlying Mixpanel Client
+
+```go
+provider, _ := mixpanelopenfeature.NewProviderWithLocalConfig("YOUR_TOKEN", flags.LocalFlagsConfig{})
+
+provider.Mixpanel.Track(ctx, []*mixpanel.Event{
+    {Name: "button_clicked", Properties: map[string]any{"color": "blue"}},
+})
+```
+
+### Shutdown
+
+```go
+provider.Shutdown()
+```
+
+## Error Handling
+
+| Error Code | When |
+|---|---|
+| `PROVIDER_NOT_READY` | Flags evaluated before the local provider has finished fetching definitions |
+| `FLAG_NOT_FOUND` | The requested flag does not exist in Mixpanel |
+| `TYPE_MISMATCH` | The flag value type does not match the requested type |
+
+## Troubleshooting
+
+### Flags Always Return Default Values
+
+1. **Provider not ready:** Ensure polling has started and definitions have been received.
+2. **Flag not configured:** Verify the flag exists and is enabled in your Mixpanel project.
+3. **Network issues:** For remote evaluation, check that your application can reach Mixpanel's API.
+
+### Type Mismatch Errors
+
+The flag's value type must match the evaluation method. `IntValue()` accepts whole-number `float64` values. `FloatValue()` accepts any numeric type.

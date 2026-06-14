@@ -1,0 +1,396 @@
+---
+title: checkly account
+description: 'View your Checkly account plan, entitlements, feature limits, and members.'
+sidebarTitle: 'checkly account'
+---
+
+<Note>Available since CLI v7.7.0.</Note>
+
+The `checkly account` command lets you view account-level information directly from the terminal. Use it to check which features are available on your plan, inspect metered limits, discover available check locations, and list account members or pending invites.
+
+<Accordion title="Prerequisites">
+Before using `checkly account`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly account <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `members` | List account members and pending invites. |
+| `plan` | Show your account plan, entitlements, and feature limits. |
+
+## `checkly account members`
+
+<Note>The `checkly account members` command is only available since CLI v7.15.0.</Note>
+
+List account members and pending invites for the currently selected account. Use filters to find users by email or name, inspect roles, or page through large member lists.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--search, -s` | - | Search members and invites by name or email. |
+| `--type` | - | Filter by item type: `member` or `invite`. |
+| `--role` | - | Filter by member or invite role: `owner`, `admin`, `read_write`, `read_run`, or `read_only`. |
+| `--status` | - | Filter by member or invite status: `active`, `pending`, or `expired`. |
+| `--limit, -l` | - | Number of account members to return (1-100). Enables cursor pagination. |
+| `--next-id` | - | Cursor for the next page. Requires `--limit`. |
+| `--hide-id` | - | Hide member and invite IDs in formatted output. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Members Options
+
+<ResponseField name="--search, -s" type="string">
+
+Search members and invites by name or email.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --search="alex"
+npx checkly account members -s "alex@example.com"
+```
+
+</ResponseField>
+
+<ResponseField name="--type" type="string">
+
+Filter the list by item type. Use `member` for active account members, or `invite` for pending and expired invites.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --type=member
+npx checkly account members --type=invite
+```
+
+</ResponseField>
+
+<ResponseField name="--role" type="string">
+
+Filter members and invites by role. Available values: `owner`, `admin`, `read_write`, `read_run`, `read_only`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --role=admin
+npx checkly account members --role=read_only
+```
+
+</ResponseField>
+
+<ResponseField name="--status" type="string">
+
+Filter members and invites by status. Available values: `active`, `pending`, `expired`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --status=active
+npx checkly account members --type=invite --status=pending
+```
+
+</ResponseField>
+
+<ResponseField name="--limit, -l" type="number">
+
+Set the number of account members to return, between 1 and 100. When you set `--limit`, the command prints pagination information and a next-page command when more results are available.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --limit=50
+npx checkly account members -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--next-id" type="string">
+
+Cursor for paginating through results. Use the `nextId` value from the JSON response, or the next-page command shown in table output. You must use `--limit` with `--next-id`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --limit=10 --next-id=<nextId>
+```
+
+</ResponseField>
+
+<ResponseField name="--hide-id" type="boolean">
+
+Hide member and invite IDs in formatted output. JSON output always includes the response fields returned by the API.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --hide-id
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account members --output=json
+npx checkly account members -o md
+```
+
+</ResponseField>
+
+### Members Examples
+
+```bash Terminal
+# List account members and pending invites
+npx checkly account members
+
+# Search by name or email
+npx checkly account members --search="alex"
+
+# Show only active members
+npx checkly account members --type=member --status=active
+
+# Show pending invites
+npx checkly account members --type=invite --status=pending
+
+# Find account admins
+npx checkly account members --role=admin
+
+# Get results as JSON
+npx checkly account members --output=json
+
+# Page through results
+npx checkly account members --limit=10 --next-id=<nextId>
+```
+
+### Members JSON Response
+
+The `--output=json` format returns a structured response with a `members` array and cursor pagination fields.
+
+```json
+{
+  "members": [
+    {
+      "type": "member",
+      "accountId": "123",
+      "userId": "usr_123",
+      "name": "Alex Doe",
+      "email": "alex@example.com",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "createdAt": "2026-05-01T10:00:00.000Z",
+      "updatedAt": "2026-05-01T10:00:00.000Z",
+      "isSupportMembership": false,
+      "ssoEnabled": true,
+      "mfaEnabled": true
+    },
+    {
+      "type": "invite",
+      "id": "inv_123",
+      "accountId": "123",
+      "email": "new-user@example.com",
+      "role": "READ_ONLY",
+      "status": "PENDING",
+      "inviterEmail": "alex@example.com",
+      "createdAt": "2026-05-01T10:00:00.000Z",
+      "updatedAt": "2026-05-01T10:00:00.000Z",
+      "expiresAt": "2026-05-31T10:00:00.000Z"
+    }
+  ],
+  "length": 2,
+  "nextId": null
+}
+```
+
+Key fields:
+
+- **`members[].type`** — `member` for active account members or `invite` for account invites.
+- **`members[].role`** — account role, such as `OWNER`, `ADMIN`, `READ_WRITE`, `READ_RUN`, or `READ_ONLY`.
+- **`members[].status`** — `ACTIVE` for members, or `PENDING` / `EXPIRED` for invites.
+- **`length`** — number of items returned in the current response.
+- **`nextId`** — cursor for the next page. Use it with `--limit` and `--next-id`.
+
+## `checkly account plan`
+
+Show your account plan, entitlements, and feature limits. The default view displays a summary of metered entitlements with their limits. Use `--output=json` for the full response including locations, feature flags, and upgrade URLs.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan [key] [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `key` | Entitlement key to look up (e.g. `BROWSER_CHECKS`). Shows a detail view for that entitlement. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--type, -t` | - | Filter entitlements by type: `metered` or `flag`. |
+| `--search, -s` | - | Search entitlements by name or description. |
+| `--disabled` | - | Show only entitlements not included in your plan. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### Plan Options
+
+<ResponseField name="key" type="string">
+
+Pass an entitlement key as a positional argument to see a detail view for that specific entitlement, including its type, status, limit, and upgrade URL if applicable.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan BROWSER_CHECKS
+npx checkly account plan PRIVATE_LOCATIONS
+```
+
+</ResponseField>
+
+<ResponseField name="--type, -t" type="string">
+
+Filter entitlements by type. Use `metered` to see entitlements with numeric limits, or `flag` to see boolean feature flags.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan --type=metered
+npx checkly account plan -t flag
+```
+
+</ResponseField>
+
+<ResponseField name="--search, -s" type="string">
+
+Search entitlements by name or description using a case-insensitive match.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan --search="browser"
+npx checkly account plan -s "alert"
+```
+
+</ResponseField>
+
+<ResponseField name="--disabled" type="boolean">
+
+Show only entitlements that are not included in your current plan. Each disabled entitlement includes the required plan and an upgrade URL.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan --disabled
+npx checkly account plan --disabled --type=flag
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for the full response including locations, all entitlements, and upgrade URLs. Use `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly account plan --output=json
+npx checkly account plan -o md
+```
+
+</ResponseField>
+
+### Plan Examples
+
+```bash Terminal
+# Show account plan summary (metered limits + flag count)
+npx checkly account plan
+
+# Get the full response as JSON (recommended for agents)
+npx checkly account plan --output=json
+
+# Show only metered entitlements
+npx checkly account plan --type=metered
+
+# Show only feature flags
+npx checkly account plan --type=flag
+
+# Search for specific entitlements
+npx checkly account plan --search="browser"
+
+# Show features not included in your plan
+npx checkly account plan --disabled
+
+# Look up a specific entitlement
+npx checkly account plan BROWSER_CHECKS
+```
+
+### JSON Response
+
+The `--output=json` format returns a structured response useful for programmatic access and AI agents.
+
+```json
+{
+  "plan": "hobby",
+  "planDisplayName": "Hobby",
+  "checkoutUrl": "https://app.checklyhq.com/accounts/.../billing/checkout",
+  "contactSalesUrl": "https://www.checklyhq.com/contact-sales/",
+  "locations": {
+    "all": [
+      { "id": "us-east-1", "name": "N. Virginia", "available": true },
+      { "id": "eu-west-1", "name": "Ireland", "available": false }
+    ],
+    "maxPerCheck": 3
+  },
+  "entitlements": [
+    {
+      "key": "BROWSER_CHECKS",
+      "type": "metered",
+      "enabled": true,
+      "quantity": 10
+    },
+    {
+      "key": "PRIVATE_LOCATIONS",
+      "type": "metered",
+      "enabled": false,
+      "requiredPlan": "TEAM",
+      "requiredPlanDisplayName": "Team",
+      "upgradeUrl": "https://app.checklyhq.com/accounts/.../billing/checkout"
+    }
+  ]
+}
+```
+
+Key fields:
+
+- **`locations.all`** — filter to entries where `available` is `true` to get valid locations for your checks. Respect `maxPerCheck` as the upper bound per check.
+- **`entitlements`** — metered entitlements include a `quantity` limit. Disabled entitlements include `requiredPlan` and `upgradeUrl`.
+
+## Related Commands
+
+- [`checkly skills manage`](/cli/checkly-skills#checkly-skills-manage-resource) - Account management context for AI agents
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information
+- [`checkly switch`](/cli/checkly-switch) - Switch between Checkly accounts

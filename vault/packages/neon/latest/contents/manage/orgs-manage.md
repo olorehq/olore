@@ -1,7 +1,14 @@
 ---
 title: Manage Neon Organizations
+summary: >-
+  Neon organization management covers Console workflows for creating
+  organizations, inviting members and collaborators, promoting users to Admin,
+  requiring 2FA, and managing per-organization billing. Use this page to add or
+  remove members, adjust role permissions, or delete an organization from the
+  UI. Admins control deletions, billing changes, 2FA enforcement, and project
+  deletion; all members can create projects and view billing.
 enableTableOfContents: true
-updatedOn: '2025-03-14T18:29:25.736Z'
+updatedOn: '2026-06-12T01:28:52.381Z'
 ---
 
 Learn how to manage your organization's projects, invite Members, revise permissions, and oversee billing details. This section explains which specific actions each Member can take based on their assigned roles and permissions.
@@ -10,11 +17,11 @@ Learn how to manage your organization's projects, invite Members, revise permiss
 
 ## Create an organization
 
-To create a new org, use the **Create organization** button in the org switcher in the top navbar. Select a plan and enter billing details.
+To create a new org, use the **Create organization** button in the org switcher in the top navbar.
 
 ![create organization button](/docs/manage/orgs_create_button.png)
 
-Other than the free org you signed up with, organizations are always on paid plans. When creating a new organization, you'll need to select a paid plan and enter billing details.
+Select a plan for your new organization. Organizations can be free or paid; if you choose a paid plan, you'll enter billing details.
 
 ![create organization with billing](/docs/manage/orgs_create_with_billing.png)
 
@@ -22,7 +29,7 @@ After confirming, you'll be directed to your new organization's **Projects** pag
 
 ## Invite Members
 
-Only Admins have the authority to invite new Members to the organization. Invitations are issued via email. If a recipient does not have a Neon account, they will receive instructions to create one.
+Only Admins have the authority to invite new Members to the organization. Invitations are issued via email. If a recipient does not have a Neon account, they will receive instructions to create one. Alternatively, you can [auto-provision members by domain](/docs/manage/orgs-add-members-by-domain) so that users with a matching email domain are added automatically when they sign up or log in.
 
 ![organizations people tab](/docs/manage/orgs_people.png)
 
@@ -36,6 +43,10 @@ To invite Members:
 If invite emails aren't received, they may be in spam or quarantined. Recipients should check these folders and mark Neon emails as safe.
 </Admonition>
 
+To list members, update roles, or manage invitations programmatically, see [Manage organizations using the Neon API](/docs/manage/orgs-api) (including [List members](/docs/manage/orgs-api#list-members)).
+
+The **People** page also shows deactivated organization members with a **Deactivated** badge, so admins can review access without opening each member profile.
+
 ## Set permissions
 
 Permissions within the organization are exclusively managed by Admins. As an Admin:
@@ -46,11 +57,20 @@ Permissions within the organization are exclusively managed by Admins. As an Adm
 
 ![organization members](/docs/manage/orgs_members_kebab.png 'no-border')
 
+## Require 2FA for organization members
+
+Admins can require two-factor authentication (2FA) for everyone in the organization from **Organization → Settings**.
+
+- You can only enable this if your own account already has 2FA enabled.
+- When required 2FA is on, members who are not enrolled are prompted to set up 2FA when they access the organization.
+
+See [Manage your Neon account](/docs/manage/accounts#two-factor-authentication) for personal 2FA setup steps.
+
 ## Invite Collaborators
 
 Any member can invite external users to [collaborate](/docs/guides/project-collaboration-guide) on specific projects. For example, if you want to give limited access to a contractor.
 
-Members can invite collaborators from a project's **Settings** page. If any project in your organization has collaborators, you'll also see the option to invite and manage collaborators from the organization'e **People** page.
+Members can invite collaborators from a project's **Settings** page. If any project in your organization has collaborators, you'll also see the option to invite and manage collaborators from the organization's **People** page.
 
 Collaborators _do not_ have access to the organization. They access their shared projects by selecting the **Projects shared with me** option in the org switcher.
 
@@ -70,8 +90,8 @@ If invite emails aren't received, they may be in spam or quarantined. Recipients
 
 Click the More Options menu next to the row in the **Collaborators** table to manage Collaborator access. You have two options:
 
-- **Convert to member** — Admins can promote an external Collaborator to a full Member. When promoted, their collaborator permissions will be automatically removed since they'll have access to all projects as a Member.
-- **Remove from project** — All members can revoke the Collaborator's access to the shared project.
+- **Convert to member**: Admins can promote an external Collaborator to a full Member. When promoted, their collaborator permissions will be automatically removed since they'll have access to all projects as a Member.
+- **Remove from project**: All members can revoke the Collaborator's access to the shared project.
 
   ![collaborators more options menu](/docs/manage/orgs_collaborators_kebab.png 'no-border')
 
@@ -84,7 +104,7 @@ All Members can create new projects from the Organization's **Projects** page; h
 
 ## Manage billing
 
-When you create a new organization, you'll choose a plan (Launch, Scale, or Scale) for that organization. Each organization manages its own billing and plan.
+When you create a new organization, you'll choose a plan for that organization. Each organization manages its own billing and plan.
 
 As the Admin for the organization account:
 
@@ -96,11 +116,10 @@ For detailed information on pricing and plans, refer to [Neon plans](/docs/intro
 
 ### Downgrade to Free plan
 
-You can only have one Free organization per account, and Free orgs are just for personal use (no team members). If you already have a Free org, you can't downgrade another org to Free—you'll see an error if you try.
+If downgrading to the Free plan isn't available for your organization, you'll see an error when you try.
 
 To downgrade, your org must:
 
-- Have only one member (just you)
 - Stay within Free plan limits (storage, projects, branches, etc.)
 
 If you need help or think you should be able to downgrade, use the **Request support** option during the downgrade process.
@@ -151,7 +170,7 @@ alexlopez=>
 
 ### Rename an organization
 
-Only Admins can rename an organization. Go to the **Settings** page under **General information**. Changing the organization name applies globally—the new name will appear for everyone in the organization.
+Only Admins can rename an organization. Go to the **Settings** page under **General information**. Changing the organization name applies globally; the new name will appear for everyone in the organization.
 
 ![organization settings](/docs/manage/orgs_id.png 'no-border')
 

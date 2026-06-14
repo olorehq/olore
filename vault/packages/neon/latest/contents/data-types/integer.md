@@ -1,8 +1,16 @@
 ---
 title: Postgres Integer data types
 subtitle: Work with integers in Postgres
+summary: >-
+  Postgres integer types `SMALLINT` (2 bytes), `INTEGER` (4 bytes), and
+  `BIGINT` (8 bytes) store whole numbers without a fractional component and do
+  not support unsigned values. Use `SMALLINT` for small-range columns,
+  `INTEGER` for general-purpose identifiers and counters, and `BIGINT` when
+  values exceed the `INTEGER` limit of roughly 2.1 billion. Topics include
+  integer arithmetic truncation and the auto-incrementing `SERIAL`,
+  `SMALLSERIAL`, and `BIGSERIAL` pseudo-types for primary keys.
 enableTableOfContents: true
-updatedOn: '2024-02-03T16:07:31.867Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 In Postgres, integer data types are used for storing numerical values without a fractional component. They are useful as identifiers, counters, and many other common data modeling tasks. Postgres offers multiple integer types, catering to different ranges of values and storage sizes.

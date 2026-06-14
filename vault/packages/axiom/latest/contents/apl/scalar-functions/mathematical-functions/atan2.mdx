@@ -1,0 +1,92 @@
+---
+title: atan2
+description: 'This page explains how to use the atan2 function in APL.'
+---
+
+Use the `atan2` function in APL to compute the angle, in radians, between the positive x-axis and the point (y, x). Unlike `atan`, which takes a single ratio, `atan2` takes separate y and x components, which avoids division-by-zero issues and preserves the correct quadrant information.
+
+`atan2` is useful when you have two independent counts or values and want to express their ratio as an angle. For example, you can use `atan2` to encode the balance between error count and success count as a direction vector, or to analyze the ratio of two traffic volumes.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `atan2(y, x)` is available in the `eval` command with the same argument order and semantics.
+
+<CodeGroup>
+```sql Splunk example
+| eval angle = atan2(errors, successes)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = atan2(todouble(errors), todouble(successes))
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the function is typically named `ATN2(y, x)` in SQL Server or `ATAN2(y, x)` in PostgreSQL. The argument order (y first, then x) is the same as in APL.
+
+<CodeGroup>
+```sql SQL example
+SELECT ATN2(errors, successes) AS angle FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend angle = atan2(todouble(errors), todouble(successes))
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+atan2(y, x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `y` | real | Yes | The y-coordinate of the point (numerator). |
+| `x` | real | Yes | The x-coordinate of the point (denominator). |
+
+### Returns
+
+The angle in radians between the positive x-axis and the point (y, x), in the range (-π, π].
+
+## Example
+
+Use `atan2` to compute the angle between the positive x-axis and the point (x, y).
+
+**Query**
+
+```kusto
+print result = atan2(1, 1)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20atan2%281%2C%201%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 0.7854 |
+
+## List of related functions
+
+- [atan](/apl/scalar-functions/mathematical-functions/atan): Returns the arc tangent from a single ratio. Use it when you have a pre-computed ratio instead of separate y and x components.
+- [asin](/apl/scalar-functions/mathematical-functions/asin): Returns the arc sine. Use it when the input maps to a sine value in [-1, 1].
+- [acos](/apl/scalar-functions/mathematical-functions/acos): Returns the arc cosine. Use it when the input maps to a cosine value in [-1, 1].
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent. Use it to apply the forward transformation before using `atan2` as the inverse.
+- [degrees](/apl/scalar-functions/mathematical-functions/degrees): Converts radians to degrees. Use it if you prefer the `atan2` result in degrees.

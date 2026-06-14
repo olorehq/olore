@@ -1,4 +1,4 @@
-import { Callout } from 'nextra/components'
+import { Callout, Steps } from 'nextra/components'
 
 # User Profile: Demographic attributes for your users
 
@@ -187,6 +187,39 @@ The event time follows the start time entries in the table, so if you have an en
 
 For billing details, read the warehouse connectors [billing FAQ section on People/Group updates](../tracking-methods/warehouse-connectors#what-actions-impact-billing-for-warehouse-connectors).
 
+## Viewing User Profiles
+
+To view a specific user's profile and activity feed in Mixpanel, follow these steps:
+
+<Steps>
+    {<h3>Navigate to the Users Tab</h3>}
+
+    Click on **Data > Users** in the left navigation bar. This will open a view listing all users currently tracked in your project, along with key attributes for each.
+
+    Learn more about the [Users](/docs/users) tab.
+
+    {<h3>Find the User</h3>}
+
+    You can browse the list or use the filter at the top of the Users page to narrow down results. For example, filtering by distinct ID, email, or other properties.
+
+    {<h3>Click Into the User's Profile</h3>}
+
+    Click on a user's distinct ID (or their name/tile) to open their individual profile.
+
+    {<h3>Explore the Profile</h3>}
+
+    Once inside, you'll find two key areas:
+
+    **Activity Feed (center/right panel):** A reverse-chronological list of all tracked interactions (events) attributed to that user. By default, it shows the last 30 days, but you can extend this to 60, 90 days, or a custom date range. You can also hide specific events to focus on the ones you care about.
+
+    **User Profile Properties (left panel):** Attributes that describe who the user is (e.g., city, country, email, custom properties). Unlike event properties, these are mutable — they always reflect the user's latest known state.
+
+    {<h3>Inspect Individual Events</h3>}
+
+    Click on any event in the activity feed to expand it and view its event properties. Additional context such as location, device, URL, or any event properties your team has configured is visible here.
+
+</Steps>
+
 ## Deleting Profiles
 
 User Profiles can be deleted either via the [Users](https://mixpanel.com/report/users) page or programmatically via our [Engage API](https://developer.mixpanel.com/reference/delete-profile). We also provide a `people_delete` method in the mixpanel-utils library [here](https://github.com/mixpanel/mixpanel-utils#people-delete).
@@ -252,5 +285,5 @@ To delete profiles yourself, please use this [guide](https://developer.mixpanel.
 ### What is the frequency of updates that are supported?
 The feature supports updates at the rate of about one change per day for each user. It is meant to cover use-cases like plan type changes, MRR etc which are slowly changing dimensions. It is not intended for more frequent changes like game score updates.
 
-## How are historic profile properties calculated within custom properties?
+### How are historic profile properties calculated within custom properties?
 You can use historic user and group properties within custom properties; when used in a custom property, the value used will always be based on the time of the event.

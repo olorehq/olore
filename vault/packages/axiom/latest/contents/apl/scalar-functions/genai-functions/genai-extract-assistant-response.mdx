@@ -80,12 +80,14 @@ Extract the assistant's response from a GenAI conversation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend ai_response = genai_extract_assistant_response(['attributes.gen_ai.input.messages'])
 | where strlen(ai_response) > 0
 | project _time, ai_response
 | limit 3
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20ai_response%20%3D%20genai_extract_assistant_response(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20where%20strlen(ai_response)%20%3E%200%20%7C%20project%20_time%2C%20ai_response%20%7C%20limit%203%22%7D)
 
 **Output**
 

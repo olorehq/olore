@@ -74,11 +74,13 @@ Estimate the number of tokens in a GenAI conversation prompt.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend user_prompt = genai_extract_user_prompt(['attributes.gen_ai.input.messages'])
 | extend estimated_tokens = genai_estimate_tokens(user_prompt)
 | summarize avg_tokens = avg(estimated_tokens), max_tokens = max(estimated_tokens)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20user_prompt%20%3D%20genai_extract_user_prompt(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20extend%20estimated_tokens%20%3D%20genai_estimate_tokens(user_prompt)%20%7C%20summarize%20avg_tokens%20%3D%20avg(estimated_tokens)%2C%20max_tokens%20%3D%20max(estimated_tokens)%22%7D)
 
 **Output**
 

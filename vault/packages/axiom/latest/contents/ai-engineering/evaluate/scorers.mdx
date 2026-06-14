@@ -1,0 +1,191 @@
+---
+title: "Scorers"
+description: "Write scoring functions that measure your AI capability's output quality. The same Scorer API works in both offline and online evaluations."
+keywords: ["ai engineering", "scorers", "evaluation", "evals", "scoring", "LLM judge", "autoevals"]
+---
+
+Scorers are functions that measure your AI capability's output. They receive the inputs and outputs of a capability run, and return a score. The same `Scorer` API works in both [offline](/ai-engineering/evaluate/write-evaluations) and [online](/ai-engineering/evaluate/online-evaluations/write-run-evaluations) evaluations.
+
+The key difference between the two contexts is what the scorer receives:
+
+- **Offline scorers** receive `input`, `output`, and `expected` (ground truth from your test collection).
+- **Online scorers** are reference-free. They receive `input` and `output` without an `expected` value.
+
+Because the API is the same, you can reuse scorers across both contexts. A scorer you write for offline evaluations works in online evaluations as long as it doesn't depend on `expected`.
+
+## Create scorers
+
+Create scorers using the `Scorer` wrapper. A scorer takes a name and a scoring function:
+
+```ts
+import { Scorer } from 'axiom/ai/scorers';
+
+const MyScorer = Scorer(
+  'my-scorer',
+  ({ input, output }) => {
+    // Return a boolean, a number (0-1), or { score, metadata }
+  }
+);
+```
+
+## Return types
+
+Scorers can return three types of values:
+
+### Boolean
+
+Return `true` or `false` for simple pass/fail checks. The SDK converts booleans to `1` (pass) or `0` (fail) and marks the score as boolean in telemetry.
+
+```ts
+const isKnownCategory = Scorer(
+  'is-known-category',
+  ({ output }: { output: string }) => {
+    return ['support', 'complaint', 'spam', 'unknown'].includes(output);
+  },
+);
+```
+
+### Numeric
+
+Return a number between `0` and `1` for graded scoring:
+
+```ts
+const formatConfidence = Scorer(
+  'format-confidence',
+  ({ output }: { output: string }) => {
+    const trimmed = output.trim().toLowerCase();
+    const isSingleWord = !trimmed.includes(' ');
+    const isClean = /^[a-z_]+$/.test(trimmed);
+
+    return (isSingleWord ? 0.5 : 0) + (isClean ? 0.5 : 0);
+  },
+);
+```
+
+### Score with metadata
+
+Return an object with `score` and `metadata` to attach additional context to the eval span:
+
+```ts
+const validCategory = Scorer(
+  'valid-category',
+  ({ output }: { output: string }) => {
+    const validCategories = ['support', 'complaint', 'spam', 'unknown'];
+    return {
+      score: validCategories.includes(output),
+      metadata: {
+        category: output,
+        validCategories,
+      },
+    };
+  },
+);
+```
+
+## Scorer patterns
+
+### Exact match (offline)
+
+Compare the output directly against the expected value. This pattern only works in offline evaluations where ground truth is available.
+
+```ts
+const ExactMatchScorer = Scorer(
+  'exact-match',
+  ({ output, expected }) => {
+    return output.sentiment === expected.sentiment ? true : false;
+  }
+);
+```
+
+### Heuristic checks
+
+Validate output structure or format without ground truth. These scorers work in both offline and online evaluations.
+
+```ts
+const formatScorer = Scorer('format', ({ output }: { output: string }) => {
+  const trimmed = output.trim();
+  return /[.!?]$/.test(trimmed) && !trimmed.includes('\n') && trimmed.length <= 200;
+});
+```
+
+### LLM-as-judge
+
+Use a second model to evaluate the output. Async scorers are useful in both contexts, especially in online evaluations where you don't have ground truth and need semantic quality assessment.
+
+```ts
+import { generateObject } from 'ai';
+import { z } from 'zod';
+
+const relevanceScorer = Scorer(
+  'relevance',
+  async ({ input, output }: { input: string; output: string }) => {
+    const result = await generateObject({
+      model: judgeModel,
+      schema: z.object({
+        relevant: z.boolean().describe('Whether the response answers the question'),
+      }),
+      system: 'You evaluate if an AI response answers the user question.',
+      prompt: `Question: ${input}\n\nResponse: ${output}`,
+    });
+    return result.object.relevant;
+  },
+);
+```
+
+<Note>
+LLM judge scorers add latency and cost per evaluation. In online evaluations, use [sampling](/ai-engineering/evaluate/online-evaluations/write-run-evaluations#sampling) to control how often they run.
+</Note>
+
+## Use `autoevals`
+
+The [`autoevals`](https://github.com/braintrustdata/autoevals) library provides prebuilt scorers for common tasks:
+
+```bash
+npm install autoevals
+```
+
+```ts
+import { Scorer } from 'axiom/ai/scorers';
+import { Levenshtein, FactualityScorer } from 'autoevals';
+
+const LevenshteinScorer = Scorer(
+  'levenshtein',
+  ({ output, expected }) => {
+    return Levenshtein({ output: output.text, expected: expected.text });
+  }
+);
+
+const FactualityCheck = Scorer(
+  'factuality',
+  async ({ output, expected }) => {
+    return await FactualityScorer({
+      output: output.text,
+      expected: expected.text,
+    });
+  }
+);
+```
+
+<Tip>
+Use multiple scorers to evaluate different aspects of your capability. For example, check both exact accuracy and semantic similarity to get a complete picture of performance.
+</Tip>
+
+## Telemetry
+
+Each scorer produces an OTel span with the following attributes:
+
+| Attribute | Description |
+|-----------|-------------|
+| `gen_ai.operation.name` | Always `eval.score` |
+| `eval.name` | The eval name |
+| `eval.score.name` | The scorer name |
+| `eval.score.value` | The numeric score (`0`-`1`) |
+| `eval.score.metadata` | JSON string of scorer metadata. Includes `eval.score.is_boolean: true` when the scorer returned a boolean. |
+| `eval.capability.name` | The capability being evaluated |
+| `eval.step.name` | The step within the capability (when set) |
+| `eval.tags` | `["online"]` for online evaluations |
+
+## What's next?
+
+- Use scorers in [offline evaluations](/ai-engineering/evaluate/write-evaluations) to test against known-good answers before shipping.
+- Use scorers in [online evaluations](/ai-engineering/evaluate/online-evaluations/write-run-evaluations) to monitor production quality continuously.

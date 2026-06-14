@@ -1,18 +1,26 @@
 ---
 title: Use Neon Auth with Next.js (API methods)
 subtitle: Build your own auth UI using SDK methods
+summary: >-
+  Neon Auth SDK integration for Next.js App Router using raw API methods. Call
+  `createNeonAuth`, `auth.signUp.email()`, `auth.signIn.email()`, and
+  `auth.middleware()` directly from the `@neondatabase/auth` package for full
+  control over your auth UI. Use this guide instead of the UI components
+  reference when you need custom sign-up and sign-in forms. Requires Next.js
+  App Router.
 enableTableOfContents: true
-updatedOn: '2026-01-30T14:03:06.272Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 layout: wide
+redirectFrom:
+  - /docs/auth/quick-start/nextjs
+  - /docs/auth/quick-start/nextjs/
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
 
-<Admonition type="note">
-Upgrading from Neon Auth SDK v0.1? See the [migration guide](/docs/auth/migrate/from-auth-v0.1) for step-by-step instructions.
-</Admonition>
+<AuthAISetupTip />
 
-This guide shows you how to integrate Neon Auth into a [Next.js](https://nextjs.org) (App Router) project using SDK methods directly. To use our pre-built UI components instead, see the [UI components guide](/docs/auth/quick-start/nextjs).
+This guide shows you how to integrate Neon Auth into a [Next.js](https://nextjs.org) (App Router) project using SDK methods directly. For pre-built UI components, see the [UI components reference](/docs/auth/reference/ui-components) and the [neon-js examples](https://github.com/neondatabase/neon-js/tree/main/examples). Upgrading from v0.1? See the [migration guide](/docs/auth/migrate/from-auth-v0.1).
 
 <TwoColumnLayout>
 
@@ -45,10 +53,10 @@ cd my-app
 </details>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
-npm install @neondatabase/auth
+```bash filename="Terminal"
+npm install @neondatabase/auth@latest
 ```
 
 </TwoColumnLayout.Block>
@@ -64,9 +72,9 @@ Replace the Auth URL with your actual Auth URL from the Neon Console. Generate a
 </Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label=".env.local">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename=".env.local"
 NEON_AUTH_BASE_URL=https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth
 NEON_AUTH_COOKIE_SECRET=your-secret-at-least-32-characters-long
 ```
@@ -83,19 +91,26 @@ Create a unified auth instance in `lib/auth/server.ts`. This single instance pro
 - `.middleware()` for route protection
 - `.getSession()` and all Better Auth server methods
 
-See the [Next.js Server SDK reference](/docs/auth/reference/nextjs-server) for complete API documentation.
+See the [Next.js Server SDK reference](/docs/auth/reference/nextjs-server) for complete API documentation (logging, cookies, upstream errors).
+
+<Admonition type="note" title="Server logging">
+The SDK logs structured **`error`** and **`warn`** messages to **`console`** by default (`logLevel: 'warn'`). This helps when the auth proxy or upstream Auth URL is misconfigured. Set **`logLevel: 'silent'`** to disable Neon Auth logging, or **`logLevel: 'debug'`** for more detail. See [Server logging](/docs/auth/reference/nextjs-server#server-logging) in the reference.
+</Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="lib/auth/server.ts">
+<TwoColumnLayout.Block>
 
-```typescript
+```typescript filename="lib/auth/server.ts"
 import { createNeonAuth } from '@neondatabase/auth/next/server';
 
 export const auth = createNeonAuth({
   baseUrl: process.env.NEON_AUTH_BASE_URL!,
   cookies: {
     secret: process.env.NEON_AUTH_COOKIE_SECRET!,
+    // sessionDataTtl: 300, // optional session_data cache TTL in seconds (default: 300)
   },
+  // logLevel: 'silent', // disable Neon Auth logging
+  // logLevel: 'debug',  // verbose proxy/upstream logging
 });
 ```
 
@@ -110,7 +125,7 @@ Create an API route handler that proxies auth requests. All Neon Auth APIs will 
 </TwoColumnLayout.Block>
 <TwoColumnLayout.Block label="app/api/auth/[...path]/route.ts">
 
-```typescript
+```typescript filename="app/api/auth/[...path]/route.ts"
 import { auth } from '@/lib/auth/server';
 
 export const { GET, POST } = auth.handler();
@@ -124,10 +139,12 @@ export const { GET, POST } = auth.handler();
 
 The middleware ensures users are authenticated before accessing protected routes. Create `proxy.ts` file in your project root:
 
-</TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="proxy.ts">
+<NextjsProxyNote/>
 
-```typescript
+</TwoColumnLayout.Block>
+<TwoColumnLayout.Block>
+
+```typescript filename="proxy.ts"
 import { auth } from '@/lib/auth/server';
 
 export default auth.middleware({
@@ -161,9 +178,9 @@ The server-side `auth` instance was already created in a previous step. The clie
 </Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="lib/auth/client.ts">
+<TwoColumnLayout.Block>
 
-```tsx
+```tsx filename="lib/auth/client.ts"
 'use client';
 
 import { createAuthClient } from '@neondatabase/auth/next';
@@ -382,9 +399,9 @@ export default function SignInForm() {
 In last step, lets create the home page and display authenticated user status:
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="app/page.tsx">
+<TwoColumnLayout.Block>
 
-```typescript
+```typescript filename="app/page.tsx"
 import { auth } from '@/lib/auth/server';
 import Link from 'next/link';
 
@@ -441,9 +458,9 @@ Safari blocks third-party cookies on non-HTTPS connections. Use `npm run dev -- 
 </Admonition>
 
 </TwoColumnLayout.Block>
-<TwoColumnLayout.Block label="Terminal">
+<TwoColumnLayout.Block>
 
-```bash
+```bash filename="Terminal"
 npm run dev
 ```
 
@@ -466,7 +483,10 @@ The `auth` instance also includes `.handler()` for API routes and `.middleware()
 
 ## Next steps
 
+- [Next.js Server SDK reference](/docs/auth/reference/nextjs-server) — logging, cookie options, and upstream error codes
+- [Auth troubleshooting](/docs/auth/troubleshooting#neon-auth-server-logging-in-the-terminal) — server logging, `NETWORK_*` errors, iframe cookies
 - [Add email verification](/docs/auth/guides/email-verification)
 - [Branching authentication](/docs/auth/branching-authentication)
+- [More example apps](/docs/auth/overview#example-applications) in the **neon-js** `examples/` directory
 
 <NeedHelp/>

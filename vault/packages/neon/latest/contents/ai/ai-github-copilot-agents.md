@@ -1,11 +1,20 @@
 ---
 title: Neon agents for GitHub Copilot
 subtitle: Custom agents for safe database migrations and query optimization in VS Code
+summary: >-
+  Neon Migration Specialist and Neon Performance Analyzer are two GitHub
+  Copilot custom agents for VS Code that run schema migrations and query
+  optimizations on temporary Neon branches, keeping production untouched until
+  changes are validated. Use these agents when you want zero-downtime Postgres
+  migrations or automated slow-query fixes without switching out of your IDE.
+  Both agents support ORMs including Prisma, Drizzle, SQLAlchemy, Django, and
+  Rails, and clean up temporary branches automatically after a default 4-hour
+  TTL.
 enableTableOfContents: true
-updatedOn: '2025-12-05T20:12:42.051Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-GitHub Copilot now supports custom agents, and we've built two specialized agents that bring Neon's branching workflow directly into your IDE. These agents help you run safe database migrations and identify slow queries — all without leaving VS Code.
+GitHub Copilot now supports custom agents, and we've built two specialized agents that bring Neon's branching workflow directly into your IDE. These agents help you run safe database migrations and identify slow queries, all without leaving VS Code.
 
 ## Available agents
 
@@ -19,7 +28,7 @@ The [Neon Migration Specialist](https://github.com/github/awesome-copilot/blob/m
 2. Runs your migration on the test branch to validate it works
 3. Validates the changes thoroughly
 4. Deletes the test branch after validation
-5. Creates migration files and opens a PR — letting you or your CI/CD apply the migration to your main branch
+5. Creates migration files and opens a PR, letting you or your CI/CD apply the migration to your main branch
 
 The agent works with your existing ORM migration system (Prisma, Drizzle, SQLAlchemy, Django, Rails, and more) and falls back to [migra](https://github.com/djrobstep/migra) if no migration system exists.
 
@@ -106,7 +115,7 @@ Once installed, invoke the agents in GitHub Copilot Chat by mentioning their nam
 
 ## How branching keeps your data safe
 
-Both agents leverage Neon's instant branching to create isolated environments for testing. This means:
+Both agents use Neon's instant branching to create isolated environments for testing. This means:
 
 - **No changes to production**: All migrations and optimizations are tested on temporary branches first
 - **Full data copy**: Test branches include a complete copy of your schema and data

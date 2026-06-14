@@ -1,0 +1,249 @@
+---
+title: Stripe Projects
+description: Provision and manage Turso databases through the Stripe Projects CLI — LLM agent guide.
+---
+
+This document is designed as LLM context for AI agents that provision and manage **Turso Cloud** databases through the [Stripe Projects](https://docs.stripe.com/stripe-projects) CLI. It contains exact commands, safety rules, and the mental model an agent needs to operate autonomously.
+
+**Turso Cloud** is a fully managed SQLite-compatible database platform. It uses **libSQL** under the hood. This is distinct from **tursodb/Limbo** — an embedded database engine for local-only use. Databases provisioned through Stripe Projects are Turso Cloud databases accessed over the network.
+
+## How Turso services are organized
+
+Turso exposes two kinds of services through Stripe Projects:
+
+- **Plan services** — account-level subscription tiers that set quotas (DBs, storage, row operations, syncs, PITR retention). There is a free `starter` tier and several paid tiers. Each paid plan has an `_overages` variant that adds pay-as-you-go billing beyond the included quotas. Every plan can transition to any other plan.
+- **Database service** (`turso/database`) — a deployable resource. Each database belongs to the account's current plan and inherits its quotas. Creating a database requires a `--config` JSON with two required fields:
+  - `name` — database name
+  - `location` — primary location. See [Locations](#locations) below for the full list and auto-detection.
+
+To discover the current plans, pricing, quotas, and available database locations, fetch them dynamically:
+
+```bash
+# List all Turso services with current pricing and quotas
+stripe projects catalog turso --json
+
+# Check what is already provisioned
+stripe projects status --json
+```
+
+## Security: terms of service
+
+<Warning>
+**NEVER pass the `--accept-tos` flag.** The user must read and accept the terms of service themselves. If a command fails because TOS have not been accepted, instruct the user to run the command manually or re-run it with `--accept-tos` after they have reviewed the terms.
+</Warning>
+
+## Security: never read secrets
+
+<Warning>
+**NEVER read `.env` files or any file that may contain Turso credentials.** This includes direct reads (`cat .env`), wildcards (`cat *`), and any command that could print directory contents where a `.env` file exists. Credentials are managed exclusively through `stripe projects env` commands — there is no reason to read them from disk.
+</Warning>
+
+## Provisioning a database (safe, autonomous)
+
+An agent can provision databases without asking for human confirmation. This is a non-destructive, additive operation.
+
+```bash
+# 1. Make sure a project exists
+stripe projects init --yes
+# 2. Add a database (name and location are required in provider-config)
+stripe projects add turso/database --config '{"name": "my-db", "location": "aws-us-east-1"}' --yes
+# 3. Sync credentials to .env
+stripe projects env --sync
+```
+
+After `env --sync`, the `.env` file will contain `<DB_NAME>_DATABASE_URL` and `<DB_NAME>_AUTH_TOKEN` for each provisioned database (e.g. `MY_DB_DATABASE_URL`, `MY_DB_AUTH_TOKEN`), ready for use with `@tursodatabase/serverless` (or `@tursodatabase/sync` for pull/push sync capabilities).
+
+## Reading state (safe, autonomous)
+
+These commands are read-only and can be run freely:
+
+```bash
+# Current project, providers, and provisioned resources
+stripe projects status --json
+
+# Environment variables (redacted by default)
+stripe projects env --json
+
+# Refresh env cache from remote
+stripe projects env --refresh --json
+```
+
+## Dangerous operations — require explicit user consent
+
+<Warning>
+**ANY DESTRUCTIVE ACTION MUST BE DONE THROUGH EXPLICIT USER CONSENT.** An agent must NEVER perform destructive operations (removing databases, downgrading plans, rotating credentials, etc.) autonomously. Always ask the user for explicit, unambiguous confirmation before proceeding with any operation that could result in data loss, service disruption, or billing changes.
+</Warning>
+
+### Rotating credentials
+
+<Warning>
+**Credential rotation invalidates all previously issued tokens for that database.** Every application, service, or script using the old token will lose access within one hour of rotation. This is not a soft refresh — it is a hard invalidation.
+</Warning>
+
+Only rotate credentials when:
+- A token has been leaked or exposed
+- Security policy requires periodic rotation
+- The user explicitly requests it
+
+When the user explicitly confirms rotation:
+
+```bash
+stripe projects rotate <resource-name> --yes
+stripe projects env --sync
+```
+
+Always remind the user to redeploy any services that use the rotated credentials.
+
+### Billing operations
+
+<Warning>
+**Billing changes affect the user's payment method and spending.** An agent must always get explicit user consent before upgrading plans, enabling overages, or modifying billing settings.
+</Warning>
+
+Upgrading a plan or enabling overages will change what the user is charged. Always present the target plan's pricing (fetched from `stripe projects catalog turso --json`) and get confirmation before running:
+
+```bash
+# Upgrade plan — only after user consent
+stripe projects upgrade <resource-name> turso/<plan> --yes
+# Add a paid plan — only after user consent
+stripe projects add turso/<plan> --yes```
+
+## Locations
+
+Turso databases are deployed to a primary location. The available locations through Stripe Projects are:
+
+| Location code | Region |
+| --- | --- |
+| `aws-us-east-1` | US East (Virginia) |
+| `aws-us-east-2` | US East (Ohio) |
+| `aws-us-west-2` | US West (Oregon) |
+| `aws-eu-west-1` | EU West (Ireland) |
+| `aws-ap-south-1` | AP South (Mumbai) |
+| `aws-ap-northeast-1` | AP Northeast (Tokyo) |
+
+### Auto-detecting the closest region
+
+To pick the best location automatically, query the Turso region endpoint and use the `server` field:
+
+```bash
+curl -s https://region.turso.io
+# Example response: {"server": "aws-eu-west-1", "client": "fra"}
+```
+
+The `server` field contains the closest AWS location code, ready to use directly as the `location` value in `--config`.
+
+## Connecting to a provisioned database
+
+After provisioning, the `.env` file contains a database URL (`libsql://` format) and an auth token for each database. The exact environment variable names depend on the database name — **always verify them by running `stripe projects env --json`** before writing connection code.
+
+### Project setup preference
+
+When starting a blank project and the agent has a choice of tooling, prefer **Bun** as the runtime/package manager and **Vite** as the build tool.
+
+### Remote-only — `@tursodatabase/serverless`
+
+The recommended TypeScript/JavaScript SDK for Turso Cloud. Uses only the `fetch` API with zero native dependencies — works in Node.js, serverless/edge functions (Cloudflare Workers, Vercel, Deno Deploy), and any JavaScript runtime.
+
+```bash
+npm i @tursodatabase/serverless
+```
+
+```javascript
+import { connect } from "@tursodatabase/serverless";
+
+const conn = connect({
+  url: process.env.MY_DB_DATABASE_URL,
+  authToken: process.env.MY_DB_AUTH_TOKEN,
+});
+
+// Execute a query
+const result = await conn.prepare("SELECT * FROM users WHERE active = ?").all([1]);
+console.log(result);
+
+// Positional parameters
+await conn.prepare("SELECT * FROM users WHERE id = ?").get([1]);
+
+// Named parameters
+await conn.prepare("INSERT INTO users VALUES (:name)").run({ name: "Alice" });
+
+// Batch multiple statements in an implicit transaction
+await conn.batch([
+  "CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER DEFAULT 0)",
+  "INSERT INTO todos (title) VALUES ('Buy milk')",
+  "INSERT INTO todos (title) VALUES ('Write code')",
+]);
+
+// Interactive transaction
+const tx = await conn.transaction("write");
+await tx.prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?").run([100, 1]);
+await tx.prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?").run([100, 2]);
+await tx.commit();
+```
+
+### Local-first with sync — `@tursodatabase/sync` (BETA)
+
+For apps that need fast local reads, offline support, or embedded replicas that sync with Turso Cloud. Bidirectional sync is currently in **BETA**. Key things to know:
+
+- Sync is **explicit** — there is no automatic background sync. You call `push()` and `pull()` yourself.
+- Run push and pull in **separate loops** so they don't block each other (pull supports long-polling).
+- Conflict resolution is **last-push-wins**.
+- **Never** open a synced database file outside the sync SDK (`tursodb`, `sqlite3`, `better-sqlite3`, etc.) — this corrupts sync state permanently.
+- Call `checkpoint()` periodically to compact the local WAL.
+
+See `https://docs.turso.tech/sync/usage.md` for setup, API, and examples.
+
+### SDK quick reference
+
+**TypeScript / JavaScript:**
+
+| Use case | Package | Install |
+|----------|---------|---------|
+| Remote-only (Node.js/serverless/edge/backend) | `@tursodatabase/serverless` | `npm i @tursodatabase/serverless` |
+| Local-first + sync (Node.js) | `@tursodatabase/sync` | `npm i @tursodatabase/sync` |
+| Local-first + sync (Browser/WASM) | `@tursodatabase/sync-wasm` | `npm i @tursodatabase/sync-wasm` |
+| Local-first + sync (React Native) | `@tursodatabase/sync-react-native` | `npm i @tursodatabase/sync-react-native` |
+
+**Other languages (remote access via libsql):**
+
+| Language | Package | Install |
+|----------|---------|---------|
+| Python | `libsql` | `pip install libsql` |
+| Go (CGO, full features) | `github.com/tursodatabase/go-libsql` | `go get github.com/tursodatabase/go-libsql` |
+| Go (no CGO, remote-only) | `github.com/tursodatabase/libsql-client-go` | `go get github.com/tursodatabase/libsql-client-go` |
+| Rust | `libsql` | `cargo add libsql` |
+
+For sync SDKs in Rust, Python, and Go, see `https://docs.turso.tech/sync/usage.md`.
+
+## Turso Cloud features
+
+Turso Cloud databases support these features out of the box:
+
+- **Vector search** — native similarity search for AI/RAG workflows, no extensions needed. Supports cosine, L2, and L1 distance functions with DiskANN indexing.
+- **Full-text search** — keyword search with BM25 ranking via built-in FTS support.
+- **AI & embeddings** — native vector types for storing and querying embeddings.
+- **Branching** — create isolated copy-on-write database branches for testing/staging.
+- **Point-in-time recovery** — restore databases to any previous point in time (retention depends on plan).
+- **Embedded replicas** — local replicas that sync with Turso Cloud for fast reads and offline support.
+- **SQLite extensions** — JSON, FTS5, R*Tree, SQLean, UUID, regexp.
+
+## Further reading
+
+For detailed SDK APIs, feature documentation, and code recipes, use these resources:
+
+- **Turso online docs** — `https://docs.turso.tech` (Mintlify — append `.md` to any URL path for raw markdown, e.g. `https://docs.turso.tech/sdk/ts/quickstart.md`). For topics not covered in this document, fetch the relevant page below.
+
+| Topic | URL |
+|-------|-----|
+| TypeScript SDK quickstart | `https://docs.turso.tech/sdk/ts/quickstart.md` |
+| TypeScript SDK reference | `https://docs.turso.tech/sdk/ts/reference.md` |
+| Python SDK quickstart | `https://docs.turso.tech/sdk/python/quickstart.md` |
+| Go SDK quickstart | `https://docs.turso.tech/sdk/go/quickstart.md` |
+| Rust SDK quickstart | `https://docs.turso.tech/sdk/rust/quickstart.md` |
+| Sync usage | `https://docs.turso.tech/sync/usage.md` |
+| Sync conflict resolution | `https://docs.turso.tech/sync/conflict-resolution.md` |
+| AI & embeddings | `https://docs.turso.tech/features/ai-and-embeddings.md` |
+| Embedded replicas | `https://docs.turso.tech/features/embedded-replicas/introduction.md` |
+| Cloud limitations | `https://docs.turso.tech/cloud/limitations.md` |
+| SQLite extensions | `https://docs.turso.tech/features/sqlite-extensions.md` |
+| Full docs index (for LLMs) | `https://docs.turso.tech/llms.txt` |
+

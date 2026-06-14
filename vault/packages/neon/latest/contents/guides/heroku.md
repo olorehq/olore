@@ -2,8 +2,14 @@
 title: Deploy Your Node.js App with Neon Postgres on Heroku
 subtitle: A step-by-step guide to deploying a Node application with a Neon Postgres
   database on Heroku
+summary: >-
+  Deploy a Node.js Express app to Heroku with Neon Postgres as the database
+  backend. Covers creating the Neon project, connecting via the `pg` driver
+  and `DATABASE_URL`, and pushing to Heroku using the Heroku CLI and Git.
+  Useful when migrating from Heroku Postgres or hosting a new Node app on
+  Heroku with Neon.
 enableTableOfContents: true
-updatedOn: '2026-02-02T12:37:39.449Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 [Heroku](https://heroku.com) is a popular platform as a service (PaaS) that enables developers to build, run, and operate applications entirely in the cloud. It simplifies the deployment process, making it a favorite among developers for its ease of use and integration capabilities.
@@ -181,14 +187,6 @@ You've now successfully deployed a Node.js application on Heroku that connects t
 To remove your application from Heroku, select the app from your [Heroku dashboard](https://dashboard.heroku.com/apps). Navigate to the `Settings` tab and scroll down to the end to find the "Delete App" option.
 
 To delete your Neon project, follow the steps outlined in the Neon documentation under [Delete a project](/docs/manage/projects#delete-a-project).
-
-## Source code
-
-You can find the source code for the application described in this guide on GitHub.
-
-<DetailIconCards>
-<a href="https://github.com/neondatabase/examples/tree/main/deploy-with-heroku" description="Deploying a Node application with a Neon Postgres database on Heroku" icon="github">Use Neon with Heroku</a>
-</DetailIconCards>
 
 ## Resources
 

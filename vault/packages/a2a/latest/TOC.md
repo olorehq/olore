@@ -1,32 +1,61 @@
 # a2a Documentation Structure
 
-## Files
+## Directory Overview
+
+| Directory | Purpose | Files |
+|-----------|---------|-------|
+| `contents/` | Root-level docs: overview, spec, definitions, changelog | 7 |
+| `contents/topics/` | Concept deep-dives: key concepts, streaming, enterprise, extensions | 10 |
+| `contents/tutorials/python/` | Step-by-step Python quickstart (8 parts) | 8 |
+| `contents/tutorials/` | Tutorial index | 1 |
+| `contents/sdk/` | SDK reference and Python SDK guide | 2 |
+
+## contents/
 
 | File | Description |
 |------|-------------|
-| `contents/README.md` | Documentation development guide for building and previewing A2A docs using mkdocs |
-| `contents/community.md` | Community resources and participation guidelines |
-| `contents/definitions.md` | Glossary of key terms and definitions used in A2A protocol |
-| `contents/index.md` | Main landing page introducing A2A protocol, key features, and getting started guide |
-| `contents/partners.md` | Information about A2A partners and ecosystem participants |
-| `contents/roadmap.md` | Future development plans and planned features for A2A protocol |
-| `contents/sdk/index.md` | SDK overview with redirect to Python API reference |
-| `contents/sdk/python.md` | Python SDK documentation and API reference |
-| `contents/specification.md` | Complete technical specification for Agent2Agent (A2A) Protocol v1.0 |
-| `contents/topics/a2a-and-mcp.md` | Explanation of how A2A works with Model Context Protocol (MCP) |
-| `contents/topics/agent-discovery.md` | Agent discovery mechanisms and capabilities advertisement |
-| `contents/topics/enterprise-ready.md` | Enterprise features including security, authentication, and deployment considerations |
-| `contents/topics/extensions.md` | Protocol extensions and customization options |
-| `contents/topics/key-concepts.md` | Core concepts including actors (User, Client Agent, Server Agent), Agent Cards, Tasks, and Messages |
-| `contents/topics/life-of-a-task.md` | Task lifecycle, state management, contextId, and taskId concepts |
-| `contents/topics/streaming-and-async.md` | Streaming with Server-Sent Events (SSE) and asynchronous operations for long-running tasks |
-| `contents/topics/what-is-a2a.md` | Introduction to A2A protocol, problems it solves, and benefits for agent interoperability |
-| `contents/tutorials/index.md` | Tutorials overview and navigation |
-| `contents/tutorials/python/1-introduction.md` | Python quickstart tutorial introduction and learning objectives |
-| `contents/tutorials/python/2-setup.md` | Python environment setup and A2A SDK installation |
-| `contents/tutorials/python/3-agent-skills-and-card.md` | Defining agent skills and creating Agent Cards |
-| `contents/tutorials/python/4-agent-executor.md` | Implementing agent logic with the Agent Executor |
-| `contents/tutorials/python/5-start-server.md` | Running and starting an A2A server |
-| `contents/tutorials/python/6-interact-with-server.md` | Sending requests and interacting with A2A agents |
-| `contents/tutorials/python/7-streaming-and-multiturn.md` | Advanced streaming capabilities and multi-turn interactions with LangGraph |
-| `contents/tutorials/python/8-next-steps.md` | Next steps and further exploration with A2A |
+| `index.md` | Protocol overview, features, and getting started links |
+| `specification.md` | Full technical protocol specification |
+| `definitions.md` | Glossary of A2A protocol terms and concepts |
+| `whats-new-v1.md` | Changelog: what changed from v0.3.0 to v1.0 |
+| `announcing-1.0.md` | v1.0 release announcement |
+| `roadmap.md` | Protocol roadmap and near-term initiatives |
+| `community.md` | Community hub and contribution resources |
+| `partners.md` | List of A2A partner organizations |
+| `README.md` | Repository readme |
+
+## contents/topics/
+
+| File | Description |
+|------|-------------|
+| `what-is-a2a.md` | What A2A is, why it exists, problems it solves |
+| `key-concepts.md` | Core protocol concepts: tasks, agents, cards, artifacts |
+| `life-of-a-task.md` | Task lifecycle: creation, execution, completion |
+| `streaming-and-async.md` | Streaming responses and asynchronous task execution |
+| `agent-discovery.md` | Agent Card discovery and resolution |
+| `a2a-and-mcp.md` | How A2A and MCP are complementary |
+| `enterprise-ready.md` | Enterprise features: auth, observability, security |
+| `multi-tenancy.md` | Multi-tenant agent deployments |
+| `extensions.md` | Protocol extensions system |
+| `extension-and-binding-governance.md` | Governance for extensions and protocol bindings |
+| `custom-protocol-bindings.md` | Creating custom protocol transport bindings |
+
+## contents/tutorials/python/
+
+| File | Description |
+|------|-------------|
+| `1-introduction.md` | Tutorial intro: what you will build |
+| `2-setup.md` | Environment setup and dependencies |
+| `3-agent-skills-and-card.md` | Defining agent skills and Agent Card |
+| `4-agent-executor.md` | Implementing the AgentExecutor |
+| `5-start-server.md` | Starting the A2A server |
+| `6-interact-with-server.md` | Sending tasks to the server |
+| `7-streaming-and-multiturn.md` | Streaming responses and multi-turn conversations |
+| `8-next-steps.md` | Next steps after completing the tutorial |
+
+## contents/sdk/
+
+| File | Description |
+|------|-------------|
+| `index.md` | SDK overview and available language SDKs |
+| `python.md` | Python SDK reference and usage guide |

@@ -1,8 +1,16 @@
 ---
 title: Upgrading your Postgres version
 subtitle: Learn how upgrade to a new major Postgres version in Neon
+summary: >-
+  Upgrading to a new major Postgres version in Neon requires creating a new
+  project at the target version and migrating data. Each Neon project is
+  locked to the major version selected at creation. Use the Import Data
+  Assistant for smaller databases, pg_dump/pg_restore for larger ones, or
+  logical replication for near-zero downtime on active databases. Note that
+  pg_upgrade is not supported, minor version upgrades are automatic, and
+  pg_dump must use an unpooled connection string.
 enableTableOfContents: true
-updatedOn: '2025-08-02T10:33:29.302Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 This topic describes how to upgrade your Neon project from one **major** Postgres version to a newer one.
@@ -57,6 +65,10 @@ Alternatively, you can apply these configurations after migrating your data.
 
     If your database is small, you can use this method to pipe `pg_dump` output directly to `pg_restore` to save time. While this method is a bit simpler, we recommend it only for small databases, as it is susceptible to failures during lengthy data migrations.
 
+  <Admonition type="important">
+  Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string). Use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead.
+  </Admonition>
+
 - **Logical replication**
 
   The logical replication method can be used to achieve a near-zero downtime migration. Once the data in the new Neon project is synced with the data in the Neon project running the older version of Postgres, you can quickly switch your applications to the database. This method is recommended for active databases that cannot afford much downtime. For instructions, see [Logical Replication](/docs/guides/logical-replication-neon-to-neon).
@@ -64,7 +76,7 @@ Alternatively, you can apply these configurations after migrating your data.
     <Admonition type="note" title="Notes">
     - Neon does not support the `pg_dumpall` utility. If upgrading via dump and restore, dumps must be performed one database at a time using `pg_dump`.
     - Neon does not yet support upgrading using `pg_upgrade`. Support for this utility is being considered for a future release.
-    - If you choose a dump and restore method, it is recommended that you use `pg_dump` and `pg_store` programs from the newer version of Postgres, to take advantage of any enhancements introduced in the newer version. Current releases of the these programs can read data from all previous Postgres versions supported by Neon.
+    - If you choose a dump and restore method, it is recommended that you use `pg_dump` and `pg_restore` programs from the newer version of Postgres, to take advantage of any enhancements introduced in the newer version. Current releases of these programs can read data from all previous Postgres versions supported by Neon.
     </Admonition>
 
 ### 3. Switch over your applications

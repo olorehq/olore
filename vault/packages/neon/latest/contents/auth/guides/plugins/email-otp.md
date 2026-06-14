@@ -1,8 +1,16 @@
 ---
 title: Email OTP
 subtitle: Sign in and verify email addresses with one-time passwords
+summary: >-
+  Neon Auth Email OTP delivers one-time passwords by email for passwordless
+  sign-in, password reset, and email verification without requiring manual
+  installation of the Better Auth plugin. Use this page to implement these
+  flows via Neon SDK methods or by passing the `emailOTP` prop to
+  `NeonAuthUIProvider` for pre-built UI components. OTP codes are time-limited
+  and rate-limited (exceeding attempts returns `TOO_MANY_ATTEMPTS`), and
+  production deployments require a dedicated SMTP provider.
 enableTableOfContents: true
-updatedOn: '2026-01-07T15:07:19.158Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <FeatureBetaProps feature_name="Neon Auth with Better Auth" />
@@ -33,7 +41,7 @@ If you're using Neon Auth UI components, enable Email OTP by passing the `emailO
 
 ```tsx shouldWrap filename="app/layout.tsx"
 import { authClient } from '@/lib/auth/client';
-import { NeonAuthUIProvider } from '@neondatabase/neon-js/auth/react/ui';
+import { NeonAuthUIProvider } from '@neondatabase/auth-ui';
 import './globals.css';
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -56,7 +64,7 @@ Users can now sign in with Email OTP by selecting the option on the sign-in scre
 
 ![Email OTP verification](/docs/auth/email-otp-verification.png)
 
-> If you haven't set up Neon Auth UI components yet, see our [Quick start guides](/docs/auth/overview#quick-start-guides).
+> If you haven't set up Neon Auth UI components yet, see the [UI components reference](/docs/auth/reference/ui-components) and the [Next.js](/docs/auth/quick-start/nextjs-api-only) or [React](/docs/auth/quick-start/react) quick start.
 
 ## Use Email OTP with SDK methods
 
@@ -117,7 +125,7 @@ export async function verifyEmail(email: string, otp: string) {
 
 > For more details, see the [Verify email with OTP code](/docs/reference/javascript-sdk#auth-verifyemail) in Neon SDK.
 
-Checkout our [Email verification guide](/docs/auth/guides/email-verification) for a complete walkthrough.
+Check out our [Email verification guide](/docs/auth/guides/email-verification) for a complete walkthrough.
 
 ### Check an OTP (optional)
 
@@ -193,5 +201,7 @@ If users exceed the allowed verification attempts, the API returns an error code
 ## Email provider configuration
 
 For production environments, we strongly recommend using a dedicated email provider. The default shared SMTP should be used only during development. Refer to the [Email provider configuration guide](/docs/auth/production-checklist#email-provider) for setup instructions.
+
+A custom SMTP provider changes the sender address but still sends Neon's default templates. For full branding control, use webhooks. See [Customize emails](/docs/auth/guides/customize-emails).
 
 <NeedHelp/>

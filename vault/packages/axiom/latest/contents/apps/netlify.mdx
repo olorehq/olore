@@ -1,55 +1,57 @@
 ---
 title: 'Connect Axiom with Netlify'
-description: 'Integrating Axiom with Netlify to get a comprehensive observability experience for your Netlify projects. This gives you a better understanding of how your Jamstack apps are performing.'
+description: 'This page explains how to integrate Axiom with Netlify.'
 overview: 'All-in-one platform for automating modern web projects'
 sidebarTitle: Netlify
-keywords: ['axiom documentation', 'documentation', 'axiom', 'netlify', log drains', 'jamstack', 'zero config observability']
+keywords: ['axiom documentation', 'documentation', 'axiom', 'netlify', 'log drains', 'jamstack', 'zero config observability']
 logoId: 'netlify'
 ---
 
-Integrate Axiom with Netlify to get a comprehensive observability experience for your Netlify projects. This integration gives you a better understanding of how your Jamstack apps are performing.
+import Prerequisites from "/snippets/standard-prerequisites.mdx"
 
-You can easily monitor logs and metrics related to your website traffic, serverless functions, and app requests. The integration is easy to set up, and you don’t need to configure anything to get started.
+Netlify is a platform for building and deploying highly performant websites, e-commerce stores, and web apps. Netlify automatically builds your site and deploys it across its global edge network.
 
-With Axiom’s Zero-Config Observability app, you can see all your metrics in real-time, without sampling. That means you can get a complete view of your app’s performance without any gaps in data.
+Integrating Axiom with Netlify allows you to stream traffic, function, and deployment logs directly to Axiom, giving you comprehensive observability over your Netlify projects. With real-time, unsampled data, you can monitor site performance, detect errors quickly, and make informed decisions about your Jamstack apps.
 
-Axiom’s Netlify app is complete with a pre-built dashboard that gives you control over your Jamstack projects. You can use this dashboard to track key metrics and make informed decisions about your app’s performance.
+The Netlify integration supports all [edge deployments](/reference/edge-deployments). The integration sends data to your organization's default edge deployment automatically.
 
-Overall, the Axiom Netlify app makes it easy to monitor and optimize your Jamstack apps. However, do note that this integration is only available for Netlify customers enterprise-level plans where [Log Drains are supported](https://docs.netlify.com/monitor-sites/log-drains/).
+<Note>
+This integration is only available for Netlify customers on enterprise-level plans where Log Drains are supported. For more information, see [Netlify documentation](https://docs.netlify.com/manage/monitoring/log-drains/).
+</Note>
 
-## What’s Netlify
+<Prerequisites />
+- [Create a Netlify account](https://app.netlify.com/signup).
 
-Netlify is a platform for building highly performant and dynamic websites, e-commerce stores, and web apps. Netlify automatically builds your site and deploys it across its global edge network.
+## Setup
 
-The Netlify platform provides teams everything they need to take modern web projects from the first preview to full production.
-
-## Sending logs to Axiom
-
-The log events gotten from Axiom gives you better insight into the state of your Netlify sites environment so that you can easily monitor traffic volume, website configurations, function logs, resource usage, and more.
-
-1. Log in to your [Axiom account](https://app.axiom.co/), click **Apps** in the **Settings** menu, select the **Netlify app**, and then click **Install now**.
+1. In Axiom, click **Settings > Apps > Netlify > Install now**.
 1. Click **Authorize**, and then copy the integration token.
-1. Log in to your **Netlify Team Account**, select your site settings, and then select **Log Drains**.
-1. In your log drain service, select **Axiom**, paste the integration token from Step 1, and then click **Connect**.
+1. In Netlify, select the site you want to integrate with Axiom. Go to **Logs & Metrics > Log Drains**, and then click **Enable a log drain**.
+1. In **Log drain service**, select **Axiom**.
+1. Select the log types to send to Axiom.
+1. In **Region**, select the default edge deployment of your organization.
+    <Warning>
+    The edge deployment you select must match the default edge deployment of your organization. To determine your organization's default edge deployment, see [Edge deployments](/reference/edge-deployments).
+    </Warning>
+1. In **Integration token**, paste the integration token from Axiom.
+1. Click **Connect**.
 
-## App overview
+For more information on Log Drains, see the [Netlify documentation](https://docs.netlify.com/manage/monitoring/log-drains/).
 
-### Traffic and function Logs
+## Netlify dashboard
 
-With Axiom, you can instrument, and actively monitor your Netlify sites, stream your build logs, and analyze your deployment process, or use the pre-build Netlify Dashboard to get an overview of all the important traffic data, usage, and metrics. Various logs are produced when users collaborate and interact with your sites and websites hosted on Netlify. Axiom captures and ingests all these logs into the `netlify` dataset.
+Axiom displays the data it receives in a pre-built Netlify dashboard that delivers immediate, actionable insights into your sites' activity and performance.
 
-You can also drill down to your site source with Axiom’s advanced query language and fork the dashboard to start building your own site monitors.
+This comprehensive overview includes:
 
-Back in your Axiom datasets console, you see all your traffic and function logs in your `netlify` dataset.
+- **Traffic logs**: Monitor traffic volume, request patterns, and site configurations.
+- **Function logs**: Track serverless function executions, errors, and resource usage.
+- **Live log streaming**: Stream your site and app logs live with filtering for important information.
 
-### Live stream logs
+With these insights, you can:
 
-Stream your sites and app logs live, and filter them to see important information.
-
-### Zero-config dashboard for your Netlify sites
-
-Use the pre-build Netlify Dashboard to get an overview of all the important metrics. You can fork the dashboard and start building your own.
-
-## Start logging Netlify Sites today
-
-Axiom Netlify integration allows you to monitor, and log all of your sites, and apps in one place. With the Axiom app, you can quickly detect site errors, and get high-level insights into your Netlify projects.
+- Quickly detect site errors and unusual traffic patterns.
+- Monitor serverless function performance and resource usage.
+- Analyze your build and deployment processes.
+- Drill down into specific events using APL queries.
+- Fork the dashboard and build your own custom site monitors.

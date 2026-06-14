@@ -1,0 +1,101 @@
+---
+title: 'Agentic Checks Overview'
+description: 'Monitor critical user journeys and AI-powered experiences with prompt-driven Agentic Checks that discover, verify, and maintain synthetic monitoring scripts.'
+sidebarTitle: 'Overview'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [Agentic Check Construct](/constructs/agentic-check).
+</Tip>
+
+## What are Agentic Checks?
+
+Agentic Checks are AI-powered synthetic checks that turn a monitoring goal into an executable check. You describe what the agent should verify, and Checkly runs the agent in a browser-capable runtime to explore the target, evaluate assertions, and persist what it learns for future runs.
+
+Agentic Checks are useful when the behavior you need to monitor is clear, but the exact script is expensive to write or maintain by hand. They also work well for nondeterministic application behavior, such as AI-powered support chat, search, or assistant flows where the exact response can vary while the expected outcome stays stable.
+
+**Agentic Checks are a good fit for:**
+
+- Critical user journeys that change often
+- Authentication or onboarding flows that need contextual checks
+- AI-powered product flows where the monitor should evaluate whether the user goal was completed, not whether the output matched exact text
+- Pages where you want the monitor to adapt when implementation details change
+- Early monitoring coverage before you invest in a hand-written Browser Check or Playwright Check Suite
+
+## Prompt best practices
+
+The prompt is the monitoring contract for an Agentic Check. Write it as a focused objective with clear pass and fail criteria.
+
+A reliable prompt usually includes:
+
+- **Goal**: The user journey or system behavior to monitor.
+- **What you are given**: The start URL, test account context, and any required variables or secrets using `{{VARIABLE_NAME}}` notation.
+- **Success looks like**: The exact outcome that should pass.
+- **Failure looks like**: The states that should fail the check.
+- **Strictness**: Whether the agent should assert exact values or evaluate the outcome more flexibly.
+
+Choose strictness based on the application behavior:
+
+- Use strict assertions for deterministic flows, such as a login page loading, an API response containing a required field, or a dashboard showing an account name.
+- Use outcome-based assertions for nondeterministic flows, such as an AI support assistant answering a billing question or a search experience returning relevant results. In these cases, describe the intent and acceptance criteria instead of requiring exact copy.
+- Avoid vague prompts like "monitor my app". If the prompt is broad, tell the agent what surface to cover and what failures should matter.
+
+Keep prompts focused on one flow. If you want to monitor navigation, login, and record creation, create separate Agentic Checks for each flow.
+
+## How Agentic Checks work
+
+The first run uses your prompt to discover the target and create a reusable check script. Later runs execute the saved script first for faster, lower-cost monitoring. If the saved script fails, the agent can wake up in self-heal mode, diagnose the failure, update the script, and verify the result before the run finishes.
+
+Each run can produce:
+
+- A human-readable summary
+- Assertions the agent evaluated
+- Errors and failure details
+- Agent steps and tool activity
+- Suggestions for improving the check
+- User-facing artifacts collected during the run
+
+<Note>
+Agentic Checks are not a replacement for every deterministic check. Use them for important flows where the agent's discovery and self-healing behavior is valuable. Use [API Checks](/detect/synthetic-monitoring/api-checks/overview), [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview), or [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) when you need fully deterministic scripted monitoring.
+</Note>
+
+## Variables, secrets, and skills
+
+Agentic Checks run with a small default runtime for browser automation. You can extend that runtime with skills.
+
+To use account variables or secrets, reference them directly in the prompt with double curly brackets, such as `{{TEST_USER_EMAIL}}` or `{{API_TOKEN}}`. This is the only way to expose Checkly account variables and secrets to an Agentic Check.
+
+Treat this access as a security boundary:
+
+- Only reference the variables and secrets the agent needs.
+- Do not put secrets directly in prompts.
+- Review generated checks before deploying them to production monitoring.
+
+Learn how to configure variables, secrets, and skills in the [Agentic Checks configuration guide](/detect/synthetic-monitoring/agentic-checks/configuration).
+
+## Billing and entitlements
+
+Agentic Checks use active-capacity billing:
+
+- Active Agentic Checks consume purchased active capacity.
+- Inactive Agentic Checks keep their configuration and history without consuming active capacity.
+- Starter and Team plans include Agentic Check capacity; you can purchase additional active capacity from the billing page.
+- Agentic Check runs still count toward usage analytics, but they are billed by active capacity, not per-run runtime usage.
+- Plan changes that would leave you with more active Agentic Checks than the target subscription allows are blocked until you deactivate checks or purchase enough capacity.
+- Accounts can run Agentic Checks from up to three locations by default. Enterprise accounts can contact sales for unlimited locations.
+
+<Info>
+Your billing page is the source of truth for the exact Agentic Check capacity included in your plan and any additional capacity you have purchased.
+</Info>
+
+## Next steps
+
+<Columns cols={2}>
+<Card title="Configure Agentic Checks" href="/detect/synthetic-monitoring/agentic-checks/configuration">
+Define prompts, skills, variables, and scheduling behavior.
+</Card>
+
+<Card title="Agentic Check Construct" href="/constructs/agentic-check">
+Configure Agentic Checks as code with the Checkly CLI.
+</Card>
+</Columns>

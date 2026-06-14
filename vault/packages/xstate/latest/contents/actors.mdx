@@ -139,13 +139,13 @@ const subscription = actor.subscribe((snapshot) => {
 ```ts
 // Observer as an object
 const subscription = actor.subscribe({
-  next(snapshot) {
+  next: (snapshot) => {
     console.log(snapshot);
   },
-  error(err) {
+  error: (err) => {
     // ...
   },
-  complete() {
+  complete: () => {
     // ...
   },
 });
@@ -330,7 +330,7 @@ Learn more about [promise actors.](promise-actors)
 
 ### Transition function logic (`fromTransition(...)`) [#fromtransition]
 
-Transition actor logic is described by a [transition function](migration.mdx#use-actor-logic-creators-for-invokesrc-instead-of-functions), similar to a [reducer](cheatsheet#creating-transition-logic). Transition functions take the current `state` and received `event` object as arguments, and return the next state. Actors created from transition logic (“transition actors”) can:
+Transition actor logic is described by a [transition function](/docs/migration#use-actor-logic-creators-for-invokesrc-instead-of-functions), similar to a [reducer](cheatsheet#creating-transition-logic). Transition functions take the current `state` and received `event` object as arguments, and return the next state. Actors created from transition logic (“transition actors”) can:
 
 - Receive events
 - Emit snapshots of its state

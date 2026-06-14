@@ -7,13 +7,13 @@ There is two build arguments that you can pass to the `open-next build` command:
 
 ### Configuration File
 
-For personalisation you need to create a file `open-next.config.ts` at the same place as your `next.config.js`, and export a default object that satisfies the `OpenNextConfig` interface. It is possible to not have an `open-next.config.ts` file, the default configuration will then be applied automatically.
+For personalization you need to create a file `open-next.config.ts` at the same place as your `next.config.js`, and export a default object that satisfies the `OpenNextConfig` interface. It is possible to not have an `open-next.config.ts` file, the default configuration will then be applied automatically.
 
 This file needs to be placed at the same level as your `next.config.js` file.
 
 If you have an `open-next.config.ts` file, make sure you have atleast this:
 
-```ts
+```ts filename="open-next.config.ts"
 export default {
   default: {},
 };
@@ -29,7 +29,7 @@ If you want to look at a full example, you can check [the full example](/aws/con
 
 By default Next.js will add the [`x-powered-by`](https://nextjs.org/docs/app/api-reference/config/next-config-js/poweredByHeader) header. OpenNext will also add a header `x-opennext`. To opt-out of this, open `next.config.js` and disable the poweredByHeader property in the configuration:
 
-```ts
+```js filename="next.config.js"
 module.exports = {
   poweredByHeader: false,
 };

@@ -15,32 +15,60 @@ sdk: ios, android
 The `UserProfileView` renders a comprehensive user profile interface that displays user information and provides account management options. It includes personal information, security settings, account switching, and sign-out functionality.
 
 > [!IMPORTANT]
-> The `UserProfileView` only appears when a user is signed in.
+> The `UserProfileView` only appears when there is a current user.
 
 ## Parameters
 
 <If sdk="ios">
   <Properties>
-    - `isDismissable`
+    - `isDismissible`
     - `Bool`
 
-    Whether the view can be dismissed by the user. When `true`, a dismiss button appears in the navigation bar and the view can be used in sheets or other dismissable contexts. When `false`, no dismiss button is shown, making it suitable for fullscreen usage. Defaults to `true`.
+    Whether the view can be dismissed by the user. When `true`, a dismiss button appears in the navigation bar and the view can be used in sheets or other dismissible contexts. When `false`, no dismiss button is shown, making it suitable for fullscreen usage. Defaults to `true`.
   </Properties>
 </If>
 
 <If sdk="android">
   <Properties>
     - `clerkTheme`
-    - `ClerkTheme`
+    - `ClerkTheme?`
 
     The theme to apply to the `UserProfileView`. This will override any theme applied to the `UserProfileView`'s parent view, or configured in the `Clerk` global object.
 
     ---
 
-    - `onDismiss`
-    - `() -> Unit`
+    - `customRows`
+    - `List<UserProfileCustomRow>`
 
-    A callback function that is called when the user dismisses the view, such as when they tap a back button or close button. Use this callback to handle navigation or perform cleanup when the user closes the profile view, for example, navigating back to the previous screen or updating your app's state.
+    Custom rows to display on the profile account screen.
+
+    ---
+
+    - `customDestination`
+    - `(@Composable (String) -> Unit)?`
+
+    Destination builder for custom rows. The destination receives the tapped row's `routeKey`. Custom rows are ignored when this is `null`.
+
+    ---
+
+    - `onAddAccount`
+    - `(() -> Unit)?`
+
+    Called when the user selects the add account action. Use this to host the add account auth flow outside the profile view.
+
+    ---
+
+    - `onDismiss`
+    - `(() -> Unit)?`
+
+    Called when the user profile view is dismissed. When omitted, dismissal falls back to the system back dispatcher.
+
+    ---
+
+    - `isDismissible`
+    - `Boolean`
+
+    Whether the view shows a top-right close affordance that dismisses the profile. Defaults to `true`.
   </Properties>
 </If>
 
@@ -54,8 +82,12 @@ The `UserProfileView` renders a comprehensive user profile interface that displa
   Present `UserProfileView` as a dismissible sheet when you want users to be able to close the profile view and return to the previous screen.
 
   ```swift
+  import SwiftUI
+  import ClerkKit
+  import ClerkKitUI
+
   struct MainView: View {
-    @Environment(\.clerk) private var clerk
+    @Environment(Clerk.self) private var clerk
     @State private var profileIsPresented = false
 
     var body: some View {
@@ -78,12 +110,16 @@ The `UserProfileView` renders a comprehensive user profile interface that displa
   Use `UserProfileView` as a fullscreen view when you want to dedicate the entire screen to profile management.
 
   ```swift
+  import SwiftUI
+  import ClerkKit
+  import ClerkKitUI
+
   struct ProfileView: View {
-    @Environment(\.clerk) private var clerk
+    @Environment(Clerk.self) private var clerk
 
     var body: some View {
       if clerk.user != nil {
-        UserProfileView(isDismissable: false)
+        UserProfileView(isDismissible: false)
       }
     }
   }
@@ -111,6 +147,16 @@ The `UserProfileView` renders a comprehensive user profile interface that displa
       UserProfileView()
     }
   }
+  ```
+
+  ### Non-dismissible profile view
+
+  Use `isDismissible = false` when the profile view is the required fullscreen experience for the current route.
+
+  ```kotlin
+  import com.clerk.ui.userprofile.UserProfileView
+
+  UserProfileView(isDismissible = false)
   ```
 </If>
 

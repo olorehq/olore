@@ -77,12 +77,14 @@ Calculate the cost of input tokens for a GenAI chat operation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend model = ['attributes.gen_ai.request.model']
 | extend input_tokens = tolong(['attributes.gen_ai.usage.input_tokens'])
 | extend input_cost = genai_input_cost(model, input_tokens)
 | summarize total_input_cost = sum(input_cost), avg_input_cost = avg(input_cost)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20model%20%3D%20%5B%27attributes.gen_ai.request.model%27%5D%20%7C%20extend%20input_tokens%20%3D%20tolong(%5B%27attributes.gen_ai.usage.input_tokens%27%5D)%20%7C%20extend%20input_cost%20%3D%20genai_input_cost(model%2C%20input_tokens)%20%7C%20summarize%20total_input_cost%20%3D%20sum(input_cost)%2C%20avg_input_cost%20%3D%20avg(input_cost)%22%7D)
 
 **Output**
 

@@ -1,27 +1,36 @@
 ---
 title: Neon SDKs
+summary: >-
+  Neon SDKs split into two categories: Client SDKs (TypeScript) for building
+  apps with the Data API and Neon Auth, and Management SDKs (TypeScript, Python,
+  @neondatabase/toolkit) for programmatically creating and controlling projects,
+  branches, databases, endpoints, and roles via the Neon API. Client SDKs target
+  app developers who need database queries and user authentication; Management
+  SDKs target platform automation and DevOps workflows. Community-maintained Go
+  and Node.js/Deno API wrappers are listed here but are not officially supported
+  by Neon.
 enableTableOfContents: true
-updatedOn: '2026-01-27T14:34:28.525Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Neon provides two categories of SDKs to support different use cases:
 
-- **Client SDKs** — For application developers building apps with [Neon Auth](/docs/auth/overview) and the [Data API](/docs/data-api/overview). These SDKs handle user authentication and database queries from your application.
-- **Management SDKs** — For programmatically managing Neon platform resources like projects, branches, databases, endpoints, and roles. These are wrappers around the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api).
+- **Client SDKs**: For application developers building apps with the [Data API](/docs/data-api/overview) and optionally [Neon Auth](/docs/auth/overview). These SDKs handle database queries and user authentication from your application.
+- **Management SDKs**: For programmatically managing Neon platform resources like projects, branches, databases, endpoints, and roles. These are wrappers around the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api).
 
 ## Client SDKs
 
-Use these SDKs to build applications with Neon Auth and the Data API.
+Use these SDKs to build applications with the Data API and optional authentication via Neon Auth or another JWT provider.
 
 <DetailIconCards>
 
-<a href="/docs/reference/javascript-sdk" description="Build apps with Neon Auth and Data API using authentication methods and database queries" icon="neon">Neon Auth & Data API TypeScript SDKs</a>
+<a href="/docs/reference/javascript-sdk" description="Build apps with the Data API using database queries and authentication methods" icon="neon">Neon TypeScript SDK</a>
 
 </DetailIconCards>
 
 ## Management SDKs
 
-Use these SDKs to programmatically manage your Neon infrastructure — projects, branches, databases, endpoints, roles, and operations.
+Use these SDKs to programmatically manage your Neon infrastructure (projects, branches, databases, endpoints, roles, and operations).
 
 <DetailIconCards>
 

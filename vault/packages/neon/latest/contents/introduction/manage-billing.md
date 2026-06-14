@@ -2,15 +2,26 @@
 title: Manage billing
 subtitle: Invoices, payment methods, changing your plan, and other actions around
   managing your bill
+summary: >-
+  The Neon Billing page in the Neon Console centralizes account billing
+  actions: viewing charges to date, updating payment methods and billing
+  email, downloading invoices, and upgrading or downgrading plans. Use it to
+  stop monthly charges by switching to the Free plan, fix a failed payment, or
+  request billing support (available on paid plans only). Legacy Enterprise
+  plan downgrades require a support ticket. Indian customers must pay invoices
+  manually because Stripe does not support e-Mandate recurring payments in
+  India.
 enableTableOfContents: true
-updatedOn: '2025-12-15T11:31:51.513Z'
+updatedOn: '2026-06-10T15:22:41.769Z'
 ---
 
 <InfoBlock>
 <DocsList title="What you will learn:">
 <p>How to access the Billing page</p>
-<p>How to update your billing information</p>
+<p>How to update payment method, billing email, and billing details</p>
 <p>How to download invoices</p>
+<p>How to pay an invoice manually</p>
+<p>How to request billing support</p>
 <p>How to change plans</p>
 <p>How to prevent further monthly charges</p>
 <p>How to delete your account</p>
@@ -19,6 +30,7 @@ updatedOn: '2025-12-15T11:31:51.513Z'
 <DocsList title="Related topics" theme="docs">
 <a href="/docs/introduction/plans">Neon plans</a>
 <a href="/docs/introduction/monitor-usage">Monitoring billing and usage</a>
+<a href="/docs/introduction/support">Support</a>
 </DocsList>
 </InfoBlock>
 
@@ -32,17 +44,21 @@ To access your **Billing** page:
 1. Select your organization from the breadcrumb menu at the top-left of the console.
 1. Select **Billing** from the menu to view the charges to date.
 
-On the **Billing** page, you will find a summary outlining current charges and the details of your plan, your payment information, and your monthly invoices.
+The **Billing** page has a sidebar with **Billing summary** and **Payment info**. **Billing summary** shows **This month's summary**: your billing period, plan details (including **Change plan**), and **Charges to date**. **Payment info** shows how you pay, your billing email, and company or address details (see [Update your payment method](#update-your-payment-method) and [Update billing details](#update-billing-details-company-and-address)).
+
+At the top of the page, **View/Pay invoices** opens your invoices, where you can download them or pay an outstanding invoice (see [Pay an invoice](#pay-an-invoice)). If you are on a **paid** plan, **Request billing support** appears next to it (see [Request billing support](#request-billing-support)).
 
 ## Update your payment method
+
+The **Payment info** view explains that **charges are applied to your card on the first day of the month**.
 
 To update your payment method:
 
 1. Navigate to the Neon Console.
 1. Select your organization from the breadcrumb menu at the top-left of the console.
 1. Select **Billing** from the menu.
-1. Navigate to the **Payment info** section of the page.
-1. Locate **Payment method** and click **Edit**.
+1. In the sidebar, select **Payment info**.
+1. In the **Payment method** card, select **Edit**.
 
 If you are unable to update your payment method, please [contact support](/docs/introduction/support).
 
@@ -50,11 +66,11 @@ If you are unable to update your payment method, please [contact support](/docs/
 
 ### Missed payments
 
-If an auto-debit payment transaction fails, Neon sends a request to update your payment method. Late fees and payment policies are described in the [Neon Platform Services Product Specific Schedule](/terms-of-service).
+If an auto-debit payment transaction fails, Neon sends a request to update your payment method. You can also pay an outstanding invoice manually at any time from **View/Pay invoices** (see [Pay an invoice](#pay-an-invoice)). Late fees and payment policies are described in the [Neon Platform Terms](/platform-terms).
 
 ### Failing payments for Indian customers
 
-Neon’s billing system uses **Stripe Checkout**, which does not currently support **e-Mandates** — a requirement from the Reserve Bank of India (RBI) for automatic recurring payments. Because of this, customers in India cannot set up automatic monthly payments. In the event of a payment failure, please [contact support](/docs/introduction/support) to request a link to your invoice to complete the payment manually.
+Neon’s billing system uses **Stripe Checkout**, which does not currently support **e-Mandates** (a requirement from the Reserve Bank of India) (RBI) for automatic recurring payments. Because of this, customers in India cannot set up automatic monthly payments. In the event of a payment failure, please [contact support](/docs/introduction/support) to request a link to your invoice to complete the payment manually.
 
 ## Update your billing email
 
@@ -63,14 +79,42 @@ To update your billing email:
 1. Navigate to the Neon Console.
 1. Select your organization from the breadcrumb menu at the top-left of the console.
 1. Select **Billing** from the menu.
-1. Navigate to the **Payment info** section of the page.
-1. Locate **Billing email** and click **Edit**.
+1. In the sidebar, select **Payment info**.
+1. In the **Billing email** card, select **Edit**.
 
 If you are unable to update your billing email, please [contact support](/docs/introduction/support).
+
+## Update billing details (company and address)
+
+To update the company name, address, postal or ZIP code, country, or VAT or tax ID shown on your account:
+
+1. Navigate to the Neon Console.
+1. Select your organization from the breadcrumb menu at the top-left of the console.
+1. Select **Billing** from the menu.
+1. In the sidebar, select **Payment info**.
+1. In the **Billing Info** card, select **Edit**.
+
+If you are unable to update this information, please [contact support](/docs/introduction/support).
 
 ## Invoices
 
 A Neon invoice includes the charges and the amount due for the billing period. For an explanation of what you've been billed for, see [Usage metrics](/docs/introduction/plans#usage-metrics).
+
+### Pay an invoice
+
+Invoices are charged automatically to your payment method on the first day of the month. If an automatic payment didn't go through, organization admins (or the account owner on a personal account) can pay an outstanding invoice manually at any time.
+
+To pay an invoice manually:
+
+1. Navigate to the Neon Console.
+1. Select your organization from the breadcrumb menu at the top-left of the console.
+1. Select **Billing** from the menu.
+1. Select **View/Pay invoices**.
+1. On an unpaid invoice, select **Pay invoice** to open its secure payment page and complete the payment.
+
+<Admonition type="note">
+**Pay invoice** appears only on unpaid invoices, and only for organization admins (or the account owner on a personal account). Other members can view the invoice without the payment action. Paying an invoice manually settles it immediately instead of waiting for the automatic monthly charge.
+</Admonition>
 
 ### Download invoices
 
@@ -79,28 +123,35 @@ To download an invoice:
 1. Navigate to the Neon Console.
 1. Select your organization from the breadcrumb menu at the top-left of the console.
 1. Select **Billing** from the menu.
-1. Navigate to the **Invoices** section of the page.
-1. Find the invoice you want to download and select **Download** from the menu.
+1. Select **View/Pay invoices**.
+1. Find the invoice you want and open its actions menu, then select **Download**.
 
 <Admonition type="note">
 When an invoice is paid, Neon's billing system sends a payment confirmation email to the address associated with the Neon account.
 </Admonition>
 
-### Request a refund
+### Request billing support
 
-If you find an issue with your invoice, you can request a refund. The request will be reviewed by the Neon billing team.
+If you have a question or problem with billing or an invoice, you can contact the billing team from the **Billing** page. This is available on **paid** plans.
+
+#### From the Billing page header
 
 1. Navigate to the Neon Console.
 1. Select your organization from the breadcrumb menu at the top-left of the console.
 1. Select **Billing** from the menu.
-1. Click the "View past invoices" button.
-1. Find the invoice you want to request a refund for, and select **Request credit note** from the menu. Enter a problem description explaining the reason for the request.
+1. Select **Request billing support**.
+1. In the form, choose the **related invoice** (if you have invoices) and describe how we can help, then submit.
+
+If you have no invoices yet, **Request billing support** may appear disabled with a short explanation.
+
+#### From past invoices
+
+1. On the **Billing** page, select **View/Pay invoices**.
+1. For the invoice you care about, open the actions menu (`...`) and select **Request support**. The same form opens with that invoice pre-selected.
+
+You can still use **Download** from the invoice menu to save a PDF. For other support paths (for example **Launch** plan limits on ticket topics), see [Support](/docs/introduction/support).
 
 ## Change your plan
-
-<Admonition type="important">
-You cannot upgrade or downgrade to a [legacy plan](/docs/introduction/legacy-plans). If you're currently on a legacy plan, you can only upgrade or downgrade to one of the [current usage-based pricing plans](/docs/introduction/plans).
-</Admonition>
 
 <Admonition type="note" title="Restart required for new limits">
 If you're upgrading your plan, your compute will only pick up the new plan limits (such as max compute size and project storage) after the compute restarts. See [Restart a compute](/docs/manage/computes#restart-a-compute).
@@ -117,7 +168,7 @@ Changing your plan to one with lower usage allowances may affect the performance
 
 If you are downgrading your plan, you will be required to remove any projects, branches, or data that exceed your new plan allowances.
 
-To downgrade from a **legacy Enterprise plan**, please contact [Sales](/contact-sales). Cancellation of a legacy Enterprise plan is handled according to the Master Subscription Agreement (MSA) outlined in the Customer Agreement.
+To downgrade from a **legacy Enterprise plan**, please open a support ticket. Cancellation of a legacy Enterprise plan is handled according to the Master Subscription Agreement (MSA) outlined in the Customer Agreement.
 
 ## How to prevent further monthly charges to your account
 

@@ -4,6 +4,8 @@ description: 'Import existing resources into your CLI-managed project.'
 sidebarTitle: 'checkly import'
 ---
 
+<Note>Available since CLI v5.4.0.</Note>
+
 <Tip>Learn more about importing existing Checkly resources in [the "Importing Existing Resources" guide](/cli/importing).</Tip>
 
 The `checkly import` command imports existing resources from your Checkly account into your CLI-managed project. This allows you to bring existing checks, alert channels, and other resources under code management using a structured three-phase workflow.
@@ -46,10 +48,10 @@ npx checkly import check:2ce8...
 
 `npx checkly import` starts an interactive process that generates an import plan, applies it to create Check files, and commits the changes to mark resources as managed by your CLI project.
 
-| Option | Description |
-|--------|-------------|
-| `--config, -c` | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts|js` file in the current directory. |
-| `--root` | The root folder in which to write generated code files. |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--config, -c` | - | The Checkly CLI configuration file. If not passed, uses the `checkly.config.ts|js` file in the current directory. |
+| `--root` | - | The root folder in which to write generated code files. |
 
 ## Command Options
 

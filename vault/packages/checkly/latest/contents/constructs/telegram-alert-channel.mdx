@@ -1,0 +1,93 @@
+---
+title: 'TelegramAlertChannel Construct'
+description: 'Learn how to configure Telegram alert channels with the Checkly CLI.'
+sidebarTitle: 'Telegram'
+---
+
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
+
+
+<Tip>
+For general information about alerting, see our docs on [the Telegram integration](/integrations/alerts/telegram) and [alerting with Checkly](/communicate/alerts/overview/).
+</Tip>
+
+Sends alerts to a Telegram channel.
+
+<CodeGroup>
+
+```ts Basic Example
+import { TelegramAlertChannel } from 'checkly/constructs'
+
+const telegramChannel = new TelegramAlertChannel('my-telegramchannel-1', {
+  name: 'My Telegram channel',
+  apiKey: 'xxxxxx',
+  chatId: 'xxxxxx'
+})
+```
+
+```ts Advanced Example
+import { TelegramAlertChannel } from 'checkly/constructs'
+
+const telegramChannel = new TelegramAlertChannel('my-telegramchannel-1', {
+  name: 'My Telegram channel',
+  apiKey: 'xxxxxx',
+  chatId: 'xxxxxx',
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+  sslExpiry: true,
+  sslExpiryThreshold: 30,
+})
+```
+
+</CodeGroup>
+
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
+## Configuration
+
+### Telegram Alert Channel Options
+
+<ResponseField name="name" type="string" required>
+Friendly name to recognise the integration.
+</ResponseField>
+
+<ResponseField name="apiKey" type="string" required>
+The API key associated with your Telegram bot.
+</ResponseField>
+
+<ResponseField name="chatId" type="string" required>
+The chat ID of the Telegram channel you want to send alerts to.
+</ResponseField>
+
+<ResponseField name="payload" type="string">
+The message sent to the chat when an alert is triggered. If this is not specified, we'll send a default payload with some basic information about the alert.
+
+We have [handlebar helpers and variables](/integrations/alerts/webhooks/#using-variables) available for building custom payloads.
+
+```ts highlight={5-16}
+new TelegramAlertChannel('my-telegramchannel-1', {
+  name: 'My Telegram channel',
+  apiKey: 'xxxxxx',
+  chatId: 'xxxxxx',
+  payload: `
+    <b>{{ALERT_TITLE}}</b> at {{RUN_LOCATION}} ({{RESPONSE_TIME}}ms)
+    {{#if AI_ANALYSIS_CLASSIFICATION}}
+    AI Analysis: <i>{{AI_ANALYSIS_CLASSIFICATION}}</i>
+
+    {{AI_ANALYSIS_ROOT_CAUSE}}
+    <a href="{{AI_ANALYSIS_LINK}}">Read full analysis</a>
+    {{/if}}
+
+    Tags: {{#each TAGS}} <i><b>{{this}}</b></i> {{#unless @last}},{{/unless}} {{/each}}
+    <a href="{{RESULT_LINK}}">View check result</a>
+    `
+})
+```
+</ResponseField>
+
+### General Alert Channel Options
+
+<AlertChannelOptionsText />

@@ -44,6 +44,10 @@ Understanding how settings cascade through the hierarchy:
 
 </Note>
 
+<Note>
+Runs you [cancel](/concepts/cancellation) never trigger alerts. No failure, degraded, or recovery notification is sent for a cancelled run, regardless of the settings above.
+</Note>
+
 ## Alert Configuration
 
 ### Account-Level
@@ -70,7 +74,7 @@ Configure alerts for teams and service categories:
 ![Group-level alert settings](/images/docs/images/alerting/alert-settings-group.png)
 
 <Note>
-#### Group Override
+### Group Override
 Configure how group settings interact with individual checks:
 
 **If checked, Group settings override individual check settings**
@@ -185,7 +189,7 @@ This option should mostly be used when checks are run very regularly, i.e. once 
 
 
 ### Location-Based Escalation
-This option can be selected in addition to the run or time-based escalation settings and only affect checks running in [parallel](/monitoring/global-locations/#parallel) with two or more locations selected. 
+This option can be selected in addition to the run or time-based escalation settings and only affect checks running in [parallel](/concepts/scheduling#parallel) with two or more locations selected. 
 
 When enabled, alerts will only be sent when the specified percentage of locations are failing. Use this setting to reduce alert noise and fatigue for services that can handle being unavailable from some locations before action is required. 
 

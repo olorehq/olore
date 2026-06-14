@@ -1,0 +1,67 @@
+---
+title: 'PagerdutyAlertChannel Construct'
+description: 'Learn how to configure Pagerduty alert channels with the Checkly CLI.'
+sidebarTitle: 'Pagerduty'
+---
+
+import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
+
+
+<Tip>
+For general information about alerting, see our docs on [the Pagerduty integration](/integrations/incident-management/pagerduty) and [alerting with Checkly](/communicate/alerts/overview/).
+</Tip>
+
+Sends an alert notification to a specific service in your Pagerduty account.
+
+<CodeGroup>
+
+```ts Basic Example
+import { PagerdutyAlertChannel } from 'checkly/constructs'
+
+const pagerdutyChannel = new PagerdutyAlertChannel('pagerduty-channel-1', {
+  account: 'ACME',
+  serviceName: 'ACME products',
+  serviceKey: '872b9b58ff4a9n06d0dl9f20487bbqwew'
+})
+```
+
+```ts Advanced Example
+import { PagerdutyAlertChannel } from 'checkly/constructs'
+
+const pagerdutyChannel = new PagerdutyAlertChannel('pagerduty-channel-1', {
+  account: 'ACME',
+  serviceName: 'ACME products',
+  serviceKey: '872b9b58ff4a9n06d0dl9f20487bbqwew',
+  sendRecovery: true,
+  sendFailure: true,
+  sendDegraded: true,
+  sslExpiry: true,
+  sslExpiryThreshold: 30,
+})
+```
+
+</CodeGroup>
+
+<Note>
+  If you need to reference existing alert channels that were created outside of your CLI project, use [`fromId()`](/constructs/alert-channel#using-fromid-to-reference-an-existing-channel).
+</Note>
+
+## Configuration
+
+### Pagerduty Alert Channel Options
+
+<ResponseField name="account" type="string" required>
+The name of your Pagerduty account.
+</ResponseField>
+
+<ResponseField name="serviceName" type="string" required>
+The name of your service defined in Pagerduty under which the alerts should be nested.
+</ResponseField>
+
+<ResponseField name="serviceKey" type="string" required>
+The API key created by installing the Checkly integration in Pagerduty. We advise you to [install the Pagerduty alert channel first from the UI](https://app.checklyhq.com/alerts/settings/channels/new/pagerduty/) to grab the `serviceKey`.
+</ResponseField>
+
+### General Alert Channel Options
+
+<AlertChannelOptionsText />

@@ -1,0 +1,156 @@
+---
+title: "Asset Loading"
+description: "Resolve out-of-band images, fonts, and audio."
+---
+
+A `.riv` file can either embed asset bytes (images, fonts, audio, scripts) **in-band**
+or reference them by CDN UUID and let the runtime fetch them. Implement
+`FileAssetLoader` to control the second path — resolving from disk, the
+network, or your own asset pipeline.
+
+## The `FileAssetLoader` Interface
+
+```cpp
+#include "rive/file_asset_loader.hpp"
+#include "rive/assets/file_asset.hpp"
+
+class FileAssetLoader : public RefCnt<FileAssetLoader> {
+public:
+    virtual bool loadContents(FileAsset& asset,
+                              Span<const uint8_t> inBandBytes,
+                              Factory* factory) = 0;
+};
+```
+
+`loadContents` is called once per asset during `File::import`. You return:
+
+- `true` — you handled it. Either you populated `asset` synchronously, or
+  you kicked off async work and will populate it later.
+- `false` — fall back to the in-band bytes (if any).
+
+`asset` arrives typed: cast it to the concrete subclass to populate it.
+
+| Asset type | Class | How to populate |
+| ---------- | ----- | --------------- |
+| Image      | `ImageAsset`    | `asset.renderImage(factory->decodeImage(bytes))` |
+| Font       | `FontAsset`     | `asset.font(factory->decodeFont(bytes))` |
+| Audio      | `AudioAsset`    | `asset.audioSource(factory->decodeAudio(bytes))` |
+
+## Sync Example: Load by File Name
+
+```cpp
+#include "rive/file_asset_loader.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/assets/audio_asset.hpp"
+
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <vector>
+
+class DiskAssetLoader : public rive::FileAssetLoader {
+public:
+    explicit DiskAssetLoader(std::filesystem::path root)
+        : m_root(std::move(root)) {}
+
+    bool loadContents(rive::FileAsset& asset,
+                      rive::Span<const uint8_t> inBandBytes,
+                      rive::Factory* factory) override
+    {
+        // Prefer in-band bytes when present.
+        if (inBandBytes.size() > 0) return false;
+
+        auto path = m_root / asset.uniqueFilename();
+        std::ifstream f(path, std::ios::binary);
+        if (!f) return false;
+        std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(f)), {});
+        rive::Span<const uint8_t> span{bytes.data(), bytes.size()};
+
+        if (auto* img = dynamic_cast<rive::ImageAsset*>(&asset)) {
+            img->renderImage(factory->decodeImage(span));
+            return true;
+        }
+        if (auto* fnt = dynamic_cast<rive::FontAsset*>(&asset)) {
+            fnt->font(factory->decodeFont(span));
+            return true;
+        }
+        if (auto* aud = dynamic_cast<rive::AudioAsset*>(&asset)) {
+            aud->audioSource(factory->decodeAudio(span));
+            return true;
+        }
+        return false;
+    }
+
+private:
+    std::filesystem::path m_root;
+};
+```
+
+`asset.uniqueFilename()` is the editor-assigned name with extension; use
+`asset.cdnUuidStr()` if you index by CDN UUID instead.
+
+## Wiring It Up
+
+```cpp
+rcp<FileAssetLoader> loader = make_rcp<DiskAssetLoader>("assets/");
+
+ImportResult result;
+rcp<File> file = File::import(bytes, factory, &result, loader);
+```
+
+The loader is reference-counted — `File` keeps it alive for the file's
+lifetime so async loads can complete after `import` returns.
+
+## Async Loading
+
+For async (HTTP, decoder thread, etc), return `true` from `loadContents`
+**without** calling `renderImage` / `font` / `audioSource`, then populate the
+asset later from any thread:
+
+```cpp
+bool loadContents(FileAsset& asset, Span<const uint8_t>, Factory* factory) override {
+    auto* image = dynamic_cast<ImageAsset*>(&asset);
+    if (!image) return false;
+
+    rcp<ImageAsset> keepAlive = ref_rcp(image);
+
+    fetchAsync(image->cdnUuidStr(), [keepAlive, factory](std::vector<uint8_t> bytes) {
+        // Assumes this callback is dispatched to the render thread — see the
+        // warning below about decoder thread-safety.
+        rcp<RenderImage> ri =
+            factory->decodeImage({bytes.data(), bytes.size()});
+        keepAlive->renderImage(std::move(ri));
+        // The next advanceAndApply will pick up the new image.
+    });
+    return true;
+}
+```
+
+<Warning>
+  Decoders (`Factory::decodeImage`, `Factory::decodeFont`,
+  `Factory::decodeAudio`) are **not guaranteed thread-safe** for every
+  backend. If you decode off-thread, decode into a CPU-side representation
+  and finalize the GPU upload back on the render thread, or use a
+  thread-safe `Factory` if your backend supports it.
+</Warning>
+
+## Built-In Loaders
+
+For simple cases the runtime ships a relative-path loader you can extend:
+
+```cpp
+#include "rive/relative_local_asset_loader.hpp"
+
+rcp<FileAssetLoader> loader =
+    make_rcp<RelativeLocalAssetLoader>("/path/to/assets");
+```
+
+It loads files by `uniqueFilename()` from a directory on disk — handy for
+samples and tooling.
+
+## When In-Band Bytes Already Cover Everything
+
+If your `.riv` file embeds all of its assets, you can skip the loader
+entirely. `inBandBytes` will be non-empty for those assets and the runtime
+will decode them with the `Factory` you provided.

@@ -2,8 +2,14 @@
 title: Connect Astro to Postgres on Neon
 subtitle: Learn how to make server-side queries to Postgres from .astro files or API
   routes.
+summary: >-
+  Connecting Astro to Neon Postgres requires the Astro Node adapter for
+  on-demand (SSR) rendering so pages query the database at request time rather
+  than only at build time. The guide covers driver options including
+  node-postgres, postgres.js, and the Neon serverless driver, and shows query
+  patterns for both .astro page components and server endpoint API routes.
 enableTableOfContents: true
-updatedOn: '2026-02-04T22:32:55.752Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/astro-serverless-prompt.md" 
@@ -104,7 +110,7 @@ There are multiple ways to make server side requests with Astro. See below for t
 
 ### Page Components (.astro files)
 
-In your `.astro` page components (e.g., `src/pages/index.astro`), you can query the database in the frontmatter section (between the `---` fences). Import the database client from your utility file:
+In your `.astro` page components (for example, `src/pages/index.astro`), you can query the database in the frontmatter section (between the `---` fences). Import the database client from your utility file:
 
 <CodeTabs reverse={true} labels={["node-postgres", "postgres.js", "Neon serverless driver"]}>
 
@@ -224,17 +230,5 @@ When you run `npm run dev` you can expect to see something like the following wh
 ```
 
 </Steps>
-
-## Source code
-
-You can find the source code for the applications described in this guide on GitHub.
-
-<DetailIconCards>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-astro" description="Get started with Astro and Neon" icon="github">Get started with Astro and Neon</a>
-
-<a href="https://github.com/neondatabase/examples/tree/main/with-astro-api-routes" description="Get started with Astro API Routes and Neon" icon="github">Get started with Astro API Routes and Neon</a>
-
-</DetailIconCards>
 
 <NeedHelp/>

@@ -5,35 +5,34 @@ description: Local Playwright documentation reference (latest). Playwright docum
 
 # playwright Documentation
 
-Playwright documentation. Use for end-to-end testing, browser automation, cross-browser testing, selectors, assertions, and test fixtures. Supports JavaScript/TypeScript, Python, Java, and C#.
+Playwright documentation. Use for end-to-end testing, browser automation, cross-browser testing, selectors, assertions, and test fixtures.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started (JS/TS) | `contents/intro-js.md` |
-| Writing tests | `contents/writing-tests-js.md` |
-| Locators / selectors | `contents/locators.md` |
-| API reference | `contents/api/` |
-| Test runner config | `contents/test-api/class-testconfig.md` |
+| Get started (JS/TS) | `contents/intro-js.md` |
+| Get started (Python) | `contents/intro-python.md` |
+| Write tests | `contents/writing-tests-js.md` |
+| Locators and selectors | `contents/locators.md` |
+| Page API reference | `contents/api/class-page.md` |
+| Locator API reference | `contents/api/class-locator.md` |
 | Assertions | `contents/test-assertions-js.md` |
-| Network / mocking | `contents/network.md` |
+| Network interception | `contents/network.md` |
 | Authentication | `contents/auth.md` |
-| Debugging / tracing | `contents/debug.md` |
+| CI/CD setup | `contents/ci.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- End-to-end testing, browser automation, cross-browser testing
-- Playwright test runner: fixtures, config, reporters, parallelism, retries
-- Locators, selectors, assertions, actionability
-- Network interception, API testing, mocking
-- Authentication, storage state, browser contexts
-- Screenshots, videos, traces, visual regression
-- CI/CD integration, Docker, sharding
-- Component testing, accessibility testing
-- Page Object Model, custom fixtures, TypeScript
-- Python/Java/C# Playwright usage
+- End-to-end browser testing with Playwright
+- Browser automation, web scraping, or page interaction
+- Selectors, locators, and finding elements
+- Assertions and auto-waiting behavior
+- Test configuration, fixtures, and parallelization
+- Network mocking and interception
+- Playwright API (Page, Locator, BrowserContext, etc.)
+- Running Playwright in CI, Docker, or with MCP
 
 ## How to find information
 

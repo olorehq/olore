@@ -1,0 +1,151 @@
+---
+title: Migrate PromQL queries to Axiom
+description: This page explains how to migrate your PromQL queries to Axiom.
+sidebarTitle: Migrate
+keywords: ["metrics", "opentelemetry", "otel", "mpl", "metricsdb", "promql", "migrate"]
+---
+
+To migrate your PromQL queries to Metrics Processing Language (MPL), choose one of the following options:
+- Manually translate your PromQL queries to MPL. This page explains the differences between MPL and PromQL and provides examples of how to migrate your queries.
+- Use the [Query metrics skill](/console/intelligence/skills/query-metrics) to translate your PromQL queries to MPL.
+
+## Differences between MPL and PromQL
+
+While MPL and PromQL are both designed for querying metrics data, they differ in fundamental ways that impact how queries are written and interpreted. This section outlines the key differences to help you adapt PromQL workflows when migrating to Axiom.
+
+### Richer type system
+
+Prometheus treats all label values as strings, which often leads users to rely heavily on regular expressions for filtering. MPL, by contrast, supports a broader and more expressive type system, including native types like numbers, booleans, and timestamps. This means you can write cleaner, type-aware queries and avoid the pitfalls of string-only comparisons.
+
+For OpenTelemetry (OTel) data, this difference means that MPL preserves source types, enabling more accurate and efficient filtering and aggregation.
+
+### Labels versus fields
+
+PromQL is optimized for a sparse label space and performs poorly with high-cardinality label sets. This design limits how many dimensions can be encoded as labels.
+
+MPL doesn't impose the same restrictions. It encourages richer, high-cardinality data ingestion, allowing you to store and query more attributes per event without performance degradation.
+
+Additionally, PromQL users often use enrichment queries to simulate dimensional joins and join label values from one series into another. MPL doesn't currently support this pattern because it diverges from OpenTelemetry semantics, which emphasize event-based modeling over metric enrichment.
+
+### Histogram behavior
+
+Histogram support differs significantly. In PromQL, histogram queries typically yield one time series per bucket or a single quantile series depending on the function.
+
+MPL allows histogram operations that can output multiple series in a single query, providing greater flexibility for analyzing distributions or rendering percentile summaries directly.
+
+### Regular expression syntax
+
+In PromQL, regular expressions are written as string literals using the `=~` operator. This requires escaping special characters using double quotes and backslashes, which can be error-prone.
+
+MPL treats regular expressions as a first-class type. Use the `==` and `!=` operators with a regex literal prefixed by `#/`. There is no `=~` operator in MPL.
+
+```kusto
+// PromQL
+service=~"checkout|payment"
+
+// MPL equivalent
+| where service == #/checkout|payment/
+```
+
+<Tip>
+Regex is a native type in MPL. Denote regex using `#/` and `/` instead of quotation marks (`'` or `"`).
+
+In regex, escape slash (`/`), but don't escape quotation marks (`'` or `"`).
+</Tip>
+
+## Examples
+
+### Average over time
+
+Calculate the fraction of time JVM CPU utilization stays below 80% over a 7-day window.
+
+<CodeGroup>
+```kusto Prometheus example
+avg_over_time(
+   (
+      max(jvm_cpu_recent_utilization_ratio) < bool 0.8
+   )[7d:]
+)
+```
+
+```kusto MPL equivalent
+`otel-demo-metrics`:`jvm.cpu.recent_utilization`
+| group using max
+| map is::lt(0.8)
+| align to 7d using avg
+```
+</CodeGroup>
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60jvm.cpu.recent_utilization%60%20%7C%20group%20using%20max%20%7C%20map%20is%3A%3Alt(0.8)%20%7C%20align%20to%207d%20using%20avg%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### Multiply each value by 100
+
+Convert CPU utilization from a ratio (0–1) to a percentage (0–100).
+
+<CodeGroup>
+```kusto Prometheus example
+process_cpu_utilization_ratio{} * 100
+```
+
+```kusto MPL equivalent
+`otel-demo-metrics`:`process.cpu.utilization`
+| map * 100
+```
+</CodeGroup>
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60process.cpu.utilization%60%20%7C%20map%20*%20100%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### Calculate average error rate
+
+Calculate the average error rate per 5-minute windows for HTTP server requests.
+
+<CodeGroup>
+```kusto Prometheus example
+sum(rate(http_server_request_duration_seconds_count{status_code=~"5.."}[5m]))
+/
+sum(rate(http_server_request_duration_seconds_count{}[5m]))
+```
+
+```kusto MPL equivalent
+(
+  `otel-demo-metrics`:`http.server.request.duration`
+  | where `http.response.status_code` >= 500
+  | map rate
+  | align to 5m using avg
+  | group using sum,
+  `otel-demo-metrics`:`http.server.request.duration`
+  | map rate
+  | align to 5m using avg
+  | group using sum
+)
+| compute error_rate using /
+```
+</CodeGroup>
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22(%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3E%3D%20500%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%2C%20%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20using%20sum%20)%20%7C%20compute%20error_rate%20using%20%2F%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)
+
+### Calculate rate
+
+Calculate the rate of HTTP requests by method, route, and status code.
+
+<CodeGroup>
+```kusto Prometheus example
+sum by (method, route, status_code) (
+      rate(
+          http_server_request_duration_seconds_count{
+              status_code=~"[123].."
+          }[5m]
+      )
+  )
+```
+
+```kusto MPL equivalent
+`otel-demo-metrics`:`http.server.request.duration`
+| where `http.response.status_code` == #/[123]../
+| map rate
+| align to 5m using avg
+| group by `http.request.method`, `http.route`, `http.response.status_code` using sum
+```
+</CodeGroup>
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%60otel-demo-metrics%60%3A%60http.server.request.duration%60%20%7C%20where%20%60http.response.status_code%60%20%3D%3D%20%23%2F%5B123%5D..%2F%20%7C%20map%20rate%20%7C%20align%20to%205m%20using%20avg%20%7C%20group%20by%20%60http.request.method%60%2C%20%60http.route%60%2C%20%60http.response.status_code%60%20using%20sum%22%2C%22metricsDataset%22%3A%22otel-demo-metrics%22%7D)

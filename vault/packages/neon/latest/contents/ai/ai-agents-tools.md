@@ -1,11 +1,19 @@
 ---
 title: AI tools for Agents
 subtitle: AI-powered tools for development and database management
+summary: >-
+  Neon's AI tools hub lists every integration for connecting AI editors and
+  agent frameworks to Neon Postgres, including the MCP server, Claude Code
+  plugin, Cursor plugin, GitHub Copilot agents, and Agent Skills. Use this page
+  to find the right integration for natural-language database control, safe
+  migrations, or autonomous agent backends. A one-command setup (`npx
+  neonctl@latest init`) configures OAuth, installs Agent Skills, and connects
+  your editor in a single step.
 enableTableOfContents: true
-updatedOn: '2026-02-04T14:57:09.212Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-Neon provides several ways to integrate with AI tools and agents, from natural language database control to autonomous agent frameworks. Choose the tools that fit your workflow.
+Neon is the backend for apps and agents. This page covers Neon's integrations with AI tools and agent frameworks, from natural language database control to autonomous agent platforms. Choose the tools that fit your workflow.
 
 ## Quick setup
 
@@ -15,7 +23,7 @@ The fastest way to get started with Neon and AI:
 npx neonctl@latest init
 ```
 
-This authenticates via OAuth, creates an API key, configures your editor (Cursor, VS Code, or Claude Code), and installs [agent skills](https://github.com/neondatabase/agent-skills). Then restart and ask your AI assistant **"Get started with Neon"**.
+This authenticates via OAuth, creates an API key, configures your editor or CLI, and installs [agent skills](https://github.com/neondatabase/agent-skills). Then restart and ask your AI assistant **"Get started with Neon"**.
 
 ## MCP integration
 
@@ -34,6 +42,14 @@ If you're using Claude Code, install the Neon plugin to get Skills, MCP integrat
 <a href="/docs/ai/ai-claude-code-plugin" description="Includes Claude Code Skills for Neon, Neon MCP integration, and context rules" icon="github">Claude Code plugin for Neon</a>
 </DetailIconCards>
 
+## Cursor plugin
+
+If you're using Cursor, install the Neon plugin to get Neon Skills and MCP integration in one package.
+
+<DetailIconCards>
+<a href="/docs/ai/ai-cursor-plugin" description="Install the Neon Cursor plugin to use Neon Skills and Neon MCP integration directly in Cursor" icon="github">Cursor plugin for Neon</a>
+</DetailIconCards>
+
 ## GitHub Copilot agents
 
 Custom agents for GitHub Copilot that bring Neon's branching workflow directly into VS Code for safe migrations and query optimization.
@@ -42,18 +58,12 @@ Custom agents for GitHub Copilot that bring Neon's branching workflow directly i
 <a href="/docs/ai/ai-github-copilot-agents" description="Safe database migrations and query optimization using Neon branching" icon="github">Neon agents for GitHub Copilot</a>
 </DetailIconCards>
 
-## AI rules
+## Agent Skills
 
-For other AI tools like Cursor, use these individual `.mdc` context rule files. Copy them to your AI tool's custom rules directory — the format is tool-agnostic and works with any AI assistant that supports context rules.
+Give your AI assistant structured context about Neon's features, APIs, and best practices.
 
 <DetailIconCards>
-<a href="/docs/ai/ai-rules-neon-auth" description="AI rules for implementing authentication with Neon" icon="github">Neon Auth</a>
-<a href="/docs/ai/ai-rules-neon-drizzle" description="AI rules for using Drizzle ORM with Neon" icon="github">Neon Drizzle</a>
-<a href="/docs/ai/ai-rules-neon-serverless" description="AI rules for serverless database connections" icon="github">Neon Serverless Driver</a>
-<a href="/docs/ai/ai-rules-neon-typescript-sdk" description="AI rules for using the Neon API TypeScript SDK" icon="github">Neon API TypeScript SDK</a>
-<a href="/docs/ai/ai-rules-neon-python-sdk" description="AI rules for using the Neon Python SDK" icon="github">Neon Python SDK</a>
-<a href="/docs/ai/ai-rules-neon-api" description="AI rules for using the Neon API" icon="github">Neon API</a>
-<a href="/docs/ai/ai-rules-neon-toolkit" description="AI rules for using the Neon Toolkit" icon="github">Neon Toolkit</a>
+<a href="/docs/ai/agent-skills" description="Install Neon Agent Skills for accurate code suggestions covering Auth, Drizzle, serverless connections, APIs, and more" icon="github">Agent Skills</a>
 </DetailIconCards>
 
 ## Build AI agents

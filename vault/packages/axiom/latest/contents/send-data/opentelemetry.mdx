@@ -23,12 +23,10 @@ OpenTelemetry-compatible events flow into Axiom, where they’re organized into 
 | ------------------------------------------------------------------ | ------------------- |
 | [Logs](https://opentelemetry.io/docs/concepts/signals/logs/)       | ✓                   |
 | [Traces](https://opentelemetry.io/docs/concepts/signals/traces/)   | ✓                   |
-| [Metrics](https://opentelemetry.io/docs/concepts/signals/metrics/) | Public preview      |
+| [Metrics](https://opentelemetry.io/docs/concepts/signals/metrics/) | ✓                   |
 
 <Info>
-Support for OTel metrics is currently in public preview. For more information, see [Feature states](/platform-overview/roadmap#feature-states).
-
-You must use a different, dedicated dataset for each OTel component. When you create a dataset, select the type of OTel data you want to send to it. For more information, see [Create dataset](/reference/datasets#create-dataset).
+You must use a different, dedicated dataset for each OTel component. When you create a dataset, select **Events** for logs or traces data, and select **Metrics** for metrics data. For more information, see [Create dataset](/reference/datasets#create-dataset).
 </Info>
 
 <Prerequisites />
@@ -458,7 +456,7 @@ import { trace } from '@opentelemetry/api';
 import { instrument, ResolveConfigFn } from '@microlabs/otel-cf-workers';
 
 export interface Env {
-  AXIOM_API_TOKEN: string,
+  AXIOM_TOKEN: string,
   AXIOM_DATASET: string,
   AXIOM_DOMAIN: string
 }
@@ -478,7 +476,7 @@ const config: ResolveConfigFn = (env: Env, _trigger) => {
     exporter: {
       url: `https://${env.AXIOM_DOMAIN}/v1/traces`,
       headers: {
-        'Authorization': `Bearer ${env.AXIOM_API_TOKEN}`,
+        'Authorization': `Bearer ${env.AXIOM_TOKEN}`,
         'X-Axiom-Dataset': `${env.AXIOM_DATASET}`
       },
     },

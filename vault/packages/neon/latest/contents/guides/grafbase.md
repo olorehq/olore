@@ -2,9 +2,17 @@
 title: Use Grafbase Edge Resolvers with Neon
 subtitle: Learn how to build and deploy serverless GraphQL backends with Grafbase and
   Neon
+summary: >-
+  Grafbase Edge Resolvers with the Neon serverless driver let you run GraphQL
+  mutations and queries against a Neon Postgres database at the edge, without a
+  traditional server. Choose this guide when building a serverless GraphQL
+  backend that needs real-time, database-driven field resolution, such as
+  dynamic pricing calculated from row counts in Neon. The setup covers
+  GraphQL schema definition, JavaScript resolver files, DATABASE_URL
+  environment variable configuration, and local testing with the Grafbase CLI.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-02-03T20:41:57.314Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 _This guide was contributed by Josep Vidal from Grafbase_

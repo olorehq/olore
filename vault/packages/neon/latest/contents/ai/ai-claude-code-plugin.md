@@ -1,16 +1,25 @@
 ---
 title: Claude Code plugin for Neon
+summary: >-
+  The Neon Claude Code plugin, available on the official Claude plugins
+  marketplace, bundles the neon-postgres Skill and an MCP server integration
+  that gives Claude Code direct access to Neon's API for creating projects,
+  managing branches, running SQL, and configuring serverless Postgres connections.
+  Use this page to install the plugin (`claude plugin install
+  neon@claude-plugins-official`) and verify the neon-postgres skill is active,
+  distinguishing it from the standalone Agent Skills setup used with other AI
+  tools.
 description: >-
-  Install the Neon Claude Code plugin to give Claude access to Neon’s APIs,
+  Install the Neon Claude Code plugin to give Claude access to Neon's APIs,
   Postgres workflows, and built-in Skills.
-updatedOn: '2025-10-24T11:19:19.273Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
-The **Neon Claude Code plugin** adds Neon-specific Skills and API access to Claude Code, Anthropic’s AI development environment. It’s part of the [Neon AI Rules toolkit](https://github.com/neondatabase-labs/ai-rules), and it bundles four guided Skills plus an MCP (Model Context Protocol) server integration.
+The **Neon Claude Code plugin** is available on the official Claude plugins marketplace. It adds Neon-specific Skills and API access to Claude Code, Anthropic's AI development environment, bundling guided Skills plus an MCP (Model Context Protocol) server integration.
 
 ## Overview
 
-Claude Skills are Markdown-based workflows that tell Claude how to complete specific tasks — like setting up a database connection, editing a file, or running a script. The Neon plugin packages several of these Skills into a reusable bundle, so Claude Code can interact directly with Neon Postgres.
+Claude Skills are Markdown-based workflows that tell Claude how to complete specific tasks (like setting up a database connection, editing a file, or running a script). The Neon plugin packages several of these Skills into a reusable bundle, so Claude Code can interact directly with Neon Postgres.
 
 Once installed, the plugin gives Claude the ability to:
 
@@ -19,28 +28,18 @@ Once installed, the plugin gives Claude the ability to:
 - Configure serverless Postgres connections
 - Reference Neon documentation and best practices in context
 
-## What’s included
+## What's included
 
 The plugin contains:
 
-- **4 Claude Skills**
-- **An MCP server integration** that connects Claude to Neon’s APIs
-- **Portable context rules (.mdc files)** for other AI tools such as Cursor
-
-### Included Skills
-
-| Skill                  | Description                                                                                                                                                                         |
-| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **neon-drizzle**       | Guides Claude through setting up [Drizzle ORM](https://orm.drizzle.team) with Neon. Handles schema creation, connection setup, and project scaffolding.                             |
-| **neon-serverless**    | Teaches Claude how to configure [Neon's serverless Postgres driver](https://neon.com/docs/serverless/serverless-driver) and test connections.                                       |
-| **neon-toolkit**       | Provides workflows for using the [Neon Management API](https://api-docs.neon.tech/reference/getting-started-with-neon-api) to create databases, projects, and branches dynamically. |
-| **add-neon-knowledge** | Gives Claude access to [Neon documentation](https://neon.com/docs/introduction) snippets and usage examples — the "Neon brain."                                                     |
+- **The `neon-postgres` skill** for guided Neon workflows, covering getting started, connections, Neon Auth, the Data API, platform SDKs, and developer tools
+- **An MCP server integration** that connects Claude to Neon's APIs
 
 ## How it works
 
-Each Skill is a Markdown file with a description and a step-by-step workflow. When you ask Claude to perform a task (for example, _“Integrate Neon with Drizzle”_), it checks the available Skill descriptions, finds a match, and loads the full instructions to complete the task.
+Each Skill is a Markdown file with a description and a step-by-step workflow. When you ask Claude to perform a task (for example, _"Integrate Neon with Drizzle"_), it checks the available Skill descriptions, finds a match, and loads the full instructions to complete the task.
 
-The plugin’s MCP server integration lets Claude interact with Neon’s live API endpoints. That means Claude can:
+The plugin's MCP server integration lets Claude interact with Neon's live API endpoints. That means Claude can:
 
 - Query Neon for project information
 - Create or delete branches and databases
@@ -49,73 +48,50 @@ The plugin’s MCP server integration lets Claude interact with Neon’s live AP
 
 ## Install the plugin in Claude Code
 
-1. Add the Neon marketplace:
+1. Install the Neon plugin:
+
+   From your terminal:
 
    ```bash
-   /plugin marketplace add neondatabase-labs/ai-rules
+   claude plugin install neon@claude-plugins-official
    ```
 
-2. Install the Neon plugin:
+   Or from within a Claude Code session:
 
-   ```bash
-   /plugin install neon-plugin@neon
+   ```text
+   /plugin install neon@claude-plugins-official
    ```
 
-3. Verify the installation:
+2. Verify the installation:
    Ask Claude Code:
 
-   ```bash
+   ```text
    which skills do you have access to?
    ```
 
-   You should see the four Neon Skills listed.
+   You should see the `neon-postgres` skill listed.
 
-4. Start using the Skills:
+3. Start using the Skills:
    Use natural language prompts like:
-   > “Use the neon-drizzle Skill to set up Drizzle ORM with Neon.”
+   > "Use the neon-drizzle Skill to set up Drizzle ORM with Neon."
 
 Claude will automatically select and execute the relevant workflow.
 
-## Use the rules outside Claude Code
+## Use skills outside Claude Code
 
-The [Neon AI Rules toolkit repository](https://github.com/neondatabase-labs/ai-rules) also includes portable `.mdc` context rule files.
+The [Agent Skills repository](https://github.com/neondatabase/agent-skills) provides skills for other AI tools as well. You can install them with:
 
-You can use them in:
-
-- **Cursor:** copy the `.mdc` files into `.cursor/rules/`
-- **Other AI tools:** place them in your assistant’s custom rules directory
-
-These files include best-practice prompts and code patterns for connecting to and developing with Neon Postgres.
-
-## Repository structure
-
+```bash
+npx skills add neondatabase/agent-skills -s neon-postgres
 ```
-ai-rules/
-├── .claude-plugin/
-│   └── marketplace.json        # Marketplace metadata
-├── neon-plugin/                # Claude Code plugin
-│   ├── .claude-plugin/
-│   │   └── plugin.json         # Plugin configuration
-│   ├── .mcp.json               # MCP server connection
-│   └── skills/                 # Guided skills
-│       ├── neon-drizzle/       # Drizzle ORM skill
-│       │   ├── SKILL.md
-│       │   ├── guides/         # Workflow guides
-│       │   ├── references/     # Technical docs
-│       │   ├── scripts/        # Automation
-│       │   └── templates/      # Code examples
-│       ├── neon-serverless/    # Serverless skill
-│       ├── neon-toolkit/       # Ephemeral DB skill
-│       └── add-neon-docs/      # Docs installer skill
-├── *.mdc                       # Context rules (13 files)
-├── LICENSE
-└── README.md
-```
+
+See [Agent Skills](/docs/ai/agent-skills) for all installation options.
 
 ## Learn more
 
-- [Neon AI Rules toolkit](https://github.com/neondatabase-labs/ai-rules)
+- [Agent Skills repository](https://github.com/neondatabase/agent-skills)
+- [Agent Skills overview](/docs/ai/agent-skills)
 - [Claude Skills documentation](https://docs.anthropic.com/en/docs/agents/claude-code)
 - [AI Agents and Tools overview](/docs/ai/ai-agents-tools)
 
-If you run into issues, visit our [Discord](https://discord.gg/neondatabase) or open an issue in the [ai-rules repository](https://github.com/neondatabase-labs/ai-rules/issues).
+If you run into issues, visit our [Discord](https://discord.gg/92vNTzKDGp) or open an issue in the [Agent Skills repository](https://github.com/neondatabase/agent-skills/issues).

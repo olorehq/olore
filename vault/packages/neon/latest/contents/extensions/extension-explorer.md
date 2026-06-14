@@ -1,9 +1,14 @@
 ---
 title: Postgres extension explorer
+summary: >-
+  A category-browsable index of all Postgres extensions supported on Neon,
+  organized into groups such as AI/ML, analytics, geospatial, search, security,
+  and query optimization. Navigate to individual extension docs, install
+  instructions, or the flat alphabetical list.
 enableTableOfContents: true
 redirectFrom:
   - /docs/extensions/extensions-intro
-updatedOn: '2025-12-22T13:54:25.153Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 Browse supported Postgres extensions by category.
@@ -153,8 +158,6 @@ Browse supported Postgres extensions by category.
 
 <a href="https://github.com/RhodiumToad/ip4r" description="Provides a range index type and functions for efficiently storing and querying IPv4 and IPv6 ranges and addresses in Postgres" icon="table">ip4r</a>
 
-<a href="https://github.com/sraoss/pg_ivm" description="Provides an Incremental View Maintenance (IVM) feature for Postgres" icon="table">pg_ivm</a>
-
 <a href="https://github.com/pgpartman/pg_partman" description="A partition manager extension that enables creating and managing time-based and number-based table partition sets in Postgres" icon="table">pg_partman</a>
 
 <a href="/docs/extensions/pg_prewarm" description="Allows manual preloading of relation data into the Postgres buffer cache, reducing access times for frequently queried tables" icon="table">pg_prewarm</a>
@@ -201,7 +204,7 @@ Browse supported Postgres extensions by category.
 
 <a href="https://livescript.net/" description="Enables writing functions in LiveScript, a Javascript dialect that serves as a more powerful successor to CoffeeScript" icon="binary-code">plls</a>
 
-<a href="https://github.com/plv8/plv8/" description="A Postgres procedural language powered by V8 Javascript Engine for writing functions in Javascript that are callable from SQL" icon="binary-code">plv8</a>
+<a href="/docs/extensions/plv8" description="Deprecated on Neon. Was a Postgres procedural language powered by V8 for JavaScript callable from SQL; use plpgsql or app-side logic instead" icon="binary-code">plv8</a>
 
 <a href="https://www.postgresql.org/docs/16/plpgsql.html" description="The default procedural language for Postgres, enabling the creation of complex functions and triggers" icon="binary-code">plpgsql</a>
 
@@ -242,8 +245,6 @@ Browse supported Postgres extensions by category.
 <a href="/docs/extensions/dict_int" description="Provides a text search dictionary template for indexing integer data in Postgres" icon="search">dict_int</a>
 
 <a href="/docs/extensions/fuzzystrmatch" description="Provides several functions to determine similarities and distance between strings in Postgres" icon="search">fuzzystrmatch</a>
-
-<a href="/docs/extensions/pg_search" description="An Elasticsearch alternative for full-text search and analytics on Postgres" icon="search">pg_search</a>
 
 <a href="/docs/extensions/pg_trgm" description="Provides functions and operators for determining the similarity of alphanumeric text based on trigram matching, and index operator classes for fast string similarity search" icon="search">pg_trgm</a>
 

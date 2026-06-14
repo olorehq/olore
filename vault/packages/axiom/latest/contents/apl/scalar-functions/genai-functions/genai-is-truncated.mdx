@@ -75,7 +75,7 @@ Check if a GenAI response was truncated due to token limits.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend finish_reason = ['attributes.gen_ai.response.finish_reasons']
 | extend is_truncated = genai_is_truncated(['attributes.gen_ai.input.messages'], finish_reason)
 | summarize 
@@ -83,6 +83,8 @@ Check if a GenAI response was truncated due to token limits.
     total_count = count(),
     truncation_rate = round(100.0 * countif(is_truncated) / count(), 2)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20finish_reason%20%3D%20%5B%27attributes.gen_ai.response.finish_reasons%27%5D%20%7C%20extend%20is_truncated%20%3D%20genai_is_truncated(%5B%27attributes.gen_ai.input.messages%27%5D%2C%20finish_reason)%20%7C%20summarize%20truncated_count%20%3D%20countif(is_truncated)%2C%20total_count%20%3D%20count()%2C%20truncation_rate%20%3D%20round(100.0%20*%20countif(is_truncated)%20%2F%20count()%2C%202)%22%7D)
 
 **Output**
 

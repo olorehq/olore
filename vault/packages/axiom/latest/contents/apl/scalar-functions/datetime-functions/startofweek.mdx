@@ -1,0 +1,165 @@
+---
+title: startofweek
+description: 'This page explains how to use the startofweek function in APL.'
+---
+
+Use the `startofweek` function in APL to round a datetime value down to the start of the week. The function returns the preceding Sunday at midnight (00:00:00) for the date that contains the given datetime value. You can optionally shift the result by a specified number of weeks using the offset parameter.
+
+You can use `startofweek` to bin events into weekly buckets for aggregation, reporting, and trend analysis across log, trace, and security datasets.
+
+Use it when you want to:
+
+- Group events by week for weekly summaries and dashboards.
+- Align timestamps to week boundaries for consistent aggregation.
+- Compare metrics across different weeks.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you use `relative_time` with the `@w0` snap-to modifier to round a timestamp to the start of the week (Sunday). In APL, the `startofweek` function achieves the same result and supports an optional week offset.
+
+<CodeGroup>
+```sql Splunk example
+... | eval week_start=relative_time(_time, "@w0")
+```
+
+```kusto APL equivalent
+... | extend week_start = startofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you use `DATE_TRUNC('week', timestamp_column)` to truncate a timestamp to the start of the week. Note that the start day of the week varies across SQL implementations. In APL, `startofweek` always uses Sunday as the start of the week.
+
+<CodeGroup>
+```sql SQL example
+SELECT DATE_TRUNC('week', timestamp_column) AS week_start FROM events;
+```
+
+```kusto APL equivalent
+['dataset']
+| extend week_start = startofweek(_time)
+```
+
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+startofweek(datetime [, offset])
+```
+
+### Parameters
+
+| Name     | Type       | Description                                            |
+| -------- | ---------- | ------------------------------------------------------ |
+| datetime | `datetime` | The input datetime value.                              |
+| offset   | `long`     | Optional: The number of weeks to offset from the input datetime. Default is `0`. |
+
+### Returns
+
+A `datetime` representing the start of the week (Sunday at 00:00:00) for the given date value, shifted by the offset if specified.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Count requests per week to identify weekly traffic patterns.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend week_start = startofweek(_time)
+| summarize request_count = count() by week_start
+| sort by week_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20week_start%20%3D%20startofweek(_time)%20%7C%20summarize%20request_count%20%3D%20count()%20by%20week_start%20%7C%20sort%20by%20week_start%20asc%22%7D)
+
+**Output**
+
+| week_start           | request_count |
+| -------------------- | ------------- |
+| 2025-01-05T00:00:00Z | 10234         |
+| 2025-01-12T00:00:00Z | 11587         |
+| 2025-01-19T00:00:00Z | 9876          |
+
+This query bins each HTTP request to the start of its week and counts the total requests per week.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Track the weekly average span duration for each service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend week_start = startofweek(_time)
+| summarize avg_duration = avg(duration) by week_start, ['service.name']
+| sort by week_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20extend%20week_start%20%3D%20startofweek(_time)%20%7C%20summarize%20avg_duration%20%3D%20avg(duration)%20by%20week_start%2C%20%5B'service.name'%5D%20%7C%20sort%20by%20week_start%20asc%22%7D)
+
+**Output**
+
+| week_start           | service.name | avg_duration     |
+| -------------------- | ------------ | ---------------- |
+| 2025-01-05T00:00:00Z | frontend     | 00:00:01.2340000 |
+| 2025-01-12T00:00:00Z | frontend     | 00:00:01.1750000 |
+| 2025-01-19T00:00:00Z | frontend     | 00:00:01.2890000 |
+
+This query groups trace spans by week and service, then calculates the average span duration for each combination.
+
+</Tab>
+<Tab title="Security logs">
+
+Monitor weekly server error trends to detect weeks with unusual failure activity.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where toint(status) >= 500
+| extend week_start = startofweek(_time)
+| summarize error_count = count() by week_start
+| sort by week_start asc
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20toint(status)%20%3E%3D%20500%20%7C%20extend%20week_start%20%3D%20startofweek(_time)%20%7C%20summarize%20error_count%20%3D%20count()%20by%20week_start%20%7C%20sort%20by%20week_start%20asc%22%7D)
+
+**Output**
+
+| week_start           | error_count |
+| -------------------- | ----------- |
+| 2025-01-05T00:00:00Z | 45          |
+| 2025-01-12T00:00:00Z | 67          |
+| 2025-01-19T00:00:00Z | 38          |
+
+This query filters for server errors and counts them per week to reveal weekly error patterns.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [endofweek](/apl/scalar-functions/datetime-functions/endofweek): Returns the end of the week for a datetime value.
+- [startofday](/apl/scalar-functions/datetime-functions/startofday): Returns the start of the day for a datetime value.
+- [startofmonth](/apl/scalar-functions/datetime-functions/startofmonth): Returns the start of the month for a datetime value.
+- [startofyear](/apl/scalar-functions/datetime-functions/startofyear): Returns the start of the year for a datetime value.
+- [week_of_year](/apl/scalar-functions/datetime-functions/week-of-year): Returns the ISO 8601 week number from a datetime value.

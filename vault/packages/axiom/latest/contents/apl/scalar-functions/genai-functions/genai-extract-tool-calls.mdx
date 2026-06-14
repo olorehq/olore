@@ -77,13 +77,15 @@ Extract tool calls from a GenAI conversation to analyze which functions are bein
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend tool_calls = genai_extract_tool_calls(['attributes.gen_ai.input.messages'])
 | where isnotnull(tool_calls)
 | extend tool_name = tostring(tool_calls[0]['function']['name'])
 | summarize call_count = count() by tool_name
 | top 5 by call_count
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20tool_calls%20%3D%20genai_extract_tool_calls(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20where%20isnotnull(tool_calls)%20%7C%20extend%20tool_name%20%3D%20tostring(tool_calls%5B0%5D%5B%27function%27%5D%5B%27name%27%5D)%20%7C%20summarize%20call_count%20%3D%20count()%20by%20tool_name%20%7C%20top%205%20by%20call_count%22%7D)
 
 **Output**
 

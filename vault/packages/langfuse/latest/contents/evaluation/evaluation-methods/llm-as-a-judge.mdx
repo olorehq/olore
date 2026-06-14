@@ -1,5 +1,5 @@
 ---
-title: "LLM-as-a-Judge Evaluation: Complete Guide"
+title: LLM-as-a-Judge
 sidebarTitle: LLM-as-a-Judge
 description: "Learn how LLM-as-a-Judge evaluation works — use large language models to automatically score, evaluate, and monitor your LLM application outputs at scale with rubric-guided assessments."
 ---
@@ -18,15 +18,16 @@ This approach has become one of the most popular methods for evaluating LLM appl
 
 ## How LLM-as-a-Judge Works
 
-The core idea is straightforward: present an LLM with the input, the application's output, and a scoring rubric, then ask it to evaluate the output. The judge model produces a [`score`](/docs/evaluation/core-concepts#scores) along with chain-of-thought reasoning explaining its assessment.
+The core idea is straightforward: present an LLM with the input, the application's output, and a scoring rubric, then ask it to evaluate the output. The judge model produces a [`score`](/docs/evaluation/scores/overview) along with reasoning explaining its assessment.
 
 A typical LLM-as-a-Judge prompt includes:
+
 1. **Evaluation criteria** — a rubric defining what "good" looks like (e.g., "Score 1 if the answer is factually incorrect, 5 if fully accurate and well-sourced")
 2. **Input context** — the original user query or prompt
 3. **Output to evaluate** — the application's response
 4. **Optional reference** — ground truth or expected output for comparison
 
-The judge model then returns a structured score and reasoning that can be tracked, aggregated, and analyzed over time.
+The judge model then returns a structured score and reasoning that can be tracked, aggregated, and analyzed over time. In Langfuse, that score can be numeric, categorical, or boolean. Use numeric scores for continuous judgments like helpfulness from `0` to `1`. Use categorical scores when you want explicit labels such as `correct`, `partially_correct`, or `incorrect`. Use boolean scores for binary decisions where the outcome is `true` or `false`, such as whether a user is disagreeing with the assistant, whether a request is out-of-scope, or whether an answer violates policy. For more production-monitoring examples, see [LLM-as-a-Judge for Production Monitoring](/blog/2026-04-01-llm-as-a-judge-production-monitoring).
 
 ## Why use LLM-as-a-Judge?
 
@@ -40,6 +41,7 @@ LLM-as-a-Judge evaluators can run on three types of data: **Observations** (indi
 
 ### Decision Tree
 
+import { Details, Summary } from "@/components/Details";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 <div className="flex flex-col items-center gap-6 py-8 my-6">
@@ -55,6 +57,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 <div className="flex flex-col md:flex-row gap-12 w-full justify-center">
 
 {/* Live Production Branch */}
+
 <div className="flex flex-col items-center gap-4 flex-1 min-w-[280px]">
   <Card className="border-2 border-primary w-full">
     <CardHeader className="p-4">
@@ -79,10 +82,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
         <div className="text-xs text-muted-foreground mt-1">Complete workflow executions</div>
       </CardContent>
     </Card>
+
   </div>
 </div>
 
 {/* Offline Experiments Branch */}
+
 <div className="flex flex-col items-center gap-4 flex-1 min-w-[280px]">
   <Card className="border-2 border-primary w-full">
     <CardHeader className="p-4">
@@ -111,12 +116,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 ### Understanding Each Evaluation Target
 
-<Tabs items={["Live Production Data", "Offline Experiment Data"]} storageKey="eval-data-type">
+<Tabs items={["Live Production Data", "Offline Experiment Data"]}>
 <Tab>
 
 Evaluate live production traffic to monitor your LLM application performance in real-time.
 
-<Tabs items={["Observations (Recommended)", "Traces (Legacy)"]} storageKey="eval-live-target">
+<Tabs items={["Observations (Recommended)", "Traces (Legacy)"]}>
 <Tab>
 
 Run evaluators on individual observations within your traces—such as LLM calls, retrieval operations, embedding generations, or tool calls.
@@ -133,6 +138,7 @@ Run evaluators on individual observations within your traces—such as LLM calls
 At ingest time, each observation is evaluated against your filter criteria. Matching observations are added to an evaluation queue. Evaluation jobs are then processed asynchronously. Scores are attached to the specific observation, resulting in one score per observation per evaluator. Depending on your filter criteria, multiple observations may match the criteria and result in multiple scores per trace.
 
 **Example Use Cases**
+
 - Evaluate helpfulness of only the final chatbot response to users
 - Monitor toxicity scores on all customer-facing LLM generations
 - Track retrieval relevance for RAG systems by targeting document retrieval observations
@@ -157,6 +163,7 @@ Run evaluators on complete traces, evaluating entire workflow executions from st
 At ingest time, each trace is evaluated against your filter criteria. Matching traces are added to an evaluation queue and processed asynchronously. Scores are attached to the trace itself, resulting in one score per trace per evaluator.
 
 **Example Use Cases**
+
 - Score the accuracy of a multi-step agent workflow, if and only if evaluator needs full context spanning multiple operations (e.g., retrieval → reranking → generation → citation)
 
 </Tab>
@@ -189,8 +196,6 @@ Each experiment run generates traces that are automatically scored by your selec
 
 </Tab>
 </Tabs>
-
-
 
 ## Set up step-by-step
 
@@ -231,22 +236,24 @@ Langfuse ships a growing catalog of evaluators built and maintained by us and pa
 
 When the library doesn't fit your specific needs, add your own:
 
-1. Draft an evaluation prompt with `{{variables}}` placeholders (`input`, `output`, `ground_truth` …).
-2. Optional: Customize the **score** (0-1) and **reasoning** prompts to guide the LLM in scoring.
-3. Optional: Pin a custom dedicated model for this evaluator. If no custom model is specified, it will use the default evaluation model (see Section 2).
-4. Save → the evaluator can now be reused across your project.
+1. Draft an evaluation prompt with `{{variables}}` placeholders (`input`, `output`, `ground_truth` ...).
+2. Choose a **score type**: use **Numeric** for gradients like helpfulness or faithfulness, **Categorical** for discrete labels, or **Boolean** for `true` / `false` decisions such as `User Disagreement`, `Out-of-Scope Request`, or `Insufficient Answer`.
+3. If you choose **Categorical**, define the allowed categories. Optionally enable **Allow multiple matches** if more than one label can apply. Langfuse will create one score per selected category. **Boolean** evaluators do not require a category list.
+4. Optional: Customize the **score reasoning** prompt and the output prompt for your selected score type.
+5. Optional: Pin a custom dedicated model for this evaluator. If no custom model is specified, it will use the default evaluation model (see Section 2).
+6. Save → the evaluator can now be reused across your project.
 
 </Tab>
 </Tabs>
 
 ### Choose which Data to Evaluate
 
-With your evaluator and model selected, configure which data to run the evaluations on. See the [How it works](#how-it-works) section above to understand which option fits your use case.
+With your evaluator and model selected, configure which data to run the evaluations on. See the [Understanding Each Evaluation Target](#understanding-each-evaluation-target) section above to understand which option fits your use case.
 
-<Tabs items={["Live Production Data", "Offline Experiment Data"]} storageKey="eval-data-type">
+<Tabs items={["Live Production Data", "Offline Experiment Data"]}>
 <Tab>
 
-<Tabs items={["Observations (Recommended)", "Traces (Legacy)"]} storageKey="eval-live-target">
+<Tabs items={["Observations (Recommended)", "Traces (Legacy)"]}>
 <Tab>
 
 **Configuration Steps**
@@ -307,8 +314,6 @@ We recommend migrating to [observation-level evaluators](/faq/all/llm-as-a-judge
 - **Recommended**: Python >= 3.9.0 or JS/TS >= 4.4.0 with experiment runner functions ([`run_experiment()`](/docs/evaluation/experiments/experiments-via-sdk) / [`experiment.run()`](/docs/evaluation/experiments/experiments-via-sdk)). More performant architecture with built-in evaluator orchestration.
 - **Legacy support**: Older SDK versions supported. Upgrade recommended for better performance.
 
-
-
 </Tab>
 </Tabs>
 
@@ -316,7 +321,7 @@ We recommend migrating to [observation-level evaluators](/faq/all/llm-as-a-judge
 
 You now need to teach Langfuse _which properties_ of your observation, trace, or experiment item represent the actual data to populate these variables for a sensible evaluation. For instance, you might map your system's logged observation input to the prompt's `{{input}}` variable, and the LLM response (observation output) to the prompt's `{{output}}` variable. This mapping is crucial for ensuring the evaluation is sensible and relevant.
 
-<Tabs items={["Live Production Data", "Offline Experiment Data"]} storageKey="eval-data-type">
+<Tabs items={["Live Production Data", "Offline Experiment Data"]}>
 <Tab>
 
 - **Prompt Preview**: As you configure the mapping, Langfuse shows a **live preview of the evaluation prompt populated with actual data**. This preview uses historical data from the last 24 hours that matched your filters. You can navigate through several examples to see how their respective data fills the prompt, helping you build confidence that the mapping is correct.
@@ -342,9 +347,10 @@ To see your evaluator in action, you need to either [send traces](/docs/observab
 ✨ Done! You have successfully set up an evaluator which will run on your data.
 
 <Callout type="info">
-  Need custom logic? Use the SDK instead—see [Custom
-  Scores](/docs/evaluation/evaluation-methods/custom-scores) or an [external
-  pipeline example](/docs/evaluation/evaluation-methods/scores-via-sdk).
+  Need deterministic custom logic? Use [code
+  evaluators](/docs/evaluation/evaluation-methods/code-evaluators) or
+  ingest scores from an [external evaluation
+  pipeline](/docs/evaluation/evaluation-methods/scores-via-sdk).
 </Callout>
 
 ## Debug LLM-as-a-Judge Executions
@@ -358,15 +364,32 @@ You can show the LLM-as-a-Judge execution traces by filtering for the environmen
   environment](/images/docs/evaluation/llm-as-a-judge-debug-traces.png)
 </Frame>
 
-<details>
-<summary>LLM-as-a-Judge Execution Status</summary>
+<Details>
+<Summary>LLM-as-a-Judge Execution Status</Summary>
 
 - **Completed**: Evaluation finished successfully.
 - **Error**: Evaluation failed (click execution trace ID for details).
 - **Delayed**: Evaluation hit rate limits by the LLM provider and is being retried with exponential backoff.
 - **Pending**: Evaluation is queued and waiting to run.
 
-</details>
+</Details>
+
+## Programmatic Setup via API [#api]
+
+Beyond the UI, you can set up and manage LLM-as-a-Judge evaluation programmatically through the public API. This is useful for version-controlling your evaluation setup, replicating it across projects, or automating rollouts from a deployment pipeline.
+
+The setup is split into two resources:
+
+- **Evaluators** define _how_ to score data: the judge prompt, its `{{variables}}`, the structured output definition (numeric, boolean, or categorical), and the optional model configuration. Evaluators are versioned—creating one under an existing name produces the next version, and active rules automatically move to it.
+- **Evaluation rules** define _what_ gets evaluated: the target (live observations or experiments), filters, sampling rate, and the mapping from your data onto the evaluator's variables. Each rule references an evaluator family by `name` and `scope`.
+
+A typical flow is to create an evaluator, read back its `variables` and `outputDefinition`, then create one or more evaluation rules that reference it.
+
+The endpoints are designed to be explored and consumed by coding agents. The recommended way to set up evaluators programmatically is to point an agent at the API reference and have it create the evaluators and wire up the evaluation rules for you.
+
+<Callout type="info">
+  These endpoints are currently **unstable** and may change while the underlying evaluation data model is being redesigned. See the [Evaluators](https://api.reference.langfuse.com/#tag/unstableevaluators) and [Evaluation Rules](https://api.reference.langfuse.com/#tag/unstableevaluationrules) API reference for the full request and response schemas.
+</Callout>
 
 ## Advanced Topics
 
@@ -400,30 +423,40 @@ This backfill flow runs from the traces table, but the resulting scores are atta
 
 ## FAQ
 
-<details>
-<summary>What is LLM-as-a-Judge evaluation?</summary>
+<Details>
+<Summary>What is LLM-as-a-Judge evaluation?</Summary>
+
 LLM-as-a-Judge is an evaluation methodology where a large language model (the "judge") assesses the quality of outputs from another LLM application. The judge model is given the input, the application's output, and a scoring rubric, then produces a score with reasoning. It's one of the most popular approaches for evaluating LLM applications because it combines human-like nuance with automated scalability.
-</details>
 
-<details>
-<summary>How accurate is LLM-as-a-Judge compared to human evaluation?</summary>
+</Details>
+
+<Details>
+<Summary>How accurate is LLM-as-a-Judge compared to human evaluation?</Summary>
+
 Research shows that strong LLM judges (such as GPT-5 class models) achieve 80-90% agreement with human evaluators on many quality dimensions, which is comparable to inter-annotator agreement between humans. Accuracy improves significantly with well-designed rubrics and clear evaluation criteria. For best results, calibrate your LLM-as-a-Judge setup against a small set of human-annotated examples.
-</details>
 
-<details>
-<summary>What models work best as LLM judges?</summary>
+</Details>
+
+<Details>
+<Summary>What models work best as LLM judges?</Summary>
+
 The most capable models generally produce the best evaluations. Models with strong instruction-following and reasoning capabilities (such as GPT-4o, Claude Sonnet, or Gemini Pro) are commonly used. The judge model should support structured output so scores can be reliably parsed. In Langfuse, you configure the judge model via [LLM Connections](/docs/administration/llm-connection).
-</details>
 
-<details>
-<summary>How much does LLM-as-a-Judge cost?</summary>
+</Details>
+
+<Details>
+<Summary>How much does LLM-as-a-Judge cost?</Summary>
+
 Cost depends on the judge model and the size of the inputs being evaluated. A typical evaluation costs $0.01-0.10 per assessment. You can manage costs by: (1) using sampling to evaluate a percentage of traces, (2) targeting specific observations instead of full traces, and (3) choosing cost-effective judge models for simpler evaluations.
-</details>
 
-<details>
-<summary>Can I use LLM-as-a-Judge for RAG evaluation?</summary>
+</Details>
+
+<Details>
+<Summary>Can I use LLM-as-a-Judge for RAG evaluation?</Summary>
+
 Yes. LLM-as-a-Judge is particularly effective for RAG pipelines. You can evaluate faithfulness (is the answer grounded in the retrieved context?), relevance (does the answer address the question?), and completeness (does the answer cover all relevant information?). Langfuse also integrates with [RAGAS](/guides/cookbook/evaluation_of_rag_with_ragas) for specialized RAG evaluation metrics.
-</details>
+
+</Details>
 
 ## GitHub Discussions
 

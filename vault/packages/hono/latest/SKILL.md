@@ -11,47 +11,58 @@ Hono web framework documentation. Use for ultrafast edge/serverless apps, routin
 
 ```
 contents/
-├── api/              # Core API reference (6 files)
-├── concepts/         # Framework concepts (4 files)
-├── getting-started/  # Platform setup guides (18 files)
-├── guides/           # Usage guides (11 files)
-├── helpers/          # Helper utilities (15 files)
-└── middleware/       # Middleware reference (24 files)
+├── index.md              # Overview, features, quick start (1 file)
+├── api/                  # Core API reference (7 files)
+├── concepts/             # Conceptual guides — routers, middleware, web standards (5 files)
+├── getting-started/      # Platform-specific setup guides (18 files)
+├── guides/               # How-to guides — JSX, RPC, validation, testing (10 files)
+├── helpers/              # Built-in helper utilities (15 files)
+└── middleware/           # Built-in and third-party middleware (24 files)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Core API | `contents/api/hono.md`, `contents/api/context.md`, `contents/api/routing.md` |
-| Getting Started | `contents/getting-started/basic.md`, `contents/getting-started/cloudflare-workers.md` |
-| Routing | `contents/api/routing.md`, `contents/concepts/routers.md` |
-| Middleware | `contents/concepts/middleware.md`, `contents/guides/middleware.md` |
-| Authentication | `contents/middleware/builtin/basic-auth.md`, `contents/middleware/builtin/bearer-auth.md`, `contents/middleware/builtin/jwt.md` |
-| Platform Adapters | `contents/getting-started/cloudflare-workers.md`, `contents/getting-started/deno.md`, `contents/getting-started/bun.md`, `contents/getting-started/nodejs.md` |
-| JSX/Templates | `contents/guides/jsx.md`, `contents/guides/jsx-dom.md`, `contents/middleware/builtin/jsx-renderer.md` |
-| Request Handling | `contents/api/request.md`, `contents/api/context.md` |
-| Validation | `contents/guides/validation.md` |
+| Getting started / quick start | `contents/index.md`, `contents/getting-started/basic.md` |
+| Routing — paths, params, wildcards | `contents/api/routing.md`, `contents/api/hono.md` |
+| Context, Request, Response | `contents/api/context.md`, `contents/api/request.md` |
+| Middleware — writing and using | `contents/guides/middleware.md`, `contents/concepts/middleware.md` |
+| RPC / type-safe client (hc) | `contents/guides/rpc.md`, `contents/concepts/stacks.md` |
+| JSX and rendering | `contents/guides/jsx.md`, `contents/guides/jsx-dom.md`, `contents/middleware/builtin/jsx-renderer.md` |
+| Validation (Zod, etc.) | `contents/guides/validation.md` |
 | Testing | `contents/guides/testing.md`, `contents/helpers/testing.md` |
-| Helpers | `contents/helpers/cookie.md`, `contents/helpers/html.md`, `contents/helpers/jwt.md`, `contents/helpers/streaming.md` |
-| RPC | `contents/guides/rpc.md` |
-| Security | `contents/middleware/builtin/cors.md`, `contents/middleware/builtin/csrf.md`, `contents/middleware/builtin/secure-headers.md` |
-| Performance | `contents/middleware/builtin/compress.md`, `contents/middleware/builtin/cache.md` |
+| Authentication (Basic, Bearer, JWT, JWK) | `contents/middleware/builtin/basic-auth.md`, `contents/middleware/builtin/bearer-auth.md`, `contents/middleware/builtin/jwt.md`, `contents/middleware/builtin/jwk.md`, `contents/helpers/jwt.md` |
+| CORS, CSRF, Security headers | `contents/middleware/builtin/cors.md`, `contents/middleware/builtin/csrf.md`, `contents/middleware/builtin/secure-headers.md` |
+| Cookies | `contents/helpers/cookie.md` |
+| Streaming responses | `contents/helpers/streaming.md` |
+| WebSocket | `contents/helpers/websocket.md` |
+| Static Site Generation (SSG) | `contents/helpers/ssg.md` |
+| Cloudflare Workers setup | `contents/getting-started/cloudflare-workers.md` |
+| Cloudflare Pages setup | `contents/getting-started/cloudflare-pages.md` |
+| AWS Lambda / Lambda@Edge setup | `contents/getting-started/aws-lambda.md`, `contents/getting-started/lambda-edge.md` |
+| Deno setup | `contents/getting-started/deno.md` |
+| Bun setup | `contents/getting-started/bun.md` |
+| Node.js setup | `contents/getting-started/nodejs.md` |
+| Vercel / Netlify / Supabase setup | `contents/getting-started/vercel.md`, `contents/getting-started/netlify.md`, `contents/getting-started/supabase-functions.md` |
+| Caching, compression, ETag | `contents/middleware/builtin/cache.md`, `contents/middleware/builtin/compress.md`, `contents/middleware/builtin/etag.md` |
+| Logging, timing, request ID | `contents/middleware/builtin/logger.md`, `contents/middleware/builtin/timing.md`, `contents/middleware/builtin/request-id.md` |
+| HTTP errors and exceptions | `contents/api/exception.md` |
+| Factory / middleware creation helpers | `contents/helpers/factory.md` |
+| Third-party middleware index | `contents/middleware/third-party.md` |
+| Best practices | `contents/guides/best-practices.md` |
+| FAQ | `contents/guides/faq.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Hono framework setup and configuration
-- Building edge/serverless applications
-- Platform-specific deployment (Cloudflare Workers, Deno, Bun, Node.js, AWS Lambda, Vercel, etc.)
-- Routing and request handling
-- Middleware (authentication, CORS, JWT, compression, etc.)
-- JSX and templating
-- Helper utilities (cookies, streaming, HTML, etc.)
-- RPC functionality
-- Testing Hono applications
-- Request validation
-- Web Standards compliance
+- Building web APIs or full-stack apps with Hono
+- Routing, middleware, context, or request handling in Hono
+- Deploying Hono to Cloudflare Workers, Deno, Bun, AWS Lambda, Node.js, Vercel, or other platforms
+- RPC mode and type-safe client generation with `hc`
+- JSX rendering, validation, streaming, or WebSocket in Hono
+- Any built-in middleware (auth, CORS, caching, security headers, etc.)
+- Built-in helpers (cookie, JWT, SSG, streaming, testing, etc.)
 
 ## How to find information
 

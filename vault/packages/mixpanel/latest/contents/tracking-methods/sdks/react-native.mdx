@@ -42,6 +42,9 @@ mixpanel.init();
 ```
 
 ### Library Configuration
+
+<Callout type="warning">For projects with EU or India data residency, you must configure the SDK to use the correct regional endpoint. Events sent to the wrong region will not be ingested. Learn more about [Privacy-Friendly Tracking](/docs/tracking-methods/sdks/react-native#privacy-friendly-tracking).</Callout>
+
 The Mixpanel object can be initialized with different configurations. See below for a list of configuration options.
 
 ```javascript
@@ -651,24 +654,42 @@ mixpanel.track('some_other_event');
 ```
 
 ### EU Data Residency
-Route data to Mixpanel's EU servers by calling `.setServerURL()` to set the `serverURL` to `https://api-eu.mixpanel.com` after initializing the client.
+Route data to Mixpanel's EU servers by setting the `serverURL` to `https://api-eu.mixpanel.com`.
+
+The recommended approach is to pass the `serverURL` to `.init()` so it is set before any events are sent. The `.init()` method accepts the `serverURL` as its third argument (available in SDK v3.3.0 and above).
 
 Learn more about [EU Data Residency](/docs/privacy/eu-residency).
 
 **Example Usage**
+```javascript
+// set the server URL at initialization to use Mixpanel's EU domain
+mixpanel.init(false, {}, 'https://api-eu.mixpanel.com');
+```
+
+Alternatively, you can call `.setServerURL()` to change the `serverURL` after initializing the client.
+
 ```javascript
 // set the Mixpanel instance to send data using Mixpanel's EU domain
 mixpanel.setServerURL('https://api-eu.mixpanel.com');
 ```
 
 ### India Data Residency
-Route data to Mixpanel's India servers by calling `.setServerURL()` to set the `serverURL` to `https://api-in.mixpanel.com` after initializing the client.
+Route data to Mixpanel's India servers by setting the `serverURL` to `https://api-in.mixpanel.com`.
+
+The recommended approach is to pass the `serverURL` to `.init()` so it is set before any events are sent. The `.init()` method accepts the `serverURL` as its third argument (available in SDK v3.3.0 and above).
 
 Learn more about [India Data Residency](/docs/privacy/in-residency).
 
 **Example Usage**
 ```javascript
-// set the Mixpanel instance to send data using Mixpanel's EU domain
+// set the server URL at initialization to use Mixpanel's India domain
+mixpanel.init(false, {}, 'https://api-in.mixpanel.com');
+```
+
+Alternatively, you can call `.setServerURL()` to change the `serverURL` after initializing the client.
+
+```javascript
+// set the Mixpanel instance to send data using Mixpanel's India domain
 mixpanel.setServerURL('https://api-in.mixpanel.com');
 ```
 

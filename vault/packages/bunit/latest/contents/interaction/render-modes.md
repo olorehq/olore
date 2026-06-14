@@ -43,7 +43,7 @@ The following example shows how to test the above component to check both render
 public void InteractiveServer()
 {
   // Act
-  var cut = RenderComponent<MovieComponent>(ps => ps
+  var cut = Render<MovieComponent>(ps => ps
     .SetAssignedRenderMode(RenderMode.InteractiveServer));
   
   // Assert
@@ -57,9 +57,9 @@ public void InteractiveServer()
 public void StaticRendering()
 {
   // Act
-  var cut = RenderComponent<MovieComponent>();
+  var cut = Render<MovieComponent>();
   // This is the same behavior as:
-  // var cut = RenderComponent<MovieComponent>(ps => ps
+  // var cut = Render<MovieComponent>(ps => ps
   //  .SetAssignedRenderMode(null));
   
   // Assert
@@ -133,7 +133,7 @@ public void SimulatingPreRenderingOnBlazorServer()
   SetRendererInfo(new RendererInfo(rendererName: "Static", isInteractive: false));
 
   // Act
-  var cut = RenderComponent<AssistentComponent>();
+  var cut = Render<AssistentComponent>();
 
   // Assert
   cut.MarkupMatches("<p>Loading...</p>");
@@ -146,7 +146,7 @@ public void SimulatingInteractiveServerRendering()
   SetRendererInfo(new RendererInfo(rendererMode: "Server", isInteractive: true));
 
   // Act
-  var cut = RenderComponent<AssistentComponent>();
+  var cut = Render<AssistentComponent>();
 
   // Assert
   cut.MarkupMatches("<p>Hey I am your assistant</p>");

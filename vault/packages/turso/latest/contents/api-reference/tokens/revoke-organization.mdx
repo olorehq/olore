@@ -1,0 +1,19 @@
+---
+sidebarTitle: Revoke (Organization)
+openapi: "DELETE /v1/organizations/{organizationSlug}/api-tokens/{tokenId}"
+---
+
+<Info>
+
+This endpoint takes a token **ID** (not a name) because token names are not unique across users in an organization. Admins and owners may revoke any token scoped to the organization; members and viewers may only revoke tokens they minted themselves. Use [`DELETE /v1/auth/api-tokens/{tokenName}`](/api-reference/tokens/revoke) to revoke unrestricted tokens.
+
+</Info>
+
+<RequestExample>
+
+```bash cURL
+curl -L -X DELETE 'https://api.turso.tech/v1/organizations/{organizationSlug}/api-tokens/{tokenId}' \
+  -H 'Authorization: Bearer TOKEN'
+```
+
+</RequestExample>

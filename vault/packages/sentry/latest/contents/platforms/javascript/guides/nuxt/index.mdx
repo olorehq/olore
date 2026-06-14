@@ -10,36 +10,71 @@ categories:
 
 <PlatformContent includePath="getting-started-prerequisites" />
 
-## Step 1: Install
+<StepConnector selector="h2" showNumbers={true}>
 
-To install Sentry using the installation wizard, run the following command within your project:
+## Install
+
+<Alert level="warning">
+
+The AI-powered `sentry init` flow is currently experimental. To use the existing framework-specific setup instead, see the option below, or check out the [Manual Setup](/platforms/javascript/guides/nuxt/manual-setup/) guide.
+
+</Alert>
+
+<SplitLayout>
+<SplitSection>
+<SplitSectionText>
+
+Run the Sentry init command in your project directory to automatically configure Sentry in your Nuxt application.
+
+The command guides you through setup and asks which optional Sentry features you want to enable beyond error monitoring.
+
+</SplitSectionText>
+<SplitSectionCode>
+
+```bash
+npx sentry@latest init
+```
+
+</SplitSectionCode>
+</SplitSection>
+</SplitLayout>
+
+<Expandable title="How does sentry init work?">
+
+The `sentry init` command is AI-powered. It analyzes your project and generates a tailored integration, rather than applying a fixed template. Here's what it does:
+
+- **Analyzes your project** — reads project files and manifests to understand your Nuxt app structure, including monorepos. It also respects AI instruction files such as `CLAUDE.md`, `AGENTS.md`, and `.cursorrules`.
+- **Detects your framework** — identifies Nuxt and selects the `@sentry/nuxt` SDK.
+- **Fetches official Sentry docs** — uses the current Sentry documentation as the source of truth when generating integration code.
+- **Installs dependencies** — adds `@sentry/nuxt` using your project's package manager.
+- **Creates and modifies files** — sets up client-side and server-side initialization, Nuxt module configuration, and other selected features based on your project structure.
+- **Verifies the integration** — re-reads modified files after writing to confirm Sentry was integrated.
+
+For full details on what each file does, see the [Manual Setup](/platforms/javascript/guides/nuxt/manual-setup/) guide.
+
+</Expandable>
+
+<Expandable title="Prefer the existing Nuxt wizard?">
+
+If you don't want to use the experimental AI-powered flow, run the framework-specific installation wizard instead:
 
 ```bash
 npx @sentry/wizard@latest -i nuxt
 ```
 
-The wizard then guides you through the setup process, asking you to enable additional (optional) Sentry features for your application beyond error monitoring.
-
-<PlatformContent includePath="getting-started-features-expandable" />
-
-This guide assumes that you enable all features and allow the wizard to create an example page or component. You can add or remove features at any time, but setting them up now will save you the effort of configuring them manually later.
-
-<Expandable title="What does the installation wizard change inside your application?">
-- Creates `sentry.(client|server).config.ts` to initialize the SDK
-- Creates or updates your `nuxt.config.ts` to add build options to add source maps upload and auto-instrumentation via Vite plugins
-- Creates `.env.sentry-build-plugin` with an auth token to upload source maps (this file is automatically added to `.gitignore`)
-- Adds an example page and route to your application to help verify your Sentry setup
-  - If it couldn't create a page, the wizard adds an example component instead
+To configure Sentry manually, follow the [Manual Setup](/platforms/javascript/guides/nuxt/manual-setup/) guide.
 
 </Expandable>
 
-## Step 2: Avoid Ad Blockers With Tunneling (Optional)
+## Avoid Ad Blockers With Tunneling (Optional)
 
 <PlatformContent includePath="getting-started-tunneling" />
 
-## Step 3: Verify Your Setup
+## Verify Your Setup
 
-If you haven't tested your Sentry configuration yet, let's do it now. You can confirm that Sentry is working properly and sending data to your Sentry project by using the example page created by the installation wizard.
+The `sentry init` command checks the integration files it creates or modifies before it finishes. To confirm runtime events are reaching Sentry, start your Nuxt app, exercise the parts of your app that should send events, and then check your Sentry project.
+
+If you used the Nuxt installation wizard instead, you can also verify your setup with the example page or component it creates.
 
 <Expandable level="warning" title="The wizard created an example component instead of a page.">
 The wizard creates a `SentryErrorButton` component when it fails to add an example page to your project. This usually happens if you don't have a `app.vue` file or if that file does not contain the `NuxtPage` component. To verify your setup, follow these steps before continuing with the next section, "View Captured Data in Sentry":
@@ -55,32 +90,55 @@ To test Sentry, you can run your Nuxt application in either production or develo
 We **recommend testing in production mode** as it most closely resembles your deployed application's environment.
 
 <Alert>
-  By default, the SDK will add the server config as `sentry.server.config.mjs` to the build.
-  To find the exact path to this file, enable `debug` mode in your Sentry configuration within `nuxt.config.ts`.
-  Sentry will then print the exact path during the build process.
+  By default, the SDK will add the server config as `sentry.server.config.mjs`
+  to the build. To find the exact path to this file, enable `debug` mode in your
+  Sentry configuration within `nuxt.config.ts`. Sentry will then print the exact
+  path during the build process.
 </Alert>
 
 ### Run in Production Mode (Recommended)
 
+<SplitLayout>
+<SplitSection>
+<SplitSectionText>
+
 After building with `nuxi build`, run your project and make sure to load Sentry on the server side by explicitly adding it via `--import` (read more about this flag in [Installation Methods](/platforms/javascript/guides/nuxt/install)).
+
+</SplitSectionText>
+<SplitSectionCode>
 
 ```
 # Start your app after building your project with `nuxi build`
 node --import ./.output/server/sentry.server.config.mjs .output/server/index.mjs
 ```
 
+</SplitSectionCode>
+</SplitSection>
+</SplitLayout>
+
 ### Run in Development Mode
+
+<SplitLayout>
+<SplitSection>
+<SplitSectionText>
 
 The server config file is generated in the `.nuxt` directory the first time you run `nuxt dev`. If you delete your `.nuxt` directory, you'll need to run `nuxt dev` once without the `NODE_OPTIONS` variable to regenerate it.
 
 If you only want to use Sentry on the client-side or only need basic error monitoring on the server side, you can omit the `--import` flag when running your application.
+
+</SplitSectionText>
+<SplitSectionCode>
 
 ```
 # Run the dev server with the --import flag after running `nuxt dev` once (without the flag)
 NODE_OPTIONS='--import ./.nuxt/dev/sentry.server.config.mjs' nuxt dev
 ```
 
-After building and running your project:
+</SplitSectionCode>
+</SplitSection>
+</SplitLayout>
+
+If you used the Nuxt installation wizard, after building and running your project:
 
 1.  Open the example page `/sentry-example-page` in your browser. For most Nuxt applications, this will be at localhost.
 2.  Click the "Throw sample error" button. This triggers two errors:
@@ -95,7 +153,7 @@ Now, head over to your project on [Sentry.io](https://sentry.io/) to view the co
 
 <PlatformContent includePath="getting-started-browser-sandbox-warning" />
 
-<PlatformContent includePath="getting-started-verify-locate-data" />
+<Include name="quick-start-locate-data-expandable" />
 
 ## Next Steps
 
@@ -103,6 +161,7 @@ At this point, you should have integrated Sentry into your Nuxt application and 
 
 Now's a good time to customize your setup and look into more advanced topics. Our next recommended steps for you are:
 
+- Explore [practical guides](/guides/) on what to monitor, log, track, and investigate after setup
 - Learn how to [manually capture errors](/platforms/javascript/guides/nuxt/usage/)
 - Continue to [customize your configuration](/platforms/javascript/guides/nuxt/configuration/)
 - Get familiar with [Sentry's product features](/product) like tracing, insights, and alerts
@@ -112,6 +171,8 @@ Now's a good time to customize your setup and look into more advanced topics. Ou
 <Expandable permalink={false} title="Are you having problems setting up the SDK?">
 
 - If you encountered issues with our installation wizard, try [setting up Sentry manually](/platforms/javascript/guides/nuxt/manual-setup/)
-- [Get support](https://sentry.zendesk.com/hc/en-us/)
+- [Get support](https://www.sentry.help/en/)
 
 </Expandable>
+
+</StepConnector>

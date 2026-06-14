@@ -4,55 +4,40 @@
 
 ```
 contents/
-├── index.mdx                        # Introduction
-├── quick-start.mdx                  # Quick start guide
-├── philosophy.mdx                   # Mental models
-├── comparison.mdx                   # Comparison with other tools
-├── defaults.mdx                     # Default behaviors
-├── limitations.mdx                  # Known limitations
-├── faq.mdx                          # Frequently asked questions
-├── runbook.mdx                      # Debugging runbook
-├── cli/                             # CLI reference (1 file)
-├── integrations/                    # Integration guides (3 files)
-├── http/                            # HTTP mocking (14 files)
-│   ├── index.mdx
-│   ├── handling-requests.mdx
-│   ├── intercepting-requests/       # Request interception (5 files)
-│   └── mocking-responses/           # Response mocking (10 files)
-├── graphql/                         # GraphQL mocking (9 files)
-│   ├── index.mdx
-│   ├── schema-first-mocking.mdx
-│   ├── intercepting-operations/     # Operation interception (5 files)
-│   └── mocking-responses/           # Response mocking (3 files)
-├── websocket/                       # WebSocket mocking (12 files)
-│   ├── index.mdx
-│   ├── bindings.mdx
-│   ├── event-logs.mdx
-│   ├── type-safety.mdx
-│   ├── client-events/               # Client event handlers (5 files)
-│   └── server-events/               # Server event handlers (5 files)
-├── sse/                             # Server-Sent Events (9 files)
-│   ├── index.mdx
-│   ├── intercepting-sources/        # Source interception (1 file)
-│   └── server-events/               # Server event handlers (7 files)
-├── api/                             # API reference (27 files)
-│   ├── http.mdx                     # http namespace
-│   ├── graphql.mdx                  # graphql namespace
-│   ├── ws.mdx                       # ws namespace
-│   ├── sse.mdx                      # sse namespace
-│   ├── http-response.mdx            # HttpResponse class
-│   ├── bypass.mdx                   # bypass()
-│   ├── passthrough.mdx              # passthrough()
-│   ├── delay.mdx                    # delay()
-│   ├── get-response.mdx             # getResponse()
-│   ├── life-cycle-events.mdx        # Life cycle events
-│   ├── request-handler.mdx          # RequestHandler
-│   ├── is-common-asset-request.mdx  # isCommonAssetRequest()
-│   ├── setup-worker/                # setupWorker API (7 files)
-│   └── setup-server/                # setupServer API (8 files)
-├── recipes/                         # Recipes (10 files)
-├── migrations/                      # Migration guides (1 file)
-└── shared/                          # Shared docs (1 file)
+├── index.mdx                          # Introduction
+├── quick-start.mdx                    # Quick start guide
+├── defaults.mdx                       # Default behaviors
+├── limitations.mdx                    # Known limitations
+├── comparison.mdx                     # Comparison with other tools
+├── migrations.mdx                     # Migration overview
+├── faq.mdx                            # Frequently asked questions
+├── runbook.mdx                        # Debugging runbook
+├── api/                               # API reference (18 files)
+│   ├── bypass.mdx
+│   ├── delay.mdx
+│   ├── finalize.mdx
+│   ├── get-response.mdx
+│   ├── graphql.mdx
+│   ├── http-response.mdx
+│   ├── http.mdx
+│   ├── is-common-asset-request.mdx
+│   ├── life-cycle-events.mdx
+│   ├── passthrough.mdx
+│   ├── request-handler.mdx
+│   ├── sse.mdx
+│   ├── ws.mdx
+│   ├── setup-server/                  # setupServer API (7 files)
+│   └── setup-worker/                  # setupWorker API (7 files)
+├── best-practices/                    # Best practices (8 files)
+├── cli/                               # CLI reference (1 file)
+├── graphql/                           # GraphQL mocking (8 files)
+├── http/                              # HTTP mocking (16 files)
+├── integrations/                      # Environment integrations (3 files)
+├── migrations/                        # Migration guides (1 file)
+├── recipes/                           # Recipes and patterns (11 files)
+├── shared/                            # Shared troubleshooting (1 file)
+├── sse/                               # Server-Sent Events (8 files)
+└── websocket/                         # WebSocket mocking (12 files)
 ```
 
 ## Key Entry Points
@@ -60,15 +45,15 @@ contents/
 | Task | Start Here |
 |------|------------|
 | New user | `contents/quick-start.mdx` |
-| Browser integration | `contents/integrations/browser.mdx` |
-| Node.js integration | `contents/integrations/node.mdx` |
-| HTTP mocking | `contents/http/` |
-| GraphQL mocking | `contents/graphql/` |
-| WebSocket mocking | `contents/websocket/` |
-| SSE mocking | `contents/sse/` |
-| API reference | `contents/api/` |
-| Troubleshooting | `contents/runbook.mdx` |
-| Migrating from v1 | `contents/migrations/1.x-to-2.x.mdx` |
+| HTTP mocking | `contents/http/index.mdx` |
+| GraphQL mocking | `contents/graphql/index.mdx` |
+| WebSocket mocking | `contents/websocket/index.mdx` |
+| Server-Sent Events | `contents/sse/index.mdx` |
+| API reference | `contents/api/http.mdx`, `contents/api/graphql.mdx` |
+| Browser setup | `contents/integrations/browser.mdx` |
+| Node.js setup | `contents/integrations/node.mdx` |
+| Debugging | `contents/runbook.mdx` |
+| Best practices | `contents/best-practices/index.mdx` |
 
 ## Detailed Structure
 
@@ -77,157 +62,181 @@ contents/
 | File | Description |
 |------|-------------|
 | `index.mdx` | Introduction to MSW |
-| `quick-start.mdx` | Quick start guide (Vitest/Node.js) |
-| `philosophy.mdx` | Mental models behind MSW |
-| `comparison.mdx` | Comparison with Nock, Mirage, Cypress, Playwright |
-| `defaults.mdx` | Default behaviors (passthrough, etc.) |
-| `limitations.mdx` | Known browser and Node.js limitations |
+| `quick-start.mdx` | Quick start guide |
+| `defaults.mdx` | Default behaviors (passthrough, handler fallthrough) |
+| `limitations.mdx` | Known limitations |
+| `comparison.mdx` | Comparison with nock, Mirage, Cypress, Playwright, etc. |
+| `migrations.mdx` | Migration guides overview |
 | `faq.mdx` | Frequently asked questions |
 | `runbook.mdx` | Debugging runbook for common issues |
+
+### api/ (13 files)
+
+| File | Description |
+|------|-------------|
+| `bypass.mdx` | `bypass()` - bypass request interception |
+| `delay.mdx` | `delay()` - add artificial delays |
+| `finalize.mdx` | `finalize()` - finalize response body |
+| `get-response.mdx` | `getResponse()` - get response from a handler |
+| `graphql.mdx` | `graphql` namespace reference |
+| `http-response.mdx` | `HttpResponse` class reference |
+| `http.mdx` | `http` namespace reference |
+| `is-common-asset-request.mdx` | `isCommonAssetRequest()` utility |
+| `life-cycle-events.mdx` | Life cycle events |
+| `passthrough.mdx` | `passthrough()` - pass request to network |
+| `request-handler.mdx` | `RequestHandler` class reference |
+| `sse.mdx` | `sse` namespace for Server-Sent Events |
+| `ws.mdx` | `ws` namespace for WebSockets |
+
+### api/setup-server/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | `setupServer()` API overview (Node.js) |
+| `boundary.mdx` | `server.boundary()` - isolate handlers |
+| `close.mdx` | `server.close()` - stop the server |
+| `list-handlers.mdx` | `server.listHandlers()` |
+| `listen.mdx` | `server.listen()` - start listening |
+| `reset-handlers.mdx` | `server.resetHandlers()` |
+| `restore-handlers.mdx` | `server.restoreHandlers()` |
+| `use.mdx` | `server.use()` - add runtime handlers |
+
+### api/setup-worker/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | `setupWorker()` API overview (browser) |
+| `list-handlers.mdx` | `worker.listHandlers()` |
+| `reset-handlers.mdx` | `worker.resetHandlers()` |
+| `restore-handlers.mdx` | `worker.restoreHandlers()` |
+| `start.mdx` | `worker.start()` - start the service worker |
+| `stop.mdx` | `worker.stop()` - stop the service worker |
+| `use.mdx` | `worker.use()` - add runtime handlers |
+
+### best-practices/ (8 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Best practices overview |
+| `avoid-request-assertions.mdx` | Why to avoid asserting requests directly |
+| `custom-request-predicate.mdx` | Custom request matching predicates |
+| `dynamic-mock-scenarios.mdx` | Dynamic mock scenarios |
+| `managing-the-worker.mdx` | Managing the service worker lifecycle |
+| `network-behavior-overrides.mdx` | Overriding network behaviors at runtime |
+| `structuring-handlers.mdx` | How to structure request handlers |
+| `typescript.mdx` | TypeScript best practices |
 
 ### cli/ (1 file)
 
 | File | Description |
 |------|-------------|
-| `cli/init.mdx` | `msw init` CLI command |
+| `init.mdx` | `npx msw init` - initialize MSW in a project |
+
+### graphql/ (8 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | GraphQL mocking overview |
+| `schema-first-mocking.mdx` | Schema-first mocking approach |
+| `intercepting-operations/index.mdx` | Intercepting GraphQL operations |
+| `intercepting-operations/mutations.mdx` | Intercepting mutations |
+| `intercepting-operations/operations.mdx` | Intercepting operations |
+| `intercepting-operations/queries.mdx` | Intercepting queries |
+| `intercepting-operations/variables.mdx` | Working with variables |
+| `mocking-responses/index.mdx` | Mocking GraphQL responses |
+| `mocking-responses/errors.mdx` | Mocking GraphQL errors |
+| `mocking-responses/query-batching.mdx` | Query batching |
+
+### http/ (16 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | HTTP mocking overview |
+| `handling-requests.mdx` | Handling intercepted requests |
+| `intercepting-requests/index.mdx` | Intercepting requests overview |
+| `intercepting-requests/body.mdx` | Reading request body |
+| `intercepting-requests/cookies.mdx` | Reading request cookies |
+| `intercepting-requests/path-parameters.mdx` | Path parameters |
+| `intercepting-requests/query-parameters.mdx` | Query parameters |
+| `mocking-responses/index.mdx` | Mocking responses overview |
+| `mocking-responses/binary.mdx` | Binary responses |
+| `mocking-responses/cookies.mdx` | Setting cookies in responses |
+| `mocking-responses/error-responses.mdx` | Error responses |
+| `mocking-responses/file-uploads.mdx` | File upload mocking |
+| `mocking-responses/network-errors.mdx` | Simulating network errors |
+| `mocking-responses/polling.mdx` | Polling scenarios |
+| `mocking-responses/proxying-requests.mdx` | Proxying/forwarding requests |
+| `mocking-responses/redirects.mdx` | Redirect responses |
+| `mocking-responses/response-patching.mdx` | Response patching (modify real responses) |
+| `mocking-responses/response-timing.mdx` | Response timing |
+| `mocking-responses/streaming.mdx` | Streaming responses |
 
 ### integrations/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `integrations/browser.mdx` | Browser integration with Service Worker |
-| `integrations/node.mdx` | Node.js integration |
-| `integrations/react-native.mdx` | React Native integration |
-
-### http/ (14 files)
-
-| File | Description |
-|------|-------------|
-| `http/index.mdx` | HTTP mocking overview |
-| `http/handling-requests.mdx` | Request handler structure |
-| `http/intercepting-requests/index.mdx` | Intercepting requests overview |
-| `http/intercepting-requests/body.mdx` | Reading request body |
-| `http/intercepting-requests/cookies.mdx` | Reading request cookies |
-| `http/intercepting-requests/path-parameters.mdx` | Path parameters |
-| `http/intercepting-requests/query-parameters.mdx` | Query parameters |
-| `http/mocking-responses/index.mdx` | Mocking responses overview |
-| `http/mocking-responses/binary.mdx` | Binary responses |
-| `http/mocking-responses/cookies.mdx` | Response cookies |
-| `http/mocking-responses/error-responses.mdx` | Error responses |
-| `http/mocking-responses/file-uploads.mdx` | File upload mocking |
-| `http/mocking-responses/network-errors.mdx` | Network errors |
-| `http/mocking-responses/polling.mdx` | Request polling |
-| `http/mocking-responses/proxying-requests.mdx` | Proxying requests |
-| `http/mocking-responses/redirects.mdx` | Redirects |
-| `http/mocking-responses/response-patching.mdx` | Response patching |
-| `http/mocking-responses/response-timing.mdx` | Response timing/delay |
-| `http/mocking-responses/streaming.mdx` | Streaming responses |
-
-### graphql/ (9 files)
-
-| File | Description |
-|------|-------------|
-| `graphql/index.mdx` | GraphQL mocking overview |
-| `graphql/schema-first-mocking.mdx` | Schema-first mocking |
-| `graphql/intercepting-operations/index.mdx` | Intercepting operations overview |
-| `graphql/intercepting-operations/queries.mdx` | Query interception |
-| `graphql/intercepting-operations/mutations.mdx` | Mutation interception |
-| `graphql/intercepting-operations/operations.mdx` | All operations |
-| `graphql/intercepting-operations/variables.mdx` | Operation variables |
-| `graphql/mocking-responses/index.mdx` | Mocking responses overview |
-| `graphql/mocking-responses/errors.mdx` | GraphQL errors |
-| `graphql/mocking-responses/query-batching.mdx` | Query batching |
-
-### websocket/ (12 files)
-
-| File | Description |
-|------|-------------|
-| `websocket/index.mdx` | WebSocket mocking overview |
-| `websocket/bindings.mdx` | WebSocket bindings |
-| `websocket/event-logs.mdx` | Event logs |
-| `websocket/type-safety.mdx` | TypeScript type safety |
-| `websocket/client-events/index.mdx` | Client events overview |
-| `websocket/client-events/broadcasting-data.mdx` | Broadcasting data |
-| `websocket/client-events/client-to-server-forwarding.mdx` | Client-to-server forwarding |
-| `websocket/client-events/closing-client-connection.mdx` | Closing connections |
-| `websocket/client-events/erroring-the-connection.mdx` | Erroring connections |
-| `websocket/client-events/sending-data.mdx` | Sending data |
-| `websocket/server-events/index.mdx` | Server events overview |
-| `websocket/server-events/closing-server-connection.mdx` | Closing server connection |
-| `websocket/server-events/establishing-server-connection.mdx` | Establishing connection |
-| `websocket/server-events/sending-data.mdx` | Sending data from server |
-| `websocket/server-events/server-to-client-forwarding.mdx` | Server-to-client forwarding |
-
-### sse/ (9 files)
-
-| File | Description |
-|------|-------------|
-| `sse/index.mdx` | SSE mocking overview |
-| `sse/intercepting-sources/index.mdx` | Intercepting SSE sources |
-| `sse/server-events/index.mdx` | Server events overview |
-| `sse/server-events/closing-the-connection.mdx` | Closing the connection |
-| `sse/server-events/custom-events.mdx` | Custom events |
-| `sse/server-events/erroring-the-connection.mdx` | Erroring the connection |
-| `sse/server-events/establishing-server-connection.mdx` | Establishing connection |
-| `sse/server-events/message-events.mdx` | Message events |
-| `sse/server-events/retry.mdx` | Retry behavior |
-
-### api/ (27 files)
-
-| File | Description |
-|------|-------------|
-| `api/http.mdx` | `http` namespace — REST handler factory |
-| `api/graphql.mdx` | `graphql` namespace — GraphQL handler factory |
-| `api/ws.mdx` | `ws` namespace — WebSocket handler factory |
-| `api/sse.mdx` | `sse` namespace — SSE handler factory |
-| `api/http-response.mdx` | `HttpResponse` class |
-| `api/bypass.mdx` | `bypass()` function |
-| `api/passthrough.mdx` | `passthrough()` function |
-| `api/delay.mdx` | `delay()` function |
-| `api/get-response.mdx` | `getResponse()` function |
-| `api/life-cycle-events.mdx` | Life cycle events |
-| `api/request-handler.mdx` | `RequestHandler` class |
-| `api/is-common-asset-request.mdx` | `isCommonAssetRequest()` function |
-| `api/setup-worker/index.mdx` | `setupWorker()` function |
-| `api/setup-worker/start.mdx` | `worker.start()` |
-| `api/setup-worker/stop.mdx` | `worker.stop()` |
-| `api/setup-worker/use.mdx` | `worker.use()` |
-| `api/setup-worker/reset-handlers.mdx` | `worker.resetHandlers()` |
-| `api/setup-worker/restore-handlers.mdx` | `worker.restoreHandlers()` |
-| `api/setup-worker/list-handlers.mdx` | `worker.listHandlers()` |
-| `api/setup-server/index.mdx` | `setupServer()` function |
-| `api/setup-server/listen.mdx` | `server.listen()` |
-| `api/setup-server/close.mdx` | `server.close()` |
-| `api/setup-server/use.mdx` | `server.use()` |
-| `api/setup-server/reset-handlers.mdx` | `server.resetHandlers()` |
-| `api/setup-server/restore-handlers.mdx` | `server.restoreHandlers()` |
-| `api/setup-server/list-handlers.mdx` | `server.listHandlers()` |
-| `api/setup-server/boundary.mdx` | `server.boundary()` |
-
-### recipes/ (10 files)
-
-| File | Description |
-|------|-------------|
-| `recipes/custom-worker-script-location.mdx` | Custom worker script location |
-| `recipes/global-response-delay.mdx` | Global response delay |
-| `recipes/higher-order-resolver.mdx` | Higher-order resolver pattern |
-| `recipes/keeping-mocks-in-sync.mdx` | Keeping mocks in sync with API |
-| `recipes/merging-service-workers.mdx` | Merging service workers |
-| `recipes/using-base-url.mdx` | Using a base URL |
-| `recipes/using-cdn.mdx` | Using MSW via CDN |
-| `recipes/using-custom-homepage.mdx` | Custom Service Worker homepage |
-| `recipes/using-local-https.mdx` | Using local HTTPS |
-| `recipes/vitest-browser-mode.mdx` | Vitest browser mode |
-| `recipes/xmlhttprequest-progress-events.mdx` | XHR progress events |
+| `browser.mdx` | Browser integration (Service Worker) |
+| `node.mdx` | Node.js integration |
+| `react-native.mdx` | React Native integration |
 
 ### migrations/ (1 file)
 
 | File | Description |
 |------|-------------|
-| `migrations/1.x-to-2.x.mdx` | Migration guide from v1 to v2 |
+| `1.x-to-2.x.mdx` | Migration guide from MSW 1.x to 2.x |
+
+### recipes/ (11 files)
+
+| File | Description |
+|------|-------------|
+| `custom-worker-script-location.mdx` | Custom service worker script location |
+| `global-response-delay.mdx` | Global response delay |
+| `higher-order-resolver.mdx` | Higher-order resolver pattern |
+| `keeping-mocks-in-sync.mdx` | Keeping mocks in sync with API |
+| `merging-service-workers.mdx` | Merging multiple service workers |
+| `using-base-url.mdx` | Using a base URL |
+| `using-cdn.mdx` | Loading MSW from a CDN |
+| `using-custom-homepage.mdx` | Custom service worker homepage |
+| `using-local-https.mdx` | Using local HTTPS |
+| `vitest-browser-mode.mdx` | Vitest browser mode integration |
+| `xmlhttprequest-progress-events.mdx` | XHR progress events |
 
 ### shared/ (1 file)
 
 | File | Description |
 |------|-------------|
-| `shared/jest-missing-globals.mdx` | Fix for Jest missing globals |
+| `jest-missing-globals.mdx` | Fix for Jest missing Node.js globals |
+
+### sse/ (8 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Server-Sent Events overview |
+| `intercepting-sources/index.mdx` | Intercepting SSE sources |
+| `server-events/index.mdx` | Server events overview |
+| `server-events/closing-the-connection.mdx` | Closing SSE connection |
+| `server-events/custom-events.mdx` | Custom SSE events |
+| `server-events/erroring-the-connection.mdx` | Erroring the SSE connection |
+| `server-events/establishing-server-connection.mdx` | Establishing server connection |
+| `server-events/message-events.mdx` | Message events |
+| `server-events/retry.mdx` | Retry behavior |
+
+### websocket/ (12 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | WebSocket mocking overview |
+| `bindings.mdx` | WebSocket bindings |
+| `event-logs.mdx` | Event logs |
+| `type-safety.mdx` | TypeScript type safety |
+| `client-events/index.mdx` | Client events overview |
+| `client-events/broadcasting-data.mdx` | Broadcasting data to clients |
+| `client-events/client-to-server-forwarding.mdx` | Client-to-server forwarding |
+| `client-events/closing-client-connection.mdx` | Closing client connection |
+| `client-events/erroring-the-connection.mdx` | Erroring the connection |
+| `client-events/sending-data.mdx` | Sending data to client |
+| `server-events/index.mdx` | Server events overview |
+| `server-events/closing-server-connection.mdx` | Closing server connection |
+| `server-events/establishing-server-connection.mdx` | Establishing server connection |
+| `server-events/sending-data.mdx` | Sending data from server |
+| `server-events/server-to-client-forwarding.mdx` | Server-to-client forwarding |

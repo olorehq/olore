@@ -1,10 +1,21 @@
 ---
 title: Connecting with the Neon-Managed Integration
 subtitle: Link an existing Neon project to Vercel and keep billing in Neon
+summary: >-
+  The Neon-Managed Vercel Integration connects an existing Neon project to a
+  Vercel project via Connectable Accounts, keeping billing in Neon and
+  automatically creating an isolated database branch named
+  `preview/<git-branch>` for each Vercel preview deployment. Use this
+  integration instead of the Vercel-Managed Integration when you already have a
+  Neon account or need direct billing control. The two integrations cannot
+  coexist in the same Vercel project, and each Neon project maps to exactly one
+  Vercel project. The integration injects `DATABASE_URL`, `DATABASE_URL_UNPOOLED`,
+  and legacy `PG*` variables per deployment, with optional automatic branch
+  cleanup when Git branches are deleted.
 redirectFrom:
   - /docs/guides/vercel-previews-integration
 enableTableOfContents: true
-updatedOn: '2026-01-13T14:45:42.236Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>
@@ -180,7 +191,7 @@ The integration sets both modern (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`) and l
 **To customize which variables are used:**
 
 1. Go to **Neon Console → Integrations → Manage → Settings**
-2. Select the variables you want (e.g., `PGHOST`, `PGUSER`, etc.)
+2. Select the variables you want (for example, `PGHOST`, `PGUSER`, etc.)
 3. Click **Save changes**
 
 ![Select Vercel variables](/docs/guides/vercel_select_variables.png)
@@ -188,12 +199,9 @@ The integration sets both modern (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`) and l
 ### Branch cleanup
 
 **Automatic cleanup (recommended):**
-Enable **Automatically delete obsolete Neon branches** during setup to remove preview branches automatically when the corresponding Git branch is deleted.
+Enable **Automatically delete obsolete Neon branches** during setup to remove preview branches automatically when the corresponding Git branch is deleted. Cleanup runs the next time a preview deployment is created.
 
-<Admonition type="note">
-This Git-branch-based cleanup differs from the [Vercel-Managed Integration](/docs/guides/vercel-managed-integration), which deletes branches when deployments are deleted (either manually or automatically via Vercel's retention policies).
-
-</Admonition>
+Unlike the [Vercel-Managed Integration](/docs/guides/vercel-managed-integration), this cleanup is not affected by Vercel's deployment retention policies. For a full comparison and additional cleanup options, see [Managing Vercel preview branch cleanup](/docs/guides/vercel-branch-cleanup).
 
 **Manual cleanup:**
 If needed, you can delete branches manually:
@@ -205,7 +213,7 @@ If needed, you can delete branches manually:
 <Admonition type="warning" title="Important cleanup considerations">
 - **Don't rename branches:** Renaming either the Git branch or Neon branch breaks name-matching logic and may cause unintended deletions
 - **Avoid child branches:** Creating child branches on preview branches prevents automatic deletion
-- **Role dependency:** The integration depends on the selected role - removing it will break the integration
+- **Role dependency:** The integration depends on the selected role; removing it will break the integration
 </Admonition>
 
 ### Disconnect integration

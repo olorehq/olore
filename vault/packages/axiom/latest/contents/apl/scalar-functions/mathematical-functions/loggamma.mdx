@@ -1,0 +1,98 @@
+---
+title: loggamma
+description: 'This page explains how to use the loggamma function in APL.'
+---
+
+Use the `loggamma` function in APL to compute the natural logarithm of the absolute value of the [gamma function](https://en.wikipedia.org/wiki/Gamma_function). This is equivalent to `log(abs(gamma(x)))` but avoids the numeric overflow that occurs when `gamma(x)` itself becomes too large to represent as a floating-point number.
+
+`loggamma` is useful when you work with large inputs to the gamma function in statistical calculations, such as log-likelihood computations, Bayesian modeling, or custom anomaly scoring. Use it whenever `gamma(x)` would overflow to infinity.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn't include a built-in `loggamma()` function. You typically implement it using external libraries or the Machine Learning Toolkit.
+
+<CodeGroup>
+```sql Splunk example
+| eval loggamma_val = null()
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend loggamma_val = loggamma(x)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard SQL does not define a `LOGGAMMA()` function. You need to implement it in application code or through database-specific extensions.
+
+<CodeGroup>
+```sql SQL example
+-- No standard SQL equivalent; use application code
+SELECT NULL AS loggamma_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend loggamma_val = loggamma(x)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+loggamma(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The input value. Must not be zero or a negative integer. |
+
+### Returns
+
+The natural logarithm of the absolute value of the gamma function of `x`.
+
+## Example
+
+Use `loggamma` to compute the log-gamma value of a duration in seconds without risking numeric overflow.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| extend duration_s = req_duration_ms / 1000.0
+| extend loggamma_val = loggamma(duration_s)
+| project _time, id, req_duration_ms, loggamma_val
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20extend%20duration_s%20%3D%20req_duration_ms%20/%201000.0%20%7C%20extend%20loggamma_val%20%3D%20loggamma%28duration_s%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20loggamma_val%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | loggamma_val |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1000.0 | 0.0000 |
+| 2024-11-14 10:01:00 | user-2 | 2000.0 | 0.0000 |
+| 2024-11-14 10:02:00 | user-3 | 10000.0 | 16.1181 |
+
+## List of related functions
+
+- [gamma](/apl/scalar-functions/mathematical-functions/gamma): Returns the gamma function directly. Use it for small inputs where overflow is not a concern.
+- [log](/apl/scalar-functions/mathematical-functions/log): Returns the natural logarithm. Use it for general log-transformation without the gamma relationship.
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it to exponentiate `loggamma` results back to the original gamma scale when the values are small enough.
+- [isfinite](/apl/scalar-functions/mathematical-functions/isfinite): Returns whether a value is finite. Use it to verify that `loggamma` results are valid for downstream calculations.
+- [abs](/apl/scalar-functions/mathematical-functions/abs): Returns the absolute value. Note that `loggamma(x)` equals `log(abs(gamma(x)))`, so `abs` is implicitly applied to `gamma(x)` before the log.

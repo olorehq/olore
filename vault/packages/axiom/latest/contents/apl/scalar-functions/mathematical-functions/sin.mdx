@@ -1,0 +1,91 @@
+---
+title: sin
+description: 'This page explains how to use the sin function in APL.'
+---
+
+Use the `sin` function in APL to compute the sine of an angle expressed in radians. The function accepts any real number and returns a value in the range [-1, 1].
+
+`sin` is most commonly used in observability to encode time-of-day or other periodic signals as cyclic coordinates. When combined with `cos`, it produces a two-dimensional representation of periodic phenomena that preserves circular distance. For example, you can encode hour-of-day cyclically so that hour 23 and hour 0 are treated as adjacent.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, `sin()` takes an angle in radians and returns the sine, just like APL.
+
+<CodeGroup>
+```sql Splunk example
+| eval sin_val = sin(angle_rad)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend sin_val = sin(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `SIN()` is a standard function with identical semantics.
+
+<CodeGroup>
+```sql SQL example
+SELECT SIN(angle_rad) AS sin_val FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend sin_val = sin(angle_rad)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+sin(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | The angle in radians. |
+
+### Returns
+
+The sine of `x`, a real number in the range [-1, 1].
+
+## Example
+
+Use `sin` to compute the sine of an angle in radians.
+
+**Query**
+
+```kusto
+print result = sin(pi() / 2)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22print%20result%20%3D%20sin%28pi%28%29%20/%202%29%22%7D)
+
+**Output**
+
+| result |
+|---|
+| 1 |
+
+## List of related functions
+
+- [cos](/apl/scalar-functions/mathematical-functions/cos): Returns the cosine. Use `sin` and `cos` together to produce a two-dimensional cyclic encoding of angles.
+- [tan](/apl/scalar-functions/mathematical-functions/tan): Returns the tangent. Use it when you need the ratio of sine to cosine.
+- [asin](/apl/scalar-functions/mathematical-functions/asin): Returns the arc sine. Use it as the inverse of `sin`.
+- [pi](/apl/scalar-functions/mathematical-functions/pi): Returns the constant π. Use it to construct radian values before calling `sin`.
+- [radians](/apl/scalar-functions/mathematical-functions/radians): Converts degrees to radians. Use it to prepare degree inputs before calling `sin`.

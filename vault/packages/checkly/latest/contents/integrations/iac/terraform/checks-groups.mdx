@@ -8,7 +8,7 @@ Checks make up the most important unit of your Checkly monitoring setup. Groups 
 
 ## Checks
 
-[Browser checks](/browser-checks/), [API checks](/api-checks/), [Heartbeat monitors](/heartbeat-monitors/) and [Multistep checks](/multistep-checks/) share many arguments, configuration-wise, 
+[Browser checks](/detect/synthetic-monitoring/browser-checks/overview), [API checks](/detect/synthetic-monitoring/api-checks/overview), [Heartbeat monitors](/detect/uptime-monitoring/heartbeat-monitors/overview) and [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview) share many arguments, configuration-wise, 
 but also have their own unique ones. The type of your check is controlled using the `type` argument.
 
 ### Browser checks
@@ -145,7 +145,7 @@ Upon applying your terraform configuration changes, you will be returned a read-
 As with Browser checks, when constructing a Multistep check it is possible to provide the script directly in-line, 
 but the recommended approach is to store scripts in separate files.
 
-> Multistep checks are only supported on runtime 2023.09 or later. See [Runtimes](/runtimes/) for more details.
+> Multistep checks are only supported on runtime 2023.09 or later. See [Runtimes](/platform/runtimes/overview) for more details.
 
 For example, a Multistep check can look as follows:
 ```terraform
@@ -231,7 +231,7 @@ resource "checkly_tcp_monitor" "example-tcp-monitor-2" {
 
 ## Groups
 
-Once you start having more than just a handful of checks, it makes sense to start looking into [groups](/groups/) to keep things tidy:
+Once you start having more than just a handful of checks, it makes sense to start looking into [groups](/platform/groups) to keep things tidy:
 
 ```terraform
 resource "checkly_check_group" "key-shop-flows" {

@@ -1,8 +1,17 @@
 ---
 title: Secure your app with RLS
 subtitle: Learn how Row-level Security (RLS) protects user data
+summary: >-
+  Step-by-step tutorial for securing a React note-taking app against
+  cross-user data leaks using Postgres Row-Level Security on Neon, with
+  JWT-based `auth.user_id()` and Drizzle's `crudPolicy`. Choose this page when
+  you need to verify that database-level RLS policies hold even after removing
+  application-layer `owner_id` filters, or when integrating Neon Auth, Auth0,
+  or Clerk as a JWT provider. The tutorial uses `ALTER TABLE ... DISABLE ROW
+  LEVEL SECURITY` to expose the leak, then shows how `crudPolicy` restores
+  isolation without touching application code.
 enableTableOfContents: true
-updatedOn: '2025-12-10T22:18:02.771Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 redirectFrom:
   - /docs/guides/neon-rls-authorize-tutorial
   - /docs/guides/neon-authorize-tutorial
@@ -27,7 +36,7 @@ For authentication, **Neon Auth** issues a unique `userId` in a JSON Web Token (
 
 To get started, you'll need:
 
-- **Neon account**: Sign up at [Neon](https://neon.tech) and create your first project in **AWS** (note: [Azure](/docs/guides/neon-rls#current-limitations) regions are not currently supported).
+- **Neon account**: Sign up at [Neon](https://neon.tech) and create your first project in **AWS** (note: Azure regions are not currently supported).
 - **Neon Data API + Neon Auth example application**: Clone the sample [Neon Data API + Neon Auth repository](https://github.com/neondatabase-labs/neon-data-api-neon-auth):
 
   ```bash
@@ -36,7 +45,7 @@ To get started, you'll need:
 
   Follow the instructions in the README to set up Neon Data API with Neon Auth, configure environment variables, and run database migrations.
 
-  > When enabling Neon Data API, ensure you select **Neon Auth** with Neon Data API.
+  > This sample app uses Neon Auth, so select **Neon Auth** when enabling the Data API. If you're using a different auth provider, see [Custom authentication providers](/docs/data-api/custom-authentication-providers).
 
 <Steps>
 
@@ -50,9 +59,9 @@ npm run dev
 
 Open the app in your browser using [`localhost:5173`](http://localhost:5173).
 
-Now, let's create the two users we'll use to show how RLS policies can prevent data leaks between users, and what can go wrong if you don't. The sample app supports Google and Github logins, so let's create one of each. For this guide, we'll call our two users Alice and Bob.
+Now, let's create the two users we'll use to show how RLS policies can prevent data leaks between users, and what can go wrong if you don't. The sample app supports Google and GitHub logins, so let's create one of each. For this guide, we'll call our two users Alice and Bob.
 
-Create your `Alice` user using Google. Then, using a private browser session, create your `Bob` user account using Github or other Google account.
+Create your `Alice` user using Google. Then, using a private browser session, create your `Bob` user account using GitHub or other Google account.
 
 Side by side, here's the empty state for both users:
 
@@ -304,7 +313,7 @@ pgPolicy('shared_policy', {
 
 The `shared_policy` enables any authenticated user to read notes marked as shared (`shared = true`), allowing others to view shared notes even if they are not the owner. This policy applies similarly to paragraphs, checking if the linked note is shared.
 
-Although RLS permits read access to shared notes for all authenticated users, the shared notes are not directly visible in other users' UI. Instead, sharing occurs via the "Share" button, which copies the note's URL to the clipboard. This URL includes the note's ID, enabling authenticated users to access the shared note and its paragraphs with-in in a read-only mode.
+Although RLS permits read access to shared notes for all authenticated users, the shared notes are not directly visible in other users' UI. Instead, sharing occurs via the "Share" button, which copies the note's URL to the clipboard. This URL includes the note's ID, enabling authenticated users to access the shared note and its paragraphs within a read-only mode.
 
 ### RLS policies table
 
@@ -327,4 +336,4 @@ shared_policy                    | SELECT | (shared = true)                     
 (5 rows)
 ```
 
-To get an understanding of `auth.user_id()` and the role it plays in these policies, see this [explanation](/docs/guides/neon-rls#how-neon-rls-gets-authuserid-from-the-jwt).
+To get an understanding of `auth.user_id()` and the role it plays in these policies, see this [explanation](/docs/data-api/get-started#what-is-authuserid-and-authuid).

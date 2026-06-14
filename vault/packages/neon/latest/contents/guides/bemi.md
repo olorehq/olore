@@ -2,9 +2,18 @@
 title: Create an automatic audit trail with Bemi
 subtitle: Learn how to create an automatic audit trail for your Postgres database with
   Bemi
+summary: >-
+  Bemi is an open-source audit trail tool that uses Postgres logical replication
+  (CDC via WAL) to automatically record every create, update, and delete on your
+  Neon database, capturing both before and after row states without schema
+  changes. Use this guide when you need tamper-evident change history, time
+  travel queries, or ORM-level context tracking with Prisma, TypeORM,
+  SQLAlchemy, or Rails. Enabling logical replication permanently sets
+  wal_level=logical on all databases in the Neon project and keeps compute
+  active while Bemi is connected, which prevents scale-to-zero.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2025-08-02T10:33:29.265Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 [Bemi](https://bemi.io/) is an open-source solution that plugs into Postgres and ORMs such as Prisma, TypeORM, SQLAlchemy, and Ruby on Rails to track database changes automatically. It unlocks robust context-aware audit trails and time travel querying inside your application.
@@ -18,6 +27,10 @@ In this guide, we'll show you how to connect your Neon database to Bemi to creat
 - A [Bemi account](https://bemi.io/)
 - A [Neon account](https://console.neon.tech/)
 - Read the [important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices) before you begin
+
+<Admonition type="important" title="Compute and billing">
+Replication keeps compute active (no [scale to zero](/docs/introduction/scale-to-zero)) while subscribers are connected, which can increase your bill. See [Important notices about logical replication in Neon](/docs/guides/logical-replication-neon#important-notices).
+</Admonition>
 
 ## Enable logical replication in Neon
 
@@ -34,7 +47,7 @@ To enable logical replication in Neon:
 3. Select **Logical Replication**.
 4. Click **Enable** to enable logical replication.
 
-You can verify that logical replication is enabled by running the following query from the [[Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor):
+You can verify that logical replication is enabled by running the following query from the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor):
 
 ```sql
 SHOW wal_level;

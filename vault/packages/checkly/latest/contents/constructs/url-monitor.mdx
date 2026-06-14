@@ -30,6 +30,7 @@ import { Frequency, UrlAssertionBuilder, UrlMonitor } from "checkly/constructs"
 
 new UrlMonitor("url-monitor", {
   name: "Url Monitor",
+  description: "[httpbin.org/get](https://httpbin.org/get) should return **200** status code.",
   activated: true,
   maxResponseTime: 10000,
   degradedResponseTime: 5000,
@@ -46,6 +47,7 @@ import { Frequency, UrlAssertionBuilder, UrlMonitor } from "checkly/constructs"
 
 new UrlMonitor("advanced-url-monitor", {
   name: "Advanced URL Monitor",
+  description: "**API health check** returns 200.",
   activated: true,
   frequency: Frequency.EVERY_5M,
   locations: ["us-east-1", "eu-west-1"],

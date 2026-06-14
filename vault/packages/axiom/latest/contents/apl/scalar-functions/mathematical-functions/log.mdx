@@ -1,0 +1,97 @@
+---
+title: log
+description: 'This page explains how to use the log function in APL.'
+---
+
+Use the `log` function in APL to compute the natural logarithm (base-e) of a positive numeric value. The function is the inverse of `exp`.
+
+`log` is one of the most commonly used mathematical functions in observability. Log-transforming latency, error counts, or request rates compresses wide value ranges into a more manageable scale, reduces the influence of extreme outliers, and can reveal patterns that are linear on a log scale. It's also the basis for computing geometric means with `exp(avg(log(x)))`.
+
+## For users of other query languages
+
+If you come from other query languages, this section explains how to adjust your existing queries to achieve the same results in APL.
+
+<AccordionGroup>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the natural logarithm is called `ln()` rather than `log()`. The SPL `log()` function computes the base-10 logarithm by default. In APL, `log()` always means the natural logarithm.
+
+<CodeGroup>
+```sql Splunk example
+| eval ln_duration = ln(req_duration_ms)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend ln_duration = log(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, `LN()` computes the natural logarithm and `LOG()` computes the base-10 logarithm in most dialects. In APL, `log()` means the natural logarithm, matching SQL's `LN()`.
+
+<CodeGroup>
+```sql SQL example
+SELECT LN(req_duration_ms) AS ln_duration FROM logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend ln_duration = log(req_duration_ms)
+```
+</CodeGroup>
+
+</Accordion>
+</AccordionGroup>
+
+## Usage
+
+### Syntax
+
+```kusto
+log(x)
+```
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `x` | real | Yes | A positive real number (x > 0). |
+
+### Returns
+
+- The natural logarithm of `x`.
+- `null` if `x` is negative, zero, or cannot be converted to a real value.
+
+## Example
+
+Use `log` to compress request durations onto a natural log scale.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where req_duration_ms > 0
+| extend log_duration = log(req_duration_ms)
+| project _time, id, req_duration_ms, log_duration
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%20%22%5B%27sample-http-logs%27%5D%20%7C%20where%20req_duration_ms%20%3E%200%20%7C%20extend%20log_duration%20%3D%20log%28req_duration_ms%29%20%7C%20project%20_time%2C%20id%2C%20req_duration_ms%2C%20log_duration%22%7D)
+
+**Output**
+
+| _time | id | req_duration_ms | log_duration |
+|---|---|---|---|
+| 2024-11-14 10:00:00 | user-1 | 1.0 | 0.0000 |
+| 2024-11-14 10:01:00 | user-2 | 100.0 | 4.6052 |
+| 2024-11-14 10:02:00 | user-3 | 10000.0 | 9.2103 |
+
+## List of related functions
+
+- [exp](/apl/scalar-functions/mathematical-functions/exp): Returns e^x. Use it as the inverse of `log` to return to the original scale.
+- [log2](/apl/scalar-functions/mathematical-functions/log2): Returns the base-2 logarithm. Use it for binary-scale analysis such as bit depth or memory sizing.
+- [log10](/apl/scalar-functions/mathematical-functions/log10): Returns the base-10 logarithm. Use it for order-of-magnitude analysis or decibel calculations.
+- [loggamma](/apl/scalar-functions/mathematical-functions/loggamma): Returns the log of the absolute value of the gamma function. Use it to avoid overflow when computing `gamma` on large inputs.
+- [sqrt](/apl/scalar-functions/mathematical-functions/sqrt): Returns the square root. Use it as a lighter alternative to `log` for compressing small value ranges.

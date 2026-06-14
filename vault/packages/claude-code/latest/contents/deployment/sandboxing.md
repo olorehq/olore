@@ -75,13 +75,13 @@ On **Linux and WSL2**, install the required packages first:
 
 <Tabs>
   <Tab title="Ubuntu/Debian">
-    ```bash  theme={null}
+    ```bash theme={null}
     sudo apt-get install bubblewrap socat
     ```
   </Tab>
 
   <Tab title="Fedora">
-    ```bash  theme={null}
+    ```bash theme={null}
     sudo dnf install bubblewrap socat
     ```
   </Tab>
@@ -91,17 +91,19 @@ On **Linux and WSL2**, install the required packages first:
 
 You can enable sandboxing by running the `/sandbox` command:
 
-```text  theme={null}
+```text theme={null}
 /sandbox
 ```
 
 This opens a menu where you can choose between sandbox modes. If required dependencies are missing (such as `bubblewrap` or `socat` on Linux), the menu displays installation instructions for your platform.
 
+By default, if the sandbox cannot start (missing dependencies or unsupported platform), Claude Code shows a warning and runs commands without sandboxing. To make this a hard failure instead, set [`sandbox.failIfUnavailable`](/en/settings#sandbox-settings) to `true`. This is intended for managed deployments that require sandboxing as a security gate.
+
 ### Sandbox modes
 
 Claude Code offers two sandbox modes:
 
-**Auto-allow mode**: Bash commands will attempt to run inside the sandbox and are automatically allowed without requiring permission. Commands that cannot be sandboxed (such as those needing network access to non-allowed hosts) fall back to the regular permission flow. Explicit ask/deny rules you've configured are always respected.
+**Auto-allow mode**: Bash commands will attempt to run inside the sandbox and are automatically allowed without requiring permission. Commands that cannot be sandboxed (such as those needing network access to non-allowed hosts) fall back to the regular permission flow. Explicit deny rules are always respected, and `rm` or `rmdir` commands that target `/`, your home directory, or other critical system paths still trigger a permission prompt. Ask rules apply only to commands that fall back to the regular permission flow.
 
 **Regular permissions mode**: All bash commands go through the standard permission flow, even when sandboxed. This provides more control but requires more approvals.
 
@@ -119,7 +121,7 @@ Customize sandbox behavior through your `settings.json` file. See [Settings](/en
 
 By default, sandboxed commands can only write to the current working directory. If subprocess commands like `kubectl`, `terraform`, or `npm` need to write outside the project directory, use `sandbox.filesystem.allowWrite` to grant access to specific paths:
 
-```json  theme={null}
+```json theme={null}
 {
   "sandbox": {
     "enabled": true,
@@ -144,11 +146,11 @@ Path prefixes control how paths are resolved:
 
 The older `//path` prefix for absolute paths still works. If you previously used single-slash `/path` expecting project-relative resolution, switch to `./path`. This syntax differs from [Read and Edit permission rules](/en/permissions#read-and-edit), which use `//path` for absolute and `/path` for project-relative. Sandbox filesystem paths use standard conventions: `/tmp/build` is an absolute path.
 
-You can also deny write or read access using `sandbox.filesystem.denyWrite` and `sandbox.filesystem.denyRead`. These are merged with any paths from `Edit(...)` and `Read(...)` permission rules. To re-allow reading specific paths within a denied region, use `sandbox.filesystem.allowRead`, which takes precedence over `denyRead`. When `allowManagedReadPathsOnly` is enabled in managed settings, only managed `allowRead` entries are respected; user, project, and local `allowRead` entries are ignored.
+You can also deny write or read access using `sandbox.filesystem.denyWrite` and `sandbox.filesystem.denyRead`. These are merged with any paths from `Edit(...)` and `Read(...)` permission rules. To re-allow reading specific paths within a denied region, use `sandbox.filesystem.allowRead`, which takes precedence over `denyRead`. When `allowManagedReadPathsOnly` is enabled in managed settings, only managed `allowRead` entries are respected; user, project, and local `allowRead` entries are ignored. `denyRead` still merges from all sources.
 
 For example, to block reading from the entire home directory while still allowing reads from the current project, add this to your project's `.claude/settings.json`:
 
-```json  theme={null}
+```json theme={null}
 {
   "sandbox": {
     "enabled": true,
@@ -167,7 +169,7 @@ The `.` in `allowRead` resolves to the project root because this configuration l
 
   * Many CLI tools require accessing certain hosts. As you use these tools, they will request permission to access certain hosts. Granting permission will allow them to access these hosts now and in the future, enabling them to safely execute inside the sandbox.
   * `watchman` is incompatible with running in the sandbox. If you're running `jest`, consider using `jest --no-watchman`
-  * `docker` is incompatible with running in the sandbox. Consider specifying `docker` in `excludedCommands` to force it to run outside of the sandbox.
+  * `docker` is incompatible with running in the sandbox. Consider specifying `docker *` in `excludedCommands` to force it to run outside of the sandbox.
 </Tip>
 
 <Note>
@@ -248,6 +250,7 @@ Filesystem and network restrictions are configured through both sandbox settings
 * Use `Read` and `Edit` deny rules to block access to specific files or directories
 * Use `WebFetch` allow/deny rules to control domain access
 * Use sandbox `allowedDomains` to control which domains Bash commands can reach
+* Use sandbox `deniedDomains` to block specific domains even when a broader `allowedDomains` wildcard would otherwise permit them
 
 Paths from both `sandbox.filesystem` settings and permission rules are merged together into the final sandbox configuration.
 
@@ -264,7 +267,7 @@ For organizations requiring advanced network security, you can implement a custo
 * Log all network requests
 * Integrate with existing security infrastructure
 
-```json  theme={null}
+```json theme={null}
 {
   "sandbox": {
     "network": {
@@ -295,7 +298,7 @@ The sandboxed bash tool works alongside:
 
 The sandbox runtime is available as an open source npm package for use in your own agent projects. This enables the broader AI agent community to build safer, more secure autonomous systems. This can also be used to sandbox other programs you may wish to run. For example, to sandbox an MCP server you could run:
 
-```bash  theme={null}
+```bash theme={null}
 npx @anthropic-ai/sandbox-runtime <command-to-sandbox>
 ```
 
@@ -306,6 +309,13 @@ For implementation details and source code, visit the [GitHub repository](https:
 * **Performance overhead**: Minimal, but some filesystem operations may be slightly slower
 * **Compatibility**: Some tools that require specific system access patterns may need configuration adjustments, or may even need to be run outside of the sandbox
 * **Platform support**: Supports macOS, Linux, and WSL2. WSL1 is not supported. Native Windows support is planned.
+
+## What sandboxing does not cover
+
+The sandbox isolates Bash subprocesses. Other tools operate under different boundaries:
+
+* **Built-in file tools**: Read, Edit, and Write use the permission system directly rather than running through the sandbox. See [permissions](/en/permissions).
+* **Computer use**: when Claude opens apps and controls your screen, it runs on your actual desktop rather than in an isolated environment. Per-app permission prompts gate each application. See [computer use in the CLI](/en/computer-use) or [computer use in Desktop](/en/desktop#let-claude-use-your-computer).
 
 ## See also
 

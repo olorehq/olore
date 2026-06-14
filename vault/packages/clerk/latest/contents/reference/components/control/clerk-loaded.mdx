@@ -1,7 +1,7 @@
 ---
 title: '`<ClerkLoaded>`'
-description: The `<ClerkLoaded>` component guarantees that the Clerk object has loaded and will be available under `window.Clerk`. This allows you to wrap child components to access the Clerk object without the need to check it exists.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, remix, tanstack-react-start, vue, js-frontend
+description: The <ClerkLoaded> component guarantees that the Clerk object has loaded and will be available under window.Clerk. This allows you to wrap child components to access the Clerk object without the need to check it exists.
+sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 ---
 
 The `<ClerkLoaded>` component guarantees that the Clerk object has loaded (the `status` is `'ready'` or `'degraded'`) and will be available under `window.Clerk`. This allows you to wrap child components to access the `Clerk` object without the need to check it exists.
@@ -29,8 +29,8 @@ The `<ClerkLoaded>` component guarantees that the Clerk object has loaded (the `
   </If>
 
   <If sdk="expo">
-    ```tsx {{ filename: 'app/index.tsx' }}
-    import { ClerkLoaded } from '@clerk/clerk-expo'
+    ```tsx {{ filename: 'src/app/index.tsx' }}
+    import { ClerkLoaded } from '@clerk/expo'
     import { Text, View } from 'react-native'
 
     export default function Screen() {
@@ -77,7 +77,7 @@ The `<ClerkLoaded>` component guarantees that the Clerk object has loaded (the `
 <If sdk="js-frontend">
   ## Usage with JavaScript
 
-  The following methods available on an instance of the [`Clerk`](/docs/reference/javascript/clerk) class is used to render and control the `<ClerkLoaded />` component:
+  The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class is used to render and control the `<ClerkLoaded />` component:
 
   - [`load()`](#load)
 
@@ -93,7 +93,9 @@ The `<ClerkLoaded>` component guarantees that the Clerk object has loaded (the `
 
   #### `ClerkOptions`
 
-  <Include src="_partials/javascript/clerk-options" />
+  The `load()` method accepts an optional object that accepts the following props. All props are optional.
+
+  <Typedoc src="shared/clerk-options" />
 
   #### `load()` usage
 

@@ -48,10 +48,10 @@ OpenTelemetry provides a standardized way to collect and export telemetry data f
         }),
         spanProcessors: [new SimpleSpanProcessor(
           new OTLPTraceExporter({
-            url: `https://${process.env.AXIOM_DOMAIN}/v1/traces`,
+            url: `https://${process.env.AXIOM_HOST}/v1/traces`,
             headers: {
-              Authorization: `Bearer ${process.env.API_TOKEN}`,
-              "X-Axiom-Dataset": `${process.env.DATASET_NAME}`,
+              Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
+              "X-Axiom-Dataset": `${process.env.AXIOM_DATASET}`,
             },
           })
         )],
@@ -64,9 +64,9 @@ OpenTelemetry provides a standardized way to collect and export telemetry data f
 1. Add the `AXIOM_DOMAIN`, `API_TOKEN`, and `DATASET_NAME` environment variables to your `.env` file. For example:
 
     ```bash
-    AXIOM_DOMAIN=api.axiom.co
-    API_TOKEN=xaat-123
-    DATASET_NAME=my-dataset
+    AXIOM_HOST="AXIOM_DOMAIN"
+    AXIOM_TOKEN="API_TOKEN"
+    AXIOM_DATASET="DATASET_NAME"
     ```
 
 ### Update root layout
@@ -185,10 +185,10 @@ export function register() {
     resource: new Resource({ [SEM_RESOURCE_ATTRIBUTES.SERVICE_NAME]: 'nextjs-app' }),
     spanProcessor: new BatchSpanProcessor(
       new OTLPTraceExporter({
-        url: `https://${process.env.AXIOM_DOMAIN}/v1/traces`,
+        url: `https://${process.env.AXIOM_HOST}/v1/traces`,
         headers: {
-          Authorization: `Bearer ${process.env.API_TOKEN}`,
-          'X-Axiom-Dataset': `${process.env.DATASET_NAME}`,
+          Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
+          'X-Axiom-Dataset': `${process.env.AXIOM_DATASET}`,
         },
       })
     ),

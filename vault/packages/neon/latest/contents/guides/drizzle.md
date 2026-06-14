@@ -1,8 +1,16 @@
 ---
 title: Connect from Drizzle to Neon
 subtitle: Learn how to connect to Neon from Drizzle
+summary: >-
+  Drizzle ORM connection guide for Neon Postgres walks through initializing a
+  TypeScript/Node.js project with supported drivers: Neon serverless HTTP, Neon
+  WebSocket, node-postgres, and postgres.js. Use this page when you need
+  type-safe queries plus Drizzle Kit migrations against a Neon database and want
+  to pick the right driver for serverless or long-running environments. The
+  guide also shows how to point Drizzle at different Neon branches per
+  environment by selecting a connection string based on NODE_ENV.
 enableTableOfContents: true
-updatedOn: '2025-11-05T19:50:31.418Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <CopyPrompt src="/prompts/drizzle-prompt.md" 
@@ -17,19 +25,12 @@ description="Pre-built prompt for connecting Node/TypeScript applications to Neo
 <DocsList title="Related resources" theme="docs">
   <a href="https://orm.drizzle.team/docs/tutorials/drizzle-with-neon">Drizzle with Neon Postgres (Drizzle Docs)</a>
   <a href="/docs/guides/drizzle-migrations">Schema migration with Drizzle ORM</a>
-</DocsList>
-
-<DocsList title="Source code" theme="repo">
-  <a href="https://github.com/neondatabase/examples/tree/main/with-nextjs-drizzle-edge">Next.js Edge Functions with Drizzle</a>
+  <a href="/docs/guides/nextjs#video-walkthrough">Getting started with Neon (Next.js and Drizzle video)</a>
 </DocsList>
 
 </InfoBlock>
 
 Drizzle is a modern ORM for TypeScript that provides a simple and type-safe way to interact with your database. This guide demonstrates how to connect your application to a Neon Postgres database using Drizzle ORM.
-
-<Admonition type="tip" title="AI Rules available">
-Working with AI coding assistants? Check out our [AI rules for Drizzle ORM with Neon](/docs/ai/ai-rules-neon-drizzle) to help your AI assistant generate better code when using Drizzle with your Neon database.
-</Admonition>
 
 To connect a TypeScript/Node.js project to Neon using Drizzle ORM, follow these steps:
 
@@ -78,7 +79,7 @@ Install Drizzle ORM, Drizzle Kit for migrations, and your preferred database dri
 
 <TabItem>
 
-Use the Neon serverless HTTP driver for serverless environments (e.g., Vercel, Netlify).
+Use the Neon serverless HTTP driver for serverless environments (for example, Vercel, Netlify).
 
 ```bash
 npm install drizzle-orm @neondatabase/serverless dotenv
@@ -89,7 +90,7 @@ npm install -D drizzle-kit
 
 <TabItem>
 
-Use the Neon WebSocket driver for long-running applications that require a persistent connection (e.g., a standard Node.js server).
+Use the Neon WebSocket driver for long-running applications that require a persistent connection (for example, a standard Node.js server).
 
 ```bash
 npm install drizzle-orm @neondatabase/serverless ws dotenv
@@ -336,6 +337,27 @@ Successfully queried the database: [ { id: 1, name: 'John Doe' } ]
 ```
 
 </Steps>
+
+## Using Neon branches with Drizzle
+
+You can point Drizzle at different Neon [branches](/docs/introduction/branching) per environment by selecting the connection string based on `NODE_ENV` (or any other environment variable):
+
+```typescript
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+
+const getBranchUrl = () => {
+  const env = process.env.NODE_ENV;
+  if (env === 'development') return process.env.DEV_DATABASE_URL;
+  if (env === 'test') return process.env.TEST_DATABASE_URL;
+  return process.env.DATABASE_URL;
+};
+
+const sql = neon(getBranchUrl()!);
+export const db = drizzle({ client: sql });
+```
+
+Each branch has its own connection string, available in the Neon Console or via the CLI (`neonctl connection-string <branch-id-or-name> --project-id <project-id>`).
 
 ## Resources
 

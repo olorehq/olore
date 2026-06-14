@@ -18,11 +18,15 @@ You'll need a series of API endpoints that work together to complete a business 
 ![Multistep check edit page](/images/docs/images/multistep-api-checks/create-multistep-check.png)
 </Frame>
 
-### Name and tags
+### Name, tags, and description
 
-A meaningful name will not only help you and others identify your checks within Checkly, but it will help provide a better alerting experience if your checks fall into an alert state.
+* **Name:** a meaningful name will not only help you and others identify your checks within Checkly, but it will help provide a better alerting experience if your checks fall into an alert state
 
-Tags can relate your checks together. They also determine which checks are shown on your [dashboards](/dashboards/).
+* **Tags:** let you relate your checks together. They also determine which checks are shown on your [dashboards](/communicate/dashboards/overview)
+
+* **Descriptions:** add context about what a check does or why it exists
+
+Together, these fields improve alert clarity and play an important role in incident investigation. [Rocky AI](/resolve/ai-root-cause-analysis/overview) uses this information to provide more accurate root cause and user impact analysis.
 
 ### Playwright script
 
@@ -39,7 +43,7 @@ API requests and assertions in the same test step will be presented under the sa
 
 ![Multistep test results](/images/docs/images/multistep-api-checks/test-results.jpg)
 
-To provide actionable and easy-to-read [check run results](/monitoring/check-results/#multistep-check-results), we recommend using the `test.step()` structure when writing the Playwright script for you Multistep check.
+To provide actionable and easy-to-read [check run results](/detect/synthetic-monitoring/multistep-checks/overview#multistep-check-results), we recommend using the `test.step()` structure when writing the Playwright script for you Multistep check.
 
 ```ts  {title="my-test.spec.ts"}
 import { test, expect } from '@playwright/test'
@@ -73,14 +77,14 @@ In the sidebar, you can view:
 - File dependencies
 - Your Playwright config file (if your check was created with the [Checkly CLI](/cli/))
 - The test report
-- OpenTelemetry traces for this run (if you've enabled [Checkly Traces](/traces-open-telemetry/))
+- OpenTelemetry traces for this run (if you've enabled [Checkly Traces](/resolve/traces/overview))
 - [Runtimes](/platform/runtimes/overview), including the packages in your current runtime
 
 After each test run, you can view the result tree by selecting the test report in the editor sidebar. Selecting an API request shows details about that request. You can also view errors and any failed assertions in this report.
 
 ### Scheduling & locations
 
-You can configure your checks to run from our [public](/monitoring/global-locations/) locations, or use a Checkly Agent to host your own [private](/platform/private-locations/overview) locations. If you don't select more than one location and you've disabled retrying checks from the same location, we will pick a random location when retrying checks.
+You can configure your checks to run from our [public](/concepts/locations) locations, or use a Checkly Agent to host your own [private](/platform/private-locations/overview) locations. If you don't select more than one location and you've disabled retrying checks from the same location, we will pick a random location when retrying checks.
 
 Checkly runs your Multistep checks based on an interval you set. The shortest interval you can run is every minute and the longest is every 24 hours.
 
@@ -92,5 +96,5 @@ Choose which [alert channels](/communicate/alerts/channels) to get notified thro
 
 ### Testing
 
-You can run your check as an [E2E test](/testing) locally or from your CI/CD pipeline to validate your freshly deployed application. Use the Checkly CLI, or configure integrations with Vercel and GitHub.
+You can run your check as an [E2E test](/detect/testing/overview) locally or from your CI/CD pipeline to validate your freshly deployed application. Use the Checkly CLI, or configure integrations with Vercel and GitHub.
 

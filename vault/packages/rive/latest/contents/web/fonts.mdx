@@ -4,10 +4,52 @@ description: 'Loading and replacing fonts dynamically at runtime.'
 ---
 
 import SwappingFonts from "/snippets/runtimes/fonts/swapping-fonts.mdx"
-import fallbackFontsUnsupported from "/snippets/runtimes/fonts/fallback-fonts-unsupported.mdx"
+import fallbackFonts from "/snippets/runtimes/fonts/fallback-fonts.mdx"
 
 <SwappingFonts />
 
 For more information, see [Loading Assets](/runtimes/web/loading-assets).
+`
+<fallbackFonts />
 
-<fallbackFontsUnsupported />
+<Note>
+  For security reasons, browsers do not allow direct access to a user's system fonts. As a result, fallback fonts must be explicitly provided for this runtime.
+</Note>
+
+As of `v2.37.1`, the JS runtime provides an API for supplying fallback fonts. When a glyph cannot be rendered with the default font, Rive will invoke a callback you provide to retrieve a list of decoded fonts to try instead. Importantly, this callback must be registered before Rive begins rendering. 
+
+To start, import the `RiveFont` named export from the JS package and call its static method `setFallbackFontCallback()`, passing in your callback. The callback receives the glyph that failed to render (as a Unicode code point) and the font weight, and should return a list of fallback fonts. It may be called multiple times if successive fallback fonts also lack support for the glyph.
+
+```javascript
+import { RiveFont, decodeFont, Rive } from "@rive-app/webgl2";
+
+const THAI_FALLBACK_FONT_URL =
+  "https://raw.githubusercontent.com/google/fonts/main/ofl/notoserifthai/NotoSerifThai%5Bwdth%2Cwght%5D.ttf";
+
+const setFallbackFonts = async () => {
+  const notoSerifThai = await fetch(THAI_FALLBACK_FONT_URL).then((res) => res.arrayBuffer());
+  const riveThaiDecodedFont = await decodeFont(new Uint8Array(notoSerifThai));
+
+  RiveFont.setFallbackFontCallback((codePoint: number, weight: number) => {
+    console.log("fallback font missing glyph: ", codePoint, " + weight: ", weight);
+    // For Thai, use Noto Serif Thai font
+    if (codePoint >= 0x0E00 && codePoint <= 0x0E7F) {
+      return [riveThaiDecodedFont];
+    }
+    return null;
+  });
+};
+
+const main = async () => {
+  await setFallbackFonts();
+  const r = new Rive({ 
+    src: "my.riv",
+    autoplay: true,
+    stateMachines: "State Machine 1",
+    // ...
+  });
+};
+main();
+```
+
+

@@ -5,6 +5,10 @@ title: '@xstate/store-angular'
 The `@xstate/store-angular` package provides Angular bindings for [XState Store](/docs/xstate-store). It includes utilities for subscribing to store state as Angular signals.
 
 <Callout>
+These are the docs for `@xstate/store-angular` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/angular).
+</Callout>
+
+<Callout>
 
 This package re-exports all of `@xstate/store`, so you only need to install `@xstate/store-angular`.
 
@@ -42,7 +46,7 @@ yarn add @xstate/store-angular
 
 ```ts
 import { Component } from '@angular/core';
-import { createStore, injectStore } from '@xstate/store-angular';
+import { createStore, injectStore } from '@xstate/store-angular'; // [!code highlight:1]
 
 const store = createStore({
   context: { count: 0 },
@@ -66,6 +70,7 @@ const store = createStore({
 })
 export class CounterComponent {
   store = store;
+  // [!code highlight:1]
   count = injectStore(store, (state) => state.context.count);
 }
 ```
@@ -78,24 +83,24 @@ Creates an Angular signal that subscribes to a store and returns a selected valu
 
 ```ts
 import { Component } from '@angular/core';
-import { injectStore } from '@xstate/store-angular';
+import { injectStore } from '@xstate/store-angular'; // [!code highlight:1]
 
 @Component({
   selector: 'app-counter',
   template: `<div>Count: {{ count() }}</div>`,
 })
 export class CounterComponent {
-  // Select specific value
+  // [!code highlight:1]
   count = injectStore(store, (state) => state.context.count);
 
-  // With custom comparison function
+  // [!code highlight:4]
   user = injectStore(
     store,
     (state) => state.context.user,
     (prev, next) => prev.id === next.id
   );
 
-  // Without selector (returns full snapshot)
+  // [!code highlight:1]
   snapshot = injectStore(store);
 }
 ```

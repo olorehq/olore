@@ -5,45 +5,44 @@ description: Local partyserver documentation reference (latest). Cloudflare Part
 
 # partyserver Documentation
 
-Cloudflare PartyKit documentation. Use for real-time collaborative apps, WebSocket servers, PartyServer, multiplayer features, Y.js integration, Durable Objects, RPC, storage, and edge-deployed stateful backends.
+Cloudflare PartyKit documentation covering the full ecosystem of packages for building real-time, collaborative, and stateful applications on Cloudflare Workers and Durable Objects. Includes WebSocket handling, multiplayer room routing, Yjs/CRDT support, RPC, pub-sub, scheduling, and AI agent patterns.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/hono-party/README.md` | hono-party | Hono middleware integration for PartyServer WebSockets |
-| `contents/partyagent/README.md` | partyagent | Autonomous AI agents on Durable Objects with tool usage and task hand-off |
-| `contents/partybase/README.md` | partybase | Database solution for PartyServer with migration system |
-| `contents/partyflow/README.md` | partyflow | Lightweight workflow engine for PartyServer |
-| `contents/partyfn/README.md` | partyfn | Typesafe bidirectional RPC between client and server |
-| `contents/partyhard/README.md` | partyhard | Component of the PartyServer ecosystem |
-| `contents/partyserver/README.md` | PartyServer | Core library: Server class, lifecycle hooks, broadcasting, routing, hibernation |
-| `contents/partysession/README.md` | partysession | Per-user Durable Object session state management |
+| `contents/hono-party/README.md` | hono-party | Hono middleware integration — adds PartyServer WebSocket/multiplayer to Hono apps |
+| `contents/partyagent/README.md` | partyagent | Autonomous AI agents on Durable Objects with NLP, tools, and task delegation |
+| `contents/partybase/README.md` | partybase | Database layer for Durable Objects with migrations and admin UI |
+| `contents/partyflow/README.md` | partyflow | Lightweight workflow engine built on Durable Objects |
+| `contents/partyfn/README.md` | partyfn | Typesafe bidirectional RPC between client and Durable Object server |
+| `contents/partyhard/README.md` | partyhard | PartyServer ecosystem component |
+| `contents/partyserver/README.md` | PartyServer | Core library — room-based routing and real-time apps on Durable Objects |
+| `contents/partysession/README.md` | partysession | One Durable Object per user — session and per-user state management |
 | `contents/partysmart/README.md` | partysmart | Alias for partyagent |
-| `contents/partysocket/README.md` | PartySocket | Reconnecting WebSocket client with buffering and multi-platform support |
-| `contents/partysub/README.md` | partysub | Pub-sub for Durable Objects |
-| `contents/partysync/README.md` | partysync | Experimental DO-to-client state synchronization |
-| `contents/partytracks/README.md` | partytracks | Observable-based WebRTC audio/video via Cloudflare Realtime SFU |
-| `contents/partywhen/README.md` | partywhen | Durable task scheduler with cron and alarm support |
-| `contents/y-partyserver/README.md` | y-partyserver | Yjs CRDT backend for collaborative editing |
+| `contents/partysocket/README.md` | PartySocket | Auto-reconnecting WebSocket client with standard WebSocket API compatibility |
+| `contents/partysub/README.md` | partysub | Pub-sub for Cloudflare Workers powered by Durable Objects (experimental) |
+| `contents/partysync/README.md` | partysync | Experimental DO-to-client state synchronization library |
+| `contents/partytracks/README.md` | partytracks | Observable-based WebRTC audio/video with Cloudflare Realtime SFU |
+| `contents/partywhen/README.md` | partywhen | Durable task scheduler — time, delay, cron, and natural language scheduling via Alarms |
+| `contents/y-partyserver/README.md` | y-partyserver | Yjs CRDT backend for PartyServer — collaborative editing over WebSocket |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Building real-time WebSocket servers with Durable Objects on Cloudflare Workers
-- PartyServer Server class, lifecycle hooks (onConnect, onMessage, onClose, onStart, onAlarm), broadcasting
-- Routing WebSocket/HTTP requests with routePartykitRequest or getServerByName
-- Connecting from the client using PartySocket (reconnecting WebSocket)
-- Collaborative editing, shared state, or Yjs/CRDT integration with y-partyserver
-- Pub-sub messaging with partysub
-- Typesafe RPC between client and server with partyfn
-- Scheduling durable tasks or cron jobs with partywhen
-- Integrating PartyServer with Hono via hono-party
-- WebRTC audio/video in real-time apps with partytracks
-- Per-user session state with partysession
-- AI agents on Durable Objects with partyagent
+- Setting up PartyServer or PartyKit for real-time WebSocket apps on Cloudflare
+- Room-based routing and multiplayer app patterns with Durable Objects
+- Collaborative editing or Y.js / Yjs integration (y-partyserver)
+- Auto-reconnecting WebSocket clients (PartySocket)
+- Typesafe RPC between client and server (partyfn)
+- Pub-sub messaging on Cloudflare Workers (partysub)
+- State synchronization between Durable Objects and clients (partysync)
+- Scheduling durable tasks with cron, delay, or time expressions (partywhen)
+- AI agents on Durable Objects (partyagent)
+- Integrating PartyServer with Hono (hono-party)
+- WebRTC audio/video in real-time apps (partytracks)
 
 ## How to find information
 
-1. Check Quick Reference above for the relevant file
-2. Read specific files from `contents/{filename}`
+1. Check Quick Reference above for the relevant package
+2. Read the specific file from `contents/{package}/README.md`

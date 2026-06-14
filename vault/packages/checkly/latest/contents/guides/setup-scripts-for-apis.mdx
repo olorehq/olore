@@ -7,7 +7,7 @@ sidebarTitle: Setup and Teardown Scripts
 
 ## The importance of self-contained checks
 
-Checkly's [API Monitoring](/blog/what-is-api-monitoring/) checks run independently and on different schedules, possibly even following different retry logic when failures occur. It is therefore important not to create dependencies between them, which could introduce false failures and flakiness. Checkly prevents this antipattern by having each check run fully isolated in its own sandbox.
+Checkly's [API Monitoring](/learn/monitoring/api-monitoring) checks run independently and on different schedules, possibly even following different retry logic when failures occur. It is therefore important not to create dependencies between them, which could introduce false failures and flakiness. Checkly prevents this antipattern by having each check run fully isolated in its own sandbox.
 
 But how do you run complex API checks that have prerequisites (e.g., auth tokens, test data) that themselves require an API call or other preparation steps? That's what [setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) are made for:
 
@@ -242,7 +242,7 @@ if (response.statusCode >= 200 && response.statusCode < 300) {
   Full reference for setup and teardown scripts, including built-in variables and technical details.
 </Card>
 
-<Card title="Monitoring as Code" href="/guides/monitoring-as-code/">
+<Card title="Monitoring as Code" href="/guides/getting-started-with-monitoring-as-code">
   Understand monitoring as code (MaC) via our Checkly CLI.
 </Card>
 

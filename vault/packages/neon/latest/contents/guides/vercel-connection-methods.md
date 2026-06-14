@@ -1,8 +1,19 @@
 ---
 title: Connecting to Neon from Vercel
-subtitle: Learn how Vercel Fluid compute optimizes database connections and why standard TCP is the recommended method.
+subtitle: Learn how Vercel Fluid compute optimizes database connections and why standard
+  TCP is the recommended method.
+summary: >-
+  Vercel Fluid compute connection methods for Neon compares TCP, HTTP, and
+  WebSocket protocols by setup roundtrip cost to explain why Fluid compute
+  makes standard Postgres TCP with connection pooling the recommended approach.
+  Classic serverless could not safely pool connections, requiring the
+  @neondatabase/serverless HTTP driver; Vercel Fluid solves this by closing
+  idle connections before function suspension, making TCP pooling
+  (node-postgres, Drizzle ORM with attachDatabasePool) the lowest-latency
+  option. Use this page instead of the integration guides when deciding which
+  connection method to use based on your Vercel compute model.
 enableTableOfContents: true
-updatedOn: '2025-11-10T14:15:32.000Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 <InfoBlock>
@@ -26,7 +37,7 @@ updatedOn: '2025-11-10T14:15:32.000Z'
 
 Vercel's **Fluid** compute model fundamentally changes the performance trade-offs for connecting to your Neon database.
 
-**The short answer:** With Vercel Fluid, we recommend you use a **standard Postgres TCP connection** (e.g., with the [node-postgres package](https://node-postgres.com/)) and a connection pool. This is the new fastest and most robust method.
+**The short answer:** With Vercel Fluid, we recommend you use a **standard Postgres TCP connection** (for example, with the [node-postgres package](https://node-postgres.com/)) and a connection pool. This is the new fastest and most robust method.
 
 This guide explains why this is a change, the difference between connection methods, and what you should use.
 
@@ -85,6 +96,26 @@ _Note: Roundtrip counts are estimates and vary based on authentication and confi
 ### If you are using Vercel's Fluid compute:
 
 We recommend using a standard Postgres TCP driver (like [node-postgres](https://node-postgres.com/)) and implementing a connection pool. This will give you the best performance by paying the connection cost once and reusing the connection for subsequent queries. See Vercel's [Connection pooling with Vercel Functions](https://vercel.com/guides/connection-pooling-with-functions) guide for implementation details.
+
+Here is a complete example using Drizzle ORM with `attachDatabasePool` from `@vercel/functions`:
+
+```typescript
+// src/lib/db/client.ts
+import { attachDatabasePool } from '@vercel/functions';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+
+import * as schema from './schema';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+attachDatabasePool(pool);
+
+export const db = drizzle({ client: pool, schema });
+```
+
+`attachDatabasePool` handles the connection lifecycle for you: the first request establishes a TCP connection, subsequent requests reuse it instantly, and idle connections close gracefully before Vercel suspends the function.
 
 <Admonition type="note" title="A note on benchmarking">
 Before migrating, we recommend you benchmark both connection methods on your own app. While TCP with pooling is the new default, some applications with a very high number of cold starts might, in edge cases, still see an advantage from the low initial connection time of the HTTP driver.

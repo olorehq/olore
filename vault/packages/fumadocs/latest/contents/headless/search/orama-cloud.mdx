@@ -49,13 +49,7 @@ REST API integration requires your docs to upload the indexes.
    import * as fs from 'node:fs/promises';
    import { OramaCloud } from '@orama/core';
 
-   // the path of pre-rendered `static.json`, choose one according to your React framework
-   const filePath = {
-     next: '.next/server/app/static.json.body',
-     'tanstack-start': '.output/public/static.json',
-     'react-router': 'build/client/static.json',
-     waku: 'dist/public/static.json',
-   }['next'];
+   const filePath = '<see below>';
 
    async function main() {
      const orama = new OramaCloud({
@@ -77,6 +71,8 @@ REST API integration requires your docs to upload the indexes.
    void main();
    ```
 
+   <include>.static-route-output.mdx</include>
+
 4. Run the script after production build, make sure the environment variables are available (e.g. Bun reads from `.env` files):
 
    ```json title="package.json"
@@ -96,19 +92,21 @@ To search documents on the client side, consider:
 
   ```ts
   import { useDocsSearch } from 'fumadocs-core/search/client';
+  import { oramaCloudClient } from 'fumadocs-core/search/client/orama-cloud';
   import { OramaCloud } from '@orama/core';
 
-  const client = new OramaCloud({
+  const orama = new OramaCloud({
     projectId: process.env.NEXT_PUBLIC_ORAMA_PROJECT_ID,
     apiKey: process.env.NEXT_PUBLIC_ORAMA_API_KEY,
   });
 
   const { search, setSearch, query } = useDocsSearch({
-    type: 'orama-cloud',
-    client,
-    params: {
-      // optional search params
-    },
+    client: oramaCloudClient({
+      client: orama,
+      params: {
+        // optional search params
+      },
+    }),
   });
   ```
 
@@ -125,20 +123,22 @@ Same as REST API integration, but make sure to set `index` to `crawler`.
 
 ```ts
 import { useDocsSearch } from 'fumadocs-core/search/client';
+import { oramaCloudClient } from 'fumadocs-core/search/client/orama-cloud';
 import { OramaCloud } from '@orama/core';
 
-const client = new OramaCloud({
+const orama = new OramaCloud({
   projectId: '<project id>',
   apiKey: '<read only api key>',
 });
 
 const { search, setSearch, query } = useDocsSearch({
-  type: 'orama-cloud',
-  index: 'crawler',
-  client,
-  params: {
-    // optional search params
-  },
+  client: oramaCloudClient({
+    index: 'crawler',
+    client: orama,
+    params: {
+      // optional search params
+    },
+  }),
 });
 ```
 

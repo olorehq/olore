@@ -92,3 +92,31 @@ riveInstance.layout = new rive.Layout({ fit: rive.Fit.Fill });
     .matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
     .addEventListener("change", computeSize);
 ```
+
+## TypeScript API surface
+
+These types are exported from `@rive-app/canvas` (or your bundled `rive` global):
+
+```typescript
+export interface LayoutParameters {
+  fit?: Fit;
+  alignment?: Alignment;
+  layoutScaleFactor?: number;
+  minX?: number;
+  minY?: number;
+  maxX?: number;
+  maxY?: number;
+}
+
+export class Layout {
+  constructor(params?: LayoutParameters);
+  readonly fit: Fit;
+  readonly alignment: Alignment;
+  readonly layoutScaleFactor: number;
+  readonly minX: number;
+  readonly minY: number;
+  readonly maxX: number;
+  readonly maxY: number;
+  copyWith(partial: LayoutParameters): Layout;
+}
+```

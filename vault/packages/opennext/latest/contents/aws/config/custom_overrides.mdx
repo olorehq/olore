@@ -4,7 +4,7 @@ In some cases the simple example is not enough, and you want to add more customi
 
 <Callout>
 Be careful if you use the edge runtime (either in a function or by using the external middleware), we do 2 compilations of the `open-next.config.ts`, one for node and one for the edge runtime. If you're using some custom overrides, you likely want to add
-```ts
+```ts filename="open-next.config.ts"
 edgeExternals: ['./customWrapper', './anyOtherOverrideUsed']
 ```
 to your `open-next.config.ts` to avoid the edge runtime to try to compile overrides that are not compatible with the edge runtime.
@@ -17,8 +17,7 @@ Sometimes you might want to modify the object received by OpenNext. For example 
 
 You'll still have to use a fallback value during dev as this is not used by the dev server.
 
-```ts
-// customConverter.ts
+```ts filename="customConverter.ts"
 import converter from "@opennextjs/aws/overrides/converters/aws-apigw-v2.js";
 import type { Converter } from "@opennextjs/aws/types/overrides.js";
 import { Config } from "sst/node/Config";
@@ -50,8 +49,7 @@ export default {
 } as Converter;
 ```
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
 const config = {
@@ -69,8 +67,7 @@ Here we provide a few examples for some custom wrapper.
 
 ### Define a global to use node in the middleware
 
-```ts
-// customWrapper.ts
+```ts filename="customWrapper.ts"
 import defaultWrapper from "@opennextjs/aws/overrides/wrappers/aws-lambda.js";
 
 //Here you can define some globals
@@ -87,8 +84,7 @@ globalThis.myApi = async () => {
 export default defaultWrapper;
 ```
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -102,8 +98,7 @@ export default config;
 
 But since Next dev server runs in a fake edge runtime and that the global is defined only for deployment, you'll have to mock the global in your middleware.
 
-```ts
-// middleware.ts
+```ts filename="middleware.ts"
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -135,8 +130,7 @@ export function middleware(request: NextRequest) {
 
 ### Use middy.js with the wrapper
 
-```ts
-// customWrapper.ts
+```ts filename="customWrapper.ts"
 import streamingWrapper from "@opennextjs/aws/overrides/wrappers/aws-lambda.js";
 import type { WrapperHandler } from "@opennextjs/aws/types/overrides.js";
 import middy from "@middy/core";
@@ -154,8 +148,7 @@ export default {
 };
 ```
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -173,8 +166,7 @@ In this example the custom wrapper is used to preload some important routes befo
 
 **WARNING**: This one is not properly tested. It's just an example of what you could do. You should test it properly before using it in production. Also preloading too many routes is probably a bad idea.
 
-```ts
-// customWrapper.ts
+```ts filename="customWrapper.ts"
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
 import { Writable } from "node:stream";
 
@@ -251,8 +243,7 @@ export default {
 };
 ```
 
-```ts
-// open-next.config.ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -267,7 +258,7 @@ const config = {
 
 You can take inspiration from our [`fs-dev`](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/incrementalCache/fs-dev.ts) override which uses the file system to store the incremental cache. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.ts";
 const config = {
   default: {
@@ -287,7 +278,7 @@ export default config;
 
 By default it will use SQS queue to revalidate stale routes. You can read more about this [here](/aws/config/overrides/queue). To create your own custom override you can take inspiration by looking at our [included](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/queue) implementations. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.ts";
 const config = {
   default: {
@@ -307,7 +298,7 @@ export default config;
 
 To override the tag cache you can take inspiration by looking at the [`fs-dev`](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/tagCache/fs-dev.ts) override that uses the filesystem. You can read more about this override [here](/aws/config/overrides/tag_cache). You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.ts";
 const config = {
   default: {
@@ -327,7 +318,7 @@ export default config;
 
 This override is only used internally by OpenNext to resolve the origin of the request if you have an `external` middleware. You can take inspiration from looking at our included [`pattern-env`](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/originResolver/pattern-env.ts) override. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},
@@ -348,7 +339,7 @@ export default config;
 
 This override is used in the image optimization server to load an image from a custom source. You can look at our implemention of using the file system [here](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/imageLoader/fs-dev.ts). You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},
@@ -366,7 +357,7 @@ export default config;
 
 To have a custom override for the warmer invoke you can take inspiration by looking at our [`aws-lambda`](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/warmer/aws-lambda.ts) override. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},
@@ -384,7 +375,7 @@ export default config;
 
 To have a custom override for the CDN Invalidation you can take inspiration by looking at our [`cloudfront`](https://github.com/opennextjs/opennextjs-aws/tree/main/packages/open-next/src/overrides/cdnInvalidation/cloudfront.ts) override. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -403,7 +394,7 @@ export default config;
 
 This is used by OpenNext to proxy rewritten requests to external services. You can read more about it [here](/aws/config/overrides/proxy_external_request). To have a custom override for the External Request Proxy you can take inspiration by looking at our [`fetch`](https://github.com/opennextjs/opennextjs-aws/blob/main/packages/open-next/src/overrides/proxyExternalRequest/fetch.ts) override. You need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {
@@ -422,7 +413,7 @@ export default config;
 
 This is used by OpenNext to resolve static assets. You can read more about it [here](/aws/config/overrides/asset_resolver). To have a custom override for the Asset Resolver, you need an `open-next.config.ts` with this:
 
-```ts
+```ts filename="open-next.config.ts"
 import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 const config = {
   default: {},

@@ -76,10 +76,12 @@ Count the number of conversation turns in a GenAI chat operation.
 **Query**
 
 ```kusto
-['genai-traces']
+['otel-demo-genai']
 | extend turns = genai_conversation_turns(['attributes.gen_ai.input.messages'])
 | summarize avg_turns = avg(turns), max_turns = max(turns)
 ```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-genai%27%5D%20%7C%20extend%20turns%20%3D%20genai_conversation_turns(%5B%27attributes.gen_ai.input.messages%27%5D)%20%7C%20summarize%20avg_turns%20%3D%20avg(turns)%2C%20max_turns%20%3D%20max(turns)%22%7D)
 
 **Output**
 

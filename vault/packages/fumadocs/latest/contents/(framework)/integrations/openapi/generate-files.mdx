@@ -24,7 +24,7 @@ void generateFiles({
 
 ### `per`
 
-Customise the content of pages, default to `operation`.
+Customize the content of pages, default to `operation`.
 
 <Callout>Operation refers to an API endpoint with specific method like `/api/weather:GET`.</Callout>
 
@@ -43,7 +43,7 @@ void generateFiles({
 });
 ```
 
-When set to `custom`, you can pass a function to fully customise the generation process:
+When set to `custom`, you can pass a function to fully customize the generation process:
 
 ```ts title="Example"
 import { generateFiles, OperationOutput } from 'fumadocs-openapi';
@@ -51,7 +51,6 @@ import { generateFiles, OperationOutput } from 'fumadocs-openapi';
 void generateFiles({
   per: 'custom',
   toPages(builder) {
-    const { dereferenced } = builder.document;
     const items = builder.extract();
 
     for (const op of items.operations) {
@@ -118,6 +117,7 @@ void generateFiles({
     },
     items: [
       {
+        // output path
         path: 'index.mdx',
         // optional: restrict the input files (identical to the `input` field in server)
         only: ['petstore.yaml'],
@@ -125,6 +125,25 @@ void generateFiles({
         description: 'All available pages',
       },
     ],
+  },
+});
+```
+
+### `meta`
+
+Generate [`meta.json`](/docs/page-conventions#meta) files automatically.
+
+You can always define the `meta.json` files manually for maximal flexibility.
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  meta: true,
+
+  // or customize how folders are represented:
+  meta: {
+    folderStyle: 'separator',
   },
 });
 ```
@@ -160,16 +179,17 @@ A function that controls the output file name of MDX pages.
 import { generateFiles } from 'fumadocs-openapi';
 
 void generateFiles({
-  name: (output, document) => {
+  name(output) {
+    const doc = this.document;
     if (output.type === 'operation') {
-      const operation = document.paths![output.item.path]![output.item.method]!;
+      const operation = doc.paths![output.item.path]![output.item.method]!;
       // operation object
       console.log(operation);
 
       return 'my-dir/filename';
     }
 
-    const hook = document.webhooks![output.item.name][output.item.method]!;
+    const hook = this.dereferenceShallow(doc.webhooks![output.item.name])[output.item.method]!;
     // webhook object
     console.log(hook);
     return 'my-dir/filename';
@@ -179,7 +199,7 @@ void generateFiles({
 
 ### `frontmatter`
 
-Customise the frontmatter of MDX files.
+Customize the frontmatter of MDX files.
 
 By default, it includes:
 

@@ -1,8 +1,17 @@
 ---
 title: Postgres json_each() function
 subtitle: Expands JSON into a record per key-value pair
+summary: >-
+  `json_each(json)` expands a JSON object into one row per top-level key,
+  returning each key as `text` and its value as `json`, making it the right
+  choice for iterating over a JSON object with an unknown or dynamic schema in
+  SQL. Use it instead of `jsonb_each` when the input column is typed `json`
+  rather than `jsonb`, and instead of `json_each_text` when preserving the JSON
+  type on values matters. For large JSON objects, the row-expansion carries
+  performance overhead; `json_object_keys` is lighter when only the keys are
+  needed.
 enableTableOfContents: true
-updatedOn: '2024-06-14T07:55:54.374Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `json_each` function in Postgres is used to expand a `JSON` object into a set of key-value pairs.

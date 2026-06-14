@@ -2,7 +2,11 @@
 title: '@xstate/store-vue'
 ---
 
-The `@xstate/store-vue` package provides Vue bindings for [XState Store](/docs/xstate-store). It includes composables for subscribing to store state as reactive refs.
+The `@xstate/store-vue` package provides Vue bindings for [XState Store](/docs/xstate-store). It includes composables for subscribing to store state as readonly refs, creating setup-scoped stores, and using atoms.
+
+<Callout>
+These are the docs for `@xstate/store-vue` v2. For v1 docs, see [v1 docs](/docs/xstate-store-v3/vue).
+</Callout>
 
 <Callout>
 
@@ -41,8 +45,8 @@ yarn add @xstate/store-vue
 ## Quick start
 
 ```vue
-<script setup>
-import { createStore, useSelector } from '@xstate/store-vue';
+<script setup lang="ts">
+import { createStore, useSelector } from '@xstate/store-vue'; // [!code highlight:1]
 
 const store = createStore({
   context: { count: 0 },
@@ -53,6 +57,7 @@ const store = createStore({
   },
 });
 
+// [!code highlight:1]
 const count = useSelector(store, (state) => state.context.count);
 </script>
 
@@ -69,24 +74,49 @@ const count = useSelector(store, (state) => state.context.count);
 
 ### `useSelector(store, selector?, compare?)`
 
-Creates a reactive ref that subscribes to a store and returns a selected value.
+Creates a readonly ref that subscribes to a store or atom and returns a selected value.
+
+### `useStore(configOrLogic, input?)`
+
+Creates a store instance for the current setup scope. Pass either a store config or store logic created with `createStoreLogic(...)`.
 
 ```vue
-<script setup>
-import { useSelector } from '@xstate/store-vue';
+<script setup lang="ts">
+import { createStoreLogic, useSelector, useStore } from '@xstate/store-vue'; // [!code highlight:1]
 
-// Select specific value
+const counterLogic = createStoreLogic({
+  context: (input: { initialCount: number }) => ({
+    count: input.initialCount,
+  }),
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+});
+
+// [!code highlight:1]
+const store = useStore(counterLogic, { initialCount: 0 });
 const count = useSelector(store, (state) => state.context.count);
+</script>
 
-// With custom comparison function
-const user = useSelector(
-  store,
-  (state) => state.context.user,
-  (prev, next) => prev.id === next.id
-);
+<template>
+  <button @click="store.trigger.inc()">{{ count }}</button>
+</template>
+```
 
-// Without selector (returns full snapshot)
-const snapshot = useSelector(store);
+### `useAtom(atomOrConfig, selectorOrInput?, compare?)`
+
+Subscribes to an atom and returns a readonly ref. You can pass an existing atom, or an atom config created with `createAtomConfig(...)`.
+
+```vue
+<script setup lang="ts">
+import { createAtomConfig, useAtom } from '@xstate/store-vue'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+// [!code highlight:1]
+const count = useAtom(countConfig, { initialCount: 0 });
 </script>
 
 <template>
@@ -94,12 +124,28 @@ const snapshot = useSelector(store);
 </template>
 ```
 
-**Parameters:**
-- `store` - The store to subscribe to
-- `selector` - Optional function to select a value from the store snapshot. If not provided, returns the full snapshot.
-- `compare` - Optional comparison function (defaults to strict equality `===`)
+### `useAtomState(atomOrConfig, input?)`
 
-**Returns:** A read-only ref containing the selected value
+Creates or subscribes to an atom for the current setup scope. It returns the current readonly ref and the live atom instance.
+
+```vue
+<script setup lang="ts">
+import { createAtomConfig, useAtomState } from '@xstate/store-vue'; // [!code highlight:1]
+
+const countConfig = createAtomConfig((input: { initialCount: number }) => {
+  return input.initialCount;
+});
+
+// [!code highlight:1]
+const [count, countAtom] = useAtomState(countConfig, { initialCount: 0 });
+</script>
+
+<template>
+  <button @click="countAtom.set((count) => count + 1)">
+    {{ count }}
+  </button>
+</template>
+```
 
 ## Full documentation
 

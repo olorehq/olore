@@ -48,10 +48,10 @@ Before creating an experiment report, ensure you have:
 
 ### Step 1: Select an Experiment
 
-Click 'New Experiment' from the Experiment report menu and select your experiment. Any experiment started in the last 30 days will automatically be detected and populated in the dropdown. To analyze experiments that began before 30 days, please hard-code the experiment name
+Click 'New Experiment' from the Experiment report menu and select your experiment. Both experiments run through Mixpanel Feature Flags and experiments tracked via exposure events are detected and populated in the dropdown. To keep the dropdown focused on experiments you're likely to care about, we hide Mixpanel Feature Flag experiments once their flag is archived, and we hide exposure-event experiments that haven't received an exposure event in the last 30 days. To analyze an exposure-event experiment beyond that window, you can hard-code the experiment name by typing `$experiment:Experiment name` as a filter or breakdown property, where `Experiment name` is the value of whichever property you configured as the experiment name on your exposure events.
 
 <Callout type="info">
-Only experiments tracked via exposure events, i.e, `$experiment_started`, can be analyzed in the experiment report. Read more on how to track experiments [here](#implementation-for-experimentation). 
+Two kinds of experiments can be analyzed in the experiment report: experiments run through Mixpanel Feature Flags with the Experiment type, and experiments tracked via exposure events (i.e., `$experiment_started`). Read more on how to track experiments [here](#implementation-for-experimentation).
 </Callout>
 ### Step 2: Choose the ‘Control’ Variant
 
@@ -72,6 +72,31 @@ Mixpanel has set default automatic configurations, seen below. If required, plea
 1. **Experiment Model type**: Sequential
 2. **Confidence Threshold**: 95%
 3. **Experiment Start Date**: Date of the first user exposed to the experiment
+
+### Experiment JSON Parameters
+
+Each variant can optionally carry a **value** in addition to its name — either a **string** or a **JSON object**. The variant name is what your code switches on to render the right experience. The value is configuration data the SDK returns alongside the assignment, so you can remotely control parameters of your app or site (copy, colors, thresholds, layout configs, pricing, etc.) without a code deploy.
+
+For example, a variant named `treatment` might carry a JSON object value like:
+
+```json
+{
+  "cta_text": "Limited time — Buy now",
+  "discount": 20,
+  "layout": "grid"
+}
+```
+
+Your client code reads the value from the SDK alongside the variant name. In the JavaScript SDK:
+
+```javascript
+const fallback = { cta_text: "Buy now", discount: 0, layout: "list" };
+const config = await mixpanel.flags.get_variant_value("checkout-promo", fallback);
+
+renderCheckout(config.cta_text, config.discount, config.layout);
+```
+
+See the [JavaScript Feature Flags guide](/docs/tracking-methods/sdks/javascript/javascript-flags) for the full SDK reference.
 
 ### Changing Settings Mid-Experiment
 
@@ -194,32 +219,48 @@ This example shows why larger sample sizes are crucial—with only 10 users per 
 
 ### How do you read lift?
 
+<Callout type="info">
+Lift is always calculated using **exposures** (users assigned to a variant) as the denominator — not the denominator you may see in other tabs like Totals or Chart. For funnel metrics, this means the lift denominator differs from the funnel conversion rate denominator. See the FAQ ["Why does the lift in Results disagree with the conversion rate in Totals or Chart?"](#why-does-the-lift-in-results-disagree-with-the-conversion-rate-in-totals-or-chart) for a worked example.
+</Callout>
+
 Lift is the percentage difference between the control and variant(s) metrics. 
 $Lift= { (variant \,group\,rate - control \,group\,rate) \over (control \,group\,rate)}$
 
-Lift, mean, and variance are calculated differently based on the type of metric being analyzed:
+The "group rate" in this formula is calculated differently for each metric type. In every case, the denominator is **the number of users exposed to that variant** (i.e., users who received the `$experiment_started` event for that variant):
 
 **Total Events Metrics:**
+- **Numerator:** Total event count in the variant
+- **Denominator:** Number of users exposed to the variant
 - **Group Rate:** Total count ÷ Number of users exposed
 - **Variance:** Calculated directly from the per-user event counts, treated as a continuous variable
 - **Example:** If the treatment group has 150 total purchases from 100 exposed users, the group rate = 1.5 purchases per user
 
 **Total Sessions Metrics:**
+- **Numerator:** Total session count in the variant
+- **Denominator:** Number of users exposed to the variant
 - **Group Rate:** Total count ÷ Number of users exposed
 - **Variance:** Equal to the mean (Poisson distribution property)
 
 **Rate Metrics (Conversion, Retention):** 
-- **Group Rate:** The actual rate (already normalized)
+- **Numerator:** Number of users who converted (or were retained) in the variant
+- **Denominator:** Number of users exposed to the variant
+- **Group Rate:** Conversions ÷ Exposures
 - **Variance:** Calculated using Bernoulli distribution: p × (1-p)
-- **Example:** If 25 out of 100 users convert, group rate = 0.25 (25% conversion rate)
+- **Example:** If 25 out of 100 exposed users convert, group rate = 0.25 (25%). Note that this denominator is exposures — not funnel entrants. This is different from the funnel conversion rate you see in the Totals or Chart tabs, which uses funnel entrants as the denominator.
 
 **Value Metrics (Averages, Sums):**
+- **Numerator:** Sum of property values across all users in the variant
+- **Denominator:** Number of users exposed to the variant
 - **Group Rate:** Sum of property values ÷ Number of users exposed  
 - **Variance:** Calculated from the distribution of individual property values
 - **Example:** If the treatment group spent $5,000 total from 100 users, the group rate = $50 average per exposed user
 
 **Why This Matters:**
-Normalizing by exposed users (not just converters) helps you understand the impact on your entire user base. A feature that increases average order value among buyers but reduces conversion rate may decrease overall revenue per user.
+Normalizing by exposed users (not just converters or funnel entrants) helps you understand the impact on your entire user base. A feature that increases average order value among buyers but reduces conversion rate may decrease overall revenue per user.
+
+<Callout type="info">
+**Metrics with a Group Identifier:** When you [change a metric's group identifier](/docs/data-structure/advanced/group-analytics#change-the-group-identifier-in-a-report) from Users to a group key (e.g., Company), exposures for that metric are counted at the group level. The number of exposed groups is then used for all of that metric's calculations — normalizing group rates, computing variance, and determining statistical significance. For example, if a metric is set to aggregate by Company and 200 companies have been exposed to the treatment, the group rate is calculated as the total metric value divided by those 200 exposed companies, not by the number of individual users.
+</Callout>
 
 **Custom Formula Metrics:**
 For complex metrics using formulas like `Revenue per User = Total Revenue ÷ Unique Users`, Mixpanel uses propagation of uncertainty to estimate variance. This combines the variances of the component metrics (Total Revenue and Unique Users) to calculate the overall metric's statistical significance. The system assumes metrics in formulas are uncorrelated for these calculations.
@@ -240,6 +281,43 @@ Click 'Analyze' on a metric to dive deeper into the results. This will open a no
 You can also add the experiment breakdowns and filters directly in a report via the Experiments tab in the query builder. This lets you do on-the-fly analysis with the experiment groups. Under the hood, the experiment breakdown and filter work the same as the Experiment report.
 
 
+
+## Multiple Environments
+
+Multiple Environments lets you treat separate Mixpanel projects as development, staging, and production environments for the same experiment or feature flag. Build and iterate on an experiment (and its underlying flag) in one project, then push it to another project when you're ready — without recreating it by hand. Linked experiments and flags stay connected so you can continue pushing updates over time.
+
+### Other Environments Selector
+
+The "Other Environments" selector appears under the **Configuration** tab of an experiment, inside the **More** section. This panel lets you manage an experiment's links to copies of itself in other projects.
+
+#### Pushing changes
+
+Pushing changes copies the full configuration of the source (original) experiment to the linked destination experiment in the other project. Any changes that exist only on the destination experiment will be overwritten.
+
+#### Other Environments Menu
+
+This menu lists the experiments in other projects that are linked to the current experiment. From here, you can navigate to a linked experiment, push the source experiment's current configuration to it, or remove the connection.
+
+#### Duplicate To Project
+
+To duplicate an experiment to another project, open the Other Environments menu and select **Duplicate To Project**. In the dialog, choose the destination project.
+
+This flow is for duplicating across projects only — to duplicate within the same project, use the existing **Duplicate** option within the experiment's overflow (`...`) menu in the top-right of the experiment page.
+
+Once duplicated, the new experiment is linked to the original and can be managed from the "Other Environments" menu.
+
+#### Feature Flags
+
+If an experiment is linked to a **Mixpanel** Feature Flag, the underlying flag cannot be duplicated on its own from the Feature Flags page — use the experiment's Duplicate flow to copy the experiment and flag together. If your experiment uses a **third-party** flag instead, you can duplicate the experiment directly; no flag duplication step is involved.
+
+When duplicating an experiment that is linked to a Mixpanel Flag to another project, you will be prompted to confirm whether you also want to duplicate the linked flag. If you do, the new experiment will be linked to the new flag, and the new flag will also appear in the "Other Environments" menu of the original flag.
+
+When pushing changes, if both the source and destination experiments are linked to flags that are also linked (i.e., you chose to duplicate the flag as well), you can choose to push any changes from the source flag to the destination project's flag at the same time.
+
+<Callout type="info">
+  **Billing across projects:** You aren't double-charged for using the same feature flag across multiple projects. Mixpanel charges based on active feature flag keys, so the same flag-key shared across projects is counted once.
+</Callout>
+
 ## Advanced Statistical Methods
 
 Mixpanel offers several advanced statistical options to help you get more reliable experiment results. These features address common challenges in experimentation: controlling for multiple comparisons, handling outliers, validating experiment setup, and reducing variance to reach significance faster.
@@ -251,7 +329,7 @@ Mixpanel offers several advanced statistical options to help you get more reliab
 | **Bonferroni Correction** | Makes significance thresholds stricter to account for testing multiple metrics/variants at once | You're tracking multiple metrics or testing multiple variants | If a metric loses significance after correction, don't treat it as a confirmed winner. Run a follow-up experiment focused on that metric alone. |
 | **Winsorization** | Caps extreme outlier values at a percentile you choose | Revenue or value-based metrics where outliers are common | If results change substantially after Winsorization, this indicates your original results were driven by outliers. Decide whether your business decision is about typical users or extreme ones. |
 | **SRM** | Checks whether your variant split matches the configured allocation | Always on as a health check | Pause the experiment. Identify and fix the root cause of the mismatch, then restart the experiment. |
-| **Retro-AA** | Checks whether variant groups were already different *before* the experiment started | Always on as a health check | Your groups had pre-existing bias. Consider enabling CUPED to correct for it. Investigate your assignment logic to prevent it in future experiments. |
+| **Pre-Experiment Bias** | Checks whether variant groups were already different *before* the experiment started | Always on as a health check | Your groups had pre-existing bias. Consider enabling CUPED to correct for it. Investigate your assignment logic to prevent it in future experiments. |
 | **CUPED** | Uses pre-experiment behavior to adjust for natural variance and pre-existing bias, helping you reach significance faster | Your users have pre-experiment history and your metrics have high natural variance | If confidence intervals don't noticeably tighten, pre-experiment behavior isn't predictive for your metrics. Results are still valid, you just won't get faster detection. |
 
 ### Bonferroni Correction
@@ -272,9 +350,9 @@ Bonferroni Correction is conservative. It reduces false positives but also makes
 
 ### Winsorization
 
-Outliers can distort experiment results, especially for revenue or value-based metrics. If most customers have cart sizes under $100 but one customer in the treatment group spends $100,000, this single extreme value could skew all your results and make it harder to detect real effects.
+Outliers can distort experiment results, especially for revenue or value-based metrics. If most customers have cart sizes under \$100 but one customer in the treatment group spends \$100,000, this single extreme value could skew all your results and make it harder to detect real effects.
 
-Winsorization addresses this by capping extreme values at a specified percentile. When enabled, you select a percentile threshold (such as 5%). Mixpanel then finds the values at the top and bottom of that percentile range and caps any values beyond those limits. In the example above, if the 95th percentile corresponds to $90, then the $100,000 purchase would be treated as $90 for the analysis.
+Winsorization addresses this by capping extreme values at a specified percentile. When enabled, you select a percentile threshold (such as 5%). Mixpanel then finds the values at the top and bottom of that percentile range and caps any values beyond those limits. In the example above, if the 95th percentile corresponds to \$90, then the \$100,000 purchase would be treated as \$90 for the analysis.
 
 **When to use Winsorization:**
 
@@ -296,17 +374,17 @@ Small imbalances can happen by random chance, but larger mismatches often indica
 
 If Mixpanel detects a statistically significant sample ratio mismatch, you'll see a warning. We recommend investigating the root cause of the mismatch and restarting the experiment after fixing it.
 
-#### Retrospective-AA Analysis (Retro-AA)
+#### Pre-Experiment Bias Analysis
 
-When you see lift in your experiment, you want to be confident it's caused by your treatment—not by pre-existing differences between the groups. Retro-AA helps you check this.
+When you see lift in your experiment, you want to be confident it's caused by your treatment—not by pre-existing differences between the groups. Pre-Experiment Bias helps you check this.
 
 The idea is simple: Mixpanel runs the same statistical analysis on 2 weeks of pre-experiment data. It looks at how each variant's users behaved *before* they were exposed to the experiment, using the same metrics you're measuring during the experiment.
 
-If the groups were properly randomized, there should be no significant difference in the pre-experiment period—users hadn't been treated yet, so nothing should cause a difference. But if Retro-AA finds statistically significant lift in the pre-experiment data, that's a red flag. It suggests the groups weren't equivalent to begin with, which means any lift you see during the experiment might not be caused by your treatment.
+If the groups were properly randomized, there should be no significant difference in the pre-experiment period—users hadn't been treated yet, so nothing should cause a difference. But if Pre-Experiment Bias finds statistically significant lift in the pre-experiment data, that's a red flag. It suggests the groups weren't equivalent to begin with, which means any lift you see during the experiment might not be caused by your treatment.
 
-**Example:** Your experiment shows the treatment group has 15% higher engagement. But Retro-AA reveals this same group already had 12% higher engagement before the experiment started. This suggests your randomization may have assigned more naturally-engaged users to treatment, and the lift you're seeing is largely a pre-existing difference rather than a treatment effect.
+**Example:** Your experiment shows the treatment group has 15% higher engagement. But Pre-Experiment Bias reveals this same group already had 12% higher engagement before the experiment started. This suggests your randomization may have assigned more naturally-engaged users to treatment, and the lift you're seeing is largely a pre-existing difference rather than a treatment effect.
 
-Retro-AA failing for a metric doesn't necessarily invalidate your experiment. Enabling CUPED may help reduce the impact of pre-experiment bias on the data, allowing you to still analyze the results. You may however want to review your implementation to ensure assignment is not biased towards some users.
+Pre-Experiment Bias failing for a metric doesn't necessarily invalidate your experiment. Enabling CUPED may help reduce the impact of pre-experiment bias on the data, allowing you to still analyze the results. You may however want to review your implementation to ensure assignment is not biased towards some users.
 
 #### Common reasons health checks may fail:
 
@@ -343,7 +421,9 @@ For every user event, we identify if the event is performed after being exposed 
 
 ### Implementation for Experimentation
 
-Mixpanel experiment analysis work based on exposure events. To use the experiment report, you must send your Exposure events in the following format: 
+If you're using [Mixpanel Feature Flags](/docs/featureflags), you don't need to do anything extra to send exposure events — Mixpanel's SDKs track them automatically when a user is exposed to a variant. Your experiment will show up in the Experiment report as soon as the feature flag is created with the Experiment type.
+
+If you're using a 3rd party feature flagging service or an in-house feature flag system, you can still analyze your experiments in Mixpanel by sending exposure events yourself in the following format:
 
 **Event Name:** “$experiment_started”
 
@@ -356,7 +436,7 @@ An example track call would look like this:
 
 `mixpanel.track('$experiment_started', {'Experiment name': 'Test', 'Variant name': 'v1'})`
 
-You can specify the event and property that should be used as the exposure event, name, and variant in the project settings in the Overview tab under 'Experiment Event Settings'. This allows you to use an experiment event that you're already tracking, for example, via a 3rd party feature flagging tool. Note, only string properties should be used for the 'Name' and 'Variant'.
+You can specify the event and property that should be used as the exposure event, name, and variant. Go to **Settings → Project → Experimentation**. This allows you to use an experiment event that you're already tracking, for example, via a 3rd party feature flagging tool. Note, only string properties should be used for the 'Name' and 'Variant'.
 
 ![image](/exp_settings_rescale.png)
 
@@ -385,6 +465,29 @@ You can specify the event and property that should be used as the exposure event
 3. For what time duration do we associate the user being exposed to an experiment to impact metrics? 
     
     After the most recent experiment exposure for a user, we consider that user’s behavior as ‘exposed’ to an experiment for a max of 90 days.
+
+#### Why does the lift in Results disagree with the conversion rate in Totals or Chart?
+
+This is expected behavior — the two numbers use different denominators and answer different questions.
+
+**Lift** divides conversions by **exposures** (all users assigned to a variant). **Totals/Chart** for funnel metrics divides funnel completers by **funnel entrants** (users who started the funnel). When a variant changes how many users enter the funnel — for example, a new CTA that attracts more (or less qualified) users — the two rates can move in opposite directions.
+
+**Worked example:**
+
+|  | Control | Variant (v1) |
+| --- | --- | --- |
+| Exposures (users assigned) | 35,350 | 35,620 |
+| Funnel entrants | 7,504 | 8,676 |
+| Funnel completers | 2,289 | 2,480 |
+| **Funnel conversion** (completers ÷ entrants) | 30.50% | 28.58% |
+| **Per-exposure conversion** (completers ÷ exposures) | 6.49% | 6.96% |
+
+- **Funnel conversion (Totals/Chart tab):** v1 is 28.58% vs control 30.50% — v1 looks **worse** (−6.3%).
+- **Per-exposure conversion (basis for Lift):** v1 is 6.96% vs control 6.49% — v1 looks **better** (+7.52%).
+
+Both are correct. The funnel conversion rate answers: "For users who started the funnel, how often did they finish?" The per-exposure conversion rate answers: "For all users assigned to this variant, how often did they convert?"
+
+In this example, the variant brought more users into the funnel (8,676 entrants vs 7,504). Those additional users lowered the funnel completion rate, but the variant still converted a larger share of its total exposed population. Lift uses the per-exposure rate because it measures the overall impact of the variant on your entire user base, not just on users who happened to enter the funnel.
 
 ## Experimentation Pricing FAQ
 <Callout type="info">

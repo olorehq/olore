@@ -15,6 +15,8 @@ Variable|Description
 `LOG_LEVEL`|(Default: `INFO`) Set the log level of the agent. Can be one of `DEBUG`, `LOG`, `INFO`, `WARN` or `ERROR`.
 `USE_OS_DNS_RESOLVER`|When set to true, TCP monitors will resolve DNS using `getaddrinfo` C function, instead of using the network. This enables easier DNS resolution for internal services e.g. services running in the same Kubernetes cluster.
 `DEPENDENCY_CACHE`|(Default: `OFF`) Set to `CHECKLY_S3` to enable dependency caching for [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). Caches installed dependencies between runs to speed up check execution. Learn more about [dependency caching](/detect/synthetic-monitoring/playwright-checks/custom-dependencies#dependency-caching).
+`AGENT_HEALTH_PORT`|(Default: `8081`) Port for the HTTP [health probe endpoints](#health-probe-endpoints).
+`EXTERNAL_OBSERVABILITY`| Enabled by default. Set to `off` to disable [external observability](#external-observability) reporting of agent runtime errors to Checkly.
 
 For example, you can add these variables to the standard docker run command like this:
 
@@ -151,12 +153,38 @@ To configure the agent to trust the certificate, first copy the certificate as a
 docker run -v ~/certificate.pem:/checkly/certificate.pem -e NODE_EXTRA_CA_CERTS=/checkly/certificate.pem -e API_KEY="pl_...." -d checkly/agent:latest
 ```
 
+## Health Probe Endpoints
+
+The Checkly Agent exposes HTTP health probe endpoints on port `8081` by default. You can change this port using the `AGENT_HEALTH_PORT` environment variable.
+
+Endpoint|Description
+---|---
+`GET /-/readiness`|Returns `200 OK` when the agent is ready to accept work. Returns `503 Service Unavailable` during shutdown.
+`GET /-/liveness`|Returns `200 OK` to indicate the agent process is running.
+`GET /health`|Returns `200 OK` as a general health check.
+
+These endpoints are useful for configuring [Kubernetes readiness and liveness probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) or any other container orchestration health checks.
+
+## External Observability
+
+The Checkly Agent reports error-level events to Checkly to help detect crashes, bugs, and environment-related issues. This is enabled by default starting with agent v7.0.0.
+
+Only limited technical metadata is collected (e.g. error messages, stack traces, agent version, platform, go runtime information). Sensitive data such as API keys, environment variables, check configuration, URLs, headers, and response bodies is **never** sent.
+
+To disable external observability, set the `EXTERNAL_OBSERVABILITY` environment variable to `off`:
+
+```bash Terminal
+-e EXTERNAL_OBSERVABILITY=off
+```
+
 ## Agent Version and Runtimes
 
 Each Checkly Agent only supports specific [runtimes](/platform/runtimes/overview/). This is to keep the container image at an acceptable size. When you change the runtime a check uses, you may also need to change to the corresponding agent version. Similarly, if you update the agent version to one using a different runtime you also need to update your checks to use the same runtime.
 
 | Agent version | Runtimes |
 |---------------|----------|
+| 8.0.0 | 2026.04 |
+| 7.0.0* | 2026.04, 2025.04 |
 | 6.0.0 | 2025.04, 2024.09 |
 | 5.0.0 | 2025.04 |
 | 4.0.0 | 2024.09 |
@@ -166,12 +194,44 @@ Each Checkly Agent only supports specific [runtimes](/platform/runtimes/overview
 | 2.0.0 | 2023.02 |
 | 1.3.9 | 2022.10 |
 
+<Tip>
+*If you're upgrading from runtime `2024.09` to `2026.04`, use the `7.0.2-migrate-202409-202604` migration image. It ships all three intermediate runtimes (`2024.09`, `2025.04`, `2026.04`) so you can migrate your checks incrementally.
+</Tip>
+
 As each agent version only supports specific runtimes, we recommend pinning agent versions used in production.
 
 ## Troubleshooting
 
+<Accordion title="Self-signed proxy certificate not trusted">
 If you're using a self-signed certificate for your proxy, the Agent's HTTP client will not trust it by default. There are two ways to fix this.
 
 1. Add your Certificate Authority's (CA) root certificate to the system's CA store. On Debian, and related Linux distributions, you can do this by copying your `*.crt` certificate to `/usr/local/share/ca-certificates/` and running `sudo update-ca-certificates`.
 2. Alternatively, you can tell the node process in the Agent's container to accept unauthorized certificates with the following environment variable, `NODE_TLS_REJECT_UNAUTHORIZED=0`. This can be appended to your `docker run ..` command with the `-e` flag.
+</Accordion>
 
+<Accordion title="Raw socket permission denied for Traceroute or Packet Capture on private locations">
+Container runtimes drop `NET_RAW` by default. Traceroute and Packet Capture need raw sockets, so the Checkly Agent needs this capability explicitly granted.
+
+**How to fix**:
+
+In **Kubernetes**, update your pod spec or Helm values:
+* `allowPrivilegeEscalation=true` — prevents Kubernetes from setting the `no_new_privs` bit on the container process, which would otherwise block file capabilities (like `cap_net_raw+ep`) from taking effect.
+* `capabilities.add=["NET_RAW"]` — adds `CAP_NET_RAW` to the container's bounding and permitted capability sets, allowing the kernel to open the raw sockets (`SOCK_RAW`).
+
+```yaml
+securityContext:
+  allowPrivilegeEscalation: true
+  capabilities:
+    add: ["NET_RAW"]
+```
+
+In **Docker**:
+
+```bash
+docker run --cap-add=NET_RAW ghcr.io/checkly/agent:latest
+```
+
+Docker does not set `no_new_privs` by default, so `--cap-add` is sufficient. If you run with `--security-opt no-new-privileges`, file capabilities on binaries will be blocked — remove that flag to allow `NET_RAW`.
+
+`NET_RAW` only grants permission to create raw sockets. It does not escalate broader container privileges.
+</Accordion>

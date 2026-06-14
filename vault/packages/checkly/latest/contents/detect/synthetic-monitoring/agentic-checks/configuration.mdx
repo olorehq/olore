@@ -1,0 +1,130 @@
+---
+title: 'Agentic Checks Configuration'
+description: 'Configure Agentic Checks with prompts, variables, skills, scheduling, locations, and active capacity.'
+sidebarTitle: 'Configuration'
+---
+
+<Accordion title="Prerequisites">
+Before creating Agentic Checks, ensure you have:
+
+- Access to Agentic Checks on your Checkly account
+- Available Agentic Check active capacity if the check will be active
+- An initialized Checkly CLI project if you want to manage the check as code
+- Any required test credentials saved as Checkly variables or secrets
+
+For CLI setup, see the [CLI overview](/cli/overview).
+</Accordion>
+
+## Define the check goal
+
+Write the prompt as a monitoring objective, not as implementation instructions. Include the target URL, the user journey, and the observable success criteria.
+
+For broader guidance, see [Prompt best practices](/detect/synthetic-monitoring/agentic-checks/overview#prompt-best-practices).
+
+```text Prompt
+Go to https://app.example.com/login.
+Sign in with the test account.
+Verify that the dashboard loads, the account name is visible, and there are no blocking console errors.
+```
+
+Good prompts include:
+
+- The exact page or flow to start from
+- The expected end state
+- Important assertions
+- Known constraints, such as test account behavior
+- What should count as a failure
+
+Avoid prompts that ask the agent to test too many unrelated paths in one check. Create separate Agentic Checks for separate critical flows.
+
+## Reference variables and secrets
+
+Agentic Checks do **not** automatically expose all account variables or secrets to the agent. To expose one to an Agentic Check, reference it directly in the prompt with double curly brackets, such as `{{TEST_USER_EMAIL}}`.
+
+```typescript checkout.agentic.check.ts
+import { AgenticCheck, Frequency } from 'checkly/constructs'
+
+new AgenticCheck('checkout-flow', {
+  name: 'Checkout Flow',
+  prompt: 'Sign in with {{TEST_USER_EMAIL}} and {{TEST_USER_PASSWORD}}, then verify that a user can reach the checkout review step.',
+  frequency: Frequency.EVERY_1H,
+  activated: true,
+})
+```
+
+<Warning>
+Do not paste secret values directly into the prompt. Store secrets in Checkly and reference them by name with `{{SECRET_NAME}}`.
+</Warning>
+
+Some applications block automated monitoring unless requests include required headers, test bypass tokens, or feature flags. If your flow depends on a header value, store that value as a Checkly variable or secret and say in the prompt which header the agent should send. Do not paste the header value directly into the prompt.
+
+## Add skills
+
+Agentic Checks include a default browser automation skill. You can add extra skills when the agent needs domain-specific capabilities.
+
+```typescript agentic-runtime.check.ts
+import { AgenticCheck } from 'checkly/constructs'
+
+new AgenticCheck('web-quality-check', {
+  name: 'Web Quality Agentic Check',
+  prompt: 'Review the homepage and verify that the main navigation and primary call to action are usable.',
+  agentRuntime: {
+    skills: ['addyosmani/web-quality-skills'],
+  },
+})
+```
+
+Keep the skill list short. Every added skill expands what the agent can do during execution.
+
+## Scheduling and locations
+
+Agentic Checks can run from up to three public locations by default. Enterprise accounts can contact sales to enable unlimited locations.
+
+The CLI construct supports these frequencies:
+
+| Frequency in minutes | Frequency constant |
+|----------------------|--------------------|
+| `5` | `Frequency.EVERY_5M` |
+| `10` | `Frequency.EVERY_10M` |
+| `15` | `Frequency.EVERY_15M` |
+| `30` | `Frequency.EVERY_30M` |
+| `60` | `Frequency.EVERY_1H` |
+| `120` | `Frequency.EVERY_2H` |
+| `180` | `Frequency.EVERY_3H` |
+| `360` | `Frequency.EVERY_6H` |
+| `720` | `Frequency.EVERY_12H` |
+| `1440` | `Frequency.EVERY_24H` |
+
+## Active capacity
+
+Only active Agentic Checks consume Agentic Check capacity.
+
+Use `activated: false` when you want to deploy an Agentic Check draft without consuming active capacity:
+
+```typescript draft.agentic.check.ts
+import { AgenticCheck } from 'checkly/constructs'
+
+new AgenticCheck('draft-agentic-check', {
+  name: 'Draft Agentic Check',
+  prompt: 'Verify the account settings page loads for a signed-in user.',
+  activated: false,
+})
+```
+
+You can keep inactive checks in code and activate them later when your account has enough capacity.
+
+## Test and deploy
+
+Test your project before deploying:
+
+```bash Terminal
+npx checkly test
+```
+
+Deploy the check when you are ready:
+
+```bash Terminal
+npx checkly deploy
+```
+
+If deployment fails because of active capacity, deactivate an existing Agentic Check or purchase enough Agentic Check capacity before deploying the new active check.

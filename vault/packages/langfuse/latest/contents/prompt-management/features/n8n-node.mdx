@@ -1,12 +1,10 @@
 ---
-title: Open Source Prompt Management for n8n
+title: n8n Node
 sidebarTitle: n8n Node
 description: Community-maintained n8n node that enables seamless integration of Langfuse prompt management capabilities into n8n workflows.
 ---
 
 # n8n Node for Langfuse Prompt Management
-
-import { Callout } from "nextra/components";
 
 The Langfuse n8n node enables seamless integration of [Langfuse's Prompt Management](/docs/prompts/get-started) with n8n workflows. This community-maintained node allows you to fetch and use prompts directly from your Langfuse project within n8n workflows.
 
@@ -33,37 +31,8 @@ n8n Cloud: Use the node directly in your workflows by searching for `Langfuse`.
 
 ## GitHub Readme
 
-import { useData } from "nextra/hooks";
-import { Playground } from "nextra/components";
-
-export const getStaticProps = async () => {
-  const res = await fetch(
-    "https://raw.githubusercontent.com/langfuse/n8n-nodes-langfuse/refs/heads/master/README.md"
-  );
-  const readmeContent = await res.text();
-  return {
-    props: {
-      ssg: {
-        n8nReadme: readmeContent,
-      },
-    },
-  };
-};
-
-export function N8nNodeReadme() {
-  const { n8nReadme } = useData();
-  // Basic check to prevent errors if fetching failed or content is empty
-  if (!n8nReadme) {
-    return <p>Error loading README content.</p>;
-  }
-  // Ensure the source prop receives a string
-  const readmeString =
-    typeof n8nReadme === "string" ? n8nReadme : JSON.stringify(n8nReadme);
-  return <Playground source={readmeString} />;
-}
-
 <div className="p-6 mt-6 border bg-card rounded-md">
-  <N8nNodeReadme />
+  <FetchReadme url="https://raw.githubusercontent.com/langfuse/n8n-nodes-langfuse/refs/heads/master/README.md" />
 </div>
 
 Source: [langfuse/n8n-nodes-langfuse](https://github.com/langfuse/n8n-nodes-langfuse)

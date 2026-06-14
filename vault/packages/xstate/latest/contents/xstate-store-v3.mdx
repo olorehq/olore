@@ -1,0 +1,1949 @@
+---
+title: '@xstate/store v3'
+description: Simple state management for JavaScript/TypeScript apps in @xstate/store v3.
+---
+
+
+XState Store is a small library for simple state management in JavaScript/TypeScript applications. It is meant for updating store data using **events** for vanilla JavaScript/TypeScript apps, React apps, and more. It is comparable to libraries like Zustand, Redux, and Pinia. For more complex state management, you should use [XState](./xstate) instead, or you can [use XState Store with XState](#using-xstate-store-with-xstate).
+
+<Callout>
+These are the docs for version 3.x of XState Store. For the latest version, see [XState Store docs](./xstate-store). For version 2.x, see [Version 2.x docs](./xstate-store-v2).
+</Callout>
+
+<Callout>
+
+The `@xstate/store` library requires TypeScript version 5.4 or above.
+
+</Callout>
+
+## Framework integrations
+
+For framework-specific usage, install the appropriate package:
+
+- **React**: [`@xstate/store-react`](/docs/xstate-store-v3/react)
+- **Vue**: [`@xstate/store-vue`](/docs/xstate-store-v3/vue)
+- **Svelte**: [`@xstate/store-svelte`](/docs/xstate-store-v3/svelte)
+- **Solid**: [`@xstate/store-solid`](/docs/xstate-store-v3/solid)
+- **Angular**: [`@xstate/store-angular`](/docs/xstate-store-v3/angular)
+- **Preact**: [`@xstate/store-preact`](/docs/xstate-store-v3/preact)
+
+<Callout type="warning">
+
+**Deprecation notice:** Importing from `@xstate/store/react`, `@xstate/store/solid`, etc. is deprecated. Use the dedicated packages above instead (e.g., `@xstate/store-react`).
+
+</Callout>
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+<Tab value="npm" label="npm">
+
+```bash
+npm install @xstate/store
+```
+
+</Tab>
+
+<Tab value="pnpm" label="pnpm">
+
+```bash
+pnpm install @xstate/store
+```
+
+</Tab>
+
+<Tab value="yarn" label="yarn">
+
+```bash
+yarn add @xstate/store
+```
+
+</Tab>
+</Tabs>
+
+## Quick start
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  // Initial context
+  context: { count: 0, name: 'David' },
+  // Transitions
+  on: {
+    inc: (context) => ({
+      ...context,
+      count: context.count + 1,
+    }),
+    add: (context, event: { num: number }) => ({
+      ...context,
+      count: context.count + event.num,
+    }),
+    changeName: (context, event: { newName: string }) => ({
+      ...context,
+      name: event.newName,
+    }),
+  },
+});
+
+// Get the current state (snapshot)
+console.log(store.getSnapshot());
+// => {
+//   status: 'active',
+//   context: { count: 0, name: 'David' }
+// }
+
+// Subscribe to snapshot changes
+store.subscribe((snapshot) => {
+  console.log(snapshot.context);
+});
+
+// Send an event (traditional way)
+store.send({ type: 'inc' });
+// logs { count: 1, name: 'David' }
+
+// Send an event using the fluent trigger API
+store.trigger.add({ num: 10 });
+// logs { count: 11, name: 'David' }
+
+store.trigger.changeName({ newName: 'Jenny' });
+// logs { count: 11, name: 'Jenny' }
+```
+
+## Creating a store
+
+To create a store, pass a configuration object to the `createStore(…)` function with:
+
+1. The initial `context`
+2. An `on` object for transitions where the keys are event types and the values are context update functions
+
+When updating context in transitions, you must return the complete context object with all properties:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0, name: 'David' },
+  on: {
+    // [!code highlight:4]
+    inc: (context) => ({
+      ...context, // Preserve other context properties
+      count: context.count + 1,
+    }),
+  },
+});
+```
+
+## Effects and Side Effects
+
+You can enqueue effects in state transitions using the `enqueue` argument:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    // [!code highlight:9]
+    incrementDelayed: (context, event, enqueue) => {
+      enqueue.effect(() => {
+        setTimeout(() => {
+          store.send({ type: 'increment' });
+        }, 1000);
+      });
+
+      return context;
+    },
+    increment: (context) => ({
+      ...context,
+      count: context.count + 1,
+    }),
+  },
+});
+```
+
+<Callout type="warning">
+
+**Important:** Both `enqueue.effect()` and `enqueue.emit()` must be called **synchronously** within the transition function. Calling them outside the function's synchronous execution (e.g., inside an async callback or Promise) will have no effect, since the transition function must complete synchronously.
+
+For asynchronous operations, send an event back to the store:
+
+```ts
+const store = createStore({
+  context: { data: null },
+  emits: {
+    loaded: (payload: { data: string }) => {},
+  },
+  on: {
+    fetchData: (context, event, enqueue) => {
+      // ✅ This works - called synchronously
+      enqueue.effect(async () => {
+        const result = await fetch('/api/data');
+        const data = await result.json();
+        // Send event back to store for async operations
+        store.trigger.dataLoaded({ data });
+      });
+      return context;
+    },
+    dataLoaded: (context, event: { data: string }, enqueue) => {
+      // ✅ Now you can emit synchronously
+      enqueue.emit.loaded({ data: event.data });
+      return { ...context, data: event.data };
+    },
+  },
+});
+```
+
+This ensures **determinism**: all state changes, effects, and emitted events must be the direct result of an event being sent to the store. Async callbacks cannot enqueue effects or emit events because they happen at unpredictable times, breaking the deterministic event-driven model.
+
+</Callout>
+
+## Emitting Events
+
+You can emit events from transitions by defining them in the `emits` property and using `enqueue.emit`:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: { count: 0 },
+  // [!code highlight:5]
+  emits: {
+    increased: (payload: { by: number }) => {
+      // Optional side effects can go here
+    },
+  },
+  on: {
+    inc: (context, event: { by: number }, enqueue) => {
+      // [!code highlight:1]
+      enqueue.emit.increased({ by: event.by });
+
+      return {
+        ...context,
+        count: context.count + event.by,
+      };
+    },
+  },
+});
+
+// Listen for emitted events
+store.on('increased', (event) => {
+  console.log(`Count increased by ${event.by}`);
+});
+```
+
+## Pure transitions
+
+You can use `store.transition(state, event)` to compute a tuple of the next state and any effects from a given state and event. This is useful for debugging and testing, or for having full control over the state transitions in your application.
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  emits: {
+    incremented: (payload: { by: number }) => {},
+  },
+  on: {
+    inc: (context, event: { by: number }, enqueue) => {
+      enqueue.emit.incremented({ by: event.by });
+
+      enqueue.effect(() => {
+        setTimeout(() => {
+          store.send({ type: 'increment' });
+        }, 1000);
+      });
+
+      return {
+        ...context,
+        count: context.count + event.by,
+      };
+    },
+  },
+});
+
+const snapshot = store.getSnapshot();
+
+// [!code highlight:4]
+const [nextState, effects] = store.transition(snapshot, {
+  type: 'inc',
+  by: 1,
+});
+
+console.log(nextState.context);
+// => { count: 1 }
+
+console.log(effects);
+// => [
+//   { type: 'incremented', by: 1 },
+//   Function
+// ]
+
+// The store's state is unchanged
+console.log(store.getSnapshot().context);
+// => { count: 0 }
+```
+
+If you need to determine the next state from the store's initial state, you can get the initial snapshot using `store.getInitialSnapshot()`:
+
+```ts
+const initialSnapshot = store.getInitialSnapshot();
+
+const [nextState, effects] = store.transition(initialSnapshot, {
+  type: 'inc',
+  by: 1,
+});
+```
+
+## Selectors
+
+Store selectors provide an efficient way to select and subscribe to specific parts of your store's state. With store selectors, you can:
+
+- Get the current value of a specific part of state via `selector.get()`
+- Subscribe to changes of only that specific part via `selector.subscribe(observer)`
+- Optimize performance by only notifying subscribers when the selected value actually changes via `selector.subscribe(observer, equalityFn)`
+
+You can create a selector using `store.select(selector)`:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  context: {
+    position: { x: 0, y: 0 },
+    name: 'John',
+    age: 30,
+  },
+  on: {
+    positionUpdated: (
+      context,
+      event: { position: { x: number; y: number } },
+    ) => ({
+      ...context,
+      position: event.position,
+    }),
+  },
+});
+
+// Create a selector for the position
+const position = store.select((context) => context.position);
+
+// Get current value
+console.log(position.get()); // { x: 0, y: 0 }
+
+// Subscribe to changes
+position.subscribe((position) => {
+  console.log('Position updated:', position);
+});
+
+// When position updates, only position subscribers are notified
+store.trigger.positionUpdated({ position: { x: 100, y: 200 } });
+// Logs: Position updated: { x: 100, y: 200 }
+```
+
+### Custom Equality Functions
+
+You can provide a custom equality function as the second argument to `store.select(selector, equalityFn)` to control when subscribers should be notified:
+
+```ts
+const position = store.select(
+  (state) => state.context.position,
+  // Only notify if x coordinate changes
+  (prev, next) => prev.x === next.x,
+);
+```
+
+XState Store also provides a `shallowEqual` function that can be used as a default equality function:
+
+```ts
+import { shallowEqual } from '@xstate/store';
+
+const position = store.select((state) => state.context.position, shallowEqual);
+```
+
+## Atoms
+
+An atom is a lightweight, reactive piece of state that can be read, written to, and subscribed to. Atoms can be used standalone or combined with other atoms and stores for more complex state management.
+
+You can:
+
+- Create an atom with `createAtom(initialValue)`
+- Read the atom's value with `atom.get()`
+- Subscribe to changes with `atom.subscribe(observer)`
+- Update the atom with `atom.set(value)`
+
+<Callout>
+Atoms are best used for:
+
+- Simple, independent pieces of state
+- Derived/computed values
+- Bridging between stores and external state
+- When you need direct value updates without constraints
+
+For state that needs to follow specific transition rules or complex update logic, consider using a store instead.
+</Callout>
+
+### Creating Atoms
+
+Create an atom using `createAtom()` with an initial value:
+
+```ts
+import { createAtom } from '@xstate/store';
+
+// Create an atom with a primitive value
+const countAtom = createAtom(0);
+
+// Create an atom with an object
+const userAtom = createAtom({ name: 'David', count: 100 });
+```
+
+### Reading and Writing Atoms
+
+You can read an atom's value using `atom.get()` and update it using `atom.set()`:
+
+```ts
+const countAtom = createAtom(0);
+
+// Read the current value
+console.log(countAtom.get()); // 0
+
+// Set a new value directly
+countAtom.set(1); // 1
+
+// Update value using a function
+countAtom.set((prev) => prev + 1); // 2
+
+const count = createAtom(0);
+count.get(); // 0
+count.set(1); // 1
+count.set((prev) => prev + 1); // 2
+
+// Recomputes when count changes
+const laugh = createAtom(() => {
+  return 'ha'.repeat(count.get());
+});
+laugh.subscribe((value) => {
+  console.log(value);
+});
+```
+
+### Subscribing to Changes
+
+Atoms support subscriptions to react to value changes:
+
+```ts
+const countAtom = createAtom(0);
+
+// Subscribe to changes
+const subscription = countAtom.subscribe((newValue) => {
+  console.log('Count changed:', newValue);
+});
+
+countAtom.set(1); // Logs: "Count changed: 1"
+
+// Unsubscribe when done
+subscription.unsubscribe();
+
+countAtom.set(2); // Does not log anything
+```
+
+### Combined Atoms
+
+You can create derived atoms that combine values from other atoms, stores, or selectors:
+
+```ts
+const nameAtom = createAtom('David');
+const ageAtom = createAtom(30);
+
+// Combine multiple atoms
+const userAtom = createAtom(() => ({
+  name: nameAtom.get(),
+  age: ageAtom.get(),
+}));
+
+// Combined atoms are read-only and update automatically
+console.log(userAtom.get()); // { name: 'David', age: 30 }
+nameAtom.set('John');
+console.log(userAtom.get()); // { name: 'John', age: 30 }
+ageAtom.set(31);
+console.log(userAtom.get()); // { name: 'John', age: 31 }
+```
+
+#### Accessing Previous Value in Computed Atoms
+
+_Since v3.12.0_
+
+Computed atoms can access their previous computed value through the second parameter. This is useful for any derived state that depends on its own previous value:
+
+```ts
+const countAtom = createAtom(0);
+
+// Running total that aggregates all count changes
+// Note: Specify the type parameter for proper inference of prev
+const totalAtom = createAtom<number>((_, prev) => countAtom.get() + (prev ?? 0));
+
+console.log(totalAtom.get()); // 0
+countAtom.set(5);
+console.log(totalAtom.get()); // 5 (0 + 5)
+countAtom.set(3);
+console.log(totalAtom.get()); // 8 (5 + 3)
+countAtom.set(2);
+console.log(totalAtom.get()); // 10 (8 + 2)
+```
+
+The previous value is `undefined` on the first computation. Since TypeScript cannot infer the type of `prev`, you should provide a type parameter to `createAtom<T>()` for type safety.
+
+<Callout type="warning">
+The `read(...)` function for combining atoms is deprecated since v3.5.0. Instead, use the direct `.get()` method on atoms when creating combined atoms:
+
+```ts
+// ❌ Deprecated
+const combinedAtom = createAtom((read) => read(atomA) + read(atomB));
+
+// ✅ New API
+const combinedAtom = createAtom(() => atomA.get() + atomB.get());
+```
+
+</Callout>
+
+### Async Atoms
+
+_Since v3.6.0_
+
+Async atoms are a special type of atom that handle asynchronous values. They are created using `createAsyncAtom(…)` and take an async function that returns a promise. The atom's value represents the loading state of the async operation.
+
+The value of an async atom will be an object with a `status` property that can be:
+
+- `'pending'` - while the promise is resolving
+- `'done'` with a `data` property containing the resolved value
+- `'error'` with an `error` property containing the error that was thrown
+
+```ts
+import { createAsyncAtom } from '@xstate/store';
+
+const userAtom = createAsyncAtom(async () => {
+  const response = await fetch('/api/user');
+  return response.json();
+});
+
+userAtom.subscribe((snapshot) => {
+  if (snapshot.status === 'pending') {
+    console.log(snapshot);
+    // { status: 'pending' }
+  } else if (snapshot.status === 'done') {
+    console.log(snapshot);
+    // { status: 'done', data: { name: 'David', ... } }
+  } else if (snapshot.status === 'error') {
+    console.log(snapshot);
+    // { status: 'error', error: Error('Failed to fetch') }
+  }
+});
+```
+
+### Working with Stores and Selectors
+
+Atoms can seamlessly integrate with XState stores and selectors:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context) => ({ ...context, count: context.count + 1 }),
+  },
+});
+
+// Create an atom from a store selector
+const countSelector = store.select((state) => state.context.count);
+const doubleCountAtom = createAtom(() => 2 * countSelector.get());
+
+console.log(doubleCountAtom.get()); // 0
+store.trigger.increment();
+console.log(doubleCountAtom.get()); // 2
+```
+
+<Callout>
+Combined atoms are read-only by design. If you need to update multiple values atomically, consider using a store instead.
+</Callout>
+
+### Using Atoms with React
+
+_Since v3.7.0_
+
+The `useAtom` hook is the simplest way to use atoms in React. You can use it with or without a selector. The `useAtom` hook only returns the (selected) value of the atom, since you can set the value of the atom directly using `atom.set(…)`.
+
+```tsx
+import { createAtom } from '@xstate/store';
+import { useAtom } from '@xstate/store/react';
+
+const countAtom = createAtom(0);
+
+function Counter() {
+  // Get the full atom value
+  const count = useAtom(countAtom);
+
+  return (
+    <div>
+      <button onClick={() => countAtom.set((prevCount) => prevCount + 1)}>
+        Increment
+      </button>
+      <button onClick={() => countAtom.set(0)}>Reset</button>
+      <div>Count: {count}</div>
+    </div>
+  );
+}
+
+// With a selector
+const userAtom = createAtom({ name: 'test', age: 25 });
+
+function UserName() {
+  // Get just the name
+  const name = useAtom(userAtom, (state) => state.name);
+
+  return <div>Name: {name}</div>;
+}
+```
+
+You can also provide a custom comparison function to control re-renders:
+
+```tsx
+const userAtom = createAtom({ name: 'David' /* ... */ });
+
+function UserProfile() {
+  const name = useAtom(
+    userAtom,
+    (state) => state.name,
+    // Custom compare function - case-insensitive comparison
+    (a, b) => a.toLowerCase() === b.toLowerCase(),
+  );
+
+  return (
+    <>
+      <div>Name: {name}</div>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) =>
+          userAtom.set((prev) => ({ ...prev, name: e.target.value }))
+        }
+      />
+    </>
+  );
+}
+```
+
+<details>
+<summary>
+
+Using `useSelector`
+
+</summary>
+
+Alternatively, you can use the `useSelector` hook, which is similar to `useAtom` with a selector:
+
+```tsx
+import { createAtom } from '@xstate/store';
+import { useSelector } from '@xstate/store/react';
+
+const countAtom = createAtom(0);
+
+function Counter() {
+  const count = useSelector(countAtom, (s) => s);
+
+  return (
+    <div>
+      <button onClick={() => countAtom.set((prev) => prev + 1)}>
+        Increment
+      </button>
+      <div>Count: {count}</div>
+    </div>
+  );
+}
+```
+
+</details>
+
+## Inspection
+
+Just like with XState, you can use the [Inspect API](./inspection) to inspect events sent to the store and state transitions within the store by using the .inspect method:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  // ...
+});
+
+// [!code highlight:5]
+store.inspect((inspectionEvent) => {
+  // type: '@xstate.snapshot' or
+  // type: '@xstate.event'
+  console.log(inspectionEvent);
+});
+```
+
+<Callout>
+
+Since the store is automatically started, inspectors will immediately receive the initial state snapshot.
+
+</Callout>
+
+The `.inspect(…)` method returns a subscription object:
+
+```ts
+import { createStore } from '@xstate/store';
+
+const sub = store.inspect((inspectionEvent) => {
+  console.log(inspectionEvent);
+});
+
+// Stop listening for inspection events
+sub.unsubscribe();
+```
+
+You can use the [Stately Inspector](./inspector) to inspect and visualize the state of the store.
+
+```ts
+import { createBrowserInspector } from '@statelyai/inspect';
+import { createStore } from '@xstate/store';
+
+const store = createStore({
+  // ...
+});
+
+const inspector = createBrowserInspector({
+  // ...
+});
+
+store.inspect(inspector);
+```
+
+## Using Immer
+
+You can use the `produce(…)` function from [Immer](https://immerjs.github.io/immer/) to update the `context` in transitions:
+
+```ts
+import { createStore } from '@xstate/store';
+import { produce } from 'immer';
+
+const store = createStore({
+  context: { count: 0, todos: [] },
+  on: {
+    inc: (context, event: { by: number }) =>
+      produce(context, (draft) => {
+        draft.count += event.by;
+      }),
+    addTodo: (context, event: { todo: string }) =>
+      produce(context, (draft) => {
+        draft.todos.push(event.todo);
+      }),
+    // Not using a producer
+    resetCount: (context) => ({
+      ...context,
+      count: 0,
+    }),
+  },
+});
+```
+
+<details>
+<summary>Deprecated: <code>createStoreWithProducer(…)</code></summary>
+
+<Callout type="warning">
+
+This API is deprecated. Use `produce` from [Immer](https://immerjs.github.io/immer/) or similar libraries directly with `createStore(…)` instead.
+
+</Callout>
+
+In previous versions of `@xstate/store`, you could use the `createStoreWithProducer(…)` function to pass in a producer function to update the `context` for every transition. This will not be supported in future versions of `@xstate/store`. Instead, you can use the `produce(…)` function from [Immer](https://immerjs.github.io/immer/) or similar libraries directly with `createStore(…)`.
+
+```ts
+import { createStore } from '@xstate/store';
+import { produce } from 'immer';
+
+// Deprecated API
+const store = createStoreWithProducer(produce, {
+  context: { count: 0, todos: [] },
+  on: {
+    inc: (context, event: { by: number }) => {
+      // No return; handled by Immer
+      context.count += event.by;
+    },
+    addTodo: (context, event: { todo: string }) => {
+      // No return; handled by Immer
+      context.todos.push(event.todo);
+    },
+  },
+});
+
+// ...
+```
+
+</details>
+
+## Usage with React
+
+Use the `useSelector(store, selector)` hook from [`@xstate/store-react`](/docs/xstate-store-v3/react) to subscribe to the store and get the current state.
+
+```tsx
+import { createStore, useSelector } from '@xstate/store-react';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context, event: { by?: number }) => ({
+      count: context.count + (event.by ?? 1),
+    }),
+  },
+});
+
+function Counter() {
+  const count = useSelector(store, (state) => state.context.count);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => store.trigger.inc()}>+1</button>
+      <button onClick={() => store.trigger.inc({ by: 5 })}>+5</button>
+    </div>
+  );
+}
+```
+
+For the full React API including `useStore`, `useAtom`, and `createStoreHook`, see the [React documentation](/docs/xstate-store-v3/react).
+
+## Usage with other frameworks
+
+- **Vue**: See [`@xstate/store-vue`](/docs/xstate-store-v3/vue)
+- **Svelte**: See [`@xstate/store-svelte`](/docs/xstate-store-v3/svelte)
+- **Solid**: See [`@xstate/store-solid`](/docs/xstate-store-v3/solid)
+- **Angular**: See [`@xstate/store-angular`](/docs/xstate-store-v3/angular)
+- **Preact**: See [`@xstate/store-preact`](/docs/xstate-store-v3/preact)
+
+## Undo/Redo
+
+_Since v3.14.0_
+
+XState Store provides built-in undo/redo functionality through the `undoRedo` store extension. You can choose between two strategies:
+
+- **Event-sourced** (default): Stores events in history and replays them during undo/redo. Memory efficient and provides precise control over transaction grouping and event skipping while properly replaying side effects.
+- **Snapshot**: Stores full state snapshots in history. Useful when you need to preserve state that might be lost during event replay, or when you want to limit history size.
+
+### Basic Usage
+
+Import `undoRedo` from `@xstate/store/undo` and use it with the `.with()` method. The store will have `undo()` and `redo()` methods available on `store.trigger`:
+
+```ts
+import { createStore } from '@xstate/store';
+import { undoRedo } from '@xstate/store/undo';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo());
+```
+
+You can undo and redo multiple events in sequence. Each `undo()` call moves back one event in history, and each `redo()` call moves forward one event.
+
+<details>
+<summary>Example: Basic undo/redo</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo());
+
+// Use the store normally
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+
+// Undo the last event
+store.trigger.undo(); // count = 1
+
+// Redo the undone event
+store.trigger.redo(); // count = 2
+```
+
+</details>
+
+<details>
+<summary>Example: Multiple undo/redo operations</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo());
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.inc(); // count = 3
+
+store.trigger.undo(); // count = 2
+store.trigger.undo(); // count = 1
+store.trigger.redo(); // count = 2
+store.trigger.redo(); // count = 3
+```
+
+</details>
+
+### Transactions
+
+You can group multiple events into transactions so they are undone/redone together using `getTransactionId`. Events with the same transaction ID are grouped together and undone/redone as a single unit:
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({
+  getTransactionId: (event, snapshot) => {
+    // Return a transaction ID to group events
+    // Events with the same ID are grouped together
+  },
+}));
+```
+
+<details>
+<summary>Example: Group events by type</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    dec: (context) => ({ count: context.count - 1 }),
+  },
+}).with(undoRedo({
+  // Group events by their type
+  getTransactionId: (event) => event.type,
+}));
+
+// First transaction: increments
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+
+// Second transaction: decrements
+store.trigger.dec(); // count = 1
+store.trigger.dec(); // count = 0
+
+// Undo second transaction (both decrements)
+store.trigger.undo(); // count = 2
+
+// Undo first transaction (both increments)
+store.trigger.undo(); // count = 0
+```
+
+</details>
+
+<details>
+<summary>Example: Group events by context state</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0, transactionId: null as string | null },
+  on: {
+    inc: (context) => ({ ...context, count: context.count + 1 }),
+    setTransactionId: (context, event: { id: string }) => ({
+      ...context,
+      transactionId: event.id,
+    }),
+  },
+}).with(undoRedo({
+  // Use context state to determine transaction grouping
+  getTransactionId: (event, snapshot) => snapshot.context.transactionId,
+}));
+
+store.trigger.inc(); // count = 1
+store.trigger.setTransactionId({ id: 'batch-1' });
+store.trigger.inc(); // count = 2
+store.trigger.inc(); // count = 3
+store.trigger.inc(); // count = 4
+
+store.trigger.setTransactionId({ id: 'batch-2' });
+store.trigger.inc(); // count = 5
+store.trigger.inc(); // count = 6
+
+// Undo second transaction (all events with batch-2)
+store.trigger.undo(); // count = 4
+
+// Undo first transaction (all events with batch-1)
+store.trigger.undo(); // count = 1
+```
+
+</details>
+
+### Skipping Events
+
+You can configure certain events to be skipped from the undo/redo history using `skipEvent`. Skipped events are not stored in history and are not replayed during undo/redo operations:
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({
+  skipEvent: (event, snapshot) => {
+    // Return true to skip this event from history
+    // Return false to include it in history
+  },
+}));
+```
+
+<details>
+<summary>Example: Skip specific event types</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    log: (context) => context, // No state change, just logging
+  },
+}).with(undoRedo({
+  // Skip log events from undo/redo history
+  skipEvent: (event) => event.type === 'log',
+}));
+
+store.trigger.inc(); // count = 1
+store.trigger.log(); // count = 1 (logged but not undoable)
+store.trigger.inc(); // count = 2
+
+// Undo skips log event, only undoes inc events
+store.trigger.undo(); // count = 1
+```
+
+</details>
+
+<details>
+<summary>Example: Skip events based on state</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo({
+  // Skip events when count is 3 or more
+  skipEvent: (event, snapshot) => snapshot.context.count >= 3,
+}));
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.inc(); // count = 3
+store.trigger.inc(); // count = 4 (skipped from history)
+
+store.trigger.undo(); // count = 2 (skips the last inc)
+```
+
+</details>
+
+### Effects and Emitted Events
+
+Emitted events are properly replayed during undo/redo operations. When you undo or redo an event, any events that were emitted during the original transition are re-emitted:
+
+```ts
+const store = createStore({
+  // ...
+  emits: {
+    // ...
+  },
+  on: {
+    // ...
+  },
+}).with(undoRedo());
+```
+
+Skipped events do not have their emitted events replayed during undo/redo operations.
+
+<details>
+<summary>Example: Emitted events are replayed</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  emits: {
+    changed: (payload: { value: number }) => {},
+  },
+  on: {
+    inc: (context, event, enqueue) => {
+      enqueue.emit.changed({ value: context.count + 1 });
+      return { count: context.count + 1 };
+    },
+  },
+}).with(undoRedo());
+
+const emittedEvents: Array<{ type: string; value: number }> = [];
+store.on('changed', (event) => {
+  emittedEvents.push(event);
+});
+
+store.trigger.inc(); // emits changed(1)
+store.trigger.undo(); // emits changed(0)
+store.trigger.redo(); // emits changed(1)
+
+// emittedEvents = [
+//   { type: 'changed', value: 1 },
+//   { type: 'changed', value: 0 },
+//   { type: 'changed', value: 1 }
+// ]
+```
+
+</details>
+
+<details>
+<summary>Example: Skipped events don't replay emitted events</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  emits: {
+    changed: (payload: { value: number }) => {},
+    logged: (payload: { message: string }) => {},
+  },
+  on: {
+    inc: (context, event, enqueue) => {
+      enqueue.emit.changed({ value: context.count + 1 });
+      return { count: context.count + 1 };
+    },
+    log: (context, event: { message: string }, enqueue) => {
+      enqueue.emit.logged({ message: event.message });
+      return context; // No state change
+    },
+  },
+}).with(undoRedo({
+  skipEvent: (event) => event.type === 'log',
+}));
+
+const emittedEvents: any[] = [];
+store.on('changed', (event) => emittedEvents.push(event));
+store.on('logged', (event) => emittedEvents.push(event));
+
+store.trigger.inc(); // emits changed(1)
+store.trigger.log({ message: 'test' }); // emits logged('test') but not stored in history
+store.trigger.inc(); // emits changed(2)
+
+emittedEvents.length = 0;
+store.trigger.undo(); // emits changed(1)
+store.trigger.undo(); // emits changed(0)
+store.trigger.redo(); // emits changed(1)
+store.trigger.redo(); // emits changed(2)
+
+// Only inc events are emitted during undo/redo, log events are skipped
+// emittedEvents = [
+//   { type: 'changed', value: 1 },
+//   { type: 'changed', value: 0 },
+//   { type: 'changed', value: 1 },
+//   { type: 'changed', value: 2 }
+// ]
+```
+
+</details>
+
+### Interleaving Undo/Redo with New Events
+
+When you send a new event after undoing, the redo stack is cleared. This ensures that the history remains consistent and prevents unexpected behavior when mixing undo/redo with new events.
+
+<details>
+<summary>Example: New events clear redo stack</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    dec: (context) => ({ count: context.count - 1 }),
+  },
+}).with(undoRedo());
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.undo(); // count = 1
+store.trigger.dec(); // count = 0 (clears redo stack)
+
+// Redo should not work as we added a new event after undo
+store.trigger.redo(); // count = 0 (no change)
+```
+
+</details>
+
+### Empty Operations
+
+Undo/redo operations do nothing when there's no history to undo/redo. Calling `undo()` when there's no history, or `redo()` when there's nothing to redo, will have no effect on the store state.
+
+<details>
+<summary>Example: Empty operations</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo());
+
+const initialSnapshot = store.getSnapshot();
+
+// Undo with empty history does nothing
+store.trigger.undo();
+expect(store.getSnapshot()).toEqual(initialSnapshot);
+
+// Redo with empty redo stack does nothing
+store.trigger.redo();
+expect(store.getSnapshot()).toEqual(initialSnapshot);
+```
+
+</details>
+
+### Snapshot Strategy
+
+By default, `undoRedo` uses the event-sourced strategy. You can switch to the snapshot strategy by setting `strategy: 'snapshot'`. The snapshot strategy stores full state snapshots in history, which can be useful when:
+
+- You need to preserve state that might be lost during event replay
+- You want to limit history size with `historyLimit`
+- You want to skip duplicate snapshots with a `compare` function
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({ strategy: 'snapshot' }));
+```
+
+<details>
+<summary>Example: Using snapshot strategy</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo({ strategy: 'snapshot' }));
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.undo(); // count = 1
+store.trigger.redo(); // count = 2
+```
+
+</details>
+
+#### History Limit
+
+With the snapshot strategy, you can limit the number of snapshots stored in history using `historyLimit`. When the limit is reached, older snapshots are removed from history:
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({
+  strategy: 'snapshot',
+  historyLimit: 2,
+}));
+```
+
+<details>
+<summary>Example: History limit</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo({
+  strategy: 'snapshot',
+  historyLimit: 2,
+}));
+
+store.trigger.inc(); // count = 1
+store.trigger.inc(); // count = 2
+store.trigger.inc(); // count = 3
+store.trigger.inc(); // count = 4
+
+// Can only undo 2 times because of history limit
+store.trigger.undo(); // count = 3
+store.trigger.undo(); // count = 2
+store.trigger.undo(); // count = 2 (limit reached, no change)
+```
+
+</details>
+
+#### Compare Function
+
+With the snapshot strategy, you can provide a `compare` function to skip duplicate snapshots. If the compare function returns `true` for two consecutive snapshots, the second snapshot is not saved in history:
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({
+  strategy: 'snapshot',
+  compare: (past, current) => {
+    // Return true to skip saving this snapshot (duplicate)
+    // Return false to save this snapshot
+  },
+}));
+```
+
+<details>
+<summary>Example: Skip duplicate snapshots</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    noop: (context) => context, // No state change
+  },
+}).with(undoRedo({
+  strategy: 'snapshot',
+  // Skip snapshots where count hasn't changed
+  compare: (past, current) => past.context.count === current.context.count,
+}));
+
+store.trigger.inc(); // count = 1 (saved)
+store.trigger.noop(); // count = 1 (duplicate, not saved)
+store.trigger.noop(); // count = 1 (duplicate, not saved)
+store.trigger.inc(); // count = 2 (saved)
+
+// Should only have 2 snapshots in history (0 and 1), not 4
+store.trigger.undo(); // count = 1
+store.trigger.undo(); // count = 0
+store.trigger.undo(); // count = 0 (no change)
+```
+
+</details>
+
+<details>
+<summary>Example: All snapshots saved without compare function</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+    noop: (context) => context,
+  },
+}).with(undoRedo({ strategy: 'snapshot' }));
+
+store.trigger.inc(); // count = 1 (saved)
+store.trigger.noop(); // count = 1 (saved even though duplicate)
+store.trigger.noop(); // count = 1 (saved even though duplicate)
+store.trigger.inc(); // count = 2 (saved)
+
+// Should have 4 snapshots in history (0, 1, 1, 1)
+store.trigger.undo(); // count = 1
+store.trigger.undo(); // count = 1
+store.trigger.undo(); // count = 1
+store.trigger.undo(); // count = 0
+```
+
+</details>
+
+#### Preserving State with Skipped Events
+
+With the snapshot strategy, skipped events preserve their state in snapshots. This is because snapshots capture the full state at a point in time, including changes made by skipped events:
+
+```ts
+const store = createStore({
+  // ...
+}).with(undoRedo({
+  strategy: 'snapshot',
+  skipEvent: (event) => {
+    // ...
+  },
+}));
+```
+
+<details>
+<summary>Example: Preserving state with skipped events</summary>
+
+```ts
+const store = createStore({
+  context: { count: 0, logs: [] as string[] },
+  on: {
+    inc: (context) => ({ count: context.count + 1, logs: context.logs }),
+    log: (context, event: { type: 'log'; message: string }) => ({
+      logs: [...context.logs, event.message],
+      count: context.count,
+    }),
+  },
+}).with(undoRedo({
+  strategy: 'snapshot',
+  skipEvent: (event) => event.type === 'log',
+}));
+
+store.trigger.inc(); // count = 1, logs = []
+store.trigger.log({ message: 'first log' }); // count = 1, logs = ['first log'] (not tracked)
+store.trigger.inc(); // count = 2, logs = ['first log']
+
+// Undo should restore snapshot before second inc, which includes the log
+store.trigger.undo(); // count = 1, logs = ['first log']
+```
+
+</details>
+
+### Configuration Options
+
+The `undoRedo` function accepts a configuration object with these options:
+
+- `strategy`: `'event-sourced'` (default) or `'snapshot'` - The strategy to use for history
+- `getTransactionId(event, snapshot)`: Function to determine transaction grouping
+- `skipEvent(event, snapshot)`: Function to determine if an event should be skipped
+- `historyLimit` (snapshot strategy only): Maximum number of snapshots to store in history
+- `compare` (snapshot strategy only): Function to compare snapshots and skip duplicates
+
+### Type Safety
+
+The undo/redo extension preserves all TypeScript types from your original store:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context) => ({ count: context.count + 1 }),
+  },
+}).with(undoRedo());
+
+// Type safety is preserved
+store.getSnapshot().context satisfies { count: number };
+
+// @ts-expect-error
+store.getSnapshot().context.foo;
+
+// @ts-expect-error
+store.trigger.dec();
+```
+
+### Notes
+
+- **Event-sourced by default**: The default strategy stores events, not snapshots, making it memory efficient
+- **New events clear redo stack**: When you send a new event after undoing, the redo stack is cleared
+- **Empty operations**: Undo/redo operations do nothing when there's no history to undo/redo
+- **Type safety**: The undo/redo extension preserves all TypeScript types from your original store
+- **Emitted events**: Events emitted during transitions are replayed during undo/redo operations
+
+## Persist
+
+_Since v3.17.0_
+
+The `persist` extension persists store context to storage (such as `localStorage`, `sessionStorage`, or async adapters like React Native's `AsyncStorage`). It automatically saves state after events and restores it when the store is created.
+
+### Basic Usage
+
+Import `persist` from `@xstate/store/persist` and use it with the `.with()` method:
+
+```ts
+import { createStore } from '@xstate/store';
+import { persist } from '@xstate/store/persist';
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (ctx) => ({ count: ctx.count + 1 }),
+  },
+}).with(
+  persist({
+    name: 'my-store', // storage key
+  })
+);
+```
+
+The store context will be saved to `localStorage` (default) on every event and automatically restored when the store is created.
+
+### Storage Adapters
+
+By default, `persist` uses `localStorage`. You can provide a custom storage adapter that implements `getItem`, `setItem`, and `removeItem`:
+
+```ts
+// Use sessionStorage
+const store = createStore({
+  context: { count: 0 },
+  on: { inc: (ctx) => ({ count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    storage: sessionStorage,
+  })
+);
+```
+
+For SSR environments, use `createJSONStorage()` which provides a safe fallback when storage is unavailable:
+
+```ts
+import { persist, createJSONStorage } from '@xstate/store/persist';
+
+const store = createStore({
+  context: { count: 0 },
+  on: { inc: (ctx) => ({ count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    storage: createJSONStorage(() => sessionStorage),
+  })
+);
+```
+
+### Selective Persistence
+
+Use `pick` to only persist specific fields from the context:
+
+```ts
+const store = createStore({
+  context: { count: 0, tempData: 'not persisted' },
+  on: { inc: (ctx) => ({ ...ctx, count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    pick: (ctx) => ({ count: ctx.count }),
+  })
+);
+```
+
+### Event Filtering
+
+Use `filter` to prevent certain events from triggering persistence:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (ctx) => ({ count: ctx.count + 1 }),
+    tempChange: (ctx) => ({ count: ctx.count }),
+  },
+}).with(
+  persist({
+    name: 'my-store',
+    filter: (event) => event.type !== 'tempChange',
+  })
+);
+```
+
+### Versioning and Migration
+
+Use `version` and `migrate` for schema management when your context shape changes:
+
+```ts
+const store = createStore({
+  context: { count: 0, label: 'default' },
+  on: { inc: (ctx) => ({ ...ctx, count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    version: 2,
+    migrate: (persisted, version) => {
+      if (version === 1) {
+        return { ...persisted, label: 'migrated' };
+      }
+      return persisted;
+    },
+  })
+);
+```
+
+### Throttled Writes
+
+Use `throttle` to limit how frequently data is written to storage:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: { inc: (ctx) => ({ count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    throttle: 1000, // write at most once per second
+  })
+);
+```
+
+Use `flushStorage(store)` to force an immediate write of any pending throttled data:
+
+```ts
+import { flushStorage } from '@xstate/store/persist';
+
+// Force write pending changes
+flushStorage(store);
+```
+
+### Custom Serialization
+
+Use `serialize` and `deserialize` for custom encoding/decoding:
+
+```ts
+const store = createStore({
+  context: { date: new Date() },
+  on: {
+    setDate: (ctx, e: { date: Date }) => ({ date: e.date }),
+  },
+}).with(
+  persist({
+    name: 'my-store',
+    serialize: (ctx) => JSON.stringify({
+      date: ctx.date.toISOString(),
+    }),
+    deserialize: (str) => {
+      const parsed = JSON.parse(str);
+      return { date: new Date(parsed.date) };
+    },
+  })
+);
+```
+
+### Manual Hydration
+
+By default, the store is hydrated automatically on creation. To control when hydration happens, use `skipHydration` and `rehydrateStore()`:
+
+```ts
+import { persist, rehydrateStore, isHydrated } from '@xstate/store/persist';
+
+const store = createStore({
+  context: { count: 0 },
+  on: { inc: (ctx) => ({ count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    skipHydration: true,
+  })
+);
+
+isHydrated(store); // false
+
+// Manually rehydrate later (async)
+await rehydrateStore(store);
+
+isHydrated(store); // true
+```
+
+### Event Strategy
+
+By default, `persist` uses the `'snapshot'` strategy which saves the context directly. You can use the `'event'` strategy to persist the event log instead and replay events on rehydration:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (ctx) => ({ count: ctx.count + 1 }),
+  },
+}).with(
+  persist({
+    name: 'my-store',
+    strategy: 'event',
+    maxEvents: 100, // checkpoint after 100 events
+  })
+);
+```
+
+With the event strategy:
+- Events are persisted instead of context snapshots
+- On rehydration, events are replayed to reconstruct state
+- `maxEvents` creates automatic checkpoints to limit replay time and storage size
+
+### Clearing Persisted Data
+
+Use `clearStorage()` to remove persisted data:
+
+```ts
+import { clearStorage } from '@xstate/store/persist';
+
+clearStorage(store);
+```
+
+### Callbacks
+
+Use `onDone` and `onError` to handle persistence success and failure:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: { inc: (ctx) => ({ count: ctx.count + 1 }) },
+}).with(
+  persist({
+    name: 'my-store',
+    onDone: () => console.log('Persisted successfully'),
+    onError: (err) => console.error('Persist failed', err),
+  })
+);
+```
+
+## Reset
+
+_Since v3.17.0_
+
+The `reset` extension allows you to reset the store context back to its initial state. This is useful for clearing form data, resetting user sessions, or returning to a known state.
+
+### Basic Usage
+
+Import `reset` from `@xstate/store/reset` and use it with the `.with()` method. The store will have a `reset()` method available on `store.trigger`:
+
+```ts
+import { createStore } from '@xstate/store';
+import { reset } from '@xstate/store/reset';
+
+const store = createStore({
+  context: { count: 0, name: 'Ada' },
+  on: {
+    inc: (ctx) => ({ ...ctx, count: ctx.count + 1 }),
+    setName: (ctx, e: { name: string }) => ({ ...ctx, name: e.name }),
+  },
+}).with(reset());
+
+store.trigger.inc();
+store.trigger.setName({ name: 'Bob' });
+store.getSnapshot().context;
+// => { count: 1, name: 'Bob' }
+
+store.trigger.reset();
+store.getSnapshot().context;
+// => { count: 0, name: 'Ada' }
+```
+
+### Partial Reset
+
+You can customize what the store resets to using the `to` option. This function receives the initial `context` and current `context`, letting you preserve specific fields:
+
+```ts
+const store = createStore({
+  context: { count: 0, user: null as string | null },
+  on: {
+    inc: (ctx) => ({ ...ctx, count: ctx.count + 1 }),
+    login: (ctx, e: { user: string }) => ({ ...ctx, user: e.user }),
+  },
+}).with(
+  reset({
+    to: (initial, current) => ({ ...initial, user: current.user }),
+  })
+);
+
+store.trigger.inc();
+store.trigger.inc();
+store.trigger.login({ user: 'Alice' });
+store.getSnapshot().context;
+// => { count: 2, user: 'Alice' }
+
+store.trigger.reset();
+store.getSnapshot().context;
+// => { count: 0, user: 'Alice' } — count reset, user preserved
+```
+
+## Using XState Store with XState
+
+You may notice that stores are very similar to [actors in XState](./actors). This is very much by design. XState's actors are very powerful, but may also be too complex for simple use cases, which is why `@xstate/store` exists.
+
+However, if you have existing XState code, and you enjoy the simplicity of creating store logic with `@xstate/store`, you can use the `fromStore(context, transitions)` actor logic creator to create XState-compatible store logic that can be passed to the `createActor(storeLogic)` function:
+
+```ts
+import { fromStore } from '@xstate/store';
+import { createActor } from 'xstate';
+
+// Instead of:
+// const store = createStore( ... };
+const storeLogic = fromStore({
+  context: { count: 0, incremented: false /* ... */ },
+  on: {
+    // [!code highlight:5]
+    inc: {
+      count: (context, event) => context.count + 1,
+      // Static values do not need to be wrapped in a function
+      incremented: true,
+    },
+  },
+});
+
+const store = createActor(storeLogic);
+store.subscribe((snapshot) => {
+  console.log(snapshot);
+});
+store.start();
+
+store.send({
+  type: 'inc',
+});
+```
+
+In short, you can convert `createStore(…)` to `fromStore(…)` just by changing one line of code. Note that `fromStore(…)` returns _store logic_, and not a store actor instance. Store logic is passed to `createActor(storeLogic)` to create a store actor instance:
+
+```ts
+import { fromStore } from '@xstate/store';
+
+// Instead of:
+// const store = createStore({
+const storeLogic = fromStore({
+  context: {
+    // ...
+  },
+  on: {
+    // ...
+  },
+});
+
+// Create the store (actor)
+const storeActor = createActor(storeLogic);
+```
+
+Using `fromStore(…)` to create store actor logic also has the advantage of allowing you to provide `input` by using a context function that takes in the `input` and _returns_ the initial `context`:
+
+```ts
+import { fromStore } from '@xstate/store';
+
+const storeLogic = fromStore({
+  // [!code highlight:3]
+  context: (initialCount: number) => ({
+    count: initialCount,
+  }),
+  on: {
+    // ...
+  },
+});
+
+const actor = createActor(storeLogic, {
+  // [!code highlight:1]
+  input: 42,
+});
+```
+
+## Converting stores to state machines
+
+If you have a store that you want to convert to a state machine in XState, you can convert it in a straightforward way:
+
+1. Use `createMachine(…)` (imported from `xstate`) instead of `createStore(…)` (imported from `@xstate/store`) to create a state machine.
+1. Wrap the assignments in an `assign(…)` action creator (imported from `xstate`) and move that to the `actions` property of the transition.
+1. Destructure `context` and `event` from the first argument instead of them being separate arguments.
+
+For example, here is our store before conversion:
+
+```ts
+import { createMachine } from 'xstate';
+
+// 1. Use `createMachine(…)` instead of `createStore(…)`
+const store = createStore({
+  context: { count: 0, name: 'David' },
+  on: {
+    inc: {
+      // 2. Wrap the assignments in `assign(…)`
+      count: (context, event: { by: number }) => context.count + event.by,
+    },
+  },
+});
+
+const machine = createMachine({
+  // ...
+});
+```
+
+And here is the store as a state machine after conversion:
+
+```ts
+import { createMachine } from 'xstate';
+
+// const store = createStore({
+//   context: { count: 0, name: 'David' },
+//   on: {
+//     inc: {
+//       count: (context, event: { by: number }) => context.count + event.by
+//     }
+//   }
+// });
+
+// 1. Use `createMachine(…)` instead of `createStore(…)`
+const machine = createMachine({
+  context: {
+    count: 0,
+    name: 'David',
+  },
+  on: {
+    inc: {
+      // 2. Wrap the assignments in `assign(…)`
+      actions: assign({
+        // 3. Destructure `context` and `event` from the first argument
+        count: ({ context, event }) => context.count + event.by,
+      }),
+    },
+  },
+});
+```
+
+For stronger typing, use the [`setup(…)` function](./setup) to strongly type the `context` and `events`:
+
+```ts
+import { setup } from 'xstate';
+
+const machine = setup({
+  // [!code highlight:4]
+  types: {
+    context: {} as { count: number; name: string },
+    events: {} as { type: 'inc'; by: number },
+  },
+}).createMachine({
+  // Same as the previous example
+});
+```
+
+## Comparison
+
+This section compares XState Store to other popular state management libraries in TypeScript. It is meant for reference purposes only, and not intended to favor one approach over the other. The examples are copied from [Zustand's comparison docs](https://docs.pmnd.rs/zustand/getting-started/comparison).
+
+### Compare to Zustand
+
+**Zustand**
+
+```ts
+import { create } from 'zustand';
+
+type State = {
+  count: number;
+};
+
+type Actions = {
+  increment: (qty: number) => void;
+  decrement: (qty: number) => void;
+};
+
+const useCountStore = create<State & Actions>((set) => ({
+  count: 0,
+  increment: (qty: number) =>
+    set((state) => ({
+      count: state.count + qty,
+    })),
+  decrement: (qty: number) =>
+    set((state) => ({
+      count: state.count - qty,
+    })),
+}));
+
+const Component = () => {
+  const count = useCountStore((state) => state.count);
+  const increment = useCountStore((state) => state.increment);
+  const decrement = useCountStore((state) => state.decrement);
+  // ...
+};
+```
+
+**XState Store**
+
+```ts
+import { createStore } from '@xstate/store';
+import { useSelector } from '@xstate/store/react';
+
+const store = createStore({
+  context: {
+    count: 0,
+  },
+  on: {
+    increment: (context, { qty }: { qty: number }) => ({
+      ...context,
+      count: context.count + qty,
+    }),
+    decrement: (context, { qty }: { qty: number }) => ({
+      ...context,
+      count: context.count - qty,
+    }),
+  },
+});
+
+const Component = () => {
+  const count = useSelector(store, (state) => state.context.count);
+  const { increment, decrement } = store.trigger;
+  // ...
+};
+```

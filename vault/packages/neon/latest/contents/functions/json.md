@@ -1,8 +1,16 @@
 ---
 title: Postgres json() Function
 subtitle: Convert Text and Binary Data to JSON Values
+summary: >-
+  The PostgreSQL `json()` function converts text strings or UTF8-encoded bytea
+  data into JSON values, with optional `WITH UNIQUE` enforcement to reject
+  duplicate object keys and `FORMAT JSON ENCODING UTF8` for explicit bytea
+  parsing. Use `json()` instead of a cast or `to_json()` when you need
+  structural validation or need to control duplicate-key behavior at parse time.
+  Supported parameters include `expression`, `FORMAT JSON`, `ENCODING UTF8`,
+  and `WITH | WITHOUT UNIQUE [KEYS]`.
 enableTableOfContents: true
-updatedOn: '2025-06-23T15:24:08.760Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 The `json()` function provides a robust way to convert text or binary data into `JSON` values. This new function offers enhanced control over `JSON` parsing, including options for handling duplicate keys and encoding specifications.

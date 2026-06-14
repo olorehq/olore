@@ -60,7 +60,7 @@ Clerk enforces Enterprise SSO connections on a per-domain basis in Organizations
 
 ## Remove a member from your Organization
 
-Users who joined through an Enterprise Connection cannot leave the Organization on their own. You can remove them through the Clerk Dashboard, the [Backend API](/docs/reference/backend-api/tag/organization-memberships/delete/organizations/\{organization_id}/memberships/\{user_id}){{ target: '_blank' }}, or by another member with the [manage members Permission](/docs/guides/organizations/control-access/roles-and-permissions#system-permissions) (`org:sys_memberships:manage`). However, the user will be added back to the Organization on next sign-in, unless they are removed from the IdP or the Enterprise Connection is no longer associated with the Organization.
+Users who joined through an Enterprise Connection cannot leave the Organization on their own. You can remove them through the Clerk Dashboard, the [Backend API](/docs/reference/backend-api/tag/organization-memberships/DELETE/organizations/\{organization_id}/memberships/\{user_id}){{ target: '_blank' }}, or by another member with the [manage members Permission](/docs/guides/organizations/control-access/roles-and-permissions#system-permissions) (`org:sys_memberships:manage`). However, the user will be added back to the Organization on next sign-in, unless they are removed from the IdP or the Enterprise Connection is no longer associated with the Organization.
 
 Removed users will automatically rejoin the Organization on their next sign-in unless you also remove them from the IdP or disconnect the Enterprise Connection.
 
@@ -135,22 +135,12 @@ You will encounter this error when Clerk is unable to retrieve the user's profil
 Now that you've set up Enterprise SSO, you can:
 
 <Cards>
-  - [Set up Enterprise SSO Connections](/docs/guides/organizations/add-members/sso)
-  - Learn how to set up Enterprise SSO Connections for centralized authentication through an Identity Provider.
-
-  ---
-
-  - [JIT provisioning](/docs/guides/configure/auth-strategies/enterprise-connections/jit-provisioning)
-  - Learn more about JIT provisioning to customize how users are automatically added to Organizations.
-
-  ---
-
   - [Configure Verified Domains](/docs/guides/organizations/add-members/verified-domains)
   - Learn how to automatically invite users who don't use SSO.
 
   ---
 
-  - [Invite specific users](/docs/guides/organizations/add-members/invitations)
+  - [Add members to your Organization](/docs/guides/organizations/add-members/invitations)
   - Learn how to invite specific users to your Organization.
 
   ---

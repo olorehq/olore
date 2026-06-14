@@ -1,13 +1,22 @@
 ---
 title: Self-Host Medusa with Neon
 subtitle: Learn how to self-host Medusa using Neon Postgres as your database.
+summary: >-
+  Self-hosting Medusa, an open-source headless e-commerce platform, with Neon
+  serverless Postgres uses a Neon connection string passed via `--db-url` to
+  `create-medusa-app`, which runs database migrations and seeds demo data
+  automatically. A non-pooled connection string is required during initial
+  setup for migrations; switch to the pooled string afterward for better
+  production performance. Deployment options covered include local development
+  and self-hosted environments such as DigitalOcean, AWS EC2, Render, and
+  Fly.io.
 enableTableOfContents: true
-updatedOn: '2026-02-02T12:37:39.461Z'
+updatedOn: '2026-06-05T17:20:32.620Z'
 ---
 
 [Medusa](https://medusajs.com/) is an open-source headless e-commerce platform that provides a flexible backend for building modern e-commerce applications. It uses Postgres as its primary database to store all product, order, and customer data.
 
-In this guide, you'll learn how to set up and self-host Medusa using [Neon](https://neon.com) as your Postgres database. Neon is a serverless Postgres database platform that offers features like serverless compute, and automated scaling, making it an excellent choice for hosting your Medusa backend.
+In this guide, you'll learn how to set up and self-host Medusa using [Neon](https://neon.com) as your Postgres database. Neon is the backend for apps and agents. Neon Postgres is serverless, with autoscaling and scale-to-zero, making it an excellent choice for hosting your Medusa backend.
 
 ## Prerequisites
 
@@ -59,7 +68,7 @@ npx create-medusa-app@latest --db-url "YOUR_NEON_CONNECTION_STRING"
 ### Installation steps
 
 1.  **Follow the prompts:** The CLI will ask a few questions to configure your setup:
-    - **Project name:** Enter a name for your project (e.g., `medusa-neon-store`).
+    - **Project name:** Enter a name for your project (for example, `medusa-neon-store`).
     - **Frontend starter:** Choose whether to install the Next.js Starter Storefront or skip it depending on your preference.
 2.  **Automatic setup:**
     - The tool will install the Medusa backend and optionally the Next.js Starter Storefront.

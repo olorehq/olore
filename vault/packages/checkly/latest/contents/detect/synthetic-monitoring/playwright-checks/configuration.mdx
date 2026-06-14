@@ -7,7 +7,7 @@ sidebarTitle: 'Configuration'
 Use the `checkly.config.ts/js` file to define your Playwright Check Suite. Each Playwright Check Suite can be connected to references in your `playwright.config.ts/js` file.
 
 <Info>
-**A Playwright Check Suite can run up to 30 minutes**. [Please contact us in the Checkly Web App](https://app.checklyhq.com/?support=true) or get in touch with your account executive if you're interested in longer runs.
+**The Playwright test execution stage can run for up to 30 minutes**. Use Playwright's `globalTimeout` to set a custom suite-level limit. [Contact us in the Checkly Web App](https://app.checklyhq.com/?support=true) or get in touch with your account executive if you need longer runs.
 </Info>
 
 ## Playwright Check Suite definition
@@ -87,9 +87,10 @@ Learn more about [best practices to organize and structure your Playwright tests
 
 ## Monitoring customizations
 
-A Playwright Check Suite inherits multiple properties from [the abstract `Check` class](/cli/constructs-reference/#check):
+A Playwright Check Suite inherits multiple properties from the abstract `Check` class:
 
 - `name`
+- `description`
 - `activated`
 - `muted`
 - `locations`
@@ -102,16 +103,42 @@ A Playwright Check Suite inherits multiple properties from [the abstract `Check`
 Check out [the reference documentation](/constructs/project#param-checks-playwright-checks) for more information on these settings.
 
 <Note>
-**Checks' Retry strategy is not applicable for Playwright checks.** Playwright includes its own retry features that can be set up directly in your `playwright.config.ts/js` file with the [`retries`](https://playwright.dev/docs/test-retries) option. This allows for more detailed management of test retries within Playwright, when your check runs.
+**Checkly retry strategies do not apply to Playwright Check Suites.** Use Playwright's [`retries`](https://playwright.dev/docs/test-retries) option in your `playwright.config.ts/js` file or `testCommand` to control test retries.
 </Note>
 
-Additionally, Playwright Check Suites provide specific configuration for your Playwright monitoring.
+### Checkly-applied Playwright settings
+
+When Checkly runs a Playwright Check Suite, it applies Playwright settings that produce useful monitoring results and artifacts.
+
+Checkly applies these defaults only when you do not set the option yourself:
+
+| Playwright option | Checkly default |
+|-------------------|-----------------|
+| `workers` | `4` |
+| `retries` | `2` |
+| `use.video` | `on-first-retry` |
+| `use.screenshot` | `on-first-retry` |
+
+Your Playwright config or `testCommand` value takes precedence for these options.
+
+Checkly enforces these options for every run. User configuration does not override them:
+
+| Playwright setting | Checkly behavior |
+|--------------------|------------------|
+| `use.trace` | `on` for every run |
+| User agent | Checkly appends a [user-agent suffix](/platform/allowlisting-traffic#default-checkly-user-agent) |
+
+Checkly supports Playwright's [`globalTimeout`](https://playwright.dev/docs/api/class-testconfig#test-config-global-timeout). Use it to control the maximum duration of the Playwright suite after `npx playwright test` starts.
+
+Playwright Check Suites also provide specific configuration for your Playwright monitoring.
 
 * `installCommand:` Override the command to install dependencies. `npm install --dev` is used by default.
 
-* `testCommand:` Override the command to test. `npx playwright test` is used by default with the tags, projects, and config file options your check specifies.
+* `testCommand:` Append to the command that runs tests. `npx playwright test` is used by default with the tags, projects, and config file options your check specifies.
 
-* `group:` The group construct this check belongs to.
+* `engine:` Override the runtime engine for the check (Node.js or Bun). See [`engine`](/constructs/playwright-check#param-engine).
+
+* `group:` The group id construct this check belongs to.
 
 ### Customize install and test commands
 
@@ -131,22 +158,28 @@ installCommand: 'yarn install --frozen-lockfile'
 installCommand: 'npm install --prefix ./e2e'
 ```
 
-**Enable Playwright tracing to debug failures**
-
-```typescript
-testCommand: 'npx playwright test --trace=on'
-```
-
-**Set a specific test timeout:**
+**Set a lower test timeout:**
 
 ```typescript
 testCommand: 'npx playwright test --timeout=60000'
 ```
 
+**Set a global suite timeout:**
+
+```typescript
+testCommand: 'npx playwright test --global-timeout=120000'
+```
+
+**Stop early after failures:**
+
+```typescript
+testCommand: 'npx playwright test --max-failures=5'
+```
+
 **Combine multiple test flags:**
 
 ```typescript
-testCommand: 'npx playwright test --trace=retain-on-failure --max-failures=5'
+testCommand: 'npx playwright test --timeout=60000 --max-failures=5'
 ```
 
 ### Example Checkly config
@@ -168,7 +201,7 @@ export default defineConfig({
         pwProjects: ['chromium', 'firefox', 'webkit'],
         pwTags: '@e2e',
         installCommand: 'npm install --dev',
-        testCommand: 'npx playwright test --trace=on',
+        testCommand: 'npx playwright test --max-failures=5',
         activated: true,
         muted: false,
         group: productionGroup,
@@ -194,11 +227,26 @@ npx checkly test --grep=e2e-test-suite
 
 The `npx checkly test` command runs your Playwright tests locally using the same configuration that Checkly will use in production. This helps catch configuration errors before deployment.
 
+## Cancelling runs
+
+You can cancel queued or in-progress Playwright Check Suite runs from the UI or CLI. Cancellation applies to runs from **Schedule Now** and from test sessions started with:
+
+- `npx checkly test`
+- `npx checkly pw-test`
+- `npx checkly trigger`
+
+Two ways to cancel:
+
+- In the UI, click **Cancel Run** on the Check Suite Runs page or the Test Session Run page
+- Press <kbd>Ctrl</kbd>+<kbd>C</kbd> in the CLI (v8.0.0+) to cancel a recorded test session
+
+Cancelled runs show a **Cancelled** status in run history. See [Cancellation](/concepts/cancellation) for details on what happens after a run is cancelled.
+
 ## Common issues & troubleshooting
 
 ### Configuration errors
 
-**Invalid `logicalId`**
+#### Invalid `logicalId`
 
 ```
 Error: logicalId must be unique across all checks
@@ -206,7 +254,7 @@ Error: logicalId must be unique across all checks
 
 Ensure each Playwright Check Suite has a unique `logicalId`. The `logicalId` is used as a stable reference across deployments.
 
-**Missing Playwright configuration**
+#### Missing Playwright configuration
 
 ```
 Error: Cannot find playwright.config.ts at path: ./playwright.config.ts
@@ -214,9 +262,86 @@ Error: Cannot find playwright.config.ts at path: ./playwright.config.ts
 
 Verify that `playwrightConfigPath` points to the correct relative path from your `checkly.config.ts` file.
 
+### Alert optimization
+
+#### Alerts are triggered too late
+
+Playwright Check Suites wait for `npx playwright test` to finish before triggering an alert on test failure. Use [Playwright's `maxFailures` option](https://playwright.dev/docs/api/class-testconfig#test-config-max-failures) to stop the test run and trigger alerts earlier. This setting halts the entire suite after reaching the specified number of failures, allowing you to receive alerts faster.
+
+Specify this option in your `playwright.config` or the `testCommand` in your `checkly.config`.
+
+<Tabs>
+  <Tab title="playwright.config.ts">
+    ```typescript playwright.config.ts highlight={5}
+    import { defineConfig } from '@playwright/test';
+
+    export default defineConfig({
+      // Setting to zero (default) disables max failures.
+      maxFailures: process.env.CHECKLY === '1' ? 1 : 0,
+    })
+    ```
+  </Tab>
+  <Tab title="checkly.config.ts">
+    ```typescript checkly.config.ts highlight={11}
+    import { defineConfig } from 'checkly'
+
+    export default defineConfig({
+      checks: {
+        playwrightConfigPath: './playwright.config.ts',
+        playwrightChecks: [
+          {
+            name: 'E2E test suite',
+            logicalId: 'e2e-test-suite',
+            pwTags: '@e2e',
+            testCommand: 'npx playwright test --max-failures=1',
+          }
+        ]
+      },
+    })
+    ```
+  </Tab>
+</Tabs>
+
+#### Alerts are triggered too often
+
+End-to-end testing for complex or flaky applications can be difficult. While it's best if your Playwright tests are not flaky, you can use the [`retries` option](https://playwright.dev/docs/test-retries#retries) to automatically rerun failed tests and prevent false alarms in your Playwright Check Suites monitoring.
+
+Specify this option in your `playwright.config` or the `testCommand` in your `checkly.config`.
+
+<Tabs>
+  <Tab title="playwright.config.ts">
+    ```typescript playwright.config.ts highlight={4}
+    import { defineConfig } from '@playwright/test';
+
+    export default defineConfig({
+      retries: process.env.CHECKLY === '1' ? 3 : 0,
+    })
+    ```
+  </Tab>
+  <Tab title="checkly.config.ts">
+    ```typescript checkly.config.ts highlight={11}
+    import { defineConfig } from 'checkly'
+
+    export default defineConfig({
+      checks: {
+        playwrightConfigPath: './playwright.config.ts',
+        playwrightChecks: [
+          {
+            name: 'E2E test suite',
+            logicalId: 'e2e-test-suite',
+            pwTags: '@e2e',
+            testCommand: 'npx playwright test --retries=3',
+          }
+        ]
+      },
+    })
+    ```
+  </Tab>
+</Tabs>
+
 ### Test execution issues
 
-**Tests exceed 30-minute limit**
+#### Tests exceed 30-minute limit
 
 If your Playwright Check Suite times out after 30 minutes:
 
@@ -225,7 +350,7 @@ If your Playwright Check Suite times out after 30 minutes:
 - Optimize slow tests by reducing wait times and parallelizing where possible
 - [Contact Checkly support](https://app.checklyhq.com/?support=true) if you need further help
 
-**Dependency installation failures**
+#### Dependency installation failures
 
 If dependencies fail to install:
 
@@ -233,9 +358,25 @@ If dependencies fail to install:
 - Verify that the private registry authentication is configured correctly. See the [custom dependencies guide](/detect/synthetic-monitoring/playwright-checks/custom-dependencies/) for more details.
 - Adjust the `installCommand` to match your project's expectation.
 
-**Authentication failures in tests**
+#### Authentication failures in tests
 
 If tests fail due to authentication issues:
 
 - Verify environment variables are set correctly in Checkly. You can verify your environment variables using `npx checkly env ls`, or looking at your Global or Check's environment variables in the Checkly Webapp to ensure any `process.env.VARIABLE_NAME` call from your test is defined.
 - For persistent authentication, use Playwright's [`storageState`](https://playwright.dev/docs/auth#reuse-authentication-state) feature.
+
+#### webServer configuration requires additional files
+
+When using `webServer` in your Playwright config, you need to include the server files in your check configuration:
+
+- Add server files to the `include` parameter in your [Playwright check configuration](/constructs/playwright-check/#param-include)
+- Include all files needed to start the server (e.g., server scripts, config files)
+- Alternatively, skip `webServer` on Checkly and use your deployed URL: `...(process.env.CHECKLY ? {} : { webServer: { ... } })`
+
+#### No tests found
+
+If Playwright does not find any tests to run, this usually means a mismatch between your config and your test files:
+
+- Verify your `--grep` pattern matches actual test tags or projects
+- Verify the `testDir` path in `playwright.config.ts` matches the actual directory containing your test files
+- Ensure path aliases (`~/`, `@/`) in imports are configured in your `tsconfig.json`, or replace them with relative paths

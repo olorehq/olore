@@ -4,7 +4,7 @@ outline: deep
 
 # Vi
 
-Vitest provides utility functions to help you out through its `vi` helper. You can access it globally (when [globals configuration](/config/#globals) is enabled), or import it from `vitest` directly:
+Vitest provides utility functions to help you out through its `vi` helper. You can access it globally (when [globals configuration](/config/globals) is enabled), or import it from `vitest` directly:
 
 ```js
 import { vi } from 'vitest'
@@ -42,7 +42,7 @@ It is recommended to use `vi.mock` or `vi.hoisted` only inside test files. If Vi
 ::: warning
 `vi.mock` works only for modules that were imported with the `import` keyword. It doesn't work with `require`.
 
-In order to hoist `vi.mock`, Vitest statically analyzes your files. It indicates that `vi` that was not directly imported from the `vitest` package (for example, from some utility file) cannot be used. Use `vi.mock` with `vi` imported from `vitest`, or enable [`globals`](/config/#globals) config option.
+In order to hoist `vi.mock`, Vitest statically analyzes your files. It indicates that `vi` that was not directly imported from the `vitest` package (for example, from some utility file) cannot be used. Use `vi.mock` with `vi` imported from `vitest`, or enable [`globals`](/config/globals) config option.
 
 Vitest will not mock modules that were imported inside a [setup file](/config/setupfiles) because they are cached by the time a test file is running. You can call [`vi.resetModules()`](#vi-resetmodules) inside [`vi.hoisted`](#vi-hoisted) to clear all module caches before running a test file.
 :::
@@ -137,7 +137,7 @@ vi.mock('./path/to/module.js', () => {
 ```
 :::
 
-If there is a `__mocks__` folder alongside a file that you are mocking, and the factory is not provided, Vitest will try to find a file with the same name in the `__mocks__` subfolder and use it as an actual module. If you are mocking a dependency, Vitest will try to find a `__mocks__` folder in the [root](/config/#root) of the project (default is `process.cwd()`). You can tell Vitest where the dependencies are located through the [`deps.moduleDirectories`](/config/#deps-moduledirectories) config option.
+If there is a `__mocks__` folder alongside a file that you are mocking, and the factory is not provided, Vitest will try to find a file with the same name in the `__mocks__` subfolder and use it as an actual module. If you are mocking a dependency, Vitest will try to find a `__mocks__` folder in the [root](/config/root) of the project (default is `process.cwd()`). You can tell Vitest where the dependencies are located through the [`deps.moduleDirectories`](/config/deps#deps-moduledirectories) config option.
 
 For example, you have this file structure:
 
@@ -628,7 +628,7 @@ it('calls console.log', () => {
 :::
 
 ::: tip
-You can call [`vi.restoreAllMocks`](#vi-restoreallmocks) inside [`afterEach`](/api/hooks#aftereach) (or enable [`test.restoreMocks`](/config/#restoreMocks)) to restore all methods to their original implementations after every test. This will restore the original [object descriptor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty), so you won't be able to change method's implementation anymore, unless you spy again:
+You can call [`vi.restoreAllMocks`](#vi-restoreallmocks) inside [`afterEach`](/api/hooks#aftereach) (or enable [`test.restoreMocks`](/config/restoremocks)) to restore all methods to their original implementations after every test. This will restore the original [object descriptor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty), so you won't be able to change method's implementation anymore, unless you spy again:
 
 ```ts
 const cart = {
@@ -941,7 +941,7 @@ Calls every microtask that was queued by `process.nextTick`. This will also run 
 function runAllTimers(): Vitest
 ```
 
-This method will invoke every initiated timer until the timer queue is empty. It means that every timer called during `runAllTimers` will be fired. If you have an infinite interval, it will throw after 10 000 tries (can be configured with [`fakeTimers.loopLimit`](/config/#faketimers-looplimit)).
+This method will invoke every initiated timer until the timer queue is empty. It means that every timer called during `runAllTimers` will be fired. If you have an infinite interval, it will throw after 10 000 tries (can be configured with [`fakeTimers.loopLimit`](/config/faketimers#faketimers-looplimit)).
 
 ```ts
 let i = 0
@@ -967,7 +967,7 @@ function runAllTimersAsync(): Promise<Vitest>
 ```
 
 This method will asynchronously invoke every initiated timer until the timer queue is empty. It means that every timer called during `runAllTimersAsync` will be fired even asynchronous timers. If you have an infinite interval,
-it will throw after 10 000 tries (can be configured with [`fakeTimers.loopLimit`](/config/#faketimers-looplimit)).
+it will throw after 10 000 tries (can be configured with [`fakeTimers.loopLimit`](/config/faketimers#faketimers-looplimit)).
 
 ```ts
 setTimeout(async () => {
@@ -1051,7 +1051,7 @@ vi.useRealTimers()
 ### vi.useFakeTimers
 
 ```ts
-function useFakeTimers(config?: FakeTimerInstallOpts): Vitest
+function useFakeTimers(config?: FakeTimersConfig): Vitest
 ```
 
 To enable mocking timers, you need to call this method. It will wrap all further calls to timers (such as `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`, `setImmediate`, `clearImmediate`, and `Date`) until [`vi.useRealTimers()`](#vi-userealtimers) is called.
@@ -1064,6 +1064,16 @@ The implementation is based internally on [`@sinonjs/fake-timers`](https://githu
 `vi.useFakeTimers()` does not automatically mock `process.nextTick` and `queueMicrotask`.
 But you can enable it by specifying the option in `toFake` argument: `vi.useFakeTimers({ toFake: ['nextTick', 'queueMicrotask'] })`.
 :::
+
+You can use `toFake` to specify which timers to mock, or `toNotFake` to specify which timers to keep native. Note that `toFake` and `toNotFake` cannot be specified together.
+
+```ts
+// only mock setTimeout and clearTimeout
+vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+// mock all timers except setInterval
+vi.useFakeTimers({ toNotFake: ['setInterval'] })
+```
 
 ### vi.setTimerTickMode <Version>4.1.0</Version> {#vi-settimertickmode}
 
@@ -1085,7 +1095,7 @@ import { vi } from 'vitest'
 vi.useFakeTimers()
 
 // Manual mode (default)
-vi.setTimerTickMode({ mode: 'manual' })
+vi.setTimerTickMode('manual')
 
 let i = 0
 setInterval(() => console.log(++i), 50)
@@ -1093,13 +1103,13 @@ setInterval(() => console.log(++i), 50)
 vi.advanceTimersByTime(150) // logs 1, 2, 3
 
 // nextTimerAsync mode
-vi.setTimerTickMode({ mode: 'nextTimerAsync' })
+vi.setTimerTickMode('nextTimerAsync')
 
 // Timers will advance automatically after each macrotask
 await new Promise(resolve => setTimeout(resolve, 150)) // logs 4, 5, 6
 
 // interval mode (default when 'fakeTimers.shouldAdvanceTime' is `true`)
-vi.setTimerTickMode({ mode: 'interval', interval: 50 })
+vi.setTimerTickMode('interval', 50)
 
 // Timers will advance automatically every 50ms
 await new Promise(resolve => setTimeout(resolve, 150)) // logs 7, 8, 9
@@ -1335,3 +1345,42 @@ function resetConfig(): void
 ```
 
 If [`vi.setConfig`](#vi-setconfig) was called before, this will reset config to the original state.
+
+### vi.defineHelper <Version>4.1.0</Version> {#vi-definehelper}
+
+```ts
+function defineHelper<F extends (...args: any) => any>(fn: F): F
+```
+
+Wraps a function to create an assertion helper. When an assertion fails inside the helper, the error stack trace will point to where the helper was called, not inside the helper itself. This makes it easier to identify the source of test failures when using custom assertion functions.
+
+Works with both synchronous and asynchronous functions, and supports `expect.soft()`.
+
+```ts
+import { expect, vi } from 'vitest'
+
+const assertPair = vi.defineHelper((a, b) => {
+  expect(a).toEqual(b)
+})
+
+test('example', () => {
+  assertPair('left', 'right') // Error points to this line
+})
+```
+
+Example output:
+
+<!-- eslint-skip -->
+```js
+FAIL  example.test.ts > example
+AssertionError: expected 'left' to deeply equal 'right'
+
+Expected: "right"
+Received: "left"
+
+ ❯ example.test.ts:8:3
+      7| test('example', () => {
+      8|   assertPair('left', 'right')
+       |   ^
+      9| })
+```

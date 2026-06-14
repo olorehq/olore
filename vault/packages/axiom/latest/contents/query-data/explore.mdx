@@ -1,56 +1,81 @@
 ---
-title: 'Query data with Axiom'
-description: 'Learn how to filter, manipulate, extend, and summarize your data.'
-sidebarTitle: Query data
-keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'monitors', 'notifiers', 'slack', 'data explorer', 'apl', 'count', 'operator']
+title: Query using Builder
+description: This page explains how to use the visual query builder to query your data in Console.
+sidebarTitle: Builder
+keywords: ["query", "builder", "logs", "traces", "events", "metrics"]
 ---
 
-The Query tab provides you with robust computation and processing power to get deeper insights into your data. It enables you to filter, manipulate, extend, and summarize your data.
+Builder allows you query your data using a visual interface in the Console.
 
-To query your data, click the Query tab and choose one of the following options:
+## Typical query workflow
 
-- [Generate a query using AI based on a natural-language prompt](#generate-query-using-ai)
-- [Create a query using the visual query builder](#create-a-query-using-visual-query-builder)
-- [Create a query using Axiom Processing Language (APL)](#create-a-query-using-apl)
+Creating a query in Builder typically involves the following steps:
+1. **Source:** Select the data you want to query.
+1. **Filter:** Narrow down the query results.
+1. **Transform and aggregate:** Apply functions to shape and summarize the data before viewing results.
+1. **Time range:** Specify the time period over which you want to look up data.
 
-You can easily switch between these methods at any point when creating the query.
+Builder adapts to the type of data you query:
+- **Logs, traces, and events:** Select dataset as the source, use **Summarize** to aggregate, and **More** for sort and limit options.
+- **Metrics:** Select dataset and metric as the source, use **Transformations** to transform and aggregate the data.
 
-## Generate query using AI
-
-Explain what you want to infer from your data in your own words and Axiom AI generates the valid APL query for you.
-
-1. Click the Query tab.
-1. Click **APL**, and then click in the query editor.
-1. Press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>K</kbd>.
-1. Type what you want to infer from your data in your own words using natural language, and then click **Generate**. For example, type `Show me the most common status responses in HTTP logs.`
-1. Axiom’s AI generates the APL query based on your prompt and gives you the following options:
-    - Click **Accept** to update the editor with the generated query and change the generated query before running it. Any previous input in the query editor is lost.
-    - Click **Accept and run** to update the editor with the generated query and run it immediately. Any previous input in the query editor is lost.
-    - Click **Reject** to go back to your previous input in the query editor and close the query generator.
-
-### Iterate over prompt history
-
-Axiom saves the prompts you type in the query generator. To find one of your previous prompts and generate an APL query for it:
+## Query data using Builder
 
 1. Click the Query tab.
-1. Click **APL**, and then click in the query editor.
-1. Press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>K</kbd>.
-1. Cycle through your history using the arrow keys <Icon icon="arrow-up" iconType="solid" /> and <Icon icon="arrow-down" iconType="solid" /> to find the prompt.
-1. Click **Generate**.
+1. Click **Builder** in the top left.
+1. Define the query:
 
-## Create query using visual query builder
+    <Tabs>
+    <Tab title="Logs, traces, and events">
+    - From the list, select the dataset that you want to query.
+    - In **Where**, [add filters](#add-filters) to narrow down the query results.
+    - In **Summarize**, [add visualizations](#add-visualizations) to the query results.
+    - In **More**, [specify additional options](#more-options) such as sorting the results or limiting the number of displayed events.
+    </Tab>
+    <Tab title="Metrics">
+    - In **Dataset**, define the source of your query. Select an OTel metrics dataset, and then select the metric you want to query.
 
-1. In the top left, click **Builder**.
-2. From the list, select the dataset that you want to query.
-3. Optional: In the **Where** section, create filters to narrow down the query results.
-4. Optional: In the **Summarize** section, select a way to visualize the query results.
-5. Optional: In the **More** section, specify additional options such as sorting the results or limiting the number of displayed events.
-6. Select the time range.
-7. Click **Run**.
+        The dataset and metric names are separated by a colon in the Builder interface. For example, `axiom-dev.metrics:alertmanager_alerts`.
+
+    - In **Where**, [add filters](#filter) to narrow down the query results. Restrict the query to a set of series whose tag values match the conditions you specify.
+    - In **Transformations**, [select transformations](#transformations) to apply to the data.
+
+    <Note>
+    The metric selector only shows metrics that were active during the selected time range. Expand the time range to see more metrics in the dropdown.
+    </Note>
+
+    </Tab>
+    </Tabs>
+
+1. [Select the time range](#select-time-range).
+1. Click **Run**.
 
 While the query runs, the status bar gives you continuous updates about the number of rows examined, matched, and returned.
 
 See below for more information about each of these steps.
+
+## Example query
+
+<Tabs>
+<Tab title="Logs, traces, and events">
+<Frame>
+<img src="/doc-assets/shots/example-logs-query.png" alt="Example logs query" />
+</Frame>
+
+This example queries the `sample-http-logs` dataset to find all events where the HTTP status code is 200 and groups the results by county.
+
+</Tab>
+<Tab title="Metrics">
+<Frame>
+<img src="/doc-assets/shots/example-metrics-query.png" alt="Example metrics query" />
+</Frame>
+
+This example queries the `axiom-dev.metrics` dataset’s `alertmanager_alerts` metric one hour before the current time. It filters results to events where `k8s.namespace.name` is `monitoring` and aggregates events over 30-second time windows into their average value.
+
+</Tab>
+</Tabs>
+
+## Query logs, traces, and events
 
 ### Add filters
 
@@ -108,223 +133,129 @@ In the **More** section, specify the following additional options:
 - To limit the number of events the query returns, click **Limit**, and then specify the maximum number of returned events.
 - Specify whether to display or hide open intervals.
 
-### Select time range
+## Query metrics
+
+Your metrics data is organized into datasets, metrics, tags, and series:
+
+- **Dataset:** A group of related metrics.
+- **Metric:** A measurement that tracks a specific aspect of your system over time.
+- **Tag:** A key-value pair identifying a series.
+- **Series:** A unique combination of a metric and tag set.
+
+### Filter
+
+Use the **Where** section to filter series based on tag values:
+
+1. Click **+** in the **Where** section.
+1. Select the tag where you want to filter for values.
+1. Select the logical operator of the filter. Available operators are:
+    - Equality: `==`, `!=`
+    - Comparisons: `<`, `<=`, `>`, `>=`
+1. Specify the value for which you want to filter.
+1. Click **+** to add another filter and join them with the logical and operator.
+
+For example, the following joins three filters: `project == /.*metrics.*/ and code >= 200 and code < 300`.
+
+### Transformations
+
+Use the **Transformations** section to transform individual values or series.
+
+1. Click **+** in the **Transformations** section.
+1. Select the transformation you want to apply to the data. Available transformations are:
+    - **map:** Map the data to a new value using the expression you specify.
+    - **align:** Aggregate data using the function and the time window you specify.
+    - **group:** Group the data by a set of tags using the aggregation function you specify.
+    - **bucket** Aggregate the data by time and tag dimensions simultaneously.
+
+#### Map
+
+Use `map` to transform individual values.
+
+Available mapping functions:
+
+| Function              | Description                                                      |
+|-----------------------|------------------------------------------------------------------|
+| `rate`                | Computes the per-second rate of change for a metric.             |
+| `abs`                 | Returns the absolute value of each data point.                   |
+| `interpolate::linear` |  Linear interpolation of missing values. |
+| `fill::prev`          | Fills missing values using the previous non-null value.          |
+
+For example, to calculate rate per second for the metric, use `map rate`. To fill empty values with the latest value, use `map fill::prev`.
+
+#### Align
+
+Use `align` to aggregate over time windows. You can specify the time window and the aggregation function to apply.
+
+Available aggregation functions:
+
+| Function | Description                           |
+|----------|---------------------------------------|
+| `avg`    | Averages values in each interval.     |
+| `count`  | Counts non-null values per interval.  |
+| `max`    | Takes the maximum value per interval. |
+| `min`    | Takes the minimum value per interval. |
+| `prom::rate` | PromQL-style rate calculation. |
+| `sum`    | Sums values in each interval.         |
+| `last`   | Takes the last value in each interval.|
+
+For example, to calculate the average over 5-minute time windows, use `align to 5m using avg`. To count the data points in the last hour, use `align to 1h using count`.
+
+When metrics emit data at regular intervals but with different offsets across time series, `align` maps your data to a fixed set of time intervals. This makes it easier to visualize data from different sources on a single chart. If the alignment interval is shorter than the emission interval, some intervals can have null values. Select how to handle null values in the [chart options](/query-data/query-results#configure-chart-options).
+
+#### Group
+
+Use `group` to combine series by tags. You can specify the tags to group by and the aggregation function to apply. If you don’t specify tags, Axiom aggregates all series into one group.
+
+Available aggregation functions:
+
+| Function | Description                           |
+|----------|---------------------------------------|
+| `avg`    | Averages values in each group.     |
+| `count`  | Counts non-null values per group.  |
+| `max`    | Takes the maximum value per group. |
+| `min`    | Takes the minimum value per group. |
+| `sum`    | Sums values in each group.         |
+
+For example:
+- To calculate the number of series, use `group using count`.
+- To sum the values of all series, use `group using sum`.
+- To group data by the `project` and `namespace` tags using the `sum` aggregation, use `group by project, namespace using sum`.
+
+#### Bucket
+
+Use `bucket` to aggregate over time and tag dimensions simultaneously.
+
+Available aggregation functions:
+
+| Function | Description                           |
+|----------|---------------------------------------|
+| `avg`    | Averages values in each group and time inverval.     |
+| `count`  | Counts non-null values per group and time inverval.  |
+| `max`    | Takes the maximum value per group and time inverval. |
+| `min`    | Takes the minimum value per group and time inverval. |
+| `sum`    | Sums values in each group and time inverval.         |
+| `quantile`    | Computes the specified quantile per group and time inverval. Specify the quantile as a value between 0 and 1. For example, specifying 0.99 corresponds to the 99th percentile.        |
+
+For example:
+- To calculate the average value per group and time interval, use `bucket using histogram(avg)`.
+- To also count the number of data points per group and time interval, use `bucket using histogram(count, avg)`.
+
+<Note>
+To show the results of multiple aggregations in a single chart, use multiple functions.
+
+If you don’t specify tags with `bucket`, Axiom applies the specified aggregations to all tags.
+
+When the underlying metric is a histogram, Axiom computes `bucket` aggregations using the `interpolate_cumulative_histogram` and `interpolate_delta_histogram` functions depending on the temporality used. For quantile aggregations, this estimates the quantile using the underlying histogram data.
+</Note>
+
+## Select time range
 
 When you select the time range of a query, you specify the time interval where you want to look for events.
 
 To select the time range, choose one of the following options:
+
 1. In the top left, click <Icon icon="clock" iconType="regular"/> **Time range**.
 1. Choose one of the following options:
     - Use the **Quick range** items to quickly select popular time ranges.
     - To the right of the **Start date** and **End date** fields, click <Icon icon="calendar-days" iconType="light"/> **Select date and time** to select specific times.
     - Enter the specific time in the **Start date** and **End date** fields using natural language. For example, `1 hour ago` or `last Monday at 3pm`. For more information on the supported natural language inputs, see the [Sugar documentation](https://sugarjs.com/docs/#/DateParsing). Don’t use the `from` and `after` keywords in your input.
-
-## Create query using APL
-
-APL is a data processing language that supports filtering, extending, and summarizing data. For more information, see [Introduction to APL](/apl/introduction).
-
-Some APL queries are explained below. The pipe symbol `|` separates the operations as they flow from left to right, and top to bottom.
-
-APL is case-sensitive for everything: dataset names, field names, operators, functions, etc.
-
-Use double forward slashes (`//`) for comments.
-
-### APL count operator
-
-The below query returns the number of events from the `sample-http-logs` dataset.
-
-```kusto
-['sample-http-logs']
-| summarize count()
-```
-
-[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20count()%22%7D)
-
-### APL limit operator
-
-The `limit` operator returns a random subset of rows from a dataset up to the specified number of rows. This query returns a thousand rows from `sample-http-logs` randomly chosen by APL.
-
-```kusto
-['sample-http-logs']
-| limit 1000
-```
-
-[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20limit%201000%22%7D)
-
-### APL summarize operator
-
-The `summarize` operator produces a table that aggregates the content of the dataset. This query returns a chart of the `avg(req_duration_ms)`, and a table of `geo.city` and `avg(req_duration_ms)` of the `sample-http-logs` dataset from the time range of 2 days and time interval of 4 hours.
-
-```kusto
-['sample-http-logs']
-| where _time > ago(2d)
-| summarize avg(req_duration_ms) by _time=bin(_time, 4h), ['geo.city']
-```
-
-[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20where%20_time%20%3E%20ago(2d)%5Cn%7C%20summarize%20avg(req_duration_ms)%20by%20_time%3Dbin(_time%2C%204h)%2C%20%5B'geo.city'%5D%22%7D)
-
-## Query results
-
-The results view adapts to the query. This means that it adds and removes components as necessary to give you the best experience. The toolbar is always visible and gives details on the currently running or last-run query. The other components are explained below.
-
-### Query results without visualizations
-
-When you run a query on a dataset without specifying a visualization, Axiom displays a table with the raw query results.
-
-#### View event details
-
-To view the details for an event, click the event in the table.
-
-To configure the event details view, select one of the following in the top right corner:
-
-- Click <Icon icon="arrow-up" iconType="regular"/> **Navigate up** or <Icon icon="arrow-down" iconType="regular"/> **Navigate down** to display the details of the next or previous event.
-- Click <img src="/doc-assets/icons/fit-to-results.svg" className="inline-icon" alt="Fit panel to results icon" /> **Fit panel to results** or <img src="/doc-assets/icons/fit-to-viewport.svg" className="inline-icon" alt="Fit panel to viewport height icon" /> **Fit panel to viewport height** to change the height of the event details view.
-
-In the event details view, click <Icon icon="ellipsis-vertical" iconType="solid"/> **More** for additional options:
-
-- **View in context** opens the event in the stream of other events in the Stream tab.
-- **Copy link to event**
-- **Copy JSON**
-- **Show nulls** or **Hide nulls** toggles whether to display fields with null values.
-
-#### Select displayed fields
-
-To select the fields to be highlighted or displayed in the table, click <Icon icon="sidebar-flip" iconType="light"/> **Toggle fields panel**, and then click the fields in the list.
-
-Select <Icon icon="brackets-curly" iconType="regular"/> **Single column for event** to highlight the selected fields below the raw data for each event. Alternatively, select <Icon icon="table" iconType="light"/> **Column for each field** to display each selected field in a different column without showing the raw event data. In this view, you can resize the width of columns by dragging the borders.
-
-#### Configure table options
-
-To configure the table options, click <Icon icon="sliders-simple" iconType="light"/>, and then select one of the following:
-
-- Select **Wrap lines** to keep the whole table within the viewport and avoid horizontal scrolling.
-- Select **Show timestamp** to display the time field.
-- Select **Show event** to display the raw event data in a single column and highlight the selected fields below the raw data for each event. Alternatively, clear **Show event** to display each selected field in a different column without showing the raw event data. In this view, you can resize the width of columns by dragging the borders.
-- Select **Hide nulls** to hide empty data points.
-
-#### Event timeline
-
-Axiom can also display an event timeline about the distribution of events across the selected time range. In the event timeline, each bar represents the number of events matched within that specific time interval. Holding the pointer over a bar reveals a blue line marking the total events and shows when those events occurred in that particular time range. To display the event timeline, click <Icon icon="sliders-simple" iconType="light"/>, and then click **Show chart**.
-
-### Query results with visualizations
-
-When you run a query with visualizations, Axiom displays all the visualizations that you add to the query. Hold the pointer over charts to get extra detail on each result set.
-
-Below the charts, Axiom displays a table with the totals from each of the aggregate functions for the visualizations you specify.
-
-If the query includes group-by clauses, there is a row for each group. Hold the pointer over a group row to highlight the group’s data on time series charts. Select the checkboxes on the left to display data only for the selected rows.
-
-#### Configure chart options
-
-Click <Icon icon="sliders-simple" iconType="light"/> to access the following options for each chart:
-
-- In **Null values**, specify how to treat missing or undefined values.
-- In **Variant**, specify the chart type. Select from area, bar, or line charts.
-- In **Y-Axis**, specify the scale of the vertical axis. Select from linear or log scales.
-- In **Annotations**, specify the types of annotations to display in the chart.
-
-For more information on each option, see [Configure dashboard elements](/dashboard-elements/configure).
-
-#### Merge charts
-
-When you run a query that produces several visualizations, Axiom displays the charts separately. For example:
-
-```kusto
-['sample-http-logs']
-| summarize percentiles_array(req_duration_ms, 50, 90, 95) by status, bin_auto(_time)
-```
-
-[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20percentiles_array(req_duration_ms%2C%2050%2C%2090%2C%2095)%20by%20status%2C%20bin_auto(_time)%22%7D)
-
-To merge the separately displayed charts into a single chart, click <Icon icon="sliders-simple" iconType="light"/>, and then select **Merge charts**.
-
-#### Compare time periods
-
-On time series charts, holding the pointer over a specific time shows the same marker on similar charts for easy comparison.
-
-When you run a query with a time series visualization, you can use the **Compare period** menu to select a historical time against which to compare the results of your time range. For example, to compare the last hour’s average response time to the same time yesterday, select `1 hr` in the time range menu, and then select `-1 day` from the **Compare period** menu. The dotted line represents results from the base date, and the totals table includes the comparative totals.
-
-### Highlight time range
-
-In the event timeline, line charts, and heat maps, you can drag the pointer over the chart to highlight a specific time range, and then choose one of the following:
-- **Zoom** enlarges the section of the chart you highlighted.
-- **Show events** displays events in the selected time range in the event details view.
-
-The time range of your query automatically updates to match what you selected.
-
-### Search within query results
-
-To quickly search for an expression and highlight its occurrences within the query results:
-
-1. In the query results view, press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>F</kbd>.
-1. Type the expression that you want to search for. Axiom automatically highlights the matches and jumps to the first match.
-1. Press <kbd>Enter</kbd> repeatedly to go forward in the list of matches, and press <kbd>Enter</kbd>&nbsp;<kbd>Shift</kbd> to go backward.
-
-Axiom’s search overrides the browser’s native search. Axiom’s search is more powerful because it highlights matching entries in all results returned by the query (while still respecting automatic limits). In contrast, the browser’s search can only highlight matching entries in the events rendered on your screen.
-
-## Canvas
-
-The Canvas tab lets you display multiple charts side by side for quick visual correlation and comparison. Instead of building a full dashboard, Canvas provides a lightweight, free-form workspace where you can add charts as you explore your data.
-
-<Note>
-Canvas is designed for quick, ad-hoc analysis. To create a persistent dashboard with your charts, see [Create dashboards](/dashboards/create).
-
-Canvas is currently in public preview. For more information, see [Feature states](/platform-overview/roadmap#feature-states).
-</Note>
-
-### Add charts to Canvas
-
-1. Click the Query tab.
-1. Specify a query.
-1. Press <kbd>Cmd/Ctrl</kbd>&nbsp;<kbd>Shift</kbd>&nbsp;<kbd>Enter</kbd>.
-
-### Manage charts in Canvas
-
-Each chart you add to Canvas appears as a separate chart that you can manage in the following ways:
-
-- Drag and drop charts in Canvas to rearrange them.
-- Use **Compare period** to see how data changes over time.
-- Change chart type by clicking <Icon icon="chart-line" iconType="regular"/> **Change chart type**.
-- Change chart options by clicking <Icon icon="ellipsis-vertical" iconType="regular"/> **More >** <Icon icon="gear" iconType="regular"/> **Chart options**.
-- Add a chart to a dashboard by clicking <Icon icon="ellipsis-vertical" iconType="regular"/> **More > Add to dashboard** in the top bar.
-- View the query for a chart by clicking <img src="/doc-assets/icons/magnifying-glass-chart.svg" className="inline-icon" alt="Change chart type icon" /> **View query**.
-- Update the query for a chart by clicking the chart, editing the query in the query editor, and then clicking **Run**.
-- Rename a chart by clicking <Icon icon="ellipsis-vertical" iconType="regular"/> **More >** <Icon icon="pencil" iconType="regular"/> **Rename**. Alternatively, click the name of the chart and type a new name.
-- Duplicate a chart by clicking <Icon icon="ellipsis-vertical" iconType="regular"/> **More >** <Icon icon="copy" iconType="regular"/> **Duplicate**.
-- Delete a chart by clicking <Icon icon="ellipsis-vertical" iconType="regular"/> **More >** <Icon icon="trash-can" iconType="regular"/> **Delete**.
-
-### Share Canvas
-
-Canvas state is stored in the URL. When you copy and share the URL, others can open the same Canvas with all its charts and queries. The same permissions apply as when sharing a dashboard. For more information, see [Share dashboards](/dashboards/configure#share-dashboards).
-
-## Save and export query
-
-You can save and export the query and its results to use them in other contexts.
-
-### Save query
-
-Save a query so that you and your team members can easily find it in the future. A saved query only includes the APL query itself, not the query results. Saved queries are automatically visible to all members of your Axiom organization. You can later [find saved queries](/query-data/datasets#saved-queries) in the Datasets tab.
-
-### Create new saved query
-
-1. Click **Save** in the top bar.
-1. Axiom AI generates a descriptive name based on the query. Accept it or edit it to fit your needs.
-1. Click **Save**.
-
-### Replace previously saved query
-
-1. Click **Save** in the top bar.
-1. Click **Replace previously saved query**.
-1. Select the existing saved query that you want to overwrite.
-1. Click **Save**.
-
-### Export query
-
-To export a query and its results, click <Icon icon="ellipsis-vertical" iconType="solid"/> **More** in the top bar to access the following options:
-
-- **Add to dashboard** lets you create dashboard elements based on the query and add them to a dashboard. For more information, see [Create dashboard elements](/dashboard-elements/create).
-- **Create new monitor** lets you create a monitor based on the query. For more information, see [Monitors](/monitor-data/monitors).
-- **Copy results** lets you copy the query results to your clipboard in JSON, CSV, TOON (structured), or TOON (list) format. TOON is a structured data format that's more efficient when sharing data with LLMs and other tools. Choose TOON (structured) for hierarchical data or TOON (list) for flat representations. For more information, see the [TOON documentation](https://github.com/toon-format/toon).
-- **Download results** lets you download the query results in JSON, CSV, TOON (structured), or TOON (list) format.
-- **Copy link with relative time** copies a link to the query where the time range is relative to the time when you open the link. For example, if the time range of the query is the last 30 minutes, using the link shows query results for the 30-minute time range before opening the link.
-- **Copy link with absolute time** copies a link to the query where the time range is fixed to the same time range that you see in the query when you create the link. This link shows query results for the same time range, irrespective of when you open the link.
