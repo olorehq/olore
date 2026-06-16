@@ -286,7 +286,22 @@ async function installFromRemote(pkg: string, optionsVersion?: string): Promise<
   const downloadSpinner = ora('Downloading package...').start();
 
   try {
-    await downloadAndInstall(versionInfo.downloadUrl, olorePath, versionInfo.integrity);
+    try {
+      await downloadAndInstall(versionInfo.downloadUrl, olorePath, versionInfo.integrity);
+    } catch (error) {
+      // downloadUrl routes through the counting proxy (olore.dev). If that is
+      // unreachable, fall back to the direct GitHub asset. Don't retry on a
+      // checksum mismatch — that's a corrupt/tampered payload, not a proxy outage.
+      if (
+        versionInfo.originUrl &&
+        error instanceof DownloadError &&
+        error.code !== 'CHECKSUM_MISMATCH'
+      ) {
+        await downloadAndInstall(versionInfo.originUrl, olorePath, versionInfo.integrity);
+      } else {
+        throw error;
+      }
+    }
     downloadSpinner.succeed(`Downloaded to ${pc.gray(olorePath)}`);
   } catch (error) {
     downloadSpinner.fail('Download failed');
