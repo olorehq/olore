@@ -1,6 +1,6 @@
 # zod Documentation Structure
 
-TanStack-style pin: `main` @ `7a002366`, which is zod **4.5.4**.
+Pinned to tag `v4.5.4` @ `e8e206fa`.
 
 ## Files
 

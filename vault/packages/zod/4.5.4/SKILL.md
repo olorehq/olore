@@ -1,11 +1,11 @@
 ---
-name: olore-zod-latest
-description: Local Zod documentation reference (latest, v4.5.4). Zod schema validation for TypeScript. Use for schema definition, parsing, type inference, error customization and formatting, refinements and transforms, codecs, JSON Schema conversion, metadata registries, Zod Mini, and z.compile AOT compilation.
+name: olore-zod-4.5.4
+description: Local Zod documentation reference (4.5.4). Zod schema validation for TypeScript. Use for schema definition, parsing, type inference, error customization and formatting, refinements and transforms, codecs, JSON Schema conversion, metadata registries, Zod Mini, and z.compile AOT compilation.
 ---
 
 # zod Documentation
 
-Zod is a TypeScript-first schema validation library with static type inference. This package tracks `main` (currently **4.5.4**).
+Zod is a TypeScript-first schema validation library with static type inference. This package is pinned to **v4.5.4**.
 
 ## Quick Reference
 

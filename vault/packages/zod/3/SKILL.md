@@ -1,40 +1,41 @@
 ---
 name: olore-zod-3
-description: Local Zod v3 documentation reference. Use when asked about Zod schema validation, TypeScript type inference, error handling, or migration from earlier versions.
+description: Local Zod v3 documentation reference (final v3 release, 3.25.76). Use for Zod 3 schema definition, parsing, TypeScript type inference, refinements and transforms, ZodError handling and error maps, and migrating from Zod 1/2 to 3. For Zod 4 use olore-zod-latest instead.
 ---
 
 # Zod v3 Documentation
 
-Zod is a TypeScript-first schema declaration and validation library designed to be developer-friendly. With Zod, you declare a validator once and Zod automatically infers the static TypeScript type. It eliminates duplicative type declarations and makes it easy to compose simpler types into complex data structures.
+Zod is a TypeScript-first schema declaration and validation library — declare a
+validator once and Zod infers the static type. This package covers **v3 only**
+(final release 3.25.76, July 2025; v3 is frozen).
+
+**If the user is on Zod 4, use `olore-zod-latest` instead.** The v4 API differs
+substantially — error customization, `z.treeifyError`, codecs, `z.toJSONSchema`,
+and `z.compile` are all v4-only, and several v3 methods were renamed or removed.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/README.md` | Main Documentation | Comprehensive API reference covering primitives, objects, arrays, unions, refinements, transformers, and all Zod features |
-| `contents/ERROR_HANDLING.md` | Error Handling Guide | Explains ZodError and ZodIssue types, error formatting, and customization with error maps |
-| `contents/MIGRATION.md` | Migration Guide | Steps for upgrading from Zod 1→2 and Zod 2→3, including breaking changes and new features |
-| `contents/README_KO.md` | Korean Documentation | Korean translation of the main README |
-| `contents/README_ZH.md` | Chinese Documentation | Chinese translation of the main README |
-| `contents/blog/clerk-fellowship.md` | Zod 4 Development | Blog post about Zod 4 development plans and funding |
+| `contents/home.md` | Main documentation | The whole v3 API in one file — primitives, objects, arrays, unions, records, recursive types, refinements, transforms, and every schema method |
+| `contents/ERROR_HANDLING.md` | Error handling | `ZodError` / `ZodIssue` structure, issue codes, error maps, formatting |
+| `contents/MIGRATION.md` | Migration guide | Zod 1 → 2 and 2 → 3 upgrade steps and breaking changes |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Zod schema validation and type inference
-- Creating and composing Zod schemas (strings, objects, arrays, unions, etc.)
-- Validation methods (.parse, .safeParse, .refine, .transform)
-- Error handling with ZodError
-- Migrating from Zod 1 or Zod 2 to Zod 3
-- TypeScript integration with Zod
-- Custom validation logic and refinements
+- Zod 3 schema definition and composition, and is explicitly on v3
+- `.parse()` / `.safeParse()` and v3 parsing behaviour
+- v3 type inference (`z.infer`, `z.input`, `z.output`)
+- `.refine()`, `.superRefine()`, `.transform()`, `.preprocess()` in v3
+- `ZodError`, `ZodIssue`, issue codes, and custom error maps in v3
+- Migrating from Zod 1 or 2 up to Zod 3
+- Confirming whether an API exists in v3 vs v4
 
 ## How to find information
 
-1. Check Quick Reference above for relevant file
-2. Read `TOC.md` for complete listing
-3. Read specific files from `contents/{filename}`
-
-For API reference and usage examples, start with `contents/README.md`.
-For error handling details, see `contents/ERROR_HANDLING.md`.
-For version migration, see `contents/MIGRATION.md`.
+1. `contents/home.md` answers most questions — it is the full v3 reference; search
+   within it rather than reading it whole
+2. Error-related questions go to `contents/ERROR_HANDLING.md`
+3. For a Zod 3 → Zod 4 migration, switch to the `olore-zod-latest` skill and read
+   its `v4/changelog.mdx`
