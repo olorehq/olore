@@ -1,0 +1,87 @@
+---
+title: 'Environment variables in Terraform'
+sidebarTitle: 'Environment variables'
+description: 'Manage environment variables to reduce duplication in your monitoring setup'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/terraform/environment-variables/'
+---
+
+[Environment variables](/platform/variables) store sensitive data like credentials or configuration values that can be used across checks and groups.
+
+<Accordion title="Check-level variables">
+```terraform
+resource "checkly_check" "user-login" {
+  name      = "User Login Flow"
+  type      = "BROWSER"
+  activated = true
+  frequency = 5
+  
+  environment_variable {
+    key   = "TEST_EMAIL"
+    value = "user@example.com"
+  }
+
+  environment_variable {
+    key    = "TEST_PASSWORD"
+    value  = "secure-password"
+    secret = true
+  }
+
+  environment_variable {
+    key   = "API_BASE_URL"
+    value = "https://api.example.com"
+  }
+  
+  locations = ["us-west-1", "eu-central-1"]
+  script    = file("${path.module}/scripts/login.spec.js")
+}
+```
+
+Variables defined at check level are only available to that specific check.
+</Accordion>
+
+<Accordion title="Group-level variables">
+```terraform
+resource "checkly_check_group" "ecommerce-flows" {
+  name      = "E-commerce Flows"
+  activated = true
+  
+  environment_variable {
+    key   = "TEST_EMAIL"
+    value = "user@example.com"
+  }
+
+  environment_variable {
+    key    = "TEST_PASSWORD"
+    value  = "secure-password"
+    secret = true
+  }
+
+  environment_variable {
+    key   = "API_BASE_URL"
+    value = "https://api.example.com"
+  }
+  
+  locations   = ["us-west-1", "eu-central-1"]
+  concurrency = 3
+}
+```
+
+Variables defined at group level are inherited by all checks within that group.
+</Accordion>
+
+<Accordion title="Account-level variables">
+```terraform
+resource "checkly_environment_variable" "api-base-url" {
+  key   = "API_BASE_URL"
+  value = "https://api.example.com"
+}
+
+resource "checkly_environment_variable" "test-password" {
+  key    = "TEST_PASSWORD"
+  value  = "secure-password"
+  secret = true
+}
+```
+
+Variables defined at account level are available to all checks in your account.
+</Accordion>

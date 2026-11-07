@@ -1,0 +1,59 @@
+---
+title: 'Gauge'
+description: 'This section explains how to create gauge dashboard elements and add them to your dashboard.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'collaboration', 'queries', 'visualizations', 'filters', 'charts', 'gauge', 'thresholds', 'simple query builder', 'advanced query builder']
+---
+
+import Prerequisites from "@/content/snippets/dashboard-prerequisites.mdx"
+import CreateElement from "@/content/snippets/create-dashboard-element.mdx"
+
+Gauge dashboard elements compare a single numeric value with colored segments. Use a gauge to show whether a current value, such as an error count or average response time, is within an expected range.
+
+<Prerequisites />
+
+<CreateElement elementName="gauge" elementButtonLabel="Gauge"/>
+
+## Configure gauge segments
+
+Use the segment rail to configure the ranges:
+
+1. Enter exact boundary values in the inputs above the rail, or drag a boundary handle.
+1. Click the scissors control inside a segment to split that segment.
+1. Click the remove control below a shared boundary to merge the adjacent segments.
+
+For a row-based view, expand **Edit segment values**. Enter the **From** and **To** values for each segment, or use **Split segment** and **Remove**. Each segment starts where the previous segment ends.
+
+The selected color scale assigns a color to each segment.
+
+## Configure gauge display
+
+Configure the gauge with the following options:
+
+- **Sparkline**: Display the value over time inside the gauge.
+- **Color scale**: Apply colors from green to red or from red to green.
+- **Labels**: Display evenly spaced **Intervals**, segment **Boundaries**, or no labels. **Intervals** is the default.
+- **Scale to time range**: Scale segment values in proportion to changes in the dashboard time range. Enable this option for count and sum thresholds that represent the chart's saved time range.
+- **Custom units**: Display a unit after the gauge value.
+
+## Query requirements
+
+Gauge queries return one numeric series. In Builder, add exactly one aggregation and leave **Group by** empty. In APL, use a `summarize` or `count` statement. If the query contains `summarize`, return one expression from the last `summarize` statement and group only by `_time`, if at all.
+
+## Example with Builder
+
+In Builder, summarize `req_duration_ms` with the `avg` aggregation.
+
+<Frame>
+  <img src="/docs/doc-assets/shots/gauge-builder.png" alt="Gauge example with Builder" />
+</Frame>
+
+## Example with APL
+
+```kusto
+['sample-http-logs']
+| summarize avg(req_duration_ms) by bin_auto(_time)
+```
+
+<Frame>
+  <img src="/docs/doc-assets/shots/gauge-apl.png" alt="Gauge example with APL" />
+</Frame>

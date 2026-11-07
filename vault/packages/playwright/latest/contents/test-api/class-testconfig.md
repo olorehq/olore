@@ -73,20 +73,21 @@ The structure of the git commit metadata is subject to change.
 - type: ?<[Object]>
   - `timeout` ?<[int]> Default timeout for async expect matchers in milliseconds, defaults to 5000ms.
   - `toHaveScreenshot` ?<[Object]> Configuration for the [`method: PageAssertions.toHaveScreenshot#1`] method.
-    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
-    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
-    - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default.
-    - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
-    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
+    - `animations` "ScreenshotAnimations" ?<"allow"|"disabled"> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
+    - `caret` "ScreenshotCaret" ?<"hide"|"initial"> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
+    - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default. Note that `threshold` defines which pixels are considered different.
+    - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default. Note that `threshold` defines which pixels are considered different.
+    - `scale` "ScreenshotScale" ?<"css"|"device"> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
     - `stylePath` ?<[string]|[Array]<[string]>> See [`option: Page.screenshot.style`] in [`method: Page.screenshot`].
     - `threshold` ?<[float]> An acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
+    - `type` "ScreenshotType" ?<"png"|"webp"> Format of the screenshots taken when the snapshot name is omitted, defaults to `"png"`. Snapshots with an explicit name use the format matching their `.png` or `.webp` extension.
     - `pathTemplate` ?<[string]> A template controlling location of the screenshots. See [`property: TestConfig.snapshotPathTemplate`] for details.
   - `toMatchAriaSnapshot` ?<[Object]> Configuration for the [`method: LocatorAssertions.toMatchAriaSnapshot#2`] method.
     - `pathTemplate` ?<[string]> A template controlling location of the aria snapshots. See [`property: TestConfig.snapshotPathTemplate`] for details.
     - `children` ?<["contain" | "equal" | "deep-equal"]> Controls how children of the snapshot root are matched against the actual accessibility tree. This is equivalent to adding a `/children` property at the top of every aria snapshot template. Individual snapshots can override this by including an explicit `/children` property.
   - `toMatchSnapshot` ?<[Object]> Configuration for the [`method: SnapshotAssertions.toMatchSnapshot#1`] method.
-    - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default.
-    - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
+    - `maxDiffPixels` ?<[int]> An acceptable amount of pixels that could be different, unset by default. Note that `threshold` defines which pixels are considered different.
+    - `maxDiffPixelRatio` ?<[float]> An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default. Note that `threshold` defines which pixels are considered different.
     - `threshold` ?<[float]> An acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
   - `toPass` ?<[Object]> Configuration for the [expect(value).toPass()](../test-assertions.md#expecttopass) method.
     - `intervals` ?<[Array]<[int]>> Probe intervals for toPass method in milliseconds.
@@ -377,7 +378,7 @@ This path will serve as the base directory for each test file snapshot directory
 
 ## property: TestConfig.preserveOutput
 * since: v1.10
-- type: ?<[PreserveOutput]<"always"|"never"|"failures-only">>
+- type: "PreserveOutput" ?<"always"|"never"|"failures-only">
 
 Whether to preserve test output in the [`property: TestConfig.outputDir`]. Defaults to `'always'`.
 * `'always'` - preserve output for all tests;
@@ -448,7 +449,7 @@ export default defineConfig({
 
 ## property: TestConfig.reporter
 * since: v1.10
-- type: ?<[string]|[Array]<[Object]>|[BuiltInReporter]<"list"|"dot"|"line"|"github"|"json"|"junit"|"null"|"html">>
+- type: "BuiltInReporter" ?<[string]|[Array]<[Object]>|"list"|"dot"|"failures"|"line"|"github"|"json"|"junit"|"null"|"html"|"blob"|"perfetto">
   - `0` <[string]> Reporter name or module or file path
   - `1` <[Object]> An object with reporter options if any
 
@@ -501,9 +502,13 @@ Whether to skip entries from `.gitignore` when searching for test files. By defa
 
 ## property: TestConfig.retries
 * since: v1.10
-- type: ?<[int]>
+- type: ?<[int]|[Array]<[Object]>>
+  - `count` <[int]> The maximum number of retries given to a failed test when this entry applies.
+  - `condition` ?<[RegExp]> Regular expression matched against the error messages of the failed attempt. An entry without a condition always applies.
 
 The maximum number of retry attempts given to failed tests. By default failing tests are not retried. Learn more about [test retries](../test-retries.md#retries).
+
+When set to a list, the number of retries depends on the error. After each failed attempt, Playwright takes the largest `count` among the entries that apply, and retries the test when it has run fewer times than that. The latest failed attempt decides: a test that first fails with a matching error and then with a different one only gets the retries of the latter. Worker crashes and timeouts are matched by their error message like any other failure.
 
 **Usage**
 
@@ -512,6 +517,40 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   retries: 2,
+});
+```
+
+Retry any failure once, and up to three times when the browser or the worker crashed:
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  retries: [
+    { count: 1 },
+    { count: 3, condition: /Target crashed|worker process exited unexpectedly/ },
+  ],
+});
+```
+
+## property: TestConfig.retryStrategy
+* since: v1.62
+- type: "RetryStrategy" ?<"immediate"|"isolated">
+
+Controls when failed tests are retried. Defaults to `'immediate'`.
+* `'immediate'` - A failed test is retried as soon as a worker is available, interleaved with the rest of the run. This is the default.
+* `'isolated'` - Retries are run at the end, after all other tests have finished, one by one in a single worker. This minimizes the interference between retried tests and the rest of the suite, at the expense of the total run time.
+
+Learn more about [test retries](../test-retries.md#retries).
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  retries: 2,
+  retryStrategy: 'isolated',
 });
 ```
 
@@ -643,13 +682,14 @@ export default defineConfig({
 
 ## property: TestConfig.updateSnapshots
 * since: v1.10
-- type: ?<[UpdateSnapshots]<"all"|"changed"|"missing"|"none">>
+- type: "UpdateSnapshots" ?<"all"|"changed"|"missing"|"none"|"default">
 
-Whether to update expected snapshots with the actual results produced by the test run. Defaults to `'missing'`.
+Whether to update expected snapshots with the actual results produced by the test run. Defaults to `'default'`.
 * `'all'` - All tests that are executed will update snapshots.
 * `'changed'` - All tests that are executed will update snapshots that did not match. Matching snapshots will not be updated. Also creates missing snapshots.
-* `'missing'` - Missing snapshots are created, for example when authoring a new test and running it for the first time. This is the default.
+* `'missing'` - Missing snapshots are created, for example when authoring a new test and running it for the first time. Tests that only create missing snapshots pass.
 * `'none'` - No snapshots are updated.
+* `'default'` - Missing snapshots are created, but the tests that create them fail, so that the run does not silently pass in CI. This is the default.
 
 Learn more about [snapshots](../test-snapshots.md).
 
@@ -659,13 +699,13 @@ Learn more about [snapshots](../test-snapshots.md).
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  updateSnapshots: 'missing',
+  updateSnapshots: 'default',
 });
 ```
 
 ## property: TestConfig.updateSourceMethod
 * since: v1.50
-- type: ?<[UpdateSourceMethod]<"overwrite"|"3way"|"patch">>
+- type: "UpdateSourceMethod" ?<"overwrite"|"3way"|"patch">
 
 Defines how to update snapshots in the source code.
 * `'patch'` - Create a unified diff file that can be used to update the source code later. This is the default.
@@ -712,6 +752,9 @@ export default defineConfig({
   - `url` ?<[string]> The url on your http server that is expected to return a 2xx, 3xx, 400, 401, 402, or 403 status code when the server is ready to accept connections. Redirects (3xx status codes) are being followed and the new location is checked. Either `port` or `url` should be specified.
 
 Launch a development web server (or multiple) during the tests.
+
+Top-level servers start before `globalSetup` and stop after `globalTeardown`, regardless of project
+selection. To start servers only for particular projects, use [`property: TestProject.webServer`].
 
 **Details**
 
@@ -798,7 +841,7 @@ export default defineConfig({
 ```js
 import { test, expect } from '@playwright/test';
 
-test.use({ baseUrl: `http://localhost:${process.env.MY_SERVER_PORT ?? 3000}` });
+test.use({ baseURL: `http://localhost:${process.env.MY_SERVER_PORT ?? 3000}` });
 
 test('homepage', async ({ page }) => {
   await page.goto('/');

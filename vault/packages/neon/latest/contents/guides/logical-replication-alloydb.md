@@ -5,12 +5,12 @@ summary: >-
   Replicate data from Google AlloyDB to Neon using logical replication. Requires
   enabling the AlloyDB-specific flags alloydb.enable_pglogical and
   alloydb.logical_decoding, then creating a publication on AlloyDB and a
-  matching subscription on Neon. Covers NAT Gateway IP allowlisting, replication
+  matching subscription on Lakebase Postgres. Covers NAT Gateway IP allowlisting, replication
   role setup with alloydbsuperuser, and schema transfer via pg_dump and
   pg_restore before starting the subscription.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T19:45:35.340Z'
 ---
 
 This guide describes how to replicate data from AlloyDB Postgres to Neon using native Postgres logical replication. The steps in this guide follow those described in [Set up native PostgreSQL logical replication](https://cloud.google.com/sql/docs/postgres/replication/configure-logical-replication#set-up-native-postgresql-logical-replication), in the _Google AlloyDB documentation_.
@@ -126,7 +126,7 @@ For syntax details, see [CREATE PUBLICATION](https://www.postgresql.org/docs/cur
 
 ## Prepare your Neon destination database
 
-This section describes how to prepare your source Neon Postgres database (the subscriber) to receive replicated data from your AlloyDB Postgres instance.
+This section describes how to prepare your destination Lakebase Postgres database (the subscriber) to receive replicated data from your AlloyDB Postgres instance.
 
 ### Prepare your database schema
 
@@ -189,7 +189,7 @@ To comment out a single line, you can use `--` at the beginning of the line.
 After making any necessary modifications to the dump file, load the dumped schema using `pg_restore`.
 
 <Admonition type="tip">
-When you're restoring on Neon, you can input your Neon connection string in place of `postgresql://role:password@hostname:5432/dbname`. You can find your database connection string by clicking the **Connect** button on your **Project Dashboard**.
+When you're restoring on Neon, you can input your Neon connection string in place of `postgresql://role:password@hostname:5432/dbname`. You can find your database connection string by clicking the **Connect** button in the Console nav.
 </Admonition>
 
 ```sql
@@ -260,6 +260,6 @@ SELECT subname, received_lsn, latest_end_lsn, last_msg_receipt_time FROM pg_cata
 
 After the replication operation is complete, you can switch your application over to the destination database by swapping out your AlloyDB source database connection details for your Neon destination database connection details.
 
-You can find your Neon database connection details by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. For details, see [Connect from any application](/docs/connect/connect-from-any-app).
+You can find your Neon database connection details by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. For details, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 </Steps>

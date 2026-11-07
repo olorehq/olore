@@ -13,17 +13,13 @@ import { Demos } from "/snippets/demos.jsx";
 This guide documents how to use the Rive Flutter runtime to easily integrate Rive graphics in your Flutter apps.
 
 <Note>
-  The latest version of Rive Flutter is currently published as a dev release
-  `0.14.0-dev.x`. This means that while the package is stable and ready for
-  production use, we are still actively developing new features and
-  improvements. We recommend using the latest dev version to take advantage of
-  the newest features and fixes.
+  There is a new major version of Rive Flutter, `0.15.x`, currently available as a dev release. See the [migration guide](/runtimes/flutter/migration-guide#version-0-15-0) for what changed. Try it out and let us know what you think.
 </Note>
 
 <Info>
   Already using Rive Flutter? See our [Migration
   Guide](/runtimes/flutter/migration-guide) for information on adopting the
-  latest `0.14.x` version.
+  latest version.
 </Info>
 
 ## Quick start
@@ -43,7 +39,7 @@ Follow the steps below to integrate Rive into your Flutter apps.
     ```yaml
     # pubspec.yaml
     dependencies:
-      rive: ^0.14.0-dev.6 # or latest dev version
+      rive: ^{{versionFlutter}}
     ```
 
   </Step>
@@ -175,7 +171,7 @@ Follow the steps below to integrate Rive into your Flutter apps.
 
         1. Wrap the `RiveWidget`s that should draw to the same texture with a single inherited `RivePanel`.
         2. Set `useSharedTexture: true` in each `RiveWidget` that should draw to the shared texture.
-        3. (Optional) Set `drawOrder` in each `RiveWidget` to control the order they are drawn in. Lower numbers are drawn first.
+        3. (Optional) Set `drawOrder` in each `RiveWidget` to control stacking. Higher values draw on top. See [Draw Order](#draw-order).
 
         ```dart
          class ExampleRivePanel extends StatelessWidget {
@@ -252,7 +248,8 @@ Follow the steps below to integrate Rive into your Flutter apps.
         1. Create a `SharedRenderTexture` with `SharedRenderTexture.create()`.
         2. Place its native surface in the widget tree with `RiveSurface`.
         3. Pass the same texture to each `RiveWidget` with `sharedTexture`.
-        4. Dispose the texture when you are done with it.
+        4. (Optional) Set `drawOrder` in each `RiveWidget` to control stacking. See [Draw Order](#draw-order).
+        5. Dispose the texture when you are done with it.
 
         ```dart
         class ExampleManualSharedTexture extends StatefulWidget {
@@ -303,6 +300,7 @@ Follow the steps below to integrate Rive into your Flutter apps.
                               controller: state.controller,
                               fit: Fit.contain,
                               sharedTexture: sharedTexture,
+                              // Higher values draw on top
                               drawOrder: index,
                             ),
                         },
@@ -377,7 +375,9 @@ Follow the steps below to integrate Rive into your Flutter apps.
 - `layoutScaleFactor`: Scale factor when using `Fit.layout` (default: `1.0`)
 - `useSharedTexture`: Whether to use the nearest inherited shared texture from a [RivePanel](#rivepanel). Defaults to false. Ignored when `sharedTexture` is provided.
 - `sharedTexture`: An explicit `SharedRenderTexture` to draw into, bypassing the ancestor-based `RivePanel` lookup. Use this with [`SharedRenderTexture` and `RiveSurface`](#sharedrendertexture-and-rivesurface) to share a texture across arbitrary parts of the widget tree.
-- `drawOrder`: The draw order of the artboard. This is only used when drawing to a shared texture, either through `useSharedTexture` and [RivePanel](#rivepanel) or through `sharedTexture`, and using `Factory.rive`. Defaults to 1.
+- `drawOrder`: Stacking order when drawing to a shared texture with `Factory.rive` (default: `1`). Higher values draw on top. See [Draw Order](#draw-order).
+- `renderResolution`: How the widget's backing texture is sized with `Factory.rive` (default: `RenderResolution.display()`). Not valid with `useSharedTexture`/`sharedTexture`. See [Render Resolution](#render-resolution).
+- `drawOptimization`: When the widget redraws (default: `DrawOptimization.drawWhenChanged`). Not valid with `useSharedTexture`/`sharedTexture`. See [Draw optimization](#draw-optimization).
 
 ### `RiveWidgetBuilder`
 
@@ -404,7 +404,7 @@ Follow the steps below to integrate Rive into your Flutter apps.
 - When you want to programmatically composite a scene that includes multiple Rive graphics (from multiple Rive files/artboards)
 - When using `Factory.rive` (will report errors with `Factory.flutter`) and want to improve performance
 - When you want to reduce the number of textures being drawn to
-- When targeting web platforms to avoid WebGL context limitations through `Factory.rive`
+- When targeting web platforms to avoid [WebGL context limits](#webgl-contexts-web) through `Factory.rive`
 
 **Performance considerations:**
 
@@ -426,6 +426,9 @@ RivePanel(
 
 - Only works with `Factory.rive` - has no effect with `Factory.flutter`
 - Set `useSharedTexture: true` in your `RiveWidget`s to enable shared texture rendering
+- Set `drawOrder` in your `RiveWidget`s to control stacking (see [Draw Order](#draw-order))
+- Set `renderResolution` on the panel to control how its shared texture is sized (see [Render Resolution](#render-resolution))
+- Set `drawOptimization` on the panel to control when its shared texture redraws (see [Draw optimization](#draw-optimization))
 - If you need to interleave Rive content with Flutter content, consider using separate `RivePanel`s or `Factory.flutter`
 - For complex scenarios, benchmark both approaches to determine the best performance strategy
 
@@ -468,6 +471,64 @@ Widget build(BuildContext context) {
 - `RiveWidget.sharedTexture` takes precedence over `useSharedTexture` when both are set.
 - You must call `dispose()` on textures created with `SharedRenderTexture.create()` to release the native texture.
 - `RiveSurface` is wrapped in `IgnorePointer` by default so pointer events are handled by the individual `RiveWidget`s. Set `ignorePointer: false` if pointer events should reach the native texture widget directly.
+- Set `renderResolution` on the `RiveSurface` to control how the shared texture is sized (see [Render Resolution](#render-resolution)).
+- Pass `drawOptimization` to `SharedRenderTexture.create()` to control when the shared texture redraws (see [Draw optimization](#draw-optimization)).
+
+### Draw Order
+
+When multiple `RiveWidget`s draw to the same shared texture - through a [RivePanel](#rivepanel) or an explicit [`sharedTexture`](#sharedrendertexture-and-rivesurface) - `RiveWidget.drawOrder` (default: `1`) controls how they stack:
+
+- Higher values draw on top.
+- Widgets with the same value stack in widget-tree order.
+- Changing `drawOrder` on a mounted widget restacks it on the next frame.
+
+<Note>
+`drawOrder` only applies when drawing to a shared texture with `Factory.rive`. When a widget owns its own texture, Flutter's normal paint order applies.
+</Note>
+
+### Render resolution
+
+`Factory.rive` draws content into a backing texture. `RiveWidget.renderResolution` (default: `RenderResolution.display()`) controls how that texture is sized - the same way on every platform, including web. It changes backing resolution only; layout, fit, alignment, and hit testing are unaffected.
+
+- `RenderResolution.display()` (default): layout size * device pixel ratio * any scale ancestors apply at paint time (for example a `FittedBox` or `Transform.scale`). Content stays sharp at its final on-screen size, and allocates for it.
+- `RenderResolution.layout(scale: 1.0)`: layout size * device pixel ratio * `scale`. Ancestor transforms apply at composite time, so scaling the widget up stretches the texture (softer output) instead of reallocating it - render small and let a `FittedBox` upscale cheaply.
+- `RenderResolution.fixed(width, height)`: an explicit size in physical pixels, independent of layout, device pixel ratio, and transforms. Never reallocated on resize.
+
+For shared textures the surface owns the allocation: set `renderResolution` on the [RivePanel](#rivepanel) or [RiveSurface](#sharedrendertexture-and-rivesurface). Setting it on a `RiveWidget` alongside `useSharedTexture` or `sharedTexture` throws an assertion error.
+
+<Note>
+`renderResolution` only applies with `Factory.rive`. `Factory.flutter` paints directly into Flutter's canvas at composite resolution.
+</Note>
+
+### Draw optimization
+
+<Note>
+Available from `rive` `0.15.0`. See the [migration guide](/runtimes/flutter/migration-guide#version-0-15-0).
+</Note>
+
+By default, a Rive widget draws a frame only when something in its Artboard changed since the last draw. Advancing is unaffected: the widget advances while the content animates and stops once it settles. On frames that change nothing, the draw is skipped and the last drawn frame stays on screen. This applies to `Factory.rive` and `Factory.flutter`.
+
+`drawOptimization` takes a `DrawOptimization`:
+
+- `DrawOptimization.drawWhenChanged` (default): draw only when the Artboard changed.
+- `DrawOptimization.alwaysDraw`: draw on every advanced frame.
+
+```dart
+RiveWidget(
+  controller: controller,
+  drawOptimization: DrawOptimization.alwaysDraw,
+)
+```
+
+These still redraw even when the Artboard did not change: layout and resize, `fit` and `alignment` changes, texture recreation, a new painter, and a painter calling `notifyListeners()`.
+
+**Shared textures:** a [RivePanel](#rivepanel) or [`SharedRenderTexture`](#sharedrendertexture-and-rivesurface) redraws when any widget drawing into it changed, and then redraws all of them. It also redraws when a widget moves relative to the panel or the panel resizes. Set `drawOptimization` on the `RivePanel` or pass it to `SharedRenderTexture.create()`. Setting it on a `RiveWidget` alongside `useSharedTexture` or `sharedTexture` throws an assertion error.
+
+**Lower-level widgets:** `RiveArtboardWidget`, `RiveFileWidget`, and `RiveProceduralRenderingWidget` take the same `drawOptimization` parameter. `Artboard.didChange` is `true` when the Artboard changed since it was last drawn. Drawing clears it.
+
+<Note>
+If your Artboard painter (for example a `StateMachinePainter` subclass) draws more than its Artboard in `paint`, call `notifyListeners()` when that extra content changes, or use `DrawOptimization.alwaysDraw`. Otherwise those changes do not show until the Artboard changes. A painter without an Artboard always draws.
+</Note>
 
 ### `RiveWidgetController`
 
@@ -590,6 +651,18 @@ The exception to this is the `FileLoader`, which you control. This loader can be
 
 </Note>
 
+### WebGL contexts (web)
+
+On the web, every `Factory.rive` widget that owns its texture renders into its own WebGL context, and browsers cap live contexts (around 16, shared with Flutter's own CanvasKit surfaces).
+
+Disposing a Rive widget releases its context. A small reuse pool keeps a few canvases alive, so churn like route transitions stays cheap. Contexts the browser has evicted are detected and destroyed, never reused.
+
+Set `RiveNative.debugRenderTextureLogging = true` to log texture create, reuse, and release with live WebGL context counts.
+
+<Tip>
+When showing many Rive widgets at once on web, draw them into a single shared texture with a [RivePanel](#rivepanel) - one WebGL context in total instead of one per widget.
+</Tip>
+
 ## Specifying a renderer
 
 When creating a Rive `File` or `FileLoader`, you need to specify a factory to use:
@@ -607,12 +680,7 @@ Some considerations when choosing a renderer:
 
 For more information see [Choosing a Renderer](/runtimes/choose-a-renderer/).
 
-<Warning>
-  The Rive Renderer is not yet supported on Linux through Flutter. On Linux, it
-  automatically falls back to `Factory.flutter`.
-</Warning>
-
-### Note on Flutter Rendering
+### Note on Flutter rendering
 
 [Impeller](https://docs.flutter.dev/perf/impeller) is replacing [Skia](https://skia.org/) to become the default renderer for all platforms. As such, there is a possibility of rendering and [performance](https://github.com/flutter/flutter/issues/134432) discrepancies when using the Rive Flutter runtime with platforms that use the Impeller renderer that may not have surfaced before. If you encounter any visual or performance errors at runtime compared to expected behavior in the Rive editor, we recommend trying the following steps to triage:
 
@@ -644,7 +712,7 @@ If you encounter build errors related to Rive, ensure that:
 
 If you're still having issues, please see the [Troubleshooting section](/runtimes/flutter/rive-native#troubleshooting) in the Rive Native documentation.
 
-## Manually building Rive native libraries
+## Manually building Rive Native libraries
 
 Rive automatically downloads the native libraries for you as part of the `rive_native` plugin.
 

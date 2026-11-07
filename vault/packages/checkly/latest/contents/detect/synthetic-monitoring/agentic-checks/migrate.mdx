@@ -1,0 +1,72 @@
+---
+title: 'Migrate from Agentic Checks'
+sidebarTitle: 'Migrate Agentic Checks'
+description: 'Replace Agentic Checks with Browser or Multistep checks and enable automatic repair before December 1, 2026.'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/agentic-checks/migrate/'
+hidden: true
+---
+
+<Warning>
+Agentic Checks are deprecated and will stop running on **December 1, 2026**. Replace each active Agentic Check before that date to keep monitoring its journey.
+</Warning>
+
+Create a Browser or Multistep check for the same journey, verify the replacement, then deactivate the Agentic Check. This guide uses Browser and Multistep checks because automatic repair can edit their scripts in Checkly. The replacement has its own results and history.
+
+You can create the replacement in two ways:
+
+- **On every plan:** use your own AI agent connected to the [Checkly MCP Server](../../../ai/mcp-server).
+- **On Trial, Starter, Team, and Enterprise plans:** you can also use the [AI Assistant](../../../ai/ai-assistant) in Checkly.
+
+<Accordion title="Prerequisites">
+
+- Permission to create and edit checks
+- Access to each Agentic Check's prompt, schedule, locations, alert settings, and any variables or secrets it uses
+- For your own agent: an MCP client connected to the Checkly MCP Server. See [Set up the MCP server](../../../ai/mcp-server/setup).
+- For the AI Assistant: a Trial, Starter, Team, or Enterprise plan, with Rocky AI enabled for the account. An account owner can enable it in the [AI settings](https://app.checklyhq.com/accounts/rocky-ai).
+
+</Accordion>
+
+<Note>
+If a Checkly CLI project manages the Agentic Check, create the replacement in that project instead: replace the `AgenticCheck` construct with a `BrowserCheck` or `MultiStepCheck` construct and deploy. A deploy deletes checks that are no longer in the project, so this deletes the Agentic Check together with its history instead of deactivating it. [Checkly Skills](../../../ai/skills) help your agent write and test the check. Changes made in the Checkly app or through the MCP Server to a check that a CLI project manages are overwritten by its next deploy.
+
+Checkly CLI version 10 and later no longer include the `AgenticCheck` construct. To keep managing existing Agentic Checks as code until December 1, 2026, stay on the version 9 release line. See the [Agentic Check construct reference](/constructs/agentic-check) for version 9.
+</Note>
+
+## Create the replacement with your own AI agent
+
+1. Open the Agentic Check and select **Copy prompt**. Note its frequency, locations, alert channels, referenced variables or secrets, and any custom skills.
+2. In your MCP client, ask your agent to create the replacement through the Checkly MCP Server. Give it the copied prompt, the check type, and the original schedule and locations:
+
+```text title="Prompt" wrap
+Use Checkly to create a Browser Check named "Checkout flow" that monitors the journey below. Run it every 10 minutes from eu-west-1 and us-east-1. The prompt references variables as {{VARIABLE_NAME}}; read them in the script with process.env.VARIABLE_NAME. Show me the script before you create the check.
+
+<paste the Agentic Check prompt here>
+```
+
+3. Open the new check in Checkly and inspect its script, assertions, and settings. Confirm that important outcomes and guardrails from the original prompt are present. If the Agentic Check used custom skills, verify that the replacement script covers the behavior you still need.
+
+## Create the replacement with the AI Assistant
+
+Available on Trial, Starter, Team, and Enterprise plans.
+
+1. Open the Agentic Check and select **Copy prompt**. Note its frequency, locations, alert channels, referenced variables or secrets, and any custom skills.
+2. Select **Open AI assistant**, paste the prompt, and ask for a check for the same journey. Include the pass and fail criteria. Choose a **Browser Check** for a web journey or a **Multistep Check** for an API workflow.
+3. Review the proposed plan and select **Create checks**. Inspect the generated script, assertions, settings, and check intent. Confirm that important outcomes and guardrails from the original prompt are present. If the Agentic Check used custom skills, verify that the replacement script covers the behavior you still need.
+
+## Verify and switch over
+
+1. Run the replacement check and confirm it reports the expected result. Correct the script or settings if needed. Match the original check's frequency, locations, and alerting before relying on the replacement.
+2. In the replacement check's **Check intent** settings, review and save its intent. If it has no intent yet, select **Initialize from saved check** first. Then expand **Automatic Repair**, select **On** under **Automatic repair behavior**, and save. [Learn how automatic repair works](../../../resolve/automatic-check-repair).
+3. Once the replacement is running as expected, deactivate the Agentic Check. Keep it for its existing configuration and history, or remove it later according to your retention needs.
+
+<Tip>
+Migrate one journey at a time. If the original prompt covered several unrelated flows, create a separate replacement check for each flow and verify each one before deactivating the Agentic Check.
+</Tip>
+
+## Add automatic repair to other checks
+
+You can enable automatic repair on Browser and Multistep checks you already use. Open a check's **Check intent** settings and select **Initialize from saved check** to get an editable intent suggestion, or enter the intent manually. Review and save the intent, then expand **Automatic Repair** and set **Automatic repair behavior** to **On** and save the check. See [Add intent to an existing check](../../../resolve/automatic-check-repair#add-intent-to-an-existing-check).
+
+## AI invocation usage
+
+Each AI Assistant conversation uses one AI invocation on its first run. Later messages in that conversation use no more invocations. Root cause analysis and automatic repair each use one invocation from the same allowance. **Initialize from saved check** and creating checks through the MCP Server do not use AI invocations. See [AI invocation usage](../../../resolve/automatic-check-repair#ai-invocation-usage).

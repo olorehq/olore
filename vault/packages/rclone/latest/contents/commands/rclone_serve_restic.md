@@ -122,6 +122,17 @@ for a transfer.
 `--max-header-bytes` controls the maximum number of bytes the server will
 accept in the HTTP header.
 
+`--response-header` can be used to set an HTTP header for all responses,
+will overriding existing values. The flag may be repeated to add multiple
+headers. Use the format `Header-Name: value`.
+
+`--allow-origin` enables cross-origin (CORS) requests from browsers
+by setting the `Access-Control-Allow-Origin` header on every response to the
+origin given, e.g. `--allow-origin https://app.example.com`. Browser
+CORS preflight OPTIONS requests are answered by rclone without needing
+authentication as browsers never send credentials with them. Setting this
+to `*` allows any origin which is a security risk on an authenticated server.
+
 `--baseurl` controls the URL prefix that rclone serves from.  By default
 rclone will serve from the root.  If you used `--baseurl "/rclone"` then
 rclone would serve from a URL starting with "/rclone/".  This is
@@ -144,6 +155,11 @@ By default this will serve over http.  If you want you can serve over
 https.  You will need to supply the `--cert` and `--key` flags.
 If you wish to do client side certificate validation then you will need to
 supply `--client-ca` also.
+
+When TLS is configured every listener given with `--addr` serves TLS.
+An individual listener can be prefixed with `http://` to serve unencrypted
+HTTP on that address, or with `tls://` to state explicitly that it must serve
+TLS.  Using a `tls://` address without `--cert` and `--key` is an error.
 
 `--cert` must be set to the path of a file containing
 either a PEM encoded certificate, or a concatenation of that with the CA
@@ -201,7 +217,19 @@ htpasswd -B htpasswd user
 htpasswd -B htpasswd anotherUser
 ```
 
+Use the same hash format and cost for every entry in the file. If the
+entries differ, the time taken to reject a wrong password can reveal
+which usernames exist.
+
 The password file can be updated while rclone is running.
+
+When authentication is enabled every request must be authenticated,
+including HTTP OPTIONS requests, as the answer to an OPTIONS request can
+reveal whether a path exists. Health checks or monitoring which use
+unauthenticated OPTIONS requests will need to send credentials. The
+exception is browser CORS preflight requests when `--allow-origin`
+is set, which are answered without authentication as browsers never send
+credentials with them.
 
 Use `--realm` to set the authentication realm.
 
@@ -229,6 +257,7 @@ rclone serve restic remote:path [flags]
       --pass string                     Password for authentication
       --private-repos                   Users can only access their private repo
       --realm string                    Realm for authentication
+      --response-header stringArray     Set HTTP header for all responses, overriding existing values
       --salt string                     Password hashing salt (default "dlPL2MqE")
       --server-read-timeout Duration    Timeout for server reading data (default 1h0m0s)
       --server-write-timeout Duration   Timeout for server writing data (default 1h0m0s)

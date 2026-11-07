@@ -1,0 +1,127 @@
+---
+title: 'Send data from Rust app to Axiom'
+description: 'This page explains how to send data from a Rust app to Axiom.'
+overview: 'Systems programming language focused on safety and performance'
+sidebarTitle: Rust
+github: "https://github.com/axiomhq/axiom-rs"
+keywords: ['rs', 'rust']
+logoId: 'rust'
+darkLogoId: 'rustDark'
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+To send data from a Rust app to Axiom, use the Axiom Rust SDK.
+
+<Note>
+The Axiom Rust SDK is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-rs).
+</Note>
+
+<Prerequisites />
+
+## Install SDK
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+axiom-rs = "VERSION"
+```
+
+Replace `VERSION` with the latest version number specified on the [GitHub Releases](https://github.com/axiomhq/axiom-rs/releases) page. For example, `0.11.0`.
+
+If you use the [Axiom CLI](/reference/cli), run `eval $(axiom config export -f)` to configure your environment variables. Otherwise, [create an API token](/reference/tokens) and export it as `AXIOM_TOKEN`.
+
+## Use client
+
+```rust
+use axiom_rs::Client;
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Build your client by providing a personal token and an org id:
+    let client = Client::builder()
+        .with_token("API_TOKEN")
+        .build()?;
+
+    // Alternatively, auto-configure the client from the environment variable AXIOM_TOKEN:
+    let client = Client::new()?;
+
+    client.datasets().create("DATASET_NAME", "").await?;
+
+    client
+        .ingest(
+            "DATASET_NAME",
+            vec![json!({
+                "foo": "bar",
+            })],
+        )
+        .await?;
+
+    let res = client
+        .query(r#"['DATASET_NAME'] | where foo == "bar" | limit 100"#, None)
+        .await?;
+    println!("{:?}", res);
+
+    client.datasets().delete("DATASET_NAME").await?;
+    Ok(())
+}
+```
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-rs/tree/main/examples).
+
+## Configure region
+
+By default, the client sends data to `api.axiom.co`. To target a specific edge region, add the `with_edge` method to the builder with the edge domain that matches the region your dataset lives in:
+
+<CodeGroup>
+
+```rust EU Central 1
+let client = Client::builder()
+    .with_token("xaat-your-api-token")
+    .with_edge("eu-central-1.aws.edge.axiom.co")
+    .build()?;
+```
+
+```rust US East 1
+let client = Client::builder()
+    .with_token("xaat-your-api-token")
+    .with_edge("us-east-1.aws.edge.axiom.co")
+    .build()?;
+```
+
+</CodeGroup>
+
+The following edge domains are available:
+
+| Edge deployment    | Base domain for ingest and query |
+| ------------------ | -------------------------------- |
+| US East 1 (AWS)    | `us-east-1.aws.edge.axiom.co`    |
+| EU Central 1 (AWS) | `eu-central-1.aws.edge.axiom.co` |
+
+For more information about edge deployments, see [Edge deployments](/reference/edge-deployments).
+
+You can also configure the region without changing code by exporting environment variables. When you build the client with `Client::new()`, these are read automatically:
+
+```sh
+export AXIOM_EDGE="eu-central-1.aws.edge.axiom.co"
+# or, for a full URL (takes precedence over AXIOM_EDGE):
+export AXIOM_EDGE_URL="https://eu-central-1.aws.edge.axiom.co"
+```
+
+To point at a custom edge endpoint such as a proxy or load balancer, use `.with_edge_url("https://your-edge-host")`. `with_edge_url` takes precedence over `with_edge` if both are set.
+
+<Note>
+Edge endpoints require an API token (`xaat-`), not a personal token (`xapt-`). Ingesting with a personal token against an edge endpoint returns a `PersonalTokenNotSupportedForEdge` error.
+</Note>
+
+## Optional features
+
+You can use the [Cargo features](https://doc.rust-lang.org/stable/cargo/reference/features.html#the-features-section):
+
+- `default-tls`: Provides TLS support to connect over HTTPS. Enabled by default.
+- `native-tls`: Enables TLS functionality provided by `native-tls`.
+- `rustls-tls`: Enables TLS functionality provided by `rustls`.
+- `tokio`: Enables usage with the `tokio` runtime. Enabled by default.
+- `async-std`: Enables usage with the `async-std` runtime.

@@ -6,20 +6,20 @@ summary: >-
   active branch in your local context, so subsequent commands target that
   branch without specifying `--branch` on every command.
 enableTableOfContents: true
-updatedOn: '2026-06-12T00:33:31.980Z'
+updatedOn: '2026-10-09T15:17:33.920Z'
 redirectFrom:
   - /docs/reference/cli-checkout
 ---
 
-The `checkout` command pins a branch in the local context so subsequent commands target it. It's a focused helper over [`set-context`](/docs/cli/set-context) for the common "switch the branch I'm working on" case. The `checkout` command requires neonctl 2.22.2 or later; check your version with `neonctl --version`.
+The `checkout` command pins a branch in the local context so subsequent commands target it. It's a focused helper over [`set-context`](/docs/cli/set-context) for the common "switch the branch I'm working on" case.
 
-`checkout` resolves the branch (by name or ID) against the project, then heals the `.neon` file: it always (re)writes `projectId`, `branchId`, and `orgId` (when the project has one), so a `.neon` that was missing fields or drifted ends up complete and consistent.
+`checkout` resolves the branch (by name or ID) against the project, then heals the `.neon` file: it always (re)writes `projectId`, `branch`, and `orgId` (when the project has one), so a `.neon` that was missing fields or drifted ends up complete and consistent.
 
 ## Usage
 
 <CliUsage command="checkout" />
 
-The branch argument is optional. Run `neonctl checkout` with no branch in an interactive terminal to fetch the project's branches and pick one from a list. In a non-interactive context (CI or no TTY), you must pass a branch explicitly.
+The branch argument is optional. Run `neon checkout` with no branch in an interactive terminal to fetch the project's branches and pick one from a list. In a non-interactive context (CI or no TTY), you must pass a branch explicitly.
 
 ## Options
 
@@ -27,12 +27,14 @@ The branch argument is optional. Run `neonctl checkout` with no branch in an int
 
 By default, `checkout` pulls environment variables into a `.env` file after checking out the branch; use `--no-env-pull` to skip this.
 
+Creating a branch from a [`neon.ts`](/docs/reference/neon-ts) policy evaluates that policy, resolving any `process.env` values it references (such as a function's secrets) from your environment. Pass `--env <file>` to load those values from `<file>` first, so they resolve during the checkout. Checking out an existing branch doesn't re-evaluate the policy, so `--env` is ignored there.
+
 ## Branch ID vs name
 
 Branch ID vs name is detected automatically (a `br-…` value is treated as an ID):
 
 - **ID:** Matched strictly by ID. A non-existent ID is a hard "not found" error (IDs are server-assigned, so `checkout` never creates one).
-- **Name:** Matched by name. If the name does not exist, in an interactive terminal `checkout` offers to create it (equivalent to `neonctl branches create --name <name>`: branched from the project's default branch with a read-write compute), then checks it out. In a non-interactive context, a missing name is the usual "not found" error.
+- **Name:** Matched by name. If the name doesn't exist, pass `--create` to create it (equivalent to `neon branches create --name <name>`: branched from the project's default branch with a read-write compute), then check it out. Without `--create`, an interactive terminal offers to create it, while a non-interactive context (CI or no TTY) exits with a "not found" error that tells you to pass `--create`. `--create` needs a branch name, so `neon checkout --create` on its own is an error. `--create` requires neon 4.15.0 or later.
 
 ## Project resolution
 
@@ -42,40 +44,52 @@ The project is resolved through the standard Neon CLI chain, each entry winning 
 2. `projectId` from the closest `.neon` file (found by walking up from the current directory)
 3. If still unresolved and the API key maps to exactly one project, that project is auto-detected (same behavior as `branches` and `connection-string`)
 
-If none of those resolve a project, `checkout` prints an error explaining the chain above. In an interactive terminal it then offers to run [`neonctl link`](/docs/cli/link) in the current folder so you can pick (or create) a project on the spot. In non-interactive contexts, it exits with a non-zero code instead of prompting.
+If none of those resolve a project, `checkout` prints an error explaining the chain above. In an interactive terminal it then offers to run [`neon link`](/docs/cli/link) in the current folder so you can pick (or create) a project on the spot. In non-interactive contexts, it exits with a non-zero code instead of prompting.
 
 ## Examples
 
-Pin a branch by name. New Neon projects create a default branch named `production`:
+Pin a branch by name. Projects created with the CLI or API get a default branch named `main`; Console-created projects use `production`. Run `neon branches list` if you're unsure:
 
 ```bash
-neonctl checkout production --project-id polished-snowflake-12345678
+neon checkout main --project-id polished-snowflake-12345678
 ```
 
 ```text filename="Output"
-INFO: Checked out branch br-steep-math-aiu3vve7 on project polished-snowflake-12345678. Updated /path/to/cwd/.neon.
+Checked out branch br-steep-math-aiu3vve7 on project polished-snowflake-12345678 (org org-example-12345678). Updated /path/to/cwd/.neon.
+Pulled 5 Neon variables into .env.local
+  Postgres        DATABASE_URL, DATABASE_URL_UNPOOLED
+  Branch          NEON_BRANCH, NEON_BRANCH_ID
+  Functions       NEON_FUNCTION_HOST_SUFFIX
 ```
 
 The updated `.neon` file:
 
 ```json
 {
-  "orgId": "org-abc123",
   "projectId": "polished-snowflake-12345678",
-  "branchId": "br-steep-math-aiu3vve7"
+  "orgId": "org-example-12345678",
+  "branch": "main"
 }
 ```
 
 Pick a branch interactively (requires a linked project or `--project-id`):
 
 ```bash
-neonctl checkout
+neon checkout
 ```
 
 Pin a branch by ID:
 
 ```bash
-neonctl checkout br-cool-snow-12345678 --project-id polished-snowflake-12345678
+neon checkout br-cool-snow-12345678 --project-id polished-snowflake-12345678
+```
+
+Create a branch by name if it doesn't exist yet, then pin it:
+
+```bash
+neon checkout dev --create --project-id polished-snowflake-12345678
 ```
 
 After checking out a branch, commands such as [`connection-string`](/docs/cli/connection-string) and [`psql`](/docs/cli/psql) use the pinned branch by default.
+
+To run this checkout automatically whenever you switch git branches, see [`neon git`](/docs/cli/git) (Preview), which installs a git hook that checks out the mapped Neon branch on `git checkout`.

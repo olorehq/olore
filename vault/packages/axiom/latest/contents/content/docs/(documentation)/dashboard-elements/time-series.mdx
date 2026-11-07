@@ -1,0 +1,71 @@
+---
+title: 'Time series'
+description: 'This section explains how to create time series dashboard elements and add them to your dashboard.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'dashboards', 'collaboration', 'queries', 'visualizations', 'filters', 'charts', 'thresholds', 'simple query builder', 'advanced query builder']
+---
+
+import Prerequisites from "@/content/snippets/dashboard-prerequisites.mdx"
+import CreateElement from "@/content/snippets/create-dashboard-element.mdx"
+
+Time series charts show the change in your data over time which can help identify infrastructure issues, spikes, or dips in the data. This can be a simple line chart, an area chart, or a bar chart. A time series chart might be used to show the change in the volume of log events, error rates, latency, or other time-sensitive data.
+
+<Prerequisites />
+
+<CreateElement elementName="time series" elementButtonLabel="Timeseries"/>
+
+## Thresholds
+
+Add a threshold line to compare your data with a target value, such as a latency objective or an error limit. The chart displays the threshold as a dashed horizontal line. Line, area, bar, and percentile charts support threshold lines. Each chart displays one threshold line.
+
+To add a threshold line:
+
+1. In the chart editor, run the query. The threshold fields appear after the query returns results. Before that, the **Thresholds** section displays "Run the query to set a threshold."
+1. In the settings panel on the right, expand **Thresholds**. This section is after **Y-axis**.
+1. If the chart has more than one aggregation, select an aggregation in **Aggregation**. Each aggregation has its own threshold.
+1. In **Value**, enter the threshold in the units of the chart's values. For more information, see [Threshold units](#threshold-units).
+1. Optional: In **Color**, select a color for the line. The default color is red.
+1. Optional: In **Highlight**, select **Above** or **Below** to shade the time intervals where the data crosses the threshold. The default is **None**.
+
+To delete a threshold line, click **Remove threshold**.
+
+<Note>
+Thresholds on dashboard charts are visual only. They don't send notifications. To get notified when a value crosses a threshold, create a [threshold monitor](/monitor-data/threshold-monitors).
+</Note>
+
+### Threshold units
+
+The **Value** field uses the units of the chart's values:
+
+- **Time**: Select a unit from the list next to the field: ns, µs, ms, s, min, h, or d.
+- **Data size**: Select a unit from the list next to the field. The list contains binary multiples (KiB, MiB, GiB) or decimal multiples (kB, MB, GB), depending on the unit of the field.
+- **Percent**: Enter the percentage. For example, enter `95` for 95%.
+- **Other units**: The field displays the unit, such as a currency symbol, before or after the value.
+
+If the values have no unit, enter a number.
+
+### How Axiom displays thresholds
+
+- **Line**: Axiom displays the threshold as a dashed line in the selected color. Axiom extends the y-axis to show the line, even when your data doesn't reach the threshold.
+- **Highlight**: Axiom shades each time interval where a series that the chart displays is above or below the threshold. Series from a time comparison don't count. In percentile charts, Axiom shades the time interval if any percentile crosses the threshold. Axiom doesn't shade the newest time interval while it's incomplete.
+- **Tooltip**: The tooltip displays a **Threshold** row. If you select a highlight, the tooltip marks each series value that crosses the threshold.
+
+In stacked charts (area and bar charts), Axiom compares the stack total with the threshold, not the individual series. The tooltip displays a **Total** row and marks the total if it crosses the threshold. The editor displays the hint "Stacked charts compare the stack total."
+
+If the query uses automatic bin sizes and the aggregation is a count or a sum, the values depend on the bin size. The bin size changes with the time range. In this case, the editor displays the following warning: "The bin size changes with the time range, so a count or sum threshold only fits one bin size. Set a fixed bin size to compare against a constant value." To compare the data with a constant value, set a fixed bin size in the query.
+
+## Example with Builder
+
+<Frame>
+  <img src="/docs/doc-assets/shots/timeseries-simple-chart.png" alt="Time series example with Builder" />
+</Frame>
+
+## Example with APL
+
+```kusto
+['sample-http-logs']
+| summarize count() by bin_auto(_time)
+```
+
+<Frame>
+  <img src="/docs/doc-assets/shots/timeseries-chart-apl.png" alt="Time series example with APL" />
+</Frame>

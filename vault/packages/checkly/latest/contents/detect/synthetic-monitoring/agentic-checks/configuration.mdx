@@ -1,14 +1,21 @@
 ---
 title: 'Agentic Checks Configuration'
-description: 'Configure Agentic Checks with prompts, variables, skills, scheduling, locations, and active capacity.'
+description: 'Review the configuration of deprecated Agentic Checks before migrating them.'
 sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/agentic-checks/configuration/'
+hidden: true
 ---
 
+<Note>
+Agentic Checks are deprecated and will stop running on **December 1, 2026**. [Migrate your active Agentic Checks](./migrate) before then.
+
+This page documents the `AgenticCheck` construct in Checkly CLI version 9. Checkly CLI version 10 and later no longer include it. To keep managing existing Agentic Checks as code until December 1, 2026, stay on the version 9 release line.
+</Note>
+
 <Accordion title="Prerequisites">
-Before creating Agentic Checks, ensure you have:
+To review an existing Agentic Check, you need:
 
 - Access to Agentic Checks on your Checkly account
-- Available Agentic Check active capacity if the check will be active
 - An initialized Checkly CLI project if you want to manage the check as code
 - Any required test credentials saved as Checkly variables or secrets
 
@@ -35,12 +42,13 @@ Good prompts include:
 - Known constraints, such as test account behavior
 - What should count as a failure
 
-Avoid prompts that ask the agent to test too many unrelated paths in one check. Create separate Agentic Checks for separate critical flows.
+If an existing prompt covers unrelated paths, split them into separate replacement checks during migration.
 
 ## Reference variables and secrets
 
 Agentic Checks do **not** automatically expose all account variables or secrets to the agent. To expose one to an Agentic Check, reference it directly in the prompt with double curly brackets, such as `{{TEST_USER_EMAIL}}`.
 
+{/* typecheck-skip */}
 ```typescript checkout.agentic.check.ts
 import { AgenticCheck, Frequency } from 'checkly/constructs'
 
@@ -62,6 +70,7 @@ Some applications block automated monitoring unless requests include required he
 
 Agentic Checks include a default browser automation skill. You can add extra skills when the agent needs domain-specific capabilities.
 
+{/* typecheck-skip */}
 ```typescript agentic-runtime.check.ts
 import { AgenticCheck } from 'checkly/constructs'
 
@@ -76,9 +85,7 @@ new AgenticCheck('web-quality-check', {
 
 Keep the skill list short. Every added skill expands what the agent can do during execution.
 
-## Scheduling and locations
-
-Agentic Checks can run from up to three public locations by default. Enterprise accounts can contact sales to enable unlimited locations.
+## Scheduling
 
 The CLI construct supports these frequencies:
 
@@ -95,12 +102,11 @@ The CLI construct supports these frequencies:
 | `720` | `Frequency.EVERY_12H` |
 | `1440` | `Frequency.EVERY_24H` |
 
-## Active capacity
+## Active and deactivated checks
 
-Only active Agentic Checks consume Agentic Check capacity.
+Use `activated: false` to keep an existing Agentic Check deactivated while preserving its configuration and history:
 
-Use `activated: false` when you want to deploy an Agentic Check draft without consuming active capacity:
-
+{/* typecheck-skip */}
 ```typescript draft.agentic.check.ts
 import { AgenticCheck } from 'checkly/constructs'
 
@@ -110,8 +116,6 @@ new AgenticCheck('draft-agentic-check', {
   activated: false,
 })
 ```
-
-You can keep inactive checks in code and activate them later when your account has enough capacity.
 
 ## Test and deploy
 
@@ -126,5 +130,3 @@ Deploy the check when you are ready:
 ```bash Terminal
 npx checkly deploy
 ```
-
-If deployment fails because of active capacity, deactivate an existing Agentic Check or purchase enough Agentic Check capacity before deploying the new active check.

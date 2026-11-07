@@ -1,0 +1,238 @@
+---
+title: Send failed checks to a coding agent
+sidebarTitle: Agent-Driven Repair
+description: Start a Claude Code routine from a Checkly webhook alert channel when a check fails. The agent follows a runbook skill, investigates with the Checkly CLI, and opens a pull request for you to review.
+canonical: 'https://www.checklyhq.com/docs/guides/agent-driven-repair/'
+---
+
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+
+By the end of this guide, a failing check starts a Claude Code routine that investigates the failure with the Checkly CLI and opens a pull request for you to review.
+
+<Frame>
+  <img src="/images/guides/agent-driven-repair/pull-request.png" alt="An open GitHub pull request by Claude titled 'Fix stale login check: button is labelled Login', proposing one commit from a claude/ branch into main" />
+</Frame>
+
+A failed check is a stronger signal than a log line or a customer ticket. It confirms that a flow your users depend on broke in production, and it carries the failing step, screenshots, the Playwright trace, and the root cause analysis. A webhook alert channel hands that signal to a coding agent within minutes of the failure.
+
+This guide uses [Claude Code routines](https://code.claude.com/docs/en/routines) as the agent platform; any agent you can start with an HTTP request works the same way.
+
+You need a Checkly project in a GitHub repository with at least one check, and a claude.ai Pro, Max, Team, or Enterprise plan with Claude Code on the web enabled.
+
+<Accordion title="Let your agent do it" icon="sparkles">
+
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Set up this Checkly project so a failing check that should be handled automatically starts a Claude Code routine that investigates the failure and opens a pull request.
+
+Success criteria:
+1. Add a runbook skill at .claude/skills/checkly-alert-runbook/SKILL.md. It reads the check ID and result ID from the alert, triages the failure with the Checkly CLI, classifies it as app regression, stale check, upstream outage, or flake, and opens a pull request only for the first two. It never merges, never runs `npx checkly checks run`, and never weakens an assertion to make a check pass.
+2. Add a WebhookAlertChannel that POSTs to `https://api.anthropic.com/v1/claude_code/routines/{{CLAUDE_ROUTINE_ID}}/fire` with the `Authorization: Bearer {{CLAUDE_ROUTINE_TOKEN}}` and `anthropic-version: 2023-06-01` headers. The body is JSON with a single `text` field holding the alert title, alert type, check ID, result ID, location, result link, and AI root cause. Send failure and degraded alerts, no recoveries.
+3. Subscribe only the checks I want handled automatically to the channel, with a run-based escalation of 2 failed runs and no reminders.
+4. Run `npx checkly test --record` and show me the session link.
+5. Wait for my confirmation before `npx checkly deploy`.
+
+Ask me which checks should be handled automatically. I store CLAUDE_ROUTINE_ID and CLAUDE_ROUTINE_TOKEN in Checkly myself.
+```
+
+</div>
+
+<CopyPromptButton />
+
+The steps below are what the agent does, in the open.
+
+</Accordion>
+
+## Write the runbook skill
+
+The routine starts with nothing but an alert. A runbook skill in your repository tells Claude what to investigate, which commands to use, and when to stop. Routines clone the repository on every run and load the skills committed to it.
+
+````md .claude/skills/checkly-alert-runbook/SKILL.md
+---
+name: checkly-alert-runbook
+description: Handle a failed Checkly check. Use when a Checkly alert starts an agent run with a check ID and result ID, to triage the failure, find the cause, and open a pull request with a fix.
+---
+
+# Checkly alert runbook
+
+This skill runs unattended. Nobody is watching, so work through the steps without asking questions. The only output is a pull request or an investigation summary.
+
+Use the Checkly CLI for everything Checkly-related and check `npx checkly <command> --help` instead of guessing flags. Never run `npx checkly checks run`. It uses the check's real alerting and starts this run again. Use `npx checkly test`, which records a test session and doesn't alert.
+
+## 1. Read the alert
+
+Take the check ID and result ID from the alert. Load the check and its recent results with `npx checkly checks get <checkId> --results-limit 20`, and find the matching construct in the repository.
+
+## 2. Triage
+
+Decide whether the failure is a flake, location-specific, or persistent. Reproduce it with `npx checkly test --grep "<check name>" --record`. If the test run passes, go to step 6.
+
+## 3. Gather evidence
+
+- Failing result: `npx checkly checks get <checkId> --result <resultId>`
+- Screenshots, traces, and logs: `npx checkly assets list --check-id <checkId> --result-id <resultId>`
+- Root cause analysis: `npx checkly rca run --error-group <errorGroupId> --watch -o md`
+
+## 4. Correlate with changes
+
+Find the commits between the last passing run and the first failure. A deploy right before the first failure is the prime suspect.
+
+## 5. Classify and act
+
+| Cause | Action |
+| --- | --- |
+| App regression | Pull request that fixes the app code, or reverts the offending commit |
+| Stale check, the app changed on purpose | Pull request that updates the check |
+| Upstream outage | No pull request |
+| Flake | No pull request |
+
+Before opening a pull request, look for an open one for this check and comment there instead. Keep the change minimal and verify it with the test suite and `npx checkly test`. Never merge. Never remove or loosen an assertion only to make the check pass.
+
+The pull request links the failed result and quotes the failing step, so the reviewer knows why the change exists.
+
+## 6. Finish
+
+End with a short summary: check, classification, evidence, and the pull request link or why there isn't one. If you can't find the cause with reasonable confidence, say so. Don't open a speculative pull request.
+````
+
+The classification table is the core of the runbook. It decides when the agent fixes the app, when it updates the check, and when it stops. Adapt it to your stack and to how much your team trusts its agents. A runbook can also tell the agent to roll back a deploy, turn off a feature flag, or post the root cause to your incident channel instead of opening a pull request.
+
+## Create the Claude Code routine
+
+<Note>
+Routines are in research preview. Check the [routine API reference](https://platform.claude.com/docs/en/api/claude-code/routines-fire) for changes to the endpoint and headers.
+</Note>
+
+A routine is a saved Claude Code configuration that runs in Anthropic's cloud. Create one at [claude.ai/code/routines](https://claude.ai/code/routines) with **New routine**:
+
+- **Prompt**: the request body reaches the run as untrusted data in a `routine-fire-payload` block, so the saved prompt has to tell Claude to act on it.
+
+  ```text Routine prompt
+  A Checkly check failed. The routine-fire-payload block names the check and the result. Investigate it by following the checkly-alert-runbook skill.
+  ```
+
+- **Repository**: the repository that holds your Checkly project, your application code, and the runbook skill. Claude pushes its work to `claude/`-prefixed branches. Pull requests carry your GitHub user.
+- **Environment**: create a dedicated environment for this routine. Add `CHECKLY_API_KEY` and `CHECKLY_ACCOUNT_ID` as environment variables so the Checkly CLI can authenticate. Anyone who uses the environment can read them, so use an API key created for this routine. Set **Network access** to **Custom**, allow `*.checklyhq.com`, and keep the default list of package managers.
+- **Connectors**: remove the connectors the runbook doesn't need. Claude can use every tool of an included connector without asking.
+- **Trigger**: select **API** and save the routine.
+
+{/* VERIFY Stefan: confirm *.checklyhq.com covers everything `npx checkly test --record` reaches from a routine, and whether a network secret for api.checklyhq.com can replace the CHECKLY_API_KEY variable. */}
+
+Open the routine for editing, select **Add another trigger**, and choose **API**. Copy the fire URL and select **Generate token**. The token is shown once.
+
+<Frame>
+  <img src="/images/guides/agent-driven-repair/routine-api-trigger.png" alt="The Edit scheduled task dialog of a Claude Code routine named Handle Checkly alert, with the saved prompt and an active API trigger showing the fire URL and a generated token" />
+</Frame>
+
+The fire URL contains the routine ID, the part starting with `trig_`. Store the ID as a Checkly environment variable and the token as a secret, so the alert channel uses both without committing them:
+
+```bash Terminal
+npx checkly env add CLAUDE_ROUTINE_ID <routine-id>
+npx checkly env add CLAUDE_ROUTINE_TOKEN <token> --secret
+```
+
+## Connect checks to the routine
+
+A webhook alert channel calls the routine's fire URL when a subscribed check fails or degrades. Checkly fills in `{{CLAUDE_ROUTINE_ID}}` and `{{CLAUDE_ROUTINE_TOKEN}}` from the variables you just stored.
+
+```ts alert-channels/claude-routine.ts
+import { WebhookAlertChannel } from 'checkly/constructs'
+
+export const claudeRoutine = new WebhookAlertChannel("claude-routine-webhook", {
+  name: "claudeRoutine",
+  method: "POST",
+  url: "https://api.anthropic.com/v1/claude_code/routines/{{CLAUDE_ROUTINE_ID}}/fire",
+  headers: [
+    { key: "Authorization", value: "Bearer {{CLAUDE_ROUTINE_TOKEN}}" },
+    { key: "anthropic-version", value: "2023-06-01" },
+    { key: "Content-Type", value: "application/json" },
+  ],
+  template:
+    '{"text": "Checkly Alert triggered: {{ALERT_TITLE}} (alert type: {{ALERT_TYPE}}, check id: {{CHECK_ID}}, check result id: {{CHECK_RESULT_ID}}, location: {{RUN_LOCATION}}, started at: {{STARTED_AT}}, response time: {{RESPONSE_TIME}}ms, result: {{RESULT_LINK}}, AI root cause: {{AI_ANALYSIS_ROOT_CAUSE}})"}',
+  sendFailure: true,
+  sendDegraded: true,
+  sendRecovery: false,
+});
+```
+
+The fire endpoint expects JSON with a single `text` field. The payload names the check and the result, and includes Rocky AI's root cause when [automatic analysis](/resolve/ai-root-cause-analysis/overview#automatic-analysis) is enabled. The runbook fetches everything else with the CLI.
+
+Subscribe only the checks the agent should handle automatically, so a flaky marketing page doesn't start a run:
+
+```ts login.check.ts
+import { AlertEscalationBuilder, PlaywrightCheck } from 'checkly/constructs'
+import { claudeRoutine } from './alert-channels/claude-routine'
+import { emailAlert } from './alert-channels/email'
+import { slackAlert } from './alert-channels/slack'
+
+new PlaywrightCheck('login-check', {
+  name: 'Login flow',
+  playwrightConfigPath: './playwright.config.ts',
+  pwTags: ['@auth'],
+  alertChannels: [emailAlert, slackAlert, claudeRoutine],
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(
+    2,
+    { interval: 5, amount: 0 },
+    { enabled: false, percentage: 10 },
+  ),
+})
+```
+
+The routine joins your existing alert channels and doesn't replace them. Email and Slack still notify your team the moment the check fails, while the agent investigates in parallel. If the agent can't find the cause or decides the failure needs no pull request, a human already knows about it. The escalation policy alerts after two consecutive failed runs, which filters out one-off flakes. It also sends no reminders. Every request to the fire endpoint starts a new session, and a routine accepts 30 fires per hour, so a reminder every few minutes would start a new investigation each time.
+
+## Deploy
+
+Run the project once on Checkly to confirm the constructs are valid, then deploy.
+
+```bash Terminal
+npx checkly test --record
+npx checkly deploy
+```
+
+## Verify it works
+
+Send the routine the same request the alert channel sends, filled with a real failed result. Find one with the CLI:
+
+```bash Terminal
+npx checkly checks list --status=failing
+npx checkly checks get <checkId>
+```
+
+Then fire the routine with the check ID and result ID:
+
+```bash Terminal
+curl -X POST "https://api.anthropic.com/v1/claude_code/routines/$CLAUDE_ROUTINE_ID/fire" \
+  -H "Authorization: Bearer $CLAUDE_ROUTINE_TOKEN" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Alert: Check \"Login flow\" has failed\nCheck ID: <checkId>\nResult ID: <resultId>"}'
+```
+
+The response contains a `claude_code_session_url`. Open it to watch the run load the runbook skill, pull the evidence with the Checkly CLI, and end with a pull request or a summary of why there isn't one. A green status in the routine's run list only means the session ran. Read the transcript to confirm what Claude did.
+
+
+<Frame>
+  <img src="/images/guides/agent-driven-repair/routine-runs.png" alt="The Handle Checkly alert routine in Claude Code with a history of four runs, each started by an API trigger" />
+</Frame>
+
+When a subscribed check fails on its own, the alert channel sends the same request and a new session starts. Every alert shows up as a run in the routine's history.
+
+<Note>
+Claude Code routines are one example. The same setup works with any agent or harness, such as OpenClaw or your own, that has access to your code and accepts an HTTP request as its trigger. Point the webhook alert channel at its endpoint, adjust the headers and payload to what it expects, and keep the runbook skill in the repository it works on.
+</Note>
+
+## Next
+
+[Monitor a checkout flow](/guides/monitoring-ecommerce-apps-using-playwright): the routine is only as useful as the checks that start it. Build a monitor for a flow worth waking an agent for.
+
+## Reference
+
+- [Webhook alert channels](/integrations/alerts/webhooks) and the [`WebhookAlertChannel` construct](/constructs/webhook-alert-channel)
+- [Alert escalation policy construct](/constructs/alert-escalation-policy)
+- [`checkly checks`](/cli/checkly-checks), [`checkly assets`](/cli/checkly-assets), and [`checkly rca`](/cli/checkly-rca)
+- [`checkly env`](/cli/checkly-env)
+- [Checkly Skills](/ai/skills)

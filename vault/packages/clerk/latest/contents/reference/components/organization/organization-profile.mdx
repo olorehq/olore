@@ -1,7 +1,7 @@
 ---
 title: '`<OrganizationProfile />` component'
 description: Clerk's <OrganizationProfile /> component is used to render a beautiful, full-featured Organization management UI that allows users to manage their Organization profile and security settings.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 preview:
   src: '/organization-profile'
 ---
@@ -14,6 +14,10 @@ The **Members** tab shows the Organization's members along with their join dates
 
 The **Billing** tab displays the Plans and Features that are available to the Organization, as well as the user's billing information, such as their invoices and payment methods.
 
+The **Security** tab appears for members with the `org:sys_entconns:manage` permission when [self-serve SSO](/docs/guides/configure/auth-strategies/enterprise-connections/self-serve-sso) is enabled for the Organization in the Clerk Dashboard. From this tab, they can configure and manage the Organization's enterprise SSO connection. If self-serve Directory Sync is enabled, they can also manage the connection's [Directory Sync](/docs/guides/configure/auth-strategies/enterprise-connections/self-serve-directory-sync).
+
+The **Security** tab can also appear for members who can manage [SSO bypass](/docs/guides/configure/auth-strategies/enterprise-connections/sso-bypass) when the Organization has an enterprise connection, even if self-serve SSO is disabled. They can manage the bypass allowlist, but editing the connection still requires self-serve SSO to be enabled and the `org:sys_entconns:manage` permission.
+
 <If notSdk="js-frontend">
   ## Example
 
@@ -22,11 +26,18 @@ The **Billing** tab displays the Plans and Features that are available to the Or
   <If sdk="nextjs">
     The `<OrganizationProfile />` component must be embedded using the [Next.js optional catch-all route](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes#optional-catch-all-routes) in order for the routing to work.
 
+    <Include src="_partials/nextjs/catch-all-suspense" />
+
     ```jsx {{ filename: 'app/organization-profile/[[...organization-profile]]/page.tsx' }}
     import { OrganizationProfile } from '@clerk/nextjs'
+    import { Suspense } from 'react'
 
     export default function OrganizationProfilePage() {
-      return <OrganizationProfile />
+      return (
+        <Suspense>
+          <OrganizationProfile />
+        </Suspense>
+      )
     }
     ```
   </If>
@@ -34,6 +45,18 @@ The **Billing** tab displays the Plans and Features that are available to the Or
   <If sdk="react">
     ```jsx {{ filename: 'src/App.tsx' }}
     import { OrganizationProfile } from '@clerk/react'
+
+    function App() {
+      return <OrganizationProfile />
+    }
+
+    export default App
+    ```
+  </If>
+
+  <If sdk="electron">
+    ```jsx {{ filename: 'src/App.tsx' }}
+    import { OrganizationProfile } from '@clerk/electron/react'
 
     function App() {
       return <OrganizationProfile />
@@ -56,10 +79,10 @@ The **Billing** tab displays the Plans and Features that are available to the Or
   <If sdk="expo">
     <Include src="_partials/expo/web-only-callout" />
 
-    ```jsx {{ filename: 'src/app/organization-profile.web.tsx' }}
+    ```jsx {{ filename: 'src/components/OrganizationProfile.web.tsx' }}
     import { OrganizationProfile } from '@clerk/expo/web'
 
-    export default function OrganizationProfilePage() {
+    export default function Page() {
       return <OrganizationProfile />
     }
     ```
@@ -90,7 +113,7 @@ The **Billing** tab displays the Plans and Features that are available to the Or
   <If sdk="tanstack-react-start">
     The `<OrganizationProfile />` component must be embedded using the [TanStack Router catch-all route](https://tanstack.com/router/latest/docs/framework/react/routing/routing-concepts#splat--catch-all-routes) in order for the routing to work.
 
-    ```tsx {{ filename: 'app/routes/organization-profile.$.tsx' }}
+    ```tsx {{ filename: 'src/routes/organization-profile.$.tsx' }}
     import { OrganizationProfile } from '@clerk/tanstack-react-start'
     import { createFileRoute } from '@tanstack/react-router'
 
@@ -134,10 +157,10 @@ The **Billing** tab displays the Plans and Features that are available to the Or
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<OrganizationProfile />` component:
 
-  - [`mountOrganizationProfile()`](#mount-organization-profile)
-  - [`unmountOrganizationProfile()`](#unmount-organization-profile)
-  - [`openOrganizationProfile()`](#open-organization-profile)
-  - [`closeOrganizationProfile()`](#close-organization-profile)
+  - [`mountOrganizationProfile()`](#mountorganizationprofile)
+  - [`unmountOrganizationProfile()`](#unmountorganizationprofile)
+  - [`openOrganizationProfile()`](#openorganizationprofile)
+  - [`closeOrganizationProfile()`](#closeorganizationprofile)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 
@@ -265,7 +288,7 @@ The **Billing** tab displays the Plans and Features that are available to the Or
 
   ### `closeOrganizationProfile()`
 
-  Closes the organization profile overlay.
+  Closes the Organization profile overlay.
 
   ```typescript
   function closeOrganizationProfile(): void
@@ -297,17 +320,17 @@ The **Billing** tab displays the Plans and Features that are available to the Or
 The `<OrganizationProfile />` component accepts the following properties, all of which are **optional**:
 
 <Properties>
-  - `appearance?`
-  - <code>[Appearance](/docs/guides/customizing-clerk/appearance-prop/overview) | undefined</code>
-
-  An object to style your components. Will only affect [Clerk components](/docs/reference/components/overview) and not [Account Portal](/docs/guides/account-portal/overview) pages.
-
-  ---
-
   - `afterLeaveOrganizationUrl?`
   - `string`
 
   The full URL or path to navigate to after leaving an Organization.
+
+  ---
+
+  - `appearance?`
+  - <code>[Appearance](/docs/guides/customizing-clerk/appearance-prop/overview) | undefined</code>
+
+  An object to style your components. Will only affect [Clerk components](/docs/reference/components/overview) and not [Account Portal](/docs/guides/account-portal/overview) pages.
 
   ---
 
@@ -337,6 +360,50 @@ The `<OrganizationProfile />` component accepts the following properties, all of
 
   The [routing](/docs/guides/how-clerk-works/routing) strategy for your pages. <br />Defaults to `'path'` for frameworks that handle routing, such as Next.js. Defaults to `hash` for all other SDK's, such as React.
 </Properties>
+
+<If notSdk={["astro", "vue", "nuxt", "js-frontend"]}>
+  ## Compose your own profile (experimental)
+
+  > [!WARNING]
+  > This API is experimental and may undergo breaking changes. It is exported from `@clerk/ui/experimental` and is not covered by semantic versioning, so its components, names, and props are subject to change in future releases. It is recommended to [pin](/docs/pinning) the `@clerk/ui` version.
+
+  <If sdk="expo">
+    > [!NOTE]
+    > The composable profile components are only available in Expo web projects. They are not supported in native iOS and Android apps.
+  </If>
+
+  Rather than render the full `<OrganizationProfile />` component, you can assemble your own Organization management page from smaller building blocks. Wrap them in an `<OrganizationProfileProvider>` and render only the panels and sections you need, in whatever order suits your app. An [Active Organization](!active-organization) is required. Without one, `<OrganizationProfileProvider>` renders nothing.
+
+  The composable components are imported from `@clerk/ui`, which isn't included with your Clerk SDK — install it as a direct dependency:
+
+  ```npm
+  npm install @clerk/ui
+  ```
+
+  <Include src="_partials/components/experimental-composed-profile-tanstack-callout" />
+
+  ```tsx
+  import {
+    OrganizationProfileProvider,
+    OrganizationProfileGeneralPanel,
+    OrganizationProfileProfileSection,
+    OrganizationProfileDomainsSection,
+  } from '@clerk/ui/experimental'
+
+  export default function OrganizationProfilePage() {
+    return (
+      <OrganizationProfileProvider>
+        <OrganizationProfileGeneralPanel>
+          <OrganizationProfileProfileSection />
+          <OrganizationProfileDomainsSection />
+        </OrganizationProfileGeneralPanel>
+      </OrganizationProfileProvider>
+    )
+  }
+  ```
+
+  Rendering a panel without children renders its built-in page content, the same sections the default `<OrganizationProfile />` renders on that page. The composed components don't include `<OrganizationProfile />`'s navigation, so your app owns the layout and how users move between panels.
+</If>
 
 ## Customization
 

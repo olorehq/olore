@@ -1,0 +1,68 @@
+---
+title: format_ipv4
+description: 'This page explains how to use the format_ipv4 function in APL.'
+---
+
+The `format_ipv4` function in APL converts a numeric representation of an IPv4 address into its standard dotted-decimal format. This function is particularly useful when working with logs or datasets where IP addresses are stored as integers, making them hard to interpret directly.
+
+You can use `format_ipv4` to enhance log readability, enrich security logs, or convert raw telemetry data for analysis.
+
+## Usage
+
+### Syntax
+
+```kusto
+format_ipv4(ipv4address)
+```
+
+### Parameters
+
+- `ipv4address`: A `long` numeric representation of the IPv4 address in network byte order.
+
+### Returns
+
+- Returns a string representing the IPv4 address in dotted-decimal format.
+- Returns an empty string if the conversion fails.
+
+## Use case example
+
+When analyzing HTTP request logs, you can convert IP addresses stored as integers into a readable format to identify client locations or troubleshoot issues.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend formatted_ip = format_ipv4(3232235776)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20formatted_ip%20%3D%20format_ipv4(3232235776)%22%7D)
+
+**Output**
+
+| _time               | formatted_ip | status | uri                | method |
+|---------------------|--------------|--------|---------------------|--------|
+| 2024-11-14 10:00:00 | 192.168.1.0  | 200    | /api/products       | GET    |
+
+This query decodes raw IP addresses into a human-readable format for easier analysis.
+
+## List of related functions
+
+- [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4): Matches any IP address in a string column with a list of IP addresses or ranges.
+- [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4): Checks if a single IP address is present in a string column.
+- [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare): Compares two IPv4 addresses lexicographically. Use for sorting or range evaluations.
+- [parse_ipv4](/apl/scalar-functions/ip-functions/parse-ipv4): Converts a dotted-decimal IP address into a numeric representation.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, IPv4 address conversion is typically not a built-in function. You may need to use custom scripts or calculations. APL simplifies this process with the `format_ipv4` function.
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a built-in function for IPv4 formatting. You’d often use string manipulation or external utilities to achieve the same result. In APL, `format_ipv4` offers a straightforward solution.
+
+</Accordion>
+</LanguageComparisons>

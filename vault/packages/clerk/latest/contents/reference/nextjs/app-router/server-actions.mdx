@@ -40,7 +40,7 @@ export default function AddToCart() {
 When performing Organization-related operations, you can use `auth().orgId` to check a user's Organization ID before performing an action.
 
 ```tsx {{ filename: 'actions.ts' }}
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 
 export default function AddVerifiedDomain() {
   async function addVerifiedDomain(formData: FormData) {
@@ -61,7 +61,8 @@ export default function AddVerifiedDomain() {
       throw new Error('Domain is required')
     }
 
-    await clerkClient().organizations.createOrganizationDomain({
+    const client = await clerkClient()
+    await client.organizations.createOrganizationDomain({
       organizationId: orgId,
       name: domain,
       enrollmentMode: 'automatic_invitation',
@@ -83,7 +84,7 @@ For more examples on how to use the `auth()` helper, see the [`auth()`](/docs/re
 
 ### Read user data
 
-To retrieve information about the current user in your Server Actions, you can use the [`currentUser()`](/docs/reference/nextjs/app-router/current-user) helper, which returns the [`Backend User`](/docs/reference/backend/types/backend-user) object of the currently active user. **It does count towards the [Backend API request rate limit](/docs/guides/how-clerk-works/system-limits)** so it's recommended to use the [`useUser()`](/docs/reference/hooks/use-user) hook on the client-side when possible and only use `currentUser()` when you specifically need user data in a server context. For more information on this helper, see the [`currentUser()`](/docs/reference/nextjs/app-router/current-user) reference.
+To retrieve information about the current user in your Server Actions, you can use the [`currentUser()`](/docs/reference/nextjs/app-router/current-user) helper, which returns the [`Backend User`](/docs/reference/backend/types/backend-user) object of the currently active user. **It does count toward the [Backend API request rate limit](/docs/guides/how-clerk-works/system-limits)** so it's recommended to use the [`useUser()`](/docs/reference/hooks/use-user) hook on the client-side when possible and only use `currentUser()` when you specifically need user data in a server context. For more information on this helper, see the [`currentUser()`](/docs/reference/nextjs/app-router/current-user) reference.
 
 ```tsx {{ filename: 'app/page.tsx' }}
 import { auth, currentUser } from '@clerk/nextjs/server'
@@ -93,10 +94,13 @@ export default function AddHobby() {
     'use server'
 
     const { isAuthenticated } = await auth()
-    const user = await currentUser()
-
     if (!isAuthenticated) {
       throw new Error('You must be signed in to use this feature')
+    }
+
+    const user = await currentUser()
+    if (!user) {
+      throw new Error('User not found')
     }
 
     const serverData = {
@@ -130,10 +134,14 @@ The following example demonstrates the flow of data from the Server Action being
 
   export async function addHobby(formData: FormData) {
     const { isAuthenticated } = await auth()
-    const user = await currentUser()
 
     if (!isAuthenticated) {
       throw new Error('You must be signed in to use this feature')
+    }
+
+    const user = await currentUser()
+    if (!user) {
+      throw new Error('User not found')
     }
 
     const serverData = {

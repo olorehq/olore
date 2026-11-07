@@ -43,7 +43,7 @@ import { connect } from '@tursodatabase/sync';
 
 const db = await connect({
   path: './app.db',
-  url: 'libsql://...',
+  url: 'turso://...',
   authToken: process.env.TURSO_AUTH_TOKEN,
   partialSyncExperimental: {
     bootstrapStrategy: { kind: 'prefix', length: 128 * 1024 }, // 128 KiB
@@ -57,9 +57,9 @@ import turso.sync
 
 conn = turso.sync.connect(
     path="./app.db",
-    remote_url="libsql://...",
-    remote_auth_token=os.environ["TURSO_AUTH_TOKEN"],
-    partial_sync_opts=turso.sync.PartialSyncOpts(
+    remote_url="turso://...",
+    auth_token=os.environ["TURSO_AUTH_TOKEN"],
+    partial_sync_experimental=turso.sync.PartialSyncOpts(
         bootstrap_strategy=turso.sync.PartialSyncPrefixBootstrap(length=128 * 1024),
     ),
 )
@@ -67,15 +67,15 @@ conn = turso.sync.connect(
 
 ```go Go
 import (
-	"turso"
+	turso "turso.tech/database/tursogo"
 )
 
 db, err := turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
-  Path:            "./app.db",
-  RemoteUrl:       "libsql://...",
-  RemoteAuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
-  PartialSyncConfig: turso.TursoPartialSyncConfig{
-    BoostrapStrategyPrefix: 128 * 1024, // 128 KiB
+  Path:      "./app.db",
+  RemoteUrl: "turso://...",
+  AuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
+  PartialSyncExperimental: turso.TursoPartialSyncConfig{
+    BootstrapStrategyPrefix: 128 * 1024, // 128 KiB
   },
 })
 ```
@@ -91,7 +91,7 @@ import { connect } from '@tursodatabase/sync';
 
 const db = await connect({
   path: './app.db',
-  url: 'libsql://...',
+  url: 'turso://...',
   authToken: process.env.TURSO_AUTH_TOKEN,
   partialSyncExperimental: {
     bootstrapStrategy: {
@@ -107,8 +107,8 @@ import turso.sync
 
 conn = turso.sync.connect(
     path=":memory:",
-    remote_url="libsql://...",
-    partial_sync_opts=turso.sync.PartialSyncOpts(
+    remote_url="turso://...",
+    partial_sync_experimental=turso.sync.PartialSyncOpts(
         bootstrap_strategy=turso.sync.PartialSyncQueryBootstrap(
             query="SELECT * FROM messages WHERE user_id = 'u_123' LIMIT 100"
         ),
@@ -118,15 +118,15 @@ conn = turso.sync.connect(
 
 ```go Go
 import (
-	"turso"
+	turso "turso.tech/database/tursogo"
 )
 
 db, err := turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
-  Path:            "./app.db",
-  RemoteUrl:       "libsql://...",
-  RemoteAuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
-  PartialSyncConfig: turso.TursoPartialSyncConfig{
-    BoostrapStrategyQuery: "SELECT * FROM messages WHERE user_id = 'u_123' LIMIT 100",
+  Path:      "./app.db",
+  RemoteUrl: "turso://...",
+  AuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
+  PartialSyncExperimental: turso.TursoPartialSyncConfig{
+    BootstrapStrategyQuery: "SELECT * FROM messages WHERE user_id = 'u_123' LIMIT 100",
   },
 })
 ```
@@ -290,7 +290,7 @@ await connect({
 ```py Python
 turso.sync.connect(
     ...
-    partial_sync_opts=turso.sync.PartialSyncOpts(
+    partial_sync_experimental=turso.sync.PartialSyncOpts(
         bootstrap_strategy=turso.sync.PartialSyncPrefixBootstrap(length=128 * 1024),
         segment_size=16 * 1024,
     ),
@@ -300,8 +300,8 @@ turso.sync.connect(
 ```go Go
 turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
   ...
-  PartialSyncConfig: turso.TursoPartialSyncConfig{
-    BoostrapStrategyPrefix: 128 * 1024, // 128 KiB
+  PartialSyncExperimental: turso.TursoPartialSyncConfig{
+    BootstrapStrategyPrefix: 128 * 1024, // 128 KiB
     SegmentSize: 16 * 1024,
   },
 })
@@ -432,7 +432,7 @@ await connect({
 ```py Python
 turso.sync.connect(
     ...
-    partial_sync_opts=turso.sync.PartialSyncOpts(
+    partial_sync_experimental=turso.sync.PartialSyncOpts(
         bootstrap_strategy=turso.sync.PartialSyncPrefixBootstrap(length=128 * 1024),
         prefetch=True,
     ),
@@ -442,8 +442,8 @@ turso.sync.connect(
 ```go Go
 turso.NewTursoSyncDb(context.Background(), turso.TursoSyncDbConfig{
   ...
-  PartialSyncConfig: turso.TursoPartialSyncConfig{
-    BoostrapStrategyPrefix: 128 * 1024, // 128 KiB
+  PartialSyncExperimental: turso.TursoPartialSyncConfig{
+    BootstrapStrategyPrefix: 128 * 1024, // 128 KiB
     Prefetch: true,
   },
 })

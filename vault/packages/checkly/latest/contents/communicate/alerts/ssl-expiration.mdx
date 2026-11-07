@@ -1,13 +1,15 @@
 ---
 title: 'SSL Certificate Expiration Alerts'
+description: "Get alerted up to 30 days before an SSL certificate expires. Checkly checks your certificate hourly and can notify any alert channel at your chosen threshold."
 sidebarTitle: 'SSL Alerts'
+canonical: 'https://www.checklyhq.com/docs/communicate/alerts/ssl-expiration/'
 ---
 
 An expired SSL certificate can cause havoc to sites and APIs. Checkly performs an hourly check on your certificate and can
-alert you up to 30 days before your certificate expires. All alert channels (e-mail, SMS, OpsGenie, Webhook etc.) can be used for this alert.
+alert you up to 30 days before your certificate expires. All alert channels (e-mail, SMS, Opsgenie, Webhook etc.) can be used for this alert.
 
 Simply create or pick an existing alert channel that your check subscribes to and enable *SSL certificate expiration* and
-set the day threshold to your preference. If you don't have your alert channels set up yet, see [Alert Channels](/communicate/alerts/channels).
+set the day threshold to your preference. If you don't have your alert channels set up yet, see [alert channels](/communicate/alerts/channels).
 
 <Frame>
 ![Example alert channel form](/images/docs/images/alerting/ssl_check_example.png)
@@ -23,18 +25,18 @@ The domain for the certificate is parsed from the `URL` in the HTTP request sett
 When you update your check's URL or your SSL cert, allow up to an hour for the SSL expiration date to update on Checkly’s end.
 
 <Warning>
-When using [environment variables in the URL](/platform/variables#accessing-variables-in-api-checks), make sure that the domain is fully specified.
+When using [environment variables in the URL](/platform/variables#accessing-variables), make sure that the domain is fully specified.
 SSL monitoring cannot parse the domain from a URL like `{{BASE_URL}}/test-endpoint`, but using environment variables in other parts of the URL like `https://checklyhq.com/{{TEST_PATH}}` works.
 </Warning>
 
 ### Getting `Error: unable to verify the first certificate`
 If prompted with this error, the usual cause is the certificate chain of the given website being incomplete. This will
-not happen with a browser check, because the browser will complete the certificate chain on its own. When running an API check,
+not happen with a Browser check, because the browser will complete the certificate chain on its own. When running an API check,
 though, no browser is involved - therefore the error takes place. You can use an online SSL checker
 (e.g.: [SSL Shopper](https://www.sslshopper.com/ssl-checker.html)) to help you diagnose issues with your certificate.
 
 ## Browser checks
-Since browser checks can connect to multiple domains, you need to set the SSL certificate domain to receive certificate alerts for them. 
+Since Browser checks can connect to multiple domains, you need to set the SSL certificate domain to receive certificate alerts for them.
 
 When you change this setting or update your SSL cert, allow up to an hour for the SSL expiration date to update on Checkly’s end.
 

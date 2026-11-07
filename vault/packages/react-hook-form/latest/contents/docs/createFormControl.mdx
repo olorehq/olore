@@ -1,11 +1,14 @@
 ---
 title: createFormControl
+seoTitle: "createFormControl: Form State Outside React"
 description: Standalone form state outside of React components.
 metaDescription: Create standalone React Hook Form state outside of a React component, useful for global or shared form state management across your app.
 sidebar: apiLinks
 ---
 
-This function creates the entire form state subscription and allows you to subscribe to updates with or without a React component. You can use this function without the need of the React Context API.
+## \</> `createFormControl:` <TypeText>([UseFormProps](/ts#UseFormProps)) => object</TypeText> <Since version="7.55.0" />
+
+This function creates the entire form state subscription and allows you to subscribe to updates with or without a React component. You can use this function without needing the React Context API.
 
 ### Props
 
@@ -15,36 +18,45 @@ This function creates the entire form state subscription and allows you to subsc
 | ---------- | --------------------------- | -------------- |
 | `...props` | <TypeText>Object</TypeText> | `UseFormProps` |
 
-### Returns
+### Return
 
 ---
 
-| Name          | Type                           | Description                                                                           |
-| ------------- | ------------------------------ | ------------------------------------------------------------------------------------- |
-| `formControl` | <TypeText>Object</TypeText>    | control object for `useForm` hook                                                     |
-| `control`     | <TypeText>Object</TypeText>    | control object for `useController`, `useFormState`, `useWatch`                        |
-| `subscribe`   | <TypeText>Function</TypeText>  | function to [subscribe](/docs/useform/subscribe) for form state update without render |
-| `...returns`  | <TypeText>Functions</TypeText> | `useForm` return methods                                                              |
+| Name          | Type                           | Description                                                                               |
+| ------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `formControl` | <TypeText>Object</TypeText>    | control object for `useForm` hook                                                         |
+| `control`     | <TypeText>Object</TypeText>    | control object for `useController`, `useFormState`, `useWatch`                            |
+| `subscribe`   | <TypeText>Function</TypeText>  | function to [subscribe](/docs/useform/subscribe) for form state updates without rendering |
+| `...returns`  | <TypeText>Functions</TypeText> | `useForm` return methods                                                                  |
 
 <Admonition type="important" title="Notes">
-  - This function is published at **v7.55.0** - This function is completely
-  optional, you can consider to use this instead of `useFormContext` API. - You
-  may find it useful if you would like to subscribe formsState by skipping react
-  re-render.
+  - This function is completely optional; you can consider using this instead of
+  the `useFormContext` API. - You may find it useful if you would like to
+  subscribe to `formState` while skipping React re-renders.
 </Admonition>
 
 <Admonition type="important" title="Rules">
- - You should either use this API or context API
- ```tsx
- const props = createFormControl()
 
-<FormProvider {...props} /> // ❌ You don't need provider
+- You should either use this API or the Context API
 
- <input {...props.register('name')} /> // ✅ Direct use method from createFormControl
- ```
+  ```tsx
+  const props = createFormControl()
+
+  <FormProvider {...props} /> // ❌ You don't need a provider
+
+  <input {...props.register("name")} /> // ✅ Use method directly from createFormControl
+  ```
+
+- Create the control once. Passing a new instance to `useForm({ formControl })` re-initializes the form. A control created at module scope is a single form shared by every component that uses it and, during server rendering, by every request. For one form per component instance, create it lazily:
+
+  ```tsx
+  const [form] = useState(() => createFormControl({ defaultValues }))
+  const { register } = useForm({ formControl: form.formControl })
+  ```
+
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -52,11 +64,11 @@ This function creates the entire form state subscription and allows you to subsc
 
 ```javascript
 const { formControl, control, handleSubmit, register } = createFormControl({
-  mode: 'onChange',
+  mode: "onChange",
   defaultValues: {
-    firstName: 'Bill'
-  }
-}})
+    firstName: "Bill",
+  },
+})
 
 function App() {
   useForm({
@@ -64,24 +76,29 @@ function App() {
   })
 
   return (
-    <form onSubmit={handleSubmit(data => console.log)}>
-      <input {...register('name')} />
+    <form onSubmit={handleSubmit((data) => console.log(data))}>
+      <input {...register("name")} />
       <FormState />
-      <Controller />
+      <ControlledInput />
     </form>
-  );
+  )
 }
 
 function FormState() {
-  useFormState({
-    control // no longer need context api
+  const { isDirty } = useFormState({
+    control, // no longer need context api
   })
+
+  return isDirty ? <p>Form is dirty.</p> : null
 }
 
-function Controller() {
-  useFormState({
-    control // no longer need context api
+function ControlledInput() {
+  const { field } = useController({
+    control, // no longer need context api
+    name: "firstName",
   })
+
+  return <input {...field} />
 }
 ```
 
@@ -118,3 +135,67 @@ function App() {
 ```
 
 </TabGroup>
+
+### Tips
+
+---
+
+- Use the returned `handleSubmit`, `setValue`, `reset`, and other methods anywhere that can import the control, such as a toolbar button that is outside the form's component tree.
+- To sync form values to an external store, call `subscribe` and pick only the state you need. Call the returned function to unsubscribe when you no longer need updates:
+
+  ```javascript
+  const unsubscribe = formControl.subscribe({
+    formState: { values: true },
+    callback: ({ values }) => store.setDraft(values),
+  })
+  ```
+
+- In tests, you can create a control, render your form with it, and then call methods like `setValue` or `trigger` directly, without simulating every user event.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### Two forms unexpectedly share values and errors
+
+<Why>
+
+They use the same `createFormControl` instance. A control created at module scope is a singleton, so every component—and every server request—can share its state.
+
+</Why>
+
+<Fix>
+
+Create one stable control per form instance:
+
+```javascript
+const [form] = useState(() =>
+  createFormControl({ defaultValues: { name: "" } })
+)
+```
+
+Do not recreate it on every render, and avoid a module-scoped control during server rendering.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### Form state changes but the React UI does not update
+
+<Why>
+
+Calling methods on a standalone control updates the form, but React components only re-render for state they subscribe to.
+
+</Why>
+
+<Fix>
+
+Connect the control with `useForm({ formControl })`, and read reactive state with `useFormState({ control })` or values with `useWatch({ control })`. Use `formControl.subscribe` only for side effects that do not render UI.
+
+</Fix>
+
+</Troubleshoot>

@@ -1,20 +1,20 @@
 ---
-title: Use Neon Postgres with Render
-subtitle: Connect a Neon Postgres database to your Node application deployed with Render
+title: Use Lakebase Postgres with Render
+subtitle: Connect a Lakebase Postgres database to your Node application deployed with Render
 summary: >-
-  Connecting a Node.js Express application to a Neon Postgres database and
+  Connecting a Node.js Express application to a Lakebase Postgres database and
   deploying it on Render covers project scaffolding, pg driver configuration,
   and pushing to GitHub to trigger automatic Render deployments. Use this guide
   when you want a serverless Postgres backend for a Render web service without
   using Render's native database. The guide uses Node.js with the pg library and
   Render's Git-based continuous deployment.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 [Render](https://render.com) is a comprehensive cloud service that provides hosting for web applications and static sites, with PR previews, zero-downtime deployments, and more. Render supports full-stack applications, offering both web services and background workers.
 
-This guide shows how to deploy a simple Node.js application connected to a Neon Postgres database on Render.
+This guide shows how to deploy a simple Node.js application connected to a Lakebase Postgres database on Render.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ To follow along with this guide, you will need:
 - A GitHub account. Render integrates with public GitHub providers for continuous deployment. So, you'd need a GitHub account to upload your application code.
 - [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/) installed on your local machine. We'll use Node.js to build and test the application locally.
 
-## Setting up your Neon database
+## Setting up your database
 
 ### Initialize a new project
 
@@ -33,7 +33,7 @@ Log in to the Neon Console and navigate to the [Projects](https://console.neon.t
 
 - Click the `New Project` button to create a new project.
 
-- From your project dashboard, navigate to the `SQL Editor` from the sidebar, and run the following SQL command to create a new table in your database:
+- In the Neon Console, navigate to **Postgres database** > **SQL Editor** from the sidebar, and run the following SQL command to create a new table in your database:
 
   ```sql
   CREATE TABLE books_to_read (
@@ -56,7 +56,7 @@ Log in to the Neon Console and navigate to the [Projects](https://console.neon.t
 
 ### Retrieve your Neon database connection string
 
-You can find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**. It should look similar to this:
+You can find the connection string for your database by clicking the **Connect** button in the Console nav. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require

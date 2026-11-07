@@ -1,0 +1,101 @@
+---
+title: 'Send PgBouncer metrics to Axiom'
+description: 'This page explains how to send PgBouncer metrics to Axiom using pgbouncer_exporter and the OpenTelemetry Collector.'
+overview: 'Lightweight connection pooler for PostgreSQL'
+sidebarTitle: PgBouncer
+keywords: ['pgbouncer', 'axiom documentation', 'documentation', 'axiom', 'postgres', 'postgresql', 'connection pooler', 'metrics', 'prometheus', 'opentelemetry', 'otel collector', 'pgbouncer_exporter']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+
+PgBouncer tracks detailed pool and query statistics, but it only exposes them through its admin console (`SHOW STATS`, `SHOW POOLS`) over the PostgreSQL wire protocol — there’s no native Prometheus or OTLP endpoint. To send these metrics to Axiom, run the Prometheus community’s [pgbouncer_exporter](https://github.com/prometheus-community/pgbouncer_exporter) next to PgBouncer, and an OpenTelemetry Collector that scrapes the exporter and forwards the metrics to Axiom.
+
+<Note>
+The Prometheus receiver is part of the [contrib distribution](https://github.com/open-telemetry/opentelemetry-collector-releases) of the OpenTelemetry Collector (`otelcol-contrib`). It isn’t included in the core distribution.
+</Note>
+
+<Prerequisites />
+
+<Note>
+When you create the dataset, select **Metrics** as the dataset type. Metrics require their own dedicated dataset. For more information, see [Create dataset](/reference/datasets#create-dataset).
+</Note>
+
+## Expose PgBouncer stats with pgbouncer_exporter
+
+In `pgbouncer.ini`, allow a user to read stats and let the exporter connect:
+
+```ini
+stats_users = stats
+ignore_startup_parameters = extra_float_digits
+```
+
+Then run the exporter, pointing it at PgBouncer’s special `pgbouncer` admin database:
+
+```shell
+docker run -d -p 9127:9127 prometheuscommunity/pgbouncer-exporter \
+  --pgBouncer.connectionString="postgres://stats:PASSWORD@pgbouncer:6432/pgbouncer?sslmode=disable"
+```
+
+Replace the connection string with your PgBouncer host, port, and stats user. You can also set it with the `PGBOUNCER_EXPORTER_CONNECTION_STRING` environment variable. The exporter then serves metrics at `http://localhost:9127/metrics`.
+
+## Configure the OpenTelemetry Collector
+
+Add a Prometheus receiver that scrapes the exporter and an OTLP/HTTP exporter that sends data to Axiom:
+
+```yaml
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: pgbouncer
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["pgbouncer-exporter:9127"] # host:port of pgbouncer_exporter
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  batch:
+    send_batch_max_size: 8192
+
+exporters:
+  otlphttp:
+    compression: zstd
+    endpoint: https://AXIOM_DOMAIN
+    headers:
+      authorization: Bearer API_TOKEN
+      x-axiom-metrics-dataset: DATASET_NAME
+
+service:
+  pipelines:
+    metrics:
+      receivers:
+        - prometheus
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - otlphttp
+```
+
+<Info>
+<ReplaceDomain />
+<ReplaceDatasetToken />
+For metrics, use the `x-axiom-metrics-dataset` header instead of `x-axiom-dataset`.
+</Info>
+
+## Query your metrics
+
+Once data is flowing, query your PgBouncer metrics like any other OTel metrics in Axiom. Pool metrics carry `database` and `user` tags. For example, to chart active client connections per database:
+
+```mpl
+`DATASET_NAME`:`pgbouncer_pools_client_active_connections`
+| align to $__interval using last
+| group by `database` using sum
+```
+
+For more information, see [Metrics](/query-data/metrics).

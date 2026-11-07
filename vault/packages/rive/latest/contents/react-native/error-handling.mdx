@@ -3,7 +3,7 @@ title: "Error Handling"
 description: "Handling errors in Rive React Native"
 ---
 
-## Error Handling
+## Error handling
 
 <Note>
   This page only applies to the [new
@@ -11,12 +11,33 @@ description: "Handling errors in Rive React Native"
   runtime.
 </Note>
 
+### Hook errors
+
+The loading hooks return an `error` instead of throwing. Check it alongside the loading state:
+
+```tsx
+const { riveFile, error: fileError } = useRiveFile(require('./assets/my_file.riv'));
+const { instance, error: instanceError } = useViewModelInstance(riveFile, { async: true });
+const { value: health, error: healthError } = useRiveNumber('health', instance);
+
+if (fileError || instanceError) {
+  return <Text>{(fileError ?? instanceError)!.message}</Text>;
+}
+```
+
+- `useRiveFile` sets `error` when the file can't be loaded or decoded.
+- `useViewModelInstance` sets `error` when the requested view model, artboard, or instance doesn't exist. With `required: true`, it throws instead, so you can handle it with an error boundary.
+- The property hooks (`useRiveNumber`, `useRiveTrigger`, and so on) set `error` when the property path can't be found or read.
+
+### Imperative APIs
+
 Wrap Rive operations in try/catch blocks to handle errors. For example, when loading a file:
 
 ```js
 try {
   const riveFile = await RiveFileFactory.fromURL(
-    "https://cdn.rive.app/animations/vehicles.riv"
+    "https://cdn.rive.app/animations/vehicles.riv",
+    undefined // referenced assets
   );
   // Use the riveFile...
 } catch (error) {
@@ -25,7 +46,7 @@ try {
 }
 ```
 
-### View-Based Errors
+### View-based errors
 
 Use the `onError` callback prop to handle errors during view configuration or runtime operations:
 
@@ -40,7 +61,7 @@ Use the `onError` callback prop to handle errors during view configuration or ru
 />
 ```
 
-#### Error Types
+#### Error types
 
 The following error types may occur during view operations:
 
@@ -54,7 +75,11 @@ The following error types may occur during view operations:
 | `RiveErrorType.ViewModelInstanceNotFound`      | 6     | The specified view model instance was not found       |
 | `RiveErrorType.IncorrectStateMachineInputName` | 8     | The specified state machine input name does not exist |
 
-Use these error types to provide specific error handling:
+<Warning>
+  In `0.5.0` and later, view errors are always reported as `RiveErrorType.Unknown`. Use `error.message` for details. The specific error types are only reported in `0.4.x`.
+</Warning>
+
+In `0.4.x`, you can use these error types to provide specific error handling:
 
 ```js
 import { RiveView, RiveErrorType } from "@rive-app/react-native";
@@ -85,11 +110,10 @@ import { RiveView, RiveErrorType } from "@rive-app/react-native";
 ```
 
 <Note>
-  If no `onError` handler is provided, errors will be logged to the console by
-  default.
+  If no `onError` handler is provided, errors are logged with `console.error`.
 </Note>
 
-### Android Runtime Initialization
+### Android runtime initialization
 
 On Android, the Rive native library is automatically initialized at app startup. In rare cases (ABI mismatch, missing native libraries, etc.), this initialization can fail. Use `RiveRuntime.getStatus()` to check whether initialization succeeded:
 

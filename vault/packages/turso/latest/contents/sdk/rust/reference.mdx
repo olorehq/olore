@@ -3,17 +3,17 @@ title: Reference
 description: Rust Reference for Turso
 ---
 
-Turso offers two Rust crates:
+Turso offers three Rust crates:
 
-| | `turso` | `libsql` |
-| --- | --- | --- |
-| **Use case** | Local / embedded database, sync | Remote access, existing libSQL codebases |
-| **Engine** | Turso Database (rewrite) | libSQL (SQLite fork) |
-| **Concurrent writes** | Yes (MVCC) | Not supported |
-| **Sync** | push/pull (local-first) | Embedded Replicas (writes go to cloud primary) |
-| **C compiler** | Not required | Required for `core`, `replication`, `encryption` features |
+| | `turso` | `turso_serverless` | `libsql` |
+| --- | --- | --- | --- |
+| **Use case** | Local / embedded database, sync | Remote Turso database (over-the-wire) | Remote libSQL database, existing libSQL codebases |
+| **Engine** | Turso (rewrite) | Turso (rewrite) | libSQL (SQLite fork) |
+| **Concurrent writes** | Yes (MVCC) | Yes (MVCC) | Not supported |
+| **Sync** | push/pull (local-first) | — | Embedded Replicas (writes go to cloud primary) |
+| **C compiler** | Not required | Not required | Required for `core`, `replication`, `encryption` features |
 
-**Starting a new project?** Use `turso` for local/embedded use or sync. Use `libsql` with the `remote` feature for over-the-wire access (no C compiler needed).
+**Starting a new project?** Use `turso` for local/embedded use or sync. For remote access, match the crate to the database engine: [`turso_serverless`](/sdk/rust/quickstart) for Turso databases, `libsql` with the `remote` feature for libSQL databases (no C compiler needed).
 
 ## turso
 

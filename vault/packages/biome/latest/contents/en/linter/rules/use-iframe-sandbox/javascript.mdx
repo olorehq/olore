@@ -1,0 +1,75 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: useIframeSandbox (JavaScript)
+description: JavaScript (and super languages) documentation for useIframeSandbox
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="javascript" languages={[{"id":"html","label":"HTML","href":"/linter/rules/use-iframe-sandbox/html/"},{"id":"javascript","label":"JavaScript (and super languages)","href":"/linter/rules/use-iframe-sandbox/javascript/"}]} />
+
+## Summary
+- Rule available since: `v2.4.12`
+- Diagnostic Category: [`lint/security/useIframeSandbox`](/reference/diagnostics#diagnostic-category)
+- This rule isn't recommended, so you need to enable it.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- Sources: 
+  - Inspired from [`react-dom/no-missing-iframe-sandbox`](https://eslint-react.xyz/docs/rules/dom-no-missing-iframe-sandbox)
+  - Same as [`@eslint-react/dom-no-missing-iframe-sandbox`](https://eslint-react.xyz/docs/rules/dom-no-missing-iframe-sandbox)
+  - Same as [`react/iframe-missing-sandbox`](https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/iframe-missing-sandbox.md)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"security": {
+				"useIframeSandbox": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Enforce the 'sandbox' attribute for 'iframe' elements.
+
+The sandbox attribute enables an extra set of restrictions for the content in the iframe.
+Using the sandbox attribute is considered a good security practice.
+
+See [the Mozilla docs](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe#sandbox) for details.
+
+## Examples
+
+### Invalid
+
+```jsx
+function MyComponent() {
+  return <iframe src="https://example.com" />;
+}
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.jsx:2:10 <a href=\"https://biomejs.dev/linter/rules/use-iframe-sandbox\">lint/security/useIframeSandbox</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Iframe doesn't have the </span><span style=\"color: Tomato;\"><strong>sandbox</strong></span><span style=\"color: Tomato;\"> attribute.</span><br />  <br />    <strong>1 │ </strong>function MyComponent() &#123;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>2 │ </strong>  return &lt;iframe src=&quot;https://example.com&quot; /&gt;;<br />   <strong>   │ </strong>         <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>3 │ </strong>&#125;<br />    <strong>4 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">The sandbox attribute enables an extra set of restrictions for the content in the iframe, protecting against malicious scripts and other security threats.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Provide a </span><span style=\"color: lightgreen;\"><strong>sandbox</strong></span><span style=\"color: lightgreen;\"> attribute when using </span><span style=\"color: lightgreen;\"><strong>iframe</strong></span><span style=\"color: lightgreen;\"> elements.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```jsx
+function MyComponent() {
+  return <iframe src="https://example.com" sandbox="allow-popups" />;
+}
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/src/lint/security/use_iframe_sandbox.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_js_analyze/tests/specs/security/useIframeSandbox)
+- <RulePlaygroundLink rule="useIframeSandbox" category="lint" language="jsx" code={"function MyComponent() {\n  return <iframe src=\"https://example.com\" />;\n}\n"} />
+

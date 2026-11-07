@@ -5,6 +5,8 @@ description: "Learn about importing the aiomysql integration and how it captures
 
 The aiomysql integration captures queries from [aiomysql](https://github.com/aio-libs/aiomysql/) as spans.
 
+<Include name="python-stream-mode-general-callout.mdx" />
+
 ## Install
 
 Install `sentry-sdk` from PyPI:
@@ -12,6 +14,7 @@ Install `sentry-sdk` from PyPI:
 ```bash {tabTitle:pip}
 pip install sentry-sdk
 ```
+
 ```bash {tabTitle:uv}
 uv add sentry-sdk
 ```
@@ -29,9 +32,10 @@ sentry_sdk.init(
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for tracing.
     traces_sample_rate=1.0,
-    # Add data like inputs and responses;
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
+    # Check https://docs.sentry.io/platforms/python/data-management/data-collected/ to configure what data is collected
+    data_collection={
+        "database_query_data": True,
+    },
     integrations=[
         AioMySQLIntegration(),
     ],
@@ -49,7 +53,10 @@ import asyncio
 sentry_sdk.init(
     dsn="___PUBLIC_DSN___",
     traces_sample_rate=1.0,
-    send_default_pii=True,
+    # Check https://docs.sentry.io/platforms/python/data-management/data-collected/ to configure what data is collected
+    data_collection={
+        "database_query_data": True,
+    },
     integrations=[
         AioMySQLIntegration(),
     ],
@@ -64,13 +71,14 @@ async def main():
         db="test",
     )
     try:
+        # or sentry_sdk.traces.start_span(name="testing_sentry", parent_span=None) in stream mode
         with sentry_sdk.start_transaction(name="testing_sentry"):
             async with conn.cursor() as cur:
                 await cur.execute("SELECT 'Hello World'")
                 result = await cur.fetchone()
     finally:
         conn.close()
-        
+
 asyncio.run(main())
 ```
 

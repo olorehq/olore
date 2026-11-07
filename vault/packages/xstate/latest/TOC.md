@@ -1,113 +1,183 @@
-# XState Documentation Structure
+# xstate Table of Contents
 
-## Directory Overview
+## Directory Map
 
-| Directory | Purpose | Files |
-|-----------|---------|-------|
-| `contents/` (root) | Core XState library concepts and API | 51 |
-| `contents/packages/` | Package index | 1 |
-| `contents/xstate-store/` | @xstate/store v2 integration guides | 11 |
-| `contents/xstate-store-v3/` | @xstate/store v3 integration guides | 6 |
+```
+contents/
+├── (root)            # XState core, Stately Studio, packages (92 files)
+├── agents/           # AI agents with XState (1 file)
+├── packages/         # Packages index (1 file)
+├── stately-studio/   # Studio MCP support (1 file)
+└── xstate-store/     # @xstate/store guides, framework bindings, comparisons (16 files)
+```
 
-## contents/ (root — core XState)
+## Key Entry Points
+
+| Task | Start Here |
+|------|------------|
+| New user | `contents/quick-start.mdx`, `contents/installation.mdx` |
+| Core concepts | `contents/machines.mdx`, `contents/states.mdx`, `contents/transitions.mdx` |
+| Actors | `contents/actors.mdx`, `contents/invoke.mdx`, `contents/spawn.mdx` |
+| TypeScript | `contents/typescript.mdx`, `contents/setup.mdx` |
+| Testing | `contents/testing.mdx`, `contents/xstate-test.mdx` |
+| v4 to v5 migration | `contents/migration.mdx` |
+| Simple store | `contents/xstate-store.mdx` |
+| Stately Studio | `contents/studio.mdx` |
+
+## Detailed Structure
+
+### Getting started and concepts
 
 | File | Description |
 |------|-------------|
+| `index.mdx` | Landing page for Stately and XState docs |
+| `xstate.mdx` | XState v5 overview and installation for JS/TS |
 | `installation.mdx` | How to install XState |
-| `quick-start.mdx` | 5-minute getting started guide |
-| `setup.mdx` | Setup and configuration |
-| `cheatsheet.mdx` | Quick reference cheatsheet |
-| `migration.mdx` | Migrating from XState v4 to v5 |
-| `xstate.mdx` | Main XState package overview |
+| `quick-start.mdx` | Jump straight into XState and Stately Studio |
+| `cheatsheet.mdx` | Condensed code snippets for common XState APIs |
+| `examples.mdx` | Gallery of XState example projects |
+| `glossary.mdx` | Definitions of state machine and XState terms |
 | `state-machines-and-statecharts.mdx` | Introduction to state machines and statecharts |
-| `actor-model.mdx` | Introduction to the actor model |
-| `machines.mdx` | Creating and using machines |
-| `states.mdx` | States overview |
-| `finite-states.mdx` | Finite states |
-| `initial-states.mdx` | Initial state configuration |
-| `final-states.mdx` | Final states |
-| `parallel-states.mdx` | Parallel states |
-| `parent-states.mdx` | Parent (compound) states |
-| `history-states.mdx` | History states |
-| `transitions.mdx` | Transitions between states |
-| `eventless-transitions.mdx` | Always/eventless transitions |
-| `delayed-transitions.mdx` | Delayed (after) transitions |
-| `pure-transitions.mdx` | Pure transitions |
-| `state-done-events.mdx` | State done events |
-| `guards.mdx` | Guards for conditional transitions |
-| `actions.mdx` | Actions (side effects) |
-| `context.mdx` | Context (extended state) |
-| `input.mdx` | Machine input |
-| `output.mdx` | Machine output |
-| `tags.mdx` | State tags |
-| `actors.mdx` | Actors overview |
-| `invoke.mdx` | Invoking actors |
-| `spawn.mdx` | Spawning actors |
-| `promise-actors.mdx` | Promise-based actors |
-| `callback-actors.mdx` | Callback actors |
-| `observable-actors.mdx` | Observable actors |
-| `transition-actors.mdx` | Transition actors |
-| `function-actors.mdx` | Function actors |
-| `state-machine-actors.mdx` | State machine actors |
-| `sources.mdx` | Actor sources |
-| `system.mdx` | Actor system |
-| `event-emitter.mdx` | Event emitter |
-| `persistence.mdx` | Persisting actor state |
-| `machine-restore.mdx` | Restoring machine state |
-| `inspection.mdx` | Inspecting machines at runtime |
-| `inspector.mdx` | XState Inspector |
-| `immer.mdx` | Using Immer with XState |
-| `typescript.mdx` | TypeScript usage |
-| `typegen.mdx` | Type generation |
-| `testing.mdx` | Testing state machines |
-| `graph.mdx` | Graph utilities and model-based testing paths |
-| `glossary.mdx` | Glossary of terms |
-| `examples.mdx` | Code examples and links |
+| `statecharts.mdx` | How statecharts extend state machines, with coffee and donut examples |
+| `actor-model.mdx` | The actor model and how XState implements it |
+| `migration.mdx` | Migrating from XState v4 to v5 |
 
-## contents/packages/
+### Machines, states, and transitions
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Overview of all official XState packages |
+| `machines.mdx` | Creating state machines with `createMachine` |
+| `setup.mdx` | `setup()` for typed machines, actions, guards, and actors |
+| `states.mdx` | State values, snapshots, and matching |
+| `finite-states.mdx` | Finite states and finite state machines |
+| `initial-states.mdx` | Defining the initial state |
+| `parent-states.mdx` | Hierarchical (nested) states |
+| `parallel-states.mdx` | Parallel (orthogonal) states |
+| `final-states.mdx` | Final states and machine completion |
+| `history-states.mdx` | History states to resume prior state |
+| `state-done-events.mdx` | Done events emitted when states finish |
+| `transitions.mdx` | Events and transitions |
+| `delayed-transitions.mdx` | Delayed (`after`) transitions |
+| `eventless-transitions.mdx` | Eventless (`always`) transitions |
+| `pure-transitions.mdx` | Pure transition functions without running actors |
+| `context.mdx` | Extended state (context) and `assign` |
+| `input.mdx` | Passing input to machines and actors |
+| `output.mdx` | Machine output on completion |
+| `guards.mdx` | Conditional transitions with guards |
+| `actions.mdx` | Entry, exit, and transition actions, built-in actions |
+| `tags.mdx` | Tagging states and checking tags |
+| `event-emitter.mdx` | Emitting events from actors to external listeners |
+| `descriptions.mdx` | Adding descriptions to states and transitions |
+| `routes.mdx` | Route-based state configuration |
 
-## contents/xstate-store/
-
-| File | Description |
-|------|-------------|
-| `xstate-store.mdx` | @xstate/store overview and API |
-| `xstate-store-v2.mdx` | @xstate/store v2 docs |
-| `react.mdx` | Using @xstate/store with React |
-| `preact.mdx` | Using @xstate/store with Preact |
-| `svelte.mdx` | Using @xstate/store with Svelte |
-| `vue.mdx` | Using @xstate/store with Vue |
-| `angular.mdx` | Using @xstate/store with Angular |
-| `solid.mdx` | Using @xstate/store with Solid |
-| `persist.mdx` | Persisting store state |
-| `reset.mdx` | Resetting store state |
-| `undo-redo.mdx` | Undo/redo with @xstate/store |
-| `validate-schemas.mdx` | Schema validation in @xstate/store |
-| `migration.mdx` | Migrating @xstate/store versions |
-
-## contents/xstate-store-v3/
-
-| File | Description |
-|------|-------------|
-| `xstate-store-v3.mdx` | @xstate/store v3 overview |
-| `react.mdx` | @xstate/store v3 with React |
-| `preact.mdx` | @xstate/store v3 with Preact |
-| `svelte.mdx` | @xstate/store v3 with Svelte |
-| `vue.mdx` | @xstate/store v3 with Vue |
-| `angular.mdx` | @xstate/store v3 with Angular |
-| `solid.mdx` | @xstate/store v3 with Solid |
-
-## Framework Integration Packages
+### Actors
 
 | File | Description |
 |------|-------------|
-| `xstate-react.mdx` | @xstate/react — hooks for React |
-| `xstate-vue.mdx` | @xstate/vue — utilities for Vue |
-| `xstate-svelte.mdx` | @xstate/svelte — utilities for Svelte |
-| `xstate-test.mdx` | @xstate/test — model-based testing |
-| `xstate-graph.mdx` | @xstate/graph — graph traversal (legacy) |
-| `xstate-immer.mdx` | @xstate/immer — Immer integration |
-| `xstate-fsm.mdx` | @xstate/fsm — finite state machine (minimal) |
+| `actors.mdx` | Actor types, creating, sending events, and snapshots |
+| `invoke.mdx` | Invoking actors from states |
+| `spawn.mdx` | Spawning actors dynamically |
+| `system.mdx` | Actor systems and system IDs |
+| `state-machine-actors.mdx` | Actors created from state machines |
+| `promise-actors.mdx` | Promise actors for async work |
+| `callback-actors.mdx` | Callback actors for subscriptions and side effects |
+| `observable-actors.mdx` | Observable actors for streams |
+| `transition-actors.mdx` | Transition actors using reducer-like logic |
+| `persistence.mdx` | Persisting and restoring actor state |
+| `inspection.mdx` | Inspecting actor events and snapshots |
+
+### Tooling, TypeScript, and testing
+
+| File | Description |
+|------|-------------|
+| `typescript.mdx` | Using XState with TypeScript |
+| `testing.mdx` | Testing machine and actor logic |
+| `graph.mdx` | Generating paths through machines for testing and analysis |
+| `immer.mdx` | Using Immer with XState context |
+| `developer-tools.mdx` | XState CLI and Chrome devtools |
+| `inspector.mdx` | Stately Inspector for visualizing running actors |
+| `xstate-vscode-extension.mdx` | VS Code extension for XState |
+
+### Packages
+
+| File | Description |
+|------|-------------|
+| `packages/index.mdx` | Overview of XState packages |
+| `xstate-react.mdx` | `@xstate/react` hooks and helpers |
+| `xstate-vue.mdx` | `@xstate/vue` utilities |
+| `xstate-svelte.mdx` | `@xstate/svelte` utilities |
+| `xstate-graph.mdx` | `@xstate/graph` graph algorithms and path generation |
+| `xstate-test.mdx` | `@xstate/test` model-based testing |
+| `agents/agents.mdx` | Authoring AI agents as typed state machines |
+
+### xstate-store (17 files including root)
+
+| File | Description |
+|------|-------------|
+| `xstate-store.mdx` | `@xstate/store` simple event-based state management |
+| `xstate-store/migration.mdx` | Migrating to store v4 |
+| `xstate-store/persist.mdx` | Persisting store state |
+| `xstate-store/reset.mdx` | Resetting a store |
+| `xstate-store/undo-redo.mdx` | Undo and redo support |
+| `xstate-store/validate-schemas.mdx` | Validating events with schemas |
+| `xstate-store/react.mdx` | `@xstate/store-react` bindings |
+| `xstate-store/vue.mdx` | `@xstate/store-vue` bindings |
+| `xstate-store/svelte.mdx` | `@xstate/store-svelte` bindings |
+| `xstate-store/solid.mdx` | `@xstate/store-solid` bindings |
+| `xstate-store/preact.mdx` | `@xstate/store-preact` bindings |
+| `xstate-store/angular.mdx` | `@xstate/store-angular` bindings |
+| `xstate-store/compare-jotai.mdx` | Comparison with Jotai |
+| `xstate-store/compare-pinia.mdx` | Comparison with Pinia |
+| `xstate-store/compare-recoil.mdx` | Comparison with Recoil |
+| `xstate-store/compare-redux.mdx` | Comparison with Redux |
+| `xstate-store/compare-zustand.mdx` | Comparison with Zustand |
+
+### Stately Studio: overview and projects
+
+| File | Description |
+|------|-------------|
+| `studio.mdx` | Stately Studio visual editor overview |
+| `studio-api.mdx` | Stately Studio API |
+| `stately-studio/mcp-support.mdx` | MCP support for ChatGPT, Codex, and other hosts |
+| `self-hosting.mdx` | Self-hosting the Stately editor |
+| `projects.mdx` | Organizing machines into projects |
+| `teams.mdx` | Teams and collaboration |
+| `templates.mdx` | Starting from templates |
+| `discover.mdx` | Discovering public machines |
+| `versions.mdx` | Version history of machines |
+| `lock-machines.mdx` | Locking machines against edits |
+| `user-preferences.mdx` | Editor user preferences |
+| `machine-restore.mdx` | Restoring deleted machines |
+
+### Stately Studio: editor features
+
+| File | Description |
+|------|-------------|
+| `design-mode.mdx` | Tour of Design mode panels |
+| `simulate-mode.mdx` | Tour of Simulate mode panels |
+| `live-simulation.mdx` | Live simulation mode |
+| `editor-states-and-transitions.mdx` | States and transitions in the editor |
+| `editor-actions-and-actors.mdx` | Actions and actors in the editor |
+| `editor-tags.mdx` | Tags in the editor |
+| `annotations.mdx` | Notes (annotations) on the canvas |
+| `assets.mdx` | Assets on states |
+| `autolayout.mdx` | Automatic layout of machines |
+| `canvas-view-controls.mdx` | Canvas view controls |
+| `colors.mdx` | Colors for states and transitions |
+| `keyboard-shortcuts.mdx` | Editor keyboard shortcuts |
+| `sources.mdx` | Source code panel for actors, actions, guards |
+
+### Stately Studio: import, export, sharing, AI
+
+| File | Description |
+|------|-------------|
+| `import-from-code.mdx` | Importing machines from code |
+| `import-from-github.mdx` | Syncing machines from a GitHub repo |
+| `export-as-code.mdx` | Exporting machines as code |
+| `embed.mdx` | Embedding machines via iframe |
+| `figma.mdx` | Embedding in Figma |
+| `image.mdx` | Sharing machine images via URL |
+| `url.mdx` | Sharing machines via share URL |
+| `generate-flow.mdx` | Generating machines with AI |
+| `generate-react.mdx` | Generating a React app from a machine |
+| `generate-test-paths.mdx` | Generating test paths from a machine |

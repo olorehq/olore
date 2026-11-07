@@ -1,26 +1,30 @@
 ---
 title: Connect a TanStack Start application to Neon
-subtitle: Set up a Neon project in seconds and connect from a TanStack Start application
+subtitle: Set up a project on Neon in seconds and connect from a TanStack Start application
 summary: >-
-  TanStack Start integration guide for Neon Postgres covers creating a Neon
+  TanStack Start integration guide for Lakebase Postgres covers creating a Lakebase Postgres
   project, installing a supported driver (node-postgres, postgres.js, or the
   Neon serverless driver), and writing server functions that query the database.
   Choose this page when building a type-safe React or Solid app with TanStack
   Start and need working code for both regular and static server functions
-  backed by Neon.
+  backed by Lakebase Postgres.
 enableTableOfContents: true
 redirectFrom:
   - /docs/quickstart/tanstack-start
   - /docs/integrations/tanstack-start
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-08T19:32:04.700Z'
 ---
 
+<Callout title="Realtime with TanStack">
+Build full-stack reactive apps with SSR and end-to-end type-safety using [Neon Realtime with TanStack Start + DB](/docs/realtime/examples/tanstack).
+</Callout>
+
 <CopyPrompt src="/prompts/tanstack-start-prompt.md"
-description="Pre-built prompt for connecting TanStack Start applications to Neon"/>
+description="Pre-built prompt for connecting TanStack Start applications to Lakebase Postgres"/>
 
 TanStack Start is an open-source, fully type-safe web framework for building feature rich React and Solid based applications using the TanStack ecosystem.
 
-To create a Neon project and access it from a Start application:
+To create a project on Neon and access it from a Start application:
 
 <Steps>
 
@@ -56,37 +60,13 @@ If you do not have one already, create a Neon project. Save your connection deta
 
 ## Store your Neon credentials
 
-Add a `.env` file to your project directory and add your Neon connection string to it. You can find your Neon database connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
+Add a `.env` file to your project directory and add your Neon connection string to it. You can find your Neon database connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. For more information, see [Connect from any application](/docs/connect/connect-from-any-app).
 
 ```shell shouldWrap
 DATABASE_URL="postgresql://<user>:<password>@<endpoint_hostname>.neon.tech:<port>/<dbname>?sslmode=require&channel_binding=require"
 ```
 
-If you haven't created a database yet, run the following command to generate a [Claimable Postgres by Neon database](https://neon.new/). It will spin up a database instance that you can use for 72 hours, or claim to keep forever.
-
-<CodeTabs labels={["npm", "yarn", "pnpm", "bun", "deno"]}>
-
-```bash
-  npm neon-new
-```
-
-```bash
-  yarn dlx neon-new
-```
-
-```bash
-  pnpm neon-new
-```
-
-```bash
-  bunx neon-new
-```
-
-```bash
-  deno run -A neon-new
-```
-
-</CodeTabs>
+If you haven't created a project yet, [Claimable Neon](/claimable-neon) provisions a temporary Neon project without an account. A human can claim the project into a Neon account before it expires. See [Claimable Neon](/docs/reference/claimable-neon).
 
 ## Configure the Postgres client
 
@@ -273,6 +253,10 @@ You can find the source code for the applications described in this guide on Git
 
 ## Next steps
 
-- [Set up Neon Auth](/docs/auth/quick-start/tanstack-router): Add managed authentication that branches with your database
+- [Set up Managed Better Auth](/docs/auth/quick-start/tanstack-router): Add managed authentication that branches with your database
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Deploy a Function](/docs/compute/functions/overview): Run backend compute next to your database, no separate hosting needed
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
+- [Realtime](/docs/realtime/examples/tanstack): Build fully-reactive realtime TanStack apps on Neon with SSR, end-to-end type-safety and reactive client-side development using TanStack DB &raquo;
 
 <NeedHelp/>

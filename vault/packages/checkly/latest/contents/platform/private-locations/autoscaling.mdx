@@ -1,13 +1,14 @@
 ---
 title: 'Autoscaling'
-description: 'Autoscale Checkly Agents in a Private Location with KEDA based on queued and in-flight check runs.'
+description: 'Autoscale Checkly Agents in a private location with KEDA based on queued and in-flight check runs.'
+canonical: 'https://www.checklyhq.com/docs/platform/private-locations/autoscaling/'
 ---
 
 Scale Checkly Agent pods automatically in relation to live load. This page covers the KEDA-based recipe; for static capacity planning, see [Scaling and Redundancy](/platform/private-locations/scaling-redundancy).
 
 <Accordion title="Prerequisites">
 
-- Prometheus V2 metrics are being ingested for your account — the only source for this gauge. See [Exporting Metrics & Data via Prometheus V2](/integrations/observability/prometheus-v2/).
+- Prometheus v2 metrics are being ingested for your account. They are the only source for this gauge. See [Export metrics to Prometheus](/integrations/observability/prometheus).
 - Checkly Agents are deployed via the [Checkly agent Helm chart](https://github.com/checkly/helm-charts/tree/main/charts/agent) (or an equivalent `Deployment`). See [Kubernetes Deployment](/platform/private-locations/kubernetes-deployment).
 - [KEDA](https://keda.sh) is installed in the cluster.
 
@@ -15,7 +16,7 @@ Scale Checkly Agent pods automatically in relation to live load. This page cover
 
 ## The signal
 
-Checkly exposes the `checkly_private_location_check_runs` gauge through the Prometheus V2 exporter. Filtered by `state` and a `private_location_slug_name`, it provides the count of pending and currently-executing check runs in a single Private Location — the signal you drive replica count from.
+Checkly exposes the `checkly_private_location_check_runs` gauge through the [Prometheus v2 endpoint](/integrations/observability/prometheus). Filtered by `state` and a `private_location_slug_name`, it provides the count of pending and currently-executing check runs in a single private location — the signal you drive replica count from.
 
 The relevant `state` values are:
 
@@ -23,7 +24,7 @@ The relevant `state` values are:
 - `inflight` — the check run is currently being executed by an agent.
 
 <Note>
-The gauge is aggregated on a ~1 minute interval, so checks that start and finish within that window may be excluded — their impact on Private Location capacity is negligible.
+The gauge is aggregated on a ~1 minute interval, so checks that start and finish within that window may be excluded — their impact on private location capacity is negligible.
 </Note>
 
 ## KEDA `ScaledObject`
@@ -61,10 +62,10 @@ spec:
         serverAddress: http://prometheus-k8s.monitoring.svc.cluster.local:9090
         metricName: checkly_private_location_check_runs
         threshold: "1"                # Match the agent's JOB_CONCURRENCY.
-        query: sum(checkly_private_location_check_runs{state=~"queued|inflight", private_location_slug_name="<slug>"})
+        query: sum(checkly_private_location_check_runs{queue="main", state=~"queued|inflight", private_location_slug_name="<slug>"})
 ```
 
-The query is scoped to a single Private Location by `private_location_slug_name`, so create one `ScaledObject` per Private Location.
+The query is scoped to a single private location by `private_location_slug_name`, so create one `ScaledObject` per private location. It counts only the `main` queue: uptime monitors and API checks run on the `uptime` queue, which the agent processes with `AGENT_WORKER_COUNT` workers instead of `JOB_CONCURRENCY` slots.
 
 <Tip>
 If you deploy agents with the [Checkly agent Helm chart](https://github.com/checkly/helm-charts/tree/main/charts/agent), template the `ScaledObject` alongside your chart values so the autoscaler ships with the deployment.
@@ -89,8 +90,8 @@ For example, with `threshold: "1"`, `minReplicaCount: 2`, `maxReplicaCount: 10`:
 ## Tuning the bounds
 
 - **`threshold`** — set it to match the agent's `JOB_CONCURRENCY`. The default `JOB_CONCURRENCY` is `1`, so leave `threshold: "1"`. A higher value packs more checks per pod and can cause scheduling delays for long-running checks.
-- **`minReplicaCount`** — keep at `2` or higher so a single agent failure doesn't take the Private Location offline. See [Scaling and Redundancy](/platform/private-locations/scaling-redundancy).
-- **`maxReplicaCount`** — must exceed your expected peak queued + in-flight check runs. If the cap is too low, queued check runs accumulate above it and are dropped after the 6-minute queue TTL.
+- **`minReplicaCount`** — keep at `2` or higher so a single agent failure doesn't take the private location offline. See [Scaling and Redundancy](/platform/private-locations/scaling-redundancy).
+- **`maxReplicaCount`** — must exceed your expected peak queued + in-flight check runs. If the cap is too low, queued check runs accumulate above it and are dropped once the queue TTL expires: 10 minutes for the main queue on current agents, 6 minutes for uptime monitors and for private locations still running an older agent.
 
 <Note>
 If you set `minReplicaCount: 0` to scale to zero when idle, [`cooldownPeriod`](https://keda.sh/docs/latest/reference/scaledobject-spec/#cooldownperiod) becomes important — it controls how long KEDA waits after the trigger goes inactive before scaling the deployment down to zero.
@@ -127,13 +128,13 @@ Maximum runtime by check type:
 2. Probe the signal directly:
 
    ```
-   sum(checkly_private_location_check_runs{state=~"queued|inflight", private_location_slug_name="<slug>"})
+   sum(checkly_private_location_check_runs{queue="main", state=~"queued|inflight", private_location_slug_name="<slug>"})
    ```
 
-3. Schedule a burst of checks against the Private Location and watch the replica count climb toward `maxReplicaCount`, then settle back to `minReplicaCount` once the burst clears.
+3. Schedule a burst of checks against the private location and watch the replica count climb toward `maxReplicaCount`, then settle back to `minReplicaCount` once the burst clears.
 
 ## See also
 
 - [Scaling and Redundancy](/platform/private-locations/scaling-redundancy)
-- [Exporting Metrics & Data via Prometheus V2](/integrations/observability/prometheus-v2/)
+- [Export metrics to Prometheus](/integrations/observability/prometheus)
 - [Kubernetes Deployment](/platform/private-locations/kubernetes-deployment)

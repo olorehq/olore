@@ -2,6 +2,7 @@
 title: 'Getting started with the Terraform provider for Checkly'
 sidebarTitle: 'Overview'
 description: 'Learn how to use the Checkly Terraform provider to declare your monitoring setup as code using HashiCorp Terraform'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/terraform/overview/'
 ---
 
 The [Checkly Terraform provider](https://github.com/checkly/terraform-provider-checkly) enables you to declare your monitoring setup as code using [HashiCorp Terraform](https://www.terraform.io/). You can get started with it in a matter of minutes by following the steps shown below.
@@ -9,7 +10,7 @@ The [Checkly Terraform provider](https://github.com/checkly/terraform-provider-c
 If you prefer, you can also clone our [sample repository](https://github.com/checkly/checkly-terraform-getting-started) and play around with the resources on your own.
 For in-depth information on Terraform, please see HashiCorp's [official documentation](https://developer.hashicorp.com/terraform/docs).
 
-> Looking for Monitoring as Code but don't want to use Terraform? Give our [CLI solution](/cli/) a try.
+> Looking for Monitoring as Code but don't want to use Terraform? Give our [CLI solution](/cli/overview) a try.
 
 ## Installation
 
@@ -73,8 +74,8 @@ Initializing the backend...
 
 Initializing provider plugins...
 - Finding checkly/checkly versions matching "~> 1.0"...
-- Installing checkly/checkly v1.4.3...
-- Installed checkly/checkly v1.4.3 (signed by a HashiCorp partner, key ID 4E5AC4D95E185A57)
+- Installing checkly/checkly v1.30.0...
+- Installed checkly/checkly v1.30.0 (signed by a HashiCorp partner, key ID 4E5AC4D95E185A57)
 
 ...
 
@@ -91,9 +92,9 @@ commands will detect it and remind you to do so if necessary.
 
 You can now start adding resources to your file. You can check the official documentation to see [available parameters](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/check) for each resource type. 
 
-## Your first browser check
+## Your first Browser check
 
-As an example, you could add a basic browser check resource at the bottom of your `main.tf`.
+As an example, you could add a basic Browser check resource at the bottom of your `main.tf`.
 
 ```terraform main.tf
 resource "checkly_check" "browser-check-1" {
@@ -107,7 +108,7 @@ resource "checkly_check" "browser-check-1" {
     "us-west-1"
   ]
 
-  retry_strategy = {
+  retry_strategy {
     type = "LINEAR"
   }
 
@@ -127,7 +128,7 @@ EOT
 
 ## Applying changes
 
-You can now have Terraform apply your changes on Checkly by running `terraform apply`. Terraform will draft a plan and ask you to confirm by typing `yes`. Once that is done, Terraform will go ahead and create the resources you have specified (one browser check, so far) for you.
+You can now have Terraform apply your changes on Checkly by running `terraform apply`. Terraform will draft a plan and ask you to confirm by typing `yes`. Once that is done, Terraform will go ahead and create the resources you have specified (one Browser check, so far) for you.
 
 ```bash Terminal
 $ terraform apply

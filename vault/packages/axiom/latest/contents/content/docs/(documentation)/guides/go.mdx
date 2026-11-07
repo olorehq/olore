@@ -1,0 +1,143 @@
+---
+title: 'Send data from Go app to Axiom'
+description: 'This page explains how to send data from a Go app to Axiom.'
+overview: 'Open-source programming language designed for simplicity and efficiency'
+sidebarTitle: Golang
+github: "https://github.com/axiomhq/axiom-go"
+keywords: ['go', 'golang']
+logoId: 'golang'
+enlargeLogo: true
+---
+
+To send data from a Go app to Axiom, use the Axiom Go SDK.
+
+<Note>
+The Axiom Go SDK is an open-source project and welcomes your contributions. For more information, see the [GitHub repository](https://github.com/axiomhq/axiom-go).
+</Note>
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+<Prerequisites />
+
+## Install SDK
+
+To install the SDK, run the following:
+
+```shell
+go get github.com/axiomhq/axiom-go/axiom
+```
+
+Import the package:
+
+```go
+import "github.com/axiomhq/axiom-go/axiom"
+```
+
+If you use the [Axiom CLI](/reference/cli), run `eval $(axiom config export -f)` to configure your environment variables. Otherwise, [create an API token](/reference/tokens) and export it as `AXIOM_TOKEN`.
+
+Alternatively, configure the client using [options](https://pkg.go.dev/github.com/axiomhq/axiom-go/axiom#Option) passed to the `axiom.NewClient` function:
+
+```go
+client, err := axiom.NewClient(
+    axiom.SetPersonalTokenConfig("AXIOM_TOKEN", "AXIOM_ORG_ID"),
+)
+```
+
+## Use client
+
+Create and use a client in the following way:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/axiomhq/axiom-go/axiom"
+    "github.com/axiomhq/axiom-go/axiom/ingest"
+)
+
+func main() {
+    ctx := context.Background()
+
+    client, err := axiom.NewClient()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if _, err = client.IngestEvents(ctx, "my-dataset", []axiom.Event{
+        {ingest.TimestampField: time.Now(), "foo": "bar"},
+        {ingest.TimestampField: time.Now(), "bar": "foo"},
+    }); err != nil {
+        log.Fatal(err)
+    }
+
+    res, err := client.Query(ctx, "['my-dataset'] | where foo == 'bar' | limit 100")
+    if err != nil {
+        log.Fatal(err)
+    } else if res.Status.RowsMatched == 0 {
+        log.Fatal("No matches found")
+    }
+
+    for row := range res.Tables[0].Rows() {
+        fmt.Println(row)
+    }
+}
+```
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-go/tree/main/examples).
+
+## Configure region
+
+By default, the client sends data to `api.axiom.co`. To target a specific edge region, pass the `SetEdge` option with the edge domain that matches the region your dataset lives in:
+
+<CodeGroup>
+
+```go EU Central 1
+client, err := axiom.NewClient(
+    axiom.SetEdge("eu-central-1.aws.edge.axiom.co"),
+)
+```
+
+```go US East 1
+client, err := axiom.NewClient(
+    axiom.SetEdge("us-east-1.aws.edge.axiom.co"),
+)
+```
+
+</CodeGroup>
+
+This relies on `AXIOM_TOKEN` being set in your environment. To set the token in code as well, add `axiom.SetToken("xaat-...")`.
+
+The following edge domains are available:
+
+| Edge deployment    | Base domain for ingest and query |
+| ------------------ | -------------------------------- |
+| US East 1 (AWS)    | `us-east-1.aws.edge.axiom.co`    |
+| EU Central 1 (AWS) | `eu-central-1.aws.edge.axiom.co` |
+
+For more information about edge deployments, see [Edge deployments](/reference/edge-deployments).
+
+You can also configure the region without changing code by exporting environment variables:
+
+```sh
+export AXIOM_EDGE="eu-central-1.aws.edge.axiom.co"
+# or, for a full URL (takes precedence over AXIOM_EDGE):
+export AXIOM_EDGE_URL="https://eu-central-1.aws.edge.axiom.co"
+```
+
+To point at a custom edge endpoint such as a proxy or load balancer, use `axiom.SetEdgeURL("https://your-edge-host")`. `SetEdgeURL` takes precedence over `SetEdge` if both are set.
+
+<Note>
+Edge endpoints require an API token (`xaat-`), not a personal token (`xapt-`). Ingest and query calls with a personal token against an edge endpoint return `personal tokens are not supported for edge operations, use an API token (xaat-)`.
+</Note>
+
+## Adapters
+
+To use a logging package, see the following adapters:
+- [Apex](/guides/apex)
+- [Logrus](/guides/logrus)
+- [Zap](/guides/zap)

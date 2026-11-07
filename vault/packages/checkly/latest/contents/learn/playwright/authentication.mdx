@@ -18,6 +18,7 @@ learn_playwright:
 category: Playwright
 aliases:
   - managing-cookies
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/authentication/'
 ---
 
 import SignUpCta from "/snippets/sign-up-cta.mdx"
@@ -136,6 +137,19 @@ Notice the following in this code example:
 2. In our test, we run through a fairly normal login routine. In the end, we focus on the field filled with the `XXXXXX` placeholder and call `totp.generate()` to create the 2FA token.
 
 As mentioned, there is some prep you need to do. Refer to our full [article on 2FA login](https://www.checklyhq.com/learn/playwright/bypass-totp/) for all instructions.
+
+### SMS and email one-time passcodes
+
+Unlike TOTP codes, one-time passcodes sent by SMS or email cannot be generated inside your test. The code is only known after the provider sends it. Playwright cannot read a text message or open a mailbox, so the test has to fetch the code from somewhere else and type it into the login form.
+
+You have a few practical options:
+
+- **Use a test-only bypass.** The most reliable approach is to work with your application team to add a test-mode account, a shared static code, or a header/query flag that skips the SMS/email step in a non-production environment. This keeps the test deterministic and avoids depending on third-party delivery.
+- **Poll a programmable inbox.** For email OTP, sign up your test user with a mailbox that exposes an API (for example, Mailosaur, Mailslurp, or a Gmail account you can query via the Gmail API). In your Playwright test, poll the API for the most recent message, extract the code with a regex, and `fill()` it into the OTP input.
+- **Poll a programmable phone number.** For SMS OTP, use a provider that lets you receive SMS via API (for example, Twilio or a similar service) against a dedicated test number, then poll for the latest message body and extract the code.
+- **Read the code from your own backend.** If your app stores the last issued OTP in a database or exposes it on an internal endpoint in staging, query that from the test instead of the delivery channel.
+
+Whichever path you pick, wrap the fetch step in a short polling loop with a timeout so the test fails clearly if the code never arrives, and store any credentials or API keys for the inbox provider as [environment variables](/platform/variables) rather than committing them to the repo.
 
 ## Passkey & **WebAuthn**
 

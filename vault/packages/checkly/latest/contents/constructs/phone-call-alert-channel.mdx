@@ -2,6 +2,7 @@
 title: 'PhoneCallAlertChannel Construct'
 description: 'Learn how to configure phone call alert channels with the Checkly CLI.'
 sidebarTitle: 'Phone Call'
+canonical: 'https://www.checklyhq.com/docs/constructs/phone-call-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -44,7 +45,7 @@ const callChannel = new PhoneCallAlertChannel('call-channel-1', {
 
 ## Configuration
 
-### Phone Call Alert Channel Options
+### Phone call alert channel options
 
 <ResponseField name="phoneNumber" type="string" required>
 Phone number to call. 
@@ -53,6 +54,7 @@ Each `PhoneCallAlertChannel` supports only one phone number. Phone numbers need 
 
 We only support phone numbers from certain [countries and regions](/integrations/alerts/phone-calls/#supported-countries-and-regions).
 
+{/* typecheck-wrap: PhoneCallAlertChannel */}
 ```ts highlight={2}
 new PhoneCallAlertChannel('call-channel-1', {
   phoneNumber: '+31061234567890',
@@ -64,6 +66,6 @@ new PhoneCallAlertChannel('call-channel-1', {
 Friendly name for the phone call alert channel.
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

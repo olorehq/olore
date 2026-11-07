@@ -9,7 +9,7 @@ summary: >-
   number of days. Set `PG_VERSION` and `AWS_REGION` to target any Postgres
   version or AWS region.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-04T20:10:08.844Z'
 ---
 
 This guide shows you how to configure nightly Postgres backups using a scheduled GitHub Action and `pg_dump`.
@@ -35,6 +35,10 @@ Setting up a scheduled backup involves three key components:
   - The **connection string** for your database
   - The **AWS region** where your database is deployed
   - The **Postgres version** your database is running
+
+<Admonition type="important">
+Use a direct (unpooled) connection string for `DATABASE_URL`. Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary#pooled-connection-string); use an [unpooled connection string](/docs/reference/glossary#unpooled-connection-string) instead. Make sure the hostname does not include the `-pooler` suffix.
+</Admonition>
 
 ### 3. GitHub Action
 
@@ -121,7 +125,9 @@ jobs:
 
       - name: Run pg_dump
         run: |
-          $POSTGRES/pg_dump ${{ env.DATABASE_URL }} | gzip > "${{ env.GZIP_NAME }}"
+          set -o pipefail
+          : "${DATABASE_URL:?DATABASE_URL secret is not set}"
+          "${POSTGRES}/pg_dump" "$DATABASE_URL" | gzip > "$GZIP_NAME"
 
       - name: Empty bucket of old files
         run: |
@@ -168,7 +174,7 @@ env:
 ```
 
 - `RETENTION`: Determines how long a backup file should be retained before it’s deleted
-- `DATABASE_URL`: The Neon Postgres connection string for the database you’re backing up
+- `DATABASE_URL`: The database connection string for the database you’re backing up
 - `IAM_ROLE`: The name of the AWS IAM Role
 - `AWS_ACCOUNT_ID`: Your AWS Account Id
 - `S3_BUCKET_NAME`: The name of the S3 bucket where all backups are being stored
@@ -221,7 +227,7 @@ This step involves setting three variables that are all output to `GITHUB_ENV`. 
 ```yml
 - name: Set file, folder and path variables
   run: |
-    GZIP_NAME="$(date +'%B-%d-%Y@%H:%M:%S').gz"
+    GZIP_NAME="$(date +'%B-%d-%Y@%H:%M:%S').sql.gz"
     FOLDER_NAME="${{ github.workflow }}"
     UPLOAD_PATH="s3://${{ env.S3_BUCKET_NAME }}/${FOLDER_NAME}/${GZIP_NAME}"
 
@@ -232,7 +238,7 @@ This step involves setting three variables that are all output to `GITHUB_ENV`. 
 
 The three variables are as follows:
 
-1. `GZIP_NAME`: The name of the `.gz` file derived from the date e.g, `February-20-2025@07:53:02.gz`
+1. `GZIP_NAME`: The name of the `.sql.gz` file derived from the date e.g, `February-20-2025@07:53:02.sql.gz`
 2. `FOLDER_NAME`: The folder where the `.gz` files are to be uploaded
 3. `UPLOAD_PATH`: This is the full path that includes the S3 bucket name, folder name and `.gz` file
 
@@ -255,8 +261,12 @@ This step runs `pg_dump` and saves the output in the Action's virtual memory usi
 ```yml
 - name: Run pg_dump
   run: |
-    $POSTGRES/$pg_dump ${{ env.DATABASE_URL }} | gzip > "${{ env.GZIP_NAME }}"
+    set -o pipefail
+    : "${DATABASE_URL:?DATABASE_URL secret is not set}"
+    "${POSTGRES}/pg_dump" "$DATABASE_URL" | gzip > "$GZIP_NAME"
 ```
+
+GitHub Actions already runs `bash` steps with `pipefail` enabled, but setting it explicitly makes the intent clear and keeps the step correct even if the shell is overridden: the step fails if `pg_dump` fails, instead of masking the error behind a successful `gzip`. The `DATABASE_URL` check fails the step early with a clear message if the secret is missing.
 
 ## Empty bucket of old files
 
@@ -287,4 +297,11 @@ After committing and pushing the workflow to your GitHub repository, the Action 
 
 ## Restoring from a backup
 
-Restoring a `pg_dump` backup requires downloading the file from S3 and restoring it using `pg_restore`. For instructions, see [Restoring a backup with pg_restore](/docs/manage/backup-pg-dump#restoring-a-backup-with-pgrestore).
+The workflow saves a gzip-compressed plain SQL dump, so restore it with `psql`, not `pg_restore`. Download the file from S3, then pipe it into the target database:
+
+```bash
+aws s3 cp "s3://<bucket>/<folder>/<file>.sql.gz" .
+gunzip -c <file>.sql.gz | psql "<target connection string>"
+```
+
+Restore into a new, empty database, such as one in a new Neon project. To restore with `pg_restore` instead, for example to restore a single table, change the `pg_dump` step to `pg_dump -Fc` and see [Restoring a backup with pg_restore](/docs/manage/backup-pg-dump#restoring-a-backup-with-pgrestore).

@@ -28,12 +28,12 @@ Connect to Turso databases from Vercel serverless and edge environments. Configu
 
 | | `@tursodatabase/serverless` | `@libsql/client` |
 | --- | --- | --- |
-| **Status** | Production-ready | Production-ready |
+| **Use with** | [Turso](/tursodb/quickstart) databases | [libSQL](/libsql) databases |
 | **Dependencies** | Uses only `fetch` — zero native dependencies | Requires Node.js or `/web` subpath |
-| **Concurrent writes** | Planned | Will not be supported |
+| **Concurrent writes** | Yes — built into the Turso engine | Not supported |
 | **ORM support** | Not yet supported | Drizzle, Prisma, and others |
 
-**`@tursodatabase/serverless`** is the lightest option with zero native dependencies — and will be the driver to later support concurrent writes. Use **`@libsql/client`** if you need a battle-tested driver today with ORM integration.
+Match the driver to your database engine: **`@tursodatabase/serverless`** for [Turso](/tursodb/quickstart) databases, **`@libsql/client`** for [libSQL](/libsql) databases and ORM integration (Drizzle, Prisma).
 
 ### Quickstart
 
@@ -54,7 +54,7 @@ Connect to Turso databases from Vercel serverless and edge environments. Configu
     authToken: process.env.TURSO_AUTH_TOKEN,
   });
 
-  const stmt = conn.prepare("SELECT * FROM users WHERE id = ?");
+  const stmt = await conn.prepare("SELECT * FROM users WHERE id = ?");
   const row = await stmt.get([123]);
   ```
 

@@ -1,6 +1,6 @@
 ---
 title: Trace Propagation
-description: "Learn how to connect events across applications/services."
+description: "Learn how to connect events across applications/services using the Sentry Apple SDK."
 sidebar_order: 3000
 ---
 
@@ -70,6 +70,18 @@ SentrySDK.start { options in
 @import Sentry;
 
 [SentrySDK startWithConfigureOptions:^(SentryOptions *options) {
+    options.dsn = @"___PUBLIC_DSN___";
+    options.tracePropagationTargets = @[
+        @"https://myproject.org",
+        @"https://api.otherservice.org/"
+    ];
+}];
+```
+
+```objc {tabTitle:Objective-C (SentryObjC)}
+#import <SentryObjC/SentryObjC.h>
+
+[SentryObjCSDK startWithConfigureOptions:^(SentryObjCOptions *options) {
     options.dsn = @"___PUBLIC_DSN___";
     options.tracePropagationTargets = @[
         @"https://myproject.org",

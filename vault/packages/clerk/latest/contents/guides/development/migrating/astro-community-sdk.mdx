@@ -10,6 +10,9 @@ In July 2024, we introduced official support for Astro. This migration guide cov
 
 Uninstall the community SDK and install Clerk's new official SDK for Astro.
 
+> [!IMPORTANT]
+> The official SDK supports Astro 5, 6, and 7. If your app is on Astro 4, [upgrade to Astro 5](https://docs.astro.build/en/guides/upgrade-to/v5/) or later as part of this migration.
+
 ```npm
 npm uninstall astro-clerk-auth
 npm install @clerk/astro
@@ -44,7 +47,7 @@ export default defineConfig({
 
 ### Prefix for environment variables
 
-The prefix for environment variables used in client-side code has been updated to align with Astro's [best practices](https://docs.astro.build/en/guides/environment-variables/). This change affects all [environment variables](/docs/guides/development/clerk-environment-variables){{ target: '_blank' }} supported by Clerk.
+The prefix for environment variables used in client-side code has been updated to align with Astro's [best practices](https://docs.astro.build/en/guides/environment-variables/). This change affects all [environment variables](/docs/guides/development/clerk-environment-variables) supported by Clerk.
 
 ```{{ del: [1, 4, 7], ins: [2, 5, 8] }}
 PUBLIC_ASTRO_APP_CLERK_PUBLISHABLE_KEY=

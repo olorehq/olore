@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-fisheye.png
+image: https://remotion.media/docs/generated/articles-docs-effects-fisheye.png
 slug: /effects/fisheye
 title: fisheye()
 sidebar_label: fisheye()
@@ -21,13 +21,12 @@ Pixels near the center are magnified while content near the edges is radially co
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {fisheye} from '@remotion/effects/fisheye';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -36,7 +35,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -67,9 +66,12 @@ Post-warp zoom factor. Values above `1` zoom in, values below `1` zoom out. Defa
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`fisheye()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGL2
+- WebGPU <AvailableFrom v="4.0.540" />
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

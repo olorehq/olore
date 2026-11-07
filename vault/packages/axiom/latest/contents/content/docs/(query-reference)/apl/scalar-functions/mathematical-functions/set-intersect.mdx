@@ -1,0 +1,98 @@
+---
+title: set_intersect
+description: 'This page explains how to use the set_intersect function in APL.'
+---
+
+Use the `set_intersect` function in APL to find common elements between two dynamic arrays. This function returns a new array that contains only the elements that appear in both input arrays, preserving the order from the first array and eliminating duplicates.
+
+You can use `set_intersect` when you need to compare sets of values—for example, to find users who accessed two different URLs, or to identify traces that passed through multiple services. This function is especially useful for working with dynamic fields generated during aggregations or transformations.
+
+## Usage
+
+### Syntax
+
+```kusto
+set_intersect(Array1, Array2)
+```
+
+### Parameters
+
+| Name     | Type    | Description                  |
+| -------- | ------- | ---------------------------- |
+| `Array1` | dynamic | The first array to compare.  |
+| `Array2` | dynamic | The second array to compare. |
+
+### Returns
+
+A dynamic array containing elements that exist in both `Array1` and `Array2`, in the order they appear in `Array1`, with duplicates removed.
+
+## Example
+
+Use `set_intersect` to return the intersection of two arrays.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend intersect = set_intersect(dynamic([1, 2, 3]), dynamic([2, 3, 4, 5]))
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20intersect%20%3D%20set_intersect(dynamic(%5B1%2C%202%2C%203%5D)%2C%20dynamic(%5B2%2C%203%2C%204%2C%205%5D))%22%7D)
+
+**Output**
+
+| _time            | together |
+| ---------------- | --- |
+| May 22, 11:42:52 | [2, 3] |
+
+## List of related functions
+
+- [set_difference](/apl/scalar-functions/mathematical-functions/set-difference): Returns elements in the first array that aren’t in the second. Use it to find exclusions.
+- [set_has_element](/apl/scalar-functions/mathematical-functions/set-has-element): Tests whether a set contains a specific value. Prefer it when you only need a Boolean result.
+- [set_union](/apl/scalar-functions/mathematical-functions/set-union): Returns the union of two or more sets. Use it when you need any element that appears in at least one set instead of every set.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t have a direct equivalent to `set_intersect`, but you can achieve similar functionality using `mvfilter` with conditions based on a lookup or manually defined set. APL simplifies this process by offering a built-in array intersection function.
+
+<CodeGroup>
+```sql Splunk example
+| eval A=split("apple,banana,cherry", ",")
+| eval B=split("banana,cherry,dragonfruit", ",")
+| eval C=mvfilter(match(A, B))
+````
+
+```kusto APL equivalent
+print A=dynamic(['apple', 'banana', 'cherry']), B=dynamic(['banana', 'cherry', 'dragonfruit'])
+| extend C = set_intersect(A, B)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t natively support array data types or set operations over arrays. To perform an intersection, you usually need to normalize the arrays using `UNNEST` or `JOIN`, which can be verbose. In APL, `set_intersect` performs this in a single step.
+
+<CodeGroup>
+```sql SQL example
+-- Using PostgreSQL syntax
+SELECT ARRAY(
+  SELECT unnest(array['apple','banana','cherry'])
+  INTERSECT
+  SELECT unnest(array['banana','cherry','dragonfruit'])
+);
+```
+
+```kusto APL equivalent
+print A=dynamic(['apple', 'banana', 'cherry']), B=dynamic(['banana', 'cherry', 'dragonfruit'])
+| extend C = set_intersect(A, B)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

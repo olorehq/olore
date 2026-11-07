@@ -1,0 +1,81 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noImportantInKeyframe (CSS)
+description: CSS documentation for noImportantInKeyframe
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="css" languages={[{"id":"css","label":"CSS","href":"/linter/rules/no-important-in-keyframe/css/"}]} />
+
+## Summary
+- Rule available since: `v1.8.0`
+- Diagnostic Category: [`lint/suspicious/noImportantInKeyframe`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- Sources: 
+  - Same as [`keyframe-declaration-no-important`](https://github.com/stylelint/stylelint/blob/main/lib/rules/keyframe-declaration-no-important/README.md)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noImportantInKeyframe": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow `!important` in `@keyframes` declarations.
+
+CSS ignores declarations marked with `!important` inside a keyframe, so the declaration has
+no effect. Remove `!important` and let the animation control the property value.
+
+## Examples
+
+### Invalid
+
+```css
+@keyframes foo {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1 !important;
+    }
+}
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:6:18 <a href=\"https://biomejs.dev/linter/rules/no-important-in-keyframe\">lint/suspicious/noImportantInKeyframe</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Unexpected </span><span style=\"color: Tomato;\"><strong>!important</strong></span><span style=\"color: Tomato;\"> within a keyframes declaration.</span><br />  <br />    <strong>4 │ </strong>    &#125;<br />    <strong>5 │ </strong>    to &#123;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>6 │ </strong>      opacity: 1 !important;<br />   <strong>   │ </strong>                 <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>7 │ </strong>    &#125;<br />    <strong>8 │ </strong>&#125;<br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Declarations marked </span><span style=\"color: lightgreen;\"><strong>!important</strong></span><span style=\"color: lightgreen;\"> inside keyframes are completely ignored in some browsers, so they have no effect there.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Remove the </span><span style=\"color: lightgreen;\"><strong>!important</strong></span><span style=\"color: lightgreen;\"> annotation and keep the declaration.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```css
+@keyframes foo {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+}
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/src/lint/suspicious/no_important_in_keyframe.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/tests/specs/suspicious/noImportantInKeyframe)
+- <RulePlaygroundLink rule="noImportantInKeyframe" category="lint" language="css" code={"@keyframes foo {\n    from {\n      opacity: 0;\n    }\n    to {\n      opacity: 1 !important;\n    }\n}\n"} />
+

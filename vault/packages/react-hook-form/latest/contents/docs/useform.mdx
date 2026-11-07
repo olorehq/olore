@@ -1,113 +1,34 @@
 ---
 title: useForm
+seoTitle: "useForm API: Manage React Forms"
 description: React Hook Form's primary hook for form initialization.
 metaDescription: The primary React Hook Form hook. Initialize your form with validation rules, default values, and submission handling in a single call.
 sidebar: apiLinks
 ---
 
-<SelectNav
-  options={[
-    {
-      label: "register",
-      value: "/docs/useform/register",
-    },
-    {
-      label: "unregister",
-      value: "/docs/useform/unregister",
-    },
-    {
-      label: "formstate",
-      value: "/docs/useform/formstate",
-    },
-    {
-      label: "watch",
-      value: "/docs/useform/watch",
-    },
-    {
-      label: "subscribe",
-      value: "/docs/useform/subscribe",
-    },
-    {
-      label: "handlesubmit",
-      value: "/docs/useform/handlesubmit",
-    },
-    {
-      label: "reset",
-      value: "/docs/useform/reset",
-    },
-    {
-      label: "resetField",
-      value: "/docs/useform/resetfield",
-    },
-    {
-      label: "resetDefaultValues",
-      value: "/docs/useform/resetdefaultvalues",
-    },
-    {
-      label: "setError",
-      value: "/docs/useform/seterror",
-    },
-    {
-      label: "clearErrors",
-      value: "/docs/useform/clearerrors",
-    },
-    {
-      label: "setValue",
-      value: "/docs/useform/setvalue",
-    },
-    {
-      label: "setValues",
-      value: "/docs/useform/setvalues",
-    },
-    {
-      label: "setFocus",
-      value: "/docs/useform/setfocus",
-    },
-    {
-      label: "getValues",
-      value: "/docs/useform/getvalues",
-    },
-    {
-      label: "getFieldState",
-      value: "/docs/useform/getfieldstate",
-    },
-    {
-      label: "trigger",
-      value: "/docs/useform/trigger",
-    },
-    {
-      label: "control",
-      value: "/docs/useform/control",
-    },
-    {
-      label: "Form",
-      value: "/docs/useform/form",
-    },
-  ]}
-/>
+## \</> `useForm:` <TypeText>[`UseFormProps`](/ts#UseFormProps)</TypeText>
 
-## \</> `useForm:` [`UseFormProps`](/ts#UseFormProps)
-
-`useForm` is a custom hook for managing forms with ease. It takes one object as **optional** argument. The following example demonstrates all of its properties along with their default values.
+`useForm` is a custom hook for managing forms with ease. It takes one object as an **optional** argument. The following example demonstrates all of its properties along with their default values.
 
 **Generic props:**
 
-| Option                                                  | Description                                                                                                                   |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [mode](#mode)                                           | Validation strategy **before** submitting behaviour.                                                                          |
-| [reValidateMode](#reValidateMode)                       | Validation strategy **after** submitting behaviour.                                                                           |
-| [defaultValues](#defaultValues)                         | Default values for the form, this value will be cached.                                                                       |
-| [values](#values)                                       | Reactive values to update the form values.                                                                                    |
-| [errors](#errors)                                       | Server returns errors to update form. **⚠ Important:** Keep the errors object reference-stable to avoid infinite re-renders. |
-| [resetOptions](#resetOptions)                           | Option to reset form state update while updating new form values.                                                             |
-| [criteriaMode](#criteriaMode)                           | Display all validation errors or one at a time.                                                                               |
-| [shouldFocusError](#shouldFocusError)                   | Enable or disable built-in focus management.                                                                                  |
-| [delayError](#delayError)                               | Delay error from appearing instantly.                                                                                         |
-| [validate](#validate)                                   | Form-level validation is limited to built-in validation methods.                                                              |
-| [shouldUseNativeValidation](#shouldUseNativeValidation) | Use browser built-in form constraint API.                                                                                     |
-| [shouldUnregister](#shouldUnregister)                   | Enable and disable input unregister after unmount.                                                                            |
-| [progressive](/docs/useform/form)                       | Enable progressive enhancement for native form submission when using the `Form` component.                                    |
-| [disabled](#disabled)                                   | Disable the entire form with all associated inputs.                                                                           |
+| Option                                                  | Description                                                                                                                                                                                           |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [mode](#mode)                                           | Validation strategy for **before** submission behavior.                                                                                                                                               |
+| [reValidateMode](#reValidateMode)                       | Validation strategy for **after** submission behavior.                                                                                                                                                |
+| [defaultValues](#defaultValues)                         | Default values for the form; this value will be cached.                                                                                                                                               |
+| [values](#values)                                       | Reactive values to update the form values.                                                                                                                                                            |
+| [errors](#errors)                                       | Server returns errors to update form. **⚠ Important:** Keep the errors object reference-stable to avoid infinite re-renders.                                                                          |
+| [resetOptions](#resetOptions)                           | Option to reset form state when updating with new form values.                                                                                                                                        |
+| [criteriaMode](#criteriaMode)                           | Display all validation errors or one at a time.                                                                                                                                                       |
+| [shouldFocusError](#shouldFocusError)                   | Enable or disable built-in focus management.                                                                                                                                                          |
+| [delayError](#delayError)                               | Delay error from appearing instantly.                                                                                                                                                                 |
+| [validate](#validate)                                   | Form-level validation is limited to built-in validation methods.                                                                                                                                      |
+| [shouldUseNativeValidation](#shouldUseNativeValidation) | Use browser built-in form constraint API.                                                                                                                                                             |
+| [shouldUnregister](#shouldUnregister)                   | Enable and disable input unregister after unmount.                                                                                                                                                    |
+| [progressive](#progressive)                             | Forward validation attributes (`required`, `min`, `max`, etc.) as native HTML attributes on inputs. Enables progressive enhancement for the `Form` component (usable HTML before hydration/JS loads). |
+| [disabled](#disabled)                                   | Disable the entire form with all associated inputs.                                                                                                                                                   |
+| [formControl](/docs/createFormControl)                  | Supply a pre-created form control object (from `createFormControl`) instead of letting `useForm` create one internally.                                                                               |
 
 **Schema validation props:**
 
@@ -124,21 +45,23 @@ sidebar: apiLinks
 
 ---
 
-This option allows you to configure the validation strategy before a user submits the form. The validation occurs during the `onSubmit` event, which is triggered by invoking the [`handleSubmit`](/docs/useform/handlesubmit) function.
+This option allows you to configure the validation strategy for before a user submits the form. Validation occurs during the `onSubmit` event, which is triggered by invoking the [`handleSubmit`](/docs/useform/handlesubmit) function.
 
 | Name      | Type                        | Description                                                                                                                                                                                                              |
 | --------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | onSubmit  | <TypeText>string</TypeText> | Validation is triggered on the `submit` event, and inputs attach `onChange` event listeners to re-validate themselves.                                                                                                   |
 | onBlur    | <TypeText>string</TypeText> | Validation is triggered on the `blur` event.                                                                                                                                                                             |
-| onChange  | <TypeText>string</TypeText> | Validation is triggered on the `change`event for each input, leading to multiple re-renders. Warning: this often comes with a significant impact on performance.                                                         |
+| onChange  | <TypeText>string</TypeText> | Validation is triggered on the `change` event for each input, leading to multiple re-renders. Warning: this often comes with a significant impact on performance.                                                        |
 | onTouched | <TypeText>string</TypeText> | Validation is initially triggered on the first `blur` event. After that, it is triggered on every `change` event.<br/><br/>**Note:** when using with `Controller`, make sure to wire up `onBlur` with the `render` prop. |
 | all       | <TypeText>string</TypeText> | Validation is triggered on both `blur` and `change` events.                                                                                                                                                              |
 
-#### reValidateMode: <TypeText>onChange | onBlur | onSubmit = 'onChange' </TypeText> <Popup top={3} message="React Native: Custom register or using Controller" /> {#reValidateMode}
+#### reValidateMode: <TypeText>onChange | onBlur | onSubmit = 'onChange'</TypeText> <Popup top={3} message="React Native: Custom register or using Controller" /> {#reValidateMode}
 
 ---
 
-This option allows you to configure validation strategy when inputs with errors get re-validated **after** a user submits the form (`onSubmit` event and [`handleSubmit`](/docs/useform/handlesubmit) function executed). By default, re-validation occurs during the input change event.
+This option allows you to configure the validation strategy for when inputs with errors get re-validated **after** a user submits the form (the `onSubmit` event occurs and the [`handleSubmit`](/docs/useform/handlesubmit) function is executed). By default, re-validation occurs during the input change event.
+
+**Note:** <Since version="7.56.0" /> Both `mode` and `reValidateMode` are reactive — you can update them after form initialization and the new strategy will take effect on subsequent validations.
 
 #### defaultValues: <TypeText>`FieldValues | () => Promise<FieldValues>`</TypeText> {#defaultValues}
 
@@ -149,14 +72,14 @@ The `defaultValues` prop populates the entire form with default values. It suppo
 ```javascript copy
 useForm({
   defaultValues: {
-    firstName: '',
-    lastName: ''
-  }
+    firstName: "",
+    lastName: "",
+  },
 })
 
 // set default value async
 useForm({
-  defaultValues: async () => fetch('/api-endpoint');
+  defaultValues: async () => fetch("/api-endpoint").then((res) => res.json()),
 })
 ```
 
@@ -164,6 +87,21 @@ useForm({
 
 - You **should avoid** providing `undefined` as a default value, as it conflicts with the default state of a controlled component.
 - `defaultValues` are cached. To reset them, use the [reset](/docs/useform/reset) API.
+- An async `defaultValues` function runs once, when the form mounts. If its promise rejects, `formState.isLoading` stays `true`, so catch errors inside the function and return fallback values:
+
+  ```javascript
+  useForm({
+    defaultValues: async () => {
+      try {
+        const res = await fetch("/api/user")
+        return await res.json()
+      } catch {
+        return { firstName: "", lastName: "" }
+      }
+    },
+  })
+  ```
+
 - `defaultValues` will be included in the submission result by default.
 - It's recommended to avoid using custom objects containing prototype methods, such as `Moment` or `Luxon`, as `defaultValues`.
 - There are other options for including form data:
@@ -185,7 +123,7 @@ useForm({
 
 </Admonition>
 
-#### values: <TypeText>FieldValues</TypeText> {#values}
+#### values: <TypeText>FieldValues</TypeText> <Since version="7.41.0" /> {#values}
 
 ---
 
@@ -212,11 +150,27 @@ function App() {
 }
 ```
 
-#### errors: <TypeText>FieldErrors</TypeText> {#errors}
+<Admonition type="important" title="Rules">
+
+- `values` is deep-compared with the previous `values` prop. When it changes, the form is reset with the new values, which **replaces anything the user has typed**. If your data source refetches in the background (for example, React Query on window focus) and returns updated data, set `resetOptions: { keepDirtyValues: true }` to keep the user's edits.
+- Passing a new object with the same content does nothing, so you don't need to memoize `values`.
+
+</Admonition>
+
+##### Loading form data from a server: which option to use?
+
+| Approach                                      | Updates when the data changes                     | Good for                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Async [`defaultValues`](#defaultValues)       | No, it runs once on mount                         | Edit forms that load their data once. `formState.isLoading` is `true` until it resolves.                                     |
+| [`values`](#values)                           | Yes, it resets the form whenever the data changes | Forms that must stay in sync with external or server state. Combine with [`resetOptions`](#resetOptions) to keep user edits. |
+| [`reset`](/docs/useform/reset) in `useEffect` | Only when your effect runs                        | Full control over when the form is refilled and which state to keep.                                                         |
+| Render the form after the data arrives        | No                                                | The simplest option: fetch in the parent and pass the data in as `defaultValues`.                                            |
+
+#### errors: <TypeText>FieldErrors</TypeText> <Since version="7.49.0" /> {#errors}
 
 ---
 
-The `errors` props will react to changes and update the server errors state, which is useful when your form needs to be updated by external server returned errors.
+The `errors` prop will react to changes and update the server errors state, which is useful when your form needs to be updated with errors returned from the server.
 
 ```javascript copy
 function App() {
@@ -228,19 +182,19 @@ function App() {
 }
 ```
 
-#### resetOptions: <TypeText>KeepStateOptions</TypeText> {#resetOptions}
+#### resetOptions: <TypeText>[KeepStateOptions](/ts#KeepStateOptions)</TypeText> <Since version="7.41.0" /> {#resetOptions}
 
 ---
 
 This property is related to value update behaviors. When `values` or `defaultValues` are updated, the `reset` API is invoked internally. It's important to specify the desired behavior after `values` or `defaultValues` are asynchronously updated. The configuration option itself is a reference to the [reset](/docs/useform/reset) method's options.
 
 ```javascript copy
-// by default asynchronously value or defaultValues update will reset the form values
+// by default, an asynchronous update to values or defaultValues will reset the form values
 useForm({ values })
 useForm({ defaultValues: async () => await fetch() })
 
-// options to config the behaviour
-// eg: I want to keep user interacted/dirty value and not remove any user errors
+// options to configure the behavior
+// eg: I want to keep user-interacted/dirty values and not remove any user errors
 useForm({
   values,
   resetOptions: {
@@ -274,29 +228,28 @@ When set to `true` (default), and the user submits a form that fails validation,
 
 <Admonition type="note">
 
-- Only registered fields with a `ref` will work. Custom registered inputs do not
-  apply. For example: `register('test') // doesn't work`
+- Only works when the field's `ref` is actually attached to a DOM element — e.g. `<input {...register('test')} />`. A custom-registered input whose returned props are never spread onto a real element (so no `ref` is attached) won't receive focus, since there's nothing to focus.
 - The focus order is based on the `register` order.
 
 </Admonition>
 
-#### delayError: <TypeText>number</TypeText> {#delayError}
+#### delayError: <TypeText>number</TypeText> <Since version="7.12.0" /> {#delayError}
 
 ---
 
-|                                                                                                                                                                                                                  |                                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| This configuration delays the display of error states to the end-user by a specified number of milliseconds. If the user corrects the error input, the error is removed instantly, and the delay is not applied. | <CodeSandbox url="https://codesandbox.io/s/useform-delayerror-q6c2d"/> |
+|                                                                                                                                                                                                                        |                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| This configuration delays the display of error states to the end user by a specified number of milliseconds. If the user corrects the input with errors, the error is removed instantly, and the delay is not applied. | <CodeSandbox url="https://codesandbox.io/s/useform-delayerror-q6c2d"/> |
 
-#### validate: <TypeText>Function</TypeText> {#validate}
+#### validate: <TypeText>Function</TypeText> <Since version="7.72.0" /> {#validate}
 
 ---
 
 This example demonstrates how to use the **new `validate` API** in combination with `useForm` to perform **form-level validation** in a React application.
 
-The `validate` function receives the entire form object and allows you to return a **structured error** that integrates with `formState.errors`.
+The `validate` function receives `{ formValues, formState, eventType, name }` and must return one of: `true` (valid), a `string` (surfaced at `formState.errors.form`), or an object of `{ [fieldName]: { type, message } }` (each entry surfaced at `formState.errors.form.<fieldName>`). **Note:** `validate` does not run when a `resolver` is configured — `resolver` and `validate` are mutually exclusive, and only `resolver` runs if both are set.
 
-**Examples:**
+##### Examples
 
 ---
 
@@ -305,15 +258,17 @@ const {
   register,
   formState: { errors },
 } = useForm({
-  validate: async ({ formValues }: FormValidateResult) => {
+  validate: async ({ formValues }) => {
     if (formValues.test1.length > formValues.test.length) {
       return {
-        type: "formError",
-        message: "something is wrong here",
+        test: {
+          type: "formError",
+          message: "something is wrong here",
+        },
       }
     }
 
-    if (formValue.test === "test") {
+    if (formValues.test === "test") {
       return "direct error message"
     }
 
@@ -326,7 +281,7 @@ const {
 
 ---
 
-By default, an input value will be retained when input is removed. However, you can set `shouldUnregister` to `true` to `unregister` input during unmount.
+By default, an input value will be retained when an input is removed. However, you can set `shouldUnregister` to `true` to `unregister` the input during unmount.
 
 - This is a global configuration that overrides child-level configurations. To have individual behavior, set the configuration at the component or hook level, not at `useForm`.
 - By default, `shouldUnregister: false` means unmounted fields are **not validated** by built-in validation.
@@ -339,43 +294,51 @@ By default, an input value will be retained when input is removed. However, you 
   - Unmounted inputs must be notified at either `useForm` or `useWatch`'s `useEffect` for the hook form to verify that the input is unmounted from the DOM.
 
     ```javascript
-    const NotWork = () => {
-      const [show, setShow] = React.useState(false)
-      // ❌ won't get notified, need to invoke unregister
+    const NotWork = ({ register, show }) => {
+      // ❌ won't get notified; you need to invoke unregister
       return show && <input {...register("test")} />
     }
 
-    const Work = ({ control }) => {
+    const Work = ({ control, register }) => {
+      // "show" is itself a registered checkbox field in the same form
       const { show } = useWatch({ control })
-      // ✅ get notified at useEffect
+      // ✅ gets notified in useEffect
       return show && <input {...register("test1")} />
     }
 
     const App = () => {
-      const [show, setShow] = React.useState(false)
-      const { control } = useForm({ shouldUnregister: true })
+      const [showNotWork, setShowNotWork] = useState(false)
+      const { register, control } = useForm({ shouldUnregister: true })
       return (
         <div>
-          // ✅ get notified at useForm's useEffect
-          {show && <input {...register("test2")} />}
-          <NotWork />
-          <Work control={control} />
+          <input type="checkbox" {...register("show")} />
+          {/* ✅ gets notified in useForm's useEffect */}
+          {showNotWork && <input {...register("test2")} />}
+          <NotWork register={register} show={showNotWork} />
+          <Work control={control} register={register} />
         </div>
       )
     }
     ```
 
-#### shouldUseNativeValidation: <TypeText>boolean = false</TypeText> {#shouldUseNativeValidation}
+#### shouldUseNativeValidation: <TypeText>boolean = false</TypeText> <Since version="7.9.0" /> {#shouldUseNativeValidation}
 
 ---
 
-This config will enable [browser native validation](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation). It will also enable CSS selectors `:valid` and`:invalid` making styling inputs easier. You can still use these selectors even when client-side validation is disabled.
+This config will enable [browser native validation](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation). It will also enable CSS selectors `:valid` and `:invalid`, making input styling easier. You can still use these selectors even when client-side validation is disabled.
 
 - Only works with `onSubmit` and `onChange` modes, as the `reportValidity` execution will focus the error input.
-- Each registered field's validation message is required to be string to display them natively.
+- Each registered field's validation message must be a string to be displayed natively.
 - This feature only works with the `register` API and&nbsp; `useController/Controller` that are connected with actual DOM references.
+- `shouldUseNativeValidation` works independently of `progressive` — it drives the browser's Constraint Validation API (`setCustomValidity`/`reportValidity`) directly from React Hook Form's own computed validation results, regardless of whether validation attributes are forwarded as native HTML attributes. Pair it with [`progressive`](#progressive) if you also want the constraint attributes themselves (`required`, `minLength`, etc.) present on the DOM, e.g. for SSR or pre-hydration fallback validation.
 
-**Examples:**
+  ```javascript
+  useForm({
+    shouldUseNativeValidation: true,
+  })
+  ```
+
+##### Examples
 
 ---
 
@@ -385,6 +348,7 @@ import { useForm } from "react-hook-form"
 export default function App() {
   const { register, handleSubmit } = useForm({
     shouldUseNativeValidation: true,
+    progressive: true,
   })
   const onSubmit = async (data) => {
     console.log(data)
@@ -403,7 +367,19 @@ export default function App() {
 }
 ```
 
-#### disabled: <TypeText>boolean = false</TypeText> {#disabled}
+#### progressive: <TypeText>boolean = false</TypeText> <Since version="7.44.0" /> {#progressive}
+
+---
+
+Forwards validation rules (`required`, `min`, `max`, `minLength`, `maxLength`, `pattern`) from [`register`](/docs/useform/register) as native HTML attributes on the input. Enables progressive enhancement for the [`Form`](/docs/useform/form) component (rendering usable HTML before hydration). Independent of [`shouldUseNativeValidation`](#shouldUseNativeValidation), which drives the browser's Constraint Validation API from React Hook Form's own validation results regardless of this option — pair the two if you also want the constraint attributes present on the DOM.
+
+```javascript copy
+useForm({
+  progressive: true,
+})
+```
+
+#### disabled: <TypeText>boolean = false</TypeText> <Since version="7.48.0" /> {#disabled}
 
 ---
 
@@ -411,7 +387,7 @@ This config allows you to disable the entire form and all associated inputs when
 This can be useful for preventing user interaction during asynchronous tasks or other
 situations where inputs should be temporarily unresponsive.
 
-**Examples:**
+##### Examples
 
 ---
 
@@ -469,14 +445,14 @@ npm install @hookform/resolvers
 | --------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `values`  | <TypeText>object</TypeText>                                                                                               | This object contains the entire form values.                                                                                                |
 | `context` | <TypeText>object</TypeText>                                                                                               | This is the `context` object which you can provide to the `useForm` config. It is a mutable `object` that can be changed on each re-render. |
-| `options` | <TypeText><pre>{JSON.stringify({ criteriaMode: "string", fields: "object", names: "string[]" }, null,2)}</pre></TypeText> | This is the option object containing information about the validated fields, names and `criteriaMode` from `useForm`.                       |
+| `options` | <TypeText><pre>{JSON.stringify({ criteriaMode: "string", fields: "object", names: "string[]" }, null,2)}</pre></TypeText> | This is the options object containing information about the validated fields, names and `criteriaMode` from `useForm`.                      |
 
 <Admonition type="important" title="Rules">
 
 - Schema validation focuses on field-level error reporting. Parent-level error checking is limited to the direct parent level, which is applicable for components such as group checkboxes.
 - This function will be cached.
-- Re-validation of an input will only occur one field at time during a user’s interaction. The lib itself will evaluate the `error` object to trigger a re-render accordingly.
-- A resolver can not be used with the built-in validators (e.g.: required, min, etc.)
+- Re-validation of an input will only occur one field at a time during a user’s interaction. The library itself will evaluate the `error` object to trigger re-renders accordingly.
+- A resolver cannot be used with the built-in validators (e.g.: required, min, etc.)
 - When building a custom resolver:
   - Make sure that you return an object with both `values` and `errors` properties. Their default values should be an empty object. For example: `{}`.
   - The keys of the `errors` object should match the `name` values of your fields, but they _must_ be hierarchical rather than a single key for deep errors:
@@ -486,7 +462,7 @@ npm install @hookform/resolvers
 
 </Admonition>
 
-**Examples:**
+##### Examples
 
 ---
 
@@ -634,7 +610,6 @@ const App = () => {
 ```
 
 ```tsx copy sandbox="https://codesandbox.io/s/vest-8q874"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 import { vestResolver } from "@hookform/resolvers/vest"
 import vest, { test, enforce } from "vest"
@@ -681,7 +656,6 @@ const App = () => {
 ```
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-customresoliver-ts-v7-juc63"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 import * as Joi from "joi"
 
@@ -727,7 +701,7 @@ const App = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         <label>Username</label>
         <input {...register("username")} />
-        {errors.username && <p>errors.username.message</p>}
+        {errors.username && <p>{errors.username.message}</p>}
         <input type="submit" />
       </form>
     </div>
@@ -759,12 +733,11 @@ resolver: async (data, context, options) => {
 
 #### `useForm` return and `useEffect` dependencies
 
-In a future major release, `useForm` return will be memoized to optimize performance and reflect changes in `formState`.
-As a result, adding the entire return value of `useForm` to a `useEffect` dependency list may lead to infinite loops.
+In a future major release, the `useForm` return value will be memoized to optimize performance and reflect changes in the `formState`. Once that ships, the returned object will get a new reference whenever `formState` updates — so depending on it directly in a `useEffect` dependency array will re-run that effect on every `formState` change, which can create an infinite loop if the effect itself updates the form (e.g. calling `reset`).
 
 <Admonition type="warning" >
 
-The following code is likely to create this situation:
+Avoid depending on the entire `useForm` return value going forward — the following pattern will break once memoization ships:
 
 ```javascript
 const methods = useForm()
@@ -776,7 +749,7 @@ useEffect(() => {
 
 </Admonition>
 
-Passing only the relevant methods, as showed below, should avoid this kind of issue:
+Passing only the relevant methods, as shown below, should avoid this kind of issue:
 
 ```javascript
 const methods = useForm()
@@ -788,7 +761,7 @@ useEffect(() => {
 
 <Admonition type="tip" >
 
-The recommended way is to pass destructured methods to the dependencies of an `useEffect`
+The recommended way is to pass destructured methods to the dependencies of a `useEffect`
 
 ```javascript
 const { reset } = useForm()
@@ -806,21 +779,230 @@ useEffect(() => {
 
 ---
 
-The following list contains reference to `useForm` return props.
+The following list contains references to `useForm` return props.
 
 - [register](/docs/useform/register)
 - [unregister](/docs/useform/unregister)
 - [formState](/docs/useform/formstate)
 - [watch](/docs/useform/watch)
+- [subscribe](/docs/useform/subscribe)
 - [handleSubmit](/docs/useform/handlesubmit)
 - [reset](/docs/useform/reset)
 - [resetField](/docs/useform/resetfield)
+- [resetDefaultValues](/docs/useform/resetdefaultvalues)
 - [setError](/docs/useform/seterror)
 - [clearErrors](/docs/useform/clearerrors)
 - [setValue](/docs/useform/setvalue)
+- [setValues](/docs/useform/setvalues)
 - [setFocus](/docs/useform/setfocus)
 - [getValues](/docs/useform/getvalues)
+- [getErrors](/docs/useform/geterrors)
 - [getFieldState](/docs/useform/getfieldstate)
 - [trigger](/docs/useform/trigger)
 - [control](/docs/useform/control)
 - [Form](/docs/useform/form)
+
+### Examples
+
+---
+
+A complete sign-up form: default values, validation rules, error messages, and an async submit that disables the button while it runs.
+
+<TabGroup buttonLabels={["TS", "JS"]}>
+
+```tsx copy
+import { useForm } from "react-hook-form"
+
+type FormValues = {
+  email: string
+  password: string
+}
+
+export default function App() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    defaultValues: { email: "", password: "" },
+    mode: "onTouched",
+  })
+
+  const onSubmit = async (data: FormValues) => {
+    await fetch("/api/sign-up", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        aria-invalid={errors.email ? "true" : "false"}
+        {...register("email", {
+          required: "Email is required",
+          pattern: { value: /\S+@\S+\.\S+/, message: "Enter a valid email" },
+        })}
+      />
+      {errors.email && <p role="alert">{errors.email.message}</p>}
+
+      <label htmlFor="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        aria-invalid={errors.password ? "true" : "false"}
+        {...register("password", {
+          required: "Password is required",
+          minLength: { value: 8, message: "Use at least 8 characters" },
+        })}
+      />
+      {errors.password && <p role="alert">{errors.password.message}</p>}
+
+      <button type="submit" disabled={isSubmitting}>
+        Sign up
+      </button>
+    </form>
+  )
+}
+```
+
+```javascript copy
+import { useForm } from "react-hook-form"
+
+export default function App() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: { email: "", password: "" },
+    mode: "onTouched",
+  })
+
+  const onSubmit = async (data) => {
+    await fetch("/api/sign-up", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        aria-invalid={errors.email ? "true" : "false"}
+        {...register("email", {
+          required: "Email is required",
+          pattern: { value: /\S+@\S+\.\S+/, message: "Enter a valid email" },
+        })}
+      />
+      {errors.email && <p role="alert">{errors.email.message}</p>}
+
+      <label htmlFor="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        aria-invalid={errors.password ? "true" : "false"}
+        {...register("password", {
+          required: "Password is required",
+          minLength: { value: 8, message: "Use at least 8 characters" },
+        })}
+      />
+      {errors.password && <p role="alert">{errors.password.message}</p>}
+
+      <button type="submit" disabled={isSubmitting}>
+        Sign up
+      </button>
+    </form>
+  )
+}
+```
+
+</TabGroup>
+
+### Tips
+
+---
+
+- Give every field a default value in `defaultValues`, even if it is just `""`. `isDirty`, `dirtyFields`, `reset`, and controlled components all compare against `defaultValues`, so a missing default can make a field look dirty or switch from uncontrolled to controlled.
+- If you are not sure which `mode` to use, try `mode: "onTouched"`. Errors show after the user leaves a field, and then update on every change. Users are not shown errors while they are still typing for the first time.
+- To load data from an API, pass it to [`values`](#values) instead of calling `reset` in a `useEffect`. The form updates when the values change, and the values are compared deeply, so a new object with the same content does not reset the form.
+- In a large form, keep `useForm` in the parent and move the parts that change often into child components. Read values with [`useWatch`](/docs/usewatch) and state with [`useFormState`](/docs/useformstate) in those children, so the whole form does not re-render on every key press.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### Fields stay empty after data loads from an API
+
+<Why>
+
+`defaultValues` is read once, on the first render, and then cached. If the data arrives later, the new `defaultValues` object is ignored.
+
+</Why>
+
+<Fix>
+
+Pass the data to [`values`](/docs/useform#values). The form updates whenever `values` changes:
+
+```javascript
+const { data } = useQuery(...)
+const { register } = useForm({ values: data })
+```
+
+Or call [`reset(data)`](/docs/useform/reset) once the data arrives.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### Errors only appear after the first submit
+
+<Why>
+
+This is the default. With `mode: "onSubmit"`, fields are not validated until the form is submitted. After that, `reValidateMode` (`"onChange"` by default) re-checks them as the user types.
+
+</Why>
+
+<Fix>
+
+Set [`mode`](#mode) to validate earlier, for example `useForm({ mode: "onTouched" })` to show errors when the user leaves a field.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### `formState.isValid` (or another value) is always `false` in an event handler
+
+<Why>
+
+`formState` only tracks the values your component reads during render. If you read `formState.isValid` only inside a click handler or effect, the form never subscribed to it, so it is not kept up to date.
+
+</Why>
+
+<Fix>
+
+Read the value during render, for example by destructuring it:
+
+```javascript
+const {
+  formState: { isValid },
+} = useForm({ mode: "onChange" })
+
+<button disabled={!isValid}>Submit</button>
+```
+
+</Fix>
+
+</Troubleshoot>

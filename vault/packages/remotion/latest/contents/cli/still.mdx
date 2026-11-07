@@ -1,11 +1,11 @@
 ---
-image: /generated/articles-docs-cli-still.png
+image: https://remotion.media/docs/generated/articles-docs-cli-still.png
 title: npx remotion still
 sidebar_label: still
 crumb: CLI Reference
 ---
 
-<AvailableFrom v="2.3" />
+# npx remotion still<AvailableFrom v="2.3" />
 
 Render a still frame based on the entry point, the composition ID and save it to the output location.
 
@@ -68,6 +68,12 @@ Sets the output file path, as an alternative to the `output-location` positional
 
 <Options id="frame" />
 
+To render multiple stills, use [`remotion render` with `--frames`](/docs/cli/render#--frames) instead:<AvailableFrom v="4.0.502" inline />
+
+```bash title="Render frames 0, 30, and 90"
+npx remotion render MyComp out/frames --frames=0,30,90 --image-format=png
+```
+
 ### `--bundle-cache`
 
 <Options id="bundle-cache" />
@@ -100,7 +106,7 @@ Not to be confused with the [`--timeout` flag when deploying a Lambda function](
 
 <Options id="disable-web-security" />
 
-### ~`--disable-headless`~<AvailableFrom v="2.6.5" />
+### `--disable-headless`<AvailableFrom v="2.6.5" />
 
 <Options id="disable-headless" />
 
@@ -124,6 +130,10 @@ Not to be confused with the [`--timeout` flag when deploying a Lambda function](
 
 <Options id="media-cache-size-in-bytes" />
 
+### `--preferred-effect-backend`<AvailableFrom v="4.0.540" />
+
+<Options id="preferred-effect-backend" />
+
 ### `--offthreadvideo-cache-size-in-bytes`<AvailableFrom v="4.0.23"/>
 
 <Options id="offthreadvideo-cache-size-in-bytes" />
@@ -140,9 +150,21 @@ Not to be confused with the [`--timeout` flag when deploying a Lambda function](
 
 <Options cli id="binaries-directory" />
 
-### `--experimental-rspack`<AvailableFrom v="4.0.426" />
+### `--rspack`<AvailableFrom v="4.0.502" />
 
-<Options id="experimental-rspack" />
+<Options id="rspack" />
+
+### `--license-key`<AvailableFrom v="4.0.539" />
+
+<Options id="license-key" />
+
+### `--is-production`<AvailableFrom v="4.0.539" />
+
+<Options id="is-production" />
+
+```bash title="Report a development render"
+npx remotion still --license-key=rm_sec_... --is-production=false
+```
 
 ### ~~`--ffmpeg-executable`~~
 

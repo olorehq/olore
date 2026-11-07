@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-html-in-canvas-guide.png
+image: https://remotion.media/docs/generated/articles-docs-html-in-canvas-guide.png
 id: html-in-canvas
 title: HTML-in-canvas
 crumb: 'Designing visuals'
@@ -15,8 +15,6 @@ crumb: 'Designing visuals'
   playsInline
   style={{width: '100%', borderRadius: 'var(--ifm-global-radius)', marginBottom: 0, aspectRatio: '3 / 1'}}
 />
-
-<SuggestedPrompts prompts={['use remotion html-in-canvas best practices. create a sample composition and apply a glitch effect to it!', 'use remotion html-in-canvas best practices. make a new composition and implement a subtle CRT convex shape shader on top of a HTML element. content: terminal and remotion themed. the command and output of "npx create-video@latest --yes --blank my-video" should be animated. then "claude" should be invoked and the prompt "Add a CRT effect using HTML-in-canvas " should be shown']} />
 
 Regular video editors are canvas-based which allows for complex effects and compositing that is not possible with plain CSS.
 
@@ -43,7 +41,7 @@ For rendering, you don't need to do anything — see [Rendering](#rendering) bel
 ```tsx twoslash title="MyComp.tsx"
 import {HtmlInCanvas, type HtmlInCanvasOnPaint} from 'remotion';
 
-const onPaint: HtmlInCanvasOnPaint = ({canvas, element, elementImage}) => {
+const onPaint: HtmlInCanvasOnPaint = ({canvas, elementImage}) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Failed to acquire 2D context');
@@ -51,8 +49,7 @@ const onPaint: HtmlInCanvasOnPaint = ({canvas, element, elementImage}) => {
 
   ctx.reset();
   ctx.filter = 'blur(8px)';
-  const transform = ctx.drawElementImage(elementImage, 0, 0);
-  element.style.transform = transform.toString();
+  ctx.drawElementImage(elementImage, 0, 0);
 };
 
 export const MyComp: React.FC = () => {
@@ -81,6 +78,16 @@ Also see the following sample prompts in our prompt gallery that you can give yo
 - [Vintage screen effect](https://www.remotion.dev/prompts/vintage-screen-effect-html-in-canvas)
 - [Glitch effect](https://www.remotion.dev/prompts/glitch-effect-html-in-canvas)
 
+## Example prompts
+
+<SuggestedPrompt prompt="/remotion-create Create a sample composition and apply an HTML-in-canvas glitch effect to it." />
+
+<SuggestedPrompt
+  prompt={
+    '/remotion-create Make a new composition with a subtle CRT convex-shape shader over an HTML element. Use a terminal and Remotion theme. Animate the command and output of "npx create-video@latest --yes --blank my-video", followed by invoking "claude" and entering the prompt "Add a CRT effect using HTML-in-canvas".'
+  }
+/>
+
 ## With `@remotion/transitions`
 
 [`@remotion/transitions`](/docs/transitions) can take advantage of HTML-in-canvas as well to blend two scenes.  
@@ -93,14 +100,25 @@ You can also build your own — see [Making a custom HTML-in-canvas presentation
 HTML-in-canvas is only available in Chrome 149 and later with the `chrome://flags/#canvas-draw-element` flag enabled.  
 The API is unstable - Chrome may change the API or even remove it in the future.
 
-Nesting `<HtmlInCanvas>` inside another `<HtmlInCanvas>` is not supported. Chrome would only display the outer effect, so this is invalid in Remotion. It will throw an error.  
-If you need to combine multiple effects, try to merge them into a single `onPaint` callback.
+Nesting [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas) components requires Chrome 157.0.8080.0 or newer with HTML-in-canvas enabled. See [Nested HTML-in-canvas](#nested-html-in-canvas).
+
+### Cross-origin content
+
+HTML-in-canvas [omits cross-origin content that JavaScript cannot read](https://github.com/WICG/html-in-canvas#read-back-allowed-rendering), including images and videos loaded without CORS, cross-origin iframes and tainted canvases. Content can appear in the regular page while being absent from the captured canvas.
+
+From <AvailableFrom v="4.0.542" inline />, [`<Img>`](/docs/img) and [`<Html5Video>`](/docs/html5-video) default to `crossOrigin="anonymous"` inside `<HtmlInCanvas>`, including [`<HtmlInCanvasMotionBlur>`](/docs/motion-blur/html-in-canvas-motion-blur). This also applies to [`<OffthreadVideo>`](/docs/offthreadvideo) during preview. The media server must allow CORS. In earlier versions, set `crossOrigin="anonymous"` explicitly.
+
+If the server rejects CORS, these components report a loading error instead of silently disappearing from the canvas. Anonymous CORS omits cross-origin credentials; for authenticated media, see [`<Img>`'s `crossOrigin` prop](/docs/img#crossorigin) or [`<Html5Video>`'s `crossOrigin` prop](/docs/html5-video#crossorigin).
+
+For native `<img>` and `<video>` elements, set `crossOrigin="anonymous"` yourself. SVG `<image>` elements also support this attribute. CSS background images have no `crossOrigin` attribute; use a same-origin URL, a data URL, or a blob URL created from a successful CORS fetch. If a remote server does not allow CORS, host the asset in your [public folder](/docs/assets).
 
 ## Rendering
 
 From [`v4.0.455`](https://github.com/remotion-dev/remotion/releases/tag/v4.0.455), render is supported locally via [`npx remotion render`](/docs/cli/render) and Studio, on [Lambda](/docs/lambda), on [Vercel](/docs/vercel) and through [server-side rendering](/docs/ssr) APIs.
 
 We compiled a version of Chrome and made it the default, and enabled the flag for you.
+
+Nested `<HtmlInCanvas>` components are supported during server-side rendering from Remotion <AvailableFrom v="4.0.534" inline />, which uses Chromium 157.0.8080.0.
 
 If your effect uses a WebGL shader, pass [`--gl=angle`](/docs/gl-options) to make the render work:
 
@@ -120,7 +138,7 @@ If your machine has no GPU, we recommend `--gl=swangle` instead (default on Lamb
 
 ## AI agents
 
-Remotion publishes [Agent Skills](/docs/ai/skills) that teach AI agents like Claude Code, Codex and Cursor how to use [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas) correctly — including the [`onInit`](/docs/remotion/html-in-canvas#oninit) / [`onPaint`](/docs/remotion/html-in-canvas#onpaint) lifecycle, the [`--gl=angle` flag](#rendering) and the [no-nesting rule](#limitations).
+Remotion publishes [Agent Skills](/docs/ai/skills) that teach AI agents like Claude Code, Codex and Cursor how to use [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas) correctly — including the [`onInit`](/docs/remotion/html-in-canvas#oninit) / [`onPaint`](/docs/remotion/html-in-canvas#onpaint) lifecycle, the [`--gl=angle` flag](#rendering) and [nesting support](#nested-html-in-canvas).
 
 Install them with:
 
@@ -130,14 +148,17 @@ npx skills add remotion-dev/skills
 
 ## Leveraging HTML-in-canvas for client-side rendering
 
-Not directly related, but also leveraging the same technology is the [HTML-in-canvas option in `@remotion/web-renderer`](/docs/client-side-rendering/html-in-canvas).
+Not directly related, but [`@remotion/web-renderer`](/docs/client-side-rendering/html-in-canvas) can also use this technology to capture frames.
 
-When enabled, the [client-side renderer](/docs/client-side-rendering) uses HTML-in-canvas to capture full frames in the browser, which can produce more accurate output than the default DOM compositor.
+This is opt-in. In browsers without nesting support, compositions containing [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas) use the built-in DOM composer because native capture would create a nested HTML-in-canvas subtree.
 
-This mode cannot render compositions that contain [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas) elements, because doing so would [nest HTML-in-canvas](#limitations) captures, which Chrome does not support.
+## Nested HTML-in-canvas
+
+Nesting `<HtmlInCanvas>` components is supported in Chrome 157.0.8080.0 or newer with HTML-in-canvas enabled. Use [`HtmlInCanvas.isNestingSupported()`](/docs/remotion/html-in-canvas#htmlincanvasisnestingsupported) to check at runtime. Unsupported browsers throw an error when components are nested. Server-side rendering supports nesting from Remotion <AvailableFrom v="4.0.534" inline />.
 
 ## See also
 
+- [HTML-in-canvas Bugs](/docs/html-in-canvas-bugs)
 - [`<HtmlInCanvas>`](/docs/remotion/html-in-canvas)
 - [HTML-in-canvas examples on GitHub](https://github.com/remotion-dev/html-in-canvas)
 - [Making a custom HTML-in-canvas presentation](/docs/transitions/presentations/custom-html-in-canvas)

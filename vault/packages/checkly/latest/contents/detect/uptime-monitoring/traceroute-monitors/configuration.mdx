@@ -1,0 +1,112 @@
+---
+title: 'Traceroute monitor configuration'
+description: 'Configure your Traceroute monitor to map network paths and detect routing issues, latency, and packet loss.'
+sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/traceroute-monitors/configuration/'
+---
+
+<Tip>
+To configure a Traceroute monitor using code, learn more about the [Traceroute monitor construct](/constructs/traceroute-monitor).
+</Tip>
+
+### Basic Setup
+
+Configure your Traceroute monitor by specifying the target host and probe parameters:
+
+* **Hostname or IP address:** The host to trace to (e.g. `api.example.com` or `203.0.113.1`). Do not include a scheme or port in this field
+* **IP family:** Choose between IPv4 (default) or IPv6
+* **Protocol:** The probe protocol. TCP (default) is the most firewall-friendly option. See the [protocol reference](/detect/uptime-monitoring/traceroute-monitors/overview#probe-protocols) for details on TCP, UDP, ICMP, and SCTP
+* **Port:** Destination port for TCP, UDP, and SCTP probes (1–65535). Defaults to `443` for TCP and `33434` for UDP/SCTP. Not applicable for ICMP — the port field is hidden when ICMP is selected
+* **Max Hops:** Maximum number of hops to probe before stopping (1–64, default: 30)
+* **Max Unknown Hops:** Maximum number of consecutive unresponsive hops to tolerate before cutting the trace short (1–30, default: 15). Many routers silently drop traceroute probes without affecting real traffic, so a reasonable limit prevents traces from halting unnecessarily
+* **Timeout:** Maximum time in seconds to wait for the entire trace to complete (1–30, default: 10)
+* **Reverse DNS (PTR lookup):** When enabled (default: on), Checkly performs a PTR lookup on each hop IP to resolve it to a hostname. Disable to reduce trace time when hostnames are not needed
+
+### Assertions
+
+Use assertions to validate Traceroute results and alert when paths change or degrade:
+
+You can create assertions based on:
+
+* **Latency:** RTT statistics for the **final responding hop**. Available properties: `avg`, `min`, `max`, `stdDev` (all in milliseconds). This assertion requires the destination to be reached — if `destinationReached` is `false`, `finalHopLatency` is absent and the assertion fails
+* **Hop Count:** Total number of hops recorded in the trace. Use this to detect routing changes that add or remove hops from the expected path
+* **Packet Loss:** Packet loss percentage at the **last recorded hop** (0–100). A non-zero value indicates that some probe packets were not returned
+
+For more details, see [Assertions](/detect/assertions).
+
+### Response Time Limits
+
+Set performance thresholds based on final-hop latency:
+
+* **Degraded After:** Final-hop avg RTT threshold (in milliseconds) after which the check is marked as degraded but not failed. Default: 3,000 ms. Maximum: 30,000 ms
+* **Failed After:** Final-hop avg RTT threshold after which the check fails completely. Default: 5,000 ms. Maximum: 30,000 ms
+
+<Note>
+Response-time thresholds apply to the **final-hop average RTT**, not the total check execution time. If the destination is not reached, the monitor is marked as failed regardless of these thresholds.
+</Note>
+
+### JSON Response Schema
+
+The Traceroute response is available as structured JSON. These are the key fields (a few internal bookkeeping fields are omitted here, and fields marked as omitted are absent from the JSON rather than empty):
+
+```json
+{
+  "hostname": "api.example.com",          // Target hostname or IP as configured
+  "resolvedIp": "93.184.216.34",          // IP address used for the trace
+  "port": 443,                             // Destination port; for ICMP probes this reports the unused fallback 443
+  "ipFamily": "IPv4",                      // "IPv4" or "IPv6"
+  "maxHops": 30,                           // Configured max hops
+  "totalHops": 12,                         // Number of hops actually recorded
+  "destinationReached": true,              // Whether the destination responded
+  "truncationReason": "destinationReached",// Why the trace stopped:
+                                           // "destinationReached" | "maxHops" | "maxUnknownHops" | "timeout"
+  "probeProtocol": "TCP",                 // Probe protocol: "TCP" | "UDP" | "ICMP" | "SCTP"
+  "finalHopLatency": {                     // RTT stats for the last responding hop (the whole object is omitted when the destination is not reached)
+    "avg": 12.34,
+    "min": 11.80,
+    "max": 13.10,
+    "stdDev": 0.42
+  },
+  "hops": [
+    {
+      "hop_number": 1,
+      "main_ip": "10.0.0.1",              // Primary IP observed at this hop
+      "main_host": "router.isp.net",      // Reverse-DNS hostname (omitted when PTR lookup is off or the lookup fails)
+      "sent": 3,                           // Probe packets sent to this hop
+      "received": 3,                       // Replies received from this hop
+      "loss_percentage": 0.0,             // Packet loss at this hop
+      "rtt": {                             // RTT stats (omitted when the hop never replied)
+        "last_ms": 1.23,                 // RTT of the most recent probe
+        "avg_ms": 1.10,                  // Average RTT across all probes
+        "best_ms": 0.95,                 // Minimum RTT
+        "worst_ms": 1.23,               // Maximum RTT
+        "stddev_ms": 0.12               // Standard deviation
+      },
+      "asn": 15169,                        // Autonomous System Number (omitted when unknown)
+      "asn_org": "GOOGLE",               // AS organization name (omitted when unknown)
+      "country": "US",                   // Two-letter country code (omitted when unknown)
+      "aws_region": "us-east-1",         // AWS region — only present when the hop is inside AWS
+      "aws_service": "EC2"               // AWS service — only present when the hop is inside AWS
+    }
+    // ... one entry per recorded hop
+  ],
+  "timestamp": 1720000000                 // Unix timestamp of the trace run
+}
+```
+
+### Frequency
+
+Set how often the monitor runs. Traceroute monitors run at most **once every 30 seconds** (every 30 seconds to 24 hours) — the two sub-30-second frequencies aren't available.
+
+### Scheduling & Locations
+
+* **Strategy:** Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/concepts/scheduling)
+* **Locations:** Select [public](/concepts/locations/#public-locations) or [private](/platform/private-locations/overview) locations to run the monitor from
+
+### Additional Settings
+
+* **Name:** Give your monitor a clear name to identify it in dashboards and alerts
+* **Description:** Add context about what this monitor does and why it matters. Supports markdown, max 500 characters. When a failure occurs, [Rocky AI](/ai/rocky-ai) uses the description to provide more accurate [root cause and user impact analysis](/resolve/ai-root-cause-analysis/overview)
+* **Tags:** Use tags to organize monitors across [dashboards](/communicate/dashboards/overview/) and [maintenance windows](/communicate/maintenance-windows/overview)
+* **Retries:** Define how failed runs should be retried. See [retry strategies](/communicate/alerts/retries)
+* **Alerting:** Configure your [alert settings](/communicate/alerts/configuration), [alert channels](/communicate/alerts/channels), or set up [webhooks](/integrations/alerts/webhooks) for custom integrations

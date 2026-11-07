@@ -15,6 +15,7 @@ Commercial implementations of that being:
 - [Oracle Cloud Storage](https://docs.oracle.com/en-us/iaas/integration/doc/configure-object-storage.html)
 - [Blomp Cloud Storage](https://www.blomp.com/cloud-storage/)
 - [IBM Bluemix Cloud ObjectStorage Swift](https://console.bluemix.net/docs/infrastructure/objectstorage-swift/index.html)
+- [Infomaniak Swiss Backup](https://www.infomaniak.com/en/swiss-backup/cloud-storage)
 
 Paths are specified as `remote:container` (or `remote:` for the `lsd`
 command.)  You may put subdirectories in too, e.g. `remote:container/path/to/dir`.
@@ -151,7 +152,7 @@ rclone sync --interactive /home/local/directory remote:container
 
 ### Configuration from an OpenStack credentials file
 
-An OpenStack credentials file typically looks something something
+An OpenStack credentials file typically looks something
 like this (without the comments)
 
 ```sh
@@ -327,6 +328,14 @@ Properties:
     - OVH
   - "https://authenticate.ain.net"
     - Blomp Cloud Storage
+  - "https://swiss-backup01.infomaniak.com/identity/v3"
+    - Infomaniak Swiss Backup Location 01
+  - "https://swiss-backup02.infomaniak.com/identity/v3"
+    - Infomaniak Swiss Backup Location 02
+  - "https://swiss-backup03.infomaniak.com/identity/v3"
+    - Infomaniak Swiss Backup Location 03
+  - "https://swiss-backup04.infomaniak.com/identity/v3"
+    - Infomaniak Swiss Backup Location 04
 
 #### --swift-user-id
 
@@ -709,7 +718,7 @@ Request" error rather than a more sensible error when the
 authentication fails for Swift.
 
 So this most likely means your username / password is wrong.  You can
-investigate further with the `--dump-bodies` flag.
+investigate further with the `--dump bodies` flag.
 
 This may also be caused by specifying the region when you shouldn't
 have (e.g. OVH).

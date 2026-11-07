@@ -1,5 +1,6 @@
 ---
 title: Playwright Debugging - Techniques for Script Troubleshooting
+description: "Troubleshoot failing Playwright scripts by reading error messages in context, understanding expected behavior, and using the right tools to gain visibility."
 subTitle: How to go about fixing what is not working
 date: 2021-07-26
 author: Giovanni Rago
@@ -12,6 +13,7 @@ sidebarTitle: Debugging scripts
 
 learn_playwright:
   parent: "Debugging"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/debugging/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -100,7 +102,7 @@ We can also use the console to directly try out a selector on the page in its cu
 
 ![debugging selectors in browser console](/images/samples/images/debugging-console.png)
 
-If we are using Playwright, we can also run in debug mode with `PWDEBUG=console node script.js`. This provisions a `playwright` object in the browser which allows us to also try out [Playwright-specific selectors](https://playwright.dev/docs/selectors).
+If we are using Playwright, we can also run in debug mode with `PWDEBUG=console node script.js`. This provisions a `playwright` object in the browser which allows us to also try out [Playwright-specific selectors](https://playwright.dev/docs/locators).
 
 ![debugging playwright-specific selectors in browser console](/images/samples/images/debugging-selectors.png)
 
@@ -114,9 +116,12 @@ The Inspector allows us to easily step through each instruction of our script, w
 
 > The Inspector includes additional handy features such as selector generation and debugging, as well as script recording.
 
+If a coding agent writes and fixes tests for you, all of the tools above are also available as plain text. Learn more in [Debugging with AI agents](/learn/playwright/debugging-with-ai-agents/).
+
 ## Further reading
 
 1. [Debugging challenges](/learn/playwright/debugging-errors/)
 2. [Working with selectors](/learn/playwright/selectors/)
+3. [Debugging with AI agents](/learn/playwright/debugging-with-ai-agents/)
 
 <SignUpCta />

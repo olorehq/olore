@@ -25,7 +25,7 @@ If you run into issues that require troubleshooting or support tickets, one of t
 <Render file="warp/support-lifecycle" product="cloudflare-one" />
 
 :::tip
-To get notified of new releases, subscribe to the [Cloudflare One Client changelog](/changelog/cloudflare-one-client/).
+To get notified of new releases, subscribe to the [Cloudflare One Client changelog](/changelog/product/cloudflare-one-client/).
 :::
 
 ## How to update the Cloudflare One Client
@@ -35,6 +35,10 @@ To get notified of new releases, subscribe to the [Cloudflare One Client changel
 #### Managed devices
 
 JAMF, Intune, and other MDM tools perform software updates by installing a new binary file. If you deployed the Cloudflare One Client using a [device management tool](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/), the update procedure will look exactly the same as your initial installation. To update the Cloudflare One Client, push the [latest binary file](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/download/) with the same deployment parameters. End users will not be signed out of their client, and they will not have to manually engage with the update.
+
+#### Devices managed from the Cloudflare dashboard
+
+On Windows and macOS devices running Cloudflare One Client version `2026.6.0` or later, you can assign a target client version to groups of devices directly from the Zero Trust dashboard. Matching devices silently install the target version on their next registration refresh, without requiring an MDM push or end-user action. For more information, refer to [Client version assignments](/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/mdm-deployment/client-version-assignments/).
 
 #### Unmanaged devices
 

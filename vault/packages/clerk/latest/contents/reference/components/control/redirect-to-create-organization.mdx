@@ -1,11 +1,12 @@
 ---
-title: '`<RedirectToCreateOrganization />` (deprecated)'
+title: '`<RedirectToCreateOrganization />` component'
 description: The <RedirectToCreateOrganization /> component will navigate to the create Organization flow which has been configured in your application instance. The behavior will be just like a server-side (3xx) redirect, and will override the current location in the history stack.
-sdk: nextjs, nuxt, react, react-router, tanstack-react-start, vue
+sdk: nextjs, nuxt, react, electron, react-router, tanstack-react-start, vue
+tag: deprecated
 ---
 
-> [!WARNING]
-> This feature is deprecated. Please use the [`redirectToCreateOrganization()` method](/docs/reference/objects/clerk#redirect-to-create-organization) instead.
+> [!DEPRECATED]
+> This feature is deprecated. Please use the [`redirectToCreateOrganization()` method](/docs/reference/objects/clerk#redirecttocreateorganization) instead.
 
 The `<RedirectToCreateOrganization />` component will navigate to the create Organization flow which has been configured in your application instance. The behavior will be just like a server-side (3xx) redirect, and will override the current location in the history stack.
 
@@ -14,6 +15,24 @@ The `<RedirectToCreateOrganization />` component will navigate to the create Org
 <If sdk="nextjs">
   ```tsx {{ filename: 'app/page.tsx' }}
   import { Show, RedirectToCreateOrganization } from '@clerk/nextjs'
+  import { Suspense } from 'react'
+
+  export default function Page() {
+    return (
+      <Suspense>
+        <Show when="signed-in">
+          <RedirectToCreateOrganization />
+        </Show>
+        <Show when="signed-out">You need to sign in to create an Organization.</Show>
+      </Suspense>
+    )
+  }
+  ```
+</If>
+
+<If sdk="react">
+  ```tsx {{ filename: 'pages/index.tsx' }}
+  import { Show, RedirectToCreateOrganization } from '@clerk/react'
 
   export default function Page() {
     return (
@@ -28,9 +47,9 @@ The `<RedirectToCreateOrganization />` component will navigate to the create Org
   ```
 </If>
 
-<If sdk="react">
-  ```tsx {{ filename: 'pages/index.tsx' }}
-  import { Show, RedirectToCreateOrganization } from '@clerk/react'
+<If sdk="electron">
+  ```tsx {{ filename: 'src/App.tsx' }}
+  import { Show, RedirectToCreateOrganization } from '@clerk/electron/react'
 
   export default function Page() {
     return (
@@ -63,7 +82,7 @@ The `<RedirectToCreateOrganization />` component will navigate to the create Org
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/index.tsx' }}
+  ```tsx {{ filename: 'src/routes/index.tsx' }}
   import { Show, RedirectToCreateOrganization } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 

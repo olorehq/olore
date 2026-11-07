@@ -9,7 +9,7 @@ summary: >-
   scales to zero. Only `neon_superuser` roles can call
   `pg_stat_statements_reset()` to clear accumulated stats manually.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-04T20:10:08.844Z'
 ---
 
 The `pg_stat_statements` extension provides a detailed statistical view of SQL statement execution within a Postgres database. It tracks information such as execution counts, total and average execution times, and more, helping database administrators and developers analyze and optimize SQL query performance.
@@ -36,7 +36,7 @@ In Neon, statistics collected by the `pg_stat_statements` extension are not reta
 
 ## Enable the `pg_stat_statements` extension
 
-The extension is installed by running the following `CREATE EXTENSION` statement in the Neon **SQL Editor** or from a client such as `psql` that is connected to Neon.
+The Console's [Query performance](/docs/introduction/monitor-query-performance) view works without this step. To query `pg_stat_statements` yourself, or to use commands such as `neon inspect db outliers`, install the extension in your database by running the following `CREATE EXTENSION` statement in the Neon **SQL Editor** or from a client such as `psql` that is connected to Neon.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
@@ -85,6 +85,8 @@ FROM pg_stat_statements
 ORDER BY 3 DESC
 LIMIT 10;
 ```
+
+As an alternative to writing SQL, the Neon CLI wraps these two queries as [`neon inspect db calls`](/docs/cli/inspect#db-calls) and [`neon inspect db outliers`](/docs/cli/inspect#db-outliers).
 
 ### Monitor slow queries
 

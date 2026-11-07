@@ -1,14 +1,16 @@
 ---
-title: Degraded States In Multistep Checks
+title: Degraded states in Multistep checks
+description: "Signal non-critical slowdowns in Multistep checks with the degraded state, using soft assertions and the @checkly/playwright-helpers markCheckAsDegraded helper."
 sidebarTitle: Degraded States
 
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/multistep-checks/degraded-states/'
 ---
 
-If you want to monitor your service for non-critical errors or performance degradations you can use the degraded check state. This allows you to signal that parts of a Browser check performed slower than expected, or that it triggered assertions that are of lower criticality. 
+If you want to monitor your service for non-critical errors or performance degradations you can use the degraded check state. This allows you to signal that parts of a Multistep check performed slower than expected, or that it triggered assertions that are of lower criticality.
 
 The degraded state does not affect your check's success ratio like a failed state does. You can [configure alert channels](/communicate/alerts/channels#managing-alert-channels) to notify you when a check has degraded. 
 
-To catch errors that are relevant for a degraded scenario you can use soft assertions. Soft assertions keeps your Playwright test running after it has encountered an error, unlike regular assertions which terminate the test. See the [playwright docs](https://playwright.dev/docs/test-assertions#soft-assertions) for more information on soft assertions.
+To catch errors that are relevant for a degraded scenario you can use soft assertions. Soft assertions keeps your Playwright test running after it has encountered an error, unlike regular assertions which terminate the test. See the [Playwright docs](https://playwright.dev/docs/test-assertions#soft-assertions) for more information on soft assertions.
 
 
 <Info>
@@ -44,6 +46,9 @@ if (getAPIResponseTime(response) > 100) {
 }
 ```
 
+**Arguments**
+- `response` [APIResponse](https://playwright.dev/docs/api/class-apiresponse) *(required)*. A response from a Playwright API request.
+
 ### Marking A Check As Degraded
 To mark a check as degraded, call `markCheckAsDegraded`.
 
@@ -64,40 +69,34 @@ if (foo.length > 100) {
 **Arguments**
 - `reason` String *(optional)*. Logged when the method is called. Used to identify which method caused the degradation.
 
-
-
-**Arguments**
-- `response` [APIResponse](https://playwright.dev/docs/api/class-apiresponse) *(required)*. A response from a Playwright API request.
-
 ### Example of Marking A Check As Degraded
 
 A check is marked as degraded when `markCheckAsDegraded` is called and there are no regular assertions triggered.
 
-In this example we do a simple site navigation and measure the time the test takes. At the end of the check we mark the check as degraded if the duration of the test is too long, or if the site header has changed.
+In this example we trigger a soft assertion if the API response time is too slow. We can get the response time by calling `getAPIResponseTime` with the request response as the parameter. At the end of the check we mark the check as degraded if any errors have been triggered during the test.
 
-```ts degraded.spec.ts
-import { expect, test, Page } from '@playwright/test';
-import { markCheckAsDegraded } from "@checkly/playwright-helpers"; // Import the necessary method from the Checkly helpers library.
+```ts degraded-multistep.spec.ts
+import { test, expect } from "@playwright/test"
+import { getAPIResponseTime, markCheckAsDegraded } from "@checkly/playwright-helpers"
 
-test.setTimeout(30000);
+const baseUrl = "https://danube-web.shop/api"
 
-const TEST_DEGRADATION_LIMIT = 400; // The limit for how long the test can run before it is considered degraded.
+test("Danube API books", async ({ request }) => {
+  await test.step("get all books", async () => {
+    const response = await request.get(`${baseUrl}/books`)
 
-test("Visit Checkly and go to the docs", async ({ page }) => {
-  const startTime = Date.now(); // Note the time when the test starts
+    // Check 200 status code
+    await expect(response).toBeOK()
 
-  const response = await page.goto('https://www.checklyhq.com/welcome/');
-  expect(response.status(), 'should respond with correct status code').toBeLessThan(400) // Ensure that the welcome page loaded successfully
-  await page.getByRole('link', { name: '/docs' }).click(); // Navigate to the documentation page
+    // Check degraded status
+    expect.soft(getAPIResponseTime(response), 'GET /books too slow').toBeLessThanOrEqual(200)
 
-  const header = await page.getByText('Get Started');
-  expect.soft(header).toBeTruthy(); // A soft assert example
+    return response.json()
+  })
 
-  const endTime = Date.now(); // Note the time when the test completes
-  const duration = endTime - startTime; // Calculate the test duration
-
-  if (duration > TEST_DEGRADATION_LIMIT || test.info().errors.length) { // Trigger the degradation if the duration is longer than our set limit, or if the soft assert is triggered.
-    markCheckAsDegraded(`Test duration took longer than ${TEST_DEGRADATION_LIMIT}`);
+  // Trigger degraded state if check failed due to soft assertion
+  if (test.info().errors.length) {
+    markCheckAsDegraded('Check degraded due to soft assertion failure.')
   }
 })
 ```

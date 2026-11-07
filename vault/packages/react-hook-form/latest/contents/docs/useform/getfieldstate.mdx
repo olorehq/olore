@@ -1,43 +1,45 @@
 ---
 title: getFieldState
+seoTitle: "getFieldState: Read Field State and Errors"
 description: Get validation and interaction state of a specific field.
 metaDescription: Get the current validation and interaction state of a specific field — invalid, isDirty, isTouched, and error — from React Hook Form.
 sidebar: apiLinks
 ---
 
-## \</> `getFieldState:` <TypeText>`(name: string, formState?: Object) => ({isDirty, isTouched, invalid, error})`</TypeText>
+## \</> `getFieldState:` <TypeText>[UseFormGetFieldState](/ts#UseFormGetFieldState)</TypeText> <Since version="7.25.0" />
 
-This method is introduced in react-hook-form ([v7.25.0](https://github.com/react-hook-form/react-hook-form/releases/tag/v7.25.0)) to return individual field state. It's useful in case you are trying to retrieve nested field state in a typesafe way.
+This method returns individual field state. It is useful for retrieving nested field state in a type-safe way.
 
 ### Props
 
 ---
 
-| Name      | Type                          | Description                                                                                                                                                                         |
-| --------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | <TypeText>`string`</TypeText> | registered field name.                                                                                                                                                              |
-| formState | <TypeText>`object`</TypeText> | This is an optional prop, which is only required if `formState` is not been read/subscribed from the `useForm`, `useFormContext` or `useFormState`. Read rules for more information |
+| Name      | Type                          | Description                                                                                                                                                                                          |
+| --------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | <TypeText>`string`</TypeText> | registered field name.                                                                                                                                                                               |
+| formState | <TypeText>`object`</TypeText> | This is an optional prop, which is only required if `formState` has not been read from or subscribed to via `useForm`, `useFormContext` or `useFormState`. See the rules below for more information. |
 
 ### Return
 
 ---
 
-| Name      | Type                                           | Description                                                                                 |
-| --------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `isDirty` | <TypeText>`boolean`</TypeText>                 | field is modified.<br/>**Condition:** subscribe to `dirtyFields`.                           |
-| isTouched | <TypeText>`boolean`</TypeText>                 | field has received a focus and blur event.<br/>**Condition:** subscribe to `touchedFields`. |
-| invalid   | <TypeText>`boolean`</TypeText>                 | field is not valid.<br/>**Condition:** subscribe to `errors`.                               |
-| error     | <TypeText>`undefined \| FieldError`</TypeText> | field error object.<br/>**Condition:** subscribe to `errors`.                               |
+| Name         | Type                                           | Description                                                                                                    |
+| ------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `isDirty`    | <TypeText>`boolean`</TypeText>                 | field is modified.<br/>**Condition:** subscribe to `dirtyFields`.                                              |
+| isTouched    | <TypeText>`boolean`</TypeText>                 | field has received a focus and blur event.<br/>**Condition:** subscribe to `touchedFields`.                    |
+| invalid      | <TypeText>`boolean`</TypeText>                 | field is not valid.<br/>**Condition:** subscribe to `errors`.                                                  |
+| isValidating | <TypeText>`boolean`</TypeText>                 | <Since version="7.51.0" /> field is currently being validated.<br/>**Condition:** subscribe to `isValidating`. |
+| error        | <TypeText>`undefined \| FieldError`</TypeText> | field error object.<br/>**Condition:** subscribe to `errors`.                                                  |
 
 <Admonition type="important" title="Rules">
 
-- name needs to match a registered field name.
+- The prop must match a registered field name.
   ```javascript
-  getFieldState("test")
-  getFieldState("test") // ✅ register input and return field state
-  getFieldState("non-existent-name") // ❌ will return state as false and error as undefined
+  register("test") // registers the input
+  getFieldState("test") // ✅ returns state for the registered field
+  getFieldState("non-existent-name") // ❌ returns default/false state since this name was never registered
   ```
-- `getFieldState` works by subscribing to the form state update, and you can subscribe to the formState in the following ways:
+- `getFieldState` works by subscribing to form state updates, and you can subscribe to the formState in the following ways:
   - You can subscribe at the `useForm`, `useFormContext` or `useFormState`. This is will establish the form state subscription and `getFieldState` second argument will no longer be required.
 
     ```javascript
@@ -64,7 +66,7 @@ This method is introduced in react-hook-form ([v7.25.0](https://github.com/react
     getFieldState("test") // ✅
     ```
 
-  - When form state subscription is not setup, you can pass the entire `formState` as the second optional argument by following the example below:
+  - When form state subscription is not set up, you can pass the entire `formState` as the second optional argument by following the example below:
     ```javascript
     const { register } = useForm()
     register("test")
@@ -72,18 +74,16 @@ This method is introduced in react-hook-form ([v7.25.0](https://github.com/react
     const { register, formState } = useForm()
     const { isDirty } = getFieldState("test", formState) // ✅ formState.isDirty subscribed
     const { formState } = useFormContext()
-    const { touchedFields } = getFieldState("test", formState) // ✅ formState.touchedFields subscribed
+    const { isTouched } = getFieldState("test", formState) // ✅ formState.touchedFields subscribed
     ```
 
 </Admonition>
 
-**Examples**
+### Examples
 
 ---
 
 ```javascript copy sandbox="https://codesandbox.io/s/getfieldstate-jvekk"
-import * as React from "react"
-
 import { useForm } from "react-hook-form"
 
 export default function App() {
@@ -118,3 +118,66 @@ export default function App() {
   )
 }
 ```
+
+### Tips
+
+---
+
+- In a reusable field component, subscribe to only that field with `useFormState({ name })`, and pass the result to `getFieldState`. The component then re-renders only when that field's state changes:
+
+  ```javascript
+  function FieldError({ name }) {
+    const { getFieldState } = useFormContext()
+    const formState = useFormState({ name })
+    const { error, isTouched } = getFieldState(name, formState)
+
+    return isTouched && error ? <p role="alert">{error.message}</p> : null
+  }
+  ```
+
+- `getFieldState` is typed against your form values, so a misspelled nested path is a type error. Reading `errors.some.deep.path` by hand is not checked in the same way.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `isDirty`, `isTouched`, and `invalid` are always `false`
+
+<Why>
+
+The field name may not be registered, or the component has not subscribed to the matching form-state properties. `getFieldState` reads state; it does not create every subscription by itself.
+
+</Why>
+
+<Fix>
+
+Check that the name exactly matches a registered field. Then read the required state from `formState`, or pass a scoped `useFormState` result:
+
+```javascript
+const formState = useFormState({ control, name: "email" })
+const emailState = getFieldState("email", formState)
+```
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### A field state is stale inside an event handler
+
+<Why>
+
+The component never subscribed to the state being read. Reading `getFieldState` only inside a click handler does not cause the component to re-render when that state changes.
+
+</Why>
+
+<Fix>
+
+For reactive UI, call `useFormState({ name })` during render and pass its result to `getFieldState`. For a one-time read, call `getFieldState` in the handler after the operation that updates the field.
+
+</Fix>
+
+</Troubleshoot>

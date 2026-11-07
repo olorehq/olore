@@ -9,7 +9,7 @@ summary: >-
   rows, stale schema cache hiding new tables, and OpenAPI spec "Entry not
   found" errors.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T09:41:16.035Z'
 ---
 
 <InfoBlock>
@@ -19,6 +19,10 @@ updatedOn: '2026-06-05T17:20:32.620Z'
     <a href="/docs/data-api/access-control">Access control & security</a>
   </DocsList>
 </InfoBlock>
+
+<Admonition type="important" title="Secure your data before exposing it">
+The Data API has no permission layer of its own. Every request is authorized entirely by your PostgreSQL `GRANT` statements and [Row-Level Security (RLS)](/docs/guides/row-level-security) policies, so a missing or misconfigured policy can expose a table to anyone with the endpoint URL. Before exposing data, follow [Access control & security](/docs/data-api/access-control) and [Secure your app with RLS](/docs/guides/rls-tutorial), and run the [Data API advisors](/docs/data-api/database-advisor) to catch misconfigurations.
+</Admonition>
 
 ## Permission denied to create extension "pg_session_jwt"
 
@@ -87,16 +91,16 @@ The `sub` claim in this example: `41a5f680-89d2-474d-ae59-e27bfbbbd293` represen
 
 ## How do I test the Data API without building an app?
 
-If you're using Neon Auth, you can use the Auth API reference UI to create test users and obtain JWT tokens for testing with tools like Postman or cURL.
+If you're using Managed Better Auth, you can use the Auth API reference UI to create test users and obtain JWT tokens for testing with tools like Postman or cURL.
 
-Navigate to your Auth URL with `/reference` appended (for example, `https://ep-example.neonauth.us-east-1.aws.neon.tech/neondb/auth/reference`). You can find your **Auth URL** on the **Auth** page on the **Configuration** tab in the Neon Console. From there, you can:
+Navigate to your Auth URL with `/reference` appended (for example, `https://ep-example.neonauth.us-east-1.aws.neon.tech/neondb/auth/reference`). You can find your **Auth URL** under **Settings** > **Better Auth** > **Project Info** in the Neon Console. From there, you can:
 
-1. Create a test user with `POST /api/auth/sign-up/email`.
-2. Sign in with `POST /api/auth/sign-in/email`.
-3. Call `GET /api/auth/get-session` and copy the JWT from the `Set-Auth-Jwt` response header.
+1. Create a test user with `POST /sign-up/email`.
+2. Sign in with `POST /sign-in/email`.
+3. Call `GET /get-session` and copy the JWT from the `Set-Auth-Jwt` response header.
 4. Use that JWT in your Data API requests.
 
-For step-by-step instructions, see [Testing with Neon Auth](/docs/data-api/get-started#testing-with-neon-auth).
+For step-by-step instructions, see [Testing with Managed Better Auth](/docs/data-api/get-started#testing-with-neon-auth).
 
 ## Permission denied for table
 
@@ -106,11 +110,12 @@ For step-by-step instructions, see [Testing with Neon Auth](/docs/data-api/get-s
 
 ### Why this happens
 
-The `authenticated` role doesn't have GRANT permissions on the table. This commonly occurs when:
+The role the request runs as doesn't have GRANT permissions on the table. This commonly occurs when:
 
 - The table was created before the Data API was enabled
 - The table was created after enabling the Data API, but default privileges weren't applied
 - You disabled the "Grant public schema access" option when enabling the Data API
+- You're using a custom authentication provider and the token has no `role` claim. The request then runs as the `anonymous` role, which has no table grants by default, so it can't read the table even though `authenticated` can.
 
 ### Fix
 
@@ -130,13 +135,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 GRANT SELECT, UPDATE, INSERT, DELETE ON TABLES TO authenticated;
 ```
 
+If you use a custom authentication provider, also confirm the token carries a `role` claim that names a granted role. To use the `authenticated` role, issue `"role": "authenticated"`. If the claim names a custom role, see [Custom roles](/docs/data-api/access-control#3-custom-roles) for the grants it needs. See also [Required JWT claims](/docs/data-api/custom-authentication-providers#required-jwt-claims).
+
 ## I can see all rows in my table
 
 If authenticated users can see all rows in a table regardless of ownership, Row-Level Security (RLS) is likely disabled on that table.
 
 ### Check RLS status
 
-In the Neon Console, go to the **Data API** page. If a table has RLS disabled, you'll see a warning:
+In the Neon Console, go to **Postgres database** > **Data API**. If a table has RLS disabled, you'll see a warning:
 
 > "table_name has RLS disabled. All authenticated users can view all rows in this table(s)."
 
@@ -195,8 +202,8 @@ The OpenAPI schema feature is disabled in your Data API configuration.
 
 ### Fix
 
-1. Go to the **Data API** page in the Neon Console
-2. Open the **Configuration** panel
+1. Go to **Postgres database** > **Data API** in the Neon Console
+2. Open the **Settings** tab
 3. Enable the **OpenAPI schema** toggle
 4. Try your request again
 
@@ -213,7 +220,7 @@ curl -X GET 'https://your-data-api-endpoint/rest/v1/openapi.json' \
   -H 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
-To get a JWT token for testing, see [Testing with Neon Auth](/docs/data-api/get-started#testing-with-neon-auth).
+To get a JWT token for testing, see [Testing with Managed Better Auth](/docs/data-api/get-started#testing-with-neon-auth).
 
 ## New table not found or returns empty schema
 
@@ -225,7 +232,7 @@ The Data API caches your database schema for performance. When you create or mod
 
 ### Fix
 
-1. Go to the **Data API** page in the Neon Console
+1. Go to **Postgres database** > **Data API** in the Neon Console
 2. Click the **Refresh schema cache** button
 3. Retry your request
 
@@ -248,6 +255,6 @@ JWT tokens have a limited lifespan (typically around 15 minutes). Once expired, 
 
 ### Fix
 
-Sign in again to get a fresh token. If you're using Neon Auth, call `POST /api/auth/sign-in/email` in the Auth API reference UI, then call `GET /api/auth/get-session` and copy the new JWT from the `Set-Auth-Jwt` response header.
+Sign in again to get a fresh token. If you're using Managed Better Auth, call `POST /sign-in/email` in the Auth API reference UI, then call `GET /get-session` and copy the new JWT from the `Set-Auth-Jwt` response header.
 
 For programmatic token refresh, see your authentication provider's documentation on token renewal.

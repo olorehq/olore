@@ -1,165 +1,312 @@
 ---
-title: Communicate User Feature Availability with Status Pages
-description: Learn how Checkly status pages reflect actual user experience through synthetic monitoring, not arbitrary status indicators.
-sidebarTitle: Communicate Feature Availability with Status Pages
+title: A status page backed by real monitors
+sidebarTitle: Build real-time status pages
+description: Build a public status page in code whose components go red when the checks that test them fail, and read and update its incidents from your coding agent with the Checkly MCP server.
+canonical: 'https://www.checklyhq.com/docs/guides/communicate-availability/'
 ---
 
-Most status pages are disconnected from reality. They show green uptime bars based on server pings and health checks - metrics that tell you nothing about whether users can actually complete a purchase or log in. When infrastructure looks healthy but the checkout flow is broken, those green bars become meaningless.
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-Checkly status pages go beyond reactive manual updates and infrastructure telemetry. They're powered by synthetic monitoring that simulates real user behavior, so when your status page shows "operational," it means users can actually complete their workflows.
+By the end of this guide, you have a public status page defined in code, with components named the way your users talk about your product, and automation rules that open and resolve incidents from the checks that test each component.
 
-## Where traditional status page setups fall short
+<Frame>
+  <img src="/images/guides/communicate-availability/incident-open.png" alt="Public Checkly status page Danube Shop Status reporting 2 services experiencing issues, with an open Catalog API outage incident in Investigating state, the Catalog API component in major outage, and the Storefront component in degraded performance" />
+</Frame>
 
-Traditional status pages suffer from a fundamental problem: **they communicate infrastructure health, not user experience**. Your servers might report healthy CPU usage while users can't log in because of [an incorrectly used React feature](https://blog.cloudflare.com/deep-dive-into-cloudflares-sept-12-dashboard-and-api-outage/). Your database might show normal query times while users can't search for products. Infrastructure monitoring matters but only tells part of the story.
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/communicate-availability). It monitors the search flow and the books API of the [Danube demo shop](https://danube-web.shop).
 
-The disconnect of green status bars and broken user experience erodes trust. Users learn to ignore status pages because they've been burned before by "all systems operational" banners during outages they're actively experiencing.
+<Accordion title="Let your agent do it" icon="sparkles">
 
-Outages and bugs are unavoidable. Being transparent and honest about them is what matters and builds trust in your service.
+<GuideAgentIntro />
 
-## How Checkly status pages work
+<div id="ai-setup-prompt">
 
-[Checkly status pages](/communicate/status-pages/overview) offer everything your current status page provider offers, plus integration with synthetic monitors that validate real user behavior.
+```txt Prompt
+Set up a public Checkly status page for this project, driven by the checks that test each user-facing feature.
 
-When you connect a [Playwright Check Suite](/detect/synthetic-monitoring/playwright-checks/overview) or [Browser Check](/detect/synthetic-monitoring/browser-checks/overview) that simulates a user logging in, adding items to cart, and completing checkout, your status page reflects whether that entire flow actually works.
+Success criteria:
+1. Ask me which features my users depend on. Model each as a `StatusPageV3Component` on one `StatusPageV3`, grouped under a `GROUP` component, named the way users talk about them.
+2. Make sure each component has a check that proves it works: a Playwright Check Suite or Browser Check for browser flows, an API check for public APIs. Give each check a tag only its component uses, such as `status-storefront`.
+3. Add a `StatusPageV3AutomationRule` per tag that sets the component to `MAJOR_OUTAGE`, with a first and last update written for customers. When one feature depends on another, list the dependent component too with a lower impact.
+4. Set a project-wide retry strategy, so a single failed request never opens a public incident.
+5. Run `npx checkly test --record` and show me the session link.
+6. Show me `npx checkly deploy --preview` and wait for my confirmation before deploying. Then give me the public status page URL.
 
-Following this approach, **your status page reflects what matters to your users.**
-
-Here's how the pieces fit together:
-
-1. **Synthetic monitors validate behavior** - Playwright Check Suites and Browser Checks use Playwright to simulate user actions. These aren't simple ping tests or infrastructure checks; they're validations of your service's critical user flows in a real browser.
-
-2. **Services represent user-facing capabilities** - You can define services like "Checkout" or "Login" that map to how users think about your application, not your internal architecture.
-
-3. **Incident automation connects the dots** - When a check fails, it can automatically open an incident on the connected service. When the check recovers, the incident resolves.
-
-This means your status page shows what matters: **can users actually use your application?**
-
-## Set up a status page backed by real synthetic monitoring
-
-### Create services that match user expectations
-
-Services should reflect how users perceive your application. Users care about "Login" working, not whether your auth microservice cluster is healthy.
-
-Good service examples:
-- Website
-- User Login
-- Payments
-- Search
-
-Avoid internal naming like `Auth Service v2` or `Primary Database Cluster`.
-
-To create a service:
-
-1. Navigate to **Services** under **Communicate** in the sidebar
-2. Create a new service with a user-friendly name
-
-![Services route showing multiple created services](/images/guides/images/status-pages-user-behavior-1.png)
-
-### Connect synthetic monitors to services
-
-This is where the real behavior validation happens. Each service can be connected to one or more monitors that validate its functionality.
-
-<Note>
-  Incident automation is available on Communicate Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
-</Note>
-
-1. Open your Playwright Check Suite or Browser Check from the home dashboard
-2. Click **Edit** in the check overview page
-3. Click **Settings** and enable **Incident automation**
-4. Fill in the incident name and initial status update
-5. Select which service the incident should be opened on
-6. Save your check
-
-![Incident automation configuration of a Playwright Check Suite](/images/guides/images/status-pages-user-behavior-2.png)
-
-### Create the status page
-
-1. Go to **Status pages** under **Communicate** in the sidebar
-2. Create a new status page
-3. Enter a name for your page
-4. Add cards and assign services to them. Group related services on the same card to show average uptime
-5. Configure domain settings and your status page's appearance
-6. Click **Create status page**
-
-![Status page connecting to user experience services](/images/guides/images/status-pages-user-behavior-3.png)
-
-Your status page now displays real-time availability based on actual user behavior validation.
-
-![Created Checkly Status Page](/images/guides/images/status-pages-user-behavior-4.png)
-
-### Automate everything with Monitoring as Code
-
-Checkly's [Monitoring as Code](/guides/getting-started-with-monitoring-as-code) approach enables you to automate the entire flow of creating status pages, connecting services, and configuring checks.
-
-<Accordion title="View code example">
-
-```ts highlight={10-13,15-25,27-35,44}
-import {
-  Frequency,
-  IncidentTrigger,
-  PlaywrightCheck,
-  StatusPage,
-  StatusPageService,
-} from "checkly/constructs";
-
-// 1. Create a new service to group checks and trigger incidents
-const searchService = new StatusPageService("search-service", {
-  name: "Search Service",
-})
-
-// 2. Create a new status page and connect the service
-new StatusPage("company-status", {
-  name: "User Experience Status",
-  url: "ux-status",
-  cards: [
-    {
-      name: "User Experience",
-      services: [searchService],
-    },
-  ],
-})
-
-// 3. Configure your incident automation
-const searchIncidentTrigger: IncidentTrigger = {
-  service: searchService,
-  severity: "MINOR",
-  name: "Search is down",
-  description:
-    "Some users experience issues with the product search. We're investigating.",
-  notifySubscribers: true,
-}
-
-// 4. Assign your incident automations to checks and monitors
-new PlaywrightCheck("playwright-check-suite", {
-  name: "Search Monitoring",
-  playwrightConfigPath: "../playwright.config.ts",
-  activated: true,
-  pwProjects: ["Search Monitoring"],
-  locations: ["us-east-1", "eu-west-1", "ap-southeast-2"],
-  frequency: Frequency.EVERY_10M,
-  triggerIncident: searchIncidentTrigger,
-})
+Explain each file you changed and why.
 ```
+
+</div>
+
+<CopyPromptButton />
+
+The steps below are what the agent does, in the open.
 
 </Accordion>
 
-## Why this approach works
+## Step 1: Tag the checks that prove each feature works
 
-**A status page backed by synthetic monitoring builds trust because it tells the truth.** When users see "operational," they can trust that the application actually works. When there's an incident, they know about it immediately.
+A status page is only as honest as what drives it. Drive each component with a check that does what a user does: search for a book, call the API, and assert on the answer.
 
-This transparency has practical benefits:
+The tag on each check is the contract between the check and the status page. Use one tag per component, and do not reuse it for anything else.
 
-- **Reduced support load** - Users check the status page instead of contacting support
-- **Faster incident response** - Automated incident creation means faster communication
-- **Accurate SLA reporting** - Uptime calculations reflect real user experience
+The storefront component is backed by a search flow. Run it as a Playwright Check Suite or a Browser check. Both use the same test file:
 
-<Tip>[Learn how service uptime is calculated](/communicate/status-pages/overview#service-uptime) with automated incidents.</Tip>
+<CodeGroup>
 
-When your status page answers "can I use this?" instead of "are the servers up?", users pay attention.
+```ts checkly.config.ts highlight={11-16,25-26}
+import { defineConfig } from 'checkly'
+import { Frequency, RetryStrategyBuilder } from 'checkly/constructs'
 
-## Further reading
+export default defineConfig({
+  projectName: 'Docs guide: A status page backed by real monitors',
+  logicalId: 'docs-guide-communicate-availability',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    frequency: Frequency.EVERY_5M,
+    locations: ['us-east-1', 'eu-west-1'],
+    // A public incident needs a confirmed failure, not a blip.
+    retryStrategy: RetryStrategyBuilder.fixedStrategy({
+      baseBackoffSeconds: 30,
+      maxRetries: 2,
+      sameRegion: true,
+    }),
+    checkMatch: '**/checks/**/*.check.ts',
+    playwrightConfigPath: './playwright.config.ts',
+    playwrightChecks: [
+      {
+        name: 'Storefront search',
+        logicalId: 'storefront-search',
+        frequency: Frequency.EVERY_10M,
+        locations: ['us-east-1', 'eu-west-1'],
+        // The tag is what connects this check to the Storefront component.
+        tags: ['status-storefront'],
+      },
+    ],
+  },
+  cli: {
+    runLocation: 'us-east-1',
+  },
+})
+```
 
-- [Status Pages Overview](/communicate/status-pages/overview) - Complete reference for status page features
-- [Incident Management](/communicate/status-pages/incidents) - Detailed guide to creating and managing incidents
-- [Subscriber Notifications](/communicate/status-pages/subscriber-notifications) - Set up email notifications for status changes
-- [Anatomy of a Status Page](/learn/incidents/anatomy-of-a-status-page) - What users expect from status pages
+```ts checks/search.check.ts
+import { BrowserCheck, Frequency } from 'checkly/constructs'
+import * as path from 'path'
+
+new BrowserCheck('storefront-search-browser', {
+  name: 'Storefront search (Browser Check)',
+  frequency: Frequency.EVERY_10M,
+  // The tag is what connects this check to the Storefront component.
+  tags: ['status-storefront'],
+  code: {
+    entrypoint: path.join(__dirname, '../tests/search.spec.ts'),
+  },
+})
+```
+
+</CodeGroup>
+
+```ts tests/search.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('a shopper can search for a book', async ({ page }) => {
+  await page.goto('https://danube-web.shop/')
+
+  await page.locator('input[name="searchbar"]').fill('haben')
+  await page.getByRole('button', { name: 'Search' }).click()
+
+  await expect(page.locator('.preview').first()).toContainText('Haben oder haben')
+})
+```
+
+The retry strategy in the config matters more here than anywhere else. An alert that fires on a blip wakes one person. An incident that opens on a blip tells every customer your shop is down. Each failed run is retried twice in the same region before it counts.
+
+The Catalog API component is backed by an API check on the endpoint the storefront reads from:
+
+```ts checks/books-api.check.ts highlight={5-6}
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+
+new ApiCheck('catalog-api-books', {
+  name: 'Catalog API: list books',
+  // The tag is what connects this check to the Catalog API component.
+  tags: ['status-catalog-api'],
+  degradedResponseTime: 1000,
+  maxResponseTime: 5000,
+  request: {
+    method: 'GET',
+    url: 'https://danube-web.shop/api/books',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.jsonBody('$.length').greaterThan(0),
+    ],
+  },
+})
+```
+
+## Step 2: Describe the page in code
+
+A status page is built from components. A component is either a service with its own status and 90-day uptime, or a group that nests services under one heading and shows their average uptime.
+
+Name components after what users do, not after your architecture. Your users search for books. They do not care which pod serves the search.
+
+```ts checks/status-page.check.ts
+import {
+  StatusPageV3,
+  StatusPageV3AutomationRule,
+  StatusPageV3Component,
+} from 'checkly/constructs'
+
+export const statusPage = new StatusPageV3('danube-status', {
+  name: 'Danube Shop Status',
+  url: 'danube-shop-status',
+  description: 'Live status of the Danube web shop, measured by synthetic monitors.',
+  defaultTheme: 'AUTO',
+})
+
+// Components are named the way your users talk about the product.
+const shop = new StatusPageV3Component('shop-group', {
+  statusPage,
+  type: 'GROUP',
+  name: 'Danube shop',
+  displayOrder: 0,
+})
+
+const storefront = new StatusPageV3Component('storefront', {
+  statusPage,
+  name: 'Storefront',
+  description: 'Browsing and searching for books',
+  parent: shop,
+  displayOrder: 1,
+})
+
+const catalogApi = new StatusPageV3Component('catalog-api', {
+  statusPage,
+  name: 'Catalog API',
+  description: 'The public books API',
+  parent: shop,
+  displayOrder: 2,
+})
+```
+
+`url` becomes the subdomain, so this page is served at `danube-shop-status.checkly-status-page.com`. It must be unique across all Checkly accounts, so pick your own. Add `customDomain` when you are ready to serve it from `status.yourdomain.com`; see [custom domains](/communicate/status-pages/custom-domain).
+
+## Step 3: Open incidents from failing checks
+
+An automation rule connects tags to components. When a check with one of the rule's tags fails, Checkly opens one incident with the rule's first update and sets each listed component to its impact. When the check recovers, Checkly posts the last update and resolves the incident.
+
+Add the rules to the same file:
+
+{/* typecheck-wrap: StatusPageV3AutomationRule */}
+```ts checks/status-page.check.ts
+// When a check tagged status-storefront fails, the storefront is down.
+new StatusPageV3AutomationRule('storefront-outage', {
+  statusPage,
+  name: 'Storefront outage',
+  tags: ['status-storefront'],
+  firstUpdate: 'Searching for books is failing. We are investigating.',
+  lastUpdate: 'Search is working again.',
+  components: [{ component: storefront, targetImpact: 'MAJOR_OUTAGE' }],
+})
+
+// The storefront reads from the API, so an API failure degrades it too.
+new StatusPageV3AutomationRule('catalog-api-outage', {
+  statusPage,
+  name: 'Catalog API outage',
+  tags: ['status-catalog-api'],
+  firstUpdate: 'The Catalog API is returning errors. Book listings may be incomplete. We are investigating.',
+  lastUpdate: 'The Catalog API has recovered.',
+  components: [
+    { component: catalogApi, targetImpact: 'MAJOR_OUTAGE' },
+    { component: storefront, targetImpact: 'DEGRADED_PERFORMANCE' },
+  ],
+})
+```
+
+The second rule is where a status page earns trust. The Danube storefront loads its book list from `/api/books`, so when the API fails, shoppers see it in the storefront before any storefront check fails. The rule says so on the page. Degraded performance does not lower the storefront's uptime; only partial and major outages do. See [uptime calculation](/communicate/status-pages/overview#uptime-calculation).
+
+Write `firstUpdate` and `lastUpdate` for customers, not for your on-call. They are posted to the public page and emailed to subscribers, because `notifySubscribers` defaults to `true`.
+
+<Note>
+Incident automation is available on Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
+</Note>
+
+Test the checks, then preview what the deploy creates:
+
+```bash Terminal
+npx checkly test --record
+```
+
+```text Terminal
+Running 3 checks in us-east-1.
+
+checks/books-api.check.ts
+  ✔ Catalog API: list books (14ms)
+checks/search.check.ts
+  ✔ Storefront search (Browser Check) (3s)
+playwright.config.ts
+  ✔ Storefront search (5s)
+
+3 passed, 3 total
+```
+
+```bash Terminal
+npx checkly deploy --preview
+```
+
+```text Terminal
+Create:
+    ApiCheck: catalog-api-books
+    PlaywrightCheck: storefront-search
+    BrowserCheck: storefront-search-browser
+    StatusPageV3: danube-status
+    StatusPageV3AutomationRule: catalog-api-outage
+    StatusPageV3AutomationRule: storefront-outage
+    StatusPageV3Component: catalog-api
+    StatusPageV3Component: shop-group
+    StatusPageV3Component: storefront
+```
+
+```bash Terminal
+npx checkly deploy
+```
+
+Open `https://<your-url>.checkly-status-page.com`. Every component is operational.
+
+## Verify it works
+
+Break the API check on purpose. In `checks/books-api.check.ts`, change `statusCode().equals(200)` to `statusCode().equals(201)` and run `npx checkly deploy --schedule-on-deploy`, so that the check runs right away instead of at its next scheduled time.
+
+When the sample was deployed that way, the first run failed, was retried twice 30 seconds apart, and the incident opened about a minute after the deploy. The page in the screenshot at the top of this guide is what customers saw: Catalog API in major outage, Storefront degraded, and the first update from the rule.
+
+Now read it from your coding agent through the [Checkly MCP server](/ai/mcp-server):
+
+```text Prompt
+Using Checkly, show me the open incidents on the Danube Shop Status page. For each one, list the affected components and their impact, find the failing checks that carry the matching status tag, and summarize their latest result.
+```
+
+The agent lists the open incident with its components, finds `Catalog API: list books` failing under the `status-catalog-api` tag, and reports that the API answered `200 OK` while one of two assertions failed, after three attempts from N. Virginia. That is enough to tell a broken check from a broken API before you say anything more in public.
+
+Once you know the cause, post it from the same session:
+
+```text Prompt
+Post an Identified update to that incident: "We found the cause: a bad deploy of the Catalog API. A fix is rolling out." Do not notify subscribers.
+```
+
+The update goes straight to the public page, so read what your agent drafted before you let it post. Change the assertion back to `equals(200)` and run `npx checkly deploy --schedule-on-deploy` again. The next passing run resolves the incident with the rule's last update, and the incident page keeps the full timeline:
+
+<Frame>
+  <img src="/images/guides/communicate-availability/incident-resolved.png" alt="Public incident page for Catalog API outage, lasted 1 minute, with Catalog API in major outage and Storefront in degraded performance on the component timeline, and three updates: Investigating from the automation rule, Identified posted through the MCP server, and Resolved from the automation rule" />
+</Frame>
+
+## Next
+
+[Diagnose failures with traces](/guides/reading-traces): your status page now tells users that something is broken. Find out why, from the failed check's screenshots and Playwright trace.
+
+## Reference
+
+- [Status pages overview](/communicate/status-pages/overview) and [incidents](/communicate/status-pages/incidents)
+- [`StatusPageV3`](/constructs/status-page-v3), [`StatusPageV3Component`](/constructs/status-page-v3-component), and [`StatusPageV3AutomationRule`](/constructs/status-page-v3-automation-rule)
+- [Subscriber notifications](/communicate/status-pages/subscriber-notifications) and [custom domains](/communicate/status-pages/custom-domain)
+- [Checkly MCP server tools](/ai/mcp-server/tools)
+- [Checkly Skills](/ai/skills)

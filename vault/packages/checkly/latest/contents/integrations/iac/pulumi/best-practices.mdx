@@ -2,10 +2,15 @@
 title: 'Pulumi Best Practices'
 description: 'Best practices for managing monitoring as code with the Checkly Pulumi provider'
 sidebarTitle: 'Best Practices'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/pulumi/best-practices/'
 ---
 
 
 This guide covers best practices for effectively managing your Checkly monitoring infrastructure using the Pulumi provider, ensuring maintainable, secure, and scalable monitoring as code.
+
+<Note>
+The code samples on this page only show the properties that matter for each practice. A `checkly.Check` also needs `type`, `activated` and `frequency` (and a `request` for API checks), and a `checkly.CheckGroup` needs `activated` and `concurrency`. See the [Pulumi examples](/integrations/iac/pulumi/examples) for complete resources.
+</Note>
 
 ## Resource Management
 
@@ -105,10 +110,13 @@ pulumi config set checkly:accountId your_account_id
 ```
 
 **Access in Code:**
+
+The Checkly provider reads `checkly:apiKey` and `checkly:accountId` automatically. If you need the values in your own code, read them from the `checkly` namespace:
+
 ```javascript
-const config = new pulumi.Config()
-const apiKey = config.requireSecret('checkly:apiKey')
-const accountId = config.require('checkly:accountId')
+const config = new pulumi.Config('checkly')
+const apiKey = config.requireSecret('apiKey')
+const accountId = config.require('accountId')
 ```
 
 ### Access Control
@@ -203,7 +211,7 @@ pulumi config set apiUrl https://api.example.com --stack prod
 - Comprehensive assertions
 </Card>
 
-<Card title="Non-Critical Services" icon="info">
+<Card title="Non-Critical Services" icon="info-circle">
 **Lower Frequency**
 - 10-30 minute intervals for non-critical services
 - Single location monitoring
@@ -232,7 +240,7 @@ new checkly.Check('admin-dashboard', {
 
 ### Assertion Best Practices
 
-**Comprehensive API Checks:**
+**Comprehensive API checks:**
 ```javascript
 new checkly.Check('comprehensive-api-check', {
   request: {
@@ -353,7 +361,7 @@ module.exports = { createStandardApiCheck }
 ### Automated Deployments
 
 <Columns cols={2}>
-<Card title="GitHub Actions" icon="github">
+<Card title="GitHub Actions" icon="brand-github">
 **GitHub Workflow**
 - Deploy on push to main branch
 - Preview changes on pull requests
@@ -382,12 +390,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install Pulumi
         uses: pulumi/setup-pulumi@v2
@@ -453,12 +461,12 @@ Be mindful of Checkly's resource limits and pricing when creating large numbers 
 
 **Optimization Strategies:**
 - Use appropriate check frequencies
-- Group related checks to reduce overhead
 - Monitor resource usage and costs
 - Implement check deactivation for non-critical services
 
 ### Scalability
 
+{/* typecheck-wrap */}
 ```javascript
 // Use loops for similar checks
 const endpoints = [

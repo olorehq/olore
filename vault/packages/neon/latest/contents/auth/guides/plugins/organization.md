@@ -2,7 +2,7 @@
 title: Organization
 subtitle: 'Manage multi-tenant organizations, members, and invitations'
 summary: >-
-  The Neon Auth Organization plugin adds multi-tenancy to apps built on
+  The Managed Better Auth Organization plugin adds multi-tenancy to apps built on
   Better Auth, letting each tenant share a Neon branch with role-based access
   (owner, admin, and member roles). Use it when your app needs workspaces or
   tenant isolation with invitation workflows, configurable membership limits,
@@ -11,15 +11,13 @@ summary: >-
   organizations, inviting and removing members, and checking role permissions
   client-side.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-14T11:21:37.306Z'
 ---
 
-<FeatureBetaProps feature_name="Neon Auth with Better Auth" />
+Managed Better Auth is built on [Better Auth](https://www.better-auth.com/) and comes with a pre-configured Organization plugin, so your app can support multi-tenancy without additional setup.
 
-Neon Auth is built on [Better Auth](https://www.better-auth.com/) and comes with a pre-configured Organization plugin, so your app can support multi-tenancy without additional setup.
-
-<Admonition type="note" title="Preview Feature">
-The Organization plugin is currently in **Beta**. Support for JWT token claims is under development.
+<Admonition type="note" title="Beta">
+The Organization plugin is currently in **beta**. Support for JWT token claims is available.
 </Admonition>
 
 ## Why use this plugin?
@@ -31,7 +29,7 @@ Use the Organization plugin when you need multi-tenancy in your app. It supports
 - Inviting users and assigning roles: owner, admin, or member
 - Role-based access: owners and admins can manage the org; the member role has read-only access
 
-Better Auth also has a **Teams** feature (sub-groups within an org); that feature is not currently enabled in Neon Auth.
+Better Auth also has a **Teams** feature (sub-groups within an org); that feature is not currently enabled in Managed Better Auth.
 
 ## Prerequisites
 
@@ -40,7 +38,7 @@ Better Auth also has a **Teams** feature (sub-groups within an org); that featur
 
 ## Example application
 
-**[neon-auth-orgs-example](https://github.com/neondatabase/neon-js/tree/main/examples/neon-auth-orgs-example)** is a multi-tenant sample that uses the Organization plugin with **Drizzle** and **`@neondatabase/auth`** (see that folder’s README for **bun** setup from the monorepo root). For other runnable Neon Auth apps, see [Example applications](/docs/auth/overview#example-applications).
+**[neon-auth-orgs-example](https://github.com/neondatabase/neon-js/tree/main/examples/neon-auth-orgs-example)** is a multi-tenant sample that uses the Organization plugin with **Drizzle** and **`@neon/auth`** (see that folder’s README for **bun** setup from the monorepo root). For other runnable Managed Better Auth apps, see [Example applications](/docs/auth/about#example-applications).
 
 ## Configure the organization plugin
 
@@ -50,21 +48,19 @@ The Organization plugin is enabled by default for each branch; you can disable i
 
 <TabItem>
 
-Open your project in the Neon Console, then go to **Auth** > **Plugins** (beta) and use the **Organizations** section (per branch). This tab is available when your project uses Neon Auth with **Better Auth**; other Auth settings, including your **Auth URL**, stay on the **Configuration** tab. From there you can customize:
-
-![Neon Console Auth Plugins tab with Organizations settings](/docs/changelog/neon_auth_plugins_organizations.png)
+Open your project in the Neon Console, then go to **Settings** > **Better Auth** and use the **Organizations** section (per branch). This section is available when your project uses **Managed Better Auth**. From there you can customize:
 
 - **Enable Organizations** (toggle): Turn the Organization plugin on or off for the branch. When off, all organization API calls are disabled and return an error.
 - **Limit:** Maximum total organization memberships (created + joined) per user. Once reached, the user cannot create new organizations. Default: 10.
 - **Membership Limit:** Maximum number of members per organization (default: 100).
 - **Creator role:** Role assigned to the user who creates an organization: **Owner** or **Admin**. Choose Admin if you want the org creator to have fewer privileges than Owner (for example, they cannot delete the org or change the owner).
-- **Send Invitation Email** (toggle): When on, invited users receive an email with an accept link. This requires **Verify email at signup** to be enabled in the Authentication configuration. Accepting the invitation requires the [`AuthView` component](/docs/auth/reference/ui-components#core-components) or a custom route that handles `/auth/accept-invitation?invitationId=<INV_ID>` in your application. When off, no email is sent and you handle invitations in your app (for example, via the [invitation ID](#accept-invitation) or the [user invitation list](#list-user-invitations)).
+- **Send Invitation Email** (toggle): When on, invited users receive an email with an accept link. This requires **Verify email at signup** to be enabled in the Authentication configuration. Accepting the invitation requires Better Auth UI's organization components (`npx shadcn@latest add @better-auth-ui/organization`, with its `accept-invitation` view) or a custom route that handles `/auth/accept-invitation?invitationId=<INV_ID>` in your application. When off, no email is sent and you handle invitations in your app (for example, via the [invitation ID](#accept-invitation) or the [user invitation list](#list-user-invitations)).
 
 </TabItem>
 
 <TabItem>
 
-You can also configure the plugin via the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api). Use your API key in the `Authorization` header.
+You can also configure the plugin via the [Neon API](/docs/reference/api). Use your API key in the `Authorization` header.
 
 **Get current plugin config (including organization):**
 
@@ -134,8 +130,8 @@ Example response:
 
 ### API Documentation
 
-- [Get all plugin configurations](https://api-docs.neon.tech/reference/getneonauthpluginconfigs)
-- [Update organization plugin configuration](https://api-docs.neon.tech/reference/updateneonauthorganizationplugin)
+- [Get all plugin configurations](/docs/reference/api/auth/get-neon-auth-plugin-configs)
+- [Update organization plugin configuration](/docs/reference/api/auth/update-neon-auth-organization-plugin)
 
 </TabItem>
 
@@ -333,7 +329,7 @@ const { data, error } = await authClient.organization.delete({
 Manage invitations to join an organization.
 
 <Admonition type="note" title="Invitation Emails">
-Invitation emails are supported when [**Send Invitation Email**](#configure-the-organization-plugin) is enabled in the organization config. This also requires **Verify email at signup** in the Authentication configuration. Accepting an email invitation requires the [`AuthView` component](/docs/auth/reference/ui-components#core-components) or a custom route handling `/auth/accept-invitation?invitationId=<INV_ID>` in your app.
+Invitation emails are supported when [**Send Invitation Email**](#configure-the-organization-plugin) is enabled in the organization config. This also requires **Verify email at signup** in the Authentication configuration. Accepting an email invitation requires Better Auth UI's organization components (`npx shadcn@latest add @better-auth-ui/organization`, with its `accept-invitation` view) or a custom route handling `/auth/accept-invitation?invitationId=<INV_ID>` in your app.
 
 When the email toggle is off, handle invitations in your app using the [invitation ID](#accept-invitation) or the [user invitation list](#list-user-invitations).
 </Admonition>
@@ -629,13 +625,13 @@ const canDelete = authClient.organization.checkRolePermission({
 
 ## Limitations
 
-Because Neon Auth is a managed service, some Better Auth features are not currently supported:
+Because Managed Better Auth is a managed service, some Better Auth features are not currently supported:
 
 - **Teams:** The Teams sub-feature is not currently enabled.
 - **Hooks:** Server-side hooks (for example, `beforeCreateOrganization`) are not supported.
 - **Custom Permissions:** You cannot currently define custom roles or modify default permissions.
 - **Dynamic Access Control:** Dynamic creation of roles via API is not enabled.
 
-Check the [Neon Auth roadmap](/docs/auth/roadmap) for updates on these features.
+Check the [Managed Better Auth roadmap](/docs/auth/roadmap) for updates on these features.
 
 <NeedHelp/>

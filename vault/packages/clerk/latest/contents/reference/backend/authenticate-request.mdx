@@ -3,16 +3,14 @@ title: '`authenticateRequest()`'
 description: Use the authenticateRequest() method to verify a token passed from the frontend.
 ---
 
-{/* clerk/javascript file: https://github.com/clerk/javascript/blob/main/packages/backend/src/tokens/request.ts#L62 */}
-
 Authenticates a token passed from the frontend. Networkless if the `jwtKey` is provided. Otherwise, performs a network call to retrieve the JWKS from the [Backend API](/docs/reference/backend-api/tag/jwks/GET/jwks){{ target: '_blank' }}.
 
 <If notSdk={["nextjs", "astro", "expressjs", "fastify", "nuxt", "react-router", "tanstack-react-start"]}>
-  `authenticateRequest()` requires `publishableKey` to be set. You can set this value as an [environment variable](/docs/guides/development/clerk-environment-variables#clerk-publishable-and-secret-keys) and then pass it to `createClerkClient()` so that it is passed to `authenticateRequest()`.
+  `authenticateRequest()` requires `publishableKey` to be set unless `acceptsToken` is set to `'api_key'` or `'m2m_token'`. You can set this value as an [environment variable](/docs/guides/development/clerk-environment-variables#clerk-publishable-and-secret-keys) and then pass it to `createClerkClient()` so that it is passed to `authenticateRequest()`.
 </If>
 
 <If sdk={["nextjs", "astro", "expressjs", "fastify", "nuxt", "react-router", "tanstack-react-start"]}>
-  `authenticateRequest()` requires `publishableKey` to be set. You should already have this set in your [environment variables](/docs/guides/development/clerk-environment-variables#clerk-publishable-and-secret-keys). `clerkClient` will infer the `publishableKey` from your environment variables.
+  `authenticateRequest()` requires `publishableKey` to be set unless `acceptsToken` is set to `'api_key'` or `'m2m_token'`. You should already have this set in your [environment variables](/docs/guides/development/clerk-environment-variables#clerk-publishable-and-secret-keys). `clerkClient` will infer the `publishableKey` from your environment variables.
 </If>
 
 ```ts
@@ -25,22 +23,26 @@ function authenticateRequest(
 ## Parameters
 
 <Properties>
+  - `options?`
+  - [`AuthenticateRequestOptions`](#authenticaterequestoptions)
+
+  Optional options to configure the authentication.
+
+  ---
+
   - `request`
   - `Request`
 
   `Request` object
-
-  ---
-
-  - `options?`
-  - [`AuthenticateRequestOptions`](#authenticate-request-options)
-
-  Optional options to configure the authentication.
 </Properties>
 
 ## `AuthenticateRequestOptions`
 
 It is recommended to set these options as [environment variables](/docs/guides/development/clerk-environment-variables#api-and-sdk-configuration) where possible, and then pass them to the function. For example, you can set the `secretKey` option using the `CLERK_SECRET_KEY` environment variable, and then pass it to the function like this: `createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })`.
+
+<If is="llm">
+  **For AI agents:** Run `npx clerk@latest env pull` to write the publishable and secret keys into the project's `.env` file instead of copying them from the API keys page in the Dashboard, and run `npx clerk@latest api jwks` to retrieve the instance's JSON Web Key Set when debugging token verification. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 > [!WARNING]
 > You must provide either `jwtKey` or `secretKey`.
@@ -52,6 +54,13 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 ## Returns
 
 <Properties>
+  - `headers`
+  - [Headers](https://developer.mozilla.org/en-US/docs/Web/API/Headers)
+
+  A `Headers` object containing debug or status headers.
+
+  ---
+
   - `isAuthenticated`
   - `boolean`
 
@@ -59,24 +68,10 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 
   ---
 
-  - `isSignedIn` (deprecated)
+  - ~~`isSignedIn`~~
   - `boolean`
 
   **Deprecated. Use `isAuthenticated` instead.** Indicates whether the incoming request is authenticated.
-
-  ---
-
-  - `status`
-  - `'signed-in' | 'signed-out' | 'handshake'`
-
-  The authentication state.
-
-  ---
-
-  - `reason`
-  - `string | null`
-
-  The error code or reason for the current state. When there is a signed-in user, the value will be `null`.
 
   ---
 
@@ -87,10 +82,24 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 
   ---
 
-  - `tokenType`
-  - `'session_token' | 'oauth_token' | 'm2m_token' | 'api_key'`
+  - `reason`
+  - `string | null`
 
-  The type of token.
+  The error code or reason for the current state. When there is a signed-in user, the value will be `null`.
+
+  ---
+
+  - `status`
+  - `'signed-in' | 'signed-out' | 'handshake'`
+
+  The authentication state.
+
+  ---
+
+  - `toAuth()`
+  - `function`
+
+  A function that returns the `Auth` object. This JavaScript object contains important information like the current user's session ID, user ID, and Organization ID. Learn more about the [`Auth` object](/docs/reference/backend/types/auth-object).
 
   ---
 
@@ -101,17 +110,10 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 
   ---
 
-  - `headers`
-  - [Headers](https://developer.mozilla.org/en-US/docs/Web/API/Headers)
+  - `tokenType`
+  - `'session_token' | 'oauth_token' | 'm2m_token' | 'api_key'`
 
-  A `Headers` object containing debug or status headers.
-
-  ---
-
-  - `toAuth()`
-  - `function`
-
-  A function that returns the `Auth` object. This JavaScript object contains important information like the current user's session ID, user ID, and Organization ID. Learn more about the [`Auth` object](/docs/reference/backend/types/auth-object){{ target: '_blank' }}.
+  The type of token.
 </Properties>
 
 ## Examples
@@ -170,7 +172,7 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 </If>
 
 <If sdk="astro">
-  ```tsx {{ filename: 'src/api/example.ts' }}
+  ```tsx {{ filename: 'src/pages/api/example.ts' }}
   import type { APIRoute } from 'astro'
   import { clerkClient } from '@clerk/astro/server'
 
@@ -206,12 +208,13 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 
     // Protect the route from unauthenticated users
     if (!isAuthenticated) {
-      return res.status(401).json({ error: 'User not authenticated' })
+      res.status(401).json({ error: 'User not authenticated' })
+      return
     }
 
     // Add logic to perform protected actions
 
-    return res.json({ message: 'This is a reply' })
+    res.json({ message: 'This is a reply' })
   })
   ```
 </If>
@@ -290,12 +293,11 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/api/example.tsx' }}
-  import { json } from '@tanstack/react-start'
+  ```tsx {{ filename: 'src/routes/api/example.tsx' }}
   import { createFileRoute } from '@tanstack/react-router'
   import { clerkClient } from '@clerk/tanstack-react-start/server'
 
-  export const ServerRoute = createFileRoute('/api/example')({
+  export const Route = createFileRoute('/api/example')({
     server: {
       handlers: {
         GET: async ({ request }) => {
@@ -307,12 +309,12 @@ It is recommended to set these options as [environment variables](/docs/guides/d
 
           // Protect the route from unauthenticated users
           if (!isAuthenticated) {
-            return json({ error: 'Unauthorized' }, { status: 401 })
+            return Response.json({ error: 'Unauthorized' }, { status: 401 })
           }
 
           // Add logic to perform protected actions
 
-          return json({ message: 'This is a reply' })
+          return Response.json({ message: 'This is a reply' })
         },
       },
     },
@@ -378,7 +380,7 @@ By default, `authenticateRequest()` will authenticate a session request. To auth
 </If>
 
 <If sdk="astro">
-  ```tsx {{ filename: 'src/api/example.ts' }}
+  ```tsx {{ filename: 'src/pages/api/example.ts' }}
   import type { APIRoute } from 'astro'
   import { clerkClient } from '@clerk/astro/server'
 
@@ -416,12 +418,13 @@ By default, `authenticateRequest()` will authenticate a session request. To auth
 
     // Protect the route from unauthenticated users
     if (!isAuthenticated) {
-      return res.status(401).json({ error: 'User not authenticated' })
+      res.status(401).json({ error: 'User not authenticated' })
+      return
     }
 
     // Add logic to perform protected actions
 
-    return res.json({ message: 'This is a machine-to-machine reply' })
+    res.json({ message: 'This is a machine-to-machine reply' })
   })
   ```
 </If>
@@ -504,12 +507,11 @@ By default, `authenticateRequest()` will authenticate a session request. To auth
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/api/example.tsx' }}
-  import { json } from '@tanstack/react-start'
+  ```tsx {{ filename: 'src/routes/api/example.tsx' }}
   import { createFileRoute } from '@tanstack/react-router'
   import { clerkClient } from '@clerk/tanstack-react-start/server'
 
-  export const ServerRoute = createFileRoute('/api/example')({
+  export const Route = createFileRoute('/api/example')({
     server: {
       handlers: {
         GET: async ({ request }) => {
@@ -522,12 +524,12 @@ By default, `authenticateRequest()` will authenticate a session request. To auth
 
           // Protect the route from unauthenticated users
           if (!isAuthenticated) {
-            return json({ error: 'Unauthorized' }, { status: 401 })
+            return Response.json({ error: 'Unauthorized' }, { status: 401 })
           }
 
           // Add logic to perform protected actions
 
-          return json({ message: 'This is a machine-to-machine reply' })
+          return Response.json({ message: 'This is a machine-to-machine reply' })
         },
       },
     },

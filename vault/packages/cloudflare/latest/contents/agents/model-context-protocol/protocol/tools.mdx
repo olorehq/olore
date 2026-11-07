@@ -12,46 +12,62 @@ products:
 
 import { TypeScriptExample, LinkCard } from "~/components";
 
-MCP tools are functions that an [MCP server](/agents/model-context-protocol/) exposes for clients to call. When an LLM decides it needs to take an action — look up data, run a calculation, call an API — it invokes a tool. The MCP server executes the tool and returns the result.
+MCP tools are functions that an [MCP server](/agents/model-context-protocol/) exposes for clients to call. An LLM can invoke a tool to look up data, run a calculation, or call an API. The MCP server executes the tool and returns its result.
 
-Tools are defined using the `@modelcontextprotocol/sdk` package. The Agents SDK handles transport and lifecycle; the tool definitions are the same regardless of whether you use [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/) or [`McpAgent`](/agents/model-context-protocol/apis/agent-api/).
+Define tools on an `McpServer` from `@modelcontextprotocol/server` and serve it with [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/).
 
 :::note[Experimental WebMCP adapter]
 
-The Agents SDK also includes the experimental `agents/experimental/webmcp` adapter for bridging `McpAgent` tools to Chrome's native `navigator.modelContext` API. This API is under active development and may change between releases.
+The Agents SDK also includes the experimental `agents/experimental/webmcp` adapter for bridging tools from a remote MCP server to Chrome's native `navigator.modelContext` API. This API is under active development and may change between releases.
 
 :::
 
 <LinkCard
 	title="WebMCP example"
 	href="https://github.com/cloudflare/agents/tree/main/examples/webmcp"
-	description="Bridge MCP tools from a Cloudflare McpAgent into Chrome's experimental WebMCP API."
+	description="Bridge tools from a remote MCP server into Chrome's experimental WebMCP API."
 />
 
-## Defining tools
+## Define tools
 
-Use `server.tool()` to register a tool on an `McpServer` instance. Each tool has a name, a description (used by the LLM to decide when to call it), an input schema defined with [Zod](https://zod.dev), and a handler function.
+Use `server.registerTool()` to register a tool on a stateless `McpServer` instance. Each tool has a name, a description, an input schema defined with a schema library like [Zod](https://zod.dev) or [Valibot](https://valibot.dev), and a handler function.
 
 <TypeScriptExample>
 
 ```ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
 function createServer() {
 	const server = new McpServer({ name: "Math", version: "1.0.0" });
 
-	server.tool(
+	server.registerTool(
 		"add",
-		"Add two numbers together",
-		{ a: z.number(), b: z.number() },
-		async ({ a, b }) => ({
-			content: [{ type: "text", text: String(a + b) }],
-		}),
+		{
+			description: "Add two numbers together",
+			inputSchema: { a: z.number(), b: z.number() },
+			outputSchema: { sum: z.number() },
+		},
+		async ({ a, b }) => {
+			const result = { sum: a + b };
+			return {
+				structuredContent: result,
+				content: [{ type: "text", text: JSON.stringify(result) }],
+			};
+		},
 	);
 
 	return server;
 }
+
+const handler = createMcpHandler(createServer);
+
+export default {
+	fetch(request, env, ctx) {
+		return handler(request, env, ctx);
+	},
+} satisfies ExportedHandler<Env>;
 ```
 
 </TypeScriptExample>
@@ -65,25 +81,46 @@ Tool results are returned as an array of content parts. The most common type is 
 <TypeScriptExample>
 
 ```ts
-server.tool(
-	"lookup",
-	"Look up a user by ID",
-	{ userId: z.string() },
-	async ({ userId }) => {
-		const user = await db.getUser(userId);
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler } from "agents/mcp/server";
+import { env } from "cloudflare:workers";
+import { z } from "zod";
 
-		if (!user) {
+function createServer() {
+	const server = new McpServer({ name: "Users", version: "1.0.0" });
+
+	server.registerTool(
+		"lookup",
+		{
+			description: "Look up a user by ID",
+			inputSchema: { userId: z.string() },
+		},
+		async ({ userId }) => {
+			const user = await env.USERS.get(userId, "json");
+
+			if (!user) {
+				return {
+					isError: true,
+					content: [{ type: "text", text: `User ${userId} not found` }],
+				};
+			}
+
 			return {
-				isError: true,
-				content: [{ type: "text", text: `User ${userId} not found` }],
+				content: [{ type: "text", text: JSON.stringify(user, null, 2) }],
 			};
-		}
+		},
+	);
 
-		return {
-			content: [{ type: "text", text: JSON.stringify(user, null, 2) }],
-		};
+	return server;
+}
+
+const handler = createMcpHandler(createServer);
+
+export default {
+	fetch(request, env, ctx) {
+		return handler(request, env, ctx);
 	},
-);
+} satisfies ExportedHandler<Env>;
 ```
 
 </TypeScriptExample>
@@ -105,96 +142,142 @@ Tool inputs are defined as Zod schemas and validated automatically before the ha
 <TypeScriptExample>
 
 ```ts
-server.tool(
-	"search",
-	"Search for documents by query",
-	{
-		query: z.string().describe("The search query"),
-		limit: z
-			.number()
-			.min(1)
-			.max(100)
-			.default(10)
-			.describe("Maximum number of results to return"),
-		category: z
-			.enum(["docs", "blog", "api"])
-			.optional()
-			.describe("Filter by content category"),
-	},
-	async ({ query, limit, category }) => {
-		const results = await searchIndex(query, { limit, category });
-		return {
-			content: [{ type: "text", text: JSON.stringify(results) }],
-		};
-	},
-);
-```
-
-</TypeScriptExample>
-
-## Using tools with `createMcpHandler`
-
-For stateless MCP servers, define tools inside a factory function and pass the server to [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/):
-
-<TypeScriptExample>
-
-```ts
-import { createMcpHandler } from "agents/mcp";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
-function createServer() {
-	const server = new McpServer({ name: "My Tools", version: "1.0.0" });
+const DOCUMENTS = [
+	{ title: "Getting started", category: "docs" },
+	{ title: "Release notes", category: "blog" },
+	{ title: "REST reference", category: "api" },
+];
 
-	server.tool("ping", "Check if the server is alive", {}, async () => ({
-		content: [{ type: "text", text: "pong" }],
-	}));
+function createServer() {
+	const server = new McpServer({ name: "Search", version: "1.0.0" });
+
+	server.registerTool(
+		"search",
+		{
+			description: "Search for documents by title",
+			inputSchema: {
+				query: z.string().describe("Text to look for in document titles"),
+				limit: z
+					.number()
+					.min(1)
+					.max(100)
+					.default(10)
+					.describe("Maximum number of results to return"),
+				category: z
+					.enum(["docs", "blog", "api"])
+					.optional()
+					.describe("Only return documents in this category"),
+			},
+		},
+		async ({ query, limit, category }) => {
+			const results = DOCUMENTS.filter(
+				(doc) =>
+					doc.title.toLowerCase().includes(query.toLowerCase()) &&
+					(!category || doc.category === category),
+			).slice(0, limit);
+
+			return {
+				content: [{ type: "text", text: JSON.stringify(results) }],
+			};
+		},
+	);
 
 	return server;
 }
 
+const handler = createMcpHandler(createServer);
+
 export default {
-	fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
-		const server = createServer();
-		return createMcpHandler(server)(request, env, ctx);
+	fetch(request, env, ctx) {
+		return handler(request, env, ctx);
 	},
 } satisfies ExportedHandler<Env>;
 ```
 
 </TypeScriptExample>
 
-## Using tools with `McpAgent`
+## Serve tools with `createMcpHandler`
 
-For stateful MCP servers, define tools in the `init()` method of an [`McpAgent`](/agents/model-context-protocol/apis/agent-api/). Tools have access to the agent instance via `this`, which means they can read and write state.
+For stateless MCP servers, define tools inside a factory function and pass the server to [`createMcpHandler`](/agents/model-context-protocol/apis/handler-api/):
 
 <TypeScriptExample>
 
 ```ts
-import { McpAgent } from "agents/mcp";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler } from "agents/mcp/server";
 
-export class MyMCP extends McpAgent {
-	server = new McpServer({ name: "Stateful Tools", version: "1.0.0" });
+function createServer() {
+	const server = new McpServer({ name: "My Tools", version: "1.0.0" });
 
-	async init() {
-		this.server.tool(
-			"incrementCounter",
-			"Increment and return a counter",
-			{},
-			async () => {
-				const count = (this.state?.count ?? 0) + 1;
-				this.setState({ count });
-				return {
-					content: [{ type: "text", text: `Counter: ${count}` }],
-				};
-			},
-		);
-	}
+	server.registerTool(
+		"ping",
+		{ description: "Check if the server is alive" },
+		async () => ({
+			content: [{ type: "text", text: "pong" }],
+		}),
+	);
+
+	return server;
 }
+
+const handler = createMcpHandler(createServer);
+
+export default {
+	fetch(request, env, ctx) {
+		return handler(request, env, ctx);
+	},
+} satisfies ExportedHandler<Env>;
 ```
 
 </TypeScriptExample>
+
+## Tools that need state
+
+`createMcpHandler` builds a new server for every request, so a tool cannot keep data in memory between calls. Read and write a binding instead, using `env` from `cloudflare:workers`:
+
+<TypeScriptExample>
+
+```ts
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler, getMcpAuthContext } from "agents/mcp/server";
+import { env } from "cloudflare:workers";
+
+function createServer() {
+	const server = new McpServer({ name: "Counter", version: "1.0.0" });
+
+	server.registerTool(
+		"incrementCounter",
+		{ description: "Increment and return your counter" },
+		async () => {
+			// props are set by OAuthProvider. Without it, every caller shares "anonymous".
+			const userId = String(getMcpAuthContext()?.props.userId ?? "anonymous");
+			const count = Number((await env.COUNTERS.get(userId)) ?? 0) + 1;
+			await env.COUNTERS.put(userId, String(count));
+			return {
+				content: [{ type: "text", text: `Counter: ${count}` }],
+			};
+		},
+	);
+
+	return server;
+}
+
+const handler = createMcpHandler(createServer);
+
+export default {
+	fetch(request, env, ctx) {
+		return handler(request, env, ctx);
+	},
+} satisfies ExportedHandler<Env>;
+```
+
+</TypeScriptExample>
+
+To add `OAuthProvider` and per-user props, refer to [Authorization](/agents/model-context-protocol/protocol/authorization/). For data that needs transactions or per-user logic, call a Durable Object or an [Agent](/agents/) from the tool.
 
 ## Next steps
 
@@ -208,12 +291,6 @@ export class MyMCP extends McpAgent {
 	title="createMcpHandler API"
 	href="/agents/model-context-protocol/apis/handler-api/"
 	description="Reference for stateless MCP servers."
-/>
-
-<LinkCard
-	title="McpAgent API"
-	href="/agents/model-context-protocol/apis/agent-api/"
-	description="Reference for stateful MCP servers."
 />
 
 <LinkCard

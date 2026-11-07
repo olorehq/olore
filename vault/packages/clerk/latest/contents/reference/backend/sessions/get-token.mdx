@@ -1,40 +1,11 @@
 ---
 title: '`getToken()`'
-description: Use the getToken() method to retrieve a token for a JWT template that is defined in the Clerk Dashboard.
+description: Use the getToken() method to get a token for a JWT template that is defined in the Clerk Dashboard.
 ---
 
-{/* clerk/javascript file: https://github.com/clerk/javascript/blob/main/packages/backend/src/api/endpoints/SessionApi.ts/#L51 */}
+<Typedoc src="backend/session-api/methods/get-token" />
 
-Retrieves a session token or generate a JWT using a specified template that is defined on the [**JWT templates**](https://dashboard.clerk.com/~/jwt-templates) page in the Clerk Dashboard.
-
-```ts
-function getToken(sessionId: string, template: string): Promise<Token>
-```
-
-## Parameters
-
-<Properties>
-  - `sessionId`
-  - `string`
-
-  The ID of the session to retrieve a token for.
-
-  ---
-
-  - `expiresInSeconds?`
-  - `number`
-
-  The expiration time for the token in seconds. If not provided, uses the default expiration time for the JWT template.
-
-  ---
-
-  - `template?`
-  - `string`
-
-  The name of the JWT template from the [Clerk Dashboard](https://dashboard.clerk.com/~/jwt-templates) to generate a new token from. For example: 'firebase', 'grafbase', or your custom template's name.
-</Properties>
-
-## Example
+## Usage
 
 <Include src="_partials/backend/usage" />
 
@@ -148,7 +119,7 @@ The token resembles the following:
 </If>
 
 <If sdk="astro">
-  ```tsx {{ filename: 'src/api/example.ts' }}
+  ```tsx {{ filename: 'src/pages/api/example.ts' }}
   import { clerkClient } from '@clerk/astro/server'
   import type { APIRoute } from 'astro'
 
@@ -276,12 +247,11 @@ The token resembles the following:
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/api/example.tsx' }}
-  import { json } from '@tanstack/react-start'
+  ```tsx {{ filename: 'src/routes/api/example.tsx' }}
   import { createFileRoute } from '@tanstack/react-router'
   import { auth, clerkClient } from '@clerk/tanstack-react-start/server'
 
-  export const ServerRoute = createFileRoute('/api/example')({
+  export const Route = createFileRoute('/api/example')({
     server: {
       handlers: {
         GET: async () => {
@@ -300,7 +270,7 @@ The token resembles the following:
           // Use the `getToken()` method to generate a token from a template
           const token = await clerkClient().sessions.getToken(sessionId, template)
 
-          return json({ token })
+          return Response.json({ token })
         },
       },
     },

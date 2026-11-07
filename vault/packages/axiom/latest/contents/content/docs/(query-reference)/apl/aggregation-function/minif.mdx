@@ -1,0 +1,149 @@
+---
+title: minif
+description: 'This page explains how to use the minif aggregation function in APL.'
+---
+
+## Introduction
+
+The `minif` aggregation in Axiom Processing Language (APL) allows you to calculate the minimum value of a numeric expression, but only for records that meet a specific condition. This aggregation is useful when you want to find the smallest value in a subset of data that satisfies a given predicate. For example, you can use `minif` to find the shortest request duration for successful HTTP requests, or the minimum span duration for a specific service in your OpenTelemetry traces.
+
+The `minif` aggregation is especially useful in scenarios where you need conditional aggregations, such as log analysis, monitoring distributed systems, or examining security-related events.
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize minif(Expression, Predicate)
+```
+
+### Parameters
+
+| Parameter  | Description                                                   |
+|------------|---------------------------------------------------------------|
+| `Expression` | The numeric expression whose minimum value you want to find.   |
+| `Predicate`  | The condition that determines which records to include.        |
+
+### Returns
+
+The `minif` aggregation returns the minimum value of the specified `Expression` for the records that satisfy the `Predicate`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you might want to find the minimum request duration for successful HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize minif(req_duration_ms, status == '200') by ['geo.city']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20minif(req_duration_ms,%20status%20%3D%3D%20'200')%20by%20%5B'geo.city'%5D%22%7D)
+
+**Output**
+
+| geo.city   | min_duration |
+|------------|--------------|
+| San Diego  | 120          |
+| New York   | 95           |
+
+This query finds the minimum request duration for HTTP requests with a `200` status code, grouped by city.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+For distributed tracing, you can use `minif` to find the minimum span duration for a specific service.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize minif(duration, ['service.name'] == 'frontend') by trace_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20minif(duration,%20%5B'service.name'%5D%20%3D%3D%20'frontend')%20by%20trace_id%22%7D)
+
+**Output**
+
+| trace_id   | min_duration  |
+|------------|---------------|
+| abc123     | 50ms          |
+| def456     | 40ms          |
+
+This query returns the minimum span duration for traces from the `frontend` service, grouped by `trace_id`.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can use `minif` to find the minimum request duration for HTTP requests from a specific country.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize minif(req_duration_ms, ['geo.country'] == 'US') by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20minif(req_duration_ms,%20%5B'geo.country'%5D%20%3D%3D%20'US')%20by%20status%22%7D)
+
+**Output**
+
+| status   | min_duration |
+|----------|--------------|
+| 200      | 95           |
+| 404      | 120          |
+
+This query returns the minimum request duration for HTTP requests originating from the United States, grouped by HTTP status code.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**maxif**](/apl/aggregation-function/maxif): Finds the maximum value of an expression that satisfies a condition. Use `maxif` when you need the maximum value under a condition, rather than the minimum.
+- [**avgif**](/apl/aggregation-function/avgif): Calculates the average value of an expression that meets a specified condition. Useful when you want an average instead of a minimum.
+- [**countif**](/apl/aggregation-function/countif): Counts the number of records that satisfy a given condition. Use this for counting records rather than calculating a minimum.
+- [**sumif**](/apl/aggregation-function/sumif): Sums the values of an expression for records that meet a condition. Helpful when you’re interested in the total rather than the minimum.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you might use the `min` function in combination with `where` to filter results. In APL, the `minif` function combines both the filtering condition and the minimum calculation into one step.
+
+<CodeGroup>
+```sql Splunk example
+| stats min(req_duration_ms) as min_duration where status="200"
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize minif(req_duration_ms, status == "200") by id
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you would typically use a `CASE` statement with `MIN` to apply conditional logic for aggregation. In APL, the `minif` function simplifies this by combining both the condition and the aggregation.
+
+<CodeGroup>
+```sql SQL example
+SELECT MIN(CASE WHEN status = '200' THEN req_duration_ms ELSE NULL END) as min_duration
+FROM sample_http_logs
+GROUP BY id;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize minif(req_duration_ms, status == "200") by id
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

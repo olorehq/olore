@@ -1,0 +1,50 @@
+---
+title: "Focus"
+description: "Let users move through your Rive graphic with Tab and arrow keys in the Web (JS) runtime."
+---
+
+import Overview from "/snippets/runtimes/web/focus/overview.mdx"
+import KeyboardNavigation from "/snippets/runtimes/web/focus/keyboard-navigation.mdx"
+import TabIndex from "/snippets/runtimes/web/focus/tab-index.mdx"
+import FocusInterrupt from "/snippets/runtimes/web/focus/focus-interrupt.mdx"
+import FocusInterruptOptions from "/snippets/runtimes/web/focus/focus-interrupt-options.mdx"
+import ClearingFocus from "/snippets/runtimes/web/focus/clearing-focus.mdx"
+
+<Overview runtimeName="Web (JS)" />
+
+<KeyboardNavigation runtime="web" />
+
+<TabIndex />
+
+```js highlight={6}
+const rive = new Rive({
+  canvas: document.getElementById("rive-canvas"),
+  src: "menu.riv",
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  tabIndex: -1, // Reachable by click, but skipped when tabbing through the page
+});
+```
+
+<FocusInterrupt />
+
+```js highlight={7-9}
+const rive = new Rive({
+  canvas: document.getElementById("rive-canvas"),
+  src: "menu.riv",
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  autoBind: true,
+  focusOptions: {
+    allowFocusInterrupt: true,
+  },
+});
+```
+
+<FocusInterruptOptions />
+
+<ClearingFocus />
+
+```js
+rive.clearFocus();
+```

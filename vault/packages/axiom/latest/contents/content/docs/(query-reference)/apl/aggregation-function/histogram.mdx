@@ -1,0 +1,158 @@
+---
+title: histogram
+description: 'This page explains how to use the histogram aggregation function in APL.'
+---
+
+The `histogram` aggregation in APL allows you to create a histogram that groups numeric values into intervals or “bins.” This is useful for visualizing the distribution of data, such as the frequency of response times, request durations, or other continuous numerical fields. You can use it to analyze patterns and trends in datasets like logs, traces, or metrics. It’s especially helpful when you need to summarize a large volume of data into a digestible form, providing insights on the distribution of values.
+
+The `histogram` aggregation is ideal for identifying peaks, valleys, and outliers in your data. For example, you can analyze the distribution of request durations in web server logs or span durations in OpenTelemetry traces to understand performance bottlenecks.
+
+<Note>
+The `histogram` aggregation in APL is a statistical aggregation that returns estimated results. The estimation comes with the benefit of speed at the expense of accuracy. This means that `histogram` is fast and light on resources even on a large or high-cardinality dataset, but it doesn’t provide precise results.
+</Note>
+
+## Usage
+
+### Syntax
+
+```kusto
+histogram(numeric_field, number_of_bins)
+```
+
+### Parameters
+
+- `numeric_field`: The numeric field to create a histogram for. For example, request duration or span duration.
+- `number_of_bins`: The number of bins (intervals) to use for grouping the numeric values.
+
+### Returns
+
+The `histogram` aggregation returns a table where each row represents a bin, along with the number of occurrences (counts) that fall within each bin.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You can use the `histogram` aggregation to analyze the distribution of request durations in web server logs.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize histogram(req_duration_ms, 100) by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20histogram(req_duration_ms%2C%20100)%20by%20bin_auto(_time)%22%7D)
+
+**Output**
+
+| req_duration_ms_bin | count |
+|---------------------|-------|
+| 0                   | 50    |
+| 100                 | 200   |
+| 200                 | 120   |
+
+This query creates a histogram that groups request durations into bins of 100 milliseconds and shows the count of requests in each bin. It helps you visualize how frequently requests fall within certain duration ranges.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can use the `histogram` aggregation to analyze the distribution of span durations.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize histogram(duration, 100) by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20histogram(duration%2C%20100)%20by%20bin_auto(_time)%22%7D)
+
+**Output**
+
+| duration_bin | count |
+|--------------|-------|
+| 0.1s         | 30    |
+| 0.2s         | 120   |
+| 0.3s         | 50    |
+
+This query groups the span durations into 100ms intervals, making it easier to spot latency issues in your traces.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, the `histogram` aggregation helps you understand the frequency distribution of request durations to detect anomalies or attacks.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '200'
+| summarize histogram(req_duration_ms, 50) by bin_auto(_time)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'200'%20%7C%20summarize%20histogram(req_duration_ms%2C%2050)%20by%20bin_auto(_time)%22%7D)
+
+**Output**
+
+| req_duration_ms_bin | count |
+|---------------------|-------|
+| 0                   | 150    |
+| 50                  | 400    |
+| 100                 | 100    |
+
+This query analyzes the request durations for HTTP 200 (Success) responses, helping you identify patterns in security-related events.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**percentile**](/apl/aggregation-function/percentile): Use `percentile` when you need to find the specific value below which a percentage of observations fall, which can provide more precise distribution analysis.
+- [**avg**](/apl/aggregation-function/avg): Use `avg` for calculating the average value of a numeric field, useful when you are more interested in the central tendency rather than distribution.
+- [**sum**](/apl/aggregation-function/sum): The `sum` function adds up the total values in a numeric field, helpful for determining overall totals.
+- [**count**](/apl/aggregation-function/count): Use `count` when you need a simple tally of rows or events, often in conjunction with `histogram` for more basic summarization.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, a similar operation to APL's `histogram` is the `timechart` or `histogram` command, which groups events into time buckets. However, in APL, the `histogram` function focuses on numeric values, allowing you to control the number of bins precisely.
+
+<CodeGroup>
+
+```splunk Splunk example
+| stats count by duration | timechart span=10 count
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by histogram(req_duration_ms, 10)
+```
+
+</CodeGroup>
+
+</Accordion>
+
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you can use the `GROUP BY` clause combined with range calculations to achieve a similar result to APL’s `histogram`. However, APL’s `histogram` function simplifies the process by automatically calculating bin intervals.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT COUNT(*), FLOOR(req_duration_ms/10)*10 as duration_bin
+FROM sample_http_logs
+GROUP BY duration_bin
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize count() by histogram(req_duration_ms, 10)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

@@ -1,0 +1,85 @@
+---
+title: "Cloudflare Workers Traces Integration"
+description: "Record oRPC procedure, middleware, and stream spans in Cloudflare Workers Traces through the Workers custom spans API, with no OpenTelemetry SDK."
+sidebar:
+  label: "Cloudflare Traces"
+---
+
+:::warning
+This guide assumes familiarity with [Cloudflare Workers Traces](https://developers.cloudflare.com/workers/observability/traces/). Review the official documentation if needed.
+:::
+
+## Installation
+
+```package-install
+npm install @orpc/cloudflare@beta
+```
+
+## Setup
+
+Enable traces in your Wrangler configuration, then register `CloudflareTracer` once at module scope. oRPC then records the same spans as the [OpenTelemetry integration](/docs/integrations/opentelemetry), nested under the spans Workers create automatically.
+
+```jsonc title="wrangler.jsonc"
+{
+  "observability": {
+    "traces": {
+      "enabled": true
+    }
+  }
+}
+```
+
+```ts
+import { experimental_CloudflareTracer as CloudflareTracer } from '@orpc/cloudflare'
+
+new CloudflareTracer().enable()
+```
+
+:::info
+`CloudflareTracer` covers both handlers and links, so a Worker that calls another oRPC server also records client spans. oRPC uses a single tracer, so do not enable `ORPCInstrumentation` alongside it.
+:::
+
+:::tip
+During local development, [Local Explorer](https://developers.cloudflare.com/workers/local-development/local-explorer/) shows these spans without deploying: press `e` in `wrangler dev`, or open `/cdn-cgi/local/explorer` on the Vite dev server. Local development needs Wrangler `4.151.0` or `@cloudflare/vite-plugin` `1.64.0` or later, which ship the tracing APIs oRPC uses.
+:::
+
+## Context Propagation
+
+Workers already join service binding and Durable Object calls into one trace. oRPC links also send a W3C `traceparent` header built from the active span, so servers outside Cloudflare, such as one using the [OpenTelemetry integration](/docs/integrations/opentelemetry), continue the same trace.
+
+Workers decide whether to keep a trace only after the invocation, so the header always marks the trace as sampled, and the downstream server records it even if Workers later drop their part. Set `propagationEnabled` to `false` to stop sending the header and let downstream servers sample on their own:
+
+```ts
+new CloudflareTracer({
+  propagationEnabled: false,
+}).enable()
+```
+
+## Middleware Span
+
+oRPC creates a span for each [middleware](/docs/middleware) execution. Use `tracing.getActiveSpan()` to add attributes to it:
+
+```ts
+import { tracing } from 'cloudflare:workers'
+
+export const someMiddleware = os.middleware(async (ctx, next) => {
+  tracing.getActiveSpan()?.setAttribute('someAttribute', 'someValue')
+
+  return next()
+})
+
+Object.defineProperty(someMiddleware, 'name', {
+  value: 'someName',
+})
+```
+
+:::tip
+Define the `name` property on your middleware to improve span naming and make traces easier to read.
+:::
+
+## Limitations
+
+Workers Traces still lack some APIs oRPC relies on, so:
+
+- Streamed inputs and outputs record no `yielded` and `enqueued` events.
+- Handlers ignore an incoming `traceparent` header, since Workers Traces cannot start a span under a remote parent.

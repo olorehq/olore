@@ -15,7 +15,7 @@ Playwright comes with `playwright-cli`, a command-line interface for browser aut
 ## Prerequisites
 
 Before you begin, make sure you have the following installed:
-- [Node.js](https://nodejs.org/) 18 or newer
+- [Node.js](https://nodejs.org/) 20 or newer
 - A coding agent: Claude Code, GitHub Copilot, or similar
 
 ## Installation
@@ -30,7 +30,8 @@ playwright-cli --help
 Alternatively, install `@playwright/cli` as a local dependency and use `npx`:
 
 ```bash
-npx playwright-cli --help
+npm install -D @playwright/cli@latest
+npx playwright cli --help
 ```
 
 ### Installing skills
@@ -39,6 +40,12 @@ Coding agents like Claude Code and GitHub Copilot can use locally installed skil
 
 ```bash
 playwright-cli install --skills
+```
+
+To share the skills across all your projects, add the `-g` flag to install them into your home directory (`~/.claude/skills` or, with `--skills=agents`, `~/.agents/skills`):
+
+```bash
+playwright-cli install --skills -g
 ```
 
 ### Skills-less operation
@@ -100,7 +107,7 @@ playwright-cli check <ref>              # check a checkbox or radio button
 playwright-cli uncheck <ref>            # uncheck a checkbox
 playwright-cli hover <ref>              # hover over element
 playwright-cli drag <startRef> <endRef> # drag and drop between elements
-playwright-cli upload <file>            # upload files
+playwright-cli upload <files...>        # upload one or multiple files
 playwright-cli close                    # close the page
 ```
 
@@ -129,6 +136,7 @@ playwright-cli snapshot --filename=f    # save snapshot to specific file
 playwright-cli screenshot               # screenshot of the current page
 playwright-cli screenshot [ref]         # screenshot of a specific element
 playwright-cli screenshot --filename=f  # save with specific filename
+playwright-cli screenshot --hires       # capture using device pixels
 playwright-cli pdf                      # save page as PDF
 ```
 
@@ -205,6 +213,17 @@ playwright-cli video-chapter <title>    # add chapter marker to video
 playwright-cli video-stop --filename=f  # stop video recording
 ```
 
+### WebMCP
+
+Pages can register their own tools for agents through the experimental [WebMCP](https://webmachinelearning.github.io/webmcp/) API. The tools a page registers are listed at the top of the page snapshot, and they can be called directly:
+
+```bash
+playwright-cli webmcp-list                       # list tools registered by the page
+playwright-cli webmcp-call <name> [--params]     # call one, passing a JSON object
+```
+
+Tool names, descriptions, schemas and results are provided by the page, so treat them as untrusted input.
+
 ## Sessions
 
 The CLI keeps the browser profile in memory by default — cookies and storage state are preserved between calls within a session but lost when the browser closes. Use `--persistent` to save the profile to disk.
@@ -233,6 +252,8 @@ playwright-cli close-all                # close all browsers
 playwright-cli kill-all                 # forcefully kill all browser processes
 playwright-cli -s=name delete-data      # delete user data for a named session
 ```
+
+A headless session shuts itself down after an hour without commands, so a session an agent forgot to close does not keep a browser running. Headed and attached browsers are never closed automatically. Change the timeout with `open --idle-timeout=<ms>` or `timeouts.idle` in the config file, and pass `0` to disable it.
 
 ## Monitoring
 
@@ -300,6 +321,7 @@ This requires the [Playwright Extension](https://github.com/microsoft/playwright
 | **Run headed**            | `playwright-cli open https://example.com --headed`  |
 | **Use Firefox**           | `playwright-cli open --browser=firefox`             |
 | **Monitor sessions**      | `playwright-cli show`                               |
+| **List page WebMCP tools** | `playwright-cli webmcp-list`                       |
 
 ## What's Next
 

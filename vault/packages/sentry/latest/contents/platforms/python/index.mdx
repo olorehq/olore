@@ -1,6 +1,6 @@
 ---
 title: Python
-description: Sentry's Python SDK enables automatic reporting of errors and performance data in your application.
+description: Learn how to set up Sentry in your Python app, capture your first events and traces, and view them in Sentry.
 caseStyle: snake_case
 supportLevel: production
 sdk: sentry.python
@@ -10,101 +10,169 @@ categories:
   - serverless
 ---
 
-<AgentSkillsCallout skill="sentry-python-sdk" platformName="Python" />
+<AgentSetupCallout skill="sentry-python-sdk" platformName="Python" />
 
-## Prerequisites
+<Alert level="warning" title="Using a framework?">
 
-- You need a Sentry [account](https://sentry.io/signup/) and [project](/product/projects/)
-- Read one of our dedicated guides if you use any of the <PlatformLink to="/integrations/#web-frameworks">frameworks</PlatformLink> we support
+This guide focuses on plain Python. If you're working with Django, FastAPI, Starlette, or any other web framework, choose the respective guide from the list of supported <PlatformLink to="/integrations/#web-frameworks">frameworks</PlatformLink>.
+
+</Alert>
+
+<PlatformContent includePath="getting-started-prerequisites" />
+
+<StepConnector selector="h2" showNumbers={true}>
 
 ## Install
 
-Install the Sentry SDK using [`pip`](https://pip.pypa.io/en/stable/):
+<PlatformContent includePath="getting-started-install" />
 
-```bash {tabTitle:pip}
-pip install "sentry-sdk"
-```
-
-```bash {tabTitle:uv}
-uv add "sentry-sdk"
-```
+This guide requires `sentry-sdk` version 2.70.0 or later. If you already have the SDK installed, upgrade it with `pip install --upgrade sentry-sdk`.
 
 ## Configure
 
-Choose the features you want to configure, and this guide will show you how:
+**Error Monitoring** starts working as soon as you call `sentry_sdk.init()`. **Logs** and **Application Metrics** need no extra configuration when using `sentry_sdk.logger` and `sentry_sdk.metrics`, and you'll learn how to send them in steps [#3](#send-logs) and [#4](#send-application-metrics-).
+This guide also enables **Tracing** and **Profiling**.
 
-<OnboardingOptionButtons
-  options={["error-monitoring", "performance", "profiling", "logs"]}
-/>
+<Include name="quick-start-features-expandable" />
+
+### Initialize the Sentry SDK
 
 Configuration should happen as **early as possible** in your application's lifecycle.
 
+Import and initialize the SDK in your app's entry point:
+
+The snippet also turns on:
+
+- Collection of user data, such as the user's IP address: via <PlatformLink to="/configuration/options/#data_collection">`data_collection`</PlatformLink>
+- Tracing: via <PlatformLink to="/configuration/options/#traces_sample_rate">`traces_sample_rate`</PlatformLink>
+- Profiling: via <PlatformLink to="/configuration/options/#profile_session_sample_rate">`profile_session_sample_rate`</PlatformLink> and <PlatformLink to="/configuration/options/#profile_lifecycle">`profile_lifecycle`</PlatformLink>
+
+Don't need a feature? Remove its options from the snippet.
+
 ```python
 import sentry_sdk
-
 sentry_sdk.init(
     dsn="___PUBLIC_DSN___",
-    # Add request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-    # ___PRODUCT_OPTION_START___ performance
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for tracing.
-    traces_sample_rate=1.0,
-    # ___PRODUCT_OPTION_END___ performance
-    # ___PRODUCT_OPTION_START___ profiling
-    # To collect profiles for all profile sessions,
-    # set `profile_session_sample_rate` to 1.0.
-    profile_session_sample_rate=1.0,
-    # Profiles will be automatically collected while
-    # there is an active span.
-    profile_lifecycle="trace",
-    # ___PRODUCT_OPTION_END___ profiling
-    # ___PRODUCT_OPTION_START___ logs
 
-    # Enable logs to be sent to Sentry
-    enable_logs=True,
-    # ___PRODUCT_OPTION_END___ logs
+    # Check https://docs.sentry.io/platforms/python/data-management/data-collected/ to configure what data is collected
+    data_collection={
+        "user_info": True,
+    },
+
+    # Enables Tracing.
+    # Set to 1.0 to capture 100% of spans for tracing.
+    # We recommend reducing this value in production.
+    traces_sample_rate=1.0,
+
+    # Enables Profiling.
+    # Set to 1.0 to profile 100% of sessions.
+    profile_session_sample_rate=1.0,
+    # Profiles are collected while a transaction is active.
+    profile_lifecycle="trace",
 )
 ```
 
-In async programs, it's recommended to call `sentry_sdk.init()` inside an `async` function to ensure async code is instrumented properly. If possible, we recommend calling `sentry_sdk.init()` at the beginning of the first `async` function you call.
+In async programs, add the <PlatformLink to="/integrations/asyncio/">`AsyncioIntegration`</PlatformLink> to instrument your async code. This integration isn't enabled by default. Call `sentry_sdk.init()` at the beginning of the first `async` function you call:
 
 ```python
 import asyncio
 import sentry_sdk
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
 async def main():
     sentry_sdk.init(
-        ...  # same as above
+        ...,  # same options as above
+        integrations=[AsyncioIntegration()],
     )
 
 asyncio.run(main())
 ```
 
-## Verify
+### Instrumenting Your App
 
-Add this intentional error to your application to test that everything is working right away.
+The Sentry SDK automatically enables integrations for <PlatformLink to="/tracing/instrumentation/automatic-instrumentation/">many popular libraries</PlatformLink>, so operations like HTTP requests or database queries made with supported libraries will be captured as spans automatically.
 
-```py
-division_by_zero = 1 / 0
+However, spans are only created within an existing transaction. If you're not using a supported framework that creates transactions automatically, you'll need to create them manually using `sentry_sdk.start_transaction()`.
+
+See <PlatformLink to="/tracing/instrumentation/custom-instrumentation/">Custom Instrumentation</PlatformLink> for more info.
+
+```python
+import sentry_sdk
+
+def some_function():
+    with sentry_sdk.start_transaction(op="task", name="Test Transaction"):
+        ...
+```
+
+## Send Logs
+
+Use `sentry_sdk.logger` to send structured logs at different levels. You can include searchable attributes with each message.
+
+To capture records from Python's standard-library `logging` module or Loguru, configure `capture_sentry_logs=True` on the corresponding integration. See the <PlatformLink to="/integrations/logging/">standard logging</PlatformLink> and <PlatformLink to="/integrations/loguru/">Loguru</PlatformLink> integration guides.
+
+See <PlatformLink to="/logs/">Set Up Logs</PlatformLink> for all available logging methods and formatting options.
+
+```python
+import sentry_sdk
+
+sentry_sdk.logger.info("Order processed {order_id}", order_id="order-123")
+sentry_sdk.logger.warning("Rate limit reached", attributes={"endpoint": "/api/orders"})
+```
+
+## Send Application Metrics <FeatureBadge type="new" />
+
+Use `sentry_sdk.metrics` to send counters, gauges, and distributions from your app. Metrics are enabled by default after you initialize the SDK.
+
+See <PlatformLink to="/metrics/">Set Up Metrics</PlatformLink> for all available metric types and configuration options.
+
+```python
+import sentry_sdk
+
+sentry_sdk.metrics.count("checkout.failed", 1)
+sentry_sdk.metrics.gauge("active_connections", 42)
+sentry_sdk.metrics.distribution("api_latency", 187, unit="millisecond")
+```
+
+## Verify Your Setup
+
+Let's test your setup and confirm that data reaches your Sentry project.
+
+Run this code after `sentry_sdk.init()` to send a test error, along with a trace, a log, and a metric:
+
+```python
+import sentry_sdk
+
+with sentry_sdk.start_transaction(op="test", name="Verify Sentry setup"):
+    sentry_sdk.logger.info("Sentry verification log")
+    sentry_sdk.metrics.count("sentry.verification", 1)
+    1 / 0
 ```
 
 <Alert>
 
-Learn more about manually capturing an error or message in our <PlatformLink to="/usage/">Usage documentation</PlatformLink>.
+The SDK sends profiles after a transaction finishes, so a script that exits right away, like the one above, might not send a profile. Profiles appear for applications that keep running after their transactions complete.
 
 </Alert>
 
-To view and resolve the recorded error, log into [sentry.io](https://sentry.io) and select your project. Clicking on the error's title will open a page where you can see detailed information and mark it as resolved.
+### View Captured Data in Sentry
 
-<Alert>
+Now, head over to your project on [Sentry.io](https://sentry.io) to view the collected data (it takes a couple of moments for the data to appear).
 
-Not seeing your error in Sentry? Make sure you're running the above example from a file and not from a Python shell like IPython.
-
-</Alert>
+<Include name="quick-start-locate-data-expandable" />
 
 ## Next Steps
 
-- Explore [practical guides](/guides/) on what to monitor, log, track, and investigate after setup
-- Dive straight into the API with our [API docs](https://getsentry.github.io/sentry-python/)
+At this point, you should have integrated Sentry into your Python application. Here's what to explore next:
+
+- Explore [practical guides](/get-started/guides/) on what to monitor, log, track, and investigate after setup
+- <PlatformLink to="/agent-tracing/">Set up Agent Tracing</PlatformLink> to monitor your AI systems
+- Learn how to <PlatformLink to="/usage/">manually capture errors</PlatformLink>
+
+<Expandable permalink={false} title="Are you having problems setting up the SDK?">
+
+- Find various topics in <PlatformLink to="/troubleshooting/">Troubleshooting</PlatformLink>
+- [Get support](https://www.sentry.help/en/)
+
+</Expandable>
+
+</StepConnector>

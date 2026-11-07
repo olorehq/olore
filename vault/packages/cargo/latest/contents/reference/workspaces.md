@@ -87,7 +87,7 @@ By having a workspace without a root package,
 - Commands run in the workspace root will run against all workspace
   members by default, see [`default-members`](#the-default-members-field).
 
-## The `members` and `exclude` fields 
+## The `members` and `exclude` fields
 
 The `members` and `exclude` fields define which packages are members of
 the workspace:
@@ -104,6 +104,11 @@ should be an array of strings containing directories with `Cargo.toml` files.
 
 The `members` list also supports [globs] to match multiple paths, using
 typical filename glob patterns like `*` and `?`.
+
+> [!TIP]
+> Keep all member packages in a flat directory (commonly `crates/`)
+> and use a glob pattern for the `members` field, e.g.
+> `members = ["crates/*"]`. This minimizes churn in maintaining the `members` list.
 
 The `exclude` key can be used to prevent paths from being included in a
 workspace. This can be useful if some path dependencies aren't desired to be
@@ -137,7 +142,8 @@ members = ["path/to/member1", "path/to/member2", "path/to/member3/*"]
 default-members = ["path/to/member2", "path/to/member3/foo"]
 ```
 
-> Note: when a [root package](#root-package) is present,
+> [!NOTE]
+> When a [root package](#root-package) is present,
 > you can only operate on it using `--package` and `--workspace` flags.
 
 When unspecified, the [root package](#root-package) will be used.
@@ -199,6 +205,10 @@ inherited by members of a workspace.
 Specifying a workspace dependency is similar to [package dependencies][specifying-dependencies] except:
 - Dependencies from this table cannot be declared as `optional`
 - [`features`][features] declared in this table are additive with the `features` from `[dependencies]`
+- `default-features` declared on a package dependency overrides the value set
+  here in Edition 2024 packages (requires Rust 1.99+). Before Rust 1.99, or in
+  earlier editions, package-level `default-features = false` may be ignored or
+  rejected unless the workspace dependency also disables default features.
 
 You can then [inherit the workspace dependency as a package dependency][inheriting-a-dependency-from-a-workspace]
 
@@ -212,6 +222,7 @@ members = ["bar"]
 cc = "1.0.73"
 rand = "0.8.5"
 regex = { version = "1.6.0", default-features = false, features = ["std"] }
+serde = { version = "1.0.190", default-features = true }
 ```
 
 ```toml
@@ -219,9 +230,11 @@ regex = { version = "1.6.0", default-features = false, features = ["std"] }
 [package]
 name = "bar"
 version = "0.2.0"
+edition = "2024"
 
 [dependencies]
 regex = { workspace = true, features = ["unicode"] }
+serde = { workspace = true, default-features = false }
 
 [build-dependencies]
 cc.workspace = true

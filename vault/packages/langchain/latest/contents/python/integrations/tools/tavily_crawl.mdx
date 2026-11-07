@@ -1,7 +1,12 @@
 ---
-title: "Tavily crawl integration"
-description: "Integrate with the Tavily crawl tool using LangChain Python."
+title: Tavily crawl integration
+description: Integrate with the Tavily crawl tool using LangChain Python.
+integration:
+  name: Tavily crawl
+  pypi: langchain-tavily
 ---
+
+import ChatModelTabs from '/snippets/chat-model-tabs.mdx';
 
 [Tavily](https://tavily.com) is a search engine built specifically for AI agents (LLMs), delivering real-time, accurate, and factual results at speed. Tavily offers a [Crawl](https://docs.tavily.com/documentation/api-reference/endpoint/crawl) endpoint that performs a structured web traversal from a starting URL, with built-in content extraction and intelligent discovery.
 
@@ -9,7 +14,7 @@ description: "Integrate with the Tavily crawl tool using LangChain Python."
 
 ### Integration details
 
-| Class                                                            | Package                                                          | Serializable | [JS support](https://js.langchain.com/docs/integrations/tools/tavily_crawl) |  Version |
+| Class                                                            | Package                                                          | Serializable | [JS support](/oss/javascript/integrations/tools/tavily_crawl) |  Version |
 |:-----------------------------------------------------------------|:-----------------------------------------------------------------| :---: | :---: | :---: |
 | @[`TavilyCrawl`] | @[`langchain-tavily`] | ✅ | ✅  |  ![PyPI - Version](https://img.shields.io/pypi/v/langchain-tavily?style=flat-square&label=%20) |
 
@@ -160,11 +165,9 @@ agent = create_agent(model, [tavily_crawl_tool])
 
 user_input = "Crawl https://docs.tavily.com and find the API reference for the search endpoint."
 
-for step in agent.stream(
-    {"messages": user_input},
-    stream_mode="values",
-):
-    step["messages"][-1].pretty_print()
+stream = agent.stream_events({"messages": user_input}, version="v3")
+for snapshot in stream.values:
+    snapshot["messages"][-1].pretty_print()
 ```
 
 ---

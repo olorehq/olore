@@ -2,21 +2,19 @@
 title: Email verification
 subtitle: Verify user email addresses during sign-up or account creation
 summary: >-
-  Neon Auth email verification confirms that users own the email address
+  Managed Better Auth email verification confirms that users own the email address
   they register with, using either a numeric OTP code (works with shared or
   custom email providers) or a click-through verification link (requires a
   custom email provider). Both methods expire after 15 minutes and can be
   resent; verification can be configured as required or optional in the Neon
   Console, controlling whether unverified users can sign in.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-05T01:14:13.350Z'
 ---
-
-<FeatureBetaProps feature_name="Neon Auth with Better Auth" />
 
 Email verification ensures users own the email addresses they register with. The application name shown in these emails is configurable per branch. See [Application name](/docs/auth/production-checklist#application-name).
 
-Neon Auth supports two verification methods:
+Managed Better Auth supports two verification methods:
 
 - **Verification codes** (users enter a numeric code from their email) - works with shared or custom email providers
 - **Verification links** (users click a link in their email) - requires a custom email provider
@@ -27,15 +25,49 @@ Verification links require a [custom email provider](/docs/auth/production-check
 
 ## Enable email verification
 
-In your project's **Settings** → **Auth** page, enable **Sign-up with Email** and **Verify at Sign-up**. Choose your verification method.
+<Tabs labels={["Console", "CLI", "API"]}>
+
+<TabItem>
+
+In your project's **Settings** → **Better Auth** page, enable **Sign-up with Email** and **Verify at Sign-up**. Choose your verification method.
 
 ![Email verification settings in Neon Console](/docs/auth/email-verification-settings.png)
+
+</TabItem>
+
+<TabItem>
+
+Enable email and password authentication with verification required using [`neon neon-auth config email-password update`](/docs/cli/neon-auth#config-email-password-update):
+
+```bash
+neon neon-auth config email-password update --enabled --require-email-verification
+```
+
+</TabItem>
+
+<TabItem>
+
+Update the configuration with the [Update email and password configuration](/docs/reference/api/auth/update-neon-auth-email-and-password-config) endpoint. Replace `{project_id}` and `{branch_id}` with your project and branch IDs:
+
+```bash
+curl -X PATCH 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/email_and_password' \
+  -H 'Authorization: Bearer $NEON_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "enabled": true,
+  "require_email_verification": true
+}'
+```
+
+</TabItem>
+
+</Tabs>
 
 ## Verification links
 
 Verification links require a custom email provider. See [Email provider configuration](/docs/auth/production-checklist#email-provider) to set this up.
 
-When a user clicks the verification link in their email, the Neon Auth server handles verification and redirects them back to your application. Your app checks for the new session and shows the appropriate UI.
+When a user clicks the verification link in their email, the Managed Better Auth server handles verification and redirects them back to your application. Your app checks for the new session and shows the appropriate UI.
 
 ### 1. Check session on mount (#check-session-on-mount)
 
@@ -397,4 +429,4 @@ The server sends whichever type (verification link or verification code) you con
 
 ## Required vs optional verification
 
-When email verification is **required** in your Console settings, users cannot sign in until they verify. When verification is **optional**, users can sign in immediately but their `emailVerified` field remains `false` until verified.
+When email verification is **required** in your Console settings, users cannot sign in until they verify. When verification is **optional**, which is the default, users can sign in immediately but their `emailVerified` field remains `false` until verified. If your app links a signed-in user to existing data by matching their email address, check that `emailVerified` is `true` first. Otherwise, anyone who signs up with that address gets that data.

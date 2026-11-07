@@ -19,11 +19,13 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
 
     For programmatic control, you can optionally specify `artboardName` and `stateMachineName` props to use a different artboard or state machine.
 
+    <Note>
+      In `0.5.0` and later, `RiveView` always plays a state machine. If the artboard has no default state machine, set `stateMachineName`; direct timeline animation playback is not supported.
+    </Note>
+
     ```ts
     export default function PlaybackExample() {
-      const { riveFile } = useRiveFile(
-        'https://cdn.rive.app/animations/vehicles.riv'
-      );
+      const { riveFile } = useRiveFile(require('./assets/my_file.riv'));
 
       return (
         <View style={styles.container}>
@@ -53,7 +55,11 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
       _If not set, the default state machine will be used, as configured in the Editor._
     </ResponseField>
 
-    And manage `play`, `pause`, and `reset` on the Rive view reference.
+    And manage `play` and `pause` on the Rive view reference.
+
+    <Note>
+      `reset()` is deprecated and does nothing in `0.5.0` and later. To restart a state machine from its initial state, remount the `RiveView`, for example by changing its `key`.
+    </Note>
 
     ```javascript
     import { Fit, RiveView, useRive, useRiveFile } from '@rive-app/react-native';
@@ -72,10 +78,6 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
         riveViewRef?.pause();
       };
 
-      const reset = () => {
-        riveViewRef?.reset();
-      };
-
       return (
         <View style={styles.container}>
           <View style={styles.riveContainer}>
@@ -92,7 +94,6 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
           </View>
           <Button onPress={play} title="Play" />
           <Button onPress={pause} title="Pause" />
-          <Button onPress={reset} title="Reset" />
         </View>
       );
     }

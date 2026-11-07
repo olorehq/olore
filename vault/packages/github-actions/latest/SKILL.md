@@ -13,28 +13,23 @@ GitHub Actions documentation. Use for CI/CD workflows, workflow syntax, actions,
 |------|-------------|
 | Getting started | `contents/get-started/quickstart.md` |
 | Workflow syntax | `contents/reference/workflows-and-actions/workflow-syntax.md` |
-| Events that trigger workflows | `contents/reference/workflows-and-actions/events-that-trigger-workflows.md` |
-| Expressions and functions | `contents/reference/workflows-and-actions/expressions.md` |
-| Contexts (github, env, steps, etc.) | `contents/reference/workflows-and-actions/contexts.md` |
-| Workflow commands | `contents/reference/workflows-and-actions/workflow-commands.md` |
-| Secrets | `contents/concepts/security/secrets.md` |
+| Events and triggers | `contents/reference/workflows-and-actions/events-that-trigger-workflows.md` |
+| Expressions and contexts | `contents/reference/workflows-and-actions/contexts.md` |
+| Secure use / secrets | `contents/reference/security/secure-use.md` |
 | Reusable workflows | `contents/how-tos/reuse-automations/reuse-workflows.md` |
-| Troubleshooting | `contents/how-tos/troubleshoot-workflows.md` |
+| Self-hosted runners | `contents/how-tos/manage-runners/self-hosted-runners/` |
+| Deployments and environments | `contents/how-tos/deploy/` |
+| CI build and test tutorials | `contents/tutorials/build-and-test-code/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Writing or debugging GitHub Actions workflow YAML files
-- Workflow triggers, events, jobs, steps, and expressions
-- Secrets, environment variables, and contexts
-- GitHub-hosted, self-hosted, or larger runners
-- Reusable workflows and composite/JavaScript/Docker actions
-- CI/CD pipelines: building, testing, deploying code
-- OIDC-based keyless authentication with AWS, Azure, GCP, and other cloud providers
-- Artifact attestations and supply chain security
-- Migrating from other CI/CD systems (Jenkins, CircleCI, GitLab, Azure Pipelines)
-- Deployment environments, protection rules, and approval gates
-- Actions Runner Controller (ARC) and Kubernetes-based runners
+- Writing or debugging workflow YAML (triggers, jobs, steps, matrix, concurrency)
+- Expressions, contexts, variables, and secrets
+- GitHub-hosted, larger, and self-hosted runners, Actions Runner Controller
+- Creating, publishing, and reusing actions and reusable workflows
+- Deployments, environments, OIDC, and artifact attestations
+- Migrating CI from other providers to GitHub Actions
 
 ## How to find information
 

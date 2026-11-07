@@ -123,6 +123,24 @@ when `--metadata` is enabled (or when using `--metadata-set` / `--metadata-mappe
 Notes:
 - Rclone ignores reserved `x-ms-*` keys (except `x-ms-tags`) for user metadata.
 
+### Hierarchical namespace
+
+Storage accounts with hierarchical namespace enabled (Azure Data Lake
+Storage Gen2) have real directories. On these accounts rclone supports
+empty directories, creating them with `rclone mkdir` and removing
+them with `rclone rmdir`, whatever the `--azureblob-directory-markers`
+setting.
+
+Note that deleting the last file in a directory leaves the directory
+behind. Use `rclone rmdirs` or `--delete-empty-src-dirs` to remove
+empty directories.
+
+Rclone reads whether the storage account has a hierarchical namespace
+when it first uses the remote and saves it as the `hns` option in the
+config file. Set `--azureblob-hns` to override this.
+
+Blob tags (`x-ms-tags` metadata) aren't supported on these accounts.
+
 ### Performance
 
 When uploading large files, increasing the value of
@@ -354,13 +372,13 @@ be explicitly specified using exactly one of the `msi_object_id`,
 `msi_client_id`, or `msi_mi_res_id` parameters.
 
 If none of `msi_object_id`, `msi_client_id`, or `msi_mi_res_id` is
-set, this is is equivalent to using `env_auth`.
+set, this is equivalent to using `env_auth`.
 
 #### Federated Identity Credentials
 
 If these variables are set, rclone will authenticate with federated identity.
 
-- `tenant`: tenant ID of of the storage
+- `tenant`: tenant ID of the storage
 - `client_id`: client ID of the application the user will authenticate to storage
 - `msi_client_id`: managed identity client ID of the application the user will
   authenticate to
@@ -371,7 +389,7 @@ over MSI. This token is then exchanged for actual storage token using
 
 #### Azure CLI tool `az` {#use_az}
 
-Set to use the [Azure CLI tool `az`](https://learn.microsoft.com/en-us/cli/azure/)
+If `use_az` is set, use [Azure CLI tool `az`](https://learn.microsoft.com/en-us/cli/azure/)
 as the sole means of authentication.
 
 Setting this can be useful if you wish to use the `az` CLI on a host with
@@ -901,6 +919,52 @@ Properties:
 - Type:        int
 - Default:     5000
 
+#### --azureblob-use-arrow-list
+
+Use the Apache Arrow listing format.
+
+If set, directory listings are fetched using the ListBlobs Apache
+Arrow response format instead of XML. Arrow responses are smaller and
+much cheaper to parse, making listings of large containers several
+times faster. Combine with "list_parallelism" for the biggest gains.
+
+"Blob Listing with Apache Arrow" is in public preview at Microsoft and
+is only supported on flat namespace accounts. On accounts with a
+hierarchical namespace (ADLS Gen2), or where the feature is otherwise
+unavailable, the server returns XML and the listing transparently
+falls back to the normal XML path (logged at debug level).
+
+Properties:
+
+- Config:      use_arrow_list
+- Env Var:     RCLONE_AZUREBLOB_USE_ARROW_LIST
+- Type:        bool
+- Default:     false
+
+#### --azureblob-list-parallelism
+
+Number of parallel shards to list a directory with.
+
+If set greater than 1, the blob name keyspace of each directory is
+split into ranges which are listed concurrently using the Arrow
+startFrom/endBefore range parameters. This can dramatically speed up
+listing containers with millions of objects, for both recursive
+(ListR) and single directory listings. Speed keeps improving up to a
+parallelism of around 30.
+
+This has no effect unless "use_arrow_list" is also set, as Arrow is the
+only listing path that supports server-side name ranges. If the
+account does not support range listing (e.g. it has a hierarchical
+namespace) the listing falls back to sequential. The default of 0 (or
+1) lists sequentially.
+
+Properties:
+
+- Config:      list_parallelism
+- Env Var:     RCLONE_AZUREBLOB_LIST_PARALLELISM
+- Type:        int
+- Default:     0
+
 #### --azureblob-access-tier
 
 Access tier of blob: hot, cool, cold or archive.
@@ -963,28 +1027,6 @@ Properties:
 - Type:        bool
 - Default:     false
 
-#### --azureblob-memory-pool-flush-time
-
-How often internal memory buffer pools will be flushed. (no longer used)
-
-Properties:
-
-- Config:      memory_pool_flush_time
-- Env Var:     RCLONE_AZUREBLOB_MEMORY_POOL_FLUSH_TIME
-- Type:        Duration
-- Default:     1m0s
-
-#### --azureblob-memory-pool-use-mmap
-
-Whether to use mmap buffers in internal memory pool. (no longer used)
-
-Properties:
-
-- Config:      memory_pool_use_mmap
-- Env Var:     RCLONE_AZUREBLOB_MEMORY_POOL_USE_MMAP
-- Type:        bool
-- Default:     false
-
 #### --azureblob-encoding
 
 The encoding for the backend.
@@ -1026,6 +1068,9 @@ creates an empty object ending with "/", to persist the folder.
 
 This object also has the metadata "hdi_isfolder = true" to conform to
 the Microsoft standard.
+
+This is not needed on storage accounts with a hierarchical namespace
+(see the hns option) as these always support empty directories.
  
 
 Properties:
@@ -1034,6 +1079,24 @@ Properties:
 - Env Var:     RCLONE_AZUREBLOB_DIRECTORY_MARKERS
 - Type:        bool
 - Default:     false
+
+#### --azureblob-hns
+
+Set if the storage account has a hierarchical namespace.
+
+Storage accounts with hierarchical namespace enabled (Azure Data Lake
+Storage Gen2) have real directories which can be empty.
+
+If this is unset then rclone will read it from the storage account
+and save it in the config file.
+
+
+Properties:
+
+- Config:      hns
+- Env Var:     RCLONE_AZUREBLOB_HNS
+- Type:        Tristate
+- Default:     unset
 
 #### --azureblob-no-check-container
 

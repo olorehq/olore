@@ -37,6 +37,13 @@ bun add --dev --exact prettier@%PRETTIER_VERSION%
 ```
 
 </TabItem>
+<TabItem value="deno">
+
+```bash
+deno install --dev --save-exact prettier@%PRETTIER_VERSION%
+```
+
+</TabItem>
 </Tabs>
 
 Then, create an empty config file to let editors and other tools know you are using Prettier:
@@ -137,6 +144,19 @@ If you forget to install Prettier first, `bunx` will temporarily download the la
 :::
 
 </TabItem>
+<TabItem value="deno">
+
+```bash
+deno x prettier . --write
+```
+
+:::info
+
+What is `deno x` doing at the start? It runs the locally installed Prettier. We’ll leave off the `deno x` part for brevity throughout the rest of this file!
+
+:::
+
+</TabItem>
 </Tabs>
 
 `prettier --write .` is great for formatting everything, but for a big project it might take a little while. You may run `prettier --write app/` to format a certain directory, or `prettier --write app/components/Button.js` to format a certain file. Or use a _glob_ like `prettier --write "app/**/*.test.js"` to format all tests in a directory (see [fast-glob](https://github.com/mrmlnc/fast-glob#pattern-syntax) for supported glob syntax).
@@ -165,7 +185,7 @@ And being able to run Prettier from the command line is still a good fallback, a
 
 ## ESLint (and other linters)
 
-If you use ESLint, install [eslint-config-prettier](https://github.com/prettier/eslint-config-prettier#installation) to make ESLint and Prettier play nice with each other. It turns off all ESLint rules that are unnecessary or might conflict with Prettier. There’s a similar config for Stylelint: [stylelint-config-prettier](https://github.com/prettier/stylelint-config-prettier)
+If you use ESLint, install [eslint-config-prettier](https://github.com/prettier/eslint-config-prettier#installation) to make ESLint and Prettier play nice with each other. It turns off all ESLint rules that are unnecessary or might conflict with Prettier.
 
 (See [Prettier vs. Linters](comparison.md) to learn more about formatting vs linting, [Integrating with Linters](integrating-with-linters.md) for more in-depth information on configuring your linters, and [Related projects](related-projects.md) for even more integration possibilities, if needed.)
 
@@ -217,6 +237,15 @@ node --eval "fs.writeFileSync('.husky/pre-commit','pnpm exec lint-staged\n')"
 bun add --dev husky lint-staged
 bunx husky init
 bun --eval "fs.writeFileSync('.husky/pre-commit','bunx lint-staged\n')"
+```
+
+</TabItem>
+<TabItem value="deno">
+
+```bash
+deno install --dev husky lint-staged
+deno x husky init
+deno eval "Deno.writeTextFileSync('.husky/pre-commit','deno x lint-staged\n')"
 ```
 
 </TabItem>

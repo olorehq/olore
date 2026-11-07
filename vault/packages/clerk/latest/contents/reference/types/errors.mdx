@@ -1,7 +1,7 @@
 ---
 title: '`Errors`'
 description: An interface that represents the errors that occurred during the last API request, for use in custom flows.
-sdk: js-frontend, astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
+sdk: js-frontend, astro, chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
 ---
 
 The `Errors` type is used to access the errors that occurred during the last API request when building custom sign-in and sign-up flows.
@@ -18,111 +18,111 @@ interface Errors<T> {
 
 <Properties>
   - `fields`
-  - <code><a href="#sign-in-fields">SignInFields</a> | <a href="#sign-up-fields">SignUpFields</a></code>
+  - <code><a href="#signinfields">SignInFields</a> | <a href="#signupfields">SignUpFields</a></code>
 
   The collection of possible errors on known fields.
 
   ---
 
-  - `raw`
-  - <code><a href="#clerk-error">ClerkError</a>\[] | null</code>
+  - `global`
+  - <code><a href="#clerkglobalhookerror">ClerkGlobalHookError</a> | null</code>
 
-  The raw, unparsed errors from the Clerk API. For example, if the error is an instance of `ClerkAPIResponseError`, this field will contain the `ClerkAPIResponseError` instance, while `fields` will contain the parsed errors associated with the fields that caused the error.
+  Parsed errors that are not related to any specific field.
 
   ---
 
-  - `global`
-  - <code><a href="#clerk-global-hook-error">ClerkGlobalHookError</a> | null</code>
+  - `raw`
+  - <code><a href="#clerkerror">ClerkError</a>\[] | null</code>
 
-  Parsed errors that are not related to any specific field.
+  The raw, unparsed errors from the Clerk API. For example, if the error is an instance of `ClerkAPIResponseError`, this field will contain the `ClerkAPIResponseError` instance, while `fields` will contain the parsed errors associated with the fields that caused the error.
 </Properties>
 
 ### `SignInFields`
 
 <Properties>
+  - `code`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
+
+  The error for the code field.
+
+  ---
+
   - `identifier`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the identifier field.
 
   ---
 
   - `password`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the password field.
-
-  ---
-
-  - `code`
-  - <code><a href="#field-error">FieldError</a> | null</code>
-
-  The error for the code field.
 </Properties>
 
 ### `SignUpFields`
 
 <Properties>
+  - `captcha`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
+
+  The error for the captcha field.
+
+  ---
+
+  - `code`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
+
+  The error for the code field.
+
+  ---
+
+  - `emailAddress`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
+
+  The error for the email address field.
+
+  ---
+
   - `firstName`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the first name field.
 
   ---
 
   - `lastName`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the last name field.
 
   ---
 
-  - `emailAddress`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - `legalAccepted`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
-  The error for the email address field.
-
-  ---
-
-  - `phoneNumber`
-  - <code><a href="#field-error">FieldError</a> | null</code>
-
-  The error for the phone number field.
+  The error for the legal accepted field.
 
   ---
 
   - `password`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the password field.
 
   ---
 
+  - `phoneNumber`
+  - <code><a href="#fielderror">FieldError</a> | null</code>
+
+  The error for the phone number field.
+
+  ---
+
   - `username`
-  - <code><a href="#field-error">FieldError</a> | null</code>
+  - <code><a href="#fielderror">FieldError</a> | null</code>
 
   The error for the username field.
-
-  ---
-
-  - `code`
-  - <code><a href="#field-error">FieldError</a> | null</code>
-
-  The error for the code field.
-
-  ---
-
-  - `captcha`
-  - <code><a href="#field-error">FieldError</a> | null</code>
-
-  The error for the captcha field.
-
-  ---
-
-  - `legalAccepted`
-  - <code><a href="#field-error">FieldError</a> | null</code>
-
-  The error for the legal accepted field.
 </Properties>
 
 ### `FieldError`
@@ -135,17 +135,17 @@ interface Errors<T> {
 
   ---
 
-  - `message`
-  - `string`
-
-  The error message of the error, returned by the Clerk API.
-
-  ---
-
   - `longMessage?`
   - `string`
 
   The long error message of the error, returned by the Clerk API.
+
+  ---
+
+  - `message`
+  - `string`
+
+  The error message of the error, returned by the Clerk API.
 </Properties>
 
 ### `ClerkGlobalHookError`
@@ -171,10 +171,10 @@ Represents an error that occurred during the last API request, but is not relate
 Type used for all errors generated by the Clerk SDK.
 
 <Properties>
-  - `message`
-  - `string`
+  - `cause?`
+  - `Error`
 
-  A message that describes the error. This is typically intented to be showed to the developers. It should not be shown to the user or parsed directly as the message contents are not guaranteed to be stable - use the `code` property instead.
+  The cause of the error, typically an `Error` instance that was caught and wrapped by the Clerk error handler.
 
   ---
 
@@ -185,6 +185,13 @@ Type used for all errors generated by the Clerk SDK.
 
   ---
 
+  - `docsUrl?`
+  - `string`
+
+  A URL to the documentation for the error.
+
+  ---
+
   - `longMessage?`
   - `string`
 
@@ -192,15 +199,8 @@ Type used for all errors generated by the Clerk SDK.
 
   ---
 
-  - `cause?`
-  - `Error`
-
-  The cause of the error, typically an `Error` instance that was caught and wrapped by the Clerk error handler.
-
-  ---
-
-  - `docsUrl?`
+  - `message`
   - `string`
 
-  A URL to the documentation for the error.
+  A message that describes the error. This is typically intented to be showed to the developers. It should not be shown to the user or parsed directly as the message contents are not guaranteed to be stable - use the `code` property instead.
 </Properties>

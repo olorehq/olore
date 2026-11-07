@@ -25,6 +25,13 @@ However, **it's recommended to use environment variables instead of these props 
 
 To access your Clerk app in your local project, you must specify your app's [Publishable Keys](!publishable-key) for use in the frontend, and [Secret Keys](!secret-key) for use in the backend.
 
+> [!NOTE]
+> These keys connect your app to Clerk. If you instead want your app's users to create their own API keys to access your app's API, see the [API keys feature](/docs/guides/development/machine-auth/api-keys).
+
+<If is="llm">
+  **For AI agents:** Instead of copying these keys from the Dashboard and writing the variables by hand, run `npx -y clerk@latest env pull` — it writes the Publishable and Secret Keys to your project's env file using the correct framework-specific variable names, merging into your existing env file — other variables are preserved and existing Clerk keys are updated. For production keys, follow [API keys and environment variables](/docs/guides/development/deployment/production#api-keys-and-environment-variables) instead of running a plain `npx clerk@latest env pull --instance prod`, which writes them over your development keys. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
+
 <Tabs items={["General", "Vite"]}>
   <Tab>
     | Variable | Description |
@@ -54,7 +61,7 @@ The following environment variables enable you to configure API and SDK behavior
     | <If notSdk={["nextjs", "nuxt"]}>`CLERK_JS_VERSION`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_JS_VERSION`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_JS_VERSION`</If> | Sets the npm version for `@clerk/clerk-js`. |
     | <If notSdk={["nextjs", "nuxt"]}>`CLERK_API_URL`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_API_URL`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_API_URL`</If> | Sets the Clerk API URL for debugging. Defaults to `"https://api.clerk.com"` |
     | <If notSdk={["nextjs", "nuxt"]}>`CLERK_API_VERSION`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_API_VERSION`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_API_VERSION`</If> | Sets the version of the Clerk API to use. Defaults to `"v1"` |
-    | <If notSdk={["nextjs", "nuxt"]}>`CLERK_JWT_KEY`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_JWT_KEY`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_JWT_KEY`</If> | Sets the JWT verification key that Clerk will use to provide networkless JWT session token verification. Refer to [Manual JWT verification](/docs/guides/sessions/manual-jwt-verification). |
+    | <If notSdk={["nextjs", "nuxt"]}>`CLERK_JWT_KEY`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_JWT_KEY`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_JWT_KEY`</If> | Sets the JWT verification key that Clerk will use to provide networkless JWT [session token](!session-token) verification. Refer to [Manual JWT verification](/docs/guides/sessions/manual-jwt-verification). |
     | <If notSdk={["nextjs", "nuxt"]}>`CLERK_FAPI`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_FAPI`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_FAPI`</If> | Sets the URL to your Clerk apps' Frontend API. |
     | <If notSdk={["nextjs", "nuxt"]}>`CLERK_PROXY_URL`</If> <If sdk="nextjs">`NEXT_PUBLIC_CLERK_PROXY_URL`</If> <If sdk="nuxt">`NUXT_PUBLIC_CLERK_PROXY_URL`</If> | Sets the URL for your proxy. |
     | `CLERK_ENCRYPTION_KEY` (Next.js only) | Sets the encryption key to securely propagate `clerkMiddleware` dynamic keys during request time. A 128-bit, pseudorandom value should be used. See [Dynamic keys](/docs/reference/nextjs/clerk-middleware#dynamic-keys) to learn more. |

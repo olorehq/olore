@@ -1,7 +1,7 @@
 ---
 title: '`SignInSecondFactor`'
 description: The SignInSecondFactor type represents the second factor verification strategy that can be used in the sign-in process.
-sdk: js-frontend, astro, chrome-extension, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
+sdk: js-frontend, astro, chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start, nuxt, vue
 ---
 
 The `SignInSecondFactor` type represents the [second factor verification](!second-factor-verification) strategy that can be used in the sign-in process.
@@ -11,17 +11,17 @@ type SignInSecondFactor = PhoneCodeFactor | TOTPFactor | BackupCodeFactor
 ```
 
 <Properties>
-  - `strategy`
-  - `'phone_code' | 'totp' | 'backup_code'`
-
-  The strategy of the factor.
-
-  ---
-
   - `phoneNumberId`
   - `string`
 
   The ID of the phone number that a code will be sent to. Populated when the `strategy` is `'phone_code'`.
+
+  ---
+
+  - `primary`
+  - `boolean`
+
+  Whether the factor is the primary factor. Populated when the strategy is `'phone_code'`.
 
   ---
 
@@ -36,10 +36,10 @@ type SignInSecondFactor = PhoneCodeFactor | TOTPFactor | BackupCodeFactor
 
   ---
 
-  - `primary`
-  - `boolean`
+  - `strategy`
+  - `'phone_code' | 'totp' | 'backup_code'`
 
-  Whether the factor is the primary factor. Populated when the strategy is `'phone_code'`.
+  The strategy of the factor.
 </Properties>
 
 ## `TOTPFactor`

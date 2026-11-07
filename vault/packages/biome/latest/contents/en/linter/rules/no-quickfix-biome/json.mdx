@@ -1,0 +1,101 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noQuickfixBiome (JSON)
+description: JSON (and super languages) documentation for noQuickfixBiome
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="json" languages={[{"id":"json","label":"JSON (and super languages)","href":"/linter/rules/no-quickfix-biome/json/"}]} />
+
+## Summary
+- Rule available since: `v2.1.3`
+- Diagnostic Category: [`lint/suspicious/noQuickfixBiome`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule has a [**safe**](/linter/#safe-fixes) fix.
+- The default severity of this rule is [**information**](/reference/diagnostics#information).
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noQuickfixBiome": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow `quickfix.biome` in supported editor settings.
+
+`quickfix.biome` asks the editor to apply independent Biome fixes together. When fixes edit
+the same source text, their changes can overlap and produce invalid code. Use
+`source.fixAll.biome` instead.
+
+The rule checks Visual Studio Code and Zed settings files whose paths end with:
+
+- `.vscode/settings.json`
+- `Code/User/settings.json`
+- `.zed/settings.json`
+- `zed/settings.json`
+
+## Examples
+
+### Invalid
+
+```json
+{
+    "quickfix.biome": "explicit"
+}
+```
+
+### Valid
+
+```json
+{
+    "source.fixAll.biome": "explicit"
+}
+```
+
+## Options
+
+### `additionalPaths`
+
+Adds settings-file path suffixes for other editors. For example, adding
+`".myEditor/file.json"` checks every file whose path ends with that value. Defaults to an
+empty list.
+
+```json title='biome.json'
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noQuickfixBiome": {
+					"level": "on",
+					"options": {
+						"additionalPaths": [
+							".myEditor/file.json"
+						]
+					}
+				}
+			}
+		}
+	}
+}
+
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/src/lint/suspicious/no_quickfix_biome.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/tests/specs/suspicious/noQuickfixBiome)
+

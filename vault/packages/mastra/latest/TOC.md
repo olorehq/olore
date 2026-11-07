@@ -4,297 +4,283 @@
 
 ```
 contents/
-├── index.mdx                    # Get Started overview
-├── getting-started/             # Installation and setup (3 files)
-├── agents/                      # Agents (18 files)
-├── agent-builder/               # Agent Builder UI (11 files)
-├── workflows/                   # Workflows (10 files)
-├── memory/                      # Memory (8 files)
-├── rag/                         # Retrieval-Augmented Generation (5 files)
-├── mcp/                         # Model Context Protocol (2 files)
-├── streaming/                   # Streaming (5 files)
-├── voice/                       # Voice (4 files)
-├── evals/                       # Evaluations (7 files)
-│   └── datasets/                # Datasets (2 files)
-├── server/                      # Server (8 files)
-│   └── auth/                    # Authentication providers (13 files)
-├── deployment/                  # Deployment (6 files)
-├── observability/               # Observability (9 files)
-│   ├── integrations/            # Integration exporters (16 files)
-│   │   ├── bridges/             # Bridges (2 files)
-│   │   ├── exporters/           # Exporters (12 files)
-│   │   └── processors/          # Processors (1 file)
-│   ├── metrics/                 # Metrics (2 files)
-│   └── tracing/                 # Tracing (1 file)
-├── browser/                     # Browser automation (5 files)
-├── workspace/                   # Workspace (6 files)
-├── studio/                      # Studio UI (4 files)
-├── editor/                      # Editor (3 files)
-└── mastra-platform/             # Mastra Platform (5 files)
+├── (root files)/ (9 files)
+├── agents/ (9 files)
+├── auth/ (7 files)
+├── connections/ (5 files)
+├── deployment/ (8 files)
+├── evals/ (11 files)
+├── getting-started/ (2 files)
+├── guides/ (8 files)
+├── harness/ (6 files)
+├── knowledge/ (7 files)
+├── mastra-platform/ (16 files)
+├── memory/ (7 files)
+├── observability/ (6 files)
+├── sandbox/ (6 files)
+├── server/ (8 files)
+├── signals/ (7 files)
+├── studio/ (6 files)
+├── workflows/ (11 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New user / quickstart | `contents/index.mdx` |
+| New user | `contents/index.mdx` |
+| Local development | `contents/develop.mdx` |
 | Build an agent | `contents/agents/overview.mdx` |
-| Create a workflow | `contents/workflows/overview.mdx` |
-| Add memory | `contents/memory/overview.mdx` |
-| Set up RAG | `contents/rag/overview.mdx` |
-| MCP integration | `contents/mcp/overview.mdx` |
-| Server setup | `contents/server/mastra-server.mdx` |
+| Add tools | `contents/agents/tools.mdx` |
+| Workflows | `contents/workflows/overview.mdx` |
+| Memory | `contents/memory/overview.mdx` |
 | Deploy | `contents/deployment/overview.mdx` |
+| Evals | `contents/evals/overview.mdx` |
 | Observability | `contents/observability/overview.mdx` |
-| Evaluations | `contents/evals/overview.mdx` |
-| Voice | `contents/voice/overview.mdx` |
-| Browser automation | `contents/browser/overview.mdx` |
+| Server and auth | `contents/server/overview.mdx` |
 
 ## Detailed Structure
 
-### Root (1 file)
+### (root) (9 files)
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Get Started overview, quickstart command, framework integration |
+| `browser.mdx` | Give Mastra agents browser automation through native SDK providers, CLI tools, CDP connections, or cloud services such |
+| `channels.mdx` | Connect Mastra agents to Slack, Discord, Telegram, and other messaging channels with webhooks, thread context, tool |
+| `classifier.mdx` | Ask a decision model typed questions about your application state and act on structured answers instead of parsing |
+| `develop.mdx` | Develop and test Mastra agents locally with mastra dev, Studio, file-based agents, the Mastra CLI, and AI coding tools |
+| `index.mdx` | Create your first Mastra TypeScript application, build an AI agent with tools, run it in Studio, and explore framework |
+| `license.mdx` | Understand Mastra’s dual-license model, including which core packages use Apache License 2.0 and which enterprise |
+| `skills.mdx` | Attach reusable Agent Skills directly to Mastra agents using inline definitions, filesystem paths, dynamic loaders, and |
+| `storage.mdx` | Configure Mastra storage to persist memory, workflow state, observability data, evals, schedules, and long-running |
+| `subagents.mdx` | Build Mastra supervisor agents that delegate work to specialized subagents with hooks, request context, message |
 
-### getting-started/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `getting-started/build-with-ai.mdx` | Build Mastra projects using AI-assisted setup |
-| `getting-started/manual-install.mdx` | Manual installation into existing projects |
-| `getting-started/project-structure.mdx` | Project structure and conventions |
-
-### agents/ (18 files)
-
-| File | Description |
-|------|-------------|
-| `agents/overview.mdx` | Agents overview and core concepts |
-| `agents/using-tools.mdx` | Giving agents tools to use |
-| `agents/structured-output.mdx` | Getting structured output from agents |
-| `agents/adding-voice.mdx` | Adding voice capabilities to agents |
-| `agents/agent-approval.mdx` | Human-in-the-loop agent approval |
-| `agents/background-tasks.mdx` | Running agents as background tasks |
-| `agents/channels.mdx` | Connecting agents to channels (Slack, etc.) |
-| `agents/code-mode.mdx` | Code mode for agents |
-| `agents/goals.mdx` | Setting goals for agents |
-| `agents/guardrails.mdx` | Adding guardrails to agents |
-| `agents/networks.mdx` | Agent networks |
-| `agents/processors.mdx` | Agent processors |
-| `agents/sdk-agents.mdx` | SDK-based agents |
-| `agents/signal-providers.mdx` | Signal providers for agents |
-| `agents/signals.mdx` | Agent signals |
-| `agents/supervisor-agents.mdx` | Supervisor agent pattern |
-| `agents/a2a.mdx` | Agent-to-agent (A2A) protocol |
-| `agents/acp.mdx` | Agent Communication Protocol (ACP) |
-
-### agent-builder/ (11 files)
+### agents/ (9 files)
 
 | File | Description |
 |------|-------------|
-| `agent-builder/overview.mdx` | Agent Builder overview (Enterprise) |
-| `agent-builder/configuration.mdx` | Configure Agent Builder features and defaults |
-| `agent-builder/access-control.mdx` | RBAC roles for Agent Builder |
-| `agent-builder/model-policy.mdx` | Restrict models in Agent Builder |
-| `agent-builder/memory.mdx` | Default memory for Agent Builder agents |
-| `agent-builder/browser.mdx` | Browser providers for Agent Builder |
-| `agent-builder/channels.mdx` | Channel integrations for Agent Builder |
-| `agent-builder/deploying.mdx` | Deploying Agent Builder to production |
-| `agent-builder/integrations.mdx` | Third-party tool providers |
-| `agent-builder/skill-registries.mdx` | Skill registries for Agent Builder |
-| `agent-builder/workspace.mdx` | Default workspace for Agent Builder agents |
+| `code-mode.mdx` | Configure Mastra code mode so agents can run multi-tool computations in isolated local or remote sandboxes and return |
+| `guardrails.mdx` | Protect Mastra agents with built-in guardrail processors for prompt injection, content moderation, PII redaction |
+| `human-in-the-loop.mdx` | Add human-in-the-loop controls to Mastra agents with tool approval and suspended execution, so people can provide input |
+| `networks.mdx` | Understand deprecated Mastra agent networks, including multi-agent routing, structured output, tool approvals, and |
+| `overview.mdx` | Build Mastra agents that use LLMs, tools, memory, workflows, and subagents to reason through open-ended tasks and |
+| `processors.mdx` | Use Mastra input and output processors to transform, validate, filter, and control agent messages at defined points in |
+| `resumable-streams.mdx` | Publish agent runs on a stream topic so clients can reconnect, other readers can follow a run with observe(), and any |
+| `structured-output.mdx` | Generate validated, typed structured output from Mastra agents with JSON Schema, Zod, or Valibot, including streaming |
+| `tools.mdx` | Create schema-validated Mastra tools that let agents call APIs, query databases, run functions, and invoke agents |
 
-### workflows/ (10 files)
+### auth/ (7 files)
 
 | File | Description |
 |------|-------------|
-| `workflows/overview.mdx` | Workflow overview and concepts |
-| `workflows/control-flow.mdx` | Branching and control flow |
-| `workflows/error-handling.mdx` | Workflow error handling |
-| `workflows/human-in-the-loop.mdx` | Human-in-the-loop steps |
-| `workflows/suspend-and-resume.mdx` | Suspending and resuming workflows |
-| `workflows/agents-and-tools.mdx` | Using agents and tools in workflows |
-| `workflows/scheduled-workflows.mdx` | Scheduled/cron workflows |
-| `workflows/snapshots.mdx` | Workflow snapshots |
-| `workflows/time-travel.mdx` | Workflow time travel / replay |
-| `workflows/workflow-state.mdx` | Workflow state management |
+| `composite-auth.mdx` | Combine multiple Mastra authentication providers with CompositeAuth, control provider order, and support fallback |
+| `custom-auth-provider.mdx` | Create a custom Mastra authentication provider by extending MastraAuthProvider, with token validation and user |
+| `fga.mdx` | Configure Mastra Fine-Grained Authorization for resource-level permissions that map routes to actions and scope stored |
+| `jwt.mdx` | Secure Mastra APIs with MastraJwtAuth and a shared secret, then create JSON Web Tokens and send authenticated requests |
+| `overview.mdx` | Choose and configure authentication for Mastra APIs and Studio using JWT, built-in identity providers, third-party |
+| `simple-auth.mdx` | Use Mastra SimpleAuth for token-to-user authentication, API key scenarios, custom headers, and lightweight |
+| `workers.mdx` | Secure communication between standalone Mastra workers and the API server with bearer tokens, API key headers, or |
 
-### memory/ (8 files)
+### connections/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `memory/overview.mdx` | Memory overview and configuration |
-| `memory/message-history.mdx` | Message history storage |
-| `memory/working-memory.mdx` | Working memory |
-| `memory/semantic-recall.mdx` | Semantic recall (vector search) |
-| `memory/observational-memory.mdx` | Observational memory |
-| `memory/memory-processors.mdx` | Memory processors and filters |
-| `memory/multi-user-threads.mdx` | Multi-user thread management |
-| `memory/storage.mdx` | Memory storage backends |
+| `a2a.mdx` | Expose Mastra agents through the Agent-to-Agent protocol and consume remote A2A agents as subagents or call them |
+| `acp.mdx` | Connect ACP-compatible coding agents to Mastra as tools or subagents, with configured models and sessions that stream |
+| `mcp.mdx` | Connect Mastra agents to remote MCP servers, expose Mastra tools through MCPServer, manage approvals, subscribe to MCP |
+| `overview.mdx` | Connect Mastra to remote agents, coding agents, SDK runtimes, MCP servers, and external tools by choosing the protocol |
+| `sdk-agents.mdx` | Use Claude Agent SDK, Cursor Agent SDK, and OpenAI Agents SDK agents inside Mastra as delegated agents with their |
 
-### rag/ (5 files)
+### deployment/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `rag/overview.mdx` | RAG overview |
-| `rag/chunking-and-embedding.mdx` | Chunking and embedding strategies |
-| `rag/retrieval.mdx` | Retrieval techniques |
-| `rag/vector-databases.mdx` | Vector database integrations |
-| `rag/graph-rag.mdx` | Graph RAG |
+| `cloud-providers.mdx` | Compare deployment options for Mastra applications across Mastra platform and supported cloud providers, then follow |
+| `mastra-server.mdx` | Build and deploy a production Mastra server, configure build output and public assets, run the generated application |
+| `monorepo.mdx` | Deploy Mastra applications from pnpm, npm, Yarn, or Bun monorepos by configuring workspace packages, build commands |
+| `overview.mdx` | Choose how to deploy a Mastra application as a server, framework integration, monorepo service, cloud deployment |
+| `sandbox.mdx` | Deploy a complete Mastra server and Studio to an ephemeral E2B, Daytona, or Vercel sandbox and receive a public URL for |
+| `web-framework.mdx` | Deploy Mastra alongside a Next.js or Astro application using the framework’s standard Vercel or Netlify build and |
+| `workers.mdx` | Run Mastra workflow orchestration, schedules, and long-running background tasks in dedicated workers to keep API |
+| `workflow-runners.mdx` | Deploy Mastra workflows to specialized orchestration platforms such as Inngest or Temporal for durable execution |
 
-### mcp/ (2 files)
-
-| File | Description |
-|------|-------------|
-| `mcp/overview.mdx` | MCP overview and setup |
-| `mcp/mcp-apps.mdx` | Connecting to MCP applications |
-
-### streaming/ (5 files)
+### evals/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `streaming/overview.mdx` | Streaming overview |
-| `streaming/events.mdx` | Streaming events |
-| `streaming/tool-streaming.mdx` | Tool result streaming |
-| `streaming/workflow-streaming.mdx` | Workflow output streaming |
-| `streaming/background-task-streaming.mdx` | Background task streaming |
+| `built-in-scorers.mdx` | Choose built-in Mastra scorers for accuracy, reliability, context quality, output quality, safety, and fast |
+| `custom-scorers.mdx` | Build custom Mastra scorers with createScorer using JavaScript functions or LLM prompts across preprocess, analyze |
+| `datasets.mdx` | Create versioned Mastra datasets, define item schemas, manage test data through code or Studio, and track experiments |
+| `evals-with-memory.mdx` | Run Mastra evals against memory-enabled agents using shared or per-item threads, observational memory, runEvals, and |
+| `experiments.mdx` | Run Mastra dataset experiments against registered agents or workflows, apply scorers, compare results, and inspect |
+| `gates-and-verdicts.mdx` | Define mandatory gates and score thresholds for Mastra evals, compute passed, scored, or failed verdicts, and enforce |
+| `multi-turn.mdx` | Evaluate Mastra agents across multi-turn conversations by sending sequential inputs on one memory thread and scoring |
+| `overview.mdx` | Evaluate Mastra agents and workflows with model-graded, rule-based, and programmatic scorers through live evaluations |
+| `quick-checks.mdx` | Add fast, deterministic Quick Checks to Mastra evals for assertions on output text and tool calls without using an LLM |
+| `running-in-ci.mdx` | Run Mastra scorer experiments in CI with runEvals, define test cases for agents or workflows, inspect aggregate results |
+| `vitest-integration.mdx` | Run runEvals evaluations as Vitest tests with expectEvals, expectEval, custom matchers, and a score reporter using |
 
-### voice/ (4 files)
-
-| File | Description |
-|------|-------------|
-| `voice/overview.mdx` | Voice overview |
-| `voice/text-to-speech.mdx` | Text-to-speech (TTS) |
-| `voice/speech-to-text.mdx` | Speech-to-text (STT) |
-| `voice/speech-to-speech.mdx` | Speech-to-speech |
-
-### evals/ (7 files)
+### getting-started/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `evals/overview.mdx` | Evals overview |
-| `evals/built-in-scorers.mdx` | Built-in evaluation scorers |
-| `evals/custom-scorers.mdx` | Custom evaluation scorers |
-| `evals/evals-with-memory.mdx` | Evaluating agents with memory |
-| `evals/running-in-ci.mdx` | Running evals in CI |
-| `evals/datasets/overview.mdx` | Evaluation datasets |
-| `evals/datasets/running-experiments.mdx` | Running dataset experiments |
+| `_partial-agent-quickstart.mdx` | Partial: agent quickstart snippet included by the getting-started pages |
+| `_partial-quickstart-prompt.mdx` | Partial: quickstart prompt snippet included by the getting-started pages |
+
+### guides/ (8 files)
+
+| File | Description |
+|------|-------------|
+| `agent-lifecycle.mdx` | Follow an agent run from input preparation through repeated model and tool calls to the final result, for both regular |
+| `authentication-identity.mdx` | Design secure identity flows for Mastra that protect endpoints and carry trusted user context through agents and tools |
+| `build-an-eval-loop.mdx` | Use datasets, LLM judges, and Mastra Studio experiments to compare agent changes, investigate failures, and build |
+| `context-engineering.mdx` | Engineer the context Mastra agents receive by combining instructions, inline data, tools, RAG, filesystems, memory, and |
+| `mcp-authentication-authorization.mdx` | Choose credentials for MCP connections, protect a Mastra MCP server, and separate delegated access from tool and data |
+| `multi-agent-systems.mdx` | Choose a Mastra multi-agent architecture by comparing handoffs, workflows, supervisors, and council patterns for |
+| `overview.mdx` | Explore guides to designing, building, and evaluating Mastra applications, from agent architecture and context to |
+| `streaming.mdx` | Stream incremental responses from Mastra agents and workflows, consume text and structured output, handle events, and |
+
+### harness/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `agent-controller.mdx` | Build interactive Mastra agent applications with Agent Controller sessions, persistent threads, modes, approvals |
+| `background-tasks.mdx` | Run long-lived Mastra tool calls and subagents as background tasks while streams remain open, with per-call |
+| `durable-agents.mdx` | Wrap Mastra agents in durable execution so streams and long-running turns survive client disconnects and process |
+| `goals.mdx` | Set a durable goal for a Mastra agent so an execution loop evaluates progress and continues working until the objective |
+| `overview.mdx` | Use the Mastra harness to start, continue, update, and preserve agent work beyond one request with durable execution |
+| `schedules.mdx` | Schedule Mastra agents with cron expressions, recurring prompts, optional thread delivery, lifecycle hooks, and APIs |
+
+### knowledge/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `agents-and-tools.mdx` | Turn on the Knowledge tools for an agent, and what agents can do with them |
+| `load-your-content.mdx` | Load your own content, such as product docs or policies, into Knowledge so agents can search and read it |
+| `overview.mdx` | Give agents shared pages and notes they search, read and write, with access decided by your configuration rather than |
+| `patterns.mdx` | What you can build with Knowledge: a docs agent, one agent for many customers, pinned policies, coding conventions |
+| `pinned-context.mdx` | Keep Knowledge pages in an agent's context every turn, pinned in config for every run of a scope or by agents at |
+| `scopes-and-access.mdx` | Declare the scopes Knowledge content lives in, set which scopes each run holds, and check what a run can reach |
+| `search.mdx` | How Knowledge search ranks results, and how to add search by meaning |
+
+### mastra-platform/ (16 files)
+
+| File | Description |
+|------|-------------|
+| `alerts.mdx` | Configure Mastra platform alerts for failed deploys, service outages, and usage thresholds, then send notifications to |
+| `api.mdx` | Use the Mastra platform REST API to manage members, tokens, Studio and Server deployments, gateways, observability |
+| `configuration.mdx` | Configure Mastra platform project resolution with .mastra-project.json and manage environment variables from platform |
+| `connect.mdx` | Use Mastra Connect to manage provider connections on Mastra platform and make them available to your app as agent tools |
+| `database.mdx` | Provision and attach managed Turso, Neon, or Postgres databases to Mastra platform environments, then use injected |
+| `deploy.mdx` | Deploy a Mastra application to Mastra platform with mastra deploy, including project creation, environment selection |
+| `environments.mdx` | Create isolated Mastra platform environments for production, staging, and previews with separate URLs, variables |
+| `github.mdx` | Connect a GitHub repository to Mastra platform for push-to-deploy workflows, template projects, repository linking, and |
+| `observability.mdx` | Collect, import, and query hosted traces, logs, metrics, scores, and feedback from Mastra applications with Mastra |
+| `overview.mdx` | Deploy, monitor, and manage AI applications with Mastra platform projects, environments, hosted databases, workspaces |
+| `regions.mdx` | Choose the US or EU region for a Mastra platform environment and understand how compute, hosted databases, and |
+| `server.mdx` | Deploy and host a Mastra application as a production API server with managed builds, environment variables, custom |
+| `studio.mdx` | Deploy Mastra Studio as a hosted team workspace for testing agents and workflows, with trace inspection and no UI |
+| `system-environment-variables.mdx` | Reference for the environment variables Mastra platform injects into every deploy, including project and environment |
+| `trace-intelligence.mdx` | Use Mastra Trace Intelligence to identify recurring goals, outcomes, behaviors, sentiment, and themes across agent |
+| `workspaces.mdx` | Use Mastra platform workspaces to give each environment isolated bucket storage and on-demand sandboxes for filesystem |
+
+### memory/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `memory-processors.mdx` | Configure Mastra memory processors to filter, trim, transform, and deduplicate messages before they reach the model |
+| `message-history.mdx` | Store and retrieve recent Mastra conversation messages, configure history limits and thread titles, and query threads |
+| `multi-user-threads.mdx` | Share one Mastra memory thread across multiple users by preserving speaker identity in messages and combining history |
+| `observational-memory.mdx` | Configure Mastra Observational Memory to compress long conversations into durable observations while preserving context |
+| `overview.mdx` | Add memory to Mastra agents with message history, observational memory, and working memory across threads and |
+| `semantic-recall.mdx` | Retrieve relevant messages from past Mastra conversations with semantic recall, vector search, embeddings, metadata |
+| `working-memory.mdx` | Persist user profiles, preferences, and application data with Mastra working memory using resource- or thread-scoped |
+
+### observability/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `feedback.mdx` | Create, list, delete, aggregate, and export human feedback records in Mastra observability, with ratings and comments |
+| `logging.mdx` | Configure structured Mastra logging with PinoLogger, trace correlation, observability storage, custom logger adapters |
+| `overview.mdx` | Configure Mastra observability to collect traces, logs, metrics, scores, and feedback for monitoring, debugging, and |
+
+### observability/integrations/exporters/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `mastra-storage.mdx` | Persist Mastra traces and metrics with MastraStorageExporter, choose a storage provider and tracing strategy, and |
+
+### observability/metrics/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Collect automatic duration, token usage, and cost metrics from Mastra traces, store them in supported databases, and |
+
+### observability/tracing/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Trace Mastra agents, workflows, tools, and model calls with hierarchical spans, sampling, metadata, tags, filtering |
+
+### sandbox/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `computer.mdx` | Give Mastra agents screenshot, mouse, and keyboard control in supported desktop sandboxes |
+| `filesystem.mdx` | Give Mastra agents local or remote filesystem access, configure persistent storage and mounts, and work with files |
+| `lsp.mdx` | Configure Language Server Protocol support in Mastra workspaces so agents can inspect symbols, definitions, references |
+| `overview.mdx` | Run Mastra agents in isolated local or remote sandboxes with filesystem access, shell commands, code execution, and |
+| `search.mdx` | Index filesystem or application content in Mastra workspaces and search it with BM25 keyword, vector semantic, or |
+| `skills.mdx` | Create filesystem-backed Mastra skills with SKILL.md instructions, supporting files, configurable discovery paths, and |
 
 ### server/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `server/mastra-server.mdx` | Mastra server setup and configuration |
-| `server/mastra-client.mdx` | Mastra client (TypeScript SDK) |
-| `server/custom-api-routes.mdx` | Adding custom API routes |
-| `server/custom-adapters.mdx` | Custom server adapters |
-| `server/server-adapters.mdx` | Available server adapters |
-| `server/middleware.mdx` | Server middleware |
-| `server/pubsub.mdx` | Pub/sub messaging |
-| `server/request-context.mdx` | Request context |
+| `custom-adapters.mdx` | Implement a custom Mastra server adapter for unsupported web frameworks by mapping routes, middleware, request |
+| `custom-api-routes.mdx` | Add custom HTTP endpoints to a Mastra server with schema validation, middleware, authentication, OpenAPI documentation |
+| `mastra-client.mdx` | Use the type-safe Mastra Client SDK from browser applications to call agents, workflows, tools, memory, and server APIs |
+| `middleware.mdx` | Add Mastra server middleware for authentication, authorization, CORS, request logging, route blocking, and |
+| `overview.mdx` | Configure the Mastra HTTP server to expose agents and workflows through REST APIs with middleware, authentication |
+| `pubsub.mdx` | Configure Mastra PubSub event delivery for components, resumable streams, workers, and schedules across one process |
+| `request-context.mdx` | Pass request-specific runtime values through Mastra RequestContext to configure agents, workflows, tools, models |
+| `server-adapters.mdx` | Run Mastra with Elysia, Express, Fastify, Hono, Koa, NestJS, Next.js, or TanStack Start server adapters and control |
 
-### server/auth/ (13 files)
-
-| File | Description |
-|------|-------------|
-| `server/auth/index.mdx` | Auth overview |
-| `server/auth/simple-auth.mdx` | Simple auth setup |
-| `server/auth/jwt.mdx` | JWT authentication |
-| `server/auth/composite-auth.mdx` | Composite auth strategies |
-| `server/auth/custom-auth-provider.mdx` | Custom auth providers |
-| `server/auth/auth0.mdx` | Auth0 integration |
-| `server/auth/better-auth.mdx` | Better Auth integration |
-| `server/auth/clerk.mdx` | Clerk integration |
-| `server/auth/fga.mdx` | Fine-grained authorization (FGA) |
-| `server/auth/firebase.mdx` | Firebase auth integration |
-| `server/auth/okta.mdx` | Okta integration |
-| `server/auth/supabase.mdx` | Supabase auth integration |
-| `server/auth/workos.mdx` | WorkOS integration |
-
-### deployment/ (6 files)
+### signals/ (7 files)
 
 | File | Description |
 |------|-------------|
-| `deployment/overview.mdx` | Deployment overview |
-| `deployment/mastra-server.mdx` | Deploying Mastra server |
-| `deployment/cloud-providers.mdx` | Cloud provider deployment guides |
-| `deployment/web-framework.mdx` | Deploying with web frameworks |
-| `deployment/monorepo.mdx` | Monorepo deployment |
-| `deployment/workflow-runners.mdx` | Workflow runner deployment |
+| `notifications.mdx` | Create durable Mastra notification records, resolve delivery policy, and deliver notifications or summaries to an agent |
+| `overview.mdx` | Send asynchronous input into a Mastra agent thread while Mastra manages whether the agent is active or idle |
+| `running-across-processes.mdx` | Run Mastra agent threads across multiple processes with a shared PubSub backend and thread leases |
+| `sending-signals.mdx` | Send input to an agent thread and let Mastra decide whether to deliver it or wake the thread |
+| `signal-providers.mdx` | Build Mastra signal providers that monitor external systems through polling or webhooks and deliver notifications into |
+| `state-signals.mdx` | Keep durable, named state on a Mastra thread and send snapshots or deltas that the model sees as context |
+| `thread-streams.mdx` | Subscribe to a Mastra agent thread to read stored history, live output, and lifecycle events as a single ordered stream |
 
-### observability/ (9 files)
-
-| File | Description |
-|------|-------------|
-| `observability/overview.mdx` | Observability overview |
-| `observability/config.mdx` | Observability configuration |
-| `observability/logging.mdx` | Logging setup |
-| `observability/storage.mdx` | Observability storage backends |
-| `observability/integrations/overview.mdx` | Integrations overview |
-| `observability/integrations/processors/sensitive-data-filter.mdx` | Sensitive data filter processor |
-| `observability/integrations/bridges/datadog.mdx` | Datadog bridge |
-| `observability/integrations/bridges/otel.mdx` | OpenTelemetry bridge |
-| `observability/integrations/exporters/arize.mdx` | Arize exporter |
-| `observability/integrations/exporters/arthur.mdx` | Arthur exporter |
-| `observability/integrations/exporters/braintrust.mdx` | Braintrust exporter |
-| `observability/integrations/exporters/datadog.mdx` | Datadog exporter |
-| `observability/integrations/exporters/laminar.mdx` | Laminar exporter |
-| `observability/integrations/exporters/langfuse.mdx` | Langfuse exporter |
-| `observability/integrations/exporters/langsmith.mdx` | LangSmith exporter |
-| `observability/integrations/exporters/mastra-platform.mdx` | Mastra platform exporter |
-| `observability/integrations/exporters/mastra-storage.mdx` | Mastra storage exporter |
-| `observability/integrations/exporters/otel.mdx` | OpenTelemetry exporter |
-| `observability/integrations/exporters/posthog.mdx` | PostHog exporter |
-| `observability/integrations/exporters/sentry.mdx` | Sentry exporter |
-| `observability/metrics/overview.mdx` | Metrics overview |
-| `observability/metrics/querying.mdx` | Querying metrics |
-| `observability/tracing/overview.mdx` | Tracing overview |
-
-### browser/ (5 files)
+### studio/ (6 files)
 
 | File | Description |
 |------|-------------|
-| `browser/overview.mdx` | Browser automation overview |
-| `browser/agent-browser.mdx` | AgentBrowser (Playwright-based) |
-| `browser/stagehand.mdx` | Stagehand (AI-powered, Browserbase) |
-| `browser/browser-viewer.mdx` | BrowserViewer (CLI tool integration) |
-| `browser/recording.mdx` | Browser session recording (alpha) |
+| `auth.mdx` | Secure Mastra Studio and API routes with login flows, token forwarding, role-based access control, default roles, and |
+| `deployment.mdx` | Deploy Mastra Studio on Mastra platform, alongside your API, or as a static SPA on your own infrastructure or content |
+| `editor.mdx` | Use Mastra Studio Editor so collaborators can change agent instructions and tools without modifying source code, from |
+| `knowledge.mdx` | Browse the Knowledge instances registered on your Mastra server from Studio, as a page tree and a graph |
+| `observability.mdx` | Monitor Mastra agents, workflows, tools, and model calls in Studio with metrics dashboards, hierarchical traces, and |
+| `overview.mdx` | Use Mastra Studio to build, test, and manage agents, workflows, processors, tools, and MCP servers while inspecting |
 
-### workspace/ (6 files)
-
-| File | Description |
-|------|-------------|
-| `workspace/overview.mdx` | Workspace overview |
-| `workspace/filesystem.mdx` | Filesystem providers |
-| `workspace/sandbox.mdx` | Sandbox (command execution) |
-| `workspace/lsp.mdx` | LSP inspection (code intelligence) |
-| `workspace/search.mdx` | Search and indexing |
-| `workspace/skills.mdx` | Workspace skills |
-
-### studio/ (4 files)
+### workflows/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `studio/overview.mdx` | Studio overview |
-| `studio/auth.mdx` | Studio authentication |
-| `studio/deployment.mdx` | Deploying Studio |
-| `studio/observability.mdx` | Studio observability views |
-
-### editor/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `editor/overview.mdx` | Editor overview (CMS-style agent config) |
-| `editor/prompts.mdx` | Prompt blocks and versioning |
-| `editor/tools.mdx` | Tool management through the editor |
-
-### mastra-platform/ (5 files)
-
-| File | Description |
-|------|-------------|
-| `mastra-platform/overview.mdx` | Mastra Platform overview |
-| `mastra-platform/observability.mdx` | Hosted observability on Mastra Platform |
-| `mastra-platform/studio.mdx` | Studio on Mastra Platform |
-| `mastra-platform/server.mdx` | Server on Mastra Platform |
-| `mastra-platform/configuration.mdx` | Platform configuration |
+| `agents-and-tools.mdx` | Call Mastra agents and tools from workflow steps, compose them directly with createStep, and choose between execute |
+| `control-flow.mdx` | Control Mastra workflow execution with sequential steps, parallel branches, conditional logic, loops, nested workflows |
+| `dynamic-workflows.mdx` | Create, persist, update, and execute Mastra workflows from JSON definitions while registering dependencies and managing |
+| `error-handling.mdx` | Handle Mastra workflow failures with retries, result status checks, lifecycle callbacks, conditional branches, step |
+| `human-in-the-loop.mdx` | Pause Mastra workflows for approvals, reviews, or user input, then resume with supplied data, reject with bail, or |
+| `overview.mdx` | Build deterministic Mastra workflows with typed steps, agents, tools, branching, parallel execution, loops, suspension |
+| `scheduled-workflows.mdx` | Run Mastra workflows on one or more cron schedules, inspect trigger history in Studio, and pause or resume scheduled |
+| `snapshots.mdx` | Store and retrieve Mastra workflow snapshots so suspended executions preserve step results and state and can resume |
+| `suspend-and-resume.mdx` | Suspend Mastra workflows while waiting for external input, resources, or time, then resume saved runs with data and |
+| `time-travel.mdx` | Debug Mastra workflows by re-executing from a selected step with new execution context, including nested steps |
+| `workflow-state.mdx` | Share typed global state across Mastra workflow steps, initialize and update values, preserve state through suspension |

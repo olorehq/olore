@@ -71,13 +71,13 @@ try {
         expected: 'string',
         code: 'invalid_type',
         path: [ 'username' ],
-        message: 'Invalid input: expected string'
+        message: 'Invalid input: expected string, received number'
       },
       {
         expected: 'number',
         code: 'invalid_type',
         path: [ 'xp' ],
-        message: 'Invalid input: expected number'
+        message: 'Invalid input: expected number, received string'
       }
     ] */
   }
@@ -96,13 +96,13 @@ try {
         expected: 'string',
         code: 'invalid_type',
         path: [ 'username' ],
-        message: 'Invalid input: expected string'
+        message: 'Invalid input'
       },
       {
         expected: 'number',
         code: 'invalid_type',
         path: [ 'xp' ],
-        message: 'Invalid input: expected number'
+        message: 'Invalid input'
       }
     ] */
   }
@@ -138,6 +138,8 @@ Player.validate({ username: 42, xp: "100" });     // false
 ```
 
 Use `.validateAsync()` for schemas with async refinements or transforms. On a [compiled schema](/compile), `.validate()` answers directly from the compiled fast path.
+
+`.validate()` also stops at the first failure, so it never collects issues. That makes it the call to use on large untrusted input when only the yes-or-no answer matters. `.safeParse()` reports every issue in the input, so its work grows with the input: a million invalid array elements produce a million issues. Bound such inputs with `.max()` or a request body limit, or use `.validate()`.
 
 ## Inferring types
 

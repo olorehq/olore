@@ -1,11 +1,12 @@
 ---
 title: handleSubmit
+seoTitle: "handleSubmit: React Form Submission"
 description: Validate inputs and invoke your submit callback.
 metaDescription: Validate form inputs and invoke your submit callback with typed form data, or pass errors to an error handler on validation failure.
 sidebar: apiLinks
 ---
 
-## \</> `handleSubmit:` <TypeText>`((data: Object, e?: Event) => Promise<void>, (errors: Object, e?: Event) => Promise<void>) => Promise<void>`</TypeText>
+## \</> `handleSubmit:` <TypeText>[UseFormHandleSubmit](/ts#UseFormHandleSubmit)</TypeText>
 
 This function will receive the form data if form validation is successful.
 
@@ -13,32 +14,74 @@ This function will receive the form data if form validation is successful.
 
 ---
 
-| Name               | Type                                                                | Description            |
-| ------------------ | ------------------------------------------------------------------- | ---------------------- |
-| SubmitHandler      | <TypeText>`(data: Object, e?: Event) => Promise<void>`</TypeText>   | A successful callback. |
-| SubmitErrorHandler | <TypeText>`(errors: Object, e?: Event) => Promise<void>`</TypeText> | An error callback.     |
+| Name               | Type                                                                                                | Description            |
+| ------------------ | --------------------------------------------------------------------------------------------------- | ---------------------- |
+| SubmitHandler      | <TypeText>`(data: TFieldValues, e?: BaseSyntheticEvent) => TResult \| Promise<TResult>`</TypeText>  | A successful callback. |
+| SubmitErrorHandler | <TypeText>`(errors: FieldErrors, e?: BaseSyntheticEvent) => unknown \| Promise<unknown>`</TypeText> | An error callback.     |
 
 <Admonition type="important" title="Rules">
 
-- `disabled` inputs will appear as `undefined` values in form values. If you want to prevent users from updating an input and wish to retain the form value, you can use `readOnly` or disable the entire &lt;fieldset /&gt;. Here is an [example](https://codesandbox.io/s/react-hook-form-disabled-inputs-oihxx).
-- `handleSubmit` function will not swallow errors that occurred inside your onSubmit callback, so we recommend you to try and catch inside async request and handle those errors gracefully for your customers.
+- <Since version="7.84.0" /> The promise returned by calling
+  `handleSubmit(onValid)(event)` resolves with whatever `onValid` returns,
+  instead of discarding it.
 
   ```javascript
-  const onSubmit = async () => {
+  const onValid = (data) => ({ id: data.id })
+  const result = await handleSubmit(onValid)() // result: { id: string } | undefined
+  ```
+
+- `formState.isSubmitting` stays `true` until the promise returned by `onSubmit` settles, so `await` (or return) your async work:
+
+  ```javascript
+  const onSubmit = async (data) => {
+    await fetch("/api", { method: "POST", body: JSON.stringify(data) }) // ✅ isSubmitting stays true until this resolves
+  }
+  ```
+
+- `disabled` inputs will appear as `undefined` values in form values. If you want to prevent users from updating an input and wish to retain the form value, you can use `readOnly` or disable the entire &lt;fieldset /&gt;. Here is an [example](https://codesandbox.io/s/react-hook-form-disabled-inputs-oihxx).
+- `handleSubmit` function will not swallow errors that occurred inside your onSubmit callback, so we recommend that you use try/catch blocks inside your async requests and handle those errors gracefully for your customers. Use `setError` inside the catch block to register a server-side error — this also ensures `formState.isSubmitSuccessful` is set to `false`.
+
+  ```javascript
+  const onSubmit = async (data) => {
     // async request which may result error
     try {
       // await fetch()
     } catch (e) {
-      // handle your error
+      setError("root.serverError", {
+        type: e.status,
+        message: e.message,
+      })
     }
   }
 
   return <form onSubmit={handleSubmit(onSubmit)} />
   ```
 
+- To submit from a button outside the `<form>`, either link the button to the form with the native `form` attribute, or call the returned function directly:
+
+  ```javascript
+  <form id="profile-form" onSubmit={handleSubmit(onSubmit)}>...</form>
+
+  <button type="submit" form="profile-form">Save</button> // ✅ native form attribute
+  <button type="button" onClick={handleSubmit(onSubmit)}>Save</button> // ✅ call handleSubmit directly
+  ```
+
+- React's `submit` event bubbles through the component tree, including portals. If a form is rendered inside another form (for example in a modal), stop propagation so the outer form doesn't submit too:
+
+  ```javascript
+  <form
+    onSubmit={(event) => {
+      event.stopPropagation()
+      handleSubmit(onInnerSubmit)(event)
+    }}
+  />
+  ```
+
+- For submitting with React Server Actions or `useActionState`, see [Server Actions](/advanced-usage#ServerActionsuseActionState). To test your submit flow, see [Testing Form](/advanced-usage#TestingForm).
+
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -96,31 +139,81 @@ export default function App() {
 **Async**
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-async-submit-validation-kpx0o"
-import { useForm } from "react-hook-form";
+import { useForm } from "react-hook-form"
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function App() {
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const onSubmit = async data => {
-    await sleep(2000);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm()
+  const onSubmit = async (data) => {
+    await sleep(2000)
     if (data.username === "bill") {
-      alert(JSON.stringify(data));
+      alert(JSON.stringify(data))
     } else {
-      alert("There is an error");
+      alert("There is an error")
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <label htmlFor="username">User Name</label>
-      <input placeholder="Bill" {...register("username"} />
+      <input placeholder="Bill" {...register("username")} />
 
       <input type="submit" />
     </form>
-  );
+  )
 }
 ```
+
+**Resolver with transformed values**
+
+When a resolver (Zod, Yup, Joi, or custom) transforms the submitted data — so the output type differs from the field input type — use `useForm`'s third generic, `TTransformedValues`, to tell TypeScript what `handleSubmit` will receive. Without it, the callback is typed as the input (field) type and you'll get errors accessing transformed properties.
+
+```tsx copy
+import { useForm, SubmitHandler } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+// Example using Zod — the same pattern applies to any resolver whose
+// output type differs from its input type (Yup, Joi, custom, etc.)
+const schema = z
+  .object({
+    emailOrPhone: z.string().trim(),
+  })
+  .transform(({ emailOrPhone }) => ({
+    isEmail: emailOrPhone.includes("@"),
+    isPhone: /^\d+$/.test(emailOrPhone),
+    value: emailOrPhone,
+  }))
+
+type FormInput = z.input<typeof schema> // { emailOrPhone: string }
+type FormOutput = z.output<typeof schema> // { isEmail: boolean; isPhone: boolean; value: string }
+
+export default function App() {
+  // 1st generic = field/input type (drives register, watch, etc.)
+  // 3rd generic = transformed output type (drives handleSubmit callback)
+  const { register, handleSubmit } = useForm<FormInput, unknown, FormOutput>({
+    resolver: zodResolver(schema),
+  })
+
+  const onSubmit: SubmitHandler<FormOutput> = (data) => {
+    console.log(data.isEmail, data.isPhone, data.value)
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("emailOrPhone")} />
+      <input type="submit" />
+    </form>
+  )
+}
+```
+
+---
 
 ### Video
 
@@ -129,3 +222,99 @@ function App() {
 The following video tutorial explains the `handleSubmit` API in detail.
 
 <YouTube youTubeId="KzcPKB9SOEk" />
+
+### Tips
+
+---
+
+- `handleSubmit` does not block a second submission while the first one is still pending. Disable the submit button with `formState.isSubmitting`, or check it at the start of your handler.
+- Use the second argument, `onInvalid`, to react to failed validation, for example to log analytics or open the section that contains the first error:
+
+  ```javascript
+  handleSubmit(onValid, (errors) => {
+    analytics.track("form_invalid", { fields: Object.keys(errors) })
+  })
+  ```
+
+- Transform the data inside `onValid` (or in your resolver) and not in the inputs. Inputs keep their raw values, and you send the shape your API needs.
+- When you call `handleSubmit(onValid)()` without an event, nothing calls `preventDefault`. Use this to submit from a keyboard shortcut or a timer.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `onSubmit` is never called and nothing happens
+
+<Why>
+
+Validation failed. `handleSubmit` only calls your handler when every field is valid. If you do not render `errors`, the form looks like it ignores the click.
+
+</Why>
+
+<Fix>
+
+Render `formState.errors`, or pass a second callback to see what failed:
+
+```javascript
+<form onSubmit={handleSubmit(onSubmit, (errors) => console.log(errors))}>
+```
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### The page reloads and `onSubmit` never runs
+
+<Why>
+
+`handleSubmit(onSubmit)` returns the submit handler. Wrapping it in an arrow function, as in `onSubmit={() => handleSubmit(onSubmit)}`, creates that handler but never calls it, so the browser submits the form natively and reloads the page.
+
+</Why>
+
+<Fix>
+
+Pass the result directly:
+
+```javascript
+<form onSubmit={handleSubmit(onSubmit)}>
+```
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### An error thrown in `onSubmit` is not shown to the user
+
+<Why>
+
+If `onSubmit` throws (or its promise rejects), `handleSubmit` rethrows the error and sets `isSubmitSuccessful` to `false`. Nothing is added to `formState.errors`.
+
+</Why>
+
+<Fix>
+
+Catch the error and store it with [`setError`](/docs/useform/seterror) under a `root` key:
+
+```javascript
+const onSubmit = async (data) => {
+  try {
+    await save(data)
+  } catch {
+    setError("root.server", { message: "Could not save. Try again." })
+  }
+}
+
+{
+  errors.root?.server && <p role="alert">{errors.root.server.message}</p>
+}
+```
+
+</Fix>
+
+</Troubleshoot>

@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-lambda-deployfunction.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-deployfunction.png
 id: deployfunction
 title: deployFunction()
 slug: /lambda/deployfunction
@@ -8,7 +8,7 @@ crumb: 'Lambda API'
 
 Creates an [AWS Lambda](https://aws.amazon.com/lambda/) function in your AWS account that will be able to render a video in the cloud.
 
-If a function with the same version, memory size and timeout already existed, it will be returned instead without a new one being created. This means this function can be treated as idempotent.
+If a function with the same name, version, memory size, disk size and timeout already exists, it will be returned instead without a new one being created. This means this function can be treated as idempotent.
 
 ## Example
 
@@ -28,6 +28,14 @@ console.log(functionName);
 ## Arguments
 
 An object with the following properties:
+
+### `functionName?`<AvailableFrom v="4.0.540" />
+
+Override the [default function name](/docs/lambda/naming-convention). By default, the name is generated from the Remotion version, memory size, disk size and timeout.
+
+The name must contain 1–64 letters, digits, hyphens or underscores. Different names allow multiple functions with the same configuration. An existing function with this name must have the same Remotion version, memory size, disk size and timeout; otherwise deployment fails.
+
+Select the function explicitly when rendering. Names outside the `remotion-render-` prefix also require updated IAM permissions. See [Custom Lambda function names](/docs/lambda/custom-function-names).
 
 ### `region`
 
@@ -63,6 +71,16 @@ Sets the amount of disk storage that is available in the Lambda function. Must b
 
 Use a custom role for the function instead of the default (`arn:aws:iam::[aws-account-id]:role/remotion-lambda-role`)
 
+### `customLayerArns?`<AvailableFrom v="4.0.510" />
+
+An ordered, non-empty array of complete Lambda Layer version ARNs. The specified Layers replace all Remotion-hosted runtime Layers.
+
+Each ARN must include a numeric version and use the function's AWS region and AWS partition. If omitted, Remotion-hosted Layers continue to be selected using `runtimePreference`. Non-default `runtimePreference` values cannot be combined with custom Layers.
+
+This option is required in [AWS China regions](/docs/lambda/aws-china-regions), where Remotion-hosted Layers are unavailable.
+
+See [Custom Layers](/docs/lambda/custom-layers) for usage, limits, compatibility, and IAM requirements.
+
 ### `enableLambdaInsights?`<AvailableFrom v="4.0.61" />
 
 <Options id="enable-lambda-insights" />
@@ -87,9 +105,16 @@ An object with the following values:
 - `functionName` (_string_): The name of the function just created.
 - `alreadyExisted`: (_boolean_): Whether the creation was skipped because the function already existed.
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Deployment files required" clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
+
+The Remotion Lambda deployment files must be included in the serverless deployment.
+
 ## See also
 
 - [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/deploy-function.ts)
 - [CLI equivalent: `npx remotion lambda functions deploy`](/docs/lambda/cli/functions/deploy)
 - [`deleteFunction()`](/docs/lambda/deletefunction)
 - [`getFunctions()`](/docs/lambda/getfunctions)
+- [Custom Lambda function names](/docs/lambda/custom-function-names)

@@ -1,29 +1,29 @@
 ---
-image: /generated/articles-docs-tailwind-enable-tailwind.png
+image: https://remotion.media/docs/generated/articles-docs-tailwind-enable-tailwind.png
 title: enableTailwind()
 crumb: '@remotion/tailwind'
 ---
 
-_available from v3.3.95_
+# enableTailwind()<AvailableFrom v="3.3.95" />
 
 :::note
 This is documentation for enabling Tailwind v3.  
 For the Tailwind v4 version of this site, see the [Tailwind v4 documentation](/docs/tailwind-v4/enable-tailwind).
 :::
 
-A function that modifies the default Webpack configuration to make the necessary changes to support TailwindCSS.
+A function that modifies the default bundler configuration to make the necessary changes to support TailwindCSS.
 See the [setup](/docs/tailwind) to see full instructions on how to setup TailwindCSS in Remotion.
 
 ```ts twoslash title="remotion.config.ts"
 import {Config} from '@remotion/cli/config';
 import {enableTailwind} from '@remotion/tailwind';
 
-Config.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideBundlerConfig((currentConfiguration) => {
   return enableTailwind(currentConfiguration);
 });
 ```
 
-## Multiple Webpack changes
+## Multiple bundler changes
 
 If you want to make other configuration changes, you can do so by doing them reducer-style:
 
@@ -31,7 +31,7 @@ If you want to make other configuration changes, you can do so by doing them red
 import {Config} from '@remotion/cli/config';
 import {enableTailwind} from '@remotion/tailwind';
 
-Config.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideBundlerConfig((currentConfiguration) => {
   return enableTailwind({
     ...currentConfiguration,
 
@@ -53,9 +53,13 @@ import path from 'node:path';
 import {Config} from '@remotion/cli/config';
 import {enableTailwind} from '@remotion/tailwind';
 
-Config.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideBundlerConfig((currentConfiguration) => {
   return enableTailwind(currentConfiguration, {
     configLocation: path.join(__dirname, 'tailwind.config.js'),
   });
 });
 ```
+
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions={false} clientSideRendering="" serverSideRendering="Build step" player="" studio="Build step" hideBrowsers />

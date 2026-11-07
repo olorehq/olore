@@ -1,0 +1,144 @@
+---
+title: "Managing team members"
+description: "Find members in your Checkly account, change their roles or remove them several at a time, resend or remove pending invitations, change your own role, and leave an account."
+sidebarTitle: "Managing Team Members"
+canonical: 'https://www.checklyhq.com/docs/admin/team-management/managing-team-members/'
+---
+
+**Account settings > Members** lists the members of your account. Invitations that haven't been accepted yet are listed under the invite form. From there you change members' roles, remove members, resend or remove invitations, change your own role, or leave the account. To invite someone, see [Adding team members](/admin/team-management/adding-team-members).
+
+## The members list
+
+The **Account members** table shows each member's **Name**, **Email**, **SSO** and **MFA** status, **Role** and **Created** date. Invitations are listed in [Pending invites](#pending-invites).
+
+When the account has more than one member, these filters sit above the table:
+
+- The search field matches names and emails.
+- **Role** keeps the members holding the roles you pick.
+- **Has SSO** keeps members who signed in through single sign-on.
+- **Has MFA** keeps members with multi-factor authentication turned on.
+- **Editable by you** keeps the members you can act on. It only shows when you can act on someone.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/members-editable-filter.png" alt="Account members table with the Editable by you filter on, listing only the members you can act on, each with a checkbox" />
+  <img className="hidden dark:block" src="/images/team-management/members-editable-filter-dark.png" alt="Account members table with the Editable by you filter on, listing only the members you can act on, each with a checkbox" />
+</Frame>
+
+## Select members
+
+A row has a checkbox when you can act on it: a member whose role you can change or whom you can remove. Your own row and the owner's never have one.
+
+- The checkbox in the table header selects every row you can act on.
+- On a phone, each card has its own checkbox.
+- A row that a filter hides leaves the selection.
+
+With rows checked, a bar at the bottom of the screen shows how many are selected and offers:
+
+- **Select all** checks every row you can act on. It shows while some of them aren't checked.
+- **Change role** and **Remove**. An action that can't apply to the selection is disabled. Hover it to see why.
+- The **x** button clears the selection. Pressing Escape while the bar has focus does the same.
+
+On a phone, the bar is docked to the bottom edge. Its actions open from **Actions**.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/members-selection.png" alt="Account members table with two members checked and the selection bar at the bottom showing the count, Select all, Change role and Remove" />
+  <img className="hidden dark:block" src="/images/team-management/members-selection-dark.png" alt="Account members table with two members checked and the selection bar at the bottom showing the count, Select all, Change role and Remove" />
+</Frame>
+
+If your account is managed through the [Vercel native integration](/integrations/ci-cd/vercel/managing-plan#user-management), you manage its members in Vercel. The table has no checkboxes.
+
+## Change members' roles
+
+1. Select the members and click **Change role**.
+2. Pick a role: the built-in roles, then any [custom roles](/admin/team-management/custom-roles) (beta) enabled for your account. You can type to search the picker. It only offers roles you can give to every member you selected, and shows the description of the one you pick.
+3. Click **Change role**.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/members-change-role.png" alt="The Change role dialog with the role picker open, listing the roles below a search field" />
+  <img className="hidden dark:block" src="/images/team-management/members-change-role-dark.png" alt="The Change role dialog with the role picker open, listing the roles below a search field" />
+</Frame>
+
+Members lose any permission the new role doesn't hold. These rules apply:
+
+- You can only change the role of members with less access than you.
+- You can only give a role whose permissions you hold yourself.
+- The owner's role only changes by [transferring ownership](/admin/team-management/overview#transferring-ownership).
+- Invitations keep the role they were sent with. To invite someone with another role, remove their invitation and invite them again.
+- On the Hobby plan, changing roles needs an upgrade to the Team plan.
+- If the change isn't allowed for one of the members when you confirm, nobody's role changes. An error tells you why. This can happen when someone changed their role in the meantime.
+- Members who left the account after you loaded the page are skipped. The others get the new role. A message names the members that were skipped.
+
+The dialog warns you when the role you pick holds exactly your own permissions. For example, an Admin who makes a member an Admin sees the warning. Those members become your peers. You can no longer change their role or remove them. Only someone with more access than you, such as the owner, can undo the change.
+
+## Remove members
+
+Select the members and click **Remove**. When you remove one member, the confirmation names them. When you remove several, it counts them. For example: **Remove 2 members?** If any of them are in an on-call rotation, the confirmation links their schedules. It warns that their shifts become unassigned.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/members-remove.png" alt="Confirmation dialog titled Remove 2 members?, saying the members lose access right away" />
+  <img className="hidden dark:block" src="/images/team-management/members-remove-dark.png" alt="Confirmation dialog titled Remove 2 members?, saying the members lose access right away" />
+</Frame>
+
+- Removed members lose access to the account right away.
+- You can only remove members with less access than you. The owner can't be removed.
+- If a member you selected left the account after you loaded the page, Checkly removes the others. A message names the members that were skipped.
+
+<Note>
+A removed member who signs in through the account's SSO connection can come back. This happens when [JIT provisioning](/admin/team-management/single-sign-on#just-in-time-jit-provisioning) is on, the account has room for another member, and they aren't a member of any other Checkly account. They rejoin the next time they open Checkly. They get the **Default Role** set in **Account settings > SSO configuration**. To keep them out, remove their access in your identity provider. The owner can also turn off **JIT Provisioning** on that page.
+</Note>
+
+## Pending invites
+
+Under the invite form, **Pending invites** lists the invitations that haven't been accepted yet, with their **Email** and **Role**. It shows when there are pending invitations and you can invite members. The number next to the title counts them. Click the title to fold or unfold the list. When the account reaches its plan's member limit, the invite form goes away. The list stays. Removing invitations frees seats.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/pending-invites.png" alt="The Invite new members card with the invite form and, below it, the Pending invites list with a count of 2, showing each invitation's email, role, a Resend button and a remove button" />
+  <img className="hidden dark:block" src="/images/team-management/pending-invites-dark.png" alt="The Invite new members card with the invite form and, below it, the Pending invites list with a count of 2, showing each invitation's email, role, a Resend button and a remove button" />
+</Frame>
+
+- **Resend** sends the invitation email again. The invitation stays valid for another month.
+- The trash button removes the invitation after you confirm. A removed invitation can no longer be accepted.
+- You can resend or remove invitations that other members sent.
+- If the invitation was accepted or removed after you loaded the page, nothing is removed. A message tells you which happened. A person who accepted the invitation is now a member and shows in the members list.
+
+## Change your own role
+
+Click **Change your role** above the members table, next to **Leave account**. Pick a role and click **Change your role**.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/members-change-own-role.png" alt="The Change your role dialog with your current role in the role picker and a note that only the account owner or an admin can give back the permissions you lose" />
+  <img className="hidden dark:block" src="/images/team-management/members-change-own-role-dark.png" alt="The Change your role dialog with your current role in the role picker and a note that only the account owner or an admin can give back the permissions you lose" />
+</Frame>
+
+- You can only move to a role whose permissions you already hold.
+- You need the **Lower your own role** permission. Without it, or without a role you can move to, the button doesn't show.
+- You lose any permission the new role doesn't hold. To get them back, ask the owner or an admin.
+- The owner changes role only by [transferring ownership](/admin/team-management/overview#transferring-ownership).
+- The button is disabled on the Hobby plan and on accounts managed through Vercel.
+
+On a phone, **Change your role** and **Leave account** are in the **Your membership** menu next to the table's title.
+
+## Leave an account
+
+Click **Leave account** above the members table and confirm. You lose access to the account right away. Checkly switches you to another of your accounts. If you have no other account, Checkly signs you out. To come back, ask the owner or an admin to invite you again.
+
+If you're in an on-call rotation, the confirmation links your schedules. It warns that your shifts become unassigned. Arrange a replacement before you leave.
+
+You can't leave an account:
+
+- **As the owner.** [Transfer ownership](/admin/team-management/overview#transferring-ownership) first.
+- **When your SSO connection signs you into it.** Your access comes from the connection.
+- **When it's managed through Vercel.** Its members are managed in Vercel.
+
+## Permissions
+
+Every role can see the members list. Acting on it needs these permissions:
+
+| Permission | What it allows | Built-in roles |
+|------------|----------------|----------------|
+| Change members' roles | Give members with less access than you a role whose permissions you hold | Owner, Admin |
+| Remove members | Remove members with less access than you | Owner, Admin |
+| Invite members | Invite people, and resend or remove any invitation | Owner, Admin |
+| Lower your own role | Move yourself to a role whose permissions you already hold | Owner, Admin, Read & Write |
+
+The owner holds **Lower your own role**. The owner's role only changes by transferring ownership. If enabled for your account, [custom roles](/admin/team-management/custom-roles) (beta) can grant these permissions one by one. See [Team member roles](/admin/team-management/overview#team-member-roles) for what each role can do.

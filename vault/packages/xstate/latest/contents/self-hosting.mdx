@@ -1,0 +1,201 @@
+---
+title: Self-hosting
+description: Run the Stately editor in your own environment, embed it in a host app, and choose the auth, API, AI, and comments boundaries for an internal deployment.
+---
+
+<Callout type="warning">
+
+This is an early preview of self-hosting. If you're interested in piloting or providing feedback, please [contact us](mailto:support@stately.ai).
+
+</Callout>
+
+Self-hosting runs the Stately editor app from source and points your host application at that editor URL. This is useful when teams need the visual editor inside their own network, behind their own access controls, or connected to their own persistence layer.
+
+The self-hosted editor does not require a database for local editing, importing, exporting, simulation, or iframe embedding. Your host application owns persistence: listen for SDK `change` or `save` events and write the graph, machine config, or exported format to your own system.
+
+## Quick start from source
+
+Install dependencies, build the app, and start the default no-auth deployment:
+
+```bash
+pnpm install
+AUTH_PROVIDER=none EDITOR_SYNC_AUTH_REQUIRED=false AI_ENABLED=false pnpm build:app
+AUTH_PROVIDER=none EDITOR_SYNC_AUTH_REQUIRED=false AI_ENABLED=false pnpm start -H 0.0.0.0
+```
+
+The editor listens on `http://localhost:3000`.
+
+Smoke-test the running app:
+
+```bash
+curl -f http://localhost:3000/
+curl -f "http://localhost:3000/embed"
+```
+
+This command sets:
+
+```bash
+AUTH_PROVIDER=none
+EDITOR_SYNC_AUTH_REQUIRED=false
+AI_ENABLED=false
+```
+
+Use this default for an internal proof of concept where the editor is only reachable inside a trusted network or behind a separate access-control layer.
+
+## Embed from a host app
+
+Install the SDK in the host app:
+
+```bash
+npm install @statelyai/sdk
+```
+
+Mount the self-hosted editor:
+
+```ts
+import { createStatelyEmbed } from '@statelyai/sdk';
+
+const embed = createStatelyEmbed({
+  baseUrl: 'http://localhost:3000',
+  origin: 'http://localhost:3000',
+});
+
+embed.mount(document.getElementById('editor')!);
+
+embed.init({
+  machine: machineConfig,
+  format: 'xstate',
+  mode: 'editing',
+});
+
+embed.on('save', async ({ machineConfig, graph, patches }) => {
+  await saveToYourSystem({ machineConfig, graph, patches });
+});
+```
+
+For cross-origin host apps, add the host origin to `API_ALLOWED_ORIGINS` and set `origin` to the editor origin you expect the iframe to use.
+
+## Configuration
+
+| Variable                            | Required                  | Suggested pilot value   | Purpose                                                                                                                                               |
+| ----------------------------------- | ------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_BASE_URL`              | Yes                       | `http://localhost:3000` | Public URL for the editor app. This origin is also allowed to call editor APIs.                                                                       |
+| `API_ALLOWED_ORIGINS`               | No                        | Local dev origins       | Comma-separated origins allowed to call editor APIs.                                                                                                  |
+| `AUTH_PROVIDER`                     | No                        | `none`                  | `none` allows all validated requests. `stately` verifies Stately API keys. Unset means Stately auth in production and allow-all in local development. |
+| `EDITOR_SYNC_AUTH_REQUIRED`         | No                        | `false`                 | API-key gate for `/api/editor-sync/*`. Set to `true` if those endpoints should require a token.                                                       |
+| `AI_ENABLED`                        | No                        | `false`                 | Set to `false` to disable AI routes.                                                                                                                  |
+| `OPENAI_API_KEY`                    | Only when AI is enabled   | unset                   | Required by the current AI route when `AI_ENABLED` is not `false`.                                                                                    |
+| `NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY` | Only for default comments | unset                   | Enables standalone comments with a public Liveblocks key. Embed integrations can pass comments config instead.                                        |
+
+## Deployment modes
+
+### No auth behind a private boundary
+
+Use this for the first internal pilot:
+
+```bash
+AUTH_PROVIDER=none
+EDITOR_SYNC_AUTH_REQUIRED=false
+AI_ENABLED=false
+```
+
+Put the app behind your VPN, internal load balancer, identity-aware proxy, or other network boundary. The editor will not require Stately API keys.
+
+### Reverse proxy or same-origin auth
+
+Put the editor behind an authenticated reverse proxy and keep:
+
+```bash
+AUTH_PROVIDER=none
+```
+
+In this mode the proxy owns authentication and the editor trusts traffic that reaches it. This is the simplest shape for SSO-protected internal deployments.
+
+### Stately API-key auth
+
+Use Stately API-key validation when the editor should validate requests itself:
+
+```bash
+AUTH_PROVIDER=stately
+EDITOR_SYNC_AUTH_REQUIRED=true
+```
+
+Host apps should pass `apiKey` to `createStatelyEmbed()`, or requests must carry a valid bearer token.
+
+## Editor sync
+
+The `/api/editor-sync/parse` and `/api/editor-sync/apply` endpoints support source-aware visual editing. They accept source documents, parse machines, and apply semantic graph edits back to source text.
+
+For a no-auth internal pilot:
+
+```bash
+EDITOR_SYNC_AUTH_REQUIRED=false
+```
+
+For a token-gated deployment:
+
+```bash
+EDITOR_SYNC_AUTH_REQUIRED=true
+AUTH_PROVIDER=stately
+```
+
+The default request body limit is 2 MB. Override it with:
+
+```bash
+EDITOR_SYNC_MAX_BYTES=4000000
+```
+
+## Conversion API and MCP
+
+Self-hosted deployments expose versioned HTTP APIs for integrations that need machine documents without embedding the editor UI:
+
+```text
+POST /api/v1/convert
+POST /api/v1/apply-patches
+POST /api/v1/diff
+```
+
+The generated OpenAPI document is available at `/api/v1/openapi.json`, and the rendered API reference is available at `/api/v1/docs`.
+
+The same conversion, patch application, and diff contracts are available from the app's MCP endpoint:
+
+```text
+POST /api/mcp
+```
+
+For stdio-only MCP clients, bridge to the HTTP endpoint with `mcp-remote`:
+
+```json
+{
+  "mcpServers": {
+    "statelyai": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3000/api/mcp"]
+    }
+  }
+}
+```
+
+Most clients use the `mcpServers` key as the visible server name, so name the entry `statelyai`.
+
+## AI and comments
+
+The source-first pilot command disables AI. The current AI route requires `OPENAI_API_KEY` when enabled, so leave `AI_ENABLED=false` for deployments where external AI calls are not approved.
+
+Comments are optional. For embed integrations, pass a `comments` object to `embed.init()`. If comments must be self-hosted, provide a Liveblocks-compatible `baseUrl` or leave comments disabled for the pilot.
+
+## Production checklist
+
+- Set `NEXT_PUBLIC_BASE_URL` to the externally reachable HTTPS URL.
+- Set `API_ALLOWED_ORIGINS` to only the host app origins that should call editor APIs.
+- Decide whether auth is handled by the editor (`AUTH_PROVIDER=stately`) or by a reverse proxy (`AUTH_PROVIDER=none` behind the proxy).
+- Disable AI with `AI_ENABLED=false` unless the deployment has an approved AI provider and `OPENAI_API_KEY`.
+- Decide whether comments are disabled, Liveblocks-hosted, or pointed at a self-hosted Liveblocks-compatible endpoint.
+- Store edited machines through the host app by handling SDK `save` or `change` events.
+- Run a representative import, edit, save, and export flow with a real machine before opening access to a broader team.
+
+## Known limits
+
+- Persistence is host-owned. The self-hosted editor does not provide a database-backed project registry.
+- The current AI route is OpenAI-backed.
+- The embed protocol supports permissive local and self-hosted messaging by default. Pass a strict SDK `origin` and restrict `API_ALLOWED_ORIGINS` for production deployments.

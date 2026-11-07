@@ -39,7 +39,9 @@ Module id relative to the project. This is the same as `task.name` in the deprec
 This is a Vite's [`DevEnvironment`](https://vite.dev/guide/api-environment) that transforms all files inside of the test module.
 
 ::: details History
+
 - `v4.0.15`: added as experimental
+
 :::
 
 ## state
@@ -48,7 +50,7 @@ This is a Vite's [`DevEnvironment`](https://vite.dev/guide/api-environment) that
 function state(): TestModuleState
 ```
 
-Works the same way as [`testSuite.state()`](/api/advanced/test-suite#state), but can also return `queued` if module wasn't executed yet.
+Works the same way as [`testSuite.state()`](/api/advanced/test-suite#state), but can also return `queued` if the module is queued, but Vitest did not collect its tests yet.
 
 ## meta <Version>3.1.0</Version> {#meta}
 
@@ -153,7 +155,7 @@ interface ImportDuration {
 function logs(): ReadonlyArray<UserConsoleLog>
 ```
 
-Console logs recorded on top level of the module during test collection.For example:
+Console logs recorded on top level of the module during test collection. For example:
 
 ```ts
 console.log('included') // [!code highlight]

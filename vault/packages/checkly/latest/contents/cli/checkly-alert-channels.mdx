@@ -1,0 +1,294 @@
+---
+title: checkly alert-channels
+description: 'List and inspect alert channels and their notification logs from the Checkly CLI.'
+sidebarTitle: 'checkly alert-channels'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-alert-channels/'
+---
+
+<Note>Available since CLI v8.5.0.</Note>
+
+The `checkly alert-channels` commands let you inspect the alert channels in your account and troubleshoot notification delivery from the terminal. These commands are read-only and don't change your [alert channel configuration](/communicate/alerts/channels).
+
+<Accordion title="Prerequisites">
+Before using `checkly alert-channels`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly alert-channels <subcommand> [arguments] [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all alert channels in your account. |
+| `get` | Get details of an alert channel. |
+| `logs` | List notification logs for an alert channel. |
+
+## `checkly alert-channels list`
+
+List the alert channels in your account. The default table includes each channel's ID, type, name, subscription count, and creation date.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels list [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of alert channels to return (1-100). Default: `25`. |
+| `--page, -p` | - | Page number. Default: `1`. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Set the number of alert channels to return per page, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels list --limit=50
+npx checkly alert-channels list -l 10
+```
+
+</ResponseField>
+
+<ResponseField name="--page, -p" type="number" default="1">
+
+Select the page of alert channels to return.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels list --limit=10 --page=2
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels list --output=json
+npx checkly alert-channels list -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List the first page of alert channels
+npx checkly alert-channels list
+
+# List the second page with 50 channels per page
+npx checkly alert-channels list --limit=50 --page=2
+
+# Get alert channels as JSON
+npx checkly alert-channels list --output=json
+```
+
+## `checkly alert-channels get`
+
+Get the configuration and subscriptions for a specific alert channel.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels get <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The numeric ID of the alert channel to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--output, -o` | - | Output format: `detail`, `json`, or `md`. Default: `detail`. |
+
+### Get Options
+
+<ResponseField name="--output, -o" type="string" default="detail">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels get 12345 --output=json
+npx checkly alert-channels get 12345 -o md
+```
+
+</ResponseField>
+
+### Get Examples
+
+```bash Terminal
+# View alert channel details and subscriptions
+npx checkly alert-channels get 12345
+
+# Get the alert channel as JSON
+npx checkly alert-channels get 12345 --output=json
+```
+
+## `checkly alert-channels logs`
+
+List [notification log](/communicate/alerts/notification-log) entries for a specific alert channel. Use this command to identify failed deliveries or inspect notifications from a specific time window.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs <id> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The numeric ID of the alert channel whose logs you want to retrieve. |
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--limit, -l` | - | Number of logs to return (1-100). Default: `25`. |
+| `--page, -p` | - | Page number. Default: `1`. |
+| `--from` | - | Start of the log window as a Unix timestamp, inclusive. |
+| `--to` | - | End of the log window as a Unix timestamp, exclusive. |
+| `--status, -s` | - | Filter logs by status. Supported value: `failed`. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+<Note>If you omit `--from` and `--to`, the command returns logs from the preceding 24 hours. An explicit time window can span at most 24 hours.</Note>
+
+### Logs Options
+
+<ResponseField name="--limit, -l" type="number" default="25">
+
+Set the number of notification logs to return per page, between 1 and 100.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --limit=50
+```
+
+</ResponseField>
+
+<ResponseField name="--page, -p" type="number" default="1">
+
+Select the page of notification logs to return.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --limit=10 --page=2
+```
+
+</ResponseField>
+
+<ResponseField name="--from" type="number">
+
+Set the inclusive start of the log window as a Unix timestamp.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --from=1772359200
+```
+
+</ResponseField>
+
+<ResponseField name="--to" type="number">
+
+Set the exclusive end of the log window as a Unix timestamp. The interval between `--from` and `--to` can't exceed 24 hours.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --from=1772359200 --to=1772445600
+```
+
+</ResponseField>
+
+<ResponseField name="--status, -s" type="string">
+
+Filter the logs to failed notification deliveries.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --status=failed
+npx checkly alert-channels logs 12345 -s failed
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly alert-channels logs 12345 --output=json
+npx checkly alert-channels logs 12345 -o md
+```
+
+</ResponseField>
+
+### Logs Examples
+
+```bash Terminal
+# List recent notification logs for an alert channel
+npx checkly alert-channels logs 12345
+
+# Show only failed deliveries
+npx checkly alert-channels logs 12345 --status=failed
+
+# Inspect a specific 24-hour window
+npx checkly alert-channels logs 12345 --from=1772359200 --to=1772445600
+
+# Get failed deliveries as paginated JSON
+npx checkly alert-channels logs 12345 --status=failed --limit=100 --output=json
+```
+
+## JSON pagination
+
+The `list` and `logs` commands return JSON in a stable pagination envelope when you use `--output=json`:
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 25,
+    "total": 0,
+    "totalPages": 0
+  }
+}
+```
+
+## Related Commands
+
+- [`checkly checks`](/cli/checkly-checks) - List and inspect checks
+- [`checkly api`](/cli/checkly-api) - Make authenticated Checkly API requests
+- [`checkly whoami`](/cli/checkly-whoami) - Display current account information

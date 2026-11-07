@@ -2,6 +2,7 @@
 title: 'SmsAlertChannel Construct'
 description: 'Learn how to configure SMS alert channels with the Checkly CLI.'
 sidebarTitle: 'SMS'
+canonical: 'https://www.checklyhq.com/docs/constructs/sms-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -10,7 +11,7 @@ import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
 For general information about alerting, see our docs on [SMS alerts](/integrations/alerts/sms) and [alerting with Checkly](/communicate/alerts/overview/).
 </Tip>
 
-Use SMS Alert Channels to send SMS notifications to phone numbers when checks fail or recover.
+Use SMS alert channels to send SMS notifications to phone numbers when checks fail or recover.
 
 <CodeGroup>
 
@@ -45,7 +46,7 @@ const smsChannel = new SmsAlertChannel('sms-channel-1', {
 
 ## Configuration
 
-### SMS Alert Channel Options
+### SMS alert channel options
 
 <ResponseField name="phoneNumber" type="string" required>
 Phone number to send SMS notifications to. 
@@ -54,6 +55,7 @@ Each `SmsAlertChannel` supports only one phone number. Phone numbers need to be 
 
 We only support phone numbers from certain [countries and regions](/integrations/alerts/sms#supported-countries-and-regions).
 
+{/* typecheck-wrap: SmsAlertChannel */}
 ```ts highlight={3}
 new SmsAlertChannel('sms-channel-1', {
   name: 'Ops on-call',
@@ -66,6 +68,6 @@ new SmsAlertChannel('sms-channel-1', {
 Friendly name for the SMS alert channel.
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

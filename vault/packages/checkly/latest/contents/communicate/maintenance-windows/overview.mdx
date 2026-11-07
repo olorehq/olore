@@ -1,7 +1,8 @@
 ---
-title: 'Maintenance Windows'
+title: 'Maintenance windows'
 description: 'Schedule planned maintenance periods to prevent false alerts and control check behavior during downtime.'
-sidebarTitle: 'Maintenance Windows'
+sidebarTitle: 'Maintenance windows'
+canonical: 'https://www.checklyhq.com/docs/communicate/maintenance-windows/overview/'
 ---
 
 <Tip>
@@ -24,7 +25,9 @@ After giving your window an appropriate name, the core options you have are:
 
 ![Maintenance window schedule](/images/maintenance-schedule-3.png)
 
-Set the **start** date and time, then choose how long the window **lasts** by entering a duration in hours and minutes. Quick-duration presets (30m, 1h, 4h, 24h) and a **Now** shortcut are available. **All times are in UTC**. The builder shows the equivalent time in your local timezone underneath as a reference.
+Set the **start** date and time, then choose how long the window **lasts** by entering a duration in hours and minutes. Quick-duration presets (30m, 1h, 4h, 24h) and a **Now** shortcut are available.
+
+Pick the **timezone** your times are entered in. The builder shows the equivalent **UTC** time underneath as a reference. Existing windows created before timezones were introduced stay on UTC, and their schedules are unchanged.
 
 #### Setting repeats
 
@@ -36,6 +39,17 @@ If your maintenance window repeats at a certain cadence, toggle the **repeat** o
 
 > If you schedule a window on the 31st and add a **monthly repeat cycle**, your schedule will also activate on
 > the 30th of the relevant months and the 28th or 29th of February depending on the leap year.
+
+#### Timezones and daylight saving
+
+A repeating window keeps the **local time you entered**. A window set to 4:00 AM in `Europe/Paris` runs at 4:00 AM local all year. We shift the underlying UTC time by an hour when daylight saving starts and ends, so you never have to reschedule it.
+
+A clock change adds or removes an hour from the day. If your window starts inside that hour, we resolve it like this:
+
+- When clocks jump **forward**, that hour disappears: where 2:00 AM becomes 3:00 AM, a 2:30 AM window starts at 3:30 AM.
+- When clocks fall **back**, that hour happens twice: where 3:00 AM becomes 2:00 AM, a 2:30 AM window runs at the **first** 2:30 AM, not the second.
+
+A window that is running when the clocks change keeps its length, so that one time it ends an hour earlier or later on the clock. An 8-hour window starting at 11:00 PM normally ends at 7:00 AM; on the night clocks fall back it ends at 6:00 AM, and on the night they jump forward it ends at 8:00 AM. The schedule shows a hint when one of your next occurrences crosses a clock change.
 
 ### Check behavior
 

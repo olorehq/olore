@@ -1,0 +1,144 @@
+---
+title: array_iff
+description: 'Use the array_iff function in APL to filter arrays by a condition and select the corresponding values.'
+---
+
+The `array_iff` function in Axiom Processing Language (APL) allows you to create arrays based on a condition. It returns an array with elements from two specified arrays, choosing each element from the first array when a condition is met and from the second array otherwise. This function is useful for scenarios where you need to evaluate a series of conditions across multiple datasets, especially in log analysis, trace data, and other applications requiring conditional element selection within arrays.
+
+## Usage
+
+### Syntax
+
+```kusto
+array_iff(condition_array, array1, array2)
+```
+
+### Parameters
+
+- `condition_array`: An array of boolean values, where each element determines whether to choose the corresponding element from `array1` or `array2`.
+- `array1`: The array to select elements from when the corresponding `condition_array` element is `true`.
+- `array2`: The array to select elements from when the corresponding `condition_array` element is `false`.
+
+### Returns
+
+An array where each element is selected from `array1` if the corresponding `condition_array` element is `true`, and from `array2` otherwise.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+The `array_iff` function can help filter log data conditionally, such as choosing specific durations based on HTTP status codes.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| order by _time desc
+| limit 1000
+| summarize is_ok = make_list(status == '200'), request_duration = make_list(req_duration_ms)
+| project ok_request_duration = array_iff(is_ok, request_duration, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20order%20by%20_time%20desc%20%7C%20limit%201000%20%7C%20summarize%20is_ok%20%3D%20make_list(status%20%3D%3D%20'200')%2C%20request_duration%20%3D%20make_list(req_duration_ms)%20%7C%20project%20ok_request_duration%20%3D%20array_iff(is_ok%2C%20request_duration%2C%200)%22%7D)
+
+**Output**
+
+| ok_request_duration |
+| --- |
+| [0.3150485097707766, 0, 0.21691408087847264, 0, 0.2757618582190533] |
+
+This example filters the `req_duration_ms` field to include only durations for the most recent 1,000 requests with status `200`, replacing others with `0`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+With OpenTelemetry trace data, you can use `array_iff` to filter spans based on the service type, such as selecting durations for `server` spans and setting others to zero.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| order by _time desc
+| limit 1000
+| summarize is_server = make_list(kind == 'server'), duration_list = make_list(duration)
+| project server_durations = array_iff(is_server, duration_list, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20order%20by%20_time%20desc%20%7C%20limit%201000%20%7C%20summarize%20is_server%20%3D%20make_list(kind%20%3D%3D%20'server')%2C%20duration_list%20%3D%20make_list(duration)%20%7C%20project%20%20server_durations%20%3D%20array_iff(is_server%2C%20duration_list%2C%200)%22%7D)
+
+**Output**
+
+| server_durations |
+| --- |
+| ["45.632µs", "54.622µs", 0, "34.051µs"] |
+
+In this example, `array_iff` selects durations only for `server` spans, setting non-server spans to `0`.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, `array_iff` can be used to focus on specific cities in which HTTP requests originated, such as showing response durations for certain cities and excluding others.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| limit 1000
+| summarize is_london = make_list(['geo.city'] == "London"), request_duration = make_list(req_duration_ms)
+| project london_duration = array_iff(is_london, request_duration, 0)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%20%7C%20limit%201000%20%7C%20summarize%20is_london%20%3D%20make_list(%5B'geo.city'%5D%20%3D%3D%20'London')%2C%20request_duration%20%3D%20make_list(req_duration_ms)%20%7C%20project%20london_duration%20%3D%20array_iff(is_london%2C%20request_duration%2C%200)%22%7D)
+
+**Output**
+
+| london_duration    |
+|------------------|
+| [100, 0, 250]    |
+
+This example filters the `req_duration_ms` array to show durations for requests from London, with non-matching cities having `0` as duration.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_slice](/apl/scalar-functions/array-functions/array-slice): Extracts a subset of elements from an array.
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Combines multiple arrays.
+- [array_rotate_right](/apl/scalar-functions/array-functions/array-rotate-right): Rotates array elements to the right by a specified number of positions.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, array manipulation based on conditions typically requires using conditional functions or eval expressions. APL’s `array_iff` function lets you directly select elements from one array or another based on a condition, offering more streamlined array manipulation.
+
+<CodeGroup>
+```sql Splunk example
+eval selected_array=if(condition, array1, array2)
+```
+
+```kusto APL equivalent
+array_iff(condition_array, array1, array2)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, conditionally selecting elements from arrays often requires complex `CASE` statements or functions. With APL’s `array_iff` function, you can directly compare arrays and conditionally populate them, simplifying array-based operations.
+
+<CodeGroup>
+```sql SQL example
+CASE WHEN condition THEN array1 ELSE array2 END
+```
+
+```kusto APL equivalent
+array_iff(condition_array, array1, array2)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

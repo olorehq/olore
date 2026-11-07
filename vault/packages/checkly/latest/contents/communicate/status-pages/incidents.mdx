@@ -2,107 +2,91 @@
 title: 'Incident Management'
 description: 'Guide to creating, managing, and automating incidents on Checkly status pages including subscriber notifications and incident backfilling capabilities.'
 sidebarTitle: 'Incidents'
+canonical: 'https://www.checklyhq.com/docs/communicate/status-pages/incidents/'
 ---
 
-Incidents are used to communicate downtime on one or more services. You can open incidents manually as part of your incident management process, or automatically by connecting a check to a service using incident automation. 
+Incidents communicate downtime on one or more components. You can open incidents manually as part of your incident management process, or automatically with [automation rules](#incident-automation).
 
-When an incident is posted, a notification will be sent to all users subscribed to the Status Page, unless you opt out of notifications when creating the incident update.
+When an incident is posted, a notification will be sent to all users subscribed to the status page, unless you opt out of notifications when creating the incident update.
 
 ## Creating an incident
 
-Create an incident when you want to communicate downtime or known issues of your services to users via your Status Page.
+Create an incident when you want to communicate downtime or known issues to users via your status page.
 
-1. Click ‘Status pages’ in the sidebar and open your Status Page.
-2. Click ‘Add incident’ at the top right, or click the fire icon at the bottom of the card that most relates to the incident you're about to create
-3. Enter the name of the incident
-4. Choose the severity of the incident
-5. Select which services are impacted in the dropdown list.
+1. Click ‘Status pages’ in the sidebar and open your status page.
+2. Click ‘Add incident’ at the top right.
+3. Enter the name of the incident.
+4. Select which components are impacted, and the [impact](/communicate/status-pages/overview#component-status-and-impacts) each one gets: under maintenance, degraded performance, partial outage, or major outage.
+5. Write the initial incident update message, and set the status of the incident.
+6. If you want to backfill the incident, select **Use custom date to backfill incident** under **Public date** and set the date shown on your status page.
+7. Select if you want to notify subscribers of your status page about the incident.
+8. Click ‘Create incident’
 
-> Note that incidents will be posted on all status pages where a service is present. [See Services for more details](/communicate/status-pages/overview#services).
+The incident now appears on your status page, and the impacted components show their new status. If you selected the option to notify subscribers, they receive the update message by email.
 
-6. Write the initial incident update message, and update the status of the incident.
-8. If you want to backfill the incident, select `Use custom date`. See [Backfilling incidents for more information](/communicate/status-pages/incidents#backfilling-an-incident).
-9. Select if you want to notify subscribers of your Status Page about the incident.
-10. Click ‘Create incident’
+![Creating an incident](/images/docs/images/status-pages-v3/status_page_v3_incident.png)
 
-Your incident will now appear on all status pages that show the selected service(s). If you selected the option to notify subscribers, they will receive the update message by email.
+## Incident duration and downtime
 
-> All times on status pages are displayed in UTC.
+Downtime is tracked per component, not per incident. Each affected component has an impact timeline made of phases:
 
+- A phase starts when you give a component a non-operational impact, and ends when you change the impact, set it back to operational, remove the component from the incident, or resolve the incident.
+- Changing the impact (e.g. major outage → partial outage) closes the current phase and starts a new one, so the full history is kept.
+- A component can only be non-operational while an active incident impacts it. Resolving the incident closes all open phases.
+- Phases of an ongoing incident count up to the current time.
 
-## Updating an incident
+[Uptime](/communicate/status-pages/overview#uptime-calculation) is calculated from these phases over the last 90 days. Phase time is weighted by impact:
 
-To update an ongoing incident go to the ‘Incidents’ tab on your Status Page and select the incident to update.
+| Impact | Counts as downtime |
+|--------|--------------------|
+| Major outage | 100% |
+| Partial outage | 30% |
+| Degraded performance | 0% |
+| Under maintenance | 0% |
 
-![Incidents view](/images/docs/images/status-pages/status-pages-incidents-1.png)
+Overlapping phases never double-count: when several incidents impact the same component at the same time, the overlapping time counts once, and partial outage time that overlaps a major outage is already covered by the major outage.
 
-From there, you can:
- * Post a new status update for the incident
- * Edit existing updates
- * Change the impacted services
- * Change the incident severity
- * Delete the incident entirely
+For example, a component with a 2-hour major outage and a separate 10-hour partial outage in the 90-day window accumulates 2 + (0.3 × 10) = 5 hours of downtime.
 
-## Incident duration
-
-Incident duration measures the actual downtime of your service. It is calculated based on the timestamps of your incident updates:
-
-- **Resolved incidents**: Duration is measured from the first update to the first resolved update that closed the incident. If the incident was later re-opened and resolved again, the duration extends to the final resolved update.
-- **Ongoing incidents**: Duration is measured from the first update to the current time.
-
-For example, if an incident was opened at 10:00, resolved at 10:30, then re-opened at 11:00 and resolved again at 11:30, the duration would be 1 hour 30 minutes (10:00 → 11:30). However, if the incident was resolved at 10:30 and a second resolved update was added later without re-opening, the duration remains 30 minutes.
-
-You can adjust the incident duration by editing the public date on incident updates, or by [backfilling an incident](/communicate/status-pages/incidents#backfilling-an-incident) with custom timestamps.
+You can correct the record after the fact by editing a component's impact timeline on the incident, or by [backfilling an incident](/communicate/status-pages/incidents#creating-an-incident). Edited timelines must stay consistent: a phase ends after it starts, phases of the same component never overlap, and a resolved incident has no open phases.
 
 ## Incident notifications
 
-Whenever you post an incident update, Checkly can automatically send email notifications to users subscribed to your Status Page.
+Whenever you post an incident update, Checkly can automatically send email notifications to users subscribed to your status page.
 
 Emails are sent out only when an update is first posted. Notifications are not sent again if the incident update is edited.
 
-If you want to post an incident update without notifying your subscribers you can uncheck the ‘Notifications’ checkbox when updating the incident.
-![Incident notification settings](/images/docs/images/status-pages/status-pages-notifications-2.png)
+If you want to post an incident update without notifying your subscribers you can uncheck the ‘Send notification to subscribers’ checkbox when updating the incident.
 
 
-Incident notifications contain information about the incident name, the severity and status as well as which services are impacted.
-![Example notification](/images/docs/images/status-pages/status-pages-notifications-1.png)
+Incident notifications contain the incident name and status, and the impacted components with their impact.
+![Example notification](/images/docs/images/status-pages-v3/status_page_v3_email.png)
 
 
 ## Subscribing to incident notifications
 
-Subscribing to incident notifications is done on your Status Page. To subscribe, a user needs to enter a valid email address. A verification email will be sent to the registered email, and the user will be ready to receive incident notifications after confirming the subscription.
+Subscribing to incident notifications is done on your status page. To subscribe, a user needs to enter a valid email address. A verification email will be sent to the registered email, and the user will be ready to receive incident notifications after confirming the subscription.
 
 ## Incident automation
 
 <Note>
-Incident automation is available on Communicate Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
+Incident automation is available on Team and Enterprise plans. [View pricing](https://checklyhq.com/pricing)
 </Note>
 
-Incident automation opens incidents automatically whenever a check fails. It works by connecting a check to a service. Multiple checks can be connected to the same service through incident automation. After connecting:
-* When the check fails and triggers an alert, it will also open an incident on the connected service.
-* The incident will be automatically resolved when the check recovers.
+Automation rules open incidents automatically when checks fail. A rule matches checks by **tag**: when a check carrying one of the rule's tags fails and triggers an alert, the rule opens one incident impacting the components it lists. The incident resolves automatically when the check recovers.
 
-To associate a Check to a Service:
+To create an automation rule:
 
-1. Open your check from the home dashboard.
-2. Click ‘Edit’ in the check overview page.
-3. For API checks, URL monitors and TCP monitors, click the ‘Incident triggers’ tab. For Browser and Multistep checks, first click ‘Settings’ then ‘Incident automation’.
-4. Check the ‘Enable incident automation’ checkbox.
-5. Fill in the incident name, a first status update and the severity of the incident which will be created upon the check failing.
-6. Select which service the incident should be opened on.
-7. Select if the Status Page subscribers should be notified when the incident updates are automatically posted.
-8. Save your check.
+1. Open your status page and go to the ‘Automation’ tab.
+2. Click ‘Add rule’ and name the rule.
+3. Add one or more tags. Any check or group carrying one of these tags can trigger the rule.
+4. Select the components the incident should impact, and the impact each one gets.
+5. Write the first status update (posted when the incident opens) and the last update (posted when it resolves).
+6. Select if subscribers should be notified, and optionally adjust the cool down between automated incidents.
+7. Save the rule.
 
-![Incident automation](/images/docs/images/status-pages/status-pages-incident-automation-1.png)
+Automation rules can also be managed in code with the [`StatusPageV3AutomationRule`](/constructs/status-page-v3-automation-rule) construct or the [`checkly_status_page_v3_automation_rule`](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/status_page_v3_automation_rule) Terraform resource.
 
-## Backfilling an incident
-
-Backfilling allows you to add incidents for downtime that happened in the past. Use backfilling to provide accurate uptime information to your users.
-
-To backfill an incident, follow the steps 1 - 7 in the [Creating an incident](/communicate/status-pages/incidents#creating-an-incident) process. Next, select ‘Use custom date to backfill incident’ and pick the date and time when the incident started.
-
-![Incident backfilling](/images/docs/images/status-pages/status-pages-backfilling-1.png)
-
-We recommend to uncheck notifications when backfilling incidents to avoid notifying customers about resolved incidents.
-
-If you only want to provide the history of the incident, you can set the first incident update to resolved. This will correctly show the incident as having occurred, but without a duration. If you want to have correct uptime on your service you should post two incident updates, with the timestamps for when the incident started and resolved respectively.
+<Note>
+On deprecated v2 pages, automation works through per-check incident triggers instead. See [Status pages v2 (deprecated)](/communicate/status-pages/v2-deprecated#incident-automation-with-check-triggers).
+</Note>

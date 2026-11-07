@@ -45,11 +45,10 @@ on:
     branches: [ main, master ]
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v5
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
         node-version: lts/*
     - name: Install dependencies
@@ -58,7 +57,7 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: npx playwright test
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
@@ -74,6 +73,17 @@ The workflow performs these steps:
 1. Install Playwright Browsers
 1. Run Playwright tests
 1. Upload HTML report to the GitHub UI
+
+Note that the workflow does not set a job-level `timeout-minutes`. Instead, set [`globalTimeout`](./test-timeouts.md#global-timeout) in your config:
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  // Fail the run after an hour, so that the reporters still produce a report.
+  globalTimeout: 60 * 60 * 1000,
+});
+```
 
 To learn more about this, see ["Understanding GitHub Actions"](https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions).
 
@@ -91,10 +101,9 @@ on:
     branches: [ main, master ]
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
@@ -107,7 +116,7 @@ jobs:
       run: python -m playwright install --with-deps
     - name: Run your tests
       run: pytest --tracing=retain-on-failure
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}
       with:
         name: playwright-traces
@@ -123,10 +132,9 @@ on:
     branches: [ main, master ]
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
@@ -148,10 +156,9 @@ on:
     branches: [ main, master ]
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Setup dotnet
       uses: actions/setup-dotnet@v5
       with:

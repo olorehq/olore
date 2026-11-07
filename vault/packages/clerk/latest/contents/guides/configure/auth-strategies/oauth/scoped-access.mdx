@@ -10,11 +10,11 @@ Clerk's OAuth implementation supports **OAuth scoped access**, which lets third-
 Before diving into implementations details, it's important to understand the different actors involved in this flow:
 
 - **Client**: The third-party app that wants to access a user's data from your application (the [resource service](!oauth-resource-service)). This app is configured to obtain [OAuth tokens](!oauth-access-token) from Clerk.
-- **Authorization service (or Identity Provider, IdP)**: The service that authenticates the user and grants the [OAuth tokens](!oauth-access-token). In this example, Clerk would be the authorization service or IdP.
-- **Resource service (or Service Provider, SP)**: The service that holds the data that the [client](!oauth-client) wants to access. In this example, this would be **your own application** that uses Clerk for authentication and route protection.
+- **Authorization service**: The service that issues [access tokens](!oauth-access-token) to clients. In user-based flows like this one, it also authenticates the user and obtains their authorization. In this example, Clerk is the [**authorization service**](!oauth-authorization-service).
+- **Resource service**: The service that holds the data that the [client](!oauth-client) wants to access. In OAuth, this role is called the **resource server**. In this example, this would be **your own application** that uses Clerk for authentication and route protection.
 
 > [!NOTE]
-> If you would like to know more about the terminology around OAuth, check out the [OAuth terminology guide](/docs/guides/configure/auth-strategies/oauth/overview#key-terminology).
+> If you're new to OAuth terminology, start with the [OAuth terminology guide](/docs/guides/configure/auth-strategies/oauth/overview#key-terminology).
 
 This guide provides step-by-step instructions on how to build OAuth scoped access into a Clerk app.
 
@@ -24,7 +24,7 @@ This guide provides step-by-step instructions on how to build OAuth scoped acces
   To create a Clerk OAuth application:
 
   1. In the Clerk Dashboard, navigate to the [**OAuth applications**](https://dashboard.clerk.com/~/oauth-applications) page.
-  1. Select **Add OAuth application**. A modal will open.
+  1. Select **Add application** → **Create OAuth application**. A modal will open.
   1. Complete the following fields:
      - `Name` - Helps you identify your application.
      - `Scopes` - The scopes that you would like to leverage. Learn more about [OAuth scopes currently supported by Clerk](/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth#scopes).
@@ -32,16 +32,22 @@ This guide provides step-by-step instructions on how to build OAuth scoped acces
   1. You'll be redirected to your app's settings page. Under **Application credentials**, save the **Client ID** somewhere secure as you'll need it later.
   1. In the **Redirect URIs** field, add the redirect URI provided by your [client](!oauth-client). This is the URL that Clerk will redirect to with an authorization code after the user has authenticated and consented to the access request. This guide uses `http://localhost:3000/oauth_callback` as an example.
 
+  <If is="llm">
+    **For AI agents:** Create and manage the OAuth application from the terminal instead of the Dashboard: run `npx clerk@latest api oauth_applications -d '<json>'` with the name, scopes, and redirect URIs to create it (the response includes the Client ID and Client Secret), and update scopes later with `npx clerk@latest api oauth_applications/<id> -X PATCH -d '<json>'`. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+  </If>
+
   To learn more about the other OAuth application configuration settings, like **Dynamic client registration**, see the [dedicated guide](/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth).
 
   ### Test the OAuth flow
 
   If you are aiming to integrate your Clerk app with a third-party app that acts as an OAuth [client](!oauth-client), you can reference their documentation on how to integrate OAuth connections in order to test your OAuth flow. It will likely be necessary to provide the `client_id` and `client_secret` from the OAuth app created above.
 
-  If you don't have a specific, existing OAuth client in mind, you can use the following [OAuth test client](https://github.com/clerk/test-oauth-client) project. It contains a minimal Express.js server that can run through an OAuth flow. Let's walk through how to use this test client below.
+  If you don't have a specific, existing OAuth client in mind, you can use the [OAuth test client](https://github.com/clerk/test-oauth-client) project. It contains a minimal Express.js server that demonstrates the Authorization Code Flow with `S256` PKCE, as required by [OAuth 2.1](https://oauth.net/2.1/). The flow is standards-based and not specific to Clerk or this test project.
 
-  > [!NOTE]
-  > This implementation follows [the OAuth specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13), and is not specific to Clerk or this test project. Any compliant OAuth client will behave the same way.
+  > [!IMPORTANT]
+  > New Clerk instances require PKCE by default. For an existing instance, select the **Settings** tab on the [**OAuth applications**](https://dashboard.clerk.com/~/oauth-applications) page, then under **Authorization security**, enable **Require PKCE** to ensure Clerk rejects authorization requests from clients that don't use PKCE. Learn more about [requiring PKCE for all clients](/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth#require-pkce-for-all-clients).
+
+  Here is how to use this test client:
 
   1. Clone the [following repository](https://github.com/clerk/test-oauth-client) to your machine.
   1. In your terminal and within your project, run the following command:
@@ -65,10 +71,12 @@ This guide provides step-by-step instructions on how to build OAuth scoped acces
 
   Once this is complete, you'll be able to see the OAuth flow begin. If you are not currently signed in, you'll first be presented with a sign in screen. After signing in, Clerk will redirect to an OAuth consent screen, showing the requested scopes and asking for your consent.
 
-  > [!NOTE]
+  > [!IMPORTANT]
   > The consent screen uses the scopes passed in the authorization request to inform the user exactly what they're granting access to, and to whom.
   >
   > By default, the consent screen is shown for all newly created OAuth apps, but this can be disabled in each app's settings [in the Clerk Dashboard](https://dashboard.clerk.com/~/oauth-applications), although not recommended. Learn more about [how Clerk's OAuth consent screen works](/docs/guides/configure/auth-strategies/oauth/how-clerk-implements-oauth#consent-screen-management).
+  >
+  > If you need to host the consent page on your own application domain, see [Set up a custom OAuth consent page](/docs/guides/configure/auth-strategies/oauth/custom-consent-page). Clerk strongly recommends using the default [Account Portal](/docs/guides/account-portal/overview) consent page unless you have a specific product requirement that it cannot satisfy.
 
   Once you have accepted, you'll be redirected to the OAuth callback route, the `redirect_uri` specified earlier. This process will exchange the authorization code for an [access token](!oauth-access-token), and return the access token and refresh token as a JSON response, similar to this:
 

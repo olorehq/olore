@@ -1,0 +1,93 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noDuplicateFontNames (CSS)
+description: CSS documentation for noDuplicateFontNames
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="css" languages={[{"id":"css","label":"CSS","href":"/linter/rules/no-duplicate-font-names/css/"}]} />
+
+## Summary
+- Rule available since: `v1.8.0`
+- Diagnostic Category: [`lint/suspicious/noDuplicateFontNames`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- Sources: 
+  - Same as [`font-family-no-duplicate-names`](https://github.com/stylelint/stylelint/blob/main/lib/rules/font-family-no-duplicate-names/README.md)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noDuplicateFontNames": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow duplicate names in font-family lists.
+
+The rule checks the `font` and `font-family` properties. It skips values supplied through
+`var()` because their contents are not known during analysis.
+
+The unquoted pair `font-family: monospace, monospace` is allowed. This pattern preserves an
+inherited font size instead of using the browser's preferred monospace size. See
+[MDN's explanation](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-family#monospace_font_size).
+This rule ignores `var(--custom-property)` values.
+
+## SCSS limitations
+
+Font values that require SCSS evaluation, including variables, interpolation, and
+user-defined function results, are ignored because the emitted font names are unknown.
+
+## Examples
+
+### Invalid
+
+```css
+a { font-family: "Lucida Grande", 'Arial', sans-serif, sans-serif; }
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:1:56 <a href=\"https://biomejs.dev/linter/rules/no-font-family-duplicate-names\">lint/suspicious/noDuplicateFontNames</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Duplicate font names are redundant and unnecessary: </span><span style=\"color: Tomato;\"><strong>sans-serif</strong></span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font-family: &quot;Lucida Grande&quot;, 'Arial', sans-serif, sans-serif; &#125;<br />   <strong>   │ </strong>                                                       <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">This is where the duplicate font name is found:</span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font-family: &quot;Lucida Grande&quot;, 'Arial', sans-serif, sans-serif; &#125;<br />   <strong>   │ </strong>                                           <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Remove duplicate font names within the property.</span><br />  <br /></code></pre>"} />
+
+```css
+a { font-family: 'Arial', "Lucida Grande", Arial, sans-serif; }
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:1:44 <a href=\"https://biomejs.dev/linter/rules/no-font-family-duplicate-names\">lint/suspicious/noDuplicateFontNames</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Duplicate font names are redundant and unnecessary: </span><span style=\"color: Tomato;\"><strong>Arial</strong></span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font-family: 'Arial', &quot;Lucida Grande&quot;, Arial, sans-serif; &#125;<br />   <strong>   │ </strong>                                           <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">This is where the duplicate font name is found:</span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; font-family: 'Arial', &quot;Lucida Grande&quot;, Arial, sans-serif; &#125;<br />   <strong>   │ </strong>                 <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Remove duplicate font names within the property.</span><br />  <br /></code></pre>"} />
+
+```css
+a { FONT: italic 300 16px/30px Arial, " Arial", serif; }
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:1:39 <a href=\"https://biomejs.dev/linter/rules/no-font-family-duplicate-names\">lint/suspicious/noDuplicateFontNames</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Duplicate font names are redundant and unnecessary: </span><span style=\"color: Tomato;\"><strong>&quot; Arial&quot;</strong></span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; FONT: italic 300 16px/30px Arial, &quot; Arial&quot;, serif; &#125;<br />   <strong>   │ </strong>                                      <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">This is where the duplicate font name is found:</span><br />  <br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>1 │ </strong>a &#123; FONT: italic 300 16px/30px Arial, &quot; Arial&quot;, serif; &#125;<br />   <strong>   │ </strong>                               <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>2 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Remove duplicate font names within the property.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```css
+a { font-family: "Lucida Grande", "Arial", sans-serif; }
+b { font: normal 14px/32px -apple-system, BlinkMacSystemFont, sans-serif; }
+c { font-family: SF Mono, Liberation Mono, sans-serif; }
+d { font: 1em SF Mono, Liberation Mono, sans-serif; }
+e { font-family: monospace, monospace; }
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/src/lint/suspicious/no_duplicate_font_names.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/tests/specs/suspicious/noDuplicateFontNames)
+- <RulePlaygroundLink rule="noDuplicateFontNames" category="lint" language="css" code={"a { font-family: \"Lucida Grande\", 'Arial', sans-serif, sans-serif; }\n"} />
+

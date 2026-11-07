@@ -1,36 +1,36 @@
 ---
 title: The lakebase_text extension
-subtitle: BM25 full-text search for Neon Postgres
+subtitle: BM25 full-text search for Lakebase Postgres
 summary: >-
-  The lakebase_text extension adds the lakebase_bm25 index type to Neon Postgres
+  The lakebase_text extension adds the lakebase_bm25 index type to Lakebase Postgres
   for BM25 full-text search. It requires no migration from PostgreSQL's built-in
   full-text search — standard tsvector types and tsquery operators work unchanged.
   Use this page to enable the extension, create a lakebase_bm25 index, query
-  with the <&> operator and to_bm25query function, configure the default_limit
+  with the <@> operator and to_bm25query function, configure the default_limit
   and prefilter GUCs, set fallback parameters at the index level, and reference
   all types, operators, functions, and index parameters.
 enableTableOfContents: true
-updatedOn: '2026-06-09T20:13:02.957Z'
+redirectFrom:
+  - /docs/extensions/lakebase_text
+updatedOn: '2026-07-31T15:27:48.506Z'
 ---
 
-<EarlyAccessProps feature_name="lakebase_text" />
+The `lakebase_text` extension adds a `lakebase_bm25` index type to Postgres for [BM25](https://en.wikipedia.org/wiki/Okapi_BM25) full-text search. It is a native upgrade to PostgreSQL's built-in full-text search: standard `tsvector` type and query operators work unchanged; only the index type changes.
 
-The `lakebase_text` extension adds a `lakebase_bm25` index type to Postgres for [BM25](https://en.wikipedia.org/wiki/Okapi_BM25) full-text search. It is a native upgrade to PostgreSQL's built-in full-text search: standard `tsvector` types and query operators work unchanged; only the index type changes.
-
-Lakebase Search is in private preview. To request access or learn about its architecture advantages, see [Lakebase Search](/docs/ai/lakebase-search).
+See [Lakebase Search](/docs/ai/lakebase-search) for the architecture and the companion `lakebase_vector` extension.
 
 ## Why lakebase_text?
 
 PostgreSQL's built-in full-text search uses GIN indexes with `tsvector`. GIN works well for boolean filtering, but it has two limitations for search relevance:
 
-- **No BM25 ranking.** GIN uses `ts_rank`, a TF-IDF variant that scores documents by fetching `tsvector` values from the heap at query time. BM25 is more accurate, accounting for term frequency, document length, and corpus-wide statistics together.
+- **No BM25 ranking.** GIN uses `ts_rank`, which does not use global corpus statistics, so scores degrade as data grows. BM25 is more accurate, accounting for term frequency, document length, and corpus-wide statistics together.
 - **No top-K pushdown.** GIN must score all matching documents even when you only need the top 10. For large tables, this means significant unnecessary work on every query.
 
 `lakebase_bm25` adds a first-class BM25 index with Block-Max WAND top-K pushdown: the index returns only the K most relevant results directly, without scoring the entire match set. It fully preserves standard `tsvector` types and existing query operators. No application logic changes are required.
 
 ## Enable the lakebase_text extension
 
-Run the following statement in the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) or from a client such as [psql](/docs/connect/query-with-psql-editor):
+Install the extension in the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) or from a client such as [psql](/docs/connect/query-with-psql-editor):
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS lakebase_text;
@@ -38,33 +38,48 @@ CREATE EXTENSION IF NOT EXISTS lakebase_text;
 
 `lakebase_text` requires Postgres 16 or later. It has no extension dependencies; unlike `lakebase_vector`, it does not require `pgvector`.
 
+`lakebase_text` relies on a preloaded library that Neon enables by default. If you've customized your project's [preloaded libraries](/docs/extensions/pg-extensions#extensions-with-preloaded-libraries), make sure `lakebase_text` is in the list.
+
+### Upgrade the extension and indexes
+
+A new Lakebase Search release can add features, fixes, and performance improvements. Although Lakebase Search is released as part of Neon updates, it does not upgrade everything automatically. In `lakebase_text`, two things upgrade separately and carry version numbers that are unrelated to each other:
+
+- **The extension version** is the version of the SQL objects that `CREATE EXTENSION lakebase_text` creates, including its data types, functions, operators, and the `lakebase_bm25` index access method. This version is reported by `SELECT installed_version FROM pg_available_extensions WHERE name = 'lakebase_text'`. `ALTER EXTENSION lakebase_text UPDATE` updates this version.
+- **The index storage format** is the on-disk layout of a `lakebase_bm25` index. The extension may introduce updated index storage formats in an update, unlocking more features and delivering better performance. All newly created indexes automatically use the latest storage format, while existing indexes can be upgraded to the new format using `REINDEX INDEX CONCURRENTLY` after a newer storage format is available.
+
+Upgrading is not urgent. The extension is compatible with SQL objects and index storage formats from older versions, but staying current keeps you on the supported, best-performing path and avoids a larger migration later, so upgrade when convenient rather than deferring indefinitely.
+
+<Admonition type="note">
+The latest available extension version is reported by `SELECT default_version FROM pg_available_extensions WHERE name = 'lakebase_text'`.
+</Admonition>
+
 ## Quick start
 
-Create a table with a `tsvector` column generated from a text column:
+Create a table with a `tsvector` column and insert data:
 
 ```sql
 CREATE TABLE documents (
     id serial PRIMARY KEY,
     passage text,
-    vector tsvector GENERATED ALWAYS AS (to_tsvector('english', passage)) STORED
+    vector tsvector
 );
 
-INSERT INTO documents (passage) VALUES
-('PostgreSQL is a powerful, open-source object-relational database system.'),
-('Full-text search is a technique for searching in plain-text documents.'),
-('BM25 is a ranking function used by search engines to estimate document relevance.'),
-('PostgreSQL provides advanced features like full-text search and window functions.'),
-('Effective ranking algorithms like BM25 improve information retrieval results.');
+INSERT INTO documents (passage, vector) VALUES
+('PostgreSQL is a powerful, open-source object-relational database system.', to_tsvector('english', 'PostgreSQL is a powerful, open-source object-relational database system.')),
+('Full-text search is a technique for searching in plain-text documents.', to_tsvector('english', 'Full-text search is a technique for searching in plain-text documents.')),
+('BM25 is a ranking function used by search engines to estimate document relevance.', to_tsvector('english', 'BM25 is a ranking function used by search engines to estimate document relevance.')),
+('PostgreSQL provides advanced features like full-text search and window functions.', to_tsvector('english', 'PostgreSQL provides advanced features like full-text search and window functions.')),
+('Effective ranking algorithms like BM25 improve information retrieval results.', to_tsvector('english', 'Effective ranking algorithms like BM25 improve information retrieval results.'));
 ```
 
 Create a `lakebase_bm25` index on the `tsvector` column:
 
 ```sql
-CREATE INDEX documents_passage_bm25 ON documents USING lakebase_bm25 (vector bm25_ops);
+CREATE INDEX documents_passage_bm25 ON documents USING lakebase_bm25 (vector);
 ```
 
 <Admonition type="important" title="Create the index after inserting data">
-`lakebase_bm25` computes corpus-wide statistics (document count, term frequencies, IDF values) at index build time, not incrementally. Create the index after your initial data load. If you insert a large number of new documents later, drop and recreate the index to keep BM25 scores accurate.
+`lakebase_bm25` computes corpus-wide statistics (document count, term frequencies) at index build time and updates them at VACUUM time. Create the index after your initial data load. After bulk-loading a large amount of new data, run `VACUUM` manually to keep BM25 scores accurate.
 </Admonition>
 
 Set how many results the index returns and run a BM25 search:
@@ -74,15 +89,41 @@ SET lakebase_bm25.default_limit TO 5;
 
 SELECT
   id,
-  vector <&> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
+  vector <@> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
 FROM documents
 ORDER BY score
 LIMIT 5;
 ```
 
-The `<&>` operator calculates the negative BM25 score of a document against a query. Ordering by score ascending returns the most relevant documents first (lower negative score = higher relevance).
+The `<@>` operator calculates the negative BM25 score of a document against a query. Ordering by score ascending returns the most relevant documents first (lower negative score = higher relevance).
 
 `to_bm25query` constructs a `bm25query_tsvector` value by combining the query `tsvector` with the object identifier of the BM25 index. The index identifier is required because BM25 scoring depends on corpus-wide statistics stored in the index.
+
+<Admonition type="note">
+A `lakebase_bm25` index scan can omit any number of rows whose `<@>` value is exactly `0.0`. Do not rely on zero-distance rows being returned or on their order. To evaluate every row, set `lakebase_bm25.enable_scan` to `off` to use a sequential scan instead.
+</Admonition>
+
+## Keep the index accurate
+
+BM25 statistics are computed at index build time and updated by VACUUM. For most workloads, regular VACUUM keeps scores accurate. After bulk-loading a large amount of new data, run VACUUM manually:
+
+```sql title="PostgreSQL"
+VACUUM documents;
+```
+
+To maintain query and update performance, `VACUUM` must clean the index promptly. For a table dedicated to text search, Neon recommends setting `autovacuum_vacuum_insert_scale_factor` to `0` so the insert-triggered autovacuum threshold does not grow with the table:
+
+```sql title="PostgreSQL"
+ALTER TABLE documents SET (
+  autovacuum_vacuum_insert_scale_factor = 0
+);
+```
+
+With the scale factor set to `0`, `autovacuum_vacuum_insert_threshold` determines the fixed number of inserted tuples that triggers autovacuum. Tune that threshold based on your workload.
+
+<Admonition type="warning">
+BM25 global statistics are not MVCC-versioned. If `VACUUM` updates the statistics while a transaction is using an older MVCC snapshot, the transaction can calculate scores using statistics newer than its row snapshot. Row visibility remains MVCC-compliant, but scores, rankings, and top-K results can change within a `REPEATABLE READ` transaction. Do not rely on snapshot-stable BM25 rankings across a concurrent `VACUUM`, including autovacuum.
+</Admonition>
 
 ## Configure default_limit
 
@@ -102,7 +143,7 @@ You can store search parameters directly in an index as storage parameters, rath
 Set `default_limit` at index creation:
 
 ```sql
-CREATE INDEX documents_passage_bm25 ON documents USING lakebase_bm25 (vector bm25_ops)
+CREATE INDEX documents_passage_bm25 ON documents USING lakebase_bm25 (vector)
 WITH (default_limit = 5);
 ```
 
@@ -111,7 +152,7 @@ Queries against this index use `default_limit = 5` without requiring a `SET` com
 ```sql
 SELECT
   id,
-  vector <&> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
+  vector <@> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
 FROM documents
 ORDER BY score
 LIMIT 5;
@@ -137,7 +178,7 @@ SET lakebase_bm25.prefilter = on;
 
 SELECT
   id,
-  vector <&> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
+  vector <@> to_bm25query(to_tsvector('english', 'PostgreSQL'), 'documents_passage_bm25') AS score
 FROM documents
 WHERE id % 1000 = 0
 ORDER BY score
@@ -152,19 +193,19 @@ Prefilter is recommended when the filter is **strict** (eliminates many rows) or
 
 | Type                 | Description                                                                                                   |
 | :------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `bm25query_tsvector` | Combines a query `tsvector` with the object identifier of a BM25 index. Passed as the right operand to `<&>`. |
+| `bm25query_tsvector` | Combines a query `tsvector` with the object identifier of a BM25 index. Passed as the right operand to `<@>`. |
 
 ### Operators
 
 | Operator | Arguments                        | Result   | Description                                                                                                                               |
 | :------- | :------------------------------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| `<&>`    | `tsvector`, `bm25query_tsvector` | `double` | Returns the negative BM25 score of a document against a query, in the context of the BM25 index. Order ascending for most-relevant-first. |
+| `<@>`    | `tsvector`, `bm25query_tsvector` | `double` | Returns the negative BM25 score of a document against a query, in the context of the BM25 index. Order ascending for most-relevant-first. |
 
 ### Operator classes
 
-| Operator class | Default | Operator                            |
-| :------------- | :------ | :---------------------------------- |
-| `bm25_ops`     | Yes     | `<&>(tsvector, bm25query_tsvector)` |
+| Operator class      | Default | Operator                            |
+| :------------------ | :------ | :---------------------------------- |
+| `tsvector_bm25_ops` | Yes     | `<@>(tsvector, bm25query_tsvector)` |
 
 ### Functions
 
@@ -174,12 +215,12 @@ Prefilter is recommended when the filter is **strict** (eliminates many rows) or
 
 ### Index storage parameters
 
-| Parameter       | Type    | Default | Domain        | Description                                                                      |
-| :-------------- | :------ | :------ | :------------ | :------------------------------------------------------------------------------- |
-| `k1`            | real    | `1.2`   | `[1.2, 2.0]`  | BM25 `k1` parameter. Controls term frequency saturation.                         |
-| `b`             | real    | `0.75`  | `[0.0, 1.0]`  | BM25 `b` parameter. Controls document length normalization.                      |
-| `default_limit` | integer | `1000`  | `[-1, 65535]` | Fallback value for `lakebase_bm25.default_limit`. GUCs take precedence when set. |
-| `prefilter`     | boolean | `false` | —             | Fallback value for `lakebase_bm25.prefilter`. GUCs take precedence when set.     |
+| Parameter       | Type    | Default | Domain       | Description                                                                      |
+| :-------------- | :------ | :------ | :----------- | :------------------------------------------------------------------------------- |
+| `k1`            | real    | `1.2`   | `[1.2, 2.0]` | BM25 `k1` parameter. Controls term frequency saturation.                         |
+| `b`             | real    | `0.75`  | `[0.0, 1.0]` | BM25 `b` parameter. Controls document length normalization.                      |
+| `default_limit` | integer | `1000`  | `[1, 65535]` | Fallback value for `lakebase_bm25.default_limit`. GUCs take precedence when set. |
+| `prefilter`     | boolean | `false` | —            | Fallback value for `lakebase_bm25.prefilter`. GUCs take precedence when set.     |
 
 ### Search parameters (GUCs)
 

@@ -1,0 +1,153 @@
+---
+title: bag_pack
+description: 'This page explains how to use the bag_pack and pack functions in APL.'
+---
+
+Use the `bag_pack` function in APL to construct a dynamic property bag from a list of key-value pairs. A property bag is a flexible data structure where keys are strings and values are dynamic types. This function is useful when you want to combine multiple values into a single dynamic object, often to simplify downstream processing or export.
+
+You typically use `bag_pack` in projection scenarios to consolidate structured data—for example, packing related request metadata into one field, or grouping trace data by contextual attributes. This makes it easier to output, filter, or transform nested information.
+
+<Note>
+The `pack` and `bag_pack` functions are equivalent in APL.
+
+A common use is `bag_pack(*)` that gets all fields of your dataset as a bag. The wildcard `*` is useful to match all fields in the current row, but it increases query complexity and decreases stability and performance.
+</Note>
+
+## Usage
+
+### Syntax
+
+```kusto
+bag_pack(key1, value1, key2, value2, ...)
+```
+
+### Parameters
+
+| Name                  | Type     | Description                                                              |
+| --------------------- | -------- | ------------------------------------------------------------------------ |
+| `key1, key2, ...`     | `string` | The names of the fields to include in the property bag.                  |
+| `value1, value2, ...` | `scalar` | The corresponding values for the keys. Values can be of any scalar type. |
+
+The number of keys must equal the number of values. Keys must be string literals or string expressions.
+
+### Returns
+
+A `dynamic` value representing a property bag (dictionary) where keys are strings and values are the corresponding values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `bag_pack` to create a structured object that captures key request attributes for easier inspection or export.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '500'
+| project _time, error_context = bag_pack('uri', uri, 'method', method, 'duration_ms', req_duration_ms)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'500'%20%7C%20project%20_time%2C%20error_context%20%3D%20bag_pack%28'uri'%2C%20uri%2C%20'method'%2C%20method%2C%20'duration_ms'%2C%20req_duration_ms%29%22%7D)
+
+**Output**
+
+| _time               | error_context                                                 |
+| -------------------- | -------------------------------------------------------------- |
+| 2025-05-27T10:00:00Z | `{ "uri": "/api/data", "method": "GET", "duration_ms": 342 }`  |
+| 2025-05-27T10:05:00Z | `{ "uri": "/api/auth", "method": "POST", "duration_ms": 879 }` |
+
+The query filters HTTP logs to 500 errors and consolidates key request fields into a single dynamic column named `error_context`.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `bag_pack` to enrich trace summaries with service metadata for each span.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| where ['service.name'] == 'checkout'
+| project trace_id, span_id, span_info = bag_pack('kind', kind, 'duration', duration, 'status_code', status_code)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20where%20%5B'service.name'%5D%20%3D%3D%20'checkout'%20%7C%20project%20trace_id%2C%20span_id%2C%20span_info%20%3D%20bag_pack%28'kind'%2C%20kind%2C%20'duration'%2C%20duration%2C%20'status_code'%2C%20status_code%29%22%7D)
+
+**Output**
+
+| trace_id | span_id | span_info                                                                     |
+| --------- | -------- | ------------------------------------------------------------------------------ |
+| a1b2...   | f9c3...  | `{ "kind": "server", "duration": "00:00:00.1240000", "status_code": "OK" }`    |
+| c3d4...   | h7e2...  | `{ "kind": "client", "duration": "00:00:00.0470000", "status_code": "ERROR" }` |
+
+The query targets spans from the `checkout` and combines attributes into a single object per span.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `bag_pack` to create a compact event summary combining user ID and geographic info for anomaly detection.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| project _time, id, geo_summary = bag_pack('city', ['geo.city'], 'country', ['geo.country'])
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20project%20_time%2C%20id%2C%20geo_summary%20%3D%20bag_pack('city'%2C%20%5B'geo.city'%5D%2C%20'country'%2C%20%5B'geo.country'%5D)%22%7D)
+
+**Output**
+
+| _time               | id       | geo_summary                            |
+| -------------------- | -------- | --------------------------------------- |
+| 2025-05-27T12:00:00Z | user_01 | `{ "city": "Berlin", "country": "DE" }` |
+| 2025-05-27T12:01:00Z | user_02 | `{ "city": "Paris", "country": "FR" }`  |
+
+The query helps identify patterns in failed access attempts by summarizing location data per event.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [bag_keys](/apl/scalar-functions/array-functions/bag-keys): Returns all keys in a dynamic property bag. Use it when you need to enumerate available keys.
+- [bag_has_key](/apl/scalar-functions/array-functions/bag-has-key): Checks whether a dynamic property bag contains a specific key.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, you can use `mvzip` and `eval` to create key-value mappings, or use `spath` to interpret JSON data. However, packing data into a true key-value structure for export or downstream use requires JSON manipulation. APL’s `bag_pack` provides a native and type-safe way to do this.
+
+<CodeGroup>
+```sql Splunk example
+| eval metadata=tojson({"status": status, "duration": req_duration_ms})
+````
+
+```kusto APL equivalent
+project metadata = bag_pack('status', status, 'duration', req_duration_ms)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+SQL doesn’t have a direct built-in function like `bag_pack`. To achieve similar behavior, you typically construct JSON objects using functions like `JSON_OBJECT` or use user-defined types. In APL, `bag_pack` is the idiomatic way to construct dynamic objects with labeled fields.
+
+<CodeGroup>
+```sql SQL example
+SELECT JSON_OBJECT('status' VALUE status, 'duration' VALUE req_duration_ms) AS metadata FROM logs;
+```
+
+```kusto APL equivalent
+project metadata = bag_pack('status', status, 'duration', req_duration_ms)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

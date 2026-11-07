@@ -1,152 +1,300 @@
 ---
-title: A guide to diagnosing failures with Playwright Traces
-description: When you get a notification of a failed check, you can often determine the cause right in the Checkly dashboard. This guide covers some the most common failure modes and where to find answers.
-tags: Playwright
-sidebarTitle: A Guide to Playwright Traces
+title: Debug a failed check
+sidebarTitle: Debug a Failed Check
+description: Go from a failing Playwright check to its root cause with the Checkly CLI, the Playwright trace in your terminal, and Rocky AI, then confirm the fix with a test run before you deploy.
+canonical: 'https://www.checklyhq.com/docs/guides/reading-traces/'
 ---
 
-import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-<PlaywrightCheckSuiteTryOut />
+By the end of this guide, you have taken a failing check from the alert to its root cause without leaving the terminal, confirmed the diagnosis with a recorded test run, and deployed the fix.
 
-Checkly warns you of failures before they’re reported by users. With well-timed alerts you can find out minutes or hours before you get your first support ticket that something is broken. But once we’ve gotten a notification of a failure, how do we do the first step of root cause analysis: diagnosing the cause of the failure?
+<Frame>
+  <img src="/images/guides/debug-failed-check/check-detail.png" alt="The Shop checkout check detail page in Checkly, with failed runs from N. Virginia and Ireland followed by a passing run after the fix" />
+</Frame>
 
-Browser checks, especially, involve multiple systems that have to ‘work’ to pass a check, how do we find out if network issues, script errors, or a garbled database row, were possible causes? This article shows you how to go from an alert to the first part of repair: finding the error.
+To follow along, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/debug-failed-check). It monitors the checkout of the [Danube demo shop](https://danube-web.shop), and it fails on purpose.
 
-## Diagnosing a problem based on the pattern: interpreting a check dashboard
+<Accordion title="Let your agent do it" icon="sparkles">
 
-Whenever you’re working a technical incident, it’s tempting to go to the most detailed information first: checking traces from individual checks is a bit like starting incident investigation in application logs: the answer is in there, but there’s a lot of information to sift through.
+<GuideAgentIntro />
 
-How can we look at high-level dashboards showing multiple check runs, and start to diagnose possible causes?
+<div id="ai-setup-prompt">
 
-To emphasize: none of the patterns mentioned here are proof positive, and you should always take the second step of looking into the check’s traces. That detailed analysis is covered in the second half of this guide.
+```txt Prompt
+The Checkly check "Shop checkout" in this project is failing. Find the root cause and prove it.
 
-### Identifying a growing problem
+Success criteria:
+1. Run `npx checkly checks list --status=failing` and `npx checkly checks get <id>` to find the failing result and its error group.
+2. Read the root cause analysis with `npx checkly checks get <id> --error-group <error-group-id>`. Treat it as a hypothesis, not a verdict.
+3. Download the Playwright trace with `npx checkly assets download` and read it with `npx playwright trace`: list the actions, show the failing action, list the requests, and extract the error-context attachment.
+4. Tell me the root cause in two sentences, with the evidence from the trace that supports it.
+5. Propose the smallest change to `tests/checkout.spec.ts` that confirms the diagnosis, apply it, and run `npx checkly test --record`. Show me the session link.
+6. Wait for my confirmation before `npx checkly deploy`.
+```
 
-When you’re looking at the pattern of failures, one question you’d like to answer is: ‘did [x] code release cause this failure?’ To answer this quickly, look for a pattern like the one below, where a small problem grows with time:
+</div>
 
-![a Checkly dashboard](/images/guides/images/reading-traces-01.png)
+<CopyPromptButton />
 
+The steps below are what the agent does, in the open.
 
-*In this case it looks like a problem has been getting worse for a while, with slow performance causes ‘degraded’ results before checks stop passing entirely*
+</Accordion>
 
-In this case we can see that degraded results started on or about April 24th. Even though the alerts started a few days later, it’s likely the problem has been growing since late April. Again, this isn’t proof positive since all those results were only ‘degraded,’ a good next step would be to check the resource use of the services. This might be something like a memory leak that’s getting worse with time!
+## Step 1: Find what failed
 
-### The comb: failures with set intervals
+An alert tells you a check failed. Start from the terminal, not the dashboard. List the failing checks and open the one from the alert.
 
-In the chart below, this check is currently passing, but an oddly regular pattern of failures has been happening for some time. This indicates a common failure mode:
+```bash Terminal
+npx checkly checks list --status=failing
+```
 
+```text Terminal
+✔ 80 passing    ⚠ 1 degraded    ✖ 2 failing    (2 total checks)
 
-![a Checkly dashboard](/images/guides/images/reading-traces-02.png)
+NAME                 TYPE        STATUS    FREQ  TAGS                   ID
+Shop checkout        PLAYWRIGHT  failing   10m   shop, checkout         8c688bf9-2c0a-4614-be7b-e66008b1093a
+```
 
-*This regular failure that never affects all checks look like it might be a failure in one region.*
+```bash Terminal
+npx checkly checks get 8c688bf9-2c0a-4614-be7b-e66008b1093a
+```
 
-What would cause some, but not all, checks to fail with some regularity? Checking the list of failure locations, we see that all the checks are coming from one place.
+```text Terminal
+Shop checkout
 
+Type:       PLAYWRIGHT
+Status:     failing
+Frequency:  Every 10m
+Locations:  us-east-1, eu-west-1
 
-![a Checkly dashboard](/images/guides/images/reading-traces-03.png)
+ERROR GROUPS
+ERROR                                                       FIRST SEEN    LAST SEEN     RCA   ERROR GROUP ID
+Error: expect(locator).toBeVisible() failed Locator: getB…  2m ago        4s ago        Yes   0653dbc0-9c7c-4eae-9417-deed85074a2e
 
-*Sure enough one geographic region is failing.*
+RECENT RESULTS
+TIME          LOCATION   STATUS    RESPONSE TIME   RESULT ID
+41s ago       eu-west-1  failing   35.74s          01a0df0e-99a6-7379-aab4-9e3f0bfcf420
+43s ago       us-east-1  failing   29.00s          01a0df0e-8e55-725d-978d-5b4b89c5a664
+```
 
-In this case geo-fencing, localization or some other geographic specific setting is causing only one check location to fail. A few settings to detect this issue more reliably:
+Two things matter here. Every result fails with the same error, so Checkly has folded them into one error group. And it fails from both locations, so this is not a regional blip. The `RCA` column says Rocky AI has already analyzed the group.
 
-If you’re often getting failures in one region that’s critical to your business, consider increasing check frequency or setting your checks to ‘parallel runs’ meaning that ever selected geographic region every time
+## Step 2: Read the error and the analysis
 
+Open the error group. It prints the full Playwright error with the failing line, and below it the root cause analysis.
 
-![a Checkly dashboard](/images/guides/images/reading-traces-04.png)
+```bash Terminal
+npx checkly checks get 8c688bf9-2c0a-4614-be7b-e66008b1093a --error-group 0653dbc0-9c7c-4eae-9417-deed85074a2e
+```
 
-*Parallel vs. round-robin checks, each set with a five-minute interval.*
+```text Terminal
+FULL ERROR
+Error: expect(locator).toBeVisible() failed
 
-Second, if you’ve selected round-robin checks but still want to detect single-region failures quickly, set your retry strategy to always retry from the same region.
+Locator: getByText('All good, order is on the way. Thank you!!')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
 
+  19 |   await page.getByRole('button', { name: 'Buy' }).click()
+  20 |
+> 21 |   await expect(page.getByText('All good, order is on the way. Thank you!!')).toBeVisible()
+     |                                                                              ^
 
-![a Checkly dashboard](/images/guides/images/reading-traces-05.png)
+ROOT CAUSE ANALYSIS
 
-*Now a failure in Cape Town will run all its check attempts from Cape Town*
+Classification: PLAYWRIGHT_CODE_ERROR
+Root cause:     The test immediately asserts that the success message "All good, order is on the way. Thank you!!" is visible without filling any checkout fields, so the page correctly shows a validation error instead of the success state. ...
 
-To read further about retries, regions, and timing, check out how to [optimize your MTTD with the right check frequency](https://www.checklyhq.com/blog/check-frequency/).
+  EVIDENCE
+  · PLAYWRIGHT_TRACE — All three traces show the DOM snapshot at failure with the checkout form still present, validation message `Please fill in all fields.` and the `Buy` button, but no element containing the expected success text, ...
+```
 
-## Diving in and finding the problem: beyond the video
+The error says what did not happen: the order confirmation never appeared after **Buy**. Rocky read the trace and found what happened instead: the form showed `Please fill in all fields.`. That is the lead.
 
-Let’s start with a simple example of a failing test. In this case my web shop’s category view is supposed to look like this:
+Rocky's conclusion is a hypothesis, and this one is wrong in a detail that matters. Open the spec: it fills name, surname, address, zipcode, and city. Whenever the analysis and your code disagree, the trace decides.
 
+<Note>
+Rocky analyzes every new error group automatically. To rerun it with what you know, use `npx checkly rca run --error-group <id> --user-context "..." --watch`.
+</Note>
 
-![a Checkly dashboard](/images/guides/images/reading-traces-06.png)
+## Step 3: Look at the result
 
-*A user expects to be able to find top sellers and hidden gems in the category view.*
+The result page has the failure screenshot, the video, and the trace viewer. It is the quickest way to see what the browser saw, and it is what the alert links to.
 
-But now, my check on this page is failing, and I’d like to figure out why. The pattern is sudden and complete, with all checks failing, starting a few hours ago.
+<Frame>
+  <img src="/images/guides/debug-failed-check/result-failed.png" alt="The failed Shop checkout result in Checkly with the Run, Retry 1, and Retry 2 tabs, the View Trace, Screenshots, Video, and Analyze root cause buttons, and the Playwright error with line 21 highlighted" />
+</Frame>
 
-### We all start by checking the video
+Open the screenshot. The checkout form is still on screen, five fields are filled, the company field is empty, and the form says `Please fill in all fields.`.
 
-Reader, I’ll level with you: the purpose of this article is to get you to do more than checking the video on a failed check. But before I offer more routes to check I wish to acknowledge *we all start by checking the video.* A video has the great benefit of showing both the failure and the ‘normal’ behavior of the check up until that point, it reminds us what page we were loading and there’s a good chance that the failure is visual enough to show up right away.
+<Frame>
+  <img src="/images/guides/debug-failed-check/failure-screenshot.png" alt="The Danube shop checkout form at the moment of failure: name, surname, address, zipcode, and city filled in, the Company (optional) field empty, and the message Please fill in all fields above the Buy button" />
+</Frame>
 
+That is a strong lead, and a screenshot is one frame. The trace tells you what the click did and what the page looked like as text you can search.
 
-![a Checkly dashboard](/images/guides/images/reading-traces-07.png)
+## Step 4: Read the trace in the terminal
 
-*In this example, the gap between the video and what we expect in the screenshot above is significant, the ‘bottom sellers’ section of the page is missing entirely.*
+Download the trace for the failed result. Every asset belongs to one result, so pass the result ID and the check ID from step 1.
 
-So, of course, we’re all going to check the video capture early in the troubleshooting process. But while the video is nice for finding glaring issues but doesn’t offer much detail beyond that. To know why this page doesn’t look right, we need to go a few steps beyond.
+```bash Terminal
+npx checkly assets download --check-id=8c688bf9-2c0a-4614-be7b-e66008b1093a --result-id=01a0df0e-99a6-7379-aab4-9e3f0bfcf420 --type=trace
+```
 
-### What loaded and what didn’t: the network tab
+```text Terminal
+Downloaded archive asset
+Path: ./checkly-assets/check-result-01a0df0e-99a6-7379-aab4-9e3f0bfcf420/assets.zip
+```
 
-The network tab is often a good next step when the video didn’t have our answer: without loading the full trace it’s a quick way to see if anything failed to load or loaded very slowly.
+Unzip it and open the first attempt's trace with Playwright's terminal trace viewer. It needs Playwright 1.59 or later.
 
+```bash Terminal
+unzip -q checkly-assets/check-result-01a0df0e-99a6-7379-aab4-9e3f0bfcf420/assets.zip -d checkly-assets/result
+npx playwright trace open checkly-assets/result/test-results/checkout-checkout-completes/trace.zip
+npx playwright trace actions
+```
 
-![a Checkly dashboard](/images/guides/images/reading-traces-08.png)
+```text Terminal
+   19. 0:02.353  Fill "Berlin"                                                37ms
+                 getByPlaceholder('City')
+   20. 0:02.392  Check                                                       83ms
+                 getByLabel('as soon as possible')
+   21. 0:02.476  Click                                                       82ms
+                 getByRole('button', { name: 'Buy' })
+   22. 0:02.561  Expect "toBeVisible"                                        5.0s  ✗
+                 getByText('All good, order is on the way. Thank you!!')
+```
 
-*The network tab shows the same details you’d get from a browser’s dev tools*
+Every field was filled and **Buy** was clicked. Then the expectation waited five seconds for a confirmation that never came. Check what the click did on the network.
 
-In this case, the only failed kit was a fontawesome library, which seems unlikely to break a page component, so it’s time to move on!
+```bash Terminal
+npx playwright trace requests
+```
 
-### Check each retry - viewing past attempts
+```text Terminal
+   18. GET      304      logo-horizontal.svg                                 73ms        -
+   19. GET      200      books                                               72ms       19
+   20. POST     200      logs                                               176ms       88
+```
 
-If you’re investigating a check with extremely strange or stochastic results, you might wonder ‘this check retried twice before it reported failure, how did those other check runs go?’ We know since we got an alert the other check runs also failed, but to go deeper just use the drop-down on the top left of the check run viewer.
+No order was sent. The last request to the shop is the cart's `books` lookup, before the click. Whatever stopped the order happened in the browser, so look at the page as it was when the test failed. Playwright attaches it as `error-context`.
 
+```bash Terminal
+npx playwright trace attachments
+npx playwright trace attachment 4
+```
 
-![a Checkly dashboard](/images/guides/images/reading-traces-09.png)
+```text Terminal
+    - textbox "Name" [ref=e21]: Max
+    - textbox "Surname" [ref=e22]: Mustermann
+    - textbox "Address" [ref=e23]: Musterstrasse 1
+    - textbox "Zipcode" [ref=e24]: "10115"
+    - textbox "City" [ref=e25]: Berlin
+    - textbox "Company (optional)" [ref=e26]
+    - text: I would like the items to be shipped
+    - radio "as soon as possible" [checked] [ref=e27]
+    ...
+    - paragraph: Please fill in all fields.
+    - button "Buy"
+```
 
-You can select each attempt in the drop-down.
+There is the root cause. Five fields are filled, the sixth is labelled optional and empty, and the form refuses to submit with `Please fill in all fields.`. The check is doing exactly what a customer without a company would do, and that customer cannot buy. This is an application bug, not a monitoring bug.
 
-### Try the new AI explainer
+<Tip>
+Point your coding agent at the same trace with `npx playwright trace install-skill`. [Debugging with AI agents](/learn/playwright/debugging-with-ai-agents) covers the full text-first toolchain.
+</Tip>
 
-When trying to interpret a failure, especially during a late night incident response process, it’s helpful to get a summary of how this failure affects users, written in plain English. Translating technical error messages into a more readable format is something that language models excel at, so you may want to try out our AI Impact Analysis tool. For this failure, the analysis looks pretty spot on: users can’t see a section labelled ‘bottom sellers’
+## Step 5: Confirm the diagnosis, then ship
 
+A root cause is a claim until a change proves it. If the company field is the cause, filling it should make the check pass. Fill it, and leave a comment that says why, so nobody mistakes the workaround for the intended flow.
 
-![a Checkly dashboard](/images/guides/images/reading-traces-09a.png)
+```ts tests/checkout.spec.ts highlight={18-20}
+import { test, expect } from '@playwright/test'
 
-AI Impact analysis is a beta feature, which you can switch on in your account settings.
+test('checkout completes', async ({ page }) => {
+  await page.goto('/')
 
+  await page.locator('.preview:nth-child(1) > .preview-author').click()
+  await page.getByRole('button', { name: 'Add to cart' }).click()
+  await page.locator('#logo').click()
 
-![a Checkly dashboard](/images/guides/images/reading-traces-10.png)
+  await page.locator('#cart').click()
+  await page.getByRole('button', { name: 'Checkout' }).click()
 
-While the AI explainer is helpful in figuring out the scope of the problem, to go further we really need the big guns: the full trace of this test session.
+  await page.getByPlaceholder('Name', { exact: true }).fill('Max')
+  await page.getByPlaceholder('Surname', { exact: true }).fill('Mustermann')
+  await page.getByPlaceholder('Address').fill('Musterstrasse 1')
+  await page.getByPlaceholder('Zipcode').fill('10115')
+  await page.getByPlaceholder('City').fill('Berlin')
+  // The form rejects an empty company field even though the label says optional.
+  // Fill it so the rest of the flow stays monitored while the app fix ships.
+  await page.getByPlaceholder('Company (optional)').fill('Checkly')
+  await page.getByLabel('as soon as possible').check()
+  await page.getByRole('button', { name: 'Buy' }).click()
 
-### Pro tools: the full trace
+  await expect(page.getByText('All good, order is on the way. Thank you!!')).toBeVisible()
+})
+```
 
-How many times has a user reported a failure somewhere on your site, and you’ve wished they could send a full trace from their dev tools? In some support teams, asking for this browser trace is a common first step in the diagnosis process. For problems detected early with Checkly, the same detailed information is available as soon as you get an alert. Click the trace button to get the whole story.
+Run it on Checkly without deploying. The deployed monitor keeps running the old code until you say otherwise.
 
+```bash Terminal
+npx checkly test --record
+```
 
-![a Checkly dashboard](/images/guides/images/reading-traces-11.png)
+```text Terminal
+Running 1 checks in eu-west-1.
 
-*The magic happens under the ‘trace’ button.*
+playwright.config.ts
+  ✔ Shop checkout (11s)
 
-The full trace will load, let’s step through some of the information on the trace view:
+1 passed, 1 total
 
-![a Checkly dashboard](/images/guides/images/reading-traces-12.png)
+Detailed session summary at: https://chkly.link/l/zbPNj
+```
 
-1. The test is broken down into components, and you can scroll through and see what had loaded as each test was happening.
-2. Screenshots of the page as loads and formats. You can check a screenshot for each assertion.
-3. The network tab that was so useful previously is available here.
-4. The console, errors, and log messages from the browser
-5. The Call tab which shows exactly how the current playwright call was interpreted. This is so interesting it deserves its own screenshot:
+It passes, so the diagnosis holds. File the bug against the checkout form with the trace attached. Then deploy, so the monitor covers the rest of the checkout while the fix ships.
 
-![a Checkly dashboard](/images/guides/images/reading-traces-13.png)
+```bash Terminal
+npx checkly deploy
+```
 
-If you notice that the page took a second or two to fully load, and you’re worried it caused the `expect.toBeVisible` call to fail: probably not! Remember that [Playwright’s auto-waiting](https://www.checklyhq.com/learn/playwright/waits-and-timeouts/) ensures that the element will be found as soon as it loads, and your test won’t fail just because of a flash of unformatted content.
+## Verify it works
 
-### **Conclusions**
+Run the deployed check instead of waiting for its next scheduled run.
 
-Effective incident diagnosis begins with understanding the patterns in your check failures before diving into detailed traces. Starting with the video replay is natural, as it provides immediate visual context, but the real answers often lie in the network logs, console errors, and full traces.
+```bash Terminal
+npx checkly checks run --tags=checkout
+```
 
-Ultimately, Checkly equips you with the data needed to move from alert to resolution efficiently. By combining pattern recognition with detailed trace analysis, you can diagnose issues faster, reduce downtime, and maintain a seamless user experience. For further optimization, explore [fine-tuning check frequencies](https://www.checklyhq.com/blog/check-frequency/) and retry strategies to minimize detection time—because the sooner you find the problem, the sooner you can fix it.
+```text Terminal
+1 check session completed: 1 passed.
+
+STATUS     NAME              TYPE        LOCATIONS     DURATION  CHECK ID                              SESSION ID
+passed     Shop checkout     PLAYWRIGHT  eu-west-1     9s        8c688bf9-2c0a-4614-be7b-e66008b1093a  01a0df11-61cc-7330-b673-0e752811097e
+```
+
+The check is passing again, and the failed runs and the recovery are on the check page.
+
+The same investigation works from a chat client with the [Checkly MCP Server](/ai/mcp-server) connected, which is where you are when the alert lands on your phone. The server's tools read live results, error groups, and analyses, and download the same assets.
+
+```text Prompt
+Investigate the failing "Shop checkout" check. Read its error group and any existing root cause analysis, then tell me whether this is an application problem or a test problem and what evidence supports that.
+```
+
+The agent calls `list-check-stats` with the failing filter to find the check, `get-error-group-root-cause-analyses` to read the group and Rocky's analysis, and `list-check-result-assets` when it needs the trace. It ends with the same `Please fill in all fields.` evidence you found in step 4.
+
+## Next
+
+[Monitor a checkout flow](/guides/monitoring-ecommerce-apps-using-playwright): now that you can debug one, build a full checkout monitor with the Playwright Check Suite and a Browser check side by side.
+
+## Reference
+
+- [`checkly checks`](/cli/checkly-checks), [`checkly assets`](/cli/checkly-assets), and [`checkly rca`](/cli/checkly-rca)
+- [Rocky AI root cause analysis](/resolve/ai-root-cause-analysis/overview)
+- [Debugging with AI agents](/learn/playwright/debugging-with-ai-agents)
+- [Checkly MCP tools](/ai/mcp-server/tools)
+- [Checkly Skills](/ai/skills)

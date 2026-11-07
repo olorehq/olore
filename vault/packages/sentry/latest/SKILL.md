@@ -1,9 +1,9 @@
 ---
 name: olore-sentry-latest
-description: Local Sentry documentation reference (latest). Sentry error monitoring documentation. Use for error tracking, performance monitoring, session replay, SDK setup, alerts, releases, and integrations.
+description: Local sentry documentation reference (latest). Sentry error monitoring documentation. Use for error tracking, performance monitoring, session replay, SDK setup, alerts, releases, and integrations.
 ---
 
-# Sentry Documentation
+# sentry Documentation
 
 Sentry error monitoring documentation. Use for error tracking, performance monitoring, session replay, SDK setup, alerts, releases, and integrations.
 
@@ -11,36 +11,27 @@ Sentry error monitoring documentation. Use for error tracking, performance monit
 
 | Task | Entry Point |
 |------|-------------|
-| SDK setup (JavaScript) | `contents/platforms/javascript/index.mdx` |
-| SDK setup (Python) | `contents/platforms/python/index.mdx` |
-| SDK setup (other platform) | `contents/platforms/{platform}/index.mdx` |
-| Error tracking & issues | `contents/product/issues/` |
-| Performance & tracing | `contents/product/explore/` |
-| Alerts & cron monitors | `contents/product/monitors-and-alerts/` |
-| Releases & deploy tracking | `contents/product/releases/` |
-| Sentry CLI | `contents/cli/` |
-| REST API | `contents/api/` |
-| PII scrubbing | `contents/security-legal-pii/scrubbing/` |
+| Getting started | `contents/get-started/index.mdx` |
+| SDK setup per platform | `contents/platforms/` (e.g. `platforms/javascript/`, `platforms/python/`) |
+| Issues and alerts | `contents/product/issues/`, `contents/product/monitors-and-alerts/` |
+| Tracing, profiling, replay | `contents/product/` |
+| Web API reference | `contents/api/` |
+| sentry-cli | `contents/cli/` |
+| Integrations | `contents/integrations/` |
+| Data scrubbing and PII | `contents/security-legal-pii/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Setting up Sentry SDK in any language or framework (JavaScript, Python, Go, Ruby, Java, .NET, PHP, iOS, Android, etc.)
-- Error tracking, issue grouping, fingerprinting, and triage
-- Performance monitoring, distributed tracing, N+1 queries, slow DB queries
-- Session replay, profiling, and metrics
-- Alerts, cron monitors, and uptime checks
-- Releases, deploy tracking, and release health
-- Sentry CLI for source maps, debug symbols, and releases
-- Integrations with Jira, Slack, GitHub, PagerDuty, and others
-- OpenTelemetry (OTLP) integration with Sentry
-- PII scrubbing and data privacy configuration
-- Sentry REST API usage
+- Setting up or configuring Sentry SDKs (JavaScript, Python, Go, Java, mobile, etc.)
+- Error tracking, issue grouping, alerts, and releases
+- Performance monitoring, tracing, profiling, and session replay
+- Sentry integrations, the Web API, sentry-cli, and organization settings
 
 ## How to find information
 
 1. **First**, read `TOC.md` for complete file listing organized by directory
-2. Identify the relevant platform under `contents/platforms/{platform}/` or product feature under `contents/product/`
+2. Identify relevant section based on user's question
 3. Read specific files for details
 
 **TOC.md contains all files organized by directory - always check it first.**

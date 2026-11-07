@@ -21,7 +21,6 @@ import Enums from "/snippets/runtimes/data-binding/enums.mdx"
 
 import { YouTube } from "/snippets/youtube.mdx";
 import { Demos } from "/snippets/demos.jsx";
-import { Apple } from "/snippets/constants.mdx"
 
 <Overview />
 
@@ -30,7 +29,7 @@ import { Apple } from "/snippets/constants.mdx"
 <ViewModels />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
     View models are not their own type; rather, they are a source when creating a view model instance from a `File`.
 
     You can define the source of a view model via the `ViewModelSource` type.
@@ -42,7 +41,7 @@ import { Apple } from "/snippets/constants.mdx"
 
     These sources are used in conjunction with getting a view model instance. See [View Model Instances](#view-model-instances) for more information.
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
     ```swift
     let riveViewModel = RiveViewModel(...)
     let file = riveViewModel.riveModel!.riveFile
@@ -65,7 +64,7 @@ import { Apple } from "/snippets/constants.mdx"
 <ViewModelInstances />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         The following section assumes that you have read through the [Apple](/runtimes/apple/apple) overview.
 
         ```swift
@@ -83,14 +82,14 @@ import { Apple } from "/snippets/constants.mdx"
         // Alternatively, using the default view model for an artboard
         let artboard: Artboard = ...
         // A blank view model instance
-        blankInstance = try await file.createViewModelInstance(.blank(from: .artboardDefault(Artboard)))
+        blankInstance = try await file.createViewModelInstance(.blank(from: .artboardDefault(artboard)))
         // The default instance for the view model
-        defaultInstance = try await file.createViewModelInstance(.viewModelDefault(from: .artboardDefault(Artboard)))
+        defaultInstance = try await file.createViewModelInstance(.viewModelDefault(from: .artboardDefault(artboard)))
         // An instance by name from the view model
-        namedInstance = try await file.createViewModelInstance(.name("Instance", from: .artboardDefault(Artboard)))
+        namedInstance = try await file.createViewModelInstance(.name("Instance", from: .artboardDefault(artboard)))
         ```
     </Tab>
-        <Tab title={Apple.legacyRuntimeName}>
+        <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
         let viewModel = riveViewModel.riveModel!.riveFile.viewModelNamed("...")!
@@ -117,31 +116,36 @@ import { Apple } from "/snippets/constants.mdx"
 <Binding />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
-        Given the following example code:
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
+        Create and retain the instance you want to read, observe, or modify, then bind it when creating the state machine. Run setup from a `@MainActor` async context.
+
         ```swift
-        let file: File = ...
-        let artboard: Artboard = try await file.createArtboard()
-        let stateMachine: StateMachine = try await artboard.createStateMachine()
-        let viewModelInstance = try await file.createViewModelInstance(...)
+        let artboard = try await file.createArtboard()
+        let viewModelInstance = try await file.createViewModelInstance(
+            .viewModelDefault(from: .artboardDefault(artboard))
+        )
+        let stateMachine = try await artboard.createStateMachine(binding: viewModelInstance)
+        let rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine)
         ```
 
-        You can manually bind the view model instance to the state machine:
+        To replace the main instance later, create a new instance and use the async throwing binding API:
+
         ```swift
-        stateMachine.bindViewModelInstance(viewModelInstance)
+        let replacementInstance = try await file.createViewModelInstance(
+            .viewModelDefault(from: .artboardDefault(artboard))
+        )
+        try await stateMachine.bindViewModelInstances(main: replacementInstance)
         ```
 
-        Alternatively, you can utilize the `Rive` type to (automatically) data bind a view model instance:
-        ```swift
-        // Automatically find a default view model instance to bind. This is the default value, if you do not pass in a dataBind argument.
-        var rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine, dataBind: .auto)
-        // Bind a view model instance
-        var rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine, dataBind: .viewModelInstance(viewModelInstance))
-        // Do not bind. This assumes you have manually bound a view model instance earlier
-        var rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine, dataBind: .none)
-        ```
+        After binding succeeds, retain `replacementInstance` for subsequent property access.
+
+        The `Rive` initializer with an explicit artboard and state machine uses those components as configured, without rebinding. Create the artboard from the same file and the state machine from that artboard. Use compatible instances from the same file and worker.
+
+        <Warning>
+        Bound instances cannot be retrieved from the state machine. The deprecated `Rive.viewModelInstance` property returns `nil` with the new initializers. Keep your own references for property access. See [migration guidance](/runtimes/apple/migrating-from-legacy#updating-existing-concurrency-runtime-code).
+        </Warning>
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
         let artboard = riveViewModel.riveModel!.artboard,
@@ -160,24 +164,23 @@ import { Apple } from "/snippets/constants.mdx"
 <AutoBinding />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
-        Given the following example code:
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
+        State machine creation binds authored main and global defaults when available. If you do not need programmatic access to those instances, use a convenience initializer:
+
         ```swift
-        let file: File = ...
-        let artboard: Artboard = try await file.createArtboard()
-        let stateMachine: StateMachine = try await artboard.createStateMachine()
-        let viewModelInstance = try await file.createViewModelInstance(...)
+        let rive = try await Rive(file: file)
         ```
 
-        When creating a `Rive` object, you can elect to auto bind:
+        To choose an artboard and use its default state machine:
+
         ```swift
-        // Automatically find a default view model instance to bind. This is the default value, if you do not pass in a dataBind argument.
-        var rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine, dataBind: .auto)
-        // or
-        var rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine)
+        let artboard = try await file.createArtboard("Artboard")
+        let rive = try await Rive(file: file, artboard: artboard)
         ```
+
+        Automatically created instances have no public getters. If you need to read or change their properties, create and retain instances explicitly as shown in [Binding](#binding).
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
         riveViewModel.riveModel?.enableAutoBind { instance in
@@ -191,12 +194,71 @@ import { Apple } from "/snippets/constants.mdx"
     </Tab>
 </Tabs>
 
+## Global View Models
+
+In the new Apple runtime, global view models provide shared data, such as a theme, to bindings authored to use that global. Create instances and bind them by their global view model names:
+
+```swift
+let artboard = try await file.createArtboard()
+let main = try await file.createViewModelInstance(
+    .viewModelDefault(from: .artboardDefault(artboard))
+)
+// This example requires a global view model named "Theme" in the file.
+let theme = try await file.createViewModelInstance(
+    .viewModelDefault(from: .name("Theme"))
+)
+let stateMachine = try await artboard.createStateMachine(binding: main) {
+    ("Theme", theme)
+}
+let rive = try await Rive(file: file, artboard: artboard, stateMachine: stateMachine)
+```
+
+To discover which global view models a file contains, use `try await file.getGlobalViewModelNames()`.
+
+In this example, keep `main` and `theme` in your app's model if you need to access their properties. Global instances use the same property and observation APIs as the main instance. To share an instance across state machines from the same file, bind that same instance to each state machine.
+
+You can replace only a global binding later:
+
+```swift
+let darkTheme = try await file.createViewModelInstance(
+    .name("Dark", from: .name("Theme"))
+)
+try await stateMachine.bindViewModelInstances {
+    ("Theme", darkTheme)
+}
+```
+
+The globals builder supports `if`, `if let`, and `for` statements. For example, choose between instances named "Light" and "Dark" authored on the "Theme" view model:
+
+```swift
+let lightTheme = try await file.createViewModelInstance(
+    .name("Light", from: .name("Theme"))
+)
+let darkTheme = try await file.createViewModelInstance(
+    .name("Dark", from: .name("Theme"))
+)
+// colorScheme is the current SwiftUI ColorScheme value from your app.
+try await stateMachine.bindViewModelInstances {
+    if colorScheme == .dark {
+        ("Theme", darkTheme)
+    } else {
+        ("Theme", lightTheme)
+    }
+}
+```
+
+The builder runs when you call the binding method. To switch themes when the color scheme changes, call it again with the updated value and your retained instances.
+
+You can also pass `main:` to update main and global bindings in one call. Each call sets the supplied bindings; it does not replace the complete set of bindings. Omitting a global does not remove it or clear its instance—the existing binding stays in place. Slots without an existing or supplied instance receive authored defaults when available. Passing `nil` for `main` also preserves its existing binding rather than clearing it.
+
+All supplied global names are checked before applying any supplied bindings. An unknown or non-global name throws `StateMachineError.invalidGlobalViewModelName`; duplicate names in one call throw `StateMachineError.duplicateGlobalViewModelInstance`. These rejected calls leave existing bindings intact. Metadata failures throw `StateMachineError.error`, and cancellation throws `StateMachineError.cancelled`. Name validation does not check instance type or worker compatibility.
+
 <Properties />
 
 <ListingProperties />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         ```swift
         let file: File = ...
         let properties = try await file.getProperties(of: "ViewModel")
@@ -207,7 +269,7 @@ import { Apple } from "/snippets/constants.mdx"
         }
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
         let viewModel = riveViewModel.riveModel!.file.viewModelNamed(...)!
@@ -222,15 +284,34 @@ import { Apple } from "/snippets/constants.mdx"
 <ReadingAndWritingProperties />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         Property types are a very thin wrapper around the path and return type of a property.
 
-        All property APIs (e.g setters, getters, and triggers) are available as part of a `ViewModelInstance` object.
+        Property APIs are available on `ViewModelInstance`. Call them from a main-actor context. Reading a String, Number, Boolean, Color, or Enum property uses `try await`. Setting a property queues the change and returns immediately.
+
+        | Property | Swift value | Supported operations |
+        | --- | --- | --- |
+        | `StringProperty` | `String` | Read, write, `valueStream(of:)` |
+        | `NumberProperty` | `Float` | Read, write, `valueStream(of:)` |
+        | `BoolProperty` | `Bool` | Read, write, `valueStream(of:)` |
+        | `ColorProperty` | `Color` | Read, write, `valueStream(of:)` |
+        | `EnumProperty` | `String` | Read, write, `valueStream(of:)` |
+        | `TriggerProperty` | No stored value | `fire(trigger:)`, `stream(of:)` |
+        | `ImageProperty` | `Image?` | Write; `nil` clears |
+        | `FontProperty` | `Font?` | Write; `nil` clears |
+        | `BlobProperty` | `Blob?` | Write; `nil` clears |
+        | `ArtboardProperty` | `Artboard?` | Write; `nil` clears |
+        | `ViewModelInstanceProperty` | `ViewModelInstance` | Read and replace the nested instance |
+        | `ListProperty` | List of View Model instances | Count, get, append, insert, remove, swap |
+
+        Image, Font, Blob, and Artboard properties do not expose value getters or value streams. The View Model instance retains values assigned to these properties until they are replaced, cleared with `nil`, or the instance is released. Keep a strong reference to any decoded image, font, or blob, or created artboard, that you need to keep alive before assigning it. Images and fonts registered as global assets are also retained by the worker.
+
+        Nested instances and list items expose their own property APIs.
 
         <CodeGroup>
             ```swift String
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             // String
             let stringProperty = StringProperty(path: "path/to/string")
@@ -240,16 +321,16 @@ import { Apple } from "/snippets/constants.mdx"
 
             ```swift Number
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             let numberProperty = NumberProperty(path: "path/to/number")
             let numberValue = try await viewModelInstance.value(of: numberProperty)
-            viewModelInstance.setValue(of: numberValue, to: 9001)
+            viewModelInstance.setValue(of: numberProperty, to: 9001)
             ```
 
             ```swift Bool
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             let boolProperty = BoolProperty(path: "path/to/bool")
             let boolValue = try await viewModelInstance.value(of: boolProperty)
@@ -258,7 +339,7 @@ import { Apple } from "/snippets/constants.mdx"
 
             ```swift Color
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             let colorProperty = ColorProperty(path: "path/to/color")
             let colorValue = try await viewModelInstance.value(of: colorProperty)
@@ -267,7 +348,7 @@ import { Apple } from "/snippets/constants.mdx"
 
             ```swift Enum
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             let enumProperty = EnumProperty(path: "path/to/enum")
             let enumValue = try await viewModelInstance.value(of: enumProperty)
@@ -276,14 +357,14 @@ import { Apple } from "/snippets/constants.mdx"
 
             ```swift Trigger
             let file: File = ...
-            let viewModelInstance = try await file.createViweModelInstance(...)
+            let viewModelInstance = try await file.createViewModelInstance(...)
 
             let triggerProperty = TriggerProperty(path: "path/to/trigger")
             viewModelInstance.fire(trigger: triggerProperty)
             ```
         </CodeGroup>
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
 
@@ -361,12 +442,26 @@ import { Apple } from "/snippets/constants.mdx"
 <NestedPropertyPaths />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
-        Property types are no longer reference types, and require the name or full path to a property when initializing the property value type. There is no longer an API to chain nested properties.
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
+        Use a `/`-separated path to access a nested property directly, or retrieve the nested instance with `ViewModelInstanceProperty`:
 
-        See [Properties](#properties) for usage details.
+        ```swift
+        let title = StringProperty(path: "header/title")
+        viewModelInstance.setValue(of: title, to: "Welcome")
+
+        let headerProperty = ViewModelInstanceProperty(path: "header")
+        let header = viewModelInstance.value(of: headerProperty)
+        header.setValue(of: StringProperty(path: "title"), to: "Welcome")
+
+        let replacement = try await file.createViewModelInstance(
+            .viewModelDefault(from: .name("Header"))
+        )
+        viewModelInstance.setValue(of: headerProperty, to: replacement)
+        ```
+
+        Create replacements with a View Model compatible with the nested property, using the same worker.
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
 
@@ -394,8 +489,10 @@ import { Apple } from "/snippets/constants.mdx"
 <Observability />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
-        Property listeners utilize Swift Concurrency's async throwing stream API. If a property returns a value, you can listen to its changes by calling the `valueStream(of:)` method on a `ViewModelInstance` object.
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
+        `RiveController` automatically redraws after changes to bound main and global instances, including nested and list child instances. You do not need to subscribe to the deprecated `dirtyStream()` API to request redraws. Use property streams to react to values in your app.
+
+        String, Number, Boolean, Color, and Enum properties expose changes through Swift Concurrency's async throwing streams. Call `valueStream(of:)` on a `ViewModelInstance` object.
 
         ```swift
         let file: File = ...
@@ -433,7 +530,7 @@ import { Apple } from "/snippets/constants.mdx"
         }
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
 
@@ -448,7 +545,7 @@ import { Apple } from "/snippets/constants.mdx"
         // Alternatively, you can create a view model instance manually
         viewModelInstance = riveViewModel.riveModel!.riveFile.viewModelNamed("...")!.createDefaultInstance()!
 
-        // Get the string property
+        // Get the String property
         let stringProperty = instance.stringProperty(fromPath: "...")!
 
         // Add a listener
@@ -470,20 +567,22 @@ import { Apple } from "/snippets/constants.mdx"
 <Images />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
-        To set an image, you first need to decode an image from a `Worker`. This has to be the `Worker` that was used when initializing a `File`, from which you are setting the image property of a view model instance.
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
+        To set an image, you first need to decode an image from a `Worker`. This has to be the `Worker` that was used when initializing a `File`, from which you are setting the Image property of a view model instance.
 
         ```swift
         let worker = try await Worker()
         let file = try await File(source: ..., worker: worker)
-        let viewModelInstance = file.createViewModelInstance(...)
+        let viewModelInstance = try await file.createViewModelInstance(...)
         let imageProperty = ImageProperty(path: "path/to/image")
         let imageData: Data = ...
-        let image = try await decodeImage(from: imageData)
+        let image = try await worker.decodeImage(from: imageData)
         viewModelInstance.setValue(of: imageProperty, to: image)
+        // Clear the image when needed.
+        viewModelInstance.setValue(of: imageProperty, to: nil)
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let riveViewModel = RiveViewModel(...)
 
@@ -507,7 +606,7 @@ import { Apple } from "/snippets/constants.mdx"
 
         let imageProperty = viewModelInstance.imageProperty(fromPath: "image")!
 
-        // Once you have your data binding view model instance, you can set the image property value
+        // Once you have your data binding view model instance, you can set the Image property value
         imageProperty.setValue(image)
 
         // You can also pass nil to clear the image
@@ -516,10 +615,40 @@ import { Apple } from "/snippets/constants.mdx"
     </Tab>
 </Tabs>
 
+## Fonts
+
+In the Apple concurrency API, decode a font with the same `Worker` used to load the instance's file, then assign it to a `FontProperty`.
+
+```swift
+let fontData: Data = ...
+let font = try await worker.decodeFont(from: fontData)
+let fontProperty = FontProperty(path: "headingFont")
+viewModelInstance.setValue(of: fontProperty, to: font)
+
+// Clear the font when needed.
+viewModelInstance.setValue(of: fontProperty, to: nil)
+```
+
+`decodeFont(from:)` also accepts `UIFont` on UIKit platforms and `NSFont` on macOS. See [Loading Assets](/runtimes/apple/loading-assets) for decoding and global registration options.
+
+## Blobs
+
+A blob holds arbitrary binary data. Decode it with the same worker as the instance's file, then assign it to a Blob property:
+
+```swift
+let data = Data([0x01, 0x02, 0x03])
+let blob = try await worker.decodeBlob(from: data)
+let blobProperty = BlobProperty(path: "payload")
+viewModelInstance.setValue(of: blobProperty, to: blob)
+
+// Clear the blob when needed.
+viewModelInstance.setValue(of: blobProperty, to: nil)
+```
+
 <Lists />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         ```swift
         let file: File = ...
         let viewModelInstance = try await file.createViewModelInstance(...)
@@ -533,7 +662,7 @@ import { Apple } from "/snippets/constants.mdx"
 
         // Result: [insertedInstance, newInstance]
         let insertedInstance = try await file.createViewModelInstance(...)
-        viewModelInstance.insertInstance(instance, to: listProperty, at: 0)
+        viewModelInstance.insertInstance(insertedInstance, to: listProperty, at: 0)
 
         // Result: [newInstance, insertedInstance]
         viewModelInstance.swapInstance(atIndex: 0, withIndex: 1, in: listProperty)
@@ -548,10 +677,10 @@ import { Apple } from "/snippets/constants.mdx"
         viewModelInstance.removeInstance(newInstance, from: listProperty)
 
         // Result: 0
-        let size = try await viewModelInstance.size(of: listProperty)
+        let finalSize = try await viewModelInstance.size(of: listProperty)
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         let listProperty = viewModelInstance.listProperty(fromPath: "list")!
 
@@ -579,21 +708,23 @@ import { Apple } from "/snippets/constants.mdx"
 <Artboards />
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
     ```swift
     let file: File = ...
     let viewModelInstance = try await file.createViewModelInstance(...)
     let artboardProperty = ArtboardProperty(path: "path/to/artboard")
     let artboard = try await file.createArtboard(...)
     viewModelInstance.setValue(of: artboardProperty, to: artboard)
+    // Clear the artboard when needed.
+    viewModelInstance.setValue(of: artboardProperty, to: nil)
     ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
-        Use the `artboardProperty` method on a `RiveDataBindingViewModel.Instance` object to get the artboard property.
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
+        Use the `artboardProperty` method on a `RiveDataBindingViewModel.Instance` object to get the Artboard property.
 
-        Then use the `setValue` method on the artboard property object to set the new artboard value.
+        Then use the `setValue` method on the Artboard property object to set the new artboard value.
 
-        `setValue` accepts a `RiveBindableArtboard` object, which is a wrapper for an artboard that can be used to set the artboard property value.
+        `setValue` accepts a `RiveBindableArtboard` object, which is a wrapper for an artboard that can be used to set the Artboard property value.
 
         You can get a `RiveBindableArtboard` object by using the `bindableArtboard` methods on a `RiveFile` object.
 
@@ -611,6 +742,6 @@ import { Apple } from "/snippets/constants.mdx"
 
 <Enums />
 
-# Examples
+## Examples
 
 See the [Data Binding view](https://github.com/rive-app/rive-ios/blob/main/Example-iOS/Source/Examples/SwiftUI/DataBindingView.swift) in the Example app for a demo.

@@ -1,7 +1,7 @@
 ---
 title: '`Variables` prop'
 description: Utilize Clerk's variables property in order to adjust the general styles of the component's base theme, like colors, backgrounds, typography.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend, fastify, expressjs, go, ruby
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend, fastify, expressjs, go, ruby
 ---
 
 {/* JS file: https://github.com/clerk/javascript/blob/main/packages/ui/src/internal/appearance.ts */}
@@ -11,84 +11,12 @@ The `variables` property is used to adjust the general styles of the component's
 ## Properties
 
 <Properties>
-  - `colorPrimary`
+  - `borderRadius`
   - `string`
 
-  The primary color used throughout the components.
+  The border radius used throughout the components. By default, this is set to `0.375rem`.
 
-  CSS variable: `--clerk-color-primary`
-
-  ---
-
-  - `colorDanger`
-  - `string`
-
-  The color used for error states.
-
-  CSS variable: `--clerk-color-danger`
-
-  ---
-
-  - `colorSuccess`
-  - `string`
-
-  The color used for success states.
-
-  CSS variable: `--clerk-color-success`
-
-  ---
-
-  - `colorWarning`
-  - `string`
-
-  The color used for warning states.
-
-  CSS variable: `--clerk-color-warning`
-
-  ---
-
-  - `colorNeutral`
-  - `string`
-
-  The color that will be used for all to generate the neutral shades the components use. This option applies to borders, backgrounds for hovered elements, hovered dropdown options.
-
-  CSS variable: `--clerk-color-neutral`
-
-  ---
-
-  - `colorForeground`
-  - `string`
-
-  The color used for text.
-
-  CSS variable: `--clerk-color-foreground`
-
-  ---
-
-  - `colorPrimaryForeground`
-  - `string`
-
-  The color used for text on the primary background.
-
-  CSS variable: `--clerk-color-primary-foreground`
-
-  ---
-
-  - `colorMutedForeground`
-  - `string`
-
-  The color used for secondary text.
-
-  CSS variable: `--clerk-color-muted-foreground`
-
-  ---
-
-  - `colorMuted`
-  - `string`
-
-  The color used for muted backgrounds.
-
-  CSS variable: `--clerk-color-muted`
+  CSS variable: `--clerk-border-radius`
 
   ---
 
@@ -101,12 +29,30 @@ The `variables` property is used to adjust the general styles of the component's
 
   ---
 
-  - `colorInputForeground`
+  - `colorBorder`
   - `string`
 
-  The color used for text in input fields.
+  The base border color used in the components.
 
-  CSS variable: `--clerk-color-input-foreground`
+  CSS variable: `--clerk-color-border`
+
+  ---
+
+  - `colorDanger`
+  - `string`
+
+  The color used for error states.
+
+  CSS variable: `--clerk-color-danger`
+
+  ---
+
+  - `colorForeground`
+  - `string`
+
+  The color used for text.
+
+  CSS variable: `--clerk-color-foreground`
 
   ---
 
@@ -119,12 +65,66 @@ The `variables` property is used to adjust the general styles of the component's
 
   ---
 
-  - `colorShimmer`
+  - `colorInputForeground`
   - `string`
 
-  The color of the avatar shimmer.
+  The color used for text in input fields.
 
-  CSS variable: `--clerk-color-shimmer`
+  CSS variable: `--clerk-color-input-foreground`
+
+  ---
+
+  - `colorModalBackdrop`
+  - `string`
+
+  The background color of the modal backdrop.
+
+  CSS variable: `--clerk-color-modal-backdrop`
+
+  ---
+
+  - `colorMuted`
+  - `string`
+
+  The color used for muted backgrounds.
+
+  CSS variable: `--clerk-color-muted`
+
+  ---
+
+  - `colorMutedForeground`
+  - `string`
+
+  The color used for secondary text.
+
+  CSS variable: `--clerk-color-muted-foreground`
+
+  ---
+
+  - `colorNeutral`
+  - `string`
+
+  The color that will be used for all to generate the neutral shades the components use. This option applies to borders, backgrounds for hovered elements, hovered dropdown options.
+
+  CSS variable: `--clerk-color-neutral`
+
+  ---
+
+  - `colorPrimary`
+  - `string`
+
+  The primary color used throughout the components.
+
+  CSS variable: `--clerk-color-primary`
+
+  ---
+
+  - `colorPrimaryForeground`
+  - `string`
+
+  The color used for text on the primary background.
+
+  CSS variable: `--clerk-color-primary-foreground`
 
   ---
 
@@ -146,21 +146,30 @@ The `variables` property is used to adjust the general styles of the component's
 
   ---
 
-  - `colorBorder`
+  - `colorShimmer`
   - `string`
 
-  The base border color used in the components.
+  The color of the avatar shimmer.
 
-  CSS variable: `--clerk-color-border`
+  CSS variable: `--clerk-color-shimmer`
 
   ---
 
-  - `colorModalBackdrop`
+  - `colorSuccess`
   - `string`
 
-  The background color of the modal backdrop.
+  The color used for success states.
 
-  CSS variable: `--clerk-color-modal-backdrop`
+  CSS variable: `--clerk-color-success`
+
+  ---
+
+  - `colorWarning`
+  - `string`
+
+  The color used for warning states.
+
+  CSS variable: `--clerk-color-warning`
 
   ---
 
@@ -209,15 +218,6 @@ The `variables` property is used to adjust the general styles of the component's
 
   ---
 
-  - `borderRadius`
-  - `string`
-
-  The border radius used throughout the components. By default, this is set to `0.375rem`.
-
-  CSS variable: `--clerk-border-radius`
-
-  ---
-
   - `spacing`
   - `string`
 
@@ -228,7 +228,8 @@ The `variables` property is used to adjust the general styles of the component's
 
 ### Deprecated properties  {{ toc: false }}
 
-The following properties are deprecated as of 2025-07-15 and will be removed in the next major version of Clerk.
+> [!DEPRECATED]
+> The following properties are deprecated as of 2025-07-15 and will be removed in the next major version of Clerk. Use the replacements noted below instead.
 
 - `colorText` (use `colorForeground` instead)
 - `colorTextOnPrimaryBackground` (use `colorPrimaryForeground` instead)
@@ -249,7 +250,7 @@ You can customize Clerk components by passing an object of variables to the `var
 > - **`color-mix()`**: Chrome 111+, Firefox 113+, Safari 16.2+
 > - **Relative color syntax**: Chrome 119+, Firefox 120+, Safari 16.4+
 >
-> For broader browser support, when using the `variables` prop, **use direct color values** (e.g. `colorPrimary: '#6c47ff'`) instead of CSS variables or modern color functions.
+> For broader browser support, when using the `variables` prop, **use direct color values** (e.g., `colorPrimary: '#6c47ff'`) instead of CSS variables or modern color functions.
 
 ### Apply `variables` to all Clerk components
 

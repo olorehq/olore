@@ -6,7 +6,7 @@ sidebarTitle: Scores via API/SDK
 
 # Scores via API/SDK
 
-You can use the Langfuse SDKs or API to add [scores](/docs/evaluation/scores/overview) to traces, observations, sessions and dataset runs. This is an evaluation method that allows to set up custom evaluation workflows and extend the scoring capabilities of Langfuse. See the [data model](/docs/evaluation/scores/data-model#scores) for full details on the score object.
+You can use the Langfuse SDKs or API to add [scores](/docs/evaluation/scores/overview) to traces, observations, sessions and dataset runs. This is an evaluation method that allows you to set up custom evaluation workflows and extend the scoring capabilities of Langfuse. See the [data model](/docs/evaluation/scores/data-model#scores) for full details on the score object.
 
 If you want Langfuse to run deterministic Python or TypeScript logic for you, use [code evaluators](/docs/evaluation/evaluation-methods/code-evaluators). Use this page when your application, pipeline, or CI job computes scores and sends them to Langfuse via API or SDK.
 
@@ -15,6 +15,8 @@ If you want Langfuse to run deterministic Python or TypeScript logic for you, us
 Scores can be attached at different levels of granularity: to individual traces, to specific observations within a trace, or to full sessions.
 
 See the [API reference](/docs/api) for full details on the POST and GET endpoints for scores and score configs.
+
+Upgrading from Python SDK v4 or JS/TS SDK v5? `api.scores.create` now takes a list of scores, and score reads moved to `api.scores.get_many` / `api.scores.getMany`. See the [Python v4 → v5](/docs/observability/sdk/upgrade-path/python-v4-to-v5#scores-api) and [JS/TS v5 → v6](/docs/observability/sdk/upgrade-path/js-v5-to-v6#scores-api) migration guides.
 
 ### Trace or Observation-level Scores
 
@@ -47,9 +49,9 @@ langfuse.create_score(
     comment="Factually correct", # optional
 )
 
-# Method 2: Score current span/generation (within context)
+# Method 2: Score current observation (within context)
 with langfuse.start_as_current_observation(as_type="span", name="my-operation") as span:
-    # Score the current span
+    # Score the current observation
     span.score(
         name="correctness",
         value=0.9,
@@ -67,7 +69,7 @@ with langfuse.start_as_current_observation(as_type="span", name="my-operation") 
 
 # Method 3: Score via the current context
 with langfuse.start_as_current_observation(as_type="span", name="my-operation"):
-    # Score the current span
+    # Score the current observation
     langfuse.score_current_span(
         name="correctness",
         value=0.9,
@@ -101,9 +103,9 @@ langfuse.create_score(
     comment="Some factual errors", # optional
 )
 
-# Method 2: Score current span/generation (within context)
+# Method 2: Score current observation (within context)
 with langfuse.start_as_current_observation(as_type="span", name="my-operation") as span:
-    # Score the current span
+    # Score the current observation
     span.score(
         name="accuracy",
         value="partially correct",
@@ -120,7 +122,7 @@ with langfuse.start_as_current_observation(as_type="span", name="my-operation") 
 
 # Method 3: Score via the current context
 with langfuse.start_as_current_observation(as_type="span", name="my-operation"):
-    # Score the current span
+    # Score the current observation
     langfuse.score_current_span(
         name="accuracy",
         value="partially correct",
@@ -154,9 +156,9 @@ langfuse.create_score(
     comment="Incorrect answer", # optional
 )
 
-# Method 2: Score current span/generation (within context)
+# Method 2: Score current observation (within context)
 with langfuse.start_as_current_observation(as_type="span", name="my-operation") as span:
-    # Score the current span
+    # Score the current observation
     span.score(
         name="helpfulness",
         value=1, # 0 or 1
@@ -172,7 +174,7 @@ with langfuse.start_as_current_observation(as_type="span", name="my-operation") 
     )
 # Method 3: Score via the current context
 with langfuse.start_as_current_observation(as_type="span", name="my-operation"):
-    # Score the current span
+    # Score the current observation
     langfuse.score_current_span(
         name="helpfulness",
         value=1, # 0 or 1
@@ -206,9 +208,9 @@ langfuse.create_score(
     comment="Reviewed by QA team", # optional
 )
 
-# Method 2: Score current span/generation (within context)
+# Method 2: Score current observation (within context)
 with langfuse.start_as_current_observation(as_type="span", name="my-operation") as span:
-    # Score the current span
+    # Score the current observation
     span.score(
         name="reviewer_notes",
         value="The response was helpful but could be more concise.",
@@ -225,7 +227,7 @@ with langfuse.start_as_current_observation(as_type="span", name="my-operation") 
 
 # Method 3: Score via the current context
 with langfuse.start_as_current_observation(as_type="span", name="my-operation"):
-    # Score the current span
+    # Score the current observation
     langfuse.score_current_span(
         name="reviewer_notes",
         value="The response was helpful but could be more concise.",
@@ -345,7 +347,7 @@ await langfuse.flush();
 </Tab>
 <Tab>
 
-You can also create scores directly via the [REST API](https://api.reference.langfuse.com/#tag/legacyscorev1/POST/api/public/scores). Authenticate using HTTP Basic Auth with your Langfuse Public Key as username and Secret Key as password.
+You can also create scores directly via the [REST API](https://api.reference.langfuse.com/#tag/scores/POST/api/public/scores). Authenticate using HTTP Basic Auth with your Langfuse Public Key as username and Secret Key as password.
 
 <Tabs items={["Numeric", "Categorical", "Boolean", "Text"]}>
 <Tab>
@@ -355,14 +357,16 @@ Numeric score values must be provided as float.
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "correctness",
-    "value": 0.9,
-    "dataType": "NUMERIC",
-    "comment": "Factually correct"
-  }'
+  -d '[
+    {
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "correctness",
+      "value": 0.9,
+      "dataType": "NUMERIC",
+      "comment": "Factually correct"
+    }
+  ]'
 ```
 
 </Tab>
@@ -373,14 +377,16 @@ Categorical score values must be provided as strings.
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "accuracy",
-    "value": "partially correct",
-    "dataType": "CATEGORICAL",
-    "comment": "Some factual errors"
-  }'
+  -d '[
+    {
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "accuracy",
+      "value": "partially correct",
+      "dataType": "CATEGORICAL",
+      "comment": "Some factual errors"
+    }
+  ]'
 ```
 
 </Tab>
@@ -391,14 +397,16 @@ Boolean scores must be provided as a float, where `1` is true and `0` is false. 
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "helpfulness",
-    "value": 0,
-    "dataType": "BOOLEAN",
-    "comment": "Incorrect answer"
-  }'
+  -d '[
+    {
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "helpfulness",
+      "value": 0,
+      "dataType": "BOOLEAN",
+      "comment": "Incorrect answer"
+    }
+  ]'
 ```
 
 </Tab>
@@ -409,14 +417,16 @@ Text score values must be provided as strings between 1 and 500 characters.
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "reviewer_notes",
-    "value": "The response was helpful but could be more concise.",
-    "dataType": "TEXT",
-    "comment": "Reviewed by QA team"
-  }'
+  -d '[
+    {
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "reviewer_notes",
+      "value": "The response was helpful but could be more concise.",
+      "dataType": "TEXT",
+      "comment": "Reviewed by QA team"
+    }
+  ]'
 ```
 
 </Tab>
@@ -424,6 +434,37 @@ curl -X POST https://cloud.langfuse.com/api/public/scores \
 
 </Tab>
 </LangTabs>
+
+### Browser score ingestion [#browser-score-ingestion]
+
+Use `@langfuse/browser` when the score is created in frontend code, for example thumbs up/down user feedback, star ratings, or client-side quality signals. Use a dedicated key with the [Scores ingestion permissions](/docs/administration/rbac#api-key-permissions) so it can only submit scores. The browser SDK sends each score immediately to `POST /api/public/scores` (JS/TS SDK v5 and earlier use the ingestion API).
+
+For backend services, scripts, CI jobs, and evaluation pipelines, use `@langfuse/client` as shown in the JS/TS SDK examples above.
+
+```bash
+npm install @langfuse/browser
+```
+
+```ts
+import { LangfuseBrowserClient } from "@langfuse/browser";
+
+const langfuse = new LangfuseBrowserClient({
+  publicKey: process.env.NEXT_PUBLIC_LANGFUSE_PUBLIC_KEY!,
+  baseUrl: process.env.NEXT_PUBLIC_LANGFUSE_BASE_URL, // optional, defaults to https://cloud.langfuse.com
+});
+
+await langfuse.score({
+  traceId: message.traceId,
+  observationId: message.generationId, // optional
+  id: `user-feedback-${message.traceId}`, // optional, use as an idempotency key
+  name: "user-feedback",
+  value: 1, // 1 for positive, 0 for negative
+  dataType: "BOOLEAN",
+  comment: "Helpful answer", // optional
+});
+```
+
+`score()` returns `{ id }` after the request succeeds. No `flush()` call is required.
 
 ### Session-level Scores
 
@@ -471,13 +512,15 @@ await langfuse.flush();
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "sessionId": "session_id_here",
-    "name": "session_quality",
-    "value": 0.85,
-    "dataType": "NUMERIC",
-    "comment": "Overall conversation quality"
-  }'
+  -d '[
+    {
+      "sessionId": "session_id_here",
+      "name": "session_quality",
+      "value": 0.85,
+      "dataType": "NUMERIC",
+      "comment": "Overall conversation quality"
+    }
+  ]'
 ```
 
 </Tab>
@@ -485,13 +528,17 @@ curl -X POST https://cloud.langfuse.com/api/public/scores \
 
 ## Advanced
 
-### Preventing Duplicate Scores
+### Preventing Duplicate Scores [#preventing-duplicate-scores]
 
 By default, Langfuse allows for multiple scores of the same `name` on the same trace. This is useful if you'd like to track the evolution of a score over time or if e.g. you've received multiple user feedback scores on the same trace.
 
-In some cases, you want to prevent this behavior or update an existing score. This can be achieved by creating an **idempotency key** on the score and passing this as an `id` (JS/TS) / `score_id` (Python) when creating the score, for example `trace_id-score_name`.
+In some cases, you want to prevent this behavior or overwrite an existing score. A score is identified by three fields — its `id`, its `name`, and its date (`toDate(timestamp)`) — and a new score only replaces an existing one when all three match. To achieve this, create an **idempotency key** and pass it as the `id` (JS/TS) / `score_id` (Python) when creating the score (for example `trace_id-score_name`), and keep the `name` and `timestamp` unchanged across calls. If any of the three differs — for example the same `id` with a different `name` — you get an additional score rather than a replacement.
 
-Note that if you expect API calls for the same score to be 30+ days apart, you should also use the same timestamp. See [How to update traces, observations, and scores](/faq/all/tracing-data-updates#updating-traces-observations-and-scores) for more details.
+<Callout type="warning">
+Do not send partial score updates (only the changed fields) and rely on Langfuse to merge them into the existing record. This merge only happens for a limited window after creation, is deprecated, and will be removed. Always send the complete score.
+</Callout>
+
+See [How to update traces, observations, and scores](/faq/all/tracing-data-updates#updating-scores) for more details on Langfuse's immutable data model.
 
 ### Enforcing a Score Config
 
@@ -745,7 +792,7 @@ await langfuse.flush();
 </Tab>
 <Tab>
 
-You can also enforce score configs via the [REST API](https://api.reference.langfuse.com/#tag/legacyscorev1/POST/api/public/scores) by providing a `configId`.
+You can also enforce score configs via the [REST API](https://api.reference.langfuse.com/#tag/scores/POST/api/public/scores) by providing a `configId`.
 
 <Tabs items={["Numeric Scores", "Categorical Scores", "Boolean Scores", "Text Scores"]}>
 <Tab>
@@ -755,16 +802,18 @@ When ingesting numeric scores, you can provide the value as a float. If you prov
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "id": "unique_id",
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "accuracy",
-    "value": 0.9,
-    "dataType": "NUMERIC",
-    "configId": "78545-6565-3453654-43543",
-    "comment": "Factually correct"
-  }'
+  -d '[
+    {
+      "id": "unique_id",
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "accuracy",
+      "value": 0.9,
+      "dataType": "NUMERIC",
+      "configId": "78545-6565-3453654-43543",
+      "comment": "Factually correct"
+    }
+  ]'
 ```
 
 </Tab>
@@ -775,16 +824,18 @@ Categorical scores are used to evaluate data that falls into specific categories
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "id": "unique_id",
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "correctness",
-    "value": "correct",
-    "dataType": "CATEGORICAL",
-    "configId": "12345-6565-3453654-43543",
-    "comment": "Factually correct"
-  }'
+  -d '[
+    {
+      "id": "unique_id",
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "correctness",
+      "value": "correct",
+      "dataType": "CATEGORICAL",
+      "configId": "12345-6565-3453654-43543",
+      "comment": "Factually correct"
+    }
+  ]'
 ```
 
 </Tab>
@@ -795,16 +846,18 @@ When ingesting boolean scores, you can provide the value as a float. If you prov
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "id": "unique_id",
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "helpfulness",
-    "value": 1,
-    "dataType": "BOOLEAN",
-    "configId": "93547-6565-3453654-43543",
-    "comment": "Factually correct"
-  }'
+  -d '[
+    {
+      "id": "unique_id",
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "helpfulness",
+      "value": 1,
+      "dataType": "BOOLEAN",
+      "configId": "93547-6565-3453654-43543",
+      "comment": "Factually correct"
+    }
+  ]'
 ```
 
 </Tab>
@@ -815,16 +868,18 @@ When ingesting text scores, provide the value as a string (1–500 characters). 
 curl -X POST https://cloud.langfuse.com/api/public/scores \
   -u "pk-lf-...":"sk-lf-..." \
   -H "Content-Type: application/json" \
-  -d '{
-    "id": "unique_id",
-    "traceId": "trace_id_here",
-    "observationId": "observation_id_here",
-    "name": "reviewer_notes",
-    "value": "The response was helpful but could be more concise.",
-    "dataType": "TEXT",
-    "configId": "24680-6565-3453654-43543",
-    "comment": "Reviewed by QA team"
-  }'
+  -d '[
+    {
+      "id": "unique_id",
+      "traceId": "trace_id_here",
+      "observationId": "observation_id_here",
+      "name": "reviewer_notes",
+      "value": "The response was helpful but could be more concise.",
+      "dataType": "TEXT",
+      "configId": "24680-6565-3453654-43543",
+      "comment": "Reviewed by QA team"
+    }
+  ]'
 ```
 
 </Tab>
@@ -903,23 +958,28 @@ For example, let's assume you'd like to ingest a text score to capture **reviewe
 
 ## Update Existing Scores via API/SDKs [#update]
 
-When creating a score, you can provide an optional `id` (JS/TS) / `score_id` (Python) parameter. This will update the score if it already exists within your project.
+When creating a score, you can provide an optional `id` (JS/TS) / `score_id` (Python) parameter. A re-ingested score overwrites an existing one only when its `id`, `name`, and `timestamp` (at date granularity, `toDate(timestamp)`) all match — a matching `id` alone is not sufficient, and any difference creates a duplicate instead of an update.
 
-If you want to update a score without needing to fetch the list of existing scores from Langfuse, you can set your own `id` parameter as an idempotency key when initially creating the score.
+To overwrite a score without fetching existing scores first, set a stable `id` as an idempotency key when initially creating the score, and keep the `name` and `timestamp` unchanged on subsequent calls. See [Preventing Duplicate Scores](#preventing-duplicate-scores) for details.
 
 ## Related guides
 
 <ManualGuideList
   guides={[
     {
-      href: "/guides/cookbook/user-feedback",
+      href: "/guides/user-feedback-loop",
       topic: "Collecting user feedback",
-      lede: "Collect in-app feedback from your users on application quality or performance, captured in the frontend via our Browser SDK.",
+      lede: "Capture explicit and implicit user feedback as scores on your traces, including in-app ratings sent via our Browser SDK.",
     },
     {
       href: "/guides/cookbook/example_external_evaluation_pipelines",
       topic: "Custom evaluation data pipeline",
       lede: "Continuously monitor quality by fetching traces, running custom evaluations, and ingesting scores back into Langfuse.",
+    },
+    {
+      href: "/guides/cookbook/example_structured_output_extraction",
+      topic: "Per-field scores for structured extraction",
+      lede: "Emit one boolean score per output field to evaluate document extraction and catch regressions that pooled accuracy hides.",
     },
     {
       href: "/guides/cookbook/security-and-guardrails",

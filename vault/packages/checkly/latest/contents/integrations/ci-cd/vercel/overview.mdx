@@ -1,6 +1,8 @@
 ---
 title: Integrating Checkly in Vercel
+description: "Integrate Checkly with Vercel using the Marketplace and Connected integrations to manage your account and monitor preview and production deployments."
 sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/integrations/ci-cd/vercel/overview/'
 ---
 
 If you are using Vercel to develop, preview, and ship your application, you can natively integrate with Checkly by installing [the official integration](https://vercel.com/marketplace/checkly) from the Vercel Marketplace. 
@@ -8,7 +10,7 @@ If you are using Vercel to develop, preview, and ship your application, you can 
 Checkly offers two integrations for Vercel users:
 - Marketplace Integration, **for managing your Checkly account and users**. With the native integration, user access and billing is managed through Vercel. If you are new to Vercel's native integrations you can read more about them on the [Vercel documentation page](https://vercel.com/docs/integrations#native-integrations).
 - Connected Integration, **to monitor your preview and production deployments**. The connected integration can be installed stand-alone or on top of the native integration and helps you by:
-  -  Automatically creating a pre-scripted browser check to catch any errors and failed requests as your web page loads.
+  -  Automatically creating a pre-scripted Browser check to catch any errors and failed requests as your web page loads.
   -  Enabling you to run checks against preview and production deployments on Vercel.
 
 <Note>
@@ -30,7 +32,7 @@ To install Checkly's managed Vercel integration, navigate to the [integration's 
 This integration has some [known limitations](/integrations/ci-cd/vercel/overview#limitations). We recommend using the [Checkly CLI](/cli/overview) in your CI/CD pipeline instead.
 </Warning>
 
-1. To install Checkly's connected Vercel integration, navigate to [Integrations](https://app.checklyhq.com/settings/account/integrations), under your account's dropdown menu and click the `Vercel marketplace` button, or go directly to the [integration listing on the Vercel marketplace](https://vercel.com/marketplace/checkly).
+1. To install Checkly's connected Vercel integration, navigate to [Integrations](https://app.checklyhq.com/settings/account/integrations) (open **Account settings** from the left sidebar, then select **Integrations**) and click the `Vercel marketplace` button, or go directly to the [integration listing on the Vercel marketplace](https://vercel.com/marketplace/checkly).
 
 2. On the marketplace page for Checkly, click `Connect Account`.
 
@@ -111,7 +113,7 @@ With API checks, we automatically replace the hostname part of your request URL 
 
 Notice we only replace the host part, not the URL path or any query parameters.
 
-Just like for browser checks, the check will run on deploy against our preview environment, while also still running on a schedule against production.
+Just like for Browser checks, the check will run on deploy against our preview environment, while also still running on a schedule against production.
 
 ### How Checkly checks maps to Vercel checks
 
@@ -141,8 +143,8 @@ Vercel deployment in two ways because the Reliability part and Performance part 
 
 | Checkly       | Vercel            | Blocking heuristic                                                                                                                                   |
 |---------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| API Check     | Reliability Check | Blocks deployment when it fails due to > 399 HTTP response codes, assertions and other API check specific features.                                   |
-| Browser Check | Reliability Check | Blocks deployment when it fails due to > 399 HTTP response codes on the main HTML document, syntax errors in the script, or assertions using the `expect` or `assert` libraries in the browser check script. |
+| API check     | Reliability Check | Blocks deployment when it fails due to > 399 HTTP response codes, assertions and other API check specific features.                                   |
+| Browser check | Reliability Check | Blocks deployment when it fails due to > 399 HTTP response codes on the main HTML document, syntax errors in the script, or assertions using the `expect` or `assert` libraries in the Browser check script. |
 |               | Performance Check | Blocks deployment when a degradation is registered in the aggregate **Virtual Experience Score** based on Web Vitals. Read below for more details.                                   |
 
 

@@ -1,0 +1,28 @@
+---
+id: createFacetedMinMaxValues
+title: createFacetedMinMaxValues
+---
+
+```ts
+function createFacetedMinMaxValues<TFeatures, TData>(): (table, columnId) => () => [number, number] | undefined;
+```
+
+Defined in: [features/column-faceting/createFacetedMinMaxValues.ts:17](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-faceting/createFacetedMinMaxValues.ts#L17)
+
+Creates a memoized faceted min max values helper for faceted filtering.
+
+The returned function derives facet data from the table row model and relevant filter state so filter UIs can display available values.
+
+## Type Parameters
+
+### TFeatures
+
+`TFeatures` *extends* [`TableFeatures`](../interfaces/TableFeatures.md)
+
+### TData
+
+`TData` *extends* [`RowData`](../type-aliases/RowData.md) = `any`
+
+## Returns
+
+(`table`, `columnId`) => () => \[`number`, `number`\] \| `undefined`

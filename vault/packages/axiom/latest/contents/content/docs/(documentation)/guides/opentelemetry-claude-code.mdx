@@ -1,0 +1,189 @@
+---
+title: 'Monitor Claude Code with Axiom'
+description: 'Configure Claude Code to send OpenTelemetry metrics, logs, and traces to Axiom for usage monitoring and observability.'
+overview: 'Claude Code AI assistant with OpenTelemetry integration'
+sidebarTitle: Claude Code
+keywords: ['guides', 'claude code', 'claude', 'anthropic', 'otel', 'opentelemetry', 'ai', 'monitoring', 'metrics', 'logs', 'traces']
+logoId: 'openTelemetry'
+---
+
+import ReplaceToken from "@/content/snippets/replace-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+
+Claude Code has built-in [OpenTelemetry support](https://code.claude.com/docs/en/monitoring-usage) that exports metrics, logs, and traces (trace export is in beta). Axiom natively ingests OTLP data, making the two a natural fit. This guide covers the Axiom-specific configuration to connect Claude Code telemetry to Axiom.
+
+## Prerequisites
+
+- [Create an Axiom account](https://app.axiom.co/register).
+- Create three datasets for metrics, logs, and traces in a [correlation group](/query-data/correlations). To create all three at once, go to **Datasets > Correlations > New correlation group**, select **From new datasets**, and enter a prefix such as `claude`. Axiom creates `claude-metrics`, `claude-logs`, and `claude-traces`.
+- [Create an API token in Axiom](/reference/tokens) with ingest permissions for the three datasets only.
+
+## How Axiom routes OpenTelemetry data
+
+Axiom routes data to datasets via headers, and the header differs by signal type:
+
+- Logs and traces use `x-axiom-dataset`
+- Metrics use `x-axiom-metrics-dataset`
+
+This means signal-specific header configuration is required rather than a single shared `OTEL_EXPORTER_OTLP_HEADERS` value.
+
+## Configure environment variables
+
+Create a file named `setup-otel.sh` with the following content:
+
+<Warning>
+Don't execute the script directly. Source the script instead. The exported variables must exist in the current shell where Claude inherits them.
+</Warning>
+
+```bash setup-otel.sh
+#!/bin/bash
+
+# Claude Code OpenTelemetry configuration for Axiom
+# Usage: source ./setup-otel.sh && claude
+
+# Replace these with your own values
+AXIOM_API_TOKEN="API_TOKEN"
+AXIOM_HOST="AXIOM_DOMAIN"
+AXIOM_METRICS_DATASET="METRICS_DATASET_NAME"
+AXIOM_LOGS_DATASET="LOGS_DATASET_NAME"
+AXIOM_TRACES_DATASET="TRACES_DATASET_NAME"
+
+# Enable telemetry and configure the exporters
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+
+# Enable trace export (beta)
+export CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1
+export OTEL_TRACES_EXPORTER=otlp
+
+# Use http/protobuf for all signals
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+
+# Separate endpoints per signal type
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://${AXIOM_HOST}/v1/metrics
+export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://${AXIOM_HOST}/v1/logs
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://${AXIOM_HOST}/v1/traces
+
+# Separate headers per signal type (Axiom routes to datasets via different headers)
+export OTEL_EXPORTER_OTLP_METRICS_HEADERS="Authorization=Bearer ${AXIOM_API_TOKEN},x-axiom-metrics-dataset=${AXIOM_METRICS_DATASET}"
+export OTEL_EXPORTER_OTLP_LOGS_HEADERS="Authorization=Bearer ${AXIOM_API_TOKEN},x-axiom-dataset=${AXIOM_LOGS_DATASET}"
+export OTEL_EXPORTER_OTLP_TRACES_HEADERS="Authorization=Bearer ${AXIOM_API_TOKEN},x-axiom-dataset=${AXIOM_TRACES_DATASET}"
+
+# Shorter intervals for testing (default: 60s metrics, 5s logs)
+export OTEL_METRIC_EXPORT_INTERVAL=10000
+export OTEL_LOGS_EXPORT_INTERVAL=5000
+
+# Optional: log full prompt content and tool/MCP details
+export OTEL_LOG_USER_PROMPTS=1
+export OTEL_LOG_TOOL_DETAILS=1
+
+echo "Axiom OTel configured: metrics -> ${AXIOM_METRICS_DATASET}, logs -> ${AXIOM_LOGS_DATASET}, traces -> ${AXIOM_TRACES_DATASET}"
+```
+
+<Info>
+<ReplaceToken />
+<ReplaceDomain />
+Replace `METRICS_DATASET_NAME` with the name of the Axiom dataset for metrics.
+
+Replace `LOGS_DATASET_NAME` with the name of the Axiom dataset for logs.
+
+Replace `TRACES_DATASET_NAME` with the name of the Axiom dataset for traces.
+</Info>
+
+## Verify the integration
+
+<Steps>
+<Step title="Source the script and start Claude Code">
+Run the following command in your terminal:
+
+```bash
+source ./setup-otel.sh && claude
+```
+</Step>
+
+<Step title="Interact with Claude Code">
+Use Claude Code for 15 to 20 seconds to generate telemetry data. Ask questions, run commands, or perform any typical tasks.
+</Step>
+
+<Step title="Observe telemetry in Axiom">
+In Axiom, go to your datasets and observe the telemetry data:
+
+- The logs dataset shows events like `claude_code.user_prompt`, `claude_code.tool_result`, and `claude_code.api_request`.
+- The metrics dataset shows counters like `claude_code.session.count` and `claude_code.token.usage`, updating on the 10-second interval configured above.
+- The traces dataset shows spans like `claude_code.interaction` and `claude_code.llm_request`.
+</Step>
+
+<Step title="Go from a log event to its trace">
+In the logs dataset, click an event, and then click **View trace**. Because the datasets are in a correlation group, Axiom opens the trace of the prompt that produced the event.
+</Step>
+</Steps>
+
+<Tip>
+If one signal arrives but the other doesn't, double-check the headers. The most common mistake is using `x-axiom-dataset` for metrics instead of `x-axiom-metrics-dataset`.
+</Tip>
+
+## Production considerations
+
+When moving from testing to production, consider these adjustments:
+
+- **Disable prompt logging**: Remove `OTEL_LOG_USER_PROMPTS=1` unless prompt content is needed in your observability backend. This reduces the volume of sensitive data stored.
+- **Limit content logging**: `OTEL_LOG_TOOL_DETAILS`, `OTEL_LOG_TOOL_CONTENT`, and `OTEL_LOG_RAW_API_BODIES` add commands, file contents, and full conversations to your telemetry. This content can include source code and secrets. Enable only the flags you need.
+- **Use managed settings for teams**: For team deployments, administrators can set these variables in Claude Code's [managed settings file](https://code.claude.com/docs/en/monitoring-usage#administrator-configuration) instead of relying on each developer to source a script.
+- **Add resource attributes**: Use `OTEL_RESOURCE_ATTRIBUTES` to tag all telemetry with department, team, or cost center identifiers for filtering and alerting in Axiom.
+
+    ```bash
+    export OTEL_RESOURCE_ATTRIBUTES="team=platform,cost_center=engineering,environment=production"
+    ```
+
+- **Adjust export intervals**: For production, consider using longer intervals to reduce overhead:
+
+    ```bash
+    export OTEL_METRIC_EXPORT_INTERVAL=60000  # 60 seconds
+    export OTEL_LOGS_EXPORT_INTERVAL=30000    # 30 seconds
+    ```
+
+## Reference
+
+### Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_ENABLE_TELEMETRY` | Set to `1` to enable OpenTelemetry export. |
+| `OTEL_METRICS_EXPORTER` | Set to `otlp` to enable OTLP metrics export. |
+| `OTEL_LOGS_EXPORTER` | Set to `otlp` to enable OTLP logs export. |
+| `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA` | Set to `1` to enable trace export, which is in beta. |
+| `OTEL_TRACES_EXPORTER` | Set to `otlp` to enable OTLP traces export. |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | Protocol for all signals. Use `http/protobuf` for Axiom. |
+| `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` | Axiom metrics endpoint URL. |
+| `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | Axiom logs endpoint URL. |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Axiom traces endpoint URL. |
+| `OTEL_EXPORTER_OTLP_METRICS_HEADERS` | Headers for metrics including authorization and dataset. |
+| `OTEL_EXPORTER_OTLP_LOGS_HEADERS` | Headers for logs including authorization and dataset. |
+| `OTEL_EXPORTER_OTLP_TRACES_HEADERS` | Headers for traces including authorization and dataset. |
+| `OTEL_METRIC_EXPORT_INTERVAL` | Metrics export interval in milliseconds. Default: 60000. |
+| `OTEL_LOGS_EXPORT_INTERVAL` | Logs export interval in milliseconds. Default: 5000. |
+| `OTEL_LOG_USER_PROMPTS` | Set to `1` to log full prompt content. |
+| `OTEL_LOG_TOOL_DETAILS` | Set to `1` to log tool and MCP details. |
+| `OTEL_LOG_TOOL_CONTENT` | Set to `1` to log tool output, such as file contents and command output, in trace spans. Requires trace export. |
+| `OTEL_LOG_RAW_API_BODIES` | Set to `1` to log the full API request and response bodies, which include the conversation history. |
+| `CLAUDE_CODE_OTEL_CONTENT_MAX_LENGTH` | Maximum length of content attributes, such as tool output and API bodies, in UTF-16 code units. Default: 61440. The [maximum field size in Axiom](/reference/limits) is 1 MB, and `262144` stays under it for any text. |
+| `OTEL_RESOURCE_ATTRIBUTES` | Comma-separated key=value pairs for resource attributes. |
+
+### Expected telemetry data
+
+Claude Code exports the following telemetry:
+
+**Logs:**
+- `claude_code.user_prompt`: User prompts sent to Claude Code.
+- `claude_code.tool_result`: Results from tool executions.
+- `claude_code.api_request`: API requests made by Claude Code.
+
+**Metrics:**
+- `claude_code.session.count`: Number of Claude Code sessions.
+- `claude_code.token.usage`: Token usage counters.
+
+**Traces:**
+- `claude_code.interaction`: Root span for each user prompt.
+- `claude_code.llm_request`: API requests made by Claude Code.
+- `claude_code.tool`: Tool executions.

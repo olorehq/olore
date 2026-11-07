@@ -1,12 +1,12 @@
 ---
-image: /generated/articles-docs-lambda-getcompositionsonlambda.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-getcompositionsonlambda.png
 id: getcompositionsonlambda
 title: getCompositionsOnLambda()
 slug: /lambda/getcompositionsonlambda
 crumb: 'Lambda API'
 ---
 
-<AvailableFrom v="3.3.2" />
+# getCompositionsOnLambda()<AvailableFrom v="3.3.2" />
 
 Gets the compositions inside a Lambda function.
 
@@ -48,7 +48,7 @@ In which region your Lambda function is deployed.
 
 ### `serveUrl`
 
-A URL pointing to a Remotion project. Use [`deploySite()`](/docs/lambda/deploysite) to deploy a Remotion project.
+A URL pointing to a Remotion project. Create one by building with [`bundle()`](/docs/bundle) and deploying with [`deploySiteFromBundle()`](/docs/lambda/deploysitefrombundle).
 
 ### `inputProps`
 
@@ -107,6 +107,10 @@ Logs can be read through the CloudWatch URL that this function returns.
 
 <Options id="media-cache-size-in-bytes" />
 
+### `preferredEffectBackend?`<AvailableFrom v="4.0.540" />
+
+<Options id="preferred-effect-backend" />
+
 ### `offthreadVideoCacheSizeInBytes?`<AvailableFrom v="4.0.23"/>
 
 <Options id="offthreadvideo-cache-size-in-bytes" />
@@ -117,7 +121,9 @@ Logs can be read through the CloudWatch URL that this function returns.
 
 ### ~~`dumpBrowserLogs?`~~
 
-Deprecated in v4.0 in favor of [`logLevel`](#loglevel).
+:::info Deprecated
+Use [`logLevel`](#loglevel) instead.
+:::
 
 ## Return value
 
@@ -146,5 +152,11 @@ Returns a promise that resolves to an array of available compositions. Example v
 ];
 ```
 
-- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/get-compositions-on-lambda.ts)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda-client/src/get-compositions-on-lambda.ts)
 - [getCompositions()](/docs/renderer/get-compositions)
+
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/lambda/light-client).

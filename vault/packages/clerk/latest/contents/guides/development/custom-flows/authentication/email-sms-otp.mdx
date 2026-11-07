@@ -25,6 +25,8 @@ Clerk supports passwordless authentication, which lets users sign in and sign up
 
 This guide demonstrates how to build a custom user interface for signing up and signing in using phone OTP. The process for using email OTP is similar, and the differences will be highlighted throughout.
 
+<Include src="_partials/authentication/otp-expiration-and-resend" />
+
 <Steps>
   ## Enable phone OTP
 
@@ -43,6 +45,10 @@ This guide demonstrates how to build a custom user interface for signing up and 
   1. Ensure **Sign-in with email** is enabled, with **Email verification code** selected.
   1. Ensure **Password** is disabled, as you want to use email OTP and not password authentication.
 
+  <If is="llm">
+    **For AI agents:** Instead of toggling these settings in the Dashboard, run `npx clerk@latest config patch --json '{"auth_email":{"used_for_sign_up":false,"used_for_sign_in":false,"sign_in_strategies":[]},"auth_phone":{"used_for_sign_up":true,"verify_at_sign_up":true,"verification_strategies":["phone_code"],"used_for_sign_in":true,"sign_in_strategies":["phone_code"]},"auth_password":{"enabled":false,"required":false}}'` to disable email authentication, enable phone OTP, and disable password authentication. Run `npx clerk@latest config schema --keys auth_phone auth_email` to see all available settings, including the email OTP equivalents. Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+  </If>
+
   ## Sign-up flow
 
   <If notSdk={["ios", "android"]}>
@@ -51,8 +57,8 @@ This guide demonstrates how to build a custom user interface for signing up and 
     Then, to sign up a user using their phone number and verify their sign-up with an SMS code, you must:
 
     1. Initiate the sign-up process by collecting the user's phone number with the [`signUp.create()`](/docs/reference/objects/sign-up-future#create) method.
-    1. Send a one-time code to the provided phone number for verification with the [`signUp.verifications.sendPhoneCode()`](/docs/reference/objects/sign-up-future#verifications-send-phone-code) method (or [`signUp.verifications.sendEmailCode()`](/docs/reference/objects/sign-up-future#verifications-send-email-code) if you're modifying this example for email OTP).
-    1. Collect the one-time code and verify it with the [`signUp.verifications.verifyPhoneCode()`](/docs/reference/objects/sign-up-future#verifications-verify-phone-code) method (or [`signUp.verifications.verifyEmailCode()`](/docs/reference/objects/sign-up-future#verifications-verify-email-code) if you're modifying this example for email OTP).
+    1. Send a one-time code to the provided phone number for verification with the [`signUp.verifications.sendPhoneCode()`](/docs/reference/objects/sign-up-future#verifications-sendphonecode) method (or [`signUp.verifications.sendEmailCode()`](/docs/reference/objects/sign-up-future#verifications-sendemailcode) if you're modifying this example for email OTP).
+    1. Collect the one-time code and verify it with the [`signUp.verifications.verifyPhoneCode()`](/docs/reference/objects/sign-up-future#verifications-verifyphonecode) method (or [`signUp.verifications.verifyEmailCode()`](/docs/reference/objects/sign-up-future#verifications-verifyemailcode) if you're modifying this example for email OTP).
        <Include src="_partials/custom-flows/phone-number" />
     1. If the phone number verification is successful, finalize the sign-up with the [`signUp.finalize()`](/docs/reference/objects/sign-up-future#finalize) method to create the user and set the newly created session as the active session.
 
@@ -166,7 +172,8 @@ This guide demonstrates how to build a custom user interface for signing up and 
             {/* For your debugging purposes. You can just console.log errors, but we put them in the UI for convenience */}
             {errors && <p>{JSON.stringify(errors, null, 2)}</p>}
 
-            {/* Required for sign-up flows. Clerk's bot sign-up protection is enabled by default */}
+            {/* Required for sign-up flows if your application uses legacy bot sign-up protection.
+            See https://clerk.com/docs/guides/secure/legacy-bot-protection */}
             <div id="clerk-captcha" />
           </>
         )
@@ -640,9 +647,8 @@ This guide demonstrates how to build a custom user interface for signing up and 
   <If notSdk={["ios", "android"]}>
     <Include src="_partials/custom-flows/use-sign-in-hook" />
 
-    1. Initiate the sign-in process by collecting the user's phone number with the [`signIn.phoneCode.sendCode()`](/docs/reference/objects/sign-in-future#phone-code-send-code) method.
-    1. Send a one-time code to the provided phone number for verification with the [`signIn.phoneCode.verifyCode()`](/docs/reference/objects/sign-in-future#phone-code-verify-code) method (or [`signIn.emailCode.verifyCode()`](/docs/reference/objects/sign-in-future#email-code-verify-code) if you're modifying this example for email OTP).
-    1. Collect the one-time code and verify it with the [`signIn.phoneCode.verifyCode()`](/docs/reference/objects/sign-in-future#phone-code-verify-code) method (or [`signIn.emailCode.verifyCode()`](/docs/reference/objects/sign-in-future#email-code-verify-code) if you're modifying this example for email OTP).
+    1. Initiate the sign-in process by collecting the user's phone number with the [`signIn.phoneCode.sendCode()`](/docs/reference/objects/sign-in-future#phonecode-sendcode) method.
+    1. Collect the one-time code and verify it with the [`signIn.phoneCode.verifyCode()`](/docs/reference/objects/sign-in-future#phonecode-verifycode) method (or [`signIn.emailCode.verifyCode()`](/docs/reference/objects/sign-in-future#emailcode-verifycode) if you're modifying this example for email OTP).
        <Include src="_partials/custom-flows/phone-number" />
     1. If the phone number verification is successful, finalize the sign-in with the [`signIn.finalize()`](/docs/reference/objects/sign-in-future#finalize) method to set the newly created session as the active session.
 
@@ -698,7 +704,7 @@ This guide demonstrates how to build a custom user interface for signing up and 
           } else if (signIn.status === 'needs_second_factor') {
             // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
           } else if (signIn.status === 'needs_client_trust') {
-            // See https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
+            // See https://clerk.com/docs/guides/development/custom-flows/authentication/device-trust
           } else {
             // Check why the sign-in is not complete
             console.error('Sign-in attempt not complete:', signIn)
@@ -826,7 +832,7 @@ This guide demonstrates how to build a custom user interface for signing up and 
           } else if (signIn.status === 'needs_second_factor') {
             // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
           } else if (signIn.status === 'needs_client_trust') {
-            // See https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
+            // See https://clerk.com/docs/guides/development/custom-flows/authentication/device-trust
           } else {
             // Check why the sign-in is not complete
             console.error('Sign-in attempt not complete:', signIn)

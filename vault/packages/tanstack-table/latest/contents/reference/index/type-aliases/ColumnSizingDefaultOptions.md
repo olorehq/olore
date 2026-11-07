@@ -1,0 +1,10 @@
+---
+id: ColumnSizingDefaultOptions
+title: ColumnSizingDefaultOptions
+---
+
+```ts
+type ColumnSizingDefaultOptions = Pick<TableOptions_ColumnSizing, "onColumnSizingChange">;
+```
+
+Defined in: [features/column-sizing/columnSizingFeature.types.ts:57](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-sizing/columnSizingFeature.types.ts#L57)

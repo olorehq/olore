@@ -13,7 +13,9 @@ Most of this middleware leverages external libraries.
 - [OIDC Auth](https://github.com/honojs/middleware/tree/main/packages/oidc-auth)
 - [Firebase Auth](https://github.com/honojs/middleware/tree/main/packages/firebase-auth)
 - [Verify RSA JWT (JWKS)](https://github.com/wataruoguchi/verify-rsa-jwt-cloudflare-worker)
+- [SSOJet Auth](https://github.com/ssojet/ssojet-hono)
 - [Stytch Auth](https://github.com/honojs/middleware/tree/main/packages/stytch-auth)
+- [Shopify Auth](https://github.com/besart-k/hono-shopify-auth)
 
 ### Validators
 
@@ -41,6 +43,7 @@ Most of this middleware leverages external libraries.
 ### Development
 
 - [ESLint Config](https://github.com/honojs/middleware/tree/main/packages/eslint-config)
+- [hono-testkit](https://github.com/md-sagban/hono-testkit)
 - [SSG Plugin Essential](https://github.com/honojs/middleware/tree/main/packages/ssg-plugins-essential)
 
 ### Monitoring / Tracing
@@ -58,6 +61,9 @@ Most of this middleware leverages external libraries.
 - [GraphQL Server](https://github.com/honojs/middleware/tree/main/packages/graphql-server)
 - [oRPC](https://orpc.dev/docs/adapters/hono)
 - [tRPC Server](https://github.com/honojs/middleware/tree/main/packages/trpc-server)
+- [mcp-use (MCP Server)](https://github.com/mcp-use/mcp-use)
+- [hono-mcp-bridge (Expose routes as MCP tools)](https://github.com/serikshaikamalov/hono-mcp-bridge)
+- [chanx-js (Typed WebSockets with AsyncAPI docs)](https://js.chanx.dev/server/integrations/hono)
 
 ### Transpiler
 
@@ -66,6 +72,7 @@ Most of this middleware leverages external libraries.
 
 ### UI / Renderer
 
+- [Asyntai AI Chatbot](https://asyntai.com/documentation/integrations/hono/)
 - [Qwik City](https://github.com/honojs/middleware/tree/main/packages/qwik-city)
 - [React Compatibility](https://github.com/honojs/middleware/tree/main/packages/react-compat)
 - [React Renderer](https://github.com/honojs/middleware/tree/main/packages/react-renderer)
@@ -84,6 +91,7 @@ Most of this middleware leverages external libraries.
 - [Cap Checkpoint](https://capjs.js.org/guide/middleware/hono.html)
 - [Event Emitter](https://github.com/honojs/middleware/tree/main/packages/event-emitter)
 - [Geo](https://github.com/ktkongtong/hono-geo-middleware/tree/main/packages/middleware)
+- [Guard Core (IP filtering, rate limiting, attack detection)](https://github.com/Guard-Core/guard-core-ts/tree/master/packages/hono)
 - [Hono Rate Limiter](https://github.com/rhinobase/hono-rate-limiter)
 - [Hono Problem Details (RFC 9457)](https://github.com/paveg/hono-problem-details)
 - [Hono Simple DI](https://github.com/maou-shonen/hono-simple-DI)
@@ -94,5 +102,6 @@ Most of this middleware leverages external libraries.
 - [MCP](https://github.com/honojs/middleware/tree/main/packages/mcp)
 - [RONIN (Database)](https://github.com/ronin-co/hono-client)
 - [Session](https://github.com/honojs/middleware/tree/main/packages/session)
+- [StitchAPI (Typed, resilient API calls + SSE)](https://github.com/rejifald/StitchAPI/tree/main/packages/hono)
 - [tsyringe](https://github.com/honojs/middleware/tree/main/packages/tsyringe)
 - [User Agent based Blocker](https://github.com/honojs/middleware/tree/main/packages/ua-blocker)

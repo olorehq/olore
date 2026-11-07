@@ -1,0 +1,88 @@
+---
+title: 'gRPC monitor configuration'
+description: 'Configure your gRPC monitor to verify service availability, health, and response correctness.'
+sidebarTitle: 'Configuration'
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/grpc-monitors/configuration/'
+---
+
+<Tip>
+To configure a gRPC monitor using code, learn more about the [gRPC monitor construct](/constructs/grpc-monitor).
+</Tip>
+
+### Basic Setup
+
+Configure your gRPC monitor by specifying the target service and monitoring mode:
+
+* **Host**: The hostname or IP address of the gRPC server (e.g. `grpc.example.com` or `10.0.0.1`). Do not include a scheme or port.
+* **Port**: The port the gRPC server is listening on (e.g. `50051`)
+* **IP family**: Choose between IPv4 (default) or IPv6
+* **TLS**: Whether to use TLS encryption for the connection (default: enabled). Disable for plaintext connections.
+* **Skip SSL verification**: Skip TLS certificate validation. Useful for servers with self-signed certificates in non-production environments.
+
+### Monitoring Mode
+
+Choose between two monitoring modes:
+
+#### BEHAVIOR Mode (default)
+
+Invokes a unary gRPC method and asserts on the response. Requires:
+
+* **Method**: The fully-qualified method name in `package.Service/Method` format (e.g. `mypackage.MyService/GetUser`)
+* **Encoding and service definition**: How the request is encoded and the method schema is resolved:
+  * **Protobuf** (default): Use server reflection or provide the `.proto` file content inline.
+  * **FlatBuffers**: Provide a compiled binary FlatBuffers schema (`.bfbs`). Compile the `.fbs` source locally with `flatc -b --schema --bfbs-builtins schema.fbs`; Checkly consumes the generated `.bfbs` file, not the `.fbs` source. The `--bfbs-builtins` flag preserves attributes used for streaming and nested FlatBuffers fields.
+* **Request message**: Optional JSON-encoded payload sent as the gRPC request body
+* **Metadata**: Optional key/value pairs sent as gRPC request headers (e.g. `authorization: Bearer {{MY_TOKEN}}`)
+
+<Note>
+For a Checkly CLI example that compiles and loads a FlatBuffers schema, see the [`GrpcMonitor` construct documentation](/constructs/grpc-monitor#use-a-flatbuffers-schema).
+</Note>
+
+#### HEALTH Mode
+
+Calls `grpc.health.v1.Health/Check` using the standard gRPC health-check protocol. Useful for monitoring overall server health without invoking a specific application method.
+
+* **Service** (optional): The name of the service to check. Leave empty to query overall server health.
+
+### Assertions
+
+Use assertions to validate gRPC responses and ensure your service meets availability and performance expectations.
+
+You can create assertions based on:
+
+* **Response time**: Assert that the total gRPC call duration (including DNS and connection) is within a threshold
+* **gRPC status code**: Assert on the numeric gRPC status code. Common values: `0` (OK), `1` (CANCELLED), `2` (UNKNOWN), `4` (DEADLINE_EXCEEDED), `14` (UNAVAILABLE). See the [gRPC status codes reference](https://grpc.github.io/grpc/core/md_doc_statuscodes.html).
+* **Health check status** (HEALTH mode): Assert on the health status reported by the server. In the UI you select the status by name (`SERVING`, `NOT_SERVING`, `UNKNOWN`, `SERVICE_UNKNOWN`); the assertion target is stored and evaluated as the status's **numeric** enum value (`UNKNOWN=0`, `SERVING=1`, `NOT_SERVING=2`, `SERVICE_UNKNOWN=3`), so via the API or CLI use the number (e.g. `1` for `SERVING`). Only equals / not-equals comparisons are supported.
+* **Response message** (BEHAVIOR mode): Assert against the JSON response body using a JSON path expression. For example:
+  * `$.status` → assert on a top-level field
+  * `$.result.id` → assert on a nested field
+  * Learn more about JSON path assertions: [JSON responses with JSON path](/detect/assertions/#json-responses-with-json-path)
+* **Response metadata**: Assert against response metadata (header) values returned by the server, identified by key
+
+For more details, see our documentation on [Assertions](/detect/assertions).
+
+### Response Time Limits
+
+Set performance thresholds for your gRPC service:
+
+* **Degraded After**: Time threshold (in milliseconds) after which the check is marked as degraded but not failed. Use for early performance warnings without triggering failure alerts.
+* **Failed After**: Time threshold after which the check is marked as failed. Use for hard latency limits that should trigger alerts.
+
+The maximum allowed threshold is 180,000 ms (3 minutes), matching the maximum call timeout.
+
+### Frequency
+
+Set how often the monitor runs (every 10 seconds to 24 hours).
+
+### Scheduling & Locations
+
+* **Strategy**: Choose between round-robin or parallel execution. Learn more about [scheduling strategies](/concepts/scheduling)
+* **Locations**: Select [public](/concepts/locations/#public-locations) or [private](/platform/private-locations/overview) locations to run the monitor from
+
+### Additional Settings
+
+* **Name**: Give your monitor a clear name to identify it in dashboards and alerts
+* **Description**: Add context about what this monitor does and why it matters. Supports markdown, max 500 characters. When a failure occurs, [Rocky AI](/ai/rocky-ai) uses the description to provide more accurate [root cause and user impact analysis](/resolve/ai-root-cause-analysis/overview)
+* **Tags**: Use tags to organize monitors across [dashboards](/communicate/dashboards/overview/) and [maintenance windows](/communicate/maintenance-windows/overview)
+* **Retries**: Define how failed runs should be retried. See [retry strategies](/communicate/alerts/retries)
+* **Alerting**: Configure your [alert settings](/communicate/alerts/configuration), [alert channels](/communicate/alerts/channels), or set up [webhooks](/integrations/alerts/webhooks) for custom integrations

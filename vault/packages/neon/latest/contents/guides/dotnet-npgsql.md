@@ -1,15 +1,15 @@
 ---
-title: Connect a .NET (C#) application to Neon Postgres
+title: Connect a .NET (C#) application to Lakebase Postgres
 subtitle: Learn how to run SQL queries in Neon from .NET using the Npgsql library
 summary: >-
   Npgsql is the .NET data provider for PostgreSQL that lets a C# application
-  connect to a Neon Postgres database and run SQL queries directly, without an
+  connect to a Lakebase Postgres database and run SQL queries directly, without an
   ORM. Use this guide for raw SQL access to Neon via NpgsqlConnection and
   NpgsqlCommand, covering CRUD operations, parameterized queries to prevent SQL
   injection, and credential storage in appsettings.json. For ORM-based
   alternatives, see the Entity Framework guide.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 <CopyPrompt src="/prompts/dotnet-prompt.md" 
@@ -69,8 +69,8 @@ For your .NET project, you will create a project directory and add the required 
 
 Create a file named `appsettings.json` in your project's root directory. This is the standard .NET approach for storing configuration data like connection strings.
 
-1.  In the [Neon Console](https://console.neon.tech), select your project on the **Dashboard**.
-2.  Click **Connect** on your **Project Dashboard** to open the **Connect to your database** modal.
+1.  In the [Neon Console](https://console.neon.tech), open your project.
+2.  Click **Connect** in the Console nav to open the **Connect to your branch** modal.
 3.  Select **.NET** as your connection method.
     ![Connection modal](/docs/connect/dotnet_connection_details.png)
 4.  Copy the **pooled** connection string, which includes your password.
@@ -442,6 +442,11 @@ While this guide demonstrates how to connect to Neon using raw SQL queries, for 
 Explore the following resources to learn how to integrate ORMs with Neon:
 
 - [Connect an Entity Framework application to Neon](/docs/guides/dotnet-entity-framework)
+
+## Next steps: Neon backend services
+
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
 
 ## Resources
 

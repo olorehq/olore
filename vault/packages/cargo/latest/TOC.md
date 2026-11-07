@@ -4,125 +4,129 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/appendix/` | Glossary and authentication reference | 2 |
-| `contents/commands/` | CLI command reference pages | 38 |
-| `contents/getting-started/` | Installation and first steps | 2 |
-| `contents/guide/` | Cargo usage guide | 11 |
-| `contents/reference/` | Detailed reference documentation | 31 |
-| `contents/faq.md` | Frequently asked questions | 1 |
+| `contents/` | Top-level pages | 2 |
+| `contents/appendix/` | Git authentication, glossary | 2 |
+| `contents/commands/` | cargo subcommand man pages | 41 |
+| `contents/getting-started/` | Installation and first steps | 3 |
+| `contents/guide/` | Guide to using Cargo | 11 |
+| `contents/reference/` | Manifest, config, features, profiles, registries and more | 31 |
+
+## (root)
+
+| File | Description |
+|------|-------------|
+| `faq.md` | Frequently asked questions |
+| `index.md` | Cargo book introduction |
 
 ## appendix/
 
 | File | Description |
 |------|-------------|
-| `git-authentication.md` | Git authentication configuration |
-| `glossary.md` | Cargo and Rust packaging terminology |
+| `git-authentication.md` | Git authentication for dependencies |
+| `glossary.md` | Glossary of Cargo terms |
 
 ## commands/
 
 | File | Description |
 |------|-------------|
-| `cargo.md` | Top-level cargo command reference |
-| `cargo-add.md` | Add dependencies to Cargo.toml |
-| `cargo-bench.md` | Run benchmarks |
-| `cargo-build.md` | Compile packages |
-| `cargo-check.md` | Check packages without compiling |
-| `cargo-clean.md` | Remove build artifacts |
-| `cargo-clippy.md` | Run Clippy lints |
-| `cargo-doc.md` | Build documentation |
-| `cargo-fetch.md` | Fetch dependencies |
-| `cargo-fix.md` | Automatically fix lint warnings |
-| `cargo-fmt.md` | Format source code |
-| `cargo-generate-lockfile.md` | Generate the lockfile |
-| `cargo-help.md` | Display help information |
-| `cargo-info.md` | Display crate info from crates.io |
-| `cargo-init.md` | Create a new package in an existing directory |
-| `cargo-install.md` | Install a Rust binary |
-| `cargo-locate-project.md` | Print a JSON representation of a Cargo.toml location |
-| `cargo-login.md` | Save an API token from a registry |
-| `cargo-logout.md` | Remove a saved API token from a registry |
-| `cargo-metadata.md` | Output dependency and package metadata as JSON |
-| `cargo-miri.md` | Run tests under Miri interpreter |
-| `cargo-new.md` | Create a new Cargo package |
-| `cargo-owner.md` | Manage crate owners on a registry |
-| `cargo-package.md` | Assemble a local package into a distributable tarball |
-| `cargo-pkgid.md` | Print a fully qualified package specification |
-| `cargo-publish.md` | Upload a package to a registry |
-| `cargo-remove.md` | Remove dependencies from Cargo.toml |
-| `cargo-report.md` | Generate and display various kinds of reports |
-| `cargo-report-future-incompatibilities.md` | Reports any future-incompatible warnings |
-| `cargo-run.md` | Run a binary or example |
-| `cargo-rustc.md` | Compile a package and pass extra flags to the compiler |
-| `cargo-rustdoc.md` | Build a package's documentation using rustdoc |
-| `cargo-search.md` | Search packages on crates.io |
-| `cargo-test.md` | Execute unit and integration tests |
-| `cargo-tree.md` | Display a tree visualization of dependencies |
-| `cargo-uninstall.md` | Remove a Rust binary |
-| `cargo-update.md` | Update dependencies as recorded in the lockfile |
-| `cargo-vendor.md` | Vendor all dependencies locally |
-| `cargo-version.md` | Show version information |
-| `cargo-yank.md` | Remove a pushed crate from the index |
+| `cargo-add.md` | `cargo add` command reference |
+| `cargo-bench.md` | `cargo bench` command reference |
+| `cargo-build.md` | `cargo build` command reference |
+| `cargo-check.md` | `cargo check` command reference |
+| `cargo-clean.md` | `cargo clean` command reference |
+| `cargo-clippy.md` | `cargo clippy` command reference |
+| `cargo-doc.md` | `cargo doc` command reference |
+| `cargo-fetch.md` | `cargo fetch` command reference |
+| `cargo-fix.md` | `cargo fix` command reference |
+| `cargo-fmt.md` | `cargo fmt` command reference |
+| `cargo-generate-lockfile.md` | `cargo generate lockfile` command reference |
+| `cargo-help.md` | `cargo help` command reference |
+| `cargo-info.md` | `cargo info` command reference |
+| `cargo-init.md` | `cargo init` command reference |
+| `cargo-install.md` | `cargo install` command reference |
+| `cargo-locate-project.md` | `cargo locate project` command reference |
+| `cargo-login.md` | `cargo login` command reference |
+| `cargo-logout.md` | `cargo logout` command reference |
+| `cargo-metadata.md` | `cargo metadata` command reference |
+| `cargo-miri.md` | `cargo miri` command reference |
+| `cargo-new.md` | `cargo new` command reference |
+| `cargo-owner.md` | `cargo owner` command reference |
+| `cargo-package.md` | `cargo package` command reference |
+| `cargo-pkgid.md` | `cargo pkgid` command reference |
+| `cargo-publish.md` | `cargo publish` command reference |
+| `cargo-remove.md` | `cargo remove` command reference |
+| `cargo-report-future-incompatibilities.md` | `cargo report future incompatibilities` command reference |
+| `cargo-report.md` | `cargo report` command reference |
+| `cargo-run.md` | `cargo run` command reference |
+| `cargo-rustc.md` | `cargo rustc` command reference |
+| `cargo-rustdoc.md` | `cargo rustdoc` command reference |
+| `cargo-search.md` | `cargo search` command reference |
+| `cargo-test.md` | `cargo test` command reference |
+| `cargo-tree.md` | `cargo tree` command reference |
+| `cargo-uninstall.md` | `cargo uninstall` command reference |
+| `cargo-update.md` | `cargo update` command reference |
+| `cargo-vendor.md` | `cargo vendor` command reference |
+| `cargo-version.md` | `cargo version` command reference |
+| `cargo-yank.md` | `cargo yank` command reference |
+| `cargo.md` | cargo top-level command |
+| `deprecated-and-removed.md` | Deprecated and removed commands |
 
 ## getting-started/
 
 | File | Description |
 |------|-------------|
-| `installation.md` | How to install Cargo and Rust |
-| `first-steps.md` | First steps with Cargo |
+| `first-steps.md` | Create and run a first package |
+| `index.md` | Getting started overview |
+| `installation.md` | Installing Rust and Cargo |
 
 ## guide/
 
 | File | Description |
 |------|-------------|
-| `why-cargo-exists.md` | Background and motivation for Cargo |
-| `creating-a-new-project.md` | Creating a new Cargo package |
-| `working-on-an-existing-project.md` | Working on an existing Cargo project |
-| `dependencies.md` | Adding and using dependencies |
-| `project-layout.md` | Standard package layout conventions |
-| `cargo-toml-vs-cargo-lock.md` | When to commit Cargo.lock |
-| `tests.md` | Writing and running tests |
-| `continuous-integration.md` | CI setup for Cargo projects |
-| `cargo-home.md` | The Cargo home directory |
-| `build-performance.md` | Optimizing build performance |
-| `index.md` | Guide overview (skipped - link list) |
+| `build-performance.md` | Improving build performance |
+| `cargo-home.md` | Cargo home directory |
+| `cargo-toml-vs-cargo-lock.md` | Cargo.toml vs Cargo.lock |
+| `continuous-integration.md` | Using Cargo in CI |
+| `creating-a-new-project.md` | Creating a new project |
+| `dependencies.md` | Adding dependencies |
+| `index.md` | Guide overview |
+| `project-layout.md` | Package layout conventions |
+| `tests.md` | Running tests |
+| `why-cargo-exists.md` | Why Cargo exists |
+| `working-on-an-existing-project.md` | Working on an existing project |
 
 ## reference/
 
 | File | Description |
 |------|-------------|
-| `manifest.md` | Cargo.toml manifest format reference |
-| `cargo-targets.md` | Configuring cargo targets (lib, bin, test, etc.) |
-| `rust-version.md` | The rust-version field |
-| `workspaces.md` | Cargo workspaces |
-| `specifying-dependencies.md` | Specifying dependency versions and sources |
-| `overriding-dependencies.md` | Overriding dependencies |
-| `source-replacement.md` | Replacing dependency sources |
-| `resolver.md` | Dependency resolution algorithm |
-| `features.md` | Cargo features and conditional compilation |
-| `features-examples.md` | Feature usage examples |
-| `profiles.md` | Compilation profiles (dev, release, etc.) |
-| `config.md` | Cargo configuration file reference |
-| `environment-variables.md` | Environment variables Cargo reads and sets |
-| `build-scripts.md` | Build script (build.rs) reference |
+| `build-cache.md` | Build cache layout |
 | `build-script-examples.md` | Build script examples |
-| `build-cache.md` | Build cache and artifact layout |
-| `pkgid-spec.md` | Package ID specification format |
-| `external-tools.md` | Integrating external tools with Cargo |
-| `registries.md` | Using and configuring crate registries |
-| `registry-authentication.md` | Registry authentication |
+| `build-scripts.md` | Build scripts (build.rs) |
+| `cargo-targets.md` | Package targets (bin, lib, example, test, bench) |
+| `config.md` | Configuration (.cargo/config.toml) |
 | `credential-provider-protocol.md` | Credential provider protocol |
+| `environment-variables.md` | Environment variables |
+| `external-tools.md` | External tools and custom subcommands |
+| `features-examples.md` | Feature examples |
+| `features.md` | Features and optional dependencies |
+| `future-incompat-report.md` | Future incompatibility reports |
+| `index.md` | Reference overview |
+| `lints.md` | Lints tables |
+| `manifest.md` | Manifest format (Cargo.toml) |
+| `overriding-dependencies.md` | Overriding dependencies |
+| `pkgid-spec.md` | Package ID specifications |
+| `profiles.md` | Profiles |
+| `publishing.md` | Publishing on crates.io |
+| `registries.md` | Registries |
+| `registry-authentication.md` | Registry authentication |
 | `registry-index.md` | Registry index format |
-| `registry-web-api.md` | Registry HTTP API |
-| `running-a-registry.md` | Running a custom registry |
-| `lints.md` | Cargo lints |
-| `semver.md` | SemVer compatibility reference |
-| `future-incompat-report.md` | Future-incompatibility reports |
-| `timings.md` | Build timing reports |
-| `publishing.md` | Publishing crates to crates.io |
-| `unstable.md` | Unstable/nightly Cargo features |
-
-## Root
-
-| File | Description |
-|------|-------------|
-| `faq.md` | Frequently asked questions about Cargo |
+| `registry-web-api.md` | Registry web API |
+| `resolver.md` | Dependency resolver |
+| `running-a-registry.md` | Running a registry |
+| `rust-version.md` | rust-version (MSRV) |
+| `semver.md` | SemVer compatibility |
+| `source-replacement.md` | Source replacement |
+| `specifying-dependencies.md` | Specifying dependencies |
+| `timings.md` | Build timings |
+| `unstable.md` | Unstable (nightly) features |
+| `workspaces.md` | Workspaces |

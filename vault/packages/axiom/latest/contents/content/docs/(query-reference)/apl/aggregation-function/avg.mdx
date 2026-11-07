@@ -1,0 +1,150 @@
+---
+title: avg
+description: 'This page explains how to use the avg aggregation function in APL.'
+---
+
+The `avg` aggregation in APL calculates the average value of a numeric field across a set of records. You can use this aggregation when you need to determine the mean value of numerical data, such as request durations, response times, or other performance metrics. It’s useful in scenarios such as performance analysis, trend identification, and general statistical analysis.
+
+When to use `avg`:
+
+- When you want to analyze the average of numeric values over a specific time range or set of data.
+- For comparing trends, like average request duration or latency across HTTP requests.
+- To provide insight into system or user performance, such as the average duration of transactions in a service.
+
+## Usage
+
+### Syntax
+
+```kusto
+summarize avg(ColumnName) [by GroupingColumn]
+```
+
+### Parameters
+
+- **ColumnName**: The numeric field you want to calculate the average of.
+- **GroupingColumn** (optional): A column to group the results by. If not specified, the average is calculated over all records.
+
+### Returns
+
+- A table with the average value for the specified field, optionally grouped by another column.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+This example calculates the average request duration for HTTP requests, grouped by status.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize avg(req_duration_ms) by status
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20avg(req_duration_ms)%20by%20status%22%7D)
+
+**Output**
+
+| status | avg_req_duration_ms |
+|--------|---------------------|
+| 200    | 350.4               |
+| 404    | 150.2               |
+
+This query calculates the average request duration (in milliseconds) for each HTTP status code.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+This example calculates the average span duration for each service to analyze performance across services.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize avg(duration) by ['service.name']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%5Cn%7C%20summarize%20avg(duration)%20by%20%5B'service.name'%5D%22%7D)
+
+**Output**
+
+| service.name          | avg_duration |
+|-----------------------|--------------|
+| frontend              | 500ms        |
+| cartservice           | 250ms        |
+
+This query calculates the average duration of spans for each service.
+
+</Tab>
+<Tab title="Security logs">
+
+In security logs, you can calculate the average request duration by country to analyze regional performance trends.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize avg(req_duration_ms) by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%5Cn%7C%20summarize%20avg(req_duration_ms)%20by%20%5B'geo.country'%5D%22%7D)
+
+**Output**
+
+| geo.country | avg_req_duration_ms |
+|-------------|---------------------|
+| US          | 400.5               |
+| DE          | 250.3               |
+
+This query calculates the average request duration for each country from where the requests originated.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**sum**](/apl/aggregation-function/sum): Use `sum` to calculate the total of a numeric field. This is useful when you want the total of values rather than their average.
+- [**count**](/apl/aggregation-function/count): The `count` function returns the total number of records. It’s useful when you want to count occurrences rather than averaging numerical values.
+- [**min**](/apl/aggregation-function/min): The `min` function returns the minimum value of a numeric field. Use this when you’re interested in the smallest value in your dataset.
+- [**max**](/apl/aggregation-function/max): The `max` function returns the maximum value of a numeric field. This is useful for finding the largest value in the data.
+- [**stdev**](/apl/aggregation-function/stdev): This function calculates the standard deviation of a numeric field, providing insight into how spread out the data is around the mean.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `avg` function works similarly, but the syntax differs slightly. Here’s how to write the equivalent query in APL.
+
+<CodeGroup>
+```sql Splunk example
+| stats avg(req_duration_ms) by status
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize avg(req_duration_ms) by status
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `avg` aggregation is used similarly, but APL has a different syntax for structuring the query.
+
+<CodeGroup>
+```sql SQL example
+SELECT status, AVG(req_duration_ms)
+FROM sample_http_logs
+GROUP BY status
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize avg(req_duration_ms) by status
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

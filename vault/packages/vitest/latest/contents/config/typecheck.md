@@ -15,6 +15,14 @@ Options for configuring [typechecking](/guide/testing-types) test environment.
 
 Enable typechecking alongside your regular tests.
 
+::: tip
+When typechecking is enabled, Vitest prints a warning that this is an experimental feature. Set the `VITEST_DISABLE_EXPERIMENTAL_LOG` environment variable to hide it:
+
+```bash
+VITEST_DISABLE_EXPERIMENTAL_LOG=true vitest --typecheck
+```
+:::
+
 ## typecheck.only {#typecheck-only}
 
 - **Type:** `boolean`
@@ -47,7 +55,7 @@ Glob pattern for files that should be treated as test files.
 ## typecheck.exclude
 
 - **Type:** `string[]`
-- **Default:** `['**/node_modules/**', '**/dist/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**']`
+- **Default:** `['**/node_modules/**', '**/.git/**']`
 
 Glob pattern for files that should not be treated as test files.
 

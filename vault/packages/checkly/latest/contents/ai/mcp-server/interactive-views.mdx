@@ -1,0 +1,76 @@
+---
+title: 'Interactive MCP views'
+description: 'View check status, browse checks, and explore response times directly in your AI conversation with Checkly MCP Apps.'
+sidebarTitle: 'Interactive views'
+canonical: 'https://www.checklyhq.com/docs/ai/mcp-server/interactive-views/'
+---
+
+Checkly MCP UI brings check cards, check lists, and response-time charts into your AI conversation. You can inspect your monitoring data and ask follow-up questions without leaving the chat.
+
+Interactive views are available on every Checkly account.
+
+<Accordion title="Before you begin">
+- [Connect the Checkly MCP Server](/ai/mcp-server/setup) to your client.
+- Use a client that supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview), such as Claude Desktop. Support for MCP tools alone does not guarantee that a client can display interactive views.
+- Allow the `checkly:checks:read` session permission and use an account role with [`checks:read`](/admin/team-management/permissions) access.
+</Accordion>
+
+You use the same MCP endpoint and authentication as other Checkly tools. If you have access to several accounts, name the account in your prompt or [select a default account](/ai/mcp-server/setup#select-an-account).
+
+## Check status
+
+Ask for a check card to see one check's current status, type, tags, and availability and response-time percentiles over the last 24 hours, when available.
+
+```text title="Prompt" wrap
+Show an interactive status card for my Checkout API check.
+```
+
+<Frame caption="Check status card with sample data.">
+  <img src="/images/ai/mcp/check-status.png" alt="Checkout API check card showing passing status, production and payments tags, availability, and P95 and P99 response times." />
+</Frame>
+
+This view uses `show-check-status`. It shows aggregate metrics, without individual run history.
+
+## Check list
+
+Ask for a check list to browse current status. You can filter by name, tag, check type, or passing, failing, and degraded status.
+
+```text title="Prompt" wrap
+Show an interactive list of my Checkly checks.
+```
+
+<Frame caption="Paginated check list with sample data.">
+  <img src="/images/ai/mcp/check-list.png" alt="Interactive list of checks with check-type icons, current status badges, and Previous and Next pagination controls." />
+</Frame>
+
+This view uses `show-check-list` and displays up to 20 checks per page. Use **Previous** and **Next** to browse more results. Pagination keeps your filters. The list shows current status without historical metrics.
+
+## Response-time chart
+
+Ask for a chart to explore one check's response times. The default time window is the last 24 hours.
+
+```text title="Prompt" wrap
+Show an interactive response-time chart for my Checkout API check over the last 24 hours.
+```
+
+<Frame caption="Response-time chart with sample data.">
+  <img src="/images/ai/mcp/response-time.png" alt="Checkout API response-time chart showing average and P95 time series with controls for average, P50, P95, and P99." />
+</Frame>
+
+For a different window, include a start and end time in your prompt:
+
+```text title="Prompt" wrap
+Show a response-time chart for my Checkout API check from 09:00 UTC yesterday to 09:00 UTC today.
+```
+
+This view uses `show-check-response-time`. Time windows must be in the past, span at most seven days, and fall within your plan's data retention. Chart times use UTC, and periods without results appear as gaps.
+
+Response-time charts are unavailable for Heartbeat, ICMP, traceroute, and SSL monitors.
+
+## Refresh a view
+
+Views show the data returned when you request them. Use **Refresh** to fetch the latest data, or ask a follow-up question to change the check, filters, or time window. Views do not refresh automatically.
+
+All three views are read-only and use your existing [MCP permissions](/ai/mcp-server/security-and-permissions). They do not run checks or change your monitoring configuration.
+
+If a view is missing or fails to load, see [Troubleshoot interactive views](/ai/mcp-server/troubleshooting#interactive-views).

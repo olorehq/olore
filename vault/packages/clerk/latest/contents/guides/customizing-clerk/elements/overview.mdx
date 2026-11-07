@@ -1,9 +1,11 @@
 ---
-title: Clerk Elements (beta)
+title: Clerk Elements
 description: Learn how to use Clerk Elements to build custom UIs on top of the Clerk APIs without having to manage the underlying logic.
+tag: deprecated
 ---
 
-<Include src="_partials/elements-callout" />
+> [!DEPRECATED]
+> This feature is deprecated. With the release of [Clerk Core 3](/changelog/2026-03-03-core-3), the redesigned [hooks](/docs/reference/hooks/overview) are the recommended replacement for building custom flows. They expose stateful objects, step methods that map directly to the flow, and structured field-level errors out of the box, so you no longer need to manage attempt status, loading states, or error parsing yourself.
 
 Clerk Elements is a library of unstyled, composable components that can be used to build custom UIs on top of the Clerk APIs without having to manage the underlying logic.
 
@@ -21,12 +23,12 @@ You should use Clerk Elements if you want a deeper level of control and customiz
 Clerk Elements can be integrated into your existing application and workflows. For example, you may want to use Clerk Elements with:
 
 - **Tailwind CSS** – If you use Tailwind CSS, you can pass a `className` prop to most elements that Clerk Elements renders. See [the styling guide](/docs/guides/customizing-clerk/elements/guides/styling#tailwind-css) to learn more.
-- **Existing styles or component library** – If you have an existing component library that you want to use to build your authentication UIs, Clerk Elements supports composition via an `asChild` prop. Read [the styling guide](/docs/guides/customizing-clerk/elements/guides/styling#with-existing-components-via-as-child) to learn more.
+- **Existing styles or component library** – If you have an existing component library that you want to use to build your authentication UIs, Clerk Elements supports composition via an `asChild` prop. Read [the styling guide](/docs/guides/customizing-clerk/elements/guides/styling#with-existing-components-via-aschild) to learn more.
 - **With prebuilt components** - Continue using prebuilt components while customizing the flows you care most about.
 
 ## Getting started
 
-Clerk Elements currently only works with Next.js App Router and [Clerk Core 2](/changelog/2024-04-19){{ target: '_blank' }}. As it gets closer to a stable release, support for additional frameworks will be added. If your Next.js application is already using Clerk, make sure to [upgrade to Core 2](/docs/guides/development/upgrading/upgrade-guides/core-2/nextjs). If you're starting from scratch, follow the [Next.js quickstart](/docs/nextjs/getting-started/quickstart) before proceeding.
+Clerk Elements currently only works with Next.js App Router and [Clerk Core 2](/changelog/2024-04-19). As it gets closer to a stable release, support for additional frameworks will be added. If your Next.js application is already using Clerk, make sure to [upgrade to Core 2](/docs/guides/development/upgrading/upgrade-guides/core-2/nextjs). If you're starting from scratch, follow the [Next.js quickstart](/docs/nextjs/getting-started/quickstart) before proceeding.
 
 To get started, install the Clerk Elements package:
 
@@ -42,6 +44,3 @@ Once you have your project set up, you can start building custom UIs with Clerk 
 - [Build a sign-in flow](/docs/guides/customizing-clerk/elements/guides/sign-in)
 - [Sign-in examples](/docs/guides/customizing-clerk/elements/examples/sign-in)
 - [Sign-in components](/docs/guides/customizing-clerk/elements/reference/sign-in)
-
-> [!NOTE]
-> With the beta release, only sign-up and sign-in flows are supported. Support for building the rest of the prebuilt components with Elements is actively being worked on.

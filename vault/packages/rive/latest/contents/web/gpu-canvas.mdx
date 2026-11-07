@@ -1,0 +1,75 @@
+---
+title: "GPU Canvas"
+description: "Opt a Rive instance into GPU Canvas to render 3D and shader content on the web."
+---
+
+GPU Canvas enables Rive files to render 3D and shader content in the web runtime. It is opt-in per Rive instance and available in [`@rive-app/webgl2`](https://www.npmjs.com/package/@rive-app/webgl2) `2.42.0+`.
+
+<Warning>
+  GPU Canvas is experimental. The API may change in a minor release without a major version bump.
+</Warning>
+
+## Requirements
+
+- **`@rive-app/webgl2` only.** The Canvas2D packages (`@rive-app/canvas`, `@rive-app/canvas-lite`) do not support GPU Canvas yet.
+- **`useOffscreenRenderer` must stay false.** GPU Canvas needs a WebGL context per `<canvas>`, while the offscreen renderer pattern shares one context across every canvas on the page. It is `false` by default in the web runtime, so there is nothing to change unless you set it to `true`.
+
+## Enabling GPU Canvas
+
+Pass `enableGPUCanvas: true` when you create the Rive instance:
+
+```javascript highlight={9}
+import { Rive } from "@rive-app/webgl2";
+
+const rive = new Rive({
+  src: "my_file.riv",
+  canvas: document.getElementById("canvas"),
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  autoBind: true,
+  enableGPUCanvas: true,
+});
+```
+
+GPU Canvas is disabled by default, but that may change in a future major version.
+
+## Enabling GPU Canvas on a cached file
+
+A `RiveFile` takes the same `enableGPUCanvas` flag and cannot be changed once the `RiveFile` is constructed:
+
+```javascript highlight={5,15}
+import { RiveFile, Rive } from "@rive-app/webgl2";
+
+const riveFile = new RiveFile({
+  src: "my_file.riv",
+  enableGPUCanvas: true,
+});
+await riveFile.init();
+
+const rive = new Rive({
+  riveFile,
+  canvas: document.getElementById("canvas"),
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  autoBind: true,
+  enableGPUCanvas: true,
+});
+```
+
+The file's flag wins over the same property on `new Rive()`: a `RiveFile` created with `enableGPUCanvas: true` renders through the required deferred renderer technique even when the `Rive` instance is created with `enableGPUCanvas: false` (or unset), and the runtime logs a warning.
+
+<Warning>
+  **A GPU Canvas `RiveFile` cannot be shared across Rive instances.** The renderer binds a file to a single `<canvas>`, so the first `Rive` instance you pass it to claims it.
+
+Additional Rive instances will still load, but they won't use the `RiveFile` you passed in. Instead, the runtime logs a warning and creates a fresh copy of the `.riv` from the file's existing buffer. As a result, anything you read or configure through the original `RiveFile` does not apply to those additional instances.
+</Warning>
+
+## Limits
+
+Each GPU Canvas instance takes its own WebGL context, and browsers cap how many contexts a page can hold, so only opt in for the graphics that need it. See [WebGL Context Limits](/runtimes/web/canvas-vs-webgl#webgl-context-limits).
+
+## Related
+
+- [Rive Parameters](/runtimes/web/rive-parameters) — full constructor reference
+- [Canvas vs WebGL2](/runtimes/web/canvas-vs-webgl) — choosing a package
+- [React: GPU Canvas](/runtimes/react/gpu-canvas)

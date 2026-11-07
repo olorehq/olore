@@ -1,0 +1,87 @@
+---
+title: 'Send data from Cribl to Axiom'
+description: 'Learn how to configure Cribl Stream to forward data to Axiom using the Webhook or Syslog destination, and how to send OCSF security data with the OCSF for Axiom pack.'
+overview: 'Data stream processing tool for log data collection and routing'
+sidebarTitle: Cribl
+keywords: ['cribl', 'axiom documentation', 'documentation', 'axiom', 'cribl stream', 'cribl logstream', 'log forwarding', 'webhook destination', 'http destination', 'syslog destination', 'log integration', 'ocsf', 'cribl pack']
+logoId: 'cribl'
+isPopular: true
+popularityOrder: 10
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import CriblWebhookDestination from "@/content/snippets/cribl-webhook-destination.mdx"
+
+Cribl is a data processing framework often used with machine data. It allows you to parse, reduce, transform, and route data to and from various systems in your infrastructure.
+
+You can send data from Cribl Stream to Axiom using the Webhook destination or the Syslog destination.
+
+<Tip>
+To send OCSF security events, use the OCSF for Axiom pack together with the Webhook destination. The pack conforms OCSF events to the Axiom OCSF schema before they leave Cribl. For more information, see [Send OCSF data from Cribl Stream](/use-cases/ocsf/send-data#send-ocsf-data-from-cribl-stream).
+</Tip>
+
+<Prerequisites />
+
+## Send data using the Webhook destination
+
+Cribl Stream has no dedicated Axiom destination. The stock Webhook destination sends batched, compressed NDJSON events straight to Axiom’s [ingest API](/restapi/ingest).
+
+1. In Cribl Stream, add a **Webhook** destination and enter an **Output ID** for it.
+1. Configure the destination with the following settings.
+
+    <CriblWebhookDestination />
+
+1. Optional: In **Processing Settings > Post-Processing**, select a pipeline to shape events before they leave Cribl, and adjust **System fields**. By default, Cribl adds the `cribl_pipe` field to every event.
+1. Save the destination, and then commit and deploy the change.
+
+## Send data using the Syslog destination
+
+### Create Syslog endpoint
+
+import SetUpEndpoint from "@/content/snippets/set-up-endpoint-no-heading.mdx"
+
+<SetUpEndpoint endpointName="Syslog" />
+
+### Configure destination in Cribl
+
+1. Create a new Syslog destination in Cribl Stream:
+
+Open Cribl’s UI and navigate to **Destinations > Syslog**. Click on `+` Add New to create a new destination.
+
+2. Configure the destination:
+
+- **Name:** Choose a name and output ID for the destination.
+
+- **Protocol:** Choose the protocol for the Syslog messages. Select the TCP protocol.
+
+- **Destination Address:** Input the address of the Axiom endpoint to which you want to send logs. This address is generated from your Syslog endpoint in Axiom and follows this format: `tcp+tls://qsfgsfhjsfkbx9.syslog.axiom.co:6514`.
+
+- **Destination Port:** Enter the port number on which the Axiom endpoint is listening for Syslog messages which is `6514`
+
+- **Format:** Choose the Syslog message format. `RFC3164` is a common format and is generally recommended.
+
+- **Facility:** Choose the facility code to use in the Syslog messages. The facility code represents the type of process that’s generating the Syslog messages.
+
+- **Severity:** Choose the severity level to use in the Syslog messages. The severity level represents the importance of the Syslog messages.
+
+<Frame caption="Cribl LogStream destination configuration">
+  <img src="/docs/doc-assets/shots/cribl-output-syslog-1.png" alt="Cribl LogStream destination configuration" />
+</Frame>
+
+3. Configure the Message:
+
+- **Timestamp Format:** Choose the timestamp format to use in the Syslog messages.
+
+- **Application Name Field:** Enter the name of the field to use as the app name in the Syslog messages.
+
+- **Message Field:** Enter the name of the field to use as the message in the Syslog messages. Typically, this would be `_raw`.
+
+- **Throttling:** Enter the throttling value. Throttling is a mechanism to control the data flow rate from the source (Cribl) to the destination (in this case, an Axiom Syslog Endpoint).
+
+<Frame caption="Configure the Syslog message">
+  <img src="/docs/doc-assets/shots/cribl-syslog-message.png" alt="Configure the Syslog message" />
+</Frame>
+
+4. Save and enable the destination
+
+After you’ve finished configuring the destination, save your changes and make sure the destination is enabled.

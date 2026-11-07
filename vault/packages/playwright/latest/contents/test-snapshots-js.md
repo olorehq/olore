@@ -50,6 +50,26 @@ The snapshot name `example-test-1-chromium-darwin.png` consists of a few parts:
 
 The snapshot name and path can be configured with [`property: TestConfig.snapshotPathTemplate`] in the playwright config.
 
+Snapshots are stored as PNG by default. Give the snapshot a name with the `.webp` extension to store it in the WebP format instead, it is also lossless:
+
+```js
+await expect(page).toHaveScreenshot('landing.webp');
+```
+
+To store all unnamed snapshots as WebP, set the `type` option in the [`property: TestConfig.expect`] configuration:
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  expect: {
+    toHaveScreenshot: {
+      type: 'webp',
+    },
+  },
+});
+```
+
 > Note that `toHaveScreenshot()` also accepts an array of path segments to the snapshot file such as `expect().toHaveScreenshot(['relative', 'path', 'to', 'snapshot.png'])`.
 > However, this path must stay within the snapshots directory for each test file (i.e. `a.spec.js-snapshots`), otherwise it will throw.
 
@@ -61,28 +81,40 @@ Sometimes you need to update the reference screenshot, for example when the page
 npx playwright test --update-snapshots
 ```
 
+## Hover effects
+
+Screenshots capture any hover effects present in the page at the moment. To avoid hover effects, move the mouse to a position that does not trigger them, or hover an element that has no effects, before taking the screenshot:
+
+```js
+await page.mouse.move(-1, -1);
+await expect(page).toHaveScreenshot();
+```
+
 ## Options
 
-### maxDiffPixels
+### maxDiffPixels and threshold
 
 Playwright Test uses the [pixelmatch](https://github.com/mapbox/pixelmatch) library. You can [pass various options](./api/class-pageassertions.md#page-assertions-to-have-screenshot-1) to modify its behavior:
+
+- `threshold` defines which pixels are considered different. It is an acceptable perceived color difference between the same pixel in compared images, between `0` (strict) and `1` (lax). Defaults to `0.2`.
+- `maxDiffPixels` is an acceptable amount of pixels that could be different. Unset by default.
 
 ```js title="example.spec.ts"
 import { test, expect } from '@playwright/test';
 
 test('example test', async ({ page }) => {
   await page.goto('https://playwright.dev');
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 });
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100, threshold: 0.1 });
 });
 ```
 
-If you'd like to share the default value among all the tests in the project, you can specify it in the playwright config, either globally or per project:
+If you'd like to share the default values among all the tests in the project, you can specify them in the playwright config, either globally or per project:
 
 ```js title="playwright.config.ts"
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   expect: {
-    toHaveScreenshot: { maxDiffPixels: 100 },
+    toHaveScreenshot: { maxDiffPixels: 100, threshold: 0.1 },
   },
 });
 ```

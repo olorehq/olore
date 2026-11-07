@@ -5,50 +5,50 @@ description: Local Stripe Node.js SDK documentation reference (latest). Use for 
 
 # stripe Documentation
 
-Stripe Node.js SDK documentation covering installation, configuration, TypeScript types, webhook signature verification, auto-pagination, error handling, and framework-specific integration examples.
+Stripe Node.js SDK documentation (stripe-node master) covering installation, client configuration, TypeScript types, webhook signature verification, auto-pagination, error handling, v2 event notifications, and framework-specific examples.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/README.md` | Stripe Node.js Library | Main library overview: installation, authentication, usage, TypeScript support, webhooks, auto-pagination, error handling, custom HTTP clients |
-| `contents/examples/snippets/README.md` | Snippets Setup | How to build and run the local example snippets |
-| `contents/examples/snippets/event_notification_webhook_handler.ts` | Event Notification Handler | Example: handling Stripe v2 event notifications (billing meter events) |
-| `contents/examples/snippets/example_template.ts` | Snippet Template | Template structure for writing new SDK usage examples |
-| `contents/examples/snippets/meter_event_stream.ts` | Meter Event Stream | Example: streaming meter events via the V2 API |
-| `contents/examples/webhook-signing/README.md` | Webhook Signing Guide | Overview of webhook signature verification with links to framework examples |
-| `contents/examples/webhook-signing/deno/main.ts` | Deno Webhook Example | Webhook signature verification in Deno |
-| `contents/examples/webhook-signing/express/main.ts` | Express Webhook Example | Webhook signature verification in Express.js |
-| `contents/examples/webhook-signing/koa/main.ts` | Koa Webhook Example | Webhook signature verification in Koa.js |
-| `contents/examples/webhook-signing/nestjs/app.controller.ts` | NestJS Webhook Controller | NestJS controller handling Stripe webhook events |
-| `contents/examples/webhook-signing/nestjs/app.module.ts` | NestJS Webhook Module | NestJS module setup for webhook handling |
-| `contents/examples/webhook-signing/nestjs/config.ts` | NestJS Webhook Config | Configuration for NestJS webhook example |
-| `contents/examples/webhook-signing/nestjs/main.ts` | NestJS Entry Point | NestJS app bootstrap for webhook example |
-| `contents/examples/webhook-signing/nextjs/app/api/webhooks/route.ts` | Next.js App Router Webhook | Webhook route handler for Next.js App Router |
-| `contents/examples/webhook-signing/nextjs/main.ts` | Next.js Entry Point | Next.js webhook example bootstrap |
-| `contents/examples/webhook-signing/nextjs/next-env.d.ts` | Next.js Types | TypeScript environment declarations for Next.js |
-| `contents/examples/webhook-signing/nextjs/pages/api/webhooks.ts` | Next.js Pages Router Webhook | Webhook API route for Next.js Pages Router |
-| `contents/src/autoPagination.ts` | Auto-Pagination | Implementation for iterating all pages of paginated list responses |
-| `contents/src/crypto/CryptoProvider.ts` | CryptoProvider Interface | Pluggable crypto interface for webhook HMAC verification |
-| `contents/src/Error.ts` | Error Classes | All Stripe error types: StripeError, StripeAPIError, StripeAuthenticationError, StripeRateLimitError, StripeInvalidRequestError, etc. |
-| `contents/src/lib.ts` | SDK Config Types | RequestOptions, UserProvidedConfig, ApiList, ApiListPromise, Response types |
-| `contents/src/net/HttpClient.ts` | HttpClient Interface | Interface for custom HTTP client implementations |
-| `contents/src/resources.ts` | Resources Registry | Auto-generated registry of all Stripe API resource classes |
-| `contents/src/shared.ts` | Shared Types | Metadata, Address, PaginationParams, RangeQueryParam, ShippingAddressParam, Emptyable |
-| `contents/src/stripe.core.ts` | Stripe Client | Core Stripe class: constructor, configuration options, request handling, resource attachment |
-| `contents/src/Types.ts` | Core Types | UserProvidedConfig, RequestData, StripeRawError, ApiMode, BaseAddress, DEFAULT_BASE_ADDRESSES |
-| `contents/src/Webhooks.ts` | Webhooks | constructEvent, constructEventAsync, generateTestHeaderString for webhook signature verification |
+| `contents/.hark/migration-guides/v23.md` | v23.md | Migration guide for v23: new API version, Node 20 minimum, breaking SDK changes |
+| `contents/README.md` | README.md | Stripe Node.js library overview: install, client config, usage, TypeScript, webhooks, pagination, errors |
+| `contents/examples/snippets/README.md` | README.md | Setup and run instructions for the example snippets |
+| `contents/examples/snippets/event_notification_handler_endpoint.ts` | event_notification_handler_endpoint.ts | Receive event notifications with an event notification handler and fallback callback |
+| `contents/examples/snippets/event_notification_webhook_handler.ts` | event_notification_webhook_handler.ts | Parse and process v2 event notification webhooks with the client |
+| `contents/examples/snippets/example_template.ts` | example_template.ts | Template for writing new SDK usage snippets |
+| `contents/examples/snippets/meter_event_stream.ts` | meter_event_stream.ts | Stream billing meter events through the high-throughput V2 meter event stream |
+| `contents/examples/webhook-signing/README.md` | README.md | Guide to verifying Stripe webhook signatures with per-framework examples |
+| `contents/examples/webhook-signing/deno/main.ts` | main.ts | Webhook signature verification in Deno |
+| `contents/examples/webhook-signing/express/main.ts` | main.ts | Webhook signature verification in Express with raw body handling |
+| `contents/examples/webhook-signing/koa/main.ts` | main.ts | Webhook signature verification in Koa with bodyparser |
+| `contents/examples/webhook-signing/nestjs/app.controller.ts` | app.controller.ts | NestJS controller that verifies webhook signatures |
+| `contents/examples/webhook-signing/nestjs/app.module.ts` | app.module.ts | NestJS module wiring config and controller for the webhook example |
+| `contents/examples/webhook-signing/nestjs/config.ts` | config.ts | NestJS config loading Stripe secret key and webhook secret |
+| `contents/examples/webhook-signing/nestjs/main.ts` | main.ts | NestJS app bootstrap for the webhook example |
+| `contents/examples/webhook-signing/nextjs/app/api/webhooks/route.ts` | route.ts | Next.js App Router route handler verifying webhook signatures |
+| `contents/examples/webhook-signing/nextjs/main.ts` | main.ts | Next.js example runner (test-infrastructure entry point) |
+| `contents/examples/webhook-signing/nextjs/next-env.d.ts` | next-env.d.ts | Next.js TypeScript environment declarations for the example |
+| `contents/examples/webhook-signing/nextjs/pages/api/webhooks.ts` | webhooks.ts | Next.js Pages Router API route verifying webhook signatures |
+| `contents/src/Error.ts` | Error.ts | Stripe error classes (StripeError and subclasses) and raw error types |
+| `contents/src/Types.ts` | Types.ts | Core shared TypeScript types: client config, request data, raw errors, base addresses |
+| `contents/src/Webhooks.ts` | Webhooks.ts | Webhook helpers: constructEvent, signature verification and test header generation |
+| `contents/src/autoPagination.ts` | autoPagination.ts | Auto-pagination implementation for list methods (async iteration, toArray) |
+| `contents/src/crypto/CryptoProvider.ts` | CryptoProvider.ts | CryptoProvider interface for pluggable HMAC and signature computation |
+| `contents/src/lib.ts` | lib.ts | Public library typings: app info, API version, HTTP agent and protocol types |
+| `contents/src/net/HttpClient.ts` | HttpClient.ts | HttpClient interface and response types for custom HTTP clients |
+| `contents/src/resources.ts` | resources.ts | Registry mapping API resource classes to client namespaces (generated) |
+| `contents/src/shared.ts` | shared.ts | Shared types such as Metadata, MetadataParam and Decimal |
+| `contents/src/stripe.core.ts` | stripe.core.ts | Core Stripe client class: constructor, options, request setup, webhooks, errors |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Installing and initializing the Stripe Node.js SDK
-- Creating Payment Intents, Checkout Sessions, or Subscriptions
-- Handling and verifying Stripe webhook events
-- Stripe TypeScript types (RequestOptions, ApiList, Metadata, errors)
-- Auto-pagination over list responses
-- Custom HTTP client or crypto provider configuration
-- Stripe SDK usage in Express, Koa, NestJS, Next.js, Deno, or Bun
+- Setting up the Stripe Node client, options, and TypeScript usage
+- Verifying webhook signatures in Express, Koa, NestJS, Next.js, or Deno
+- Event notifications, meter event streams, and v2 API usage
+- Auto-pagination, error classes, and custom HTTP or crypto providers
+- Migrating to stripe-node v23
 
 ## How to find information
 

@@ -2,15 +2,18 @@
 title: "Admin Overview"
 description: "Comprehensive guide to managing your Checkly account, team members, security, and integrations"
 sidebarTitle: "Overview"
+canonical: 'https://www.checklyhq.com/docs/admin/team-management/overview/'
 ---
 
 This section covers all aspects of administering your Checkly account, from managing team members and permissions to setting up advanced security features and API access.
 
 ## Team Member Roles
 
-When inviting a team member to join your account you can assign one of five roles: **Owner**, **Admin**, **Read & Write**, **Read & Run**, or **Read Only**. Each role inherits all permissions from the roles below it.
+Checkly has five built-in roles: **Owner**, **Admin**, **Read & Write**, **Read & Run**, and **Read Only**. Each role inherits all permissions from the roles below it. If [custom roles](/admin/team-management/custom-roles) (beta) are enabled for your account, you can also define roles with the permissions you pick.
 
-Only the initial account creator has the Owner role. You can change assigned roles at any time after a teammate joins.
+Each account has one Owner. The account creator is the Owner until they [transfer ownership](#transferring-ownership). You can invite teammates with any other role. You can [change a member's role](/admin/team-management/managing-team-members#change-members’-roles) after they join.
+
+<div className="role-matrix">
 
 | Capability | Owner | Admin | Read & Write | Read & Run | Read Only |
 |------------|:-----:|:-----:|:------------:|:----------:|:---------:|
@@ -19,12 +22,19 @@ Only the initial account creator has the Owner role. You can change assigned rol
 | Create/edit/delete checks | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Manage alert settings | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Manage maintenance windows | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Share/edit/delete shared views | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Access locked variables | ✓ | ✓ | ✓ | ✗ | ✗ |
-| Manage team members | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Manage team members (only below their current role. i.e. Owners can remove Admins, but Admins cannot remove Owners or other Admins.) | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Manage account settings | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Manage Private Locations | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Manage private locations | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Create service API keys | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Transfer ownership | ✓ | ✗ | ✗ | ✗ | ✗ |
+
+</div>
+
+### Permissions and roles
+
+Your account role grants permissions for actions on resources. Use the [permissions reference](/admin/team-management/permissions) to find each permission’s ID, name in the role editor, description, and how to request access.
 
 ### Choosing the Right Role
 
@@ -38,15 +48,29 @@ Only the initial account creator has the Owner role. You can change assigned rol
 
 ### Adding Team Members
 
-Learn how to invite new users to your account and manage their access levels.
+Learn how to invite new users to your account.
 
 [Learn more about adding team members](/admin/team-management/adding-team-members)
+
+### Managing Team Members
+
+Change members' roles, remove members and invitations, change your own role, or leave an account.
+
+[Learn more about managing team members](/admin/team-management/managing-team-members)
 
 ### Transferring Ownership
 
 **Owners** can transfer ownership to another team member from the [General](https://app.checklyhq.com/settings/account/general) section in account settings. Click "Transfer ownership" and follow the instructions. Your role will change to **Admin** after the transfer.
 
+If the current Owner is no longer at your company or can no longer access Checkly, reach out to [support@checklyhq.com](mailto:support@checklyhq.com) and we can transfer ownership for you. To verify that you're authorized to request the change, we'll ask you to provide a previous Checkly receipt or invoice.
+
 ## Account Management
+
+### Account name
+
+The account Owner can change the account name from the [General](https://app.checklyhq.com/settings/account/general) section in account settings. By default the account name is the Owner's email address, but you can change it to reflect a department, product team, etc.
+
+![set account name](/images/docs/images/teams/account_name.png)
 
 ### Email and Password Changes
 
@@ -78,7 +102,7 @@ Generate API keys for programmatic access to your Checkly account through the RE
 
 **API Key Types:**
 - **User API Keys** - Tied to individual users with inherited permissions
-- **Service API Keys** - Account-level keys for CI/CD and automation (Enterprise only)
+- **Service API Keys** - Account-level keys for CI/CD and automation (Starter, Team, and Enterprise plans)
 
 ## Getting Help
 

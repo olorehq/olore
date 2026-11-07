@@ -4,7 +4,8 @@
 
 | Directory | Purpose | Files |
 |-----------|---------|-------|
-| `contents/` | Root-level docs: overview, spec, definitions, changelog | 7 |
+| `contents/` | Root-level docs: overview, spec, definitions, changelog | 8 |
+| `contents/blog/` | Blog index and announcement posts | 4 |
 | `contents/topics/` | Concept deep-dives: key concepts, streaming, enterprise, extensions | 10 |
 | `contents/tutorials/python/` | Step-by-step Python quickstart (8 parts) | 8 |
 | `contents/tutorials/` | Tutorial index | 1 |
@@ -18,11 +19,19 @@
 | `specification.md` | Full technical protocol specification |
 | `definitions.md` | Glossary of A2A protocol terms and concepts |
 | `whats-new-v1.md` | Changelog: what changed from v0.3.0 to v1.0 |
-| `announcing-1.0.md` | v1.0 release announcement |
 | `roadmap.md` | Protocol roadmap and near-term initiatives |
 | `community.md` | Community hub and contribution resources |
 | `partners.md` | List of A2A partner organizations |
 | `README.md` | Repository readme |
+
+## contents/blog/
+
+| File | Description |
+|------|-------------|
+| `index.md` | Blog index |
+| `posts/announcing-1.0.md` | v1.0 release announcement |
+| `posts/a2a-joins-aaif.md` | A2A joins the Agentic AI Foundation |
+| `posts/introducing-a2a-cli.md` | Introducing the A2A CLI |
 
 ## contents/topics/
 

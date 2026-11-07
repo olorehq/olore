@@ -1,10 +1,13 @@
 ---
-title: 'Browser Check Examples'
-description: 'Real-world examples and implementation patterns for monitoring user workflows with Checkly browser checks across different industries and scenarios.'
+title: 'Browser check examples'
+description: 'Real-world examples and implementation patterns for monitoring user workflows with Checkly Browser checks across different industries and scenarios.'
 sidebarTitle: 'Examples'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/examples/'
 ---
 
 These real-world use cases demonstrate how to implement comprehensive user journey monitoring across different industries and scenarios.
+
+The examples below leave out the `import { test, expect } from '@playwright/test'` line. Add it to the top of your script.
 
 ## E-commerce and Retail
 
@@ -627,107 +630,30 @@ test('Video streaming platform workflow', async ({ page }) => {
 ## Performance and Accessibility Monitoring
 
 ### Core Web Vitals Validation
-Monitor user experience metrics across different pages:
-
-```typescript
-test('Performance monitoring - Core Web Vitals', async ({ page }) => {
-  // Measure page load performance
-  const startTime = Date.now()
-  await page.goto('https://app.example.com')
-  
-  // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle')
-  const loadTime = Date.now() - startTime
-  
-  // Core Web Vitals collection
-  const vitals = await page.evaluate(() => {
-    return new Promise((resolve) => {
-      new PerformanceObserver((list) => {
-        const entries = list.getEntries()
-        const vitals = {}
-        
-        entries.forEach((entry) => {
-          if (entry.entryType === 'largest-contentful-paint') {
-            vitals.lcp = entry.startTime
-          }
-          if (entry.entryType === 'first-input') {
-            vitals.fid = entry.processingStart - entry.startTime
-          }
-          if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-            vitals.cls = (vitals.cls || 0) + entry.value
-          }
-        })
-        
-        setTimeout(() => resolve(vitals), 5000)
-      }).observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] })
-    })
-  })
-  
-  // Assert performance thresholds
-  expect(loadTime).toBeLessThan(3000) // Page load < 3 seconds
-  expect(vitals.lcp).toBeLessThan(2500) // LCP < 2.5 seconds
-  expect(vitals.fid).toBeLessThan(100) // FID < 100ms
-  expect(vitals.cls).toBeLessThan(0.1) // CLS < 0.1
-})
-```
+You don't need custom code to measure Core Web Vitals. Checkly collects Web Vitals automatically for every page your browser check visits. See [Performance & Web Vitals](/detect/synthetic-monitoring/browser-checks/performance-metrics).
 
 ### Accessibility Compliance Testing
-Ensure web accessibility standards are met:
+Run automated accessibility checks with [axe-core](https://github.com/dequelabs/axe-core). Checkly runtimes include `@axe-core/playwright`:
 
 ```typescript
+import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+
 test('Accessibility compliance validation', async ({ page }) => {
   await page.goto('https://app.example.com')
-  
-  // Keyboard navigation testing
-  await page.keyboard.press('Tab')
-  const focusedElement = await page.evaluate(() => document.activeElement.tagName)
-  expect(['BUTTON', 'A', 'INPUT']).toContain(focusedElement)
-  
-  // Screen reader compatibility
-  const ariaLabels = await page.locator('[aria-label]').count()
-  expect(ariaLabels).toBeGreaterThan(0)
-  
-  // Color contrast validation
-  const buttons = page.locator('button')
-  const buttonCount = await buttons.count()
-  
-  for (let i = 0; i < buttonCount; i++) {
-    const button = buttons.nth(i)
-    const isVisible = await button.isVisible()
-    if (isVisible) {
-      const styles = await button.evaluate((el) => {
-        const computed = window.getComputedStyle(el)
-        return {
-          color: computed.color,
-          backgroundColor: computed.backgroundColor
-        }
-      })
-      
-      // Basic contrast check (simplified)
-      expect(styles.color).not.toBe(styles.backgroundColor)
-    }
-  }
-  
-  // Form accessibility
-  const inputs = page.locator('input')
-  const inputCount = await inputs.count()
-  
-  for (let i = 0; i < inputCount; i++) {
-    const input = inputs.nth(i)
-    const hasLabel = await input.evaluate((el) => {
-      return el.labels && el.labels.length > 0 || 
-             el.getAttribute('aria-label') ||
-             el.getAttribute('aria-labelledby')
-    })
-    expect(hasLabel).toBeTruthy()
-  }
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+
+  expect(results.violations).toEqual([])
 })
 ```
 
 <Note>
-Browser checks provide comprehensive validation of user experiences. Combine them with API checks and multistep checks for complete application monitoring coverage across all user touchpoints.
+Browser checks provide comprehensive validation of user experiences. Combine them with API checks and Multistep checks for complete application monitoring coverage across all user touchpoints.
 </Note>
 
 <Tip>
-Use realistic test data and user scenarios in your browser checks to ensure they accurately represent actual user behavior and catch real-world issues.
+Use realistic test data and user scenarios in your Browser checks to ensure they accurately represent actual user behavior and catch real-world issues.
 </Tip>

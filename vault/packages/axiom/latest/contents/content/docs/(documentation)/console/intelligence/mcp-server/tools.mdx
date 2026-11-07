@@ -1,0 +1,278 @@
+---
+title: "MCP tools reference"
+description: "Tools and prompts exposed by Axiom MCP Server, with example prompts for AI agents."
+sidebarTitle: Tools
+keywords: ["MCP", "MCP tools", "Axiom MCP", "queryDataset", "APL", "AI agent"]
+---
+
+Axiom MCP Server exposes [tools](https://modelcontextprotocol.io/docs/concepts/tools) and [prompts](https://modelcontextprotocol.io/docs/concepts/prompts) that AI agents can call.
+
+For setup, see [Axiom MCP Server](/console/intelligence/mcp-server).
+
+## Tools at a glance
+
+| Category | Read | Write |
+| --- | --- | --- |
+| Query | `queryDataset`, `getSavedQueries` | — |
+| Datasets | `listDatasets`, `getDatasetFields` | `createDataset` |
+| Metrics | `listMetrics`, `listMetricTags`, `getMetricTagValues`, `searchMetrics`, `queryMetrics` | — |
+| Dashboards | `listDashboards`, `getDashboard`, `exportDashboard` | `createDashboard`, `updateDashboard`, `updateDashboardChart`, `deleteDashboard` |
+| Monitors and notifiers | `checkMonitors`, `getMonitor`, `getMonitorHistory`, `listNotifiers` | `createMonitor`, `updateMonitor`, `deleteMonitor`, `createNotifier`, `updateNotifier`, `deleteNotifier` |
+| Service map | `services-getMap`, `services-getChanges`, `services-getEdgeHistory` | — |
+| Feedback | — | `sendFeedback` |
+
+## Query
+
+<ParamField path="queryDataset" type="Read">
+Run an APL query against an events or traces dataset. For metrics datasets, use `queryMetrics` instead.
+
+**Example:** “Show the top 10 status codes in `logs` for the last 30 minutes.”
+</ParamField>
+
+<ParamField path="getSavedQueries" type="Read">
+List saved APL queries in your organization.
+
+**Example:** “List my saved queries.”
+</ParamField>
+
+## Datasets
+
+<ParamField path="listDatasets" type="Read">
+List available Axiom datasets.
+
+**Example:** “List datasets.”
+</ParamField>
+
+<ParamField path="getDatasetFields" type="Read">
+List fields in an events or traces dataset, including field names and types. For metrics datasets, use `listMetrics` and `listMetricTags` instead.
+
+**Example:** “List the fields in the dataset `logs`.”
+</ParamField>
+
+<ParamField path="createDataset" type="Write">
+Create a new dataset in the current organization.
+
+**Example:** “Create an events dataset named `app-logs`.”
+</ParamField>
+
+## Metrics
+
+<ParamField path="listMetrics" type="Read">
+List available metric names in a dataset.
+
+**Example:** “List metrics in the `metrics` dataset.”
+</ParamField>
+
+<ParamField path="listMetricTags" type="Read">
+List tags available for filtering metrics in a dataset.
+
+**Example:** “What tags can I filter on in the `metrics` dataset?”
+</ParamField>
+
+<ParamField path="getMetricTagValues" type="Read">
+Get values for a specific metric tag in a dataset.
+
+**Example:** “List values for the `service.name` tag in `metrics`.”
+</ParamField>
+
+<ParamField path="searchMetrics" type="Read">
+Search for metrics that match a known tag value.
+
+**Example:** “Find metrics tagged with `service.name` = `api-gateway`.”
+</ParamField>
+
+<ParamField path="queryMetrics" type="Read">
+Run an MPL query against an Axiom metrics dataset.
+
+**Example:** “Show CPU usage for `api-gateway` over the last hour.”
+</ParamField>
+
+## Dashboards
+
+<ParamField path="listDashboards" type="Read">
+List dashboards in your organization.
+
+**Example:** “List my dashboards.”
+</ParamField>
+
+<ParamField path="getDashboard" type="Read">
+Get details for a dashboard by UID.
+
+**Example:** “Show the configuration for dashboard `abc123`.”
+</ParamField>
+
+<ParamField path="exportDashboard" type="Read">
+Export a dashboard as JSON.
+
+**Example:** “Export dashboard `abc123` as JSON.”
+</ParamField>
+
+<ParamField path="createDashboard" type="Write">
+Create a dashboard from a JSON document.
+
+**Example:** “Create a dashboard that charts error rate for `logs` over the last 24 hours.”
+</ParamField>
+
+<ParamField path="updateDashboard" type="Write">
+Update a dashboard by UID.
+
+**Example:** “Update dashboard `abc123` to add a panel for p99 latency.”
+</ParamField>
+
+<ParamField path="updateDashboardChart" type="Write">
+Patch a single chart in an existing dashboard by chart ID.
+
+**Example:** “Change the time range on chart `chart-1` in dashboard `abc123` to the last 6 hours.”
+</ParamField>
+
+<ParamField path="deleteDashboard" type="Write">
+Delete a dashboard by UID.
+
+**Example:** “Delete dashboard `abc123`.”
+</ParamField>
+
+## Monitors and notifiers
+
+<ParamField path="checkMonitors" type="Read">
+Check monitors and their current statuses.
+
+**Example:** “Which monitors are currently alerting?”
+</ParamField>
+
+<ParamField path="getMonitor" type="Read">
+Get a monitor’s full definition by ID, including the complete query text.
+
+**Example:** “Show the full configuration for monitor `mon_123`.”
+</ParamField>
+
+<ParamField path="getMonitorHistory" type="Read">
+Get alert history for a specific monitor.
+
+**Example:** “Show alert history for monitor `mon_123` over the last 7 days.”
+</ParamField>
+
+<ParamField path="listNotifiers" type="Read">
+List configured notifiers.
+
+**Example:** “List notifiers.”
+</ParamField>
+
+<ParamField path="createMonitor" type="Write">
+Create a new monitor.
+
+**Example:** “Create a monitor that alerts when error rate in `logs` exceeds 5%.”
+</ParamField>
+
+<ParamField path="updateMonitor" type="Write">
+Update an existing monitor by ID.
+
+**Example:** “Update monitor `mon_123` to use a 5-minute threshold window.”
+</ParamField>
+
+<ParamField path="deleteMonitor" type="Write">
+Delete a monitor by ID.
+
+**Example:** “Delete monitor `mon_123`.”
+</ParamField>
+
+<ParamField path="createNotifier" type="Write">
+Create a new notifier.
+
+**Example:** “Create a Slack notifier for the `#alerts` channel.”
+</ParamField>
+
+<ParamField path="updateNotifier" type="Write">
+Update an existing notifier by ID.
+
+**Example:** “Update notifier `ntf_123` to point at a different webhook URL.”
+</ParamField>
+
+<ParamField path="deleteNotifier" type="Write">
+Delete a notifier by ID.
+
+**Example:** “Delete notifier `ntf_123`.”
+</ParamField>
+
+## Service map
+
+These tools are available when service map is enabled for your organization.
+
+<ParamField path="services-getMap" type="Read">
+Get the service dependency graph, including call volume, errors, and approximate latency.
+
+**Example:** “Show the service map for the last hour.”
+</ParamField>
+
+<ParamField path="services-getChanges" type="Read">
+Report what changed in the service dependency graph, such as new or missing dependencies and latency regressions.
+
+**Example:** “What changed in the service map in the last 6 hours?”
+</ParamField>
+
+<ParamField path="services-getEdgeHistory" type="Read">
+Get time-series history for a service’s dependency edges.
+
+**Example:** “Show edge history from `api-gateway` to `checkout` over the last day.”
+</ParamField>
+
+## Feedback
+
+<ParamField path="sendFeedback" type="Write">
+Send feedback to the Axiom team about MCP tool descriptions, results, errors, or missing capabilities.
+
+**Example:** “Report that the `queryDataset` time-range description is unclear.”
+
+</ParamField>
+
+## Prompts
+
+Axiom MCP Server also ships prebuilt prompts for clients that support MCP prompts.
+
+<ParamField path="explore-unknown-dataset" type="Prompt">
+Explore an unknown dataset to understand its structure, content, and potential use cases.
+
+**Example:** “Explore the `otel-demo` dataset and summarize what it’s for.”
+</ParamField>
+
+<ParamField path="detect-anomalies-in-events" type="Prompt">
+Detect anomalies using statistical analysis and pattern recognition across a dataset.
+
+**Example:** “Look for anomalies in `logs` over the last 6 hours.”
+</ParamField>
+
+<ParamField path="correlate-events-across-datasets" type="Prompt">
+Find patterns and correlations between events across multiple datasets.
+
+**Example:** “Correlate errors in `logs` with deploys in `cicd` for the last day.”
+</ParamField>
+
+<ParamField path="data-quality-investigation" type="Prompt">
+Investigate data quality issues such as missing data, inconsistencies, and collection problems.
+
+**Example:** “Check `logs` for gaps or schema inconsistencies in the last 24 hours.”
+</ParamField>
+
+<ParamField path="establish-performance-baseline" type="Prompt">
+Establish performance baselines for a dataset to support monitoring and anomaly detection.
+
+**Example:** “Establish a latency baseline for `api` over the last 7 days.”
+</ParamField>
+
+<ParamField path="monitor-health-analysis" type="Prompt">
+Analyze monitor health, alert patterns, and effectiveness.
+
+**Example:** “Analyze which monitors flap the most this week.”
+</ParamField>
+
+<ParamField path="investigate-service-topology" type="Prompt">
+Walk a system’s service dependency graph to find what talks to what, which dependency is at fault, and when it changed. Available when service map is enabled for your organization.
+
+**Example:** “Investigate the topology around `api-gateway`.”
+</ParamField>
+
+Axiom plans to support MCP [resources](https://modelcontextprotocol.io/docs/concepts/resources) in the future.
+
+## What’s next
+
+- [Set up Axiom MCP Server](/console/intelligence/mcp-server)
+- [AI agents](/console/intelligence/ai-agents-overview)

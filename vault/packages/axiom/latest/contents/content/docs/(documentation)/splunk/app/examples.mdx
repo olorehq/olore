@@ -1,0 +1,94 @@
+---
+title: 'Axiom for Splunk app examples'
+description: 'Worked examples for the Axiom for Splunk app, from exploring datasets to enriching Splunk events with Axiom context.'
+sidebarTitle: Examples
+keywords: ['splunk', 'splunk app examples', 'axsearch', 'axstats', 'axlookup', 'axquery', 'use cases']
+---
+
+These examples show common workflows with the Axiom for Splunk app. Each one pushes the expensive part of the search into Axiom, returns a focused result set, and uses normal SPL for presentation. Replace the dataset and field names with your own.
+
+## Explore an unfamiliar dataset
+
+Start with the discovery commands when you’re learning what a dataset contains:
+
+```spl
+| axdatasets
+| table name, kind, retentionDays
+| sort name
+```
+
+```spl
+| axfields dataset="payments"
+| table name, type, unit
+| sort name
+```
+
+```spl
+| axsample dataset="payments" limit=10 fields="customer_id,amount,status"
+```
+
+## Investigate errors
+
+Use `axsearch` for event searches where you want Splunk-like syntax and event-shaped rows back. The Splunk time picker controls the Axiom query window, so a search over **Last 60 minutes** queries the same hour in Axiom:
+
+```spl
+| axsearch dataset="payments" q="status=failed amount>1000" fields="customer_id,amount,status,reason" limit=500
+| table _time, customer_id, amount, reason
+```
+
+The returned rows are real Splunk events, so everything downstream is normal SPL:
+
+```spl
+| axsearch dataset="http-logs" q="status>=500" fields="service,status,message" limit=1000
+| rex field=message "timeout after (?<timeout_ms>\d+)ms"
+| stats count by service, timeout_ms
+```
+
+## Aggregate at scale
+
+Use `axstats` when the next thing you want is a grouped table. The aggregation runs inside Axiom, so it stays exact over any number of events and only the grouped rows cross into Splunk:
+
+```spl
+| axstats dataset="payments" q="status=failed" stats="count as failures, sum(amount) as failed_amount" by="reason"
+| sort -failures
+```
+
+Combine multiple aggregations in one command:
+
+```spl
+| axstats dataset="http-logs" stats="count as requests, avg(duration_ms) as avg_ms, p95(duration_ms) as p95_ms" by="service"
+| sort -requests
+```
+
+## Build dashboards and alerts
+
+Use `axtimechart` when the next thing you want is a time series. It’s a reporting command, so the Visualization tab works directly and the search drops into dashboard panels and alerts unchanged:
+
+```spl
+| axtimechart dataset="payments" q="status=failed" span=15m agg="count as failures" by="reason" limit=1000
+```
+
+In a saved search or alert, the schedule’s dispatch window becomes the Axiom query window, so an alert that runs every 5 minutes over the last 5 minutes queries exactly that window in Axiom.
+
+## Enrich Splunk events with Axiom context
+
+Use `axlookup` when the base events are already in Splunk and Axiom has useful context to look up. This example adds deployment metadata from an Axiom dataset to Splunk events:
+
+```spl
+index=main service=api
+| axlookup dataset="deployments" on="service=service.name" fields="version,owner,team"
+| table _time, service, axiom_version, axiom_owner, axiom_team
+```
+
+Added fields are prefixed with `axiom_` and normalized to Splunk-friendly names, so `service.version` becomes `axiom_service_version`. For the conventions, see [Field conventions](/splunk/app/commands#field-conventions).
+
+## Reach for full APL
+
+Use `axquery` when the command-specific surface isn’t enough. Any APL query works, including operators and functions that have no SPL equivalent:
+
+```spl
+| axquery apl="['http-logs'] | where status >= 500 | summarize errors=count() by service, bin(_time, 1h) | sort by _time asc"
+| table _time, service, errors
+```
+
+Browse the [APL tutorial](/apl/tutorial) for query patterns you can adapt, and use the [Splunk SPL to APL cheat sheet](/apl/guides/splunk-cheat-sheet) to translate familiar SPL idioms.

@@ -1,0 +1,25 @@
+---
+title: 'Export traces to Chronosphere'
+description: 'Send Checkly traces to Chronosphere with a restricted service account token.'
+sidebarTitle: 'Chronosphere'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/chronosphere/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Chronosphere" />
+
+Chronosphere is now Palo Alto Networks Cortex XCOR. The endpoint host is still `<instance>.chronosphere.io` and its documentation lives at docs-xcor.paloaltonetworks.com.
+
+1. Get the endpoint. It is `https://<instance>.chronosphere.io/data/opentelemetry/v1/traces`.
+2. Get the key. In Chronosphere, go to the admin view, then **Platform** > **Service Accounts**, and add a service account. Make it restricted and write-only. Copy the token right away, because Chronosphere shows it once.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+4. Find the spans. In Chronosphere, the spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `API-Token` | `<service account token>` |
+
+Chronosphere documents the endpoint in [OTLP endpoints](https://docs-xcor.paloaltonetworks.com/ingest/metrics-traces/otel/otlp-endpoints).
+<OtlpVendorOutro />

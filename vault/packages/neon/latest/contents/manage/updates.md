@@ -6,12 +6,12 @@ summary: >-
   with automatic cache prewarming to avoid cold-cache performance loss after
   restart. Paid plan users can schedule a preferred update window via the
   console or API. Free plan updates are scheduled by Neon with advance notice.
-  Computes above the 8 CU autoscale ceiling are excluded from automatic
+  Computes larger than 16 CU are excluded from automatic
   updates and must be restarted manually. Configure connection retry logic
   to handle the brief disruption.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-04T20:40:59.376Z'
 ---
 
 To keep your Neon [computes](/docs/reference/glossary#compute) and Postgres instances up to date with the latest patches and features, Neon applies updates to your project's computes. We notify you of updates in advance so that you can plan for them if necessary. On Neon's paid plans, you can select an update window (a specific day and hour for updates).
@@ -22,7 +22,7 @@ To apply updates to your compute (Postgres upgrades, security patches, and simil
 
 To protect performance, Neon **prewarms** your compute's cache during the update process, without adding time to the restart. Prewarming means repopulating Postgres's in-memory buffer cache from storage before your workload continues, so frequently used data is already in memory instead of being read cold from storage after the restart. Prewarming runs automatically. You do not configure it. There are no additional compute or storage costs associated with this behavior.
 
-For technical details, see [Zero-Downtime Patching Part 1: Prewarming](https://neon.com/blog/prewarming).
+For technical details, see [Zero-Downtime Patching Part 1: Prewarming](/blog/prewarming).
 
 <Admonition type="important">
 Brief connection drops are expected during compute updates. Verify that your application has a retry policy configured to handle these brief interruptions. For guidance on implementing retry logic, see [Building resilient applications with Postgres](/guides/building-resilient-applications-with-postgres).
@@ -49,7 +49,7 @@ Neon applies updates to computes based on the following rules:
 - Computes that have been active for 30 days or more receive updates.
 - Computes that are restarted receive available updates immediately.
 - Computes in a transition state (for example, shutting down or restarting) at the time of an update are not updated.
-- Computes whose **maximum** autoscale size is **greater than 8 CU** are not updated automatically. If your maximum is **exactly 8 CU**, your compute is **not** treated as a large compute and receives scheduled updates like smaller sizes. See [Updating large computes](#updating-large-computes).
+- Computes **larger than 16 CU** are not updated automatically. Autoscaling computes, which have a maximum of 16 CU, and fixed-size computes up to 16 CU receive scheduled updates. See [Updating large computes](#updating-large-computes).
 
 If a compute is excluded from an update, Neon will apply the missed update with the next update, assuming the compute meets the update criteria mentioned above.
 
@@ -63,8 +63,8 @@ On the **Free plan**, updates are scheduled and applied automatically. You can c
 
 To view planned updates:
 
-1. Go to the Neon project dashboard.
-2. Select **Settings** > **Updates**.
+1. Open your project in the Neon Console.
+2. Select **Settings** > **Postgres**.
 
    ![Free plan updates UI](/docs/manage/free_plan_updates.png)
 
@@ -81,20 +81,20 @@ You can specify an update window in your Neon project's settings or using the Ne
 <TabItem>
 In the Neon Console:
 
-1. Go to the Neon project dashboard.
-2. Select **Settings** > **Updates**.
+1. Open your project in the Neon Console.
+2. Select **Settings** > **Postgres**.
 3. Choose a day of the week and an hour. Updates will occur within this time window and take only a few seconds.
 
    ![Paid plan updates UI](/docs/manage/paid_plan_updates.png)
 
-You can check your project's settings for upcoming updates. We'll post a notice there at least **7 days** ahead of a planned update, letting you know when it's coming.
+You can check your project's settings for upcoming updates. On all paid plans, we post a notice there at least **3 days** ahead of a planned update, letting you know when it's coming.
 
-> If you're a Scale plan customer, you will also receive an **email notification** 7 days in advance of a planned update.
+> On the **Scale** and **Enterprise** plans, you also receive an **email notification** 3 days in advance of a planned update, in addition to the in-console notice. On the **Launch** plan, advance notice is provided in the console only, with no email.
 
 </TabItem>
 
 <TabItem>
-On Neon paid plans, the [Create project](https://api-docs.neon.tech/reference/createproject) and [Update project](https://api-docs.neon.tech/reference/updateproject) APIs let you define an update window using the `maintenance_window` object, as shown in the `Update project` example below.
+On Neon paid plans, the [Create project](/docs/reference/api/projects/create-project) and [Update project](/docs/reference/api/projects/update-project) APIs let you define an update window using the `maintenance_window` object, as shown in the `Update project` example below.
 
 - The `weekdays` parameter accepts an integer (`1` for Monday, `2` for Tuesday, and so on) or an array of integers to specify multiple weekdays.
 - The `start_time` and `end_time` values must be in UTC (`HH:MM` format) and at least one hour apart. Shorter intervals are not supported. Both times must fall on the same day. For example, (`22:00`, `23:00`) and (`23:00`, `00:00`) are valid settings, but (`22:00`, `03:00`) is not, as it would span multiple days.
@@ -128,7 +128,7 @@ curl --request PATCH \
 
 ## Check for updates using the Neon API
 
-You can retrieve your update window and check for planned updates using the [Retrieve project details](https://api-docs.neon.tech/reference/getproject) endpoint.
+You can retrieve your update window and check for planned updates using the [Retrieve project details](/docs/reference/api/projects/get-project) endpoint.
 
 To get your project details, send the following request, replacing `<your_project_id>` with your Neon project ID, and `$NEON_API_KEY` with your [Neon API key](/docs/manage/api-keys):
 
@@ -168,7 +168,11 @@ For compute restart instructions, see [Restart a compute](/docs/manage/computes#
 
 ## Updating large computes
 
-Computes whose **maximum** autoscale size is **greater than 8 CU** are not updated automatically (_scheduled updates do not apply_). Computes capped at **exactly 8 CU** follow the usual [automatic update rules](#how-often-are-updates-applied) above. To apply updates on a large compute, you'll need to restart it manually. A restart may occur automatically due to [scale to zero](/docs/introduction/scale-to-zero), but if scale to zero is disabled or your compute runs continuously, please plan for manual restarts.
+<Admonition type="note" title="Threshold raised to 16 CU">
+As of early November 2026, computes up to 16 CU receive scheduled updates. Previously, computes configured to scale beyond 8 CU were not updated automatically and needed a manual restart.
+</Admonition>
+
+Fixed-size computes **larger than 16 CU** are not updated automatically (_scheduled updates do not apply_). Computes up to 16 CU, including all autoscaling computes, follow the usual [automatic update rules](#how-often-are-updates-applied) above. To apply updates on a large compute, you'll need to restart it manually. Computes larger than 16 CU don't [scale to zero](/docs/introduction/scale-to-zero), so they won't pick up updates through a stop/start cycle. Plan for manual restarts.
 
 Neon typically releases compute updates weekly, so we recommend scheduling weekly compute restarts.
 
@@ -182,7 +186,7 @@ Most Postgres connection drivers include built-in retry mechanisms that automati
 
 However, if your application has strict availability requirements, you may want to ensure that your connection settings are configured to allow for retries. Check your driver's documentation for options like connection timeouts, retry intervals, and connection pooling strategies. Your configuration should account for the few seconds it takes to apply updates to your Neon compute. For related information, see [Build connection timeout handling into your application](/docs/connect/connection-latency#build-connection-timeout-handling-into-your-application).
 
-If your application or integration uses the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api) or [SDKs](/docs/reference/sdk) that wrap the Neon API, we recommend building in the same type of retry logic.
+If your application or integration uses the [Neon API](/docs/reference/api) or [SDKs](/docs/reference/sdk) that wrap the Neon API, we recommend building in the same type of retry logic.
 
 ## See also
 

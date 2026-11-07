@@ -1,0 +1,95 @@
+---
+title: 'SSL monitor overview'
+description: 'Monitor TLS certificate health, expiry, and security posture of your HTTPS endpoints.'
+sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/ssl-monitors/overview/'
+---
+
+<Tip>
+**Monitoring as Code**: Learn more about the [SSL monitor construct](/constructs/ssl-monitor).
+</Tip>
+
+## What are SSL monitors?
+
+SSL monitors verify the health of a TLS certificate by connecting to a hostname, completing a full TLS handshake, and inspecting the resulting certificate and negotiated protocol parameters. Typical use cases include:
+
+* Detecting certificate expiry before it causes user-facing errors
+* Verifying that a recently-renewed certificate is deployed to all your servers
+* Enforcing minimum TLS version and cipher strength across your infrastructure
+* Catching chain trust failures caused by missing intermediate certificates
+* Alerting on weak or compromised certificate authority usage
+
+## How do SSL monitors work?
+
+Each SSL monitor run performs the following steps:
+
+1. **DNS resolution** — If a hostname is provided, Checkly resolves it to an IP address
+2. **TCP connect** — A TCP connection is opened to the target host and port (default: 443)
+3. **TLS handshake** — A full TLS handshake is performed; an optional SNI server name override can be sent during this step
+4. **Certificate inspection** — The leaf certificate and chain are examined: expiry date, hostname verification, chain trust, signature algorithm, key size, SANs, and fingerprints are all captured
+5. **Security baseline evaluation** — On a successful handshake and certificate verification, a configurable rule set evaluates the negotiated protocol (TLS version, cipher suite, CA trust) and produces a per-rule verdict plus an overall **grade** and **verdict** (`pass` / `warn` / `fail`). The baseline is skipped when an earlier step fails (e.g. hostname mismatch or chain untrusted).
+6. **Assertions** — Optional assertions are evaluated against the certificate and handshake data
+
+## SSL monitor results
+
+Select a specific check run to inspect its results:
+
+* **Summary:** Shows the target hostname and port, the monitor state (passed, degraded, or failed), and the TLS handshake time
+
+* **Error details:** If the run failed, the error category and message explain what went wrong. Categories map to the stage where the failure occurred: `dns` (name resolution), `connect` (TCP connection), `timeout` or `handshake` (TLS handshake), `hostname` (certificate does not cover the monitored hostname), or `chain` (certificate chain not trusted). An expired certificate surfaces as a failure via a negative `daysUntilExpiry` value rather than a separate category.
+
+* **Handshake data:** The negotiated TLS version, cipher suite, and handshake duration in milliseconds
+
+* **Certificate details:** Subject, issuer, serial number, validity window (not-before / not-after), days until expiry, signature algorithm, key algorithm and size, subject alternative names (SANs), and SHA-256 fingerprint
+
+* **Security baseline:** The per-rule verdict table and the aggregate grade (`A-`, `B`, or `F`) produced by the security baseline evaluation
+
+* **Certificate chain:** The intermediate and root certificates presented during the handshake, with their subjects, issuers, validity dates, and fingerprints
+
+Learn more in our documentation on [Results](/concepts/results).
+
+## The Security Baseline
+
+The security baseline is a built-in rule set that evaluates each successful handshake and certificate verification against current best practices without requiring explicit assertions. Rules cover:
+
+| Rule | Default severity | What it checks |
+|------|-----------------|----------------|
+| `minTLSVersion` | `fail` | Negotiated TLS version is at or above the required minimum |
+| `minKeySizeBits` | `fail` | RSA key size meets the required minimum |
+| `weakSignatureAlgorithm` | `fail` | No non-root certificate in the chain uses MD2-RSA, MD5-RSA, SHA1-RSA, DSA-SHA1, or ECDSA-SHA1 |
+| `weakCipherSuite` | `fail` | The negotiated cipher suite is not in the known-weak list |
+| `knownBadCA` | `fail` | No certificate in the chain was issued by a distrusted CA |
+| `recommendedTLSVersion` | `ignore` (advisory) | Negotiated version meets the recommended minimum |
+| `recommendedKeySizeBits` | `ignore` (advisory) | RSA key meets the advisory size recommendation |
+| `ocspMustStapleRespected` | `ignore` (advisory) | If the leaf declares OCSP must-staple, a stapled response was provided |
+| `sctPresent` | `ignore` (advisory) | A Signed Certificate Timestamp was observed in the handshake |
+
+The aggregate **grade** is computed from the worst rule outcome:
+
+| Grade | Meaning |
+|-------|---------|
+| `A-` | All rules pass (or baseline disabled) |
+| `B` | At least one advisory or degrade-severity rule violated |
+| `F` | At least one fail-severity rule violated |
+
+You can override the default severity for each rule or disable the baseline entirely in the [SSL Config](/detect/uptime-monitoring/ssl-monitors/configuration#security-baseline).
+
+## Troubleshooting Common Issues
+
+<Accordion title="Hostname verification failed but the site loads fine in a browser">
+This can happen when a server hosts multiple certificates and the default certificate served to Checkly does not cover the monitored hostname. The runner reports this as failure category `hostname`. Use the **SNI server name** (`serverName`) option in the SSL config to explicitly request the certificate for your hostname.
+
+If the certificate is legitimately shared across hostnames (e.g. a wildcard `*.example.com` that covers `api.example.com`) and hostname verification still fails, confirm the SAN list on the certificate contains the monitored hostname.
+</Accordion>
+
+<Accordion title="Certificate chain is not trusted">
+A chain trust failure (failure category `chain`) means one or more intermediate certificates are missing or the root is not trusted. Common causes:
+
+* The server is not sending the full intermediate chain — verify with `openssl s_client -connect hostname:443 -showcerts`
+* The certificate was issued by a CA whose root was recently distrusted (e.g. Entrust 2024)
+* Self-signed or internal CA certificates — enable **Skip chain validation** in the SSL config if you only want to monitor expiry and other properties without trust verification
+</Accordion>
+
+<Accordion title="Alert days before expiry fires too early or too late">
+The `alertDaysBeforeExpiry` setting (default: 20 days) controls when a degraded alert is raised due to approaching expiry. If you use aggressive certificate rotation you may want to lower this value; if you need more lead time to trigger your renewal process, raise it. The monitor always fails immediately when the certificate is expired (`daysUntilExpiry < 0`), regardless of this setting.
+</Accordion>

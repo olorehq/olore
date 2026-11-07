@@ -1,5 +1,6 @@
 ---
 title: How to Handle Test Data with Playwright
+description: "Keep Playwright tests DRY by factoring out test data and fixtures into dedicated files, so complex end-to-end scenarios stay readable and maintainable."
 subTitle: Introduction to fixture handling
 date: 2020-07-16
 author: Giovanni Rago
@@ -11,6 +12,7 @@ weight: 3
 sidebarTitle: Test data
 learn_playwright:
   parent: "Best practices"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/handling-test-data/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -24,7 +26,7 @@ We define _test data_ as any data we consistently use to verify properties such 
 
 It is often desirable to [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) up our scripts by factoring out test data. In the case of simple tests, it's usually not an issue to embed test data directly inside our script, but complex end-to-end scenarios might require moving this information elsewhere, like a dedicated file.
 
-Looking at our [test webshop](https://danube-store.herokuapp.com/), we might want to verify that a specific item list is loaded on the store's front page. As this list contains several tens of elements, each with different attributes, keeping our fixtures inside our script would be impractical. Let's add this data to a JSON file instead:
+Looking at our [test webshop](https://danube-web.shop/), we might want to verify that a specific item list is loaded on the store's front page. As this list contains several tens of elements, each with different attributes, keeping our fixtures inside our script would be impractical. Let's add this data to a JSON file instead:
 
 ```json
 [
@@ -73,7 +75,7 @@ If the platform you are testing exposes an API endpoint to pull up-to-date test 
 ```js
 const axios = require('axios')
 ...
-const { data } = await axios.get('https://danube-store.herokuapp.com/api/books')
+const { data } = await axios.get('https://danube-web.shop/api/books')
 const bookList = JSON.parse(data)
 const foundList = bookList
 ```

@@ -7,18 +7,18 @@ summary: >-
   repeating `--org-id` on every command, set a persistent org context with
   `set-context`.
 enableTableOfContents: true
-updatedOn: '2026-06-11T23:50:21.258Z'
+updatedOn: '2026-11-05T15:33:57.188Z'
 ---
 
 Neon's CLI provides an expanding set of commands to manage your organizations.
 
 ## Authorization
 
-Use the `auth` command to authenticate your Neon account from the CLI. This command opens a browser where you will be asked to grant the necessary permissions to manage your Neon resources across all organizations you belong to. Your OAuth token is stored in `~/.config/neonctl/credentials.json`.
+Use the `login` command to authenticate your Neon account from the CLI. This command opens a browser where you will be asked to grant the necessary permissions to manage your Neon resources across all organizations you belong to. Your OAuth token is stored in `~/.config/neon/credentials.json`.
 
 Authentication is tied to your Neon user account. Once authenticated, you can access and manage any organization you belong to. When running commands, you'll need to specify which organization to use via `--org-id`, a [context file](/docs/cli/set-context), or by responding to the interactive prompt.
 
-See [Auth - CLI](/docs/cli/auth) to learn more.
+See [Login - CLI](/docs/cli/login) to learn more.
 
 ## List Organizations
 
@@ -29,14 +29,32 @@ Example:
 ```bash
 neon orgs list
 Organizations
-┌────────────────────────┬──────────────────┐
-│ Id                     │ Name             │
-├────────────────────────┼──────────────────┤
-│ org-ocean-art-12345678 │ Example Org      │
-└────────────────────────┴──────────────────┘
+ID                      Name         Plan
+org-ocean-art-12345678  Example Org  Launch
 ```
 
 See [Orgs - CLI](/docs/cli/orgs) to learn more.
+
+## Manage members and invitations
+
+The `neon orgs members` commands list, inspect, update, and remove the members of an organization, and `neon orgs invitations` lists and sends invitations. Changing a role or removing a member requires an organization Admin. Organization API keys can't send invitations, so use a personal API key.
+
+```bash
+neon orgs members list --org-id org-xxxx-xxxx
+neon orgs invitations create --email dana@example.com --role editor --org-id org-xxxx-xxxx
+```
+
+See [Orgs - CLI](/docs/cli/orgs#members) to learn more.
+
+## Manage spending notifications
+
+The `neon orgs spending-limit` commands get, set, and remove the organization's monthly [spending notification](/docs/introduction/spending-notifications) threshold, in US dollars:
+
+```bash
+neon orgs spending-limit set 500 --org-id org-xxxx-xxxx
+```
+
+See [Orgs - CLI](/docs/cli/orgs#spending-limit) to learn more.
 
 ## Manage projects within an Organization
 
@@ -47,15 +65,10 @@ Example: Listing all projects in an organization:
 ```bash
 neon projects list --org-id org-xxxx-xxxx
 Projects
-┌───────────────────────────┬───────────────────────────┬────────────────────┬──────────────────────┐
-│ Id                        │ Name                      │ Region Id          │ Created At           │
-├───────────────────────────┼───────────────────────────┼────────────────────┼──────────────────────┤
-│ bright-moon-12345678      │ dev-backend-api           │ aws-us-east-2      │ 2024-07-26T11:43:37Z │
-├───────────────────────────┼───────────────────────────┼────────────────────┼──────────────────────┤
-│ silent-forest-87654321    │ test-integration-service  │ aws-eu-central-1   │ 2024-05-30T22:14:49Z │
-├───────────────────────────┼───────────────────────────┼────────────────────┼──────────────────────┤
-│ crystal-stream-23456789   │ staging-web-app           │ aws-us-east-2      │ 2024-05-17T13:47:35Z │
-└───────────────────────────┴───────────────────────────┴────────────────────┴──────────────────────┘
+ID                       Name                      Region ID         Created At
+bright-moon-12345678     dev-backend-api           aws-us-east-2     2026-07-26T11:43:37Z
+silent-forest-87654321   test-integration-service  aws-eu-central-1  2026-05-30T22:14:49Z
+crystal-stream-23456789  staging-web-app           aws-us-east-2     2026-05-17T13:47:35Z
 ```
 
 You can include the `org-id` to apply the following subcommands specifically to your organization:
@@ -64,6 +77,24 @@ You can include the `org-id` to apply the following subcommands specifically to 
 - [Create projects](/docs/cli/projects#create)
 
 See [Projects - CLI](/docs/cli/projects) to learn more.
+
+## Manage project access
+
+The CLI doesn't have a dedicated command for [per-project permissions](/docs/manage/user-permissions) yet. To manage who can access a project from the CLI, use the [`neon api`](/docs/cli/api) command, which sends an authenticated request to any Neon API route.
+
+For example, to set an organization member's role on a project, call the member-role endpoint with the role you want to grant (`viewer`, `editor`, or `admin`). You send the role in lowercase; the response reports it as an uppercase permission level (`VIEWER`, `EDITOR`, or `ADMIN`):
+
+```bash
+neon api /projects/{project_id}/members/{member_id}/role -X PUT -F role=editor
+```
+
+To remove a member's explicit role on a project (they keep whatever their organization role grants by default):
+
+```bash
+neon api /projects/{project_id}/members/{member_id}/role -X DELETE
+```
+
+The [API key's permissions](/docs/manage/api-keys#types-of-api-keys) determine what these requests can do: only organization Admins can manage project access. For the full list of project-access routes and their fields, see the [Neon API reference](/docs/reference/api).
 
 ## Setting Organization Context
 

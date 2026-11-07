@@ -39,7 +39,8 @@ and `/projects/foo/bar/baz/mybin/.cargo/config.toml`, Cargo does not read
 those configuration files if it is invoked from the workspace root
 (`/projects/foo/bar/baz/`).
 
-> **Note:** Cargo also reads config files without the `.toml` extension, such as
+> [!NOTE]
+> Cargo also reads config files without the `.toml` extension, such as
 > `.cargo/config`. Support for the `.toml` extension was added in version 1.39
 > and is the preferred form. If both files exist, Cargo will use the file
 > without the extension.
@@ -70,7 +71,8 @@ rustc = "rustc"               # the rust compiler tool
 rustc-wrapper = "…"           # run this wrapper instead of `rustc`
 rustc-workspace-wrapper = "…" # run this wrapper instead of `rustc` for workspace members
 rustdoc = "rustdoc"           # the doc generator tool
-target = "triple"             # build for the target triple (ignored by `cargo install`)
+target = "tuple"              # build for the target tuple (ignored by `cargo install`)
+profile = "dev"               # build using the specified profile (ignored by `cargo install`)
 target-dir = "target"         # path of where to place generated artifacts
 build-dir = "target"          # path of where to place intermediate build artifacts
 rustflags = ["…", "…"]        # custom flags to pass to all compiler invocations
@@ -119,6 +121,7 @@ user-agent = "…"            # the user-agent header
 
 [install]
 root = "/some/path"         # `cargo install` destination directory
+profile = "release"         # build using the specified profile
 
 [net]
 retry = 3                   # network retries
@@ -144,6 +147,7 @@ panic = 'unwind'         # The panic strategy.
 incremental = true       # Incremental compilation.
 codegen-units = 16       # Number of code generation units.
 rpath = false            # Sets the rpath linking option.
+trim-paths = "none"      # Sanitizes paths in build outputs.
 [profile.<name>.build-override]  # Overrides build-script settings.
 # Same keys for a normal profile.
 [profile.<name>.package.<name>]  # Override profile for a package.
@@ -152,11 +156,13 @@ rpath = false            # Sets the rpath linking option.
 [resolver]
 lockfile-path = "…"  # Overrides the path used for
 incompatible-rust-versions = "allow"  # Specifies how resolver reacts to these
+incompatible-publish-age = "deny"  # Specifies how resolver treats recently published versions
 
 [registries.<name>]  # registries other than crates.io
 index = "…"          # URL of the registry index
 token = "…"          # authentication token for the registry
 credential-provider = "cargo:token" # The credential provider for this registry.
+min-publish-age = "7 days" # Override `registry.global-min-publish-age` for this registry
 
 [registries.crates-io]
 protocol = "sparse"  # The protocol to use to access crates.io.
@@ -166,6 +172,7 @@ default = "…"        # name of the default registry
 token = "…"          # authentication token for crates.io
 credential-provider = "cargo:token"           # The credential provider for crates.io.
 global-credential-providers = ["cargo:token"] # The credential providers to use by default.
+global-min-publish-age = "7 days" # The time span allowed for registry packages to use by default.
 
 [source.<name>]      # source definition and replacement
 replace-with = "…"   # replace this source with the given named source
@@ -177,7 +184,7 @@ branch = "…"         # branch name for the git repository
 tag = "…"            # tag name for the git repository
 rev = "…"            # revision for the git repository
 
-[target.<triple>]
+[target.<tuple>]
 linker = "…"              # linker to use
 runner = "…"              # wrapper to run executables
 rustflags = ["…", "…"]    # custom flags for `rustc`
@@ -188,7 +195,7 @@ linker = "…"            # linker to use
 runner = "…"            # wrapper to run executables
 rustflags = ["…", "…"]  # custom flags for `rustc`
 
-[target.<triple>.<links>] # `links` build script override
+[target.<tuple>.<links>] # `links` build script override
 rustc-link-lib = ["foo"]
 rustc-link-search = ["/path/to/foo"]
 rustc-flags = "-L /some/path"
@@ -303,7 +310,8 @@ include = [
 ]
 ```
 
-> **Note:** For better readability and to avoid confusion, it is recommended to:
+> [!NOTE]
+> For better readability and to avoid confusion, it is recommended to:
 > - Place `include` at the top of the configuration file
 > - Put one include per line for clearer version control diffs
 > - Use inline table syntax when optional includes are needed
@@ -338,7 +346,8 @@ In particular, rules are:
   no matter those files are from either the [hierarchical probing](#hierarchical-structure)
   or the [`--config <path>`](#command-line-overrides) option.
 
-> **Note:** To maintain consistency with existing `.cargo/config.toml` probing behavior,
+> [!IMPORTANT]
+> To maintain consistency with existing `.cargo/config.toml` probing behavior,
 > it is by design that a path in a config file passed via `--config <path>`
 > is also relative to two levels up from the config file itself.
 >
@@ -401,7 +410,8 @@ be specified with environment variables of the form
 `CARGO_REGISTRIES_<name>_TOKEN` where `<name>` is the name of the registry in
 all capital letters.
 
-> **Note:** Cargo also reads and writes credential files without the `.toml`
+> [!NOTE]
+> Cargo also reads and writes credential files without the `.toml`
 > extension, such as `.cargo/credentials`. Support for the `.toml` extension
 > was added in version 1.39. In version 1.68, Cargo writes to the file with the
 > extension by default. However, for backward compatibility reason, when both
@@ -410,8 +420,8 @@ all capital letters.
 ## Configuration keys
 
 This section documents all configuration keys. The description for keys with
-variable parts are annotated with angled brackets like `target.<triple>` where
-the `<triple>` part can be any [target triple] like
+variable parts are annotated with angled brackets like `target.<tuple>` where
+the `<tuple>` part can be any [target tuple] like
 `target.x86_64-pc-windows-msvc`.
 
 ### `paths`
@@ -530,7 +540,7 @@ Sets the executable to use for `rustdoc`.
 * Default: host platform
 * Environment: `CARGO_BUILD_TARGET`
 
-The default [target platform triples][target triple] to compile to.
+The default [target platform tuples][target tuple] to compile to.
 
 Possible values:
 - Any supported target in `rustc --print target-list`.
@@ -543,6 +553,22 @@ Can be overridden with the `--target` CLI option.
 [build]
 target = ["x86_64-unknown-linux-gnu", "i686-unknown-linux-gnu"]
 ```
+
+#### `build.profile`
+* Type: string
+* Default: `"test"` if `cargo test` else `"dev"`
+* Environment: `CARGO_BUILD_PROFILE`
+
+The default [profile] to compile with.
+
+Can be overridden with the `--release` or `--profile` CLI options.
+
+```toml
+[build]
+profile = "debug"
+```
+
+> **MSRV:** Respected as of 1.100.
 
 #### `build.target-dir`
 * Type: string (path)
@@ -587,7 +613,7 @@ order, with the first one being used:
 
 1. `CARGO_ENCODED_RUSTFLAGS` environment variable.
 2. `RUSTFLAGS` environment variable.
-3. All matching `target.<triple>.rustflags` and `target.<cfg>.rustflags`
+3. All matching `target.<tuple>.rustflags` and `target.<cfg>.rustflags`
    config entries joined together.
 4. `build.rustflags` config value.
 
@@ -599,13 +625,14 @@ for the host, such as build scripts or proc macros, will not receive the args.
 Without `--target`, the flags will be passed to all compiler invocations
 (including build scripts and proc macros) because dependencies are shared. If
 you have args that you do not want to pass to build scripts or proc macros and
-are building for the host, pass `--target` with the [host triple][target triple].
+are building for the host, pass `--target` with the [host tuple][target tuple].
 
 It is not recommended to pass in flags that Cargo itself usually manages. For
 example, the flags driven by [profiles](profiles.md) are best handled by setting the
 appropriate profile setting.
 
-> **Caution**: Due to the low-level nature of passing flags directly to the
+> [!CAUTION]
+> Due to the low-level nature of passing flags directly to the
 > compiler, this may cause a conflict with future versions of Cargo which may
 > issue the same or similar flags on its own which may interfere with the
 > flags you specify. This is an area where Cargo may not always be backwards
@@ -624,13 +651,14 @@ order, with the first one being used:
 
 1. `CARGO_ENCODED_RUSTDOCFLAGS` environment variable.
 2. `RUSTDOCFLAGS` environment variable.
-3. All matching `target.<triple>.rustdocflags` and `target.<cfg>.rustdocflags`
+3. All matching `target.<tuple>.rustdocflags` and `target.<cfg>.rustdocflags`
   config entries joined together.
 4. `build.rustdocflags` config value.
 
 Additional flags may also be passed with the [`cargo rustdoc`] command.
 
-> **Caution**: Due to the low-level nature of passing flags directly to the
+> [!CAUTION]
+> Due to the low-level nature of passing flags directly to the
 > compiler, this may cause a conflict with future versions of Cargo which may
 > issue the same or similar flags on its own which may interfere with the
 > flags you specify. This is an area where Cargo may not always be backwards
@@ -641,9 +669,10 @@ Additional flags may also be passed with the [`cargo rustdoc`] command.
 * Default: from profile
 * Environment: `CARGO_BUILD_INCREMENTAL` or `CARGO_INCREMENTAL`
 
-Whether or not to perform [incremental compilation]. The default if not set is
-to use the value from the [profile](profiles.md#incremental). Otherwise this overrides the setting of
-all profiles.
+Whether or not to perform [incremental compilation].
+
+In environments with `CI` set, the default if not set is `CARGO_BUILD_INCREMENTAL=false`.
+Otherwise, the default is to use the value from the [profile](profiles.md#incremental).
 
 The `CARGO_INCREMENTAL` environment variable can be set to `1` to force enable
 incremental compilation for all profiles, or `0` to disable it. This env var
@@ -775,7 +804,8 @@ The automatic deletion of files only occurs when running commands that are alrea
 
 Automatic deletion is disabled if cargo is offline such as with `--offline` or `--frozen` to avoid deleting artifacts that may need to be used if you are offline for a long period of time.
 
-> **Note**: This tracking is currently only implemented for the global cache in Cargo's home directory.
+> [!NOTE]
+> This tracking is currently only implemented for the global cache in Cargo's home directory.
 > This includes registry indexes and source files downloaded from registries and git dependencies.
 > Support for tracking build artifacts is not yet implemented, and tracked in [cargo#13136](https://github.com/rust-lang/cargo/issues/13136).
 >
@@ -920,6 +950,26 @@ your home directory).
 
 Can be overridden with the `--root` command-line option.
 
+#### `install.profile`
+* Type: string
+* Default: `"release"`
+* Environment: `CARGO_INSTALL_PROFILE`
+
+The default [profile] for `cargo install` to compile with.
+
+Can be overridden with the `--debug` or `--profile` CLI options.
+
+```toml
+[install]
+profile = "tool"
+
+[profile.tool]
+inherits = "release"
+lto = true
+```
+
+> **MSRV:** Respected as of 1.100.
+
 ### `[net]`
 
 The `[net]` table controls networking configuration.
@@ -933,7 +983,7 @@ Number of times to retry possibly spurious network errors.
 
 #### `net.git-fetch-with-cli`
 * Type: boolean
-* Default: false
+* Default: auto-detect
 * Environment: `CARGO_NET_GIT_FETCH_WITH_CLI`
 
 If this is `true`, then Cargo will use the `git` executable to fetch registry
@@ -1116,6 +1166,13 @@ See [rpath](profiles.md#rpath).
 
 See [strip](profiles.md#strip).
 
+#### `profile.<name>.trim-paths`
+* Type: string
+* Default: See profile docs.
+* Environment: `CARGO_PROFILE_<name>_TRIM_PATHS`
+
+See [trim-paths](profiles.md#trim-paths).
+
 ### `[resolver]`
 
 The `[resolver]` table overrides [dependency resolution behavior](resolver.md) for local development (e.g. excludes `cargo install`).
@@ -1152,6 +1209,23 @@ See the [resolver](resolver.md#rust-version) chapter for more details.
 > **MSRV:**
 > - `allow` is supported on any version
 > - `fallback` is respected as of 1.84
+
+#### `resolver.incompatible-publish-age`
+* Type: string
+* Default: `"deny"`
+* Environment: `CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE`
+
+When resolving the version of a dependency,
+specify the behavior for versions with a `pubtime` (if present)
+that is incompatible with the configured `min-publish-age`.
+Values include:
+
+- `allow`: treat pubtime-incompatible versions like any other version
+- `deny`: ignore pubtime-incompatible versions unless they already exist in the lock file
+
+See the [resolver](resolver.md#publish-age) chapter for more details.
+
+> **MSRV:** Respected as of 1.100+
 
 ### `[registries]`
 
@@ -1191,6 +1265,26 @@ paths or arguments that contain spaces, use an array.
 If the value exists in the [`[credential-alias]`](#credential-alias) table, the alias will be used.
 
 See [Registry Authentication](registry-authentication.md) for more information.
+
+#### `registries.<name>.min-publish-age`
+* Type: string
+* Default: [`registry.global-min-publish-age`](#registryglobal-min-publish-age)
+* Environment: `CARGO_REGISTRIES_<name>_MIN_PUBLISH_AGE`
+
+Specifies the minimum timespan since a version's `pubtime` that may be
+considered for [`resolver.incompatible-publish-age`] for packages from this
+registry. If not set, [`registry.global-min-publish-age`](#registryglobal-min-publish-age) will be used.
+
+Will be ignored if the registry does not support this.
+
+It supports the following values:
+
+- An integer followed by "seconds", "minutes", "hours", "days", "weeks", or "months"
+- `"0"` to allow all packages
+
+Generally, `"0"`, `"N days"`, and `"N weeks"` will be used.
+
+> **MSRV:** Respected as of 1.100+
 
 #### `registries.crates-io.protocol`
 * Type: string
@@ -1267,6 +1361,25 @@ referenced here by its alias.
 
 See [Registry Authentication](registry-authentication.md) for more information.
 
+#### `registry.global-min-publish-age`
+* Type: string
+* Default: `"0"`
+* Environment: `CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE`
+
+Specifies the global minimum timespan since a version's `pubtime` that it may
+be considered for [`resolver.incompatible-publish-age`] for packages.
+If `min-publish-age` is not set for a specific registry using
+`registries.<name>.min-publish-age`, Cargo will use this minimum publish age.
+
+It supports the following values:
+
+- An integer followed by "seconds", "minutes", "hours", "days", "weeks", or "months"
+- `"0"` to allow all packages
+
+Generally, `"0"`, `"N days"`, and `"N weeks"` will be used.
+
+> **MSRV:** Respected as of 1.100+
+
 ### `[source]`
 
 The `[source]` table defines the registry sources available. See [Source
@@ -1340,9 +1453,9 @@ If none of `branch`, `tag`, or `rev` is set, defaults to the `master` branch.
 ### `[target]`
 
 The `[target]` table is used for specifying settings for specific platform
-targets. It consists of a sub-table which is either a [platform triple][target triple] 
+targets. It consists of a sub-table which is either a [platform tuple][target tuple]
 or a [`cfg()` expression]. The given values will be used if the target platform
-matches either the `<triple>` value or the `<cfg>` expression.
+matches either the `<tuple>` value or the `<cfg>` expression.
 
 ```toml
 [target.thumbv7m-none-eabi]
@@ -1360,50 +1473,50 @@ to view) and extra `--cfg` flags passed to `rustc` (such as those defined in
 `RUSTFLAGS`). Do not try to match on `debug_assertions`, `test`, Cargo features
 like `feature="foo"`, or values set by [build scripts].
 
-If using a target spec JSON file, the [`<triple>`] value is the filename stem.
+If using a target spec JSON file, the [`<tuple>`] value is the filename stem.
 For example `--target foo/bar.json` would match `[target.bar]`.
 
-#### `target.<triple>.ar`
+#### `target.<tuple>.ar`
 
 This option is deprecated and unused.
 
-#### `target.<triple>.linker`
+#### `target.<tuple>.linker`
 * Type: string (program path)
 * Default: none
-* Environment: `CARGO_TARGET_<triple>_LINKER`
+* Environment: `CARGO_TARGET_<tuple>_LINKER`
 
 Specifies the linker which is passed to `rustc` (via [`-C linker`]) when the
-[`<triple>`] is being compiled for. By default, the linker is not overridden.
+[`<tuple>`] is being compiled for. By default, the linker is not overridden.
 
 #### `target.<cfg>.linker`
-This is similar to the [target linker](#targettriplelinker), but using
-a [`cfg()` expression]. If both a [`<triple>`] and `<cfg>` linker match,
-the `<triple>` will take precedence. It is an error if more than one
+This is similar to the [target linker](#targettuplelinker), but using
+a [`cfg()` expression]. If both a [`<tuple>`] and `<cfg>` linker match,
+the `<tuple>` will take precedence. It is an error if more than one
 `<cfg>` linker matches the current target.
 
-#### `target.<triple>.runner`
+#### `target.<tuple>.runner`
 * Type: string or array of strings ([program path with args])
 * Default: none
-* Environment: `CARGO_TARGET_<triple>_RUNNER`
+* Environment: `CARGO_TARGET_<tuple>_RUNNER`
 
-If a runner is provided, executables for the target [`<triple>`] will be
+If a runner is provided, executables for the target [`<tuple>`] will be
 executed by invoking the specified runner with the actual executable passed as
 an argument. This applies to [`cargo run`], [`cargo test`] and [`cargo bench`]
 commands. By default, compiled executables are executed directly.
 
 #### `target.<cfg>.runner`
 
-This is similar to the [target runner](#targettriplerunner), but using
-a [`cfg()` expression]. If both a [`<triple>`] and `<cfg>` runner match,
-the `<triple>` will take precedence. It is an error if more than one
+This is similar to the [target runner](#targettuplerunner), but using
+a [`cfg()` expression]. If both a [`<tuple>`] and `<cfg>` runner match,
+the `<tuple>` will take precedence. It is an error if more than one
 `<cfg>` runner matches the current target.
 
-#### `target.<triple>.rustflags`
+#### `target.<tuple>.rustflags`
 * Type: string or array of strings
 * Default: none
-* Environment: `CARGO_TARGET_<triple>_RUSTFLAGS`
+* Environment: `CARGO_TARGET_<tuple>_RUSTFLAGS`
 
-Passes a set of custom flags to the compiler for this [`<triple>`]. 
+Passes a set of custom flags to the compiler for this [`<tuple>`].
 The value may be an array of strings or a space-separated string.
 
 See [`build.rustflags`](#buildrustflags) for more details on the different
@@ -1411,16 +1524,16 @@ ways to specific extra flags.
 
 #### `target.<cfg>.rustflags`
 
-This is similar to the [target rustflags](#targettriplerustflags), but
-using a [`cfg()` expression]. If several `<cfg>` and [`<triple>`] entries
+This is similar to the [target rustflags](#targettuplerustflags), but
+using a [`cfg()` expression]. If several `<cfg>` and [`<tuple>`] entries
 match the current target, the flags are joined together.
 
-#### `target.<triple>.rustdocflags`
+#### `target.<tuple>.rustdocflags`
 * Type: string or array of strings
 * Default: none
-* Environment: `CARGO_TARGET_<triple>_RUSTDOCFLAGS`
+* Environment: `CARGO_TARGET_<tuple>_RUSTDOCFLAGS`
 
-Passes a set of custom flags to the compiler for this [`<triple>`].
+Passes a set of custom flags to the compiler for this [`<tuple>`].
 The value may be an array of strings or a space-separated string.
 
 See [`build.rustdocflags`](#buildrustdocflags) for more details on the different
@@ -1428,11 +1541,11 @@ ways to specific extra flags.
 
 #### `target.<cfg>.rustdocflags`
 
-This is similar to the [target rustdocflags](#targettriplerustdocflags), but
-using a [`cfg()` expression]. If several `<cfg>` and [`<triple>`] entries
+This is similar to the [target rustdocflags](#targettuplerustdocflags), but
+using a [`cfg()` expression]. If several `<cfg>` and [`<tuple>`] entries
 match the current target, the flags are joined together.
 
-#### `target.<triple>.<links>`
+#### `target.<tuple>.<links>`
 
 The links sub-table provides a way to [override a build script]. When
 specified, the build script for the given `links` library will not be
@@ -1550,7 +1663,9 @@ Report progress to the terminal emulator for display in places like the task bar
 [source replacement]: source-replacement.md
 [revision]: https://git-scm.com/docs/gitrevisions
 [registries]: registries.md
+[profile]: profiles.md
 [`cargo:token`]: registry-authentication.md#cargotoken
 [crates.io]: https://crates.io/
-[target triple]: ../appendix/glossary.md#target '"target" (glossary)'
-[`<triple>`]: ../appendix/glossary.md#target '"target" (glossary)'
+[target tuple]: ../appendix/glossary.md#target '"target" (glossary)'
+[`<tuple>`]: ../appendix/glossary.md#target '"target" (glossary)'
+[`resolver.incompatible-publish-age`]: config.md#resolverincompatible-publish-age

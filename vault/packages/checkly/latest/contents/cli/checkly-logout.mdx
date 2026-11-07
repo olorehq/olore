@@ -2,6 +2,7 @@
 title: checkly logout
 description: 'Log out of your Checkly account.'
 sidebarTitle: 'checkly logout'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-logout/'
 ---
 
 The `checkly logout` command signs out of your current Checkly account and removes stored authentication tokens from your local machine.
@@ -22,6 +23,8 @@ The basic command logs out of your current Checkly account and removes stored au
 ```bash Terminal
 npx checkly logout [options]
 ```
+
+In a terminal, the CLI asks you to confirm first. When there's no terminal to answer in, for example in CI, a script or an AI agent, it logs out without asking.
 
 | Option | Required | Description |
 |--------|----------|-------------|
@@ -64,9 +67,11 @@ The logout process will:
 
 The command removes authentication tokens stored locally in:
 
-- **macOS**: `~/Library/Preferences/@checkly/cli-nodejs/auth.json`
-- **Linux**: `~/.config/@checkly/cli-nodejs/auth.json`
-- **Windows**: `%APPDATA%\@checkly\cli-nodejs\auth.json`
+- **macOS**: `~/Library/Preferences/@checkly/cli/auth.json`
+- **Linux**: `~/.config/@checkly/cli/auth.json`
+- **Windows**: `%APPDATA%\@checkly\cli\Config\auth.json`
+
+The same directory holds a `config.json` with the selected account ID and name, which is cleared as well.
 
 ## After Logout
 

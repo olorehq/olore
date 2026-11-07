@@ -5,32 +5,32 @@ description: Local better-auth documentation reference (latest). Better Auth doc
 
 # better-auth Documentation
 
-Better Auth is a framework-agnostic, universal authentication and authorization library for TypeScript. It provides email/password, OAuth/social login, 2FA, passkeys, organizations, multi-session, SSO, and a plugin ecosystem — all self-hosted with full control over your database.
+Better Auth documentation. Use for TypeScript authentication, OAuth, email/password, 2FA, organizations, sessions, and framework-agnostic auth.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Install | `contents/installation.mdx` |
+| Getting started | `contents/introduction.mdx` |
+| Installation | `contents/installation.mdx` |
 | Basic usage | `contents/basic-usage.mdx` |
+| Configuration options | `contents/reference/options.mdx` |
 | Database adapters | `contents/adapters/` |
-| Social/OAuth providers | `contents/authentication/` |
-| Core concepts | `contents/concepts/` |
+| OAuth providers | `contents/authentication/` |
+| Plugins | `contents/plugins/index.mdx` |
 | Framework integrations | `contents/integrations/` |
-| Plugins | `contents/plugins/` |
-| Config options | `contents/reference/options.mdx` |
-| Error reference | `contents/reference/errors/` |
+| Error reference | `contents/reference/errors/index.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Setting up authentication (email/password, OAuth, magic link, passkeys, 2FA, OTP)
-- Integrating Better Auth with Next.js, Nuxt, SvelteKit, Astro, Hono, Express, or other frameworks
-- Database adapters (Drizzle, Prisma, Mongoose, Postgres, MySQL, SQLite)
-- Session and user management
-- Plugins (organization/teams, admin, JWT, OIDC provider, SCIM, SSO)
-- Migrating from NextAuth, Clerk, Auth0, Supabase Auth, or WorkOS
-- Configuration options, hooks, cookies, rate limiting, or TypeScript types
+- Setting up authentication with Better Auth (email/password, OAuth, magic links, OTP, passkeys)
+- Configuring social login providers (Google, GitHub, Apple, Microsoft, etc.)
+- Using Better Auth plugins (2FA, organizations, admin, API keys, JWT, SSO, OIDC, etc.)
+- Integrating Better Auth with frameworks (Next.js, Nuxt, Astro, SvelteKit, Hono, Express, etc.)
+- Database adapter setup (Prisma, Drizzle, MongoDB, PostgreSQL, MySQL, SQLite)
+- Session management, cookies, rate limiting, and security
+- Migrating from other auth providers or upgrading to the latest version
 
 ## How to find information
 

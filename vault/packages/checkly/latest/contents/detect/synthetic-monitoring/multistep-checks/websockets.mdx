@@ -1,8 +1,9 @@
 ---
-title: WebSockets on Multistep checks - Checkly Docs
+title: WebSockets on Multistep checks
+description: "Monitor a WebSocket endpoint from a Multistep check by scripting a connection, sending messages, and validating the responses you get back."
 sidebarTitle: WebSockets
-navTitle: WebSockets
 
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/multistep-checks/websockets/'
 ---
 
 To create a WebSocket check in Checkly, you'll need to write a script that establishes a WebSocket connection, sends messages, and validates responses.
@@ -147,16 +148,16 @@ ws.on('message', (data: Buffer) => {
     console.log('First message (non-JSON):', messageString);
     isFirstMessage = false; // Update the flag after handling the first message
   } else { // Process JSON echo response
+    let message: SubscriptionMessage;
     try {
-      const message: SubscriptionMessage = JSON.parse(data.toString());
-      if (message) {
-        console.log('Notification received:', message);
-        // Add an assertion to confirm the JSON returned is the same as what we sent
-        expect(message).toMatchObject({ "action": "subscribe", "channel": "updates" })
-      }
+      message = JSON.parse(data.toString());
     } catch (error) {
       console.error('Error parsing received message:', error);
+      return;
     }
+    console.log('Notification received:', message);
+    // Add an assertion to confirm the JSON returned is the same as what we sent
+    expect(message).toMatchObject({ "action": "subscribe", "channel": "updates" })
   }
 });
 
@@ -204,16 +205,16 @@ ws.on('message', (data) => {
     console.log('First message (non-JSON):', messageString);
     isFirstMessage = false; // Update the flag after handling the first message
   } else { // Process JSON echo response
+    let message;
     try {
-      const message = JSON.parse(data);
-      if (message) {
-        console.log('Notification received:', message);
-        // Add an assertion to confirm the JSON returned is the same as what we sent
-        expect(message).toMatchObject({ "action": "subscribe", "channel": "updates" })
-      }
+      message = JSON.parse(data);
     } catch (error) {
       console.error('Error parsing received message:', error);
+      return;
     }
+    console.log('Notification received:', message);
+    // Add an assertion to confirm the JSON returned is the same as what we sent
+    expect(message).toMatchObject({ "action": "subscribe", "channel": "updates" })
   }
 });
 

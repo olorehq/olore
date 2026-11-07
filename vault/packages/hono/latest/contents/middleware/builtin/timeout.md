@@ -19,7 +19,7 @@ Default Settings:
 const app = new Hono()
 
 // Applying a 5-second timeout
-app.use('/api', timeout(5000))
+app.use('/api/*', timeout(5000))
 
 // Handling a route
 app.get('/api/data', async (c) => {
@@ -36,7 +36,7 @@ import { HTTPException } from 'hono/http-exception'
 // Custom exception factory function
 const customTimeoutException = (context) =>
   new HTTPException(408, {
-    message: `Request timeout after waiting ${context.req.headers.get(
+    message: `Request timeout after waiting ${context.req.header(
       'Duration'
     )} seconds. Please try again later.`,
   })
@@ -55,6 +55,21 @@ app.get('/api/long-process', async (c) => {
   return c.json({ data: 'This usually takes longer' })
 })
 ```
+
+::: tip Fresh error stacks
+
+Use a factory when timeout errors are reported to an observability service:
+
+```ts
+timeout(
+  5000,
+  () => new HTTPException(504, { message: 'Gateway Timeout' })
+)
+```
+
+Passing an exception instance reuses its construction-time stack for every timeout, which can affect stack attribution and error fingerprinting.
+
+:::
 
 ## Notes
 

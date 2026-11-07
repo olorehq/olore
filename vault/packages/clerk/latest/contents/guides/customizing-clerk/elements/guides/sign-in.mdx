@@ -1,6 +1,7 @@
 ---
 title: Build a sign-in flow with Clerk Elements
 description: Learn how to build a complete sign-in form with Clerk Elements.
+tag: deprecated
 ---
 
 <TutorialHero
@@ -23,12 +24,13 @@ description: Learn how to build a complete sign-in form with Clerk Elements.
   ]}
 />
 
-<Include src="_partials/elements-callout" />
+> [!DEPRECATED]
+> This feature is deprecated. With the release of [Clerk Core 3](/changelog/2026-03-03-core-3), the redesigned [hooks](/docs/reference/hooks/overview) are the recommended replacement for building custom flows. They expose stateful objects, step methods that map directly to the flow, and structured field-level errors out of the box, so you no longer need to manage attempt status, loading states, or error parsing yourself.
 
 > [!NOTE]
 >
 > - Clerk Elements is for [advanced use-cases](/docs/guides/customizing-clerk/elements/overview#why-use-clerk-elements) that require a high-level of customization. The easiest way to implement Clerk is with our [all-in-one UI components](/docs/reference/components/overview).
-> - Clerk Elements currently only works with Next.js App Router and [Clerk Core 2](/changelog/2024-04-19){{ target: '_blank' }}.
+> - Clerk Elements currently only works with Next.js App Router and [Clerk Core 2](/changelog/2024-04-19).
 
 <Steps>
   ## Add a sign-in route
@@ -266,7 +268,7 @@ description: Learn how to build a complete sign-in form with Clerk Elements.
 
   To enable users to reset their passwords, you can add the following additional steps:
 
-  1. `forgot-password` –  Renders [`<SignIn.SupportedStrategy>`](/docs/guides/customizing-clerk/elements/reference/sign-in#supported-strategy), which initiates the reset process, whereby an email code is sent to the user for verification.
+  1. `forgot-password` –  Renders [`<SignIn.SupportedStrategy>`](/docs/guides/customizing-clerk/elements/reference/sign-in#supportedstrategy), which initiates the reset process, whereby an email code is sent to the user for verification.
      - `<SignIn.SupportedStrategy>` is also used in the `forgot-password` and `choose-strategy` steps to trigger verification of a supported strategy.
   1. `reset-password` – Allows a verified user to input a new password. If your instance has been set up to accept SMS codes, you can also use `reset_password_phone_code`.
 
@@ -277,5 +279,5 @@ description: Learn how to build a complete sign-in form with Clerk Elements.
 
   Learn how to style your Clerk Elements components with the [styling guide](/docs/guides/customizing-clerk/elements/guides/styling).
 
-  For more extensive customization of the UI, see the additional Clerk Elements components such as [`<Loading>`](/docs/guides/customizing-clerk/elements/reference/common#loading) and [`<FieldState>`](/docs/guides/customizing-clerk/elements/reference/common#field-state).
+  For more extensive customization of the UI, see the additional Clerk Elements components such as [`<Loading>`](/docs/guides/customizing-clerk/elements/reference/common#loading) and [`<FieldState>`](/docs/guides/customizing-clerk/elements/reference/common#fieldstate).
 </Steps>

@@ -1,9 +1,9 @@
 ---
 title: The Neon GitHub integration
-subtitle: Connect Neon Postgres to a GitHub repository and build GitHub Actions
+subtitle: Connect Lakebase Postgres on Neon to a GitHub repository and build GitHub Actions
   workflows
 summary: >-
-  The Neon GitHub integration connects a Neon Postgres project to a GitHub
+  The Neon GitHub integration connects a Lakebase Postgres project on Neon to a GitHub
   repository by installing a GitHub App that stores a NEON_API_KEY secret and
   NEON_PROJECT_ID variable in the repo. GitHub Actions workflows use these to
   create a database branch when a pull request opens and delete it on close.
@@ -15,7 +15,7 @@ summary: >-
 enableTableOfContents: true
 redirectFrom:
   - /docs/guides/neon-github-app
-updatedOn: '2026-06-11T23:50:21.258Z'
+updatedOn: '2026-08-04T05:05:30.414Z'
 ---
 
 The Neon GitHub integration connects your Neon project to a GitHub repository, streamlining database development within your overall application development workflow. For instance, you can configure GitHub Actions to create a database branch for each pull request and automatically apply schema changes to that database branch. To help you get started, we provide a [sample GitHub Actions workflow](#add-the-github-actions-workflow-to-your-repository).
@@ -270,7 +270,7 @@ When connecting a Neon project to a GitHub repository, the GitHub integration pe
 - Creates a `NEON_API_KEY` secret in your GitHub repository
 - Adds a `NEON_PROJECT_ID` variable to your GitHub repository
 
-The `NEON_API_KEY` allows you to run any [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api) method or [Neon CLI](/docs/cli) command, which means you can develop actions and workflows that create, update, and delete various objects in Neon such as projects, branches, databases, roles, and computes.
+The `NEON_API_KEY` allows you to run any [Neon API](/docs/reference/api) method or [Neon CLI](/docs/cli) command, which means you can develop actions and workflows that create, update, and delete various objects in Neon such as projects, branches, databases, roles, and computes.
 
 The `NEON_PROJECT_ID` variable defines the Neon project that is connected to the repository. Operations run on Neon via the Neon API or CLI typically require specifying the Neon project ID, as a Neon account may have more than one Neon project.
 
@@ -285,7 +285,7 @@ The sample GitHub Actions workflow provided by the Neon GitHub integration depen
 To view the Neon API key created by the integration:
 
 1. In the [Neon Console](https://console.neon.tech), click your profile at the top right corner of the page.
-2. Select **Account settings**.
+2. Select **Settings** (under **Account**).
 3. Select **API keys**.
 
 The API key created by the integration should be listed with a name similar to the following: **API key for GitHub (cool-darkness-12345678)**. You cannot view the key itself, only the name it was given, the time it was created, and when the key was last used.
@@ -331,7 +331,7 @@ Any GitHub Actions workflows you've added to GitHub repositories that are depend
 To remove the GitHub integration:
 
 1. In the Neon Console, navigate your account Profile.
-2. Select **Account settings**.
+2. Select **Settings** (under **Account**).
 3. Select **Integrations**.
 4. Click **Remove**.
 

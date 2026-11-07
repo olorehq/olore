@@ -1,0 +1,149 @@
+---
+title: 'Troubleshoot the Checkly MCP Server'
+description: 'Resolve common Checkly MCP Server setup, authentication, account selection, and tool access issues.'
+sidebarTitle: 'Troubleshooting'
+canonical: 'https://www.checklyhq.com/docs/ai/mcp-server/troubleshooting/'
+---
+
+<Accordion title="Before you begin">
+Before troubleshooting, confirm:
+
+- Your MCP client is configured with `https://api.checklyhq.com/mcp`.
+- You chose an authentication method supported by your client.
+- You restarted your MCP client after editing its configuration.
+- Your Checkly user or service API key can access the account you want to use.
+</Accordion>
+
+## Authentication
+
+### OAuth sign-in fails
+
+If your client reports that authentication is required or the browser sign-in does not complete:
+
+1. Confirm the client is in the [supported OAuth clients list](/ai/mcp-server/setup#supported-oauth-clients).
+2. Confirm the endpoint is exactly `https://api.checklyhq.com/mcp`.
+3. Re-run your client's MCP login or authentication flow.
+4. Remove stale Checkly MCP credentials from the client if it keeps reusing an old token.
+5. Reconnect and call `whoami`.
+
+If the browser login page shows a "Something went wrong" error, contact [Checkly Support](mailto:support@checklyhq.com). Include the MCP client, the Checkly account, and the approximate time of the error.
+
+### OAuth client registration fails
+
+The Checkly MCP Server only supports Checkly-approved OAuth clients. Checkly does not support Dynamic Client Registration (DCR).
+
+If your client reports a dynamic registration error, a failed client registration, or never opens the expected OAuth flow, confirm that the client is in the [supported OAuth clients list](/ai/mcp-server/setup#supported-oauth-clients). A client can support remote MCP servers and still be incompatible with the Checkly OAuth flow.
+
+If your client can send custom headers, use [API-key authentication](/ai/mcp-server/setup#set-up-with-an-api-key) as a fallback.
+
+### An API key is rejected
+
+If your client reports a missing or invalid bearer token:
+
+1. Confirm the header is exactly `Authorization: Bearer <checkly-api-key>`.
+2. Use a current `cu_...` user API key or `sv_...` service API key. Deprecated account API keys and old `sk_...` service-key formats are rejected.
+3. Confirm the key has not been revoked.
+4. Confirm the client sends the header with remote MCP requests.
+5. Reconnect and call `whoami`.
+
+For a user API key, confirm the user still belongs to the target account. For a service API key, confirm the key belongs to the target account and has the role needed for the action.
+
+If your client reads the bearer token from an environment variable, start the client from an environment where that variable is set. See [Set up with an API key](/ai/mcp-server/setup#set-up-with-an-api-key) for client examples and [Creating an API key in Checkly](/admin/creating-api-key) for key management.
+
+## Tools and permissions
+
+### No tools are listed
+
+Visible tools depend on the permissions granted to the MCP session. If no tools appear:
+
+1. Use your MCP client's refresh tools option.
+2. Restart the client if the tools list still does not update.
+3. Reconnect with OAuth, or confirm your API-key header is still configured.
+
+After the tools list refreshes, call `whoami` or ask Checkly which accounts you can access to verify the connection.
+
+### A specific tool is missing
+
+Each tool requires an MCP session permission. For example:
+
+- Check status and results require permission to list checks, their status, and results.
+- Test sessions require permission to read your Checkly test sessions.
+- Asset tools require permission to read Checkly assets plus the related result permission.
+- Incident write tools require permission to create and update your Checkly incidents.
+
+See [MCP tools](/ai/mcp-server/tools) for the full tool list.
+
+The `invite-account-member` tool is not available with API-key authentication. Reconnect with OAuth if you need to invite account members through MCP.
+
+If the tool you expected is not part of the current MCP Server, [share feedback or requests](https://feedback.checklyhq.com) so we can understand the workflow your agent was trying to complete.
+
+### A tool call is denied
+
+Tool visibility and Checkly account access are separate checks. A tool can be visible but reject a call when the selected account does not include the required feature or the authenticated user or service API key has an insufficient role.
+
+Confirm the target account and the role returned by `whoami`. User API keys inherit the user's role. Service API keys use the account and role selected when the key was created. See [Security and permissions](/ai/mcp-server/security-and-permissions#role-checks) for the access required by write and run actions.
+
+## Account selection
+
+### A tool asks for an account
+
+OAuth sessions and user API keys can access multiple Checkly accounts. Ask your client:
+
+```text title="Prompt" wrap
+Use Checkly to show the accounts I can access, then show failing checks for <account-name>.
+```
+
+To always use the same account, set the `X-Checkly-Account` header in your MCP server configuration. See [Select an account](/ai/mcp-server/setup#select-an-account).
+
+Service API keys are already scoped to one account. If a service-key session reports that it cannot access the account in `X-Checkly-Account`, remove the header or set it to the account configured on the key.
+
+## Interactive views
+
+### A view appears as text or data
+
+Confirm your client supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview). A client can support MCP tools without rendering interactive views. Ask explicitly for an interactive card, list, or chart so your agent uses `show-check-status`, `show-check-list`, or `show-check-response-time`.
+
+If your client cannot display views, use `list-check-stats` or `get-check-performance-summary` to read the data.
+
+### A view tool is missing or fails to load
+
+1. Refresh your client's tools list or reconnect to Checkly.
+2. Confirm the session has `checkly:checks:read` and your account role grants [`checks:read`](/admin/team-management/permissions).
+3. Confirm the selected account contains the check you requested. See [Select an account](/ai/mcp-server/setup#select-an-account).
+
+For response-time charts, use a past window of at most seven days within your plan's data retention. Heartbeat, ICMP, traceroute, and SSL monitors do not support this chart. Gaps in a chart indicate periods without results.
+
+Views do not refresh automatically. Use **Refresh** to request current data. If a view still fails, contact [Checkly Support](mailto:support@checklyhq.com) with your client, account, view tool, and approximate time of the error.
+
+## Local check authoring
+
+### The MCP server cannot access or deploy my local project
+
+You can create and update standalone Browser and Multistep checks through MCP using inline scripts. The MCP server runs remotely and cannot access your local project files, bundle code, or deploy a project.
+
+For local project authoring, use the [Checkly CLI](/cli/overview) in your project. To let your AI agent do this, install [Checkly Skills](/ai/skills).
+
+## Write actions
+
+### A write tool did more than expected
+
+Some write tools are not idempotent. Retrying a call can create another invite, another incident, or another incident update.
+
+If a write tool changed more than you expected, contact [Checkly Support](mailto:support@checklyhq.com). Include the MCP client, the Checkly account, the tool name, and the approximate time of the action.
+
+Before approving write tool calls, check:
+
+- The target account ID.
+- The target status page or check ID.
+- Whether subscribers will be notified.
+- Whether the action consumes check-run or RCA quota.
+
+## Browser-based clients
+
+### A browser client or web IDE cannot connect
+
+Some browser-based clients require CORS support and may handle OAuth differently from command-line clients. If a browser-based client cannot connect:
+
+1. If you use OAuth, confirm the client is in the [supported OAuth clients list](/ai/mcp-server/setup#supported-oauth-clients).
+2. If you use an API key, confirm the client sends custom headers with remote MCP requests.
+3. Try another supported client, such as Claude Code.

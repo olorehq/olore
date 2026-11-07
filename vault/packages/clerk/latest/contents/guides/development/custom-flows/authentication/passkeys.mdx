@@ -17,8 +17,17 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
   When setting up passkeys with Android, there are a few additional steps to follow. Learn more about [passkeys for Android](/docs/reference/android/passkeys).
 </If>
 
+<If sdk="electron">
+  > [!NOTE]
+  > In Electron, pass the `passkeys` export from `@clerk/electron/passkeys` to `<ClerkProvider>` before using these flows. Renderer mode needs an `https://` origin that matches your instance's relying party ID; local bundles, custom schemes, and the dev server need native mode on macOS or Windows, which requires the optional native module. See [Configure passkeys for Electron](/docs/reference/electron/passkeys).
+</If>
+
 <If sdk="expo">
   When setting up passkeys with Expo, there are a few additional steps to follow. Learn more about [passkeys for Expo](/docs/reference/expo/passkeys).
+</If>
+
+<If sdk="ios">
+  Before you add passkeys to an iOS app, complete the [iOS quickstart](/docs/ios/getting-started/quickstart) or run `npx clerk@latest init`. This configures Native API, registers the app's exact Bundle ID and App ID Prefix, and adds the `webcredentials:` Associated Domain when the selected target has a safely editable entitlements path. Otherwise, the CLI reports the required manual step. Run `npx clerk@latest doctor` afterward to verify the selected Xcode target and linked development instance.
 </If>
 
 ### Domain restrictions for passkeys
@@ -32,7 +41,7 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
     <Include src="_partials/sdk-examples-not-available-callout" />
   </If>
 
-  To create a passkey for a user, you must call [`User.createPasskey()`](/docs/reference/objects/user#create-passkey), as shown in the following example:
+  To create a passkey for a user, you must call [`User.createPasskey()`](/docs/reference/objects/user#createpasskey), as shown in the following example:
 
   <If notSdk="expo">
     ```tsx {{ filename: 'components/CustomCreatePasskeysButton.tsx' }}
@@ -186,7 +195,7 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
     <Include src="_partials/sdk-examples-not-available-callout" />
   </If>
 
-  To sign a user into your Clerk app with a passkey, you must call [`SignIn.authenticateWithPasskey()`](/docs/reference/objects/sign-in#authenticate-with-passkey). This method allows users to choose from their discoverable passkeys, such as hardware keys or passkeys in password managers.
+  To sign a user into your Clerk app with a passkey, you must call [`SignIn.authenticateWithPasskey()`](/docs/reference/objects/sign-in#authenticatewithpasskey). This method allows users to choose from their discoverable passkeys, such as hardware keys or passkeys in password managers.
 
   <If notSdk="expo">
     ```tsx {{ filename: 'components/SignInWithPasskeyButton.tsx' }}
@@ -356,7 +365,6 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
   <If sdk="android">
     ```kotlin
     import com.clerk.api.Clerk
-    import com.clerk.api.auth.signInWithPasskey
     import com.clerk.api.network.serialization.onFailure
     import com.clerk.api.network.serialization.onSuccess
     import com.clerk.api.signin.SignIn
@@ -448,7 +456,7 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
     import { ThemedText } from '@/components/themed-text'
     import { ThemedView } from '@/components/themed-view'
     import { useUser } from '@clerk/expo'
-    import { PasskeyResource } from '@clerk/shared/types'
+    import type { PasskeyResource } from '@clerk/expo/types'
     import { useState } from 'react'
     import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native'
 
@@ -753,7 +761,7 @@ To use passkeys, first enable the strategy in the [Clerk Dashboard](https://dash
     import { ThemedText } from '@/components/themed-text'
     import { ThemedView } from '@/components/themed-view'
     import { useUser } from '@clerk/expo'
-    import { PasskeyResource } from '@clerk/shared/types'
+    import type { PasskeyResource } from '@clerk/expo/types'
     import { useState } from 'react'
     import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native'
 

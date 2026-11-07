@@ -29,6 +29,7 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
       "id": "<PROGRAM_ID>",
       "name": "rate-limiter",
       "status": "success",
+      "version": 1,
       "created_on": "<TIMESTAMP>",
       "modified_on": "<TIMESTAMP>"
     }
@@ -43,10 +44,13 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
 
 This example uploads a new eBPF program written in C. The program source code is sent as the request body with `Content-Type: text/plain`.
 
+Include the optional `X-Program-Name` header to specify a human-readable program name. If omitted, the API generates a UUID as the program name.
+
 ```bash title="Request"
 curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programmable_flow_protection/configs/programs" \
 --header "Authorization: Bearer <API_TOKEN>" \
 --header "Content-Type: text/plain" \
+--header "X-Program-Name: my-rate-limiter" \
 --data-binary "@/path/to/program.c"
 ```
 
@@ -54,8 +58,9 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
 {
   "result": {
     "id": "<PROGRAM_ID>",
-    "name": "program",
+    "name": "my-rate-limiter",
     "status": "success",
+    "version": 1,
     "created_on": "<TIMESTAMP>",
     "modified_on": "<TIMESTAMP>"
   },
@@ -83,7 +88,7 @@ If the program fails compilation or verification, the API returns a detailed err
 
 ## Update a program
 
-This example updates an existing program with new source code. You can update a program even if it is currently in use by one or more rules. If the new program fails compilation or verification, the update fails and the existing program remains active.
+This example updates an existing program with new source code. Each update creates a new version under the same program ID. Rules using the program remain pinned to their existing `program_version`. If the new program fails compilation or verification, the update fails and the existing version remains active.
 
 ```bash title="Request"
 curl --request PATCH \
@@ -99,6 +104,7 @@ curl --request PATCH \
     "id": "<PROGRAM_ID>",
     "name": "program",
     "status": "success",
+    "version": 2,
     "created_on": "<TIMESTAMP>",
     "modified_on": "<TIMESTAMP>"
   },
@@ -142,6 +148,7 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
     {
       "id": "<RULE_ID>",
       "program_id": "<PROGRAM_ID>",
+      "program_version": 1,
       "scope": "global",
       "name": "global",
       "mode": "enabled",
@@ -177,6 +184,7 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
   "result": {
     "id": "<RULE_ID>",
     "program_id": "<PROGRAM_ID>",
+    "program_version": 1,
     "scope": "global",
     "name": "global",
     "mode": "monitoring",
@@ -214,6 +222,7 @@ curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/magic/programma
   "result": {
     "id": "<RULE_ID>",
     "program_id": "<PROGRAM_ID>",
+    "program_version": 1,
     "scope": "region",
     "name": "WEUR",
     "mode": "enabled",
@@ -231,7 +240,7 @@ Refer to [JSON objects](/ddos-protection/advanced-ddos-systems/api/programmable-
 
 ## Update a rule
 
-This example updates an existing rule. You can update the mode, scope, and expression, but not the program. To change the program, delete the rule and create a new one.
+This example updates an existing rule's mode and pins it to version `2` of its program. If you omit `program_version`, the rule remains pinned to its existing version.
 
 ```bash title="Request"
 curl --request PATCH \
@@ -239,7 +248,8 @@ curl --request PATCH \
 --header "Authorization: Bearer <API_TOKEN>" \
 --header "Content-Type: application/json" \
 --data '{
-  "mode": "enabled"
+  "mode": "enabled",
+  "program_version": 2
 }'
 ```
 
@@ -248,6 +258,7 @@ curl --request PATCH \
   "result": {
     "id": "<RULE_ID>",
     "program_id": "<PROGRAM_ID>",
+    "program_version": 2,
     "scope": "global",
     "name": "global",
     "mode": "enabled",

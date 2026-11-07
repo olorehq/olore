@@ -1,0 +1,124 @@
+---
+title: Build a custom authentication flow using biometric sign-in
+description: Learn how to enroll a biometric credential and let returning users sign in to a native app with biometrics.
+sdk: expo, android, ios
+---
+
+<Include src="_partials/custom-flows-callout" />
+
+Biometric sign-in lets returning users sign in with their device's biometrics. After a normal sign-in or sign-up, your app can enroll the current installation as a biometric credential. When the session expires, the user can sign in again with biometrics instead of their original sign-in method.
+
+This is different from using biometrics only to unlock local app content. Biometric sign-in authenticates with Clerk and creates a Clerk session. It is also different from a [passkey](/docs/guides/development/custom-flows/authentication/passkeys): biometric credentials are scoped to the native app installation and don't use [WebAuthn](https://www.w3.org/TR/webauthn-2/).
+
+During enrollment, the SDK generates a device-bound key pair and registers the public key with Clerk. The private key never leaves the device. To sign in, the device signs a one-time Clerk challenge after the user approves the system authentication prompt. Clerk verifies the signature before creating a session.
+
+<If sdk="expo">
+  > [!IMPORTANT]
+  > For a custom Expo flow, use [`useBiometricCredentials()`](/docs/reference/expo/native-hooks/use-biometric-credentials) to enroll biometric credentials and sign in returning users. The hook requires `@clerk/expo-biometrics` and a [development build](https://docs.expo.dev/develop/development-builds/introduction/) that includes it; it won't work in Expo Go. Don't use [`expo-local-authentication`](https://docs.expo.dev/versions/latest/sdk/local-authentication/) as a substitute; that package only verifies biometrics locally and cannot create a Clerk session.
+</If>
+
+## Enable biometric sign-in
+
+1. In the Clerk Dashboard, navigate to the [**Native applications**](https://dashboard.clerk.com/~/native-applications) page and enable the Native API. This is required to integrate Clerk in your native application or browser extension.
+   > [!WARNING]
+   > Enabling the Native API opens a public request pathway that bypasses browser-based CAPTCHA challenges. Learn more about [how the Native API affects challenges](/docs/guides/protect/getting-started#native-api-considerations).
+1. Navigate to the [**User & authentication**](https://dashboard.clerk.com/~/user-authentication/user-and-authentication) page and select the **Biometric** tab.
+1. Enable **Sign-in with mobile biometrics**.
+
+If you use Clerk's prebuilt authentication views, you can also enable **Prompt after sign-in** or **Prompt after sign-up**. The prebuilt views will then offer enrollment after authentication and display biometric sign-in when a signed-out user has an enrolled credential. For a custom flow, use the APIs demonstrated in this guide.
+
+<If sdk="ios">
+  > [!IMPORTANT]
+  > If [`AuthView(isDismissible: false)`](/docs/reference/views/authentication/auth-view) is your app's root authentication view, use `clerk.isAuthFlowComplete` before replacing it with authenticated content so biometric enrollment can finish.
+</If>
+
+<If sdk="android">
+  > [!IMPORTANT]
+  > If [`AuthView(isDismissible = false)`](/docs/reference/views/authentication/auth-view) is your app's root authentication view, use `Clerk.isAuthFlowCompleteFlow` before replacing it with authenticated content so biometric enrollment can finish.
+</If>
+
+<If sdk="expo">
+  > [!IMPORTANT]
+  > If the native [`<AuthView />`](/docs/reference/expo/native-components/auth-view) is your app's non-dismissible root authentication view, use [`useAuthViewState()`](/docs/reference/expo/native-hooks/use-auth-view-state) before replacing it with authenticated content so biometric enrollment can finish.
+</If>
+
+## Configure your platform
+
+<If sdk="ios">
+  To support Face ID, add `NSFaceIDUsageDescription` to your app's `Info.plist`. The value must explain why your app uses Face ID. Touch ID doesn't require additional `Info.plist` configuration.
+
+  ```xml {{ filename: 'Info.plist' }}
+  <key>NSFaceIDUsageDescription</key>
+  <string>Use Face ID to sign in to this app.</string>
+  ```
+</If>
+
+<If sdk="android">
+  Biometric sign-in is supported on Android 9 (API level 28) and later. The device must have a Class 3 biometric enrolled. Clerk automatically adds the `USE_BIOMETRIC` permission to your app's merged manifest.
+</If>
+
+<If sdk="expo">
+  Install `@clerk/expo-biometrics`, then rebuild your development build:
+
+  ```bash {{ filename: 'terminal' }}
+  npx expo install @clerk/expo-biometrics
+  ```
+
+  <Tabs items={["iOS", "Android"]}>
+    <Tab>
+      To support Face ID, set the `faceIDPermission` option on the `@clerk/expo` config plugin. It adds `NSFaceIDUsageDescription` to your app's `Info.plist`. The value must explain why your app uses Face ID.
+
+      ```json {{ filename: 'app.json' }}
+      {
+        "expo": {
+          "plugins": [["@clerk/expo", { "faceIDPermission": "Use Face ID to sign in to this app." }]]
+        }
+      }
+      ```
+
+      > [!IMPORTANT]
+      > The iOS Simulator can't create the hardware-backed keys required for biometric credentials. Test on a physical iPhone.
+    </Tab>
+
+    <Tab>
+      Biometric sign-in is supported on Android 9 (API level 28) and later. The device must have a Class 3 biometric enrolled. Clerk automatically adds the `USE_BIOMETRIC` permission to your app's merged manifest.
+    </Tab>
+  </Tabs>
+</If>
+
+<Include src="_partials/authentication/biometric-credentials/policy" />
+
+## Enroll a biometric credential
+
+Enroll the current app installation only after the user completes a normal sign-in or sign-up and Clerk has a session with a status of `active` or `pending`.
+
+<Include src="_partials/authentication/biometric-credentials/enroll" />
+
+## Sign a returning user in
+
+When the user no longer has an active session, check whether a local biometric credential is available before displaying biometric sign-in. While signed out, this availability check only inspects local state and can't confirm that the credential still exists in Clerk. If the subsequent sign-in reports that the credential no longer exists, the SDK removes the stale local state.
+
+<Include src="_partials/authentication/biometric-credentials/sign-in" />
+
+<If sdk="expo">
+  ## Reverify an active session
+
+  [Reverification](/docs/guides/secure/reverification) prompts a signed-in user to verify their identity again before a sensitive action. While the user is signed in, reverify their identity with an enrolled biometric credential. This requires an active session and a credential enrolled with `'biometry_current_set'`. Successful reverification updates the existing session and refreshes its token, so you don't need to call [`setActive()`](/docs/reference/objects/clerk#setactive).
+
+  Wrap the request to your backend with the [`useReverification()`](/docs/reference/hooks/use-reverification) hook. When your backend responds that the action requires reverification, the hook calls `onNeedsReverification` and retries the request after you call `complete()`. Expo has no prebuilt reverification UI, so `onNeedsReverification` is required.
+
+  The following example sends a request to a route that [requires reverification](/docs/guides/secure/reverification#how-to-require-reverification) and calls `reverify()` when the route asks for it. If the biometric verification doesn't complete, the example calls `cancel()`, which rejects the request. Replace the route and the console messages with your own.
+
+  <Include src="_partials/authentication/biometric-credentials/reverify" />
+</If>
+
+## Revoke a biometric credential
+
+While the user is signed in, list their active biometric credentials and let them choose which credential to revoke. Revoking a credential prevents Clerk from accepting it again. When the matching credential belongs to the current app installation, the SDK also deletes its local private key and credential metadata.
+
+> [!WARNING]
+> Don't delete only the local key as a replacement for revocation. Local deletion doesn't invalidate the credential stored by Clerk.
+
+The following example lists biometric credentials and revokes the selected credential.
+
+<Include src="_partials/authentication/biometric-credentials/revoke" />

@@ -1,269 +1,277 @@
 ---
-title: Reusing Playwright Monitors Across Every Phase of your Software Development Life Cycle
-sidebarTitle: Reusing Playwright Across The SDLC
-description: The same Playwright code you write for end-to-end testing before deployment, can also test code earlier as part of the dev process, and end-to-end tests can be run on a cadence in Checkly to turn test code into monitoring code.
-tags: Playwright
+title: Run checks on every deploy
+sidebarTitle: Monitoring Every Release
+description: Test pull request previews before merging, trigger deployed checks after production deployments, and record the commit, branch, and environment.
+canonical: 'https://www.checklyhq.com/docs/guides/sdlc-monitoring/'
 ---
 
-Recently I had a chance to write about going from Playwright testing, [using Playwright to run e2e tests against your staging/pre-deploy environment, and Checkly to monitor your production envrionment](https://www.checklyhq.com/guides/playwright-testing-to-monitoring/). Once you’re using the power of Playwright and Checkly together to monitor your production environment, it’s time to go one step further: use the powerful tools from Checkly to monitor all your environments, from local development on your laptop, to a staging environment, to production. With this guide, the same code you wrote in Playwright for your initial tests on your laptop will get re-used (as appropriate) to monitor Staging, and finally Production to let you know that everything’s working, and find problems before your users do.
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-## The Problem: A Fractured Picture of Your Code
+By the end of this guide, your pull requests will test their preview URL before merge, your production deploys will trigger deployed checks and fail the validation workflow on failures, and each test session will identify its commit, branch, and environment.
 
-If you’re already excited about Playwright and/or Checkly, you probably don’t need much convincing that it’s good to use both to monitor more environments, if so feel free to skip this section. 
+<Frame>
+  <img src="/images/guides/checks-on-deploy/session.png" alt="Passing URL monitor and browser check with the Production environment, repository, branch, and commit recorded" />
+</Frame>
 
-In short, we’re all aware that the software development life cycle (SDLC) often breaks down when it comes to finding bugs and solving outages.
+The [sample project](https://github.com/checkly/docs/tree/main/samples/guides/checks-on-deploy) monitors the Danube shop with one URL monitor and one Browser check.
 
-![a diagram showing the ideal vs the real SDLC](/images/guides/images/sdlc-monitoring-01.png)
+<Accordion title="Let your agent do it" icon="sparkles">
+  <GuideAgentIntro />
 
-Ideally development should only be getting requirements from planning and design, with any feedback (issues that need fixing) coming in the QA stages before deployment to production. In reality a huge list of failures can result in developers having to fix failures and re-engineer code to keep production running. There are two significant concerns that a more unified testing and monitoring approach can help us address:
+  <div id="ai-setup-prompt">
+```txt
+Set up checks on every deploy using samples/guides/checks-on-deploy.
+Use ENVIRONMENT_URL for a Danube shop URL monitor and Browser Check.
+Run npx checkly test --record, then stop for confirmation before
+npx checkly deploy. Add two checkly/checkly-action@v1 workflows:
+pull_request runs test against the ready preview for that exact commit
+with reporting auto; successful production deployment_status events
+run trigger with tags and reporting github-actions. Require the PR
+job and external Checkly result before merging. Record the environment
+with CHECKLY_TEST_ENVIRONMENT and preserve commit and branch metadata.
+Prove a wrong URL fails and the correct URL passes. Validate workflow
+YAML and report separately whether the workflows ran in CI.
+```
+  </div>
 
-1. When bugs are found post deployment, feedback is often given without full context, with the first reports going to someone other than the developer.
+  <CopyPromptButton />
+</Accordion>
 
-2. Any fixes have to be delivered out-of-band of the normal development cycle, either coded in haste during [incident response](https://www.checklyhq.com/learn/incidents/what-is-incident-response/), or written and deployed during time that was supposed ot be spent on new features.
+The steps below are what the agent does, in the open.
 
+## 1. Give both checks an environment URL
 
-By unifying around Checkly, **feedback is delivered directly to developers**, with developers working on their own tests, which then offer direct feedback with all the context that product teams need to diagnose root causes. The many unforeseen failures caused by the interaction of application code and the production environment should be monitored with **the same quality of tests that scruitinized our code pre-deployment.**
+<Accordion title="Before you begin">
+Complete the [quickstart](/quickstart) first.
 
-## The Solution: Unified Checkly & Playwright Monitoring
+Your deployment provider must publish GitHub deployments for each PR head commit, with a successful status and a reachable `environment_url`. The preview workflow looks for the environment named `Preview`; change that name to match your provider. Production deployments must set `production_environment: true`.
 
-Why do we need to test after staging? After all, if a bug gets through to production, it just means we need to do more testing and better testing before production right?
+Store your Checkly API key as the GitHub Actions secret `CHECKLY_API_KEY`, and your account ID as the variable `CHECKLY_ACCOUNT_ID`. Use a key for the account that owns your deployed checks. These examples need trusted PRs with access to that secret; fork PRs do not receive repository secrets.
+</Accordion>
 
-![a diagram showing the ideal vs the real SDLC](/images/guides/images/sdlc-monitoring-02.png)
+Copy the sample into `samples/guides/checks-on-deploy` in your repository and run `npm ci` there. Keep this directory layout for the workflows below.
 
-In reality no matter how much effort we put into simulating a production environment in our pre-deployment testing (hereafter we’ll refer to the environment before production as ‘Staging’ even though your team might call it something else), there are always large gaps between our testing and production environments. Things like third-party API’s, the real resource requirements of production data, and users abilities to find edge cases where we thought none existed, all serve to keep us well supplied with failures that only happen on production.
+The sample's `checkly.config.ts` selects `__checks__/**/*.check.ts`, sets a ten-minute schedule, and tags both checks `guide-checks-on-deploy`:
 
-All of this doesn’t mean the work we did on testing before deployment was without value. Local testing gives the fastest possible feedback, often in seconds. And testing on Staging provides a consistent environment with detailed feedback. 
+```typescript __checks__/shop.check.ts
+import { BrowserCheck, UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+import * as path from 'path'
 
-![a diagram showing the ideal vs the real SDLC](/images/guides/images/sdlc-monitoring-03.png)
+const environmentVariables = [
+  { key: 'ENVIRONMENT_URL', value: 'https://danube-web.shop' },
+]
 
-Each phase of the SDLC is a valuable place to run testing. What Checkly adds to the equation is running in-depth end-to-end tests on a cadence, meaning you can monitor your own production app as thoroughly as you do pre-deploy code. How does Checkly integrate throughout the process? The map looks something like this:
-
-![a diagram showing Checkly integrated in dev, deploy, and monitor phases of code diaployment](/images/guides/images/sdlc-monitoring-04.png)
-
-*In this diagram, Checkly uses the power of Playwright and OpenTelemetry to give you insight into how your code is running at every stage of the software development life cycle*
-
-Checkly serves as both a runner of your Playwright tests throughout the process, and place to see the results of your tests (Playwright Traces) and to collate your test results with backend data (through Checkly Traces, more on this in section 2 below). The result is a process that’s more integrated, that finds problems more proactively, and involves developers in the observability process from day 1.
-
-## 1. Local testing - Playwright on the laptop
-
-In the first phase, our test build is running on our local workstation, and we want test feedback as quickly as possible. The few seconds it takes to run a basic Playwright test might be the most time acceptable, if a developer is checking her test feedback every time she writes a few lines of code.
-
-### Local testing with Playwright
-
-The process starts with developers working with their test code at the same time they’re writing features. Some devs may use tests written by QA or other teams, and should make use [test fixtures](https://www.checklyhq.com/blog/how-to-implement-custom-test-fixtures-in-playwright/) to automate repeated tasts within their Playwright tests. 
-
-### Example: Creating a Custom Fixture for Logging In
-
-Let’s say you want to log in to your application before running a set of tests. Instead of repeating the login code in every test, you can create a custom fixture that handles the login process.
-
-**Step 1: Define the Custom Fixture**
-
-Create a `fixtures.js` file to define your custom fixture. This fixture will extend the base `test` object provided by Playwright.
-
-```ts Playwright.test.ts
-// fixtures.js
-import { test as base } from '@playwright/test';
-
-// Define a custom fixture that includes a logged-in page
-export const test = base.extend({
-  loggedInPage: async ({ page }, use) => {
-    // Perform login steps
-    await page.goto('<https://example.com/login>');
-    await page.fill('input#username', 'testuser');
-    await page.fill('input#password', 'password123');
-    await page.click('button#login');
-
-    // Wait for the login to complete (e.g., redirect to the dashboard)
-    await page.waitForURL('<https://example.com/dashboard>');
-
-    // Pass the logged-in page to the test
-    await use(page);
+new UrlMonitor('deploy-shop-url', {
+  name: 'Deploy: shop responds',
+  request: {
+    url: process.env.ENVIRONMENT_URL || 'https://danube-web.shop',
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
   },
-});
+})
 
-export { expect } from '@playwright/test';
-
+new BrowserCheck('deploy-shop-browser', {
+  name: 'Deploy: shop displays books',
+  environmentVariables,
+  code: { entrypoint: path.join(__dirname, 'shop.spec.ts') },
+})
 ```
 
-**Step 2: Use the Custom Fixture in Tests**
+The URL monitor reads the local variable when the CLI builds it. The Browser check reads the remote variable when Playwright runs:
 
-Now that the fixture is defined, you can use it in your tests. Import the custom `test` object from `fixtures.js` and write your tests as usual.
+```typescript __checks__/shop.spec.ts
+import { test, expect } from '@playwright/test'
 
-```ts Playwright.test.ts
-// example.spec.js
-import { test, expect } from './fixtures';
-
-test('Test 1: Verify dashboard loads', async ({ loggedInPage }) => {
-  // Use the logged-in page provided by the fixture
-  await expect(loggedInPage).toHaveTitle('Dashboard');
-  await expect(loggedInPage.locator('h1')).toHaveText('Welcome, testuser!');
-});
-
-test('Test 2: Verify user profile link', async ({ loggedInPage }) => {
-  // Navigate to the profile page
-  await loggedInPage.click('a#profile-link');
-  await expect(loggedInPage).toHaveURL('<https://example.com/profile>');
-  await expect(loggedInPage.locator('h1')).toHaveText('User Profile');
-});
+test('shop displays books', async ({ page }) => {
+  console.log(`Environment: ${process.env.ENVIRONMENT_URL}`)
+  await page.goto(process.env.ENVIRONMENT_URL!)
+  await expect(page.locator('.preview-title').first()).toBeVisible()
+})
 ```
 
----
+Both [Browser checks](/detect/synthetic-monitoring/browser-checks/overview) and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) work with this deployment pattern. This sample uses a Browser check. For a target behind your firewall, see [private locations](/platform/private-locations/overview).
 
-With test fixtures you can share test code across your team, saving them time as they write local tests. 
-
-### Test your laptop from all over the globe with the Checkly CLI
-
-After you’ve done the first extremely-high-speed iterative testing while writing new code, you may want to see how your local build handles requests sent from one or more real-world locations. This would require that your build is available to the internet either through a dev server or a reverse proxy tool like [ngrok](https://ngrok.com/). 
-
-With Checkly you can write your Playwright tests and then run them through the Checkly system, running your test from multiple geographic locations right from your local terminal with the [Checkly CLI](https://www.checklyhq.com/cli/overview). 
-
-After setting up your tests in a Checkly repisitory, a simple `npx checkly test` will run your Playwright tests, not from your laptop but from the geographic locations defined in your `checkly.config.ts` file.
-
-![The Checkly CLI running playwright tests from the Checkly network](/images/guides/images/sdlc-monitoring-05.png)
-
-*With the Checkly CLI your tests run from all the geographic locations in your configuration.*
-
-After you’re happy with your Playwright tests run through Checkly, you’ll be ready to deploy your tests as monitors to the checkly system, and store that code in a shared repository. All of this is part of the monitoring as code standard that Checkly supports. More on this in the following sections.
-
-## 2. Staging - Monitoring pre-deploy code with Checkly
-
-Once you’ve gathered code changes into a pull request, and the updates go on from your local or deve environments, it’s time to do some further phases of the testing pyramid, namely integration testing, contract testing, and e2e testing. With tests running on Checkly you get:
-
-- Tests run from real locations with full geographic coverage
-- Consistent runtime environments - the same containers that run your Playwright tests against production will be used for staging tests
-- Easily accessible results - use the Checkly dashboards to view test results and traces
-
-In this section we’ll cover the necessary tools for running your code in Staging, with the appropriate configuration before it moves to production.
-
-### Monitoring as Code
-
-This guide can’t provide a complete tutorial of the monitoring as code (MaC) workflow, but in general this will look something like:
-
-- Write tests locally from a shared repository
-- Update and expand your tests via source control
-- Deploy from your shared repository to Checkly
-- Manage configuration via config file in your repository
-- integrate ad-hoc test runs within your CI/CD tools
-
-[A complete map to MaC is on our documentation site](https://www.checklyhq.com/guides/monitoring-as-code/), and with these tools you can easily share monitoring code and configuration with your own team.
-
-### Local Environment Variables
-
-Local environment variables are used **at build time**. This means they are available when you run commands like `checkly test` or `checkly deploy`. These variables are tied to your local environment, whether it’s your laptop, or a CI/CD pipeline.
-
-**Example:**
-
-Imagine you have an email alert channel in your Checkly setup. You can define the email address using `process.env` in your code:
-
-```jsx
-const email = process.env.EMAIL || 'stefan@checklyhq.com';
-
-```
-
-If you want to override this email address locally, you can set an environment variable in your terminal before running the Checkly CLI:
-
-```bash Terminal    
-EMAIL=raccoon@checklyhq.com npx checkly deploy
-
-```
-
-When you deploy, Checkly will use the local variable (`raccoon@checklyhq.com`) instead of the default value.
-
----
-
-### Remote Environment Variables
-
-Remote environment variables are used **at runtime** in the Checkly cloud. These variables are accessible when your checks (like browser checks or API checks) are running in Checkly’s infrastructure. Local variables won’t work here because the Checkly cloud doesn’t have access to your local environment.
-
-**Example:**
-
-Let’s say you have a browser check that visits a URL defined by a remote environment variable:
-
-```jsx
-const url = process.env.SCREENSHOT_URL || '<https://www.checklyhq.com>';
-
-```
-
-If `SCREENSHOT_URL` isn’t set remotely, the check will default to `checklyhq.com`. To set this variable in the Checkly cloud, you can use the Checkly CLI:
+From the sample directory, test and deploy the production defaults:
 
 ```bash Terminal
-npx checkly env add SCREENSHOT_URL <https://docs.checklyhq.com>
-
+npx checkly test --record --env ENVIRONMENT_URL=https://danube-web.shop --test-session-name 'Docs guide: Run checks on every deploy | production'
+npx checkly deploy --force
 ```
 
-Now, when the browser check runs in the Checkly cloud, it will use the updated URL (`https://docs.checklyhq.com`).
+The recorded run passed both checks. Deploying then created the scheduled monitors:
 
----
-
-**Overriding Remote Variables**
-
-Sometimes, you might want to override remote environment variables temporarily, like during a preview deployment. The Checkly CLI makes this easy with the `-e` flag:
-
-```bash Terminal  
-npx checkly test -e SCREENSHOT_URL=https://google.com --record --verbose
-
+```text Terminal
+Successfully deployed project "Docs guide: Run checks on every deploy" to account "Checkly Marketing".
 ```
 
-This command overrides the `SCREENSHOT_URL` variable for that specific test run, allowing you to test different configurations without changing your remote settings permanently.
+When adapting the sample, replace both Danube defaults with your production URL and set `repoUrl` in `checkly.config.ts` to your repository. Deploy with the production URL, since `trigger` uses the URL monitor's saved request URL.
 
-### Optional: Private locations for running Checkly within your cloud
+## 2. Test the ready preview before merging
 
-For enterprise users, you may want to run Checkly monitors from within your cloud. This is especially helpful if your API isn’t available on the public internet, or you want to run checks from a geographic location not covered by the Checkly system. If your development and staging locations are running on private clouds, a [Checkly Private Location](https://www.checklyhq.com/docs/detect/private-locations/overview) makes testing easier.
+Copy this workflow from the sample into your repository's root `.github/workflows/`. It waits up to ten minutes for a successful `Preview` deployment of the PR head commit, then runs `npx checkly test` through the Action.
 
-![a diagram showing A container on your cloud running a Checkly Private Location](/images/guides/images/sdlc-monitoring-06.png)
+```yaml .github/workflows/checkly-preview.yml
+name: Checkly preview
 
-*A container on your cloud running a Checkly Private Location*
+on:
+  pull_request:
 
-Requirements:
+permissions:
+  contents: read
+  deployments: read
 
-- A Checkly enterprise accounts
-- A container runtime (we test using Docker, but other runtimes should work)
-- Outbound internet access for the Agent to [https://agent.checklyhq.com](https://agent.checklyhq.com/) (proxy configuration is supported)
-- Access to your API or browser-based applications and services from the Private Location network
+jobs:
+  preview:
+    name: Checkly preview job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-Once you’ve set up your private location, pick your private location when creating checks. If no agents run for 10 minutes, the location turns off until agents reconnect.
+      - name: Wait for this commit's preview deployment
+        id: preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 60); do
+            deployment_id=$(gh api "repos/$REPOSITORY/deployments?sha=$HEAD_SHA&per_page=100" \
+              --jq '[.[] | select(.environment == "Preview" and .production_environment == false)][0].id // empty')
+            if [ -n "$deployment_id" ]; then
+              url=$(gh api "repos/$REPOSITORY/deployments/$deployment_id/statuses" \
+                --jq '.[0] | select(.state == "success") | .environment_url // empty')
+              if [ -n "$url" ]; then
+                echo "url=$url" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "No successful Preview deployment for $HEAD_SHA" >&2
+          exit 1
 
-### Checkly Traces for OpenTelemetry insights
+      - uses: checkly/checkly-action@v1
+        with:
+          command: test
+          working-directory: samples/guides/checks-on-deploy
+          install-command: npm ci
+          reporting: auto
+          github-check-name: Checkly preview results
+          test-session-name: "Deploy checks | Preview | ${{ steps.preview.outputs.url }}"
+          env: ENVIRONMENT_URL=${{ steps.preview.outputs.url }}
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_TEST_ENVIRONMENT: Preview
+          ENVIRONMENT_URL: ${{ steps.preview.outputs.url }}
+```
 
-At any layer of running tests against your services, it’s helpful to connect the information from synthetic testing with backend trace data. With [Checkly Traces](https://www.checklyhq.com/docs/traces-open-telemetry/), it’s possible to export backend data captured with [OpenTelemetry](https://www.checklyhq.com/learn/opentelemetry/getting-started-with-observability/) and gather trace data from your backend services as they’re handling the requests sent during a Checkly Test. 
+The step's `env.ENVIRONMENT_URL` supplies the URL monitor at build time; `with.env` passes it to the browser at runtime. Neither changes the deployed production checks.
 
-Implementation is straightforward and results in a highly efficient observability setup that doesn’t use bandwidth for 
-unnecessary monitoring data. In most cases the setup will look like this:
+With `reporting: auto`, a connected Checkly GitHub App can report asynchronously through **Checkly preview results**. Otherwise, the Action waits and reports through **Checkly preview job**. Follow the [GitHub Actions integration](/integrations/ci-cd/github/actions) to connect the app from your Checkly account.
 
-1. Configure Checkly to send a header with its requests, which will be picked up and propagated by OpenTelemetry instrumentation
-2. Add a configuration to the [OpenTelemetry collector](https://www.checklyhq.com/learn/opentelemetry/what-is-the-otel-collector/) to send only relevant traces to Checkly
-3. Enjoy information on database requests, compute time, third party requests, and other backend processes right in your Checkly dashboard 
+<Warning>
+Set branch rules to require **Checkly preview job** and, when using the GitHub App, **Checkly preview results**. The job alone can pass while the external Checkly result is still running. Confirm which reporting mode your first PR uses before enabling required checks.
+</Warning>
 
-![a dashboard showing back-end requests](/images/guides/images/sdlc-monitoring-06.png)
+## 3. Validate each production deployment
 
-*With Checkly Traces you can see the database calls and other timespans as your backend services handle requests kicked off by a Checkly test.*
+Copy the second workflow into the same root workflow directory. Your deployment provider must emit a successful GitHub deployment status for every production release.
 
-Checkly Traces is easy to implement even if you aren’t currently using OpenTelemetry, [check out our documentation](https://www.checklyhq.com/docs/traces-open-telemetry/) on how to get started.
+```yaml .github/workflows/checkly-production.yml
+name: Checkly production
 
-## 3. Production - Finding failures in real time with Playwright & Checkly
+on:
+  deployment_status:
 
-### Moving to Production cadence
+permissions:
+  contents: read
 
-Once you’ve moved to production, it’s time to run your tests on a cadence, creating a monitor that tell you within minutes if any part of your service goes down. The process for setting this cadence looks like:
+jobs:
+  production:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.production_environment == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
 
-1. [Determine the right check frequency](https://www.checklyhq.com/blog/check-frequency/) based on SLA
-2. Configure your tests either in the web UI or by editing your [test repository’s config](https://www.checklyhq.com/cli/overviewproject-structure/) file
-3. [Group or tag tests](https://www.checklyhq.com/docs/groups/#organizing-checks-with-groups---checkly-docs) by criticality to have consistent cadence for high value services - this also makes it easier to see checks together in the web UI
+      - uses: checkly/checkly-action@v1
+        with:
+          command: trigger
+          working-directory: samples/guides/checks-on-deploy
+          install-command: npm ci
+          reporting: github-actions
+          tags: guide-checks-on-deploy
+          github-sha: ${{ github.event.deployment.sha }}
+          test-session-name: "Deploy checks | ${{ github.event.deployment.environment }} | ${{ github.event.deployment_status.environment_url }}"
+          env: ENVIRONMENT_URL=${{ github.event.deployment_status.environment_url }}
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+          CHECKLY_TEST_ENVIRONMENT: ${{ github.event.deployment.environment }}
+          CHECKLY_REPO_BRANCH: ${{ github.event.deployment.ref }}
+```
 
-With alerts running on a cadence, you can ensure that you’re hearing about failures before your users report them. The final step is setting up the alerting your team receives when a monitor detects problems.
+This runs `npx checkly trigger` against deployed checks with the sample's tag. `reporting: github-actions` waits and fails the validation workflow if a check fails. It also fails if no checks match. This happens after deployment; it does not roll back the release or change an already completed deployment job.
 
-### Alerting on failures
+The Action supplies commit metadata from the event. Checkout uses the same SHA, and `CHECKLY_REPO_BRANCH` preserves the deployment ref. Have your provider send a branch name as that ref if you want a branch label rather than a SHA. `CHECKLY_TEST_ENVIRONMENT` fills the session's **Environment** field; `ENVIRONMENT_URL` selects the browser's target.
 
-Finally, now that we’re monitoring production with Checkly, we’ll need to send alerts to an on-call team and/or key stakeholders when something is detected as not working. [Checkly supports multiple alert channels](https://www.checklyhq.com/docs/alerting-and-retries/#alerting-and-retries-with-checkly---checkly-docs), with configuration available either for a single check, at the group level, or all checks. Some best practices:
+For local runs, the CLI reads git metadata from your checkout and `repoUrl` from the project config. Uncommitted edits are tested, but the recorded SHA still identifies the current commit. Commit your checks before using that SHA to reproduce a run.
 
-- Configure retry logic for minimal alert fatigue - Checkly offers fine-grained retries on checks, and it’s important to double-check that failures aren’t transitory. Balance alert fatigue with time efficiency, as multiple retries can significantly impact time to detection.
-- Don’t rely on a single alert channel, always have at least one backup like a slack message or email to make sure that a delivery failure doesn't aggravate an outage.
-- Use soft assertions and degraded states for more depth - not every behavior counts as total failure. For slowly-loading graphics or error messages that don’t block the user, [use the degraded state](https://www.checklyhq.com/blog/never-miss-alerts/#use-soft-assertions-to-reduce-alert-fatigue) to flag the problem without sending high priority alerts.
+`CHECKLY_RUN_SOURCE` describes what started a run, not its environment or commit. In Playwright Check Suites, recorded CLI tests use `TEST_RECORD`, recorded triggers use `TRIGGER_RECORD`, and scheduled runs use `SCHEDULER`. A GitHub Action running `trigger` is still `TRIGGER_RECORD`; `DEPLOYMENT` denotes a Checkly deployment hook. This sample's Browser check did not expose that variable, so it logs the target URL instead.
 
-There’s also a general factor of time and team culture: if you do the work now to ensure checkly alerts are timely and informative, your team will grow a culture of taking alerts from Checkly seriously, and either resolving or investigating every high priority notification.
+## Verify it works
 
-## Conclusions: from dev to production with Checkly
+From the sample directory, intentionally use a wrong path. The local variable changes the URL monitor's build; `--env` changes the browser's runtime target:
 
-With Checkly and Playwright, you can test and monitor every stage—from local development to production—using the same powerful tools. This unified approach catches issues early, keeps your team informed, and helps you deliver a better experience to users.
+```bash Terminal
+export CHECKLY_TEST_ENVIRONMENT=Preview
+ENVIRONMENT_URL=https://danube-web.shop/does-not-exist npx checkly test --record --env ENVIRONMENT_URL=https://danube-web.shop/does-not-exist --test-session-name 'Docs guide: Run checks on every deploy | verified failure'
+```
 
-Start small with local tests, expand to staging, then monitor production with confidence. Checkly makes it easy to stay ahead of problems before they reach your users.
+Danube returns HTTP 200 for this path, so the URL monitor passes. The browser detects the missing book list and the CLI exits with code 1:
+
+```text Terminal
+1 failed, 1 passed, 2 total
+```
+
+<Frame>
+  <img src="/images/guides/checks-on-deploy/failure.png" alt="Preview session showing a passing URL monitor and failing browser assertion for the wrong URL" />
+</Frame>
+
+Restore the URL and label the session:
+
+```bash Terminal
+export CHECKLY_TEST_ENVIRONMENT=Production
+npx checkly test --record --env ENVIRONMENT_URL=https://danube-web.shop --test-session-name 'Docs guide: Run checks on every deploy | verified pass'
+```
+
+```text Terminal
+2 passed, 2 total
+```
+
+Open the session link printed by the CLI to see its git metadata and environment. In **Test sessions**, search for the session name to compare the failed and passing runs:
+
+<Frame>
+  <img src="/images/guides/checks-on-deploy/list.png" alt="Test sessions list showing the failed Preview run and passing Production run with their branch and commit" />
+</Frame>
+
+The sample also passed a local `npx checkly trigger --tags guide-checks-on-deploy` run. Both workflow files were parsed as YAML; they were not executed in CI. After configuring your provider and secrets, open a PR and deploy to production to verify both workflow paths in your repository.
+
+## Next
+
+[Set up alerting](/guides/alerting) so failures on the production monitoring schedule reach your team between deploys.
+
+## Reference
+
+- [GitHub Actions](/integrations/ci-cd/github/actions)
+- [GitHub deployments](/integrations/ci-cd/github/deployments)
+- [checkly test](/cli/checkly-test)
+- [checkly trigger](/cli/checkly-trigger)
+- [Environment variables](/cli/environment-variables)
+- [Built-in Playwright Check Suite variables](/detect/synthetic-monitoring/playwright-checks/environment-variables)

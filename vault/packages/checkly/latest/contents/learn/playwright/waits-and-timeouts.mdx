@@ -1,5 +1,6 @@
 ---
 title: Dealing with waits and timeouts in Playwright
+description: "Replace flaky hard-coded timeouts in Playwright with auto-waiting and web-first assertions to make your tests faster and more reliable."
 date: 2021-11-26
 author: Giovanni Rago
 githubUser: ragog
@@ -10,10 +11,12 @@ sidebarTitle: Waits and timeouts
 weight: 70
 learn_playwright:
   parent: "Interaction"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/waits-and-timeouts/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
 import SignUpCta from "/snippets/sign-up-cta.mdx"
+import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
 
 <PlaywrightCheckSuiteTryOut />
 
@@ -108,7 +111,7 @@ await expect(page.getByRole('button', {name: 'Login'})).toBeHidden()
 If you pair web-first assertions with Playwright's auto-waiting actions, your scripts will be expressive, human-readable, and, most importantly, not include any hard timeouts.
 
 <Tip>
-It's important to understand that auto-waiting web-first assertions also have synchronous counterparts.
+It's important to understand that auto-waiting web-first assertions also have non-retrying counterparts.
 
 ```
 // check if this element is visible at this moment (true/false)
@@ -191,16 +194,89 @@ And for more advanced cases, you can pass a function to be evaluated within the 
 ```ts
 // wait for a specific state in the browser window after clicking a button
 const secretInternalState = page.waitForFunction(
-  () => window.localstorage.secretThing === 'true'
+  () => window.localStorage.getItem('secretThing') === 'true'
 );
 await page.getByRole('button', { name: 'Login' }).click()
 await secretInternalState
 ```
+
+## When auto-waiting isn't enough
+
+Sometimes a page looks ready, but it isn't. Modern frontend frameworks often render static HTML first and attach JavaScript event handlers later, a step called hydration. A button can be visible, stable, and enabled while clicking it still does nothing. Playwright's actionability checks pass, the click happens too early, and the next step fails.
+
+```ts failing-test.spec.ts
+import { test } from '@playwright/test'
+
+test('open and close the modal', async ({ page }) => {
+  await page.goto('https://site.example/modalLoader.html')
+  // The button is visible, but its click handler isn't ready yet
+  await page.getByRole('button', { name: 'Toolbar 1' }).click()
+  // The modal never opens, so this locator never resolves
+  await page.locator('#modal1').getByText('Close').click()
+})
+```
+
+Adding `page.waitForTimeout()` makes this pass until the page gets slower. Use one of these alternatives instead.
+
+### Fix the page: disable controls until they work
+
+If you can change the application, render the button with the `disabled` attribute and enable it once its handler is attached. Playwright doesn't click disabled elements, so auto-waiting works again. Users benefit too, because the button no longer invites clicks that do nothing.
+
+```html
+<button onclick="showModal('modal1')" disabled>Toolbar 1</button>
+```
+
+### Wait for the network response that makes the page ready
+
+If readiness depends on a backend call, wait for that response. `waitForResponse` also accepts a predicate, which is useful when the same URL is polled several times:
+
+```ts
+const responsePromise = page.waitForResponse(response =>
+  response.url().endsWith('/modalBackend')
+    && response.status() === 200
+    && response.request().method() === 'PUT'
+)
+await page.getByText('trigger response').click()
+const response = await responsePromise
+```
+
+<Note>
+Don't `await` the `waitForResponse` call itself. Create the promise first, trigger the request, then `await` the promise.
+</Note>
+
+<YoutubeEmbed id="5CER0dKweyw" title="How to wait for a specific API response in your Playwright end-to-end tests" />
+
+### Retry the interaction with `toPass`
+
+If you can't change the page and there's no request to wait for, retry the whole interaction until it succeeds or the assertion times out:
+
+```ts retry-with-topass.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('open and close the modal', async ({ page }) => {
+  await page.goto('https://site.example/modalLoader.html')
+
+  // Retry this block until every action and assertion passes
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Toolbar 1' }).click()
+    await page.locator('#modal1').getByText('Close').click({ timeout: 1000 })
+  }).toPass()
+})
+```
+
+This works around the hydration problem in your test. It doesn't fix the experience for your users.
+
+<YoutubeEmbed id="8g7FvoRToGo" title="Avoid flaky end-to-end tests due to poorly hydrated Frontends with Playwright's toPass()" />
+
+### Report slowness as degraded instead of failed
+
+If the delay is a performance problem rather than a broken feature, mark a Checkly check as [degraded](/detect/synthetic-monitoring/multistep-checks/degraded-states) instead of failing it: use a soft assertion and call `markCheckAsDegraded` from `@checkly/playwright-helpers`. Soft assertions on their own still fail the check. Degraded checks show up in the dashboard and only notify alert channels that are set up to receive degraded alerts.
 
 ## Takeaways
 
 1. Never use hard waits or timeouts.
 2. Use auto-waiting instead.
 3. Combine auto-waiting actions with web-first assertions to test UI state instead of implementation details.
+4. When a page looks ready before it is, fix the page, wait for the right response, or retry the interaction with `toPass`.
 
 <SignUpCta />

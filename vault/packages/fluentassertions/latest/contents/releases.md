@@ -9,8 +9,51 @@ sidebar:
 
 ## Unreleased
 
+### What's new
+* Added generic-math support on .NET 8 or later: `Should()` now returns numeric assertions for other `INumber<T>` types such as `Half` and `NFloat`, and `BeApproximately`/`NotBeApproximately` (including the nullable variants) work for any `IFloatingPoint<T>` - [#3395](https://github.com/fluentassertions/fluentassertions/pull/3395)
+* Added `Should()` assertions for `System.Uri`, such as `BeAbsolute`, `HaveScheme`, `HaveHost`, `HavePath` and `HaveQueryParameter` - [#3390](https://github.com/fluentassertions/fluentassertions/pull/3390)
+* Added a `BeOrderedBy(expression, CollectionSortOrder)` overload for collections so callers can pass a sort expression plus a direction enum (`CollectionSortOrder.Ascending`/`CollectionSortOrder.Descending`) instead of branching on direction - [#3363](https://github.com/fluentassertions/fluentassertions/pull/3363)
+
+### Enhancements
+
+### Fixes
+* `JsonNodeAssertions.BeNumeric`/`NotBeNumeric` no longer throw on manually constructed `JsonNode` - [#3354](https://github.com/fluentassertions/fluentassertions/pull/3354)
+
+### Breaking Changes (for users)
+* On .NET 8 or later, `Half` and `NFloat` now get `NumericAssertions<T>` instead of `ComparableTypeAssertions<T>`, so members such as `BeRankedEquallyTo` and `BeSameAs` are no longer available for them - [#3395](https://github.com/fluentassertions/fluentassertions/pull/3395)
+
+## 8.11.0
+
+### What's new
+* Added `ThatSatisfy` to `MethodInfoSelector` and `PropertyInfoSelector` - [#3257](https://github.com/fluentassertions/fluentassertions/pull/3257)
+* Introduced new collection assertion methods `BeSupersetOf`, `BeProperSubsetOf` and `BeProperSupersetOf`, where an empty expected subset is treated as a valid (trivially satisfied) case for `BeSupersetOf` and `BeProperSupersetOf` instead of throwing - [#3271](https://github.com/fluentassertions/fluentassertions/pull/3271)
+* Added `BeJsonSerializable<T>()` for .NET 6+ to assert `System.Text.Json` round-tripping, with overloads for equivalency options and `JsonSerializerOptions` - [#3293](https://github.com/fluentassertions/fluentassertions/pull/3293)
+* Added `HaveLineCount`/`NotHaveLineCount` and `ContainLine`/`NotContainLine` to `StringAssertions` for asserting on the number of lines in a string and whether it contains a specific line, normalizing `\r\n`, `\n` and `\r` line endings. `ContainLine` returns an `AndWhichConstraint` exposing the matched line for further chaining - [#3297](https://github.com/fluentassertions/fluentassertions/pull/3297)
+* Added `Should()` overloads for `Func<ValueTask>` and `Func<ValueTask<T>>`, so `ValueTask`-returning delegates support the same assertions as `Task`-returning ones - [#3301](https://github.com/fluentassertions/fluentassertions/pull/3301)
+* Added public `ValueTypeAssertions<TSubject, TAssertions>` and `NullableValueTypeAssertions<TSubject, TAssertions>` base classes (both deriving from `ValueTypeAssertionsBase<TSubject, TSubjectResult, TAssertions>`) to make it easier to build custom assertions for value types — non-nullable subjects get `Be`/`NotBe`/`Match`, nullable subjects additionally get `BeNull`, `NotBeNull`, `HaveValue`, `NotHaveValue` and a nullable `Match` overload - [#3308](https://github.com/fluentassertions/fluentassertions/pull/3308)
+
 ### Enhancements
 * `BeEmpty` for `IEnumerable<T>` assertions now lists the first 10 items in the collection instead of only the first one - [#3198](https://github.com/fluentassertions/fluentassertions/pull/3198)
+
+### Fixes
+* `JsonNodeAssertions.HaveProperty`/`NotHaveProperty` now correctly distinguish an absent property from one with an explicit `null` value - [#3282](https://github.com/fluentassertions/fluentassertions/pull/3282)
+* `JsonNodeAssertions.HaveProperty` no longer throws an `InvalidOperationException` when wrapped in an `AssertionScope` and invoked on a non-`JsonObject` subject - [#3295](https://github.com/fluentassertions/fluentassertions/pull/3295)
+* Fixed several `PropertyInfoAssertions` methods (`BeVirtual`, `NotBeVirtual`, `BeWritable`, `NotBeWritable`, `BeReadable`, `NotBeReadable`, `Return`, `NotReturn`) and `TypeAssertions.HaveProperty`/`HaveIndexer` throwing an intermediate `NullReferenceException` before they could produce their proper failure message when used inside an `AssertionScope` - [#3323](https://github.com/fluentassertions/fluentassertions/pull/3323)
+
+### Breaking Changes (for users)
+* `Func<ValueTask>` and `Func<ValueTask<T>>` used to bind to the synchronous `Should<T>(Func<T>)` overload, which treated the value task as an ordinary return value. They now bind to the new asynchronous overloads instead. Replace `Throw`, `ThrowExactly`, `NotThrow` and `NotThrowAfter` with their `ThrowAsync`, `ThrowExactlyAsync`, `NotThrowAsync` and `NotThrowAfterAsync` counterparts, and note that `Subject` now exposes a task-based adapter rather than the original delegate - [#3301](https://github.com/fluentassertions/fluentassertions/pull/3301)
+
+## 8.10.0
+
+### What's new
+
+* Add `ComparingNullCollectionsAsEmpty` and `ComparingNullStringsAsEmpty` options to `BeEquivalentTo` - [#3202](https://github.com/fluentassertions/fluentassertions/pull/3202)
+
+### Enhancements
+
+* Fail with a descriptive error when path-based rules are used on value-semantic types - [#3187](https://github.com/fluentassertions/fluentassertions/pull/3187)
+* Significantly speed up `BeEquivalentTo` for large unordered collections - [#3189](https://github.com/fluentassertions/fluentassertions/pull/3188)
+* Include original index in extraneous item failure messages - [#3203](https://github.com/fluentassertions/fluentassertions/pull/3203)
 
 ## 8.9.0
 

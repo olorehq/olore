@@ -1,3 +1,20 @@
 ---
 openapi: get /v1/reporting
+title: Generate report
+sidebarTitle: Generate report
+canonical: 'https://www.checklyhq.com/docs/api-reference/reporting/generates-a-report-with-aggregate-statistics-for-checks-and-check-groups/'
 ---
+
+## Generate bucketed reports
+
+Granular reporting is generally available. Set `granularity` to `day`, `week`, or `month` to return per-bucket results in `aggregates` instead of a single result in `aggregate`.
+
+```http
+GET /v1/reporting?from=<unix>&to=<unix>&granularity=day&timezone=America%2FNew_York
+```
+
+You can set `timezone` only when you set `granularity`. It accepts [named IANA time zones](https://data.iana.org/time-zones/tzdb/zone1970.tab) such as `America/New_York`, but not UTC offset identifiers such as `+05:00`. If you omit `timezone`, bucket boundaries use `UTC`.
+
+Bucket boundaries follow calendar boundaries in the selected time zone. Daily buckets can therefore span 23 or 25 hours around daylight saving time transitions.
+
+Granular queries support reporting windows of up to 400 days and up to 120 buckets. The `successRatio` field can contain up to four decimal places in both granular and non-granular reports.

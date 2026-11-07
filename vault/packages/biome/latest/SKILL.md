@@ -1,43 +1,37 @@
 ---
 name: olore-biome-latest
-description: Local Biome documentation reference (latest). Biome is a fast JavaScript/TypeScript toolchain for formatting, linting, and more — a drop-in replacement for Prettier and ESLint.
+description: Local Biome documentation reference (latest). Biome documentation. Use for fast JavaScript/TypeScript formatting, linting, lint rules, configuration, and Prettier/ESLint replacement.
 ---
 
 # Biome Documentation
 
-Biome is a performant web toolchain that formats, lints, and analyzes JavaScript, TypeScript, JSX, CSS, JSON, GraphQL, and HTML. It replaces Prettier and ESLint with a single fast binary.
+Biome is a fast toolchain for formatting, linting, and analyzing JavaScript, TypeScript, JSX, CSS, JSON, GraphQL, HTML and more. English docs only.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Install and first run | `contents/guides/getting-started.mdx` |
-| Configure biome.json | `contents/reference/configuration.mdx` |
-| CLI commands | `contents/reference/cli.mdx` |
-| Migrate from ESLint/Prettier | `contents/guides/migrate-eslint-prettier.mdx` |
-| Browse lint rules | `contents/linter/rules/` |
-| Formatter options | `contents/formatter/index.mdx` |
-| Language support matrix | `contents/internals/language-support.mdx` |
-| Editor integrations | `contents/editors/introduction.mdx` |
+| Install and first run | `contents/en/installation/quick-start.mdx` |
+| Migrate from ESLint/Prettier | `contents/en/installation/migrate-from-other-tools.mdx` |
+| Configure biome.json | `contents/en/reference/configuration.mdx` |
+| CLI commands | `contents/en/reference/cli.mdx` |
+| Linter overview | `contents/en/linter/index.mdx` |
+| Lint rule details | `contents/en/linter/rules/{rule-name}/` |
+| Formatter | `contents/en/formatter/index.mdx` |
+| CI and git hooks | `contents/en/recipes/` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Formatting JavaScript, TypeScript, JSX, CSS, JSON, or GraphQL with Biome
-- Linting rules, enabling/disabling rules, rule categories, or rule options
-- Configuring biome.json (extends, rules, formatter options, linter options)
-- Migrating from Prettier, ESLint, or other tools to Biome
-- CLI usage, CI integration, git hooks, or editor plugins
-- GritQL patterns and custom plugins
-- Assist actions like organizing imports or sorting keys
-- Suppressing diagnostics or understanding error categories
+- Formatting and linting with Biome, lint rules and rule options
+- Configuring biome.json, VCS integration, monorepos
+- Migrating from Prettier or ESLint
+- CLI, CI integration, git hooks, editor/LSP setup, GritQL plugins
 
 ## How to find information
 
-1. **First**, read `TOC.md` for the complete file listing organized by directory
-2. Identify the relevant section based on the user's question
+1. **First**, read `TOC.md` for complete file listing organized by directory
+2. Identify relevant section based on user's question
 3. Read specific files for details
 
-**TOC.md contains all 572 files organized by directory — always check it first.**
-
-For lint rule lookups, files in `contents/linter/rules/` follow the pattern `{no|use}-{rule-name}.mdx` — go directly to the file if you know the rule name.
+**TOC.md contains all files organized by directory - always check it first.**

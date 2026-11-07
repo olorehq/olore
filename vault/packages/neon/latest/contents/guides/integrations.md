@@ -5,25 +5,30 @@ subtitle: Find detailed instructions for integration across various platforms an
 summary: >-
   Index of Neon integration guides organized by category: authentication,
   deployment, schema migration, replication, monitoring, and serverless.
-  Use this page to find setup instructions for connecting Neon Postgres to a
+  Use this page to find setup instructions for connecting Neon to a
   specific platform or tool.
 enableTableOfContents: true
 redirectFrom:
-  - /docs/integrations/integrations-list/
-updatedOn: '2026-06-05T17:20:32.620Z'
+  - /docs/integrations/integrations-list
+  - /docs/guides/stepzen
+  - /docs/guides/outerbase
+  - /docs/guides/deno
+  - /docs/guides/grafbase
+  - /docs/guides/wundergraph
+updatedOn: '2026-10-21T11:04:20.383Z'
 ---
 
 ## Authentication
 
 <TechCards>
 
-<a href="/docs/guides/auth-auth0" title="Auth0" description="Authenticate Neon Postgres application users with Auth0" icon="auth0"></a>
+<a href="/docs/guides/auth-auth0" title="Auth0" description="Authenticate Lakebase Postgres application users with Auth0" icon="auth0"></a>
 
-<a href="/docs/guides/auth-authjs" title="Auth.js" description="Authenticate Neon Postgres application users with Auth.js" icon="auth"></a>
+<a href="/docs/guides/auth-authjs" title="Auth.js" description="Authenticate Lakebase Postgres application users with Auth.js" icon="auth"></a>
 
-<a href="/docs/guides/auth-clerk" title="Clerk" description="Authenticate Neon Postgres application users with Clerk" icon="clerk"></a>
+<a href="/docs/guides/auth-clerk" title="Clerk" description="Authenticate Lakebase Postgres application users with Clerk" icon="clerk"></a>
 
-<a href="/docs/guides/auth-okta" title="Okta" description="Authenticate Neon Postgres application users with Okta" icon="okta"></a>
+<a href="/docs/guides/auth-okta" title="Okta" description="Authenticate Lakebase Postgres application users with Okta" icon="okta"></a>
 
 </TechCards>
 
@@ -35,17 +40,15 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/cloudflare-workers" title="Cloudflare Workers" description="Use Neon with Cloudflare Workers" icon="cloudflare"></a>
 
-<a href="/docs/guides/deno" title="Deno Deploy" description="Use Neon with Deno Deploy" icon="deno"></a>
-
-<a href="/docs/guides/heroku" title="Heroku" description="Deploy Your App with Neon Postgres on Heroku" icon="heroku"></a>
+<a href="/docs/guides/heroku" title="Heroku" description="Deploy Your App with Neon on Heroku" icon="heroku"></a>
 
 <a href="/docs/guides/koyeb" title="Koyeb" description="Use Neon with Koyeb" icon="koyeb"></a>
 
-<a href="/docs/guides/netlify-functions" title="Netlify Functions" description="Connect a Neon Postgres database to your Netlify Functions application" icon="netlify"></a>
+<a href="/docs/guides/netlify-functions" title="Netlify Functions" description="Connect a Lakebase Postgres database to your Netlify Functions application" icon="netlify"></a>
 
-<a href="/docs/guides/railway" title="Railway" description="Use Neon Postgres with Railway" icon="railway"></a>
+<a href="/docs/guides/railway" title="Railway" description="Use Neon with Railway" icon="railway"></a>
 
-<a href="/docs/guides/render" title="Render" description="Use Neon Postgres with Render" icon="render"></a>
+<a href="/docs/guides/render" title="Render" description="Use Neon with Render" icon="render"></a>
 
 <a href="/docs/guides/vercel-overview" title="Vercel" description="Learn how to integrate Neon with Vercel" icon="vercel"></a>
 
@@ -55,7 +58,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <TechCards>
 
-<a href="/guides/convex-neon" title="Convex" description="Integrate Convex with Neon Postgres" icon="convex"></a>
+<a href="/guides/convex-neon" title="Convex" description="Integrate Convex with Neon" icon="convex"></a>
 
 <a href="/docs/guides/neon-github-app" title="GitHub integration" description="Use the Neon GitHub integration" icon="github"></a>
 
@@ -73,7 +76,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/file-storage" title="File storage" description="Integrate file storage with Neon" icon="database"></a>
 
-<a href="/docs/guides/aws-s3" title="AWS S3" description="Integrate AWS S3 with Neon Postgres" icon="aws-s3-bucket"></a>
+<a href="/docs/guides/aws-s3" title="AWS S3" description="Integrate AWS S3 with Neon" icon="aws-s3-bucket"></a>
 
 <a href="/docs/guides/azure-blob-storage" title="Azure Blob Storage" description="Integrate Azure Blob Storage with Neon" icon="azure"></a>
 
@@ -93,9 +96,9 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <TechCards>
 
-<a href="/docs/guides/datadog" title="Datadog" description="Send metrics and events from Neon Postgres to Datadog" icon="datadog"></a>
+<a href="/docs/guides/datadog" title="Datadog" description="Send metrics and events from Neon to Datadog" icon="datadog"></a>
 
-<a href="/docs/guides/grafana-cloud" title="Grafana Cloud" description="Send metrics and logs from Neon Postgres to Grafana Cloud" icon="grafana"></a>
+<a href="/docs/guides/grafana-cloud" title="Grafana Cloud" description="Send metrics and logs from Neon to Grafana Cloud" icon="grafana"></a>
 
 <a href="/docs/guides/opentelemetry" title="OpenTelemetry" description="Send metrics and events from Neon to any OpenTelemetry compatible backend" icon="opentelemetry"></a>
 
@@ -105,7 +108,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <TechCards>
 
-<a href="/docs/guides/askyourdatabase" title="Ask Your Database" description="Chat with your Neon Postgres database with AskYourDatabase" icon="database"></a>
+<a href="/docs/guides/askyourdatabase" title="Ask Your Database" description="Chat with your Lakebase Postgres database with AskYourDatabase" icon="database"></a>
 
 <a href="/docs/guides/cloudflare-hyperdrive" title="Cloudflare Hyperdrive" description="Use Neon with Cloudflare Hyperdrive" icon="cloudflare"></a>
 
@@ -113,13 +116,9 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/exograph" title="Exograph" description="Use Exograph with Neon" icon="exograph"></a>
 
-<a href="/docs/guides/grafbase" title="Grafbase" description="Use Grafbase Edge Resolvers with Neon" icon="grafbase"></a>
-
 <a href="/docs/guides/hasura" title="Hasura" description="Connect from Hasura Cloud to Neon" icon="hasura"></a>
 
 <a href="/docs/guides/postgrest" title="PostgREST" description="Create a REST API from your Neon database" icon="postgresql"></a>
-
-<a href="/docs/guides/wundergraph" title="Wundergraph" description="Use Wundergraph with Neon" icon="wundergraph"></a>
 
 </TechCards>
 
@@ -129,8 +128,6 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/logical-replication-airbyte" title="Airbyte" description="Replicate data from Neon with Airbyte" icon="airbyte"></a>
 
-<a href="/docs/guides/bemi" title="Bemi" description="Create an automatic audit trail with Bemi" icon="bemi"></a>
-
 <a href="/docs/guides/logical-replication-clickhouse" title="ClickHouse" description="Replicate data from Neon to ClickHouse using ClickPipes" icon="clickhouse"></a>
 
 <a href="/docs/guides/logical-replication-kafka-confluent" title="Confluent (Kafka)" description="Replicate data from Neon with Confluent (Kafka)" icon="confluent"></a>
@@ -139,7 +136,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/logical-replication-decodable" title="Decodable" description="Replicate data from Neon with Decodable" icon="decodable"></a>
 
-<a href="/docs/guides/logical-replication-estuary-flow" title="Estuary Flow" description="Replicate data from Neon with Estuary Flow" icon="estuary"></a>
+<a href="/docs/guides/logical-replication-estuary-flow" title="Estuary" description="Replicate data from Neon with Estuary" icon="estuary"></a>
 
 <a href="/docs/guides/logical-replication-fivetran" title="Fivetran" description="Replicate data from Neon with Fivetran" icon="fivetran"></a>
 
@@ -147,13 +144,11 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/logical-replication-materialize" title="Materialize" description="Replicate data from Neon to Materialize" icon="materialize"></a>
 
+<a href="/docs/guides/logical-replication-neon-to-lakebase" title="Neon to Lakebase" description="Replicate data from Neon to Lakebase Postgres on Databricks" icon="databricks"></a>
+
 <a href="/docs/guides/logical-replication-neon-to-neon" title="Neon to Neon" description="Replicate data from Neon to Neon" icon="neon"></a>
 
 <a href="/docs/guides/logical-replication-postgres" title="Neon to PostgreSQL" description="Replicate data from Neon to PostgreSQL" icon="postgresql"></a>
-
-<a href="/docs/guides/logical-replication-prisma-pulse" title="Prisma Pulse" description="Stream database changes in real-time with Prisma Pulse" icon="prisma"></a>
-
-<a href="/docs/guides/sequin" title="Sequin" description="Stream changes and rows from your database to anywhere with Sequin" icon="sequin"></a>
 
 <a href="/docs/guides/logical-replication-airbyte-snowflake" title="Snowflake" description="Replicate data from Neon to Snowflake with Airbyte" icon="snowflake"></a>
 
@@ -171,6 +166,8 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/logical-replication-cloud-sql" title="Cloud SQL" description="Replicate data from Cloud SQL to Neon" icon="google-cloud-sql"></a>
 
+<a href="/docs/guides/logical-replication-lakebase-to-neon" title="Lakebase to Neon" description="Replicate data from Lakebase Postgres on Databricks to Neon" icon="databricks"></a>
+
 <a href="/docs/guides/logical-replication-neon-to-neon" title="Neon to Neon" description="Replicate data from Neon to Neon" icon="neon"></a>
 
 <a href="/docs/guides/logical-replication-postgres-to-neon" title="PostgreSQL to Neon" description="Replicate data from PostgreSQL to Neon" icon="postgresql"></a>
@@ -187,7 +184,7 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/django-migrations" title="Django" description="Connect a Django application to Neon" icon="django"></a>
 
-<a href="/docs/guides/drizzle-migrations" title="Drizzle" description="Schema migration with Neon Postgres and Drizzle ORM" icon="drizzle"></a>
+<a href="/docs/guides/drizzle-migrations" title="Drizzle" description="Schema migration with Lakebase Postgres and Drizzle ORM" icon="drizzle"></a>
 
 <a href="/docs/guides/entity-migrations" title="Entity Framework" description="Schema migration with Neon and Entity Framework" icon="entity"></a>
 
@@ -197,11 +194,11 @@ updatedOn: '2026-06-05T17:20:32.620Z'
 
 <a href="/docs/guides/liquibase" title="Liquibase" description="Use Liquibase with Neon" icon="liquibase"></a>
 
-<a href="/docs/guides/prisma-migrations" title="Prisma" description="Schema migration with Neon Postgres and Prisma ORM" icon="prisma"></a>
+<a href="/docs/guides/prisma-migrations" title="Prisma" description="Schema migration with Lakebase Postgres and Prisma ORM" icon="prisma"></a>
 
 <a href="/docs/guides/rails-migrations" title="Rails" description="Connect a Rails application to Neon" icon="rails"></a>
 
-<a href="/docs/guides/sequelize" title="Sequelize" description="Schema migration with Neon Postgres and Sequelize" icon="sequelize"></a>
+<a href="/docs/guides/sequelize" title="Sequelize" description="Schema migration with Lakebase Postgres and Sequelize" icon="sequelize"></a>
 
 <a href="/docs/guides/sqlalchemy" title="SQLAlchemy" description="Connect an SQLAlchemy application to Neon" icon="sqlalchemy"></a>
 

@@ -1,0 +1,206 @@
+---
+title: Vercel Marketplace
+description: Use and manage Turso databases provisioned through the Vercel Marketplace — LLM agent guide.
+---
+
+This document is designed as LLM context for AI agents working with **Turso Cloud** databases provisioned through the [Vercel Marketplace](https://vercel.com/marketplace/tursocloud) (integration slug: `tursocloud`). It contains exact commands, safety rules, and the mental model an agent needs to operate autonomously.
+
+**Turso Cloud** is a fully managed SQLite-compatible database platform. Databases provisioned through the Vercel Marketplace are Turso Cloud databases accessed over the network.
+
+If the user has **already provisioned** a Turso database and connected it to their project, go straight to [Using an already-provisioned database](#using-an-already-provisioned-database).
+
+## Security: never read secrets
+
+<Warning>
+**NEVER read `.env` files or any file that may contain Turso credentials.** This includes direct reads (`cat .env.local`), wildcards (`cat *`), and any command that could print directory contents where a `.env*` file exists. Use `vercel env ls` to see variable **names** (values are redacted) — that is all an agent needs; the SDK reads the values from `process.env` at runtime.
+</Warning>
+
+## Using an already-provisioned database
+
+Every Vercel project connected to a Turso resource has two environment variables injected by the integration:
+
+- `TURSO_DATABASE_URL` — the database connection URL
+- `TURSO_AUTH_TOKEN` — the token used to authenticate requests
+
+A `--prefix` chosen at connect time may have altered the names (e.g. `ANALYTICS_TURSO_DATABASE_URL`) — **always verify with `vercel env ls`** before writing connection code.
+
+```bash
+# 1. Link the local checkout to the Vercel project (if not already linked)
+vercel link --yes
+# 2. Verify the variable names (values stay redacted)
+vercel env ls
+# 3. Make the variables available for local development — do NOT read the file
+vercel env pull .env.local
+```
+
+Then connect with the recommended SDK:
+
+### Remote-only — `@tursodatabase/serverless`
+
+The recommended TypeScript/JavaScript SDK for Turso Cloud. Uses only the `fetch` API with zero native dependencies — works in Node.js, Vercel serverless and edge functions, and any JavaScript runtime.
+
+```bash
+npm i @tursodatabase/serverless
+```
+
+```javascript
+import { connect } from "@tursodatabase/serverless";
+
+const conn = connect({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+// Execute a query — prepare() is async, await it before using the statement
+const stmt = await conn.prepare("SELECT * FROM users WHERE active = ?");
+const result = await stmt.all([1]);
+console.log(result);
+
+// Positional parameters
+const byId = await conn.prepare("SELECT * FROM users WHERE id = ?");
+const row = await byId.get([1]);
+
+// Named parameters
+const insert = await conn.prepare("INSERT INTO users VALUES (:name)");
+await insert.run({ name: "Alice" });
+
+// Batch multiple statements in an implicit transaction
+await conn.batch([
+  "CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER DEFAULT 0)",
+  "INSERT INTO todos (title) VALUES ('Buy milk')",
+  "INSERT INTO todos (title) VALUES ('Write code')",
+]);
+
+// Transactions: wrap statements in a function; each call runs in BEGIN..COMMIT
+const addTodo = await conn.prepare("INSERT INTO todos (title) VALUES (?)");
+const addMany = conn.transaction((titles) => {
+  for (const title of titles) {
+    addTodo.run([title]);
+  }
+});
+await addMany(["Ship docs", "Review PR"]);
+```
+
+### In-Function SQLite — `@tursodatabase/vercel-experimental` (BETA)
+
+Vercel-specific alternative for read-heavy workloads: database pages are replicated into the serverless function, so reads execute locally with zero network round-trips while writes go directly to the remote database. Databases are created on demand (`createDb("user-" + userId)`), which makes database-per-tenant patterns trivial. Configured with `TURSO_API_TOKEN`, `TURSO_ORG`, and `TURSO_GROUP` (a Turso platform API token — **not** the marketplace-injected variable pair). See `https://docs.turso.tech/integrations/vercel.md` for setup and the full comparison.
+
+### Local-first with sync — `@tursodatabase/sync` (BETA)
+
+For apps that need fast local reads, offline support, or embedded replicas that sync with Turso Cloud. Sync is explicit (`push()`/`pull()`), conflict resolution is last-push-wins, and a synced database file must **never** be opened outside the sync SDK. Besides the JavaScript family (`@tursodatabase/sync`, `@tursodatabase/sync-wasm`, `@tursodatabase/sync-react-native`), sync SDKs are available for Python (`pyturso`) and Go (`tursogo`) — all of them work seamlessly with databases provisioned in the cloud. See `https://docs.turso.tech/sync/usage.md` for setup, API, and examples.
+
+### SDK quick reference
+
+**TypeScript / JavaScript:**
+
+| Use case | Package | Install |
+|----------|---------|---------|
+| Remote-only (Node.js/serverless/edge/backend) | `@tursodatabase/serverless` | `npm i @tursodatabase/serverless` |
+| In-Function SQLite (Vercel Functions) | `@tursodatabase/vercel-experimental` | `npm i @tursodatabase/vercel-experimental` |
+| Local-first + sync (Node.js) | `@tursodatabase/sync` | `npm i @tursodatabase/sync` |
+| Local-first + sync (Browser/WASM) | `@tursodatabase/sync-wasm` | `npm i @tursodatabase/sync-wasm` |
+| Local-first + sync (React Native) | `@tursodatabase/sync-react-native` | `npm i @tursodatabase/sync-react-native` |
+
+**Other languages:**
+
+| Use case | Package | Install |
+|----------|---------|---------|
+| Local-first + sync (Python) | `pyturso` | `pip install pyturso` |
+| Local-first + sync (Go) | `tursogo` | `go get turso.tech/database/tursogo` |
+| Remote-only (Python, libsql protocol) | `libsql` | `pip install libsql` |
+| Remote-only (Go, libsql protocol) | `github.com/tursodatabase/libsql-client-go` | `go get github.com/tursodatabase/libsql-client-go` |
+| Remote-only (Rust, libsql protocol) | `libsql` | `cargo add libsql` |
+
+## Inspecting state (safe, autonomous)
+
+These commands are read-only and can be run freely:
+
+```bash
+# Turso resources for the linked project (--all for the whole team)
+vercel integration list --integration tursocloud --format=json
+
+# Environment variable names for the linked project (values redacted)
+vercel env ls
+
+# Open the Turso dashboard via SSO (opens a browser)
+vercel integration open tursocloud
+```
+
+<Note>
+Available `vercel integration` subcommands vary between CLI versions — run `vercel integration --help` to see what the installed version supports before relying on a subcommand.
+</Note>
+
+## Provisioning a new database (safe, autonomous)
+
+Provisioning on the free `starter` plan is a non-destructive, additive operation an agent may perform without confirmation:
+
+```bash
+vercel integration add tursocloud --name my-db --metadata region=iad1 --plan starter
+```
+
+- `region` is the only metadata key. It is **required at creation and cannot be changed afterwards**.
+- After provisioning, the CLI connects the resource to the linked project and runs `vercel env pull` automatically (`--no-connect` / `--no-env-pull` to skip).
+- When connecting a second Turso database to the same project, avoid variable-name collisions with `--prefix` (prepended as-is, e.g. `--prefix ANALYTICS_` → `ANALYTICS_TURSO_DATABASE_URL`).
+- Environment variable changes only apply to **new** deployments — redeploy the project afterwards.
+- If the integration is not installed yet, first-time installation requires accepting marketplace terms — **never accept terms on the user's behalf**; direct the user to complete that step in the Vercel dashboard.
+
+### Regions
+
+The `region` metadata key takes a Vercel region code, mapped to a Turso location:
+
+| Vercel region code | Turso location | Region |
+| --- | --- | --- |
+| `iad1` | `aws-us-east-1` | US East (Virginia) |
+| `cle1` | `aws-us-east-2` | US East 2 (Ohio) |
+| `pdx1` | `aws-us-west-2` | US West (Oregon) |
+| `dub1` | `aws-eu-west-1` | EU West (Ireland) |
+| `bom1` | `aws-ap-south-1` | AP South (Mumbai) |
+| `hnd1` | `aws-ap-northeast-1` | AP NorthEast (Tokyo) |
+
+To auto-detect the closest region, query `curl -s https://region.turso.io` — the `server` field returns a Turso location (e.g. `aws-eu-west-1`), which maps back to the Vercel code via the table (here `dub1`).
+
+## Dangerous operations — require explicit user consent
+
+<Warning>
+**ANY DESTRUCTIVE ACTION MUST BE DONE THROUGH EXPLICIT USER CONSENT.** An agent must NEVER autonomously delete databases, disconnect resources from projects, uninstall the integration, change billing plans, or rotate credentials. All of these can cause data loss, service disruption, or billing changes.
+</Warning>
+
+- **Deleting a database resource** permanently destroys its data. **Disconnecting** a resource removes its environment variables and breaks deployments that use it. Both are done from the Vercel dashboard (or newer CLI versions' `vercel integration resource` subcommands).
+- **Billing plan is installation-scoped** — the plan (`starter` free tier; paid tiers with `_overages` variants for pay-as-you-go beyond quotas) applies to ALL Turso databases under the installation, and billing is unified through Vercel. Always present pricing and get confirmation before any plan change.
+- **Uninstalling the integration** (`vercel integration remove tursocloud`) requires all resources to be removed first.
+- **Rotating credentials** (from the resource's settings in the Vercel dashboard) hard-invalidates previously issued tokens for that database — every consumer of the old token loses access once it expires. After rotation, redeploy connected projects and re-run `vercel env pull`.
+
+## Turso Cloud features
+
+Turso Cloud databases support these features out of the box:
+
+- **Vector search** — native similarity search for AI/RAG workflows, no extensions needed. Supports cosine, L2, and L1 distance functions with DiskANN indexing.
+- **Full-text search** — keyword search with BM25 ranking via built-in FTS support.
+- **AI & embeddings** — native vector types for storing and querying embeddings.
+- **Branching** — create isolated copy-on-write database branches for testing/staging.
+- **Point-in-time recovery** — restore databases to any previous point in time (retention depends on plan).
+- **Embedded replicas** — local replicas that sync with Turso Cloud for fast reads and offline support.
+- **SQLite extensions** — JSON, FTS5, R*Tree, SQLean, UUID, regexp.
+
+## Further reading
+
+For detailed SDK APIs, feature documentation, and code recipes, use these resources:
+
+- **Turso online docs** — `https://docs.turso.tech` (Mintlify — append `.md` to any URL path for raw markdown, e.g. `https://docs.turso.tech/sdk/ts/quickstart.md`). For topics not covered in this document, fetch the relevant page below.
+
+| Topic | URL |
+|-------|-----|
+| Turso + Vercel integration (SQL over HTTP, In-Function SQLite) | `https://docs.turso.tech/integrations/vercel.md` |
+| TypeScript SDK quickstart | `https://docs.turso.tech/sdk/ts/quickstart.md` |
+| TypeScript SDK reference | `https://docs.turso.tech/sdk/ts/reference.md` |
+| Python SDK quickstart | `https://docs.turso.tech/sdk/python/quickstart.md` |
+| Go SDK quickstart | `https://docs.turso.tech/sdk/go/quickstart.md` |
+| Rust SDK quickstart | `https://docs.turso.tech/sdk/rust/quickstart.md` |
+| Sync usage | `https://docs.turso.tech/sync/usage.md` |
+| Sync conflict resolution | `https://docs.turso.tech/sync/conflict-resolution.md` |
+| AI & embeddings | `https://docs.turso.tech/features/ai-and-embeddings.md` |
+| Embedded replicas | `https://docs.turso.tech/features/embedded-replicas/introduction.md` |
+| Cloud limitations | `https://docs.turso.tech/cloud/limitations.md` |
+| SQLite extensions | `https://docs.turso.tech/features/sqlite-extensions.md` |
+| Full docs index (for LLMs) | `https://docs.turso.tech/llms.txt` |
+| Vercel CLI `integration` command | `https://vercel.com/docs/cli/integration` |

@@ -1,11 +1,13 @@
 ---
 title: 'MaintenanceWindow Construct'
 description: 'Learn how to configure maintenance windows with the Checkly CLI.'
-sidebarTitle: 'Maintenance Window'
+sidebarTitle: 'Maintenance window'
+canonical: 'https://www.checklyhq.com/docs/constructs/maintenance-window/'
+mode: "wide"
 ---
 
 <Tip>
-Learn more about Maintenance Windows in [the Maintenance Windows documentation](/communicate/maintenance-windows/overview).
+Learn more about maintenance windows in [the maintenance windows documentation](/communicate/maintenance-windows/overview).
 </Tip>
 
 Use Maintenance Windows to schedule planned maintenance periods that prevent your checks from running and triggering alerts during expected downtime.
@@ -46,10 +48,14 @@ new MaintenanceWindow("weekly-backup", {
 | `name` | `string` | ✅ | - | Name of the maintenance window |
 | `startsAt` | `Date` | ✅ | - | Start date and time (ISO 8601 timestamp) |
 | `endsAt` | `Date` | ✅ | - | End date and time (ISO 8601 timestamp) |
-| `tags` | `string[]` | ✅ | - | Tags that filter which checks are affected |
+| `tags` | `string[]` | ❌ | `[]` | Tags that filter which checks are paused |
 | `repeatInterval` | `number` | ❌ | - | Repeat interval from the first occurrence |
-| `repeatUnit` | `string` | ❌ | - | Repeat strategy: `'WEEK'` \| `'MONTH'` \| `'YEAR'` |
+| `repeatUnit` | `string` | ❌ | - | Repeat strategy: `'DAY'` \| `'WEEK'` \| `'MONTH'` |
 | `repeatEndsAt` | `Date` | ❌ | - | When to stop repeating (ISO 8601 timestamp) |
+| `timezone` | `string` | ❌ | UTC | IANA time zone used to schedule recurring occurrences |
+| `pauseAllChecks` | `boolean` | ❌ | `false` | Pause every check in the account, regardless of `tags` |
+| `silenceAlertsTags` | `string[]` | ❌ | `[]` | Tags that filter which checks have their alerts silenced |
+| `silenceAllAlerts` | `boolean` | ❌ | `false` | Silence alerts for every check in the account |
 
 ### `MaintenanceWindow` Options
 
@@ -58,6 +64,7 @@ A name for the maintenance window that will be displayed in the Checkly dashboar
 
 Usage:
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={2}
 new MaintenanceWindow("my-maintenance", {
   name: "Weekly Database Backup",
@@ -68,12 +75,13 @@ new MaintenanceWindow("my-maintenance", {
 **Use cases**: Window identification, dashboard display, maintenance tracking.
 </ResponseField>
 
-<ResponseField name="tags" type="string[]" required>
+<ResponseField name="tags" type="string[]">
 
-Tags that filter which checks are affected by this maintenance window. Checks with ANY of these tags will be paused during the maintenance period to avoid unnecessary alerts.
+Tags that filter which checks are affected by this maintenance window. Checks with ANY of these tags will be paused during the maintenance period to avoid unnecessary alerts. Not needed when `pauseAllChecks` is `true`.
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={3}
 new MaintenanceWindow("my-maintenance", {
   name: "API Maintenance",
@@ -94,6 +102,7 @@ Start date and time for the maintenance window in UTC (ISO 8601 timestamp).
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={3}
 new MaintenanceWindow("my-maintenance", {
   name: "Database Maintenance",
@@ -111,6 +120,7 @@ End date and time for the maintenance window in UTC (ISO 8601 timestamp).
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={4}
 new MaintenanceWindow("my-maintenance", {
   name: "Database Maintenance",
@@ -128,6 +138,7 @@ Repeat interval from the first occurrence. Used with `repeatUnit` to create recu
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={3}
 new MaintenanceWindow("recurring-maintenance", {
   name: "Weekly Maintenance",
@@ -146,6 +157,7 @@ Repeat strategy that defines the time unit for recurring maintenance windows (`D
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={4}
 new MaintenanceWindow('recurring-maintenance', {
   name: "Bi-weekly Maintenance",
@@ -159,6 +171,7 @@ new MaintenanceWindow('recurring-maintenance', {
 
 <CodeGroup>
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts Daily Maintenance
 new MaintenanceWindow("daily-updates", {
   name: "Daily Database Sync",
@@ -170,6 +183,7 @@ new MaintenanceWindow("daily-updates", {
 })
 ```
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts Weekly Maintenance
 new MaintenanceWindow("weekly-updates", {
   name: "Weekly System Updates",
@@ -181,6 +195,7 @@ new MaintenanceWindow("weekly-updates", {
 })
 ```
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts Monthly Maintenance
 new MaintenanceWindow("monthly-db", {
   name: "Monthly Database Maintenance",
@@ -202,6 +217,7 @@ When to stop repeating the maintenance window (ISO 8601 timestamp in UTC). If no
 
 **Usage:**
 
+{/* typecheck-wrap: MaintenanceWindow */}
 ```ts highlight={5}
 new MaintenanceWindow("limited-recurring", {
   name: "Limited Time Maintenance",
@@ -215,10 +231,89 @@ new MaintenanceWindow("limited-recurring", {
 **Use cases**: Limited-time maintenance periods, project-based scheduling, planned end dates.
 </ResponseField>
 
+<ResponseField name="timezone" type="string">
+The named [IANA time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) used to schedule recurring occurrences, for example `"America/New_York"`. Occurrences keep the same local time across daylight-saving changes; see [Timezones and daylight saving](/communicate/maintenance-windows/overview#timezones-and-daylight-saving). Editors suggest known zone names as you type.
+
+`startsAt` and `endsAt` stay absolute instants: the time zone does not reinterpret them, it only decides how later occurrences follow local time. UTC offsets such as `"+05:00"` or `"Etc/GMT+5"` are not accepted. Defaults to UTC.
+
+**Usage:**
+
+{/* typecheck-wrap: MaintenanceWindow */}
+```ts highlight={4}
+new MaintenanceWindow("nightly-maintenance", {
+  name: "Nightly Maintenance",
+  tags: ["production"],
+  timezone: "Europe/Berlin",
+  startsAt: new Date("2025-02-15T02:00:00.000Z"), // 03:00 in Berlin
+  endsAt: new Date("2025-02-15T03:00:00.000Z"),
+  repeatInterval: 1,
+  repeatUnit: "DAY",
+})
+```
+
+<Warning>
+The CLI always sends the time zone on deploy. If you remove `timezone` from your code, or a time zone was set for the window in the Checkly UI, the next deploy resets the window to UTC. A time zone can't be changed while a maintenance is active, so a deploy that changes it during an active maintenance fails until the maintenance ends.
+</Warning>
+
+**Use cases**: Maintenance tied to local business hours, recurring windows that must survive daylight-saving changes.
+</ResponseField>
+
+<ResponseField name="pauseAllChecks" type="boolean" default="false">
+Pause every check in the account during the maintenance window, regardless of `tags`.
+
+**Usage:**
+
+{/* typecheck-wrap: MaintenanceWindow */}
+```ts highlight={3}
+new MaintenanceWindow("platform-migration", {
+  name: "Platform Migration",
+  pauseAllChecks: true,
+  /* More options... */
+})
+```
+
+**Use cases**: Account-wide migrations, full platform downtime.
+</ResponseField>
+
+<ResponseField name="silenceAlertsTags" type="string[]">
+Tags that filter which checks have their alerts silenced during the maintenance window. Silenced checks keep running and collecting data, but alert channels aren't notified. Ignored when `silenceAllAlerts` is `true`.
+
+**Usage:**
+
+{/* typecheck-wrap: MaintenanceWindow */}
+```ts highlight={3}
+new MaintenanceWindow("degraded-api", {
+  name: "Expected API Degradation",
+  silenceAlertsTags: ["api"],
+  /* More options... */
+})
+```
+
+**Use cases**: Keep monitoring during expected degradation without noisy alerts.
+</ResponseField>
+
+<ResponseField name="silenceAllAlerts" type="boolean" default="false">
+Silence alerts for every check in the account during the maintenance window, regardless of `silenceAlertsTags`. Checks keep running.
+
+**Usage:**
+
+{/* typecheck-wrap: MaintenanceWindow */}
+```ts highlight={3}
+new MaintenanceWindow("quiet-period", {
+  name: "Quiet Period",
+  silenceAllAlerts: true,
+  /* More options... */
+})
+```
+
+**Use cases**: Account-wide alert silencing while monitoring continues.
+</ResponseField>
+
 ## Examples
 
 <Tabs>
   <Tab title="Database Maintenance">
+    {/* typecheck-wrap: MaintenanceWindow */}
     ```ts
     new MaintenanceWindow("database-maintenance", {
       name: "Monthly Database Maintenance",
@@ -233,6 +328,7 @@ new MaintenanceWindow("limited-recurring", {
   </Tab>
 
   <Tab title="Weekly System Updates">
+    {/* typecheck-wrap: MaintenanceWindow */}
     ```ts
     new MaintenanceWindow("system-updates", {
       name: "Weekly System Updates",
@@ -247,6 +343,7 @@ new MaintenanceWindow("limited-recurring", {
   </Tab>
 
   <Tab title="Emergency Maintenance">
+    {/* typecheck-wrap */}
     ```ts
     // For immediate one-time maintenance
     const now = new Date()
@@ -263,6 +360,7 @@ new MaintenanceWindow("limited-recurring", {
   </Tab>
 
   <Tab title="Service-Specific Maintenance">
+    {/* typecheck-wrap: MaintenanceWindow */}
     ```ts
     // API service maintenance
     new MaintenanceWindow("api-maintenance", {

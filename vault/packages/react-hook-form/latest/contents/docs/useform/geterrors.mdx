@@ -1,0 +1,132 @@
+---
+title: getErrors
+seoTitle: "getErrors: Read React Form Errors"
+description: Read current form errors without subscribing to re-renders.
+metaDescription: Read all, individual, or multiple currently stored form errors without running validation.
+sidebar: apiLinks
+---
+
+## \</> `getErrors:` <TypeText>[UseFormGetErrors](/ts#UseFormGetErrors)</TypeText> <Since version="7.86.0" />
+
+`getErrors` reads the errors currently stored in the form without running validation, subscribing to error changes, or triggering re-renders. Use [`formState.errors`](/docs/useform/formstate) or [`useFormState`](/docs/useformstate) for reactive error UI.
+
+### Props
+
+---
+
+| Name   | Type                           | Description                                                                                                                                                         |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name` | <TypeText>undefined</TypeText> | Returns all currently stored errors.                                                                                                                                |
+|        | <TypeText>string</TypeText>    | Returns the error at a field, parent, or global error path (`root`, `root.*`, `form`, or `form.*`), or `undefined`. Parent paths may return a nested error subtree. |
+|        | <TypeText>string[]</TypeText>  | Returns one result for each path in the same order. Missing errors remain `undefined`.                                                                              |
+
+<Admonition type="important" title="Rules">
+
+- Treat returned errors as read-only. Use [`setError`](/docs/useform/seterror) and [`clearErrors`](/docs/useform/clearerrors) to update the form's stored errors.
+
+</Admonition>
+
+### Example
+
+---
+
+```tsx copy
+import { useForm } from "react-hook-form"
+
+type FormInputs = {
+  email: string
+  user: {
+    firstName: string
+  }
+}
+
+export default function App() {
+  const { register, getErrors } = useForm<FormInputs>({
+    mode: "onChange",
+  })
+
+  const readErrors = () => {
+    const allErrors = getErrors()
+    const userErrors = getErrors("user")
+    const [emailError, firstNameError] = getErrors(["email", "user.firstName"])
+
+    console.log({
+      allErrors,
+      userErrors,
+      emailError,
+      firstNameError,
+    })
+  }
+
+  return (
+    <form>
+      <input {...register("email", { required: true })} />
+      <input {...register("user.firstName", { required: true })} />
+      <button type="button" onClick={readErrors}>
+        Read errors
+      </button>
+    </form>
+  )
+}
+```
+
+### Tips
+
+---
+
+- Use `getErrors` in event handlers and effects where you need the current errors but do not want a re-render. For example, in a multi-step form, find which steps have errors after validation:
+
+  ```javascript
+  const onNext = async () => {
+    await trigger()
+    const [account, address] = getErrors(["account", "address"])
+    setStepsWithErrors({ account: !!account, address: !!address })
+  }
+  ```
+
+- Do not render from `getErrors`. The value is not reactive, so the UI does not update when errors change. Use [`formState.errors`](/docs/useform/formstate) or [`ErrorMessage`](/docs/useformstate/errormessage) for UI.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `getErrors()` is empty even though a field value is invalid
+
+<Why>
+
+`getErrors` reads errors that are already stored; it does not run validation. If the current validation mode has not checked the field yet, there is no error to return.
+
+</Why>
+
+<Fix>
+
+Validate first, then read the result:
+
+```javascript
+await trigger("email")
+const emailError = getErrors("email")
+```
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### An error rendered with `getErrors` does not update
+
+<Why>
+
+`getErrors` intentionally does not subscribe or cause a re-render. It is a snapshot API for handlers and effects.
+
+</Why>
+
+<Fix>
+
+Render errors with [`ErrorMessage`](/docs/useformstate/errormessage), `formState.errors`, or `useFormState({ name })`. Keep `getErrors` for imperative reads.
+
+</Fix>
+
+</Troubleshoot>

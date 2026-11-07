@@ -8,7 +8,7 @@ or reference them by CDN UUID and let the runtime fetch them. Implement
 `FileAssetLoader` to control the second path — resolving from disk, the
 network, or your own asset pipeline.
 
-## The `FileAssetLoader` Interface
+## The `FileAssetLoader` interface
 
 ```cpp
 #include "rive/file_asset_loader.hpp"
@@ -36,7 +36,7 @@ public:
 | Font       | `FontAsset`     | `asset.font(factory->decodeFont(bytes))` |
 | Audio      | `AudioAsset`    | `asset.audioSource(factory->decodeAudio(bytes))` |
 
-## Sync Example: Load by File Name
+## Sync example: load by file name
 
 ```cpp
 #include "rive/file_asset_loader.hpp"
@@ -90,7 +90,7 @@ private:
 `asset.uniqueFilename()` is the editor-assigned name with extension; use
 `asset.cdnUuidStr()` if you index by CDN UUID instead.
 
-## Wiring It Up
+## Wiring it up
 
 ```cpp
 rcp<FileAssetLoader> loader = make_rcp<DiskAssetLoader>("assets/");
@@ -102,7 +102,7 @@ rcp<File> file = File::import(bytes, factory, &result, loader);
 The loader is reference-counted — `File` keeps it alive for the file's
 lifetime so async loads can complete after `import` returns.
 
-## Async Loading
+## Async loading
 
 For async (HTTP, decoder thread, etc), return `true` from `loadContents`
 **without** calling `renderImage` / `font` / `audioSource`, then populate the
@@ -135,7 +135,7 @@ bool loadContents(FileAsset& asset, Span<const uint8_t>, Factory* factory) overr
   thread-safe `Factory` if your backend supports it.
 </Warning>
 
-## Built-In Loaders
+## Built-in loaders
 
 For simple cases the runtime ships a relative-path loader you can extend:
 
@@ -149,7 +149,7 @@ rcp<FileAssetLoader> loader =
 It loads files by `uniqueFilename()` from a directory on disk — handy for
 samples and tooling.
 
-## When In-Band Bytes Already Cover Everything
+## When in-band bytes already cover everything
 
 If your `.riv` file embeds all of its assets, you can skip the loader
 entirely. `inBandBytes` will be non-empty for those assets and the runtime

@@ -40,7 +40,7 @@ function Demo() {
 `onChange` is called with two arguments:
 
 - `value` - string value of the selected option
-- `option` – selected option object
+- `option` – selected option object, or `null` when the value is cleared or the option is deselected
 
 If you prefer the object format in state, use the second argument of the onChange handler:
 
@@ -204,6 +204,12 @@ of flipping to the other side. Useful when working with large option lists:
 
 ## Group options
 
+The `group` property accepts any React node, so you can render custom markup
+(icons, badges, styled text) as a group label instead of a plain string. This
+also applies to `MultiSelect`, `Autocomplete` and `TagsInput`. Note that
+`NativeSelect` renders native `optgroup` elements and only supports string
+group labels.
+
 <Demo data={SelectDemos.groups} />
 
 ## Disabled options
@@ -313,6 +319,10 @@ the user cannot interact with the input and `Select` will not show suggestions.
 ## Error state
 
 <Demo data={SelectDemos.error} />
+
+## Success state
+
+<Demo data={SelectDemos.success} />
 
 <StylesApiSelectors component="Select" />
 

@@ -7,7 +7,7 @@ outline: deep
 
 - **Type:** `FakeTimerConfig`
 
-Options that Vitest will pass down to [`@sinon/fake-timers`](https://npmx.dev/package/@sinonjs/fake-timers) when using [`vi.useFakeTimers()`](/api/vi#vi-usefaketimers).
+Options that configure fake timers when using [`vi.useFakeTimers()`](/api/vi#vi-usefaketimers). Vitest's fake timer implementation is based on [`@sinon/fake-timers`](https://npmx.dev/package/@sinonjs/fake-timers), with additional options and behavior tailored to Vitest.
 
 ## fakeTimers.now
 
@@ -18,21 +18,21 @@ Installs fake timers with the specified Unix epoch.
 
 ## fakeTimers.toFake
 
-- **Type:** `('setTimeout' | 'clearTimeout' | 'setImmediate' | 'clearImmediate' | 'setInterval' | 'clearInterval' | 'Date' | 'nextTick' | 'hrtime' | 'requestAnimationFrame' | 'cancelAnimationFrame' | 'requestIdleCallback' | 'cancelIdleCallback' | 'performance' | 'queueMicrotask')[]`
+- **Type:** `('setTimeout' | 'clearTimeout' | 'setImmediate' | 'clearImmediate' | 'setInterval' | 'clearInterval' | 'Date' | 'nextTick' | 'hrtime' | 'requestAnimationFrame' | 'cancelAnimationFrame' | 'requestIdleCallback' | 'cancelIdleCallback' | 'performance' | 'queueMicrotask' | 'Intl' | 'Temporal')[]`
 - **Default:** everything available globally except `nextTick` and `queueMicrotask`
 
 An array with names of global methods and APIs to fake. For example, to only mock `setTimeout()` and `nextTick()`, specify this property as `['setTimeout', 'nextTick']`.
+
+`Temporal` is only faked when it is available on the global object: natively (Node.js >= 26 by default, behind `--harmony-temporal` on older versions, and supporting browsers) or through a globally installed polyfill such as `import 'temporal-polyfill/global'`.
 
 Mocking `nextTick` is not supported when running Vitest inside `node:child_process` by using `--pool=forks`. NodeJS uses `process.nextTick` internally in `node:child_process` and hangs when it is mocked. Mocking `nextTick` is supported when running Vitest with `--pool=threads`.
 
 ## fakeTimers.toNotFake
 
-- **Type:** `('setTimeout' | 'clearTimeout' | 'setImmediate' | 'clearImmediate' | 'setInterval' | 'clearInterval' | 'Date' | 'nextTick' | 'hrtime' | 'requestAnimationFrame' | 'cancelAnimationFrame' | 'requestIdleCallback' | 'cancelIdleCallback' | 'performance' | 'queueMicrotask')[]`
+- **Type:** `('setTimeout' | 'clearTimeout' | 'setImmediate' | 'clearImmediate' | 'setInterval' | 'clearInterval' | 'Date' | 'nextTick' | 'hrtime' | 'requestAnimationFrame' | 'cancelAnimationFrame' | 'requestIdleCallback' | 'cancelIdleCallback' | 'performance' | 'queueMicrotask' | 'Intl' | 'Temporal')[]`
 - **Default:** `[]`
 
-An array with names of global methods and APIs to keep native. All other available timers will be mocked. For example, to keep `setInterval()` native and mock all other timers, specify this property as `['setInterval']`.
-
-Mocking `nextTick` is not supported when running Vitest inside `node:child_process` by using `--pool=forks`. When running with `--pool=forks`, Vitest automatically adds `nextTick` to the `toNotFake` array.
+An array of global methods and APIs to exclude from fake timers. Vitest always excludes `nextTick` and `queueMicrotask` when this option is used. To fake either API, use `toFake` instead.
 
 ::: warning
 Using both `toFake` and `toNotFake` together is not supported.
@@ -65,3 +65,10 @@ Relevant only when using with `shouldAdvanceTime: true`. increment mocked time b
 - **Default:** `true`
 
 Tells fake timers to clear "native" (i.e. not fake) timers by delegating to their respective handlers. When disabled, it can lead to potentially unexpected behavior if timers existed prior to starting fake timers session.
+
+## fakeTimers.fakeNodeBuiltins <Version>5.1.0</Version> {#faketimers-fakenodebuiltins}
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Mock timer APIs imported from `node:timers` and `node:timers/promises`.

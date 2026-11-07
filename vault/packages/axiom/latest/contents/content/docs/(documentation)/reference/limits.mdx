@@ -1,0 +1,308 @@
+---
+title: 'Limits'
+description: 'This reference article explains the pricing-based and system-wide limits and requirements imposed by Axiom.'
+sidebarTitle: Limits
+keywords: ['axiom documentation', 'documentation', 'axiom', 'reference', 'settings', 'field restrictions', 'time stamp', 'time stamp field', 'limits', 'requirements', 'pricing', 'usage']
+---
+
+Axiom applies certain limits and requirements to guarantee good service across the platform. Some of these limits depend on your pricing plan, and some of them are applied system-wide. This reference article explains all limits and requirements applied by Axiom.
+
+Limits are necessary to prevent potential issues that could arise from the ingestion of excessively large events or data structures that are too complex. Limits help maintain system performance, allow for effective data processing, and manage resources effectively.
+
+## Pricing-based limits
+
+The table below summarizes the limits applied to each pricing plan. For more details on pricing and contact information, see the [Axiom pricing page](https://axiom.co/pricing).
+
+|                                      | Personal                    | Axiom Cloud                         |
+|:--------------------------------------|:-----------------------------|:-------------------------------------|
+| Always Free storage                  | 25 GB                       | 100 GB                              |
+| Always Free data loading             | 500 GB / month              | 1,000 GB / month                    |
+| Always Free query compute            | 10 GB-hours / month         | 100 GB-hours / month                |
+| Maximum data loading                 | 500 GB / month              | –                                   |
+| Maximum data retention               | 30 days                     | Custom                              |
+| [Datasets](/reference/datasets)                             | 3                           | 100 *                               |
+| Fields per dataset                   | 256                         | 1,024 *                             |
+| Users                                | 1                           | 1,000 *                             |
+| [Monitors](/monitor-data/monitors)                             | 3                           | 500 *                               |
+| [Notifiers](/monitor-data/notifiers-overview)                            | Email, Discord              | All supported                       |
+| [Supported edge deployments](/reference/edge-deployments)         | US                          | US                                  |
+
+\* Soft limit that can be increased upon request.
+
+If you’re on the Axiom Cloud plan and you exceed the Always Free allowances outlined above, additional charges apply based on your usage above the allowance. For more information, see the [Axiom pricing page](https://axiom.co/pricing).
+
+All plans include unlimited bandwidth, API access, and data sources subject to the [Fair Use Policy](https://axiom.co/terms).
+
+To see how much of your allowance each dataset uses, go to <Icon icon="gear" iconType="solid"/> **Settings > Usage**.
+
+For more information on how to save on data loading, data retention, and querying costs, see [Optimize usage](/reference/optimize-usage).
+
+### Restrictions on datasets and fields
+
+Axiom restricts the number of datasets and the number of fields in your datasets. The number of datasets and fields you can use is based on your pricing plan and explained in the table above.
+
+If you ingest a new event that would exceed the allowed number of fields in a dataset, Axiom returns an error and rejects the event. To prevent this error, ensure that the number of fields in your events are within the allowed limits.
+
+To reduce the number of fields in a dataset, use one of the following approaches:
+- [Delete the fields](/reference/datasets#delete-fields) you don’t need.
+- [Vacuum the fields](/reference/datasets#vacuum-fields) to remove fields that no longer occur in events within your retention period. If necessary, [trim the dataset](/reference/datasets#trim-dataset) first.
+- Use [map fields](/apl/data-types/map-fields).
+
+To prevent new fields from being added to an event dataset, [lock its schema](/reference/datasets#lock-dataset-schema).
+
+## System-wide limits
+
+The following limits are applied to all accounts, irrespective of the pricing plan.
+
+### Limits on ingested data
+
+The table below summarizes the limits Axiom applies to each data ingest. These limits are independent of your pricing plan. For metrics, see [Limits on ingested metrics](#limits-on-ingested-metrics).
+
+|                              | Limit     |
+| ---------------------------- | --------- |
+| Maximum field size           | 1 MB      |
+| Maximum events in a batch    | 10,000    |
+| Maximum field name length    | 200 bytes |
+
+If you try to ingest data that exceeds these limits, Axiom does the following:
+- Replaces strings that are too long with `<invalid string: too long>`.
+- Replaces binary with `<invalid data>`.
+- Truncates maps and slices that nest deeper than 100 levels and replaces them with `nil` at the cut-off level.
+- Converts the following float values to `nil`:
+    - NaN
+    - +Infty
+    - -Infty
+
+### Limits on ingested metrics
+
+The limits below apply to OpenTelemetry metrics that you send to the `/v1/metrics` endpoint. They’re separate from the event ingest limits above and independent of your pricing plan.
+
+|                                          | Limit                   |
+| ---------------------------------------- | ----------------------- |
+| Maximum request size                     | 4 MiB (4,194,304 bytes) |
+| Maximum metric name length               | 256 bytes               |
+| Maximum attribute name length            | 256 bytes               |
+| Maximum attribute value length           | 1 KiB (1,024 bytes)     |
+| Maximum buckets per histogram data point | 256                     |
+| Maximum quantiles per summary data point | 256                     |
+
+The maximum request size applies to the uncompressed payload. Axiom accepts gzip, zstd, brotli, and deflate compression, and compressing requests reduces the bandwidth you use. Axiom checks the request size after decompressing the request, so compression doesn’t allow you to send more data in a single request.
+
+If a request exceeds the maximum request size, Axiom rejects it with the HTTP status code `413`. The OpenTelemetry Collector treats this status code as a permanent error, so it drops the batch instead of retrying it.
+
+To keep requests within the limit, use the `batch` processor in your OpenTelemetry Collector configuration and set `send_batch_max_size`. Whether a given batch size stays within 4 MiB depends on the number of attributes that your data points carry. If you receive `413` responses, reduce `send_batch_max_size`. For an example configuration, see [Send OpenTelemetry data to Axiom](/send-data/opentelemetry).
+
+The maximum number of buckets applies to each histogram data point and counts the entries in its `explicit_bounds` list. The implicit overflow bucket that catches values above the last boundary doesn’t count towards the limit. For summary data points, the limit counts the entries in the `quantile_values` list.
+
+If a metric name, an attribute, or the number of buckets or quantiles exceeds the limits above, Axiom doesn’t reject the whole request. It rejects the affected data points, responds with the HTTP status code `200`, and returns an OpenTelemetry `partial_success` message that reports the number of rejected data points and the reason. For example, a histogram data point with too many buckets is reported as `[http.server.duration] metric limit violation: Bucket count 300 (explicit_bounds/quantile_values) exceeds limit 256`.
+
+### Special fields
+
+Axiom creates the following two fields automatically for a new dataset:
+
+- `_time` is the timestamp of the event. If the data you ingest doesn’t have a `_time` field, Axiom assigns the time of the data ingest to the events. If you ingest data using the [Ingest data](/restapi/endpoints/ingestToDataset) API endpoint, you can specify the timestamp field with the [timestamp-field](/restapi/endpoints/ingestToDataset#parameter-timestamp-field) parameter.
+- `_sysTime` is the time when you ingested the data.
+
+In most cases, use `_time` to define the timestamp of events. In rare cases, if you experience clock skews on your event-producing systems, `_sysTime` can be useful.
+
+### Reserved field names
+
+Axiom reserves the following field names for internal use:
+
+- `_blockInfo`
+- `_cursor`
+- `_rowID`
+- `_source`
+- `_sysTime`
+
+Don’t ingest data that contains these fields names. If you try to ingest a field with a reserved name, Axiom renames the ingested field to `_user_FIELDNAME`. For example, if you try to ingest the field `_sysTime`, Axiom renames it to `_user_sysTime`.
+
+In general, avoid ingesting field names that start with `_`.
+
+### Requirements for timestamp field
+
+The most important field requirement is about the timestamp.
+
+<Note>
+All events stored in Axiom must have a `_time` timestamp field. If the data you ingest doesn’t have a `_time` field, Axiom assigns the time of the data ingest to the events. To specify the timestamp yourself, include a `_time` field in the ingested data.
+</Note>
+
+If you include the `_time` field in the ingested data, follow these requirements:
+
+- Timestamps are specified in the `_time` field.
+- The `_time` field contains timestamps in a valid time format. Axiom accepts many date strings and timestamps without knowing the format in advance, including Unix Epoch, RFC3339, or ISO 8601.
+- The `_time` field is a field with UTF-8 encoding.
+- The `_time` field isn’t used for any other purpose.
+- The timestamp isn’t more than 24 hours in the future or before the Unix epoch (`1970-01-01T00:00:00Z`).
+
+Axiom rejects events with a timestamp more than 24 hours in the future or before the Unix epoch and doesn’t store them. If a request contains both valid and rejected events, Axiom stores the valid events, responds with the HTTP status code `200`, counts the rejected events in `failed`, and lists them in `failures`. If every event in a request is rejected, Axiom responds with the HTTP status code `400`.
+
+### Requirements for log level fields
+
+Stream, query results, trace logs, and the event timeline use the same rules to choose an event's display level. These rules leave stored event fields and monitor conditions unchanged.
+
+An explicit log level takes priority over words in a message. For example, an event with `level: "info"` and `message: "error error error"` displays as `info`.
+
+#### Field priority
+
+Axiom checks the following fields in order and stops at the first recognized value. Missing fields and unrecognized values fall through to the next field. Within each table row, fields are checked from left to right.
+
+| Priority | Fields | Accepted values |
+| --- | --- | --- |
+| 1 | `_row_status` | A dashboard query's display override. Accepts the text levels below. |
+| 2 | `severity_id` with `class_uid` | [OCSF severity IDs](/reference/limits#supported-schemas). |
+| 3 | `severity_text`, `severity_number`, `severityText`, `severityNumber` | OpenTelemetry text or numeric levels, according to the field name. |
+| 4 | `level`, `severity`, `log.level`, `@level`, `@severity` | Text levels. `severity` also accepts Syslog codes when the event has [Syslog headers](/reference/limits#supported-schemas). |
+| 5 | `record.level`, `record.severity` | Text levels. |
+| 6 | `data.log_level` | Convex levels: `DEBUG`, `INFO`, `LOG`, `WARN`, and `ERROR`. |
+| 7 | `record.error` | Text levels. Exception objects and error descriptions aren't recognized. |
+| 8 | `log.syslog.severity.code`, `log.syslog.severity.name` | Syslog codes or names. |
+| 9 | `type` and `record` fields | [AWS Lambda platform events](/reference/limits#aws-lambda-platform-events). |
+
+Axiom reads dotted field names and their nested equivalents, including objects stored as JSON text. For example, both `{"record.level": "info"}` and `{"record": {"level": "info"}}` supply `record.level`. If both forms exist, a non-null dotted field takes precedence.
+
+#### Recognized values
+
+Text values match exactly, ignoring capitalization. For example, `ERROR` matches, but `errorful` and `error: request failed` don't.
+
+| Display level | Text values |
+| --- | --- |
+| `error` | `err`, `error` |
+| `warn` | `warn`, `warning` |
+| `info` | `info` |
+| `success` | `success` |
+| `trace` | `trace` |
+| `debug` | `debug` |
+| `notice` | `notice` |
+| `critical` | `crit`, `critical` |
+| `fatal` | `fatal` |
+| `alert` | `alert` |
+| `emergency` | `emerg`, `emergency` |
+| `unknown` | `unknown` |
+
+Levels keep their names and timeline groups, even when they share a color.
+
+#### Supported schemas
+
+Numeric levels depend on the schema: `5` means `debug` in OpenTelemetry, `notice` in Syslog, and `critical` in OCSF.
+
+OpenTelemetry numeric fields accept integers from 1 to 24:
+
+| Numeric value | Display level |
+| --- | --- |
+| 1–4 | `trace` |
+| 5–8 | `debug` |
+| 9–12 | `info` |
+| 13–16 | `warn` |
+| 17–20 | `error` |
+| 21–24 | `fatal` |
+
+These fields also accept decimal strings such as `"17"`. Values such as `0`, `25`, `"017"`, and `"Severity(17)"` aren't recognized.
+
+OpenTelemetry text fields also accept numbered names such as `WARN2` and `FATAL4`. For more information, see [OpenTelemetry severity fields](https://opentelemetry.io/docs/specs/otel/logs/data-model/#severity-fields).
+
+For Convex's `data.log_level`, `DEBUG` displays as `debug`, `INFO` and `LOG` as `info`, `WARN` as `warn`, and `ERROR` as `error`. The value `LOG` has no special meaning in other fields or message text.
+
+<Accordion title="Open Cybersecurity Schema Framework (OCSF)">
+
+Axiom reads `severity_id` when `class_uid` is a nonnegative integer, including `0`.
+
+| ID | Display level |
+| --- | --- |
+| 0 | `unknown` |
+| 1 | `informational` |
+| 2 | `low` |
+| 3 | `medium` |
+| 4 | `high` |
+| 5 | `critical` |
+| 6 | `fatal` |
+| 99 | The event's `severity` text, converted to lowercase. Missing, empty, or non-string values produce `other`. |
+
+For more information, see the severity attributes in the [OCSF schema](https://schema.ocsf.io/1.2.0/classes/authentication).
+
+</Accordion>
+
+<Accordion title="Syslog">
+
+Axiom reads codes from `log.syslog.severity.code` and names from `log.syslog.severity.name`.
+
+| Code | Display level |
+| --- | --- |
+| 0 | `emergency` |
+| 1 | `alert` |
+| 2 | `critical` |
+| 3 | `error` |
+| 4 | `warn` |
+| 5 | `notice` |
+| 6 | `info` |
+| 7 | `debug` |
+
+Names accept the text levels above, plus `informational` as `info`. Axiom also reads these codes and names from `severity` when `hostname`, `application`, and `message` are all strings, including empty strings.
+
+Axiom does not read severity from the combined Syslog priority value (PRI) or from `event.severity`. For more information, see [Syslog severity levels](https://www.rfc-editor.org/rfc/rfc5424.html#section-6.2.1).
+
+</Accordion>
+
+##### AWS Lambda platform events
+
+Axiom uses these rules when earlier fields do not supply a level. Event types include the `platform.` prefix, and their field values are case-sensitive.
+
+<Accordion title="Platform event levels">
+
+| Event type | Condition | Display level |
+| --- | --- | --- |
+| `platform.start`, `platform.logsSubscription`, `platform.logSubscription`, `platform.telemetrySubscription` | Any | `info` |
+| `platform.logsDropped` | Any | `warn` |
+| `platform.fault` | Any | `error` |
+| `platform.initStart`, `platform.restoreStart` | `record.runtimeVersion` is a nonempty string | `info` |
+| `platform.initStart`, `platform.restoreStart` | `record.runtimeVersion` is missing or empty | `debug` |
+| `platform.initRuntimeDone`, `platform.restoreRuntimeDone`, `platform.runtimeDone` | `record.status` is `success` | `debug` |
+| `platform.report`, `platform.restoreReport` | `record.status` is `success` or absent | `info` |
+| `platform.initReport` | `record.initializationType` is `on-demand` | `debug` |
+| `platform.initReport` | `record.initializationType` is `provisioned-concurrency`, `snap-start`, or `lambda-managed-instances` | `info` |
+| `platform.extension` | `record.state` is `Ready` | `info` |
+| `platform.extension` | `record.state` is `InitError`, `ExitError`, `ShutdownFailed`, or `LaunchError` | `warn` |
+
+For runtime and report events, `record.status` values of `failure`, `error`, and `timeout` produce `warn`. On `platform.initReport`, a failure status takes priority over the initialization type.
+
+Other or malformed values produce `unknown`, without continuing to message fallback. Lambda application logs use explicit level fields or message fallback. For more information, see [AWS Lambda log levels](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-log-level.html).
+
+</Accordion>
+
+#### Message fallback
+
+If no field supplies a recognized level, Axiom checks string values in `message`, `msg`, `@message`, `text`, `record`, and `data.message`, in that order. For each value, Axiom checks only the first 100 characters and first two lines. The first complete severity keyword wins. The word `unknown` is excluded. Axiom doesn't scan the entire event or count repeated keywords.
+
+For example:
+
+| Event | Display level | Reason |
+| --- | --- | --- |
+| `{"level": "info", "message": "error error error"}` | `info` | The explicit level wins. |
+| `{"message": "WARN retry; error"}` | `warn` | The first keyword wins. |
+| `{"message": "request started\nerror: connection refused\nretry scheduled"}` | `error` | The keyword is on the second line. |
+| `{"message": "request started\nconnecting to database\nerror: connection refused"}` | `unknown` | The keyword is outside the first two lines. |
+| `{"severityNumber": 17}` | `error` | The numeric level is recognized. |
+
+If nothing matches, the event displays as neutral `unknown`.
+
+#### Inspect a log level
+
+Hover over an event's severity marker to see its display level, the field that determined it, and that field's original value. The tooltip also links to documentation for that format.
+
+The tooltip shows the matching format: OTel, AWS Lambda, Convex, OCSF, or Syslog. Text levels means no single schema was identified. Message indicates a keyword match, and Override indicates `_row_status`.
+
+In the event details view, click a level badge with a source field to highlight that field. If the value is inside JSON text, Axiom highlights the containing field.
+
+#### Map a custom field
+
+To use a custom severity field, create a [virtual field](/query-data/virtual-fields#creating-a-virtual-field) named `level` or `severity` that returns a recognized value. For example, if `app_log_level` contains values such as `INFO` and `ERROR`, create a virtual field named `level` with this expression:
+
+```kusto
+tostring(app_log_level)
+```
+
+Virtual fields follow the same field priority as stored fields. A virtual field named `severity` doesn't override a recognized `level` or an earlier field.
+
+## Temporary account-specific limits
+
+If you send a large amount of data in a short amount of time and with a high frequency of API requests, Axiom may temporarily restrict or disable your ability to send data to Axiom. This is to prevent abuse of the platform and to guarantee consistent and high-quality service to all customers. In this case, Axiom kindly asks you to reconsider your approach to data collection. For example, to reduce the total number of API requests, try sending your data in larger batches. This adjustment both streamlines Axiom operations and improves the efficiency of your data ingest. If you often experience these temporary restrictions and have a good reason for changing these limits, please [contact Support](https://axiom.co/contact).

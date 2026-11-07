@@ -1,0 +1,76 @@
+---
+title: 'Install and configure the Axiom for Splunk app'
+description: 'Learn how to install the Axiom for Splunk app from Splunkbase, connect it to Axiom with an API token, and run your first search.'
+sidebarTitle: Install and configure
+keywords: ['splunk', 'splunk app', 'splunkbase', 'axsearch', 'axdatasets', 'install', 'api token']
+---
+
+The Axiom for Splunk app adds a set of `ax` commands to SPL. With the app, Splunk users discover Axiom datasets, run Axiom-backed searches, push aggregations down into Axiom, look up Axiom context for Splunk events, and keep using normal SPL for the final shaping, dashboards, and alerts.
+
+The app is a query bridge, not an index replication tool. Axiom remains the system that stores and queries Axiom datasets. Splunk remains the system where your team composes investigations, shapes results, and connects output to existing operational workflows.
+
+## Prerequisites
+
+- [Create an Axiom account](https://app.axiom.co/register).
+- [Create an advanced API token in Axiom](/reference/tokens#create-advanced-api-token) with query permissions on the datasets you want to expose in Splunk.
+- Splunk Enterprise 9.0 or later. The app supports Splunk 9 and Splunk 10.
+
+<Note>
+Dataset visibility in Splunk comes from the token. Users of the app see and query exactly the datasets the configured token can read, so scope the token to the datasets you intend to share.
+</Note>
+
+## Install the app
+
+1. Install the [Axiom app from Splunkbase](https://splunkbase.splunk.com/app/9339) using Splunk Web, or download the package and install it from file.
+2. In Splunk Web, open the Axiom app. On first use, Splunk redirects you to the app’s setup page.
+3. Enter your Axiom API token. The app stores it securely in Splunk’s credential store, marks the app configured, and reloads.
+
+The token is shared by users of the app on that Splunk instance. Use a token scoped to the datasets the whole team should see. To store additional credentials for specific use cases, save them under a different name and select them per search with the `tokenName` option.
+
+## Verify the connection
+
+List the datasets the token can access:
+
+```spl
+| axdatasets
+| table name, kind, retentionDays
+| sort name
+```
+
+If the table shows your datasets, the app is ready. Next, inspect the fields in a dataset and sample some events:
+
+```spl
+| axfields dataset="http-logs"
+| table name, type, unit
+| sort name
+```
+
+```spl
+| axsample dataset="http-logs" fields="service,status,message" limit=20
+```
+
+## Run your first search
+
+Search an Axiom dataset with Splunk-like syntax, then shape the results with normal SPL:
+
+```spl
+| axsearch dataset="http-logs" q="status>=500 service=checkout" fields="service,status,message" limit=100
+| table _time, service, status, message
+```
+
+Aggregate inside Axiom and present in Splunk:
+
+```spl
+| axstats dataset="http-logs" q="status>=500" stats="count as errors" by="service" limit=100
+| sort -errors
+```
+
+A good search pushes the expensive part into Axiom, returns a focused result set, and then uses SPL for presentation. For the full command surface, see [Commands](/splunk/app/commands). For worked examples, see [Examples](/splunk/app/examples).
+
+## Troubleshoot setup
+
+**No datasets appear.** Confirm setup saved the token, then verify the token can query at least one dataset. For more information, see [Tokens](/reference/tokens) and [Datasets](/reference/datasets).
+
+**You need to replace the token.** Open the app’s setup page again and enter the new token. The old token stops being used immediately.
+
+For help, visit [axiom.co/support](https://axiom.co/support) or email [support@axiom.co](mailto:support@axiom.co). Include the app version, the Splunk version, and the command you ran.

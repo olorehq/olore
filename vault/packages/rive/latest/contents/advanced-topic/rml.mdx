@@ -1,0 +1,162 @@
+---
+title: "Rive Markup Language (RML)"
+sidebarTitle: "RML"
+description: "The XML format that describes a Rive scene as text."
+---
+
+Rive Markup Language (RML) is a text-based representation of a Rive file. It lets you create and modify Rive content as code, making it possible to build Rive files with coding agents and other text-based workflows instead of working exclusively in the Editor.
+
+RML uses XML to describe the objects and relationships in a Rive file. Every element is a Rive type, every attribute is one of its properties, and nesting elements links them together. The names are the same ones the Editor uses, so there is no separate RML object model to learn.
+
+A project can be a single `.rml` file or several. The [Rive CLI](/cli/overview) compiles them together into one `.riv` file for use with the Rive Runtimes, or a `.rev` file that you can open and continue editing in the Rive Editor.
+
+Work with a [coding agent](/cli/agents) to create RML, compile it, inspect the result, and iterate on your Rive file.
+
+## Example
+
+The following example shows how RML maps familiar Rive concepts (an artboard, shapes, fills, an animation, and a State Machine) to XML.
+
+```xml scene.rml
+<Rive version="1" kind="fragment">
+    <Artboard defaultStateMachineId="0:7" styleId="0:5" width="500" height="500" name="Artboard" id="0:2">
+        <LayoutComponentStyle name="Artboard Style" id="0:5"/>
+
+        <Fill name="Background">
+            <SolidColor colorValue="FF1D1D1D" name="Color"/>
+        </Fill>
+
+        <Shape x="250" y="250" name="Triangle" id="0:14">
+            <Triangle originX="0.5" originY="0.5" width="220" height="200" name="Path"/>
+            <Fill name="Fill">
+                <SolidColor colorValue="FF57A5E0" name="Color"/>
+            </Fill>
+        </Shape>
+
+        <!-- State Machine -->
+        <StateMachine name="State Machine 1" id="0:7">
+            <StateMachineLayer name="Layer 1" id="0:8">
+                <AnyState x="200" y="-120"/>
+                <ExitState x="400" y="-120"/>
+                <EntryState>
+                    <StateTransition stateToId="0:12"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:6" id="0:12"/>
+            </StateMachineLayer>
+        </StateMachine>
+
+        <!-- Animation -->
+        <LinearAnimation loopValue="loop" duration="120" name="Spin" id="0:6">
+            <KeyedObject objectId="0:14">
+                <KeyedProperty propertyKey="15">
+                    <KeyFrameDouble value="0" interpolationType="linear"/>
+                    <KeyFrameDouble value="6.2831855" interpolationType="linear" frame="120"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+    </Artboard>
+</Rive>
+```
+
+## How RML maps to Rive
+
+Every document is wrapped in a single `Rive` root. It takes two required attributes: `version`, the RML format version, currently `1`; and `kind`, which is `fragment` for a project file you write yourself. The other value, `bundle`, is the self-contained document the Rive Editor exports, and a project's files are never bundles. `Rive` must be the first and only top-level element, and the CLI refuses a document without it.
+
+Inside that root, RML follows the structure of a Rive file. Artboards contain their scene content, while assets, view models, converters, and enums sit alongside them as root elements.
+
+A fragment never declares a `Backboard`. What the Editor keeps there, such as the default artboard and the publish settings, is project configuration, so it lives in [rive.yaml](/cli/reference/project-config) instead. The build creates the `Backboard` from those keys. Only a bundle carries a `Backboard` element.
+
+Nesting reflects relationships between Rive objects. In the example above, the `Shape` contains a `Triangle` path and a `Fill`. Properties belong to their corresponding Rive type, so the transform position (`x` and `y`) belongs to the `Shape`, while `width` and `height` belong to the `Triangle`.
+
+Animations reference the objects and properties they change. Here, `KeyedObject objectId="0:14"` targets the shape named "Triangle", while `propertyKey="15"` identifies its rotation property. You can write `property="rotation"` instead, and `rive schema Shape --animatable` lists both forms. The State Machine references that animation, and `defaultStateMachineId="0:7"` on the Artboard causes the State Machine to play when the file loads.
+
+## Splitting a project across files
+
+A project can hold any number of `.rml` files, in any folders, and they compile as one
+document. Split by whatever reads well, such as artboards in one file and view models
+in another. Each file keeps its own `Rive` root with `kind="fragment"`.
+
+Smaller files also mean less for a [coding agent](/cli/agents) to read when it only
+needs to change one part of the scene.
+
+```text
+myproject/
+  rive.yaml
+  scene.rml            <Rive version="1" kind="fragment">
+  data/
+    view_models.rml    <Rive version="1" kind="fragment">
+```
+
+An id declared in one file can be referenced from another, ids may not repeat across
+files, and a problem is reported against the file it is in.
+
+<Note>
+Files compile in path order, and that order decides how artboards land in the `.riv`.
+Name the default artboard with `main` in [rive.yaml](/cli/reference/project-config)
+rather than relying on a filename that sorts first.
+</Note>
+
+Run `rive samples` and pick `rml_split` for a working example.
+
+<Note>
+ The following sections use the Rive CLI to look up RML types, compile files, and inspect the results. See [Rive CLI](/cli/overview) to install the CLI and learn the available commands.
+</Note>
+
+## Writing RML
+
+### IDs and references
+
+RML uses IDs when one element needs to reference another. For example, an animation uses `objectId` to identify the object it animates, while an Animation State uses `animationId` to identify the animation it plays.
+
+IDs are two numbers separated by a colon, such as `0:12` or `14:11981`. Each ID must be unique across the entire document. Elements only need an `id` when another element references them.
+
+References use attributes ending in `Id`, such as `styleId`, `animationId`, and `objectId`. Nesting creates many of these relationships automatically, so you usually don't need to write the reference yourself. Run `rive docs format` to see which references are created by nesting.
+
+### Value formats
+
+| Type | Written as |
+|---|---|
+| Color | ARGB hex, no `#`: `colorValue="FFFF5A3C"`. Six digits is opaque RGB. |
+| Boolean | `"true"` / `"false"` |
+| Enum | A name or its integer: `layoutWidthScaleType="fill"` |
+| Rotation | Radians. A full turn is `6.2831855`. |
+| Animation timing | Frames, at the animation's `fps` (default 60). Transition durations are milliseconds. |
+
+## Checking your work
+
+Three checks, and none replaces the others:
+
+```bash
+rive <dir> --verify              # does it compile? (RML, Luau and shaders)
+rive inspect <dir> --json        # what got built, and is `problems` empty?
+rive <dir> --screenshot=out.png  # does it look right?
+```
+
+A clean build proves that the file compiles, but not that it behaves or looks as intended.
+
+Run `inspect` for what got built, and
+a screenshot for what it looks like. A bind pointing at the wrong property, or a
+shape that renders invisibly, passes the first two checks. See
+[Examples](/cli/examples#headless-rendering).
+
+## RML reference
+
+RML includes hundreds of Rive types and properties. Rather than memorizing or guessing their names, use the CLI to look up the schema:
+
+```bash
+rive schema Rectangle              # properties, defaults, enum names, property keys
+rive schema --search gradient      # find a type by name
+rive schema Shape --animatable     # properties that can be keyed
+rive schema Shape --bindable       # properties that can be data bound
+```
+
+For broader RML concepts and patterns, use the RML reference included with the CLI:
+
+```bash
+rive docs                    # reference index
+rive docs format             # RML structure and format
+rive docs skeleton           # a complete file, annotated line by line
+rive docs --list             # list available topics
+rive docs --search gradient  # search all topics
+```
+
+The reference covers topics including layout, data binding, State Machines, text, drawing, rigging, transforms, easing, assets, keyboard focus, and accessibility semantics. `rive docs gotchas` covers common issues, including those that may fail silently.

@@ -1,0 +1,122 @@
+---
+title: 'Send data to Axiom using the Splunk HEC API'
+description: 'This page explains how to send data to Axiom through the Splunk HTTP Event Collector (HEC) compatible API.'
+overview: 'Splunk-compatible HTTP Event Collector endpoint for ingesting events'
+sidebarTitle: Splunk HEC
+keywords: ['splunk', 'hec', 'http event collector', 'axiom documentation', 'documentation', 'axiom', 'logs', 'ingest']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+
+Axiom offers a Splunk [HTTP Event Collector (HEC)](https://docs.splunk.com/Documentation/Splunk/latest/Data/UsetheHTTPEventCollector) compatible API so you can send events from Splunk forwarders, the OpenTelemetry `splunk_hec` exporter, and any other HEC client without changing your existing tooling.
+
+The HEC API is served from a dedicated host on your edge deployment: `hec.AXIOM_DOMAIN`. For example, if your edge deployment’s base domain is `us-east-1.aws.edge.axiom.co`, the HEC endpoint is `https://hec.us-east-1.aws.edge.axiom.co`.
+
+<Prerequisites />
+
+<Info>
+<ReplaceDomain />
+The HEC endpoints are hosted at `hec.AXIOM_DOMAIN`, a dedicated subdomain of your edge deployment’s base domain.
+</Info>
+
+## Authentication
+
+Authenticate every request with an Axiom [API token](/reference/tokens) that has permission to ingest into the target dataset. The HEC API accepts the token in any of the following schemes:
+
+| Scheme | Header |
+| :--- | :--- |
+| Splunk (default HEC clients) | `Authorization: Splunk API_TOKEN` |
+| Bearer | `Authorization: Bearer API_TOKEN` |
+| Basic | `Authorization: Basic <base64 of x:API_TOKEN>` (for example, `curl -u x:API_TOKEN`) |
+
+Requests without a valid token are rejected with `401 Unauthorized` (missing token) or `403 Forbidden` (token not permitted for the dataset).
+
+## Choose the target dataset
+
+In Splunk, events are routed by `index`. Axiom maps the HEC `index` to an Axiom [dataset](/reference/datasets) and resolves it in the following order:
+
+1. The `index` query parameter, for example `?index=DATASET_NAME`.
+2. The `index` field inside the event envelope.
+3. The dataset the API token is scoped to, when the token grants ingest access to exactly one dataset.
+
+If none of these resolve to a dataset, the request is rejected with HEC code `7` (Incorrect index).
+
+## Send events
+
+Send JSON events to `/services/collector/event`. The bare `/services/collector` path is an alias of the event endpoint. Each request body is one or more HEC event envelopes, which may be concatenated (newline-delimited or back-to-back).
+
+```shell wrap
+curl -X POST 'https://hec.AXIOM_DOMAIN/services/collector/event?index=DATASET_NAME' \
+    -H 'Authorization: Splunk API_TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{"event": {"message": "hello from HEC", "severity": "INFO"}, "sourcetype": "httpevent"}'
+```
+
+A successful ingest returns `200 OK` with the Splunk status body:
+
+```json
+{"text": "Success", "code": 0}
+```
+
+### Event envelope fields
+
+Axiom interprets the standard HEC envelope fields as follows:
+
+| Field | Behavior |
+| :--- | :--- |
+| `event` | When an object, its keys become top-level fields of the Axiom event. When a string, it is stored in the `_raw` field. |
+| `fields` | Merged into the event as top-level fields. |
+| `time` | Parsed as the event timestamp (`_time`). Accepts epoch seconds, epoch milliseconds, or an RFC 3339 string. When omitted, Axiom assigns the ingest time. |
+| `index` | Selects the target dataset (see [Choose the target dataset](#choose-the-target-dataset)) and is also retained as a field. |
+| `host`, `source`, `sourcetype` | Retained as fields on the event. |
+
+## Send raw events
+
+Send arbitrary payloads to `/services/collector/raw`. Metadata is supplied through query parameters rather than an envelope. Each line of a `text/plain` body becomes an event; JSON bodies are also accepted.
+
+```shell wrap
+curl -X POST 'https://hec.AXIOM_DOMAIN/services/collector/raw?index=DATASET_NAME&sourcetype=mysourcetype&source=mysource&host=myhost' \
+    -H 'Authorization: Splunk API_TOKEN' \
+    -H 'Content-Type: text/plain' \
+    --data-binary 'a raw log line
+another raw log line'
+```
+
+## Compressed payloads
+
+The HEC API accepts gzip-compressed request bodies. Set `Content-Encoding: gzip` and send the gzipped payload:
+
+```shell wrap
+curl -X POST 'https://hec.AXIOM_DOMAIN/services/collector/event?index=DATASET_NAME' \
+    -H 'Authorization: Splunk API_TOKEN' \
+    -H 'Content-Type: application/json' \
+    -H 'Content-Encoding: gzip' \
+    --data-binary @events.json.gz
+```
+
+## Check service health
+
+`GET /services/collector/health` (and the versioned `/services/collector/health/1.0`) report whether the collector is accepting data. No authentication is required.
+
+```shell wrap
+curl 'https://hec.AXIOM_DOMAIN/services/collector/health'
+```
+
+```json
+{"text": "HEC is healthy", "code": 17}
+```
+
+## Response codes
+
+Responses follow the Splunk HEC convention: an HTTP status code plus a JSON body carrying a Splunk `code`.
+
+| HTTP status | HEC code | Meaning |
+| :--- | :--- | :--- |
+| `200` | `0` | Success. |
+| `200` | `17` | The collector is healthy (health endpoints only). |
+| `400` | `5` | No data. The request body was empty. |
+| `400` | `6` | Invalid data format. The body could not be parsed. |
+| `400` | `7` | Incorrect index. The target dataset could not be resolved. |
+| `401` | — | Missing or unsupported authentication. |
+| `403` | — | The token is not permitted to ingest into the dataset. |

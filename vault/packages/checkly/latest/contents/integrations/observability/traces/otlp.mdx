@@ -1,0 +1,150 @@
+---
+title: 'Export traces to any OpenTelemetry backend'
+description: 'Send every API check, URL monitor, Browser check and Multistep check run as an OpenTelemetry span to any OTLP/HTTP endpoint.'
+sidebarTitle: 'OTLP (any backend)'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/otlp/'
+---
+
+When trace export is on, Checkly sends each API check, URL monitor, Browser check and Multistep check run as one OpenTelemetry span to an OTLP/HTTP endpoint you choose. Any OpenTelemetry backend or Collector that accepts OTLP/HTTP works. If your application honors the `traceparent` header, its spans join the same trace as the check. Export is account-wide to one endpoint. To reach several backends, send to a Collector and route from there.
+
+<Accordion title="Prerequisites">
+- A [plan](https://www.checklyhq.com/pricing/) that includes trace export, otherwise the export settings cannot be saved.
+- Export is controlled by **Enable exporting traces** under **Export Traces** on [Settings > Traces](https://app.checklyhq.com/settings/account/traces). Import Traces does not need to be on.
+- You enable export for the whole account. No per-check or per-group setting exists.
+- An endpoint reachable from Checkly's public locations for checks that run there, and from your private location's network for checks that run there. Runs from public locations connect from Checkly's [static IP ranges](/platform/ip-information#static-ip-ranges), which include IPv6 addresses.
+</Accordion>
+
+## Set up
+
+<Steps>
+<Step title="Enable export">
+Open [Settings > Traces](https://app.checklyhq.com/settings/account/traces) and, under **Export Traces**, select **Enable exporting traces**.
+</Step>
+<Step title="Enter the endpoint URL">
+Enter your backend's OTLP/HTTP traces URL, for example `https://otel.acme.com/v1/traces`. Use an `https` URL that ends in `/v1/traces`. Checkly only checks that the URL is well formed when you save, not the scheme, the path or that the endpoint answers.
+</Step>
+<Step title="Add authentication headers">
+Click **Add header** and enter each header your endpoint expects as a key and a value, for example `Authorization` with `Bearer <token>`. Put credentials in header rows, not in the URL. API checks and URL monitors drop the URL's query string when they export. Click the lock next to a value to store it as an account secret, which the row then references as `{{NAME}}`. Any value written as `{{NAME}}` is replaced with the matching environment variable or secret when the check runs. Rows with an empty key or value are discarded.
+</Step>
+</Steps>
+
+![Export Traces settings with an endpoint URL and an authorization header](/images/docs/images/otel/otel_export_traces_settings.png)
+
+## What is sent
+
+Checkly sends one root span per check run, with no child spans. These check types take part:
+
+| Check type | Trace headers on its requests | Span exported |
+|---|---|---|
+| API check | Yes | Yes |
+| URL monitor | Yes | Yes |
+| Browser check | Yes for `@playwright/test` scripts, unless the check [sets its own `extraHTTPHeaders`](/resolve/traces/overview#add-trace-headers-to-custom-http-headers). Other scripts only get the `CHECKLY_TRACEPARENT` variable | Yes |
+| Multistep check | Yes, unless the check [sets its own `extraHTTPHeaders`](/resolve/traces/overview#add-trace-headers-to-custom-http-headers) | Yes |
+
+The span is named after the check and has kind `CLIENT`. Its OpenTelemetry status is always `OK`, even when the check fails. The check's verdict is in `checkly.check.status`.
+
+### Span attributes
+
+| Attribute | Type | Example | Present when |
+|---|---|---|---|
+| `checkly.account.id` | string | `97bbd3a5-1f0c-4e2a-9b7d-5c8e2a6f4d10` | Always |
+| `checkly.check.id` | string | `438481ea-0eab-43d6-8932-ab51bd0d49d6` | Always. Empty on `checkly test` runs |
+| `checkly.check.result.id` | string | `6030240b-7a4e-4c1f-8d2b-9e3f1a5c7b82` | Always |
+| `checkly.check.name` | string | `ACME homepage` | Always |
+| `checkly.check.type` | string | The check type | Always |
+| `checkly.check.runtime` | string | `2026.04` | Always |
+| `checkly.check.session.id` | string | `b2c4e6f8-3a5d-4b7e-9c1f-2d4a6b8c0e13` | Scheduled runs. Empty or absent on `checkly test` and `checkly trigger` runs |
+| `checkly.check.location` | string | Region code of the run, for example `eu-west-1` | Always |
+| `checkly.check.tags` | string array | `["production", "checkout"]` | The check has at least one tag |
+| `checkly.check.status` | string | `PASSED`, `FAILED` or `DEGRADED` | Always |
+
+Each span also carries the resource attributes `service.name`, set to `checkly`, and `telemetry.sdk.language`. Its instrumentation scope is `checkly-tracer`, or `checkly-browser-tracer` for Browser checks on the current runtime. When the [Coralogix integration](/integrations/observability/coralogix) is on as well, spans can include the resource attributes `cx.application.name` and `cx.subsystem.name`.
+
+`checkly.check.tags` carries the check's tags as a string array, the check's own tags first, then tags inherited from its group, deduplicated. Use it to filter or group traces by the same labels you organize your checks by, such as a team or workflow tag.
+
+- The attribute is only present when the check has tags.
+- At most 20 tags are exported per span. A tag longer than 128 characters is omitted entirely rather than truncated.
+- Attributes are set on Checkly's root span only. They do not propagate to your application's own spans within the trace. To find a whole trace by tag, filter on the root span, then use its trace ID.
+
+### Trace headers
+
+Checkly adds these headers to the requests a check makes:
+
+| Header | Value | Description |
+|---|---|---|
+| `traceparent` | `{version}-{trace_id}-{span_id}-{trace_flags}` | A trace parent ID in [the canonical W3C format](https://www.w3.org/TR/trace-context/#traceparent-header-field-values) |
+| `tracestate` | `checkly=true`, `check_id=<check ID>`, `check_result_id=<result ID>`, `checkly_timestamp=<ms>`, and on ad hoc and test session runs of Browser checks and Multistep checks `checkly_debug=true` | Marks the request as coming from a Checkly check. Members may appear in any order and some may be absent |
+
+## Correlate with your application's traces
+
+The exported span's trace ID is the one in the `traceparent` header the check sent to your application, and it equals the [runtime variable](/detect/synthetic-monitoring/browser-checks/mac-structure#built-in-runtime-variables) `CHECKLY_TRACE_ID`. If your application honors `traceparent`, its spans and Checkly's root span share one trace. The check result page shows the same ID under **Traces**, and a [webhook](/integrations/alerts/webhooks) template can include it as `{{OTEL_TRACE_ID}}` to build a link into your tool.
+
+Two settings change the header your application receives:
+
+- On API checks and URL monitors, a request header you define named `traceparent` replaces Checkly's.
+- On API checks and URL monitors, a [Coralogix](/integrations/observability/coralogix) custom trace header replaces `traceparent`. Browser checks and Multistep checks send both headers.
+
+To send your application's spans into Checkly instead, see [How it works](/resolve/traces/how-it-works) and [Import traces](/resolve/traces/import/overview).
+
+## Receive spans with an OpenTelemetry Collector
+
+This configuration runs on the `otelcol-contrib` distribution of the OpenTelemetry Collector. It accepts OTLP/HTTP on port 4318 and requires a bearer token. It listens on plain HTTP, so put TLS in front of it, with a reverse proxy or the receiver's `tls` settings, so that Checkly reaches an `https` URL. Replace `debug` with the exporter for your backend.
+
+```yaml
+extensions:
+  bearertokenauth:
+    token: ${env:CHECKLY_EXPORT_TOKEN}
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        auth:
+          authenticator: bearertokenauth
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  extensions: [bearertokenauth]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+```
+
+In Checkly, add a header row with the key `Authorization` and the value `Bearer <the same token>`. Set the URL to the https address of this receiver, ending in `/v1/traces`.
+
+For receivers, exporters, TLS and authentication, see the [Collector configuration docs](https://opentelemetry.io/docs/collector/configuration/) and the [bearer token auth extension](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/bearertokenauthextension).
+
+## Delivery
+
+- Checkly sends OTLP/HTTP with protobuf encoding. There is no gRPC, JSON or gzip option.
+- Each export request times out after 5 seconds.
+- Checkly may retry briefly on 429, 502, 503 and 504.
+- Failures are logged on Checkly's side and never shown in the UI.
+
+A slow or unavailable endpoint can leave gaps in your traces that Checkly does not report.
+
+## Troubleshooting
+
+- **Nothing arrives.** Check that **Enable exporting traces** is on, the URL ends in `/v1/traces`, and the header rows match what your endpoint expects. Confirm the endpoint accepts OTLP/HTTP protobuf, since a gRPC-only receiver on port 4317 receives nothing, allows Checkly's [static IP ranges](/platform/ip-information#static-ip-ranges) or your private location's network, and answers within 5 seconds. Checkly shows no export errors, so read your endpoint's logs and search your backend for the trace ID shown under **Traces** on a recent check result.
+- **Only Browser check and Multistep check spans arrive.** API checks and URL monitors drop the URL's query string. Move credentials from the URL into a header row.
+- **Every span has status `OK`.** This is expected. Filter on `checkly.check.status` to find failed or degraded runs.
+- **A check type you expected is missing.** Only the types in [What is sent](#what-is-sent) export spans.
+
+For the wire format, see the [OTLP/HTTP specification](https://opentelemetry.io/docs/specs/otlp/#otlphttp).
+
+## Backends with their own page
+
+- [Coralogix](/integrations/observability/coralogix)
+- [Chronosphere](/integrations/observability/traces/chronosphere)
+- [ClickStack](/integrations/observability/traces/clickstack)
+- [Cribl Stream](/integrations/observability/traces/cribl)
+- [Dash0](/integrations/observability/traces/dash0)
+- [Datadog](/integrations/observability/traces/datadog)
+- [Grafana Tempo](/integrations/observability/traces/grafana-tempo)
+- [Honeycomb](/integrations/observability/traces/honeycomb)
+- [New Relic](/integrations/observability/traces/new-relic)

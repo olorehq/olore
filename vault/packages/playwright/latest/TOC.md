@@ -4,272 +4,235 @@
 
 ```
 contents/
-├── intro-*.md              # Getting started (JS, Python, Java, C#)
-├── getting-started-*.md    # CLI, MCP, VS Code
-├── writing-tests-*.md      # Writing tests (JS, Python, Java, C#)
-├── running-tests-*.md      # Running tests (JS, Python, Java, C#)
-├── api/                    # Core API reference (57 files)
-├── test-api/               # Test runner API reference (12 files)
-├── test-reporter-api/      # Reporter API reference (6 files)
-├── electron-api/           # Electron API reference (2 files)
-├── mobile-api/             # Android/mobile API reference (5 files)
-└── *.md                    # Guides and how-to docs
+├── *.md                # Guides, concepts, test runner docs (95 files; suffix -js/-java/-python/-csharp marks language)
+├── api/                  # Core library API reference (55 files)
+├── test-api/             # Playwright Test API reference (12 files)
+├── test-reporter-api/    # Reporter API reference (7 files)
+├── mobile-api/           # Android API (experimental) (5 files)
+├── electron-api/         # Electron API (experimental) (2 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| Get started (JS) | `contents/intro-js.md` |
-| Get started (Python) | `contents/intro-python.md` |
-| Get started (Java) | `contents/intro-java.md` |
-| Get started (C#) | `contents/intro-csharp.md` |
-| Write first test (JS) | `contents/writing-tests-js.md` |
-| API reference (Page) | `contents/api/class-page.md` |
-| API reference (Locator) | `contents/api/class-locator.md` |
-| Selectors / Locators | `contents/locators.md` |
-| Assertions (JS) | `contents/test-assertions-js.md` |
-| Configuration (JS) | `contents/test-configuration-js.md` |
-| Network interception | `contents/network.md` |
-| Authentication | `contents/auth.md` |
-| CI integration | `contents/ci.md` |
+| Install and first test (Node) | `contents/intro-js.md` |
+| Install (Python / Java / .NET) | `contents/intro-python.md`, `contents/intro-java.md`, `contents/intro-csharp.md` |
+| Locators | `contents/locators.md` |
+| Assertions | `contents/test-assertions-js.md` |
+| Fixtures | `contents/test-fixtures-js.md` |
+| Configuration | `contents/test-configuration-js.md` |
+| Mock network | `contents/mock.md` |
+| Debugging | `contents/debug.md` |
+| Page API | `contents/api/class-page.md` |
+| CI setup | `contents/ci.md` |
 
 ## Detailed Structure
 
-### Root-level getting started (9 files)
+File naming: `-js` = Node.js/TypeScript Playwright Test, `-python`, `-java`, `-csharp` = other languages; unsuffixed files apply to all languages.
+
+### contents/ (root) (95 files)
 
 | File | Description |
 |------|-------------|
-| `intro-js.md` | Getting started with Playwright for Node.js/TypeScript |
-| `intro-python.md` | Getting started with Playwright for Python |
-| `intro-java.md` | Getting started with Playwright for Java |
-| `intro-csharp.md` | Getting started with Playwright for .NET/C# |
-| `getting-started-cli.md` | playwright-cli for coding agents |
-| `getting-started-mcp.md` | Playwright MCP server for LLM/agent use |
-| `getting-started-vscode-js.md` | VS Code extension setup and usage |
-| `languages.md` | Overview of supported languages |
-| `library-js.md` | Using Playwright as a library (JS, no test runner) |
-| `library-python.md` | Using Playwright as a library (Python) |
-| `library-csharp.md` | Using Playwright as a library (C#) |
+| `accessibility-testing-java.md` | Accessibility testing with axe-core and Playwright (Java) |
+| `accessibility-testing-js.md` | Accessibility testing with axe-core and Playwright (JavaScript/TypeScript) |
+| `actionability.md` | Auto-waiting: actionability checks run before each action (visible, stable, enabled, etc.) |
+| `api-testing-csharp.md` | API testing with APIRequestContext: REST requests, auth, and state sharing with the browser (.NET) |
+| `api-testing-java.md` | API testing with APIRequestContext: REST requests, auth, and state sharing with the browser (Java) |
+| `api-testing-js.md` | API testing with APIRequestContext: REST requests, auth, and state sharing with the browser (JavaScript/TypeScript) |
+| `api-testing-python.md` | API testing with APIRequestContext: REST requests, auth, and state sharing with the browser (Python) |
+| `aria-snapshots.md` | ARIA snapshot testing with toMatchAriaSnapshot and YAML accessibility-tree templates |
+| `auth.md` | Authentication: reusing signed-in state across tests via storageState and setup projects |
+| `best-practices-js.md` | Best practices for writing reliable, maintainable Playwright tests |
+| `browser-contexts.md` | Isolation: browser contexts as clean-slate isolated sessions, multi-context scenarios |
+| `browsers.md` | Installing and managing browser binaries, channels, Chrome/Edge/WebKit/Firefox |
+| `chrome-extensions-js-python.md` | Testing Chrome extensions with persistent contexts |
+| `ci-intro.md` | Setting up CI quickly with GitHub Actions workflow |
+| `ci.md` | Running tests in CI: sample configs for GitHub, GitLab, Azure, Jenkins, CircleCI and others |
+| `clock.md` | Clock API: mocking and controlling Date, timers and time passage in tests |
+| `codegen-intro.md` | Generating tests with Codegen and recording user actions |
+| `codegen.md` | Test generator: codegen options, emulation, and recording sessions |
+| `debug.md` | Debugging tests: Inspector, VS Code, browser dev tools, PWDEBUG, verbose logs |
+| `dialogs.md` | Handling alert, confirm, prompt and beforeunload dialogs |
+| `docker.md` | Running Playwright in Docker images and container setup |
+| `downloads.md` | Handling file downloads triggered by the page |
+| `emulation.md` | Emulating devices, viewport, locale, timezone, geolocation, permissions, color scheme |
+| `evaluating.md` | Evaluating JavaScript in the page and passing arguments between Node and browser |
+| `events.md` | Listening to page events: requests, popups, console, dialogs, downloads |
+| `extensibility.md` | Custom selector engines and registering them |
+| `frames.md` | Working with frames and iframes via Frame and FrameLocator |
+| `getting-started-cli.md` | playwright-cli: command-line browser automation for coding agents |
+| `getting-started-mcp.md` | Playwright MCP server for browser automation through Model Context Protocol |
+| `getting-started-vscode-js.md` | Using the Playwright VS Code extension to run, debug and record tests |
+| `handles.md` | JSHandle and ElementHandle: references to in-page objects and DOM nodes |
+| `input.md` | Actions: typing, clicking, checkboxes, select options, uploading files, drag and drop |
+| `intro-csharp.md` | Installation and first test setup (.NET) |
+| `intro-java.md` | Installation and first test setup (Java) |
+| `intro-js.md` | Installation and first test setup (JavaScript/TypeScript) |
+| `intro-python.md` | Installation and first test setup (Python) |
+| `junit-java.md` | Using Playwright with JUnit in Java |
+| `languages.md` | Supported languages (Node.js, Python, Java, .NET) and their feature parity |
+| `library-csharp.md` | Using Playwright as a library for browser automation outside a test runner (.NET) |
+| `library-js.md` | Using Playwright as a library for browser automation outside a test runner (JavaScript/TypeScript) |
+| `library-python.md` | Using Playwright as a library for browser automation outside a test runner (Python) |
+| `locators.md` | Locators: role, text, label, test id, CSS, filtering and chaining; core of auto-waiting |
+| `mock-browser-js.md` | Mocking browser APIs such as clipboard, geolocation, and other experimental APIs |
+| `mock.md` | Mocking and modifying network requests, HAR replay, and API responses |
+| `navigations.md` | Navigating to URLs, waiting for navigations and load states |
+| `network.md` | Monitoring and modifying network traffic, proxies, HTTP auth, WebSockets |
+| `other-locators.md` | Legacy and CSS/XPath locators, selector syntax and pseudo-classes |
+| `pages.md` | Pages and popups: working with tabs, new windows and page lifecycle |
+| `pom.md` | Page object model pattern for structuring test suites |
+| `protractor-js.md` | Migrating from Protractor to Playwright Test |
+| `puppeteer-js.md` | Migrating from Puppeteer to Playwright |
+| `running-tests-csharp.md` | Running and debugging tests, selecting browsers and tests (.NET) |
+| `running-tests-java.md` | Running and debugging tests, selecting browsers and tests (Java) |
+| `running-tests-js.md` | Running and debugging tests, selecting browsers and tests (JavaScript/TypeScript) |
+| `running-tests-python.md` | Running and debugging tests, selecting browsers and tests (Python) |
+| `screenshots.md` | Taking page, element and full-page screenshots |
+| `selenium-grid.md` | Connecting Playwright to Selenium Grid (experimental) |
+| `service-workers-js-python.md` | Service workers: intercepting, routing and blocking them |
+| `test-agents-js.md` | Test agents: planner, generator and healer for AI-assisted test creation |
+| `test-annotations-js.md` | Annotations and tags: skip, fixme, fail, slow, tag, custom annotations |
+| `test-assertions-csharp-java-python.md` | Web-first assertions for .NET, Java and Python, auto-retrying |
+| `test-assertions-js.md` | Assertions with expect: web-first matchers, polling, soft assertions, custom matchers |
+| `test-cli-js.md` | Command line: running tests, flags, codegen, show-report, install |
+| `test-components-js.md` | Experimental component testing for React, Vue, Svelte |
+| `test-configuration-js.md` | Test configuration: playwright.config options, projects, timeouts, reporters |
+| `test-fixtures-js.md` | Fixtures: built-in, custom, worker-scoped, auto and overridden fixtures |
+| `test-global-setup-teardown-js.md` | Global setup and teardown via project dependencies or config files |
+| `test-parallel-js.md` | Parallelism: workers, fully parallel mode, serial mode, test isolation |
+| `test-parameterize-js.md` | Parameterizing tests by data or project options and environment variables |
+| `test-projects-js.md` | Projects: multiple browsers/configs, dependencies, splitting tests |
+| `test-reporters-js.md` | Built-in reporters (list, line, dot, html, json, junit, blob) and custom reporters |
+| `test-retries-js.md` | Retries, flaky test detection and per-test retry configuration |
+| `test-runners-csharp.md` | Test runners for .NET: MSTest, NUnit, xUnit and base classes |
+| `test-runners-java.md` | Hooking Playwright up to Java test runners |
+| `test-runners-python.md` | Pytest plugin reference: CLI options, fixtures and configuration |
+| `test-sharding-js.md` | Sharding tests across machines and merging reports |
+| `test-snapshots-js.md` | Visual comparisons with toHaveScreenshot and snapshot updating |
+| `test-timeouts-js.md` | Test, expect, action and navigation timeouts |
+| `test-typescript-js.md` | TypeScript support, tsconfig paths and babel transforms |
+| `test-ui-mode-js.md` | UI Mode: watch mode, time travel debugging, filters |
+| `test-use-options-js.md` | Use options: browser, context, network, recording and emulation options |
+| `test-webserver-js.md` | Launching a local dev server before tests with the webServer option |
+| `testing-library-js.md` | Migrating from Testing Library to Playwright component testing |
+| `threading-java.md` | Thread safety and multithreading with Playwright Java |
+| `touch-events.md` | Legacy touch events emulation |
+| `trace-viewer-intro-csharp.md` | Trace viewer introduction: recording and viewing traces (.NET) |
+| `trace-viewer-intro-java-python.md` | Trace viewer introduction: recording and viewing traces (Java and Python) |
+| `trace-viewer-intro-js.md` | Trace viewer introduction: recording and viewing traces (JavaScript/TypeScript) |
+| `trace-viewer.md` | Trace Viewer: recording, opening and analyzing traces in depth |
+| `videos.md` | Recording videos of tests |
+| `webview2.md` | Automating Microsoft Edge WebView2 apps |
+| `writing-tests-csharp.md` | Writing tests: actions, assertions, test isolation (.NET) |
+| `writing-tests-java.md` | Writing tests: actions, assertions, test isolation (Java) |
+| `writing-tests-js.md` | Writing tests: actions, assertions, test isolation (JavaScript/TypeScript) |
+| `writing-tests-python.md` | Writing tests: actions, assertions, test isolation (Python) |
 
-### Writing and running tests (8 files)
-
-| File | Description |
-|------|-------------|
-| `writing-tests-js.md` | Writing tests in JavaScript/TypeScript |
-| `writing-tests-python.md` | Writing tests in Python |
-| `writing-tests-java.md` | Writing tests in Java |
-| `writing-tests-csharp.md` | Writing tests in C# |
-| `running-tests-js.md` | Running tests in JavaScript/TypeScript |
-| `running-tests-python.md` | Running tests in Python |
-| `running-tests-java.md` | Running tests in Java |
-| `running-tests-csharp.md` | Running tests in C# |
-
-### Core testing guides (JS-focused, 20+ files)
-
-| File | Description |
-|------|-------------|
-| `locators.md` | Locators — finding elements on page |
-| `other-locators.md` | XPath, CSS, and legacy locator strategies |
-| `actionability.md` | Auto-waiting and actionability checks |
-| `test-assertions-js.md` | Assertions (JS/TS) |
-| `test-assertions-csharp-java-python.md` | Assertions (C#, Java, Python) |
-| `test-configuration-js.md` | Playwright config file options |
-| `test-use-options-js.md` | Per-test use options |
-| `test-fixtures-js.md` | Fixtures system |
-| `test-annotations-js.md` | Test annotations (skip, fail, slow, fixme) |
-| `test-cli-js.md` | Test runner CLI flags |
-| `test-parallel-js.md` | Parallel test execution |
-| `test-retries-js.md` | Retry failed tests |
-| `test-sharding-js.md` | Sharding tests across machines |
-| `test-reporters-js.md` | Built-in reporters (HTML, JUnit, JSON, etc.) |
-| `test-snapshots-js.md` | Visual/snapshot testing |
-| `test-timeouts-js.md` | Timeout configuration |
-| `test-projects-js.md` | Projects (multi-browser / multi-config) |
-| `test-global-setup-teardown-js.md` | Global setup and teardown |
-| `test-parameterize-js.md` | Parameterized tests |
-| `test-typescript-js.md` | TypeScript configuration |
-| `test-components-js.md` | Component testing (React, Vue, Svelte) |
-| `test-ui-mode-js.md` | UI mode (interactive test runner) |
-| `test-webserver-js.md` | Web server integration for tests |
-| `best-practices-js.md` | Best practices for Playwright tests |
-| `pom.md` | Page Object Model pattern |
-| `test-agents-js.md` | Testing with AI agents |
-
-### Browser interaction guides
-
-| File | Description |
-|------|-------------|
-| `input.md` | Keyboard, mouse, and form input |
-| `touch-events.md` | Touch events and mobile gestures |
-| `navigations.md` | Page navigation and load events |
-| `network.md` | Network interception and mocking |
-| `mock.md` | Mocking APIs and responses |
-| `mock-browser-js.md` | Browser API mocking (JS) |
-| `events.md` | Handling page events |
-| `dialogs.md` | Handling dialogs (alert, confirm, prompt) |
-| `downloads.md` | Handling file downloads |
-| `frames.md` | Working with iframes |
-| `pages.md` | Working with multiple pages/tabs |
-| `handles.md` | Element handles and JSHandle |
-| `evaluating.md` | Executing JavaScript in the browser |
-| `screenshots.md` | Taking screenshots |
-| `videos.md` | Recording videos |
-| `clock.md` | Controlling time/clock in tests |
-| `service-workers-js-python.md` | Service worker interception |
-| `aria-snapshots.md` | ARIA snapshots for accessibility testing |
-| `auth.md` | Authentication strategies (cookies, storage state) |
-| `emulation.md` | Device emulation, geolocation, permissions |
-| `extensibility.md` | Custom selector engines |
-
-### Accessibility and API testing
-
-| File | Description |
-|------|-------------|
-| `accessibility-testing-js.md` | Accessibility testing (JS) |
-| `accessibility-testing-java.md` | Accessibility testing (Java) |
-| `api-testing-js.md` | API testing without browser (JS) |
-| `api-testing-python.md` | API testing without browser (Python) |
-| `api-testing-java.md` | API testing without browser (Java) |
-| `api-testing-csharp.md` | API testing without browser (C#) |
-
-### Debugging and tooling
-
-| File | Description |
-|------|-------------|
-| `debug.md` | Debugging tests with Playwright Inspector |
-| `trace-viewer.md` | Trace Viewer full reference |
-| `trace-viewer-intro-js.md` | Trace Viewer introduction (JS) |
-| `trace-viewer-intro-java-python.md` | Trace Viewer introduction (Java/Python) |
-| `trace-viewer-intro-csharp.md` | Trace Viewer introduction (C#) |
-| `codegen.md` | Test code generator (codegen) |
-| `codegen-intro.md` | Codegen introduction |
-
-### Browsers and infrastructure
+### api/ (55 files)
 
 | File | Description |
 |------|-------------|
-| `browsers.md` | Browser configuration (Chromium, Firefox, WebKit) |
-| `browser-contexts.md` | Browser contexts for test isolation |
-| `chrome-extensions-js-python.md` | Testing Chrome extensions |
-| `ci.md` | CI/CD integration (GitHub Actions, Jenkins, etc.) |
-| `ci-intro.md` | CI setup introduction |
-| `docker.md` | Running Playwright in Docker |
-| `selenium-grid.md` | Connecting to Selenium Grid (experimental) |
-| `webview2.md` | Automating WebView2 apps |
+| `class-apirequest.md` | Entry point for creating API request contexts |
+| `class-apirequestcontext.md` | Send HTTP requests for API testing and share cookies with browser contexts |
+| `class-apiresponse.md` | Response returned by APIRequestContext requests |
+| `class-apiresponseassertions.md` | Assertions on API responses (toBeOK) |
+| `class-browser.md` | A launched browser instance; creates contexts and pages |
+| `class-browsercontext.md` | Isolated browser session: cookies, storage, routing, permissions, pages |
+| `class-browserserver.md` | Server handle for a launched browser to connect to remotely |
+| `class-browsertype.md` | Launch or connect to chromium, firefox or webkit |
+| `class-cdpsession.md` | Raw Chrome DevTools Protocol session |
+| `class-cdpsessionevent.md` | Events dispatched by a CDP session |
+| `class-clock.md` | Control and fake time in the page |
+| `class-consolemessage.md` | Console message dispatched by the page |
+| `class-coverage.md` | JavaScript and CSS code coverage collection |
+| `class-credentials.md` | Virtual WebAuthn authenticator for passkey testing |
+| `class-debugger.md` | Pause and step through script execution |
+| `class-dialog.md` | Alert, confirm, prompt dialog object |
+| `class-disposable.md` | Handle for undoing registered actions |
+| `class-download.md` | File download object with save and path methods |
+| `class-elementhandle.md` | Reference to an in-page DOM element |
+| `class-error.md` | Error type for abnormal Playwright operation termination |
+| `class-filechooser.md` | File chooser dialog object for uploads |
+| `class-formdata.md` | Build form data for API requests |
+| `class-frame.md` | Frame tree node: navigation, locators, evaluation |
+| `class-framelocator.md` | Locator view into an iframe |
+| `class-genericassertions.md` | Generic value assertions (toBe, toEqual, etc.) |
+| `class-jshandle.md` | Reference to an in-page JavaScript object |
+| `class-keyboard.md` | Virtual keyboard input |
+| `class-locator.md` | Locator methods: actions, queries, filtering, waiting |
+| `class-locatorassertions.md` | Web-first locator assertions (toBeVisible, toHaveText, ...) |
+| `class-logger.md` | Pluggable logger sink |
+| `class-mouse.md` | Virtual mouse input |
+| `class-page.md` | Single tab API: navigation, events, locators, screenshots, routing |
+| `class-pageassertions.md` | Page assertions (toHaveURL, toHaveTitle, ...) |
+| `class-playwright.md` | Root module exposing browser types, devices and selectors |
+| `class-playwrightassertions.md` | Creating web-first assertions with expect |
+| `class-playwrightexception.md` | Exception type thrown on abnormal termination |
+| `class-request.md` | Network request object and its lifecycle events |
+| `class-requestoptions.md` | Build request options and form data for API requests |
+| `class-response.md` | Network response received by the page |
+| `class-route.md` | Fulfill, continue, abort or modify intercepted requests |
+| `class-screencast.md` | Capture screencast frames from a page |
+| `class-selectors.md` | Register custom selector engines and set test id attribute |
+| `class-snapshotassertions.md` | Snapshot and screenshot comparison assertions |
+| `class-timeouterror.md` | Error thrown when an operation times out |
+| `class-touchscreen.md` | Virtual touchscreen input |
+| `class-tracing.md` | Start and stop trace recording and save traces |
+| `class-video.md` | Recorded video associated with a page |
+| `class-weberror.md` | Unhandled exception thrown in the page |
+| `class-webmcp.md` | Tools registered by a frame via experimental WebMCP |
+| `class-websocket.md` | WebSocket connection inspection and events |
+| `class-websocketframe.md` | Frame sent over a WebSocket connection |
+| `class-websocketroute.md` | Mock or intercept WebSocket connections |
+| `class-webstorage.md` | Access localStorage or sessionStorage of the page |
+| `class-worker.md` | Web worker representation and evaluation |
+| `params.md` | Shared parameter and option definitions referenced across API docs |
 
-### Java and other languages
-
-| File | Description |
-|------|-------------|
-| `junit-java.md` | JUnit integration for Java |
-| `test-runners-java.md` | Java test runners |
-| `test-runners-python.md` | Python test runners |
-| `test-runners-csharp.md` | C# test runners |
-| `threading-java.md` | Threading model for Java |
-
-### Migration guides
-
-| File | Description |
-|------|-------------|
-| `puppeteer-js.md` | Migrating from Puppeteer |
-| `protractor-js.md` | Migrating from Protractor |
-| `testing-library-js.md` | Migrating from Testing Library |
-
-### Electron and Android APIs
-
-| File | Description |
-|------|-------------|
-| `electron-api/class-electron.md` | Electron class API |
-| `electron-api/class-electronapplication.md` | ElectronApplication class API |
-| `mobile-api/class-android.md` | Android class API |
-| `mobile-api/class-androiddevice.md` | AndroidDevice class API |
-| `mobile-api/class-androidinput.md` | AndroidInput class API |
-| `mobile-api/class-androidsocket.md` | AndroidSocket class API |
-| `mobile-api/class-androidwebview.md` | AndroidWebView class API |
-
-### api/ — Core API reference (57 files)
-
-| File | Description |
-|------|-------------|
-| `api/class-playwright.md` | Playwright entry point |
-| `api/class-browser.md` | Browser class |
-| `api/class-browsercontext.md` | BrowserContext class |
-| `api/class-browserserver.md` | BrowserServer class |
-| `api/class-browsertype.md` | BrowserType class (launch, connect) |
-| `api/class-page.md` | Page class (main automation API) |
-| `api/class-frame.md` | Frame class |
-| `api/class-framelocator.md` | FrameLocator class |
-| `api/class-locator.md` | Locator class |
-| `api/class-elementhandle.md` | ElementHandle class (legacy) |
-| `api/class-jshandle.md` | JSHandle class |
-| `api/class-keyboard.md` | Keyboard class |
-| `api/class-mouse.md` | Mouse class |
-| `api/class-touchscreen.md` | Touchscreen class |
-| `api/class-request.md` | Request class |
-| `api/class-requestoptions.md` | RequestOptions class |
-| `api/class-response.md` | Response class |
-| `api/class-route.md` | Route class (network interception) |
-| `api/class-websocket.md` | WebSocket class |
-| `api/class-websocketframe.md` | WebSocketFrame class |
-| `api/class-websocketroute.md` | WebSocketRoute class |
-| `api/class-apirequest.md` | APIRequest class |
-| `api/class-apirequestcontext.md` | APIRequestContext class |
-| `api/class-apiresponse.md` | APIResponse class |
-| `api/class-apiresponseassertions.md` | APIResponseAssertions class |
-| `api/class-locatorassertions.md` | LocatorAssertions class |
-| `api/class-pageassertions.md` | PageAssertions class |
-| `api/class-playwrightassertions.md` | PlaywrightAssertions class |
-| `api/class-genericassertions.md` | GenericAssertions class |
-| `api/class-snapshotassertions.md` | SnapshotAssertions class |
-| `api/class-dialog.md` | Dialog class |
-| `api/class-download.md` | Download class |
-| `api/class-filechooser.md` | FileChooser class |
-| `api/class-formdata.md` | FormData class |
-| `api/class-video.md` | Video class |
-| `api/class-screencast.md` | Screencast class |
-| `api/class-tracing.md` | Tracing class |
-| `api/class-coverage.md` | Coverage class |
-| `api/class-clock.md` | Clock class |
-| `api/class-credentials.md` | Credentials (WebAuthn) class |
-| `api/class-selectors.md` | Selectors class (custom engines) |
-| `api/class-worker.md` | Worker class |
-| `api/class-cdpsession.md` | CDPSession class |
-| `api/class-cdpsessionevent.md` | CDPSessionEvent class |
-| `api/class-consolemessage.md` | ConsoleMessage class |
-| `api/class-webstorage.md` | WebStorage class |
-| `api/class-logger.md` | Logger class |
-| `api/class-debugger.md` | Debugger class |
-| `api/class-disposable.md` | Disposable interface |
-| `api/class-error.md` | Error class |
-| `api/class-timeouterror.md` | TimeoutError class |
-| `api/class-playwrightexception.md` | PlaywrightException class |
-| `api/class-weberror.md` | WebError class |
-
-### test-api/ — Test runner API reference (12 files)
+### test-api/ (12 files)
 
 | File | Description |
 |------|-------------|
-| `test-api/class-test.md` | test object (describe, it, beforeEach, etc.) |
-| `test-api/class-testconfig.md` | TestConfig options |
-| `test-api/class-fullconfig.md` | FullConfig (resolved config) |
-| `test-api/class-testproject.md` | TestProject options |
-| `test-api/class-fullproject.md` | FullProject (resolved project) |
-| `test-api/class-testoptions.md` | TestOptions (use options) |
-| `test-api/class-fixtures.md` | Fixtures class |
-| `test-api/class-testinfo.md` | TestInfo (per-test metadata) |
-| `test-api/class-testinfoerror.md` | TestInfoError class |
-| `test-api/class-teststepinfo.md` | TestStepInfo class |
-| `test-api/class-workerinfo.md` | WorkerInfo class |
-| `test-api/class-location.md` | Location class |
+| `class-fixtures.md` | Built-in test fixtures (page, context, browser, request) |
+| `class-fullconfig.md` | Resolved configuration passed to tests and reporters |
+| `class-fullproject.md` | Resolved runtime project configuration |
+| `class-location.md` | Source code location of tests or suites |
+| `class-test.md` | test function: declare tests, hooks, steps, annotations |
+| `class-testconfig.md` | All playwright.config options |
+| `class-testinfo.md` | Info about the running test: attachments, status, outputs |
+| `class-testinfoerror.md` | Error info for a failed test |
+| `class-testoptions.md` | Test options for browser, context and more |
+| `class-testproject.md` | Project configuration options |
+| `class-teststepinfo.md` | Info about the current test step |
+| `class-workerinfo.md` | Info about the worker running tests |
 
-### test-reporter-api/ — Reporter API reference (6 files)
+### test-reporter-api/ (7 files)
 
 | File | Description |
 |------|-------------|
-| `test-reporter-api/class-reporter.md` | Reporter interface |
-| `test-reporter-api/class-suite.md` | Suite class |
-| `test-reporter-api/class-testcase.md` | TestCase class |
-| `test-reporter-api/class-testresult.md` | TestResult class |
-| `test-reporter-api/class-teststep.md` | TestStep class |
-| `test-reporter-api/class-testerror.md` | TestError class |
+| `class-reporter.md` | Custom reporter interface and lifecycle hooks |
+| `class-suite.md` | Group of tests in the test hierarchy |
+| `class-testcase.md` | A single test case and its metadata |
+| `class-testerror.md` | Test error details |
+| `class-testresult.md` | Result of a single test run |
+| `class-testrun.md` | Controls which tests run and their status |
+| `class-teststep.md` | A step within a test result |
+
+### mobile-api/ (5 files)
+
+| File | Description |
+|------|-------------|
+| `class-android.md` | Experimental Android automation entry point |
+| `class-androiddevice.md` | Connected Android device: shell, input, webviews, screenshots |
+| `class-androidinput.md` | Android input: taps, swipes, drags |
+| `class-androidsocket.md` | Socket to a process on the Android device |
+| `class-androidwebview.md` | WebView open on an Android device |
+
+### electron-api/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `class-electron.md` | Launch Electron applications (experimental) |
+| `class-electronapplication.md` | Running Electron app: windows, evaluate, close |

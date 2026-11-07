@@ -60,19 +60,14 @@ continuous integration systems.
 
 ### Dealing with the Lockfile
 
-By default, the `Cargo.lock` file that is included with the package will be
-ignored. This means that Cargo will recompute which versions of dependencies
-to use, possibly using newer versions that have been released since the
-package was published. The `--locked` flag can be used to force Cargo to use
-the packaged `Cargo.lock` file if it is available. This may be useful for
-ensuring reproducible builds, to use the exact same set of dependencies that
-were available when the package was published. It may also be useful if a
-newer version of a dependency is published that no longer builds on your
-system, or has other problems. The downside to using `--locked` is that you
-will not receive any fixes or updates to any dependency. Note that Cargo did
-not start publishing `Cargo.lock` files until version 1.37, which means
-packages published with prior versions will not have a `Cargo.lock` file
-available.
+By default, Cargo uses the `Cargo.lock` file included with the package if it is
+available. This ensures that the installed executable uses the dependency versions
+selected when the package was published. If no lockfile is available, including for
+packages published with versions of Cargo before 1.37, Cargo resolves the dependencies
+normally.
+
+The `--locked` flag does not currently change dependency resolution for `cargo install`.
+If no `Cargo.lock` is available, using `--locked` emits a warning.
 
 ### Configuration Discovery
 
@@ -231,8 +226,8 @@ be specified multiple times, which enables all specified features.</p>
 
 <dl>
 
-<dt class="option-term" id="option-cargo-install---target"><a class="option-anchor" href="#option-cargo-install---target"><code>--target</code> <em>triple</em></a></dt>
-<dd class="option-desc"><p>Install for the specified target architecture. The default is the host architecture. The general format of the triple is
+<dt class="option-term" id="option-cargo-install---target"><a class="option-anchor" href="#option-cargo-install---target"><code>--target</code> <em>tuple</em></a></dt>
+<dd class="option-desc"><p>Install for the specified target architecture. The default is the host architecture. The general format of the tuple is
 <code>&lt;arch&gt;&lt;sub&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</code>.</p>
 <p>Possible values:</p>
 <ul>
@@ -260,7 +255,7 @@ is specified.</p>
 
 
 <dt class="option-term" id="option-cargo-install---debug"><a class="option-anchor" href="#option-cargo-install---debug"><code>--debug</code></a></dt>
-<dd class="option-desc"><p>Build with the <code>dev</code> profile instead of the <code>release</code> profile.
+<dd class="option-desc"><p>Build with the <code>debug</code> profile instead of the <code>release</code> profile.
 See also the <code>--profile</code> option for choosing a specific profile by name.</p>
 </dd>
 

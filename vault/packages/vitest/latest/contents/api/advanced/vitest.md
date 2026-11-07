@@ -44,7 +44,46 @@ You can get the latest summary of snapshots via the `vitest.snapshot.summary` pr
 
 ## cache
 
-Cache manager that stores information about latest test results and test file stats. In Vitest itself this is only used by the default sequencer to sort tests.
+Cache manager that stores the results of the previous test runs. Vitest uses it to sort tests in the default sequencer and to select tests with [`--last-failed`](/guide/cli#last-failed).
+
+### cache.getTestSpecificationResult <Version type="experimental">5.0.4</Version> {#cache-gettestspecificationresult}
+
+Returns the result of the test file from the previous test runs, or `undefined` if Vitest has no result for it.
+
+```ts
+function getTestSpecificationResult(
+  specification: TestSpecification
+): CachedTestFileResult | undefined
+
+interface CachedTestFileResult {
+  /**
+   * The file has a known failure.
+   * A complete run of the file clears it, or a run in which every known failed test passes.
+   */
+  failed: boolean
+  /**
+   * Duration of the last complete run in milliseconds.
+   */
+  duration: number
+  /**
+   * Unix timestamp in milliseconds of the start of the last complete run.
+   * It is not set if the file never ran completely.
+   */
+  lastRun?: number
+  /**
+   * Full names of the tests that failed in the last run of the file.
+   * `--last-failed` runs only these tests.
+   * It is not set if the failure happened outside of tests, for example in a hook or during collection.
+   */
+  failedTests?: string[]
+}
+```
+
+A run is not complete if it was cancelled or if it executed only a part of the file, for example, because of a test name pattern, a line filter or `.only`.
+
+::: warning
+`vitest.cache.getFileTestResults` and `vitest.cache.getFileStats` are deprecated and will be removed in the next major version. Use `getTestSpecificationResult` instead of `getFileTestResults`. Vitest does not cache file sizes anymore; read the size from the file system if your sequencer needs it.
+:::
 
 ## watcher <Version>4.0.0</Version> {#watcher}
 
@@ -168,6 +207,7 @@ This method can be slow because it needs to filter `--changed` flags. Do not use
 
 - If you need to get the list of specifications for known test files, use [`getModuleSpecifications`](#getmodulespecifications) instead.
 - If you need to get the list of all possible test files, use [`globTestSpecifications`](#globtestspecifications).
+
 :::
 
 ## mergeReports
@@ -185,17 +225,21 @@ This method is called automatically by [`startVitest`](/guide/advanced/tests) if
 ## collect
 
 ```ts
-function collect(filters?: string[]): Promise<TestRunResult>
+function collect(
+  filters?: string[],
+  options?: {
+    staticParse?: boolean
+    staticParseConcurrency?: number
+  }
+): Promise<TestRunResult>
 ```
 
-Execute test files without running test callbacks. `collect` returns unhandled errors and an array of [test modules](/api/advanced/test-module). It accepts string filters to match the test files - these are the same filters that [CLI supports](/guide/filtering#cli).
+Based on `staticParse`, this will either statically analyse test files to collect them (the default) or run the code without executing test callbacks. `collect` returns unhandled errors and an array of [test modules](/api/advanced/test-module). It accepts string filters to match the test files - these are the same filters that [CLI supports](/guide/filtering#cli).
 
-This method resolves tests specifications based on the config `include`, `exclude`, and `includeSource` values. Read more at [`project.globTestFiles`](/api/advanced/test-project#globtestfiles). If `--changed` flag was specified, the list will be filtered to include only files that changed.
+This method resolves tests specifications based on the config `include`, `exclude`, and `includeSource` values. Read more at [`project.globTestFiles`](/api/advanced/test-project#globtestfiles). If `--changed` flag was specified, the list will be filtered to include only files that changed. If [`--shard`](/guide/cli#shard) was specified, only the files of the current shard are collected.
 
 ::: warning
-Note that Vitest doesn't use static analysis to collect tests. Vitest will run every test file in isolation, just like it runs regular tests.
-
-This makes this method very slow, unless you disable isolation before collecting tests.
+Note that since Vitest 5, the tests are collected by static analysis by default. If disabled via the second option, Vitest will run every test file in isolation, just like it runs regular tests. This would make this method very slow, unless you disable isolation manually before collecting tests.
 :::
 
 ## start
@@ -261,7 +305,7 @@ function runTestSpecifications(
 ): Promise<TestRunResult>
 ```
 
-This method runs every test based on the received [specifications](/api/advanced/test-specification). The second argument, `allTestsRun`, is used by the coverage provider to determine if it needs to include uncovered files in report.
+This method runs every test based on the received [specifications](/api/advanced/test-specification). It does not apply the [`--shard`](/guide/cli#shard) option. The second argument, `allTestsRun`, is used by the coverage provider to determine if it needs to include uncovered files in report.
 
 ::: warning
 This method doesn't trigger `onWatcherRerun`, `onWatcherStart` and `onTestsRerun` callbacks. If you are rerunning tests based on the file change, consider using [`rerunTestSpecifications`](#reruntestspecifications) instead.
@@ -311,7 +355,7 @@ function collectTests(
 
 Execute test files without running test callbacks. `collectTests` returns unhandled errors and an array of [test modules](/api/advanced/test-module).
 
-This method works exactly the same as [`collect`](#collect), but you need to provide test specifications yourself.
+This method works exactly the same as [`collect`](#collect), but you need to provide test specifications yourself. It does not apply the [`--shard`](/guide/cli#shard) option.
 
 ::: warning
 Note that Vitest doesn't use static analysis to collect tests. Vitest will run every test file in isolation, just like it runs regular tests.
@@ -406,6 +450,7 @@ const dynamicExample = await vitest.import('./example.js')
 
 dynamicExample !== staticExample // ✅
 ```
+
 :::
 
 ::: info
@@ -479,6 +524,7 @@ function onFilterWatchedSpecification(
   fn: (specification: TestSpecification) => boolean
 ): void
 ```
+
 Register a handler that will be called when a file is changed. This callback should return `true` or `false`, indicating whether the test file needs to be rerun.
 
 With this method, you can hook into the default watcher logic to delay or discard tests that the user doesn't want to keep track of at the moment:
@@ -561,7 +607,7 @@ function experimental_parseSpecification(
 ): Promise<TestModule>
 ```
 
-This function will collect all tests inside the file without running it. It uses rollup's `parseAst` function on top of Vite's `ssrTransform` to statically analyse the file and collect all tests that it can.
+This function will collect all tests inside the file without running it. It uses rollup's `parseAst` function on top of Vite's `ssrTransform` to statically analyse the file and collect all tests that it can. A call is collected only if its first argument is a string, a template string, a number, a variable, a property like `MyClass.name`, or a condition (`a ? b : c`, `a ?? b`, `a || b`) of those, so `test(getName(), fn)` is not collected. A name that is not a literal, such as `test(isWindows ? 'a' : 'b', fn)`, is collected with its source code as the name. The test keeps its location, but a test name pattern cannot match it.
 
 ::: warning
 If Vitest could not analyse the name of the test, it will inject a `dynamic: true` property to the test or a suite. The `id` will also have a postfix with `-dynamic` to not break tests that were collected properly.
@@ -576,6 +622,7 @@ import { escapeTestName } from 'vitest/node'
 // turns into /hello, .+?/
 const escapedPattern = new RegExp(escapeTestName('hello, %s', true))
 ```
+
 :::
 
 ::: warning
@@ -584,10 +631,10 @@ Vitest will only collect tests defined in the file. It will never follow imports
 Vitest collects all `it`, `test`, `suite` and `describe` definitions even if they were not imported from the `vitest` entry point.
 :::
 
-## experimental_parseSpecifications <Version type="experimental">4.0.0</Version> <Experimental /> {#parsespecifications}
+## parseSpecifications <Version>5.0.0</Version> {#parsespecifications}
 
 ```ts
-function experimental_parseSpecifications(
+function parseSpecifications(
   specifications: TestSpecification[],
   options?: {
     concurrency?: number
@@ -597,13 +644,15 @@ function experimental_parseSpecifications(
 
 This method will [collect tests](#parsespecification) from an array of specifications. By default, Vitest will run only `os.availableParallelism()` number of specifications at a time to reduce the potential performance degradation. You can specify a different number in a second argument.
 
-## experimental_clearCache <Version type="experimental">4.0.11</Version> <Experimental /> {#clearcache}
+## clearCache <Version>5.0.0</Version> {#clearcache}
 
 ```ts
-function experimental_clearCache(): Promise<void>
+function clearCache(): Promise<void>
 ```
 
-Deletes all Vitest caches, including [`experimental.fsModuleCache`](/config/experimental#experimental-fsmodulecache).
+Deletes all Vitest caches, including [`fsModuleCache`](/config/fsmodulecache).
+
+This was available since Vitest 4.0.11 as experimental `experimental_clearCache` method.
 
 ## experimental_getSourceModuleDiagnostic <Version type="experimental">4.0.15</Version> <Experimental /> {#getsourcemodulediagnostic}
 
@@ -615,6 +664,7 @@ export function experimental_getSourceModuleDiagnostic(
 ```
 
 ::: details Types
+
 ```ts
 export interface ModuleDefinitionLocation {
   line: number
@@ -654,6 +704,7 @@ export interface SourceModuleDiagnostic {
   untrackedModules: UntrackedModuleDefinitionDiagnostic[]
 }
 ```
+
 :::
 
 Returns module's diagnostic. If [`testModule`](/api/advanced/test-module) is not provided, `selfTime` and `totalTime` will be aggregated across all tests that were running the last time. If the module was not transformed or executed, the diagnostic will be empty.
@@ -668,7 +719,7 @@ At the moment, the [browser](/guide/browser/) modules are not supported.
 function createReport(scope: string): Report
 ```
 
-Creates a report that is limited to the given scope. `Report` follows Vitest's rules around [Storing artifacts on file system](/guide/advanced/reporters.html#storing-artifacts-on-file-system).
+Creates a report that is limited to the given scope. `Report` follows Vitest's rules around [Storing artifacts on file system](/guide/advanced/reporters#storing-artifacts-on-file-system).
 
 `Report` provides collection of utilities for writing test results, temporary files and other artifacts on the file system. It's especially intended for third party integrations like custom reporters.
 
@@ -698,7 +749,6 @@ const report = vitest.createReport('my-json-reporter')
 // Is <project-root>/.vitest/my-json-reporter
 const root = report.root
 ```
-
 
 ### Report.clean
 
@@ -766,7 +816,6 @@ const filenames: string[] = await report.readdir()
 
 ### Report.delete
 
-<!-- eslint-skip -->
 ```ts
 function delete(filename: string): Promise<void>
 ```
@@ -779,4 +828,3 @@ const report = vitest.createReport('my-json-reporter')
 // Deletes file from .vitest/my-json-reporter/test-report.json
 await report.delete('test-report.json')
 ```
-

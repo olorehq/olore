@@ -34,7 +34,7 @@ npm install @langchain/langgraph
 
 <Tip>
 **Set up LangSmith for LangGraph development**
-Sign up for [LangSmith](https://smith.langchain.com) to quickly spot issues and improve the performance of your LangGraph projects. LangSmith lets you use trace data to debug, test, and monitor your LLM apps built with LangGraph—read more about [how to get started with LangSmith](https://docs.smith.langchain.com).
+Sign up for [LangSmith](https://smith.langchain.com) to quickly spot issues and improve the performance of your LangGraph projects. LangSmith lets you use trace data to debug, test, and monitor your LLM apps built with LangGraph—read more about [how to get started with LangSmith](https://docs.langchain.com/langsmith/observability).
 </Tip>
 
 
@@ -130,6 +130,7 @@ const graph = builder.compile();
   ```python
   from typing_extensions import TypedDict
   from langgraph.graph.state import StateGraph, START
+  from langgraph.stream import UpdatesTransformer
 
   # Define subgraph
   class SubgraphState(TypedDict):
@@ -171,7 +172,7 @@ const graph = builder.compile();
   builder.add_edge("node_1", "node_2")
   graph = builder.compile()
 
-  stream = graph.stream_events({"foo": "foo"}, version="v3")
+  stream = graph.stream_events({"foo": "foo"}, version="v3", transformers=[UpdatesTransformer])
   for event in stream:
       if event["method"] == "updates":
           print(event["params"]["namespace"], event["params"]["data"])
@@ -227,11 +228,14 @@ const graph = builder.compile();
 
   const graph = builder.compile();
 
-  for await (const chunk of await graph.stream(
+  const stream = await graph.streamEvents(
     { foo: "foo" },
-    { subgraphs: true }
-  )) {
-    console.log(chunk);
+    { subgraphs: true, version: "v3" }
+  );
+  for await (const message of stream.messages) {
+    for await (const token of message.text) {
+      process.stdout.write(token);
+    }
   }
   ```
 
@@ -255,6 +259,7 @@ const graph = builder.compile();
   # Grandchild graph
   from typing_extensions import TypedDict
   from langgraph.graph.state import StateGraph, START, END
+  from langgraph.stream import UpdatesTransformer
 
   class GrandChildState(TypedDict):
       my_grandchild_key: str
@@ -318,7 +323,7 @@ const graph = builder.compile();
 
   parent_graph = parent.compile()
 
-  stream = parent_graph.stream_events({"my_key": "Bob"}, version="v3")
+  stream = parent_graph.stream_events({"my_key": "Bob"}, version="v3", transformers=[UpdatesTransformer])
   for event in stream:
       if event["method"] == "updates":
           print(event["params"]["namespace"], event["params"]["data"])
@@ -395,11 +400,14 @@ const graph = builder.compile();
 
   const parentGraph = parent.compile();
 
-  for await (const chunk of await parentGraph.stream(
+  const stream = await parentGraph.streamEvents(
     { myKey: "Bob" },
-    { subgraphs: true }
-  )) {
-    console.log(chunk);
+    { subgraphs: true, version: "v3" }
+  );
+  for await (const message of stream.messages) {
+    for await (const token of message.text) {
+      process.stdout.write(token);
+    }
   }
   ```
 
@@ -498,6 +506,7 @@ const graph = builder.compile();
   ```python
   from typing_extensions import TypedDict
   from langgraph.graph.state import StateGraph, START
+  from langgraph.stream import UpdatesTransformer
 
   # Define subgraph
   class SubgraphState(TypedDict):
@@ -533,7 +542,7 @@ const graph = builder.compile();
   builder.add_edge("node_1", "node_2")
   graph = builder.compile()
 
-  stream = graph.stream_events({"foo": "foo"}, version="v3")
+  stream = graph.stream_events({"foo": "foo"}, version="v3", transformers=[UpdatesTransformer])
   for event in stream:
       if event["method"] == "updates" and not event["params"]["namespace"]:
           print(event["params"]["data"])
@@ -585,8 +594,11 @@ const graph = builder.compile();
 
   const graph = builder.compile();
 
-  for await (const chunk of await graph.stream({ foo: "foo" })) {
-    console.log(chunk);
+  const stream = await graph.streamEvents({ foo: "foo" }, { version: "v3" });
+  for await (const message of stream.messages) {
+    for await (const token of message.text) {
+      process.stdout.write(token);
+    }
   }
   ```
 
@@ -660,13 +672,13 @@ def veggie_info(veggie_name: str) -> str:
 fruit_agent = create_agent(
     model="gpt-5.4-mini",
     tools=[fruit_info],
-    prompt="You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
+    system_prompt="You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
 )
 
 veggie_agent = create_agent(
     model="gpt-5.4-mini",
     tools=[veggie_info],
-    prompt="You are a veggie expert. Use the veggie_info tool. Respond in one sentence.",
+    system_prompt="You are a veggie expert. Use the veggie_info tool. Respond in one sentence.",
 )
 
 # Wrap subagents as tools for the outer agent
@@ -690,7 +702,7 @@ def ask_veggie_expert(question: str) -> str:
 agent = create_agent(
     model="gpt-5.4-mini",
     tools=[ask_fruit_expert, ask_veggie_expert],
-    prompt=(
+    system_prompt=(
         "You have two experts: ask_fruit_expert and ask_veggie_expert. "
         "ALWAYS delegate questions to the appropriate expert."
     ),
@@ -780,13 +792,13 @@ const veggieInfo = tool(
 const fruitAgent = createAgent({
   model: "gpt-5.4-mini",
   tools: [fruitInfo],
-  prompt: "You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
+  systemPrompt: "You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
 });
 
 const veggieAgent = createAgent({
   model: "gpt-5.4-mini",
   tools: [veggieInfo],
-  prompt: "You are a veggie expert. Use the veggie_info tool. Respond in one sentence.",
+  systemPrompt: "You are a veggie expert. Use the veggie_info tool. Respond in one sentence.",
 });
 
 // Wrap subagents as tools for the outer agent
@@ -822,7 +834,7 @@ const askVeggieExpert = tool(
 const agent = createAgent({
   model: "gpt-5.4-mini",
   tools: [askFruitExpert, askVeggieExpert],
-  prompt:
+  systemPrompt:
     "You have two experts: ask_fruit_expert and ask_veggie_expert. " +
     "ALWAYS delegate questions to the appropriate expert.",
   checkpointer: new MemorySaver(),
@@ -933,7 +945,7 @@ def fruit_info(fruit_name: str) -> str:
 fruit_agent = create_agent(
     model="gpt-5.4-mini",
     tools=[fruit_info],
-    prompt="You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
+    system_prompt="You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
     checkpointer=True,  # [!code highlight]
 )
 
@@ -952,7 +964,7 @@ def ask_fruit_expert(question: str) -> str:
 agent = create_agent(
     model="gpt-5.4-mini",
     tools=[ask_fruit_expert],
-    prompt="You have a fruit expert. ALWAYS delegate fruit questions to ask_fruit_expert.",
+    system_prompt="You have a fruit expert. ALWAYS delegate fruit questions to ask_fruit_expert.",
     middleware=[  # [!code highlight]
         ToolCallLimitMiddleware(tool_name="ask_fruit_expert", run_limit=1),  # [!code highlight]
     ],  # [!code highlight]
@@ -1016,11 +1028,11 @@ agent = create_agent(
 
   fruit_agent = create_sub_agent(
       "gpt-5.4-mini", name="fruit_agent",
-      tools=[fruit_info], prompt="...", checkpointer=True,
+      tools=[fruit_info], system_prompt="...", checkpointer=True,
   )
   veggie_agent = create_sub_agent(
       "gpt-5.4-mini", name="veggie_agent",
-      tools=[veggie_info], prompt="...", checkpointer=True,
+      tools=[veggie_info], system_prompt="...", checkpointer=True,
   )
 
   config = {"configurable": {"thread_id": "1"}}
@@ -1067,7 +1079,7 @@ const fruitInfo = tool(
 const fruitAgent = createAgent({
   model: "gpt-5.4-mini",
   tools: [fruitInfo],
-  prompt: "You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
+  systemPrompt: "You are a fruit expert. Use the fruit_info tool. Respond in one sentence.",
   checkpointer: true,  // [!code highlight]
 });
 
@@ -1092,7 +1104,7 @@ const askFruitExpert = tool(
 const agent = createAgent({
   model: "gpt-5.4-mini",
   tools: [askFruitExpert],
-  prompt: "You have a fruit expert. ALWAYS delegate fruit questions to ask_fruit_expert.",
+  systemPrompt: "You have a fruit expert. ALWAYS delegate fruit questions to ask_fruit_expert.",
   middleware: [  // [!code highlight]
     toolCallLimitMiddleware({ toolName: "ask_fruit_expert", runLimit: 1 }),  // [!code highlight]
   ],  // [!code highlight]
@@ -1172,10 +1184,10 @@ const agent = createAgent({
   }
 
   const fruitAgent = createSubAgent("gpt-5.4-mini", {
-    name: "fruit_agent", tools: [fruitInfo], prompt: "...", checkpointer: true,
+    name: "fruit_agent", tools: [fruitInfo], systemPrompt: "...", checkpointer: true,
   });
   const veggieAgent = createSubAgent("gpt-5.4-mini", {
-    name: "veggie_agent", tools: [veggieInfo], prompt: "...", checkpointer: true,
+    name: "veggie_agent", tools: [veggieInfo], systemPrompt: "...", checkpointer: true,
   });
   const config = { configurable: { thread_id: "1" } };
 
@@ -1432,7 +1444,9 @@ for subgraph in stream.subgraphs:
 If you need the raw protocol events, iterate the stream directly and filter on `event["method"]` and `event["params"]["namespace"]`:
 
 ```python
-stream = graph.stream_events({"foo": "foo"}, version="v3")
+from langgraph.stream import UpdatesTransformer
+
+stream = graph.stream_events({"foo": "foo"}, version="v3", transformers=[UpdatesTransformer])
 for event in stream:
     if event["method"] == "updates":
         print(event["params"]["namespace"], event["params"]["data"])
@@ -1441,14 +1455,15 @@ for event in stream:
 
 :::js
 ```typescript
-for await (const chunk of await graph.stream(
+const stream = await graph.streamEvents(
   { foo: "foo" },
   {
     subgraphs: true,   // [!code highlight]
-    streamMode: "updates",
+    version: "v3",
   }
-)) {
-  console.log(chunk);
+);
+for await (const snapshot of stream.values) {
+  console.log(snapshot);
 }
 ```
 
@@ -1460,6 +1475,7 @@ for await (const chunk of await graph.stream(
   ```python
   from typing_extensions import TypedDict
   from langgraph.graph.state import StateGraph, START
+  from langgraph.stream import UpdatesTransformer
 
   # Define subgraph
   class SubgraphState(TypedDict):
@@ -1495,7 +1511,7 @@ for await (const chunk of await graph.stream(
   builder.add_edge("node_1", "node_2")
   graph = builder.compile()
 
-  stream = graph.stream_events({"foo": "foo"}, version="v3")  # [!code highlight]
+  stream = graph.stream_events({"foo": "foo"}, version="v3", transformers=[UpdatesTransformer])  # [!code highlight]
   for event in stream:
       if event["method"] == "updates":
           print(event["params"]["namespace"], event["params"]["data"])
@@ -1549,14 +1565,15 @@ for await (const chunk of await graph.stream(
 
   const graph = builder.compile();
 
-  for await (const chunk of await graph.stream(
+  const stream = await graph.streamEvents(
     { foo: "foo" },
     {
-      streamMode: "updates",
       subgraphs: true,   // [!code highlight]
+      version: "v3",
     }
-  )) {
-    console.log(chunk);
+  );
+  for await (const snapshot of stream.values) {
+    console.log(snapshot);
   }
   ```
 

@@ -310,6 +310,20 @@ the resolver will need to pick one version that works in both cases and that wou
 [Rust version]: rust-version.md
 [`resolver.incompatible-rust-versions`]: config.md#resolverincompatible-rust-versions
 
+### Publish age
+
+Versions with a publish time newer than the configured [`min-publish-age`][`registry.global-min-publish-age`]
+are considered pubtime-incompatible.
+When [`resolver.incompatible-publish-age`] is set to `deny`,
+the resolver will ignore these versions
+unless they already exist in the `Cargo.lock` file.
+Setting the config to `allow` would disable the check,
+which if combined with `cargo update --precise`,
+cargo would pull in a specific version and its transitive dependencies.
+
+[`registry.global-min-publish-age`]: config.md#registryglobal-min-publish-age
+[`resolver.incompatible-publish-age`]: config.md#resolverincompatible-publish-age
+
 ### Features
 
 For the purpose of generating `Cargo.lock`, the resolver builds the dependency
@@ -526,7 +540,7 @@ version in `Cargo.toml` like this:
 [package]
 name = "my-package"
 version = "1.0.0"
-resolver = "2"
+resolver = "3"
 ```
 - `"1"` (default)
 - `"2"` ([`edition = "2021"`](manifest.md#the-edition-field) default): Introduces changes in [feature
@@ -542,10 +556,12 @@ specified in the `[workspace]` table, for example:
 ```toml
 [workspace]
 members = ["member1", "member2"]
-resolver = "2"
+resolver = "3"
 ```
 
-> **MSRV:** Requires 1.51+
+> **MSRV:**
+> - `"2"` requires 1.51+
+> - `"3"` requires 1.84+
 
 [virtual workspace]: workspaces.md#virtual-workspace
 [features-2]: features.md#feature-resolver-version-2
@@ -682,9 +698,11 @@ $ cargo update
 ```
 You can enable some extra logging to see why this happened:
 ```console
-$ env CARGO_LOG=cargo::core::resolver=trace cargo update
+$ env CARGO_LOG=cargo::resolver=trace cargo update
 ```
-**Note:** Cargo log targets and levels may change over time.
+
+> [!NOTE]
+> Cargo log targets and levels may change over time.
 
 ### SemVer-breaking patch release breaks the build
 

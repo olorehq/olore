@@ -1,0 +1,42 @@
+---
+title: 'Create checks with the AI Assistant'
+sidebarTitle: 'AI Assistant'
+description: 'Plan monitoring and create checks and monitors with the Checkly AI Assistant.'
+canonical: 'https://www.checklyhq.com/docs/ai/ai-assistant/'
+---
+
+The AI Assistant helps you turn a monitoring goal into a plan and create the checks you approve. It can create Browser, Multistep, and API checks, as well as uptime and Heartbeat monitors. It does not create Playwright Check Suites.
+
+Every check it creates includes an intent: the goal and required outcomes the check should prove. For Browser and Multistep checks created in Checkly, [automatic repair](../resolve/automatic-check-repair) can use that intent when repairing the check's script.
+
+<Accordion title="Prerequisites">
+
+- A Trial, Starter, Team, or Enterprise account with Rocky AI enabled
+- Permission to create checks in the account
+- Any test credentials your journey needs, stored as [Checkly variables or secrets](../platform/variables)
+
+</Accordion>
+
+## Create a check
+
+1. Open **AI Assistant** in the Checkly app and select **New**.
+2. Describe the site, app, or API you want to monitor. Include the starting point, the journey, and the observable outcome that should pass.
+3. Review the proposed monitoring plan and linked test session results. Ask the assistant to adjust the flow, assertions, frequency, locations, or alerting before you approve it.
+4. Select the checks you want and choose **Create checks**.
+5. Open each new check, run it, and review its behavior and settings. For Browser and Multistep checks, also review the **Check intent** section in the check settings.
+
+While preparing your plan, the Assistant tests Browser, Multistep, and API checks in recorded test sessions. URL and Heartbeat monitors are outside this testing step.
+
+For a browser journey, ask for a Browser check. For an API endpoint, ask for an API check; for several related requests, ask for a Multistep check. Use a URL monitor for site availability or a Heartbeat monitor for a scheduled job. If a journey has important negative cases or guardrails, describe them in your request and confirm they appear in the generated intent.
+
+The AI Assistant does not change a check's automatic repair setting when it creates the check. A Browser or Multistep check inherits the account default until you [set automatic repair for that check](../resolve/automatic-check-repair#enable-automatic-repair). Review its intent and choose **On** if you want to enable repair explicitly.
+
+## Checks that need project files
+
+Standalone creation cannot attach a custom Playwright configuration, visual snapshots, or setup/teardown script files and their helper files. If your check needs these, use a [local Checkly CLI project](../cli/overview) and deploy it.
+
+## Resume a conversation
+
+Open **Conversations** to revisit previous conversations. Choose **All conversations** to search the history. You can continue a conversation you started while its workspace is still available and it has remaining conversation usage.
+
+A conversation becomes read-only when another member owns it, its workspace expires, or it reaches its conversation usage limit. You can still read its history. Only the owner can continue their conversation. For an expired workspace or a conversation usage limit, choose **Start a new conversation** and describe what you want to continue. Its first run uses one invocation from your [account's AI allowance](./rocky-ai#consumption-and-invocations).

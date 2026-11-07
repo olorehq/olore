@@ -157,7 +157,7 @@ npx playwright --version
 
 ## Configure Browsers
 
-Playwright can run tests on Chromium, WebKit and Firefox browsers as well as branded browsers such as Google Chrome and Microsoft Edge. It can also run on emulated tablet and mobile devices. See the [registry of device parameters](https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/deviceDescriptorsSource.json) for a complete list of selected desktop, tablet and mobile devices.
+Playwright can run tests on Chromium, WebKit and Firefox browsers as well as branded browsers such as Google Chrome and Microsoft Edge. It can also run on emulated tablet and mobile devices. See the [registry of device parameters](https://github.com/microsoft/playwright/blob/main/packages/isomorphic/deviceDescriptorsSource.json) for a complete list of selected desktop, tablet and mobile devices.
 
 ### Run tests on different browsers
 * langs: js
@@ -671,7 +671,7 @@ set NODE_EXTRA_CA_CERTS="C:\certs\root.crt"
 $Env:NODE_EXTRA_CA_CERTS="C:\certs\root.crt"
 ```
 
-If your network is slow to connect to Playwright browser archive, you can increase the connection timeout in milliseconds with `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT` environment variable:
+If the browser archive download is slow or stalls, you can increase the download socket timeout in milliseconds with the `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT` environment variable. Despite its name this is an idle timeout rather than a connection timeout; it limits how long the download may go without receiving data, and defaults to 30 seconds:
 
 ```bash tab=bash-bash lang=js
 PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000 npx playwright install
@@ -888,7 +888,7 @@ pwsh bin/Debug/netX/playwright.ps1 install
 ```
 
 ## Using a pre-installed Node.js
-* langs: python, java, dotnet
+* langs: python, java, csharp
 By default, Playwright uses its bundled Node.js runtime for operations such as browser installation and script execution. If you want Playwright to use a pre-installed Node.js binary instead of the bundled runtime, you can specify it using the `PLAYWRIGHT_NODEJS_PATH` environment variable. This can be useful in environments where you need to use a specific version of Node.js or where the bundled runtime is not compatible.
 
 ```bash tab=bash-bash lang=js
@@ -1146,7 +1146,23 @@ mvn test
 
 Playwright keeps track of the clients that use its browsers. When there are no more clients that require a particular version of the browser, that version is deleted from the system. That way you can safely use Playwright instances of different versions and at the same time, you don't waste disk space for the browsers that are no longer in use.
 
-To opt-out from the unused browser removal, you can set the `PLAYWRIGHT_SKIP_BROWSER_GC=1` environment variable.
+To opt-out from the unused browser removal, you can set the `PLAYWRIGHT_SKIP_BROWSER_GC=1` environment variable, or pass the `--no-remove` option to the install command:
+
+```bash js
+npx playwright install --no-remove
+```
+
+```bash java
+mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --no-remove"
+```
+
+```bash python
+playwright install --no-remove
+```
+
+```bash csharp
+pwsh bin/Debug/netX/playwright.ps1 install --no-remove
+```
 
 ### List all installed browsers:
 

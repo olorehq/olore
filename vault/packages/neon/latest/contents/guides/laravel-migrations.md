@@ -1,18 +1,18 @@
 ---
-title: Schema migration with Neon Postgres and Laravel
-subtitle: Set up Neon Postgres and run migrations for your Laravel project
+title: Schema migration with Lakebase Postgres and Laravel
+subtitle: Set up a database on Neon and run migrations for your Laravel project
 summary: >-
-  Run Laravel schema migrations on Neon Postgres using the Eloquent ORM and
+  Run Laravel schema migrations on Lakebase Postgres using the Eloquent ORM and
   `php artisan migrate`. Covers first-time setup and adding columns via new
   migration files. Neon requires a direct (non-pooled) connection string for
   migrations; pooled PgBouncer connections can cause migration errors.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
 
 [Laravel](https://laravel.com/) is a popular PHP web application framework that provides an expressive and elegant syntax for building web applications. It includes an ORM (Object-Relational Mapping) called Eloquent, which allows you to interact with databases using a fluent API. Laravel also provides a powerful migration system to manage database schema changes over time.
 
-This guide demonstrates how to use Laravel with the Neon Postgres database. We'll create a simple Laravel application and walk through the process of setting up the database, defining models, and generating and running migrations to manage schema changes.
+This guide demonstrates how to use Laravel with the Lakebase Postgres database. We'll create a simple Laravel application and walk through the process of setting up the database, defining models, and generating and running migrations to manage schema changes.
 
 ## Prerequisites
 
@@ -31,14 +31,14 @@ To follow along with this guide, you will need:
 
 ### Retrieve your Neon database connection string
 
-Find your database connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. It should look similar to this:
+Find your database connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
 ```
 
 <Admonition type="important" title="Always use a direction connection for migrations">
-Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can be prone to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
+Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can be prone to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
 </Admonition>
 
 Keep your connection string handy for later use.
@@ -154,7 +154,7 @@ public function up()
 
 ### Apply the migration
 
-To apply the migration and create the corresponding tables in the Neon Postgres database, run the following command:
+To apply the migration and create the corresponding tables in the Lakebase Postgres database, run the following command:
 
 ```bash
 php artisan migrate
@@ -366,6 +366,6 @@ You can find the source code for the application described in this guide on GitH
 For more information on the tools and concepts used in this guide, refer to the following resources:
 
 - [Laravel Documentation](https://laravel.com/docs)
-- [Neon Postgres](/docs/introduction)
+- [Neon](/docs)
 
 <NeedHelp/>

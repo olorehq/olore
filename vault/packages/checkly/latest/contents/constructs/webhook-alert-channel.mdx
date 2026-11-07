@@ -2,6 +2,7 @@
 title: 'WebhookAlertChannel Construct'
 description: 'Learn how to configure webhook alert channels with the Checkly CLI.'
 sidebarTitle: 'Webhook'
+canonical: 'https://www.checklyhq.com/docs/constructs/webhook-alert-channel/'
 ---
 
 import AlertChannelOptionsText from '/snippets/alert-channel-options-text.mdx';
@@ -65,11 +66,12 @@ const webhookChannel = new WebhookAlertChannel('webhook-channel-1', {
 
 ## Configuration
 
-### Webhook Alert Channel Options
+### Webhook alert channel options
 
-<ResponseField name="url" type="URL" required>
+<ResponseField name="url" type="URL | string" required>
 Target URL for the webhook request.
 
+{/* typecheck-wrap: WebhookAlertChannel */}
 ```ts highlight={4}
 new WebhookAlertChannel('webhook-channel-1', {
   name: 'Pushover webhook',
@@ -79,17 +81,18 @@ new WebhookAlertChannel('webhook-channel-1', {
 ```
 </ResponseField>
 
-<ResponseField name="method" type="string" required>
+<ResponseField name="method" type="string" default="POST">
 The HTTP method, either `GET`, `POST`, `PUT`, `PATCH`, `HEAD` or `DELETE`.
 </ResponseField>
 
-<ResponseField name="name" type="string">
+<ResponseField name="name" type="string" required>
 Friendly name for the webhook channel.
 </ResponseField>
 
 <ResponseField name="template" type="string">
 The request body template, usually JSON. You can use [Handlebars-style template variables](/integrations/alerts/webhooks#using-variables) to further customize the template.
 
+{/* typecheck-wrap: WebhookAlertChannel */}
 ```ts highlight={5-14}
 new WebhookAlertChannel('webhook-channel-1', {
   name: 'Pushover webhook',
@@ -112,6 +115,7 @@ new WebhookAlertChannel('webhook-channel-1', {
 <ResponseField name="headers" type="array">
 An array of `{ key, value }` objects to define HTTP headers.
 
+{/* typecheck-wrap: WebhookAlertChannel */}
 ```ts highlight={5}
 new WebhookAlertChannel('webhook-channel-1', {
   name: 'Pushover webhook',
@@ -125,6 +129,7 @@ new WebhookAlertChannel('webhook-channel-1', {
 <ResponseField name="queryParameters" type="array">
 An array of `{ key, value }` objects to define query parameters.
 
+{/* typecheck-wrap: WebhookAlertChannel */}
 ```ts highlight={5}
 new WebhookAlertChannel('webhook-channel-1', {
   name: 'Pushover webhook',
@@ -139,6 +144,6 @@ new WebhookAlertChannel('webhook-channel-1', {
 Secret token that you can use to validate the authenticity of the webhook and its payload. [Learn more about webhook secrets.](/integrations/alerts/webhooks#webhook-secrets)
 </ResponseField>
 
-### General Alert Channel Options
+### General alert channel options
 
 <AlertChannelOptionsText />

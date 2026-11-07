@@ -1,0 +1,62 @@
+---
+title: 'Status pages v2 (deprecated)'
+description: 'Documentation for the deprecated cards-and-services status pages.'
+sidebarTitle: 'v2 (deprecated)'
+canonical: 'https://www.checklyhq.com/docs/communicate/status-pages/v2-deprecated/'
+---
+
+<Warning>
+**Deprecated.** This page describes the previous generation of Checkly status pages, built from cards and account-wide services. Existing v2 pages keep working, but new pages use [components](/communicate/status-pages/overview#components). You can migrate a v2 page to the current generation from its page settings in the Checkly app.
+</Warning>
+
+## Services
+
+A service represents a functional piece of your application, such as a landing page, API, or support portal. Services are account-wide: a single service can be shown on multiple status pages. When an incident is opened for a service, it appears on all pages that use it, and subscribers of each of those pages receive email notifications.
+
+When naming a service, use a name that is identifiable for your users, as it is used in incident notifications.
+
+## Cards
+
+A v2 status page displays services grouped into cards. A card shows the average uptime of the services listed on it.
+
+To display a service, open the status page editor and use the **Services** dropdown on a card. You can create new services directly from the dropdown.
+
+## Incident automation with check triggers
+
+On v2 pages, incidents are automated by connecting a check to a service:
+
+1. Open your check and click **Edit**.
+2. For API checks, URL monitors and TCP monitors, open the **Incident triggers** tab. For Browser and Multistep checks, open **Settings**, then **Incident automation**.
+3. Enable **incident automation** and fill in the incident name, first status update, and severity.
+4. Select the service the incident should be opened on and whether subscribers are notified.
+5. Save your check.
+
+When the check fails and triggers an alert, an incident opens on the connected service. It resolves automatically when the check recovers.
+
+<Note>
+On current status pages, automation works through tag-based [automation rules](/communicate/status-pages/incidents#incident-automation) instead of per-check triggers.
+</Note>
+
+## Uptime calculation
+
+Uptime on v2 pages is calculated over the last 90 days per service. Incident duration counts as downtime:
+
+```
+Uptime = ((Total time - Downtime) / Total time) × 100
+```
+
+A card shows the average uptime of its services.
+
+## Monitoring as code
+
+The v2 constructs are deprecated but still documented: [`StatusPage`](/constructs/status-page), [`StatusPageService`](/constructs/status-page-service), and [`IncidentTrigger`](/constructs/incident-trigger).
+
+## Migrating to the current generation
+
+Open your v2 page and start the migration from the page settings. The wizard lets you:
+
+- Pick which cards and services become groups and components.
+- Carry over incidents, their reported downtime, and maintenance windows.
+- Review checks that used incident triggers. Tag-based automation rules cannot be derived automatically, so recreate those automations after migrating.
+
+Migration is one-way. The v2 page becomes a components-based page under the same URL.

@@ -9,33 +9,33 @@ When you begin your Preact Query journey, you'll want these devtools by your sid
 
 > For Chrome, Firefox, and Edge users: Third-party browser extensions are available for debugging TanStack Query directly in browser DevTools. These provide the same functionality as the framework-specific devtools packages:
 >
-> - <img alt="Chrome logo" src="https://www.google.com/chrome/static/images/chrome-logo.svg" width="16" height="16" class="inline mr-1 not-prose" /> [Devtools for Chrome](https://chromewebstore.google.com/detail/tanstack-query-devtools/annajfchloimdhceglpgglpeepfghfai)
-> - <img alt="Firefox logo" src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" width="16" height="16" class="inline mr-1 not-prose" /> [Devtools for Firefox](https://addons.mozilla.org/en-US/firefox/addon/tanstack-query-devtools/)
-> - <img alt="Edge logo" src="https://upload.wikimedia.org/wikipedia/commons/9/98/Microsoft_Edge_logo_%282019%29.svg" width="16" height="16" class="inline mr-1 not-prose" /> [Devtools for Edge](https://microsoftedge.microsoft.com/addons/detail/tanstack-query-devtools/edmdpkgkacmjopodhfolmphdenmddobj)
+> - <img alt="Chrome logo" src="https://www.google.com/chrome/static/images/chrome-logo.svg" width="16" height="16" class="inline mr-1 not-prose" /> <a href="https://chromewebstore.google.com/detail/tanstack-query-devtools/annajfchloimdhceglpgglpeepfghfai">Devtools for Chrome</a>
+> - <img alt="Firefox logo" src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" width="16" height="16" class="inline mr-1 not-prose" /> <a href="https://addons.mozilla.org/en-US/firefox/addon/tanstack-query-devtools/">Devtools for Firefox</a>
+> - <img alt="Edge logo" src="https://upload.wikimedia.org/wikipedia/commons/9/98/Microsoft_Edge_logo_%282019%29.svg" width="16" height="16" class="inline mr-1 not-prose" /> <a href="https://microsoftedge.microsoft.com/addons/detail/tanstack-query-devtools/edmdpkgkacmjopodhfolmphdenmddobj">Devtools for Edge</a>
 
 ## Install and Import the Devtools
 
 The devtools are a separate package that you need to install:
 
-```bash
+```sh
 npm i @tanstack/preact-query-devtools
 ```
 
 or
 
-```bash
+```sh
 pnpm add @tanstack/preact-query-devtools
 ```
 
 or
 
-```bash
+```sh
 yarn add @tanstack/preact-query-devtools
 ```
 
 or
 
-```bash
+```sh
 bun add @tanstack/preact-query-devtools
 ```
 
@@ -85,9 +85,12 @@ function App() {
 - `shadowDOMTarget?: ShadowRoot`
   - Default behavior will apply the devtool's styles to the head tag within the DOM.
   - Use this to pass a shadow DOM target to the devtools so that the styles will be applied within the shadow DOM instead of within the head tag in the light DOM.
+- `hideDisabledQueries?: boolean`
+  - Defaults to `false`.
+  - Set this to true to hide disabled queries from the devtools panel.
 - `theme?: "light" | "dark" | "system"`
-  - Defaults to `system`.
-  - Set this to change the theme of the devtools panel.
+  - Defaults to the theme selected in the devtools Settings menu, or `system` if none is selected.
+  - Set this to change the theme of the devtools panel. This overrides the theme selected in the Settings menu.
 
 ## Embedded Mode
 
@@ -132,6 +135,71 @@ function App() {
 - `shadowDOMTarget?: ShadowRoot`
   - Default behavior will apply the devtool's styles to the head tag within the DOM.
   - Use this to pass a shadow DOM target to the devtools so that the styles will be applied within the shadow DOM instead of within the head tag in the light DOM.
+- `hideDisabledQueries?: boolean`
+  - Defaults to `false`.
+  - Set this to true to hide disabled queries from the devtools panel.
 - `theme?: "light" | "dark" | "system"`
-  - Defaults to `system`.
-  - Set this to change the theme of the devtools panel.
+  - Defaults to the theme selected in the devtools Settings menu, or `system` if none is selected.
+  - Set this to change the theme of the devtools panel. This overrides the theme selected in the Settings menu.
+
+## Devtools in production
+
+Devtools are excluded in production builds. However, it might be desirable to lazy load the devtools in production:
+
+```tsx
+import { lazy, Suspense } from 'preact/compat'
+import { useEffect, useState } from 'preact/hooks'
+import { QueryClient, QueryClientProvider } from '@tanstack/preact-query'
+import { PreactQueryDevtools } from '@tanstack/preact-query-devtools'
+import { Example } from './Example'
+
+const queryClient = new QueryClient()
+
+const PreactQueryDevtoolsProduction = lazy(() =>
+  import('@tanstack/preact-query-devtools/build/modern/production.js').then(
+    (d) => ({
+      default: d.PreactQueryDevtools,
+    }),
+  ),
+)
+
+function App() {
+  const [showDevtools, setShowDevtools] = useState(false)
+
+  useEffect(() => {
+    Object.assign(window, {
+      toggleDevtools: () => setShowDevtools((old) => !old),
+    })
+  }, [])
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Example />
+      <PreactQueryDevtools initialIsOpen />
+      {showDevtools && (
+        <Suspense fallback={null}>
+          <PreactQueryDevtoolsProduction />
+        </Suspense>
+      )}
+    </QueryClientProvider>
+  )
+}
+
+export default App
+```
+
+With this, calling `window.toggleDevtools()` will download the devtools bundle and show them.
+
+### Modern bundlers
+
+If your bundler supports package exports, you can use the following import path:
+
+```tsx
+const PreactQueryDevtoolsProduction = lazy(() =>
+  import('@tanstack/preact-query-devtools/production').then((d) => ({
+    default: d.PreactQueryDevtools,
+  })),
+)
+```
+
+For TypeScript, you would need to set `moduleResolution` to `'bundler'`, `'node16'`, or `'nodenext'` in your tsconfig.

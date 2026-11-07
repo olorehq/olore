@@ -1,0 +1,165 @@
+---
+title: topkif
+description: 'This page explains how to use the topkif aggregation in APL.'
+---
+
+The `topkif` aggregation in Axiom Processing Language (APL) allows you to identify the top `k` values based on a specified field, while also applying a filter on another field. Use `topkif` when you want to find the most significant entries that meet specific criteria, such as the top-performing queries from a particular service, the most frequent errors for a specific HTTP method, or the highest latency requests from a specific country.
+
+Use `topkif` when you need to focus on the most important filtered subsets of data, especially in log analysis, telemetry data, and monitoring systems. This aggregation helps you quickly zoom in on significant values without scanning the entire dataset.
+
+<Note>
+The `topkif` aggregation in APL is a statistical aggregation that returns estimated results. The estimation provides the benefit of speed at the expense of precision. This means that `topkif` is fast and light on resources even on large or high-cardinality datasets but doesn’t provide completely accurate results.
+
+For completely accurate results, use the [top operator](/apl/tabular-operators/top-operator) together with a filter.
+</Note>
+
+## Syntax
+
+```kusto
+topkif(Field, k, Condition)
+```
+
+## Parameters
+
+- `Field`: The field or expression to rank the results by.
+- `k`: The number of top results to return.
+- `Condition`: A logical expression that specifies the filtering condition.
+
+## Returns
+
+A subset of the original dataset containing the top `k` values based on the specified field, after applying the filter condition.
+
+# Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `topkif` when analyzing HTTP logs to find the top 5 most frequent HTTP status codes for GET requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize topkif(status, 5, method == 'GET')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20topkif(status%2C%205%2C%20method%20%3D%3D%20'GET')%22%7D)
+
+**Output**
+
+| status | count_ |
+|--------|--------|
+| 200    | 900    |
+| 404    | 250    |
+| 500    | 100    |
+| 301    | 90     |
+| 302    | 60     |
+
+This query groups GET requests by HTTP status and returns the 5 most frequent statuses.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `topkif` in OpenTelemetry traces to find the top five services for server.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize topkif(['service.name'], 5, kind == 'server')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20topkif(%5B'service.name'%5D%2C%205%2C%20kind%20%3D%3D%20'server')%22%7D)
+
+**Output**
+
+| service.name | count_     |
+|-------------|------------|
+| frontend-proxy         | 99,573 |
+| frontend         | 91,800     |
+| product-catalog         | 29,696     |
+| image-provider         | 25,223  |
+| flagd         | 10,336      |
+
+This query shows the top five services filtered to server.
+
+</Tab>
+<Tab title="Security logs">
+
+Use `topkif` in security log analysis to find the top 5 cities generating GET HTTP requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize topkif(['geo.city'], 5, method == 'GET')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20topkif(%5B'geo.city'%5D%2C%205%2C%20method%20%3D%3D%20'GET')%22%7D)
+
+**Output**
+
+| geo.city | count_ |
+|----------|--------|
+| New York | 300    |
+| London   | 250    |
+| Paris    | 200    |
+| Tokyo    | 180    |
+| Berlin   | 160    |
+
+This query returns the top 5 cities generating the most GET HTTP requests.
+
+</Tab>
+</Tabs>
+
+# List of related aggregations
+
+- [topk](/apl/aggregation-function/topk): Returns the top `k` results without filtering. Use topk when you don’t need to restrict your analysis to a subset.
+- [top](/apl/tabular-operators/top-operator): Returns the top results based on a field with accurate results. Use top when precision is important.
+- [sort](/apl/tabular-operators/sort-operator): Sorts the dataset based on one or more fields. Use sort if you need full ordered results.
+- [extend](/apl/tabular-operators/extend-operator): Adds calculated fields to your dataset, useful before applying topkif to create new fields to rank.
+- [count](/apl/aggregation-function/count): Counts occurrences in the dataset. Use count when you only need counts without focusing on the top entries.`
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+Splunk SPL doesn’t have a direct equivalent to the `topkif` function. You can achieve similar results by using the top command combined with a where clause, which is closer to using APL’s top operator with a filter. However, APL’s `topkif` provides a more optimized, estimated solution when you want speed and efficiency.
+
+<CodeGroup>
+```sql Splunk example
+| where method="GET" | top limit=5 status
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize topkif(status, 5, method == 'GET')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, identifying the top `k` rows filtered by a condition often involves a WHERE clause followed by ORDER BY and LIMIT. APL’s `topkif` simplifies this by combining the filtering and top-k selection in one function.
+
+<CodeGroup>
+```sql SQL example
+SELECT status, COUNT(*)
+FROM sample_http_logs
+WHERE method = 'GET'
+GROUP BY status
+ORDER BY COUNT(*) DESC
+LIMIT 5;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize topkif(status, 5, method == 'GET')
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>
+
+# Usage

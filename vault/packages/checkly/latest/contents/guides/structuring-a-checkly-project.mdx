@@ -1,0 +1,359 @@
+---
+title: Structure a Checkly project for a real codebase
+sidebarTitle: Structuring a Project
+description: Organize checks by service with groups, keep shared settings in one config, and deploy monitoring from CI on every merge to main.
+canonical: 'https://www.checklyhq.com/docs/guides/structuring-a-checkly-project/'
+---
+
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
+
+By the end of this guide, your monitoring repository has one folder per service, shared defaults in a single config, a group per service with its own locations and variables, and a workflow that redeploys monitoring on every merge to `main`.
+
+<Frame>
+  <img src="/images/guides/structure-a-project/outcome-groups.png" alt="The Checkly check list filtered to Shop, showing the Shop API and Shop web groups with two checks each, tagged api and web" />
+</Frame>
+
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/structure-a-project). It monitors the [Danube demo shop](https://danube-web.shop) and its API.
+
+<Accordion title="Let your agent do it" icon="sparkles">
+
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Restructure the Checkly project in this repository so it scales with the codebase.
+
+Goal: one folder per service under `__checks__`, shared defaults in `checkly.config.ts`, a `CheckGroupV2` per service, and a GitHub Actions workflow that deploys on merge to `main`.
+
+Success criteria:
+1. Look at the services this repository contains and propose the service folders. Ask me to confirm before moving files.
+2. Move shared settings (frequency, locations, tags, alert channels) into the `checks` defaults of `checkly.config.ts`. Keep `logicalId` unchanged.
+3. Put one `group.ts` in each service folder with a `CheckGroupV2`. Give the API group an `API_BASE_URL` environment variable and make its checks use `{{API_BASE_URL}}`.
+4. Put credentials in secrets with `npx checkly env add <KEY> <value> --secret`, never in code.
+5. Add `.github/workflows/checkly-deploy.yml` that runs `npx checkly deploy --force` on pushes to `main` that touch `__checks__/**` or `checkly.config.ts`, reading `CHECKLY_API_KEY` from secrets and `CHECKLY_ACCOUNT_ID` from variables.
+6. Run `npx checkly test --record`, then show me `npx checkly deploy --preview` and wait for my confirmation before deploying.
+
+Explain each file you changed and why.
+```
+
+</div>
+
+<CopyPromptButton />
+
+The sections below are the same work done by hand, so you can see what the agent built and why each piece is there.
+
+</Accordion>
+
+## How a project is organized
+
+Every Checkly project has three levels of configuration, and settings inherit downward. A value set on a check wins over the group, which wins over the project.
+
+<Frame>
+  <img src="/images/guides/structure-a-project/settings-inheritance.png" alt="Tree of the sample project: the project sets frequency, two locations, a tag, and an alert channel. The Shop web group below it sets three locations and the Shop API group sets an API_BASE_URL variable. Of the three checks at the bottom, only Homepage uptime overrides a value, running every minute instead of the project's ten." />
+</Frame>
+
+This is the sample project from this guide. Each box lists only what that level sets, and everything else comes from the level above.
+
+| Level | Where it lives | What belongs there |
+|---|---|---|
+| Project | `checkly.config.ts` | Anything true for every check in the account: frequency, default locations, tags, alert channels, and where to find check files |
+| Group | `group.ts` in a service folder | Anything true for one service: its locations, environment variables, tags, and how its checks run |
+| Check | `*.check.ts` | Only what is specific to that check: the request or script, assertions, and response time thresholds |
+
+Groups are optional. A project with a handful of checks does fine with project defaults alone. Once several people own different parts of the system, a group per service gives each part its own settings and its own page in Checkly, and lets you run or mute that service as a unit.
+
+The folder layout is a convention, not a rule. Checkly finds check files with the `checkMatch` glob and does not care where they sit. Mirror the groups anyway, one folder per service, so the path tells you who owns a check and what it covers. Splitting by check type or by team works too, but service folders are the ones that survive a reorg.
+
+```text Project layout
+checkly.config.ts
+__checks__/
+  alert-channels.ts
+  web/
+    group.ts
+    homepage.check.ts
+    homepage.spec.ts
+    uptime.check.ts
+  api/
+    group.ts
+    books.check.ts
+```
+
+The rest of this guide sets up each level in turn, then wires up a deploy from CI.
+
+## Project defaults
+
+Put the settings every check should inherit in `checkly.config.ts`, and the alert channel they share next to the checks.
+
+```ts checkly.config.ts highlight={10-16}
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+import { opsEmail } from './__checks__/alert-channels'
+
+export default defineConfig({
+  projectName: 'Docs guide: Structure a project',
+  logicalId: 'docs-guide-structure-a-project',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    // Defaults every check inherits unless a group or the check overrides them.
+    frequency: Frequency.EVERY_10M,
+    locations: ['us-east-1', 'eu-west-1'],
+    tags: ['shop'],
+    alertChannels: [opsEmail],
+    // Where to find checks. One folder per service keeps ownership obvious.
+    checkMatch: '**/__checks__/**/*.check.ts',
+  },
+  cli: {
+    runLocation: 'eu-west-1',
+  },
+})
+```
+
+```ts __checks__/alert-channels.ts
+import { EmailAlertChannel } from 'checkly/constructs'
+
+// One channel, attached to every check through the project defaults.
+// The alerting guide tunes when and how often it fires.
+export const opsEmail = new EmailAlertChannel('ops-email', {
+  address: 'ops@example.com',
+  sendFailure: true,
+  sendRecovery: true,
+  sendDegraded: false,
+})
+```
+
+The `checkMatch` glob finds check files at any depth, so adding a service folder needs no config change. Keep `logicalId` stable. Changing it makes Checkly treat the project as new and drops its history.
+
+## A group per service
+
+Each service folder gets a `group.ts` with a `CheckGroupV2`. The two groups here carry different things, which is the point: a group holds whatever is true for that service and nothing else.
+
+The storefront group sets locations. It runs from three regions so a regional CDN problem shows up as a single-location failure.
+
+```ts __checks__/web/group.ts
+import { CheckGroupV2 } from 'checkly/constructs'
+
+// The storefront: user-facing pages. Runs from three regions so a
+// regional CDN problem shows up as a single-location failure.
+export const webGroup = new CheckGroupV2('shop-web', {
+  name: 'Shop web',
+  tags: ['web'],
+  locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  runParallel: true,
+})
+```
+
+The API group sets a variable instead. Every API check in the folder reads `{{API_BASE_URL}}`, so moving the API to a new host is a one-line change.
+
+```ts __checks__/api/group.ts highlight={8-10}
+import { CheckGroupV2 } from 'checkly/constructs'
+
+// The backend API. The base URL lives on the group, so every API check
+// in this folder reads {{API_BASE_URL}} instead of repeating the host.
+export const apiGroup = new CheckGroupV2('shop-api', {
+  name: 'Shop API',
+  tags: ['api'],
+  environmentVariables: [
+    { key: 'API_BASE_URL', value: 'https://danube-web.shop/api' },
+  ],
+})
+```
+
+Once deployed, each group gets its own page with the checks it owns, their combined availability, and a button to run them all at once.
+
+<Frame>
+  <img src="/images/guides/structure-a-project/group-web.png" alt="The Shop web group page in Checkly showing two passing checks, availability and response time stats, and recent run results from three locations" />
+</Frame>
+
+## Checks
+
+A check joins its group through the `group` property and inherits everything above it. The file itself holds only what is specific to this check. The uptime monitor below overrides one inherited value, because a URL monitor is cheap enough to run every minute.
+
+```ts __checks__/web/uptime.check.ts highlight={6,8}
+import { Frequency, UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+import { webGroup } from './group'
+
+new UrlMonitor('shop-homepage-uptime', {
+  name: 'Homepage uptime',
+  group: webGroup,
+  // Overrides the project default: uptime is cheap, run it more often.
+  frequency: Frequency.EVERY_1M,
+  degradedResponseTime: 3000,
+  maxResponseTime: 10000,
+  request: {
+    url: 'https://danube-web.shop/',
+    followRedirects: true,
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+The API check reads the group's variable in its URL and adds nothing but its own assertions.
+
+```ts __checks__/api/books.check.ts highlight={11}
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+import { apiGroup } from './group'
+
+new ApiCheck('shop-api-books', {
+  name: 'Books catalog',
+  group: apiGroup,
+  degradedResponseTime: 2000,
+  maxResponseTime: 5000,
+  request: {
+    method: 'GET',
+    url: '{{API_BASE_URL}}/books',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.headers('content-type').contains('application/json'),
+      AssertionBuilder.jsonBody('$.length').greaterThan(0),
+      AssertionBuilder.jsonBody('$[0].title').notEmpty(),
+    ],
+  },
+})
+```
+
+<Tip>
+Credentials go in secrets, not in code. Add one globally with `npx checkly env add API_TOKEN "..." --secret` and read it the same way, as `{{API_TOKEN}}` in API checks or `process.env.API_TOKEN` in scripts. See [environment variables and secrets](/platform/variables).
+</Tip>
+
+Run the project on Checkly's infrastructure to confirm every check parses and passes.
+
+```bash Terminal
+npx checkly test
+```
+
+```text Terminal
+Parsing your project... ✅
+Validating project resources... ✅
+Bundling project resources... ✅
+Uploading Playwright tests... ✅
+
+Running 3 checks in eu-west-1.
+
+__checks__/api/books.check.ts
+  ✔ Books catalog (217ms)
+__checks__/web/homepage.check.ts
+  ✔ Homepage renders (5s)
+__checks__/web/uptime.check.ts
+  ✔ Homepage uptime (216ms)
+
+3 passed, 3 total
+```
+
+## Deploy from CI on every merge
+
+The structure above is code, so it ships like code. Preview what the first deploy creates, then deploy once from your machine.
+
+```bash Terminal
+npx checkly deploy --preview
+```
+
+```text Terminal
+Create:
+    EmailAlertChannel: ops-email
+    ApiCheck: shop-api-books
+    BrowserCheck: shop-homepage
+    UrlMonitor: shop-homepage-uptime
+    CheckGroupV2: shop-api
+    CheckGroupV2: shop-web
+```
+
+```bash Terminal
+npx checkly deploy
+```
+
+From here on, let CI do it. The workflow below redeploys the project whenever a merge to `main` touches monitoring code. Checkly diffs the project against what is deployed and applies only the change, so re-running it is safe.
+
+```yaml .github/workflows/checkly-deploy.yml
+name: Deploy Checkly monitoring
+
+# Every merge to main that touches monitoring code redeploys the project.
+# Checkly diffs the project against what is deployed and applies the change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '__checks__/**'
+      - 'checkly.config.ts'
+      - 'package-lock.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx checkly deploy --force
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ vars.CHECKLY_ACCOUNT_ID }}
+```
+
+Store `CHECKLY_API_KEY` as a repository secret and `CHECKLY_ACCOUNT_ID` as a repository variable. Both come from your Checkly settings, described in [CLI authentication](/cli/authentication). The `--force` flag skips the interactive confirmation.
+
+<Note>
+This workflow deploys after a merge. Running `npx checkly test` on every pull request, so a broken check never reaches `main`, is the subject of the [checks on every deploy](/guides/sdlc-monitoring) guide.
+</Note>
+
+## Verify it works
+
+Add a check the way a teammate would: one new file in the service folder, nothing else.
+
+```ts __checks__/api/book-detail.check.ts
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+import { apiGroup } from './group'
+
+new ApiCheck('shop-api-book-detail', {
+  name: 'Book detail',
+  group: apiGroup,
+  degradedResponseTime: 2000,
+  maxResponseTime: 5000,
+  request: {
+    method: 'GET',
+    url: '{{API_BASE_URL}}/books/1',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.jsonBody('$.title').equals('Haben oder haben'),
+    ],
+  },
+})
+```
+
+The preview shows exactly one new resource. Everything else is untouched.
+
+```bash Terminal
+npx checkly deploy --preview
+```
+
+```text Terminal
+Create:
+    ApiCheck: shop-api-book-detail
+
+Update and Unchanged:
+    EmailAlertChannel: ops-email
+    ApiCheck: shop-api-books
+    BrowserCheck: shop-homepage
+    UrlMonitor: shop-homepage-uptime
+    CheckGroupV2: shop-api
+    CheckGroupV2: shop-web
+```
+
+Commit the file and merge. The workflow deploys it, and the new check appears under Shop API with the group's variable and the project's alert channel already applied.
+
+## Next
+
+[Turn your Playwright tests into monitors](/guides/playwright-testing-to-monitoring): the tests you already have become the checks in your `web` folder.
+
+## Reference
+
+- [Project construct](/constructs/project)
+- [CheckGroupV2 construct](/constructs/check-group-v2) and [Groups](/platform/groups)
+- [Environment variables and secrets](/platform/variables)
+- [Run Checkly from GitHub Actions](/integrations/ci-cd/github/actions) and [CLI authentication](/cli/authentication)
+- [`npx checkly test`](/cli/checkly-test) and [`npx checkly deploy`](/cli/checkly-deploy)
+- [Checkly Skills](/ai/skills)

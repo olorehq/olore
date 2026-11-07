@@ -4,25 +4,28 @@ description: Learn how to use Clerk to quickly and easily add secure authenticat
 sdk: tanstack-react-start
 ---
 
-<TutorialHero
-  exampleRepo={[
-    {
-      title: "TanStack React Start Quickstart Repo",
-      link: "https://github.com/clerk/clerk-tanstack-react-start-quickstart"
+<PromptOnly>
+  Hand this prompt to your agent to add auth to your app with the [Clerk CLI](/docs/cli). No need to leave your terminal or copy and paste API keys.
 
-    }
-  ]}
-/>
+  <Prompt
+    variant="card"
+    src="prompts/cli-setup.md"
+    title="Add Clerk to TanStack React Start"
+    output="replace"
+    framework="tanstack-start"
+  />
 
-<Steps>
+  Or set up Clerk yourself by following the step-by-step instructions.
+</PromptOnly>
+
+<ManualSteps>
   ## Create a new TanStack React Start app
 
   If you don't already have a TanStack React Start app, run the following commands to [create a new one](https://tanstack.com/start/latest/docs/framework/react/getting-started).
 
   ```npm
-  npm create @tanstack/start@latest clerk-tanstack-react-start
+  npx @tanstack/cli@latest create clerk-tanstack-react-start
   cd clerk-tanstack-react-start
-  npm install
   ```
 
   ## Install `@clerk/tanstack-react-start`
@@ -35,35 +38,37 @@ sdk: tanstack-react-start
   npm install @clerk/tanstack-react-start
   ```
 
-  <SignedIn>
-    ## Set your Clerk API keys
+  ## Set your Clerk API keys
 
-    Add the following keys to your `.env` file. These keys can always be retrieved from the [**API keys**](https://dashboard.clerk.com/~/api-keys) page in the Clerk Dashboard.
+  <Include src="_partials/quickstarts/set-clerk-api-keys" />
 
-    ```sh {{ filename: '.env' }}
-    CLERK_PUBLISHABLE_KEY={{pub_key}}
-    CLERK_SECRET_KEY={{secret}}
-    ```
-  </SignedIn>
+  ```env {{ filename: '.env' }}
+  VITE_CLERK_PUBLISHABLE_KEY={{pub_key}}
+  CLERK_SECRET_KEY={{secret}}
+  ```
 
   ## Add `clerkMiddleware()` to your app
 
-  [`clerkMiddleware()`](/docs/reference/tanstack-react-start/clerk-middleware) grants you access to user authentication state throughout your app. It also allows you to protect specific routes from unauthenticated users. To add `clerkMiddleware()` to your app, follow these steps:
+  [`clerkMiddleware()`](/docs/reference/tanstack-react-start/clerk-middleware) grants you access to user authentication state throughout your app. To add `clerkMiddleware()` to your app, follow these steps:
 
-  1. Create a `src/start.ts` file with the following code:
+  1. Create a `src/start.ts` file with the following code. TanStack Start doesn't add its default CSRF middleware when this file exists, so add it explicitly to protect server functions.
 
      ```tsx {{ filename: 'src/start.ts' }}
      import { clerkMiddleware } from '@clerk/tanstack-react-start/server'
-     import { createStart } from '@tanstack/react-start'
+     import { createCsrfMiddleware, createStart } from '@tanstack/react-start'
+
+     const csrfMiddleware = createCsrfMiddleware({
+       filter: (ctx) => ctx.handlerType === 'serverFn',
+     })
 
      export const startInstance = createStart(() => {
        return {
-         requestMiddleware: [clerkMiddleware()],
+         requestMiddleware: [csrfMiddleware, clerkMiddleware()],
        }
      })
      ```
 
-  1. By default, `clerkMiddleware()` will not protect any routes. All routes are public and you must opt-in to protection for routes. See the [`clerkMiddleware()` reference](/docs/reference/tanstack-react-start/clerk-middleware) to learn how to require authentication for specific routes.
+  1. `clerkMiddleware()` does not protect routes by itself. All routes are public until you add route-level protection. See the [server-side route protection example](#server-side) to learn how.
 
   ## Add `<ClerkProvider>` to your app
 
@@ -71,12 +76,10 @@ sdk: tanstack-react-start
 
   Add the `<ClerkProvider>` component to your app's root route, as shown in the following example:
 
-  ```tsx {{ filename: 'src/routes/__root.tsx', ins: [1, 41, 44], fold: [[2, 33]] }}
+  ```tsx {{ filename: 'src/routes/__root.tsx', ins: [1, 39], fold: [[2, 31]] }}
   import { ClerkProvider } from '@clerk/tanstack-react-start'
   import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
   import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-  import Header from '../components/Header'
 
   import appCss from '../styles.css?url'
 
@@ -112,10 +115,7 @@ sdk: tanstack-react-start
           <HeadContent />
         </head>
         <body>
-          <ClerkProvider>
-            <Header />
-            {children}
-          </ClerkProvider>
+          <ClerkProvider>{children}</ClerkProvider>
           <TanStackRouterDevtools />
           <Scripts />
         </body>
@@ -203,33 +203,8 @@ sdk: tanstack-react-start
   <Include src="_partials/quickstarts/run-project-step" />
 
   <Include src="_partials/quickstarts/create-first-user-step" />
-
-  <SignedOut>
-    > [!IMPORTANT]
-    > To make configuration changes to your Clerk development instance, claim the Clerk keys that were generated for you by selecting **Configure your application** in the bottom right of your app. This will associate the application with your Clerk account.
-  </SignedOut>
-</Steps>
+</ManualSteps>
 
 ## Next steps
 
-Learn more about Clerk components, how to build custom authentication flows, and how to use Clerk's client-side helpers using the following guides.
-
-<Cards>
-  - [Prebuilt components](/docs/reference/components/overview)
-  - Learn how to quickly add authentication to your app using Clerk's suite of components.
-
-  ---
-
-  - [Customization & localization](/docs/guides/customizing-clerk/appearance-prop/overview)
-  - Learn how to customize and localize Clerk components.
-
-  ---
-
-  - [Create a custom sign-in-or-up page](/docs/tanstack-react-start/guides/development/custom-sign-in-or-up-page)
-  - Learn how to create a custom sign-in-or-up page with Clerk components.
-
-  ---
-
-  - [Protect content and read user data](/docs/tanstack-react-start/guides/users/reading)
-  - Learn how to use Clerk's hooks and helpers to protect content and read user data in your TanStack React Start app.
-</Cards>
+<Include src="_partials/quickstarts/next-steps/frontend-sdks" />

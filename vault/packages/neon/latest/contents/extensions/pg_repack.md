@@ -9,7 +9,7 @@ summary: >-
   are not superusers. Repacking temporarily doubles storage and increases WAL
   history for the duration of your PITR window.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T19:45:35.340Z'
 ---
 
 Postgres, like any database system, can accumulate bloat over time due to frequent updates and deletes. Bloat refers to wasted space within your tables and indexes, which can lead to decreased query performance and increased storage usage. `pg_repack` is a powerful Postgres extension that allows you to efficiently remove this bloat by rewriting tables and indexes online, with minimal locking. Unlike `VACUUM FULL` or `CLUSTER`, `pg_repack` avoids exclusive locks, ensuring your applications remain available during the reorganization process.
@@ -107,9 +107,9 @@ Let's break down the key components:
 These options specify how `pg_repack` connects to your database. You can often omit the `DBNAME` from the main command if you provide these connection options.
 
 - **`-d DBNAME`, `--dbname=DBNAME`**: Specifies the database name to connect to.
-- **`-h HOSTNAME`, `--host=HOSTNAME`**: Specifies the hostname of your Neon endpoint. You can find this by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal.
+- **`-h HOSTNAME`, `--host=HOSTNAME`**: Specifies the hostname of your Neon endpoint. You can find this by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal.
 - **`-p PORT`, `--port=PORT`**: Specifies the port. For Neon, this is always `5432`.
-- **`-U USERNAME`, `--username=USERNAME`**: Specifies your Neon username. You can find this by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal.
+- **`-U USERNAME`, `--username=USERNAME`**: Specifies your Neon username. You can find this by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal.
 - **`-W`, `--password`**: Forces `pg_repack` to prompt for your password.
 
 ### Generic options
@@ -184,7 +184,7 @@ Let's walk through a practical example of using `pg_repack` to reorganize a tabl
 
 ### Connect to your Neon Database
 
-Ensure you are connected to your Neon database using [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) or from a client such as [psql](/docs/connect/query-with-psql-editor). You can find your connection details by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal.
+Ensure you are connected to your Neon database using [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) or from a client such as [psql](/docs/connect/query-with-psql-editor). You can find your connection details by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal.
 
 ### Create a sample table with bloat (Optional)
 
@@ -234,7 +234,7 @@ pg_repack -k -h <your_neon_host> -p 5432 -d <your_neon_database> -U <your_neon_u
 Replace the placeholders with your Neon connection details.
 
 - `-h <your_neon_host>`: Your Neon hostname.
-- `-p 5432`: The port (always 5432 for Neon Postgres).
+- `-p 5432`: The port (always 5432 for Lakebase Postgres).
 - `-d <your_neon_database>`: Your Neon database name.
 - `-U <your_neon_username>`: Your Neon username.
 - `--table bloated_table`: Specifies the table to repack.
@@ -295,7 +295,7 @@ Running `pg_repack` can temporarily **increase** your Neon project's storage siz
 
 ## Conclusion
 
-`pg_repack` is an invaluable tool for maintaining the health and performance of your Neon Postgres database. By enabling you to remove bloat online and with minimal locking, it helps ensure your database remains efficient, responsive, and cost-effective. Regularly using `pg_repack`, especially on tables with frequent updates and deletes, can help you reclaim disk space, improve query performance, and optimize your database.
+`pg_repack` is an invaluable tool for maintaining the health and performance of your database. By enabling you to remove bloat online and with minimal locking, it helps ensure your database remains efficient, responsive, and cost-effective. Regularly using `pg_repack`, especially on tables with frequent updates and deletes, can help you reclaim disk space, improve query performance, and optimize your database.
 
 ## References
 

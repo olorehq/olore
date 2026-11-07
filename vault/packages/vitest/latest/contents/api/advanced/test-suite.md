@@ -72,6 +72,7 @@ const hash = generateFileHash(
   undefined, // the project name or `undefined` is not set
 )
 ```
+
 :::
 
 ::: danger
@@ -145,6 +146,7 @@ function visit(collection: TestCollection) {
   }
 }
 ```
+
 :::
 
 ## ok
@@ -169,7 +171,7 @@ Checks the running state of the suite. Possible return values:
 - **skipped**: this suite was skipped during collection.
 
 ::: warning
-Note that [test module](/api/advanced/test-module) also has a `state` method that returns the same values, but it can also return an additional `queued` state if the module wasn't executed yet.
+Note that [test module](/api/advanced/test-module) also has a `state` method that returns the same values, but it can also return an additional `queued` state if the module is queued, but Vitest did not collect its tests yet.
 :::
 
 ## errors

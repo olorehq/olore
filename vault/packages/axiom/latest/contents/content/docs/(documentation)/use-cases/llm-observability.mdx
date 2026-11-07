@@ -1,0 +1,66 @@
+---
+title: "LLM observability"
+description: "Learn how to observe your generative AI apps in production using OpenTelemetry instrumentation and Axiom's auto-provisioned GenAI dashboards."
+sidebarTitle: Overview
+keywords: ["llm observability", "genai", "observe", "telemetry", "opentelemetry", "gen ai dashboard"]
+---
+
+import AIInstrumentationApproaches from "@/content/snippets/ai-instrumentation-approaches.mdx"
+
+Axiom provides first-class observability for generative AI applications. Instrument your app using OpenTelemetry and Axiom automatically provisions a GenAI dashboard and waterfall trace view for every dataset containing AI telemetry.
+
+## Instrument your app
+
+<AIInstrumentationApproaches />
+
+## Visualize traces in Console
+
+Visualizing and making sense of this telemetry data is a core part of the Axiom Console experience:
+
+- A dedicated **AI traces waterfall view** visualizes single and multi-step LLM workflows, with clear input/output inspection at each stage.
+- A pre-built **GenAI OTel dashboard** automatically appears for any dataset receiving AI telemetry. It features elements for tracking cost per invocation, time-to-first-token, call counts by model, and error rates.
+
+### Access AI traces waterfall view
+
+1. Click the Query tab.
+1. Create an APL query about your GenAI dataset. For example:
+
+    ```kusto
+    ['otel-demo-genai']
+    | where ['attributes.gen_ai.operation.name'] == "chat"
+    ```
+
+    [Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-genai'%5D%20%7C%20where%20%5B'attributes.gen_ai.operation.name'%5D%20%3D%3D%20'chat'%22%7D)
+
+1. In the list of trace IDs, click the trace you want to explore.
+1. Explore how spans within the trace are related to each other in the waterfall view. To only display AI spans, click **AI spans** in the top left.
+
+<Frame>
+  <img src="/docs/doc-assets/shots/gen-ai-waterfall-view.png" alt="AI traces waterfall view" />
+</Frame>
+
+### Access GenAI dashboard
+
+Axiom automatically creates the GenAI dashboard if the field `attributes.gen_ai.operation.name` is present in your data.
+
+To access the GenAI dashboard:
+
+1. Click the Dashboards tab.
+1. Click the dashboard **Generative AI Overview (DATASET_NAME)** where `DATASET_NAME` is the name of your GenAI dataset.
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/dashboards/genai.otel-demo-genai)
+
+The GenAI dashboard provides you with important insights about your GenAI app such as:
+- Vitals about requests, broken down by operation, capability, and step.
+- Token usage and cost analysis
+- Error analysis
+- Comparison of performance and reliability of different AI models
+
+<Frame>
+  <img src="/docs/doc-assets/shots/gen-ai-dashboard.png" alt="AI traces waterfall view" />
+</Frame>
+
+## What’s next?
+
+- Use [GenAI APL functions](/apl/scalar-functions/genai-functions) to query and analyze your LLM data.
+- See [GenAI attributes](/use-cases/llm-observability/gen-ai-attributes) for the full list of OpenTelemetry attributes Axiom recognizes.

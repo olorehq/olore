@@ -1,0 +1,146 @@
+---
+title: 'Axiom transport for Winston logger'
+description: 'This page explains how to send data from a Node.js app to Axiom through Winston.'
+overview: 'A logger for just about everything'
+sidebarTitle: Winston
+keywords: ['js', 'pino', 'winston', 'node', 'javascript', 'typescript', 'ts']
+logoId: 'winston'
+---
+
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+<Prerequisites />
+
+## Install SDK
+
+To install the SDK, run the following:
+
+```shell
+npm install @axiomhq/winston
+```
+
+## Import the Axiom transport for Winston
+
+```js
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+```
+
+## Create a Winston logger instance
+
+```js
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+        // You can pass an option here. If you don’t, the transport is configured automatically
+        // using environment variables like `AXIOM_DATASET` and `AXIOM_TOKEN`
+        new AxiomTransport({
+            dataset: 'DATASET_NAME',
+            token: 'API_TOKEN',
+        }),
+    ],
+});
+```
+
+<Info>
+<ReplaceDatasetToken />
+</Info>
+
+After setting up the Axiom transport for Winston, use the logger as usual:
+
+```js
+logger.log({
+    level: 'info',
+    message: 'Logger successfully setup',
+});
+```
+
+### Error, exception, and rejection handling
+
+To log errors, use the [`winston.format.errors`](https://github.com/winstonjs/logform#errors) formatter. For example:
+
+```ts
+import winston from 'winston';
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+const { combine, errors, stack } = winston.format;
+const axiomTransport = new AxiomTransport({ ... });
+const logger = winston.createLogger({
+  // 8<----snip----
+  format: combine(errors({ stack: true }), json()),
+  // 8<----snip----
+});
+```
+
+To automatically log exceptions and rejections, add the Axiom transport to the [`exceptionHandlers`](https://github.com/winstonjs/winston#exceptions) and [`rejectionHandlers`](https://github.com/winstonjs/winston#rejections). For example:
+
+```ts
+import winston from 'winston';
+import { WinstonTransport as AxiomTransport } from '@axiomhq/winston';
+const axiomTransport = new AxiomTransport({ ... });
+const logger = winston.createLogger({
+  // 8<----snip----
+  transports: [axiomTransport],
+  exceptionHandlers: [axiomTransport],
+  rejectionHandlers: [axiomTransport],
+  // 8<----snip----
+});
+```
+
+<Warning>
+Running on Edge runtime isn’t supported.
+</Warning>
+
+## Configure region
+
+By default, the transport sends data to `api.axiom.co`. To target a specific edge region, set the `edge` option on `AxiomTransport` to the edge domain that matches the region your dataset lives in:
+
+<CodeGroup>
+
+```ts EU Central 1
+new AxiomTransport({
+    dataset: 'DATASET_NAME',
+    token: 'API_TOKEN',
+    edge: 'eu-central-1.aws.edge.axiom.co',
+});
+```
+
+```ts US East 1
+new AxiomTransport({
+    dataset: 'DATASET_NAME',
+    token: 'API_TOKEN',
+    edge: 'us-east-1.aws.edge.axiom.co',
+});
+```
+
+</CodeGroup>
+
+The following edge domains are available:
+
+| Edge deployment    | Base domain for ingest and query |
+| ------------------ | -------------------------------- |
+| US East 1 (AWS)    | `us-east-1.aws.edge.axiom.co`    |
+| EU Central 1 (AWS) | `eu-central-1.aws.edge.axiom.co` |
+
+For more information about edge deployments, see [Edge deployments](/reference/edge-deployments).
+
+<Warning>
+Always use the `edge` option to target a region. Don't put a regional hostname in `url` — `url` is reserved for non-ingest API operations and won't route ingest correctly. (This is unrelated to the Edge runtime note above, which is about where your code runs.)
+</Warning>
+
+### Transport options
+
+| Option     | Required | Description                                                                                                       |
+| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
+| `dataset`  | yes      | The Axiom dataset to ingest logs into. Falls back to the `AXIOM_DATASET` environment variable.                   |
+| `token`    | yes      | An Axiom API token with `ingest` permission for the dataset.                                                      |
+| `orgId`    | no       | Organization ID. Required when using a personal token.                                                            |
+| `edge`     | no       | Edge domain for ingest, without scheme. Example: `eu-central-1.aws.edge.axiom.co`. Use this to target a region.   |
+| `edgeUrl`  | no       | Full edge URL with scheme. Takes precedence over `edge` if both are set. Useful for self-hosted or proxy setups.  |
+| `url`      | no       | Base URL for non-ingest API operations.                                                                          |
+| `onError`  | no       | Callback invoked when sending data fails.                                                                        |
+
+## Examples
+
+For more examples, see the [examples in GitHub](https://github.com/axiomhq/axiom-js/tree/main/examples/winston).

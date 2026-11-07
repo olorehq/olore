@@ -2,6 +2,7 @@
 title: 'Importing existing Checks into your CLI project'
 description: 'Learn how to import checks from the UI into the CLI'
 sidebarTitle: 'Importing Resources From the UI'
+canonical: 'https://www.checklyhq.com/docs/cli/importing/'
 ---
 
 If you got started with Checkly working in the webapp you can use the `import` CLI command to download all your UI-managed resources as code and start managing your entire Checkly setup from the CLI.
@@ -14,6 +15,10 @@ To ensure that you can go through this process safely, and test your setup along
 - `npx checkly import`: This generates the code for all resources in your account not already managed through the CLI, allowing for a review of all resources that will be imported. At this point no mapping have been created between imported resources and the existing ones in your account. A `deploy` in this state will duplicate your UI-managed resources as CLI-managed ones. If you cancel here, nothing will change for existing resources that are managed through the UI on your account.
 - `npx checkly import apply`: Links the imported resources to your CLI project, but keeps the mapping in a **pending** state. You can now make changes to resources in your account via the CLI, as the mapping has been established. As long as this mapping is **pending** you cannot delete any of the imported resources via the CLI. You are free to test your setup and deploy changes, but you will be prevented from deleting any resources until you commit your plan. You can cancel your import at this stage, but any changes made to resources through a `deploy` will persist.
 - `npx checkly import commit`: Commits the plan, removing the **pending** state from all imported resources. Imported resources can now be deleted through the CLI by removing their constructs. At this point the `import` is completed and cannot be canceled.
+
+<Note>
+Playwright Check Suites are never part of an import plan, whether you import everything or [name a single check by id](#importing-individual-resources): a suite is defined by the code bundle the CLI uploaded on deploy, and an import cannot turn that bundle back into source files. Naming one reports that no importable resources were found. To manage a suite from a new project, deploy it again from the Playwright project that holds its source.
+</Note>
 
 ## Importing step-by-step
 
@@ -68,12 +73,11 @@ new BrowserCheck('check-landing-page-3eNrQgOb', {
   code: {
     entrypoint: './check-landing-page.spec.ts',
   },
-  ...
   alertChannels: [
     // Note the usage of the imported alert channel here
     emailAlert1,
   ],
-  ...
+  /* More options... */
 })
 ```
 

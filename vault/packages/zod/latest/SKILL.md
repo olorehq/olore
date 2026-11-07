@@ -1,52 +1,44 @@
 ---
 name: olore-zod-latest
-description: Local Zod documentation reference (latest, v4.5.4). Zod schema validation for TypeScript. Use for schema definition, parsing, type inference, error customization and formatting, refinements and transforms, codecs, JSON Schema conversion, metadata registries, Zod Mini, and z.compile AOT compilation.
+description: Local zod documentation reference (latest). Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, schema composition, codecs, JSON Schema conversion, and AOT compilation with z.compile.
 ---
 
 # zod Documentation
 
-Zod is a TypeScript-first schema validation library with static type inference. This package tracks `main` (currently **4.5.4**).
+Zod schema validation documentation. Use for TypeScript type inference, parsing, error handling, schema composition, codecs, JSON Schema conversion, and AOT compilation with z.compile.
 
 ## Quick Reference
 
 | File | Title | Description |
 |------|-------|-------------|
-| `contents/index.mdx` | Intro | What Zod is, install, the 30-second example |
-| `contents/basics.mdx` | Basic usage | Define a schema, parse, handle errors, infer types |
-| `contents/api.mdx` | Defining schemas | **Main API reference.** All schema types, methods, string formats, refinements, transforms |
-| `contents/compile.mdx` | AOT compilation | `z.compile()` — compile a schema into a flat, loop-free validator for hot paths |
-| `contents/codecs.mdx` | Codecs | `z.codec()`, `.encode()` / `.decode()` for bidirectional transforms |
-| `contents/error-customization.mdx` | Customizing errors | The `error` param, error maps, per-issue messages |
-| `contents/error-formatting.mdx` | Formatting errors | `z.treeifyError`, `z.prettifyError`, `z.flattenError` |
-| `contents/json-schema.mdx` | JSON Schema | `z.toJSONSchema()` / `z.fromJSONSchema()`, OpenAPI interop |
-| `contents/metadata.mdx` | Metadata and registries | `z.registry`, `.meta()`, `.describe()` |
-| `contents/ecosystem.mdx` | Ecosystem | Integrations and community tooling |
-| `contents/library-authors.mdx` | For library authors | Peer dep ranges, Standard Schema, generic schema helpers |
-| `contents/packages/zod.mdx` | Zod | Main package internals |
-| `contents/packages/mini.mdx` | Zod Mini | Tree-shakable variant for bundle size |
-| `contents/packages/core.mdx` | Zod Core | Minimal core for custom implementations |
-| `contents/v4/index.mdx` | Release notes | Zod 4 features, perf, breaking changes |
-| `contents/v4/changelog.mdx` | Migration guide | Zod 3 → Zod 4 upgrade path |
-| `contents/v4/versioning.mdx` | Versioning | Compatibility policy |
+| `contents/api.mdx` | Defining schemas | Complete reference for all Zod schema types (primitives, objects, arrays, unions, etc.), methods, and validations |
+| `contents/basics.mdx` | Basic usage | Introductory walkthrough: define a schema, parse data, handle errors, and infer TypeScript types |
+| `contents/codecs.mdx` | Codecs | Bidirectional transformations with z.codec, encode and decode (since zod 4.1) |
+| `contents/compile.mdx` | AOT compilation | Compile schemas ahead of time into flat validators for faster hot-path validation (z.compile) |
+| `contents/ecosystem.mdx` | Ecosystem | Third-party integrations, form libraries, code generators, mocking tools, and community resources |
+| `contents/error-customization.mdx` | Customizing errors | Customize validation messages, per-schema and global error maps, and issue structure |
+| `contents/error-formatting.mdx` | Formatting errors | Utilities to format ZodError output: treeifyError, prettifyError, flattenError |
+| `contents/index.mdx` | Intro | Introduction to Zod, installation, requirements, and sponsors |
+| `contents/json-schema.mdx` | JSON Schema | Convert Zod schemas to JSON Schema with z.toJSONSchema and its options |
+| `contents/library-authors.mdx` | For library authors | Guidance for building libraries on top of Zod, peer dependencies, and Zod 3/4 support |
+| `contents/metadata.mdx` | Metadata and registries | Attach metadata to schemas with .meta(), .describe(), and custom registries |
+| `contents/packages/core.mdx` | Zod Core | The zod/v4/core sub-package: base classes and utilities for custom implementations |
+| `contents/packages/mini.mdx` | Zod Mini | Tree-shakable functional variant of Zod, when to use it, and key differences |
+| `contents/packages/zod.mdx` | Zod | Internals and structure of the flagship zod package |
+| `contents/v4/changelog.mdx` | Migration guide | Breaking changes and upgrade guide from Zod 3 to Zod 4 |
+| `contents/v4/index.mdx` | Release notes | Zod 4 release notes: performance gains, new features, and changes |
+| `contents/v4/versioning.mdx` | Versioning | Versioning strategy and subpath compatibility for Zod 4 |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Defining and composing schemas (strings, numbers, objects, arrays, unions, discriminated unions, recursive types)
-- Parsing and validating: `.parse()`, `.safeParse()`, `.parseAsync()`, `.decode()`, `.encode()`
-- TypeScript inference: `z.infer`, `z.input`, `z.output`, generic schema helpers
-- Refinements, transforms, `.check()`, `.superRefine()`, `.pipe()`
+- Defining Zod schemas, parsing data, and inferring TypeScript types
 - Customizing and formatting validation errors
-- Converting to/from JSON Schema or OpenAPI
-- Metadata and registries
-- **`z.compile()` / AOT compilation for validation-heavy hot paths** (added in 4.5)
-- Codecs and bidirectional transforms
-- Zod Mini and bundle-size optimization
-- Migrating from Zod 3 to Zod 4
-- Building a library on top of Zod
+- Codecs, transforms, metadata, and registries
+- JSON Schema conversion and AOT compilation (z.compile)
+- Zod Mini, Zod Core, and migrating from Zod 3 to Zod 4
 
 ## How to find information
 
 1. Check Quick Reference above for the relevant file
-2. Most API questions are answered by `contents/api.mdx` — it is large, so search within it rather than reading it whole
-3. Read specific files from `contents/{filename}`
+2. Read specific files from `contents/{filename}`

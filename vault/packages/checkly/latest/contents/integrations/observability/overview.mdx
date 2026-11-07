@@ -1,0 +1,47 @@
+---
+title: 'Observability integrations'
+description: 'Send Checkly metrics, traces and alerts to the tools you already use, and bring your application traces into Checkly.'
+sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/overview/'
+---
+
+Turn on trace export and every API check, URL monitor, Browser check and Multistep check run is sent to your tracing backend as one OpenTelemetry span with the check name, location, tags and verdict, joined to your application's spans when your app honors the `traceparent` header. Point any scraper that sends a bearer token at one URL and it reads the status of every check type, plus timings and Browser check web vitals.
+
+## Choose an integration
+
+| I want | How Checkly does it | Go to |
+| --- | --- | --- |
+| Metrics in my dashboards | Your scraper reads one Prometheus endpoint with a bearer token. | [Prometheus](/integrations/observability/prometheus) |
+| Check runs as traces in my backend | Checkly sends one span per run over OTLP/HTTP to any OpenTelemetry backend or collector. | [Export traces over OTLP](/integrations/observability/traces/otlp) |
+| Alerts in my tools | Alert notifications go out as webhooks. Add `OTEL_TRACE_ID` to the payload to link the alert to the trace in your own tool, or `OTEL_TRACE_LINK` to open the trace in Checkly. Both are empty when the run has no trace. | [Webhooks](/integrations/alerts/webhooks) |
+| Traces and metrics through my OpenTelemetry Collector | The Collector receives the spans on its OTLP/HTTP receiver and scrapes the Prometheus endpoint with its `prometheus` receiver. | [Collector receiver](/integrations/observability/traces/otlp#receive-spans-with-an-opentelemetry-collector), [Collector scraper](/integrations/observability/prometheus#scraping-with-other-tools) |
+| My application's traces in Checkly | Your app sends its spans to Checkly over OTLP, so a failed check result shows what happened in your backend. | [Import traces](/resolve/traces/import/overview) |
+
+## Coverage and limits
+
+- Metrics cover every check type, including Heartbeat monitors, plus queue and agent metrics for your private locations.
+- Traces are sent for API check, URL monitor, Browser check and Multistep check runs.
+- The span's OpenTelemetry status is always OK. Filter on `checkly.check.status` to find failed and degraded runs in your tool.
+- Traces carry no metrics, the Prometheus endpoint carries no traces, and neither carries logs.
+- Export is account-wide to one endpoint. Failed exports are not shown in Checkly.
+- Timings are averages only. Histograms expose only the `+Inf` bucket, and counters reset every hour.
+
+## Integration pages
+
+<Columns cols={3}>
+<Card title="Prometheus" href="/integrations/observability/prometheus">
+Scrape check, heartbeat and private location metrics from one endpoint.
+</Card>
+
+<Card title="Export traces over OTLP" href="/integrations/observability/traces/otlp">
+Send one span per check run to any backend or collector that accepts OTLP/HTTP.
+</Card>
+
+<Card title="Coralogix" href="/integrations/observability/coralogix">
+Send traces, RUM and alerts to Coralogix.
+</Card>
+</Columns>
+
+Backend not listed? Use [Export traces over OTLP](/integrations/observability/traces/otlp) for traces and [Prometheus](/integrations/observability/prometheus) for metrics. Pages for specific backends: [Chronosphere](/integrations/observability/traces/chronosphere), [ClickStack](/integrations/observability/traces/clickstack), [Cribl Stream](/integrations/observability/traces/cribl), [Dash0](/integrations/observability/traces/dash0), [Datadog](/integrations/observability/traces/datadog), [Grafana Tempo](/integrations/observability/traces/grafana-tempo), [Honeycomb](/integrations/observability/traces/honeycomb), [New Relic](/integrations/observability/traces/new-relic).
+
+New to traces and spans? [OpenTelemetry concepts](/learn/opentelemetry/overview) covers the basics.

@@ -1,17 +1,20 @@
 ---
 title: FormProvider
+seoTitle: "FormProvider: Share React Form Context"
 description: Share form context across deeply nested components.
 metaDescription: Wrap your form tree with FormProvider to share useForm methods across deeply nested components without passing props manually.
 sidebar: apiLinks
 ---
 
-This component will host context object and allow consuming component to subscribe to context and use [useForm](/docs/useform) props and methods.
+## \</> `FormProvider`: <TypeText>[FormProviderProps](/ts#FormProviderProps)</TypeText>
+
+This component hosts the context object and allows consuming components to subscribe to context and use [useForm](/docs/useform) props and methods.
 
 ### Props
 
 ---
 
-This following table applied to `FormProvider`, `useFormContext` accepts no argument.
+The following table applies to `FormProvider`; `useFormContext` accepts no arguments.
 
 | Name       | Type                        | Description                                    |
 | ---------- | --------------------------- | ---------------------------------------------- |
@@ -19,15 +22,17 @@ This following table applied to `FormProvider`, `useFormContext` accepts no argu
 
 <Admonition type="important" title="Rules">
 
-- Avoid using nested FormProvider
+- Avoid nesting `FormProvider` components. Because React context does not merge, any `useFormContext()` call inside the inner `FormProvider`'s subtree will only see the _innermost_ form's methods and state — not the outer form — which can silently break field registration or validation for consumers that expect the outer form.
+- <Since version="7.44.0" /> `FormProviderProps` accepts a `TTransformedValues` generic (`FormProviderProps<TFieldValues, TContext, TTransformedValues>`) to type a resolver's transformed output.
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-v7-form-context-ytudi"
+import { useEffect } from "react"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 
 export default function App() {
@@ -40,11 +45,10 @@ export default function App() {
     reset({
       name: "data",
     })
-  }, [reset]) // ❌ never put `methods` as the deps
+  }, [reset]) // ❌ never put `methods` as a dependency
 
   return (
     <FormProvider {...methods}>
-      // pass all methods into the context
       <form onSubmit={methods.handleSubmit(onSubmit)}>
         <NestedInput />
         <input {...register("name")} />
@@ -60,3 +64,52 @@ function NestedInput() {
   return <input {...register("test")} />
 }
 ```
+
+### Tips
+
+---
+
+- Spread the whole `useForm` return value: `<FormProvider {...methods}>`. If you pass only some methods, child components that call [`useFormContext`](/docs/useformcontext) get an object with missing methods.
+- Inside a `FormProvider`, hooks such as [`useController`](/docs/usecontroller), [`useWatch`](/docs/usewatch), [`useFormState`](/docs/useformstate), and [`useFieldArray`](/docs/usefieldarray) can leave out `control`. They read it from context.
+- To have two forms on one page, render two `FormProvider`s next to each other, not one inside the other.
+- To share a form without React context, see [`createFormControl`](/docs/createFormControl).
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `handleSubmit is not a function` (or another method is `undefined`)
+
+<Why>
+
+Only some methods were passed to `FormProvider`, for example `<FormProvider register={register}>`. `useFormContext()` returns exactly what the provider received, so the other methods are missing.
+
+</Why>
+
+<Fix>
+
+Spread the whole `useForm` return value: `<FormProvider {...methods}>`.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### A field inside a nested `FormProvider` is missing from the submitted data
+
+<Why>
+
+`useFormContext` uses the nearest `FormProvider`. When one provider is rendered inside another, fields under the inner one register with the inner form, and the outer form's `handleSubmit` never sees them.
+
+</Why>
+
+<Fix>
+
+Use one `FormProvider` per form. To show two forms on one page, render the providers next to each other, not one inside the other.
+
+</Fix>
+
+</Troubleshoot>

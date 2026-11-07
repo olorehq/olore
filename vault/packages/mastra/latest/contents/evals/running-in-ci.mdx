@@ -1,6 +1,6 @@
 ---
 title: "Running scorers in CI | Evals"
-description: "Learn how to run scorer experiments in your CI/CD pipeline using the runEvals function."
+description: "Run Mastra scorer experiments in CI with runEvals, define test cases for agents or workflows, inspect aggregate results, and track quality over time."
 packages:
   - "@mastra/core"
 ---
@@ -17,11 +17,13 @@ You can use any testing framework that supports ESM modules, such as [Vitest](ht
 
 Use `runEvals` to evaluate your agent against multiple test cases. The function accepts an array of data items, each containing an `input` and optional `groundTruth` for scorer validation.
 
-```typescript title="src/mastra/agents/weather-agent.test.ts"
+Resolve the `target` with `mastra.getAgent()` or `mastra.getWorkflow()` rather than importing it directly. A directly imported agent or workflow has no Mastra instance attached, so registry lookups inside steps or tools (such as `mastra.getAgent('weatherAgent')`) fail, scores aren't persisted, and trace-based trajectory scoring is unavailable.
+
+```typescript title="tests/weather-agent.test.ts"
 import { describe, it, expect } from 'vitest'
-import { createScorer, runEvals } from '@mastra/core/evals'
-import { weatherAgent } from './weather-agent'
-import { locationScorer } from '../scorers/location-scorer'
+import { runEvals } from '@mastra/core/evals'
+import { mastra } from '../src/mastra'
+import { locationScorer } from '../src/mastra/scorers/location-scorer'
 
 describe('Weather Agent Tests', () => {
   it('should correctly extract locations from queries', async () => {
@@ -40,7 +42,7 @@ describe('Weather Agent Tests', () => {
           groundTruth: { expectedLocation: 'Berlin', expectedCountry: 'RU' },
         },
       ],
-      target: weatherAgent,
+      target: mastra.getAgent('weatherAgent'),
       scorers: [locationScorer],
     })
 
@@ -58,7 +60,7 @@ The `runEvals` function returns an object with:
 - `scores`: Average scores for each scorer across all test cases
 - `summary.totalItems`: Total number of test cases processed
 
-```typescript prettier:false
+```typescript oxfmt:false
 {
   scores: {
     'location-accuracy': 1.0,  // Average score across all items
@@ -74,26 +76,20 @@ The `runEvals` function returns an object with:
 
 Create separate test cases for different evaluation scenarios:
 
-```typescript title="src/mastra/agents/weather-agent.test.ts"
+```typescript title="tests/weather-agent.test.ts"
 describe('Weather Agent Tests', () => {
-  const locationScorer = createScorer({
-    /* ... */
-  })
+  const weatherAgent = mastra.getAgent('weatherAgent')
 
   it('should handle location disambiguation', async () => {
     const result = await runEvals({
       data: [
         {
           input: 'weather in Berlin',
-          groundTruth: {
-            /* ... */
-          },
+          groundTruth: {/* ... */},
         },
         {
           input: 'weather in Berlin, Maryland',
-          groundTruth: {
-            /* ... */
-          },
+          groundTruth: {/* ... */},
         },
       ],
       target: weatherAgent,

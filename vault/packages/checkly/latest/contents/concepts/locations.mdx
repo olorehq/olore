@@ -1,7 +1,8 @@
 ---
 title: 'Locations'
-description: 'Learn about Public and Private locations using Checkly'
+description: 'Learn about public and private locations using Checkly'
 sidebarTitle: 'Locations'
+canonical: 'https://www.checklyhq.com/docs/concepts/locations/'
 ---
 
 **Locations** represent the global vantage points from which Checkly tests and monitors your applications. You can configure your tests and checks to run from an ever growing amount of global locations. Leveraging global infrastructure allows us to measure what the user experience is in different parts of the world.
@@ -9,9 +10,9 @@ sidebarTitle: 'Locations'
 ## What are Locations?
 Think of **Locations** as your monitoring outposts distributed around the globe. Each Location represents a geographic point where Checkly can execute your Checks, simulating the experience of users in that region. This geographic distribution is crucial because it reveals how your application performs for users regardless of where they're accessing it from.
 
-You can select one or more data center locations to run your checks from. We advise to always select at least 2 locations. There are two reasons for this:
+You can select one or more data center locations to run your checks from. On the Hobby and Starter plans, you can select up to 3 locations from North Virginia, North California, Frankfurt, London, Singapore and Sydney. We advise to always select at least 2 locations. There are two reasons for this:
 * Redundancy: we might have an issue in one location, but not the other.
-* Retrying: if your check fails, we will execute its retry strategy where you have the option check from a different location.
+* Retrying: if your check fails, we will execute its retry strategy where you have the option to retry from a different location. Checks running in parallel always retry from the same location.
 
 
 ## Public Locations
@@ -28,14 +29,16 @@ Current Locations in Checkly are:
 | Oregon (us-west-2) | Paris (eu-west-3) | Hong Kong (ap-east-1) |
 | Montreal (ca-central-1) | Stockholm (eu-north-1) | Sydney (ap-southeast-2) |
 | São Paulo (sa-east-1) | Milan (eu-south-1) | Seoul (ap-northeast-2) |
-|  | Bahrain (me-south-1) | Mumbai (ap-south-1) |
-|  | Cape Town (af-south-1) | Jakarta (ap-southeast-3) |
+|  | Cape Town (af-south-1) | Mumbai (ap-south-1) |
+|  |  | Jakarta (ap-southeast-3) |
 
 *Checkly hosted location. All other locations run on AWS. Please note that the hosting provider for a location may change over time as we scale and optimize our infrastructure.
 
-## Private Locations
+Bahrain (me-south-1) is no longer available. Checks don't run there, even if it's still selected.
 
-**Private Locations** extend this concept to your own infrastructure. A **Private Location** is a monitoring location that you manage by simply deploying a lightweight Checkly Agent. Running a check from a **Private Location** allows you to monitor internal systems and test the performance and reliability of applications and APIs that are only accessible from within your network.
+## Private locations
+
+**Private locations** extend this concept to your own infrastructure. A **private location** is a monitoring location that you manage by simply deploying a lightweight Checkly Agent. Running a check from a **private location** allows you to monitor internal systems and test the performance and reliability of applications and APIs that are only accessible from within your network.
 > Learn more about [private locations](/platform/private-locations/overview) to monitor your private and segregated applications and APIs.
 
 ## Locations as User Experience Proxies

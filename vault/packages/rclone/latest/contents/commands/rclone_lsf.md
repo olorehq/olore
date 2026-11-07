@@ -43,6 +43,12 @@ T - tier of storage if known, e.g. "Hot" or "Cool"
 M - Metadata of object in JSON blob format, eg {"key":"value"}
 ```
 
+Some backends use composite IDs. In particular, Google Drive shortcuts are
+normally dereferenced, and their "i" field contains the target object's ID
+followed by the shortcut's ID, separated by a tab. This tab is part of the ID
+field and is not changed by `--separator`. Use `--drive-skip-shortcuts` to omit
+shortcut entries.
+
 So if you wanted the path, size and modification time, you would use
 `--format "pst"`, or maybe `--format "tsp"` to put the path last.
 
@@ -158,6 +164,10 @@ Note that `ls` and `lsl` recurse by default - use `--max-depth 1` to stop the re
 The other list commands `lsd`,`lsf`,`lsjson` do not recurse by default -
 use `-R` to make them recurse.
 
+On the bucket-based remotes (e.g. s3, gcs, b2) a directory is a key prefix
+rather than an object, so a listing without `-R` shows each prefix as one
+directory entry and not the objects stored under it.
+
 List commands prefer a recursive method that uses more memory but fewer
 transactions by default. Use `--disable ListR` to suppress the behavior.
 See [`--fast-list`](/docs/#fast-list) for more details.
@@ -200,6 +210,7 @@ Flags for filtering directory listings
       --exclude-if-present stringArray      Exclude directories if filename is present
       --files-from stringArray              Read list of source-file names from file (use - to read from stdin)
       --files-from-raw stringArray          Read list of source-file names from file without any processing of lines (use - to read from stdin)
+      --files-from0 stringArray             Read list of source-file names from file using NUL as separator (use - to read from stdin)
   -f, --filter stringArray                  Add a file filtering rule
       --filter-from stringArray             Read file filtering patterns from a file (use - to read from stdin)
       --hash-filter string                  Partition filenames by hash k/n or randomly @/n

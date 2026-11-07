@@ -1,0 +1,10 @@
+---
+id: VisibilityDefaultOptions
+title: VisibilityDefaultOptions
+---
+
+```ts
+type VisibilityDefaultOptions = Pick<TableOptions_ColumnVisibility, "onColumnVisibilityChange">;
+```
+
+Defined in: [features/column-visibility/columnVisibilityFeature.types.ts:25](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-visibility/columnVisibilityFeature.types.ts#L25)

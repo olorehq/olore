@@ -1,29 +1,43 @@
 ---
 title: setValue
+seoTitle: "setValue: Update React Form Values"
 description: Dynamically update a registered field's value.
 metaDescription: Dynamically update a registered field's value with options to trigger validation, mark the field dirty, or set it as touched.
 sidebar: apiLinks
 ---
 
-## \</> `setValue:` <TypeText>(name: string, value: unknown, config?: SetValueConfig) => void</TypeText>
+## \</> `setValue:` <TypeText>[UseFormSetValue](/ts#UseFormSetValue)</TypeText>
 
-This function allows you to dynamically set the value of a <strong>registered</strong> field and have the options to validate and update the form state. At the same time, it tries to avoid unnecessary rerender.
+This function allows you to dynamically set the value of a <strong>registered</strong> field and provides options to validate and update the form state. At the same time, it attempts to avoid unnecessary re-renders.
 
 ### Props
 
 ---
 
-| Name                                     |                                                   | Description                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`<br/><TypeText>string</TypeText>   |                                                   | Target a single field or field array by name.                                                                                                                                                                                                                                                                                                                                                            |
-| `value`<br/><TypeText>unknown</TypeText> |                                                   | The value for the field. This argument is required and can not be `undefined`.                                                                                                                                                                                                                                                                                                                           |
-| `options`                                | `shouldValidate`<br/><TypeText>boolean</TypeText> | <ul><li>Whether to compute if your input is valid or not (subscribed to <TypeText>errors</TypeText>).</li><li>Whether to compute if your entire form is valid or not (subscribed to <TypeText>isValid</TypeText>).</li>This option will update `touchedFields` at the specified field level not the entire form touched fields.</ul>                                                                     |
-|                                          | `shouldDirty`<br/><TypeText>boolean</TypeText>    | <ul><li>Whether to compute if your input is dirty or not against your `defaultValues` (subscribed to <TypeText>dirtyFields</TypeText>).</li><li>Whether to compute if your entire form is dirty or not against your `defaultValues` (subscribed to <TypeText>isDirty</TypeText>).</li><li>This option will update `dirtyFields` at the specified field level not the entire form dirty fields.</li></ul> |
-|                                          | `shouldTouch`<br/><TypeText>boolean</TypeText>    | Whether to set the input itself to be touched.                                                                                                                                                                                                                                                                                                                                                           |
+| Name                                     |                                                   | Description                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`<br/><TypeText>string</TypeText>   |                                                   | Target a single field or field array by name.                                                                                                                                                                                                                                                                                                                                                               |
+| `value`<br/><TypeText>unknown</TypeText> |                                                   | The value for the field. This argument is required and cannot be `undefined`.                                                                                                                                                                                                                                                                                                                               |
+| `options`                                | `shouldValidate`<br/><TypeText>boolean</TypeText> | <ul><li>Whether to compute if your input is valid or not (subscribed to <TypeText>errors</TypeText>).</li><li>Whether to compute if your entire form is valid or not (subscribed to <TypeText>isValid</TypeText>).</li><li>This option only recomputes validity for the specified field, not the entire form's `errors`.</li></ul>                                                                          |
+|                                          | `shouldDirty`<br/><TypeText>boolean</TypeText>    | <ul><li>Whether to compute if your input is dirty or not against your `defaultValues` (subscribed to <TypeText>dirtyFields</TypeText>).</li><li>Whether to compute if your entire form is dirty or not against your `defaultValues` (subscribed to <TypeText>isDirty</TypeText>).</li><li>This option will update `dirtyFields` at the specified field level, not the entire form's dirty fields.</li></ul> |
+|                                          | `shouldTouch`<br/><TypeText>boolean</TypeText>    | <Since version="7.8.0" /> Whether to set the input itself to be touched.                                                                                                                                                                                                                                                                                                                                    |
+|                                          | `delayError`<br/><TypeText>boolean</TypeText>     | <Since version="7.82.0" /> Opt-in flag that delays the display of the resulting validation error, using the delay (in milliseconds) configured via [`useForm({ delayError })`](/docs/useform#delayError). Only takes effect when `shouldValidate` is also set to `true`.                                                                                                                                    |
 
 <Admonition type="important" title="Rules">
 
-- You can use methods such as [replace](/docs/usefieldarray#replace) or [update](/docs/usefieldarray#update) for field array, however, they will cause the component to unmount and remount for the targeted field array.
+- By default, `setValue` only updates the value and notifies [`watch`](/docs/useform/watch), [`useWatch`](/docs/usewatch) and [`subscribe`](/docs/useform/subscribe). It does **not** validate the field (even after the form has been submitted) or mark it as dirty or touched. Pass the options you need:
+
+  ```javascript
+  setValue("firstName", "Bill", {
+    shouldValidate: true, // update errors and isValid
+    shouldDirty: true, // update dirtyFields and isDirty
+    shouldTouch: true, // update touchedFields
+  })
+  ```
+
+- `shouldDirty` only guarantees that the target field is marked in `dirtyFields` immediately. Because `isDirty` always compares current values against `defaultValues`, a later update to _any_ field can trigger a `dirtyFields` recompute that also surfaces other fields whose value already differs from their default — including ones last written with `shouldDirty: false`.
+
+- You can use methods such as [replace](/docs/usefieldarray#return) or [update](/docs/usefieldarray#return) for a field array; however, they will cause the component to unmount and remount for the targeted field array.
 
   ```javascript
   const { update } = useFieldArray({ name: "array" })
@@ -44,26 +58,26 @@ This function allows you to dynamically set the value of a <strong>registered</s
 
   register("nestedValue", { value: { test: "data" } }) // register a nested value input
   setValue("nestedValue.test", "updatedData") // ❌ failed to find the relevant field
-  setValue("nestedValue", { test: "updatedData" }) // ✅ setValue find input and update
+  setValue("nestedValue", { test: "updatedData" }) // ✅ setValue finds the input and updates it
   ```
 
 - It's recommended to register the input's name before invoking `setValue`. To update the entire `FieldArray`, make sure the `useFieldArray` hook is being executed first.
 
-  **Important:** use `replace` from `useFieldArray` instead, update entire field array with `setValue` will be removed in the next major version.
+  **Important:** Prefer `replace` from `useFieldArray` for updating an entire field array — it's the more explicit, purpose-built API, and this `setValue` usage may become discouraged in a future version.
 
   ```javascript
   // you can update an entire Field Array,
-  setValue("fieldArray", [{ test: "1" }, { test: "2" }]) // ✅
+  setValue("fieldArray", [{ test: "1" }, { test: "2" }]) // ⚠️ works, but prefer replace() from useFieldArray
 
-  // you can setValue to a unregistered input
-  setValue("notRegisteredInput", "value") // ✅ prefer to be registered
+  // you can use `setValue` on an unregistered input
+  setValue("notRegisteredInput", "value") // ✅ prefer it to be registered
 
-  // the following will register a single input (without register invoked)
-  setValue("resultSingleNestedField", { test: "1", test2: "2" }) // 🤔
+  // the following will implicitly register a single input (without register being invoked)
+  setValue("resultSingleNestedField", { test: "1", test2: "2" }) // ⚠️ works, but registers a field you never called register() on — prefer registering it explicitly
 
-  // with registered inputs, the setValue will update both inputs correctly.
-  register("notRegisteredInput.test", "1")
-  register("notRegisteredInput.test2", "2")
+  // With registered inputs, `setValue` will update both inputs correctly.
+  register("notRegisteredInput.test")
+  register("notRegisteredInput.test2")
   setValue("notRegisteredInput", { test: "1", test2: "2" }) // ✅ sugar syntax to setValue twice
   ```
 
@@ -80,14 +94,19 @@ import { useForm } from "react-hook-form"
 
 const App = () => {
   const { register, setValue } = useForm({
-    firstName: "",
+    defaultValues: {
+      firstName: "",
+    },
   })
 
   return (
     <form>
       <input {...register("firstName", { required: true })} />
-      <button onClick={() => setValue("firstName", "Bill")}>setValue</button>
+      <button type="button" onClick={() => setValue("firstName", "Bill")}>
+        setValue
+      </button>
       <button
+        type="button"
         onClick={() =>
           setValue("firstName", "Luo", {
             shouldValidate: true,
@@ -102,10 +121,22 @@ const App = () => {
 }
 ```
 
-**Dependant Fields**
+**Delay Error**
 
-```tsx sandbox="https://codesandbox.io/s/dependant-field-dwin1"
-import * as React from "react"
+```javascript
+// the actual delay (in ms) is configured once at the form level
+const { setValue } = useForm({ delayError: 500 })
+
+setValue("firstName", "Bill", {
+  delayError: true, // opt in to the 500ms delay configured above
+  shouldValidate: true,
+})
+```
+
+**Dependent Fields**
+
+```tsx sandbox="https://codesandbox.io/s/dependent-field-dwin1"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 type FormValues = {
@@ -126,7 +157,7 @@ export default function App() {
   const onSubmit = (data: FormValues) => console.log(data)
   const [a, b] = watch(["a", "b"])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (formState.touchedFields.a && formState.touchedFields.b && a && b) {
       setValue("c", `${a} ${b}`)
     }
@@ -158,3 +189,41 @@ export default function App() {
 ---
 
 <YouTube youTubeId="qpv51sCH3fI" />
+
+### Tips
+
+---
+
+- When a value comes from the user through a custom widget, such as a map picker or a rich-text editor, pass `{ shouldDirty: true, shouldTouch: true, shouldValidate: true }`. The field then behaves the same as a native input that the user typed in.
+- To update several fields at once, use [`setValues`](/docs/useform/setvalues). It updates them with a single re-render, while calling `setValue` many times can cause more renders.
+- Do not call `setValue` during render. Call it in an event handler or an effect.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `isDirty` and errors don't change after `setValue`
+
+<Why>
+
+By default, `setValue` only updates the value. It does not validate the field or mark it as dirty or touched.
+
+</Why>
+
+<Fix>
+
+Pass the options you need:
+
+```javascript
+setValue("email", value, {
+  shouldValidate: true,
+  shouldDirty: true,
+  shouldTouch: true,
+})
+```
+
+</Fix>
+
+</Troubleshoot>

@@ -1,0 +1,108 @@
+---
+title: "Semantics"
+description: "Make your Rive graphics accessible to screen readers by enabling semantics in the Flutter runtime."
+---
+
+import OverviewIntro from "/snippets/runtimes/semantics/overview-intro.mdx"
+import DefinedInEditor from "/snippets/runtimes/semantics/defined-in-editor.mdx"
+
+This page covers enabling semantics in the Flutter runtime so your Rive graphics are accessible to screen readers. To learn what semantics are and how to add them to a graphic, see the [Semantics](/editor/accessibility/semantics) editor documentation.
+
+## Overview
+
+<OverviewIntro />
+
+The Flutter runtime reads those semantics from the running state machine and projects them into Flutter's semantics tree. Each Rive semantic node becomes a Flutter semantics node with the matching role, flags, and actions, positioned over the element it describes and kept in sync as the state machine advances.
+
+The graphic itself is painted pixels, opaque to assistive technologies, so this projected tree is what makes it discoverable. The runtime also forwards screen reader actions back to the state machine, such as tapping a button, stepping a slider, or moving accessibility focus.
+
+<Warning>
+  Semantics are **opt-in**. The default mode is `RiveSemantics.disabled`, so no semantic tree is queried or built until you enable semantics.
+</Warning>
+
+<DefinedInEditor />
+
+## Requirements
+
+- `rive` version `0.15.0` or later. `RiveWidget.semantics` is not available in `0.14.x`.
+- Flutter `3.32.0` or later (Dart `3.8.0`), which is the `rive` package minimum.
+
+## Semantics modes
+
+Semantics are controlled by the `semantics` parameter of `RiveWidget`, which takes a `RiveSemantics` mode such as `RiveSemantics.auto`:
+
+| Mode | Description |
+| --- | --- |
+| `disabled` | **Default.** Semantics are disabled. No semantic tree is queried or built. |
+| `enabled` | Semantics are active. The semantic tree is built when the widget mounts and kept up to date as the state machine advances. |
+| `auto` | Semantics activate the first time the platform requests accessibility, such as when a screen reader connects, then behave like `enabled`. Nothing is queried or built until then. |
+
+<Note>
+  Activation is one way. Once semantics are enabled, the controller keeps tracking them until it is disposed, so switching back to `RiveSemantics.disabled` removes the semantic nodes but does not stop the tracking.
+</Note>
+
+## Usage
+
+Pass `semantics` when you build your `RiveWidget`.
+
+```dart highlight={3}
+return RiveWidget(
+  controller: controller,
+  semantics: RiveSemantics.enabled,
+);
+```
+
+Semantics work the same way when drawing into a shared texture with `useSharedTexture` or `sharedTexture`.
+
+### Activating only for screen reader users
+
+Use `RiveSemantics.auto` so nothing is queried or built until the platform asks for accessibility. This is the best default for most apps, since it does no work at all for users who never turn on a screen reader.
+
+```dart highlight={3}
+return RiveWidget(
+  controller: controller,
+  semantics: RiveSemantics.auto,
+);
+```
+
+On web, the platform requests accessibility when the user activates the page's hidden "Enable accessibility" element, not at startup.
+
+## How semantics map to Flutter
+
+The runtime translates each editor semantic role into the matching Flutter semantics role, flags, and actions.
+
+| Editor role | Flutter semantics |
+| --- | --- |
+| Button | Button with a tap action |
+| Checkbox | Button with a tap action and a checked state |
+| Switch | Button with a tap action and a toggled state |
+| Slider | Slider with a value and increase/decrease actions |
+| Text | Label text. Headers also report a heading level. |
+| Image | Image |
+| Group / None | Grouping node |
+| List / List item | List / list item |
+| Tab / Tab list | Tab with a tap action / tab bar |
+| Dialog / Alert dialog | Dialog / alert dialog. When modal, screen readers treat it as its own route. |
+| Radio group / Radio button | Radio group / button in a mutually exclusive group with a tap action |
+
+States and traits map to the matching Flutter semantics flags, such as enabled, expanded, selected, checked, toggled, and required. A flag is only set when the corresponding trait is present in the editor, so assistive technologies see "not applicable" rather than "false".
+
+- **Label**, **Hint**, and **Value** map to the node's label, hint, and value.
+- **Hidden** hides the node from assistive technologies.
+- **Live Region** marks the node as a live region, so changes are announced.
+
+## Testing semantics
+
+Rive semantics go through Flutter's own accessibility support, so test with the screen readers [Flutter supports](https://docs.flutter.dev/ui/accessibility/assistive-technologies):
+
+- **Android**: TalkBack
+- **iOS / macOS**: VoiceOver
+- **Windows**: Narrator or NVDA
+- **Linux**: Orca
+- **Web**: the screen reader of the host platform, such as VoiceOver on macOS and iOS, TalkBack on Android, or NVDA or JAWS on Windows
+
+Turn one on and navigate through your graphic after enabling semantics at runtime. Check that each element announces a clear label, the correct role, and an accurate value and state, and that navigation follows a logical order. Setting `showSemanticsDebugger: true` on your `MaterialApp` draws the generated tree on screen.
+
+Flutter only builds a semantics tree once the platform asks for one, which on web means the user activating the hidden "Enable accessibility" element. Call `SemanticsBinding.instance.ensureSemantics()` to build it yourself, either to inspect it without a screen reader or to skip that step for your users, and hold the returned handle for as long as you need it.
+
+For a full checklist, see [Testing Semantics](/editor/accessibility/semantics#testing-semantics) in the editor documentation.

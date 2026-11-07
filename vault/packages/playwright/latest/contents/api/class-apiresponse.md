@@ -57,8 +57,7 @@ An object with all the response HTTP headers associated with this response.
 
 ## method: APIResponse.headersArray
 * since: v1.16
-- returns: <[Array]<[Object]>>
-  * alias: HttpHeader
+- returns: "HttpHeader" <[Array]<[Object]>>
   * alias-csharp: Header
   - `name` <[string]> Name of the header.
   - `value` <[string]> Value of the header.
@@ -117,6 +116,14 @@ Contains the status text of the response (e.g. usually an "OK" for a success).
 - returns: <[string]>
 
 Returns the text representation of response body.
+
+## method: APIResponse.timing = %%-resource-timing-%%
+* since: v1.62
+
+Returns resource timing information for given response. For redirected requests, returns the information for the last
+request in the redirect chain. When the response is served [from the HAR file](../mock.md#replaying-from-har), timing
+information is not available and all the values are -1. Find more information at
+[Resource Timing API](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming).
 
 ## method: APIResponse.url
 * since: v1.16

@@ -3,8 +3,13 @@ title: 'Fonts'
 description: 'Loading and replacing fonts dynamically at runtime.'
 ---
 
+import DataBindingFonts from "/snippets/runtimes/fonts/data-binding-fonts.mdx"
 import SwappingFonts from "/snippets/runtimes/fonts/swapping-fonts.mdx"
 import fallbackFonts from "/snippets/runtimes/fonts/fallback-fonts.mdx"
+
+<DataBindingFonts />
+
+For more information, see [Data Binding](/runtimes/web/data-binding#fonts).
 
 <SwappingFonts />
 
@@ -16,7 +21,7 @@ For more information, see [Loading Assets](/runtimes/web/loading-assets).
   For security reasons, browsers do not allow direct access to a user's system fonts. As a result, fallback fonts must be explicitly provided for this runtime.
 </Note>
 
-As of `v2.37.1`, the JS runtime provides an API for supplying fallback fonts. When a glyph cannot be rendered with the default font, Rive will invoke a callback you provide to retrieve a list of decoded fonts to try instead. Importantly, this callback must be registered before Rive begins rendering. 
+As of `v2.37.1`, the JS runtime provides an API for supplying fallback fonts. When a glyph cannot be rendered with the default font, Rive will invoke a callback you provide to retrieve a list of decoded fonts to try instead. Importantly, this callback must be registered before Rive begins rendering.
 
 To start, import the `RiveFont` named export from the JS package and call its static method `setFallbackFontCallback()`, passing in your callback. The callback receives the glyph that failed to render (as a Unicode code point) and the font weight, and should return a list of fallback fonts. It may be called multiple times if successive fallback fonts also lack support for the glyph.
 
@@ -42,10 +47,10 @@ const setFallbackFonts = async () => {
 
 const main = async () => {
   await setFallbackFonts();
-  const r = new Rive({ 
+  const r = new Rive({
     src: "my.riv",
     autoplay: true,
-    stateMachines: "State Machine 1",
+    stateMachine: "State Machine 1",
     // ...
   });
 };

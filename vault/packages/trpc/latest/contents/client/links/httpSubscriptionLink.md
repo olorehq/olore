@@ -1,11 +1,15 @@
 ---
 id: httpSubscriptionLink
 title: HTTP Subscription Link
+description: A terminating link for subscriptions over Server-sent Events
 sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
+section: "Client Usage"
+parent: "client/links"
+order: 34
 ---
 
-`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
+`httpSubscriptionLink` is a [**terminating link**](../links.md#the-terminating-link) that uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
 
 SSE is a good option for real-time as it's a bit easier than setting up a WebSockets-server.
 
@@ -15,7 +19,7 @@ SSE is a good option for real-time as it's a bit easier than setting up a WebSoc
 If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill). For React Native specific instructions please defer to the [compatibility section](#compatibility-react-native).
 :::
 
-To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to make it explicit that we want to use SSE for subscriptions.
+To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.md) to make it explicit that we want to use SSE for subscriptions.
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
@@ -350,13 +354,25 @@ The Streams API can be ponyfilled using the [web-streams-polyfill](https://www.n
 
 Install the required polyfills:
 
-import { InstallSnippet } from '@site/src/components/InstallSnippet';
-
-<InstallSnippet pkgs="rn-eventsource-reborn web-streams-polyfill @azure/core-asynciterator-polyfill" />
+```package-install
+rn-eventsource-reborn web-streams-polyfill @azure/core-asynciterator-polyfill
+```
 
 Add the polyfills to your project before the link is used (e.g. where you add your TRPCReact.Provider):
 
-```ts title="utils/api.tsx"
+```ts twoslash title="utils/api.tsx"
+// @filename: polyfills.d.ts
+declare module '@azure/core-asynciterator-polyfill';
+declare module 'rn-eventsource-reborn' {
+  export const RNEventSource: any;
+}
+declare module 'web-streams-polyfill' {
+  export const ReadableStream: any;
+  export const TransformStream: any;
+}
+
+// @filename: utils/api.ts
+// ---cut---
 import '@azure/core-asynciterator-polyfill';
 import { RNEventSource } from 'rn-eventsource-reborn';
 import { ReadableStream, TransformStream } from 'web-streams-polyfill';

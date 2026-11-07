@@ -11,54 +11,40 @@ tRPC documentation. Use for end-to-end typesafe APIs, React Query integration, N
 
 ```
 contents/
-├── main/                          # Introduction, quickstart, concepts (5 files)
-├── server/                        # Routers, procedures, middleware, adapters (19 files)
-├── client/                        # Client integrations (47 files)
-│   ├── links/                     # HTTP, WebSocket, and utility links (10 files)
-│   ├── react/                     # @trpc/react-query hooks (15 files)
-│   ├── nextjs/                    # Next.js App Router & Pages Router (9 files)
-│   ├── tanstack-react-query/      # Next-gen TanStack Query integration (5 files)
-│   └── vanilla/                   # Framework-agnostic client (4 files)
-├── migration/                     # Migration guides (1 file)
-└── further/                       # FAQ and HTTP RPC spec (2 files)
+├── (root)                          # Intro, quickstart, concepts, FAQ, RPC spec, migration (11 files)
+├── client/                         # Client overview, CORS, headers (7 files)
+│   ├── links/                      # HTTP, batch, SSE, WebSocket, retry, split links (9 files)
+│   ├── nextjs/                     # App Router, Server Actions, Pages Router (7 files)
+│   ├── react/                      # Classic React Query hooks, deprecated (14 files)
+│   ├── tanstack-react-query/       # TanStack React Query integration (6 files)
+│   └── vanilla/                    # Vanilla TS client (4 files)
+└── server/                         # Routers, procedures, middleware, validators, subscriptions (19 files)
+    └── adapters/                   # Express, Fastify, Next.js, Lambda, fetch, standalone (6 files)
 ```
 
 ## Topic Guide
 
 | Topic | Key Files |
 |-------|-----------|
-| Getting started | `contents/main/introduction.mdx`, `contents/main/quickstart.mdx`, `contents/main/concepts.mdx` |
-| Server setup | `contents/server/overview.md`, `contents/server/routers.md`, `contents/server/procedures.md` |
-| Middleware & auth | `contents/server/middlewares.md`, `contents/server/authorization.md`, `contents/server/context.md` |
+| Getting started | `contents/quickstart.md`, `contents/concepts.md` |
+| Routers and procedures | `contents/server/routers.md`, `contents/server/procedures.md` |
+| Context and middleware | `contents/server/context.md`, `contents/server/middlewares.md` |
 | Input validation | `contents/server/validators.md` |
-| Error handling | `contents/server/error-handling.md`, `contents/server/error-formatting.md`, `contents/further/faq.mdx` |
-| React hooks | `contents/client/react/useQuery.md`, `contents/client/react/useMutation.md`, `contents/client/react/useSubscription.md`, `contents/client/react/useUtils.mdx` |
-| Next.js (App Router) | `contents/client/nextjs/app-router/setup.mdx`, `contents/client/nextjs/app-router/server-actions.mdx` |
-| Next.js (Pages Router) | `contents/client/nextjs/pages-router/setup.mdx`, `contents/client/nextjs/pages-router/ssr.md` |
-| TanStack Query integration | `contents/client/tanstack-react-query/overview.md`, `contents/client/tanstack-react-query/setup.mdx`, `contents/client/tanstack-react-query/usage.mdx` |
-| Subscriptions & WebSockets | `contents/server/subscriptions.md`, `contents/server/websockets.md`, `contents/client/links/wsLink.md`, `contents/client/links/httpSubscriptionLink.md` |
-| Links & transport | `contents/client/links/overview.md`, `contents/client/links/httpLink.md`, `contents/client/links/httpBatchLink.md`, `contents/client/links/splitLink.mdx` |
-| Server adapters | `contents/server/adapters/express.md`, `contents/server/adapters/nextjs.md`, `contents/server/adapters/fastify.md`, `contents/server/adapters/aws-lambda.md` |
-| Type inference | `contents/client/react/infer-types.md`, `contents/client/vanilla/infer-types.md` |
-| Data transformers | `contents/server/data-transformers.md` |
-| Vanilla client | `contents/client/vanilla/overview.md`, `contents/client/vanilla/setup.mdx` |
-| Migration v10 to v11 | `contents/migration/migrate-from-v10-to-v11.mdx` |
-| HTTP RPC spec | `contents/further/rpc.md` |
+| Subscriptions | `contents/server/subscriptions.md`, `contents/client/links/httpSubscriptionLink.md`, `contents/client/links/wsLink.md` |
+| Server adapters | `contents/server/adapters/` |
+| TanStack React Query | `contents/client/tanstack-react-query/setup.md`, `contents/client/tanstack-react-query/usage.md` |
+| Next.js | `contents/client/nextjs/app-router-setup.md`, `contents/client/nextjs/server-actions.md` |
+| Links | `contents/client/links.md`, `contents/client/links/httpBatchLink.md` |
+| Vanilla client | `contents/client/vanilla/setup.md` |
+| Errors | `contents/server/error-handling.md`, `contents/server/error-formatting.md` |
+| Migration | `contents/migrate-from-v10-to-v11.md` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Setting up tRPC server with routers and procedures
-- React Query / TanStack Query hooks (useQuery, useMutation, useSubscription)
-- Next.js integration (App Router, Pages Router, server actions)
-- WebSocket and SSE subscriptions
-- Client links (HTTP, batching, WebSocket, splitLink)
-- Middleware, authorization, and context patterns
-- Input validation with Zod or other validators
-- Error handling and data transformers
-- Migrating from tRPC v10 to v11
-- Server adapters (Express, Fastify, Next.js, AWS Lambda)
-- Type-safe client setup and type inference
+- Defining tRPC routers, procedures, context and middleware
+- Using tRPC with React, TanStack React Query or Next.js
+- Links, subscriptions, WebSockets and server adapters
 
 ## How to find information
 

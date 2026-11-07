@@ -1,65 +1,81 @@
 ---
 title: Application Logs
-description: Learn how to use Application Logs in the Clerk Dashboard to monitor authentication events, track user activity, and debug issues across your instance.
+description: Learn how to use Application Logs in the Clerk Dashboard and Backend API to monitor authentication events, track user activity, and debug issues across your instance.
 ---
 
-The [**Logs**](https://dashboard.clerk.com/~/application-logs) page of the Clerk Dashboard provides a detailed audit trail of events that occur within your instance. Application Logs track actions such as sign-ins, sign-ups, user updates, Organization changes, and more — enabling debugging, compliance, and observability.
+The [**Application Logs**](https://dashboard.clerk.com/~/application-logs) page of the Clerk Dashboard provides a detailed audit trail of events that occur within your instance. Application Logs track actions such as sign-ins, sign-ups, user updates, Organization changes, and more — enabling debugging, compliance, and observability.
 
-## Viewing and filtering logs
+To learn how to filter entries, inspect event details, and understand retention, see the [Logs overview](/docs/guides/dashboard/logs/overview).
 
-The Application Logs page displays a reverse-chronological feed of events. You can narrow the results using the following filters:
+## Log groups
 
-- **Event type**: Filter by event type (e.g., `user.created`, `sign_in.completed`). Supports trailing wildcards (e.g., `sign_in.*`).
-- **Actor**: Filter by the user or API key that triggered the event.
-- **Subject**: Filter by the resource ID being acted upon (e.g., a user ID or Organization ID).
-- **Trace ID**: Filter by distributed trace ID for correlating events across systems.
-- **Device**: Filter by device ID.
-- **Date range**: Set a time window to scope the results.
+Application Logs collect the events of each sign-in and sign-up into a single **log group**. A group shows the type of flow, how many events it recorded, and, once the flow concludes, whether it **completed** or **failed**. A flow that hasn't concluded has no status.
 
-For a complete list of event types, see [Supported events](#supported-events).
+In the Clerk Dashboard, the logs page opens on the **Group** view, where each group is one row that expands to its events, oldest first. Use the **Group | List** switch next to the refresh button to show one row per event instead. The Group view adds two filters:
 
-## Log detail view
+- **Group**: Show only sign-ins or only sign-ups.
+- **Status**: Show only flows that completed or failed.
 
-Select any log entry to view its full details, including:
+The other filters keep the groups that have at least one matching event, and the row shows how many of its events matched. **Date range** is the exception: it selects groups by when they started. When a group has more events than its row shows, select **Load more**.
 
-- **Event metadata**: Event type, timestamp, actor, subject, and source.
-- **Payload**: The full event data as a JSON object, containing the state of the resource at the time of the event.
+In the Backend API, `GET /v1/logs` returns the grouped view by default (`view=grouped`). Events outside any group appear next to the groups, and `object` tells them apart. Each group has its `group_type`, `status`, `event_count`, its first `events`, its `first_event`, and a `subject`. Filter groups with `group_type` and `status`, and load more of a group's events with `GET /v1/logs/groups/{group_id}/events`. That request takes the group's `started_at`, and its `events_cursor` as `starting_after` for the first page; for later pages, pass the `starting_after` cursor the previous response returned.
 
-## Plans and retention
+The grouped view only pages forward. It rejects `ending_before`, takes only cursors from a grouped page, and accepts a `limit` of at most 100. Pass `view=flat` to get one item per event and the flat list's pagination, which takes a `limit` of up to 500. You need it if your code pages with `ending_before`, reuses a cursor from the flat list, or asks for more than 100 items.
 
-Application Logs retention depends on your [plan](/pricing){{ target: '_blank' }}:
+Each event in a group carries the group's ID in `group_id`, so you can follow a flow from start to finish even when its events have different subjects.
 
-| Plan | Retention period |
-| - | - |
-| **Hobby** | 1 day |
-| **Pro** | 7 days |
-| **Business** | 30 days |
-| **Enterprise** | Custom |
+## Event subjects
 
-Retention periods apply equally to production and development instances.
+The **subject** of an event is the ID of the user, Organization, or instance the event is about:
+
+- An event about a user, such as a sign-in once the account is known, or a change to the user's email address, phone number, or password, uses the user's ID.
+- An event about an Organization, such as a change to one of its memberships, invitations, or domains, uses the Organization's ID.
+- An event that affects several resources uses their closest common parent, and an event with side effects uses the resource it mainly changed.
+- The instance ID is used only when nothing more specific applies, such as a sign-up before its user exists or a sign-in for an identifier that doesn't belong to any user.
+
+A sign-in is about the user once its identifier matches an account, so its events use that user's ID, even when the sign-in fails. A sign-up uses the instance ID until it completes, and the new user's ID on `sign_up.completed`. Use the log group, not the subject, to follow a single sign-in or sign-up.
+
+The **actor** is whoever triggered the event: a user, a Dashboard user, a [Secret Key](!secret-key), an API key, an integration, or Clerk itself. To find every event involving a user, whether they were the actor or the subject, filter by **User ID**.
+
+Older events keep the subject they were recorded with, so filtering by subject can miss them.
+
+## Access Application Logs with the Backend API
+
+You can also access Application Logs through the [Backend API](/docs/reference/backend-api/tag/logs){{ target: '_blank' }} using the `GET /v1/logs` endpoint. Use it to investigate specific events and debug issues, whether you call the endpoint directly or through an AI agent.
+
+- **Rate limits**: Requests are rate limited. If you exceed an API rate limit, the request returns `429` with the code `too_many_requests`. Viewing logs in the Dashboard doesn't count toward these limits.
+- **Retention**: Results only go back as far as your plan's retention period. See [Plans and retention](/docs/guides/dashboard/logs/overview#plans-and-retention).
+- **Coverage**: The API shows events recorded by Clerk, not all traffic to your app. It doesn't show requests blocked before reaching Clerk (e.g., by firewall rules, bot protection, or rate limits), requests that load Clerk's JavaScript, or browser errors. An empty response doesn't prove your app had no traffic.
+
+### Export logs
+
+Syncing or exporting logs through the Backend API isn't allowed. For continuous delivery to a storage bucket you own, use log drains, available on the [Enterprise plan](/pricing).
 
 ## Supported events
 
-The following tables list all event types that can appear in Application Logs, organized by category. Use these identifiers when filtering logs in the Clerk Dashboard.
+The following tables list all event types that can appear in Application Logs, organized by category. Use these identifiers when filtering logs in the Clerk Dashboard or Backend API.
+
+{/* GENERATED:log-events START. The tables below are generated from clerk_go's event_stream annotations, and edits between these markers are overwritten. See clerk-docs/AGENTS.md. */}
 
 ### Sign-up events
 
 | Event type | Description |
 | - | - |
-| `sign_up.created` | Sign-up was created |
 | `sign_up.completed` | Sign-up was completed |
-| `sign_up.updated` | Sign-up was updated |
-| `sign_up.failed` | Sign-up failed |
+| `sign_up.created` | Sign-up was created |
 | `sign_up.email_address.created` | Email address was added to sign-up |
-| `sign_up.phone_number.created` | Phone number was added to sign-up |
-| `sign_up.web3_wallet.created` | Web3 wallet was added to sign-up |
-| `sign_up.username.created` | Username was added to sign-up |
-| `sign_up.password.created` | Password was added to sign-up |
-| `sign_up.unsafe_metadata.created` | Unsafe metadata was added to sign-up |
-| `sign_up.legal_accepted` | Legal terms were accepted for sign-up |
-| `sign_up.invitation.accepted` | Invitation was accepted for sign-up |
 | `sign_up.external_account.connected` | External account was connected for sign-up |
+| `sign_up.failed` | Sign-up failed |
+| `sign_up.invitation.accepted` | Invitation was accepted for sign-up |
+| `sign_up.legal_accepted` | Legal terms were accepted for sign-up |
+| `sign_up.password.created` | Password was added to sign-up |
+| `sign_up.phone_number.created` | Phone number was added to sign-up |
+| `sign_up.rejected` | Sign-up request was rejected |
 | `sign_up.saml_account.connected` | SAML account was connected for sign-up |
+| `sign_up.unsafe_metadata.created` | Unsafe metadata was added to sign-up |
+| `sign_up.updated` | Sign-up was updated |
+| `sign_up.username.created` | Username was added to sign-up |
+| `sign_up.web3_wallet.created` | Web3 wallet was added to sign-up |
 
 #### Enumeration events
 
@@ -67,62 +83,65 @@ The following tables list all event types that can appear in Application Logs, o
 | - | - |
 | `sign_up.enumeration_target.email_address` | Sign-up attempted with existing email address |
 | `sign_up.enumeration_target.phone_number` | Sign-up attempted with existing phone number |
-| `sign_up.enumeration_target.web3_wallet` | Sign-up attempted with existing web3 wallet |
 | `sign_up.enumeration_target.username` | Sign-up attempted with existing username |
+| `sign_up.enumeration_target.web3_wallet` | Sign-up attempted with existing web3 wallet |
 
 #### Verification events
 
 | Event type | Description |
 | - | - |
-| `sign_up.email_address.verification.code_sent` | Verification email code was sent for sign-up |
 | `sign_up.email_address.verification.code_attempt_invalid` | Invalid verification email code attempt for sign-up |
-| `sign_up.email_address.verified` | Email address was verified for sign-up |
+| `sign_up.email_address.verification.code_sent` | Verification email code was sent for sign-up |
 | `sign_up.email_address.verification.link_sent` | Verification email link was sent for sign-up |
-| `sign_up.phone_number.verification.code_sent` | Verification phone code was sent for sign-up |
+| `sign_up.email_address.verified` | Email address was verified for sign-up |
 | `sign_up.phone_number.verification.code_attempt_invalid` | Invalid verification phone code attempt for sign-up |
+| `sign_up.phone_number.verification.code_attempt_rejected` | Verification phone code attempt for sign-up was rejected before the code was checked (for example, the code was never sent) |
+| `sign_up.phone_number.verification.code_sent` | Verification phone code was sent for sign-up |
 | `sign_up.phone_number.verified` | Phone number was verified for sign-up |
 
 #### CAPTCHA events
 
 | Event type | Description |
 | - | - |
-| `sign_up.captcha.required` | Sign-up requires CAPTCHA |
-| `sign_up.captcha.passed` | Sign-up CAPTCHA passed |
 | `sign_up.captcha.failed` | Sign-up CAPTCHA failed |
+| `sign_up.captcha.passed` | Sign-up CAPTCHA passed |
+| `sign_up.captcha.required` | Sign-up requires CAPTCHA |
 | `sign_up.captcha.skipped` | Sign-up CAPTCHA skipped |
 
 ### Sign-in events
 
 | Event type | Description |
 | - | - |
-| `sign_in.created` | Sign-in was created |
+| `sign_in.already_signed_in` | Sign-in failed because user is already signed in |
 | `sign_in.completed` | Sign-in was completed |
+| `sign_in.created` | Sign-in was created |
+| `sign_in.enterprise_connection_required` | Sign-in failed because user must use their enterprise connection email |
 | `sign_in.failed` | Sign-in failed |
-| `sign_in.transfer.completed` | Sign-in was completed via transfer |
-| `sign_in.invitation.accepted` | Invitation was accepted for sign-in |
-| `sign_in.user_locked` | Sign-in was blocked because user is locked |
 | `sign_in.identifier_blocked` | Sign-in was blocked by allowlist/blocklist |
-| `sign_in.already_signed_in` | Sign-in was rejected because user is already signed in |
-| `sign_in.enterprise_connection_required` | Sign-in was rejected — must use enterprise connection email |
+| `sign_in.invitation.accepted` | Invitation was accepted for sign-in |
+| `sign_in.rejected` | Sign-in request was rejected |
+| `sign_in.transfer.completed` | Sign-in was completed via transfer |
+| `sign_in.user_locked` | Sign-in was blocked because user is locked |
 
 #### Password events
 
 | Event type | Description |
 | - | - |
+| `sign_in.password.compromised` | Password flagged for mandatory reset by admin or instance policy during sign-in |
 | `sign_in.password.failed` | Password attempt failed during sign-in |
 | `sign_in.password.pwned` | Password found in public breach database (HIBP) during sign-in |
-| `sign_in.password.compromised` | Password flagged for mandatory reset by admin or instance policy during sign-in |
 
 #### Verification events
 
 | Event type | Description |
 | - | - |
+| `sign_in.email_address.verification.code_attempt_invalid` | Invalid verification email code attempt for sign-in |
 | `sign_in.email_address.verification.code_sent` | Verification email code was sent for sign-in |
 | `sign_in.email_address.verification.link_sent` | Verification email link was sent for sign-in |
-| `sign_in.email_address.verification.code_attempt_invalid` | Invalid verification email code attempt for sign-in |
 | `sign_in.email_address.verified` | Email address was verified for sign-in |
-| `sign_in.phone_number.verification.code_sent` | Verification phone code was sent for sign-in |
 | `sign_in.phone_number.verification.code_attempt_invalid` | Invalid verification phone code attempt for sign-in |
+| `sign_in.phone_number.verification.code_attempt_rejected` | Verification phone code attempt for sign-in was rejected before the code was checked (for example, the code was never sent) |
+| `sign_in.phone_number.verification.code_sent` | Verification phone code was sent for sign-in |
 | `sign_in.phone_number.verified` | Phone number was verified for sign-in |
 | `sign_in.web3_signature.failed` | Web3 signature verification failed during sign-in |
 
@@ -130,86 +149,100 @@ The following tables list all event types that can appear in Application Logs, o
 
 | Event type | Description |
 | - | - |
-| `sign_in.prepare_first_factor.failed` | First factor preparation failed |
-| `sign_in.prepare_first_factor.passed` | First factor preparation passed |
 | `sign_in.attempt_first_factor.failed` | First factor attempt failed |
 | `sign_in.attempt_first_factor.passed` | First factor attempt passed |
-| `sign_in.prepare_second_factor.failed` | Second factor preparation failed |
-| `sign_in.prepare_second_factor.passed` | Second factor preparation passed |
 | `sign_in.attempt_second_factor.failed` | Second factor attempt failed |
 | `sign_in.attempt_second_factor.passed` | Second factor attempt passed |
+| `sign_in.prepare_first_factor.failed` | First factor preparation failed |
+| `sign_in.prepare_first_factor.passed` | First factor preparation passed |
+| `sign_in.prepare_second_factor.failed` | Second factor preparation failed |
+| `sign_in.prepare_second_factor.passed` | Second factor preparation passed |
+| `sign_in.sso_bypass.succeeded` | Enterprise SSO was bypassed with an email code |
+
+#### Client Trust events
+
+| Event type | Description |
+| - | - |
+| `sign_in.client_trust.passed` | User verified their email address or phone number, establishing trust for an unrecognized device |
+| `sign_in.client_trust.required` | Sign-in with a password from an unrecognized device requires verifying an email address or phone number before it can complete |
 
 #### CAPTCHA events
 
 | Event type | Description |
 | - | - |
-| `sign_in.captcha.required` | Sign-in requires CAPTCHA |
-| `sign_in.captcha.passed` | Sign-in CAPTCHA passed |
-| `sign_in.captcha.failed` | Sign-in CAPTCHA failed |
 | `sign_in.captcha.bypassed` | Sign-in CAPTCHA bypassed |
+| `sign_in.captcha.failed` | Sign-in CAPTCHA failed |
+| `sign_in.captcha.passed` | Sign-in CAPTCHA passed |
+| `sign_in.captcha.required` | Sign-in requires CAPTCHA |
 
 ### User events
 
 | Event type | Description |
 | - | - |
-| `user.created` | User was created |
-| `user.updated` | User was updated |
-| `user.deleted` | User was deleted |
+| `sso_bypass_allowlist.user.added` | User was added to the SSO bypass allowlist |
+| `sso_bypass_allowlist.user.removed` | User was removed from the SSO bypass allowlist |
+| `user.all_totps.deleted` | All user TOTPs were deleted |
+| `user.backup_codes.deleted` | All user backup codes were deleted |
 | `user.banned` | User was banned |
-| `user.unbanned` | User was unbanned |
-| `user.locked` | User was locked |
-| `user.unlocked` | User was unlocked |
-| `user.metadata.updated` | User metadata was updated |
+| `user.created` | User was created |
 | `user.credits.adjusted` | User credits were adjusted |
+| `user.deleted` | User was deleted |
+| `user.locked` | User was locked |
+| `user.merged` | Another user was merged into this user and deleted |
+| `user.metadata.updated` | User metadata was updated |
+| `user.mfa.disabled` | User MFA was disabled |
 | `user.password.verified` | User password was verified |
 | `user.password_compromised.set` | User password marked as compromised |
 | `user.password_compromised.unset` | User password no longer marked as compromised |
 | `user.totp_code.verified` | User TOTP code was verified |
-| `user.mfa.disabled` | User MFA was disabled |
-| `user.backup_codes.deleted` | All user backup codes were deleted |
-| `user.all_totps.deleted` | All user TOTPs were deleted |
+| `user.unbanned` | User was unbanned |
+| `user.unlocked` | User was unlocked |
+| `user.updated` | User was updated |
 
 #### External account events
 
 | Event type | Description |
 | - | - |
 | `user.external_account.connected` | External account was connected to user account |
+| `user.external_account.connection_initiated` | External account connection initiated for user account |
 | `user.external_account.disconnected` | External account was disconnected from user account |
 | `user.external_account.reauthorized` | External account was reauthorized for user account |
+| `user.external_account.token_retrieval_failed` | External account token retrieval failed |
 | `user.external_account.token_revoked` | External account token was revoked |
 
 #### MFA events
 
 | Event type | Description |
 | - | - |
-| `user.totp.created` | TOTP (authenticator app) setup was initiated for user |
-| `user.totp.verified` | TOTP (authenticator app) was verified and enabled for user |
-| `user.totp.deleted` | TOTP (authenticator app) was removed from user account |
 | `user.backup_codes.created` | Backup codes were generated for user MFA recovery |
+| `user.mfa.enabled` | MFA was enabled for user |
+| `user.totp.created` | TOTP (authenticator app) setup was initiated for user |
+| `user.totp.deleted` | TOTP (authenticator app) was removed from user account |
+| `user.totp.verified` | TOTP (authenticator app) was verified and enabled for user |
 
 #### Password events
 
 | Event type | Description |
 | - | - |
-| `user.password.changed` | User password was changed |
 | `user.password.change_failed` | User password change failed |
+| `user.password.changed` | User password was changed |
 | `user.password.deleted` | User password was removed |
 
 #### Profile image events
 
 | Event type | Description |
 | - | - |
-| `user.profile_image.updated` | User profile image was updated |
 | `user.profile_image.deleted` | User profile image was deleted |
+| `user.profile_image.updated` | User profile image was updated |
 
 #### Passkey events
 
 | Event type | Description |
 | - | - |
 | `user.passkey.created` | Passkey was created for user account |
-| `user.passkey.verified` | Passkey was verified for user account |
-| `user.passkey.updated` | Passkey was updated for user account |
 | `user.passkey.deleted` | Passkey was deleted from user account |
+| `user.passkey.updated` | Passkey was updated for user account |
+| `user.passkey.verified` | Passkey was verified for user account |
 
 ### Session events
 
@@ -217,53 +250,88 @@ The following tables list all event types that can appear in Application Logs, o
 | - | - |
 | `session.created` | Session was created |
 | `session.ended` | Session ended |
+| `session.expiry.updated` | Session expiry was updated |
 | `session.revoked` | Session was revoked |
 | `session.token.created` | Session token was created |
+
+#### Reverification events
+
+| Event type | Description |
+| - | - |
+| `session.reverification.attempt_first_factor.failed` | First factor attempt for session reverification failed |
+| `session.reverification.attempt_first_factor.passed` | First factor attempt for session reverification passed |
+| `session.reverification.attempt_second_factor.failed` | Second factor attempt for session reverification failed |
+| `session.reverification.attempt_second_factor.passed` | Second factor attempt for session reverification passed |
+| `session.reverification.completed` | User completed reverifying their session |
+| `session.reverification.prepare_first_factor.failed` | First factor preparation for session reverification failed |
+| `session.reverification.prepare_first_factor.passed` | First factor preparation for session reverification passed |
+| `session.reverification.prepare_second_factor.failed` | Second factor preparation for session reverification failed |
+| `session.reverification.prepare_second_factor.passed` | Second factor preparation for session reverification passed |
+| `session.reverification.required` | Request to a protected endpoint was rejected because the session had not been reverified, or its reverification had expired |
+| `session.reverification.started` | User started reverifying their session |
 
 ### Device events
 
 | Event type | Description |
 | - | - |
 | `device.verified` | Device was verified |
+| `user.trusted_device.created` | Trusted device was added for user |
+| `user.trusted_device.revoked` | Trusted device was revoked from user |
+
+### Protect events
+
+| Event type | Description |
+| - | - |
+| `protect.challenge.failed` | Submitted Protect challenge was rejected |
+| `protect.challenge.passed` | Protect challenge was completed |
+| `protect.decision.shadowed` | Protect would have blocked or challenged, but is in shadow mode |
+| `protect.email.blocked` | Email delivery was blocked by Protect |
+| `protect.identifier.locked` | Identifier was locked after too many failed attempts |
+| `protect.sign_in.blocked` | Sign-in was blocked by Protect |
+| `protect.sign_in.challenged` | Protect issued a challenge during sign-in |
+| `protect.sign_up.blocked` | Sign-up was blocked by Protect |
+| `protect.sign_up.challenged` | Protect issued a challenge during sign-up |
+| `protect.sms.blocked` | SMS delivery was blocked by Protect |
+| `protect.sms.challenged` | Protect required a challenge before SMS delivery |
 
 ### SCIM events
 
 | Event type | Description |
 | - | - |
-| `scim.user.created` | SCIM user was created |
-| `scim.user.updated` | SCIM user was updated |
-| `scim.user.patched` | SCIM user was patched |
-| `scim.user.deleted` | SCIM user was deleted |
 | `scim.group_membership.changed` | SCIM group membership changed |
 | `scim.provisioning_failed` | SCIM provisioning failed |
+| `scim.user.created` | SCIM user was created |
+| `scim.user.deleted` | SCIM user was deleted |
+| `scim.user.patched` | SCIM user was patched |
+| `scim.user.updated` | SCIM user was updated |
 
 ### Organization events
 
 | Event type | Description |
 | - | - |
 | `organization.created` | Organization was created |
-| `organization.updated` | Organization was updated |
-| `organization.deleted` | Organization was deleted |
-| `organization.logo.updated` | Organization logo was updated |
-| `organization.logo.deleted` | Organization logo was deleted |
-| `organization.metadata.updated` | Organization metadata was updated |
 | `organization.credits.adjusted` | Organization credits were adjusted |
+| `organization.deleted` | Organization was deleted |
+| `organization.logo.deleted` | Organization logo was deleted |
+| `organization.logo.updated` | Organization logo was updated |
+| `organization.metadata.updated` | Organization metadata was updated |
+| `organization.updated` | Organization was updated |
 
 #### Membership events
 
 | Event type | Description |
 | - | - |
 | `organization_membership.created` | User was added as a member to an Organization |
-| `organization_membership.updated` | Organization membership was updated |
 | `organization_membership.deleted` | User was removed from or left an Organization |
 | `organization_membership.metadata.updated` | Organization membership metadata was updated |
+| `organization_membership.updated` | Organization membership was updated |
 
 #### Invitation events
 
 | Event type | Description |
 | - | - |
-| `organization_invitation.created` | Organization invitation was created |
 | `organization_invitation.accepted` | User accepted invitation to join an Organization |
+| `organization_invitation.created` | Organization invitation was created |
 | `organization_invitation.revoked` | Organization invitation was revoked |
 
 #### Membership Request events
@@ -283,79 +351,127 @@ The following tables list all event types that can appear in Application Logs, o
 
 | Event type | Description |
 | - | - |
+| `organization_domain.affiliation.verified` | Organization domain affiliation was verified |
+| `organization_domain.affiliation_verification.prepared` | Affiliation verification was prepared for an Organization domain |
 | `organization_domain.created` | Domain was added to an Organization |
 | `organization_domain.deleted` | Domain was removed from an Organization |
-| `organization_domain.updated` | Organization domain was updated |
 | `organization_domain.enrollment_mode.updated` | Enrollment mode was updated for an Organization domain |
-| `organization_domain.affiliation_verification.prepared` | Affiliation verification was prepared for an Organization domain |
-| `organization_domain.affiliation.verified` | Organization domain affiliation was verified |
+| `organization_domain.ownership_verified` | Ownership of an Organization domain was verified |
+| `organization_domain.updated` | Organization domain was updated |
 
 ### Billing events
 
 | Event type | Description |
 | - | - |
-| `user.subscription_item.canceled` | User canceled their Subscription |
-| `user.subscription_item.free_trial.extended` | Free trial was extended for a user's Subscription |
-| `user.subscription_item.price_transition.created` | Price transition was created for a user's Subscription |
-| `user.checkout.created` | User created checkout |
-| `user.checkout.confirmed` | User confirmed checkout |
-| `user.payment_method.created` | User created payment method |
-| `user.payment_method.initialized` | User initialized payment method setup |
-| `user.payment_method.deleted` | User deleted payment method |
-| `user.default_payment_method.set` | User set default payment method |
+| `organization.checkout.confirmed` | Organization checkout was confirmed |
+| `organization.checkout.created` | Organization checkout was created |
+| `organization.checkout.promo_code.applied` | Promo code was applied to organization checkout |
+| `organization.checkout.promo_code.removed` | Promo code was removed from organization checkout |
+| `organization.default_payment_method.set` | Default payment method set for an Organization |
+| `organization.payment_method.created` | Payment method created for an Organization |
+| `organization.payment_method.deleted` | Payment method deleted for an Organization |
+| `organization.payment_method.initialized` | Payment method setup initialized for an Organization |
 | `organization.subscription_item.canceled` | Organization Subscription was canceled |
 | `organization.subscription_item.free_trial.extended` | Free trial was extended for an Organization Subscription |
+| `organization.subscription_item.free_trial.started` | Free trial was started for an Organization's Subscription |
 | `organization.subscription_item.price_transition.created` | Price transition was created for an Organization Subscription |
-| `organization.checkout.created` | Organization checkout was created |
-| `organization.checkout.confirmed` | Organization checkout was confirmed |
-| `organization.payment_method.created` | Payment method created for an Organization |
-| `organization.payment_method.initialized` | Payment method setup initialized for an Organization |
-| `organization.payment_method.deleted` | Payment method deleted for an Organization |
-| `organization.default_payment_method.set` | Default payment method set for an Organization |
+| `user.checkout.confirmed` | User confirmed checkout |
+| `user.checkout.created` | User created checkout |
+| `user.checkout.promo_code.applied` | User applied a promo code to checkout |
+| `user.checkout.promo_code.removed` | User removed a promo code from checkout |
+| `user.default_payment_method.set` | User set default payment method |
+| `user.payment_method.created` | User created payment method |
+| `user.payment_method.deleted` | User deleted payment method |
+| `user.payment_method.initialized` | User initialized payment method setup |
+| `user.subscription_item.canceled` | User canceled their Subscription |
+| `user.subscription_item.free_trial.extended` | Free trial was extended for a user's Subscription |
+| `user.subscription_item.free_trial.started` | Free trial was started for a user's Subscription |
+| `user.subscription_item.price_transition.created` | Price transition was created for a user's Subscription |
 
 ### Email address events
 
 | Event type | Description |
 | - | - |
 | `email_address.created` | Email address was created |
-| `email_address.verified` | Email address was verified |
-| `email_address.updated` | Email address was updated |
 | `email_address.deleted` | Email address was deleted |
+| `email_address.updated` | Email address was updated |
+| `email_address.verification.link_opened` | Email verification link was opened, with its result and where the user was redirected |
+| `email_address.verified` | Email address was verified |
 
 ### Phone number events
 
 | Event type | Description |
 | - | - |
 | `phone_number.created` | Phone number was created |
-| `phone_number.verified` | Phone number was verified |
-| `phone_number.updated` | Phone number was updated |
 | `phone_number.deleted` | Phone number was deleted |
+| `phone_number.updated` | Phone number was updated |
+| `phone_number.verified` | Phone number was verified |
+
+### SMS events
+
+| Event type | Description |
+| - | - |
+| `sms.accepted` | SMS was accepted for delivery (delivery not yet confirmed) |
+| `sms.delivered` | SMS was delivered |
+| `sms.failed` | SMS failed to send |
+| `sms.unconfirmed` | SMS delivery was not confirmed |
+| `sms.undeliverable` | SMS could not be delivered |
+
+To learn how to interpret these events, understand failure reasons, and troubleshoot delivery, see [SMS delivery events](/docs/guides/dashboard/logs/sms-delivery-events).
+
+### Email events
+
+| Event type | Description |
+| - | - |
+| `email.accepted` | Email was accepted for delivery |
+| `email.bounced` | Email bounced |
+| `email.clicked` | Email link click was reported |
+| `email.complained` | Email was reported as spam by the recipient |
+| `email.deferred` | Email delivery was deferred |
+| `email.delivered` | Email was delivered to the recipient mail server |
+| `email.dropped` | Email was dropped before delivery |
+| `email.failed` | Email delivery failed |
+| `email.opened` | Email open was reported |
+| `email.unsubscribed` | Recipient unsubscribed from email |
+
+In the Clerk Dashboard, only members who [can view Email Logs](/docs/guides/dashboard/logs/email-logs#access) see the email subject line (`payload.subject`).
 
 ### Web3 wallet events
 
 | Event type | Description |
 | - | - |
 | `web3_wallet.created` | Web3 wallet was created |
-| `web3_wallet.verified` | Web3 wallet was verified |
 | `web3_wallet.deleted` | Web3 wallet was deleted |
+| `web3_wallet.verified` | Web3 wallet was verified |
 
 ### OAuth events
 
 | Event type | Description |
 | - | - |
-| `oauth_application.created` | OAuth application was created |
-| `oauth_authorization.granted` | OAuth authorization was granted |
+| `oauth_application.dynamically_registered` | OAuth application was dynamically registered |
 | `oauth_authorization.failed` | OAuth authorization failed |
+| `oauth_authorization.granted` | OAuth authorization was granted |
+| `oauth_callback.failed` | OAuth callback failed |
 | `oauth_consent.denied` | OAuth consent was denied by user |
-| `oauth_token.created` | OAuth token was created |
 | `oauth_session.ended` | OAuth session ended |
+| `oauth_token.created` | OAuth token was created |
+| `oauth_token.failed` | OAuth token request was rejected |
+| `oauth_token.revoked` | OAuth token was revoked |
+
+### SAML events
+
+| Event type | Description |
+| - | - |
+| `saml_callback.failed` | SAML callback was rejected |
 
 ### Invitation events
 
 | Event type | Description |
 | - | - |
-| `invitation.created` | Instance invitation was created |
 | `invitation.accepted` | Instance invitation was accepted |
+| `invitation.created` | Instance invitation was created |
+| `invitation.deleted` | Instance invitation was deleted |
+| `invitation.link.opened` | Invitation link was opened, with its outcome and where the invitee was redirected |
 | `invitation.revoked` | Instance invitation was revoked |
 
 ### Actor token events
@@ -391,4 +507,6 @@ The following tables list all event types that can appear in Application Logs, o
 | - | - |
 | `waitlist_entry.created` | Waitlist entry was created |
 | `waitlist_entry.deleted` | Waitlist entry was deleted |
-| `waitlist_entry.invited` | An invitation was sent to the waitlist entry |
+| `waitlist_entry.invited` | Invitation was sent to the waitlist entry |
+
+{/* GENERATED:log-events END */}

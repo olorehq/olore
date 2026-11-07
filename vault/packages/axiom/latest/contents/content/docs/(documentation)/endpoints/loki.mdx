@@ -1,0 +1,85 @@
+---
+title: 'Send data from Loki to Axiom'
+description: 'Integrate Axiom in your existing Loki stack with minimal effort and without breaking any of your existing Loki workflows.'
+overview: 'Horizontally scalable, multi-tenant log aggregation system'
+sidebarTitle: Loki
+keywords: ['axiom documentation', 'documentation', 'axiom', 'endpoints', 'http', 'syslog', 'splunk', 'datadog', 'loki', 'honeycomb', 'javascript', 'python']
+logoId: 'grafanaLoki'
+---
+
+import SetUpEndpoint from "@/content/snippets/set-up-endpoint.mdx"
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+This page explains how to send data from Loki to Axiom.
+
+<Prerequisites />
+
+<SetUpEndpoint endpointName="Loki" />
+
+## Configure Loki
+
+In Loki, specify the following environment variables:
+
+- `host` or `url` is the target URL for the endpoint you have generated in Axiom by following the procedure above. For example, `https://opbizplsf8klnw.ingress.axiom.co`.
+- Optional: Use `labels` or `tags` to specify labels or tags for your app.
+
+## Examples
+
+### Send logs from Loki using JavaScript
+
+```js
+const { createLogger, transports, format, } = require("winston");
+const LokiTransport = require("winston-loki");
+
+let logger;
+
+const initializeLogger = () => {
+  if (logger) {
+    return;
+  }
+
+  logger = createLogger({
+    transports: [
+      new LokiTransport({
+        host: "$LOKI_ENDPOINT_URL",
+        labels: { app: "axiom-loki-endpoint" },
+        json: true,
+        format: format.json(),
+        replaceTimestamp: true,
+        onConnectionError: (err) => console.error(err),
+      }),
+      new transports.Console({
+        format: format.combine(format.simple(), format.colorize()),
+      }),
+    ],
+  });
+};
+
+initializeLogger()
+logger.info("Starting app...");
+```
+
+### Send logs from Loki using Python
+
+```py
+import logging
+import logging_loki
+
+# Create a handler
+handler = logging_loki.LokiHandler(
+    url='$LOKI_ENDPOINT_URL',
+    tags={'app': 'axiom-loki-py-endpoint'},
+    version='1',
+)
+
+# Create a logger
+logger = logging.getLogger('loki')
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
+# Log some messages
+logger.info('Hello, world from Python!')
+logger.warning('This is a warning')
+logger.error('This is an error')
+```

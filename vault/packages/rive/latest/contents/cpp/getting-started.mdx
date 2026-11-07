@@ -19,7 +19,7 @@ This guide walks you through cloning the runtime, compiling it, and getting a
   latest version available — older toolchains may fail to compile the renderer.
 </Note>
 
-## 1. Clone and Build the Runtime
+## 1. Clone and build the runtime
 
 ```bash
 git clone https://github.com/rive-app/rive-runtime.git
@@ -52,7 +52,7 @@ Build artifacts land in `out/release/` (or `out/debug/`). You'll link
 against `librive.a` (or `rive.lib` on Windows), plus the per-backend
 renderer libraries like `librive_pls_renderer.a`.
 
-## 2. Add Headers to Your Project
+## 2. Add headers to your project
 
 The public include roots are:
 
@@ -76,7 +76,7 @@ target_link_libraries(my_app PRIVATE
 )
 ```
 
-## 3. Load a `.riv` File
+## 3. Load a `.riv` file
 
 ```cpp
 #include "rive/file.hpp"
@@ -116,7 +116,7 @@ if (!sm && artboard->stateMachineCount() > 0) {
 }
 ```
 
-## 5. Advance and Draw
+## 5. Advance and draw
 
 A render loop has three phases each frame: **advance**, **draw**, **flush**.
 
@@ -155,7 +155,7 @@ void renderFrame(float dt) {
   [Rendering Loop](/runtimes/cpp/rendering-loop).
 </Tip>
 
-## 6. Forward Input
+## 6. Forward input
 
 Route pointer events back through the state machine so
 listeners and hit-testing work:
@@ -177,7 +177,7 @@ sm->pointerDown(toArtboard(mouseX, mouseY));
 sm->pointerUp(toArtboard(mouseX, mouseY));
 ```
 
-## What's Next
+## What's next
 
 <CardGroup cols={2}>
   <Card title="Renderers" icon="microchip" href="/runtimes/cpp/renderers">

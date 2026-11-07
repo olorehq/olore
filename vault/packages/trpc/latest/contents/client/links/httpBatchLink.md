@@ -1,11 +1,15 @@
 ---
 id: httpBatchLink
 title: HTTP Batch Link
+description: A terminating link that batches concurrent tRPC calls into a single HTTP request
 sidebar_label: HTTP Batch Link
 slug: /client/links/httpBatchLink
+section: "Client Usage"
+parent: "client/links"
+order: 32
 ---
 
-`httpBatchLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
+`httpBatchLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request. A batch can include calls to different procedures (queries and mutations are batched separately).
 
 ## Usage
 
@@ -33,7 +37,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+After that, calls made in the same event loop tick are batched together, so you don't need `Promise.all`, though it's a common way to do it. The code below will produce exactly **one** HTTP request, and the server will call `createContext` **once** for it:
 
 ```ts twoslash
 // @target: esnext
@@ -59,6 +63,8 @@ const somePosts = await Promise.all([
   trpc.post.byId.query(3),
 ]);
 ```
+
+Each procedure still runs its own resolver, so whether this makes one database query depends on your data layer. Prisma [batches `findUnique()` calls made in the same tick](https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance#solving-the-n1-problem) into one query, and a [DataLoader](https://github.com/graphql/dataloader) can do the same for other queries. Otherwise, each resolver makes its own query.
 
 ## `httpBatchLink` Options {#options}
 
@@ -101,6 +107,19 @@ export interface HTTPLinkOptions {
   headers?:
     | HTTPHeaders
     | ((opts: { opList: NonEmptyArray<Operation> }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Send all requests as POST requests regardless of the procedure type
+   * The server must separately allow overriding the method. See:
+   * @see https://trpc.io/docs/rpc
+   */
+  methodOverride?: 'POST';
+  /**
+   * The character between a procedure path's segments in URLs. Must match
+   * the server's `pathSeparator`.
+   * @default '.'
+   * @see https://trpc.io/docs/rpc#path-separator
+   */
+  pathSeparator?: '.' | '_' | '~' | '-';
 }
 ```
 
@@ -125,7 +144,7 @@ const client = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: 'http://localhost:3000',
       maxURLLength: 2083, // a suitable size
-      // alternatively, you can make all RPC-calls to be called with POST
+      // alternatively, you can make all RPC-calls to be called with POST (also requires `allowMethodOverride: true` on the server)
       // methodOverride: 'POST',
     }),
   ],
@@ -138,18 +157,38 @@ const client = createTRPCClient<AppRouter>({
 
 `maxBatchSize` limits how many operations may be sent in a single batch request. Requests exceeding this limit will be rejected with a `400 Bad Request` error. This can be passed to any tRPC adapter.
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
 
 createHTTPServer({
+  router: appRouter,
   maxBatchSize: 10,
 });
 ```
 
 or for example if using Next.js:
 
-```ts title='pages/api/trpc/[trpc].ts'
-export default trpcNext.createNextApiHandler({
+```ts twoslash title='pages/api/trpc/[trpc].ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: pages/api/trpc/[trpc].ts
+// ---cut---
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../router';
+
+export default createNextApiHandler({
+  router: appRouter,
   maxBatchSize: 10,
 });
 ```
@@ -238,30 +277,4 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-or, if you're using Next.js:
-
-```tsx twoslash title='utils/trpc.ts'
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.ts
-// ---cut---
-import type { AppRouter } from '../server';
-import { httpLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpLink({
-          url: '/api/trpc',
-        }),
-      ],
-    };
-  },
-});
-```
+With Next.js, it's the same: swap the link in the `createTRPCClient` you pass to `TRPCProvider`.

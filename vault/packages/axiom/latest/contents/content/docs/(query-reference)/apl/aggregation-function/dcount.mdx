@@ -1,0 +1,150 @@
+---
+title: dcount
+description: 'This page explains how to use the dcount aggregation function in APL.'
+---
+
+The `dcount` aggregation function in Axiom Processing Language (APL) counts the distinct values in a column. This function is essential when you need to know the number of unique values, such as counting distinct users, unique requests, or distinct error codes in log files.
+
+Use `dcount` for analyzing datasets where it’s important to identify the number of distinct occurrences, such as unique IP addresses in security logs, unique user IDs in app logs, or unique trace IDs in OpenTelemetry traces.
+
+<Note>
+The `dcount` aggregation in APL is a statistical aggregation that returns estimated results. The estimation comes with the benefit of speed at the expense of accuracy. This means that `dcount` is fast and light on resources even on a large or high-cardinality dataset, but it doesn’t provide precise results.
+</Note>
+
+## Usage
+
+### Syntax
+
+```kusto
+dcount(column_name)
+```
+
+### Parameters
+
+- **column_name**: The name of the column for which you want to count distinct values.
+
+### Returns
+
+The function returns the count of distinct values found in the specified column.
+
+## Use case examples
+
+<Tabs>
+
+<Tab title="Log analysis">
+
+In log analysis, you can count how many distinct users accessed the service.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize dcount(id)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20dcount(id)%22%7D)
+
+**Output**
+
+| distinct_users |
+|----------------|
+| 45             |
+
+This query counts the distinct values in the `id` field, representing the number of unique users who accessed the system.
+
+</Tab>
+
+<Tab title="OpenTelemetry traces">
+
+In OpenTelemetry traces, you can count how many unique trace IDs are recorded.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize dcount(trace_id)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20dcount(trace_id)%22%7D)
+
+**Output**
+
+| distinct_traces |
+|-----------------|
+| 321             |
+
+This query counts the distinct trace IDs in the dataset, helping you determine how many unique traces are being captured.
+
+</Tab>
+
+<Tab title="Security logs">
+
+In security logs, you can count how many distinct IP addresses were logged.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize dcount(['geo.city'])
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20dcount(%5B'geo.city'%5D)%22%7D)
+
+**Output**
+
+| distinct_cities |
+|-----------------|
+| 35              |
+
+This query counts the number of distinct cities recorded in the logs, which helps analyze the geographic distribution of traffic.
+
+</Tab>
+
+</Tabs>
+
+## List of related aggregations
+
+- [**count**](/apl/aggregation-function/count): Counts the total number of records in the dataset, including duplicates. Use it when you need to know the overall number of records.
+- [**countif**](/apl/aggregation-function/countif): Counts records that match a specific condition. Use `countif` when you want to count records based on a filter or condition.
+- [**dcountif**](/apl/aggregation-function/dcountif): Counts the distinct values in a column but only for records that meet a condition. It’s useful when you need a filtered distinct count.
+- [**sum**](/apl/aggregation-function/sum): Sums the values in a column. Use this when you need to add up values rather than counting distinct occurrences.
+- [**avg**](/apl/aggregation-function/avg): Calculates the average value for a column. Use this when you want to find the average of a specific numeric field.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, you can count distinct values using the `dc` function within the `stats` command. In APL, the `dcount` function offers similar functionality.
+
+<CodeGroup>
+```sql Splunk example
+| stats dc(user_id) AS distinct_users
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize dcount(id)
+```
+</CodeGroup>
+
+</Accordion>
+
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, distinct counting is typically done using `COUNT` with the `DISTINCT` keyword. In APL, `dcount` provides a direct and efficient way to count distinct values.
+
+<CodeGroup>
+```sql SQL example
+SELECT COUNT(DISTINCT user_id) AS distinct_users
+FROM sample_http_logs
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize dcount(id)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

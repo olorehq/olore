@@ -31,14 +31,14 @@ The Azure Content Understanding integration provides a context provider that aut
 
 ### Basic Usage Example
 
-See the [samples directory](samples/) which demonstrates:
+See the [Azure Content Understanding samples](../../samples/02-agents/context_providers/azure_content_understanding/) which demonstrate:
 
-- Single PDF upload and Q&A ([01_document_qa](samples/01-get-started/01_document_qa.py))
-- Multi-turn sessions with cached results ([02_multi_turn_session](samples/01-get-started/02_multi_turn_session.py))
-- PDF + audio + video parallel analysis ([03_multimodal_chat](samples/01-get-started/03_multimodal_chat.py))
-- Structured field extraction with prebuilt-invoice ([04_invoice_processing](samples/01-get-started/04_invoice_processing.py))
-- CU extraction + OpenAI vector store RAG ([05_large_doc_file_search](samples/01-get-started/05_large_doc_file_search.py))
-- Interactive web UI with DevUI ([02-devui](samples/02-devui/))
+- Single PDF upload and Q&A ([01_document_qa](../../samples/02-agents/context_providers/azure_content_understanding/01_document_qa.py))
+- Multi-turn sessions with cached results ([02_multi_turn_session](../../samples/02-agents/context_providers/azure_content_understanding/02_multi_turn_session.py))
+- PDF + audio + video parallel analysis ([03_multimodal_chat](../../samples/02-agents/context_providers/azure_content_understanding/03_multimodal_chat.py))
+- Structured field extraction with prebuilt-invoice ([04_invoice_processing](../../samples/02-agents/context_providers/azure_content_understanding/04_invoice_processing.py))
+- CU extraction + OpenAI vector store RAG ([05_large_doc_file_search](../../samples/02-agents/context_providers/azure_content_understanding/05_large_doc_file_search.py))
+- Interactive web UI with DevUI ([DevUI samples](../../samples/02-agents/devui/README.md))
 
 ```python
 import asyncio
@@ -56,7 +56,7 @@ cu = ContentUnderstandingContextProvider(
 )
 
 client = FoundryChatClient(
-    project_endpoint="https://your-project.services.ai.azure.com",
+    project_endpoint="https://your-account.services.ai.azure.com/api/projects/your-project",
     model="gpt-4.1",
     credential=credential,
 )
@@ -114,14 +114,14 @@ Set these in your shell or in a `.env` file:
 
 ```bash
 AZURE_CONTENTUNDERSTANDING_ENDPOINT=https://your-cu-resource.cognitiveservices.azure.com/
-AZURE_AI_PROJECT_ENDPOINT=https://your-project.services.ai.azure.com
-AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4.1
+FOUNDRY_PROJECT_ENDPOINT=https://your-account.services.ai.azure.com/api/projects/your-project
+FOUNDRY_MODEL=gpt-4.1
 ```
 
 You also need to be logged in with `az login` (for `AzureCliCredential`).
 
 ### Next steps
 
-- Explore the [samples directory](samples/) for complete code examples
+- Explore the [Azure Content Understanding samples](../../samples/02-agents/context_providers/azure_content_understanding/) for complete code examples
 - Read the [Azure Content Understanding documentation](https://learn.microsoft.com/azure/ai-services/content-understanding/) for detailed service information
 - Learn more about the [Microsoft Agent Framework](https://aka.ms/agent-framework)

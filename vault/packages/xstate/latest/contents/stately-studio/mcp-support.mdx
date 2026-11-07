@@ -1,0 +1,78 @@
+---
+title: Stately MCP support
+description: Get help connecting Stately in ChatGPT, Codex, and other MCP hosts, opening models, and saving behavior proposals.
+---
+
+Stately brings visual application flows into ChatGPT, Codex, and other MCP
+hosts. This page covers connection problems, model access, editing, and saved
+proposals.
+
+## Contact support
+
+Email [support@stately.ai](mailto:support@stately.ai). Include:
+
+- What you tried and the error message.
+- The host you use, such as ChatGPT web, ChatGPT desktop, or Codex.
+- Whether the problem happens when connecting, opening a model, saving a
+  proposal, or handing it to chat.
+
+Screenshots are helpful. Remove private information, and never include API
+keys, passwords, or access tokens.
+
+## Connect Stately
+
+Connect the official hosted MCP endpoint:
+
+```text
+https://mcp.stately.ai/mcp
+```
+
+Sign in with the Stately account that owns or can access your models. If a
+connection uses an old or different account, reconnect and sign in with the
+intended account.
+
+See the [Stately MCP connection guide](/docs/packages/mcp) for client setup.
+
+## I cannot open a model
+
+Check that you are signed in to the correct Stately account and have access to
+the model's [project](/docs/projects). A link or machine ID does not grant access
+to a private project.
+
+## I can view a model but cannot edit
+
+Free accounts can save generated models and view them read-only in the MCP
+editor. Editing and saving behavior proposals require a verified paid editing
+entitlement and permission to edit the project.
+
+If you have paid access, check that the MCP connection uses the same account
+and that you can edit the project's models in Stately. See
+[account plans](/docs/studio-pro-plan) and [project access](/docs/projects).
+
+## I cannot implement a proposal
+
+Save your graph changes with **Save proposal** first. Implementation requires
+a chat host that supports proposal handoff and has access to your application
+source.
+
+Saving a proposal creates a saved version in Stately; it does not change your
+application code. **Implement changes** sends the saved proposal to the current
+chat for the agent to review and implement. If the host cannot send messages,
+use a host that supports this handoff.
+
+If the chat has no source access, connect the source project before asking it
+to implement the proposal.
+
+## What does an estimated flow mean?
+
+An estimated flow describes behavior inferred from source or a supplied
+description. Source evidence documents the estimate; it does not verify
+runtime behavior.
+
+Before implementation, review the current source and any stale or conflicting
+changes. A description-only model has no recorded source snapshot, so its
+source freshness is unknown. Matching source hashes do not prove the
+application behaves correctly.
+
+See Stately's [privacy policy](https://stately.ai/privacy) and
+[terms of service](https://stately.ai/terms).

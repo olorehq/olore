@@ -1,0 +1,335 @@
+---
+title: checkly assets
+description: 'List and download result assets such as logs, traces, videos, and screenshots.'
+sidebarTitle: 'checkly assets'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-assets/'
+---
+
+<Note>Available since CLI v8.8.0.</Note>
+
+The `checkly assets` command lets you list and download result assets from the terminal. Assets are the artifacts produced by a check run or [test session](/detect/testing/overview/) result, such as logs, Playwright traces, videos, screenshots, packet captures, and reports.
+
+Every asset belongs to a single result. Identify that result with `--result-id` together with either `--check-id` (for a scheduled check result) or `--test-session-id` (for a test-session result).
+
+<Accordion title="Prerequisites">
+Before using `checkly assets`, ensure you have:
+
+- Checkly CLI installed
+- Valid Checkly account authentication (run `npx checkly login` if needed)
+- A check result ID or test-session result ID, and its corresponding check ID or test session ID
+
+For additional setup information, see [CLI overview](/cli/overview).
+</Accordion>
+
+## Usage
+
+```bash Terminal
+npx checkly assets <subcommand> [options]
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List result assets. |
+| `download` | Download result assets. |
+
+## `checkly assets list`
+
+List the assets available for a check result or a test-session result. Use filters to narrow by asset type or name, then copy the exact `Asset` value to use with `checkly assets download`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> (--check-id=<check-id> | --test-session-id=<test-session-id>) [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--result-id` | Yes | Check result ID or test-session result ID. |
+| `--check-id` | - | Check ID for a scheduled check result. Use one of `--check-id` or `--test-session-id`. |
+| `--test-session-id` | - | Test session ID for a test-session result. Use one of `--check-id` or `--test-session-id`. |
+| `--type` | - | Filter assets by type: `log`, `trace`, `video`, `screenshot`, `pcap`, `report`, `file`, or `all`. Default: `all`. |
+| `--asset` | - | Filter assets by exact `Asset`/`Name` value or glob. |
+| `--view` | - | Human output view: `table` or `tree`. Ignored with `--output json`. Default: `table`. |
+| `--output, -o` | - | Output format: `table`, `json`, or `md`. Default: `table`. |
+
+### List Options
+
+<ResponseField name="--result-id" type="string" required>
+
+The check result ID or test-session result ID to list assets for.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--check-id" type="string">
+
+The check ID for a scheduled check result. Use exactly one of `--check-id` or `--test-session-id`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--test-session-id" type="string">
+
+The test session ID for a test-session result. Use exactly one of `--check-id` or `--test-session-id`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --test-session-id=<test-session-id>
+```
+
+</ResponseField>
+
+<ResponseField name="--type" type="string" default="all">
+
+Filter assets by type. Available values: `log`, `trace`, `video`, `screenshot`, `pcap`, `report`, `file`, `all`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --type=trace
+```
+
+</ResponseField>
+
+<ResponseField name="--asset" type="string">
+
+Filter assets by their exact `Asset`/`Name` value, or by a glob pattern.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --asset="trace.zip"
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --asset="*.png"
+```
+
+</ResponseField>
+
+<ResponseField name="--view" type="string" default="table">
+
+Choose the human-readable view. Use `table` to see exact `Asset` values for download, or `tree` for a hierarchical overview. This flag is ignored when `--output=json`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --view=tree
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access or `md` for markdown.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --output=json
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> -o md
+```
+
+</ResponseField>
+
+### List Examples
+
+```bash Terminal
+# List all assets for a check result
+npx checkly assets list --result-id=<result-id> --check-id=<check-id>
+
+# List all assets for a test-session result
+npx checkly assets list --result-id=<result-id> --test-session-id=<test-session-id>
+
+# Show only traces
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --type=trace
+
+# Filter assets by name with a glob
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --asset="*.png"
+
+# Show a hierarchical tree view
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --view=tree
+
+# Get the asset list as JSON
+npx checkly assets list --result-id=<result-id> --check-id=<check-id> --output=json
+```
+
+## `checkly assets download`
+
+Download assets for a check result or a test-session result. You must select assets with `--type` or `--asset` — use `--type all` to download everything. By default, files are written to `./checkly-assets/<source>-<result-id>`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> (--check-id=<check-id> | --test-session-id=<test-session-id>) (--type=<type> | --asset=<asset>) [options]
+```
+
+**Options:**
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--result-id` | Yes | Check result ID or test-session result ID. |
+| `--check-id` | - | Check ID for a scheduled check result. Use one of `--check-id` or `--test-session-id`. |
+| `--test-session-id` | - | Test session ID for a test-session result. Use one of `--check-id` or `--test-session-id`. |
+| `--type` | - | Select assets by type: `log`, `trace`, `video`, `screenshot`, `pcap`, `report`, `file`, or `all`. |
+| `--asset` | - | Select an asset by exact `Asset`/`Name` value or glob. |
+| `--dir` | - | Directory to write assets into. Default: `./checkly-assets/<source>-<result-id>`. |
+| `--force` | - | Overwrite existing files. Mutually exclusive with `--skip-existing`. |
+| `--skip-existing` | - | Skip files that already exist. Mutually exclusive with `--force`. |
+| `--output, -o` | - | Output format: `table` or `json`. Default: `table`. |
+
+<Note>Pass `--type` or `--asset` to select which assets to download. Use `--type all` to download all assets for the result.</Note>
+
+### Download Options
+
+<ResponseField name="--result-id" type="string" required>
+
+The check result ID or test-session result ID to download assets from.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all
+```
+
+</ResponseField>
+
+<ResponseField name="--check-id" type="string">
+
+The check ID for a scheduled check result. Use exactly one of `--check-id` or `--test-session-id`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all
+```
+
+</ResponseField>
+
+<ResponseField name="--test-session-id" type="string">
+
+The test session ID for a test-session result. Use exactly one of `--check-id` or `--test-session-id`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --test-session-id=<test-session-id> --type=all
+```
+
+</ResponseField>
+
+<ResponseField name="--type" type="string">
+
+Select assets by type. Available values: `log`, `trace`, `video`, `screenshot`, `pcap`, `report`, `file`, `all`. Use `--type all` to download every asset.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=video
+```
+
+</ResponseField>
+
+<ResponseField name="--asset" type="string">
+
+Select a single asset by its exact `Asset`/`Name` value, or by a glob pattern.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --asset="trace.zip"
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --asset="*.png"
+```
+
+</ResponseField>
+
+<ResponseField name="--dir" type="string">
+
+Directory to write the downloaded assets into. When omitted, assets are written to `./checkly-assets/<source>-<result-id>`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --dir=./artifacts
+```
+
+</ResponseField>
+
+<ResponseField name="--force" type="boolean" default="false">
+
+Overwrite existing files in the target directory. Cannot be combined with `--skip-existing`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --force
+```
+
+</ResponseField>
+
+<ResponseField name="--skip-existing" type="boolean" default="false">
+
+Skip files that already exist in the target directory. Cannot be combined with `--force`.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --skip-existing
+```
+
+</ResponseField>
+
+<ResponseField name="--output, -o" type="string" default="table">
+
+Set the output format. Use `json` for programmatic access, including the resolved directory and downloaded file paths.
+
+**Usage:**
+
+```bash Terminal
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --output=json
+```
+
+</ResponseField>
+
+### Download Examples
+
+```bash Terminal
+# Download all assets for a check result
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all
+
+# Download all assets for a test-session result
+npx checkly assets download --result-id=<result-id> --test-session-id=<test-session-id> --type=all
+
+# Download only traces
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=trace
+
+# Download a single asset by name
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --asset="trace.zip"
+
+# Write assets to a custom directory
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --dir=./artifacts
+
+# Re-run without overwriting already-downloaded files
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --skip-existing
+
+# Get the download result as JSON
+npx checkly assets download --result-id=<result-id> --check-id=<check-id> --type=all --output=json
+```
+
+## Related Commands
+
+- [`checkly test-sessions`](/cli/checkly-test-sessions) - Inspect recorded test sessions and their results
+- [`checkly checks`](/cli/checkly-checks) - List, inspect, and analyze checks and their results
+- [`checkly rca`](/cli/checkly-rca) - Trigger root cause analysis for error groups

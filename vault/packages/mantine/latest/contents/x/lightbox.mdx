@@ -1,0 +1,391 @@
+import { LightboxDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.Lightbox);
+
+## Installation
+
+<InstallScript packages="embla-carousel@^8.5.2 embla-carousel-react@^8.5.2 @mantine/lightbox" />
+
+After installation import package styles at the root of your application:
+
+```tsx
+import '@mantine/core/styles.css';
+import '@mantine/lightbox/styles.css';
+```
+
+## Usage
+
+`@mantine/lightbox` is a full-screen media lightbox built on [embla carousel](https://www.embla-carousel.com/).
+Click any image to open the lightbox:
+
+<Demo data={LightboxDemos.usage} />
+
+## Slide data
+
+The `slides` prop accepts an array of `LightboxSlideData` objects. There are three slide types –
+image (default), video and custom:
+
+```tsx
+import type { LightboxSlideData } from '@mantine/lightbox';
+
+const slides: LightboxSlideData[] = [
+  // Image slide (default type)
+  {
+    src: 'image.png', // Image URL
+    alt: 'Mountain lake', // Alt text, always set it for screen readers
+    caption: 'Mountain lake at sunrise', // Caption displayed below the slide
+    thumbSrc: 'image-small.png', // Custom thumbnail URL, `src` is used if not set
+    renderThumb: ({ active }) => <span>Thumb</span>, // Custom thumbnail content, see below
+    srcSet: 'image-2x.png 2x', // Optional srcset for responsive images
+    sizes: '(max-width: 600px) 100vw, 50vw', // Optional sizes attribute
+    loading: 'lazy', // Optional loading attribute, see below
+  },
+
+  // Video slide
+  {
+    type: 'video',
+    src: 'video.mp4',
+    label: 'Product demo', // Accessible video label
+    poster: 'poster.png', // Poster image, also used as thumbnail
+    thumbSrc: 'poster-small.png', // Custom thumbnail URL, `poster` is used if not set
+    renderThumb: ({ active }) => <span>Thumb</span>, // Custom thumbnail content, see below
+    autoPlay: true, // Auto-play when the slide becomes active
+    tracks: [{ src: 'captions.vtt', kind: 'captions', srcLang: 'en', label: 'English' }],
+  },
+
+  // Custom slide
+  {
+    type: 'custom',
+    render: ({ active }) => <div>Custom content</div>,
+    thumbSrc: 'thumb.png', // Custom thumbnail URL
+    renderThumb: ({ active }) => <span>Thumb</span>, // Custom thumbnail content, see below
+  },
+];
+```
+
+### Image loading
+
+By default, only the image of the active slide is loaded when the lightbox is opened, other images
+and thumbnails are loaded lazily. Thumbnails use `src` if `thumbSrc` is not set, set `thumbSrc`
+to a smaller image if the originals are large.
+
+Set the `loading` property on an image slide to change this, for example to preload
+the next slide:
+
+```tsx
+import type { LightboxSlideData } from '@mantine/lightbox';
+
+const slides: LightboxSlideData[] = [
+  { src: 'image-1.png', alt: 'First' },
+  { src: 'image-2.png', alt: 'Second', loading: 'eager' },
+];
+```
+
+## Zoom
+
+Enable image zoom with the `withZoom` prop. On desktop, click an image to zoom in, scroll wheel to
+adjust zoom level, and drag or use arrow keys to pan when zoomed. On mobile, double-tap to zoom and
+pinch to adjust. Use `zoomMaxScale` to change the maximum zoom scale (`3` by default):
+
+<Demo data={LightboxDemos.zoom} />
+
+## Thumbnails
+
+Set `withThumbnails` to display the thumbnail strip at the bottom. Users can hide it
+with the `T` key or the toolbar button:
+
+<Demo data={LightboxDemos.thumbnails} />
+
+### Custom thumbnails
+
+By default, thumbnails are images. Set `renderThumb` on a slide to render custom thumbnail
+content instead, for example a `<video>` element. The content is placed inside a 64x64px
+button, size it with `width: 100%` and `height: 100%`:
+
+```tsx
+import type { LightboxSlideData } from '@mantine/lightbox';
+
+const slides: LightboxSlideData[] = [
+  {
+    type: 'video',
+    src: 'video.mp4',
+    renderThumb: () => (
+      <video
+        src="video-thumb.mp4"
+        muted
+        playsInline
+        preload="metadata"
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    ),
+  },
+];
+```
+
+## All features
+
+Zoom, thumbnails, fullscreen and download features can be combined:
+
+<Demo data={LightboxDemos.allFeatures} />
+
+## Loop navigation
+
+Set `loop` to enable infinite wrapping at the ends of the slide list:
+
+<Demo data={LightboxDemos.loop} />
+
+## Slide transition
+
+By default, slides are changed instantly when arrow buttons or keyboard are used.
+Set `withSlideTransition` to animate slide changes. Use `emblaOptions={{ duration: 40 }}`
+to change the animation speed. Embla duration is not in milliseconds, values between 20 and 60
+are recommended:
+
+<Demo data={LightboxDemos.transition} />
+
+## Embla options
+
+Use `emblaOptions` prop to pass [options](https://www.embla-carousel.com/api/options/) to
+the embla carousel. `loop` and `startIndex` options cannot be set this way, use `loop` and
+`currentIndex` props instead:
+
+```tsx
+import { Lightbox } from '@mantine/lightbox';
+
+function Demo() {
+  return (
+    <Lightbox
+      opened
+      onClose={() => {}}
+      slides={[]}
+      emblaOptions={{ dragFree: false, duration: 30, align: 'center' }}
+    />
+  );
+}
+```
+
+## z-index
+
+`zIndex` controls the `z-index` of the overlay and the content elements, `400` by default:
+
+```tsx
+import { Lightbox } from '@mantine/lightbox';
+
+function Demo() {
+  return <Lightbox opened onClose={() => {}} slides={[]} zIndex={1000} />;
+}
+```
+
+## Open and close transition
+
+Use `transitionProps` to change the animation of the content, it accepts the same options
+as the [Transition](/core/transition) component. The overlay always fades. To change only
+the duration (`200` by default), use `transitionDuration`:
+
+<Demo data={LightboxDemos.overlayTransition} />
+
+## Disable animations
+
+Set `transitionProps={{ duration: 0 }}` to open and close the lightbox without animation:
+
+<Demo data={LightboxDemos.disableTransition} />
+
+## Swipe to close
+
+On mobile, swiping down closes the lightbox. This is enabled by default.
+Set `closeOnSwipeDown={false}` to disable:
+
+<Demo data={LightboxDemos.swipeClose} />
+
+## Click outside to close
+
+Set `closeOnClickOutside` to close the lightbox when the empty space around the slide
+content is clicked. It is disabled by default to prevent accidental closing:
+
+<Demo data={LightboxDemos.closeOnClickOutside} />
+
+## Store API
+
+Mount `Lightbox.Provider` once in your app and open the lightbox from anywhere
+using the static `Lightbox` methods:
+
+```tsx
+import { Lightbox } from '@mantine/lightbox';
+
+// Open with slides and optional start index
+Lightbox.open({ slides, startIndex: 2 });
+
+// Close
+Lightbox.close();
+
+// Navigate
+Lightbox.next();
+Lightbox.prev();
+Lightbox.setIndex(5);
+```
+
+<Demo data={LightboxDemos.store} />
+
+## Multiple lightboxes
+
+By default, `Lightbox.Provider` and the static `Lightbox` methods use the shared `lightboxStore`.
+To use several independent lightboxes, create a separate store with `createLightbox`
+and pass it to the `store` prop:
+
+```tsx
+import { Button } from '@mantine/core';
+import { createLightbox, Lightbox } from '@mantine/lightbox';
+
+const [productStore, productLightbox] = createLightbox();
+
+function Demo() {
+  return (
+    <>
+      <Lightbox.Provider store={productStore} withThumbnails />
+      <Button onClick={() => productLightbox.open({ slides })}>Open product gallery</Button>
+    </>
+  );
+}
+```
+
+To subscribe to the state of any lightbox store in a component, use the `useLightboxStore` hook:
+
+```tsx
+import { lightboxStore, useLightboxStore } from '@mantine/lightbox';
+
+function Demo() {
+  const { opened, currentIndex, slides } = useLightboxStore(lightboxStore);
+  return <div>Current slide: {currentIndex + 1}</div>;
+}
+```
+
+## Video slides
+
+Set `type: 'video'` on a slide to render a `<video>` element. Videos are paused
+when the slide is changed. The `poster` image is used as the thumbnail unless
+`thumbSrc` or `renderThumb` is set:
+
+<Demo data={LightboxDemos.video} />
+
+## Custom slides
+
+Set `type: 'custom'` and a `render` function to display any content in a slide.
+Custom slides do not have a default thumbnail, set `renderThumb` or `thumbSrc`:
+
+<Demo data={LightboxDemos.custom} />
+
+## Custom toolbar
+
+Use `toolbarItems` prop to replace the default toolbar items. It accepts an array of items
+or a function that returns it. The function is called with the lightbox state and handlers:
+
+```tsx
+interface ToolbarItemsPayload {
+  slides: LightboxSlideData[];
+  currentIndex: number;
+  setIndex: (index: number) => void;
+  next: () => void;
+  prev: () => void;
+  close: () => void;
+  thumbnailsVisible: boolean;
+  toggleThumbnails: () => void;
+  isFullscreen: boolean;
+  toggleFullscreen: () => void;
+  zoomed: boolean;
+  toggleZoom: () => void;
+}
+```
+
+Use the built-in toolbar item factories for common actions:
+
+<Demo data={LightboxDemos.toolbar} />
+
+## Compound components
+
+To change the layout of the lightbox, use compound components:
+
+```tsx
+import { Lightbox } from '@mantine/lightbox';
+
+function CustomLightbox({ opened, onClose, slides }) {
+  return (
+    <Lightbox.Root opened={opened} onClose={onClose} slides={slides} withZoom withThumbnails>
+      <Lightbox.Toolbar />
+      <Lightbox.Slides>
+        {slides.map((slide, index) => (
+          <Lightbox.Slide key={index} slide={slide} index={index} />
+        ))}
+      </Lightbox.Slides>
+      <Lightbox.Navigation />
+      <Lightbox.Caption />
+      <Lightbox.Thumbnails />
+    </Lightbox.Root>
+  );
+}
+```
+
+`Lightbox.Thumbnails` is rendered only when `withThumbnails` is set on `Lightbox.Root`.
+
+## Labels
+
+Use `labels` prop to translate the lightbox. Labels that are not set fall back
+to the default English values:
+
+```tsx
+import { Lightbox } from '@mantine/lightbox';
+
+function Demo() {
+  return (
+    <Lightbox
+      opened
+      onClose={() => {}}
+      slides={[]}
+      labels={{
+        lightboxLabel: 'Galerie',
+        slideLabel: (index, total) => `Bild ${index} von ${total}`,
+        slidesLabel: 'Bilder',
+        thumbnailLabel: (index) => `Zu Bild ${index} wechseln`,
+        previousSlideLabel: 'Vorheriges Bild',
+        nextSlideLabel: 'Nächstes Bild',
+        enterFullscreenLabel: 'Vollbild aktivieren',
+        exitFullscreenLabel: 'Vollbild beenden',
+        showThumbnailsLabel: 'Miniaturansichten anzeigen',
+        hideThumbnailsLabel: 'Miniaturansichten ausblenden',
+        downloadLabel: 'Herunterladen',
+        closeLabel: 'Schließen',
+      }}
+    />
+  );
+}
+```
+
+To change labels for all lightboxes in your application, set `labels` in
+[default props](/theming/default-props) of the `Lightbox` component.
+
+## Accessibility
+
+- Always set the `alt` property on image slides and the `label` property on video slides and custom toolbar items
+- The lightbox has `role="dialog"` and is labelled with `labels.lightboxLabel`, set `aria-label` to change the label of a single lightbox
+- Focus is trapped inside the lightbox and is returned to the previously focused element when it is closed
+- Slide changes are announced with `aria-live="polite"`
+- Inactive slides are hidden from screen readers and removed from the tab order
+
+## Keyboard shortcuts
+
+Set `withKeyboardEvents={false}` to disable all shortcuts except `Escape`. Shortcuts are ignored
+while focus is inside an input, a video or an interactive element of a custom slide:
+
+<KeyboardEventsTable
+  data={[
+    { key: 'Escape', description: 'Close lightbox' },
+    { key: 'ArrowLeft', description: 'Previous slide, pan left when zoomed' },
+    { key: 'ArrowRight', description: 'Next slide, pan right when zoomed' },
+    { key: 'ArrowUp', description: 'Pan up when zoomed' },
+    { key: 'ArrowDown', description: 'Pan down when zoomed' },
+    { key: 'F', description: 'Toggle fullscreen (requires withFullscreen)' },
+    { key: 'T', description: 'Toggle thumbnails (requires withThumbnails)' },
+    { key: 'Z', description: 'Toggle zoom (requires withZoom)' },
+  ]}
+/>

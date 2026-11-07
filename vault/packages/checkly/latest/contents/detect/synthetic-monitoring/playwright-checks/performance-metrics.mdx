@@ -1,0 +1,122 @@
+---
+title: Performance & Web Vitals
+sidebarTitle: Web Vitals
+description: 'Web Vitals for Playwright Check Suites'
+tags: ['synthetic-monitoring', 'playwright-checks']
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/playwright-checks/performance-metrics/'
+---
+
+Checkly automatically collects Web Vitals for the pages your Playwright Check Suites visit. Every page is measured and scored, and the results appear in the check result. No changes to your tests are needed.
+
+<Note>
+Collection is on by default on all browsers. TBT and INP are available on **Chromium** and shown as a dash where unsupported.
+</Note>
+
+## Where Web Vitals appear
+
+A single run can visit many pages across its tests, so Web Vitals are reported per page visit rather than once per check. You find them in two places:
+
+- The check result's **Performance** tab, which lists every page visited across the run.
+- Each test result's **Web Vitals** section.
+
+<Frame>
+  ![The Web Vitals section of a test result, listing each visited page with its LCP, CLS, FCP, TTFB, TBT, and INP scores](/images/pwn-web-vitals.png)
+</Frame>
+
+Each row is one page visit. Expand a row to see what drove its largest paint and its slowest interaction.
+
+## Web Vitals
+
+For each page a test visits, Checkly collects six [Web Vitals](https://web.dev/learn-web-vitals/) and scores each one good, needs improvement, or poor against the canonical [web.dev thresholds](https://web.dev/articles/defining-core-web-vitals-thresholds).
+
+<Accordion title="First Contentful Paint (FCP)" icon="brush">
+**Initial Content Display**
+Measures the time from when the page starts loading to when any content is rendered. A large FCP means users see a white screen for too long, doubting whether the page works at all.
+
+[Read more about FCP over at web.dev](https://web.dev/fcp/)
+</Accordion>
+
+<Accordion title="Largest Contentful Paint (LCP)" icon="photo">
+**Main Content Loading**
+Measures the time to render the largest visual item within the browser viewport. High LCP means users wait too long before the most useful part of your page loads.
+
+[Read more about LCP over at web.dev](https://web.dev/lcp/)
+</Accordion>
+
+<Accordion title="Cumulative Layout Shift (CLS)" icon="arrows-minimize">
+**Visual Stability**
+An aggregate metric that signals screen elements "jumping around" as the page loads. Low CLS means you have a stable page layout.
+
+[Read more about CLS over at web.dev](https://web.dev/cls/)
+</Accordion>
+
+<Accordion title="Total Blocking Time (TBT)" icon="clock">
+**Main Thread Responsiveness**
+Reflects the time a web page is "blocked" from receiving user input because the main rendering thread is busy. High TBT means sluggish user interactions.
+
+[Read more about TBT over at web.dev](https://web.dev/tbt/)
+</Accordion>
+
+<Accordion title="Time to First Byte (TTFB)" icon="server">
+**Server Response Time**
+Indicates how long it took for your server to respond with the first byte of content. TTFB can vary based on location and network conditions.
+
+[Read more about TTFB over at web.dev](https://web.dev/time-to-first-byte/)
+</Accordion>
+
+<Accordion title="Interaction to Next Paint (INP)" icon="hand-click">
+**Interaction Responsiveness**
+Measures how quickly the page responds to user interactions like clicks, taps, and key presses, from the input to the next frame painted. A high INP means interactions feel sluggish.
+
+[Read more about INP over at web.dev](https://web.dev/inp/)
+</Accordion>
+
+<Callout type="info" emoji="💡">
+A metric can show a dash instead of a score. That is not an error. Some metrics only exist under certain conditions, for example a page your test never interacts with has no INP. INP also relies on the Event Timing API, which is well supported on Chromium and weaker on WebKit and Firefox.
+</Callout>
+
+## What caused the LCP
+
+Expand a page visit to see what produced its Largest Contentful Paint and where the time went:
+
+- The **element** that painted, shown as a CSS selector you can paste into your browser devtools.
+- The LCP **resource**, matched to the request in the trace's network log so you can see its load time.
+- A **phase breakdown** of the LCP time: time to first byte, then resource load delay, resource load time, and element render delay. For a text element the two resource phases are zero.
+
+This turns "LCP was 3.2 s" into "the hero image took 3.2 s, and most of that was the resource loading".
+
+<Frame>
+  ![The Largest Contentful Paint breakdown of a page visit, showing the painted element, the loaded resource, and how the time split across TTFB, load delay, and render delay](/images/pwn-web-vitals-lcp.png)
+</Frame>
+
+## What caused the INP
+
+The same panel breaks down the page's INP, its slowest interaction:
+
+- The **element** the user interacted with, as a CSS selector.
+- The **event type**, such as `pointerdown`, `click`, or `keydown`.
+- A **phase breakdown**: input delay (time before your handlers run), processing (your handlers running), and presentation delay (time until the next frame paints).
+
+When an interaction started before a single-page route change, Checkly notes it. That interaction's latency then reflects the cost of arriving at the new route rather than a slow interaction on it.
+
+<Frame>
+  ![The Interaction to Next Paint breakdown of a page visit, showing the interacted element, the event type, and how the time split across input delay, processing, and presentation delay](/images/pwn-web-vitals-inp.png)
+</Frame>
+
+## Single-page apps and soft navigations
+
+Core Web Vitals are measured per page load. A single-page app changes routes with `history.pushState` and no full reload, so to the browser it is still the same document, and the load metrics do not fire again for the new route.
+
+Checkly reports these visits honestly rather than showing stale or misleading numbers. A page reached by a soft navigation is marked with a **Soft nav** badge, and:
+
+- Its load metrics (LCP, FCP, TTFB) are blank. They describe a document load, not a client-side route change.
+- CLS and TBT are also blank. They accumulate over the whole document and would be misleading pinned to a single route.
+- INP is still reported. It is measured per visit, so an in-app route change keeps a real responsiveness signal, often the most useful number for that page.
+
+<Callout type="tip" emoji="💡">
+A soft-nav row with mostly empty cells is intentional, not a failure to collect data. Read its INP, and the INP breakdown, for that route's responsiveness.
+</Callout>
+
+## Web Vitals for Browser checks
+
+Classic [Browser checks](/detect/synthetic-monitoring/browser-checks/performance-metrics) collect the same Web Vitals with the same scoring. Playwright Check Suites report them per page visit across a whole suite, and add the LCP and INP attribution above.

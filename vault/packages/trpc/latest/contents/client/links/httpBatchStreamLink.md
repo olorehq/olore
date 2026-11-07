@@ -1,11 +1,15 @@
 ---
 id: httpBatchStreamLink
 title: HTTP Batch Stream Link
+description: A terminating link that batches tRPC calls and streams each response as soon as it is ready
 sidebar_label: HTTP Batch Stream Link
 slug: /client/links/httpBatchStreamLink
+section: "Client Usage"
+parent: "client/links"
+order: 33
 ---
 
-`httpBatchStreamLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
+`httpBatchStreamLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
 
 ## Options
 
@@ -20,7 +24,7 @@ Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options), 
 > All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
 :::note
-If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](https://trpc.io/docs/client/links/httpBatchLink).
+If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](./httpBatchLink.md).
 :::
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
@@ -46,7 +50,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+After that, calls made in the same event loop tick are batched together, so you don't need `Promise.all`, though it's a common way to do it. The code below will produce exactly **one** HTTP request, and the server will call `createContext` **once** for it:
 
 ```ts twoslash
 // @target: esnext
@@ -72,6 +76,8 @@ const somePosts = await Promise.all([
   trpc.post.byId.query(3),
 ]);
 ```
+
+Each procedure still runs its own resolver, so whether this makes one database query depends on your data layer. Prisma [batches `findUnique()` calls made in the same tick](https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance#solving-the-n1-problem) into one query, and a [DataLoader](https://github.com/graphql/dataloader) can do the same for other queries. Otherwise, each resolver makes its own query.
 
 ## Streaming mode
 
@@ -101,12 +107,12 @@ const client = createTRPCClient<AppRouter>({
 Compared to a regular `httpBatchLink`, a `httpBatchStreamLink` will:
 
 - Cause the requests to be sent with a `trpc-accept: application/jsonl` header (or `Accept: application/jsonl` when using `streamHeader: 'accept'`)
-- Cause the response to be sent with a `transfer-encoding: chunked` and `content-type: application/jsonl`
+- Cause the response to be sent with `transfer-encoding: chunked` and `content-type: application/json` by default. You can set the streamed response `content-type` to `application/jsonl`, `application/x-ndjson`, or another value on the server via `initTRPC.create({ jsonl: { contentType: ... } })`.
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
 ## Async generators and deferred promises {#generators}
 
-You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](/?try=minimal#try-it-out)
+You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](https://trpc.io/?try=minimal#try-it-out)
 
 ```ts twoslash
 // @target: esnext
@@ -176,10 +182,11 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which are not available in React Native. It's important to note that if your `TextDecoderStream` polyfill does not automatically polyfill `ReadableStream` and `WritableStream` those will also need to be polyfilled. If you still want to enable streaming, you need to polyfill those.
 
-You will also need to override the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
+You will also need to override the default fetch in the `httpBatchStreamLink` configuration options with one that can stream. In the below example we will be using [`react-native-fetch-api`](https://github.com/react-native-community/fetch), which streams text when you pass its `reactNative` option. On Expo, you can pass `fetch` from [`expo/fetch`](https://docs.expo.dev/versions/latest/sdk/expo/) instead, which streams without extra options.
 
 ```ts
 import { httpBatchStreamLink } from '@trpc/client';
+import { fetch } from 'react-native-fetch-api';
 
 httpBatchStreamLink({
   fetch: (url, opts) =>
@@ -205,9 +212,9 @@ You need to enable the `ReadableStream` API through a feature flag: [`streams_en
 
 You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchStreamLink.ts)
 
-## Configure a ping option to keep the connection alive
+## Configure JSONL streaming options
 
-When setting up your root config, you can pass in a `jsonl` option to configure a ping option to keep the connection alive.
+When setting up your root config, you can pass in a `jsonl` option to configure ping behavior and the response `content-type` for streamed batch responses.
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -215,6 +222,9 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create({
   jsonl: {
     pingMs: 1000,
+    contentType: 'application/jsonl',
   },
 });
 ```
+
+The default `contentType` remains `application/json` for backwards compatibility. Use `application/jsonl` if you want the response header to match the `trpc-accept` / `Accept` header sent by `httpBatchStreamLink`, or choose another value that works better with your tooling.

@@ -18,6 +18,80 @@ Register your Application class in `AndroidManifest.xml`:
 </application>
 ```
 
+## Configuration options
+
+Use `ClerkConfigurationOptions` to customize debug logging, telemetry, proxying, and shared session sync. Pass it to `Clerk.initialize()`:
+
+```kotlin
+import com.clerk.api.Clerk
+import com.clerk.api.ClerkConfigurationOptions
+import com.clerk.api.SharedSessionSyncConfig
+
+Clerk.initialize(
+  context = this,
+  publishableKey = "{{pub_key}}",
+  options = ClerkConfigurationOptions(
+    enableDebugMode = true,
+    proxyUrl = "https://proxy.example.com/__clerk",
+    telemetryEnabled = true,
+    sharedSessionSync = SharedSessionSyncConfig.enabled,
+  ),
+)
+```
+
+### `ClerkConfigurationOptions`
+
+<Properties>
+  - `customHeaders`
+  - `Map<String, String>`
+
+  Additional headers to append to outgoing Clerk API requests. Set with `withCustomHeaders()` rather than the constructor. Defaults to empty.
+
+  ---
+
+  - `enableDebugMode`
+  - `Boolean`
+
+  Enables verbose logging for SDK operations and API calls. Defaults to `false`.
+
+  ---
+
+  - `proxyUrl`
+  - `String?`
+
+  Proxy URL for apps behind a reverse proxy, e.g. `https://proxy.example.com/__clerk`. Defaults to `null`.
+
+  ---
+
+  - `sharedSessionSync`
+  - [`SharedSessionSyncConfig?`](#sharedsessionsyncconfig)
+
+  Enables shared session sync between sibling apps that use the same Clerk [Publishable Key](!publishable-key) and are signed with the same certificate. Defaults to `null`. See [Share sessions across apps](/docs/reference/native-mobile/shared-session-sync).
+
+  ---
+
+  - `telemetryEnabled`
+  - `Boolean`
+
+  Enables telemetry collection for this SDK instance. Defaults to `true`.
+
+  ---
+
+  - `updateRequiredViewEnabled`
+  - `Boolean`
+
+  Automatically shows an update screen over your app on Android when its `versionCode` is below the minimum set in the Clerk Dashboard. Users can't dismiss the screen until they update. If your app doesn't include `com.clerk:clerk-android-ui`, no screen appears. To show your own screen, call `withUpdateRequiredViewDisabled()` and use `Clerk.appVersionSupportStatus`. Defaults to `true`. See [Require a minimum app version](/docs/guides/development/minimum-app-version).
+</Properties>
+
+### `SharedSessionSyncConfig`
+
+<Properties>
+  - `SharedSessionSyncConfig.enabled`
+  - `SharedSessionSyncConfig`
+
+  Turns on shared session sync between sibling apps. See [Share sessions across apps](/docs/reference/native-mobile/shared-session-sync).
+</Properties>
+
 ## Wait for initialization
 
 The Clerk SDK initialization is non-blocking. Listen for the SDK to be ready before using Clerk features:
@@ -32,6 +106,9 @@ Clerk.isInitialized.first { it }
 // Now safe to use Clerk
 val user = Clerk.userFlow.value
 ```
+
+> [!NOTE]
+> When Clerk rejects your app's version at launch because it's older than the [minimum app version](/docs/guides/development/minimum-app-version), `Clerk.isInitialized` stays `false` while the version is unsupported, unless the app has saved state from an earlier launch. Check `Clerk.appVersionSupportStatus` before you wait on initialization.
 
 ## Next steps
 

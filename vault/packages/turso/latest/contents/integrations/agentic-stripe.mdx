@@ -156,15 +156,18 @@ const conn = connect({
   authToken: process.env.MY_DB_AUTH_TOKEN,
 });
 
-// Execute a query
-const result = await conn.prepare("SELECT * FROM users WHERE active = ?").all([1]);
+// Execute a query — prepare() is async, await it before using the statement
+const stmt = await conn.prepare("SELECT * FROM users WHERE active = ?");
+const result = await stmt.all([1]);
 console.log(result);
 
 // Positional parameters
-await conn.prepare("SELECT * FROM users WHERE id = ?").get([1]);
+const byId = await conn.prepare("SELECT * FROM users WHERE id = ?");
+const row = await byId.get([1]);
 
 // Named parameters
-await conn.prepare("INSERT INTO users VALUES (:name)").run({ name: "Alice" });
+const insert = await conn.prepare("INSERT INTO users VALUES (:name)");
+await insert.run({ name: "Alice" });
 
 // Batch multiple statements in an implicit transaction
 await conn.batch([
@@ -173,11 +176,14 @@ await conn.batch([
   "INSERT INTO todos (title) VALUES ('Write code')",
 ]);
 
-// Interactive transaction
-const tx = await conn.transaction("write");
-await tx.prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?").run([100, 1]);
-await tx.prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?").run([100, 2]);
-await tx.commit();
+// Transactions: wrap statements in a function; each call runs in BEGIN..COMMIT
+const addTodo = await conn.prepare("INSERT INTO todos (title) VALUES (?)");
+const addMany = conn.transaction((titles) => {
+  for (const title of titles) {
+    addTodo.run([title]);
+  }
+});
+await addMany(["Ship docs", "Review PR"]);
 ```
 
 ### Local-first with sync — `@tursodatabase/sync` (BETA)

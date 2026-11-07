@@ -14,7 +14,7 @@ This guide will walk you through an example using the Amazon Bedrock JavaScript 
 - In your AWS console, navigate to Amazon Bedrock and under "Request model access", select the Amazon Titan Image Generator G1 model.
 - In your Supabase project, create a `.env` file in the `supabase` directory with the following contents:
 
-```txt
+```dotenv
 AWS_DEFAULT_REGION="<your_region>"
 AWS_ACCESS_KEY_ID="<replace_your_own_credentials>"
 AWS_SECRET_ACCESS_KEY="<replace_your_own_credentials>"
@@ -46,9 +46,9 @@ And add the code to the `index.ts` file:
 ```ts index.ts
 // We need to mock the file system for the AWS SDK to work.
 import { prepareVirtualFile } from 'https://deno.land/x/mock_file@v1.1.2/mod.ts'
-import { BedrockRuntimeClient, InvokeModelCommand } from 'npm:@aws-sdk/client-bedrock-runtime'
+import { BedrockRuntimeClient, InvokeModelCommand } from 'npm:@aws-sdk/client-bedrock-runtime@^3'
 import { withSupabase } from 'npm:@supabase/server@^1'
-import { decode } from 'npm:base64-arraybuffer'
+import { decode } from 'npm:base64-arraybuffer@^1'
 
 console.log('Hello from Amazon Bedrock!')
 
@@ -108,7 +108,7 @@ export default {
           upsert: false,
         })
       if (!upload) {
-        return Response.json(uploadError)
+        return Response.json({ error: uploadError?.message ?? 'Upload failed' }, { status: 500 })
       }
       const { data } = ctx.supabase.storage.from('images').getPublicUrl(upload.path!)
       return Response.json(data)

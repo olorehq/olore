@@ -1,7 +1,7 @@
 ---
-title: '`<SignOutButton>`'
+title: '`<SignOutButton>` component'
 description: The <SignOutButton> component is a button that signs a user out.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue
 ---
 
 The `<SignOutButton>` component is a button that signs a user out. By default, it is a `<button>` tag that says **Sign Out**, but it is completely customizable by passing children.
@@ -32,6 +32,18 @@ The `<SignOutButton>` component is a button that signs a user out. By default, i
   ```
 </If>
 
+<If sdk="electron">
+  ```jsx {{ filename: 'src/App.tsx' }}
+  import { SignOutButton } from '@clerk/electron/react'
+
+  function App() {
+    return <SignOutButton />
+  }
+
+  export default App
+  ```
+</If>
+
 <If sdk="astro">
   ```astro {{ filename: 'pages/sign-out.astro' }}
   ---
@@ -45,10 +57,10 @@ The `<SignOutButton>` component is a button that signs a user out. By default, i
 <If sdk="expo">
   <Include src="_partials/expo/web-only-callout" />
 
-  ```jsx {{ filename: 'src/app/sign-out.web.tsx' }}
+  ```jsx {{ filename: 'src/components/SignOutButton.web.tsx' }}
   import { SignOutButton } from '@clerk/expo/web'
 
-  export default function SignOutPage() {
+  export default function Page() {
     return <SignOutButton />
   }
   ```
@@ -75,7 +87,7 @@ The `<SignOutButton>` component is a button that signs a user out. By default, i
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/sign-out.tsx' }}
+  ```tsx {{ filename: 'src/routes/sign-out.tsx' }}
   import { SignOutButton } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -147,6 +159,22 @@ You can create a custom button by wrapping your own button, or button text, in t
   ```
 </If>
 
+<If sdk="electron">
+  ```jsx {{ filename: 'src/App.tsx' }}
+  import { SignOutButton } from '@clerk/electron/react'
+
+  function App() {
+    return (
+      <SignOutButton>
+        <button>Custom sign out button</button>
+      </SignOutButton>
+    )
+  }
+
+  export default App
+  ```
+</If>
+
 <If sdk="astro">
   You must pass the `asChild` prop to the `<SignOutButton>` component if you are passing children to it.
 
@@ -164,10 +192,10 @@ You can create a custom button by wrapping your own button, or button text, in t
 <If sdk="expo">
   <Include src="_partials/expo/web-only-callout" />
 
-  ```jsx {{ filename: 'src/app/index.tsx' }}
+  ```jsx {{ filename: 'src/components/SignOutButton.web.tsx' }}
   import { SignOutButton } from '@clerk/expo/web'
 
-  export default function Home() {
+  export default function Page() {
     return (
       <SignOutButton>
         <button>Custom sign out button</button>
@@ -234,7 +262,7 @@ You can create a custom button by wrapping your own button, or button text, in t
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/index.tsx' }}
+  ```tsx {{ filename: 'src/routes/index.tsx' }}
   import { SignOutButton } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -285,6 +313,24 @@ In the following example, the `sessionId` is retrieved from the [`useAuth()`](/d
 <If sdk="react">
   ```jsx {{ filename: 'src/App.tsx' }}
   import { SignInButton, SignOutButton, useAuth } from '@clerk/react'
+
+  function App() {
+    const { sessionId } = useAuth()
+
+    if (!sessionId) {
+      return <SignInButton />
+    }
+
+    return <SignOutButton signOutOptions={{ sessionId }} />
+  }
+
+  export default App
+  ```
+</If>
+
+<If sdk="electron">
+  ```jsx {{ filename: 'src/App.tsx' }}
+  import { SignInButton, SignOutButton, useAuth } from '@clerk/electron/react'
 
   function App() {
     const { sessionId } = useAuth()
@@ -377,10 +423,11 @@ In the following example, the `sessionId` is retrieved from the [`useAuth()`](/d
 <If sdk="expo">
   <Include src="_partials/expo/web-only-callout" />
 
-  ```jsx {{ filename: 'src/app/index.web.tsx' }}
-  import { SignInButton, SignOutButton, useAuth } from '@clerk/expo/web'
+  ```jsx {{ filename: 'src/components/AuthButtons.web.tsx' }}
+  import { useAuth } from '@clerk/expo'
+  import { SignInButton, SignOutButton } from '@clerk/expo/web'
 
-  export default function Home() {
+  export default function Page() {
     const { sessionId } = useAuth()
 
     if (!sessionId) {
@@ -393,7 +440,7 @@ In the following example, the `sessionId` is retrieved from the [`useAuth()`](/d
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/index.tsx' }}
+  ```tsx {{ filename: 'src/routes/index.tsx' }}
   import { SignInButton, SignOutButton, useAuth } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -416,6 +463,13 @@ In the following example, the `sessionId` is retrieved from the [`useAuth()`](/d
 ## Properties
 
 <Properties>
+  - `children?`
+  - `React.ReactNode`
+
+  Children you want to wrap the `<SignOutButton>` in.
+
+  ---
+
   - `redirectUrl?`
   - `string`
 
@@ -430,13 +484,6 @@ In the following example, the `sessionId` is retrieved from the [`useAuth()`](/d
 
   - `sessionId?`: The ID of a specific session to sign out of. Useful for [multi-session applications](/docs/guides/secure/session-options#multi-session-applications).
   - `redirectUrl?`: The full URL or path to navigate after successful sign-out.
-
-  ---
-
-  - `children?`
-  - `React.ReactNode`
-
-  Children you want to wrap the `<SignOutButton>` in.
 </Properties>
 
 <If sdk="astro">

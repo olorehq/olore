@@ -5,7 +5,7 @@ description: Local TanStack Query documentation reference (latest). TanStack Que
 
 # TanStack Query Documentation
 
-TanStack Query (React Query) is a powerful server-state management library for React, Vue, Angular, Solid, Svelte, Lit, and Preact. It handles fetching, caching, synchronizing, and updating server data with minimal configuration.
+TanStack Query (React Query) is a server-state management library for React, Preact, Vue, Solid, Svelte, Angular, and Lit. It handles fetching, caching, synchronizing, and updating server data.
 
 ## Quick Reference
 
@@ -17,8 +17,7 @@ TanStack Query (React Query) is a powerful server-state management library for R
 | Queries guide | `contents/framework/react/guides/queries.md` |
 | Mutations guide | `contents/framework/react/guides/mutations.md` |
 | SSR / Next.js | `contents/framework/react/guides/ssr.md` |
-| useQuery API | `contents/framework/react/reference/useQuery.md` |
-| QueryClient API | `contents/reference/QueryClient.md` |
+| API functions (React) | `contents/framework/react/reference/functions/` |
 | ESLint plugin | `contents/eslint/eslint-plugin-query.md` |
 
 ## When to use
@@ -27,12 +26,8 @@ Use this skill when the user asks about:
 - Fetching, caching, and synchronizing server data
 - useQuery, useMutation, useInfiniteQuery hooks
 - React Query, Vue Query, Angular Query, Solid Query, Svelte Query
-- QueryClient configuration and cache management
-- Stale time, refetching, invalidation strategies
-- SSR/hydration with Next.js or other frameworks
-- Infinite scroll and paginated queries
-- Optimistic updates and mutations
-- TanStack Query ESLint plugin rules
+- QueryClient configuration, cache invalidation, stale time, refetching
+- Hydration, SSR, devtools, persistence plugins, and the ESLint plugin
 
 ## How to find information
 

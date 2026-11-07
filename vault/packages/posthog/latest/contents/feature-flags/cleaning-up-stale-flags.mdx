@@ -58,11 +58,13 @@ If you use an AI coding agent with the [PostHog MCP server](/docs/model-context-
 List all stale feature flags in my project.
 ```
 
-The MCP server calls `feature-flag-get-all` with `active: "STALE"` and returns the results. This works in any MCP client like Claude Code, Cursor, Windsurf, VS Code, and others. See [Manage flags with MCP](/docs/feature-flags/create-flags-mcp).
+The MCP server calls `feature-flag-get-all` with `active: "STALE"` and returns the results. This works in any MCP client like Claude Code, Cursor, Windsurf, VS Code, and others. See [Manage flags with MCP](/docs/feature-flags/surfaces/mcp).
 
 ## 2. Removing flags from code
 
 Once you know which flags are stale, you need to decide what happens to the code they gate. This depends on the flag's rollout state:
+
+> **Tip:** For flags backing experiments, PostHog can open the cleanup PR for you when you end the experiment. See [opening a flag cleanup PR](/docs/experiments/managing-lifecycle#opening-a-flag-cleanup-pr).
 
 ### Fully rolled out flags
 
@@ -116,7 +118,7 @@ Search your codebase for the flag key as a string. Common SDK patterns:
 | Python | `posthog.evaluate_flags(...)` followed by `flags.is_enabled('key')` or `flags.get_flag('key')`, plus older `posthog.feature_enabled('key')` and `posthog.get_feature_flag('key')` calls |
 | Node | `evaluateFlags(...)` followed by `flags.isEnabled('key')` or `flags.getFlag('key')`, plus older `isFeatureEnabled('key')` and `getFeatureFlag('key')` calls |
 | Ruby | `evaluate_flags(...)` followed by `flags.enabled?('key')` or `flags.get_flag('key')`, plus older `is_feature_enabled('key')` and `get_feature_flag('key')` calls |
-| Go | `EvaluateFlags(...)` followed by `flags.IsEnabled("key")` or `flags.GetFlag("key")`, plus older `IsFeatureEnabled("key")` and `GetFeatureFlag("key")` calls |
+| Go | `EvaluateFlags(...)` followed by `flags.IsEnabled("key")` or `flags.GetFlag("key")`, plus older `IsFeatureEnabled(...)` and `GetFeatureFlag(...)` calls |
 | Java | `evaluateFlags(...)` followed by `flags.isEnabled("key")` or `flags.getFlag("key")`, plus older `isFeatureEnabled("key")` and `getFeatureFlag("key")` calls |
 | .NET | `EvaluateFlagsAsync(...)` followed by `flags.IsEnabled("key")` or `flags.GetFlag("key")`, plus older `IsFeatureEnabledAsync("key")` and `GetFeatureFlagAsync("key")` calls |
 | Rust | `evaluate_flags(...)` followed by `flags.is_enabled("key")` or `flags.get_flag("key")`, plus older `is_feature_enabled("key")` and `get_feature_flag("key")` calls |

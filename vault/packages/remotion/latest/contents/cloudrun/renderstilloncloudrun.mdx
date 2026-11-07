@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-cloudrun-renderstilloncloudrun.png
+image: https://remotion.media/docs/generated/articles-docs-cloudrun-renderstilloncloudrun.png
 id: renderstilloncloudrun
 title: renderStillOnCloudrun()
 crumb: 'Cloud Run API'
@@ -170,6 +170,10 @@ A number describing how long the render may take to resolve all [`delayRender()`
 
 <Options id="media-cache-size-in-bytes" />
 
+### `preferredEffectBackend?`<AvailableFrom v="4.0.540" />
+
+<Options id="preferred-effect-backend" />
+
 ### `offthreadVideoCacheSizeInBytes?`<AvailableFrom v="4.0.23"/>
 
 <Options id="offthreadvideo-cache-size-in-bytes" />
@@ -177,6 +181,14 @@ A number describing how long the render may take to resolve all [`delayRender()`
 ### `offthreadVideoThreads`<AvailableFrom v="4.0.261"/>
 
 <Options id="offthreadvideo-video-threads" />
+
+### `licenseKey?`<AvailableFrom v="4.0.540"/>
+
+License key for reporting usage on [remotion.pro](https://www.remotion.pro). Pass a private API key starting with `rm_sec_`, or `"free-license"` if you qualify for the [Free License](/docs/license). Defaults to `null`, which disables usage reporting.
+
+### `isProduction?`<AvailableFrom v="4.0.540"/>
+
+<Options id="is-production" />
 
 ## Return value
 
@@ -208,6 +220,12 @@ Google Storage path, beginning with `gs://{bucket-name}`. Can be used with the [
 ### `size`
 
 Size of the rendered still in KB.
+
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/cloudrun/light-client).
 
 ## See also
 

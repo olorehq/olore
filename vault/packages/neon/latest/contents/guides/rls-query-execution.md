@@ -10,7 +10,7 @@ summary: >-
   schema to wire up the runtime connection layer, whether from a frontend using
   the Data API or a backend using the Neon serverless driver.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-07-15T00:08:00.682Z'
 ---
 
 <InfoBlock>
@@ -187,13 +187,13 @@ After defining RLS policies, the next step is choosing how to run queries that r
 
 ### Frontend: Use the Data API
 
-For frontend applications, use the [Data API](/docs/data-api/get-started#connect-and-query), which provides a REST interface for your database. In this setup, Drizzle is used only to **declare and migrate RLS policies**; query execution is done with a PostgREST-compatible client such as `@neondatabase/neon-js`, `postgrest-js` etc.
+For frontend applications, use the [Data API](/docs/data-api/get-started#connect-and-query), which provides a REST interface for your database. In this setup, Drizzle is used only to **declare and migrate RLS policies**; query execution is done with a PostgREST-compatible client such as `@neon/neon-js`, `postgrest-js` etc.
 
 When requests go through the Data API, your database enforces RLS policies automatically based on the JWT claims included in the request. This means that as long as your frontend includes the appropriate authentication token, users will only be able to access the data they're authorized to see.
 
 For complete examples of using Drizzle and RLS with the Data API, see:
 
-- [Data API tutorial](/docs/data-api/demo) - Full note-taking app example built with Neon Auth, Drizzle RLS, and the Data API
+- [Data API tutorial](/docs/data-api/demo) - Full note-taking app example built with Managed Better Auth, Drizzle RLS, and the Data API
 - [Data API getting started](/docs/data-api/get-started) - Setup and basic queries
 
 ### Backend: Use Drizzle with the serverless driver

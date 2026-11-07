@@ -1,0 +1,339 @@
+---
+title: 'Compare to Zustand'
+---
+
+This page compares XState Store with [Zustand](https://zustand.docs.pmnd.rs/).
+
+## Summary
+
+| Topic | Zustand | XState Store |
+| --- | --- | --- |
+| State model | Store state and actions live together in a store hook. | Context changes through named event transitions; atoms cover direct free-form state. |
+| Updates | Actions usually call `set(...)` directly. | `store.trigger.*(...)` sends typed events to transition functions. |
+| Effects | Userland actions and middleware. | Synchronous `enqueue.effect`, `enqueue.emit`, and `enqueue.trigger` from transitions. |
+| Rendering | React hook selectors with equality helpers. | Framework adapters with selectors and compare functions. |
+| Ecosystem | Larger user base and ecosystem. | Smaller API with built-in event, schema, atom, and extension concepts. |
+
+## State Model
+
+Zustand stores commonly combine state and actions in one object:
+
+```ts
+const useCountStore = create((set) => ({
+  count: 0,
+  increment: (by: number) =>
+    set((state) => ({
+      count: state.count + by,
+    })),
+}));
+```
+
+XState Store separates state from the events that update it:
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```ts
+const useCountStore = create((set) => ({
+  count: 0,
+  increment: (by: number) =>
+    set((state) => ({
+      count: state.count + by,
+    })),
+}));
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+
+store.trigger.increment({ by: 1 });
+```
+
+</SplitItem>
+</SplitItems>
+
+For simple direct state, XState Store atoms provide a similar free-form model:
+
+```ts
+const count = createAtom(0);
+
+count.set((value) => value + 1);
+```
+
+The main difference is not that Zustand is more flexible; it is that Zustand puts the flexible object-store model first, while XState Store puts evented transitions first and keeps direct state in atoms.
+
+**Migration tip:** If a Zustand field is updated directly and has no domain rules, migrate it to an atom. If a Zustand action represents a domain event or invariant, migrate it to a store transition.
+
+## Update Model
+
+Zustand actions can do whatever the action function does. That is useful when the state shape is small or application-specific conventions are enough.
+
+XState Store transitions make the update surface explicit:
+
+- event names are known from `on` and `schemas.events`
+- event payloads can be inferred from transition parameters or schemas
+- `store.can.*(...)` can check whether a transition is allowed without changing state
+
+This makes XState Store a better fit when updates are domain events rather than arbitrary setters.
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```ts
+const useStore = create((set) => ({
+  status: 'idle',
+  submit: () => set({ status: 'submitted' }),
+}));
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { status: 'idle' },
+  on: {
+    submit: (context) => ({ status: 'submitted' }),
+  },
+});
+
+store.can.submit();
+store.trigger.submit();
+```
+
+</SplitItem>
+</SplitItems>
+
+**Migration tip:** A Zustand action name usually becomes an `on` transition key, and the action arguments become the event payload passed to `store.trigger.*(...)`.
+
+## Effects Model
+
+Zustand effects usually live in actions, middleware, subscriptions, or surrounding application code.
+
+XState Store effects are enqueued from transitions:
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```ts
+const useStore = create((set) => ({
+  count: 0,
+  incrementLater: () => {
+    setTimeout(() => {
+      set((state) => ({ count: state.count + 1 }));
+    }, 1000);
+  },
+}));
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    incrementLater: (context, event, enqueue) => {
+      enqueue.effect(() => {
+        setTimeout(() => store.trigger.increment({ by: 1 }), 1000);
+      });
+
+      return context;
+    },
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+The trade-off is intentional: transitions stay synchronous and easy to inspect, while effects are still associated with the event that caused them.
+
+## Integration And Rendering
+
+Zustand is React-first and has a mature React hook API. XState Store is framework-neutral at the core and uses adapter packages:
+
+- `@xstate/store-react`
+- `@xstate/store-vue`
+- `@xstate/store-svelte`
+- `@xstate/store-solid`
+- `@xstate/store-angular`
+- `@xstate/store-preact`
+
+Both can avoid unnecessary renders with selectors. XState Store's selectors also exist on the core store, outside React.
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```tsx
+const count = useCountStore((state) => state.count);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+const count = useSelector(store, (state) => state.context.count);
+```
+
+</SplitItem>
+</SplitItems>
+
+## Extensions
+
+Zustand's advantage is ecosystem maturity and popularity. It has widely used middleware patterns and many community examples.
+
+XState Store includes first-party extensions for:
+
+- persistence
+- undo/redo
+- reset
+- schema validation
+
+XState Store's extension surface is smaller, but the built-in extensions share the same evented store model.
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```ts
+const useStore = create(
+  persist(
+    (set) => ({
+      count: 0,
+    }),
+    { name: 'counter' },
+  ),
+);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {},
+}).with(persist({ name: 'counter' }));
+```
+
+</SplitItem>
+</SplitItems>
+
+## Types And Runtime Contracts
+
+Zustand TypeScript support is mature, but types are generally shaped by the store object you write.
+
+XState Store infers event payloads from transitions, can type context/events/emitted events from Standard Schema-compatible schemas, and can opt into runtime validation with `validateSchemas()`.
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```ts
+type State = {
+  count: number;
+  increment: (by: number) => void;
+};
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+## When To Choose Zustand
+
+Choose Zustand when:
+
+- you want the most popular minimal React store
+- your team already knows Zustand patterns
+- you want the broadest set of examples, integrations, and ecosystem knowledge
+- direct actions and setters are the natural model for your state
+
+## When To Choose XState Store
+
+Choose XState Store when:
+
+- updates are best described as named events
+- you want typed triggers and emitted events
+- you want `store.can.*(...)` and pure transition checks
+- you want a framework-neutral core with adapters
+- you want atoms for direct local state and stores for evented domain state
+
+## Migrating from Zustand
+
+### Concept map
+
+| Zustand | XState Store |
+| --- | --- |
+| `create(...)` store state | `createStore({ context })` or `createAtom(...)` |
+| action method | transition in `on` |
+| `set(...)` | returned context from a transition, or `atom.set(...)` |
+| hook selector | `useSelector(store, selector)` |
+| middleware | extension or explicit `enqueue.effect(...)` |
+
+### Example
+
+<SplitItems>
+<SplitItem value="zustand" label="Zustand">
+
+```tsx
+const useCountStore = create((set) => ({
+  count: 0,
+  inc: (by: number) =>
+    set((state) => ({
+      count: state.count + by,
+    })),
+}));
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+
+store.trigger.inc({ by: 1 });
+```
+
+</SplitItem>
+</SplitItems>
+
+For free-form state with no transition rules, migrate to an atom instead:
+
+```ts
+const count = createAtom(0);
+
+count.set((value) => value + 1);
+```

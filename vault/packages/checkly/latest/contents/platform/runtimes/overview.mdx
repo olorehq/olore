@@ -2,9 +2,10 @@
 title: 'Checkly Runtimes'
 description: 'How Checkly runtimes work.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/platform/runtimes/overview/'
 ---
 
-Checkly lets you use JavaScript code in your [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), [MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview), and optional [setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) for API checks.
+Checkly lets you use JavaScript code in your [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview), and optional [setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) for API checks.
 
 This JavaScript code executes in a runtime environment that is managed by Checkly. This environment includes a specific Node.js version, Playwright version, browser binaries, and selected npm packages. We call these managed environments **runtimes**.
 
@@ -15,9 +16,9 @@ Playwright Check Suites use a different model. They do not use Checkly runtimes.
 You do not have to configure runtimes for most checks.
 
 1. View all the available runtimes on the [runtimes tab in the account section](https://app.checklyhq.com/settings/account/runtimes/). See the screenshot below.
-2. There is always one runtime marked as **active**. This is the runtime all checks use, unless you decide to override this at the check or group level.
+2. One runtime is your **account default**. This is the runtime all checks use, unless you decide to override this at the check or group level.
 3. Runtimes have a simple `YYYY.MM` name, e.g. `2026.04`. Newer dates include newer dependencies.
-4. Pick the runtime you want and click "Save settings". This runtime now applies to all of your checks and any new checks you create.
+4. Select the runtime you want, click **Set as account default** and confirm with **Set as default**. This runtime now applies to all checks and groups that don't pin a runtime, and to any new checks you create.
 
 ![runtimes](/images/docs/images/cli/account_runtimes.png)
 
@@ -57,7 +58,7 @@ We introduced the concept of runtimes so customers can upgrade their JavaScript 
 
 Currently, Checkly is not a full-blown CI system, where a user has full control over the Node.js version and the packages installed in the `node_modules` directory. To help you navigate this tradeoff, we want to show you exactly what happens under the hood.
 
-1. We bundle all your user code when using the [Checkly CLI](/cli) or GitHub Sync before storing your Check in our database.
+1. We bundle all your user code when using the [Checkly CLI](/cli/overview) or GitHub Sync before storing your Check in our database.
 2. Your Check is scheduled to our 20+ global locations via a message bus that has a 256kb file size limit. This is in 99%
 of the cases more than enough for any user code and included file dependencies you may include. However, it is not enough for potentially unlimited
 NPM dependencies living in `node_modules`.

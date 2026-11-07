@@ -3,7 +3,7 @@ title: The pgvector extension
 subtitle: Enable Postgres as a vector store with the pgvector extension
 summary: >-
   The pgvector extension adds vector embedding storage and similarity search to
-  Neon Postgres, supporting exact and approximate nearest-neighbor queries with
+  Lakebase Postgres, supporting exact and approximate nearest-neighbor queries with
   L2, cosine, inner product, L1, Hamming, and Jaccard distance operators. Use
   this page when building AI or NLP applications that store embeddings from
   models such as OpenAI text-embedding-3-small and need to choose between HNSW
@@ -13,7 +13,7 @@ summary: >-
 enableTableOfContents: true
 redirectFrom:
   - /docs/extensions/pg_embedding
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-06T11:14:41.532Z'
 ---
 
 The `pgvector` extension enables you to store vector embeddings and perform vector similarity search in Postgres. It's a natural fit for natural language processing applications, including those built on top of OpenAI's GPT models.
@@ -35,7 +35,15 @@ This topic describes how to enable the `pgvector` extension in Neon and how to c
 You can enable the `pgvector` extension by running the following `CREATE EXTENSION` statement in the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor) or from a client such as [psql](/docs/connect/query-with-psql-editor) that is connected to Neon.
 
 ```sql
-CREATE EXTENSION vector;
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+`pgvector` is available on every Neon plan with no add-on or paid tier required. The extension is installed per database, not per project, so run this statement once in each database where you want to store vectors. If you have multiple databases on a branch, enable it in each one.
+
+To confirm the extension is installed and check its version:
+
+```sql
+SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';
 ```
 
 ## Use a previous version of pgvector
@@ -71,7 +79,7 @@ This command generates a table named `items` with an `embedding` column capable 
 
 ## Storing embeddings
 
-After generating embeddings using a service like [OpenAI’s Embeddings API](https://platform.openai.com/docs/api-reference/embeddings), you can store them in your database. Using a Postgres client library in your preferred programming language, you can execute an `INSERT` statement similar to the following to store embeddings.
+After generating embeddings using a service like the [Neon AI Gateway](/docs/ai-gateway/embeddings) or [OpenAI’s Embeddings API](https://platform.openai.com/docs/api-reference/embeddings), you can store them in your database. The gateway serves embedding models with the same Neon credential you use for the rest of your project. Using a Postgres client library in your preferred programming language, you can execute an `INSERT` statement similar to the following to store embeddings.
 
 - Insert two new rows into the `items` table with the provided embeddings.
 
@@ -673,6 +681,8 @@ LINE 1: SELECT '[4e38,1]'::vector;
 
 ## Resources
 
-`pgvector` source code: [https://github.com/pgvector/pgvector](https://github.com/pgvector/pgvector)
+- `pgvector` source code: [https://github.com/pgvector/pgvector](https://github.com/pgvector/pgvector)
+- [Vector search in Postgres](/guides/vector-search)
+- [Building semantic search with AI embeddings, Neon, and pgvector](/guides/ai-embeddings-postgres-search)
 
 <NeedHelp/>

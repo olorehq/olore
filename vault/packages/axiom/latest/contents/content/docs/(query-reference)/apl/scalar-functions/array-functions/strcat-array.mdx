@@ -1,0 +1,94 @@
+---
+title: strcat_array
+description: 'This page explains how to use the strcat_array function in APL.'
+---
+
+The `strcat_array` function in Axiom Processing Language (APL) allows you to concatenate the elements of an array into a single string, with an optional delimiter separating each element. This function is useful when you need to transform a set of values into a readable or exportable format, such as combining multiple log entries, tracing IDs, or security alerts into a single output for further analysis or reporting.
+
+## Usage
+
+### Syntax
+
+```kusto
+strcat_array(array, delimiter)
+```
+
+### Parameters
+
+| Parameter | Type    | Description                                                                 |
+|-----------|---------|-----------------------------------------------------------------------------|
+| `array`   | dynamic | The array of values to concatenate.                                         |
+| `delimiter` | string  | The string used to separate each element in the concatenated result. Optional. Defaults to an empty string if not specified. |
+
+### Returns
+
+A single concatenated string with the array’s elements separated by the specified delimiter.
+
+## Use case example
+
+You can use `strcat_array` to combine HTTP methods and URLs for a quick summary of unique request paths.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| extend combined_requests = strcat_delim(' ', method, uri)
+| summarize requests_list = make_list(combined_requests)
+| extend paths = strcat_array(requests_list, ', ')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20extend%20combined_requests%20%3D%20strcat_delim('%20'%2C%20method%2C%20uri)%20%7C%20summarize%20requests_list%20%3D%20make_list(combined_requests)%20%7C%20extend%20paths%20%3D%20strcat_array(requests_list%2C%20'%2C%20')%22%7D)
+
+**Output**
+
+| paths                                         |
+|-----------------------------------------------|
+| GET /index, POST /submit, GET /about          |
+
+This query summarizes unique HTTP method and URL combinations into a single, readable string.
+
+## List of related functions
+
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array.
+- [array_index_of](/apl/scalar-functions/array-functions/array-index-of): Finds the index of an element in an array.
+- [array_concat](/apl/scalar-functions/array-functions/array-concat): Combines multiple arrays.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, concatenation typically involves transforming fields into a string using the `eval` command with the `+` operator or `mvjoin()` for arrays. In APL, `strcat_array` simplifies array concatenation by natively supporting array input with a delimiter.
+
+<CodeGroup>
+
+```sql Splunk example
+| eval concatenated=mvjoin(array_field, ", ")
+```
+
+```kusto APL equivalent
+dataset
+| extend concatenated = strcat_array(array_field, ', ')
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, concatenation involves functions like `STRING_AGG()` or manual string building using `CONCAT()`. APL’s `strcat_array` is similar to `STRING_AGG()`, but focuses on array input directly with a customizable delimiter.
+
+<CodeGroup>
+
+```sql SQL example
+SELECT STRING_AGG(column_name, ', ') AS concatenated FROM table;
+```
+
+```kusto APL equivalent
+dataset
+| summarize concatenated = strcat_array(column_name, ', ')
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

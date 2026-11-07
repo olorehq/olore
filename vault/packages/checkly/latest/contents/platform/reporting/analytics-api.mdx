@@ -1,6 +1,8 @@
 ---
 title: 'Analytics API'
+description: "Query Checkly check metrics with the Analytics API, returning aggregated or raw data points grouped by location or time window for your own reporting tools."
 sidebarTitle: 'Analytics API'
+canonical: 'https://www.checklyhq.com/docs/platform/reporting/analytics-api/'
 ---
 
 
@@ -11,10 +13,10 @@ The Analytics APIs allows queries across different dimensions:
 - **Non-aggregated**: Get the raw data points so you can aggregate yourself how you want it.
 
 Use powerful options like `quickRange` to select time window presets like `last30Days` or `lastMonth`, and group results 
-per `location` or per `pageIndex`. For aggregated queries you can set the `aggregationInterval` to get, for instance, data
+per `runLocation` or per `pageIndex`. For aggregated queries you can set the `aggregationInterval` to get, for instance, data
 aggregated per week over the last 30 days.
 
-Dive straight into the [API reference](/api-reference/analytics) or keep reading for more examples!
+Dive straight into the [API reference](/api-reference/analytics/api-checks) or keep reading for more examples!
 
 ## Analytics API basics
 
@@ -22,12 +24,18 @@ There are several endpoints, with one for each check or monitor type.
 
 | Endpoint | Description | API Reference |
 |----------|-------------|---------------|
-| `/v1/analytics/metrics/` | Returns all the available metrics for a specific check-type (`API`, `URL`, `TCP` or `BROWSER`) | [Learn more](/api-reference/analytics/list-all-available-reporting-metrics) |
+| `/v1/analytics/metrics/` | Returns all the available metrics for a specific check type, for example `API`, `URL`, `TCP`, `BROWSER` or `ICMP` | [Learn more](/api-reference/analytics/list-all-available-reporting-metrics) |
 | `/v1/analytics/api-checks/{checkId}` | Returns metrics for API checks | [Learn more](/api-reference/analytics/api-checks) |
 | `/v1/analytics/browser-checks/{checkId}` | Returns metrics for Browser checks | [Learn more](/api-reference/analytics/browser-checks) |
 | `/v1/analytics/multistep-checks/{id}` | Returns metrics for Multistep checks | [Learn more](/api-reference/analytics/multistep-checks) |
-| `/v1/analytics/playwright-checks/{id}` | Returns metrics for Playwright check suites | [Learn more](/api-reference/analytics/playwright-checks) |
+| `/v1/analytics/playwright-checks/{id}` | Returns metrics for Playwright Check Suites | [Learn more](/api-reference/analytics/playwright-checks) |
 | `/v1/analytics/dns/{id}` | Returns metrics for DNS monitors | [Learn more](/api-reference/analytics/dns-monitors) |
+| `/v1/analytics/url-monitors/{id}` | Returns metrics for URL monitors | [Learn more](/api-reference/analytics/url-monitors) |
+| `/v1/analytics/tcp-checks/{id}` | Returns metrics for TCP monitors | [Learn more](/api-reference/analytics/tcp-checks) |
+| `/v1/analytics/icmp/{id}` | Returns metrics for ICMP monitors | [Learn more](/api-reference/analytics/icmp-monitors) |
+| `/v1/analytics/ssl/{id}` | Returns metrics for SSL monitors | [Learn more](/api-reference/analytics/ssl-monitors) |
+| `/v1/analytics/heartbeat-checks/{id}` | Returns metrics for Heartbeat monitors | [Learn more](/api-reference/analytics/heartbeat-checks) |
+| `/v1/analytics/checks` (`POST`) | Returns an analytics summary for multiple checks | [Learn more](/api-reference/analytics/get-analytics-summary-for-multiple-checks) |
 | `/v1/analytics/heartbeat-checks/{id}` | Returns metrics for Heartbeat monitors | [Learn more](/api-reference/analytics/heartbeat-checks) |
 | `/v1/analytics/tcp-checks/{checkId}` | Returns metrics for TCP monitors | [Learn more](/api-reference/analytics/tcp-checks) |
 | `/v1/analytics/url-monitors/{checkId}` | Returns metrics for URL monitors | [Learn more](/api-reference/analytics/url-monitors) |
@@ -44,7 +52,8 @@ The example below is from a Browser check that visits three pages in a typical e
 We can query the for this Browser check using a `curl` command like:  
 
 ```bash
-curl -x GET https://api.checklyhq.com/v1/analytics/browser-checks/79ad4fe0-589a-4924-a027-d18b12eee9cb?metrics=TTFB_avg,TTFB_p99&groupBy=pageIndex&quickRange=last7Days
+curl -H "Authorization: Bearer $CHECKLY_API_KEY" -H "X-Checkly-Account: $CHECKLY_ACCOUNT_ID" \
+  "https://api.checklyhq.com/v1/analytics/browser-checks/79ad4fe0-589a-4924-a027-d18b12eee9cb?metrics=TTFB_avg,TTFB_p99&groupBy=pageIndex&quickRange=last7Days"
 ````
 
 This command add the following query params:
@@ -140,7 +149,7 @@ data (`TTFB_p50` and `TTFB_p90`) for the last 7 days grouping by page.
 
 > You **must** add the `X-Checkly-Account` and `Authorization` headers to authenticate.
 
-## Creating a Grafana Dashboard
+## Creating a Grafana dashboard
 
 Following these instructions you'll learn how to use the Analytics API within a [Grafana](https://grafana.com/) dashboard:
 
@@ -153,7 +162,7 @@ First, you need to create the Data Source with the Analytics API connection. Aft
 2. Configuring a component
 
 Next, you can pick a **time series** component and configure it by selecting the `Checkly Analytics API` data source and 
-setting the required HTTP header and query parameters to fetch the JSON. You'll find detailed docs on available parameters in the [API docs](/api-reference/analytics)
+setting the required HTTP header and query parameters to fetch the JSON. You'll find detailed docs on available parameters in the [API docs](/api-reference/analytics/api-checks)
 
 In the following image you'll see all required configuration for a component:
 
@@ -174,21 +183,6 @@ You can mix multiple components to create a beautiful dashboard. The following s
 
 ![grafana dashboard design](/images/docs/images/analytics/grafana-dashboard-design.png)
 
-## Creating reports with Google Sheets
-
-You can start creating your reports by using our public Google Sheets report example template. The spreadsheet includes the `=ChecklyAPI()` function to consume the Checkly Public API just entering configuring your credentials.
-
-1. Make a copy of our [public Google Sheets template](https://docs.google.com/spreadsheets/d/1ChcFMzuO2LOJVqu7kLGjqXf-0WmnD49_ghRLmm-OQAc/edit#gid=747858019).
-2. Add your `Account Id` and `API Key` in the Apps Script code (be careful if you'll share your spreadsheet with your credentials)
-![google sheets apps script menu](/images/docs/images/analytics/google-sheets-apps-script-menu.png)
-![google sheets apps script credentials](/images/docs/images/analytics/google-sheets-apps-script-credentials.png)
-1. Navigate the `Metrics` and `Checks` pages to confirm `Checkly Public API` requests are working
-2. Go to the `Analytics Report` page, pick a check, pick a metric and see if the chart shows the correct information
-![google sheets report](/images/docs/images/analytics/google-sheets-reports.png)
-![google sheets report summarized](/images/docs/images/analytics/google-sheets-reports-summarized.png)
-
-You'll find dropdown cells to select the check, number of results, quick time range presets, or grouping attribute.
-
 
 ## Creating report using `curl` and `jq`
 
@@ -204,7 +198,7 @@ ACCOUNT_ID=<your account ID>
 TOKEN=<your API token>
 
 rawChecks=$(curl -s --request GET \
-  --url 'https://api-test.checklyhq.com/v1/checks?limit=5&page=1' \
+  --url 'https://api.checklyhq.com/v1/checks?limit=5&page=1' \
   --header "Authorization: Bearer ${TOKEN}" \
   --header "X-Checkly-Account: ${ACCOUNT_ID}") 
 
@@ -217,7 +211,7 @@ for row in $(echo "${checksAndTypes}" | jq -c '.[]'); do
   case $checkType in
     BROWSER)
       rawMetric=$(curl -s --request GET \
-        --url "https://api-test.checklyhq.com/v1/analytics/browser-checks/${checkId}?metrics%5B%5D=TTFB_p99&metrics%5B%5D=FCP_p99&metrics%5B%5D=consoleErrors_sum&metrics%5B%5D=availability&quickRange=last30Days" \
+        --url "https://api.checklyhq.com/v1/analytics/browser-checks/${checkId}?metrics%5B%5D=TTFB_p99&metrics%5B%5D=FCP_p99&metrics%5B%5D=consoleErrors_sum&metrics%5B%5D=availability&quickRange=last30Days" \
         --header "Authorization: Bearer ${TOKEN}" \
         --header "X-Checkly-Account: ${ACCOUNT_ID}")    
       jq -jr '.checkType, " - ", .name' <<< "${rawMetric}"  
@@ -227,7 +221,7 @@ for row in $(echo "${checksAndTypes}" | jq -c '.[]'); do
 
     API)
       rawMetric=$(curl -s --request GET \
-        --url "https://api-test.checklyhq.com/v1/analytics/api-checks/${checkId}?metrics%5B%5D=firstByte_p99&metrics%5B%5D=availability&metrics%5B%5D=dns_p99" \
+        --url "https://api.checklyhq.com/v1/analytics/api-checks/${checkId}?metrics%5B%5D=firstByte_p99&metrics%5B%5D=availability&metrics%5B%5D=dns_p99" \
         --header "Authorization: Bearer ${TOKEN}" \
         --header "X-Checkly-Account: ${ACCOUNT_ID}")
       jq -jr '.checkType, " - ", .name' <<< "${rawMetric}"  

@@ -1,0 +1,364 @@
+---
+title: Monitor your API end to end
+sidebarTitle: API Monitoring
+description: Turn every endpoint into an API check that asserts on status, headers, and body, tells slow from down, authenticates in a setup script, and cleans up in a teardown.
+canonical: 'https://www.checklyhq.com/docs/guides/api-monitoring/'
+---
+
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
+
+By the end of this guide, every endpoint has a check that reads the response instead of trusting the status code, an authenticated write is created and cleaned up on every run, and a slow endpoint shows as degraded instead of paging anyone.
+
+<Frame>
+  <img src="/images/guides/api-monitoring/group.png" alt="A Checkly group page named Shop API with four API checks: GET /books, GET /books/{id}, and POST /orders passing, and a slow httpbin endpoint degraded, with run results from N. Virginia and Ireland" />
+</Frame>
+
+To follow along without your own API, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/api-monitoring). It monitors the catalog API of the [Danube demo shop](https://danube-web.shop) and uses httpbin.org, which echoes requests back, to stand in for an authenticated write endpoint.
+
+<Accordion title="Let your agent do it" icon="sparkles">
+
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Set up API monitoring for this project with Checkly so that every endpoint has a check that reads the response.
+
+Success criteria:
+1. Read my OpenAPI spec if there is one, or ask me for the endpoints. One method and path pair is one check.
+2. Create `__checks__/group.ts` with a `CheckGroupV2` that runs in parallel from 2 locations, sets the `API_BASE_URL` group variable, alerts after 1 failed run, and has retries disabled. Export `responseTimes` with `degradedResponseTime: 1000` and `maxResponseTime: 5000`.
+3. For each read endpoint, create an `ApiCheck` in the group that uses `{{API_BASE_URL}}`, spreads `responseTimes`, and asserts the status code, the content-type header, and at least two JSON body properties with `AssertionBuilder`.
+4. For each write endpoint, add a `setupScript` that fetches a token, sets the `Authorization` header, and builds a unique body, and a `tearDownScript` that deletes what the run created and scrubs the token from `response.body`. Store secrets with `npx checkly env add --secret`, never in code.
+5. Run `npx checkly test --record` and show me the session link.
+6. Show me `npx checkly deploy --preview` and wait for my confirmation before deploying.
+
+Explain each file you changed and why.
+```
+
+</div>
+
+<CopyPromptButton />
+
+The steps below are what the agent does, in the open.
+
+</Accordion>
+
+## Write down every endpoint
+
+Before writing a check, list what to cover. Different methods on the same path count separately: `GET /orders/{id}` and `DELETE /orders/{id}` are two endpoints and two checks.
+
+If your API has an OpenAPI spec, the list already exists. The shop's catalog API has two endpoints:
+
+```yaml openapi.yaml
+openapi: 3.0.3
+info:
+  title: Danube shop catalog API
+  version: 1.0.0
+servers:
+  - url: https://danube-web.shop/api
+paths:
+  /books:
+    get:
+      operationId: listBooks
+      responses:
+        '200':
+          description: Every book in the catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+  /books/{id}:
+    get:
+      operationId: getBook
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: One book
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+components:
+  schemas:
+    Book:
+      type: object
+      required: [id, title, author, price]
+```
+
+Each operation becomes a check, and each `required` property becomes an assertion. The spec says `/books/1` returns a Book, not which book. The checks below pin the values the spec leaves open.
+
+<Note>
+For a large spec, the web app can [import it](/detect/synthetic-monitoring/api-checks/openapi-spec) in bulk. This guide writes the checks as code so they deploy with the API.
+</Note>
+
+## Share what every check needs
+
+Every check shares locations, an alert rule, a base URL, and one idea of what "slow" means. Put those in a group so the tenth check costs the same as the first.
+
+```ts __checks__/group.ts
+import { AlertEscalationBuilder, CheckGroupV2, RetryStrategyBuilder } from 'checkly/constructs'
+
+// Every API check in this guide joins this group. The base URL lives here,
+// so a check reads {{API_BASE_URL}} instead of repeating the host, and a
+// staging copy of the group only changes one value.
+export const apiGroup = new CheckGroupV2('shop-api', {
+  name: 'Shop API',
+  locations: ['us-east-1', 'eu-west-1'],
+  runParallel: true,
+  environmentVariables: [{ key: 'API_BASE_URL', value: 'https://danube-web.shop/api' }],
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(1),
+  retryStrategy: RetryStrategyBuilder.noRetries(),
+})
+
+// Slow is not down: over 1 second is degraded, over 5 seconds fails.
+export const responseTimes = {
+  degradedResponseTime: 1000,
+  maxResponseTime: 5000,
+}
+```
+
+Pointing the group at staging changes one line. Retries are off so a failure lands on the first run. [Alerting that doesn't wake you up for nothing](/guides/alerting) shows when to turn them back on.
+
+The project config sets the frequency and tag:
+
+```ts checkly.config.ts
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+
+export default defineConfig({
+  projectName: 'Docs guide: Monitor your API end to end',
+  logicalId: 'docs-guide-api-monitoring',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    activated: true,
+    frequency: Frequency.EVERY_1M,
+    tags: ['guide-api-monitoring'],
+    checkMatch: '**/__checks__/**/*.check.ts',
+  },
+  cli: { runLocation: 'us-east-1' },
+})
+```
+
+## Assert on status, headers, and body
+
+A 200 with an empty array is a broken catalog that a status-code check calls healthy. Assert on the three things the response carries: status, headers, and body. A GraphQL endpoint answers 200 even when the query fails, so also assert that `$.errors` is empty.
+
+```ts __checks__/catalog.check.ts
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+import { apiGroup, responseTimes } from './group'
+
+// GET /books: the list the storefront renders. Status alone is not enough,
+// so assert the content type, that the array has books, and that the first
+// book has the fields the storefront reads.
+new ApiCheck('shop-api-books', {
+  name: 'GET /books',
+  group: apiGroup,
+  ...responseTimes,
+  request: {
+    method: 'GET',
+    url: '{{API_BASE_URL}}/books',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.headers('content-type').contains('application/json'),
+      AssertionBuilder.jsonBody('$.length').greaterThan(0),
+      AssertionBuilder.jsonBody('$[0].title').notEmpty(),
+      AssertionBuilder.jsonBody('$[0].price').notEmpty(),
+    ],
+  },
+})
+
+// GET /books/{id}: one known record. Pin the value, not just the shape,
+// so a data migration that swaps IDs fails the check.
+new ApiCheck('shop-api-book-detail', {
+  name: 'GET /books/{id}',
+  group: apiGroup,
+  ...responseTimes,
+  request: {
+    method: 'GET',
+    url: '{{API_BASE_URL}}/books/1',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.jsonBody('$.id').equals(1),
+      AssertionBuilder.jsonBody('$.title').equals('Haben oder haben'),
+      AssertionBuilder.jsonBody('$.author').notEmpty(),
+    ],
+  },
+})
+```
+
+Each assertion maps to a way the endpoint breaks:
+
+- **Status code** catches the server error and the redirect to a login page.
+- **Content-type header** catches the HTML error page that ships with a 200.
+- **Body length** catches the empty list. The first record's fields catch a serializer that dropped a column.
+- **A pinned value** catches wrong data. The list check accepts any title because the catalog changes. The detail check names one because book 1 should not.
+
+Body assertions use JSONPath: `$.length` is the array length and `$[0].title` the first element's title. Header names match case-insensitively.
+
+## Tell slow from down
+
+Every check so far spreads `responseTimes`, so each one already separates slow from down. To see where the lines sit, add an endpoint that is always slow. httpbin.org waits two seconds before answering.
+
+```ts __checks__/slow.check.ts
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+import { apiGroup, responseTimes } from './group'
+
+// An endpoint that always takes about two seconds, so you can see the
+// degraded state land between the two thresholds in the group.
+new ApiCheck('shop-api-slow', {
+  name: 'Slow endpoint (httpbin delay)',
+  group: apiGroup,
+  ...responseTimes,
+  request: {
+    method: 'GET',
+    url: 'https://httpbin.org/delay/2',
+    assertions: [AssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+Past one second the run is degraded, which is a warning, not downtime. Past five seconds it fails. The catalog endpoints answer in under 50 milliseconds, so the same thresholds let them slow down twentyfold before anyone hears about it. Set thresholds from what you measure, then tighten them where latency is the product.
+
+## Authenticate, create, and clean up
+
+A write endpoint needs a token, a request body no previous run has sent, and something to delete afterward. Setup and teardown scripts wrap the request with that work, so the check stays self-contained.
+
+```ts __checks__/orders.check.ts
+import { ApiCheck, AssertionBuilder } from 'checkly/constructs'
+import * as path from 'path'
+import { apiGroup, responseTimes } from './group'
+
+// POST /orders: an authenticated write. The setup script fetches a token and
+// builds a unique order; the teardown deletes the order and scrubs the
+// token before the response is stored. httpbin.org echoes the request back,
+// which is how the assertions can see what was sent.
+new ApiCheck('shop-api-create-order', {
+  name: 'POST /orders',
+  group: apiGroup,
+  ...responseTimes,
+  setupScript: { entrypoint: path.join(__dirname, 'orders.setup.ts') },
+  tearDownScript: { entrypoint: path.join(__dirname, 'orders.teardown.ts') },
+  request: {
+    method: 'POST',
+    url: 'https://httpbin.org/post',
+    headers: [{ key: 'Content-Type', value: 'application/json' }],
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.jsonBody('$.json.orderId').notEmpty(),
+      AssertionBuilder.jsonBody('$.json.items[0].bookId').equals(1),
+      AssertionBuilder.jsonBody('$.headers.Authorization').equals('Bearer [REDACTED]'),
+    ],
+  },
+})
+```
+
+The setup script runs before the request. It has a `request` object whose method, URL, headers, query parameters, and body it can change:
+
+```ts __checks__/orders.setup.ts
+import axios from 'axios'
+
+// 1. Get a token. A real API would exchange a client secret from
+//    process.env for a short-lived token here.
+const { data: session } = await axios.get('https://httpbin.org/uuid')
+request.headers['Authorization'] = `Bearer ${session.uuid}`
+
+// 2. Build the order with an ID no previous run has used, and keep it
+//    where the teardown can find it.
+const orderId = `order-${Date.now()}`
+process.env.ORDER_ID = orderId
+request.body = JSON.stringify({ orderId, items: [{ bookId: 1, quantity: 1 }] })
+
+console.log(`Creating ${orderId}`)
+```
+
+The teardown runs after the request and before the assertions. It sees the same `request` plus a `response` whose body it can rewrite:
+
+```ts __checks__/orders.teardown.ts
+import axios from 'axios'
+
+// 1. Delete the order this run created, whatever the main request returned.
+const orderId = process.env.ORDER_ID
+if (orderId) {
+  await axios.delete('https://httpbin.org/delete', { params: { orderId } })
+  console.log(`Deleted ${orderId}`)
+}
+
+// 2. Scrub the token before the response is stored with the result.
+//    Assertions run after this, so they see the scrubbed body.
+const body = JSON.parse(response.body)
+if (body.headers?.Authorization) {
+  body.headers.Authorization = 'Bearer [REDACTED]'
+}
+response.body = JSON.stringify(body)
+```
+
+Setup errors abort the check before the request is sent, so a broken token exchange never posts a half-built order, and the result blames the setup rather than the endpoint. Teardown errors do not stop the assertions, so a failed cleanup still reports whether the write worked. Environment variables set in setup live for one run, which is how the order ID reaches the teardown.
+
+The last assertion is only true if the teardown ran, which proves the token never reached the stored result. A real client secret goes in an account variable, not in code:
+
+```bash Terminal
+npx checkly env add SHOP_CLIENT_SECRET "your-secret" --secret
+```
+
+Test everything, then deploy:
+
+```bash Terminal
+npx checkly test --record
+```
+
+```text Terminal
+Running 4 checks in us-east-1.
+
+__checks__/catalog.check.ts
+  ✔ GET /books (14ms)
+  ✔ GET /books/{id} (19ms)
+__checks__/orders.check.ts
+  ✔ POST /orders (2s)
+__checks__/slow.check.ts
+  ⚠ Slow endpoint (httpbin delay) (3s)
+
+1 degraded, 3 passed, 4 total
+```
+
+The slow endpoint is degraded, not failed. Everything else passes.
+
+```bash Terminal
+npx checkly deploy
+```
+
+## Verify it works
+
+Simulate a bad data migration. In `__checks__/catalog.check.ts`, change the expected title from `'Haben oder haben'` to `'Parry Hotter'` and run `npx checkly test --record` again. The detail check fails, and the output names the assertion that broke:
+
+```text Terminal
+✖ GET /books/{id} (17ms)
+
+    ──Assertions────────────────────────────────────────────────────────────────
+    ✔ status code equals target "200". Received: 200.
+    ✔ JSON body property "$.id" equals target "1". Received: 1.
+    ✖ JSON body property "$.title" equals target "Parry Hotter". Received: Haben oder haben.
+    ✔ JSON body property "$.author" is not empty target "". Received: Fric Eromm.
+```
+
+The status code was fine. Only the body assertion caught it.
+
+<Frame>
+  <img src="/images/guides/api-monitoring/verify-failing.png" alt="A failed GET /books/{id} check result in a Checkly test session, with the assertion JSON body property $.title equals target Parry Hotter marked as failed and the received value Haben oder haben" />
+</Frame>
+
+Change the title back before you deploy again.
+
+## Next
+
+[Monitor the content your customers need to see](/guides/keyword-monitoring): the API returns the right books. Now check that the page built from them shows what customers need, in the right place.
+
+## Reference
+
+- [API checks](/detect/synthetic-monitoring/api-checks/overview), [assertions](/detect/assertions), and [response time limits](/detect/synthetic-monitoring/api-checks/response-limits)
+- [Setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) and [environment variables](/platform/variables)
+- [`ApiCheck`](/constructs/api-check) and [`CheckGroupV2`](/constructs/check-group-v2)
+- [Checkly Skills](/ai/skills)

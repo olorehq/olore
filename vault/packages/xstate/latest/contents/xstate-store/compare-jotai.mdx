@@ -1,0 +1,310 @@
+---
+title: 'Compare to Jotai'
+---
+
+This page compares XState Store atoms with [Jotai](https://jotai.org/).
+
+## Summary
+
+| Topic | Jotai | XState Store atoms |
+| --- | --- | --- |
+| State model | Atom configs whose values live in a Jotai store/provider. | Live atom instances with `get`, `set`, and `subscribe`. |
+| Derived state | Derived atoms read other atoms with `get`. | Derived atoms read other atoms with `.get()`. |
+| Async | Async atoms can integrate with Suspense and `loadable`. | `createAsyncAtom(...)` returns explicit pending/done/error snapshots. |
+| Rendering | React-focused `useAtom` family. | Framework adapters plus core subscriptions. |
+| Store model | Atom graph first. | Atom graph plus evented stores for transitions. |
+
+## State Model
+
+Jotai is atom-first. Its `atom(...)` function creates atom configs; atom values live in a Jotai store/provider.
+
+XState Store atoms are live readable/subscribable values:
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```tsx
+const countAtom = atom(0);
+
+function Counter() {
+  const [count, setCount] = useAtom(countAtom);
+
+  return <button onClick={() => setCount((c) => c + 1)}>{count}</button>;
+}
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+const count = createAtom(0);
+
+count.get();
+count.set((value) => value + 1);
+count.subscribe((value) => {
+  console.log(value);
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+This makes XState Store atoms usable outside a framework adapter. Framework packages add hooks on top.
+
+**Migration tip:** A primitive Jotai atom usually maps directly to `createAtom(initialValue)`.
+
+## Derived State
+
+Jotai's strongest conceptual overlap with XState Store is derived atoms. Jotai derived atoms read dependencies with `get(...)`; XState Store derived atoms read dependencies directly with `.get()`:
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const countAtom = atom(0);
+const doubledAtom = atom((get) => get(countAtom) * 2);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createAtom(0);
+const doubled = createAtom(() => count.get() * 2);
+```
+
+</SplitItem>
+</SplitItems>
+
+Both models support granular derived state. This is not a case where XState Store needs a separate selector-only store to match Jotai's core advantage; XState Store atoms are the comparison point.
+
+**Migration tip:** Replace Jotai's `get(otherAtom)` reads with direct `otherAtom.get()` calls in derived atoms.
+
+## Update Model
+
+Jotai supports writable atoms, including write-only and read-write derived atoms.
+
+XState Store atoms support direct writes with `atom.set(...)`, reducer-style writes with `createReducerAtom(...)`, and evented domain updates with `createStore(...)`:
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const countAtom = atom(0);
+const incAtom = atom(null, (get, set) => {
+  set(countAtom, get(countAtom) + 1);
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createReducerAtom(0, (state, event: { type: 'inc' }) => {
+  if (event.type === 'inc') {
+    return state + 1;
+  }
+
+  return state;
+});
+
+count.send({ type: 'inc' });
+```
+
+</SplitItem>
+</SplitItems>
+
+Use atoms for direct granular state. Use stores when you want named events, transition checks, schemas, emitted events, and extensions.
+
+**Migration tip:** Writable atoms map to `atom.set(...)` when they are simple, `createReducerAtom(...)` when they are event-shaped, and `createStore(...)` when the update is a domain transition.
+
+## Effects Model
+
+Jotai often models async as atom reads or writes. It integrates closely with React Suspense, and `loadable` can represent loading/error/data states without Suspense.
+
+XState Store has explicit async atom snapshots:
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const userAtom = atom(async () => {
+  const response = await fetch('/api/user');
+  return response.json();
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const user = createAsyncAtom(async ({ signal }) => {
+  const response = await fetch('/api/user', { signal });
+  return response.json();
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+For evented effects, XState Store uses store transitions and `enqueue.effect(...)`. That separates direct atom state from event-caused side effects.
+
+## Integration And Rendering
+
+Jotai is React-focused. Its hook model is very direct for React apps.
+
+XState Store atoms are framework-neutral and can be used directly or through adapters such as `@xstate/store-react`, `@xstate/store-vue`, and `@xstate/store-solid`.
+
+Both models can be granular. Jotai gets granularity from atom dependencies in React. XState Store gets granularity from atom subscriptions, derived atoms, and adapter selectors.
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```tsx
+function Counter() {
+  const [count] = useAtom(countAtom);
+  return <span>{count}</span>;
+}
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+function Counter() {
+  const count = useAtom(countAtom);
+  return <span>{count}</span>;
+}
+```
+
+</SplitItem>
+</SplitItems>
+
+## Extensions
+
+Jotai has a broad utility ecosystem for atom patterns.
+
+XState Store's advantage is that atoms live next to evented stores and first-party extensions:
+
+- persistence
+- undo/redo
+- reset
+- schema validation
+
+Those extensions apply to stores rather than replacing the atom graph.
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const persistedAtom = atomWithStorage('count', 0);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {},
+}).with(persist({ name: 'count' }));
+```
+
+</SplitItem>
+</SplitItems>
+
+## Types And Runtime Contracts
+
+Jotai's atom types are strong and local to the atom definitions.
+
+XState Store atom types are similarly local for atoms, and stores add schema-driven event/context/emitted-event typing plus optional runtime validation.
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const countAtom = atom<number>(0);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createAtom(0);
+
+const store = createStore({
+  schemas: {
+    events: {
+      inc: z.object({ by: z.number() }),
+    },
+  },
+  context: { count: 0 },
+  on: {},
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+## When To Choose Jotai
+
+Choose Jotai when:
+
+- your app is React-first
+- the atom graph is the main architecture
+- you want Jotai's mature atom utility ecosystem
+- Suspense-oriented async atoms are the desired UI model
+
+## When To Choose XState Store
+
+Choose XState Store when:
+
+- you want atom-style granular state and evented stores in one package
+- you need framework-neutral atoms
+- direct atom updates are not enough for some domain workflows
+- you want schemas, emitted events, transition checks, and store extensions alongside atoms
+
+## Migrating from Jotai
+
+### Concept map
+
+| Jotai | XState Store |
+| --- | --- |
+| primitive atom | `createAtom(initialValue)` |
+| derived atom | `createAtom(() => otherAtom.get())` |
+| writable atom | `atom.set(...)`, `createReducerAtom(...)`, or store transition |
+| async atom | `createAsyncAtom(...)` |
+| `useAtom(...)` | framework adapter `useAtom(...)` |
+
+### Before
+
+<SplitItems>
+<SplitItem value="jotai" label="Jotai">
+
+```ts
+const countAtom = atom(0);
+const doubledAtom = atom((get) => get(countAtom) * 2);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const countAtom = createAtom(0);
+const doubledAtom = createAtom(() => countAtom.get() * 2);
+```
+
+</SplitItem>
+</SplitItems>
+
+For write atoms with event-like updates, use a reducer atom:
+
+```ts
+const countAtom = createReducerAtom(0, (count, event: { type: 'inc' }) => {
+  if (event.type === 'inc') {
+    return count + 1;
+  }
+
+  return count;
+});
+```

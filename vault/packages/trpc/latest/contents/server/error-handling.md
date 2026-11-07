@@ -3,6 +3,22 @@ id: error-handling
 title: Error Handling
 sidebar_label: Error Handling
 slug: /server/error-handling
+section: "Backend Usage"
+order: 21
+skill:
+  name: error-handling
+  package: "@trpc/server"
+  type: core
+  requires:
+    - server-setup
+  description: Throw typed errors with TRPCError and error codes (NOT_FOUND,
+    UNAUTHORIZED, FORBIDDEN, BAD_REQUEST, INTERNAL_SERVER_ERROR), configure
+    errorFormatter for client-side Zod error display or to hide internal error
+    messages, format errors per procedure with .errors(), handle errors globally
+    with the adapter's onError callback, map tRPC errors to HTTP status codes
+    with getHTTPStatusCodeFromError(), control stack traces with isDev.
+  include:
+    - server/error-formatting
 ---
 
 Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
@@ -27,7 +43,7 @@ Here's an example error response caused by a bad request input:
 
 ## Stack traces in production
 
-By default, tRPC includes `error.data.stack` only when [`isDev`](routers#initialize-trpc) is `true`.
+By default, tRPC includes `error.data.stack` only when [`isDev`](./routers.md#initialize-trpc) is `true`.
 `initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
 If you need deterministic behavior across runtimes, override `isDev` manually.
 
@@ -37,7 +53,45 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create({ isDev: false });
 ```
 
-If you need stricter control over which error fields are returned, use [error formatting](error-formatting).
+If you need stricter control over which error fields are returned, use [error formatting](./error-formatting.md).
+
+## Secure error reporting
+
+Errors that are not a `TRPCError` are wrapped as `INTERNAL_SERVER_ERROR` and keep the original `message`. A database driver or a library can put table names, queries or file paths in that message, and it would reach the client. This is the kind of information leak [OWASP describes](https://owasp.org/www-community/Improper_Error_Handling).
+
+A safe setup has two parts:
+
+- [`onError`](#handling-errors) receives the full error. Log it or send it to your error tracker there.
+- [`errorFormatter`](error-formatting) controls what the client sees. Replace the message of `INTERNAL_SERVER_ERROR`s and only return the fields you want to expose.
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({
+  errorFormatter({ shape }) {
+    return {
+      message:
+        shape.data.code === 'INTERNAL_SERVER_ERROR'
+          ? 'Internal server error'
+          : shape.message,
+      code: shape.code,
+      data: {
+        code: shape.data.code,
+        httpStatus: shape.data.httpStatus,
+        path: shape.data.path,
+      },
+    };
+  },
+});
+```
+
+The formatter above keeps the message of every other code. A `TRPCError` you throw yourself with a code like `NOT_FOUND` or `UNAUTHORIZED` is shown as written, so write messages that are safe to show to users. One thrown with `INTERNAL_SERVER_ERROR` is replaced too.
+
+:::note
+
+Input validation errors are `BAD_REQUEST`s and their message is the output of your validation library. If you don't want to reveal which library you use or how your input is shaped, replace that message in the `errorFormatter` as well.
+
+:::
 
 ## Error codes
 
@@ -89,7 +143,7 @@ if (error instanceof TRPCError) {
 
 :::tip
 
-There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](server-side-calls).
+There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](./server-side-calls.md).
 
 :::
 
@@ -138,9 +192,15 @@ Results in the following response:
 }
 ```
 
+Throw a `TRPCError` with the code that fits, like `NOT_FOUND` or `FORBIDDEN`, so the client gets the right HTTP status. Any other error thrown in a procedure or middleware becomes an `INTERNAL_SERVER_ERROR` with the original error as its `cause`.
+
+:::warning
+The `message` of an error you didn't throw as a `TRPCError` is still sent to the client, in production too. If your errors may contain internal details, [hide them in your error formatter](./error-formatting.md#hiding-internal-error-messages).
+:::
+
 ## Handling errors
 
-All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
+All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](./error-formatting.md)).
 
 ```ts twoslash title='server.ts'
 // @filename: router.ts

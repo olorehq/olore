@@ -1,0 +1,317 @@
+---
+title: 'Compare to Redux'
+---
+
+This page compares XState Store with [Redux](https://redux.js.org/) and [Redux Toolkit](https://redux-toolkit.js.org/).
+
+## Summary
+
+| Topic | Redux Toolkit | XState Store |
+| --- | --- | --- |
+| State model | Global store with slices and reducers. | Store context updated by named transitions; atoms for direct state. |
+| Updates | Dispatch actions to reducers. | Trigger typed event transitions. |
+| Effects | Mature middleware ecosystem, thunks, listener middleware, RTK Query. | Synchronous transition-enqueued effects and emitted events. |
+| Rendering | React-Redux selectors and provider. | Framework-neutral core with adapter hooks. |
+| Ecosystem | Very mature ecosystem and tooling. | Smaller API focused on evented state. |
+
+## State Model
+
+Redux and XState Store are both event-like: something is dispatched or triggered, and state changes through a reducer-like function.
+
+Redux Toolkit usually organizes state into slices:
+
+```ts
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { count: 0 },
+  reducers: {
+    increment: (state, action: PayloadAction<number>) => {
+      state.count += action.payload;
+    },
+  },
+});
+```
+
+XState Store keeps the event handlers directly on the store config:
+
+<SplitItems>
+<SplitItem value="redux" label="Redux Toolkit">
+
+```ts
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { count: 0 },
+  reducers: {
+    increment: (state, action: PayloadAction<number>) => {
+      state.count += action.payload;
+    },
+  },
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+**Migration tip:** A Redux slice often maps to one XState Store. Slice state becomes `context`, and case reducers become `on` transitions.
+
+## Update Model
+
+Redux dispatches action objects. XState Store triggers named events:
+
+<SplitItems>
+<SplitItem value="redux" label="Redux Toolkit">
+
+```ts
+dispatch(counterSlice.actions.increment(1));
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+store.trigger.increment({ by: 1 });
+```
+
+</SplitItem>
+</SplitItems>
+
+The stricter convention Redux has that XState Store does not enforce is the single reducer pipeline with middleware around dispatch. XState Store is intentionally smaller: transitions are local to the store, extensions add specific behavior, and atoms are available when direct state is enough.
+
+**Migration tip:** Replace `dispatch(actionCreator(payload))` with `store.trigger.event(payload)`.
+
+## Effects Model
+
+Redux's strongest advantage is async and side-effect ecosystem maturity. Redux Toolkit includes thunk middleware by default, has `createAsyncThunk`, supports listener middleware for reactive workflows, and has RTK Query for server-state fetching and caching.
+
+XState Store's effect model is smaller:
+
+<SplitItems>
+<SplitItem value="redux" label="Redux Toolkit">
+
+```ts
+export const incrementLater = createAsyncThunk(
+  'counter/incrementLater',
+  async (_, { dispatch }) => {
+    await delay(1000);
+    dispatch(counterSlice.actions.increment(1));
+  },
+);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    incrementLater: (context, event, enqueue) => {
+      enqueue.effect(() => {
+        setTimeout(() => store.trigger.increment({ by: 1 }), 1000);
+      });
+
+      return context;
+    },
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+This is better when effects are simple and should stay attached to deterministic transitions. Redux Toolkit is better when you need a specialized async data-fetching or middleware story.
+
+**Migration tip:** Simple thunks can move to `enqueue.effect(...)`. Complex workflows, long-running processes, or server-state caching may belong in XState or a data-fetching library instead.
+
+## Integration And Rendering
+
+Redux is framework-agnostic at the core, but most UI usage is through React-Redux with a provider and selectors.
+
+XState Store is framework-neutral at the core and provides dedicated adapter packages for React, Vue, Svelte, Solid, Angular, and Preact.
+
+<SplitItems>
+<SplitItem value="redux" label="React-Redux">
+
+```tsx
+const count = useSelector((state: RootState) => state.counter.count);
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+const count = useSelector(store, (state) => state.context.count);
+```
+
+</SplitItem>
+</SplitItems>
+
+## Extensions
+
+Redux's extension advantage is ecosystem size:
+
+- Redux DevTools
+- middleware
+- RTK Query
+- persistence libraries
+- long-standing patterns and examples
+
+XState Store has first-party extensions for persistence, undo/redo, reset, and schema validation. The extension surface is smaller but more tightly aligned with stores.
+
+<SplitItems>
+<SplitItem value="redux" label="Redux middleware">
+
+```ts
+const store = configureStore({
+  reducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(listenerMiddleware.middleware),
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {},
+}).with(persist({ name: 'counter' }));
+```
+
+</SplitItem>
+</SplitItems>
+
+## Types And Runtime Contracts
+
+Redux Toolkit has strong TypeScript support through slices, action creators, thunks, and typed hooks.
+
+XState Store infers event payloads from transitions, supports Standard Schema for context/events/emitted events, and can opt into runtime validation with `validateSchemas()`.
+
+<SplitItems>
+<SplitItem value="redux" label="Redux Toolkit">
+
+```ts
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState,
+  reducers: {
+    increment: (state, action: PayloadAction<number>) => {},
+  },
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  schemas: {
+    events: {
+      increment: z.object({ by: z.number() }),
+    },
+  },
+  context: { count: 0 },
+  on: {},
+}).with(validateSchemas());
+```
+
+</SplitItem>
+</SplitItems>
+
+## When To Choose Redux Toolkit
+
+Choose Redux Toolkit when:
+
+- your team wants the most mature state management ecosystem
+- you need RTK Query or established async middleware patterns
+- you rely on Redux DevTools and middleware integrations
+- a single application-level reducer pipeline is the desired architecture
+
+## When To Choose XState Store
+
+Choose XState Store when:
+
+- you want Redux-like explicit events with less ceremony
+- you want typed trigger APIs instead of action creator/dispatch plumbing
+- you want emitted events and `store.can.*(...)`
+- your async/effect needs are simple enough for transition-enqueued effects
+- you also want atoms for direct local state
+
+## Migrating from Redux Toolkit
+
+### Concept map
+
+| Redux Toolkit | XState Store |
+| --- | --- |
+| slice state | store `context` |
+| case reducer | transition in `on` |
+| action creator | `store.trigger.*(...)` |
+| dispatch | `store.trigger.*(...)` |
+| selector | `store.select(...)` or adapter `useSelector(...)` |
+| thunk/listener middleware | `enqueue.effect(...)`, an extension, XState, or a data-fetching library |
+
+### Before
+
+```ts
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { count: 0 },
+  reducers: {
+    increment: (state, action: PayloadAction<number>) => {
+      state.count += action.payload;
+    },
+  },
+});
+
+dispatch(counterSlice.actions.increment(1));
+```
+
+### After
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+
+store.trigger.increment({ by: 1 });
+```
+
+For async action creators, keep the transition synchronous and enqueue the effect:
+
+```ts
+const store = createStore({
+  context: { saved: false },
+  on: {
+    save: (context, event, enqueue) => {
+      enqueue.effect(async () => {
+        await api.save();
+      });
+
+      return { saved: true };
+    },
+  },
+});
+```

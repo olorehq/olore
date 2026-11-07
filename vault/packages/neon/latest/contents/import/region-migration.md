@@ -11,14 +11,14 @@ summary: >-
   provider.
 enableTableOfContents: true
 isDraft: false
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-21T11:04:20.383Z'
 redirectFrom:
   - /docs/guides/region-migration
 ---
 
-A Neon **project** is created in a single [region](/docs/introduction/regions). Your database runs there, and you **cannot change the region** for that project.
+**Can you change the region of an existing Neon project?** Not directly, but you have options. A Neon **project** is created in a single [region](/docs/introduction/regions), and that region is fixed after creation. All branches in a project share the project's region, so branching alone won't move your data.
 
-If you need your **data** in a different region, you **create a new Neon project** in that region and **migrate your database** into it.
+To run your database in a different region, you **create a new Neon project** in that region and **migrate your database** into it.
 
 Common reasons to migrate to a different region:
 
@@ -59,7 +59,7 @@ flowchart TD
 Select the guide that matches your requirements.
 
 1. **[Migrate to another Neon region](/docs/import/migrate-neon-to-another-region)**. Compare the **Import Data Assistant**, dump and restore, and logical replication, then follow the guide linked from that page.
-2. **[Migrate Neon to Lakebase](/docs/guides/migrate-neon-to-lakebase)**. Create a Lakebase project, **`pg_dump`** from Neon, **`pg_restore`** on Lakebase.
+2. **[Migrate Neon to Lakebase](/docs/guides/migrate-neon-to-lakebase)**. Create a Lakebase project, **`pg_dump`** from Neon, **`pg_restore`** on Lakebase. For lower downtime, [replicate from Neon to Lakebase](/docs/guides/logical-replication-neon-to-lakebase) with logical replication instead.
 3. **[Postgres-compatible export from Neon](/docs/guides/export-neon-postgres-compatible)**. If another Neon region and Lakebase do not meet your requirements, use `pg_dump` to export your data in a Postgres-compatible format for migration elsewhere.
 
 <NeedHelp/>

@@ -2,6 +2,7 @@
 title: 'Setup and Teardown Scripts'
 description: 'Learn how to use setup and teardown scripts to prepare requests and process responses in API checks.'
 sidebarTitle: Setup and Teardown
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/api-checks/setup-and-teardown/'
 ---
 
 import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
@@ -11,7 +12,7 @@ Setup and teardown scripts execute arbitrary JavaScript/TypeScript code before a
 Both script types have access to environment variables, runtime objects like `request` and `response`, and popular npm packages
 like `moment`, `axios`, and `lodash`.
 
-To get the most power out of API checks with setup and teardown scripts, we advise using [the Checkly CLI](/cli).
+To get the most power out of API checks with setup and teardown scripts, we advise using [the Checkly CLI](/cli/overview).
 You can also use them [via the web UI](#using-setup-and-teardown-scripts-via-the-ui).
 
 > Setup and teardown scripts have a **maximum execution time of 10 seconds** each.
@@ -97,7 +98,7 @@ Your folder structure:
 The API check performs a `GET` on an authenticated endpoint:
 
 ```ts api.check.ts
-import { ApiCheck } from '@checkly/cli/constructs'
+import { ApiCheck } from 'checkly/constructs'
 import * as path from 'path'
 
 new ApiCheck('api-check-1', {
@@ -141,7 +142,7 @@ Benefits of this structure:
 - Reuse authentication logic across multiple API checks
 - Test authentication logic separately from Checkly-specific code
 
-Check our [setup script examples](/detect/synthetic-monitoring/api-checks/examples) for OAuth2, HMAC signing, JWT tokens, and other auth methods.
+See the [setup script examples](#setup-script-examples) for fetching tokens, OAuth2, HMAC signing and JWTs, and the [setup scripts guide](/guides/setup-scripts-for-apis) for more patterns.
 
 ### Error handling in setup scripts
 
@@ -163,7 +164,6 @@ Common use cases:
 - Cleaning up test data created during the check
 - Scrubbing sensitive data from responses before logging
 - Normalizing response data for consistent assertions
-- Extracting and storing values for subsequent checks
 
 ### Accessing the response
 
@@ -233,6 +233,449 @@ Unlike setup scripts, teardown errors **do not abort** the check. The check cont
 | HTTP request | Never executes | Already completed |
 | Assertions | Never run | Still evaluate |
 
+## Setup script examples
+
+These examples cover common authentication cases.
+
+### Fetch an external token
+
+<CodeGroup>
+```ts TypeScript
+import axios from 'axios'
+
+// use 'await' on an axios HTTP get to fetch a token from a location
+const { data } = await axios.get('http://host.docker.internal:9913/api/token')
+
+// add the token as a query parameters
+request.queryParameters['token'] = data.token
+```
+```js JavaScript
+const axios = require('axios')
+
+// use 'await' on an axios HTTP get to fetch a token from a location
+const { data } = await axios.get('http://host.docker.internal:9913/api/token')
+
+// add the token as a query parameters
+request.queryParameters['token'] = data.token
+```
+</CodeGroup>
+
+### Sign an HMAC request
+
+<CodeGroup>
+```ts TypeScript
+import CryptoJS from 'crypto-js'
+import moment from 'moment'
+
+// get keys stored in environment variables
+const privateKey = process.env.PRIVATE_KEY
+const publicKey = process.env.PUBLIC_KEY
+
+// collect the fields used in signing the request
+const method = request.method
+const contentType = 'application/json'
+const contentMd5 = ''
+const url = request.url
+const host = 'localhost:8080'
+const uri = url.replace(/^.*\/\/[^\/]+/, '')
+const timestamp = moment().toISOString()
+
+// create the signature
+const signature = [method, contentMd5, contentType, timestamp].join(',\n')
+const encryptedSignature = publicKey + ':' + CryptoJS.HmacSHA1(signature, privateKey).toString(CryptoJS.enc.Base64)
+
+// set or update the results as environment variables, to be used in the HTTP request.
+process.env.TIMESTAMP = timestamp
+process.env.ENCRYPTED_SIGNATURE = encryptedSignature
+process.env.CONTENT_TYPE = contentType
+```
+```js JavaScript
+const CryptoJS = require('crypto-js')
+const moment = require('moment')
+
+// get keys stored in environment variables
+const privateKey = process.env.PRIVATE_KEY
+const publicKey = process.env.PUBLIC_KEY
+
+// collect the fields used in signing the request
+const method = request.method
+const contentType = 'application/json'
+const contentMd5 = ''
+const url = request.url
+const host = 'localhost:8080'
+const uri = url.replace(/^.*\/\/[^\/]+/, '')
+const timestamp = moment().toISOString()
+
+// create the signature
+const signature = [method, contentMd5, contentType, timestamp].join(',\n')
+const encryptedSignature = publicKey + ':' + CryptoJS.HmacSHA1(signature, privateKey).toString(CryptoJS.enc.Base64)
+
+// set or update the results as environment variables, to be used in the HTTP request.
+process.env.TIMESTAMP = timestamp
+process.env.ENCRYPTED_SIGNATURE = encryptedSignature
+process.env.CONTENT_TYPE = contentType
+```
+</CodeGroup>
+
+### Fetch an OAuth2 access token using the `client_credentials` grant
+
+This works for OAuth2 providers like Okta and Auth0 that support the `client_credentials` grant type.
+
+<CodeGroup>
+```ts TypeScript
+import axios from 'axios'
+
+// grab the necessary credentials set up earlier in your environment variables.
+const { AUDIENCE, CLIENT_SECRET, CLIENT_ID, ISSUER } = process.env;
+
+// fetch an access token
+const { data: { access_token } } = await axios.post(`${ISSUER}/oauth/token`,
+    {
+      grant_type: "client_credentials",
+      client_id: `${CLIENT_ID}`,
+      client_secret: `${CLIENT_SECRET}`,
+      audience: `${AUDIENCE}`,
+    },
+    {
+      headers: { "content-type": "application/x-www-form-urlencoded" }
+    }
+)
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${access_token}`
+```
+```js JavaScript
+const axios = require('axios')
+
+// grab the necessary credentials set up earlier in your environment variables.
+const { AUDIENCE, CLIENT_SECRET, CLIENT_ID, ISSUER } = process.env;
+
+// fetch an access token
+const { data: { access_token } } = await axios.post(`${ISSUER}/oauth/token`,
+  {
+    grant_type: "client_credentials",
+    client_id: `${CLIENT_ID}`,
+    client_secret: `${CLIENT_SECRET}`,
+    audience: `${AUDIENCE}`,
+  },
+  {
+    headers: { "content-type": "application/x-www-form-urlencoded" }
+  }
+)
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${access_token}`
+```
+</CodeGroup>
+
+### Fetch an OAuth2 access token using the `password` grant
+
+This works for OAuth2 providers like Okta and Auth0 that support the `password` grant type.
+
+<CodeGroup>
+```ts TypeScript
+import axios from "axios";
+
+// grab the necessary credentials set up earlier in your environment variables.
+const { AUDIENCE, CLIENT_SECRET, CLIENT_ID, ISSUER, USERNAME, PASSWORD, SCOPE } = process.env;
+
+// fetch an access token
+const { data: { access_token } } = await axios.post(`${ISSUER}/oauth/token`,
+    {
+        grant_type: 'password',
+        username: `${USERNAME}`,
+        password: `${PASSWORD}`,
+        audience: `${AUDIENCE}`,
+        scope: `${SCOPE}`,
+        client_id: `${CLIENT_ID}`,
+        client_secret: `${CLIENT_SECRET}`
+    },
+    {
+        headers: { "content-type": "application/x-www-form-urlencoded" }
+    }
+)
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${access_token}`
+```
+```js JavaScript
+const axios = require('axios')
+
+// grab the necessary credentials set up earlier in your environment variables.
+const { AUDIENCE, CLIENT_SECRET, CLIENT_ID, ISSUER, USERNAME, PASSWORD, SCOPE } = process.env;
+
+// fetch an access token
+const { data: { access_token } } = await axios.post(`${ISSUER}/oauth/token`,
+    {
+      grant_type: 'password',
+      username: `${USERNAME}`,
+      password: `${PASSWORD}`,
+      audience: `${AUDIENCE}`,
+      scope: `${SCOPE}`,
+      client_id: `${CLIENT_ID}`,
+      client_secret: `${CLIENT_SECRET}`
+    },
+    {
+        headers: { "content-type": "application/x-www-form-urlencoded" }
+    }
+)
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${access_token}`
+```
+</CodeGroup>
+
+### Create a JWT token using the jsonwebtoken library
+
+<CodeGroup>
+```ts TypeScript
+// we use the jsonwebtoken library as it makes creating JTW's really easy
+import jwt from 'jsonwebtoken'
+
+// grab the secret from our environment variables
+const secret = process.env.SECRET
+
+// define a helper function to sign the token
+const getToken = () => {
+    return new Promise((resolve, reject) => {
+        jwt.sign({
+            expiry: Math.floor(Date.now() / 1000) + (60 * 60), // set the expiry time to 60 minutes
+            email: '',
+            userId: '',
+        }, secret , (err, token) => {
+            if(err) return reject(err);
+            resolve(token);
+        });
+    })
+}
+
+// create the token
+const token = await getToken();
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${token}`
+```
+```js JavaScript
+// we use the jsonwebtoken library as it makes creating JTW's really easy
+const jwt = require('jsonwebtoken');
+
+// grab the secret from our environment variables
+const secret = process.env.SECRET
+
+// define a helper function to sign the token
+const getToken = () => {
+  return new Promise((resolve, reject) => {
+    jwt.sign({
+      expiry: Math.floor(Date.now() / 1000) + (60 * 60), // set the expiry time to 60 minutes
+      email: '',
+      userId: '',
+    }, secret , (err, token) => {
+      if(err) return reject(err);
+      resolve(token);
+    });
+  })
+}
+
+// create the token
+const token = await getToken();
+
+// set the Authorization header
+request.headers['Authorization'] = `Bearer ${token}`
+```
+</CodeGroup>
+
+### Parse XML/SOAP data
+
+To prepare a SOAP API check, fetch the API data, parse the XML and store the value in an environment variable so you can use it in the request body.
+
+<CodeGroup>
+```ts TypeScript
+import axios from 'axios'
+
+// Make an XML request
+const { data } = await axios.post(
+    "https://www.dataaccess.com/webservicesserver/NumberConversion.wso",
+    `<?xml version="1.0" encoding="utf-8"?>
+      <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
+            <ubiNum>42</ubiNum>
+          </NumberToWords>
+        </soap:Body>
+    </soap:Envelope>
+  `,
+    {
+        headers: {
+            "content-type": "text/xml; charset=utf-8",
+        },
+    }
+)
+
+// Parse the value you're interested in
+const regExp = /<m:NumberToWordsResult>(.*?)<\/m:NumberToWordsResult>/g
+const result = regExp.exec(data)
+
+if (result.length > 1) {
+    // Store it in an environment variable to access it in your API Check request body
+    process.env.NUMBER_TO_WORD_RESULT = result[1]
+} else {
+    throw new Error("Could not parse XML")
+}
+```
+```js JavaScript
+const axios = require('axios').default
+
+// Make an XML request
+const { data } = await axios.post(
+  "https://www.dataaccess.com/webservicesserver/NumberConversion.wso",
+  `<?xml version="1.0" encoding="utf-8"?>
+      <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
+            <ubiNum>42</ubiNum>
+          </NumberToWords>
+        </soap:Body>
+    </soap:Envelope>
+  `,
+  {
+    headers: {
+      "content-type": "text/xml; charset=utf-8",
+    },
+  }
+)
+
+// Parse the value you're interested in
+const regExp = /<m:NumberToWordsResult>(.*?)<\/m:NumberToWordsResult>/g
+const result = regExp.exec(data)
+
+if (result.length > 1) {
+  // Store it in an environment variable to access it in your API Check request body
+  process.env.NUMBER_TO_WORD_RESULT = result[1]
+} else {
+  throw new Error("Could not parse XML")
+}
+```
+</CodeGroup>
+
+## Teardown script examples
+
+### Update response status
+
+<CodeGroup>
+```ts TypeScript
+response.statusCode = 201
+```
+```js JavaScript
+response.statusCode = 201
+```
+</CodeGroup>
+
+### Perform additional assertions
+
+You can run additional assertions in your teardown script, for example when the main assertions of the API check aren't fine-grained enough.
+
+<CodeGroup>
+```ts TypeScript
+import { expect } from 'expect'
+expect(response.body).toBe('myString')
+```
+```js JavaScript
+const { expect } = require('expect')
+expect(response.body).toBe('myString')
+```
+</CodeGroup>
+
+Or assert against a dynamic value, such as a timestamp in the response that should match today's date:
+
+<CodeGroup>
+```ts TypeScript
+import { expect } from 'expect'
+import moment from 'moment'
+
+const currentDate = moment().format('llll')
+expect(JSON.parse(response.body).date).toBe(currentDate)
+```
+```js JavaScript
+const { expect } = require('expect')
+const moment = require('moment')
+
+const currentDate = moment().format('llll')
+expect(JSON.parse(response.body).date).toBe(currentDate)
+```
+</CodeGroup>
+
+### Delete created test data based on response
+
+This script runs after an API check that POSTs a JSON blob to the Checkly API to create a check. It reads the ID of the created check from the response and deletes the check again. The credentials come from environment variables.
+
+<CodeGroup>
+```ts TypeScript
+// explicitly import axios
+import axios from 'axios'
+
+// parse the created resource
+const createdResource = JSON.parse(response.body)
+
+// setup the correct url and its parameters
+const host = 'https://api.checklyhq.com'
+const path = '/v1/checks/' + createdResource.id
+
+// set the correct auth headers
+const headers = {
+    'Authorization': 'Bearer ' + process.env.API_BEARER,
+    'X-Checkly-Account': process.env.CHECKLY_ACCOUNT_ID
+}
+
+// delete the just created resource using the axios HTTP client
+await axios.delete(host + path, { headers })
+```
+```js JavaScript
+// explicitly import axios
+const axios = require('axios')
+
+// parse the created resource
+const createdResource = JSON.parse(response.body)
+
+// setup the correct url and its parameters
+const host = 'https://api.checklyhq.com'
+const path = '/v1/checks/' + createdResource.id
+
+// set the correct auth headers
+const headers = {
+  'Authorization': 'Bearer ' + process.env.API_BEARER,
+  'X-Checkly-Account': process.env.CHECKLY_ACCOUNT_ID
+}
+
+// delete the just created resource using the axios HTTP client
+await axios.delete(host + path, { headers })
+```
+</CodeGroup>
+
+### Update the JSON response body
+
+<CodeGroup>
+```ts TypeScript
+// Parse the body as JSON
+const body = JSON.parse(response.body)
+
+// manipulate the object
+body.someKey = 1
+
+// store it again as a JSON string
+response.body = JSON.stringify(body)
+```
+```js JavaScript
+// Parse the body as JSON
+const body = JSON.parse(response.body)
+
+// manipulate the object
+body.someKey = 1
+
+// store it again as a JSON string
+response.body = JSON.stringify(body)
+```
+</CodeGroup>
+
 ## Built-in variables
 
 Inside each script, you have access to specific data structures from the API check lifecycle.
@@ -282,12 +725,12 @@ Response properties are exposed as a standard JavaScript object. These are only 
 
 | Property | Description | Type | Modifiable |
 |----------|-------------|------|------------|
-| `response.statusCode` | The response status code, e.g., 200 or 404. | Number | No |
-| `response.statusText` | The response status text, e.g., 'Ok' or 'Not found'. | String | No |
+| `response.statusCode` | The response status code, e.g., 200 or 404. | Number | Yes |
+| `response.statusMessage` | The response status text, e.g., 'Ok' or 'Not found'. | String | Yes |
 | `response.body` | The response body in string format. Use `JSON.parse()` for JSON. | String | Yes |
-| `response.headers` | The response headers. | Object | No |
+| `response.headers` | The response headers. | Object | Yes |
 | `response.timings` | Timestamps for each request stage relative to start time. | Object | No |
-| `response.timingPhases` | Time durations for each request phase. | Object | No |
+| `response.timingPhases` | Time durations for each request phase. | Object | Yes |
 
 ### Built-in runtime variables
 
@@ -323,25 +766,9 @@ Check [our runtimes documentation](/platform/runtimes/runtime-specification) for
 
 ## Using setup and teardown scripts via the UI
 
-When using the Checkly web UI, you can use setup and teardown scripts in two modes:
-
-**1. Inline scripts**
-
-Write JS/TS code directly in the editor. Best for quick, one-off pieces of code.
+When using the Checkly web UI, write JS/TS code directly in the setup and teardown script editors.
 
 ![setup and teardown script for http requests](/images/docs/images/api-checks/setup-teardown-inline.png)
-
-**2. Snippets**
-
-Use [snippets](/detect/synthetic-monitoring/api-checks/snippets/) to share code across multiple checks. This approach is similar to working with the CLI but less flexible.
-
-![reusable code snippets](/images/docs/images/api-checks/snippets.png)
-
-Select snippets from the dropdown in the setup and teardown section of your API check.
-
-![setup and teardown script for http requests with snippets](/images/docs/images/api-checks/setup-teardown-snippet.png)
-
-You can also import snippets from within your setup or teardown scripts. See the [snippet documentation](/detect/synthetic-monitoring/api-checks/snippets/) for details.
 
 ### Using environment variables via Handlebars
 
@@ -356,4 +783,4 @@ Access environment variables in the request body with `{{MY_VALUE}}` notation.
 
 ![Checkly API check editor showing a JSON request body that uses the MY_VALUE environment variable.](/images/docs/images/api-checks/setup-env-variables.png)
 
-For more examples, check our [setup script examples](/detect/synthetic-monitoring/api-checks/examples).
+For more examples, see the [setup scripts guide](/guides/setup-scripts-for-apis).

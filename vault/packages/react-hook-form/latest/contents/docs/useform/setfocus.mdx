@@ -1,11 +1,12 @@
 ---
 title: setFocus
+seoTitle: "setFocus: Focus React Form Fields"
 description: Programmatically focus a registered input field.
 metaDescription: Programmatically focus any registered input field, with an option to also select its current value in React Hook Form.
 sidebar: apiLinks
 ---
 
-## `setFocus:` <TypeText>(name: string, options: SetFocusOptions) => void</TypeText>
+## \</> `setFocus:` <TypeText>[UseFormSetFocus](/ts#UseFormSetFocus)</TypeText>
 
 This method will allow users to programmatically focus on input. Make sure input's ref is registered into the hook form.
 
@@ -13,10 +14,10 @@ This method will allow users to programmatically focus on input. Make sure input
 
 ---
 
-| Name      |                | Type                         | Description                                   |
-| --------- | -------------- | ---------------------------- | --------------------------------------------- |
-| `name`    |                | <TypeText>string</TypeText>  | An input field name to focus                  |
-| `options` | `shouldSelect` | <TypeText>boolean</TypeText> | Whether to select the input content on focus. |
+| Name      |                | Type                         | Description                                                              |
+| --------- | -------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `name`    |                | <TypeText>string</TypeText>  | An input field name to focus                                             |
+| `options` | `shouldSelect` | <TypeText>boolean</TypeText> | <Since version="7.27.0" /> Whether to select the input content on focus. |
 
 <Admonition type="important" title="Rules">
 
@@ -32,7 +33,7 @@ This method will allow users to programmatically focus on input. Make sure input
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx copy sandbox="https://codesandbox.io/s/setfocus-rolus"
-import * as React from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 type FormValues = {
@@ -42,9 +43,8 @@ type FormValues = {
 export default function App() {
   const { register, handleSubmit, setFocus } = useForm<FormValues>()
   const onSubmit = (data: FormValues) => console.log(data)
-  renderCount++
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFocus("firstName")
   }, [setFocus])
 
@@ -58,15 +58,14 @@ export default function App() {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/setfocus-rolus"
-import * as React from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 export default function App() {
   const { register, handleSubmit, setFocus } = useForm()
   const onSubmit = (data) => console.log(data)
-  renderCount++
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFocus("firstName")
   }, [setFocus])
 
@@ -80,3 +79,58 @@ export default function App() {
 ```
 
 </TabGroup>
+
+### Tips
+
+---
+
+- Focus the first field when the form opens:
+
+  ```javascript
+  useEffect(() => {
+    setFocus("firstName")
+  }, [setFocus])
+  ```
+
+- You do not need `setFocus` to focus the first invalid field on submit. [`shouldFocusError`](/docs/useform#shouldFocusError) does this by default.
+- For a component that does not forward a DOM ref, give `field.ref` an object with a `focus` method. See the Tips section of [useController](/docs/usecontroller).
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### `setFocus` does nothing
+
+<Why>
+
+React Hook Form can only focus a mounted field whose DOM ref was received through `register` or `field.ref`. A custom input that drops the ref, or a field that is not currently rendered, has no focusable element.
+
+</Why>
+
+<Fix>
+
+Forward the ref to the actual input. With `Controller`, pass `field.ref` to the component's ref prop (for example, `inputRef`), and call `setFocus` only after the field is mounted.
+
+</Fix>
+
+</Troubleshoot>
+
+<Troubleshoot>
+
+#### Focusing immediately after `reset` does not work
+
+<Why>
+
+`reset` updates the form and its field references. In the same call stack, the target input may not have registered its ref again yet.
+
+</Why>
+
+<Fix>
+
+Focus after React has committed the reset, for example from an effect that runs when the reset state changes. Avoid calling `reset()` and `setFocus()` back-to-back.
+
+</Fix>
+
+</Troubleshoot>

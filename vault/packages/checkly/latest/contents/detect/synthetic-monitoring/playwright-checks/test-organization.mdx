@@ -3,6 +3,7 @@ title: Organize your tests and monitors
 sidebarTitle: Test organization
 description: Learn how to structure and organize your Playwright Check Suites.
 tags: ['synthetic-monitoring', 'playwright-checks']
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/playwright-checks/test-organization/'
 ---
 
 Playwright Check Suites enable you to reuse your existing Playwright end-to-end tests for global synthetic monitoring.
@@ -45,8 +46,11 @@ Remember: 99.9% uptime means about 1 minute and 26 seconds of downtime each day.
 
 The quickest way to reuse your existing Playwright end-to-end tests as Playwright Check Suites is to specify your Playwright config path and a single Playwright Check Suite in your `checkly.config.ts`.
 
-```typescript highlight={3-11}
+{/* typecheck-wrap */}
+```typescript highlight={5-13}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightConfigPath: "./playwright.config.ts",
     playwrightChecks: [
@@ -65,10 +69,10 @@ Each Playwright Check Suite requires a `name` and `logicalId`.
 
 Without providing additional Playwright configuration (`pwProjects` or `pwTags`), the Playwright Check Suite will run all tests defined in the `playwright.config.ts`. It will include the tests that would also be run by `npx playwright test`.
 
-Without providing additional Checkly configuration (`frequency` or `locations`), the Playwright Check Suite will run **every 10 minutes** in **the three default locations** (North Carolina, Tokyo, London).
+Without providing additional Checkly configuration (`frequency` or `locations`), the Playwright Check Suite will run **every 10 minutes** in the locations set in `checks.locations` in your `checkly.config.ts`. If no locations are set anywhere, the CLI warns you and Checkly picks a location, so we recommend always setting locations.
 
 <Tip>
-While it's possible to run **all** your Playwright tests as long as your suite runs in under 15 minutes, we recommend to group your tests into multiple Playwright Check Suites with different monitoring configuration.
+While it's possible to run **all** your Playwright tests as long as your suite runs in under 30 minutes, we recommend to group your tests into multiple Playwright Check Suites with different monitoring configuration.
 
 This approach leads to faster Mean Time to Detect (MTTD), overall transparency and more granular monitoring information.
 </Tip>
@@ -84,8 +88,11 @@ Select existing Playwright tests and run them in a Playwright Check Suite by rel
 Use the `pwProjects` option to choose Playwright projects defined in the `playwright.config.ts` by name.
 
 <CodeGroup>
-```typescript checkly.config.ts highlight={10}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={12}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightConfigPath: "./playwright.config.ts",
     playwrightChecks: [
@@ -137,8 +144,11 @@ Using `pwProjects` creates a custom `testCommand` that includes the exact same `
 Select existing Playwright tests and run them in a Playwright Check Suite by relying on [Playwright test annotations and tags](https://playwright.dev/docs/test-annotations#tag-tests).
 
 <CodeGroup>
-```typescript checkly.config.ts highlight={9}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={11}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightChecks: [
       {
@@ -229,8 +239,11 @@ The Playwright test runner can always be configured at a global, project, or tes
 
 And configure different monitoring configuration for each Playwright project in your Playwright Check Suite.
 
-```typescript checkly.config.ts highlight={8-12, 17-21}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={10-14, 19-23}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightConfigPath: "./playwright.config.ts",
     playwrightChecks: [
@@ -239,7 +252,7 @@ export default defineConfig({
         logicalId: "environment-staging",
         // Pick the Playwright project for the staging environment
         pwProjects: ["environment-staging"],
-        // Run this Playwright Check Suite in one location every hour
+        // Run this Playwright Check Suite in three locations every hour
         frequency: Frequency.EVERY_1H,
         locations: ["us-west-1", "eu-west-2", "af-south-1"],
       },
@@ -286,8 +299,11 @@ export default defineConfig({
 
 And configure different monitoring configuration for each Playwright project in your Playwright Check Suite.
 
-```typescript checkly.config.ts highlight={8-12, 17-21}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={10-14, 19-23}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightConfigPath: "./playwright.config.ts",
     playwrightChecks: [
@@ -343,8 +359,11 @@ export default defineConfig({
 
 And configure different monitoring configuration for each Playwright project in your Playwright Check Suite.
 
-```typescript checkly.config.ts highlight={8-14, 19-25}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={10-16, 21-27}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightConfigPath: "./playwright.config.ts",
     playwrightChecks: [
@@ -364,7 +383,7 @@ export default defineConfig({
         logicalId: "important",
         // Pick the `important` project
         pwProjects: ["important"],
-        // Run this Playwright check suite in two locations every thirty minutes
+        // Run this Playwright check suite in two locations every hour
         frequency: Frequency.EVERY_1H,
         locations: ["us-west-1", "eu-west-2"],
         // Assign important alert channels
@@ -378,7 +397,7 @@ export default defineConfig({
 <Tip>
 Critical Playwright Check Suites running on high intervals should only include fast test cases to guarantee a short Mean Time to Detect (MTTD).
 
-**If a Check Suite run exceeds the specified interval frequency, subsequent runs will be skipped while it is running.**
+**For Check Suites that run more often than every 5 minutes, a scheduled run is skipped while the previous run is still in progress.**
 </Tip>
 
 ### Group tests to reuse authentication states
@@ -431,8 +450,11 @@ This Playwright setup will always run the `login-setup` project before running `
 
 Reuse the `logged-in-tests` project in your Checkly configuration.
 
-```typescript checkly.config.ts highlight={9}
+{/* typecheck-wrap */}
+```typescript checkly.config.ts highlight={11}
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightChecks: [
       {

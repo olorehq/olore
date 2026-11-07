@@ -121,6 +121,7 @@ vi.mocked(namedExport).mockReturnValue(100)
 expect(namedExport()).toBe(100)
 expect(namedExport).toBe(mocks.namedExport)
 ```
+
 :::
 
 ::: warning
@@ -135,17 +136,25 @@ vi.mock('./path/to/module.js', () => {
   }
 })
 ```
+
 :::
 
-If there is a `__mocks__` folder alongside a file that you are mocking, and the factory is not provided, Vitest will try to find a file with the same name in the `__mocks__` subfolder and use it as an actual module. If you are mocking a dependency, Vitest will try to find a `__mocks__` folder in the [root](/config/root) of the project (default is `process.cwd()`). You can tell Vitest where the dependencies are located through the [`deps.moduleDirectories`](/config/deps#deps-moduledirectories) config option.
+If the factory is not provided, Vitest looks for a file with the same name in a `__mocks__` folder and uses it instead of the original module:
+
+- If the path is a package name, like `axios` or `@company/utils/format`, Vitest looks in the `__mocks__` folder in the [root](/config/root) of the project (default is `process.cwd()`) for a file with this path and any extension, for example, `__mocks__/@company/utils/format.ts`. This also applies to a package that is linked from outside of `node_modules`, like a workspace package in a monorepo.
+- If the module resolves to a file outside of `node_modules`, Vitest looks in the `__mocks__` folder next to that file for a file with the same name and extension, for example, `src/__mocks__/increment.js` for `src/increment.js`. For a package name, Vitest does this only if the root `__mocks__` folder doesn't have the file.
+
+Vitest treats files in other [`deps.moduleDirectories`](/config/deps#deps-moduledirectories) the same as files in `node_modules`.
 
 For example, you have this file structure:
 
 ```
 - __mocks__
+  - @company
+    - utils.js
   - axios.js
 - src
-  __mocks__
+  - __mocks__
     - increment.js
   - increment.js
 - tests
@@ -160,13 +169,18 @@ import { vi } from 'vitest'
 // axios is a default export from `__mocks__/axios.js`
 import axios from 'axios'
 
+// format is a named export from `__mocks__/@company/utils.js`,
+// even if `@company/utils` is a workspace package
+import { format } from '@company/utils'
+
 // increment is a named export from `src/__mocks__/increment.js`
-import { increment } from '../increment.js'
+import { increment } from '../src/increment.js'
 
 vi.mock('axios')
-vi.mock('../increment.js')
+vi.mock('@company/utils')
+vi.mock('../src/increment.js')
 
-axios.get(`/apples/${increment(1)}`)
+axios.get(`/apples/${format(increment(1))}`)
 ```
 
 ::: warning
@@ -198,6 +212,7 @@ vi.doMock('./increment.js') // this will be called _after_ the import statement
 
 import { increment } from './increment.js'
 ```
+
 :::
 
 ```ts [increment.js]
@@ -247,6 +262,7 @@ it('uses the normal version of my-module again', () => {
   const myModule = await import('my-module') // not mocked
 })
 ```
+
 :::
 
 ### vi.mocked
@@ -473,12 +489,17 @@ You can also pass down a class to `vi.fn`:
 
 ```ts
 const Cart = vi.fn(class {
-  get = () => 0
+  get() {
+    return 0
+  }
 })
 
 const cart = new Cart()
 expect(Cart).toHaveBeenCalled()
+expect(cart.get()).toBe(0)
 ```
+
+Instances keep the prototype chain of the implementation class, so its prototype methods are available on instances, and `instanceof` checks against the implementation class pass. See [Mocking Classes](/guide/mocking/classes) for details.
 
 ### vi.mockObject <Version>3.2.0</Version>
 
@@ -486,7 +507,7 @@ expect(Cart).toHaveBeenCalled()
 function mockObject<T>(value: T, options?: MockOptions): MaybeMockedDeep<T>
 ```
 
-Deeply mocks properties and methods of a given object in the same way as `vi.mock()` mocks module exports. See [automocking](/guide/mocking.html#automocking-algorithm) for the detail.
+Deeply mocks properties and methods of a given object in the same way as `vi.mock()` mocks module exports. See [automocking](/guide/mocking#automocking-algorithm) for the detail.
 
 ```ts
 const original = {
@@ -517,6 +538,10 @@ expect(spied.simple()).toBe('value')
 expect(spied.simple).toHaveBeenCalled()
 expect(spied.simple.mock.results[0]).toEqual({ type: 'return', value: 'value' })
 ```
+
+::: warning
+With `spy: true`, `vi.mockObject` doesn't copy objects. It returns the same `original` object and replaces its methods, including the methods of nested objects and class prototypes, with spies in place.
+:::
 
 ### vi.isMockFunction
 
@@ -614,6 +639,8 @@ const spy = vi.spyOn(cart, 'Apples')
 
 If you provide an arrow function, you will get [`<anonymous> is not a constructor` error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Not_a_constructor) when the mock is called.
 
+With a class implementation, instances keep the prototype chain of that class: prototype methods like `getApples` are available on instances, and `instanceof` checks against the implementation class pass. See [Mocking Classes](/guide/mocking/classes) for details.
+
 ::: tip
 In environments that support [Explicit Resource Management](https://github.com/tc39/proposal-explicit-resource-management), you can use `using` instead of `const` to automatically call `mockRestore` on any mocked function when the containing block is exited. This is especially useful for spied methods:
 
@@ -625,6 +652,7 @@ it('calls console.log', () => {
 })
 // console.log is restored here
 ```
+
 :::
 
 ::: tip
@@ -643,6 +671,7 @@ console.log(cart.getApples()) // 42
 spy.mockReturnValue(10)
 console.log(cart.getApples()) // still 42!
 ```
+
 :::
 
 ::: tip
@@ -699,6 +728,7 @@ You can also change the value by simply assigning it, but you won't be able to u
 ```ts
 import.meta.env.MODE = 'test'
 ```
+
 :::
 
 ### vi.unstubAllEnvs {#vi-unstuballenvs}
@@ -764,6 +794,7 @@ globalThis.innerWidth = 100
 // if you are using jsdom or happy-dom
 window.innerWidth = 100
 ```
+
 :::
 
 ### vi.unstubAllGlobals {#vi-unstuballglobals}
@@ -795,6 +826,135 @@ globalThis.IntersectionObserver === undefined
 'IntersectionObserver' in globalThis === false
 // throws ReferenceError, because it's not defined
 IntersectionObserver === undefined
+```
+
+### vi.when <Version>5.0.0</Version> {#vi-when}
+
+```ts
+interface WhenOptions {
+  onUnmatched?: 'throw' | 'passthrough' | ((...args: unknown[]) => unknown)
+}
+
+interface BehaviorOptions {
+  times?: number
+}
+
+function when(spy: Mock, options?: WhenOptions): When
+```
+
+Defines per-argument behaviors on a spy, replacing its implementation for the duration of the `when` chain.
+
+Call `.calledWith(...args)` on the returned object to specify which call arguments to match, then chain one or more `then*` methods to declare what the spy should return, throw, or resolve when invoked with those arguments. Arguments are matched with the same deep equality as [`toEqual`](/api/expect#toequal) and support asymmetric matchers such as `expect.any()`.
+
+```ts
+const spy = vi.fn()
+
+vi.when(spy)
+  .calledWith(1)
+  .thenReturn('one')
+  .calledWith(2)
+  .thenReturn('two')
+
+expect(spy(1)).toBe('one')
+expect(spy(2)).toBe('two')
+```
+
+Available `then*` methods:
+
+| Method                         | Description                                |
+| ------------------------------ | ------------------------------------------ |
+| `thenReturn(value, options?)`  | Returns `value`.                           |
+| `thenReturnOnce(value)`        | Returns `value` once, then falls back.     |
+| `thenThrow(error, options?)`   | Throws `error`.                            |
+| `thenThrowOnce(error)`         | Throws `error` once, then falls back.      |
+| `thenResolve(value, options?)` | Returns a resolved `Promise` with `value`. |
+| `thenResolveOnce(value)`       | Resolves once, then falls back.            |
+| `thenReject(error, options?)`  | Returns a rejected `Promise` with `error`. |
+| `thenRejectOnce(error)`        | Rejects once, then falls back.             |
+
+The optional `times` option limits how many times a behavior applies before being exhausted. Behaviors registered for the same arguments are consumed last-in-first-out: the most recently registered behavior is tried first, and once exhausted, earlier ones act as fallbacks.
+
+```ts
+const spy = vi.fn<(key: string) => string>()
+
+vi.when(spy)
+  .calledWith('theme')
+  .thenReturn('light') // fallback, applies indefinitely
+  .thenReturn('dark', { times: 2 }) // applied first for the next 2 calls
+
+expect(spy('theme')).toBe('dark')
+expect(spy('theme')).toBe('dark')
+expect(spy('theme')).toBe('light') // falls back
+```
+
+When called with arguments that match no registered behavior, the spy falls through to its original implementation by default. Use the `onUnmatched` option to change this:
+
+- `'passthrough'` (**default**): delegates to the spy's original implementation
+- `'throw'`: throws an error listing the unmatched arguments
+- a function: called with the unmatched arguments; its return value is used
+
+```ts
+const spy = vi.fn<(id: number) => string>()
+
+vi.when(spy, { onUnmatched: 'throw' })
+  .calledWith(1)
+  .thenReturn('Alice')
+
+expect(spy(1)).toBe('Alice')
+expect(() => spy(99)).toThrow() // no behavior defined for 99
+```
+
+The `When` object returned by `vi.when` supports the [`toHaveBeenExhausted` assertion](/api/expect#tohavebeenexhausted), which passes once every registered behavior has been consumed.
+
+```ts
+const spy = vi.fn()
+const w = vi.when(spy)
+  .calledWith(1)
+  .thenReturnOnce('once')
+  .calledWith(2)
+  .thenReturn('always')
+
+expect(w).not.toHaveBeenExhausted()
+
+spy(1) // consumes the `thenReturnOnce` behavior
+spy(2) // satisfies `thenReturn` (called at least once)
+
+expect(w).toHaveBeenExhausted()
+```
+
+::: tip
+In environments that support [Explicit Resource Management](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Resource_management), you can use `using` instead of `const` to automatically restore the spy's original implementation when the containing block exits:
+
+```ts
+const spy = vi.fn(() => 'original')
+
+{
+  using w = vi.when(spy)
+    .calledWith('hello')
+    .thenReturn('mocked')
+
+  expect(spy('hello')).toBe('mocked')
+} // ← spy's original implementation is restored here
+
+expect(spy('hello')).toBe('original')
+```
+
+:::
+
+### vi.isWhenChain <Version>5.0.0</Version> {#vi-iswhenchain}
+
+```ts
+function isWhenChain(input: object): input is When
+```
+
+Returns `true` if the given value is a `When` chain created by [`vi.when`](#vi-when). If you are using TypeScript, it will also narrow down its type.
+
+```ts
+const spy = vi.fn()
+const w = vi.when(spy).calledWith(1).thenReturn(0)
+
+expect(vi.isWhenChain(w)).toBe(true)
+expect(vi.isWhenChain(spy)).toBe(false)
 ```
 
 ## Fake Timers
@@ -1028,14 +1188,14 @@ await vi.runOnlyPendingTimersAsync()
 ### vi.setSystemTime
 
 ```ts
-function setSystemTime(date: string | number | Date): Vitest
+function setSystemTime(date: string | number | Date | Temporal.Instant | Temporal.ZonedDateTime): Vitest
 ```
 
-If fake timers are enabled, this method simulates a user changing the system clock (will affect date related API like `hrtime`, `performance.now` or `new Date()`) - however, it will not fire any timers. If fake timers are not enabled, this method will only mock `Date.*` calls.
+If fake timers are enabled, this method simulates a user changing the system clock (will affect date related API like `hrtime`, `performance.now` or `new Date()`) - however, it will not fire any timers. If fake timers are not enabled, this method will only mock `Date.*` and `Temporal.Now.*` calls.
 
 Useful if you need to test anything that depends on the current date - for example [Luxon](https://github.com/moment/luxon/) calls inside your code.
 
-Accepts the same string and number arguments as the `Date`.
+Accepts the same string and number arguments as the `Date`, or a `Temporal.Instant` or `Temporal.ZonedDateTime`. Vitest uses the moment represented by a `ZonedDateTime` as the mocked time and leaves the environment's time zone unchanged.
 
 ```ts
 const date = new Date(1998, 11, 19)
@@ -1057,6 +1217,8 @@ function useFakeTimers(config?: FakeTimersConfig): Vitest
 To enable mocking timers, you need to call this method. It will wrap all further calls to timers (such as `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`, `setImmediate`, `clearImmediate`, and `Date`) until [`vi.useRealTimers()`](#vi-userealtimers) is called.
 
 Mocking `nextTick` is not supported when running Vitest inside `node:child_process` by using `--pool=forks`. NodeJS uses `process.nextTick` internally in `node:child_process` and hangs when it is mocked. Mocking `nextTick` is supported when running Vitest with `--pool=threads`.
+
+The `now` option accepts a `Date`, number, `Temporal.Instant`, or `Temporal.ZonedDateTime`. Vitest uses the moment represented by a `ZonedDateTime` as the mocked time and leaves the environment's time zone unchanged.
 
 The implementation is based internally on [`@sinonjs/fake-timers`](https://github.com/sinonjs/fake-timers).
 
@@ -1085,7 +1247,7 @@ Controls how fake timers are advanced.
 - `nextTimerAsync`: Timers will be advanced automatically to the next available timer after each macrotask.
 - `interval`: Timers are advanced automatically by a specified interval.
 
-When `mode` is `'interval'`, you can also provide an `interval` in milliseconds.
+When `mode` is `'interval'`, you can also provide an `interval` in milliseconds. See [Tick Modes](/guide/mocking/timers#tick-modes) for when to use each mode.
 
 **Example:**
 
@@ -1200,7 +1362,14 @@ test('Element exists in a DOM', async () => {
 })
 ```
 
-If `vi.useFakeTimers` is used, `vi.waitFor` automatically calls `vi.advanceTimersByTime(interval)` in every check callback.
+The `message` option describes what the callback waits for. If the wait fails, Vitest adds the message to the start of the error. The message also names the step in the [trace timeline](/config/experimental#experimental-tracetimeline).
+
+```ts
+await vi.waitFor(() => server.ping(), { message: 'server started' })
+// Error: server started: connect ECONNREFUSED
+```
+
+If `vi.useFakeTimers` is used, `vi.waitFor` automatically calls `vi.advanceTimersByTime(interval)` in every check callback. See [Automatic Advancing](/guide/mocking/timers#automatic-advancing) for details.
 
 ### vi.waitUntil {#vi-waituntil}
 
@@ -1231,6 +1400,15 @@ test('Element render correctly', async () => {
   expect(element.querySelector('.element-child')).toBeTruthy()
 })
 ```
+
+Like `vi.waitFor`, `vi.waitUntil` accepts a `message` option that prefixes the error and names the step in the [trace timeline](/config/experimental#experimental-tracetimeline).
+
+```ts
+await vi.waitUntil(() => db.users.findByName('alice'), { message: 'user saved' })
+// Error: user saved: Timed out in waitUntil!
+```
+
+If `vi.useFakeTimers` is used, `vi.waitUntil` automatically calls `vi.advanceTimersByTime(interval)` in every check callback. See [Automatic Advancing](/guide/mocking/timers#automatic-advancing) for details.
 
 ### vi.hoisted {#vi-hoisted}
 
@@ -1370,7 +1548,6 @@ test('example', () => {
 
 Example output:
 
-<!-- eslint-skip -->
 ```js
 FAIL  example.test.ts > example
 AssertionError: expected 'left' to deeply equal 'right'

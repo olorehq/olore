@@ -3,6 +3,7 @@ title: Playwright Check Suites
 sidebarTitle: Overview
 description: 'Run your Playwright end-to-end test suite as synthetic production monitoring.'
 tags: ['synthetic-monitoring', 'playwright-checks']
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/playwright-checks/overview/'
 ---
 
 <Frame>
@@ -64,12 +65,15 @@ Control which tests run as monitors using:
 - **Projects**: Select browser and project configurations from your Playwright config with `pwProjects`
 - **Tags**: Choose tests marked with specific tags (e.g., `@critical`, `@smoke`) with `pwTags`
 - **Combinations**: Mix tags and projects for precise control
-- **testCommand**: Use `npx playwright test ...` to select the tests you want to create a monitor for, using playwright flags like `--grep-invert` or `--projects`
+- **testCommand**: Use `npx playwright test ...` to select the tests you want to create a monitor for, using Playwright flags like `--grep-invert` or `--projects`
 
 Configure test selection in your `checkly.config.ts` file:
 
+{/* typecheck-wrap */}
 ```typescript checkly.config.ts
 export default defineConfig({
+  projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     playwrightChecks: [
       {
@@ -107,12 +111,12 @@ Customize how your checks run:
 - **Frequency**: Schedule runs at regular intervals
 - **Locations**: Deploy to multiple global regions
 - **Alerting**: Set up notifications and escalation
-- **Dependencies**: Use private packages and custom registries (see [custom dependencies](/detect/synthetic-monitoring/playwright-checks/custom-dependencies))
+- **Dependencies**: Use private packages and custom registries (see [Dependencies](/detect/synthetic-monitoring/playwright-checks/dependencies))
 
 ## Getting Started
 
 <Columns cols={2}>
-<Card title="Quickstart Guide" href="/quickstarts/playwright-check">
+<Card title="Quickstart Guide" href="/detect/synthetic-monitoring/playwright-checks/quickstart">
 Deploy your first Playwright Check Suite
 </Card>
 
@@ -124,7 +128,7 @@ Construct configuration options and examples
 Organize checks with groups
 </Card>
 
-<Card title="Custom Dependencies" href="/detect/synthetic-monitoring/playwright-checks/custom-dependencies">
-Use private packages and custom registries
+<Card title="Dependencies" href="/detect/synthetic-monitoring/playwright-checks/dependencies">
+Install your dependencies, including private packages
 </Card>
 </Columns>

@@ -1,21 +1,19 @@
 ---
 title: Auth production checklist
-subtitle: Required configuration before launching with Neon Auth
+subtitle: Required configuration before launching with Managed Better Auth
 summary: >-
-  Required steps before going live with Neon Auth: trusted domains, custom SMTP
+  Required steps before going live with Managed Better Auth: trusted domains, custom SMTP
   provider, application name, OAuth credentials, email verification, and
-  disabling localhost access. Use this page when Neon Auth is already configured
+  disabling localhost access. Use this page when Managed Better Auth is already configured
   for development and you need to confirm every production-blocking setting
   before launch. The default shared SMTP provider (`auth@mail.myneon.app`) is
   rate-limited and does not support verification links. A custom SMTP provider
   is required for both.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T09:41:16.035Z'
 ---
 
-<FeatureBetaProps feature_name="Neon Auth with Better Auth" />
-
-Complete these steps before taking your application to production with Neon Auth.
+Complete these steps before taking your application to production with Managed Better Auth.
 
 <CheckList title="Auth production checklist">
 
@@ -28,11 +26,11 @@ Complete these steps before taking your application to production with Neon Auth
 </CheckItem>
 
 <CheckItem title="3. Customize application name" href="/docs/auth/production-checklist#application-name">
-  Set the name your users see in user-facing auth messages. Applies to Neon Auth (Better Auth) integrations. Defaults to the Neon project name.
+  Set the name your users see in user-facing auth messages. Applies to Managed Better Auth integrations. Defaults to the Neon project name.
 </CheckItem>
 
 <CheckItem title="4. Configure OAuth credentials (if using OAuth)" href="/docs/auth/guides/setup-oauth#production-setup">
-  Set up your own Google and GitHub OAuth apps to replace shared development keys.
+  Set up your own OAuth apps (Google, GitHub, Vercel, Microsoft, or Apple). Google is the only provider with shared development credentials, so replace those with your own before launch.
 </CheckItem>
 
 <CheckItem title="5. Enable email verification (recommended)" href="/docs/auth/guides/email-verification">
@@ -40,20 +38,24 @@ Complete these steps before taking your application to production with Neon Auth
 </CheckItem>
 
 <CheckItem title="6. Disable localhost access" href="/docs/auth/production-checklist#localhost-access">
-  Disable the "Allow Localhost" setting in your project's **Settings** → **Auth** page. This setting is enabled by default for development but should be disabled in production to improve security.
+  Disable the "Allow Localhost" setting in your project's **Settings** → **Better Auth** page. This setting is enabled by default for development but should be disabled in production to improve security.
 </CheckItem>
 
 </CheckList>
 
 ## Email provider (#email-provider)
 
-Neon Auth uses a shared SMTP provider (`auth@mail.myneon.app`) by default for development and testing. For production, configure your own email provider for better deliverability and higher sending limits.
+Managed Better Auth uses a shared SMTP provider (`auth@mail.myneon.app`) by default for development and testing. For production, configure your own email provider for better deliverability and higher sending limits.
 
 A custom SMTP provider uses your sender address but still sends Neon's default email templates. For full control over email branding, content, and HTML templates, use webhooks to intercept email events and send through your own email service. See [Customize emails](/docs/auth/guides/customize-emails).
 
 ### Configure custom SMTP
 
-In your project's **Settings** → **Auth** page, configure your email provider:
+<Tabs labels={["Console", "CLI", "API"]}>
+
+<TabItem>
+
+In your project's **Settings** → **Better Auth** page, configure your email provider:
 
 1. Select **Custom SMTP provider**
 2. Enter your SMTP credentials:
@@ -64,6 +66,33 @@ In your project's **Settings** → **Auth** page, configure your email provider:
    - **Sender email**: Email address to send from
    - **Sender name**: Display name for sent emails
 3. Click **Save**
+
+</TabItem>
+
+<TabItem>
+
+Configure a standard SMTP provider with [`neon neon-auth config email-provider update`](/docs/cli/neon-auth#config-email-provider-update):
+
+```bash shouldWrap
+neon neon-auth config email-provider update --type standard --host smtp.example.com --port 587 --username example_username --password AbC123dEf --sender-email noreply@example.com --sender-name "Example App"
+```
+
+</TabItem>
+
+<TabItem>
+
+Update the provider with the [Update email provider configuration](/docs/reference/api/auth/update-neon-auth-email-provider) endpoint. Replace `{project_id}` and `{branch_id}` with your project and branch IDs:
+
+```bash shouldWrap
+curl -X PATCH 'https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/email_provider' \
+  -H 'Authorization: Bearer $NEON_API_KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{"type": "standard", "host": "smtp.example.com", "port": 587, "username": "example_username", "password": "AbC123dEf", "sender_email": "noreply@example.com", "sender_name": "Example App"}'
+```
+
+</TabItem>
+
+</Tabs>
 
 ### Email provider requirements
 
@@ -77,13 +106,12 @@ The shared email provider (`auth@mail.myneon.app`) is suitable for development a
 
 ## Application name (#application-name)
 
-Neon Auth uses the application name in user-facing auth messages, such as verification emails and password resets. By default, this is set to the Neon project name. This setting is available for Neon Auth (Better Auth) integrations only.
+Managed Better Auth uses the application name in user-facing auth messages, such as verification emails and password resets. By default, this is set to the Neon project name. This setting is available for Managed Better Auth integrations only.
 
 To set a custom application name:
 
-1. Go to **Auth** in your Neon project
-2. Select the **Configuration** tab
-3. In the **Project Info** panel, edit the **Application Name** field
+1. Go to **Settings** → **Better Auth** in your Neon project
+2. In the **Project Info** section, edit the **Application Name** field
 
 Each branch manages its own application name independently, so preview and development branches can use different names than production.
 
@@ -91,13 +119,13 @@ You can also update the application name via the API. See [Update auth configura
 
 ## Localhost access (#localhost-access)
 
-The "Allow Localhost" setting in your project's **Settings** → **Auth** page is enabled by default to allow authentication requests from localhost during development.
+The "Allow Localhost" setting in your project's **Settings** → **Better Auth** page is enabled by default to allow authentication requests from localhost during development.
 
 ### Disable for production
 
 For production environments, disable this setting to improve security:
 
-1. Go to **Settings** → **Auth** in your Neon project
+1. Go to **Settings** → **Better Auth** in your Neon project
 2. Find the **Allow Localhost** toggle
 3. Disable the toggle
 

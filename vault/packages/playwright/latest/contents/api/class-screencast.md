@@ -31,10 +31,17 @@ await page.screencast.start({
 await page.screencast.stop();
 ```
 
+### option: Screencast.start.fps
+* since: v1.64
+- `fps` <[int]>
+
+Frame rate of the video recording in frames per second. Only used together with [`option: Screencast.start.path`]. Defaults to `25`.
+
+Higher frame rates make animations and scrolling smoother at the cost of more CPU spent on encoding. Combine with [`option: Screencast.start.size`] to record high resolution videos. The video can only contain as many distinct frames as the browser produces; Firefox and WebKit currently capture up to 25 frames per second.
+
 ### option: Screencast.start.onFrame
 * since: v1.59
-- `onFrame` <[function]\([Object]\): [Promise]>
-  * alias: ScreencastFrame
+- `onFrame` "ScreencastFrame" <[function]\([Object]\): [Promise]>
   - `data` <[Buffer]> JPEG-encoded frame data.
   - `timestamp` <[float]> The timestamp of when the frame was presented by the browser, in milliseconds since the Unix epoch.
   - `viewportWidth` <[int]> Width of the page viewport at the time the frame was captured.
@@ -56,8 +63,8 @@ The quality of the image, between 0-100.
 
 ### option: Screencast.start.size
 * since: v1.59
-- `size` ?<[Object]>
-  * alias-csharp: ScreencastSize
+- `size` "ScreencastSize" ?<[Object]>
+  * alias-java: Size
   - `width` <[int]> Max frame width in pixels.
   - `height` <[int]> Max frame height in pixels.
 
@@ -125,23 +132,45 @@ How long each annotation is displayed in milliseconds. Defaults to `500`.
 
 ### option: Screencast.showActions.position
 * since: v1.59
-- `position` ?<[AnnotatePosition]<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right">>
+- `position` "AnnotatePosition" ?<"top-left"|"top"|"top-right"|"bottom-left"|"bottom"|"bottom-right">
 
 Position of the action title overlay. Defaults to `"top-right"`.
 
 ### option: Screencast.showActions.fontSize
 * since: v1.59
+* deprecated: Use `title` in [`option: Screencast.showActions.style`] instead, for example `style: { title: 'font-size: 32px' }`.
 - `fontSize` ?<[int]>
 
 Font size of the action title in pixels. Defaults to `24`.
 
 ### option: Screencast.showActions.cursor
 * since: v1.61
-- `cursor` ?<[ScreencastCursor]<"none"|"pointer">>
+- `cursor` "ScreencastCursor" ?<"none"|"pointer">
 
 Cursor decoration shown for pointer actions. `"pointer"` (the default) renders
 a mouse pointer that animates from the previous action point to the next one.
 `"none"` disables the cursor decoration.
+
+### option: Screencast.showActions.style
+* since: v1.64
+- `style` "ScreencastActionStyle" ?<[Object]>
+  - `point` ?<[string]> CSS declarations for the marker at the action point. The marker is positioned at the action point, has zero size and is centered on the point, so its size and look come from this style. Not shown when omitted.
+  - `highlight` ?<[string]> CSS declarations for the box that covers the target element. The box is positioned and sized to the element bounds. Not shown when omitted.
+  - `title` ?<[string]> CSS declarations for the action title, for example `'font-size: 32px; background: #333'`. The title is placed according to [`option: Screencast.showActions.position`].
+
+Styles of the action decorations. All decorations fade out over [`option: Screencast.showActions.duration`].
+
+**Usage**
+
+```js
+await page.screencast.showActions({
+  style: {
+    point: 'width: 20px; height: 20px; border-radius: 50%; background: red',
+    highlight: 'outline: 2px solid #333; background: rgba(0, 128, 255, .15)',
+    title: 'font-size: 16px',
+  },
+});
+```
 
 ## async method: Screencast.showOverlays
 * since: v1.59

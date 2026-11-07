@@ -1,13 +1,14 @@
 ---
-image: /generated/articles-docs-lambda-getrenderprogress.png
+image: https://remotion.media/docs/generated/articles-docs-lambda-getrenderprogress.png
 id: getrenderprogress
 title: getRenderProgress()
 slug: /lambda/getrenderprogress
 crumb: 'Lambda API'
 ---
 
-Gets the current status of a render initiated via [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda).  
-Calling this function results in a Lambda invocation.
+Gets the current status of a render initiated via [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda) or [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda).
+
+By default, calling this function results in a Lambda invocation. See [Faster progress polling](/docs/lambda/faster-progress-polling) to read the progress directly from S3 instead.
 
 For renders initiated via [`renderStillOnLambda()`](/docs/lambda/renderstillonlambda), do not use this function. Instead, the result is returned immediately.
 
@@ -63,7 +64,7 @@ Passes `forcePathStyle` to the AWS S3 client. If you don't know what this is, yo
 ### `skipLambdaInvocation?`<AvailableFrom v="4.0.218" />
 
 Instead of calling a Lambda function which will get the progress from S3, make the S3 call directly.  
-This is cheaper and faster, but the function name must follow [the function name convention](/docs/lambda/naming-convention#see-also).
+This is cheaper and faster, but requires additional permissions. Default: `false`. See [Faster progress polling](/docs/lambda/faster-progress-polling) for the requirements.
 
 ## Response
 
@@ -82,6 +83,8 @@ How many chunks have been fully rendered so far.
 `true` if video has been successfully rendered and all processes are done. `false` otherwise.
 
 ### `encodingStatus`
+
+Always `null` for image sequence renders.
 
 Either `null` if not all chunks have been rendered yet or an object with the signature `{framesEncoded: number}` that tells how many frames have been encoded so far in the encoding process.
 
@@ -106,9 +109,63 @@ Contains the following information about the render:
 
 In which bucket the render and other artifacts get saved.
 
+### `outputSequence`<AvailableFrom v="4.0.535" />
+
+For completed [`renderFramesOnLambda()`](/docs/lambda/renderframesonlambda) jobs, an object describing the output sequence. Otherwise, `null`.
+
+#### `bucketName`
+
+The destination bucket containing the images and manifest.
+
+#### `keyPrefix`
+
+The storage prefix containing the sequence.
+
+#### `manifestKey`
+
+The storage key of the JSON manifest.
+
+#### `manifestUrl`
+
+The URL of the manifest. Private manifests require storage credentials or a signed URL.
+
+#### `imageFormat`
+
+`'png'` or `'jpeg'`.
+
+#### `frameCount`
+
+The number of rendered images.
+
+### `framesUploaded`<AvailableFrom v="4.0.535" />
+
+The number of uploaded frames for an image sequence. Retries do not double-count frames. `null` for other renders, or while composition metadata is being resolved.
+
 ### `outputFile`
 
+For image sequences, this is `null`; use `outputSequence`.
+
 `null` if the video is not yet rendered, a `string` containing a URL pointing to the final artifact if the video finished rendering.
+
+### `separateAudio`<AvailableFrom v="4.0.535" />
+
+Details of the audio output when [`separateAudioTo`](/docs/lambda/rendermediaonlambda#separateaudioto) was used. Returns `null` until the render completes, or when no separate audio output was requested. `done` becomes `true` after both outputs have uploaded successfully.
+
+#### `url`
+
+The URL of the audio file.
+
+#### `bucketName`
+
+The bucket containing the audio output.
+
+#### `key`
+
+The storage key of the audio output.
+
+#### `sizeInBytes`
+
+The size of the audio file in bytes.
 
 ### `outKey`
 
@@ -176,7 +233,13 @@ If the render is in progress, this is `null`. If the render is done, it is an ar
 
 Artifacts that were created so far during the render. [See here for an example of dealing with field.](/docs/artifacts#using-rendermedia-renderstill-or-renderframes)
 
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions="Node.js runtime" clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
+
+For serverless functions, use the [light client](/docs/lambda/light-client).
+
 ## See also
 
-- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda/src/api/get-render-progress.ts)
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/lambda-client/src/get-render-progress.ts)
 - [renderMediaOnLambda()](/docs/lambda/rendermediaonlambda)

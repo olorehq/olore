@@ -27,7 +27,9 @@ See the [CLI guide](/docs/cli) for installation and all available commands.
 
 ## Use Clerk's MCP server
 
-Clerk provides its own MCP server that helps AI coding agents provide accurate SDK snippets and implementation patterns. This is useful when building authentication features with Clerk in AI tools. Learn how to [connect to Clerk's MCP server](/docs/guides/ai/mcp/clerk-mcp-server).
+Clerk provides its own MCP server that lets AI coding agents manage your Clerk applications, users, and production setup, and gives them Clerk SDK snippets. You sign in with your Clerk account when your AI client connects.
+
+To set it up in your AI client, see the [Clerk MCP server guide](/docs/guides/ai/mcp/clerk-mcp-server).
 
 ## Build your own MCP implementation
 
@@ -36,19 +38,19 @@ An MCP implementation involves two parties: a "client" and a "server". In web de
 - The "client" is the LLM application that wants to access another service on a user's behalf. For example, Claude would be the "client" if it wants to get access to Gmail.
 - The "server" is the system that hosts the protected resources the client wants to access. In this example, this would be Gmail. This is sometimes referred to as the "resource server" or "MCP server".
 
-Clerk supports MCP through dynamic client registration (for registering MCP servers programmatically), consent screens (for secure user authorization), and SDK support, making it an ideal authorization server for MCP implementations.
+Clerk supports MCP through Client ID Metadata Documents ([CIMD](!client-id-metadata-document)), Dynamic Client Registration for clients that still require it, OAuth consent screens, and SDK support.
 
-To learn how to implement both sides of the flow using Clerk, refer to the following guides:
+To implement your server and connect clients, refer to the following guides:
 
-- [Build an MCP server](/docs/guides/ai/mcp/build-mcp-server)
+- [Build and authenticate an MCP server](/docs/guides/ai/mcp/build-mcp-server)
 - [Connect an MCP client](/docs/guides/ai/mcp/connect-mcp-client)
 
 ## Agent Tasks
 
 Agent Tasks allow you to create authenticated sessions on behalf of users without going through the standard sign-in flow. This is useful for AI agent workflows where an agent needs to act on behalf of a user. Read the complete [Agent Tasks guide](/docs/guides/development/testing/agent-tasks).
 
-## AI prompts
+## Set up Clerk with an agent
 
-Clerk's AI prompt library provides curated prompts to help you work more efficiently with AI-powered development tools like Cursor, Claude Code, Codex, GitHub Copilot, and more. These prompts guide AI assistants in helping you implement Clerk's features correctly.
+Many of Clerk's quickstarts include current prompts for AI-powered development tools like Cursor, Claude Code, Codex, GitHub Copilot, and more. These prompts guide AI assistants through adding Clerk to your application.
 
-To learn more, see the [AI prompts](/docs/guides/ai/prompts) guide.
+To get started, choose your framework in the [Clerk quickstarts](/docs/getting-started/quickstart/overview).

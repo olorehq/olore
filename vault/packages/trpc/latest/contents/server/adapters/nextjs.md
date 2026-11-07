@@ -3,10 +3,14 @@ id: nextjs
 title: Next.js Adapter
 sidebar_label: Next.js
 slug: /server/adapters/nextjs
+description: Serve tRPC from a Next.js API route with createNextApiHandler, or from an App Router route handler with fetchRequestHandler
+section: "Backend Usage"
+parent: "server/adapters"
+order: 16
 ---
 
 :::tip
-tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter. For complete documentation, see the [Next.js Integration guide](../../client/nextjs/overview.mdx).
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter. For complete documentation, see the [Next.js Integration guide](../../client/nextjs.md).
 :::
 
 ## Example app
@@ -20,11 +24,20 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
   </thead>
   <tbody>
     <tr>
-      <td>Next.js Minimal Starter</td>
+      <td>Next.js Prisma Starter: an API route with <code>createNextApiHandler</code></td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-minimal-starter">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/examples-next-prisma-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/examples-next-prisma-starter">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Next.js Minimal Starter: an App Router route handler with <code>fetchRequestHandler</code></td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/examples-next-minimal-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/examples-next-minimal-starter">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -124,7 +137,7 @@ export default async function handler(
 
 ## App Router (Route Handlers)
 
-If you're using the Next.js **App Router**, use the [fetch adapter](fetch) instead, as App Router route handlers are based on the Web standard `Request` and `Response` objects. See the [App Router setup guide](/docs/client/nextjs/app-router-setup) for a complete walkthrough.
+If you're using the Next.js **App Router**, use the [fetch adapter](./fetch.md) instead, as App Router route handlers are based on the Web standard `Request` and `Response` objects. See the [App Router setup guide](/docs/client/nextjs/app-router-setup) for a complete walkthrough.
 
 ```ts twoslash title='app/api/trpc/[trpc]/route.ts'
 // @filename: app/api/trpc/init.ts

@@ -1,42 +1,35 @@
 ---
 name: olore-orpc-latest
-description: Local orpc documentation reference (latest). oRPC documentation. Use for type-safe RPC APIs, server actions, middleware, context, error handling, OpenAPI integration, and client generation in TypeScript.
+description: Local oRPC documentation reference (latest). oRPC documentation. Use for type-safe RPC APIs, server actions, middleware, context, error handling, OpenAPI integration, and client generation in TypeScript.
 ---
 
-# orpc Documentation
+# oRPC Documentation
 
-oRPC is a TypeScript library for building type-safe RPC APIs with end-to-end type safety for inputs, outputs, errors, files, and streaming. It supports OpenAPI generation, framework adapters, server actions, and integrations with TanStack Query, AI SDK, and more.
+oRPC documentation. Use for type-safe RPC APIs, server actions, middleware, context, error handling, OpenAPI integration, and client generation in TypeScript.
 
 ## Quick Reference
 
 | Task | Entry Point |
 |------|-------------|
-| Getting started | `contents/getting-started.md` |
-| Define a procedure | `contents/procedure.md` |
-| Build a router | `contents/router.md` |
-| Add middleware | `contents/middleware.md` |
-| Handle errors | `contents/error-handling.md` |
-| Client usage | `contents/client/client-side.md` |
-| OpenAPI / REST | `contents/openapi/getting-started.md` |
-| Framework adapters | `contents/adapters/` |
-| Server actions | `contents/server-action.md` |
-| Streaming | `contents/event-iterator.md` |
+| Getting started | `contents/getting-started.mdx` |
+| Procedures, routers, context, middleware | `contents/procedure.mdx`, `contents/router.mdx`, `contents/context.mdx`, `contents/middleware.mdx` |
+| Adapters (Next.js, Hono, Node HTTP, ...) | `contents/adapters/index.mdx` |
+| Clients and links | `contents/client/index.mdx`, `contents/rpc/link.mdx` |
+| Contract-first | `contents/contract-first.mdx`, `contents/contract/` |
+| OpenAPI | `contents/openapi/index.mdx` |
+| Plugins | `contents/plugins/index.mdx` |
+| Migrations (tRPC, v1) | `contents/migrations/index.mdx` |
+| API reference | `contents/api-reference.mdx` |
 
 ## When to use
 
 Use this skill when the user asks about:
-- Defining procedures, routers, middleware, and context in oRPC
-- Type-safe error handling with ORPCError
-- Server actions and RPC handler setup
-- Client-side usage and RPC links
-- OpenAPI spec generation and REST routing
-- Framework adapters (Next.js, Hono, Express, Fastify, Nuxt, SvelteKit, etc.)
-- TanStack Query, AI SDK, Better Auth, or other integrations
-- Streaming with event iterators
-- File upload and download
-- Contract-first development
-- Plugins (CORS, batching, retry, rate limiting, etc.)
-- Migrating from tRPC
+- Defining type-safe oRPC procedures, routers, context, and middleware
+- Error handling (ORPCError), event iterators/SSE, file upload and binary data
+- Server adapters and framework setup (Next.js, Nuxt, Hono, Express, Cloudflare, WebSocket)
+- Contract-first development and OpenAPI generation or clients
+- Plugins (CORS, batch, retry, validation) and integrations (TanStack Query, Zod, Better Auth, OpenTelemetry)
+- Migrating from tRPC or oRPC v1
 
 ## How to find information
 

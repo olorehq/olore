@@ -1,0 +1,139 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: noUnknownProperty (CSS)
+description: CSS documentation for noUnknownProperty
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="css" languages={[{"id":"css","label":"CSS","href":"/linter/rules/no-unknown-property/css/"}]} />
+
+## Summary
+- Rule available since: `v1.8.0`
+- Diagnostic Category: [`lint/correctness/noUnknownProperty`](/reference/diagnostics#diagnostic-category)
+- This rule is **recommended**, meaning it is enabled by default.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**error**](/reference/diagnostics#error).
+- Sources: 
+  - Same as [`property-no-unknown`](https://github.com/stylelint/stylelint/blob/main/lib/rules/property-no-unknown/README.md)
+  - Inspired from [`css/no-invalid-properties`](https://github.com/eslint/css/blob/main/docs/rules/no-invalid-properties.md)
+
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noUnknownProperty": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Disallow unrecognized CSS properties.
+
+The known-property list includes standard and browser-specific properties from
+[known-css-properties](https://github.com/known-css/known-css-properties#source).
+Custom properties such as `--custom-property` and vendor-prefixed properties such as
+`-moz-align-self` or `-webkit-align-self` are allowed.
+
+## SCSS limitations
+
+Property names containing SCSS interpolation are ignored because the emitted name cannot be
+determined statically.
+
+SCSS lets you write properties that share a prefix inside a block named after that prefix,
+such as `border: { radius: 4px; }`. These nested properties are checked by the full name
+Sass emits for them, so `radius` here is checked as `border-radius`. If the name of a
+surrounding block contains interpolation, the properties inside that block are ignored.
+
+## Examples
+
+### Invalid
+
+```css
+a {
+  colr: blue;
+}
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:2:3 <a href=\"https://biomejs.dev/linter/rules/no-unknown-property\">lint/correctness/noUnknownProperty</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Unknown property is not allowed.</span><br />  <br />    <strong>1 │ </strong>a &#123;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>2 │ </strong>  colr: blue;<br />   <strong>   │ </strong>  <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>3 │ </strong>&#125;<br />    <strong>4 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Browsers ignore properties they do not know, so the declaration has no effect. An unknown property is often a typo.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Use a known CSS property instead.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">See </span><span style=\"color: lightgreen;\"><a href=\"https://stylelint.io/user-guide/rules/property-no-unknown/\">CSS Specifications and browser specific properties</a></span><span style=\"color: lightgreen;\"> for more details.</span><br />  <br /></code></pre>"} />
+
+```css
+a {
+  my-property: 1;
+}
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\">code-block.css:2:3 <a href=\"https://biomejs.dev/linter/rules/no-unknown-property\">lint/correctness/noUnknownProperty</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Tomato;\">✖</span></strong> <span style=\"color: Tomato;\">Unknown property is not allowed.</span><br />  <br />    <strong>1 │ </strong>a &#123;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>2 │ </strong>  my-property: 1;<br />   <strong>   │ </strong>  <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>3 │ </strong>&#125;<br />    <strong>4 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Browsers ignore properties they do not know, so the declaration has no effect. An unknown property is often a typo.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Use a known CSS property instead.</span><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">See </span><span style=\"color: lightgreen;\"><a href=\"https://stylelint.io/user-guide/rules/property-no-unknown/\">CSS Specifications and browser specific properties</a></span><span style=\"color: lightgreen;\"> for more details.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```css
+a {
+  color: green;
+}
+```
+
+```css
+a {
+  fill: black;
+}
+```
+
+```css
+a {
+  -moz-align-self: center;
+}
+```
+
+## Options
+
+### `ignore`
+
+Lists additional property names to allow, without regard to letter case. Defaults to an
+empty list.
+
+```json title='biome.json'
+{
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noUnknownProperty": {
+					"level": "on",
+					"options": {
+						"ignore": [
+							"custom-property"
+						]
+					}
+				}
+			}
+		}
+	}
+}
+
+```
+
+#### Valid
+
+```css
+a {
+  custom-property: black;
+}
+```
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/src/lint/correctness/no_unknown_property.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_css_analyze/tests/specs/correctness/noUnknownProperty)
+- <RulePlaygroundLink rule="noUnknownProperty" category="lint" language="css" code={"a {\n  colr: blue;\n}\n"} />
+

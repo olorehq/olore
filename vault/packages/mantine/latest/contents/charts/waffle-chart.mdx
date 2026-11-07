@@ -1,0 +1,59 @@
+import { WaffleChartDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.WaffleChart);
+
+## Usage
+
+`WaffleChart` displays parts of a whole as a grid of colored cells. Each segment
+of the `data` array is allocated a number of cells proportional to its `value`.
+
+<Demo data={WaffleChartDemos.usage} />
+
+## Total
+
+By default, the sum of all `value` fields is treated as 100% and the entire grid
+is filled. Set `total` to a larger number to leave the remaining cells empty, for example
+to display progress towards a goal. Values smaller than the sum of the data are ignored.
+
+## Tooltip
+
+Set `withTooltip` to display a tooltip when a cell is hovered. Use `getTooltipLabel`
+to customize its content – the function receives the segment and the number of cells
+allocated to it:
+
+<Demo data={WaffleChartDemos.tooltip} />
+
+## Legend
+
+Legend is displayed at the bottom of the chart by default. Use `legendPosition`
+to move it to the `top`, `left` or `right` side, or set `withLegend={false}` to hide it:
+
+<Demo data={WaffleChartDemos.legend} />
+
+## Gap and grid size
+
+Use `rows` and `columns` props to change the number of cells in the grid (10 × 10 by default),
+`gap` to change the distance between them and `cellRadius` to change their border radius.
+Set `size` to control the width of the chart.
+
+<Demo data={WaffleChartDemos.gap} />
+
+## Fill direction
+
+`fillDirection` controls the order in which cells are filled:
+
+<Demo data={WaffleChartDemos.fillDirection} />
+
+## Empty cells color
+
+Use `emptyColor` prop to change the color of cells that are not allocated to any segment:
+
+<Demo data={WaffleChartDemos.emptyColor} />
+
+## Accessibility
+
+The grid is exposed to screen readers as a single image labelled with every segment name and value.
+Set `aria-label` or `aria-labelledby` to describe what the values represent, your label is
+announced together with the generated data summary.

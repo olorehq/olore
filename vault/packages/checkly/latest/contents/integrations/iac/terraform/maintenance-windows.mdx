@@ -1,7 +1,8 @@
 ---
 title: 'Service maintenance windows in Terraform'
-sidebarTitle: 'Service Maintenance Windows'
+sidebarTitle: 'Service maintenance windows'
 description: 'Schedule planned maintenance windows to prevent checks from running during specific times'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/terraform/maintenance-windows/'
 ---
 
 With [maintenance windows](/communicate/maintenance-windows/overview) you can schedule planned maintenance for whatever you are monitoring in order to prevent your checks from running at specific times. Maintenance windows have their own resource:
@@ -17,5 +18,27 @@ resource "checkly_maintenance_windows" "maintenance-monthly" {
   ]
 }
 ```
+
+Set `timezone` to an [IANA time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) to keep recurring windows at the same local time across daylight-saving changes, and use `pause_all_checks`, `silence_alerts_tags` and `silence_all_alerts` to control which checks are paused and which only have their alerts silenced:
+
+```terraform
+resource "checkly_maintenance_windows" "maintenance-nightly" {
+  name                = "Nightly maintenance"
+  starts_at           = "2025-02-15T02:00:00.000Z" // 03:00 in Berlin
+  ends_at             = "2025-02-15T03:00:00.000Z"
+  repeat_unit         = "DAY"
+  repeat_interval     = 1
+  timezone            = "Europe/Berlin"            // Defaults to UTC
+  tags                = ["database"]               // Checks with these tags are paused
+  silence_alerts_tags = ["api"]                    // Checks with these tags keep running, without alerts
+}
+```
+
+`starts_at` and `ends_at` stay absolute instants; see [Timezones and daylight saving](/communicate/maintenance-windows/overview#timezones-and-daylight-saving) for how later occurrences follow local time. Keep in mind:
+
+- Use the canonical IANA name, such as `America/New_York` rather than `US/Eastern`. UTC offsets such as `+05:00` aren't accepted.
+- `pause_all_checks` and `silence_all_alerts` take precedence over `tags` and `silence_alerts_tags`.
+- Terraform manages the whole window, including `description` and the `status_page_visibility` block. Removing an attribute resets it to its default, such as `timezone` to UTC, and settings made in the Checkly UI on a Terraform-managed window show up as changes in your next plan.
+- A time zone can't be changed while a maintenance is active.
 
 You can see all the configuration options for maintenance windows, as well as more examples, on the official Terraform registry [documentation page](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/maintenance_windows).

@@ -1,0 +1,105 @@
+---
+title: Agent-created organizations
+description: 'This page explains how AI agents can provision a temporary Axiom organization with a single API request, and how a human can later claim the organization and keep everything the agent built.'
+sidebarTitle: Agent-created orgs
+keywords: ["ai agents", "agent", "provision", "temporary organization", "claim", "org", "bootstrap", "mcp"]
+---
+
+An AI agent can create a real, fully functional Axiom organization with a single unauthenticated HTTP request. The response includes an API token the agent can use immediately to create datasets, ingest and query data, and build dashboards and monitors.
+
+The organization starts out temporary. A human follows the claim URL returned at provisioning time to take ownership and make the organization permanent, keeping everything the agent built. If nobody claims the organization within 24 hours, Axiom permanently deletes it together with all its data.
+
+## Provision an organization
+
+Send a POST request to `https://api.axiom.co/v2/orgs/provision`. The endpoint is public: no authentication header is required.
+
+The request body is a JSON object. Both fields are optional, so the minimal valid body is `{}`.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `name` | string | Optional display name for the organization. If omitted, Axiom generates a name like `Agent Org 3f2a91bc`. The owner can rename the organization after claiming it. |
+| `edgeDeployment` | string | Optional [edge deployment](/reference/edge-deployments) where the organization stores its data. If omitted, the organization is created in the default edge deployment, `US East 1 (AWS)`. |
+
+For example:
+
+```bash
+curl -X 'POST' 'https://api.axiom.co/v2/orgs/provision' \
+  -H 'Content-Type: application/json' \
+  -d '{ "name": "canary-experiments" }'
+```
+
+A successful request returns `200 OK` with a body like the following:
+
+```json
+{
+  "id": "canary-experiments-x7q2",
+  "name": "canary-experiments",
+  "defaultEdgeDeployment": "cloud.us-east-1.aws",
+  "expiresAt": "2026-07-17T09:14:07Z",
+  "claimUrl": "https://app.axiom.co/canary-experiments-x7q2/claim?token=a3d2f9c8-4b1e-4f6a-9c3d-8e7b2a1f0d4e",
+  "token": "xaat-8b4d2f0a-1c9e-4d7b-b3a5-6f2e8c1d9a70"
+}
+```
+
+| Field | Description |
+| :--- | :--- |
+| `id` | The organization ID. Use it in API routes that require an org ID. |
+| `name` | The display name of the organization. |
+| `defaultEdgeDeployment` | The edge deployment where the organization stores its data. |
+| `expiresAt` | The time at which the organization is deleted if it hasn’t been claimed. This is 24 hours after provisioning. |
+| `claimUrl` | The URL a human opens to take ownership of the organization. Surface this URL to the user. Treat it as a secret: anyone who opens it can claim the organization. |
+| `token` | An API token with full permissions on the organization. Treat it as a secret. Use it as a Bearer token in the `Authorization` header of subsequent API requests. |
+
+<Warning>
+The API token and the claim URL are returned exactly once, in this response. They can never be retrieved again, by anyone. Store the token before doing anything else, and treat both values as secrets: the token grants full API access to the organization, and anyone who opens the claim URL can take ownership of it. If the token is lost, the organization and its data are inaccessible over the API until a human claims the organization and creates a new token.
+</Warning>
+
+## Work in the organization
+
+The organization is not a sandbox: it behaves like any other Axiom organization. Using the returned token, the agent can immediately:
+
+- [Create datasets](/restapi/endpoints/createDataset)
+- [Ingest data](/restapi/ingest)
+- [Query data](/restapi/query)
+- [Create dashboards](/restapi/endpoints/createDashboard)
+- [Create monitors](/restapi/endpoints/createMonitor)
+
+The acting identity inside the organization is a synthetic agent user that Axiom creates during provisioning. This user owns the organization until a human claims it.
+
+## Claim the organization
+
+To keep the organization beyond its 24-hour lifespan, a human must claim it:
+
+1. Open the `claimUrl` from the provisioning response in a browser.
+2. Sign in to Axiom. If you don’t have an Axiom account yet, one is created as part of the flow.
+3. You become the owner of the organization and the organization becomes permanent.
+
+Claiming keeps everything the agent built: datasets, ingested data, dashboards, monitors, and other configuration all carry over unchanged.
+
+Claiming also has the following effects:
+
+- The temporary markers are removed. The organization no longer expires and behaves like any other Axiom organization on the Personal plan.
+- The throttled limits are lifted and the full [Personal plan limits](/reference/limits) apply.
+- The synthetic agent user is removed. The API token issued at provisioning continues to work, so the agent keeps its API access. As the new owner, you can revoke it or create additional [API tokens](/reference/tokens) at any time.
+
+Claim links are single-use: after an organization has been claimed, its claim URL is invalid.
+
+## Limits for unclaimed organizations
+
+While an organization is unclaimed, reduced limits apply that are sized for its 24-hour lifespan:
+
+- **Ingest and query:** The organization can ingest up to 10 GB of data and use up to 1 GB-hour of query compute during its 24-hour lifespan.
+- **Notifiers:** Agents can create and configure monitors and notifiers, but notifiers are disabled: notifications aren’t delivered until the organization is claimed.
+- **Provisioning:** An agent can create at most 3 organizations in a day.
+
+Claiming the organization restores the full Personal plan allowances and enables notifiers.
+
+## Expiry
+
+If the organization isn’t claimed within 24 hours (see `expiresAt` in the provisioning response), Axiom deletes it: the organization, all datasets and ingested data, dashboards, monitors, the API token, and the synthetic agent user are permanently removed. Deleted organizations can’t be recovered.
+
+## Error behavior
+
+If provisioning returns `429 Too Many Requests`, you have exceeded the provisioning rate limit. Retry later with backoff, and don’t provision more than one organization for the same task.
+
+For the full request and response schema, see the [API reference](/restapi/endpoints/provisionOrg).

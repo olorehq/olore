@@ -7,7 +7,7 @@ This sample demonstrates how to add middleware to intercept:
 
 ## What This Sample Shows
 
-1. Azure OpenAI integration via `AzureOpenAIClient` and `DefaultAzureCredential`
+1. Microsoft Foundry integration via `AIProjectClient` and `DefaultAzureCredential`
 2. Chat client middleware using `ChatClientBuilder.Use(...)`
 3. Agent run middleware (PII redaction and wording guardrails)
 4. Function invocation middleware (logging and overriding a tool result)
@@ -23,11 +23,18 @@ Not all agents support function invocation middleware.
 
 Attempting to use function middleware on agents that do not wrap a ChatClientAgent or derives from it will throw an InvalidOperationException.
 
+> **Note:** Function invocation middleware applies to tools registered on the agent. This
+> includes tools passed to the `ChatClientAgent` constructor, passed to `AsAIAgent`, configured
+> through `ChatClientAgentOptions.ChatOptions.Tools`, or supplied for an individual run. These
+> tools are passed through `ChatOptions.Tools`. Functions added directly to
+> `FunctionInvokingChatClient.AdditionalTools` bypass this middleware entirely, so don't rely on
+> the middleware to enforce checks for those functions.
+
 ## Prerequisites
 
 1. Environment variables:
-   - `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint
-   - `AZURE_OPENAI_DEPLOYMENT_NAME`: Chat deployment name (optional; defaults to `gpt-5.4-mini`)
+   - `FOUNDRY_PROJECT_ENDPOINT`: Your Foundry project endpoint
+   - `FOUNDRY_MODEL`: Model name (optional; defaults to `gpt-5.4-mini`)
 2. Sign in with Azure CLI (PowerShell):
    ```powershell
    az login
@@ -40,4 +47,3 @@ Use PowerShell:
 cd dotnet/samples/02-agents/Agents/Agent_Step11_Middleware
 dotnet run
 ```
-

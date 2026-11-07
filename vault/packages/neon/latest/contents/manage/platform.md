@@ -9,8 +9,32 @@ summary: >-
   observability, security and compliance, and operations and maintenance.
   Use this page to find the right sub-topic when you know the management
   area but not the specific doc.
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
+
+## The Neon platform, in brief
+
+Neon is a full backend platform for apps and agents, not just a database. For an overview of every product, start at the [Neon documentation home](/docs).
+
+<DetailIconCards>
+
+<a href="/docs/postgres/overview" description="Serverless Postgres with branching, autoscaling, scale to zero, and instant restore." icon="database">Postgres</a>
+
+<a href="/docs/auth/overview" description="Managed Better Auth with sign-up, OAuth, and sessions. Users live in your Postgres and branch with it." icon="lock-landscape">Auth</a>
+
+<a href="/docs/data-api/overview" description="HTTPS queries with no backend code. Drop-in compatible with Supabase." icon="network">Data API</a>
+
+<a href="/docs/storage/overview" description="S3-compatible object storage that branches with your database." icon="data">Object Storage</a>
+
+<a href="/docs/compute/functions/overview" description="Long-running serverless functions on Node.js, deployed alongside your database." icon="code">Functions</a>
+
+<a href="/docs/ai-gateway/overview" description="One API for frontier and open-source models, built into your Neon project." icon="sparkle">AI Gateway</a>
+
+<a href="/docs/realtime/overview" description="Realtime live SQL and reactive DX for building apps and agents." icon="zap">Realtime</a>
+
+</DetailIconCards>
+
+This page covers the platform's management and operations side: the account, project, and infrastructure tasks you use to run your Neon projects day to day.
 
 ## Access & collaboration
 
@@ -40,7 +64,7 @@ Learn how to manage all aspects of your Neon projects. These topics cover the ba
 
 <DetailIconCards>
 
-<a href="/docs/manage/overview" description="Learn about the Neon project and all its resources" icon="filter">Object hierarchy</a>
+<a href="/docs/concepts/the-object-model" description="Learn about the Neon project and all its resources" icon="filter">The object model</a>
 
 <a href="/docs/manage/projects" description="Create and manage projects in Neon" icon="ladder">Projects</a>
 
@@ -86,9 +110,9 @@ Monitor your Neon projects to track system health and performance.
 
 <a href="https://neon.com/guides/newrelic-otel-neon" description="Monitor Neon with New Relic using OpenTelemetry integration" icon="import">New Relic</a>
 
-<a href="/docs/introduction/monitor-pgadmin" description="Monitor your Neon Postgres database with pgAdmin" icon="wrench">pgAdmin</a>
+<a href="/docs/introduction/monitor-pgadmin" description="Monitor your database with pgAdmin" icon="wrench">pgAdmin</a>
 
-<a href="/docs/introduction/monitor-pghero" description="Monitor your Neon Postgres database with PgHero" icon="wrench">PgHero</a>
+<a href="/docs/introduction/monitor-pghero" description="Monitor your database with PgHero" icon="wrench">PgHero</a>
 
 </DetailIconCards>
 
@@ -118,7 +142,7 @@ Learn how Neon secures your projects and data, and explore the security features
 
 <a href="/docs/get-started/production-checklist" description="Guidelines to optimize price, performance, and reliability" icon="check">Production checklist</a>
 
-<a href="/docs/manage/backups" description="An overview of backup strategies for Neon Postgres" icon="database">Backups</a>
+<a href="/docs/manage/backups" description="An overview of backup strategies for Lakebase Postgres" icon="database">Backups</a>
 
 <a href="/docs/manage/backup-pg-dump" description="Learn how to create a backup of your Neon database using pg_dump" icon="database">Backup with pg_dump</a>
 

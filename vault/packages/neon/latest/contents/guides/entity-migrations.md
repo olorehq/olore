@@ -1,21 +1,21 @@
 ---
-title: Schema migration with Neon Postgres and Entity Framework
-subtitle: Set up Neon Postgres and run migrations for your Entity Framework project
+title: Schema migration with Lakebase Postgres and Entity Framework
+subtitle: Set up a database on Neon and run migrations for your Entity Framework project
 summary: >-
-  Entity Framework Core schema migrations on Neon Postgres walks through
+  Entity Framework Core schema migrations on Lakebase Postgres walks through
   installing the Npgsql EF Core provider, defining C# models, and running
-  dotnet-ef commands to create and evolve tables in a Neon database. Use this
+  dotnet-ef commands to create and evolve tables in a database. Use this
   guide when you need to connect an EF Core application to Neon and generate or
   apply migrations, including incremental schema changes such as adding a
   column. Migrations must use a direct (non-pooled) Neon connection string;
   PgBouncer pooled strings are not supported for dotnet-ef operations.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-28T11:11:18.780Z'
 ---
 
 [Entity Framework](https://learn.microsoft.com/en-us/ef/) is a popular Object-Relational Mapping (ORM) framework for .NET applications. It simplifies database access by allowing developers to work with domain-specific objects and properties without focusing on the underlying database tables and columns. Entity Framework also provides a powerful migration system that enables you to define and manage database schema changes over time.
 
-This guide demonstrates how to use Entity Framework with the Neon Postgres database. We'll create a simple .NET application and walk through the process of setting up the database, defining models, and generating and running migrations to manage schema changes.
+This guide demonstrates how to use Entity Framework with the Lakebase Postgres database. We'll create a simple .NET application and walk through the process of setting up the database, defining models, and generating and running migrations to manage schema changes.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ To follow along with this guide, you will need:
 
 ### Retrieve your Neon database connection string
 
-Find your database connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. It should appear similar to the following:
+Find your database connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. It should appear similar to the following:
 
 ```bash
 postgresql://username:password@hostname/dbname?sslmode=require&channel_binding=require
@@ -48,7 +48,7 @@ Host=hostname;Port=5432;Database=dbname;Username=username;Password=password;SSLM
 Construct the connection string in this format using the correct values for your Neon connection URI. Keep it handy for later use.
 
 <Admonition type="note">
-Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can be prone to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
+Neon supports both direct and pooled database connection strings, which you can find by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. A pooled connection string connects your application to the database via a PgBouncer connection pool, allowing for a higher number of concurrent connections. However, using a pooled connection string for migrations can be prone to errors. For this reason, we recommend using a direct (non-pooled) connection when performing migrations. For more information about direct and pooled connections, see [Connection pooling](/docs/connect/connection-pooling).
 </Admonition>
 
 ## Setting up the Entity Framework project
@@ -222,7 +222,7 @@ This command detects the new `Author` and `Book` entities and generates migratio
 
 ### Apply the migration
 
-To apply the migration and create the tables in the Neon Postgres database, run the following command:
+To apply the migration and create the tables in the Lakebase Postgres database, run the following command:
 
 ```bash
 dotnet ef database update
@@ -360,13 +360,13 @@ You can find the source code for the application described in this guide on GitH
 
 ## Conclusion
 
-In this guide, we demonstrated how to set up an Entity Framework project with Neon Postgres, define data models, generate migrations, and run them. Entity Framework's migration system make it easy to interact with the database and manage schema evolution over time.
+In this guide, we demonstrated how to set up an Entity Framework project with Lakebase Postgres, define data models, generate migrations, and run them. Entity Framework's migration system make it easy to interact with the database and manage schema evolution over time.
 
 ## Resources
 
 For more information on the tools and concepts used in this guide, refer to the following resources:
 
 - [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
-- [Neon Postgres](/docs/introduction)
+- [Neon](/docs)
 
 <NeedHelp/>

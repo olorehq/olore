@@ -17,6 +17,9 @@ description: ""
 
     <ResponseField name="reset()" type="() => Promise<void>">
       Resets the Rive graphic to its initial state.
+      <Warning>
+        Deprecated. In `0.5.0` and later, this method is not supported: it logs an error and does nothing. To restart a graphic, remount the `RiveView` (for example, by changing its `key`).
+      </Warning>
     </ResponseField>
 
     <ResponseField name="playIfNeeded()" type="() => void">
@@ -24,7 +27,7 @@ description: ""
     </ResponseField>
 
     <ResponseField name="awaitViewReady()" type="() => Promise<boolean>">
-      Waits for the Rive view to be ready. Returns a promise that resolves when the Rive view is ready.
+      Waits for the Rive view to be ready. Resolves to `true` once the view is configured, or `false` if configuration failed. The `riveViewRef` returned by `useRive` is only set after this resolves.
     </ResponseField>
 
     <ResponseField name="bindViewModelInstance(viewModelInstance)" type="(viewModelInstance: ViewModelInstance) => void">
@@ -33,68 +36,70 @@ description: ""
 
     <ResponseField name="getViewModelInstance()" type="() => ViewModelInstance | undefined">
       Gets the currently bound view model instance from the Rive view. Returns the bound `ViewModelInstance`, or `undefined` if none is bound.
+
+      To wait for the auto-bound instance in a component, prefer [`useViewModelInstance(riveViewRef, { async: true })`](/runtimes/react-native/data-binding#view-model-instances).
     </ResponseField>
 
     <ResponseField name="setTextRunValue(name, value, path?)" type="(name: string, value: string, path?: string) => void">
       Sets the text run value on the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="getTextRunValue(name, path?)" type="(name: string, path?: string) => string">
       Gets the text run value from the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="setNumberInputValue(name, value, path?)" type="(name: string, value: number, path?: string) => void">
       Sets a number state machine input on the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="getNumberInputValue(name, path?)" type="(name: string, path?: string) => number">
       Gets a number state machine input from the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="setBooleanInputValue(name, value, path?)" type="(name: string, value: boolean, path?: string) => void">
       Sets a boolean state machine input on the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="getBooleanInputValue(name, path?)" type="(name: string, path?: string) => boolean">
       Gets a boolean state machine input from the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="triggerInput(name, path?)" type="(name: string, path?: string) => void">
       Triggers a trigger state machine input on the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="onEventListener(onEvent)" type="(onEvent: (event: UnifiedRiveEvent) => void) => void">
       Adds an event listener to the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 
     <ResponseField name="removeEventListeners()" type="() => void">
       Removes all event listeners from the Rive view.
       <Warning>
-        This method is deprecated. Use data binding instead. See the [Data Binding](/runtimes/react-native/data-binding) documentation.
+        Deprecated, and only supported in `0.4.x`. In `0.5.0` and later, this method throws. Use [data binding](/runtimes/react-native/data-binding) instead.
       </Warning>
     </ResponseField>
 

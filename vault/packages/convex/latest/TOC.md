@@ -4,391 +4,548 @@
 
 ```
 contents/
-├── quickstart/             # Framework quickstarts (16 files)
-├── tutorial/               # Step-by-step tutorial (3 files)
-├── functions/              # Query, mutation, action functions (12 files)
-│   └── error-handling/     # Error handling patterns
-├── database/               # Database read/write/schema (17 files)
-│   ├── reading-data/       # Queries and indexes
-│   ├── advanced/           # OCC, system tables
-│   └── import-export/      # Data import/export
-├── agents/                 # AI agent framework (17 files)
-├── ai/                     # AI coding agent integration (8 files)
-├── auth/                   # Authentication (13 files)
-│   ├── authkit/            # WorkOS AuthKit integration
-│   └── advanced/           # Custom auth and JWT
-├── client/                 # Client libraries (25 files)
-│   ├── react/              # React client
-│   ├── nextjs/             # Next.js (app/pages router)
-│   ├── javascript/         # Node.js, Bun, script tag
-│   ├── tanstack/           # TanStack Query/Start
-│   ├── vue/                # Vue/Nuxt
-│   ├── android/            # Android SDK
-│   └── swift/              # Swift/iOS SDK
-├── scheduling/             # Cron jobs and scheduled functions (3 files)
-├── search/                 # Text search and vector search (3 files)
-├── file-storage/           # File upload/serve/delete (6 files)
-├── components/             # Convex components system (4 files)
-├── generated-api/          # Code generation docs (4 files)
-├── http-api/               # HTTP API reference (1 file)
-├── cli/                    # CLI reference and guides (23 files)
-│   └── reference/          # Per-command reference
-├── dashboard/              # Dashboard UI guide (13 files)
-│   └── deployments/        # Per-section deployment UI
-├── production/             # Production deployment (22 files)
-│   ├── hosting/            # Vercel, Netlify, custom
-│   ├── integrations/       # Log streams, exception reporting
-│   └── state/              # Limits and state
-├── platform-apis/          # Platform/management APIs (4 files)
-├── team-management/        # Teams, roles, SSO (4 files)
-├── testing/                # Unit and integration testing (4 files)
-├── understanding/          # Core concepts and best practices (6 files)
-│   └── best-practices/     # TypeScript and other best practices
-└── (root files)            # deployment-api-overview, deployment-platform-api,
-                            # eslint, management-api-overview, realtime, self-hosting
+├── (root files)/  (11 files)
+├── agents/  (17 files)
+├── ai/  (9 files)
+├── ai-gateway/  (8 files)
+├── auth/  (15 files)
+├── cli/  (25 files)
+├── client/  (30 files)
+├── components/  (4 files)
+├── config/  (6 files)
+├── dashboard/  (14 files)
+├── database/  (18 files)
+├── file-storage/  (6 files)
+├── functions/  (12 files)
+├── generated-api/  (4 files)
+├── http-api/  (1 files)
+├── linting/  (4 files)
+├── platform-apis/  (4 files)
+├── production/  (22 files)
+├── quickstart/  (16 files)
+├── scheduling/  (3 files)
+├── search/  (3 files)
+├── team-management/  (5 files)
+├── testing/  (4 files)
+├── tutorial/  (3 files)
+├── understanding/  (6 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| New user (React) | `contents/quickstart/react.mdx` |
-| New user (Next.js) | `contents/quickstart/nextjs.mdx` |
-| Tutorial | `contents/tutorial/overview.mdx` |
-| Writing functions | `contents/functions/overview.mdx` |
-| Database queries | `contents/database/overview.mdx` |
-| AI agent framework | `contents/agents/overview.mdx` |
-| Authentication | `contents/auth/overview.mdx` |
-| Scheduling | `contents/scheduling/overview.mdx` |
-| Search | `contents/search/overview.mdx` |
-| File storage | `contents/file-storage/overview.mdx` |
-| CLI reference | `contents/cli/overview.mdx` |
-| Production deploy | `contents/production/overview.mdx` |
-| Testing | `contents/testing/overview.mdx` |
+| Overview | `contents/home.mdx` |
+| Quickstart | `contents/quickstart/overview.mdx` |
+| Functions | `contents/functions/overview.mdx` |
+| Database | `contents/database/overview.mdx` |
+| Auth | `contents/auth/overview.mdx` |
+| CLI | `contents/cli/overview.mdx` |
+| Agents | `contents/agents/overview.mdx` |
 
 ## Detailed Structure
 
-### quickstart/ (16 files)
+### (root)/ (11 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Quickstart overview |
-| `react.mdx` | React quickstart |
-| `nextjs.mdx` | Next.js quickstart |
-| `nodejs.mdx` | Node.js quickstart |
-| `bun.mdx` | Bun quickstart |
-| `python.mdx` | Python quickstart |
-| `rust.mdx` | Rust quickstart |
-| `react-native.mdx` | React Native quickstart |
-| `svelte.mdx` | Svelte quickstart |
-| `vue.mdx` | Vue quickstart |
-| `nuxt.mdx` | Nuxt quickstart |
-| `remix.mdx` | Remix quickstart |
-| `tanstack-start.mdx` | TanStack Start quickstart |
-| `android.mdx` | Android quickstart |
-| `swift.mdx` | Swift quickstart |
-| `script-tag.mdx` | Script tag quickstart |
-
-### tutorial/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Tutorial overview: build a chat app |
-| `actions.mdx` | Adding actions to the tutorial app |
-| `scale.mdx` | Scaling the tutorial app |
-
-### functions/ (12 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Functions overview |
-| `query-functions.mdx` | Query functions (read-only, reactive) |
-| `mutation-functions.mdx` | Mutation functions (write data) |
-| `actions.mdx` | Action functions (external calls, side effects) |
-| `http-actions.mdx` | HTTP action endpoints |
-| `internal-functions.mdx` | Internal (private) functions |
-| `validation.mdx` | Argument validation with validators |
-| `runtimes.mdx` | Convex vs Node.js runtime |
-| `bundling.mdx` | Function bundling |
-| `debugging.mdx` | Debugging functions |
-| `error-handling/error-handling.mdx` | Error handling overview |
-| `error-handling/application-errors.mdx` | Application-level errors |
-
-### database/ (17 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Database overview |
-| `schemas.mdx` | Schema definition |
-| `types.mdx` | Supported value types |
-| `document-ids.mdx` | Document IDs |
-| `writing-data.mdx` | Insert, update, delete |
-| `pagination.mdx` | Paginated queries |
-| `backup-restore.mdx` | Backup and restore |
-| `reading-data/reading-data.mdx` | Reading data overview |
-| `reading-data/filters.mdx` | Filtering with `.filter()` |
-| `reading-data/indexes/indexes.mdx` | Database indexes |
-| `reading-data/indexes/indexes-and-query-perf.mdx` | Index performance |
-| `import-export/import-export.mdx` | Import/export overview |
-| `import-export/import.mdx` | Importing data |
-| `import-export/export.mdx` | Exporting data |
-| `advanced/occ.mdx` | Optimistic concurrency control |
-| `advanced/schema-philosophy.mdx` | Schema design philosophy |
-| `advanced/system-tables.mdx` | System tables |
+| `_betaAdmonition.mdx` | _betaAdmonition |
+| `_betaContactUsAdmonition.mdx` | _betaContactUsAdmonition |
+| `_convexValues.mdx` | _convexValues |
+| `_proFeatureUpsell.mdx` | _proFeatureUpsell |
+| `deployment-api-overview.mdx` | Deployment API |
+| `deployment-platform-api.mdx` | Deployment Platform API |
+| `error.mdx` | error |
+| `home.mdx` | Convex Docs |
+| `management-api-overview.mdx` | Management API |
+| `realtime.mdx` | Realtime |
+| `self-hosting.mdx` | Self Hosting |
 
 ### agents/ (17 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | AI agent framework overview |
-| `getting-started.mdx` | Getting started with agents |
-| `agent-usage.mdx` | Agent usage patterns |
-| `context.mdx` | Agent context management |
-| `messages.mdx` | Agent message handling |
-| `threads.mdx` | Agent threads |
-| `tools.mdx` | Agent tools |
-| `workflows.mdx` | Agent workflows |
-| `rag.mdx` | Retrieval-augmented generation |
-| `streaming.mdx` | Streaming responses |
-| `files.mdx` | File handling in agents |
-| `human-agents.mdx` | Human-in-the-loop agents |
-| `tool-approval.mdx` | Tool approval flows |
-| `rate-limiting.mdx` | Rate limiting agents |
-| `usage-tracking.mdx` | Agent usage tracking |
-| `debugging.mdx` | Debugging agents |
-| `playground.mdx` | Agent playground |
+| `agent-usage.mdx` | Agent Definition and Usage |
+| `context.mdx` | LLM Context |
+| `debugging.mdx` | Debugging |
+| `files.mdx` | Files and Images in Agent messages |
+| `getting-started.mdx` | Getting Started with Agent |
+| `human-agents.mdx` | Human Agents |
+| `messages.mdx` | Messages |
+| `overview.mdx` | AI Agents |
+| `playground.mdx` | Playground |
+| `rag.mdx` | RAG (Retrieval-Augmented Generation) with the Agent component |
+| `rate-limiting.mdx` | Rate Limiting |
+| `streaming.mdx` | Streaming |
+| `threads.mdx` | Threads |
+| `tool-approval.mdx` | Tool Approval |
+| `tools.mdx` | Tools |
+| `usage-tracking.mdx` | Usage Tracking |
+| `workflows.mdx` | Workflows |
 
-### ai/ (8 files)
+### ai/ (9 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | AI coding agent integration overview |
-| `agent-skills.mdx` | Convex agent skills for AI tools |
-| `convex-mcp-server.mdx` | Convex MCP server |
+| `agent-skills.mdx` | Convex Agent Skills |
+| `convex-mcp-server.mdx` | Convex MCP Server |
+| `convex-plugins.mdx` | Convex Agent Plugins |
+| `overview.mdx` | AI Code Generation |
 | `using-claude-code.mdx` | Using Claude Code with Convex |
 | `using-codex.mdx` | Using Codex with Convex |
 | `using-conductor.mdx` | Using Conductor with Convex |
 | `using-cursor.mdx` | Using Cursor with Convex |
 | `using-github-copilot.mdx` | Using GitHub Copilot with Convex |
 
-### auth/ (13 files)
+### ai-gateway/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Authentication overview |
-| `clerk.mdx` | Clerk integration |
-| `auth0.mdx` | Auth0 integration |
-| `convex-auth.mdx` | Convex Auth (built-in) |
-| `database-auth.mdx` | Database-level auth |
-| `functions-auth.mdx` | Auth in functions |
-| `debug.mdx` | Debugging authentication |
-| `authkit/index.mdx` | WorkOS AuthKit overview |
-| `authkit/add-to-app.mdx` | Adding AuthKit to your app |
-| `authkit/auto-provision.mdx` | Auto-provisioning users |
-| `authkit/troubleshooting.mdx` | AuthKit troubleshooting |
-| `advanced/custom-auth.mdx` | Custom auth provider |
-| `advanced/custom-jwt.mdx` | Custom JWT validation |
+| `_models-list.mdx` | _models-list |
+| `api.mdx` | HTTP API |
+| `images-and-videos.mdx` | Images and videos |
+| `models.mdx` | Models |
+| `overview.mdx` | AI Gateway |
+| `setup.mdx` | Getting started |
+| `usage-and-billing.mdx` | Usage and Billing |
+| `voice.mdx` | Voice |
 
-### client/ (25 files)
+### auth/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `react/overview.mdx` | React client overview |
-| `react/project-setup.mdx` | React project setup |
-| `react/optimistic-updates.mdx` | Optimistic updates in React |
-| `nextjs/app-router/index.mdx` | Next.js App Router integration |
-| `nextjs/app-router/server-rendering.mdx` | Server rendering with Next.js |
-| `nextjs/pages-router/index.mdx` | Next.js Pages Router integration |
-| `nextjs/pages-router/quickstart-nextjs-pages-router.mdx` | Pages Router quickstart |
-| `javascript/overview.mdx` | JavaScript client overview |
-| `javascript/node.mdx` | Node.js client |
-| `javascript/bun.mdx` | Bun client |
-| `javascript/script-tag.mdx` | Script tag client |
-| `tanstack/tanstack-query/index.mdx` | TanStack Query integration |
-| `tanstack/tanstack-start/index.mdx` | TanStack Start integration |
-| `tanstack/tanstack-start/clerk.mdx` | TanStack Start with Clerk |
-| `vue/overview.mdx` | Vue client overview |
-| `vue/nuxt.mdx` | Nuxt integration |
-| `svelte.mdx` | Svelte client |
-| `react-native.mdx` | React Native client |
-| `python.mdx` | Python client |
-| `rust.mdx` | Rust client |
-| `android/overview.mdx` | Android client overview |
-| `android/data-types.mdx` | Android data types |
-| `swift/overview.mdx` | Swift/iOS client overview |
-| `swift/data-types.mdx` | Swift data types |
-| `open-api.mdx` | OpenAPI / REST client |
+| `_under_the_hood.mdx` | _under_the_hood |
+| `auth0.mdx` | Convex & Auth0 |
+| `clerk.mdx` | Convex & Clerk |
+| `convex-auth.mdx` | Convex Auth |
+| `database-auth.mdx` | Storing Users in the Convex Database |
+| `debug.mdx` | Debugging Authentication |
+| `functions-auth.mdx` | Auth in Functions |
+| `overview.mdx` | Authentication |
 
-### scheduling/ (3 files)
+### auth/advanced/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Scheduling overview |
-| `scheduled-functions.mdx` | Scheduled function jobs |
-| `cron-jobs.mdx` | Cron job scheduling |
+| `custom-auth.mdx` | Custom OIDC Provider |
+| `custom-jwt.mdx` | Custom JWT Provider |
 
-### search/ (3 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Search overview |
-| `text-search.mdx` | Full-text search |
-| `vector-search.mdx` | Vector/semantic search |
-
-### file-storage/ (6 files)
+### auth/authkit/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | File storage overview |
-| `upload-files.mdx` | Uploading files |
-| `store-files.mdx` | Storing files from actions |
-| `serve-files.mdx` | Serving files to clients |
-| `file-metadata.mdx` | File metadata |
-| `delete-files.mdx` | Deleting files |
+| `_auth_config_ts.mdx` | _auth_config_ts |
+| `add-to-app.mdx` | Adding WorkOS AuthKit to an Existing App |
+| `auto-provision.mdx` | Automatic AuthKit Configuration |
+| `index.mdx` | Convex & WorkOS AuthKit |
+| `troubleshooting.mdx` | AuthKit Troubleshooting |
+
+### cli/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `background-agents.mdx` | Agent Mode |
+| `deploy-key-types.mdx` | Deploy Keys |
+| `local-deployments-for-dev.mdx` | Local Deployments for Development |
+| `overview.mdx` | CLI |
+
+### cli/reference/ (20 files)
+
+| File | Description |
+|------|-------------|
+| `ai-files.mdx` | npx convex ai-files |
+| `codegen.mdx` | npx convex codegen |
+| `dashboard.mdx` | npx convex dashboard |
+| `data.mdx` | npx convex data |
+| `deploy.mdx` | npx convex deploy |
+| `deployment.mdx` | npx convex deployment |
+| `dev.mdx` | npx convex dev |
+| `docs.mdx` | npx convex docs |
+| `env.mdx` | npx convex env |
+| `export.mdx` | npx convex export |
+| `function-spec.mdx` | npx convex function-spec |
+| `import.mdx` | npx convex import |
+| `insights.mdx` | npx convex insights |
+| `logout.mdx` | npx convex logout |
+| `logs.mdx` | npx convex logs |
+| `mcp.mdx` | npx convex mcp |
+| `plugins.mdx` | npx convex plugins |
+| `project.mdx` | npx convex project |
+| `run.mdx` | npx convex run |
+| `update.mdx` | npx convex update |
+
+### cli/troubleshooting/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `typecheck-performance.mdx` | Typecheck Performance |
+
+### client/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `open-api.mdx` | OpenAPI & Other Languages |
+| `python.mdx` | Python |
+| `react-native.mdx` | Convex React Native |
+| `rust.mdx` | Rust |
+
+### client/android/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `data-types.mdx` | Kotlin and Convex type conversion |
+| `overview.mdx` | Android Kotlin |
+
+### client/javascript/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `bun.mdx` | Bun |
+| `node.mdx` | Node.js |
+| `overview.mdx` | JavaScript |
+| `script-tag.mdx` | Script Tag |
+
+### client/nextjs/app-router/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Next.js |
+| `server-rendering.mdx` | Next.js Server Rendering |
+
+### client/nextjs/pages-router/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Next.js Pages Router |
+| `quickstart-nextjs-pages-router.mdx` | Next.js Pages Quickstart |
+
+### client/react/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `optimistic-updates.mdx` | Optimistic Updates |
+| `overview.mdx` | Convex React |
+| `project-setup.mdx` | Configuring Deployment URL |
+
+### client/svelte/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `authentication.mdx` | Authentication |
+| `overview.mdx` | Convex Svelte |
+| `reactivity.mdx` | Queries, Mutations & Actions |
+| `sveltekit-server-rendering.mdx` | SvelteKit Server Rendering |
+| `troubleshooting.mdx` | Troubleshooting |
+| `why-server-rendering.mdx` | Why server-side rendering with Convex? |
+
+### client/swift/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `data-types.mdx` | Swift and Convex type conversion |
+| `overview.mdx` | iOS & macOS Swift |
+
+### client/tanstack/tanstack-query/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `index.mdx` | Convex with TanStack Query |
+
+### client/tanstack/tanstack-start/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `clerk.mdx` | TanStack Start with Clerk |
+| `index.mdx` | TanStack Start |
+
+### client/vue/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `nuxt.mdx` | Nuxt |
+| `overview.mdx` | Vue |
 
 ### components/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Components overview |
-| `using.mdx` | Using Convex components |
-| `authoring.mdx` | Authoring Convex components |
-| `understanding.mdx` | Understanding components internals |
+| `authoring.mdx` | Authoring Components |
+| `overview.mdx` | Components |
+| `understanding.mdx` | Understanding Components |
+| `using.mdx` | Using Components |
+
+### config/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `auth-config.mdx` | auth.config.ts |
+| `convex-config.mdx` | convex.config.ts |
+| `convex-json.mdx` | convex.json |
+| `crons.mdx` | crons.ts |
+| `http.mdx` | http.ts |
+| `schema.mdx` | schema.ts |
+
+### dashboard/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Dashboard |
+| `profile.mdx` | Profile |
+| `projects.mdx` | Projects |
+
+### dashboard/deployments/ (10 files)
+
+| File | Description |
+|------|-------------|
+| `data.mdx` | Data |
+| `deployments.mdx` | Deployments |
+| `files.mdx` | File Storage |
+| `functions.mdx` | Functions |
+| `health.mdx` | Health |
+| `history.mdx` | History |
+| `logs.mdx` | Logs |
+| `schedules.mdx` | Schedules |
+| `schema.mdx` | Schema |
+| `settings.mdx` | Settings |
+
+### dashboard/teams/ (1 files)
+
+| File | Description |
+|------|-------------|
+| `teams.mdx` | Teams |
+
+### database/ (7 files)
+
+| File | Description |
+|------|-------------|
+| `backup-restore.mdx` | Backup & Restore |
+| `document-ids.mdx` | Document IDs |
+| `overview.mdx` | Database |
+| `pagination.mdx` | Paginated Queries |
+| `schemas.mdx` | Schemas |
+| `types.mdx` | Data Types |
+| `writing-data.mdx` | Writing Data |
+
+### database/advanced/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `commit-timestamp.mdx` | Commit Timestamp |
+| `occ.mdx` | OCC and Atomicity |
+| `schema-philosophy.mdx` | Schema Philosophy |
+| `system-tables.mdx` | System Tables |
+
+### database/import-export/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `export.mdx` | Data Export |
+| `import-export.mdx` | Data Import & Export |
+| `import.mdx` | Data Import |
+
+### database/reading-data/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `filters.mdx` | Filters |
+| `reading-data.mdx` | Reading Data |
+
+### database/reading-data/indexes/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `indexes-and-query-perf.mdx` | Introduction to Indexes and Query Performance |
+| `indexes.mdx` | Indexes |
+
+### file-storage/ (6 files)
+
+| File | Description |
+|------|-------------|
+| `delete-files.mdx` | Deleting Files |
+| `file-metadata.mdx` | Accessing File Metadata |
+| `overview.mdx` | File Storage |
+| `serve-files.mdx` | Serving Files |
+| `store-files.mdx` | Storing Generated Files |
+| `upload-files.mdx` | Uploading and Storing Files |
+
+### functions/ (10 files)
+
+| File | Description |
+|------|-------------|
+| `actions.mdx` | Actions |
+| `bundling.mdx` | Bundling |
+| `debugging.mdx` | Debugging |
+| `http-actions.mdx` | HTTP Actions |
+| `internal-functions.mdx` | Internal Functions |
+| `mutation-functions.mdx` | Mutations |
+| `overview.mdx` | Functions |
+| `query-functions.mdx` | Queries |
+| `runtimes.mdx` | Runtimes |
+| `validation.mdx` | Argument and Return Value Validation |
+
+### functions/error-handling/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `application-errors.mdx` | Application Errors |
+| `error-handling.mdx` | Error Handling |
 
 ### generated-api/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `index.mdx` | Generated code overview |
-| `api.mdx` | Generated API types |
-| `data-model.mdx` | Generated data model types |
-| `server.mdx` | Generated server types |
+| `api.mdx` | api.js |
+| `data-model.mdx` | dataModel.d.ts |
+| `index.mdx` | Generated Code |
+| `server.mdx` | server.js |
 
-### http-api/ (1 file)
-
-| File | Description |
-|------|-------------|
-| `index.mdx` | HTTP API reference |
-
-### cli/ (23 files)
+### http-api/ (1 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | CLI overview |
-| `local-deployments-for-dev.mdx` | Local development deployments |
-| `deploy-key-types.mdx` | Deploy key types |
-| `background-agents.mdx` | Background agents CLI |
-| `reference/dev.mdx` | `npx convex dev` reference |
-| `reference/deploy.mdx` | `npx convex deploy` reference |
-| `reference/run.mdx` | `npx convex run` reference |
-| `reference/data.mdx` | `npx convex data` reference |
-| `reference/env.mdx` | `npx convex env` reference |
-| `reference/logs.mdx` | `npx convex logs` reference |
-| `reference/import.mdx` | `npx convex import` reference |
-| `reference/export.mdx` | `npx convex export` reference |
-| `reference/codegen.mdx` | `npx convex codegen` reference |
-| `reference/deployment.mdx` | Deployment management commands |
-| `reference/function-spec.mdx` | Function specification |
-| `reference/dashboard.mdx` | Dashboard command |
-| `reference/docs.mdx` | Docs command |
-| `reference/update.mdx` | Update command |
-| `reference/logout.mdx` | Logout command |
-| `reference/mcp.mdx` | MCP command |
-| `reference/insights.mdx` | Insights command |
-| `reference/ai-files.mdx` | AI files command |
-| `troubleshooting/typecheck-performance.mdx` | TypeScript check performance |
+| `index.mdx` | Convex HTTP API |
 
-### dashboard/ (13 files)
+### linting/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Dashboard overview |
-| `projects.mdx` | Managing projects |
-| `profile.mdx` | Profile management |
-| `teams/teams.mdx` | Team management |
-| `deployments/deployments.mdx` | Deployment overview |
-| `deployments/data.mdx` | Data viewer |
-| `deployments/functions.mdx` | Functions viewer |
-| `deployments/logs.mdx` | Logs viewer |
-| `deployments/schedules.mdx` | Scheduled jobs viewer |
-| `deployments/files.mdx` | File storage viewer |
-| `deployments/history.mdx` | Deployment history |
-| `deployments/health.mdx` | Deployment health |
-| `deployments/settings.mdx` | Deployment settings |
-
-### production/ (22 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Production overview |
-| `environment-variables.mdx` | Environment variables |
-| `multiple-deployments.mdx` | Multiple deployments |
-| `multiple-repos.mdx` | Multiple repos setup |
-| `project-configuration.mdx` | Project configuration |
-| `custom-domains.mdx` | Custom domains |
-| `regions.mdx` | Deployment regions |
-| `networking.mdx` | Egress IP addresses |
-| `abuse-protection.mdx` | DDoS and abuse protection |
-| `pause-deployment.mdx` | Pausing a deployment |
-| `hosting/hosting.mdx` | Hosting overview |
-| `hosting/vercel.mdx` | Vercel hosting |
-| `hosting/netlify.mdx` | Netlify hosting |
-| `hosting/custom.mdx` | Custom hosting |
-| `integrations/integrations.mdx` | Integrations overview |
-| `integrations/exception-reporting.mdx` | Exception reporting (Sentry etc.) |
-| `integrations/audit-logging.mdx` | Audit logging |
-| `integrations/streaming-import-export.mdx` | Streaming import/export |
-| `integrations/log-streams/log-streams.mdx` | Log streaming |
-| `integrations/log-streams/legacy-event-schema.mdx` | Legacy log event schema |
-| `state/state.mdx` | Platform state and status |
-| `state/limits.mdx` | Platform limits |
+| `biome.mdx` | Biome |
+| `eslint.mdx` | ESLint |
+| `overview.mdx` | Linting |
+| `oxlint.mdx` | Oxlint |
 
 ### platform-apis/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Platform APIs overview |
-| `oauth-applications.mdx` | OAuth application management |
-| `embedded-dashboard.mdx` | Embedded dashboard API |
-| `track-usage.mdx` | Usage tracking API |
+| `embedded-dashboard.mdx` | Embedding the dashboard |
+| `oauth-applications.mdx` | OAuth Applications |
+| `overview.mdx` | Platform APIs |
+| `track-usage.mdx` | Tracking Usage |
 
-### team-management/ (4 files)
+### production/ (10 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Team management overview |
-| `custom-roles.mdx` | Custom roles |
-| `role-actions.mdx` | Role actions |
-| `sso.mdx` | Single sign-on (SSO) |
+| `abuse-protection.mdx` | Abuse Protection |
+| `custom-domains.mdx` | Custom Domains |
+| `environment-variables.mdx` | Environment Variables |
+| `multiple-deployments.mdx` | Working with Multiple Deployments |
+| `multiple-repos.mdx` | Multiple Repositories |
+| `networking.mdx` | Networking |
+| `overview.mdx` | Deploying Your App to Production |
+| `pause-deployment.mdx` | Pausing a Deployment |
+| `regions.mdx` | Regions |
+| `usage-limits.mdx` | Usage Limits |
+
+### production/hosting/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `custom.mdx` | Custom Hosting |
+| `hosting.mdx` | Deploy Your Frontend |
+| `netlify.mdx` | Using Convex with Netlify |
+| `vercel.mdx` | Using Convex with Vercel |
+
+### production/integrations/ (4 files)
+
+| File | Description |
+|------|-------------|
+| `audit-logging.mdx` | Audit Logging |
+| `exception-reporting.mdx` | Exception Reporting |
+| `integrations.mdx` | Integrations |
+| `streaming-import-export.mdx` | Streaming Data in and out of Convex |
+
+### production/integrations/log-streams/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `legacy-event-schema.mdx` | legacy-event-schema |
+| `log-streams.mdx` | Log Streams |
+
+### production/state/ (2 files)
+
+| File | Description |
+|------|-------------|
+| `limits.mdx` | Limits |
+| `state.mdx` | Status and Guarantees |
+
+### quickstart/ (16 files)
+
+| File | Description |
+|------|-------------|
+| `android.mdx` | Android Kotlin Quickstart |
+| `bun.mdx` | Bun Quickstart |
+| `nextjs.mdx` | Next.js Quickstart |
+| `nodejs.mdx` | Node.js Quickstart |
+| `nuxt.mdx` | Nuxt Quickstart |
+| `overview.mdx` | Quickstarts |
+| `python.mdx` | Python Quickstart |
+| `react-native.mdx` | React Native Quickstart |
+| `react.mdx` | React Quickstart |
+| `remix.mdx` | Remix Quickstart |
+| `rust.mdx` | Rust Quickstart |
+| `script-tag.mdx` | Script Tag Quickstart |
+| `svelte.mdx` | Svelte Quickstart |
+| `swift.mdx` | iOS Swift Quickstart |
+| `tanstack-start.mdx` | TanStack Start Quickstart |
+| `vue.mdx` | Vue Quickstart |
+
+### scheduling/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `cron-jobs.mdx` | Cron Jobs |
+| `overview.mdx` | Scheduling |
+| `scheduled-functions.mdx` | Scheduled Functions |
+
+### search/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | AI & Search |
+| `text-search.mdx` | Full Text Search |
+| `vector-search.mdx` | Vector Search |
+
+### team-management/ (5 files)
+
+| File | Description |
+|------|-------------|
+| `custom-roles.mdx` | Custom Roles |
+| `directory-sync.mdx` | Directory Sync (SCIM) |
+| `overview.mdx` | Team Management |
+| `role-actions.mdx` | Role Actions |
+| `sso.mdx` | Single Sign-On (SSO) |
 
 ### testing/ (4 files)
 
 | File | Description |
 |------|-------------|
-| `overview.mdx` | Testing overview |
-| `convex-test.mdx` | `convex-test` unit testing library |
-| `convex-backend.mdx` | Testing with local Convex backend |
-| `ci.mdx` | CI/CD testing setup |
+| `ci.mdx` | Continuous Integration |
+| `convex-backend.mdx` | Testing Local Backend |
+| `convex-test.mdx` | convex-test |
+| `overview.mdx` | Testing |
 
-### understanding/ (6 files)
-
-| File | Description |
-|------|-------------|
-| `overview.mdx` | Understanding Convex overview |
-| `workflow.mdx` | Development workflow |
-| `zen.mdx` | The Zen of Convex (best practices philosophy) |
-| `best-practices/best-practices.mdx` | Best practices |
-| `best-practices/typescript.mdx` | TypeScript best practices |
-| `best-practices/other-recommendations.mdx` | Other recommendations |
-
-### Root files
+### tutorial/ (3 files)
 
 | File | Description |
 |------|-------------|
-| `deployment-api-overview.mdx` | Deployment API overview |
-| `deployment-platform-api.mdx` | Deployment management API |
-| `management-api-overview.mdx` | Management API overview |
-| `eslint.mdx` | ESLint plugin for Convex |
-| `realtime.mdx` | Realtime/reactive architecture |
-| `self-hosting.mdx` | Self-hosting Convex |
-| `error.mdx` | Error reference |
+| `actions.mdx` | Convex Tutorial: Calling External Services |
+| `overview.mdx` | Convex Tutorial: A Chat App |
+| `scale.mdx` | Convex Tutorial: Scaling Your App |
+
+### understanding/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `overview.mdx` | Convex Overview |
+| `workflow.mdx` | Dev workflow |
+| `zen.mdx` | The Zen of Convex |
+
+### understanding/best-practices/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `best-practices.mdx` | Best Practices |
+| `other-recommendations.mdx` | Other Recommendations |
+| `typescript.mdx` | TypeScript |

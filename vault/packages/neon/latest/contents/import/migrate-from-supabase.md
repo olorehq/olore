@@ -1,6 +1,6 @@
 ---
-title: Migrate from Supabase to Neon Postgres
-subtitle: Learn how to migrate your database from Supabase to Neon Postgres using
+title: Migrate from Supabase to Lakebase Postgres
+subtitle: Learn how to migrate your database from Supabase to Lakebase Postgres using
   pg_dump and pg_restore
 summary: >-
   Step-by-step guide to moving a Supabase Postgres database to Neon using
@@ -14,10 +14,10 @@ summary: >-
 redirectFrom:
   - /docs/import/import-from-supabase
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-11-06T11:14:41.532Z'
 ---
 
-This guide describes how to migrate a database from Supabase to Neon Postgres.
+This guide describes how to migrate a database from Supabase to Lakebase Postgres.
 
 We use the `pg_dump` and `pg_restore` utilities, which are part of the Postgres client toolset. `pg_dump` works by dumping both the schema and data in a custom format that is compressed and suitable for input into `pg_restore` to rebuild the database.
 
@@ -105,7 +105,7 @@ Avoid using `pg_dump` over a [pooled connection string](/docs/reference/glossary
 
 ## Prepare your Neon destination database
 
-This section describes how to prepare your destination Neon Postgres database to receive the imported data.
+This section describes how to prepare your destination Lakebase Postgres database to receive the imported data.
 
 ### Create the Neon database
 
@@ -123,8 +123,8 @@ For more information, see [Create a database](/docs/manage/databases#create-a-da
 
 ### Retrieve Neon connection details
 
-1. In the Neon Console, go to your project dashboard.
-2. Select **Connect** to open the **Connect to your database** modal.
+1. Open your project in the Neon Console.
+2. Select **Connect** to open the **Connect to your branch** modal.
 3. Copy the connection string. It will look similar to this:
 
    ```
@@ -211,5 +211,6 @@ For more information on the Postgres utilities used in this guide, refer to the 
 - [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html)
 - [pg_restore](https://www.postgresql.org/docs/current/app-pgrestore.html)
 - [Migrating data to Neon](/docs/import/migrate-from-postgres)
+- [Neon vs Supabase comparison](/guides/neon-vs-supabase)
 
 <NeedHelp/>

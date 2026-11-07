@@ -1,0 +1,10 @@
+---
+id: BuiltInFilterFn
+title: BuiltInFilterFn
+---
+
+```ts
+type BuiltInFilterFn = keyof typeof filterFns;
+```
+
+Defined in: [features/column-filtering/filterFns.ts:468](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-filtering/filterFns.ts#L468)

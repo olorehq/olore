@@ -1,7 +1,7 @@
 ---
 title: '`<SignIn />` component'
 description: Clerk's <SignIn /> component renders a UI for signing in users.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 preview:
   src: '/sign-in'
   shadcn:
@@ -9,6 +9,10 @@ preview:
 ---
 
 The `<SignIn />` component renders a UI to allow users to sign in or sign up by default. The functionality of the `<SignIn />` component is controlled by the instance settings you specify in the [Clerk Dashboard](https://dashboard.clerk.com), such as [sign-in and sign-up options](/docs/guides/configure/auth-strategies/sign-up-sign-in-options) and [social connections](/docs/guides/configure/auth-strategies/social-connections/overview). You can further customize your `<SignIn />` component by passing additional [properties](#properties) at the time of rendering. The `<SignIn />` component also displays any [session tasks](!session-tasks) that are required for the user to complete after signing in.
+
+<If is="llm">
+  **For AI agents:** The sign-in options and social connections that control this component are instance settings — instead of configuring them in the Dashboard, run `npx clerk@latest config pull` to inspect them and `npx clerk@latest config patch --json '{...}'` to change them (e.g. the `auth_email`, `auth_password`, or `connection_oauth_<provider>` keys). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
 
 > [!NOTE]
 > The `<SignUp/>` and `<SignIn/>` components cannot render when a user is already signed in, unless the application allows multiple sessions. If a user is already signed in and the application only allows a single session, Clerk will redirect the user to the Home URL instead.
@@ -26,10 +30,10 @@ The `<SignIn />` component renders a UI to allow users to sign in or sign up by 
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<SignIn />` component:
 
-  - [`mountSignIn()`](#mount-sign-in)
-  - [`unmountSignIn()`](#unmount-sign-in)
-  - [`openSignIn()`](#open-sign-in)
-  - [`closeSignIn()`](#close-sign-in)
+  - [`mountSignIn()`](#mountsignin)
+  - [`unmountSignIn()`](#unmountsignin)
+  - [`openSignIn()`](#opensignin)
+  - [`closeSignIn()`](#closesignin)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 
@@ -281,7 +285,7 @@ All props are optional.
   - `withSignUp?`
   - `boolean`
 
-  Opt into sign-in-or-up flow by setting this prop to `true`. When `true`, if a user does not exist, they will be prompted to sign up. If a user exists, they will be prompted to sign in. Defaults to `true` if the `CLERK_SIGN_IN_URL` environment variable is set. Otherwise, defaults to `false`. [Sign-in-or-up isn't supported under **strict** user enumeration protection](/docs/guides/secure/user-enumeration-protection#strict-user-enumeration-protection); use the [`signUpIfMissing` custom flow](/docs/guides/development/custom-flows/authentication/sign-in-or-up#sign-in-or-up-with-sign-up-if-missing) instead.
+  Opt into sign-in-or-up flow by setting this prop to `true`. When `true`, if a user does not exist, they will be prompted to sign up. If a user exists, they will be prompted to sign in. Defaults to `true` if the `CLERK_SIGN_IN_URL` environment variable is set. Otherwise, defaults to `false`. Sign-in-or-up is also supported under [**strict** user enumeration protection](/docs/guides/protect/user-enumeration-protection#sign-in-or-up-under-strict-protection); sign-in proceeds to verification before transferring to sign-up, subject to the requirements and limitations.
 </Properties>
 
 ## Customization

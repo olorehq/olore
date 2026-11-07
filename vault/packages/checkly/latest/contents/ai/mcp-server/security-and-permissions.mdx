@@ -1,0 +1,93 @@
+---
+title: 'MCP security and permissions'
+description: 'Understand how the Checkly MCP Server authenticates users, filters tools by permission, handles account context, and protects write actions.'
+sidebarTitle: 'Security & permissions'
+canonical: 'https://www.checklyhq.com/docs/ai/mcp-server/security-and-permissions/'
+---
+
+The Checkly MCP Server uses bearer-token authentication and Checkly account authorization together. Session permissions decide which tools are visible to your MCP client. Checkly account membership, [role and permissions](/admin/team-management/permissions), and feature entitlements decide whether a specific tool call can operate on an account.
+
+## Authentication
+
+The MCP Server accepts two types of bearer tokens for `https://api.checklyhq.com/mcp`:
+
+- OAuth bearer tokens from Checkly-approved MCP clients.
+- Checkly user API keys starting with `cu_...`, and service API keys starting with `sv_...`, sent as `Authorization: Bearer <checkly-api-key>`.
+
+OAuth is recommended for interactive clients. The public MCP Server only supports Checkly-approved OAuth clients. Checkly rejects clients that attempt to use [Dynamic Client Registration (DCR)](https://datatracker.ietf.org/doc/html/rfc7591). See [supported OAuth clients](/ai/mcp-server/setup#supported-oauth-clients) or [set up an API key](/ai/mcp-server/setup#set-up-with-an-api-key).
+
+Checkly maps OAuth tokens and user API keys to a Checkly user, then loads that user's account memberships and account context for tool calls. Service API keys map to the key's configured account and role.
+
+<Warning>
+API keys are long-lived credentials. Use them when OAuth is unavailable or a workflow needs a service identity. Store keys securely and rotate them when they are no longer needed.
+</Warning>
+
+## Session permissions
+
+| Permission | Description |
+| --- | --- |
+| `checkly:account:read` | Read your Checkly account membership and status |
+| `checkly:account:invite` | Invite members to your Checkly account |
+| `checkly:checks:read` | List checks, their status and results |
+| `checkly:checks:write` | Create, update and delete checks and check groups |
+| `checkly:checks:run` | Trigger Checkly checks and on-demand test sessions |
+| `checkly:incidents:read` | Read your Checkly incidents |
+| `checkly:incidents:write` | Create and update your Checkly incidents |
+| `checkly:environment-variables:read` | Read your Checkly account environment variables (secret values excluded) |
+| `checkly:environment-variables:write` | Create, update and delete your Checkly account environment variables |
+| `checkly:status-pages:read` | Read your Checkly status pages |
+| `checkly:rca:read` | Read your Checkly root cause analyses |
+| `checkly:rca:run` | Run Checkly root cause analysis for your account |
+| `checkly:test-sessions:read` | Read your Checkly test sessions |
+| `checkly:assets:read` | Read your Checkly assets |
+| `checkly:usage:read` | Read organization contract usage for your Checkly account |
+| `checkly:error-groups:read` | Read your Checkly error groups |
+| `checkly:error-groups:write` | Update your Checkly error groups |
+
+OAuth sessions use the permissions granted by the OAuth flow. API-key sessions receive all permissions listed above except `checkly:account:invite`, so `invite-account-member` is only available with OAuth.
+
+Tools are filtered from `tools/list` when the MCP session does not include the required permission. Tool calls are also rejected if the session lacks the required permission.
+
+## Account context
+
+Most tools operate on one Checkly account. You can select a specific account in your prompt or pin an account in your MCP client configuration. See [Select an account](/ai/mcp-server/setup#select-an-account) for setup examples.
+
+<Warning>
+Accounts that require mTLS are not available through the public MCP Server.
+</Warning>
+
+Blocked accounts can be inspected with read-only tools, but write, run, and admin tools are rejected.
+
+## Role checks
+
+MCP session permissions and account permissions are separate. A session permission makes a tool available; your account role must also grant the permissions needed to use it. This applies to built-in roles and, when enabled for your account, [custom roles](/admin/team-management/custom-roles) (beta). See the [permissions reference](/admin/team-management/permissions) for permission names and how to get access:
+
+| Tool or action | Additional account access required |
+| --- | --- |
+| `invite-account-member` | [`members:create`](/admin/team-management/permissions), plus all permissions of the role you give |
+| `create-account-environment-variable` | [`environment-variables:create`](/admin/team-management/permissions) |
+| `update-account-environment-variable` | [`environment-variables:update`](/admin/team-management/permissions) |
+| `trigger-checks` | [`checks:run`](/admin/team-management/permissions) |
+| `trigger-root-cause-analysis` | [`root-cause-analyses:run`](/admin/team-management/permissions) |
+| `create-status-page-incident` | [`incidents:create`](/admin/team-management/permissions) and [`status-pages:read`](/admin/team-management/permissions) |
+| `update-status-page-incident`, `resolve-status-page-incident` | [`incidents:update`](/admin/team-management/permissions) |
+
+`invite-account-member` supports Admin, Read & Write, Read & Run, and Read Only invitations. You cannot invite an Owner or assign a [custom role](/admin/team-management/custom-roles) (beta) through this tool.
+
+## Write-action safety
+
+Some MCP tools create side effects:
+
+- `invite-account-member` sends an invite email and is not idempotent.
+- `trigger-checks` consumes check-run execution quota.
+- `trigger-root-cause-analysis` consumes RCA invocation quota.
+- `create-status-page-incident`, `update-status-page-incident`, and `resolve-status-page-incident` can notify subscribers and are not idempotent.
+- Environment variable write tools can create or replace account-level variables and secrets.
+
+Review write tool calls in your MCP client before approving them.
+
+## Secrets
+
+MCP read tools never reveal Checkly secret values. Secret values are returned as `null`.
+
+When you create or update a secret through MCP, Checkly encrypts the value and does not echo it back in the tool response.

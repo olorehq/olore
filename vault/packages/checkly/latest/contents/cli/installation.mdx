@@ -1,7 +1,8 @@
 ---
-title: 'Intallation'
+title: 'Installation'
 description: 'Creating a CLI project from scratch'
 sidebarTitle: 'Installation'
+canonical: 'https://www.checklyhq.com/docs/cli/installation/'
 ---
 
 import TsLoaderNote from '/snippets/ts-loader-note.mdx';
@@ -11,7 +12,7 @@ from scratch with the following steps.
 
 ## Prerequisites
 
-- Node.js `20.19+` or `22.12+`.
+- Node.js `22.13+`.
 - A text editor like [Visual Studio Code](https://code.visualstudio.com/).
 
 ## Installation
@@ -58,10 +59,10 @@ Create a minimal `checkly.config.ts` (or `checkly.config.js`) at the root of you
   </Tab>
   <Tab title="JavaScript">
    ```js {title="checkly.config.js"}
-   const defineConfig = require('checkly')
+   const { defineConfig } = require('checkly')
    const { Frequency } = require('checkly/constructs')
 
-   const config = {
+   module.exports = defineConfig({
     projectName: 'Website Monitoring',
     logicalId: 'website-monitoring-1',
     repoUrl: 'https://github.com/acme/website',
@@ -82,9 +83,7 @@ Create a minimal `checkly.config.ts` (or `checkly.config.js`) at the root of you
     cli: {
       runLocation: 'eu-central-1',
     }
-   }
-
-   module.exports = config;
+   })
    ```
   </Tab>
 </Tabs>
@@ -96,33 +95,21 @@ before hand or just sign up for a new account straight from the terminal.
 npx checkly login
 ```
 
-## Direct download
+## Global installs and `npx checkly@<version>`
 
-If you cannot access the npm registry directly, you can also download the Checkly CLI via our CDN.
+Run the CLI through `npx checkly` from your project (or your package manager's equivalent, such as `pnpm exec checkly` or `yarn checkly`), so the CLI version is the one in your `package.json`.
 
-- [MacOS / Darwin](https://cdn.checklyhq.com/downloads/checkly-cli/4.9.0/darwin/checkly-cli.zip)
-- [Windows](https://cdn.checklyhq.com/downloads/checkly-cli/4.9.0/windows/checkly-cli.zip)
-- [Linux](https://cdn.checklyhq.com/downloads/checkly-cli/4.9.0/linux/checkly-cli.tar.gz)
+Your checks only load with the `checkly` package your project installs, because they register with that copy. Since CLI version 10.0.0, when you run `checkly` from any other installation, for example a global `npm i -g checkly`, `pnpm dlx checkly` or `npx checkly@<version>`, inside a project that has its own `checkly` package, the CLI hands the command to your project's installation, as `npx checkly` or its equivalent would. This applies to every command. The CLI looks for your project's installation from the directory of the `--config` file if you pass one, and from the current directory otherwise. If the two versions differ, the CLI says which version runs. To use another version, install that version in your project.
 
-The download is a zipped folder containing a full installation of [the boilerplate example project](https://github.com/checkly/checkly-cli/tree/main/examples/boilerplate-project).
-You will find the following files and folders:
-- a `checkly.config.ts` file.
-- a `package.json` file including the necessary Typescript dependencies.
-- a `node_modules` directory with all dependencies pre-installed.
-- a `__checks__` folder with some example checks.
-
-<Note>
-If you want to move the CLI and its constructs to a different, already existing Node.js project, just copy the full contents
-of the `node_modules` folder to your project and manually add a `checkly.config.ts` file.
-</Note>
+Set `CHECKLY_NO_DELEGATION=1` to turn off the hand-off. Older global installs, and any install with the hand-off turned off, fail on projects that have their own `checkly` package with `Unable to create a construct ... outside a Checkly CLI project`.
 
 ## Using a Proxy Server
 
-The CLI respects the common `HTTP_PROXY` environment variable for any outbound traffic, like running `npx checkly test`
-or `npx checkly deploy`. 
+The CLI respects the common proxy environment variables for any outbound traffic, like running `npx checkly test`
+or `npx checkly deploy`. Because the CLI connects over HTTPS, set `HTTPS_PROXY` (or `ALL_PROXY`). `HTTP_PROXY` alone isn't used for these connections. Use `NO_PROXY` to bypass the proxy for specific hosts.
 
 ```bash Terminal
-HTTP_PROXY=https://proxy-url npx checkly test
+HTTPS_PROXY=https://proxy-url npx checkly test
 ```
 
 The CLI communicates with the following domains if you need to allow-list them in your proxy:

@@ -13,7 +13,7 @@ tags:
   - Private networks
 ---
 
-import { Render } from "~/components";
+import { DashButton, Render } from "~/components";
 
 With Cloudflare Browser Isolation and resolver policies, users can connect to private web-based applications via their private hostnames without needing to install the Cloudflare One Client. By the end of this tutorial, users who pass your Gateway DNS and network policies will be able to access your private application at `https://<your-team-name>.cloudflareaccess.com/browser/https://internalrecord.com`.
 
@@ -22,7 +22,7 @@ With Cloudflare Browser Isolation and resolver policies, users can connect to pr
 Make sure you have:
 
 - [Cloudflare Browser Isolation](/cloudflare-one/remote-browser-isolation/) enabled on your account
-- [Resolver policies](/cloudflare-one/traffic-policies/resolver-policies/) enabled on your account
+- [Resolver policies](/cloudflare-one/traffic-controls/resolver-policies/) enabled on your account
 - An HTTP or HTTPS application that users access through a browser
 
 ## Create a Cloudflare Tunnel
@@ -33,11 +33,13 @@ First, install `cloudflared` on a server in your private network:
 
 ## Add private network routes
 
-1. In the **CIDR** tab, add the following IP addresses:
-   - Private IP/CIDR of your application server (for example, `10.128.0.175/32`)
-   - Private IP/CIDR of your DNS server
+1. In the Cloudflare dashboard, go to **Networking** > **Routes**.
 
-2. Select **Save tunnel**.
+   <DashButton url="/?to=/:account/magic-networks/routes" />
+
+2. Select **Create route** > **Tunnel CIDR**. Select the tunnel you just created, enter the private IP/CIDR of your application server (for example, `10.128.0.175/32`), and select **Create route**.
+
+3. Repeat to create a second route for the private IP/CIDR of your DNS server.
 
 The application and DNS server are now connected to Cloudflare.
 
@@ -63,7 +65,7 @@ To test, open a browser and go to `https://<team-name>.cloudflareaccess.com/brow
 
 2. Select **Add a policy**.
 
-3. Create an expression to match against the private [domain](/cloudflare-one/traffic-policies/resolver-policies/#domain) or [hostname](/cloudflare-one/traffic-policies/resolver-policies/#host) of the application:
+3. Create an expression to match against the private [domain](/cloudflare-one/traffic-controls/resolver-policies/#domain) or [hostname](/cloudflare-one/traffic-controls/resolver-policies/#host) of the application:
 
    | Selector | Operator | Value                |
    | -------- | -------- | -------------------- |
@@ -85,7 +87,7 @@ To test, open a browser and go to `https://<team-name>.cloudflareaccess.com/brow
 
 1. Go to **Traffic policies** > **Firewall policies** > **Network**.
 
-2. Add a [network policy](/cloudflare-one/traffic-policies/network-policies/) that targets the private IP address of your application. You can optionally include any ports or protocols relevant for application access. For example,
+2. Add a [network policy](/cloudflare-one/traffic-controls/network-policies/) that targets the private IP address of your application. You can optionally include any ports or protocols relevant for application access. For example,
 
    | Selector         | Operator      | Value           | Logic | Action |
    | ---------------- | ------------- | --------------- | ----- | ------ |

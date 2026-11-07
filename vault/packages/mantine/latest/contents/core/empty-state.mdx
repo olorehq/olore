@@ -1,0 +1,80 @@
+import { EmptyStateDemos } from '@docs/demos';
+import { Layout } from '@/layout';
+import { MDX_DATA } from '@/mdx';
+
+export default Layout(MDX_DATA.EmptyState);
+
+## Usage
+
+`EmptyState` displays a placeholder for "no data" situations: empty search results, empty
+tables and lists, first-run states or error illustrations with an optional call to action.
+The simplest way to use it is with `icon`, `title` and `description` props:
+
+<Demo data={EmptyStateDemos.usage} />
+
+## Compound components
+
+For full control over the content, use compound components instead of or together with
+the shorthand props:
+
+<Demo data={EmptyStateDemos.compound} />
+
+When both are used, the content from `icon`, `title` and `description` props
+is rendered first, followed by `children`:
+
+```tsx
+import { Button, EmptyState } from '@mantine/core';
+
+function Demo() {
+  return (
+    <EmptyState icon={<Icon />} title="No results found">
+      {/* Rendered after the title */}
+      <EmptyState.Actions>
+        <Button variant="default">Reset filters</Button>
+      </EmptyState.Actions>
+    </EmptyState>
+  );
+}
+```
+
+## Variant
+
+Set the `variant` prop to `filled` or `light` to display the icon inside a colored circular
+indicator. Use the `color` prop to change the indicator color. If `variant` is not set, the icon
+is displayed with a dimmed color:
+
+<Demo data={EmptyStateDemos.variant} />
+
+## Indicator background
+
+Set `withIndicatorBackground` prop to display a neutral circular background behind the indicator
+without setting a `variant`:
+
+<Demo data={EmptyStateDemos.indicatorBackground} />
+
+## Title heading level
+
+By default, `EmptyState.Title` renders a `div` element. Set the `order` prop to render
+it as an `h1`–`h6` heading:
+
+```tsx
+import { EmptyState } from '@mantine/core';
+
+function Demo() {
+  return (
+    <EmptyState>
+      <EmptyState.Title order={2}>No results found</EmptyState.Title>
+    </EmptyState>
+  );
+}
+```
+
+<StylesApiSelectors component="EmptyState" />
+
+<Demo data={EmptyStateDemos.stylesApi} />
+
+## Accessibility
+
+- The root element does not have a landmark role
+- `EmptyState.Title` is not a heading by default, set the `order` prop to change that
+- Make sure that action buttons have accessible labels

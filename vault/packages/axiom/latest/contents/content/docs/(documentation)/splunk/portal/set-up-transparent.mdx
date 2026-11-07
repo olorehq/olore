@@ -1,0 +1,86 @@
+---
+title: 'Set up the Axiom Portal for Splunk in transparent mode'
+description: 'Learn how to register the Axiom Portal for Splunk as a federated provider in transparent mode so datasets are searchable by name and your knowledge objects work against Axiom data.'
+sidebarTitle: Set up transparent mode
+keywords: ['splunk', 'splunk portal', 'axiom portal for splunk', 'federated search', 'transparent mode', 'knowledge objects', 'lookups', 'data models', 'tstats']
+---
+
+In transparent mode, Axiom datasets are directly addressable by their own names, as `index=<name>`, with no per-dataset mapping. Splunk also replicates the search head’s knowledge bundle to Axiom, so your existing knowledge objects work against Axiom data:
+
+- **CSV lookups**, both explicit `| lookup` and automatic lookups defined in props.
+- **Data models**, including `tstats` queries and `pivot`.
+- **Tags and event types**, which the search head expands before dispatch.
+
+Transparent mode works from a Splunk Enterprise search head or Splunk Cloud Platform on the Victoria Experience. For how the modes differ, see [How the Portal works](/splunk/portal/overview).
+
+If you use Splunk Enterprise Security, transparent mode is the mode to use: Splunk doesn’t support standard mode federated search with Enterprise Security.
+
+<Warning>
+Use one mode per Splunk deployment. If you already registered a standard mode provider for the Portal, remove it before setting up transparent mode. Registering both modes against the same endpoint yields inconsistent results.
+</Warning>
+
+## Prerequisites
+
+- [Create an advanced API token in Axiom](/reference/tokens#create-advanced-api-token) with query permissions on the datasets you want to expose. The token needs no other permissions.
+- [Determine your Axiom organization ID](/reference/tokens#determine-organization-id).
+- A Splunk Enterprise 9.0 or later search head, or Splunk Cloud Platform on the Victoria Experience, and a Splunk role with permissions to manage federated search. The search head must be able to reach `splunk.portal.axiom.co` on port 443 over HTTPS. If your Splunk Cloud environment restricts outbound traffic, allow egress to this host and port first.
+
+## Register the Portal as a transparent mode provider
+
+<Steps>
+<Step title="Open federated search settings">
+In Splunk Web, go to **Settings**, and then select **Federated search**.
+</Step>
+<Step title="Add a federated provider">
+Click **Add federated provider** and fill in the fields:
+
+- For the provider mode, select **Transparent**.
+- Enter a provider name, for example `axiom`.
+- For the remote host, enter `splunk.portal.axiom.co:443`.
+- For the service account username, enter your Axiom organization ID.
+- For the service account password, enter your Axiom API token.
+- Turn on the use of the search head’s knowledge objects for this provider.
+</Step>
+<Step title="Test and save">
+Click **Test connection**, and then save the provider.
+</Step>
+</Steps>
+
+<Warning>
+The service account password is the token value itself, the string starting with `xaat-`, not the token’s name in the Axiom UI. A mistyped or expired token can still pass **Test connection**, because the connection test verifies the protocol handshake without running a query. The verification search below is the real credential check.
+</Warning>
+
+There are no federated indexes to create. Every dataset the token can query is immediately searchable by its Axiom dataset name.
+
+## Knowledge bundle replication
+
+After you save the provider, Splunk automatically replicates the search head’s knowledge bundle to the Portal and keeps it up to date with delta updates. The Portal uses the replicated bundle to evaluate lookups and data model definitions during searches, the same way a remote Splunk indexer would. Bundles are stored per organization and are never shared.
+
+Scripted, external, and KV store lookups are the exception: they execute code inside a Splunk instance, so no federated provider can run them. CSV lookups, by far the most common case, work fully. For details, see [SPL command support](/splunk/portal/spl-support#transparent-mode-knowledge-objects).
+
+## Verify the setup
+
+Search a dataset directly by name:
+
+```spl
+index=http-logs | stats count
+```
+
+An exact event count confirms authentication and pushdown. If you use lookups, verify one end to end:
+
+```spl
+index=http-logs | lookup status_names status OUTPUT status_label | stats count by status_label
+```
+
+The lookup table lives on your Splunk search head and is joined against Axiom data through the replicated bundle. If you use data models, verify `tstats`:
+
+```spl
+| tstats count from datamodel=Web by Web.status
+```
+
+If a search shows an error banner, see [Monitor and troubleshoot](/splunk/portal/troubleshoot).
+
+## What’s next
+
+- [SPL command support](/splunk/portal/spl-support)
+- [Examples](/splunk/portal/examples)

@@ -8,14 +8,17 @@ title: "DNS"
 
 # `openclaw dns`
 
-DNS helpers for wide-area discovery (Tailscale + CoreDNS). Currently focused on macOS + Homebrew CoreDNS.
+DNS helpers for wide-area discovery (Tailscale + CoreDNS). `openclaw dns setup` prints its plan on any platform; applying that plan with `--apply` requires macOS with Homebrew CoreDNS.
 
 Related:
 
 - Gateway discovery: [Discovery](/gateway/discovery)
-- Wide-area discovery config: [Configuration](/gateway/configuration)
+- Wide-area publishing behavior: [Bonjour discovery](/gateway/bonjour)
+- Wide-area discovery config: [`discovery.wideArea`](/gateway/config-runtime#wide-area-dns-sd)
 
-## Setup
+## `dns setup`
+
+Plan or apply CoreDNS setup for unicast DNS-SD discovery.
 
 ```bash
 openclaw dns setup
@@ -23,29 +26,31 @@ openclaw dns setup --domain openclaw.internal
 openclaw dns setup --apply
 ```
 
-## `dns setup`
+| Option              | Effect                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `--domain <domain>` | Wide-area discovery domain (for example `openclaw.internal`).                       |
+| `--apply`           | Install/update CoreDNS config and (re)start the service. Requires sudo, macOS only. |
 
-Plan or apply CoreDNS setup for unicast DNS-SD discovery.
+Without `--domain`, OpenClaw uses `discovery.wideArea.domain` from config. Setting that domain enables wide-area discovery.
 
-Options:
+If no domain is configured, `--domain` is not a valid DNS name, or `--apply`
+runs off macOS or without a tailnet IP, the CLI prints the specific reason on
+stderr and exits with status `1`.
 
-- `--domain <domain>`: wide-area discovery domain (for example `openclaw.internal`)
-- `--apply`: install or update CoreDNS config and restart the service (requires sudo; macOS only)
+The preview escapes control characters in displayed paths; the actual zone path is unchanged.
 
-What it shows:
+Without `--apply`, the command only prints:
 
-- resolved discovery domain
-- zone file path
-- current tailnet IPs
-- recommended `openclaw.json` discovery config
-- the Tailscale Split DNS nameserver/domain values to set
+- Resolved discovery domain and zone file path
+- Current tailnet IPs
+- Recommended `openclaw.json` discovery config
+- Tailscale Split DNS nameserver/domain values to set in the Tailscale admin console
 
-Notes:
+With `--apply` (macOS only, requires Homebrew CoreDNS):
 
-- Without `--apply`, the command is a planning helper only and prints the recommended setup.
-- If `--domain` is omitted, OpenClaw uses `discovery.wideArea.domain` from config.
-- `--apply` currently supports macOS only and expects Homebrew CoreDNS.
-- `--apply` bootstraps the zone file if needed, ensures the CoreDNS import stanza exists, and restarts the `coredns` brew service.
+- Bootstraps the zone file if missing
+- Adds the CoreDNS import stanza if missing
+- Restarts the `coredns` brew service
 
 ## Related
 

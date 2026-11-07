@@ -15,7 +15,7 @@ This particular usage uses the Turso Cloud to sync the local Turso databases and
 
 - Follow our [Quickstart](/quickstart) to install the CLI, create a database
 
-- Get the database URL (`libsql://...`):
+- Get the database URL (`turso://...`):
 ```
 turso db show <db>
 ```
@@ -31,7 +31,7 @@ turso db tokens create <db>
 
 You need three essentials to enable sync:
 - Local path: where the local, synced tursodb file is stored
-- Remote URL: your Turso Cloud URL (`libsql://...`)
+- Remote URL: your Turso Cloud URL (`turso://...`)
 - Auth token: Turso Cloud token to authenticate requests
 
 <CodeGroup>
@@ -41,7 +41,7 @@ import { connect } from '@tursodatabase/sync';
 
 const db = await connect({
   path: './app.db',                               // local path
-  url: 'libsql://...',                            // remote URL (generated with turso db show <db-name> --url)
+  url: 'turso://...',                            // remote URL (generated with turso db show <db-name> --url)
   authToken: process.env.TURSO_AUTH_TOKEN,        // authentication token (generated with turso db tokens create <db-name>)
   // longPollTimeoutMs: 10_000,                   // optional: server waits before replying to pull
   // bootstrapIfEmpty: false,                     // set to false to avoid bootstrapping on first run
@@ -54,8 +54,8 @@ import turso.sync
 
 conn = turso.sync.connect(
     path="./app.db",                                  # local path
-    remote_url="libsql://...",                        # remote URL (generated with turso db show <db-name> --url)
-    remote_auth_token=os.environ["TURSO_AUTH_TOKEN"], # authentication token (generated with turso db tokens create <db-name>)
+    remote_url="turso://...",                        # remote URL (generated with turso db show <db-name> --url)
+    auth_token=os.environ["TURSO_AUTH_TOKEN"],        # authentication token (generated with turso db tokens create <db-name>)
     # long_poll_timeout_ms=10_000,                    # optional: server waits before replying to pull
     # bootstrap_if_empty=False,                       # set to false to avoid bootstrapping on first run
 )
@@ -65,15 +65,15 @@ conn = turso.sync.connect(
 package main
 
 import (
-	"turso"
+	turso "turso.tech/database/tursogo"
 )
 
 db, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
   Path:              "./app.db",                    // local path
-  RemoteUrl:         "libsql://...",                // remote URL (generated with turso db show <db-name> --url)
-  RemoteAuthToken:   os.Getenv("TURSO_AUTH_TOKEN"), // authentication token (generated with turso db tokens create <db-name>)
+  RemoteUrl:         "turso://...",                // remote URL (generated with turso db show <db-name> --url)
+  AuthToken:         os.Getenv("TURSO_AUTH_TOKEN"), // authentication token (generated with turso db tokens create <db-name>)
   // LongPollTimeoutMs: 10_000,                     // optional: server waits before replying to pull
-  // BootstrapIfEmpty: false,                       // set to false to avoid bootstrapping on first run
+  // BootstrapIfEmpty: new(bool),                   // *bool; point at false to avoid bootstrapping on first run
 })
 ```
 
@@ -90,7 +90,7 @@ You can bootstrap or update it later at any time by explicitly calling `pull()`.
 
 <Step title="3. Push changes">
 
-Push sends your local changes to the Turso Cloud server. Under the hood, logical statements are sent, and on conflicts the strategy is "last push wins".
+Push sends your local changes to the Turso Cloud server. Under the hood, logical statements are sent, and on conflicts the strategy is "last push wins". COMMITTED WRITE transactions which overlap with WRITE transactions that are still open MAY be delayed. To push every committed transaction, make sure no write transaction is open when you push.
 
 <CodeGroup>
 
@@ -291,7 +291,7 @@ import turso.sync
 conn = turso.sync.connect(
     path="./local.db",
     remote_url=os.environ["TURSO_URL"],
-    remote_auth_token=os.environ["TURSO_AUTH_TOKEN"],
+    auth_token=os.environ["TURSO_AUTH_TOKEN"],
     bootstrap_if_empty=False,
 )
 
@@ -315,13 +315,14 @@ sync_when_online(conn)
 ```
 
 ```go Go
-// BootstrapIfEmpty: false lets the app start offline without
-// needing to reach the remote on first launch
+// BootstrapIfEmpty pointing at false lets the app start offline
+// without needing to reach the remote on first launch
+noBootstrap := false
 db, err := turso.NewTursoSyncDb(ctx, turso.TursoSyncDbConfig{
 	Path:             "./local.db",
 	RemoteUrl:        os.Getenv("TURSO_URL"),
-	RemoteAuthToken:  os.Getenv("TURSO_AUTH_TOKEN"),
-	BootstrapIfEmpty: false,
+	AuthToken:        os.Getenv("TURSO_AUTH_TOKEN"),
+	BootstrapIfEmpty: &noBootstrap,
 })
 
 func syncWhenOnline(ctx context.Context, db *turso.TursoSyncDb) {

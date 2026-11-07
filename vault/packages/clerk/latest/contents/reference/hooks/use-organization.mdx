@@ -1,9 +1,9 @@
 ---
-title: useOrganization()
+title: '`useOrganization()`'
 description: Access and manage the currently active Organization in your React application with Clerk's useOrganization() hook.
 search:
   rank: 1
-sdk: chrome-extension, expo, nextjs, react, react-router, tanstack-react-start
+sdk: chrome-extension, electron, expo, nextjs, react, react-router, tanstack-react-start
 ---
 
 The `useOrganization()` hook retrieves attributes of the currently [Active Organization](!active-organization).
@@ -26,7 +26,7 @@ Optional properties that are shared across the `invitations`, `membershipRequest
 <Typedoc src="shared/paginated-hook-config" />
 
 > [!NOTE]
-> These attributes are updating automatically and will re-render their respective components whenever you set a different Organization using the [`setActive({ organization })`](/docs/reference/objects/clerk#set-active) method or update any of the memberships or invitations. No need for you to manage updating anything manually.
+> These attributes are updating automatically and will re-render their respective components whenever you set a different Organization using the [`setActive({ organization })`](/docs/reference/objects/clerk#setactive) method or update any of the memberships or invitations. No need for you to manage updating anything manually.
 
 ## Returns
 
@@ -76,6 +76,45 @@ The following example demonstrates how to use the `infinite` property to fetch a
 <If sdk="react">
   ```jsx {{ filename: 'src/components/MemberList.tsx' }}
   import { useOrganization } from '@clerk/react'
+
+  export default function MemberList() {
+    const { memberships } = useOrganization({
+      memberships: {
+        infinite: true, // Append new data to the existing list
+        keepPreviousData: true, // Persist the cached data until the new data has been fetched
+      },
+    })
+
+    // Handle loading state
+    if (!memberships) return <div>Loading...</div>
+
+    return (
+      <div>
+        <h2>Organization members</h2>
+        <ul>
+          {memberships.data?.map((membership) => (
+            <li key={membership.id}>
+              {membership.publicUserData?.firstName} {membership.publicUserData?.lastName} &lt;
+              {membership.publicUserData?.identifier}&gt; :: {membership.role}
+            </li>
+          ))}
+        </ul>
+
+        <button
+          disabled={!memberships.hasNextPage} // Disable the button if there are no more available pages to be fetched
+          onClick={memberships.fetchNext}
+        >
+          Load more
+        </button>
+      </div>
+    )
+  }
+  ```
+</If>
+
+<If sdk="electron">
+  ```jsx {{ filename: 'src/components/MemberList.tsx' }}
+  import { useOrganization } from '@clerk/electron/react'
 
   export default function MemberList() {
     const { memberships } = useOrganization({
@@ -232,7 +271,7 @@ The following example demonstrates how to use the `infinite` property to fetch a
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/members.tsx' }}
+  ```tsx {{ filename: 'src/routes/members.tsx' }}
   import { useOrganization } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -289,7 +328,12 @@ The following example demonstrates how to use the `infinite` property to fetch a
     })
 
     // Handle loading state
-    if (!memberships) return <View>Loading...</View>
+    if (!memberships)
+      return (
+        <View>
+          <Text>Loading...</Text>
+        </View>
+      )
 
     return (
       <View>
@@ -326,6 +370,45 @@ Notice the difference between this example's pagination and the infinite paginat
 <If sdk="react">
   ```jsx {{ filename: 'src/components/MemberList.tsx' }}
   import { useOrganization } from '@clerk/react'
+
+  export default function MemberList() {
+    const { memberships } = useOrganization({
+      memberships: {
+        keepPreviousData: true, // Persist the cached data until the new data has been fetched
+      },
+    })
+
+    // Handle loading state
+    if (!memberships) return <div>Loading...</div>
+
+    return (
+      <div>
+        <h2>Organization members</h2>
+        <ul>
+          {memberships.data?.map((membership) => (
+            <li key={membership.id}>
+              {membership.publicUserData?.firstName} {membership.publicUserData?.lastName} &lt;
+              {membership.publicUserData?.identifier}&gt; :: {membership.role}
+            </li>
+          ))}
+        </ul>
+
+        <button disabled={!memberships.hasPreviousPage} onClick={memberships.fetchPrevious}>
+          Previous page
+        </button>
+
+        <button disabled={!memberships.hasNextPage} onClick={memberships.fetchNext}>
+          Next page
+        </button>
+      </div>
+    )
+  }
+  ```
+</If>
+
+<If sdk="electron">
+  ```jsx {{ filename: 'src/components/MemberList.tsx' }}
+  import { useOrganization } from '@clerk/electron/react'
 
   export default function MemberList() {
     const { memberships } = useOrganization({
@@ -482,7 +565,7 @@ Notice the difference between this example's pagination and the infinite paginat
 </If>
 
 <If sdk="tanstack-react-start">
-  ```tsx {{ filename: 'app/routes/members-paginated.tsx' }}
+  ```tsx {{ filename: 'src/routes/members-paginated.tsx' }}
   import { useOrganization } from '@clerk/tanstack-react-start'
   import { createFileRoute } from '@tanstack/react-router'
 
@@ -538,7 +621,12 @@ Notice the difference between this example's pagination and the infinite paginat
     })
 
     // Handle loading state
-    if (!memberships) return <View>Loading...</View>
+    if (!memberships)
+      return (
+        <View>
+          <Text>Loading...</Text>
+        </View>
+      )
 
     return (
       <View>

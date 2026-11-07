@@ -2,6 +2,7 @@
 title: Using Checkly CLI Constructs
 description: 'Build monitoring infrastructure using JavaScript/TypeScript and the Checkly CLI'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/constructs/overview/'
 ---
 
 import JsTsNote from '/snippets/js-ts-note.mdx';
@@ -132,12 +133,13 @@ Find a full reference of all check properties in [the `ApiCheck` construct](/con
 Assigning a `logicalId` is crucial when creating a construct. Remember the following rules when creating and updating constructs:
 
 1. Every construct needs to have a `logicalId`. This is the first argument when instantiating a class, i.e.
+{/* typecheck-wrap: ApiCheck */}
 ```ts
-const check  = new ApiCheck('my-logical-id', { name: 'My API check' })
+const check  = new ApiCheck('my-logical-id', { name: 'My API check', /* More options... */ })
 ```
 2. Every `logicalId` needs to be unique within the scope of a `Project`.
 3. A `Project` also has a `logicalId`. This needs to be unique within the scope of the Checkly account.
-4. A `logicalId` can be any string up to 255 characters in length.
+4. A `logicalId` can be up to 255 characters long and may only contain letters, numbers, and the characters `_`, `-`, `/`, `#`, and `.`.
 5. There is no hard limit on the amount of `Project`s you can have in your Checkly account.
 
 Behind the scenes, we use the `logicalId` to create a graph of your resources so we know what to persist, update and remove

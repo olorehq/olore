@@ -1,7 +1,7 @@
 ---
 title: '`<OrganizationList />` component'
 description: Clerk's <OrganizationList /> component is used to display Organization related memberships, invitations, and suggestions for the user.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 preview:
   src: '/organization-list'
 ---
@@ -41,6 +41,18 @@ The `<OrganizationList />` component displays Organization-related memberships a
     ```
   </If>
 
+  <If sdk="electron">
+    ```jsx {{ filename: 'src/App.tsx' }}
+    import { OrganizationList } from '@clerk/electron/react'
+
+    function App() {
+      return <OrganizationList />
+    }
+
+    export default App
+    ```
+  </If>
+
   <If sdk="astro">
     ```astro {{ filename: '/pages/organizations.astro' }}
     ---
@@ -58,10 +70,10 @@ The `<OrganizationList />` component displays Organization-related memberships a
   <If sdk="expo">
     <Include src="_partials/expo/web-only-callout" />
 
-    ```jsx {{ filename: 'src/app/organizations.web.tsx' }}
+    ```jsx {{ filename: 'src/components/OrganizationList.web.tsx' }}
     import { OrganizationList } from '@clerk/expo/web'
 
-    export default function OrganizationListPage() {
+    export default function Page() {
       return (
         <OrganizationList
           afterCreateOrganizationUrl={(org) => `/organization/${org.slug}`}
@@ -100,7 +112,7 @@ The `<OrganizationList />` component displays Organization-related memberships a
   </If>
 
   <If sdk="tanstack-react-start">
-    ```tsx {{ filename: 'app/routes/organizations.tsx' }}
+    ```tsx {{ filename: 'src/routes/organizations.tsx' }}
     import { OrganizationList } from '@clerk/tanstack-react-start'
     import { createFileRoute } from '@tanstack/react-router'
 
@@ -158,8 +170,8 @@ The `<OrganizationList />` component displays Organization-related memberships a
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<OrganizationList />` component:
 
-  - [`mountOrganizationList()`](#mount-organization-list)
-  - [`unmountOrganizationList()`](#unmount-organization-list)
+  - [`mountOrganizationList()`](#mountorganizationlist)
+  - [`unmountOrganizationList()`](#unmountorganizationlist)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 

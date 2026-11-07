@@ -1,0 +1,102 @@
+---
+# Don't modify this file manually. This file is auto generated from source, and you will lose your changes next time the website is built.
+# Head to the `biomejs/biome` repository, and modify the source code in there.
+editUrl: false
+
+title: useRequiredScripts (JSON)
+description: JSON (and super languages) documentation for useRequiredScripts
+localized: false
+---
+import RuleLanguageLinks from "@/components/RuleLanguageLinks.astro";
+import RulePlaygroundLink from "@/components/RulePlaygroundLink.astro";
+
+<RuleLanguageLinks current="json" languages={[{"id":"json","label":"JSON (and super languages)","href":"/linter/rules/use-required-scripts/json/"}]} />
+
+## Summary
+- Rule available since: `v2.3.9`
+- Diagnostic Category: [`lint/suspicious/useRequiredScripts`](/reference/diagnostics#diagnostic-category)
+- This rule isn't recommended, so you need to enable it.
+- This rule doesn't have a fix.
+- The default severity of this rule is [**warning**](/reference/diagnostics#warning).
+## How to configure
+```json title="biome.json"
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"useRequiredScripts": "error"
+			}
+		}
+	}
+}
+
+```
+## Description
+Require configured scripts in `package.json`.
+
+A repository can contain several packages that share commands such as `test` or `build`.
+Tools run from the repository's top-level directory may expect every package to provide the
+same script names. The rule does nothing when `requiredScripts` is empty.
+
+## Examples
+
+### Invalid
+
+```json title='biome.json'
+{
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"useRequiredScripts": {
+					"level": "on",
+					"options": {
+						"requiredScripts": [
+							"test",
+							"build"
+						]
+					}
+				}
+			}
+		}
+	}
+}
+
+```
+
+```json title='package.json'
+{
+    "scripts": {
+        "test": "vitest"
+    }
+}
+```
+
+<Fragment set:html={"<pre class=\"language-text\"><code class=\"language-text\"><a href=\"file:///package.json\">/package.json</a>:2:5 <a href=\"https://biomejs.dev/linter/rules/use-required-scripts\">lint/suspicious/useRequiredScripts</a> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br /><br />  <strong><span style=\"color: Orange;\">⚠</span></strong> <span style=\"color: Orange;\">The required script </span><span style=\"color: Orange;\"><strong>build</strong></span><span style=\"color: Orange;\"> is missing from package.json.</span><br />  <br />    <strong>1 │ </strong>&#123;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>2 │ </strong>    &quot;scripts&quot;: &#123;<br />   <strong>   │ </strong>    <strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><strong><span style=\"color: Tomato;\">^</span></strong><br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>3 │ </strong>        &quot;test&quot;: &quot;vitest&quot;<br />  <strong><span style=\"color: Tomato;\">&gt;</span></strong> <strong>4 │ </strong>    &#125;<br />   <strong>   │ </strong>    <strong><span style=\"color: Tomato;\">^</span></strong><br />    <strong>5 │ </strong>&#125;<br />    <strong>6 │ </strong><br />  <br />  <strong><span style=\"color: lightgreen;\">ℹ</span></strong> <span style=\"color: lightgreen;\">Consistent scripts across packages ensure that each can be run reliably from the root of our project. Add the missing script to your package.json.</span><br />  <br /></code></pre>"} />
+
+### Valid
+
+```json title='package.json'
+{
+    "scripts": {
+        "test": "vitest",
+        "build": "tsc"
+    }
+}
+```
+
+## Options
+
+### `requiredScripts`
+
+Lists script names that must appear in the `scripts` object. Defaults to an empty list, which
+disables the rule.
+
+## Related links
+
+- [Disable a rule](/linter/#disable-a-rule)
+- [Configure the code fix](/linter#configure-the-code-fix)
+- [Rule options](/linter/#rule-options)
+- [Source Code (Edit this Page)](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/src/lint/suspicious/use_required_scripts.rs)
+- [Test Cases](https://github.com/biomejs/biome/blob/main/crates/biome_json_analyze/tests/specs/suspicious/useRequiredScripts)
+- <RulePlaygroundLink rule="useRequiredScripts" category="lint" language="json" code={"{\n    \"scripts\": {\n        \"test\": \"vitest\"\n    }\n}\n"} />
+

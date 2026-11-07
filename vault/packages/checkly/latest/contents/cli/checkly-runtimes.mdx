@@ -2,6 +2,7 @@
 title: checkly runtimes
 description: 'List all available runtimes and their dependencies.'
 sidebarTitle: 'checkly runtimes'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-runtimes/'
 ---
 
 The `checkly runtimes` command displays all available runtime environments and their installed dependencies. This helps you understand what packages and versions are available for your checks in the Checkly cloud infrastructure.
@@ -20,17 +21,23 @@ Example output:
 ```bash Terminal
 [
   {
-    "name": "2025.04",
-    "description": "The main update is Playwright 1.51.1. The Node.js version is v22.11.0.",
+    "name": "2026.04",
+    "description": "This runtime includes Playwright v1.58.2 and Node.js v24.22.1. New dependencies are: `axios-cookiejar-support`, `csv-parse`, `imapflow`, `mysql2`, `pdf-parse`, `tough-cookie` and `winston`. Removed: `jsdom` (you can use Playwright's built-in page APIs instead).",
     "stage": "CURRENT",
     "dependencies": {
-      "@playwright/test": "1.51.1",
-      "@axe-core/playwright": "4.10.1",
-      "@azure/identity": "4.9.1",
-      "@azure/keyvault-secrets": "4.9.0",
-      "@checkly/playwright-helpers": "1.0.3"
+      "@playwright/test": "1.58.2",
+      "@axe-core/playwright": "4.11.1",
+      "@azure/identity": "4.13.0",
+      "@azure/keyvault-secrets": "4.10.0",
+      "@checkly/playwright-helpers": "1.0.4",
       ...
-      ...
+    }
+  },
+  {
+    "name": "2025.04",
+    "description": "The main update is Playwright 1.51.1. The Node.js version is v22.23.4.",
+    "stage": "STABLE",
+    ...
 ```
 
 ## Runtime Information
@@ -60,11 +67,12 @@ Common packages included in Checkly runtimes:
 
 Specify a runtime version in your `checkly.config.ts`:
 
-```typescript checkly.config.ts highlight={6}
+```typescript checkly.config.ts highlight={7}
 import { defineConfig } from 'checkly'
 
 export default defineConfig({
   projectName: 'My Project',
+  logicalId: 'my-project',
   checks: {
     runtimeId: '2025.04',
   }
@@ -81,6 +89,7 @@ new ApiCheck('books-api-check-2', {
   name: 'Books API',
   runtimeId: '2025.04',
   /* More options... */
+})
 ```
 
 Or in your check groups:
@@ -101,7 +110,7 @@ When selecting a runtime, consider:
 
 - **Package versions** your code depends on
 - **Node.js features** you're using
-- **Playwright compatibility** for browser checks
+- **Playwright compatibility** for Browser checks
 - **Long-term support** for production environments
 
 <Tip>Use the latest runtime for new projects to benefit from the newest features and security updates.</Tip>

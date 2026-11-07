@@ -7,7 +7,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
 
 <Overview />
 
-## Example Usage
+## Example usage
 
 In Flutter, you are responsible for managing the lifecycle of a Rive file. You can create a `File` object directly, or use the `FileLoader` convenience class with `RiveWidgetBuilder`. In both cases, you must call `dispose()` on the object when it's no longer needed to free up memory.
 
@@ -84,7 +84,7 @@ To optimize memory usage, reuse the same `File` object across multiple `RiveWidg
 After a `File` is disposed, it cannot be used again. To use the same `.riv` file, create a new `File` object.
 </Warning>
 
-#### Managing State
+#### Managing state
 
 How you keep the Rive `File` alive and share it with widgets depends on your state management approach. For global access, load the file in `main` or during app startup, and expose it using a package like [Provider](https://pub.dev/packages/provider). If the file is only needed in a specific part of your app, consider loading the file only when required.
 
@@ -92,6 +92,6 @@ How you keep the Rive `File` alive and share it with widgets depends on your sta
 
 Managing the file yourself gives you fine-grained control over memory usage, especially when the same Rive file is used in multiple places or simultaneously in several widgets. Use [Flutter DevTools memory tooling](https://docs.flutter.dev/tools/devtools/memory#memory-view-guide) to monitor and optimize memory if needed.
 
-#### Network Assets
+#### Network assets
 
 To load a Rive file from the Internet, use `File.url('YOUR:URL')`. For network assets, cache the file in memory to avoid repeated downloads and unnecessary decoding of the file.

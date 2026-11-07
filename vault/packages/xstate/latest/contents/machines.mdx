@@ -607,6 +607,38 @@ const machine = setup({
 });
 ```
 
+### Cheatsheet: extend setup implementations
+
+```ts
+import { and, not, setup } from 'xstate';
+
+const baseSetup = setup({
+  guards: {
+    isAuthenticated: () => true,
+    hasPermission: () => false,
+  },
+});
+
+const appSetup = baseSetup.extend({
+  guards: {
+    isUnauthenticated: not('isAuthenticated'),
+    canAccess: and(['isAuthenticated', 'hasPermission']),
+  },
+  actions: {
+    trackAccess: () => {
+      /* ... */
+    },
+  },
+  delays: {
+    shortDelay: 250,
+  },
+});
+
+const machine = appSetup.createMachine({
+  // ... Rest of machine config
+});
+```
+
 ### Cheatsheet: type-bound action helpers
 
 ```ts

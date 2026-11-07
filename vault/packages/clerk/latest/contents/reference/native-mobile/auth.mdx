@@ -64,6 +64,16 @@ Sign in using a passkey:
 val signIn = Clerk.auth.signInWithPasskey()
 ```
 
+### Sign in with biometrics
+
+Sign in using a biometric credential that was enrolled on the current app installation:
+
+```kotlin
+val signIn = Clerk.auth.signInWithBiometrics()
+```
+
+See the [biometric sign-in guide](/docs/guides/development/custom-flows/authentication/biometric-sign-in) to learn how to enroll, use, and revoke biometric credentials.
+
 ### Sign in with Enterprise SSO
 
 Sign in using [Enterprise SSO](/docs/guides/configure/auth-strategies/enterprise-connections/overview):
@@ -78,6 +88,20 @@ Sign in using a ticket generated from the Backend API:
 
 ```kotlin
 val signIn = Clerk.auth.signInWithTicket(ticket)
+```
+
+If the Backend API created the sign-in token with `org_id`, Clerk activates that Organization for the resulting session. After sign-in succeeds, the Organization ID is available from `Clerk.session?.lastActiveOrganizationId`.
+
+### Sign in with email link
+
+Send an email link to the supplied email address. After the user opens the link, handle the callback with [`Clerk.auth.handle(intent.data)`](#deep-linking).
+
+```kotlin
+Clerk.auth
+    .startEmailLinkSignIn("user@email.com")
+    .onSuccess {
+        // Show a message that tells the user to check their email.
+    }
 ```
 
 ### Sign in with identifier
@@ -110,6 +134,19 @@ Send the user an [OTP](!otp) via email to verify their sign-in. Then verify the 
 ```kotlin
 signIn = signIn.sendEmailCode()
 signIn = signIn.verifyCode("123456")
+```
+
+#### Send email link
+
+Send the user an email link to verify their sign-in. After the user opens the link, handle the callback with [`Clerk.auth.handle(intent.data)`](#deep-linking).
+
+```kotlin
+signIn
+    .sendEmailLink()
+    .onSuccess { updatedSignIn ->
+        signIn = updatedSignIn
+        // Show a message that tells the user to check their email.
+    }
 ```
 
 #### Send and verify phone code
@@ -270,7 +307,7 @@ val signUp = Clerk.auth.signUpWithTicket(ticket)
 
 Use these methods when you already have a `SignUp` from `Clerk.auth.signUp { ... }` and want to complete it with a specific factor or provider.
 
-### Send and verify email via OTP
+#### Send and verify email via OTP
 
 Send the user an [OTP](!otp) via email to verify their account. Then verify the code that the user supplies:
 
@@ -279,7 +316,20 @@ signUp = signUp.sendEmailCode()
 signUp = signUp.verifyCode("123456", VerificationType.EMAIL)
 ```
 
-### Send and verify phone via OTP
+#### Send email link
+
+Send the user an email link to verify their account. After the user opens the link, handle the callback with [`Clerk.auth.handle(intent.data)`](#deep-linking).
+
+```kotlin
+signUp
+    .sendEmailLink()
+    .onSuccess { updatedSignUp ->
+        signUp = updatedSignUp
+        // Show a message that tells the user to check their email.
+    }
+```
+
+#### Send and verify phone via OTP
 
 Send the user an [OTP](!otp) via SMS to verify their account. Then verify the code that the user supplies:
 
@@ -287,6 +337,51 @@ Send the user an [OTP](!otp) via SMS to verify their account. Then verify the co
 signUp = signUp.sendPhoneCode()
 signUp = signUp.verifyCode("654321", VerificationType.PHONE)
 ```
+
+## Hosted authentication
+
+Hosted authentication opens Clerk's [Account Portal](/docs/guides/account-portal/overview) in a browser authentication session. Account Portal supports the sign-in and sign-up methods enabled for your Clerk application. When authentication completes, the SDK closes the browser session and activates the new session in your app.
+
+Call `startHostedAuth()` from a coroutine to open the Account Portal sign-in page:
+
+```kotlin
+Clerk.auth.startHostedAuth()
+```
+
+Pass `HostedAuthMode.SIGN_UP` to open the sign-up page first:
+
+```kotlin
+import com.clerk.api.auth.HostedAuthMode
+
+Clerk.auth.startHostedAuth(mode = HostedAuthMode.SIGN_UP)
+```
+
+`startHostedAuth()` accepts the following parameters:
+
+- `mode` - The Account Portal page to open first, as a `com.clerk.api.auth.HostedAuthMode`. Defaults to sign-in.
+- `redirectUrl` - A custom native callback. Defaults to `clerk://<package-name>.callback`, which the SDK registers for you. Custom values require a matching intent filter in your app manifest, and your app must forward the received URI to `Clerk.auth.handle()`.
+
+`startHostedAuth()` returns a `ClerkResult<Session, ClerkErrorResponse>`. On success, the SDK has already activated the returned session. When the user dismisses the browser or another flow supersedes the attempt, the failure's `throwable` is a `HostedAuthCancellationException`, so you can branch on cancellation without matching message strings:
+
+```kotlin
+import com.clerk.api.hostedauth.HostedAuthCancellationException
+import com.clerk.api.network.serialization.ClerkResult
+
+when (val result = Clerk.auth.startHostedAuth()) {
+    is ClerkResult.Success -> {
+        // The session is active.
+    }
+    is ClerkResult.Failure -> {
+        if (result.throwable is HostedAuthCancellationException) {
+            // The user dismissed the browser.
+        } else {
+            // Authentication failed.
+        }
+    }
+}
+```
+
+See the [hosted authentication guide](/docs/guides/account-portal/hosted-auth) for setup instructions and tradeoffs.
 
 ## Current sign-in/sign-up
 
@@ -318,7 +413,7 @@ val sessions = Clerk.client.sessions
 
 ### Get session token
 
-Retrieve the user's session token:
+Retrieve the user's [session token](!session-token):
 
 ```kotlin
 val token = Clerk.auth.getToken()
@@ -326,6 +421,21 @@ val token = Clerk.auth.getToken()
 // or with options
 val token = Clerk.auth.getToken(GetTokenOptions(template = "my-template"))
 ```
+
+### Check authorization
+
+Use `checkAuthorization()` on a `Session` to check whether that session's user has a [Role or Permission](/docs/guides/organizations/control-access/roles-and-permissions) in the [Active Organization](!active-organization), has a [Plan or Feature](/docs/guides/billing/overview), or has [reverified](/docs/guides/secure/reverification) recently. When you pass more than one condition, it returns `true` only if all of them pass.
+
+```kotlin
+val session = Clerk.session ?: return
+
+val isAdmin = session.checkAuthorization(role = "org:admin")
+val canDeleteInvoices =
+    session.checkAuthorization(permission = "org:invoices:delete", reverification = ReverificationConfig.Moderate)
+val hasWidgets = session.checkAuthorization(feature = "widgets")
+```
+
+It returns `false` when the session has no user or you don't pass any condition, and for Role and Permission checks when there is no Active Organization. To check the current session, use `Clerk.has()` instead. See [Authorization checks](/docs/guides/secure/authorization-checks) for every condition and the reverification presets.
 
 ### Set current session
 
@@ -357,7 +467,7 @@ Clerk.auth.signOut(sessionId = sessionId)
 
 ## Deep linking
 
-Handle OAuth/SSO deep link callbacks in your Activity:
+Handle OAuth, SSO, and email link deep link callbacks in your Activity:
 
 ```kotlin
 // In your Activity's onCreate or onNewIntent

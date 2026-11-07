@@ -1,0 +1,86 @@
+---
+title: 'Usage API'
+sidebarTitle: 'Overview'
+description: 'Report organization usage across contracts, inspect credit calculations, and forecast each contract budget.'
+canonical: 'https://www.checklyhq.com/docs/api-reference/usage/overview/'
+---
+
+The Usage API reports your organization's consumption across usage terms, including renewals. Each charge identifies the term and pricing rule used to calculate it. Use v2 for new integrations.
+
+<Accordion title="Before you begin">
+  You need a user or service API key with the [`usage:read`](../../admin/team-management/permissions#usage) permission for an account in the organization. Owner and Admin have this permission by default. Send the key in the `Authorization: Bearer <api-key>` header and the account ID in the `X-Checkly-Account` header. Legacy account API keys are not supported. See [Using the Checkly API](../overview) for authentication details.
+</Accordion>
+
+<Note>
+  The v2 endpoints are in beta and may change without notice. The v1 usage endpoints are deprecated and remain available for existing integrations.
+</Note>
+
+## Choose an endpoint
+
+| Endpoint | Use it to |
+| --- | --- |
+| [`GET /v2/usage/terms`](./get-usage-terms-and-accounts-for-the-current-organization) | List usage terms, including contract dates, credit budgets, pricing rules, and covered accounts. |
+| [`GET /v2/usage/terms/{id}`](./get-a-usage-term-with-its-budget-accounts-and-applied-pricing-rules) | Retrieve one term by ID. |
+| [`GET /v2/usage/summary`](./get-consumption-across-usage-terms-with-a-calculation-breakdown-for-each-pricing-rule) | Get total credits and calculations by term and pricing rule. |
+| [`GET /v2/usage/series`](./get-paginated-consumption-across-usage-terms-group-by-account-usage-term-pricing-rule-and-check-type) | Get paginated usage over time, with optional grouping and measurement details. |
+| [`GET /v2/usage/terms/{id}/projections`](./project-whole-term-credit-consumption-from-completed-utc-days-using-v2-pricing-rules) | Forecast consumption against one term's budget. |
+
+## Select terms and dates
+
+Dates use inclusive UTC `YYYY-MM-DD` values.
+
+The terms collection lists all terms, including future terms, when you omit dates. Set `from` and `to` to list terms that overlap that range. To find terms active on one date, pass that date as both values. Read terms from `data` and follow `nextId` until it is null.
+
+Summary and series default `to` to today and `from` to the earliest selected usage start on or before `to`. If no terms exist, `from` defaults to `to`. A report can cover at most 3,661 dates. Reports can span renewals, while each term retains its own prices and budget.
+
+`coverage.gaps` lists dates outside the organization's usage terms, including dates before usage starts. A summary or ungrouped series bucket spanning a gap has null credits. When you group by term, covered terms retain their calculated charges and uncovered dates have a separate row. Deliberately filtering out a term does not create a gap.
+
+## Filter and group usage
+
+Summary and series accept `usageTermsIds`, `accountIds`, and `pricingRuleKeys`. Repeat a parameter or separate values with commas. Without an account filter, reports include the selected terms' organization accounts. V2 has no `checkTypes` filter.
+
+Series also accepts:
+
+- `interval`: `day`, `week`, `month`, or `total`. The default is `day`. Weeks start on Monday and months follow the UTC calendar. Boundary buckets are clipped to the report range.
+- `groupBy`: any combination of `account`, `usageTerm`, `pricingRule`, and `checkType`. The default is ungrouped. Repeat the parameter or separate values with commas.
+- `include`: any combination of `calculations`, `runs`, and `monitorDays`. These fields are omitted unless requested.
+- `limit`: from 1 to 500 rows per page. The default is 100.
+- `nextId`: the opaque cursor from the previous page.
+
+For example, request daily usage grouped by account, pricing rule, and check type, with pricing and measurement details:
+
+```http
+GET /v2/usage/series?from=2026-09-01&to=2026-09-30&groupBy=account,pricingRule,checkType&include=calculations,runs,monitorDays
+```
+
+## Interpret credits and measurements
+
+Summary returns `totals.creditsUsed`, `breakdown`, and `coverage`. Each series row returns `periodStart`, `periodEnd`, `dimensions`, `creditsUsed`, and `contributions`. Summary breakdowns include the applied pricing rule and calculations. Add `include=calculations` for those details in series contributions.
+
+Zero credits means calculated zero consumption. Null credits means the API cannot calculate the charge, for example because of uncovered dates or unavailable or incompatible pricing. A rule absent from an otherwise configured term contributes zero credits while retaining measured quantities.
+
+Pricing quantities depend on the rule. API and Browser checks use runs, Multistep checks use requests, and Playwright suites use metered 30-second intervals. V2 also prices recorded trace conditions, uptime, AI invocations, status pages, SMS, and phone alerts. Included allowances and conditional rates can change billable quantities and prices.
+
+`include=runs` adds physical check-run counts: `totalRuns`, `finalRuns`, `retryRuns`, `cancelledRuns`, `degradedRuns`, `failedRuns`, `errorRuns`, `abortedRuns`, and `overMaxResponseTimeRuns`. Outcome flags can overlap. These counts are independent of billed quantities.
+
+`include=monitorDays` adds observed uptime monitor resource-days. Repeated runs for the same account, monitor, check type, and UTC date count once. Uptime pricing charges one organization-day when at least one monitor records usage, regardless of monitor count. Grouped measurement rows can therefore have zero credits alongside a shared uptime charge.
+
+Covered empty rows have zero measurement counts. Counts are null when a bucket includes uncovered dates, unless the row identifies a covered term. Adding measurement details or changing grouping does not change credits.
+
+## Project one term's budget
+
+Projections use the selected term's whole account scope and budget. Summary and series filters do not apply. Request each renewal's projection separately.
+
+The optional `asOf` date defaults to yesterday UTC. Today and future dates are rejected. The response includes credits used, remaining credits, the budgeted daily pace, and four windows: `sinceStart`, `last30Days`, `last7Days`, and `last1Day`. Each window reports its actual observed period, daily average, projected contract-end consumption, projected remaining credits, budget percentages, and estimated time until credits run out.
+
+The forecast extrapolates observed credit consumption. It does not predict resource changes or future allowance exhaustion. Unknown prices or budgets can make derived fields null. V2 summary does not embed projections.
+
+## Paginate live results
+
+Terms and series return an opaque `nextId`. Send it unchanged with the same resolved dates, filters, and series options to retrieve the next page. A null cursor marks the last page. You can change the page size or reorder equivalent filters. Other query changes require starting pagination again.
+
+Each page reads current measurements and prices. Late usage or pricing corrections can change values between pages; cursors do not freeze a snapshot.
+
+## Handle errors
+
+Invalid dates, ranges, filters, or cursors return `400`. Authentication and permission errors return `401` or `403`. An unknown or inaccessible term returns `404`; an empty terms collection returns `200` with `data: []`. Overlapping selected terms return `409`, rate limits return `429`, and unavailable usage storage returns `502`.

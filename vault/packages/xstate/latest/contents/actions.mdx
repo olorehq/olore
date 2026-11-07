@@ -491,7 +491,7 @@ The `sendParent(...)` action is a special action that sends an event to the pare
 
 <Callout>
 
-It is recommended to use `sendTo(...)` by to pass actor refs (e.g. the parent actor ref) to other actors via [input](./input.ts) or events and storing those actor refs in `context` rather than using `sendParent(...)`. This avoids tight coupling between actors and can be more type-safe.
+Prefer `sendTo(...)`: pass actor refs (such as the parent actor ref) to other actors via [input](./input) or events, then store them in `context`. This avoids tight coupling and can be more type-safe than `sendParent(...)`.
 
 <details>
 <summary>Example using input:</summary>

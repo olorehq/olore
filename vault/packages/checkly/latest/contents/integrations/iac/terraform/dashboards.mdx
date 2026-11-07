@@ -2,6 +2,7 @@
 title: 'Dashboards in Terraform'
 sidebarTitle: 'Dashboards'
 description: 'Create and configure public dashboards to display check metrics and status using Terraform'
+canonical: 'https://www.checklyhq.com/docs/integrations/iac/terraform/dashboards/'
 ---
 
 [Dashboards](/communicate/dashboards/overview) allow you to display checks and their related metrics on a single page. They come with their own dedicated resource:
@@ -17,7 +18,7 @@ resource "checkly_dashboard" "dashboard-main" {
   pagination_rate = 30          // How often to trigger pagination in seconds
   hide_tags       = false       // Whether to show or hide the tags on the dashboard
   width           = "FULL"      // Determines whether to use the full screen or focus in the center
-  isPrivate       = "false"     // Sets the dashboard to private. Will return a `key` to be used as password
+  is_private      = false       // Sets the dashboard to private. Will return a `key` to be used as password
   tags = [                      // One or more tags that filter which checks to display on the dashboard
     "auto"    
   ]
@@ -32,4 +33,4 @@ You can see all the configuration options for checks, as well as more examples, 
 
 > Available as of `v1.6.6`
 
-You can control your dashboards private/public status via Terraform by setting the `isPrivate` boolean to `true`. If activated, upon applying your terraform configuration changes, you will be returned a `read-only` `key` value for the dashboard which represents the password you can use to login via the browser. The password is stored in your `tfstate` file. 
+You can control your dashboards private/public status via Terraform by setting the `is_private` boolean to `true`. If activated, upon applying your Terraform configuration changes, you will be returned a `read-only` `key` value for the dashboard which represents the password you can use to login via the browser. The password is stored in your `tfstate` file.

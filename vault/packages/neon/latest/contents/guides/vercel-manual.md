@@ -2,7 +2,7 @@
 title: Connect Vercel and Neon manually
 subtitle: Learn how to connect a Vercel project to a Neon database manually
 summary: >-
-  Manual Vercel-Neon connection wires a Neon Postgres database to a Vercel
+  Manual Vercel-Neon connection wires a Lakebase Postgres database to a Vercel
   project by setting DATABASE_URL (or granular PGUSER, PGHOST, PGDATABASE,
   PGPASSWORD, PGPORT vars) directly in Vercel's environment variable settings,
   without a Marketplace integration. Choose this path over the Vercel-Managed or
@@ -10,7 +10,7 @@ summary: >-
   monorepo, or any setup requiring direct control over branch naming, seeding, and
   migrations.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T20:12:32.981Z'
 ---
 
 <InfoBlock>
@@ -50,9 +50,9 @@ If you simply want Neon and Vercel with minimal setup, stick to the managed inte
 
 ## Connection steps
 
-1. Copy the connection string from the [Neon Console](https://console.neon.tech). Click **Connect** on your Project Dashboard, select the branch, role, and database you want, then copy the _Connection string_.
+1. Copy the connection string from the [Neon Console](https://console.neon.tech). Click **Connect** in the Console nav, select the branch, role, and database you want, then copy the _Connection string_.
 
-   ![Neon connection details modal](/docs/connect/connection_details.png)
+   ![Neon connection details modal](/docs/connect/connect_to_branch_modal.png)
 
    For example:
 

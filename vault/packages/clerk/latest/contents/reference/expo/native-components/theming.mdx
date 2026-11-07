@@ -2,11 +2,12 @@
 title: Theming Expo native components
 description: Customize the appearance of Clerk's native iOS and Android components with a JSON theme file.
 sdk: expo
+tag: beta
 ---
 
-<Include src="_partials/expo/beta-callout" />
+> [!BETA]
 
-You can customize the appearance of Clerk's [Expo native components](/docs/reference/expo/native-components/overview) by passing a `theme` option to the `@clerk/expo` config plugin. The plugin reads a JSON file at prebuild time and applies it to both iOS and Android.
+You can customize the appearance of Clerk's [Expo native components](/docs/reference/expo/native-components/overview) by passing a `theme` option to the `@clerk/expo-native-components` config plugin. The plugin reads a JSON file at prebuild time and applies it to both iOS and Android.
 
 ## Configure the plugin
 
@@ -15,14 +16,7 @@ Create a `clerk-theme.json` file in your project and reference it from the plugi
 ```json {{ filename: 'app.json' }}
 {
   "expo": {
-    "plugins": [
-      [
-        "@clerk/expo",
-        {
-          "theme": "./clerk-theme.json"
-        }
-      ]
-    ]
+    "plugins": ["@clerk/expo", ["@clerk/expo-native-components", { "theme": "./clerk-theme.json" }]]
   }
 }
 ```
@@ -69,7 +63,7 @@ Every key is optional. Provide only what you want to override; everything else f
 
 ### `colors`
 
-Light mode color tokens. Each value must be a 6- or 8-digit hex string (8-digit includes an alpha channel, e.g. `#00000080`). Unknown keys are ignored with a warning.
+Light mode color tokens. Each value must be a 6- or 8-digit hex string (8-digit includes an alpha channel, e.g., `#00000080`). Unknown keys are ignored with a warning.
 
 | Key | Description |
 | - | - |
@@ -81,7 +75,7 @@ Light mode color tokens. Each value must be a 6- or 8-digit hex string (8-digit 
 | `warning` | Warning states. |
 | `foreground` | Primary text color on `background`. |
 | `mutedForeground` | Secondary / helper text. |
-| `primaryForeground` | Text color used on top of `primary` (e.g. button labels). |
+| `primaryForeground` | Text color used on top of `primary` (e.g., button labels). |
 | `inputForeground` | Text color inside inputs. |
 | `neutral` | Neutral accent color. |
 | `border` | Borders and dividers. |

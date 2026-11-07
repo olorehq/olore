@@ -5,8 +5,6 @@ metadata:
   title: B2B/B2C Roles and Permissions with Clerk Organizations
 ---
 
-<Include src="_partials/feature-not-free-callout" />
-
 Roles and Permissions let you control who can access specific resources and perform certain actions within each Organization. Clerk provides two default Roles - **admin** and **member** - that cover most common use cases. You can also create custom Roles and fine-grained Permissions that fit your application's specific features and team setup.
 
 Roles are made available to Organizations through [Role Sets](/docs/guides/organizations/control-access/role-sets). Each Organization is assigned a Role Set that determines which Roles can be assigned to its members.
@@ -38,11 +36,11 @@ The **Creator** Role must _at least_ have the following [System Permissions](#sy
 
 To reassign the **Creator** Role:
 
-1. In the Clerk Dashboard, navigate to [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles), and select the Role Set you wish to edit.
+1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page and select the Role Set you wish to edit.
 1. [Create a new Role](#custom-roles) or use an existing Role from the list.
 1. Ensure that **Manage members**, **Read members**, and **Delete Organization** System Permissions are selected for the Role.
-1. Open the three dots icon for the Role.
-1. From the dropdown, select the **Set as Creator role** option.
+1. Open the three-dot menu for the Role.
+1. From the dropdown, select the **Set as creator role** option.
 
 ### The **Default** Role for members
 
@@ -52,20 +50,23 @@ You cannot delete an Organization Role if it's used as the Organization's **Defa
 
 To reassign the **Default** Role:
 
-1. In the Clerk Dashboard, navigate to [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles).
+1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page.
 1. [Create a new Role](#custom-roles) or use an existing Role from the list.
-1. Select the three dots next to the Role you want to set as default.
-1. From the dropdown, select the **Set as Default role** option.
+1. Open the three-dot menu next to the Role you want to set as default.
+1. From the dropdown, select the **Set as default role** option.
 
 ### Custom Roles
 
-You can create up to 10 custom Organization Roles per application instance to meet your application needs. If you need more than 10 Roles, [contact support](https://clerk.com/contact/support){{ target: '_blank' }}.
+> [!IMPORTANT]
+> Creating custom roles in development mode is free. In production, custom roles require the [**B2B Authentication** add-on](/pricing).
+
+You can create up to 10 custom Organization Roles per application instance to meet your application needs. If you need more than 10 Roles, [contact support](/contact/support).
 
 Custom Roles can be granted Permissions and access. For example, you can create a new Role of **Billing** (`org:billing`) which can be used to group users who belong to a specific department of the Organization and have permission to manage credit card information, invoices, and other resources related to billing.
 
 To create a new Role:
 
-1. In the Clerk Dashboard, navigate to [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles).
+1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page.
 1. Select the **All roles** tab.
 1. Select **Add role**.
 1. Give the Role a name, a key to reference it by, and a description. The final key will follow the format `org:<role>`.
@@ -82,9 +83,13 @@ You can change a user's Role in the Clerk Dashboard or in your application using
 > [!NOTE]
 > The Roles available in the dropdown are limited to those included in the Organization's assigned [Role Set](/docs/guides/organizations/control-access/role-sets). If you need to assign a Role that's not available, you'll need to add that Role to the Organization's Role Set.
 
+<If is="llm">
+  **For AI agents:** Instead of using the Role dropdown in the Dashboard's **Members** tab, change a member's Role with `npx clerk@latest api organizations/<org_id>/memberships/<user_id> -X PATCH -d '{"role":"org:admin"}'` (discover membership endpoints with `npx clerk@latest api ls memberships`). Roles and Permissions themselves are also manageable via the API through the `role_sets` and `organization_permissions` endpoints (see `npx clerk@latest api ls role_sets`). Install [Clerk's skills](/docs/guides/ai/skills) with `npx skills add clerk/skills` for correct CLI and SDK usage.
+</If>
+
 To change a user's Role in the Clerk Dashboard:
 
-1. In the Clerk Dashboard, select [**Organizations**](https://dashboard.clerk.com/~/organizations) and select an organization.
+1. In the Clerk Dashboard, select [**Organizations**](https://dashboard.clerk.com/~/organizations) and select an Organization.
 1. Select the **Members** tab.
 1. In the list of members, find the one whose Role you want to change.
 1. Select another Role from their Role dropdown.
@@ -93,9 +98,9 @@ To change a user's Role in the Clerk Dashboard:
 
 You cannot delete a Role that is still assigned to members of an Organization. Change the members to a different Role before completing the following steps.
 
-1. In the Clerk Dashboard, navigate to [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles).
+1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page.
 1. Select the **All roles** tab.
-1. Select the three dots icon next to the Role.
+1. Open the three-dot menu next to the Role.
 1. Select **Delete role**.
 
 > [!NOTE]
@@ -119,6 +124,7 @@ Clerk's System Permissions consist of the following:
 - Manage domains (`org:sys_domains:manage`)
 - Read billing (`org:sys_billing:read`)
 - Manage billing (`org:sys_billing:manage`)
+- Manage self-serve enterprise connections, including SSO and Directory Sync (`org:sys_entconns:manage`)
 
 You can assign these System Permissions to any Role.
 
@@ -127,11 +133,11 @@ You can assign these System Permissions to any Role.
 
 ### Custom Permissions
 
-Custom Permissions let you define fine-tuned access control within your Organization. Each Permission is tied to a Feature, and can be assigned to one or more Roles. To create a Custom Permission, you must first create a Role (e.g. **sales**) and a Feature within that Role (e.g. **invoices**). Once both exist, you can define specific Permissions (e.g. **create**) related to that Feature. To assign a Custom Permission to a user, you must assign the user to the Role that has the Permission.
+Custom Permissions let you define fine-tuned access control within your Organization. Each Permission is tied to a Feature, and can be assigned to one or more Roles. To create a Custom Permission, you must first create a Role (e.g., **sales**) and a Feature within that Role (e.g., **invoices**). Once both exist, you can define specific Permissions (e.g., **create**) related to that Feature. To assign a Custom Permission to a user, you must assign the user to the Role that has the Permission.
 
 To create a new Permission:
 
-1. In the Clerk Dashboard, navigate to [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles).
+1. In the Clerk Dashboard, navigate to the [**Roles & Permissions**](https://dashboard.clerk.com/~/organizations-settings/roles) page.
 1. [Create a new Role](#custom-roles) or use an existing Role from the list.
 1. Under **Custom permissions**, select **Create permission** under the Feature you want to create the Permission for. If there are no Features, you'll need to create a new one first. Select **Create feature** and fill in the required fields. Once finished, the newly created Feature will appear in the list, and the **Create permission** button will appear.
 1. Give the Permission a name, a key to reference it by, and a description. The final key will follow the format `org:<feature>:<permission>`.

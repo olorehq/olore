@@ -11,7 +11,7 @@ summary: >-
 enableTableOfContents: true
 redirectFrom:
   - /docs/get-started/tutorials
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-23T12:28:02.099Z'
 ---
 
 The Neon SQL Editor allows you to run queries on your Neon databases directly from the Neon Console. In addition, the editor keeps a query history, permits saving queries, and provides [**Explain**](https://www.postgresql.org/docs/current/sql-explain.html) and [**Analyze**](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE) features.
@@ -22,13 +22,15 @@ To use the SQL Editor:
 
 1. Navigate to the [Neon Console](https://console.neon.tech/).
 2. Select your project.
-3. Select **SQL Editor**.
+3. Select **Postgres database** > **SQL Editor**.
 4. Select a branch and database.
 5. Enter a query into the editor and click **Run** to view the results.
 
 ![Neon SQL Editor](/docs/get-started/sql_editor.png)
 
-You can use the following query to try the SQL Editor. The query creates a table, adds data, and retrieves the data from the table.
+## Create a table with SQL
+
+Neon runs standard Postgres, so you create tables from the SQL Editor with standard `CREATE TABLE` syntax. Enter the statement and click **Run**. The following query creates a table, adds data, and retrieves the data from the table, so you can try the editor end to end:
 
 ```sql
 CREATE TABLE IF NOT EXISTS playing_with_neon(id SERIAL PRIMARY KEY, name TEXT NOT NULL, value REAL);
@@ -38,6 +40,8 @@ SELECT * FROM playing_with_neon;
 ```
 
 Running multiple query statements at once returns a separate result set for each statement. The result sets are displayed in separate tabs, numbered in order of execution, as shown above.
+
+For schema design and repeatable migrations in real projects, use an ORM or migration tool rather than ad hoc SQL. See the [ORM guides](/docs/get-started/orms).
 
 To clear the editor, click **New Query**.
 
@@ -69,12 +73,18 @@ Queries saved to **History** are limited to 9 KB in length. While you can execut
 
 ## Explain and Analyze
 
-The Neon SQL Editor provides **Explain** and **Analyze** features.
+The Neon SQL Editor provides **Explain** and **Explain (Analyze)** features.
 
 - The **Explain** feature runs the specified query with the Postgres [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) command, which returns the execution plan for the query. The **Explain** feature only returns a plan with estimates. It does not execute the query.
-- The **Analyze** feature runs the specified query with [EXPLAIN ANALYZE](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE). The `ANALYZE` parameter causes the query to be executed and returns actual row counts and run times for plan nodes along with the `EXPLAIN` estimates.
+- The **Explain (Analyze)** feature runs the specified query with [EXPLAIN ANALYZE](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE). The `ANALYZE` parameter causes the query to be executed and returns actual row counts and run times for plan nodes along with the `EXPLAIN` estimates.
 
-Understanding the information provided by the **Explain** and **Analyze** features requires familiarity with the Postgres [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) command and its `ANALYZE` parameter. Refer to the [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) documentation and the [Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html) topic in the _PostgreSQL documentation_.
+Both features include Neon's `PREFETCH` and `FILECACHE` options, so **Explain (Analyze)** also shows compute cache hits and misses and prefetch statistics. See [View compute cache metrics with EXPLAIN ANALYZE](/docs/extensions/neon#view-lfc-metrics-with-explain-analyze).
+
+<Admonition type="warning">
+Because **Explain (Analyze)** executes the statement, running it on a data-modifying statement (`INSERT`, `UPDATE`, `DELETE`, or `MERGE`) changes your data.
+</Admonition>
+
+Understanding the information provided by the **Explain** and **Explain (Analyze)** features requires familiarity with the Postgres [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) command and its `ANALYZE` parameter. Refer to the [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) documentation and the [Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html) topic in the _PostgreSQL documentation_.
 
 ## Time Travel
 

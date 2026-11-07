@@ -2,6 +2,7 @@
 title: checkly env
 description: 'Manage the global variables of a Checkly account.'
 sidebarTitle: 'checkly env'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-env/'
 ---
 
 import CliCommandPrerequisites from '/snippets/cli-command-prerequisites.mdx';
@@ -35,8 +36,12 @@ Create a new global environment variable.
 **Usage:**
 
 ```bash Terminal
-npx checkly env add <key> <value> [options]
+npx checkly env add <key> [value] [options]
 ```
+
+If you leave out the value, the CLI asks for it with a hidden input, which keeps it out of your shell history.
+
+<Note>`checkly env add` fails if a variable with the same key already exists. Use [`checkly env update`](#checkly-env-update) to change its value, or pass `--secret` to `env update` to turn a plain variable into a secret.</Note>
 
 **Options:**
 
@@ -65,8 +70,14 @@ Update an existing global environment variable.
 **Usage:**
 
 ```bash Terminal
-npx checkly env update <key> <value> [options]
+npx checkly env update <key> [value] [options]
 ```
+
+If you leave out the value, the CLI asks for it with a hidden input, which keeps it out of your shell history.
+
+<Warning>
+`env update` always saves the variable with the `--locked` and `--secret` flags you pass. Pass `--locked` again when you update a locked variable, or it is saved unlocked. Pass `--secret` again when you update a secret, or the update fails.
+</Warning>
 
 **Options:**
 

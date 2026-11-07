@@ -1,26 +1,49 @@
 ---
 title: 'Agentic Checks Overview'
-description: 'Monitor critical user journeys and AI-powered experiences with prompt-driven Agentic Checks that discover, verify, and maintain synthetic monitoring scripts.'
+description: 'Learn about deprecated Agentic Checks and migrate them before they stop running on December 1, 2026.'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/agentic-checks/overview/'
+hidden: true
 ---
+
+<Note>
+Agentic Checks are deprecated and will stop running on **December 1, 2026**. [Migrate your active Agentic Checks](./migrate) before then.
+
+Checkly CLI version 10 and later no longer include the `AgenticCheck` construct. To keep managing existing Agentic Checks as code until December 1, 2026, stay on the version 9 release line.
+</Note>
 
 <Tip>
 **Monitoring as Code**: Learn more about the [Agentic Check Construct](/constructs/agentic-check).
 </Tip>
 
+<Frame>
+<img
+  className="block dark:hidden"
+  src="/images/next/agentic-check-overview-light.png"
+  alt="Agentic check overview"
+  style={{width: "100%"}}
+/>
+<img
+  className="hidden dark:block"
+  src="/images/next/agentic-check-overview-dark.png"
+  alt="Agentic check overview"
+  style={{width: "100%"}}
+/>
+</Frame>
+
 ## What are Agentic Checks?
 
 Agentic Checks are AI-powered synthetic checks that turn a monitoring goal into an executable check. You describe what the agent should verify, and Checkly runs the agent in a browser-capable runtime to explore the target, evaluate assertions, and persist what it learns for future runs.
 
-Agentic Checks are useful when the behavior you need to monitor is clear, but the exact script is expensive to write or maintain by hand. They also work well for nondeterministic application behavior, such as AI-powered support chat, search, or assistant flows where the exact response can vary while the expected outcome stays stable.
+Agentic Checks were designed for flows where the expected behavior is clear, but the exact script is expensive to write or maintain by hand. They also supported nondeterministic application behavior, such as AI-powered support chat or search, where the expected outcome stays stable even if the response varies.
 
-**Agentic Checks are a good fit for:**
+**Existing Agentic Checks may cover:**
 
 - Critical user journeys that change often
 - Authentication or onboarding flows that need contextual checks
 - AI-powered product flows where the monitor should evaluate whether the user goal was completed, not whether the output matched exact text
 - Pages where you want the monitor to adapt when implementation details change
-- Early monitoring coverage before you invest in a hand-written Browser Check or Playwright Check Suite
+- Early monitoring coverage before you invest in a hand-written Browser check or Playwright Check Suite
 
 ## Prompt best practices
 
@@ -40,7 +63,7 @@ Choose strictness based on the application behavior:
 - Use outcome-based assertions for nondeterministic flows, such as an AI support assistant answering a billing question or a search experience returning relevant results. In these cases, describe the intent and acceptance criteria instead of requiring exact copy.
 - Avoid vague prompts like "monitor my app". If the prompt is broad, tell the agent what surface to cover and what failures should matter.
 
-Keep prompts focused on one flow. If you want to monitor navigation, login, and record creation, create separate Agentic Checks for each flow.
+When migrating, keep each replacement focused on one flow. If the original prompt covers navigation, login, and record creation, consider separate checks for those flows.
 
 ## How Agentic Checks work
 
@@ -56,7 +79,7 @@ Each run can produce:
 - User-facing artifacts collected during the run
 
 <Note>
-Agentic Checks are not a replacement for every deterministic check. Use them for important flows where the agent's discovery and self-healing behavior is valuable. Use [API Checks](/detect/synthetic-monitoring/api-checks/overview), [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview), or [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) when you need fully deterministic scripted monitoring.
+For new monitoring, use [API checks](/detect/synthetic-monitoring/api-checks/overview), [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), or [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview). [Automatic repair](../../../resolve/automatic-check-repair) can maintain supported checks with a saved intent.
 </Note>
 
 ## Variables, secrets, and skills
@@ -73,29 +96,18 @@ Treat this access as a security boundary:
 
 Learn how to configure variables, secrets, and skills in the [Agentic Checks configuration guide](/detect/synthetic-monitoring/agentic-checks/configuration).
 
-## Billing and entitlements
+## Active and deactivated checks
 
-Agentic Checks use active-capacity billing:
-
-- Active Agentic Checks consume purchased active capacity.
-- Inactive Agentic Checks keep their configuration and history without consuming active capacity.
-- Starter and Team plans include Agentic Check capacity; you can purchase additional active capacity from the billing page.
-- Agentic Check runs still count toward usage analytics, but they are billed by active capacity, not per-run runtime usage.
-- Plan changes that would leave you with more active Agentic Checks than the target subscription allows are blocked until you deactivate checks or purchase enough capacity.
-- Accounts can run Agentic Checks from up to three locations by default. Enterprise accounts can contact sales for unlimited locations.
-
-<Info>
-Your billing page is the source of truth for the exact Agentic Check capacity included in your plan and any additional capacity you have purchased.
-</Info>
+Existing Agentic Checks can run until December 1, 2026. Deactivated checks retain their configuration and history. Follow the [migration guide](./migrate) to replace an active check before runs stop.
 
 ## Next steps
 
 <Columns cols={2}>
-<Card title="Configure Agentic Checks" href="/detect/synthetic-monitoring/agentic-checks/configuration">
-Define prompts, skills, variables, and scheduling behavior.
+<Card title="Migrate Agentic Checks" href="./migrate">
+Replace active checks before December 1, 2026.
 </Card>
 
 <Card title="Agentic Check Construct" href="/constructs/agentic-check">
-Configure Agentic Checks as code with the Checkly CLI.
+Review existing Agentic Checks managed with the Checkly CLI.
 </Card>
 </Columns>

@@ -1,0 +1,94 @@
+---
+title: parse_ipv4
+description: 'This page explains how to use the parse_ipv4 function in APL.'
+---
+
+The `parse_ipv4` function in APL converts an IPv4 address and represents it as a long number. You can use this function to convert an IPv4 address for advanced analysis, filtering, or comparisons. It’s especially useful for tasks like analyzing network traffic logs, identifying trends in IP address usage, or performing security-related queries.
+
+## Usage
+
+### Syntax
+
+```kusto
+parse_ipv4(ipv4_address)
+```
+
+### Parameters
+
+| Parameter       | Type   | Description                                    |
+|------------------|--------|------------------------------------------------|
+| `ipv4_address`   | string | The IPv4 address to parse into a long number. |
+
+### Returns
+
+The function returns the IPv4 address as a long number if the conversion succeeds. If the conversion fails, the function returns `null`.
+
+## Use case example
+
+You can use the `parse_ipv4` function to analyze web traffic by representing IP addresses as long numbers.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend ip_long = parse_ipv4('192.168.1.1')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20ip_octets%20%3D%20parse_ipv4('192.168.1.1')%22%7D)
+
+**Output**
+
+| _time              | uri                 | method | ip_long       |
+|---------------------|---------------------|--------|-----------------|
+| 2024-11-14T10:00:00 | /index.html         | GET    | 3,232,235,777 |
+
+## List of related functions
+
+- [has_any_ipv4](/apl/scalar-functions/ip-functions/has-any-ipv4): Matches any IP address in a string column with a list of IP addresses or ranges.
+- [has_ipv4_prefix](/apl/scalar-functions/ip-functions/has-ipv4-prefix): Checks if an IPv4 address matches a single prefix.
+- [has_ipv4](/apl/scalar-functions/ip-functions/has-ipv4): Checks if a single IP address is present in a string column.
+- [ipv4_compare](/apl/scalar-functions/ip-functions/ipv4-compare): Compares two IPv4 addresses lexicographically. Use for sorting or range evaluations.
+- [ipv4_is_in_range](/apl/scalar-functions/ip-functions/ipv4-is-in-range): Checks if an IP address is within a specified range.
+- [ipv4_is_private](/apl/scalar-functions/ip-functions/ipv4-is-private): Checks if an IPv4 address is within private IP ranges.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+Splunk doesn’t provide a direct function for converting an IPv4 address into a long number. However, you can achieve similar functionality using custom SPL expressions.
+
+<CodeGroup>
+```sql Splunk example
+| eval ip_int = tonumber(replace(ip, "\\.", ""))
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend ip_long = parse_ipv4(uri)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+SQL doesn’t have a built-in function equivalent to `parse_ipv4`, but you can use bitwise operations to achieve a similar result.
+
+<CodeGroup>
+```sql SQL example
+SELECT
+  (CAST(SPLIT_PART(ip, '.', 1) AS INT) << 24) +
+  (CAST(SPLIT_PART(ip, '.', 2) AS INT) << 16) +
+  (CAST(SPLIT_PART(ip, '.', 3) AS INT) << 8) +
+  CAST(SPLIT_PART(ip, '.', 4) AS INT) AS ip_int
+FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend ip_long = parse_ipv4(uri)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

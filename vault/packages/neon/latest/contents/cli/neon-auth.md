@@ -1,80 +1,80 @@
 ---
 title: 'Neon CLI command: neon-auth'
-subtitle: Manage Neon Auth from the CLI
+subtitle: Manage Managed Better Auth from the CLI
 summary: >-
-  The Neon CLI `neonctl neon-auth` command manages Neon Auth on a database
+  The Neon CLI `neon neon-auth` command manages Managed Better Auth on a database
   branch from the terminal. Use `enable`, `status`, and `disable` to provision,
-  inspect, or remove Neon Auth, and the `oauth-provider` subcommands to add,
-  update, or delete Google, GitHub, and Vercel OAuth providers. The `domain`
+  inspect, or remove Managed Better Auth, and the `oauth-provider` subcommands to add,
+  update, or delete Google, GitHub, Vercel, Microsoft, and Apple OAuth providers. The `domain`
   subcommands manage trusted redirect domains, including `allow-localhost`
   settings for local development. The `config` subcommands cover email and
-  password authentication, the email provider, the organization plugin, and
-  webhooks, while `plugins` and `user` let you inspect plugin configurations
+  password authentication, the email provider, the organization plugin,
+  webhooks, and the OAuth server, and `oauth-client` manages that server's
+  clients, while `plugins` and `user` let you inspect plugin configurations
   and manage auth users.
 enableTableOfContents: true
 redirectFrom:
   - /docs/reference/cli-neon-auth
+updatedOn: '2026-10-30T16:46:22.000Z'
 ---
 
-The `neon-auth` command manages [Neon Auth](/docs/auth/overview) on a database branch from the terminal. You can enable or disable Neon Auth, configure OAuth providers, trusted domains, email settings, and webhooks, and manage auth users.
-
-Requires neonctl 2.23.0 or later. Check your version with `neonctl --version`.
+The `neon-auth` command manages [Managed Better Auth](/docs/auth/overview) on a database branch from the terminal. You can enable or disable Managed Better Auth, configure OAuth providers, trusted domains, email settings, and webhooks, and manage auth users.
 
 <CliSubcommands command="neon-auth" />
 
-If `--project-id` or `--branch` are omitted, the CLI resolves them from your [context file](/docs/cli/set-context), auto-selects when there is only one option, and prompts otherwise.
+If `--project-id` or `--branch` are omitted, the CLI resolves them from your [context file](/docs/cli/link), auto-selects when there is only one option, and otherwise asks you to pass the flag.
 
 ## Enable and status (#enable-and-status)
 
-### neonctl neon-auth enable (#enable)
+### neon neon-auth enable (#enable)
 
-Provisions Neon Auth on the current branch.
+Provisions Managed Better Auth on the current branch.
 
 <CliUsage command="neon-auth enable" />
 
 <CliOptions command="neon-auth enable" />
 
 ```bash
-neonctl neon-auth enable
+neon neon-auth enable
 ```
 
-### neonctl neon-auth status (#status)
+### neon neon-auth status (#status)
 
-Shows whether Neon Auth is configured on the branch and displays the current connection details.
+Shows whether Managed Better Auth is configured on the branch and displays the current connection details.
 
 <CliUsage command="neon-auth status" />
 
 <CliOptions command="neon-auth status" />
 
 ```bash
-neonctl neon-auth status
+neon neon-auth status
 ```
 
-### neonctl neon-auth disable (#disable)
+### neon neon-auth disable (#disable)
 
-Removes Neon Auth from the branch.
+Removes Managed Better Auth from the branch.
 
 <CliUsage command="neon-auth disable" />
 
 <CliOptions command="neon-auth disable" />
 
 <Admonition type="important">
-The `--delete-data` option permanently deletes all Neon Auth data and schema from the database. This can't be undone.
+The `--delete-data` option permanently deletes all Managed Better Auth data and schema from the database. This can't be undone.
 </Admonition>
 
-Remove Neon Auth from the branch and delete its data:
+Remove Managed Better Auth from the branch and delete its data:
 
 ```bash
-neonctl neon-auth disable --delete-data
+neon neon-auth disable --delete-data
 ```
 
 ## OAuth providers (#oauth-provider)
 
-The `oauth-provider` subcommands manage the OAuth providers (`google`, `github`, and `vercel`) for the branch.
+The `oauth-provider` subcommands manage the OAuth providers (`google`, `github`, `vercel`, `microsoft`, and `apple`) for the branch.
 
 <CliSubcommands command="neon-auth oauth-provider" anchorParts="oauth-provider" />
 
-### neonctl neon-auth oauth-provider list (#oauth-provider-list)
+### neon neon-auth oauth-provider list (#oauth-provider-list)
 
 Lists the OAuth providers configured for the branch.
 
@@ -83,10 +83,10 @@ Lists the OAuth providers configured for the branch.
 <CliOptions command="neon-auth oauth-provider list" />
 
 ```bash
-neonctl neon-auth oauth-provider list
+neon neon-auth oauth-provider list
 ```
 
-### neonctl neon-auth oauth-provider add (#oauth-provider-add)
+### neon neon-auth oauth-provider add (#oauth-provider-add)
 
 Adds an OAuth provider.
 
@@ -97,10 +97,24 @@ Adds an OAuth provider.
 Add the Google OAuth provider with your own credentials:
 
 ```bash shouldWrap
-neonctl neon-auth oauth-provider add --provider-id google --oauth-client-id <client-id> --oauth-client-secret <client-secret>
+neon neon-auth oauth-provider add --provider-id google --oauth-client-id <client-id> --oauth-client-secret <client-secret>
 ```
 
-### neonctl neon-auth oauth-provider update (#oauth-provider-update)
+Add Apple with the `.p8` key file, Team ID, and Key ID:
+
+```bash shouldWrap
+neon neon-auth oauth-provider add --provider-id apple --oauth-client-id <services-id> --oauth-client-secret-file AuthKey_XXXXXXXXXX.p8 --apple-team-id <team-id> --apple-key-id <key-id>
+```
+
+Add Microsoft, optionally restricted to a tenant:
+
+```bash shouldWrap
+neon neon-auth oauth-provider add --provider-id microsoft --oauth-client-id <client-id> --oauth-client-secret <client-secret> --microsoft-tenant-id <tenant>
+```
+
+See [Set up OAuth](/docs/auth/guides/setup-oauth) for the provider-side setup.
+
+### neon neon-auth oauth-provider update (#oauth-provider-update)
 
 Updates the credentials for an existing OAuth provider.
 
@@ -109,10 +123,10 @@ Updates the credentials for an existing OAuth provider.
 <CliOptions command="neon-auth oauth-provider update" />
 
 ```bash shouldWrap
-neonctl neon-auth oauth-provider update --provider-id github --oauth-client-id <client-id> --oauth-client-secret <client-secret>
+neon neon-auth oauth-provider update --provider-id github --oauth-client-id <client-id> --oauth-client-secret <client-secret>
 ```
 
-### neonctl neon-auth oauth-provider delete (#oauth-provider-delete)
+### neon neon-auth oauth-provider delete (#oauth-provider-delete)
 
 Deletes an OAuth provider from the branch.
 
@@ -121,16 +135,16 @@ Deletes an OAuth provider from the branch.
 <CliOptions command="neon-auth oauth-provider delete" />
 
 ```bash
-neonctl neon-auth oauth-provider delete --provider-id vercel
+neon neon-auth oauth-provider delete --provider-id vercel
 ```
 
 ## Domains (#domain)
 
-The `domain` subcommands manage the trusted domains that Neon Auth accepts as redirect URIs for the branch.
+The `domain` subcommands manage the trusted domains that Managed Better Auth accepts as redirect URIs for the branch.
 
 <CliSubcommands command="neon-auth domain" anchorParts="domain" />
 
-### neonctl neon-auth domain list (#domain-list)
+### neon neon-auth domain list (#domain-list)
 
 Lists the trusted domains configured for the branch.
 
@@ -139,10 +153,10 @@ Lists the trusted domains configured for the branch.
 <CliOptions command="neon-auth domain list" />
 
 ```bash
-neonctl neon-auth domain list
+neon neon-auth domain list
 ```
 
-### neonctl neon-auth domain add (#domain-add)
+### neon neon-auth domain add (#domain-add)
 
 Adds a trusted domain.
 
@@ -151,10 +165,12 @@ Adds a trusted domain.
 <CliOptions command="neon-auth domain add" />
 
 ```bash
-neonctl neon-auth domain add example.com
+neon neon-auth domain add https://app.example.com
 ```
 
-### neonctl neon-auth domain delete (#domain-delete)
+A trusted domain is an origin, so include the protocol (`https://`, or `http://` for local development) and omit any trailing slash. Use `https://app.example.com`, not `app.example.com` or `https://app.example.com/`. See [Configure trusted domains](/docs/auth/guides/configure-domains).
+
+### neon neon-auth domain delete (#domain-delete)
 
 Deletes a trusted domain.
 
@@ -163,16 +179,16 @@ Deletes a trusted domain.
 <CliOptions command="neon-auth domain delete" />
 
 ```bash
-neonctl neon-auth domain delete example.com
+neon neon-auth domain delete example.com
 ```
 
-### neonctl neon-auth domain allow-localhost (#domain-allow-localhost)
+### neon neon-auth domain allow-localhost (#domain-allow-localhost)
 
 Manages localhost connection settings for the branch.
 
 <CliSubcommands command="neon-auth domain allow-localhost" anchorParts="domain-allow-localhost" />
 
-### neonctl neon-auth domain allow-localhost get (#domain-allow-localhost-get)
+### neon neon-auth domain allow-localhost get (#domain-allow-localhost-get)
 
 Gets the current localhost connection setting.
 
@@ -181,10 +197,10 @@ Gets the current localhost connection setting.
 <CliOptions command="neon-auth domain allow-localhost get" />
 
 ```bash
-neonctl neon-auth domain allow-localhost get
+neon neon-auth domain allow-localhost get
 ```
 
-### neonctl neon-auth domain allow-localhost enable (#domain-allow-localhost-enable)
+### neon neon-auth domain allow-localhost enable (#domain-allow-localhost-enable)
 
 Allows localhost connections for local development.
 
@@ -193,10 +209,10 @@ Allows localhost connections for local development.
 <CliOptions command="neon-auth domain allow-localhost enable" />
 
 ```bash
-neonctl neon-auth domain allow-localhost enable
+neon neon-auth domain allow-localhost enable
 ```
 
-### neonctl neon-auth domain allow-localhost disable (#domain-allow-localhost-disable)
+### neon neon-auth domain allow-localhost disable (#domain-allow-localhost-disable)
 
 Restricts localhost connections.
 
@@ -205,7 +221,7 @@ Restricts localhost connections.
 <CliOptions command="neon-auth domain allow-localhost disable" />
 
 ```bash
-neonctl neon-auth domain allow-localhost disable
+neon neon-auth domain allow-localhost disable
 ```
 
 ## Configuration (#config)
@@ -214,13 +230,13 @@ The `config` subcommands configure auth features for the branch: email and passw
 
 <CliSubcommands command="neon-auth config" anchorParts="config" />
 
-### neonctl neon-auth config email-password (#config-email-password)
+### neon neon-auth config email-password (#config-email-password)
 
 Manages email and password authentication settings.
 
 <CliSubcommands command="neon-auth config email-password" anchorParts="config-email-password" />
 
-### neonctl neon-auth config email-password get (#config-email-password-get)
+### neon neon-auth config email-password get (#config-email-password-get)
 
 Gets the current email and password configuration.
 
@@ -229,10 +245,10 @@ Gets the current email and password configuration.
 <CliOptions command="neon-auth config email-password get" />
 
 ```bash
-neonctl neon-auth config email-password get
+neon neon-auth config email-password get
 ```
 
-### neonctl neon-auth config email-password update (#config-email-password-update)
+### neon neon-auth config email-password update (#config-email-password-update)
 
 Updates the email and password configuration.
 
@@ -241,16 +257,16 @@ Updates the email and password configuration.
 <CliOptions command="neon-auth config email-password update" />
 
 ```bash shouldWrap
-neonctl neon-auth config email-password update --enabled --require-email-verification
+neon neon-auth config email-password update --enabled --require-email-verification
 ```
 
-### neonctl neon-auth config email-provider (#config-email-provider)
+### neon neon-auth config email-provider (#config-email-provider)
 
 Manages the email provider configuration.
 
 <CliSubcommands command="neon-auth config email-provider" anchorParts="config-email-provider" />
 
-### neonctl neon-auth config email-provider get (#config-email-provider-get)
+### neon neon-auth config email-provider get (#config-email-provider-get)
 
 Gets the current email provider configuration.
 
@@ -259,10 +275,10 @@ Gets the current email provider configuration.
 <CliOptions command="neon-auth config email-provider get" />
 
 ```bash
-neonctl neon-auth config email-provider get
+neon neon-auth config email-provider get
 ```
 
-### neonctl neon-auth config email-provider update (#config-email-provider-update)
+### neon neon-auth config email-provider update (#config-email-provider-update)
 
 Updates the email provider configuration.
 
@@ -273,28 +289,28 @@ Updates the email provider configuration.
 Configure the `standard` email provider type with your own SMTP server:
 
 ```bash shouldWrap
-neonctl neon-auth config email-provider update --type standard --host smtp.example.com --port 587 --username example_username --password AbC123dEf --sender-email noreply@example.com --sender-name "Example App"
+neon neon-auth config email-provider update --type standard --host smtp.example.com --port 587 --username example_username --password AbC123dEf --sender-email noreply@example.com --sender-name "Example App"
 ```
 
-### neonctl neon-auth config email-provider test (#config-email-provider-test)
+### neon neon-auth config email-provider test (#config-email-provider-test)
 
-Sends a test email so you can verify your SMTP configuration.
+Sends a test email through your saved SMTP provider so you can verify it works. Configure the provider first with [`update`](#config-email-provider-update).
 
 <CliUsage command="neon-auth config email-provider test" />
 
 <CliOptions command="neon-auth config email-provider test" />
 
-```bash shouldWrap
-neonctl neon-auth config email-provider test --recipient-email user@example.com --host smtp.example.com --port 587 --username example_username --password AbC123dEf --sender-email noreply@example.com --sender-name "Example App"
+```bash
+neon neon-auth config email-provider test --recipient-email user@example.com
 ```
 
-### neonctl neon-auth config organization (#config-organization)
+### neon neon-auth config organization (#config-organization)
 
 Manages organization plugin settings.
 
 <CliSubcommands command="neon-auth config organization" anchorParts="config-organization" />
 
-### neonctl neon-auth config organization get (#config-organization-get)
+### neon neon-auth config organization get (#config-organization-get)
 
 Gets the current organization plugin configuration.
 
@@ -303,10 +319,10 @@ Gets the current organization plugin configuration.
 <CliOptions command="neon-auth config organization get" />
 
 ```bash
-neonctl neon-auth config organization get
+neon neon-auth config organization get
 ```
 
-### neonctl neon-auth config organization update (#config-organization-update)
+### neon neon-auth config organization update (#config-organization-update)
 
 Updates the organization plugin configuration.
 
@@ -315,16 +331,16 @@ Updates the organization plugin configuration.
 <CliOptions command="neon-auth config organization update" />
 
 ```bash shouldWrap
-neonctl neon-auth config organization update --enabled --limit 5 --creator-role owner
+neon neon-auth config organization update --enabled --limit 5 --creator-role owner
 ```
 
-### neonctl neon-auth config webhook (#config-webhook)
+### neon neon-auth config webhook (#config-webhook)
 
 Manages webhook configuration.
 
 <CliSubcommands command="neon-auth config webhook" anchorParts="config-webhook" />
 
-### neonctl neon-auth config webhook get (#config-webhook-get)
+### neon neon-auth config webhook get (#config-webhook-get)
 
 Gets the current webhook configuration.
 
@@ -333,10 +349,10 @@ Gets the current webhook configuration.
 <CliOptions command="neon-auth config webhook get" />
 
 ```bash
-neonctl neon-auth config webhook get
+neon neon-auth config webhook get
 ```
 
-### neonctl neon-auth config webhook update (#config-webhook-update)
+### neon neon-auth config webhook update (#config-webhook-update)
 
 Updates the webhook configuration.
 
@@ -345,16 +361,172 @@ Updates the webhook configuration.
 <CliOptions command="neon-auth config webhook update" />
 
 ```bash shouldWrap
-neonctl neon-auth config webhook update --enabled --url https://example.com/webhooks/neon-auth --enabled-events user.created --timeout 5
+neon neon-auth config webhook update --enabled --url https://example.com/webhooks/neon-auth --enabled-events user.created --timeout 5
+```
+
+### neon neon-auth config oauth-server (#config-oauth-server)
+
+Manages the [OAuth provider plugin](/docs/auth/guides/plugins/oauth-provider), which turns Managed Better Auth into an OAuth 2.1 authorization server for your MCP server, API, or other apps. These commands configure the server. To manage its clients, see [OAuth clients](#oauth-client). The `oauth-provider` commands are for social sign-in providers, not this server.
+
+<CliSubcommands command="neon-auth config oauth-server" anchorParts="config-oauth-server" />
+
+### neon neon-auth config oauth-server get (#config-oauth-server-get)
+
+Gets the current OAuth server configuration.
+
+<CliUsage command="neon-auth config oauth-server get" />
+
+<CliOptions command="neon-auth config oauth-server get" />
+
+```bash
+neon neon-auth config oauth-server get
+```
+
+### neon neon-auth config oauth-server update (#config-oauth-server-update)
+
+Updates the OAuth server configuration. To enable the server, it needs a login page, a consent page, and at least one protected resource or an MCP server URL. The login and consent pages must be on a [trusted domain](#domain).
+
+<CliUsage command="neon-auth config oauth-server update" />
+
+<CliOptions command="neon-auth config oauth-server update" />
+
+```bash shouldWrap
+neon neon-auth config oauth-server update --enabled --login-page https://app.example.com/sign-in --consent-page https://app.example.com/consent
+```
+
+Set the MCP server URL to protect an MCP server, or remove the MCP configuration with `--no-mcp`:
+
+```bash shouldWrap
+neon neon-auth config oauth-server update --mcp-resource https://mcp.example.com/mcp
+```
+
+### neon neon-auth config oauth-server resource (#config-oauth-server-resource)
+
+Manages the protected resources that OAuth clients can request tokens for. `add` and `remove` read the stored list and write back the full list, so a change someone else makes at the same time can be overwritten.
+
+<CliSubcommands command="neon-auth config oauth-server resource" anchorParts="config-oauth-server-resource" />
+
+### neon neon-auth config oauth-server resource list (#config-oauth-server-resource-list)
+
+Lists the protected resources.
+
+<CliUsage command="neon-auth config oauth-server resource list" />
+
+<CliOptions command="neon-auth config oauth-server resource list" />
+
+```bash
+neon neon-auth config oauth-server resource list
+```
+
+### neon neon-auth config oauth-server resource add (#config-oauth-server-resource-add)
+
+Adds one or more protected resources.
+
+<CliUsage command="neon-auth config oauth-server resource add" />
+
+<CliOptions command="neon-auth config oauth-server resource add" />
+
+```bash
+neon neon-auth config oauth-server resource add https://api.example.com
+```
+
+### neon neon-auth config oauth-server resource remove (#config-oauth-server-resource-remove)
+
+Removes one or more protected resources. Clients stop listing a removed resource, and list it again if you add it back. On an enabled server, removing the last resource fails unless an MCP server URL is set.
+
+<CliUsage command="neon-auth config oauth-server resource remove" />
+
+<CliOptions command="neon-auth config oauth-server resource remove" />
+
+```bash
+neon neon-auth config oauth-server resource remove https://api.example.com
+```
+
+## OAuth clients (#oauth-client)
+
+The `oauth-client` subcommands manage the clients registered with the branch's OAuth server. Enable and configure the server first with [`config oauth-server`](#config-oauth-server).
+
+<CliSubcommands command="neon-auth oauth-client" anchorParts="oauth-client" />
+
+### neon neon-auth oauth-client list (#oauth-client-list)
+
+Lists the OAuth clients.
+
+<CliUsage command="neon-auth oauth-client list" />
+
+<CliOptions command="neon-auth oauth-client list" />
+
+```bash
+neon neon-auth oauth-client list
+```
+
+### neon neon-auth oauth-client create (#oauth-client-create)
+
+Creates an OAuth client. Each resource you link must already be a [protected resource](#config-oauth-server-resource). A confidential client gets a client secret, which the command prints only once. Store it before you continue.
+
+<CliUsage command="neon-auth oauth-client create" />
+
+<CliOptions command="neon-auth oauth-client create" />
+
+```bash shouldWrap
+neon neon-auth oauth-client create --name "Example app" --type confidential --redirect-uris https://app.example.com/callback --resources https://api.example.com
+```
+
+### neon neon-auth oauth-client get (#oauth-client-get)
+
+Gets an OAuth client.
+
+<CliUsage command="neon-auth oauth-client get" />
+
+<CliOptions command="neon-auth oauth-client get" />
+
+```bash
+neon neon-auth oauth-client get <client-id>
+```
+
+### neon neon-auth oauth-client update (#oauth-client-update)
+
+Updates an OAuth client. `--redirect-uris` and `--resources` replace the stored lists. You can't change the client type.
+
+<CliUsage command="neon-auth oauth-client update" />
+
+<CliOptions command="neon-auth oauth-client update" />
+
+```bash
+neon neon-auth oauth-client update <client-id> --name "Example app (staging)"
+```
+
+### neon neon-auth oauth-client rotate-secret (#oauth-client-rotate-secret)
+
+Rotates the secret of a confidential client. The old secret stops working immediately.
+
+<CliUsage command="neon-auth oauth-client rotate-secret" />
+
+<CliOptions command="neon-auth oauth-client rotate-secret" />
+
+```bash
+neon neon-auth oauth-client rotate-secret <client-id>
+```
+
+### neon neon-auth oauth-client delete (#oauth-client-delete)
+
+Deletes an OAuth client. Tokens the client already received stay valid until they expire.
+
+<CliUsage command="neon-auth oauth-client delete" />
+
+<CliOptions command="neon-auth oauth-client delete" />
+
+```bash
+neon neon-auth oauth-client delete <client-id>
 ```
 
 ## Plugins (#plugins)
 
-The `plugins` subcommands show the Neon Auth plugin configurations for the branch.
+The `plugins` subcommands show the Managed Better Auth plugin configurations for the branch.
 
 <CliSubcommands command="neon-auth plugins" anchorParts="plugins" />
 
-### neonctl neon-auth plugins list (#plugins-list)
+### neon neon-auth plugins list (#plugins-list)
 
 Lists all plugin configurations.
 
@@ -363,10 +535,10 @@ Lists all plugin configurations.
 <CliOptions command="neon-auth plugins list" />
 
 ```bash
-neonctl neon-auth plugins list
+neon neon-auth plugins list
 ```
 
-### neonctl neon-auth plugins get (#plugins-get)
+### neon neon-auth plugins get (#plugins-get)
 
 Gets a specific plugin configuration.
 
@@ -375,16 +547,16 @@ Gets a specific plugin configuration.
 <CliOptions command="neon-auth plugins get" />
 
 ```bash
-neonctl neon-auth plugins get organization
+neon neon-auth plugins get organization
 ```
 
 ## Users (#user)
 
-The `user` subcommands manage Neon Auth users on the branch.
+The `user` subcommands manage Managed Better Auth users on the branch.
 
 <CliSubcommands command="neon-auth user" anchorParts="user" />
 
-### neonctl neon-auth user create (#user-create)
+### neon neon-auth user create (#user-create)
 
 Creates an auth user.
 
@@ -393,10 +565,10 @@ Creates an auth user.
 <CliOptions command="neon-auth user create" />
 
 ```bash
-neonctl neon-auth user create --email alex@example.com --name "Alex Lopez"
+neon neon-auth user create --email alex@example.com --name "Alex Lopez"
 ```
 
-### neonctl neon-auth user delete (#user-delete)
+### neon neon-auth user delete (#user-delete)
 
 Deletes an auth user.
 
@@ -405,10 +577,10 @@ Deletes an auth user.
 <CliOptions command="neon-auth user delete" />
 
 ```bash
-neonctl neon-auth user delete <user-id>
+neon neon-auth user delete <user-id>
 ```
 
-### neonctl neon-auth user set-role (#user-set-role)
+### neon neon-auth user set-role (#user-set-role)
 
 Sets roles for an auth user.
 
@@ -417,5 +589,5 @@ Sets roles for an auth user.
 <CliOptions command="neon-auth user set-role" />
 
 ```bash
-neonctl neon-auth user set-role <user-id> --roles admin
+neon neon-auth user set-role <user-id> --roles admin
 ```

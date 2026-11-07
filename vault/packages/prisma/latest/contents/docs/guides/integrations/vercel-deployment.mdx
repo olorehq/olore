@@ -1,19 +1,27 @@
 ---
 title: Vercel app deployment
-description: Learn how to programmatically deploy applications with Vercel and Prisma Postgres using the instant deployment API
+description: Programmatically deploy full-stack apps to Vercel with a provisioned Prisma Postgres database. Built for AI app builders, agent platforms, and no-code tools.
 image: /img/guides/vercel_app_deployments.png
 url: /guides/integrations/vercel-deployment
-metaTitle: Instant app deployment with Vercel and Prisma Postgres
-metaDescription: Learn how to programmatically deploy applications with Vercel and Prisma Postgres using the instant deployment API
+metaTitle: Deploy apps to Vercel with a database via API | Prisma Postgres
+metaDescription: Programmatically create, deploy, and transfer full-stack apps on Vercel with a provisioned Prisma Postgres database. A guide for AI app builders, no-code platforms, and agent workflows.
 ---
 
 ## Introduction
 
-This guide shows you how to implement instant app deployment using [Vercel](https://vercel.com)'s API with integrated [Prisma Postgres](/postgres) databases. You'll learn to programmatically create, deploy, and transfer full-stack applications with a single API call.
+This guide shows you how to deploy a full-stack application to [Vercel](https://vercel.com) with a ready-to-use [Prisma Postgres](/postgres) database, entirely through API calls. The flow takes six Vercel API requests: create a project, authorize the Prisma integration, provision a database, connect it to the project, deploy the application code, and generate a claim code that transfers ownership to your user. No dashboard steps are required at any point.
 
-Instant app deployment solves a critical problem for AI coding platforms, no-code tools, and educational platforms: getting from generated code to a live, production-ready application. Instead of requiring users to manually set up hosting infrastructure, you can offer one-click deployments with both application and database.
+This is the deployment pattern used by AI app builders, agent platforms, no-code tools, and educational platforms that generate applications on behalf of their users. Your platform deploys the app and database programmatically, the user claims it with one click, and billing moves to their Vercel account. Every database provisioned through this flow is a full Prisma Postgres instance: managed PostgreSQL with connection pooling built in, so deployed apps handle serverless traffic without extra pooling infrastructure.
 
-By the end of this guide, you'll understand how to integrate Vercel's deployment API with Prisma Postgres to create a smooth deployment experience for your users.
+:::note[Other Vercel guides]
+
+- To deploy **your own app** that uses Prisma ORM, see the [Next.js guide](/guides/frameworks/nextjs) for Prisma ORM 8, or [Deploy to Vercel](/orm/v7/prisma-client/deployment/serverless/deploy-to-vercel) for Prisma ORM 7.
+- To add a **Prisma Postgres database to an existing Vercel project** via the Marketplace integration, see [Prisma Postgres on Vercel](/guides/postgres/vercel).
+- To create and manage Prisma Postgres databases programmatically **outside of Vercel**, see the [REST API](/rest-api).
+
+This guide covers **platforms deploying apps on behalf of their users** with Vercel's deployment API.
+
+:::
 
 ## Try the live demo
 
@@ -47,7 +55,7 @@ This guide is designed for developers building:
 
 ## Core concepts
 
-Before implementing the deployment flow, let's understand the key concepts:
+The deployment flow relies on these concepts:
 
 ### Vercel deployment architecture
 
@@ -112,7 +120,7 @@ Your Vercel team identifier for API requests.
 
 **Where to get it:**
 
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+1. Go to the [Vercel Dashboard](https://vercel.com)
 2. Switch to your **Team** (not personal account)
 3. Go to **Team Settings**
 4. Copy the Team ID displayed at the top (format: `team_abc123xyz`)
@@ -147,7 +155,7 @@ PRISMA_PRODUCT_ID="iap_yVdbiKqs5fLkYDAB"
 
 ### Prisma Postgres region
 
-The region where your Prisma Postgres database will be deployed. Choose a region close to your users for optimal performance.
+The region where your Prisma Postgres database will be deployed. Choose a region close to your users to reduce latency.
 
 **Available regions:**
 
@@ -173,7 +181,7 @@ Database limits have been increased across all plans. The **Free** plan now incl
 The billing plan determines database limits and features. Available plans:
 
 - `free` - Limited to 50 databases, suitable for development
-- `pro` - Higher limits with connection pooling and caching
+- `pro` - Higher limits
 - `business` - Enterprise features with priority support
 - `enterprise` - Custom limits and dedicated support
 - `partnerEntry` - Partner-level access with high database limits
@@ -183,7 +191,7 @@ PRISMA_BILLING_PLAN="partnerEntry"
 ```
 
 :::tip[Partner access recommended]
-For production deployments requiring multiple databases, we recommend the `partnerEntry` plan which provides higher database creation limits. [Apply for partner access](https://www.prisma.io/partners) to unlock these capabilities.
+For production deployments requiring multiple databases, we recommend the `partnerEntry` plan which provides higher database creation limits. [Apply for partner access](https://www.prisma.io/partners) to get these limits.
 :::
 
 ## Complete deployment example
@@ -237,7 +245,7 @@ async function deployApp() {
 
 ## Step-by-step deployment process
 
-The complete example above demonstrates the entire deployment process. Now let's break down each step in detail.
+The complete example above shows the entire deployment process. The sections below break down each step.
 
 ### Step 1: Create a Vercel project
 
@@ -309,14 +317,14 @@ async function createPrismaAuthorization(): Promise<{
 **Key parameters:**
 
 - `billingPlanId`: Billing plan ("partnerEntry" recommended for production)
-- `region`: Database region for optimal performance
+- `region`: Database region; pick one close to your users
 - `metadata`: JSON string containing region and other configuration
 
 Learn more in the [Vercel Integrations API documentation](https://vercel.com/docs/integrations/create-integration/marketplace-api).
 
 ### Step 3: Provision Prisma Postgres database
 
-Create a new database instance with automatic connection pooling and caching.
+Create a new database instance with built-in connection pooling.
 
 ```typescript
 async function createPrismaDatabase(
@@ -531,8 +539,6 @@ async function handleApiErrors(response: Response, operation: string) {
 }
 ```
 
-Proper error handling prevents deployment failures and provides clear debugging information to your users.
-
 ### Rate limiting considerations
 
 Vercel enforces rate limits on API endpoints. You can implement exponential backoff to handle rate limits:
@@ -557,8 +563,6 @@ async function apiCallWithRetry(url: string, options: RequestInit, maxRetries = 
 }
 ```
 
-Retry logic ensures your deployment service remains reliable during high-traffic periods.
-
 Learn more in the [Vercel API Limits documentation](https://vercel.com/docs/limits).
 
 ### Security best practices
@@ -568,15 +572,13 @@ Learn more in the [Vercel API Limits documentation](https://vercel.com/docs/limi
 - **Monitor usage**: Track API calls to prevent abuse
 - **Implement timeouts**: Set reasonable request timeouts for reliability
 
-These practices protect your integration from common security vulnerabilities and ensure stable operation.
-
 ## Production considerations
 
 The following are some production considerations for your deployment service:
 
 ### Integration with existing platforms
 
-You can integrate your deployment service with existing platforms to provide a smooth experience for your users:
+You can call the deployment flow from your existing platform code:
 
 ```typescript
 // Example integration with an AI coding platform
@@ -605,8 +607,34 @@ Track key metrics for your deployment service:
 
 - **Deployment success rate**: Monitor API failures and timeouts
 - **Claim conversion rate**: Track how many users claim their deployments
-- **Performance metrics**: Measure deployment time and user experience
+- **Performance metrics**: Measure deployment time and time to first claim
 - **Cost analysis**: Monitor Vercel and Prisma usage costs
+
+## FAQ
+
+### Can I deploy an app to Vercel with a database in a single API flow?
+
+Yes. The six-step flow in this guide creates a Vercel project, provisions a Prisma Postgres database, connects the two, and deploys the application code using only Vercel API endpoints. There is no dashboard interaction, which makes the flow suitable for automated pipelines and AI agents.
+
+### How many databases can I create programmatically?
+
+The Prisma Postgres Free plan includes 50 databases per account, and paid plans (Starter, Pro, Business) each include 1,000. Platforms that deploy on behalf of many users should [apply for partner access](https://www.prisma.io/partners), which uses the `partnerEntry` billing plan and provides higher database creation limits.
+
+### What happens to billing when a user claims a deployment?
+
+Ownership of both the Vercel project and the Prisma Postgres database transfers to the user's Vercel team, and that team becomes responsible for hosting and database costs from that point on. Claim codes are valid for 24 hours.
+
+### Which frameworks can be deployed this way?
+
+Anything Vercel can build and host, including Next.js, Nuxt, SvelteKit, and Remix. The demo templates use Next.js with Prisma ORM, and one variant adds authentication with Better Auth.
+
+### Do deployed apps need a connection pooler like pgBouncer?
+
+No. Prisma Postgres includes connection pooling by default, so apps deployed through this flow handle Vercel's serverless function scaling without a separate pooler.
+
+### Can I provision Prisma Postgres databases without Vercel?
+
+Yes. The [Prisma Postgres REST API](/rest-api) lets you create and manage databases directly, which is useful for platforms that host applications elsewhere but still want programmatic database provisioning.
 
 ## Next steps
 

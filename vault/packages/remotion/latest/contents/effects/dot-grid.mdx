@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-dot-grid.png
+image: https://remotion.media/docs/generated/articles-docs-effects-dot-grid.png
 slug: /effects/dot-grid
 title: dotGrid()
 sidebar_label: dotGrid()
@@ -21,13 +21,12 @@ Use it for dotted masks on [`<Video>`](/docs/media/video), [`<HtmlInCanvas>`](/d
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {dotGrid} from '@remotion/effects/dot-grid';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -37,7 +36,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -45,13 +44,12 @@ export const MyComp: React.FC = () => {
 To cut transparent dots out of the source instead, set `invert` to `true`:
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill} from 'remotion';
 import {Video} from '@remotion/media';
 import {dotGrid} from '@remotion/effects/dot-grid';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Video
         src="https://remotion.media/video.mp4"
         effects={[
@@ -62,7 +60,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -87,9 +85,12 @@ When `false`, only the circular dots reveal the source. When `true`, the source 
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`dotGrid()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGPU<AvailableFrom v="4.0.540" inline />
+- WebGL2
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

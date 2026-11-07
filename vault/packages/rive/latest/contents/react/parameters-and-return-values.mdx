@@ -3,6 +3,10 @@ title: 'Parameters and Return Values'
 description: 'Rive React API.'
 ---
 
+<Info>
+  Rive runtimes are open source. View the source in the Rive React [GitHub repository](https://github.com/rive-app/rive-react).
+</Info>
+
 ## Hooks
 
 ### useRive
@@ -20,17 +24,26 @@ The `useRive` hook is the recommended way to hook into the Rive runtime for full
 
 Most of these parameters come from the underlying web runtime configuration items for the Rive object, with the exception of supplying a `canvas` element. See [Rive Parameters](/runtimes/web/rive-parameters) for all the parameters you can supply in this object.
 
-<Note>
- If you supply an `onLoad` callback in the parameters, you may not have access to the `rive` instance yet. The React runtime uses `onLoad` internally to setState with the `rive` instance, and therefore may not be populated by the time it reaches a consumer-supplied callback. We recommend using a `useEffect` in place of `onLoad` to reliably use the `rive` instance if you are looking for a similar method. In a future version of the web runtime, we may supply the `rive` instance in the parameters of your callback so you can supply an `onLoad` here.
-</Note>
+For keyboard focus, pass `tabIndex` and `focusOptions` here as you would to the `Rive` constructor. See [Focus](/runtimes/react/focus) and [Text and key input](/runtimes/react/text-and-key-input).
+
+The following parameters are specific to `useRive`, or behave differently in React than they do in the web runtime:
+
+- `enableGPUCanvas` - *(optional, experimental)* Render GPU Canvas content — 3D and shaders — on this instance. `@rive-app/react-webgl2` only. Turning it on flips the `useOffscreenRenderer` default to `false`, since the two cannot be combined. False by default. See [GPU Canvas](/runtimes/react/gpu-canvas).
+
+- `onRiveReady` - *(optional)* Callback invoked once the Rive file has fully loaded and the `Rive` instance is initialized. The callback receives the `Rive` instance as its argument: `(rive: Rive) => void`. It fires synchronously before the state machine advances, so this is where **all pre-render data binding work belongs** — staging view model instances with `setViewModelInstance()` / `setGlobalViewModelInstance()`, setting property values, and flushing them with `bind()`. The data binding hooks resolve after the first frame has already rendered. See [Binding before the first frame](/runtimes/react/data-binding#binding-before-the-first-frame).
+
+<Tip>
+  Use `onRiveReady` as opposed to passing in an `onLoad` callback. `onRiveReady` will be invoked when JS emits the `RiveEvent.Load` event.
+</Tip>
+
 
 **UseRiveOptions**
 
 - `useDevicePixelRatio` - *(optional)* If `true`, the hook will scale the resolution of the animation based on the [devicePixelRatio](https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio). Defaults to `true`. NOTE: Requires the `setContainerRef` ref callback to be passed to an element wrapping a canvas element. If you use the `RiveComponent`, then this will happen automatically
 - `fitCanvasToArtboardHeight` - *(optional)* If `true`, then the canvas will resize based on the height of the artboard. Defaults to `false`
-- `useOffscreenRenderer` - *(optional)* If `true`, the Rive instance will share (or create if one does not exist) an offscreen `WebGL` context. This allows you to display multiple Rive animations on one screen to work around some browser limitations regarding multiple concurrent WebGL contexts. If `false`, each Rive instance will have its own dedicated `WebGL` context and you may need to be cautious of the browser limitations just mentioned. We recommend **not** changing this default prop, so you don't have to manage WebGL contexts. Destroying a React component does not guarantee the browser cleans up the WebGL context that was created when the canvas was mounted. Only relevant when using `@rive-app/react-webgl2`. Defaults to `true`
+- `useOffscreenRenderer` - *(optional)* If `true`, the Rive instance will share (or create if one does not exist) an offscreen `WebGL` context. This allows you to display multiple Rive animations on one screen to work around some browser limitations regarding multiple concurrent WebGL contexts. If `false`, each Rive instance will have its own dedicated `WebGL` context and you may need to be cautious of the browser limitations just mentioned. We recommend **not** changing this default prop, so you don't have to manage WebGL contexts. Destroying a React component does not guarantee the browser cleans up the WebGL context that was created when the canvas was mounted. Only relevant when using `@rive-app/react-webgl2`. Defaults to `true`, unless [GPU Canvas](/runtimes/react/gpu-canvas) is on, which flips the default to `false`. An explicit value always wins — setting `true` alongside `enableGPUCanvas` means GPU Canvas content will not draw
 
-#### Return Values
+#### Return values
 
 **RiveState**
 
@@ -48,9 +61,7 @@ Most of these parameters come from the underlying web runtime configuration item
 ### useStateMachineInput
 
 <Warning>
-**Deprecated**
-
-State machine inputs are deprecated. For new work, use [Data Binding](/runtimes/web/data-binding). This hook remains available for legacy projects.
+  **Deprecated in `v4.33.0`.** The hook still works and nothing has been removed, but state machine inputs will be removed in a future major version. Use [data binding](/runtimes/react/data-binding) for new work — see the [migration guide](/editor/data-binding/migration-guide#state-machine-inputs).
 </Warning>
 
 The `useStateMachineInput` hook can be used to grab references to Rive State Machine inputs, both for reading input values, and setting (or triggering) them. See below for parameters to pass in and the return value.
@@ -68,7 +79,7 @@ The `useStateMachineInput` hook can be used to grab references to Rive State Mac
 - `inputName?` - *(optional)* Name of a single state machine input to grab a reference to
 - `initialValue?` - *(optional)* Initial value to set on the input
 
-#### Return Values
+#### Return values
 
 This hook returns a default instance of a `StateMachineInput`.
 
@@ -122,7 +133,10 @@ The main benefit of this hook is that it allows you to create a `RiveFile` insta
     - Alternatively, with ES6, you may import the `.riv` file as a data URI. Depending on your bundle loader, you may need to use a plugin (i.e `url-loader` for Webpack) to properly parse and load in `.riv` files as a data URI string. See [this project](https://github.com/zplata/rive-nextjs/blob/main/next.config.js#L8) as a basic example on how to set this up
   - Path to public asset - This is a string path to the`.riv` public asset if bundled in your application. Note that this is **not** a relative path to the asset from wherever the current JS file is in. Treat the `.riv` as any other asset bundled in your application, such as an image or font. If your JS is compiled and run at the root of your web application, you must specify the path from the root to the location of the asset. For example, if your asset is in `/public/foo.riv`, and your JS is run from the root at `/`, you would specify: `src: '/public/foo.riv'` in this property.
 - `buffer?` - *(optional)* ArrayBuffer containing the raw bytes from a .riv file. One of `src` or `buffer` must be provided.
+- `assetLoader?` - *(optional)* Callback to load assets. Full patterns and examples in the [loading assets](/runtimes/react/loading-assets) guide.
 - `enableRiveAssetCDN?` - *(optional)* Allow the runtime to automatically load assets hosted in Rive's CDN. Enabled by default.
+- `enablePerfMarks?` - *(optional)* Emits `performance.mark` / `performance.measure` entries for key Rive startup events for performance profiling purposes. False by default.
+- `enableGPUCanvas?` - *(optional, experimental)* Import the file for GPU Canvas content — 3D and shaders. `@rive-app/react-webgl2` only at this time.
 
 **Return Values**
 
@@ -136,6 +150,43 @@ The main benefit of this hook is that it allows you to create a `RiveFile` insta
 ### `<RiveComponent />`
 
 The `RiveComponent` default export and the `RiveComponent` returned from the `useRive` hook are both to be rendered in the JSX of a component. As noted previously, all attributes and event handlers that can be passed to a `canvas` element can also be passed to the `Rive` component and used in the same manner.
+
+#### Props
+
+The default export accepts the props below in addition to any `canvas` attributes. It always plays with `autoplay: true`. For anything beyond a simple embed — controlling playback, reading the `Rive` instance, or data binding — use the [`useRive`](#userive) hook instead.
+
+```typescript
+interface RiveProps {
+  src: string; // required
+  artboard?: string;
+  stateMachine?: string;
+  layout?: Layout;
+  useOffscreenRenderer?: boolean;
+  shouldDisableRiveListeners?: boolean;
+  shouldResizeCanvasToContainer?: boolean;
+  enableGPUCanvas?: boolean;
+
+  // Deprecated props
+  animations?: string | string[];
+  stateMachines?: string | string[];
+  automaticallyHandleEvents?: boolean;
+}
+```
+
+- `src` - *(required)* URL of the Rive asset, or path to the public `.riv` asset.
+- `artboard` - *(optional)* Artboard to render. Defaults to the first artboard in the file.
+- `stateMachine` - *(strongly recommended)* Name of the state machine to play.
+- `layout` - *(optional)* A [`Layout`](/runtimes/react/layouts) instance setting fit and alignment for the drawing surface.
+- `useOffscreenRenderer` - *(optional)* Share a single WebGL context across canvases. Only relevant for `@rive-app/react-webgl2`. Defaults to `true`, unless `enableGPUCanvas` is set, which flips the default to `false`. However, if this parameter is explicitly set, the runtime will honor this flag and ignore the `enableGPUCanvas` one.
+- `shouldDisableRiveListeners` - *(optional)* Prevents Rive from attaching pointer event listeners to the canvas.
+- `shouldResizeCanvasToContainer` - *(optional)* Automatically resize the canvas to its container. Defaults to `true`.
+- `enableGPUCanvas` - *(optional, experimental)* Render GPU Canvas content — 3D and shaders — on this instance. `@rive-app/react-webgl2` only at this time. Turning it on flips the `useOffscreenRenderer` default to `false` if that flag is not set. See [GPU Canvas](/runtimes/react/gpu-canvas).
+
+#### Deprecated props
+
+- `stateMachines` - Use `stateMachine` with a single state machine name instead.
+- `animations` - Use `stateMachine` to play a state machine instead.
+- `automaticallyHandleEvents` - Deprecated along with the rest of the [Rive Events](/runtimes/react/rive-events) surface. Use [data binding](/runtimes/react/data-binding) instead.
 
 One thing to note is that `style`/`className` props set on the component will be passed onto the containing `<div>` element, rather than the underlying `<canvas>` itself. The reason for this is that the containing `<div>` element handles resizing and layout for you, and thus, all styles should be passed onto this element.
 

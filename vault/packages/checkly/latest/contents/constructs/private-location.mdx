@@ -1,14 +1,16 @@
 ---
 title: 'PrivateLocation Construct'
 description: 'Learn how to configure private locations with the Checkly CLI.'
-sidebarTitle: 'Private Locations'
+sidebarTitle: 'Private locations'
+canonical: 'https://www.checklyhq.com/docs/constructs/private-location/'
+mode: "wide"
 ---
 
 <Tip>
-Learn more about Private Locations in [the Private Locations overview](/platform/private-locations/overview).
+Learn more about private locations in [the private locations overview](/platform/private-locations/overview).
 </Tip>
 
-Use Private Locations to run checks from your own infrastructure, VPCs, or isolated networks. With a Private Location, you can monitor internal services and applications not accessible from the public internet.
+Use Private Locations to run checks from your own infrastructure, VPCs, or isolated networks. With a private location, you can monitor internal services and applications not accessible from the public internet.
 
 <Accordion title="Prerequisites">
 Before creating private locations, ensure you have:
@@ -39,7 +41,7 @@ import { ApiCheck, PrivateLocation } from "checkly/constructs"
 
 const datacenterLocation = new PrivateLocation("datacenter-east-1", {
   name: "East Coast Datacenter",
-  icon: "building",
+  icon: "organization",
   slugName: "datacenter-east-1",
   proxyUrl: "http://proxy.datacenter.local:8080",
 })
@@ -63,16 +65,17 @@ new ApiCheck("internal-api-check", {
 |-----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your private location |
 | `slugName` | `string` | ✅ | - | Unique slug identifier (must be unique across your account) |
-| `icon` | `string` | ❌ | - | [Octicon name](https://primer.style/octicons/) to distinguish the location in the UI |
+| `icon` | `string` | ❌ | `location` | [Octicon name](https://primer.style/octicons/) to distinguish the location in the UI |
 | `proxyUrl` | `string` | ❌ | - | Proxy URL for outgoing HTTP calls from this location |
 
-## Private Location Options
+## Private location options
 
 <ResponseField name="name" type="string" required>
 Friendly name for your private location that will be displayed in the Checkly dashboard and used for identification.
 
 **Usage:**
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("my-location", {
   name: "Corporate Data Center",
@@ -83,10 +86,11 @@ new PrivateLocation("my-location", {
 </ResponseField>
 
 <ResponseField name="slugName" type="string" required>
-Unique slug identifier for your private location. This must be unique across your entire Checkly account and is used for referencing the location.
+Unique slug identifier for your private location. This must be unique across your entire Checkly account and is used for referencing the location. It can be 1-30 letters, numbers and hyphens, and it can't look like an AWS region such as `eu-west-1`.
 
 **Usage:**
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("my-location", {
   name: "My Location",
@@ -99,6 +103,7 @@ new PrivateLocation("my-location", {
 <Tabs>
 <Tab title="Good Naming Practices">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 // Descriptive and stable slugs
 new PrivateLocation("corp-vpc-east", {
@@ -120,6 +125,7 @@ new PrivateLocation("datacenter-west", {
 </Tab>
 <Tab title="Avoid These Patterns">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 // Too generic or likely to change
 new PrivateLocation("location-1", {
@@ -146,6 +152,7 @@ The `slugName` must be unique across your entire Checkly account and cannot be c
 Octicon name to visually distinguish the location in the Checkly UI. Choose icons that represent your infrastructure type or purpose.
 
 Usage:
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("my-location", {
   name: "Database Zone",
@@ -154,13 +161,14 @@ new PrivateLocation("my-location", {
 })
 ```
 
-**Available icons**: Any [Octicon](https://primer.style/design/foundations/icons) name (e.g., `server`, `database`, `cloud`, `shield`, `container`, `tools`, `building`)
+**Available icons**: Any [Octicon](https://primer.style/design/foundations/icons) name (e.g., `server`, `database`, `cloud`, `shield`, `container`, `tools`, `organization`)
 </ResponseField>
 
 <ResponseField name="proxyUrl" type="string">
 Proxy URL for outgoing HTTP calls from this private location. Use when your infrastructure requires all external traffic to go through a corporate proxy.
 
 Usage:
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation('corporate-location', {
   name: 'Corporate Network',
@@ -176,6 +184,7 @@ Reference private locations by using their construct reference or by slug names 
 <Tabs>
 <Tab title="By Construct Reference">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 const privateLocationVpcEast = new PrivateLocation("corp-vpc-east", {
   name: "Corporate VPC East",
@@ -196,6 +205,7 @@ new ApiCheck("existing-location-reference", {
 
 <Tab title="By Slug Name">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts
 new ApiCheck("existing-location-check", {
   name: "Check Using Existing Location",
@@ -210,6 +220,7 @@ new ApiCheck("existing-location-check", {
 </Tab>
 <Tab title="Mixed References">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 // Combine new and existing private locations
 const newLocation = new PrivateLocation("new-location", {
@@ -240,6 +251,7 @@ new ApiCheck("mixed-locations-check", {
 <Tabs>
 <Tab title="HTTP Proxy">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("corp-proxy-location", {
   name: "Corporate Network with Proxy",
@@ -251,6 +263,7 @@ new PrivateLocation("corp-proxy-location", {
 </Tab>
 <Tab title="HTTPS Proxy">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("secure-proxy-location", {
   name: "Secure Corporate Proxy",
@@ -262,6 +275,7 @@ new PrivateLocation("secure-proxy-location", {
 </Tab>
 <Tab title="Authenticated Proxy">
 
+{/* typecheck-wrap: PrivateLocation */}
 ```ts
 new PrivateLocation("auth-proxy-location", {
   name: "Authenticated Proxy Location",
@@ -315,6 +329,7 @@ When `proxyUrl` is configured, all HTTP calls from API checks running in this pr
   </Tab>
 
   <Tab title="Multiple Datacenters">
+    {/* typecheck-wrap: PrivateLocation */}
     ```ts
     const eastDatacenter = new PrivateLocation("dc-east", {
       name: "East Coast Datacenter",
@@ -357,6 +372,7 @@ When `proxyUrl` is configured, all HTTP calls from API checks running in this pr
   </Tab>
 
   <Tab title="Development Environments">
+    {/* typecheck-wrap: PrivateLocation */}
     ```ts
     const devEnvironment = new PrivateLocation("dev-env", {
       name: "Development Environment",
@@ -366,7 +382,7 @@ When `proxyUrl` is configured, all HTTP calls from API checks running in this pr
 
     const stagingEnvironment = new PrivateLocation("staging-env", {
       name: "Staging Environment",
-      icon: "staging",
+      icon: "beaker",
       slugName: "staging-environment"
     })
 
@@ -394,6 +410,7 @@ When `proxyUrl` is configured, all HTTP calls from API checks running in this pr
   </Tab>
 
   <Tab title="With Proxy Configuration">
+    {/* typecheck-wrap: PrivateLocation */}
     ```ts
     const corporateLocation = new PrivateLocation("corporate-with-proxy", {
       name: "Corporate Network with Proxy",

@@ -1,0 +1,139 @@
+---
+title: extend
+description: 'This page explains how to use the extend operator in APL.'
+---
+
+The `extend` operator in APL allows you to create new calculated fields in your result set based on existing data. You can define expressions or functions to compute new values for each row, making `extend` particularly useful when you need to enrich your data without altering the original dataset. You typically use `extend` when you want to add additional fields to analyze trends, compare metrics, or generate new insights from your data.
+
+## Usage
+
+### Syntax
+
+```kusto
+| extend NewField = Expression
+```
+
+### Parameters
+
+- `NewField`: The name of the new field to be created.
+- `Expression`: The expression used to compute values for the new field. This can include mathematical operations, string manipulations, or functions.
+
+### Returns
+
+The operator returns a copy of the original dataset with the following changes:
+- Field names noted by `extend` that already exist in the input are removed and appended as their new calculated values.
+- Field names noted by `extend` that don’t exist in the input are appended as their new calculated values.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In log analysis, you can use `extend` to compute the duration of each request in seconds from a millisecond value.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend duration_sec = req_duration_ms / 1000
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20duration_sec%20%3D%20req_duration_ms%20%2F%201000%22%7D)
+
+**Output**
+
+| _time              | req_duration_ms | id   | status | uri          | method | geo.city | geo.country | duration_sec |
+|--------------------|-----------------|------|--------|--------------|--------|----------|-------------|--------------|
+| 2024-10-17 09:00:01| 300             | 1234 | 200    | /home        | GET    | London   | UK          | 0.3          |
+
+This query calculates the duration of HTTP requests in seconds by dividing the `req_duration_ms` field by 1000.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+You can use `extend` to create a new field that categorizes the service type based on the service’s name.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| extend service_type = iff(['service.name'] in ('frontend', 'frontendproxy'), 'Web', 'Backend')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D%20%7C%20extend%20service_type%20%3D%20iff%28%5B%27service.name%27%5D%20in%20%28%27frontend%27%2C%20%27frontendproxy%27%29%2C%20%27Web%27%2C%20%27Backend%27%29%22%7D)
+
+**Output**
+
+| _time              | span_id | trace_id | service.name      | kind    | status_code | service_type |
+|--------------------|---------|----------|-------------------|---------|-------------|--------------|
+| 2024-10-17 09:00:01| abc123  | xyz789   | frontend          | client  | 200         | Web          |
+| 2024-10-17 09:00:01| def456  | uvw123   | checkoutservice   | server  | 500         | Backend      |
+
+This query adds a new field `service_type` that categorizes the service into either Web or Backend based on the `service.name` field.
+</Tab>
+<Tab title="Security logs">
+
+For security logs, you can use `extend` to categorize HTTP statuses as success or failure.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend status_category = iff(status == '200', 'Success', 'Failure')
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D%20%7C%20extend%20status_category%20%3D%20iff%28status%20%3D%3D%20%27200%27%2C%20%27Success%27%2C%20%27Failure%27%29%22%7D)
+
+**Output**
+
+| _time              | id   | status | uri          | status_category |
+|--------------------|------|--------|--------------|-----------------|
+| 2024-10-17 09:00:01| 1234 | 200    | /home        | Success         |
+
+This query creates a new field `status_category` that labels each HTTP request as either a Success or Failure based on the status code.
+
+</Tab>
+</Tabs>
+
+## List of related operators
+
+- [project](/apl/tabular-operators/project-operator): Use `project` to select specific fields or rename them. Unlike `extend`, it doesn’t add new fields.
+- [summarize](/apl/tabular-operators/summarize-operator): Use `summarize` to aggregate data, which differs from `extend` that only adds new calculated fields without aggregation.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, the `eval` command is used to create new fields or modify existing ones. In APL, you can achieve this using the `extend` operator.
+
+<CodeGroup>
+```sql Splunk example
+index=myindex
+| eval newField = duration * 1000
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend newField = req_duration_ms * 1000
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you typically use the `SELECT` clause with expressions to create new fields. In APL, `extend` is used instead to define these new computed fields.
+
+<CodeGroup>
+```sql SQL example
+SELECT id, req_duration_ms, req_duration_ms * 1000 AS newField FROM logs;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| extend newField = req_duration_ms * 1000
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

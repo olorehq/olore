@@ -4,264 +4,294 @@
 
 ```
 contents/
-├── api/                        # Core API reference (9 files)
-│   ├── advanced/               # Advanced programmatic API (13 files)
-│   └── browser/                # Browser mode API (8 files)
-├── config/                     # Configuration reference (82 files)
-│   └── browser/                # Browser config options (23 files)
-└── guide/                      # Usage guides and tutorials (28 files)
-    ├── advanced/               # Advanced runner/reporter API (4 files)
-    ├── browser/                # Browser mode guides (8 files)
-    ├── learn/                  # Learning guides and tutorials (8 files)
-    ├── mocking/                # Mocking guides (8 files)
-    └── recipes/                # Practical recipes (11 files)
+  ./  (1 files)
+  api/  (9 files)
+  api/advanced/  (13 files)
+  api/browser/  (8 files)
+  config/  (87 files)
+  config/browser/  (23 files)
+  guide/  (30 files)
+  guide/advanced/  (5 files)
+  guide/browser/  (8 files)
+  guide/examples/  (2 files)
+  guide/learn/  (9 files)
+  guide/migration/  (3 files)
+  guide/mocking/  (8 files)
+  guide/recipes/  (13 files)
 ```
 
 ## Key Entry Points
 
 | Task | Start Here |
 |------|------------|
-| Getting started | `contents/guide/index.md` |
-| CLI reference | `contents/guide/cli.md` |
-| Configuration overview | `contents/config/index.md` |
-| Writing tests | `contents/guide/learn/writing-tests.md` |
-| Mocking | `contents/guide/mocking.md` |
+| New user | `contents/guide/index.md` |
+| Configuration | `contents/config/index.md` |
+| Writing tests | `contents/api/test.md`, `contents/api/expect.md` |
+| Mocking | `contents/api/vi.md`, `contents/guide/mocking.md` |
+| Browser Mode | `contents/guide/browser/index.md` |
 | Coverage | `contents/guide/coverage.md` |
-| Snapshots | `contents/guide/snapshot.md` |
-| Browser mode | `contents/guide/browser/index.md` |
-| API: expect | `contents/api/expect.md` |
-| API: vi utilities | `contents/api/vi.md` |
+| Migrating from Jest | `contents/guide/migration/jest.md` |
 | Troubleshooting | `contents/guide/common-errors.md` |
 
 ## Detailed Structure
+
+### ./ (1 files)
+
+| File | Description |
+|------|-------------|
+| `index.md` | Landing page for the Vitest docs |
 
 ### api/ (9 files)
 
 | File | Description |
 |------|-------------|
-| `assert-type.md` | assertType API for compile-time type assertions |
-| `assert.md` | assert API (Chai assertions) |
-| `describe.md` | describe/suite block API |
-| `expect-typeof.md` | expectTypeOf API for type testing |
-| `expect.md` | expect matchers and assertions |
-| `hooks.md` | beforeAll, afterAll, beforeEach, afterEach hooks |
-| `mock.md` | Mock instance API (MockInstance) |
-| `test.md` | test/it API |
-| `vi.md` | vi utility: spyOn, mock, fake timers, stubs |
+| `assert-type.md` | assertType helper for type-level checks |
+| `assert.md` | Chai assert-style API available in Vitest |
+| `describe.md` | describe, suite grouping and its modifiers (skip, only, concurrent, each) |
+| `expect-typeof.md` | expectTypeOf API for type-level assertions |
+| `expect.md` | expect assertions and matchers reference, asymmetric matchers |
+| `hooks.md` | beforeEach, afterEach, beforeAll, afterAll, aroundEach and onTestFinished hooks |
+| `mock.md` | Mock function API (vi.fn instances): calls, results, implementations |
+| `test.md` | test/it API, modifiers, options, test.each, test.extend fixtures |
+| `vi.md` | vi utility: mocking modules, timers, spies, env/global stubs, waitFor |
 
 ### api/advanced/ (13 files)
 
 | File | Description |
 |------|-------------|
-| `artifacts.md` | Test artifacts API |
-| `import-example.md` | Example of programmatic API usage |
-| `metadata.md` | Task metadata API |
-| `plugin.md` | Vitest plugin API |
-| `reporters.md` | Custom reporter API |
-| `runner.md` | Custom test runner API |
-| `test-case.md` | TestCase class reference |
-| `test-collection.md` | TestCollection class reference |
-| `test-module.md` | TestModule class reference |
-| `test-project.md` | TestProject class reference |
-| `test-specification.md` | TestSpecification class reference |
-| `test-suite.md` | TestSuite class reference |
-| `vitest.md` | Vitest programmatic class reference |
+| `artifacts.md` | Test artifacts API for attaching files and recordings to test results |
+| `import-example.md` | Example of importing and running Vitest programmatically |
+| `metadata.md` | Attaching custom metadata to tasks and reading it in reporters |
+| `plugin.md` | Plugin API: Vitest hooks available to Vite plugins |
+| `reporters.md` | Custom reporter API and the reporter lifecycle hooks |
+| `runner.md` | Custom test runner API and VitestRunner interface |
+| `test-case.md` | TestCase class: state and results of a single test |
+| `test-collection.md` | TestCollection: iterable collection of tests and suites |
+| `test-module.md` | TestModule class: a test file and its children |
+| `test-project.md` | TestProject class: per-project config, Vite server and provide API |
+| `test-specification.md` | TestSpecification: a project and file pair to run |
+| `test-suite.md` | TestSuite class: a describe block and its children |
+| `vitest.md` | Vitest class API: start, run, rerun and manage tests programmatically |
 
 ### api/browser/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `assertions.md` | Browser-specific expect matchers |
-| `commands.md` | Custom browser commands API |
-| `context.md` | Browser test context |
-| `interactivity.md` | User event simulation API |
-| `locators.md` | Element locator API |
-| `react.md` | React component testing utilities |
-| `svelte.md` | Svelte component testing utilities |
-| `vue.md` | Vue component testing utilities |
+| `assertions.md` | Browser Mode assertion matchers for DOM elements (toBeVisible, toHaveTextContent, ...) |
+| `commands.md` | Built-in and custom server commands callable from browser tests |
+| `context.md` | vitest/browser context: page, server, userEvent and locators |
+| `interactivity.md` | userEvent API for clicks, typing, hover and other interactions |
+| `locators.md` | Locator API for querying elements by role, text, label and test id |
+| `react.md` | Rendering React components with vitest-browser-react |
+| `svelte.md` | Rendering Svelte components with vitest-browser-svelte |
+| `vue.md` | Rendering Vue components with vitest-browser-vue |
 
-### config/ (82 files)
+### config/ (87 files)
 
 | File | Description |
 |------|-------------|
-| `index.md` | Configuration overview and vite.config integration |
-| `alias.md` | Path alias configuration |
-| `allowonly.md` | allowOnly option |
-| `api.md` | API server config (host, port) |
-| `attachmentsdir.md` | attachmentsDir option |
-| `bail.md` | bail option - stop after N failures |
-| `benchmark.md` | Benchmark configuration |
-| `cache.md` | Cache directory config |
-| `chaiconfig.md` | Chai assertion config |
-| `clearmocks.md` | clearMocks option |
-| `coverage.md` | Coverage provider configuration |
-| `css.md` | CSS processing config |
-| `dangerouslyignoreunhandlederrors.md` | dangerouslyIgnoreUnhandledErrors option |
-| `deps.md` | Dependency transform config |
-| `detectasyncleaks.md` | detectAsyncLeaks option |
-| `diff.md` | Diff output config |
-| `dir.md` | Test directory config |
-| `disableconsoleintercept.md` | disableConsoleIntercept option |
-| `env.md` | Environment variables config |
-| `environment.md` | Test environment (node/jsdom/happy-dom) |
-| `environmentoptions.md` | Environment-specific options |
-| `exclude.md` | File exclusion patterns |
-| `execargv.md` | Node.js execArgv config |
-| `expandsnapshotdiff.md` | expandSnapshotDiff option |
-| `expect.md` | expect config (timeout, requireAssertions) |
-| `experimental.md` | Experimental features config |
-| `faketimers.md` | Fake timers config |
-| `fileparallelism.md` | fileParallelism option |
-| `forcereruntriggers.md` | forceRerunTriggers config |
-| `globals.md` | globals option (Jest compatibility) |
-| `globalsetup.md` | globalSetup files config |
-| `hideskippedtests.md` | hideSkippedTests option |
-| `hooktimeout.md` | Hook timeout config |
-| `include-source.md` | includeSource config for in-source testing |
-| `include.md` | File inclusion patterns |
-| `includetasklocation.md` | includeTaskLocation option |
-| `isolate.md` | isolate option |
-| `logheapusage.md` | logHeapUsage option |
-| `maxconcurrency.md` | maxConcurrency option |
-| `maxworkers.md` | maxWorkers option |
-| `mockreset.md` | mockReset option |
-| `mode.md` | Vite mode config |
-| `name.md` | Project name config |
-| `onconsolelog.md` | onConsoleLog handler config |
-| `onstacktrace.md` | onStackTrace handler config |
-| `onunhandlederror.md` | onUnhandledError handler config |
-| `open.md` | open option (auto-open UI) |
-| `outputfile.md` | outputFile config for reporters |
-| `passwithnotests.md` | passWithNoTests option |
-| `pool.md` | Worker pool config (threads/forks/vmThreads) |
-| `printconsoletrace.md` | printConsoleTrace option |
-| `projects.md` | Multiple projects/workspaces config |
-| `provide.md` | provide context injection config |
-| `repeats.md` | repeats option |
-| `reporters.md` | Reporters config |
-| `resolvesnapshotpath.md` | resolveSnapshotPath function config |
-| `restoremocks.md` | restoreMocks option |
-| `retry.md` | retry option for flaky tests |
-| `root.md` | Root directory config |
-| `runner.md` | Custom test runner config |
-| `sequence.md` | Test sequence/order config |
-| `server.md` | Server config |
-| `setupfiles.md` | Setup files config |
-| `silent.md` | silent option |
-| `slowtestthreshold.md` | slowTestThreshold option |
-| `snapshotenvironment.md` | snapshotEnvironment config |
-| `snapshotformat.md` | Snapshot format config |
+| `alias.md` | Define custom aliases for module resolution in tests |
+| `allowonly.md` | Allow tests marked .only (disabled by default in CI) |
+| `api.md` | Configure the Vitest API server port and host |
+| `attachmentsdir.md` | Directory for test attachments |
+| `bail.md` | Stop running tests after N failures |
+| `benchmark.md` | Benchmark mode options |
+| `cache.md` | Test cache control |
+| `chaiconfig.md` | Chai assertion configuration (stack, diff, truncation) |
+| `changed.md` | Run only tests affected by changed files |
+| `clearmocks.md` | Auto-clear mock calls before each test |
+| `coverage.md` | Coverage provider, reporters, thresholds and include/exclude options |
+| `css.md` | Control CSS processing and CSS modules in tests |
+| `dangerouslyignoreunhandlederrors.md` | Ignore unhandled errors so the run does not fail |
+| `deps.md` | Dependency handling options (optimizer, inline, interop) |
+| `detectasyncleaks.md` | Detect leaked async resources |
+| `diff.md` | Custom diff output configuration |
+| `dir.md` | Base directory for scanning test files |
+| `disableconsoleintercept.md` | Disable console output interception |
+| `env.md` | Environment variables available during tests |
+| `environment.md` | Test environment (node, jsdom, happy-dom, edge-runtime) |
+| `environmentoptions.md` | Options passed to the test environment |
+| `exclude.md` | Glob patterns to exclude from test discovery |
+| `execargv.md` | Extra Node execArgv for workers |
+| `expandsnapshotdiff.md` | Expand snapshot diff on failure |
+| `expect.md` | Options for expect (poll, requireAssertions) |
+| `experimental.md` | Experimental feature flags |
+| `faketimers.md` | Default fake timer configuration |
+| `fileparallelism.md` | Run test files in parallel or serially |
+| `forcereruntriggers.md` | Files that force a full rerun in watch mode |
+| `fsmodulecache.md` | Enable on-disk module cache |
+| `fsmodulecachepath.md` | Path of the file-system module cache |
+| `globals.md` | Expose describe/it/expect as globals |
+| `globalsetup.md` | Global setup/teardown files |
+| `hideskippedtests.md` | Hide skipped tests in output |
+| `hooktimeout.md` | Default timeout for hooks |
+| `include-source.md` | Glob for in-source test files |
+| `include.md` | Glob patterns for test files |
+| `includetasklocation.md` | Include test location in task results |
+| `index.md` | Configuring Vitest: config files, defineConfig and overriding Vite config |
+| `injectcjsglobals.md` | Inject CJS globals (require, __dirname) into modules |
+| `isolate.md` | Run each test file in an isolated environment |
+| `logheapusage.md` | Log heap usage after each test |
+| `maxconcurrency.md` | Max concurrent tests per file |
+| `maxworkers.md` | Maximum number of workers |
+| `mockreset.md` | Auto-reset mocks before each test |
+| `mode.md` | Vite mode used for tests |
+| `name.md` | Project name (for projects/workspaces) |
+| `onconsolelog.md` | Callback to filter or handle console logs |
+| `onstacktrace.md` | Callback to filter stack trace frames |
+| `onunhandlederror.md` | Callback to handle unhandled errors |
+| `open.md` | Open the Vitest UI automatically |
+| `outputfile.md` | Write reporter output to a file |
+| `passwithnotests.md` | Pass when no tests are found |
+| `pool.md` | Worker pool (threads, forks, vmThreads, vmForks) |
+| `printconsoletrace.md` | Print stack trace for console calls |
+| `projects.md` | Define multiple projects in one config |
+| `provide.md` | Values provided to tests via inject |
+| `repeats.md` | Repeat each test N times |
+| `reporters.md` | Reporters to use for output |
+| `resolvesnapshotpath.md` | Custom snapshot file path resolver |
+| `restoremocks.md` | Restore original implementations before each test |
+| `retry.md` | Retry failed tests (count, delay, condition) |
+| `root.md` | Project root directory |
+| `runner.md` | Custom test runner path |
+| `sequence.md` | Test ordering: shuffle, seed, hooks order, sequencer |
+| `server.md` | Vite-node server options (deps inline/external) |
+| `setupfiles.md` | Files run before each test file |
+| `sharedviteserver.md` | Share Vite server across projects |
+| `silent.md` | Suppress console output |
+| `slowtestthreshold.md` | Threshold (ms) to flag slow tests |
+| `snapshotenvironment.md` | Custom snapshot environment |
+| `snapshotformat.md` | pretty-format options for snapshots |
 | `snapshotserializers.md` | Custom snapshot serializers |
-| `stricttags.md` | strictTags option |
-| `tags.md` | Test tags config |
-| `tasktitlevalueformattruncate.md` | taskTitleValueFormatTruncate option |
-| `teardowntimeout.md` | teardownTimeout option |
-| `testnamepattern.md` | testNamePattern config |
-| `testtimeout.md` | testTimeout option |
-| `typecheck.md` | Type checking config |
-| `ui.md` | UI mode config |
-| `unstubenvs.md` | unstubEnvs option |
-| `unstubglobals.md` | unstubGlobals option |
-| `update.md` | update option (snapshot update) |
-| `vmmemorylimit.md` | vmMemoryLimit option |
-| `watch.md` | watch mode config |
-| `watchtriggerpatterns.md` | watchTriggerPatterns config |
+| `stricttags.md` | Fail on undefined test tags |
+| `tags.md` | Define test tags and their options |
+| `tasktitlevalueformattruncate.md` | Truncate formatted values in test titles |
+| `teardowntimeout.md` | Timeout for teardown |
+| `testnamepattern.md` | Run only tests matching a name pattern |
+| `testtimeout.md` | Default test timeout |
+| `typecheck.md` | Type testing options (checker, include, tsconfig) |
+| `ui.md` | Enable the Vitest UI |
+| `unstubenvs.md` | Auto-restore stubbed env vars |
+| `unstubglobals.md` | Auto-restore stubbed globals |
+| `update.md` | Update snapshots |
+| `vmmemorylimit.md` | Memory limit for VM pools |
+| `watch.md` | Watch mode toggle |
+| `watchtriggerpatterns.md` | Map changed files to tests to rerun |
 
 ### config/browser/ (23 files)
 
 | File | Description |
 |------|-------------|
-| `api.md` | Browser API server config |
-| `commands.md` | Browser commands config |
-| `connecttimeout.md` | Browser connect timeout |
-| `detailspanelposition.md` | UI details panel position |
-| `enabled.md` | Enable browser mode |
-| `expect.md` | Browser expect config |
-| `headless.md` | Headless mode config |
-| `instances.md` | Browser instances config |
-| `isolate.md` | Browser test isolation |
-| `locators.md` | Browser locators config |
-| `orchestratorscripts.md` | Orchestrator scripts config |
-| `playwright.md` | Playwright provider config |
-| `preview.md` | Preview provider config |
-| `provider.md` | Browser provider (playwright/webdriverio) |
-| `screenshotdirectory.md` | Screenshot directory config |
-| `screenshotfailures.md` | Screenshot on failure config |
+| `commands.md` | Custom browser commands |
+| `connecttimeout.md` | Timeout for browser connection |
+| `dependencysourcemaps.md` | Source maps for browser dependencies |
+| `detailspanelposition.md` | Position of the details panel in the UI |
+| `enabled.md` | Enable Browser Mode |
+| `expect.md` | Browser-specific expect options |
+| `headless.md` | Run browser headless |
+| `importmapmocks.md` | Use import maps for module mocks |
+| `instances.md` | Browser instances (browser name and per-instance options) |
+| `locators.md` | Locator options such as test id attribute |
+| `orchestratorscripts.md` | Custom scripts injected into the orchestrator page |
+| `playwright.md` | Playwright provider options |
+| `preview.md` | Preview provider options |
+| `provider.md` | Browser provider selection (playwright, webdriverio, preview) |
+| `screenshotdirectory.md` | Where screenshots are stored |
+| `screenshotfailures.md` | Capture screenshots on failure |
 | `testerhtmlpath.md` | Custom tester HTML path |
-| `trace.md` | Browser trace config |
-| `traceview.md` | Trace viewer config |
-| `trackunhandlederrors.md` | Track unhandled errors in browser |
-| `ui.md` | Browser UI config |
-| `viewport.md` | Browser viewport config |
-| `webdriverio.md` | WebdriverIO provider config |
+| `trace.md` | Playwright trace recording mode |
+| `traceview.md` | Trace viewer options |
+| `trackunhandlederrors.md` | Track unhandled errors in the browser |
+| `ui.md` | Show Vitest UI in browser |
+| `viewport.md` | Default viewport size |
+| `webdriverio.md` | WebdriverIO provider options |
 
-### guide/ (28 files)
+### guide/ (30 files)
 
 | File | Description |
 |------|-------------|
-| `index.md` | Getting started / introduction |
-| `benchmarking.md` | Benchmarking with Vitest |
-| `cli-generated.md` | Generated CLI reference |
-| `cli.md` | CLI usage and options |
-| `common-errors.md` | Common errors and troubleshooting |
-| `coverage.md` | Code coverage setup and configuration |
-| `debugging.md` | Debugging tests |
-| `environment.md` | Test environments (jsdom, happy-dom, node) |
-| `extending-matchers.md` | Custom matchers with expect.extend |
-| `filtering.md` | Filtering tests (only, skip, tags) |
-| `ide.md` | IDE integration (VS Code, JetBrains) |
-| `improving-performance.md` | Performance tuning |
+| `benchmarking.md` | Benchmarking with bench and CLI options |
+| `cli-generated.md` | Generated list of all CLI options |
+| `cli.md` | CLI commands and options |
+| `common-errors.md` | Common errors and fixes |
+| `comparisons.md` | Comparison with Jest, Mocha, Playwright and others |
+| `coverage.md` | Coverage setup, providers and thresholds |
+| `debugging.md` | Debugging tests in IDEs and Node inspector |
+| `environment.md` | Test environments and per-file environment |
+| `extending-matchers.md` | Adding custom matchers |
+| `features.md` | Feature overview |
+| `filtering.md` | Filtering tests by name, file and tag |
+| `ide.md` | IDE integrations (VS Code, JetBrains) |
+| `improving-performance.md` | Tips for faster test runs |
 | `in-source.md` | In-source testing |
-| `lifecycle.md` | Test lifecycle |
-| `migration.md` | Migration guide (from Jest, from older Vitest) |
+| `index.md` | Getting started: install, first test, running |
+| `lifecycle.md` | Test run lifecycle |
 | `mocking.md` | Mocking overview |
-| `open-telemetry.md` | OpenTelemetry integration |
-| `parallelism.md` | Parallel test execution |
+| `open-telemetry.md` | OpenTelemetry tracing support |
+| `parallelism.md` | Parallelism and concurrency |
 | `profiling-test-performance.md` | Profiling test performance |
-| `projects.md` | Multi-project (workspace) setup |
+| `projects.md` | Test projects (multi-config) guide |
 | `reporters.md` | Built-in reporters |
 | `snapshot.md` | Snapshot testing |
-| `test-annotations.md` | Test annotations API |
+| `test-annotations.md` | Test annotations |
 | `test-context.md` | Test context and fixtures |
 | `test-tags.md` | Test tags |
-| `testing-types.md` | Type-level testing |
-| `ui.md` | Vitest UI mode |
-| `using-plugins.md` | Using Vitest plugins |
+| `testing-types.md` | Testing types |
+| `ui.md` | Vitest UI |
+| `using-plugins.md` | Using plugins |
+| `why.md` | Why Vitest |
 
-### guide/advanced/ (4 files)
+### guide/advanced/ (5 files)
 
 | File | Description |
 |------|-------------|
-| `index.md` | Advanced API getting started |
-| `pool.md` | Custom worker pool |
-| `reporters.md` | Custom reporters |
-| `tests.md` | Programmatic test running |
+| `benchmark-provider.md` | Writing a custom benchmark provider |
+| `index.md` | Advanced API overview: running Vitest from Node |
+| `pool.md` | Writing a custom pool |
+| `reporters.md` | Writing custom reporters |
+| `tests.md` | Programmatically running and inspecting tests |
 
 ### guide/browser/ (8 files)
 
 | File | Description |
 |------|-------------|
-| `index.md` | Browser mode getting started |
-| `aria-snapshots.md` | ARIA snapshot testing |
-| `component-testing.md` | Component testing (React, Vue, Svelte) |
-| `multiple-setups.md` | Multiple browser setups |
-| `playwright-traces.md` | Playwright traces |
-| `trace-view.md` | Trace view guide |
-| `visual-regression-testing.md` | Visual regression testing |
-| `why.md` | Why browser mode |
+| `aria-snapshots.md` | ARIA snapshot assertions in Browser Mode |
+| `component-testing.md` | Component testing in Browser Mode |
+| `index.md` | Browser Mode setup and overview |
+| `multiple-setups.md` | Multiple browser setups and projects |
+| `playwright-traces.md` | Recording Playwright traces |
+| `trace-view.md` | Using the trace view |
+| `visual-regression-testing.md` | Visual regression with screenshots |
+| `why.md` | Why and when to use Browser Mode |
 
-### guide/learn/ (8 files)
+### guide/examples/ (2 files)
 
 | File | Description |
 |------|-------------|
-| `async.md` | Testing async code |
-| `debugging-tests.md` | Debugging tests tutorial |
+| `projects-workspace.md` | Example projects/workspace setup |
+| `promise-done.md` | Example of migrating done callbacks to promises |
+
+### guide/learn/ (9 files)
+
+| File | Description |
+|------|-------------|
+| `async.md` | Testing asynchronous code |
+| `debugging-tests.md` | Debugging failing tests |
 | `matchers.md` | Using matchers |
 | `mock-functions.md` | Mock functions tutorial |
-| `setup-teardown.md` | Setup and teardown |
+| `setup-teardown.md` | Setup and teardown hooks |
 | `snapshots.md` | Snapshot testing tutorial |
-| `testing-in-practice.md` | Testing in practice |
+| `testing-in-practice.md` | Applying testing in real projects |
+| `writing-tests-with-ai.md` | Writing tests with AI tools |
 | `writing-tests.md` | Writing your first tests |
+
+### guide/migration/ (3 files)
+
+| File | Description |
+|------|-------------|
+| `index.md` | Migrating between Vitest versions |
+| `jest.md` | Migrating from Jest |
+| `mocha.md` | Migrating from Mocha, Chai and Sinon |
 
 ### guide/mocking/ (8 files)
 
@@ -272,22 +302,24 @@ contents/
 | `file-system.md` | Mocking the file system |
 | `functions.md` | Mocking functions |
 | `globals.md` | Mocking globals |
-| `modules.md` | Mocking modules (vi.mock) |
-| `requests.md` | Mocking HTTP requests |
+| `modules.md` | Mocking modules |
+| `requests.md` | Mocking network requests |
 | `timers.md` | Mocking timers |
 
-### guide/recipes/ (11 files)
+### guide/recipes/ (13 files)
 
 | File | Description |
 |------|-------------|
-| `browser-locators.md` | Browser locator patterns |
-| `cancellable.md` | Cancellable test patterns |
-| `custom-assertions.md` | Custom assertion patterns |
-| `db-transaction.md` | Database transaction testing |
-| `disable-isolation.md` | Disabling test isolation |
-| `explicit-resources.md` | Explicit resource management |
-| `parallel-sequential.md` | Parallel and sequential test patterns |
-| `schema-matching.md` | Schema matching patterns |
+| `affected-tests.md` | Running only affected tests |
+| `browser-locators.md` | Extending browser locators |
+| `cancellable.md` | Cancellable test resources |
+| `conditional-mocking.md` | Conditional mocking with vi.when |
+| `custom-assertions.md` | Custom assertion helpers |
+| `db-transaction.md` | Database transaction per test |
+| `disable-isolation.md` | Per-file isolation settings |
+| `explicit-resources.md` | Auto-cleanup with using |
+| `parallel-sequential.md` | Parallel and sequential test files |
+| `schema-matching.md` | Schema-driven assertions |
 | `type-narrowing.md` | Type narrowing in tests |
 | `wait-for.md` | Waiting for async conditions |
-| `watch-templates.md` | Watch mode templates |
+| `watch-templates.md` | Watching non-imported files |

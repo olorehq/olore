@@ -2,10 +2,12 @@
 title: 'Alert Escalation Policy Construct'
 description: 'Learn how to configure alert escalation policies with the Checkly CLI.'
 sidebarTitle: 'Alert Escalation Policy'
+canonical: 'https://www.checklyhq.com/docs/constructs/alert-escalation-policy/'
+mode: "wide"
 ---
 
 <Tip>
-Learn more about alert escalation policies in [the alerts configuration](/communicate/alerts/configuration#escalation-strategies).
+Learn more about alert escalation policies in [the alerts configuration](/communicate/alerts/configuration#escalation-configuration).
 </Tip>
 
 Use alert escalation policies to control when and how often you receive alerts when checks start failing, degrade, or recover. This helps you fine-tune your alerting to reduce noise and ensure timely alerts.
@@ -64,6 +66,7 @@ Creates an alert escalation policy that triggers after a specified number of con
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts
 AlertEscalationBuilder.runBasedEscalation(
   failedRuns,
@@ -84,6 +87,7 @@ AlertEscalationBuilder.runBasedEscalation(
 
 <CodeGroup>
 
+{/* typecheck-wrap */}
 ```ts Immediate Alert
 // Alert immediately on first failure
 const immediateAlert = AlertEscalationBuilder.runBasedEscalation(
@@ -101,6 +105,7 @@ new ApiCheck("critical-service-check", {
 })
 ```
 
+{/* typecheck-wrap */}
 ```ts Conservative Alert
 // Wait for multiple failures before alerting
 const conservativeAlert = AlertEscalationBuilder.runBasedEscalation(
@@ -132,6 +137,7 @@ Creates an alert escalation policy that triggers after a specified duration of c
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts
 AlertEscalationBuilder.timeBasedEscalation(
   minutesFailing,
@@ -152,6 +158,7 @@ AlertEscalationBuilder.timeBasedEscalation(
 
 <CodeGroup>
 
+{/* typecheck-wrap */}
 ```ts Alert after 15 minutes
 // Wait for batch jobs or slow services
 const timeBasedAlert = AlertEscalationBuilder.timeBasedEscalation(
@@ -251,6 +258,7 @@ parallelRunFailureThreshold: {
 
 <CodeGroup>
 
+{/* typecheck-wrap */}
 ```ts Regional Redundancy
 // Only alert if majority of regions fail
 const regionalAlert = AlertEscalationBuilder.runBasedEscalation(
@@ -271,6 +279,7 @@ new ApiCheck("global-service-check", {
 })
 ```
 
+{/* typecheck-wrap */}
 ```ts CDN Monitoring
 // Alert if 10% of CDN edges are failing
 const cdnAlert = AlertEscalationBuilder.runBasedEscalation(

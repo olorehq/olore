@@ -2,11 +2,115 @@
 title: '.NET'
 description: 'Learn how to instrument your .NET code with OpenTelemetry.'
 sidebarTitle: '.NET'
+canonical: 'https://www.checklyhq.com/docs/resolve/traces/instrumentation/dotnet/'
 ---
 
-.NET docs coming soon.
+This guide shows you how to instrument an ASP.NET Core application and send traces from Checkly-triggered requests to Checkly. For other .NET application types and instrumentation libraries, refer to the [OpenTelemetry .NET documentation](https://opentelemetry.io/docs/languages/dotnet/).
 
-* Check the canonical OpenTelemetry .NET documentation at [opentelemetry.io](https://opentelemetry.io/docs/languages/net/getting-started/).
+<Accordion title="Prerequisites">
+  - A .NET application that receives requests from a Checkly check.
+  - An OTel API key and endpoint from the [OpenTelemetry Integration page](https://app.checklyhq.com/settings/account/open-telemetry) in the Checkly app.
+</Accordion>
 
-* And the great content from [signoz.io](https://signoz.io/docs/instrumentation/dotnet/).
+## Install OpenTelemetry packages
 
+Install the OpenTelemetry SDK, OTLP exporter, and ASP.NET Core instrumentation:
+
+```bash Terminal
+dotnet add package OpenTelemetry.Extensions.Hosting
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
+```
+
+To trace outgoing `HttpClient` requests as part of the same trace, also install the HTTP client instrumentation:
+
+```bash Terminal
+dotnet add package OpenTelemetry.Instrumentation.Http
+```
+
+## Add the Checkly sampler
+
+Create `ChecklySampler.cs` in your project:
+
+```csharp ChecklySampler.cs
+using System;
+using OpenTelemetry.Trace;
+
+public sealed class ChecklySampler : Sampler
+{
+    public override SamplingResult ShouldSample(in SamplingParameters samplingParameters)
+    {
+        return HasChecklyTraceState(samplingParameters.ParentContext.TraceState)
+            ? new SamplingResult(SamplingDecision.RecordAndSample)
+            : new SamplingResult(SamplingDecision.Drop);
+    }
+
+    private static bool HasChecklyTraceState(string? traceState)
+    {
+        if (string.IsNullOrWhiteSpace(traceState))
+        {
+            return false;
+        }
+
+        foreach (var entry in traceState.Split(','))
+        {
+            var keyValue = entry.Trim().Split('=', 2);
+
+            if (keyValue.Length == 2
+                && string.Equals(keyValue[0], "checkly", StringComparison.Ordinal)
+                && string.Equals(keyValue[1], "true", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+```
+
+Checkly adds `checkly=true` to the W3C `tracestate` header on requests from its checks. This sampler records only traces that carry that value, so your application exports Checkly-triggered traces rather than all application traffic.
+
+## Configure tracing
+
+Register the sampler, the ASP.NET Core instrumentation, and the OTLP exporter in `Program.cs`:
+
+```csharp Program.cs
+using OpenTelemetry.Trace;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .SetSampler(new ChecklySampler())
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+
+var app = builder.Build();
+
+app.Run();
+```
+
+Remove `.AddHttpClientInstrumentation()` if you did not install `OpenTelemetry.Instrumentation.Http`.
+
+## Set Checkly connection details
+
+Configure the OTLP exporter with standard OpenTelemetry environment variables. Use the endpoint for your Checkly region from the OpenTelemetry Integration page.
+
+```bash Terminal
+export OTEL_EXPORTER_OTLP_HEADERS="authorization=<your-api-key>"
+export OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.eu-west-1.checklyhq.com"
+export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_SERVICE_NAME="your-service-name"
+```
+
+The .NET OTLP exporter uses gRPC by default. Set `OTEL_EXPORTER_OTLP_PROTOCOL` to `http/protobuf` to send traces to the Checkly HTTP endpoint.
+
+Keep the API key outside source control. Configure it through your deployment environment or secret manager.
+
+## Verify the integration
+
+Start your application, then run a Checkly check that calls it. The check-triggered request and its downstream spans should appear with the check result in Checkly.
+
+For more information about how Checkly correlates check results and traces, see [How Traces work](/resolve/traces/how-it-works/).

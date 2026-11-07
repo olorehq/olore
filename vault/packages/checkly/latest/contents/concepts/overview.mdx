@@ -2,6 +2,7 @@
 title: 'Core Concepts Overview'
 description: 'Learn about the core concepts of Checkly'
 sidebarTitle: 'Overview'
+canonical: 'https://www.checklyhq.com/docs/concepts/overview/'
 ---
 
 Organization in Checkly refers to how you structure and manage your monitoring setup through Groups and hierarchical organization. Groups allow you to organize your checks and centralize settings like base URLs, headers, variables and other properties a collection of checks can share. 
@@ -14,9 +15,9 @@ Good Organization transforms monitoring from a collection of individual tests in
 ## Groups as Organizational Units
 Example use cases for groups are organizing your checks around different applications, teams, or functional areas. Use the CheckGroupV2 construct to organize your Checks into groups. This comes with the following benefits: Your Checks are organized in a folder in the Checkly web UI. You can trigger all Checks in a group from the web UI and via a command line trigger.
 
-Groups serve multiple organizational purposes simultaneously. They act as configuration templates, execution units, and logical containers. Group-level configurations, such as the runtime, activated & muted state, tags, and alert channels, will override check-level configurations. 
+Groups serve multiple organizational purposes simultaneously. They act as configuration templates, execution units, and logical containers. Some group settings combine with the check's own settings: group tags are added to the check's tags, the group runtime applies only when the check has none set, and a check is deactivated or muted when either the check or its group is. Group alert settings replace the check's alert settings when the group defines them. 
 ## Flexible Configuration Inheritance
-We're making group-level overrides for scheduling strategy, locations, retries and alert settings optional. This means Groups can now act more like folders, with zero config shared, giving you more flexibility. 
+For groups created in the Checkly UI, with the public API `/v2/check-groups` endpoint or with the CLI `CheckGroupV2` construct, group-level overrides for scheduling strategy, locations, retries and alert settings are optional. By default, these Groups act like folders, with zero config shared, giving you more flexibility. Groups created with the `/v1/check-groups` endpoint or the CLI `CheckGroupV1` construct always apply their own alert, retry and scheduling settings. 
 This evolution allows Groups to serve different organizational needs—they can be strict configuration templates that enforce consistency, or they can be loose organizational containers that simply provide structure without imposing shared settings.
 ## Scaling Through Organization
 As you can see, groups in their current incarnation are mostly handy configuration buckets for common properties. In the future we will expand the group features to make them smarter. 

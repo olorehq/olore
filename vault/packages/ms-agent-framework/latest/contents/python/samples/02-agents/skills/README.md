@@ -13,7 +13,8 @@ Start with file-based or code-defined skills, then explore combining them and ad
 | [**class_based_skill**](class_based_skill/) | Define skills as Python classes using `ClassSkill` with `@ClassSkill.resource` and `@ClassSkill.script` decorators for auto-discovery. Uses a class-based unit-converter skill. |
 | [**mixed_skills**](mixed_skills/) | Combine code-defined, class-based, and file-based skills in a single agent. Uses a code-defined volume-converter, a class-based temperature-converter, and a file-based unit-converter. |
 | [**mcp_based_skill**](mcp_based_skill/) | Discover skills served over the [Model Context Protocol (MCP)](https://modelcontextprotocol.io) via `MCPSkillsSource`. Connects to a remote MCP server that exposes skills as `skill://...` resources following the SEP-2640 convention. |
-| [**script_approval**](script_approval/) | Require human-in-the-loop approval before executing skill scripts |
+| [**script_approval**](script_approval/) | Require manual human-in-the-loop approval before running skill tools (the default). |
+| [**skills_auto_approval**](skills_auto_approval/) | Configure auto-approval rules with `ToolApprovalMiddleware` so read-only skill tools are approved automatically while script execution still prompts. |
 
 ## Key Concepts
 
@@ -50,15 +51,38 @@ Skills can include executable scripts. How a script runs depends on how it was d
 
 The `script_runner` parameter on `SkillsProvider` is only applicable to **file-based** scripts. Code-defined scripts are always executed in-process regardless of this setting. See [file_based_skill](file_based_skill/) for an example using a `SkillScriptRunner` callable with a subprocess runner, and [code_defined_skill](code_defined_skill/) for in-process scripts that need no runner.
 
+### Host Runtime Context
+
+Pass host values with `agent.run(..., function_invocation_kwargs={...})`. Scripts
+should accept `FunctionInvocationContext` to read those values from
+`ctx.kwargs`, separately from model-supplied script arguments.
+
+- [Code-defined skills](code_defined_skill/) and [class-based skills](class_based_skill/)
+  declare `*, ctx: FunctionInvocationContext` on their conversion callbacks to read
+  host-controlled rounding precision. The context parameter is hidden from the
+  script schema and cannot be supplied through script arguments.
+- File-based runners that need host context declare
+  `*, ctx: FunctionInvocationContext | None = None`.
+  The runner's context parameter must have a default value.
+  Only model arguments are forwarded to the subprocess; context is not
+  automatically added to CLI arguments or environment variables.
+
+`SkillsProvider` injects the enclosing tool invocation through `run(...)`. Custom
+`SkillScript` implementations opt in with a keyword-bindable
+`FunctionInvocationContext` parameter, such as
+`ctx: FunctionInvocationContext | None = None`. Unannotated overrides keep
+receiving host values as individual keyword arguments.
+
 ## Prerequisites
 
 All samples require:
-- An [Azure AI Foundry](https://ai.azure.com/) project with a deployed model (e.g. `gpt-4o-mini`)
+- A [Microsoft Foundry](https://ai.azure.com/) project with a deployed model (e.g. `gpt-4o-mini`)
 - Azure CLI authentication (`az login`)
 - Environment variables set in a `.env` file (see `python/.env.example`)
 
-## Suppressing the experimental warning
+## Suppressing the experimental MCP Skills warning
 
-The Agent Skills APIs in these samples are still experimental. Each sample includes
-a short commented `warnings.filterwarnings(...)` snippet near the imports. Uncomment
-it if you want to suppress the Skills warning before using the experimental APIs.
+The core Agent Skills APIs are stable. MCP-based skill discovery
+(`MCPSkillsSource`) is still experimental, so the [mcp_based_skill](mcp_based_skill/)
+sample includes a short commented `warnings.filterwarnings(...)` snippet near the
+imports. Uncomment it if you want to suppress the MCP Skills warning.

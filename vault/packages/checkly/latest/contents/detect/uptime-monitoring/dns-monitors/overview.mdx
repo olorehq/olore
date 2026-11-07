@@ -1,7 +1,8 @@
 ---
-title: 'DNS Monitors Overview'
+title: 'DNS monitors overview'
 description: 'Monitor the resolution and lookup times of DNS records'
 sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/dns-monitors/overview/'
 ---
 
 
@@ -20,7 +21,7 @@ sidebarTitle: Overview
 />
 </Frame>
 
-## What are DNS Monitors?
+## What are DNS monitors?
 
 DNS monitors check that your DNS records resolve as expected. They help you catch misconfigurations, expired records, or propagation issues before they impact your users.  
 
@@ -37,7 +38,7 @@ DNS monitors perform lookups to verify your DNS configuration:
 1. **Query initiation**: Checkly runs a DNS lookup from your configured location(s)
 
 2. **Resolver selection**: The query is sent to a DNS resolver:
-   - **Default**: The query is sent to 8.8.8.8 (Google DNS). If that resolver returns an error (SERVFAIL, NXDOMAIN, etc.), Checkly automatically retries with 1.1.1.1 (Cloudflare DNS), then with an internal AWS resolver.
+   - **Default**: The query is sent to 8.8.8.8 (Google DNS). If that resolver can't be reached or times out, Checkly automatically retries with 1.1.1.1 (Cloudflare DNS), then with an internal AWS resolver. Error responses such as SERVFAIL or NXDOMAIN are returned as they are and are not retried.
    - **Custom resolver**: You can specify your own nameserver (and port) to test resolver-specific behavior. In this mode, the query is sent only to your resolver, no failover is applied.
 
 3. **DNS chain resolution**: The resolver queries the authoritative nameserver and retrieves the requested record type
@@ -74,8 +75,9 @@ DNS monitors support the following DNS record types:
 - **NS**: Nameserver records
 - **SOA**: Start of authority records
 - **TXT**: Text records (SPF, DKIM, DMARC, etc.)
+- **HTTPS**: HTTPS service binding records ([RFC 9460](https://www.rfc-editor.org/rfc/rfc9460)) — advertise HTTP/3 (`alpn`), address hints (`ipv4hint`/`ipv6hint`), and Encrypted Client Hello (`ech`)
 
-## DNS Monitor Results
+## DNS monitor results
 
 Select a specific check run to inspect its results:
 
@@ -87,7 +89,7 @@ Select a specific check run to inspect its results:
    * Target domain
    * Monitor state (passed, degraded or failed), including the DNS status code
    * Total check duration
-   * Nameserver used: Defaults to 8.8.8.8 (Google DNS) with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver on errors. You can also configure a custom nameserver and port
+   * Nameserver used: Defaults to 8.8.8.8 (Google DNS) with automatic failover to 1.1.1.1 (Cloudflare) and an internal AWS resolver when a resolver can't be reached or times out. You can also configure a custom nameserver and port
    * Protocol used (UDP or TCP)
 
 * **Error details:** If a run fails, the DNS status code and error message are shown to help diagnose the issue
@@ -125,7 +127,7 @@ Select a specific check run to inspect its results:
 1. **Set exact count assertion**: Use `$.Answer.length` equals `X` for static infrastructure
 2. **Use range assertions**: For auto-scaled systems, use `$.Answer.length` is greater than `2` and less than `10`
 3. **Monitor specific records**: Use `$.Answer[?(@.data == '203.0.113.1')]` to verify critical IPs are present
-4. **Alert on unexpected changes**: Set alerts to notify when record count deviates from baseline
+4. **Alert on unexpected changes**: A failing `$.Answer.length` assertion fails the run, which triggers your alerts
 
 **Example for MX records**: Ensure backup mail servers are configured with `$.Answer.length` equals `2` or greater.
 </Accordion>
@@ -141,9 +143,9 @@ Select a specific check run to inspect its results:
 
 **How to detect and fix**:
 1. **Test multiple resolvers**: Create separate monitors with different nameservers:
-   - Google DNS: `8.8.8.8:53`
-   - Cloudflare DNS: `1.1.1.1:53`
-   - OpenDNS: `208.67.222.222:53`
+   - Google DNS: resolver `8.8.8.8`, port `53`
+   - Cloudflare DNS: resolver `1.1.1.1`, port `53`
+   - OpenDNS: resolver `208.67.222.222`, port `53`
    - User-reported resolver: Custom IP
 2. **Monitor from multiple locations**: Run monitors from regions where users report issues
 3. **Validate DNSSEC**: Use `dig +dnssec` locally to check for DNSSEC issues

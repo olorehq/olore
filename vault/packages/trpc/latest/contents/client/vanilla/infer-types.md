@@ -3,6 +3,9 @@ id: infer-types
 title: Inferring Types
 sidebar_label: Inferring Types
 slug: /client/vanilla/infer-types
+section: "Client Usage"
+parent: "client/vanilla"
+order: 44
 ---
 
 <!-- Reusable snippet -->

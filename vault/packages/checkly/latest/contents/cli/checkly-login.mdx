@@ -2,17 +2,20 @@
 title: checkly login
 description: 'Sign up for a new Checkly account or log in to your existing account.'
 sidebarTitle: 'checkly login'
+canonical: 'https://www.checklyhq.com/docs/cli/checkly-login/'
 ---
+
+<Note>This page describes Checkly CLI version 10 and later.</Note>
 
 The `checkly login` command authenticates with Checkly by signing up for a new account or logging in to your existing account.
 
-This command opens a browser window or provides a URL for secure OAuth authentication.
+The CLI shows a URL and a short code. Open the URL in a browser on any device, enter the code, and log in or sign up there. The browser doesn't have to run on the same machine as the CLI, so this also works over SSH, in containers and from AI agents.
 
 <Accordion title="Prerequisites">
 Before using `checkly login`, ensure you have:
 
 - Checkly CLI installed
-- A web browser available (for OAuth authentication)
+- A web browser on any device (it doesn't have to be the machine running the CLI)
 - Internet connection for authentication flow
 
 No existing Checkly account is required - you can sign up during the login process.
@@ -26,29 +29,47 @@ The basic command initiates the login process and authenticates with your Checkl
 npx checkly login
 ```
 
-<Tip>Use environment variables in environments without interactive prompts. See the [Authentication section](/cli/authentication#other-authentication-options) for more info.</Tip>
+<Tip>Use environment variables in environments without interactive prompts. See the [Authentication section](/cli/authentication#from-ci) for more info.</Tip>
 
 ## Examples
 
 ```bash Terminal
 npx checkly login
 
-✔ Do you want to log in or sign up to Checkly? › I want to sign up for a new Checkly account
-✔ Do you want to open a browser window to continue with sign up? … yes
+Visit auth.checklyhq.com/activate and enter ABCD-EFGH
+
+Waiting for you to finish in the browser... ✅
+
 ✔ Which account do you want to use? › Monitoring as Code
 
-Successfully logged in as raccoon@checklyhq.com.
-Welcome to the Checkly CLI.
+Logged in as Raccoon to Monitoring as Code.
+
+To create checks for a project, run `npx checkly init`.
 ```
+
+## Options
+
+| Option | Description |
+|---|---|
+| `--account-id <id>` | Use this account instead of asking which one. When you're already logged in, switch to it without logging in again. |
+| `--no-browser` | Only print the URL and code; don't try to open a browser. Setting `CHECKLY_NO_BROWSER=1` does the same, e.g. on headless hosts. |
+| `--wait` | For AI agents: wait until you approve the code an earlier run showed, instead of returning at once. |
 
 ## Authentication Flow
 
-The login process is interactive and will:
+The login process will:
 
-1. **Open your default browser** to the Checkly authentication page
-2. **Prompt for account selection** if you have multiple accounts
-3. **Store authentication tokens** locally for future CLI usage
-4. **Display confirmation** with your account information
+1. **Show a URL and a code**, and open your default browser on that URL when it can
+2. **Wait** until you have logged in or signed up in the browser
+3. **Prompt for account selection** if you have multiple accounts
+4. **Store authentication tokens** locally for future CLI usage
+5. **Display confirmation** with your account information
+
+Commands that need authentication start the same login when no credentials are stored, so you don't have to run `checkly login` first.
+
+### AI agents
+
+When the CLI runs under an AI agent, `checkly login` prints a JSON line with the URL and code for the agent to pass on to you, and exits instead of waiting. The agent then runs `npx checkly login --wait`, which returns as soon as you've approved the login in the browser, so you don't have to tell the agent when you're done. If you have several accounts, the agent asks you which one to use. In CI, set [environment variables](/cli/authentication#from-ci) instead.
 
 ### New Users
 
@@ -70,27 +91,31 @@ If you already have an account:
 
 After successful login, the CLI stores authentication tokens locally in:
 
-- **macOS**: `~/Library/Preferences/@checkly/cli-nodejs/auth.json`
-- **Linux**: ` ~/.config/@checkly/cli-nodejs/auth.json`
-- **Windows**: `%APPDATA%\@checkly\cli-nodejs\auth.json`
+- **macOS**: `~/Library/Preferences/@checkly/cli/auth.json`
+- **Linux**: `~/.config/@checkly/cli/auth.json`
+- **Windows**: `%APPDATA%\@checkly\cli\Config\auth.json`
 
-These tokens are encrypted and used for subsequent CLI operations without requiring re-authentication.
+The file is plain JSON and is not encrypted. The stored tokens are used for subsequent CLI operations without requiring re-authentication.
 
 ## Troubleshooting
 
 ### Browser doesn't open automatically
 
-If the authentication browser window doesn't open:
+Open the displayed URL in a browser on any device and enter the code.
 
-1. Decline to open a new browser window in the CLI dialog
-2. Manually open the displayed URL in your preferred browser
-3. Complete authentication and return to the CLI
+### Logging in as a different user
+
+Run [`checkly logout`](/cli/checkly-logout) first, then `checkly login` again.
 
 ### Multiple accounts
 
-If you have access to multiple Checkly accounts, you'll be prompted to select which account to use as the active account for CLI operations.
+If you have access to multiple Checkly accounts, you'll be prompted to select which account to use as the default account for CLI operations.
 
-You can also switch accounts later using [`checkly switch`](/cli/checkly-switch).
+You can also switch accounts later using [`checkly switch`](/cli/checkly-switch) or `checkly login --account-id <id>`, or use another account for a single command with `CHECKLY_ACCOUNT_ID`. See [Working with several accounts](/cli/authentication#working-with-several-accounts).
+
+### Environment variables
+
+While `CHECKLY_API_KEY` is set, `checkly login` refuses to run; remove it to log in. With only `CHECKLY_ACCOUNT_ID` set, `checkly login` uses that account without asking and stores no default.
 
 ## Related Commands
 

@@ -1,0 +1,250 @@
+---
+title: 'StatusPageV3 Construct'
+description: 'Learn how to configure status pages with the Checkly CLI.'
+sidebarTitle: 'Status page'
+canonical: 'https://www.checklyhq.com/docs/constructs/status-page-v3/'
+---
+
+Use `StatusPageV3` to create a public status page. A v3 page has no cards or services: its structure is declared with [`StatusPageV3Component`](/constructs/status-page-v3-component) constructs that point at the page, and incidents can be automated with [`StatusPageV3AutomationRule`](/constructs/status-page-v3-automation-rule).
+
+<Warning>
+A page's generation cannot change in place. A logical ID that was deployed as a [`StatusPage`](/constructs/status-page) (deprecated) cannot be redeployed as a `StatusPageV3`, or vice versa. To move a v2 page to v3, use the migration wizard in the Checkly app.
+</Warning>
+
+<CodeGroup>
+
+```ts Basic Example
+import { StatusPageV3, StatusPageV3Component } from "checkly/constructs"
+
+const statusPage = new StatusPageV3("company-status", {
+  name: "Company Status",
+  url: "company-status",
+})
+
+new StatusPageV3Component("api-component", {
+  statusPage,
+  name: "API",
+  displayOrder: 0,
+})
+```
+
+```ts Complete Example
+import {
+  StatusPageV3,
+  StatusPageV3AutomationRule,
+  StatusPageV3Component,
+} from "checkly/constructs"
+
+const statusPage = new StatusPageV3("acme-status", {
+  name: "A.C.M.E Status",
+  url: "acme-status",
+  customDomain: "status.acme.com",
+  description: "Live status of all A.C.M.E services.",
+  logo: "https://acme.com/logo.png",
+  logoDark: "https://acme.com/logo-dark.png",
+  redirectTo: "https://acme.com",
+  favicon: "https://acme.com/favicon.ico",
+  defaultTheme: "AUTO",
+  footerText: "A.C.M.E Inc.",
+  privacyPolicyLink: "https://acme.com/privacy",
+  termsOfServiceLink: "https://acme.com/terms",
+  supportLink: "https://acme.com/support",
+  themeColors: {
+    light: {
+      headerBackgroundColor: "#0075FF",
+      headerFontColor: "#FFFFFF",
+      primaryButtonBackgroundColor: "#0075FF",
+    },
+    dark: {
+      bodyBackgroundColor: "#0B0F19",
+      cardBackgroundColor: "#151B2B",
+      linkFontColor: "#7AB8FF",
+    },
+  },
+})
+
+// A group with one component nested under it.
+const userFacing = new StatusPageV3Component("user-facing-group", {
+  statusPage,
+  type: "GROUP",
+  name: "User-Facing Services",
+  displayOrder: 0,
+})
+
+const webApp = new StatusPageV3Component("web-app-component", {
+  statusPage,
+  name: "Web Application",
+  parent: userFacing,
+  displayOrder: 1,
+})
+
+// Open an incident on the page when a check tagged "web" fails.
+new StatusPageV3AutomationRule("web-outage-rule", {
+  statusPage,
+  name: "Web outage",
+  tags: ["web"],
+  firstUpdate: "We are investigating an issue with the web application.",
+  lastUpdate: "The issue is resolved.",
+  components: [{ component: webApp, targetImpact: "MAJOR_OUTAGE" }],
+})
+```
+
+</CodeGroup>
+
+## Configuration
+
+### `StatusPageV3` Options
+
+<ResponseField name="name" type="string" required>
+Name of the status page, shown in the header and browser title.
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3 */}
+```ts highlight={2}
+new StatusPageV3("company-status", {
+  name: "Company Status",
+  /* More options... */
+})
+```
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+Subdomain under `checkly-status-page.com`. Must be unique across all Checkly accounts.
+
+**Usage:**
+
+```ts highlight={3}
+new StatusPageV3("company-status", {
+  name: "Company Status",
+  url: "company-status", // Creates company-status.checkly-status-page.com
+})
+```
+</ResponseField>
+
+<ResponseField name="customDomain" type="string">
+Custom domain for your status page (e.g., `status.example.com`). Requires DNS configuration and domain verification. See [Custom domains](/communicate/status-pages/custom-domain).
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3 */}
+```ts highlight={4}
+new StatusPageV3("company-status", {
+  name: "Company Status",
+  url: "company-status",
+  customDomain: "status.example.com",
+})
+```
+</ResponseField>
+
+<ResponseField name="description" type="string">
+Short text shown at the top of the public page.
+</ResponseField>
+
+<ResponseField name="logo" type="string">
+URL to a logo image shown in the header. Must be publicly accessible.
+</ResponseField>
+
+<ResponseField name="logoDark" type="string">
+URL to a logo used when the page is in dark mode. Falls back to `logo` when unset.
+</ResponseField>
+
+<ResponseField name="redirectTo" type="string">
+URL to redirect users to when they click the logo.
+</ResponseField>
+
+<ResponseField name="favicon" type="string">
+URL to a favicon image shown in browser tabs. Must be publicly accessible.
+</ResponseField>
+
+<ResponseField name="defaultTheme" type="string" default="AUTO">
+Default color theme for the page: `'LIGHT'`, `'DARK'`, or `'AUTO'` (follows system preference).
+</ResponseField>
+
+<ResponseField name="privacyPolicyLink" type="string">
+Link to your privacy policy, shown in the page footer.
+</ResponseField>
+
+<ResponseField name="termsOfServiceLink" type="string">
+Link to your terms of service, shown in the page footer.
+</ResponseField>
+
+<ResponseField name="supportLink" type="string">
+Link to your support channel, shown as a "Contact Support" link in the page header. Use a URL or a `mailto:` address.
+</ResponseField>
+
+<ResponseField name="footerText" type="string">
+Free-form text shown in the page footer.
+</ResponseField>
+
+<ResponseField name="googleAnalyticsTag" type="string">
+Google Analytics tag ID (e.g. `G-XXXXXXXXXX`) embedded on the public page.
+</ResponseField>
+
+<ResponseField name="allowIndexing" type="boolean" default="true">
+Whether search engines may index the public page.
+</ResponseField>
+
+<ResponseField name="themeColors" type="object">
+Custom colors for the light and dark theme of the page. Set only the colors you want to change; every other color keeps Checkly's default for that theme. Either theme can be left out entirely.
+
+Each color is a hex string in `#RGB` or `#RRGGBB` format, such as `"#F00"` or `"#FF0000"`. Unknown color names and non-hex values fail validation at deploy time. See [Custom theme colors](/communicate/status-pages/customization#custom-theme-colors) for where each color appears on the page.
+
+<Note>
+Custom theme colors must be part of your plan.
+</Note>
+
+**Usage:**
+
+{/* typecheck-wrap: StatusPageV3 */}
+```ts
+themeColors: {
+  light: {
+    headerBackgroundColor: "#0075FF",
+    headerFontColor: "#FFFFFF",
+  },
+  dark: {
+    bodyBackgroundColor: "#0B0F19",
+  },
+}
+```
+
+**Parameters:**
+
+Both `light` and `dark` accept the same set of optional color properties:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `bodyBackgroundColor` | `string` | Background of the page |
+| `headerBackgroundColor` | `string` | Background of the page header |
+| `headerFontColor` | `string` | Text in the page header |
+| `titleFontColor` | `string` | Titles and headings |
+| `bodyFontColor` | `string` | Regular body text |
+| `bodyFontColorMuted` | `string` | De-emphasized body text, such as timestamps |
+| `navigationFontColor` | `string` | Navigation links |
+| `linkFontColor` | `string` | Links in the page content |
+| `cardBackgroundColor` | `string` | Background of component and incident cards |
+| `borderColor` | `string` | Borders and dividers |
+| `primaryButtonBackgroundColor` | `string` | Background of primary buttons, such as "Get updates" |
+| `primaryButtonFontColor` | `string` | Text of primary buttons |
+</ResponseField>
+
+## Referencing an existing page
+
+Use `StatusPageV3.fromId()` to attach components and automation rules declared in code to a page created in the UI, without managing the page itself:
+
+```ts
+import { StatusPageV3, StatusPageV3Component } from "checkly/constructs"
+
+const statusPage = StatusPageV3.fromId("2fbb3ec1-0d32-4e1e-964a-9f4823502e2f")
+
+new StatusPageV3Component("cdn-component", {
+  statusPage,
+  name: "CDN",
+  displayOrder: 3,
+})
+```
+
+## Importing an existing page
+
+`checkly import status-page:<id>` imports a v3 page together with its components and automation rules into your project.

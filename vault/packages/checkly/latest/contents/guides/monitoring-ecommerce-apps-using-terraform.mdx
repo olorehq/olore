@@ -1,534 +1,419 @@
 ---
-title: How to Monitor an E-Commerce Application Using Terraform
-sidebarTitle: Monitoring an E-Commerce Application with Terraform
-description: The trend of declaring infrastructure as code has been picking up steam over the last few years, offering a way for DevOps teams to transparently manage and scale cloud infrastructure. Why should the way we manage monitoring be any different? In this article, we address this point and illustrate it with a practical example of Monitoring-as-Code on Checkly.
-tags: Terraform
+title: Monitor a shop with Terraform
+sidebarTitle: Monitoring a Shop with Terraform
+description: Declare a shop's whole monitoring stack in Terraform with the Checkly provider, from the alert channel and check group to Browser checks loaded from spec files and an API check with body assertions.
+canonical: 'https://www.checklyhq.com/docs/guides/monitoring-ecommerce-apps-using-terraform/'
 ---
-The trend of declaring infrastructure as code has been picking up steam over the last few years, offering a way for DevOps teams to transparently manage, monitor and scale cloud infrastructure. Why should the way we manage monitoring be any different? In this article, we address this point and illustrate it with a practical example of Monitoring-as-Code on Checkly.
 
-## What is Monitoring as Code?
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-Monitoring as Code is a transformative approach to maintaining the reliability and performance of modern web applications by integrating monitoring processes directly into the software development lifecycle. This method is fully compatible with Infrastructure as Code (IaC) and configuration management tools, allowing your monitoring solution to be managed alongside other infrastructure components.
+By the end of this guide, your shop's monitoring lives in five Terraform resources: an email alert channel, a check group that owns locations, retries, and alerting, two Browser checks loaded from Playwright spec files, and an API check that asserts on the response body.
 
-### Key Aspects of Monitoring as Code:
+```text Terminal
+  # checkly_alert_channel.shop_email will be created
+  # checkly_check.books_api will be created
+  # checkly_check.browser["home"] will be created
+  # checkly_check.browser["search"] will be created
+  # checkly_check_group_v2.shop will be created
 
-1. Developer-First Monitoring:
-
-  * Seamless Integration: Checkly allows developers to define and manage their monitoring configurations alongside their application code. This means monitoring scripts and configurations can be version-controlled, reviewed, and tested just like any other part of the codebase.
-
-  * CI/CD Pipeline Support: With Checkly, you can embed monitoring checks directly into your CI/CD pipelines. This ensures that every deployment is automatically verified against your monitoring criteria, reducing the risk of undetected issues reaching production and enabling hassle-free continuous delivery.
-
-2. Programmatic Configuration:
-
-  * Infrastructure as Code (IaC) Compatibility: Checkly's API and CLI tools make it easy to programmatically set up and manage monitoring. This aligns with the principles of IaC, allowing teams to define their monitoring infrastructure using code, ensuring consistency and reproducibility across environments.
-
-  * Programmable Monitoring Checks: Define advanced monitoring checks using JavaScript and TypeScript. This flexibility enables you to create highly specific and complex checks tailored to your application's unique requirements.
-
-Let's dive deeper into Checkly's Monitoring as Code solution powered by the Checkly CLI.
-
-## Infrastructure-as-Code (IaC)
-
-We've released our brand new CLI and recommend giving it a try for the best [Monitoring as Code experience](/cli/overview).
-
-Please visit our [documentation](/cli/cli-vs-terraform-pulumi) if you want to learn more about the pros & cons of the Terraform provider vs. the CLI for code monitoring automation.
-
-
-Historically, IT infrastructure has been provisioned manually, both on-premise and in the cloud. This presented several challenges, including fragmented workflows, lack of transparency, and scalability issues. In response to these problems, the last few years have seen a shift to the Infrastructure-as-Code (IaC) paradigm, in which large-scale systems are declared in configuration files, a method that code monitoring adopts to enhance operational efficiency.
-
-A new generation of tools has emerged to serve this use case, the most notable example of which is [HashiCorp Terraform](https://www.terraform.io/). Terraform provides a CLI workflow that allows users to specify the desired final infrastructure setup, handling all the intermediate steps and processes needed to achieve it, embodying the principle of **monitoring as code**.
-
-![provisioning aws infrastructure - code snippet](/images/guides/images/guides-terraform-aws.png "Provisioning AWS infrastructure via Terraform")
-
-Terraform can provision infrastructure on many cloud vendors thanks to its provider ecosystem. Each provider maps to the vendor's API, offering resources in a domain-specific language known as [HCL](https://www.terraform.io/docs/language/syntax/configuration.html), a cornerstone for both IaC and code monitoring operations.
-
-## Monitoring the IaC way
-
-Setting up monitoring tools and monitoring in general can present some of the same issues as provisioning infrastructure. This becomes apparent when scaling beyond the initial rollout or proof-of-concept phase, as monitoring as code helps manage the growing scope and maintenance needs efficiently.
-
-Monitoring-as-Code learns from IaC and brings your monitoring config closer to your application and your development workflows. How? By having it also declared as code, much like you would do with any kind of IT infrastructure.
-
-## Why Monitoring-as-Code
-
-What does one gain when moving from a manual process to a Monitoring-as-Code approach? The **main advantages** are:
-
-1. Better scalability through faster provisioning and easier maintenance.
-2. Better history and documentation: config files can be checked into source control.
-3. Shared monitoring setup visibility (and easier shared ownership) in DevOps teams.
-
-## Monitoring-as-Code with Checkly
-
-Users who have just started out will be familiar with creating checks, groups, alert channels and other resources through the Checkly UI. However, the official Terraform provider for Checkly allows for these elements to be declared as code, streamlining the provisioning and deployment of active monitoring setups, a practice central to code monitoring.
-
-You can [find the Checkly Terraform provider](https://registry.terraform.io/providers/checkly/checkly/latest) on the official Terraform registry.
-
-![official Checkly Terraform provider on Terraform Registry](/images/guides/images/guides-provider.png "Official Checkly Terraform provider")
-
-## Monitoring an e-commerce website - as code
-
-Exploring code monitoring in practice, we set up a small monitoring configuration for our [demo e-commerce website](https://danube-web.shop/) using Terraform and Playwright scripts, showcasing the efficiency, reliability and scalability of monitoring as code.
-
-### Setting up our Terraform project
-
-For our example we will be creating browser checks using [Playwright](https://playwright.dev) scripts we have previously written as part of our Playwright guides.
-
-<Tabs>
-<Tab title="Login">
-```js login.spec.js
-const { chromium } = require("playwright");
-
-(async () => {
-
-  // launch the browser and open a new page
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-
-  // navigate to our target web page
-  await page.goto("https://danube-web.shop/");
-
-  // click on the login button and go through the login procedure
-  await page.click("#login");
-  await page.type("#n-email", "user@email.com");
-  await page.type("#n-password2", "supersecure1");
-  await page.click("#goto-signin-btn");
-
-  // wait until the login confirmation message is shown
-  await page.waitForSelector("#login-message", { visible: true });
-
-  // close the browser and terminate the session
-  await browser.close();
-})();
+Plan: 5 to add, 0 to change, 0 to destroy.
 ```
-</Tab>
-<Tab title="Search">
- ```js search.spec.js
-const { chromium } = require("playwright");
-const assert = require("chai").assert;
 
-(async () => {
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/terraform-shop). It monitors the [Danube demo shop](https://danube-web.shop) and its `/api/books` endpoint.
 
-  // launch the browser and open a new page
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+<Accordion title="Let your agent do it" icon="sparkles">
 
-  const bookList = [
-    "The Foreigner",
-    "The Transformation",
-    "For Whom the Ball Tells",
-    "Baiting for Robot",
-  ];
+<GuideAgentIntro />
 
-  // navigate to our target web page
-  await page.goto("https://danube-web.shop/");
+<div id="ai-setup-prompt">
 
-  // search for keyword
-  await page.click(".topbar > input");
-  await page.type(".topbar > input", "for");
-  await page.click("#button-search");
-  await page.waitForSelector(
-    ".shop-content > ul > .preview:nth-child(1) > .preview-title"
-  );
+```txt Prompt
+Declare the monitoring for this shop in Terraform with the checkly/checkly provider, version "~> 1.0".
 
-  // halt immediately if results do not equal expected number
-  let resultsNumber = (await page.$$(".preview-title")).length;
-  assert.equal(resultsNumber, bookList.length);
+Success criteria:
+1. `providers.tf` configures the provider from the variables `checkly_api_key` and `checkly_account_id`, read from TF_VAR_ environment variables. Never write credentials into a file.
+2. `alerts.tf` creates an email alert channel for failures and recoveries. Ask me for the address and pass it as a variable.
+3. `group.tf` creates a `checkly_check_group_v2` that enforces two locations, parallel runs, a linear retry strategy, and a run-based alert policy subscribed to the email channel. It sets a `SHOP_URL` environment variable from a `shop_url` variable.
+4. `scripts/` holds one Playwright spec per shop flow. Each spec reads `process.env.SHOP_URL` with the production URL as the fallback and asserts on visible content, not just that a page loaded. `browser.tf` creates one Browser Check per spec with `for_each` and `script = file(...)`.
+5. `api.tf` creates an API check for the product API that asserts the status code, the content type, and that the JSON body is not empty.
+6. Run `npx playwright test`, `terraform fmt -check`, `terraform validate`, and `terraform plan`, and show me the results.
+7. Stop. Wait for my confirmation before `terraform apply`.
 
-  // remove every element found from the original array...
-  for (i = 0; i < resultsNumber; i++) {
-    const resultTitle = await page.$eval(
-      `.preview:nth-child(${i + 1}) > .preview-title`,
-      (e) => e.innerText
-    );
-
-    const index = bookList.indexOf(resultTitle);
-    bookList.splice(index, 1);
-  }
-
-  // ...then assert that the original array is now empty
-  assert.equal(bookList.length, 0);
-
-  // close the browser and terminate the session
-  await browser.close();
-})();
+Explain each file you changed and why.
 ```
-</Tab>
-<Tab title="Checkout">
- ```js checkout.spec.js
-const { chromium } = require("playwright");
 
-(async () => {
+</div>
 
-  // launch the browser and open a new page
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+<CopyPromptButton />
 
-  const navigationPromise = page.waitForNavigation();
+For this guide, the agent proves the setup with `npx playwright test` and `terraform plan`, and stops before `terraform apply`. The steps below are what it does, in the open.
 
-  // navigate to our target web page
-  await page.goto("https://danube-web.shop/");
+</Accordion>
 
-  // add the first item to the cart
-  await page.click(`.preview:nth-child(1) > .preview-author`);
-  await page.click(".detail-wrapper > .call-to-action");
-  await page.click("#logo");
+## Step 1: Configure the provider
 
-  // wait until navigation is complete
-  await navigationPromise;
+Start in an empty folder. The provider needs a Checkly user API key and the ID of the account to create resources in. Declare both as variables so they never land in a file you commit.
 
-  // navigate to cart and proceed
-  await page.click("#cart");
-  await page.click(".cart > .call-to-action");
-  await page.click("#s-name");
-
-  // fill out checkout info
-  await page.type("#s-name", "Max");
-  await page.type("#s-surname", "Mustermann");
-  await page.type("#s-address", "Charlottenstr. 57");
-  await page.type("#s-zipcode", "10117");
-  await page.type("#s-city", "Berlin");
-  await page.type("#s-company", "Firma GmbH");
-  await page.click(".checkout > form");
-  await page.click("#asap");
-
-  // confirm checkout
-  await page.click(".checkout > .call-to-action");
-
-  // wait until the order confirmation message is shown
-  await page.waitForSelector("#order-confirmation", { visible: true });
-
-  // close the browser and terminate the session
-  await browser.close();
-})();
- ```
-</Tab>
-</Tabs>
-
-Let's start off by creating a brand new folder:
-
-`mkdir checkly-terraform-example && cd $_`
-
-To keep things easy, we create a subdirectory...
-
-`mkdir scripts`
-
-...and copy all our scripts from above into separate files, for example `login.spec.js`.
-
-Next up, we want to create our `main.tf` file and include the basic configuration as follows:
-
-<Tabs>
-<Tab title="main.tf">
-```terraform main.tf
-variable "checkly_api_key" {}
-
+```terraform providers.tf
 terraform {
   required_providers {
     checkly = {
-      source = "checkly/checkly"
-      version = "0.8.1"
+      source  = "checkly/checkly"
+      version = "~> 1.0"
     }
   }
 }
 
+variable "checkly_api_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "checkly_account_id" {
+  type = string
+}
+
 provider "checkly" {
-  api_key = var.checkly_api_key
+  api_key    = var.checkly_api_key
+  account_id = var.checkly_account_id
 }
 ```
-</Tab>
-</Tabs>
 
-We are ready to initialise our project and have the Checkly Terraform provider set up for us. That is achieved by running:
+Terraform reads any variable from an environment variable prefixed with `TF_VAR_`. The [Terraform provider overview](/integrations/iac/terraform/overview) shows where to find both values in the app.
 
-`terraform init`
+```bash Terminal
+export TF_VAR_checkly_api_key="<your user API key>"
+export TF_VAR_checkly_account_id="<your account ID>"
+terraform init
+```
 
-After a few seconds, you should see a similar message to the following:
-
-```bash
-ragog@macpro learn-terraform % terraform init
-
-Initializing the backend...
-
+```text Terminal
 Initializing provider plugins...
-- Finding checkly/checkly versions matching "0.8.1"...
-- Installing checkly/checkly v0.8.1...
-- Installed checkly/checkly v0.8.1 (signed by a HashiCorp partner, key ID 4E5AC4D95E185A57)
-
-...
+- Finding checkly/checkly versions matching "~> 1.0"...
+- Installing checkly/checkly v1.29.0...
+- Installed checkly/checkly v1.29.0 (signed by a HashiCorp partner, key ID 4E5AC4D95E185A57)
 
 Terraform has been successfully initialized!
-
-You may now begin working with Terraform. Try running "terraform plan" to see
-any changes that are required for your infrastructure. All Terraform commands
-should now work.
-
-...
 ```
 
-### Creating our first browser checks
+## Step 2: Decide who hears about failures
 
-In the same file, right below our initial instructions, we can now add resources one after the other. They will be browser checks based on the Playwright scripts we previously stored in the `scripts` directory. Here is what each resource could look like:
+A check that fails without telling anyone is a dashboard, not monitoring. Create the alert channel first, so everything after it can subscribe.
 
-<Tabs>
-<Tab title="Login resource">
-```terraform main.tf
-resource "checkly_check" "login" {
+```terraform alerts.tf
+variable "alert_email" {
+  type        = string
+  description = "Where failure and recovery emails go."
+}
 
-  name                      = "Login E2E"
-  type                      = "BROWSER"
-  activated                 = true
-  should_fail               = false
-  frequency                 = 10
-  ssl_check                 = false
-  use_global_alert_settings = true
-  locations = [
-    "us-west-1",
-    "eu-central-1"
-  ]
-  retry_strategy = {
-    type = "LINEAR"
+resource "checkly_alert_channel" "shop_email" {
+  email {
+    address = var.alert_email
   }
 
-    script = file("${path.module}/scripts/login.spec.js")
-
+  send_failure  = true
+  send_recovery = true
+  send_degraded = false
 }
 ```
-</Tab>
-<Tab title="Search resource">
-```terraform main.tf
-resource "checkly_check" "search" {
 
-  name                      = "Search E2E"
-  type                      = "BROWSER"
-  activated                 = true
-  should_fail               = false
-  frequency                 = 15
-  ssl_check                 = false
-  use_global_alert_settings = true
-  locations = [
-    "us-west-1",
-    "eu-central-1"
-  ]
-  retry_strategy = {
-    type = "LINEAR"
+Set the address the same way as the credentials, with `export TF_VAR_alert_email="you@yourcompany.com"`. Email is the simplest channel to start with. The same resource takes Slack, PagerDuty, Opsgenie, SMS, and webhook blocks; see [alert channels for Terraform](/integrations/iac/terraform/alerting).
+
+## Step 3: Put shared settings in one group
+
+Every check for the shop should run from the same places, retry the same way, and alert the same people. Declare that once on a group instead of repeating it on every check.
+
+```terraform group.tf
+variable "shop_url" {
+  type    = string
+  default = "https://danube-web.shop"
+}
+
+# Every check in this guide joins this group. The enforce blocks make the
+# group, not each check, own locations, scheduling, retries, and alerting.
+resource "checkly_check_group_v2" "shop" {
+  name      = "Shop (Terraform)"
+  activated = true
+  tags      = ["terraform-shop"]
+
+  enforce_locations {
+    enabled   = true
+    locations = ["us-east-1", "eu-west-1"]
   }
 
-    script = file("${path.module}/scripts/search.spec.js")
+  enforce_scheduling_strategy {
+    enabled      = true
+    run_parallel = true
+  }
 
+  enforce_retry_strategy {
+    enabled = true
+    retry_strategy {
+      type                 = "LINEAR"
+      max_retries          = 2
+      base_backoff_seconds = 30
+      same_region          = false
+    }
+  }
+
+  enforce_alert_settings {
+    enabled = true
+
+    alert_settings {
+      escalation_type = "RUN_BASED"
+      run_based_escalation {
+        failed_run_threshold = 1
+      }
+    }
+
+    alert_channel_subscription {
+      channel_id = checkly_alert_channel.shop_email.id
+      activated  = true
+    }
+  }
+
+  environment_variable {
+    key   = "SHOP_URL"
+    value = var.shop_url
+  }
 }
 ```
-</Tab>
-<Tab title="Checkout resource">
-```terraform main.tf
-resource "checkly_check" "checkout" {
 
-  name                      = "Checkout E2E"
-  type                      = "BROWSER"
-  activated                 = true
-  should_fail               = false
-  frequency                 = 60
-  ssl_check                 = false
-  use_global_alert_settings = true
-  locations = [
-    "us-west-1",
-    "eu-central-1"
-  ]
-  retry_strategy = {
-    type = "LINEAR"
+`checkly_check_group_v2` changes nothing about its checks unless you ask it to. Each `enforce_` block you add takes that setting away from the checks and applies the group's value instead. Here the group runs every check from N. Virginia and Ireland in parallel, retries a failed run up to twice from a different region, and emails you as soon as one run still fails after its retries.
+
+The `SHOP_URL` variable reaches every Browser check in the group. Point the whole stack at a staging shop with `terraform plan -var="shop_url=<your staging URL>"`, without touching a check.
+
+## Step 4: Monitor the shop's flows with Browser checks
+
+Keep each flow in its own Playwright spec file. The file is the check's script, and you can run it locally before Terraform ever sees it.
+
+<CodeGroup>
+
+```ts scripts/home.spec.ts
+import { test, expect } from '@playwright/test'
+
+// SHOP_URL comes from the check group in Terraform. Locally, it falls
+// back to the production shop so the same file runs in both places.
+const shopUrl = process.env.SHOP_URL ?? 'https://danube-web.shop'
+
+test('home page lists the top sellers', async ({ page }) => {
+  await page.goto(shopUrl)
+
+  await expect(page.getByRole('heading', { name: 'Top sellers' })).toBeVisible()
+  await expect(page.locator('.preview').first()).toBeVisible()
+})
+```
+
+```ts scripts/search.spec.ts
+import { test, expect } from '@playwright/test'
+
+const shopUrl = process.env.SHOP_URL ?? 'https://danube-web.shop'
+
+test('search returns the matching books', async ({ page }) => {
+  await page.goto(shopUrl)
+
+  await page.locator('input[name="searchbar"]').fill('for')
+  await page.getByRole('button', { name: 'Search' }).click()
+
+  await expect(page.locator('.preview-title')).toHaveText([
+    'The Foreigner',
+    'The Transformation',
+    'For Whom the Ball Tells',
+    'Baiting for Robot',
+  ])
+})
+```
+
+</CodeGroup>
+
+The search test asserts the exact list of results, so a search that returns the wrong books fails as surely as one that returns nothing. Install Playwright and run both specs:
+
+```bash Terminal
+npm install --save-dev @playwright/test
+npx playwright install chromium
+npx playwright test
+```
+
+```text Terminal
+Running 2 tests using 2 workers
+
+  ✓  1 scripts/home.spec.ts:7:5 › home page lists the top sellers (626ms)
+  ✓  2 scripts/search.spec.ts:5:5 › search returns the matching books (722ms)
+
+  2 passed (1.3s)
+```
+
+Now turn every spec into a check. A `for_each` over a map creates one Browser check per entry, and `file()` reads the spec as the check's script:
+
+```terraform browser.tf
+# One Browser Check per spec file in scripts/. To monitor another flow,
+# add a spec file and one line here.
+locals {
+  browser_flows = {
+    home   = "Shop home page"
+    search = "Shop search"
   }
+}
 
-    script = file("${path.module}/scripts/checkout.spec.js")
+resource "checkly_check" "browser" {
+  for_each = local.browser_flows
 
+  name      = each.value
+  type      = "BROWSER"
+  activated = true
+  frequency = 10
+  group_id  = checkly_check_group_v2.shop.id
+
+  script = file("${path.module}/scripts/${each.key}.spec.ts")
 }
 ```
-</Tab>
-</Tabs>
 
-Now that our Terraform project has been initialised and we have added some resources, we can generate a Terraform plan by running `terraform plan`.
+The checks set only what is theirs: a name, a script, and how often to run. Everything else comes from the group. For the checkout itself, with test data that stays out of your sales numbers, follow [Monitor a checkout flow](/guides/monitoring-ecommerce-apps-using-playwright).
 
-Terraform will determine all the needed changes to be performed to replicate our monitoring software configuration on Checkly. In doing so, we will be asked for our Checkly API key, which we can find under our account settings as shown below. Not on Checkly yet? [Register a free account](https://app.checklyhq.com/signup) and enjoy your free monthly checks!
+## Step 5: Assert on the product API
 
-![screenshot of how to get api key from checkly dashboard](/images/guides/images/guides-terraform-api.png "Retrieving the Checkly API KEY")
+The storefront renders whatever `/api/books` returns. If the API answers 200 with an empty list, the pages load and show nothing to buy. An API check catches that every minute, without starting a browser.
 
- We can expose this as an environment variable in order to spare developers from having to copy-paste it all the time: `export TF_VAR_checkly_api_key=<YOUR_API_KEY>`.
+```terraform api.tf
+resource "checkly_check" "books_api" {
+  name      = "Shop books API"
+  type      = "API"
+  activated = true
+  frequency = 1
+  group_id  = checkly_check_group_v2.shop.id
 
-```
-ragog@macpro learn-terraform % terraform plan
-
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
-  + create
-
-Terraform will perform the following actions:
-
-  # checkly_check.checkout will be created
-  + resource "checkly_check" "checkout" {
-      + activated                 = true
-      + degraded_response_time    = 15000
-      + retry_strategy {
-          + base_backoff_seconds = 60
-          + max_duration_seconds = 600
-          + max_retries          = 2
-          + same_region          = true
-          + type                 = "NONE"
-        }
-      + frequency                 = 60
-      + id                        = (known after apply)
-      + locations                 = [
-          + "eu-central-1",
-          + "us-west-1",
-        ]
-      + max_response_time         = 30000
-      + name                      = "Checkout E2E"
-      + script                    = <<-EOT
-            const { chromium } = require("playwright");
-
-            ...
-
-Plan: 3 to add, 0 to change, 0 to destroy.
-```
-
-We can now finally apply our changes with `terraform apply`. We might be asked for one final confirmation in the command prompt, after which we will be greeted by the following confirmation message:
-
-```bash
-...
-
-checkly_check.checkout: Creating...
-checkly_check.login: Creating...
-checkly_check.search: Creating...
-checkly_check.checkout: Creation complete after 3s [id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
-checkly_check.login: Creation complete after 3s [id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
-checkly_check.search: Creation complete after 4s [id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
-
-Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
-```
-
-Logging in to our Checkly account, we will see the dashboard has been populated with data from our three checks, which will soon start executing on their set schedules.
-
-![terraform-created checks on checkly dashboard](/images/guides/images/guides-terraform-checks.png "Terraform-provisioned checks on Checkly")
-
-### Monitoring API correctness and performance
-
-Browser checks are now there to keep us informed on the status of our key website flows. What about our APIs, though? Whether they make up the foundation of our service or they are consumed directly by the customer, we need to ensure our endpoints are working as expected. This is easily achieved by setting up API check resources.
-
-<Tabs>
-<Tab title="API check resource">
-```terraform main.tf
-resource "checkly_check" "webstore-list-books" {
-  name                      = "list-books"
-  type                      = "API"
-  activated                 = true
-  should_fail               = false
-  frequency                 = 1
-  ssl_check                 = true
-  use_global_alert_settings = true
-  degraded_response_time    = 5000
-  max_response_time         = 10000
-
-  locations = [
-    "eu-central-1",
-    "us-west-1"
-  ]
-  
-  retry_strategy = {
-    type = "LINEAR"
-  }
+  degraded_response_time = 1000
+  max_response_time      = 3000
 
   request {
-    url              = "https://danube-web.shop/api/books"
-    follow_redirects = true
+    url    = "${var.shop_url}/api/books"
+    method = "GET"
+
     assertion {
       source     = "STATUS_CODE"
       comparison = "EQUALS"
       target     = "200"
     }
+
+    assertion {
+      source     = "HEADERS"
+      property   = "content-type"
+      comparison = "CONTAINS"
+      target     = "application/json"
+    }
+
     assertion {
       source     = "JSON_BODY"
       property   = "$.length"
-      comparison = "EQUALS"
-      target     = "30"
+      comparison = "GREATER_THAN"
+      target     = "0"
     }
   }
 }
 ```
-</Tab>
-</Tabs>
 
-We can now once more run `terraform plan`, followed by `terraform apply` to see the new check on Checkly:
+Three assertions, three different failures: the API is down, it returns an HTML error page, or it returns an empty catalog. Responses slower than one second are degraded, and slower than three seconds fail.
 
-![terraform-created api check on checkly](/images/guides/images/guides-terraform-api-check.png "Our API and Browser checks on Checkly")
+## Step 6: Plan, then apply
 
-### Alerting
+Check the formatting and the configuration, then ask Terraform what it would create:
 
-Now that we have our checks in place, we want to set up alerting to ensure we are informed as soon as a failure takes place. Alert channels can be declared as resources, just like the checks. Let's add the following to our `main.tf` file:
-
-```terraform main.tf
-resource "checkly_alert_channel" "alert-email" {
-  email {
-    address = "<YOUR_EMAIL_ADDRESS>"
-  }
-  send_recovery = true
-  send_failure = true
-  send_degraded = false
-}
+```bash Terminal
+terraform fmt -check
+terraform validate
+terraform plan
 ```
 
-We are setting up things so that we are alerted when our check starts failing, as well as when it recovers. But we still need to decide which checks will subscribe to this channel, and therefore be able to trigger the alerts. This is done by adding the following inside the resource declaration of each check, e.g.:
+The plan lists all five resources. This part of the group block shows settings it enforces on its checks:
 
-```terraform main.tf
-resource "checkly_check" "login" {
+```text Terminal
+  # checkly_check_group_v2.shop will be created
+  + resource "checkly_check_group_v2" "shop" {
+      + activated   = true
+      + name        = "Shop (Terraform)"
 
-  name                      = "Login E2E"
-  type                      = "BROWSER"
-  activated                 = true
-  should_fail               = false
-  frequency                 = 10
-  ssl_check                 = false
-  use_global_alert_settings = true
-  locations = [
-    "us-west-1",
-    "eu-central-1"
-  ]
-  retry_strategy = {
-    type = "LINEAR"
-  }
+      + enforce_locations {
+          + enabled   = true
+          + locations = [
+              + "eu-west-1",
+              + "us-east-1",
+            ]
+        }
 
-    script = file("${path.module}/scripts/login.spec.js")
+      + enforce_retry_strategy {
+          + enabled = true
 
-  alert_channel_subscription {
-    channel_id = checkly_alert_channel.alert-email.id
-    activated  = true
-  }
+          + retry_strategy {
+              + base_backoff_seconds = 30
+              + max_duration_seconds = 600
+              + max_retries          = 2
+              + same_region          = false
+              + type                 = "LINEAR"
+            }
+        }
 
-}
+      + environment_variable {
+          + key    = "SHOP_URL"
+          + value  = "https://danube-web.shop"
+        }
+    }
+
+Plan: 5 to add, 0 to change, 0 to destroy.
 ```
 
-Going through the usual `terraform plan` and `terraform apply` sequence will apply the changes on our Checkly account:
+When the plan matches what you expect, run `terraform apply` and type `yes` to create the checks in your account. From then on, the folder is the source of truth. Change a file, run `terraform plan` to see the difference, and apply.
 
-![terraform-created alert on checkly](/images/guides/images/guides-terraform-alerts.png "Terraform-provisioned alert on Checkly")
+<Warning>
+Manage these resources in Terraform or in the Checkly app, not both. Changing Terraform-managed resources in the app, and vice versa, is likely to cause issues.
+</Warning>
 
-We are now fully up and running with our monitoring-as-code setup. Our checks will run on a schedule, informing us promptly if critical anything were to go wrong. Rapidly getting to know about failures in our API and key website flows will allow us to react fast and mitigate impact on our users, ensuring a better experience with our product.
+## Verify it works
 
-You can find the complete setup described in this guide on our [dedicated repository](https://github.com/checkly/guides-monitoring-as-code).
+Break a check before it reaches production. In `scripts/search.spec.ts`, change `'Baiting for Robot'` to `'Waiting for Robot'` and run the specs again:
 
-### Expanding our setup
+```bash Terminal
+npx playwright test
+```
 
-As our setup expands, we might want to deploy additional tools to make our lives easier. We could:
+```text Terminal
+  ✓  2 scripts/home.spec.ts:7:5 › home page lists the top sellers (519ms)
+  ✘  1 scripts/search.spec.ts:5:5 › search returns the matching books (5.6s)
 
-1. Iterate over existing Playwright scripts and [create multiple checks while declaring only one resource](https://www.checklyhq.com/blog/scaling-puppeteer-playwright-on-checkly-with-terraform/#iterating-through-scripts-for-shorter-config).
-2. [Group checks together](https://www.checklyhq.com/blog/scaling-puppeteer-playwright-on-checkly-with-terraform/#grouping-checks-together) to better handle them in large numbers.
-3. [Use code snippets](https://www.checklyhq.com/blog/scaling-puppeteer-playwright-on-checkly-with-terraform/#reducing-code-duplication-with-snippets) to avoid code duplication and reduce maintenance.
-4. Move your workflow to [Terraform Cloud](https://www.terraform.io/cloud) to easily collaborate with your team when managing your Monitoring-as-Code configuration.
+  1) scripts/search.spec.ts:5:5 › search returns the matching books ────────────────────────────────
 
-## Read More
+    Error: expect(locator).toHaveText(expected) failed
 
-<div class="cards-list">
-<Card title="Checkly CLI" href="/cli/overview">
-  Understand monitoring as code (MaC) via our Checkly CLI.
-</Card>
+    Locator: locator('.preview-title')
+    Timeout: 5000ms
+    - Expected  - 1
+    + Received  + 1
 
-<Card title="End to end monitoring" href="/guides/end-to-end-monitoring/">
-  Learn end-to-end monitoring with playwright to test key website flows.
-</Card>
+      Array [
+        "The Foreigner",
+        "The Transformation",
+        "For Whom the Ball Tells",
+    -   "Waiting for Robot",
+    +   "Baiting for Robot",
+      ]
 
-<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts-for-apis">
-  Setup scripts are a fundamental tool to tailor API checks to your own target endpoints.
-</Card>
-</div>
+  1 failed
+    scripts/search.spec.ts:5:5 › search returns the matching books ─────────────────────────────────
+  1 passed (6.1s)
+```
+
+The failure names the flow and the exact result that changed, and the home page check still passes. Nothing reached Checkly, because only `terraform apply` changes a check. Once the checks exist, the same edit shows up in `terraform plan` as a change to that check's `script`, so a reviewer sees the monitoring change next to the code change. Put `'Baiting for Robot'` back.
+
+## Next
+
+[Run checks on every deploy](/guides/sdlc-monitoring): `terraform apply` keeps your monitoring in step with your code. Run the checks against each deploy too, so a broken release fails before it reaches the schedule.
+
+## Reference
+
+- [Terraform provider overview](/integrations/iac/terraform/overview), [checks and groups](/integrations/iac/terraform/checks-groups), and [alert channels](/integrations/iac/terraform/alerting)
+- [Testing Terraform scripts locally](/integrations/iac/terraform/testing-scripts-locally)
+- [`checkly_check_group_v2` on the Terraform Registry](https://registry.terraform.io/providers/checkly/checkly/latest/docs/resources/check_group_v2)
+- [Browser checks](/detect/synthetic-monitoring/browser-checks/overview) and [API checks](/detect/synthetic-monitoring/api-checks/overview)
+- [Groups](/platform/groups)
+- [Checkly CLI vs. Terraform and Pulumi](/cli/cli-vs-terraform-pulumi)
+- [Checkly Skills](/ai/skills)

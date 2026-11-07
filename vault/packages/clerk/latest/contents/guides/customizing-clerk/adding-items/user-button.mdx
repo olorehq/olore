@@ -1,15 +1,15 @@
 ---
 title: Add custom items and links to the `<UserButton />` component
 description: Learn how to add custom items and include external links within the <UserButton /> menu.
-sdk: astro, chrome-extension, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, expo, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 ---
 
 The [`<UserButton />`](/docs/reference/components/user/user-button) component supports _custom_ menu items, allowing the incorporation of app-specific settings or additional functionality.
 
 There are two types of custom menu items available:
 
-- [`<UserButton.Action>`](#user-button-action) - A menu item that triggers an action when clicked.
-- [`<UserButton.Link>`](#user-button-link) - A menu item that navigates to a page when clicked.
+- [`<UserButton.Action>`](#userbutton-action) - A menu item that triggers an action when clicked.
+- [`<UserButton.Link>`](#userbutton-link) - A menu item that navigates to a page when clicked.
 
 You can also [reorder default items](#reorder-default-items) and [conditionally render menu items](#conditionally-render-menu-items).
 
@@ -36,17 +36,17 @@ You can also [reorder default items](#reorder-default-items) and [conditionally 
 
   ---
 
-  - `open?`
-  - `string`
-
-  The path segment that will be used to open the user profile modal to a specific page.
-
-  ---
-
   - `onClick?`
   - `void`
 
   A function to be called when the menu item is clicked.
+
+  ---
+
+  - `open?`
+  - `string`
+
+  The path segment that will be used to open the user profile modal to a specific page.
 </Properties>
 
 ### Examples
@@ -442,6 +442,13 @@ The following example adds an "Open help" action to the `<UserButton />` compone
 `<UserButton.Link />` accept the following props, all of which are **required**:
 
 <Properties>
+  - `href`
+  - `string`
+
+  The path segment that will be used to navigate to the custom page.
+
+  ---
+
   - `label`
   - `string`
 
@@ -453,13 +460,6 @@ The following example adds an "Open help" action to the `<UserButton />` compone
   - `React.ReactElement`
 
   An icon displayed next to the label in the menu.
-
-  ---
-
-  - `href`
-  - `string`
-
-  The path segment that will be used to navigate to the custom page.
 </Properties>
 
 ### Example
@@ -761,7 +761,7 @@ In the following example, the "Sign out" menu item is moved to the top of the me
 </If>
 
 <If sdk="js-frontend">
-  To conditionally render menu items based on a user's Role or Custom Permissions, you can use the [`checkAuthorization()`](/docs/reference/objects/session#check-authorization) method to check if a user is authorized.
+  To conditionally render menu items based on a user's Role or Custom Permissions, you can use the [`checkAuthorization()`](/docs/reference/objects/session#checkauthorization) method to check if a user is authorized.
 </If>
 
 In the following example, the "Create organization" menu item will only render if the current user has the `org:app:admin` permission.

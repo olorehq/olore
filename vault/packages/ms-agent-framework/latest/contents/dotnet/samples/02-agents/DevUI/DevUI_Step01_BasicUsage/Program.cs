@@ -2,14 +2,15 @@
 
 // This sample demonstrates basic usage of the DevUI in an ASP.NET Core application with AI agents.
 
+using System.ClientModel.Primitives;
 using System.ComponentModel;
-using Azure.AI.OpenAI;
 using Azure.Identity;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using OpenAI;
 
 namespace DevUI_Step01_BasicUsage;
 
@@ -21,13 +22,13 @@ namespace DevUI_Step01_BasicUsage;
 /// 1. Set up Azure OpenAI as the chat client
 /// 2. Create function tools for agents to use
 /// 3. Register agents and workflows using the hosting packages with tools
-/// 4. Map the DevUI endpoint which automatically configures the middleware
+/// 4. Register DevUI services and map the DevUI endpoint
 /// 5. Map the dynamic OpenAI Responses API for Python DevUI compatibility
 /// 6. Access the DevUI in a web browser
 ///
 /// The DevUI provides an interactive web interface for testing and debugging AI agents.
 /// DevUI assets are served from embedded resources within the assembly.
-/// Simply call MapDevUI() to set up everything needed.
+/// Call AddDevUI() before building the app, then MapDevUI() to expose the interface.
 ///
 /// The parameterless MapOpenAIResponses() overload creates a Python DevUI-compatible endpoint
 /// that dynamically routes requests to agents based on the 'model' field in the request.
@@ -43,13 +44,15 @@ internal static class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Set up the Azure OpenAI client
-        var endpoint = builder.Configuration["AZURE_OPENAI_ENDPOINT"] ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT is not set.");
+        Uri endpoint = AzureOpenAIEndpoint.From(
+            builder.Configuration["AZURE_OPENAI_ENDPOINT"])
+            ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT is not set.");
         var deploymentName = builder.Configuration["AZURE_OPENAI_DEPLOYMENT_NAME"] ?? "gpt-5.4-mini";
 
         // WARNING: DefaultAzureCredential is convenient for development but requires careful consideration in production.
         // In production, consider using a specific credential (e.g., ManagedIdentityCredential) to avoid
         // latency issues, unintended credential probing, and potential security risks from fallback mechanisms.
-        var chatClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential())
+        var chatClient = new OpenAIClient(new BearerTokenPolicy(new DefaultAzureCredential(), "https://ai.azure.com/.default"), new OpenAIClientOptions { Endpoint = endpoint })
             .GetChatClient(deploymentName)
             .AsIChatClient();
 
@@ -87,10 +90,15 @@ internal static class Program
         {
             var agents = new List<IHostedAgentBuilder>() { assistantBuilder, reviewerBuilder }.Select(ab => sp.GetRequiredKeyedService<AIAgent>(ab.Name));
             return AgentWorkflowBuilder.BuildSequential(workflowName: key, agents: agents);
-        }).AddAsAIAgent();
+        }).AddAsAIAgent(includeWorkflowOutputsInResponse: true);
 
         builder.Services.AddOpenAIResponses();
         builder.Services.AddOpenAIConversations();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.AddDevUI();
+        }
 
         var app = builder.Build();
 

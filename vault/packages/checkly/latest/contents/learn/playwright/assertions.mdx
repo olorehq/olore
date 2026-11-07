@@ -9,6 +9,7 @@ description:
 tags:
   - basics
 sidebarTitle: Assertions
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/assertions/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -89,11 +90,11 @@ Non-retrying assertions evaluate conditions only once. They are used when you ex
 | `expect(value).toBeDefined()` | value is defined (not `undefined`). |
 | `expect(value).toBeNaN()` | value is `NaN`. |
 
-This makes the most sense when using Playwright to run single end-to-end tests in a controlled environment. If you're using Playwright to run on a cadence and monitor a production system, for example, with [Checkly](https://www.checklyhq.com/docs/browser-checks/playwright-test/), you generally want to stick with the auto-retrying assertions to avoid unnecessary alerts.
+This makes the most sense when using Playwright to run single end-to-end tests in a controlled environment. If you're using Playwright to run on a cadence and monitor a production system, for example, with [Checkly](/detect/synthetic-monitoring/browser-checks/playwright-support), you generally want to stick with the auto-retrying assertions to avoid unnecessary alerts.
 
 ### Negating Assertions
 
-Negating matchers allow you to assert that a condition does not hold. For example, you can use `toBeFalsy` or `not.toContain` to make negative assertions (as will be explained later, if you're checking an element directly, probably the latter of these two options will work better as it implements Playwright's auto-retries).
+Negating matchers allow you to assert that a condition does not hold. For example, you can use `toBeFalsy` or `not.toContain` to make negative assertions on a value. If you're checking an element directly, use a locator assertion such as `expect(locator).not.toContainText()` instead, as it implements Playwright's auto-retries.
 
 ### Soft Assertions
 
@@ -109,7 +110,7 @@ await expect.soft(page.getByTestId('cookieBanner')).toBeVisible();
 
 Checkly can use soft assertions as part of [a `degraded` state for Multistep checks](/detect/synthetic-monitoring/multistep-checks/degraded-states). If a check fails soft assertions and there is a call to `markCheckAsDegraded`, the check will be placed in a 'yellow light' category of degraded rather than failing. Instead of categorizing the check as a total failure the 'degraded' state signals that the check encountered issues but still completed execution. Degraded checks have different notification policies. For example: you might have degraded checks report to Slack rather than sending a notification that wakes people up.
 
-This is useful for distinguishing between partial service disruptions and complete outages, offering teams a more precise understanding of performance and reliability. If your Playwright test is running on Checkly, the check will enter a 'degraded' state when some soft assertions fail, or if you call `markCheckAsDegraded` in its execution.
+This is useful for distinguishing between partial service disruptions and complete outages, offering teams a more precise understanding of performance and reliability. If your Playwright test is running on Checkly, the check will enter a 'degraded' state when you call `markCheckAsDegraded` in its execution and no hard assertion fails. Soft assertion failures without a call to `markCheckAsDegraded` fail the check.
 
 ```ts soft-assertions.spec.ts
 import { test, expect } from '@playwright/test'
@@ -139,7 +140,7 @@ test("SpaceX-API Dragon Capsules & Next Launch", async ({ request }) => {
 })
 ```
 
-<Info>`degraded` using `@checkly/playwright-helpers` states are currently only available for [Multistep Checks](/detect/synthetic-monitoring/multistep-checks/overview) and [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview).</Info>
+<Info>`degraded` using `@checkly/playwright-helpers` states are currently only available for [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview) and [Browser checks](/detect/synthetic-monitoring/browser-checks/overview).</Info>
 
 In this case if the response has a `200` status code but the API response time is more than 200 milliseconds, the status of this check will be degraded and the slow API response time will be included as a failed step. If the response came back as a non-200 status (indicating an error) then the check would be 'failed,' whether or not `markCheckAsDegraded` was called. You can [configure alert channels](https://www.checklyhq.com/docs/communicate/alerts/channels#managing-alert-channels) to notify you when a check has degraded.
 
@@ -253,7 +254,7 @@ Implementing best practices can make your tests more reliable and easier to main
 
 - **Test Granularity**: Structure tests to cover distinct, isolated behaviors, making debugging easier. The choice between one 'super test' and 5 or 10 smaller tests should always go with the more granular option. Since [tests can be run in parallel](https://www.checklyhq.com/learn/playwright/testing-in-parallel/), it's likely that better test granularity will also improve test execution time.
 - **Create Concise Statements**: Keep assertions simple and focused. Asserting that five different page components is an indicator that you're testing multiple ideas with one test, and want to consider either breaking up your test or should at least have multiple steps.
-- **Use Descriptive Messages**: Adding clear messages to assertions helps identify failures quickly. It's also good to use [test steps](https://www.checklyhq.com/blog/improve-your-playwright-documentation-with-steps/) to add more description to the exact phase where the test failed. Read further to see how to [add test steps programmatically with Typescript decorators](https://www.checklyhq.com/blog/playwright-test-steps-with-typescript-decorators/).
+- **Use Descriptive Messages**: Adding clear messages to assertions helps identify failures quickly. It's also good to use [test steps](https://www.checklyhq.com/blog/improve-your-playwright-documentation-with-steps/) to add more description to the exact phase where the test failed. Read further to see how to [add test steps programmatically with TypeScript decorators](https://www.checklyhq.com/blog/playwright-test-steps-with-typescript-decorators/).
 - **Parameterize Assertions**: Use variables for assertion parameters to improve test readability and maintainability.
 - **Leverage Libraries**: Utilize existing libraries for common assertions where possible. Note that if you're running tests on a cadence, a full set of libraries may not be available in your execution environment.
 - **Be Specific**: Make sure your assertions are as targeted as possible to avoid false positives. Bet on auto-waiting and web-first assertions. Even a change from checking if a text label has the needed text with [`.toContain()`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-contain-1) rather than `toBe()` can improve the reliability of a page monitor.

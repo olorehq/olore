@@ -1,7 +1,8 @@
 ---
 title: "Webhook Integrations"
-description: "Create custom webhook integrations to send Checkly alerts to any API endpoin"
+description: "Create custom webhook integrations to send Checkly alerts to any API endpoint"
 sidebarTitle: "Webhooks"
+canonical: 'https://www.checklyhq.com/docs/integrations/alerts/webhooks/'
 ---
 
 import AlertChannelSecrets from '/snippets/alert-channel-secrets-callout.mdx';
@@ -31,6 +32,8 @@ In both cases we use the familiar Handlebars templating braces, i.e. `{{ }}` to 
   To avoid encoding, you can access your environment variables with triple brackets, i.e. `{{{USER_API_KEY}}}`
 </Note>
 
+A JSON payload template stays valid JSON when an inserted value contains a double quote or a line break: the value is escaped in the body we send. With `{{CHECK_NAME}}` a double quote arrives as `&quot;`, with `{{{CHECK_NAME}}}` as `\"`; a line break arrives as `\n` in both cases.
+
 <AlertChannelSecrets />
 
 You can use the following event-related variables in both URL and payload.
@@ -54,6 +57,8 @@ You can use the following event-related variables in both URL and payload.
 | `CHECK_TYPE`                     | The check type, e.g. API, BROWSER  .                                                                                                                                               |
 | `GROUP_NAME`                     | The name of the group, if the check belongs to one.                                                                                                                                |
 | `IS_REMINDER`                    | Whether this alert is a reminder (`true`) or the initial alert (`false`).                                                                                                          |
+| `OTEL_TRACE_ID`                  | The OpenTelemetry trace ID for the check run. Empty when no trace ID is available. |
+| `OTEL_TRACE_LINK`                | URL to view the OpenTelemetry trace for the check run. Empty when no trace is available. |
 | `REGION`                         | Region code where check ran, e.g. "us-east-1"                                                                                                                                  |
 | `REMINDER_SEQUENCE`              | The reminder number (`0` for initial alerts, `1`+ for reminders).                                                                                                                  |
 | `RESPONSE_TIME`                  | The reported response time for this result                                                                                                                                         |
@@ -87,21 +92,60 @@ When [automatic Rocky AI analysis](/resolve/ai-root-cause-analysis/overview#auto
 
 ### Handlebars Helpers
 
-| Helper               | Description                                                               |
-| -------------------- | ------------------------------------------------------------------------- |
-| `{{$UUID}}`          | Generates a random UUID/v4 (e.g., `9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d`) |
-| `{{$RANDOM_NUMBER}}` | Generates a random decimal number between 0 and 1000 (e.g., `345`)        |
-| `{{moment}}`         | Generates dates/times using **moment.js** with formatting:                |
+Webhook templates support [Handlebars built-in helpers](https://handlebarsjs.com/guide/builtin-helpers.html), such as `if`, `unless`, and `each`, as well as these Checkly helpers:
 
-- `{{moment "YYYY-MM-DD"}}` → `2020-08-26`
-- `{{moment "2 days ago" "YYYY-MM-DD"}}` → `2020-08-24`
-- `{{moment "last week" "X"}}` → `1597924480`
+| Helper | Example | Description |
+| --- | --- | --- |
+| `$UUID` | `{{$UUID}}` | Generates a random UUID v4, such as `9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d`. |
+| `$RANDOM_NUMBER` | `{{$RANDOM_NUMBER}}` | Generates a random integer from 0 through 10,000. |
+| `tagValue` | `{{tagValue TAGS "team" "UNKNOWN"}}` | Returns the value from the first matching `team:value` or `team=value` tag. Returns the optional final argument when no tag matches. |
+| `startsWith` | `{{startsWith value "prefix:"}}` | Returns whether a string starts with the supplied prefix. |
+| `replace` | `{{replace value "old" "new"}}` | Replaces the first matching string. |
+| `split` | `{{split "a,b,c" "," 1}}` | Splits a string and returns the item at the supplied zero-based index. |
+| `year` | `{{year}}` or `{{year 2}}` | Returns the current year with four or two digits. |
+| `date`, `moment` | `{{date "YYYY-MM-DD"}}` | Formats the current date. The two helper names are aliases. |
 
-<Note>
-  You can find the [full list of helpers in the README.md file](https://github.com/checkly/handlebars) of the underlying library we are using. For a full overview of date formatting option, check the [moment.js docs](https://momentjs.com/docs/#/displaying/format/).
-</Note>
+#### Get a value from a tag
 
-You can also use conditional helpers like `{{#eq}}` statements. Here is an example:
+Use `tagValue` when your tags store key-value metadata. Given these tags:
+
+```text
+team:payments
+environment=production
+```
+
+This template:
+
+```handlebars
+{{tagValue TAGS "team" "UNKNOWN"}}
+```
+
+renders `payments`. Both `:` and `=` separators are supported. If neither `team:...` nor `team=...` exists, the template renders the fallback `UNKNOWN`. If multiple tags match, Checkly returns the first one.
+
+<Tip>
+  Send a test message from the webhook editor to inspect the rendered request before saving your alert channel.
+</Tip>
+
+#### Format dates and times
+
+The `date` and `moment` helpers support [Day.js-compatible format tokens](https://day.js.org/docs/en/display/format). You can format the current time, an absolute date, or relative phrases such as `yesterday`, `2 days ago`, and `last week`.
+
+- `{{date "YYYY-MM-DD"}}` formats the current date, for example as `2026-07-24`.
+- `{{date "2026-07-24" "MMMM DD, YYYY"}}` renders `July 24, 2026`.
+- `{{moment "2 days ago" "YYYY-MM-DD"}}` formats the date from two days ago.
+- `{{moment "last week" "X"}}` formats last week as a Unix timestamp.
+
+#### Compare values
+
+Use comparison helpers as blocks or subexpressions where applicable. Available helpers include:
+
+- Equality and ordering: `eq`, `is`, `isnt`, `gt`, `gte`, `lt`, `lte`, and `compare`.
+- Boolean logic: `and`, `or`, `not`, `neither`, `isTruthy`, and `isFalsey`.
+- Value checks: `contains`, `has`, and `default`.
+- Numeric conditions: `ifEven`, `ifOdd`, and `ifNth`.
+- Inverse comparisons: `unlessEq`, `unlessGt`, `unlessGteq`, `unlessLt`, and `unlessLteq`.
+
+For example:
 
 ```json
 {
@@ -126,8 +170,6 @@ Two clear benefits here:
 - You only need to create one webhook to inform a 3rd party system.
 - You can translate Checkly terms to your 3rd party tool's term for the same concept, i.e. the "up status" of a check.
 
-You can find the [full list of helpers in the README.md file](https://github.com/checkly/handlebars) of the underlying library we are using.
-
 ## Webhook Secrets
 
 You can validate each webhook we deliver to your endpoint(s). Using the optional webhook secret, you can:
@@ -135,9 +177,9 @@ You can validate each webhook we deliver to your endpoint(s). Using the optional
 1. Check if the webhook was sent by Checkly.
 2. Check if the payload was not altered in any way during transmission.
 
-When you create a webhook secret, we proceed to use that secret token to cryptographically sign the webhook payload using the SHA256 hash algorithm. We add the resulting hash to the HTTP header `x-checkly-signature` on each webhook.
+When you create a webhook secret, we use it to sign each webhook: the HTTP header `x-checkly-signature` contains the HMAC-SHA256 of the raw request body, keyed with your secret and hex-encoded. The signature covers the exact bytes we send, for JSON and plain text bodies alike.
 
-On the receiving end, you can then use the value of the `x-checkly-signature` header to assert the validity and authenticity of the webhook and its payload.
+On the receiving end, compute the same HMAC over the raw request body, before parsing it, and compare it with the `x-checkly-signature` header to assert the validity and authenticity of the webhook and its payload. Parsing and re-serializing the body can change its bytes and break the comparison.
 
 Have a look at the code examples below on how to use the header and your favourite web framework.
 
@@ -145,9 +187,9 @@ Have a look at the code examples below on how to use the header and your favouri
 
 ```javascript Node.js
 // We store the webhook secret in an environment variable called CHECKLY_WEBHOOK_SECRET
-const app = require('express')();
-const bodyParser = require('body-parser');
+const express = require('express');
 const crypto = require('crypto');
+const app = express();
 
 function isVerifiedPayload (payload, signature) {
   const secret = process.env.CHECKLY_WEBHOOK_SECRET
@@ -156,10 +198,11 @@ function isVerifiedPayload (payload, signature) {
   return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature))
 }
 
-app.post('/webhook', bodyParser.json({ type: 'application/json' }), (request, response) => {
+// express.raw() keeps the body as the bytes Checkly sent; parse it only after the signature is verified
+app.post('/webhook', express.raw({ type: '*/*' }), (request, response) => {
 
   const signature = request.headers['x-checkly-signature'];
-  const payload = JSON.stringify(request.body)
+  const payload = request.body
 
   if (isVerifiedPayload(payload, signature)) {
     console.log('Signature is valid')
@@ -222,7 +265,7 @@ def webhook(request):
 
 ## Webhook Retries
 
-Checkly will retry your webhook up to **5 times** if we get an HTTP response higher than 399, e.g. a 404 or 503. Each retry is backed off 20 seconds for a total retry period of `5 * 20 = 100 seconds`.
+Checkly will retry your webhook up to **5 times** if the request fails, for example with an HTTP response higher than 399 (such as a 404 or 503), a network error, or no response within 5 seconds. Retries back off exponentially: 10, 20, 40, 80 and 160 seconds, about 5 minutes in total.
 
 This means that for checks on a 1 minute schedule, there is a potential overlap between a failure alert and recovery alert. For this reason every webhook we send has a timestamp in the `x-checkly-timestamp` header. You can use this timestamp on the receiving end to ignore any webhooks that come in "late".
 
@@ -230,9 +273,11 @@ This means that for checks on a 1 minute schedule, there is a potential overlap 
 
 The following examples give an idea how to integrate Checkly with 3rd party alerting and issue tracking systems.
 
-### OpsGenie
+### Opsgenie and Jira Service Management
 
-You can create an <a href="https://docs.opsgenie.com/docs/alert-api" target="_blank">OpsGenie</a>
+Checkly has no dedicated Jira Service Management (JSM) alert channel. JSM Operations accepts the same alert body as the Opsgenie alerts API, so the webhook below works for both. For JSM, create an API integration in JSM Operations, POST to `https://api.atlassian.com/jsm/ops/integration/v2/alerts`, and send the integration's key in the `Authorization: GenieKey {{JSM_API_KEY}}` header.
+
+You can create an <a href="https://docs.opsgenie.com/docs/alert-api" target="_blank">Opsgenie</a>
 
 alert by POST-ing the following body
 
@@ -244,13 +289,13 @@ alert by POST-ing the following body
 }
 ```
 
-to the OpsGenie `alerts` API endpoint
+to the Opsgenie `alerts` API endpoint
 
 ```
 https://{{OPSGENIE_API_KEY}}@api.opsgenie.com/v2/alerts
 ```
 
-Or you can add the OpsGenie API key in the headers, e.g.
+Or you can add the Opsgenie API key in the headers, e.g.
 
 ```
 Authorization: GenieKey {{OPSGENIE_API_KEY}}
@@ -274,7 +319,7 @@ This is an example of a full alert body:
 }
 ```
 
-In case you would like different teams to be responsible for different Check Groups, you could add a `CHECK_GROUP_TEAM` variable with a different value for each Group, then modify the above snippet with the following:
+In case you would like different teams to be responsible for different check groups, you could add a `CHECK_GROUP_TEAM` variable with a different value for each Group, then modify the above snippet with the following:
 
 ```json
 "responders": [

@@ -9,22 +9,13 @@ import { Demos } from "/snippets/demos.jsx";
 <NoteOnFeatureSupport />
 
 <Note>
-🚀 **The new Rive React Native runtime is now available!** Built with Nitro for improved performance and better React Native integration.
+`@rive-app/react-native` is the recommended Rive runtime for React Native. Built with [Nitro](https://nitro.margelo.com/), it replaces the legacy `rive-react-native` package.
 
-**Get started:**
+Starting with `0.5.0`, it runs on Rive's new native runtimes: the [new Apple runtime](/runtimes/apple/apple) on iOS, and on Android the runtime behind the new [Compose API](/runtimes/android/android). If you're upgrading from `0.4.x` or from `rive-react-native`, see the [migration guide](/runtimes/react-native/migration-guide).
 
-- [Migration guide](/runtimes/react-native/migration-guide)
 - [GitHub](https://github.com/rive-app/rive-nitro-react-native)
 - [NPM](https://www.npmjs.com/package/@rive-app/react-native)
-
-**Migration Timeline:**
-
-- **Short term:** Complete the new runtime, see [Feature Support](https://github.com/rive-app/rive-nitro-react-native?tab=readme-ov-file#feature-support) and [Roadmap](https://github.com/rive-app/rive-nitro-react-native?tab=readme-ov-file#roadmap)
-- **Medium term:** Address major concerns in the legacy package while supporting migration
-- **Long term:** Full migration to the new package
-
-We're actively gathering feedback to improve the new runtime. Please share your thoughts and report any issues you encounter.
-
+- [Release notes](https://github.com/rive-app/rive-nitro-react-native/releases)
 </Note>
 
 ## Overview
@@ -41,7 +32,7 @@ This guide documents how to get started using the Rive React Native runtime. The
       - **Android**: SDK 24 (Android 7.0) or later
       - **Xcode**: 16.4 or later
       - **JDK**: 17 or later
-      - **Nitro Modules**: 0.25.2 or later
+      - **Nitro Modules**: 0.35.10 or later (0.36.2 or later on React Native 0.87+)
 
     ## Quick Start
 
@@ -50,7 +41,7 @@ This guide documents how to get started using the Rive React Native runtime. The
     <CardGroup cols={2}>
       <Card
         title="Rive File"
-        href="https://rive.app/marketplace/24637-46037-health-bar-data-binding-quick-start?utm_source=docs&utm_medium=content"
+        href="https://rive.app/marketplace/24637-health-bar-data-binding-quick-start?utm_source=docs&utm_medium=content"
       >
         Remix/download the Rive file used in this quick start guide
       </Card>
@@ -218,13 +209,14 @@ This guide documents how to get started using the Rive React Native runtime. The
 
         This approach lets you set initial property values in the `onInit` callback before the view loads and decouples the `ViewModelInstance` from the `RiveView`.
 
-        ```ts Manually create view model instance focus={6-8, 12, 18}
+        ```ts Manually create view model instance focus={6-9, 13, 19}
         export default function QuickStart() {
           const { riveFile } = useRiveFile(
             require('path/to/quick_start.riv')
           );
           const { riveViewRef, setHybridRef } = useRive();
-          const { instance: viewModelInstance } = useViewModelInstance(riveFile, {
+          const { instance: viewModelInstance, isLoading, error } = useViewModelInstance(riveFile, {
+            async: true,
             onInit: (vmi) => vmi.numberProperty('health')!.set(20),
           });
 
@@ -246,13 +238,14 @@ This guide documents how to get started using the Rive React Native runtime. The
 
         Use the view model property hooks to update and listen to property changes.
 
-        ```ts Property hooks focus={10-37, 50-52} expandable
+        ```ts Property hooks focus={11-38, 51-53} expandable
         export default function QuickStart() {
           const { riveFile } = useRiveFile(
             require('path/to/quick_start.riv')
           );
           const { riveViewRef, setHybridRef } = useRive();
-          const { instance: viewModelInstance } = useViewModelInstance(riveFile, {
+          const { instance: viewModelInstance, isLoading, error } = useViewModelInstance(riveFile, {
+            async: true,
             onInit: (vmi) => vmi.numberProperty('health')!.set(20),
           });
 
@@ -372,34 +365,41 @@ This guide documents how to get started using the Rive React Native runtime. The
 
     ### `useViewModelInstance`
 
-    Hook to create a view model instance from a `RiveFile`, `ViewModel`, or `RiveViewRef`:
+    Hook to create a view model instance from a `RiveFile`, `ViewModel`, or `RiveViewRef`. 
+    
+    Pass `async: true` to create the instance asynchronously. The hook returns `{ instance, isLoading, error }` and the instance is not available on the first render, so gate rendering on it. Without `async: true`, the instance is created through deprecated synchronous APIs that block the JS thread.
 
     ```ts
     // From RiveFile — default artboard's ViewModel, default instance
-    const { instance } = useViewModelInstance(riveFile);
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true });
 
     // From RiveFile — specify artboard or ViewModel name (mutually exclusive)
-    const { instance } = useViewModelInstance(riveFile, { artboardName: 'MainArtboard' });
-    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, artboardName: 'MainArtboard' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, viewModelName: 'Settings' });
 
     // instanceName can be combined with any of the above to pick a specific instance
-    const { instance } = useViewModelInstance(riveFile, { instanceName: 'PersonInstance' });
-    const { instance } = useViewModelInstance(riveFile, { viewModelName: 'Settings', instanceName: 'UserSettings' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, instanceName: 'PersonInstance' });
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, viewModelName: 'Settings', instanceName: 'UserSettings' });
 
     // From a ViewModel object
-    const { instance: namedInstance } = useViewModelInstance(viewModel, { name: 'My Instance' });
-    const { instance: newInstance } = useViewModelInstance(viewModel, { useNew: true });
+    const { instance: namedInstance, isLoading, error } = useViewModelInstance(viewModel, { async: true, name: 'My Instance' });
+    const { instance: newInstance, isLoading, error } = useViewModelInstance(viewModel, { async: true, useNew: true });
 
-    // With required: true (throws if null, use with Error Boundary)
-    const { instance } = useViewModelInstance(riveFile, { required: true });
+    // With required: true (throws once resolved to null, use with Error Boundary)
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, { async: true, required: true });
 
-    // With onInit to set initial values synchronously
-    const { instance } = useViewModelInstance(riveFile, {
+    // With onInit to set initial values before the instance is exposed or bound
+    const { instance, isLoading, error } = useViewModelInstance(riveFile, {
+      async: true,
       onInit: (vmi) => {
         vmi.numberProperty('health')!.set(100);
       },
     });
     ```
+
+    <Info>
+        `async: true` is available in `@rive-app/react-native@0.4.18` and later. The synchronous creation path is deprecated and will be removed in a future release.
+    </Info>
 
     Pass the `dataBind` prop in `RiveView`.
     ```ts
@@ -411,16 +411,40 @@ This guide documents how to get started using the Rive React Native runtime. The
     );
     ```
 
-    You can also get the auto-bound instance from a `RiveViewRef`:
+    You can also get the auto-bound instance from a `RiveViewRef` — the hook waits for the view's auto-bound instance to become available:
 
     ```javascript
     import { useRive, useViewModelInstance } from '@rive-app/react-native';
 
     const { riveViewRef, setHybridRef } = useRive();
-    const { instance } = useViewModelInstance(riveViewRef);
+    const { instance, isLoading, error } = useViewModelInstance(riveViewRef, { async: true });
     ```
 
     See the [runtime data binding documentation](/runtimes/react-native/data-binding) for more information.
+
+    ## Frame rate
+
+    By default, `RiveView` renders at the display's refresh rate. Use the `frameRate` prop to cap it, for example to reduce the CPU and battery cost of a looping animation that doesn't need 120 Hz:
+
+    ```tsx
+    // Cap rendering at 30 frames per second
+    <RiveView file={riveFile} frameRate={30} />
+
+    // Let the system pick a rate between 30 and 60, ideally 60
+    <RiveView file={riveFile} frameRate={{ minimum: 30, maximum: 60, preferred: 60 }} />
+    ```
+
+    A range maps to `CAFrameRateRange` on iOS. Android doesn't support ranges, so it caps at `preferred`, or `maximum` if `preferred` isn't set. Remove the prop to return to the display's refresh rate.
+
+    Capping limits how many frames are drawn, not animation speed: playback still advances by the real time elapsed between frames.
+
+    <Note>
+      `frameRate` requires `0.5.0` or later.
+    </Note>
+
+    ## Semantics
+
+    Rive views can expose [semantics defined in the editor](/editor/accessibility/semantics) to VoiceOver on iOS. See [Semantics](/runtimes/react-native/semantics) for the available modes.
 
     ## Troubleshooting
 

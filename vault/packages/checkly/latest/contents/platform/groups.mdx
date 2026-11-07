@@ -2,21 +2,27 @@
 title: 'Groups'
 description: 'Organize your checks and apply shared configuration with Groups'
 sidebarTitle: 'Groups'
+canonical: 'https://www.checklyhq.com/docs/platform/groups/'
 ---
 
 Groups help you organize your checks (e.g. by team or feature) and apply shared configuration such as API defaults, scheduling & location overrides, and other properties.
 
 ![Check group screenshot](/images/docs/images/groups/group-in-dashboard.png)
 
-Groups serve multiple purposes: they act as organizational folders, configuration templates, and execution units. Think of them as the filing system for your monitoring infrastructure that transforms scattered checks into a coherent system reflecting your application architecture and team responsibilities.
+Groups serve multiple purposes: they act as organizational folders and configuration templates. Think of them as the filing system for your monitoring infrastructure that transforms scattered checks into a coherent system reflecting your application architecture and team responsibilities.
 
 You can populate a group by moving existing checks into it or by creating new checks directly within the group.
 
-<Note>By default, newly created check groups behave like folders, with no group-level configuration applied. To get started:</Note>
+<Note>
+By default, newly created check groups behave like folders, with no group-level configuration applied. To get started:
+
+- Define a name for the group.
+- Optionally, add tags. Tags determine which dashboards the group shows up on.
+</Note>
 
 ## Configuration
 
-Groups let you apply shared configuration to standardize how checks behave. Group-level configurations override check-level settings when applied.
+Groups let you apply shared configuration to standardize how checks behave. Depending on the setting, group-level configuration either overrides check-level settings or is merged with them.
 
 ### Check Membership
 **Moving a check into a group:** If the group has group-level configuration defined, adding a check may change how it runs. Settings like API defaults, locations & scheduling, or retries & alerting can override the check's configuration.
@@ -72,7 +78,7 @@ assert common response codes or headers for your API checks.
 #### Setup & teardown scripts
 
 You can add [setup and teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown) at the group level as well as the 
-individual group level. 
+individual check level. 
 
 This is the execution flow:
 
@@ -94,9 +100,9 @@ A common scenario for having two levels of setup scripts is the following:
 ### Variables
 You can set both variables and secrets for a Group of checks.
 
-For browser and multistep checks, you can set variables at the check level. See [browser check variables and secrets](/platform/variables) for more details.
+For Browser and Multistep checks, you can set variables at the check level. See [Browser check variables and secrets](/platform/variables) for more details.
 
-<Note>Secrets are fully supported starting with runtime version 2024.09 and later. For [Private Locations](/platform/private-locations/overview), secrets are available in agent version `3.3.4` and later, and for the [CLI](/cli/overview), in version `4.9.0` and later.</Note>
+<Note>Secrets are fully supported starting with runtime version 2024.09 and later. For [private locations](/platform/private-locations/overview), secrets are available in agent version `3.3.4` and later, and for the [CLI](/cli/overview), in version `4.9.0` and later.</Note>
 
 #### Variable hierarchy
 
@@ -111,16 +117,16 @@ that variable to be overridden at the group level or check level.
 ### Scheduling & Locations
 - **Locations:** Override location settings for all checks in the group with selected public or private locations
 - **Scheduling strategy:** Override scheduling strategy (parallel, round-robin) for all checks in the group  
-- **Frequency:** Set a default scheduling interval for new checks created in the group
+- **Frequency:** Each check runs at its own frequency. When you use the CLI, the `frequency` property of a group sets a default for the checks you define in that group.
 
 ### Retries & Alerting
 - **Retries:** Configure retry strategy for failed checks (fixed, single, linear, exponential)
-- **Alert settings:** Set up alert channels for the group - email, SMS, Slack, webhooks, etc.
+- **Alert settings:** Set up alert channels for the group - email, SMS, Slack, webhooks, etc. When you enable the group override, these settings replace the alert settings of every check in the group.
 
 
 ### Testing & Runtimes
 - **Testing:** Run checks in this group as E2E tests locally or from CI/CD pipelines
-- **Runtimes:** Set the JavaScript runtime environment for browser checks and scripts if different from account default
+- **Runtimes:** Set the JavaScript runtime environment for Browser checks and scripts if different from account default
 
 
 
@@ -131,9 +137,9 @@ that variable to be overridden at the group level or check level.
 Understanding how grouped checks run is important for sophisticated monitoring setups:
 
 1. **Individual scheduling:** Checks are scheduled as individual checks, not "as a group"
-2. **Group triggers:** Calling a "group run" using CLI or GitHub integration runs all checks in the group
+2. **Group triggers:** Calling a "group run" using a [command line trigger](/integrations/iac/terraform/command-line-triggers) (a trigger URL) or the GitHub or Vercel integration runs all checks in the group
 3. **No group state:** The group itself does not have an explicit runtime state
-4. **Individual results:** No results or metrics are collected at the group level
+4. **Individual results:** Results are stored per check. The group overview page shows the run results of all checks in the group together
 5. **Independent timing:** Checks in a group maintain their individual scheduling settings
 
 Groups are primarily configuration containers that provide shared settings and organizational structure. This approach ensures flexibility while enabling powerful configuration management at scale.

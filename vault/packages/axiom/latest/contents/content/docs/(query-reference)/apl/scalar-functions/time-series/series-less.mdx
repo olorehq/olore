@@ -1,0 +1,137 @@
+---
+title: series_less
+description: 'This page explains how to use the series_less function in APL.'
+---
+
+The `series_less` function compares two numeric arrays element by element and returns a Boolean array. Each position in the result contains `true` if the element in the first array is less than the corresponding element in the second array, and `false` otherwise.
+
+You use `series_less` when you want to evaluate trends across sequences of numeric values. It’s especially useful in time series analysis, anomaly detection, or comparing metrics side by side. For example, you can check if response times are decreasing compared to a baseline or if one service consistently performs faster than another.
+
+## Usage
+
+### Syntax
+
+```kusto
+series_less(array1, array2)
+```
+
+### Parameters
+
+| Parameter | Type  | Description                                                                |
+| --------- | ----- | -------------------------------------------------------------------------- |
+| `array1`  | array | The first array of numeric values.                                         |
+| `array2`  | array | The second array of numeric values. Must have the same length as `array1`. |
+
+### Returns
+
+An array of Boolean values. Each element is `true` if the corresponding element in `array1` is less than the element in `array2`, otherwise `false`.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+You want to check whether the average request duration in each city is less than a fixed threshold of 150 milliseconds.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| make-series city_avg = avg(req_duration_ms) on _time step 1h by ['geo.city']
+| extend threshold = dynamic([150, 150, 150])
+| extend is_less = series_less(city_avg, threshold)
+````
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20make-series%20city_avg%20%3D%20avg(req_duration_ms)%20on%20_time%20step%201h%20by%20%5B'geo.city'%5D%20%7C%20extend%20threshold%20%3D%20dynamic(%5B150%2C%20150%2C%20150%5D)%20%7C%20extend%20is_less%20%3D%20series_less(city_avg%2C%20threshold)%22%7D)
+
+**Output**
+
+| geo.city | city_avg        | threshold        | is_less               |
+| -------- | ---------------- | ---------------- | ---------------------- |
+| London   | [120, 90, 100]  | [150, 150, 150] | [true, true, true]    |
+| Paris    | [180, 200, 190] | [150, 150, 150] | [false, false, false] |
+
+This query shows whether each city’s request duration stays below a 150 ms threshold at each time step.
+
+</Tab>
+<Tab title="Security logs">
+
+You want to detect if failed requests in each country are consistently less than successful requests.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| take 50
+| summarize success = countif(status == '200'), failure = countif(status != '200') by ['geo.country'], bin(_time, 1h)
+| make-series success_series = avg(success), failure_series = avg(failure) on _time step 1h by ['geo.country']
+| extend failures_less = series_less(failure_series, success_series)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20take%2050%20%7C%20summarize%20success%20%3D%20countif(status%20%3D%3D%20'200')%2C%20failure%20%3D%20countif(status%20!%3D%20'200')%20by%20%5B'geo.country'%5D%2C%20bin(_time%2C%201h)%20%7C%20make-series%20success_series%20%3D%20avg(success)%2C%20failure_series%20%3D%20avg(failure)%20on%20_time%20step%201h%20by%20%5B'geo.country'%5D%20%7C%20extend%20failures_less%20%3D%20series_less(failure_series%2C%20success_series)%22%7D)
+
+**Output**
+
+| geo.country | success_series  | failure_series | failures_less      |
+| ----------- | ---------------- | --------------- | ------------------- |
+| US          | [300, 280, 310] | [10, 20, 15]   | [true, true, true] |
+| UK          | [150, 140, 160] | [20, 25, 30]   | [true, true, true] |
+
+This query checks whether failures stay consistently lower than successful requests across time intervals.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [series_greater_equals](/apl/scalar-functions/time-series/series-greater-equals): Compares two arrays and returns `true` when elements in the first array are greater than or equal to the second array.
+- [series_greater](/apl/scalar-functions/time-series/series-greater): Compares two arrays and returns `true` where the first array element is greater than the second.
+- [series_less_equals](/apl/scalar-functions/time-series/series-less-equals): Compares two arrays and returns `true` where the first array element is less than or equal to the second.
+- [series_not_equals](/apl/scalar-functions/time-series/series-not-equals): Compares two arrays and returns `true` where elements aren’t equal.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, comparisons across series typically rely on `eval` with conditional expressions or custom logic in combination with `timechart`. In contrast, APL provides specialized `series_*` functions like `series_less` to directly compare arrays element by element.
+
+<CodeGroup>
+```sql Splunk example
+... | timechart avg(req_duration_ms) as avg_dur
+| eval faster = if(avg_dur < 200, true, false)
+````
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series avg(req_duration_ms) on _time step 1m
+| extend is_less = series_less(avg_req_duration_ms, array_concat(dynamic([200])))
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, you normally compare scalar values rather than arrays. To compare sequences, you need to join tables with offsets or use window functions. In APL, `series_less` simplifies this by applying the comparison across arrays in a single step.
+
+<CodeGroup>
+```sql SQL example
+SELECT t1._time,
+       CASE WHEN t1.req_duration_ms < t2.req_duration_ms THEN true ELSE false END AS is_less
+FROM logs t1
+JOIN logs t2
+  ON t1._time = t2._time
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| make-series avg(req_duration_ms) on _time step 1m
+| extend compare = series_less(avg_req_duration_ms, avg_req_duration_ms[1:])
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

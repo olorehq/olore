@@ -1,0 +1,111 @@
+---
+title: 'Send data from Splunk to Axiom'
+description: 'Integrate Axiom in your existing Splunk app with minimal effort and without breaking any of your existing Splunk stack.'
+overview: 'Platform for searching, monitoring, and analyzing machine-generated data'
+sidebarTitle: Splunk
+keywords: ['axiom documentation', 'documentation', 'axiom', 'endpoints', 'http', 'syslog', 'splunk', 'datadog', 'loki', 'honeycomb', 'javascript', 'python']
+logoId: 'splunk'
+---
+
+import SetUpEndpoint from "@/content/snippets/set-up-endpoint.mdx"
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+
+This page explains how to send data from Splunk to Axiom.
+
+<Prerequisites />
+
+<SetUpEndpoint endpointName="Splunk" />
+
+## Configure Splunk
+
+In Splunk, specify the following environment variables:
+
+- `token` is your Splunk API token. For information, see the [Splunk documentation](https://help.splunk.com/en/splunk-observability-cloud/administer/authentication-and-security/authentication-tokens/api-access-tokens).
+- `url` or `host` is the target URL for the endpoint you have generated in Axiom by following the procedure above. For example, `https://opbizplsf8klnw.ingress.axiom.co`.
+
+## Examples
+
+### Send logs from Splunk using JavaScript
+
+```js
+var SplunkLogger = require('splunk-logging').Logger;
+
+var config = {
+  token: '$SPLUNK_TOKEN',
+  url: '$AXIOM_ENDPOINT_URL',
+};
+
+var Logger = new SplunkLogger({
+  token: config.token,
+  url: config.url,
+  host: '$AXIOM_ENDPOINT_URL',
+});
+
+var payload = {
+  // Message can be anything; doesn’t have to be an object
+  message: {
+    temperature: '70F',
+    chickenCount: 500,
+  },
+};
+
+console.log('Sending payload', payload);
+Logger.send(payload, function (err, resp, body) {
+  // If successful, body will be { text: 'Success', code: 0 }
+  console.log('Response from Splunk', body);
+});
+```
+
+### Send logs from Splunk using Python
+
+- Your Splunk deployment `port` and `index` values are required in your Python code.
+
+```py
+import logging
+from splunk_handler import SplunkHandler
+splunk = SplunkHandler(
+        host="$AXIOM_SPLUNK_ENDPOINT_URL",
+        port='8088',
+        token='',
+        index='main'
+    )
+
+logging.getLogger('').addHandler(splunk)
+
+logging.warning('Axiom endpoints!')
+```
+
+### Send logs from Splunk using Golang
+
+```js
+package main
+
+import "github.com/docker/docker/daemon/logger/splunk"
+
+func main() {
+
+	// Create new Splunk client
+	splunk := splunk.NewClient(
+		nil,
+		"https://{$AXIOM_SPLUNK_ENDPOINT}:8088/services/collector",
+		"{your-token}",
+		"{your-source}",
+		"{your-sourcetype}",
+		"{your-index}"
+	)
+
+	err := splunk.Log(
+		interface{"msg": "axiom endpoints", "msg2": "endpoints"}
+	)
+	if err != nil {
+        	return err
+        }
+
+	err = splunk.LogWithTime(
+		time.Now(),
+		interface{"msg": "axiom endpoints", "msg2": "endpoints"}
+	)
+	if err != nil {
+		return err
+	}
+```

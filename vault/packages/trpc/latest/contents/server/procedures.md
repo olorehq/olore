@@ -3,13 +3,15 @@ id: procedures
 title: Define Procedures
 sidebar_label: Define Procedures
 slug: /server/procedures
+section: "Backend Usage"
+order: 7
 ---
 
 A procedure is a function which is exposed to the client, it can be one of:
 
 - a `Query` - used to fetch data, generally does not change any data
 - a `Mutation` - used to send data, often for create/update/delete purposes
-- a `Subscription` - you might not need this, and we have [dedicated documentation](../server/subscriptions.md)
+- a `Subscription` - you might not need this, and we have [dedicated documentation](./subscriptions.md)
 
 Procedures in tRPC are very flexible primitives to create backend functions. They use an immutable builder pattern, which means you can [create reusable base procedures](#reusable-base-procedures) that share functionality among multiple procedures.
 
@@ -51,7 +53,7 @@ As a general pattern we recommend you rename and export `t.procedure` as `public
 
 In the below code, we're using reusable base procedures to build common use-cases for our app - we're making a reusable base procedures for logged in users (`authedProcedure`) & another base procedure that takes an `organizationId` and validates that a user is part of that organization.
 
-> This is a simplified example; in practice you may want to use some combination of [Headers](/docs/client/headers), [Context](context), [Middleware](middlewares), and [Metadata](metadata), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and [authorize](authorization) your users.
+> This is a simplified example; in practice you may want to use some combination of [Headers](/docs/client/headers), [Context](./context.md), [Middleware](./middlewares.md), and [Metadata](./metadata.md), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and [authorize](./authorization.md) your users.
 
 ```ts twoslash
 // @target: esnext
@@ -248,4 +250,4 @@ export const appRouter = t.router({
 
 ## Subscriptions
 
-For information on subscriptions, see [our subscriptions guide](../server/subscriptions.md).
+For information on subscriptions, see [our subscriptions guide](./subscriptions.md).

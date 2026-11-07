@@ -1,23 +1,27 @@
 ---
 title: 'DnsMonitor Construct'
 description: 'Learn how to configure DNS monitors with the Checkly CLI.'
-sidebarTitle: 'DNS Monitor'
+sidebarTitle: 'DNS monitor'
+canonical: 'https://www.checklyhq.com/docs/constructs/dns-monitor/'
+mode: "wide"
 ---
+
+import CheckIntent from '/snippets/check-intent.mdx';
 
 import GeneralMonitorOptionsTable from '/snippets/general-monitor-options-table.mdx';
 
 <Tip>
-Learn more about DNS Monitors in [the DNS monitor overview](/detect/uptime-monitoring/dns-monitors/overview).
+Learn more about DNS monitors in [the DNS monitor overview](/detect/uptime-monitoring/dns-monitors/overview).
 </Tip>
 
-Use DNS Monitors to verify that DNS records resolve correctly and to track lookup performance over time.
+Use DNS monitors to verify that DNS records resolve correctly and to track lookup performance over time.
 
 <Accordion title="Prerequisites">
-Before creating DNS Monitors, ensure you have:
+Before creating DNS monitors, ensure you have:
 
 - An initialized Checkly CLI project
 - A domain or hostname you want to monitor
-- Basic understanding of DNS record types (A, AAAA, CNAME, MX, NS, TXT, SOA)
+- Basic understanding of DNS record types (A, AAAA, CNAME, MX, NS, TXT, SOA, HTTPS)
 
 For additional setup information, see [CLI overview](/cli/overview).
 </Accordion>
@@ -76,16 +80,17 @@ new DnsMonitor("advanced-dns-monitor", {
 
 ## Configuration
 
-A DNS Monitor has its own DNS-specific settings, plus the standard monitor options shared across all check types.
+A DNS monitor has its own DNS-specific settings, plus the standard monitor options shared across all check types.
 
 <Tabs>
-<Tab title="DNS Monitor Settings">
+<Tab title="DNS monitor settings">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `request` | `object` | ✅ | - | DNS request configuration object |
-| `degradedResponseTime` | `number` | ❌ | `500` | Response time threshold in milliseconds for degraded status |
-| `maxResponseTime` | `number` | ❌ | `1000` | Maximum response time in milliseconds before marking as failed |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Monitor Options](#general-monitor-options). |
+| `degradedResponseTime` | `number` | ❌ | `500` | Response time threshold in milliseconds for degraded status (max 5000 by default) |
+| `maxResponseTime` | `number` | ❌ | `1000` | Maximum response time in milliseconds before marking as failed (max 5000 by default) |
 
 </Tab>
 <Tab title="General Monitor Settings">
@@ -103,6 +108,7 @@ DNS request configuration that defines the DNS query to perform and how to valid
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts
 new DnsMonitor("dns-monitor", {
   name: "DNS A Record Monitor",
@@ -121,19 +127,20 @@ new DnsMonitor("dns-monitor", {
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `query` | `string` | ✅ | - | The DNS query (domain name or IP address) |
-| `recordType` | `DnsRecordType` | ✅ | - | DNS record type: A, AAAA, CNAME, MX, NS, TXT, SOA |
-| `nameServer` | `string` | ❌ | - | Custom DNS server to query (e.g. "9.9.9.9") |
-| `port` | `number` | ❌ | `53` | Port of the DNS server |
+| `recordType` | `DnsRecordType` | ✅ | - | DNS record type: A, AAAA, CNAME, MX, NS, TXT, SOA, HTTPS |
+| `nameServer` | `string` | ❌ | - | Custom DNS server to query (e.g. "9.9.9.9"). Requires `port` |
+| `port` | `number` | ❌ | `53` | Port of the DNS server. Required when `nameServer` is set, and only allowed with `nameServer` |
 | `protocol` | `DnsProtocol` | ❌ | `UDP` | Protocol to use: UDP or TCP |
 | `assertions` | `DnsAssertion[]` | ❌ | `[]` | Response assertions using `DnsAssertionBuilder` |
 
 </ResponseField>
 
 <ResponseField name="degradedResponseTime" type="number" default="500">
-Response time threshold in milliseconds for marking the DNS Monitor as degraded (warning state).
+Response time threshold in milliseconds for marking the DNS monitor as degraded (warning state).
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={3}
 new DnsMonitor("dns-performance-tiers", {
   name: "DNS Performance Tiers",
@@ -150,10 +157,11 @@ new DnsMonitor("dns-performance-tiers", {
 </ResponseField>
 
 <ResponseField name="maxResponseTime" type="number" default="1000">
-Maximum response time in milliseconds before the DNS Monitor is marked as failed.
+Maximum response time in milliseconds before the DNS monitor is marked as failed.
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={3}
 new DnsMonitor("fast-dns", {
   name: "Fast DNS Resolution",
@@ -206,10 +214,11 @@ Learn more in our docs on [Assertions](/detect/assertions).
 ### General Monitor Options
 
 <ResponseField name="name" type="string" required>
-Friendly name for your DNS Monitor that will be displayed in the Checkly dashboard and used in notifications.
+Friendly name for your DNS monitor that will be displayed in the Checkly dashboard and used in notifications.
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={2}
 new DnsMonitor("my-monitor", {
   name: "DNS Resolution Monitor",
@@ -220,10 +229,11 @@ new DnsMonitor("my-monitor", {
 </ResponseField>
 
 <ResponseField name="frequency" type="Frequency">
-How often the DNS Monitor should run. Use the `Frequency` enum to set the check interval.
+How often the DNS monitor should run. Use the `Frequency` enum to set the check interval.
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={2}
 new DnsMonitor("my-monitor", {
   frequency: Frequency.EVERY_1M,
@@ -235,26 +245,32 @@ new DnsMonitor("my-monitor", {
 </ResponseField>
 
 <ResponseField name="locations" type="string[]" default="[]">
-Array of [public location codes](/concepts/locations/#public-locations) where the DNS Monitor should run from. Multiple locations provide geographic coverage and help detect regional DNS issues.
+Array of [public location codes](/concepts/locations/#public-locations) where the DNS monitor should run from. Multiple locations provide geographic coverage and help detect regional DNS issues.
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={2}
 new DnsMonitor("global-dns-monitor", {
-  locations: ["us-east-1", "eu-central-1", "ap-southeast-1"]
+  locations: ["us-east-1", "eu-central-1", "ap-southeast-1"],
+  /* More options... */
 })
 ```
 </ResponseField>
 
 <ResponseField name="activated" type="boolean" default="true">
-Whether the DNS Monitor is enabled and will run according to its schedule.
+Whether the DNS monitor is enabled and will run according to its schedule.
 
 **Usage:**
 
+{/* typecheck-wrap: DnsMonitor */}
 ```ts highlight={2}
 new DnsMonitor("my-monitor", {
-  activated: false // Disabled monitor
+  activated: false, // Disabled monitor
+  /* More options... */
 })
 ```
 
 </ResponseField>
+
+<CheckIntent />

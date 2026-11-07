@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-effects-halftone-linear-gradient.png
+image: https://remotion.media/docs/generated/articles-docs-effects-halftone-linear-gradient.png
 slug: /effects/halftone-linear-gradient
 title: halftoneLinearGradient()
 sidebar_label: halftoneLinearGradient()
@@ -21,12 +21,12 @@ Use it for dot-pattern wipes, overlays, and backgrounds on canvas-based componen
 ## Example
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill, Solid} from 'remotion';
+import {Solid} from 'remotion';
 import {halftoneLinearGradient} from '@remotion/effects/halftone-linear-gradient';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Solid
         width={1280}
         height={720}
@@ -42,7 +42,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -50,12 +50,12 @@ export const MyComp: React.FC = () => {
 To use colors from the previous effect in the chain, set `colorMode` to `'source'`:
 
 ```tsx twoslash title="MyComp.tsx"
-import {AbsoluteFill, Solid} from 'remotion';
+import {Solid} from 'remotion';
 import {halftoneLinearGradient} from '@remotion/effects/halftone-linear-gradient';
 
 export const MyComp: React.FC = () => {
   return (
-    <AbsoluteFill>
+    <>
       <Solid
         width={1280}
         height={720}
@@ -71,7 +71,7 @@ export const MyComp: React.FC = () => {
           }),
         ]}
       />
-    </AbsoluteFill>
+    </>
   );
 };
 ```
@@ -134,9 +134,12 @@ Set this to `true` to prevent solid-color dots from appearing in fully transpare
 
 When `true`, the effect is skipped. Defaults to `false`.
 
-## Requirements
+## Implementations
 
-`halftoneLinearGradient()` uses a WebGL2 backend. During renders, enable WebGL via [`Config.setChromiumOpenGlRenderer('angle')`](/docs/config#setchromiumopenglrenderer). See [Using WebGL during renders](/docs/remotion/html-in-canvas#using-webgl-during-renders).
+- WebGPU<AvailableFrom v="4.0.540" inline />
+- WebGL2
+
+See: [Preferred effect backend](/docs/options/preferred-effect-backend).
 
 ## See also
 

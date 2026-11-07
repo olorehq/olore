@@ -1,0 +1,116 @@
+---
+title: Diagnostics
+description: Understand the structure and content of Biome diagnostics.
+---
+import DiagnosticFatal from "@/components/generated/diagnostics/DiagnosticFatal.md";
+import DiagnosticError from "@/components/generated/diagnostics/DiagnosticError.md";
+import DiagnosticWarning from "@/components/generated/diagnostics/DiagnosticWarning.md";
+import DiagnosticInformation from "@/components/generated/diagnostics/DiagnosticInformation.md";
+import DiagnosticVerbose from "@/components/generated/diagnostics/DiagnosticVerbose.md";
+import DiagnosticInternal from "@/components/generated/diagnostics/DiagnosticInternal.md";
+import DiagnosticFixable from "@/components/generated/diagnostics/DiagnosticFixable.md";
+import DiagnosticDeprecated from "@/components/generated/diagnostics/DiagnosticDeprecated.md";
+import DiagnosticCategorySimple from "@/components/generated/diagnostics/DiagnosticCategorySimple.md";
+import DiagnosticCategoryLink from "@/components/generated/diagnostics/DiagnosticCategoryLink.md";
+import DiagnosticLocFile from "@/components/generated/diagnostics/DiagnosticLocFile.md";
+import DiagnosticLocFrame from "@/components/generated/diagnostics/DiagnosticLocFrame.md";
+import DiagnosticLocAll from "@/components/generated/diagnostics/DiagnosticLocAll.md";
+import DiagnosticLocMultiline from "@/components/generated/diagnostics/DiagnosticLocMultiline.md";
+import DiagnosticWithAdvice from "@/components/generated/diagnostics/DiagnosticWithAdvice.md";
+
+Biome diagnostics explain errors, warnings, and other events in a structured format. They usually provide the context you need to understand and resolve an issue.
+
+This page explains each part of a diagnostic and how to interpret it.
+
+## Diagnostic severity
+
+A diagnostic's severity determines how Biome reports it and can also affect the CLI. For example, an error causes the CLI to exit with a non-zero status code.
+
+### Fatal
+
+Fatal diagnostics use red text and indicate that an unexpected error occurred inside Biome. Unlike error diagnostics, they include the [fatal tag](#diagnostic-tags).
+
+<DiagnosticFatal />
+
+### Error
+
+Error diagnostics use red text and should generally be addressed. The CLI will fail and exit when raised.
+
+<DiagnosticError />
+
+### Warning
+
+Warning diagnostics use yellow text and should generally be addressed. By default, they do not cause the CLI to fail.
+
+<DiagnosticWarning />
+
+### Information
+
+Information diagnostics use green text. They provide useful context and do not cause the CLI to fail.
+
+<DiagnosticInformation />
+
+## Diagnostic tags
+
+Tags are metadata attached to a diagnostic. They can change how clients display or handle it.
+
+### Verbose
+
+{/* TODO: Add link to verbose flag after CLI page rework is merged */}
+Verbose diagnostics are hidden by default. To display them in the CLI, pass the `--verbose` option.
+
+<DiagnosticVerbose />
+
+### Internal
+
+Internal diagnostics indicate that an unexpected error occurred inside Biome. If you encounter one, please [file a bug report on GitHub](https://github.com/biomejs/biome/issues/new?template=03_bug.yml).
+
+<DiagnosticInternal />
+
+### Fixable
+
+Fixable diagnostics indicate that a fix is available. They are commonly used for lint diagnostics that offer a code action the user can review and apply.
+
+<DiagnosticFixable />
+
+### Deprecated
+
+Deprecated diagnostics identify code or configuration that is obsolete and should no longer be used.
+
+<DiagnosticDeprecated />
+
+## Diagnostic category
+
+A diagnostic category is a identifier for the type of issue being reported. It appears in the diagnostic header and can identify a command, subsystem, or rule.
+
+<DiagnosticCategorySimple />
+
+Some categories can also include a link. For example, `lint/a11y/noAccessKey` links to the documentation for that lint rule:
+
+<DiagnosticCategoryLink />
+
+## Diagnostic location
+
+A diagnostic can include a file path, source code, and a highlighted range to show where an issue occurred. Each part is optional, so Biome displays whatever context is available.
+
+A file path identifies which file the diagnostic refers to, even when no source code or exact position is available:
+
+<DiagnosticLocFile />
+
+When source code and a highlighted range are available, Biome displays a code frame that points to the relevant text. This can appear without a file path, in which case the header does not include a line and column:
+
+<DiagnosticLocFrame />
+
+When all three parts are available, Biome adds the line and column where the highlighted range begins to the file path:
+
+<DiagnosticLocAll />
+
+A highlighted range can cover multiple lines. In terminals embedded in many IDEs, you can click a location such as `path/to/file.js:2:2` to open the file and place the cursor at the beginning of that range:
+
+<DiagnosticLocMultiline />
+
+## Diagnostic advice
+
+Diagnostics can include advice after the primary message. Advice can take several forms and is displayed by default. Verbose advice is displayed only when you pass the `--verbose` option.
+
+<DiagnosticWithAdvice />

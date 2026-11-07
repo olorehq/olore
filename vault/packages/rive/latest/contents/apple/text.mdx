@@ -8,15 +8,14 @@ import Overview from "/snippets/runtimes/text/overview.mdx"
 import NestedArtboard from "/snippets/runtimes/text/nested-artboard.mdx"
 import SemanticsForAccessibility from "/snippets/runtimes/text/semantics-for-accessibility.mdx"
 import Resources from "/snippets/runtimes/text/resources.mdx"
-import { Apple } from "/snippets/constants.mdx"
 
 <Warning>
-  This deprecated feature is only supported in the Legacy Runtime, not the {Apple.currentRuntimeName}.
+  This deprecated feature is only supported in the Legacy Runtime, not the {{runtimeCurrentNameApple}}.
 </Warning>
 
 <Overview />
 
-#### Reading Text
+#### Reading text
 
 To read a given text run text value at any given time, reference the `.getTextRunValue()` API on the `RiveViewModel`:
 
@@ -26,7 +25,7 @@ open func getTextRunValue(_ textRunName: String) -> String?
 
 Supply the text run name and you'll have the Rive text run value returned, or `nil` if the text run could not be queried.
 
-#### Setting Text
+#### Setting text
 
 To set a given text run value at any given time, reference the `.setTextRunValue()` API on the `RiveViewModel`:
 
@@ -39,7 +38,7 @@ Supply the text run name and a second parameter, `textValue`, with a String valu
 <Note>
 If the supplied `textRunName` Rive text run cannot be queried on the active artboard, Rive will throw a `RiveError.textValueRunError` that you may need to catch and handle gracefully in your application.
 </Note>
-#### Example Usage
+#### Example usage
 
 ```swift
 @State private var userInput: String = ""
@@ -64,7 +63,7 @@ var body: some View {
 
 <NestedArtboard />
 
-### Reading Text
+### Reading text
 
 Similar to [reading text from a text run within a parent artboard](#reading-text), you can set the value of a text run within a component instance using the following API:
 
@@ -72,7 +71,7 @@ Similar to [reading text from a text run within a parent artboard](#reading-text
 open func getTextRunValue(_ textRunName: String, path: String) -> String?
 ```
 
-### Setting Text
+### Setting text
 
 Additionally, similar to [setting text within a parent artboard](#setting-text), you can read the value of a text run within a component instance using the following API:
 

@@ -1,0 +1,146 @@
+---
+title: MCP (AI agents)
+description: Connect AI agents to Turso Cloud over the Model Context Protocol — manage databases and run SQL with OAuth, no API token to copy.
+---
+
+Turso runs a hosted [Model Context Protocol](https://modelcontextprotocol.io) (MCP)
+server at **`https://mcp.turso.ai/mcp`**. Connect any MCP-capable AI agent and it
+can manage your Turso Cloud account — organizations, databases, groups — and run
+SQL, on your behalf.
+
+Authentication is **OAuth 2.1** (the same model you use to log in to the
+dashboard): you approve access in the browser and the agent receives a scoped
+token. **There's no API token to copy or paste.**
+
+## What the agent can do
+
+Once connected, the agent has tools to:
+
+- **Databases** — list, inspect, create, delete, and branch databases (including
+  point-in-time branches), and update configuration (delete-protection, IP/VPC
+  allow rules, size limits).
+- **SQL** — run read-only queries, writes, deletes, and schema changes, each as a
+  separate tool so the agent uses the least-powerful one for the task.
+- **Insight** — per-database analytics (top queries by frequency and latency).
+- **Recovery** — list and restore databases and groups deleted within the last
+  five days, so an agent can undo its own mistakes (see
+  [Recover Deleted Databases](/features/recover-deleted-databases)).
+
+Read-only and destructive operations are labeled, so the agent can tell them
+apart and confirm before doing anything that changes data.
+
+## Connect
+
+<Tabs>
+  <Tab title="Claude Code">
+
+  Install the plugin, then authenticate:
+
+  ```bash
+  /plugin marketplace add tursodatabase/turso-mcp
+  /plugin install turso@turso
+  ```
+
+  Run `/mcp`, select **turso**, and choose **Authenticate**. Your browser opens
+  to approve access (see [Authorize](#authorize-access) below).
+
+  </Tab>
+  <Tab title="Codex">
+
+  Install the plugin (it bundles the Turso skill too), then authenticate:
+
+  ```bash
+  codex plugin marketplace add tursodatabase/turso-mcp
+  codex plugin add turso@turso
+  codex mcp login turso
+  ```
+
+  A browser opens to approve access (see [Authorize](#authorize-access) below).
+  MCP-only alternative: add `[mcp_servers.turso]` with
+  `url = "https://mcp.turso.ai/mcp"` to `~/.codex/config.toml`, then
+  `codex mcp login turso`.
+
+  </Tab>
+  <Tab title="Cursor">
+
+  Install the plugin (it bundles the Turso skill too): open **Customize →
+  Plugins → Add marketplace**, enter `https://github.com/tursodatabase/turso-mcp`,
+  and install **Turso** from it. Then open **Settings → MCP**, select **turso**, and follow
+  the login prompt to approve access (see [Authorize](#authorize-access) below).
+
+  One-click alternative (MCP server only, no skill):
+  <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=turso&config=eyJ1cmwiOiJodHRwczovL21jcC50dXJzby5haS9tY3AifQ==">**Add to Cursor**</a>,
+  or add the server manually to `~/.cursor/mcp.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "turso": { "url": "https://mcp.turso.ai/mcp" }
+    }
+  }
+  ```
+
+  **Cursor web & cloud agents** don't read plugin or `mcp.json` config — add
+  the server once for your account instead: at
+  [cursor.com/agents](https://cursor.com/agents), open the **“+” menu** next to
+  the model picker → hover **MCP Servers** → **Add MCP**, and enter
+  `https://mcp.turso.ai/mcp`.
+
+  </Tab>
+  <Tab title="Claude (web & desktop)">
+
+  Add a custom connector pointing at the Turso MCP server:
+
+  1. Open **Settings → Connectors → Add custom connector**.
+  2. Set the URL to `https://mcp.turso.ai/mcp` and connect.
+  3. Approve access in the browser (see [Authorize](#authorize-access) below).
+
+  </Tab>
+  <Tab title="Other MCP clients">
+
+  Point any MCP client that supports remote (Streamable HTTP) servers with OAuth
+  at:
+
+  ```
+  https://mcp.turso.ai/mcp
+  ```
+
+  The client discovers the authorization server automatically (RFC 9728 / RFC
+  8414) and walks you through the same browser approval.
+
+  </Tab>
+</Tabs>
+
+## Authorize access
+
+When the browser opens, you'll log in to Turso (if you aren't already) and land
+on a consent screen where you choose **what the agent can access**:
+
+- the **organization**;
+- optionally a single **group** to limit the token to — or the whole
+  organization for full access;
+- for a group, the **permissions** (read-only, full-access, or a custom set).
+
+Approve, and the agent is connected. To re-scope or switch organizations,
+disconnect and authenticate again (in Claude Code: `/mcp` → **turso** → **Clear
+authentication**).
+
+<Note>
+Picking a **group** scopes the token to that group's resources — the
+least-privilege choice. "Entire organization" grants full access. Either way the
+token is enforced at Turso's API: every tool call is checked for org-binding,
+role, and scope, and recorded in your audit log.
+</Note>
+
+## How it works
+
+- The MCP server holds no privilege of its own. Each tool forwards your request
+  to the regular Turso platform API carrying your token, so the same
+  authorization and audit rules apply as any other API access.
+- The token is **organization- or group-scoped**; unscoped tokens are rejected.
+- Consent happens on the Turso dashboard — the only place that can see your login
+  session — which mints the scoped token the agent then uses.
+
+## Resources
+
+- Plugin source and per-agent configs: [github.com/tursodatabase/turso-mcp](https://github.com/tursodatabase/turso-mcp)

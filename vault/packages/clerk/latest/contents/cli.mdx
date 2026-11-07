@@ -1,9 +1,11 @@
 ---
 title: Clerk CLI
 description: Learn how to use the Clerk CLI to set up authentication, manage configuration, and integrate with AI agents.
+search:
+  rank: 1
 ---
 
-The Clerk CLI is a command-line tool for you and your agents to set up and manage [Clerk](https://clerk.com) authentication directly from the terminal. It supports 10+ frameworks.
+The Clerk CLI is a command-line tool for you and your agents to set up and manage Clerk authentication directly from the terminal. It supports 10+ frameworks.
 
 ## Installation
 
@@ -35,11 +37,11 @@ Install the CLI globally, or run it directly without installing using `npx clerk
   ```
 </CodeBlockTabs>
 
+## Get started
+
 <If
   sdk={["nextjs", "react", "react-router", "tanstack-react-start", "astro", "vue", "js-frontend", "expo", "nuxt", "expressjs", "fastify"]}
 >
-  ## Get started
-
   Run `clerk init` in your project directory to get started:
 
   ```bash {{ filename: 'terminal', prompt: '$' }}
@@ -51,24 +53,45 @@ Install the CLI globally, or run it directly without installing using `npx clerk
   You can also use `clerk init --starter` to bootstrap a brand new project from a starter template, or run `clerk init` without an account to get started immediately with temporary development keys.
 </If>
 
-## What you can do
+<If sdk="ios">
+  Create an iOS or macOS SwiftUI app in Xcode with **File** > **New** > **Project** and the **App** template, or use an app you already have. In your terminal, open the folder containing its Xcode project or workspace, then run:
+
+  ```bash {{ filename: 'terminal', prompt: '$' }}
+  clerk init
+  ```
+
+  This command detects your app, guides you through selecting or creating a Clerk application, installs the SDK, and configures supported capabilities and native registration. It also offers to enable native Sign in with Apple. Xcode is required.
+
+  For an unchanged SwiftUI app created from Xcode's **App** template, it also initializes Clerk and offers to add a prebuilt sign-in screen. For an app you've already customized, finish the Swift integration yourself or with your agent using the [iOS Quickstart](/docs/ios/getting-started/quickstart), then build and test sign-in.
+
+  To create a new app without opening Xcode, run `clerk init --starter` and choose **iOS (SwiftUI)** or **macOS (SwiftUI)**. The CLI asks for an app name, Bundle ID, and Apple Developer team, then creates the Xcode project and configures Clerk.
+</If>
 
 <If
-  notSdk={["nextjs", "react", "react-router", "tanstack-react-start", "astro", "vue", "js-frontend", "expo", "nuxt", "expressjs", "fastify"]}
+  notSdk={["nextjs", "react", "react-router", "tanstack-react-start", "astro", "vue", "js-frontend", "expo", "nuxt", "expressjs", "fastify", "ios"]}
 >
   > [!NOTE]
   > `clerk init` doesn't currently support scaffolding for this SDK. You can still use the CLI for app and environment management.
 </If>
 
-- **Set up authentication** — `clerk init` detects your framework, installs the SDK, and scaffolds your project with Clerk's authentication setup.
-- **Manage environment variables** — `clerk env pull` pulls your Clerk API keys into your project's env file.
+## What you can do
+
+- **Set up authentication** — `clerk init` detects your framework, installs the SDK, and applies supported authentication setup.
+- **Manage your account and project link** — `clerk auth login` and `clerk auth logout` manage your CLI session, `clerk whoami` shows the current account and linked application, and `clerk link` / `clerk unlink` connect or disconnect a project.
+- **Manage environment variables for projects that use environment files** — `clerk env pull` pulls your Clerk API keys into your project's env file. Pass `--print` to print them instead, for example, to add production keys to your hosting provider.
 - **Configure your instance** — `clerk config pull` and `clerk config patch` let you manage your Clerk instance's auth settings as code.
-- **Deploy to production** — `clerk deploy` walks you through promoting a Clerk app from development to production: registering your domain, configuring DNS, and gathering OAuth credentials. Use `clerk deploy status` to verify deploy completeness.
-- **Access the Clerk API** — `clerk api` is an authenticated client for Clerk's [Backend API](/docs/reference/backend/overview). Run `clerk api ls` to explore available endpoints.
-- **Run diagnostics** — `clerk doctor` validates your project's Clerk integration and flags common issues.
+- **Audit your instance's security** — `clerk security` grades your instance against Clerk's [security recommendations](/docs/guides/secure/overview), such as bot protection, breached password detection, user lockout, and multi-factor authentication. `clerk security fix` applies the recommendations you pick as a single config change, and `--dry-run` previews the diff first. Run `clerk security checks` to list every recommendation.
+- **Deploy to production** — `clerk deploy` walks you through promoting a Clerk app from development to production: registering your domain, configuring DNS, and gathering OAuth credentials. Pass `--domain <domain>` to skip the domain prompt and `--yes` to skip the confirmations before the production instance is created. Use `clerk deploy status` to verify deploy completeness.
+- **Access the Clerk API** — `clerk api` is an authenticated client for Clerk's [Backend API](/docs/reference/backend-api){{ target: '_blank' }}. Target the [Platform API](/docs/reference/platform-api){{ target: '_blank' }} with `--platform`, or query the public, unauthenticated Frontend API with `--fapi`. Run `clerk api ls` to explore available endpoints.
+- **Run diagnostics** — `clerk doctor` validates your project's Clerk integration and flags common issues, including whether your configured Clerk MCP server is reachable. Pass `--fix` to attempt automatic fixes.
+- **Connect AI clients to Clerk's MCP server** — `clerk mcp install` registers [Clerk's MCP server](/docs/guides/ai/mcp/clerk-mcp-server) in the AI clients detected on your machine, such as Claude Code, Cursor, and VS Code. `clerk mcp list` shows what's registered, and `clerk mcp uninstall` removes it.
 - **Manage applications** — `clerk apps list` and `clerk apps create` let you view and create Clerk applications from the terminal.
+- **Manage users** — `clerk users list`, `clerk users create`, and `clerk users open` work with Clerk users directly. For anything the curated commands don't cover, use `clerk api /users`.
+- **Impersonate a user** — `clerk impersonate` (alias `clerk imp`) mints a short-lived sign-in link so you can sign in as one of your users to reproduce an issue. Every session is traceable to your logged-in account, and you can revoke a pending token with `clerk imp revoke`.
+- **Test webhooks locally** — `clerk webhooks listen` opens a relay tunnel that forwards Clerk webhook deliveries to your local server, and `clerk webhooks verify` checks a delivery's signature offline. Neither requires a linked project.
+- **Toggle features** — `clerk enable` and `clerk disable` turn features like organizations and billing on or off for your instance.
 - **Open the Dashboard** — `clerk open` launches the [Clerk Dashboard](https://dashboard.clerk.com) in your browser from the terminal.
-- **Update the CLI** — `clerk update` updates the CLI to the latest version.
+- **Maintain the CLI** — `clerk update` updates the CLI to the latest version, and `clerk completion` generates shell autocompletion for bash, zsh, fish, and PowerShell.
 
 Run `clerk --help` for a full list of commands.
 
@@ -77,19 +100,23 @@ Run `clerk --help` for a full list of commands.
 The CLI is designed to work seamlessly with AI coding agents:
 
 - **Automatic agent detection** — The CLI auto-detects agent vs. human mode. Non-TTY environments default to agent mode, or you can set it explicitly with `--mode agent`.
-- **Agent-friendly setup** — `clerk init -y` runs the full setup non-interactively, skipping all confirmation prompts, which is ideal for AI agents.
-- **Read-only production status** — `clerk deploy --mode agent` returns a JSON snapshot of your production instance's configuration state so your AI agent can inspect progress and recommend next steps.
+- **Agent-friendly setup** — For supported projects, `clerk init -y` applies setup non-interactively. For native iOS and macOS apps, follow the [iOS setup prompt](/docs/ios/getting-started/quickstart). Both existing projects and new `--starter` projects support `--json` for missing inputs, recovery steps, and remaining Swift integration tasks.
+- **Application link protection** — Agents can pass `--app <application_id>` to select a Clerk application. In agent mode, if setup would replace an existing link, the CLI stops and requires `--relink` to confirm the switch. Inside a Git repository, that link is shared across its projects.
+- **Structured input** — Pass command options as a JSON string with `--input-json` (inline, `@file.json`, or `-` for stdin) instead of individual flags.
+- **Security audits** — In agent mode, `clerk security audit` returns JSON with each finding's status and severity, plus the exact config patch for findings that a config change can fix. `clerk security fix` requires the recommendation IDs or `--all`, plus `--yes` to apply them. Recommendations that need a product decision take `--factors` (multi-factor authentication) or `--strategy` (passwordless sign-in).
+- **Production deploys** — `clerk deploy --domain <domain> --mode agent` creates or resumes the production instance without prompting and returns a JSON report of the remaining steps, such as DNS records to add and OAuth credentials to enter. Without `--domain`, it only returns the report.
 - **Clerk Skills** — Accept the optional prompt during `clerk init` (which installs Clerk's agent skills, including `clerk-cli`), or run `npx skills add clerk/skills` anytime, to install [Clerk Skills](/docs/guides/ai/skills) — giving your AI agent deeper knowledge about Clerk's SDKs and patterns.
+- **Clerk MCP server** — `clerk mcp install` connects your AI clients to [Clerk's MCP server](/docs/guides/ai/mcp/clerk-mcp-server), which serves up-to-date Clerk SDK snippets and implementation patterns. In agent mode it runs non-interactively, targets all detected clients by default, and reports per-client results as JSON.
 
 ## Frequently asked questions (FAQ)
 
 ### What can't the CLI do?
 
-The CLI handles project setup, configuration, and API access. For user management, analytics, and other advanced features, use the [Clerk Dashboard](https://dashboard.clerk.com) directly.
+The CLI's curated commands don't cover every Clerk feature, but `clerk api` can reach any [Backend API](/docs/reference/backend-api){{ target: '_blank' }} or [Platform API](/docs/reference/platform-api){{ target: '_blank' }} endpoint. A few things are only available in the [Clerk Dashboard](https://dashboard.clerk.com): analytics and usage metrics, application and email logs, managing your Clerk workspace (team members, plan, and billing for your Clerk subscription), Account Portal branding and customization, and Clerk Protect security settings.
 
 ### Which frameworks are supported?
 
-The CLI supports frameworks such as Next.js, React, Vue, Nuxt, Astro, React Router, TanStack Start, and more. Some frameworks like Expo, Express, and Fastify are supported for SDK installation but don't yet include full scaffolding. Run `clerk init --help` for the current list.
+The CLI supports frameworks such as Next.js, React, Vue, Nuxt, Astro, React Router, TanStack Start, iOS, macOS, and more. Native Apple setup requires Xcode, and `clerk init --starter` can create the Xcode project. Some frameworks like Expo, Express, and Fastify are supported for SDK installation but don't yet include full scaffolding. Run `clerk init --help` for the current list.
 
 ### Is it open source?
 
@@ -97,7 +124,7 @@ Yes. The CLI is open source and available on [GitHub](https://github.com/clerk/c
 
 ### How do I report a bug?
 
-Open an issue on the [GitHub repo](https://github.com/clerk/cli/issues) or [contact support](https://clerk.com/contact/support).
+Open an issue on the [GitHub repo](https://github.com/clerk/cli/issues) or [contact support](/contact/support).
 
 ### How do I request a feature?
 

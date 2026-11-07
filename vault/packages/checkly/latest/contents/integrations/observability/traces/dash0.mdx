@@ -1,0 +1,28 @@
+---
+title: 'Export traces to Dash0'
+description: 'Send Checkly traces to Dash0 with a static auth token.'
+sidebarTitle: 'Dash0'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/dash0/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Dash0" />
+
+1. Get the endpoint. In Dash0, open **Settings** > **Endpoints** and copy the URL for your organization. It ends in `/v1/traces` with no trailing slash, for example `https://ingress.eu-west-1.aws.dash0.com/v1/traces`.
+2. Get the key. In Dash0, open **Settings** > **Auth Tokens** and create a token. Use a static token that starts with `auth_`.
+   ![Auth Tokens page in Dash0](/images/docs/images/otel/export-traces/dash0-token.png)
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+   ![Export Traces settings with an endpoint URL and an authorization header](/images/docs/images/otel/otel_export_traces_settings.png)
+4. Find the spans. In Dash0, the spans appear under service `checkly`.
+   ![Checkly spans in the Dash0 Tracing view](/images/docs/images/otel/export-traces/dash0-traces.png)
+
+| Header name | Value |
+|---|---|
+| `Authorization` | `Bearer auth_...` |
+
+Add a `Dash0-Dataset` header row to write to a specific dataset. A token restricted to a dataset gets a 403 without it.
+
+Dash0 documents the endpoints in [Setup without Kubernetes](https://www.dash0.com/docs/dash0/telemetry/signal-control/edge/setup-without-kubernetes).
+<OtlpVendorOutro />

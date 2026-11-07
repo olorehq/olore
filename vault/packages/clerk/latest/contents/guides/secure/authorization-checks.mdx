@@ -1,5 +1,6 @@
 ---
 title: Authorization checks
+sdk: nextjs, react, js-frontend, chrome-extension, electron, expo, expressjs, fastify, react-router, tanstack-react-start, go, astro, nuxt, vue, ruby
 description: Learn how to verify and validate user Roles and Permissions within Clerk to maintain secure access control.
 metadata:
   title: Verifying user permissions with Clerk
@@ -38,13 +39,13 @@ This guide will show you how to implement authorization checks in order to prote
 ## Important considerations
 
 - When doing authorization checks, it's recommended to use Permission-based over Role-based, and Feature-based over Plan-based authorization, as these approaches are more granular, flexible, and more secure.
-  - Note: Using `has()` **on the server-side** to check Permissions works only with **Custom Permissions**, as [System Permissions](/docs/guides/organizations/control-access/roles-and-permissions#system-permissions) aren't included in the session token claims. To check System Permissions, verify the user's Role instead.
+  - Note: Using `has()` **on the server-side** to check Permissions works only with **Custom Permissions**, as [System Permissions](/docs/guides/organizations/control-access/roles-and-permissions#system-permissions) aren't included in the [session token](!session-token) claims. To check System Permissions, verify the user's Role instead.
 - Checking for a Role or Permission depends on the user having an [Active Organization](!active-organization). Without an Active Organization, the authorization checks will likely always evaluate to false by default.
 - If you would like to perform Role-based authorization checks **without** using Clerk's Organizations feature, see [the Role Based Access Control (RBAC) guide](/docs/guides/secure/basic-rbac).
 - If you have both Organizations and Billing enabled, a Permission check will only work if the Feature part of the Permission key (`org:<feature>:<permission>`) **is a Feature included in the Organization's active Plan**. For example, say you want to check if an Organization member has the Custom Permission `org:teams:manage`, where `teams` is the Feature. Before performing the authorization check, you need to ensure that the user's Organization is subscribed to a Plan that has the `teams` Feature. If not, the authorization check will always return `false`, _even if the user has the Custom Permission_.
 
 <If sdk="nextjs">
-  * Be cautious when doing authorization checks in layouts, as these don't re-render on navigation, meaning the user session won't be checked on every route change. [Read more in the Next.js docs](https://nextjs.org/docs/app/building-your-application/authentication#layouts-and-auth-checks).
+  * Be cautious when doing authorization checks in layouts, as these don't re-render on navigation, meaning the user session won't be checked on every route change. Read more in [Next.js's guidance on layouts and auth checks](https://nextjs.org/docs/app/building-your-application/authentication#layouts-and-auth-checks).
 </If>
 
 ### Use `has()` for authorization checks
@@ -62,8 +63,17 @@ The [`has()`](/docs/reference/backend/types/auth-object#has) helper returns `fal
     <CodeBlockTabs options={["Server-side", "Client-side"]}>
       ```tsx {{ filename: 'app/page.tsx' }}
       import { auth } from '@clerk/nextjs/server'
+      import { Suspense } from 'react'
 
-      export default async function Page() {
+      export default function Page() {
+        return (
+          <Suspense>
+            <TeamSettings />
+          </Suspense>
+        )
+      }
+
+      async function TeamSettings() {
         // Use `auth()` to access the `has()` helper
         // For other frameworks, use the appropriate method for accessing the `Auth` object
         const { has } = await auth()
@@ -220,6 +230,14 @@ export default function Page() {
         return <p>{userId} is authorized to access this page.</p>
       }
       ```
+
+      <Include src="_partials/nextjs/loading-file" />
+
+      ```tsx {{ filename: 'app/dashboard/settings/loading.tsx' }}
+      export default function Loading() {
+        return <p>Loading...</p>
+      }
+      ```
     </Tab>
 
     <Tab>
@@ -245,7 +263,7 @@ export default function Page() {
 
 ## Authorization checks in JavaScript
 
-If you are not using React-based frameworks, you can use the [Clerk JavaScript SDK](/docs/reference/javascript/overview) to perform authorization checks. The following example demonstrates how to use the [`checkAuthorization()`](/docs/reference/objects/session#check-authorization) method to check if a user is authorized.
+If you are not using React-based frameworks, you can use the [Clerk JavaScript SDK](/docs/reference/javascript/overview) to perform authorization checks. The following example demonstrates how to use the [`checkAuthorization()`](/docs/reference/objects/session#checkauthorization) method to check if a user is authorized.
 
 <Tabs items={["JavaScript"]}>
   <Tab>

@@ -1,0 +1,126 @@
+---
+title: array_shift_left
+description: 'This page explains how to use the array_shift_left function in APL.'
+---
+
+The `array_shift_left` function in APL rotates the elements of an array to the left by a specified number of positions. If the shift exceeds the array length, it wraps around and continues from the beginning. This function is useful when you need to realign or reorder elements for pattern analysis, comparisons, or other array transformations.
+
+For example, you can use `array_shift_left` to:
+- Align time-series data for comparative analysis.
+- Rotate log entries for cyclic pattern detection.
+- Reorganize multi-dimensional datasets in your queries.
+
+## Usage
+
+### Syntax
+
+```kusto
+['array_shift_left'](array, shift_amount)
+```
+
+### Parameters
+
+| Parameter     | Type   | Description                                                         |
+|---------------|--------|---------------------------------------------------------------------|
+| `array`       | Array  | The array to shift.                                                |
+| `shift_amount`| Integer| The number of positions to shift elements to the left.             |
+
+### Returns
+
+An array with elements shifted to the left by the specified `shift_amount`. The function wraps the excess elements to the start of the array.
+
+## Use case example
+
+Reorganize span events to analyze dependencies in a different sequence.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| take 50
+| extend shifted_events = array_shift_left(events, 1)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20take%2050%20%7C%20extend%20shifted_events%20%3D%20array_shift_left(events%2C%201)%22%7D)
+
+**Output**
+
+```json events
+[
+  {
+    "name": "Enqueued",
+    "timestamp": 1734001111273917000,
+    "attributes": null
+  },
+  {
+    "attributes": null,
+    "name": "Sent",
+    "timestamp": 1734001111273925400
+  },
+  {
+    "name": "ResponseReceived",
+    "timestamp": 1734001111274167300,
+    "attributes": null
+  }
+]
+```
+
+```json shifted_events
+[
+  {
+    "attributes": null,
+    "name": "Sent",
+    "timestamp": 1734001111273925400
+  },
+  {
+    "name": "ResponseReceived",
+    "timestamp": 1734001111274167300,
+    "attributes": null
+  },
+  null
+]
+```
+
+This query shifts span events for `frontend` services to analyze the adjusted sequence.
+
+## List of related functions
+
+- [array_rotate_right](/apl/scalar-functions/array-functions/array-rotate-right): Rotates array elements to the right by a specified number of positions.
+- [array_rotate_left](/apl/scalar-functions/array-functions/array-rotate-left): Rotates elements of an array to the left.
+- [array_shift_right](/apl/scalar-functions/array-functions/array-shift-right): Shifts array elements to the right.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, there is no direct equivalent to `array_shift_left`, but you can achieve similar results using custom code or by manipulating arrays manually. In APL, `array_shift_left` simplifies this operation by providing a built-in, efficient implementation.
+
+<CodeGroup>
+```sql Splunk example
+| eval rotated_array = mvindex(array, 1) . mvindex(array, 0)
+```
+
+```kusto APL equivalent
+['array_shift_left'](array, 1)
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a native function equivalent to `array_shift_left`. Typically, you would use procedural SQL to write custom logic for this transformation. In APL, the `array_shift_left` function provides an elegant, concise solution.
+
+<CodeGroup>
+```sql SQL example
+-- Pseudo code in SQL
+SELECT ARRAY_SHIFT_LEFT(array_column, shift_amount)
+```
+
+```kusto APL equivalent
+['array_shift_left'](array_column, shift_amount)
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

@@ -1,0 +1,14 @@
+---
+id: filterFn_lessThanOrEqualTo
+title: filterFn_lessThanOrEqualTo
+---
+
+```ts
+const filterFn_lessThanOrEqualTo: CreatedFilterFn<any, any>;
+```
+
+Defined in: [features/column-filtering/filterFns.ts:248](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/column-filtering/filterFns.ts#L248)
+
+Keeps rows whose value is less than or equal to the filter value.
+
+This is implemented as the inverse of greater-than comparison.

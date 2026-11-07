@@ -1,0 +1,329 @@
+---
+title: 'Compare to Recoil'
+---
+
+This page compares XState Store atoms with [Recoil](https://recoiljs.org/).
+
+## Summary
+
+| Topic | Recoil | XState Store atoms |
+| --- | --- | --- |
+| State model | React atom and selector graph. | Framework-neutral atom and derived atom graph. |
+| Derived state | Selectors derive from atoms/selectors. | Derived atoms read other atoms/selectors with `.get()`. |
+| Rendering | React dependency graph determines subscriptions. | Core subscriptions plus framework adapter selectors. |
+| Effects | Atom effects and async selectors. | Async atoms and store transition effects. |
+| Scope | React-specific. | Core works outside React. |
+
+## State Model
+
+Recoil models state as a graph flowing from atoms through selectors into React components.
+
+XState Store atoms model the same broad idea of small independent state values and derived values, but the core is not React-specific:
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const firstNameState = atom({
+  key: 'firstName',
+  default: 'Ada',
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const firstName = createAtom('Ada');
+const lastName = createAtom('Lovelace');
+
+const fullName = createAtom(() => {
+  return `${firstName.get()} ${lastName.get()}`;
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+**Migration tip:** Recoil atoms usually map to `createAtom(...)`; Recoil selectors usually map to derived atoms.
+
+## Derived State
+
+Recoil selectors are derived state. They track atom/selector dependencies and notify subscribed components when the derived value changes.
+
+XState Store derived atoms provide the same core derived-state capability:
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const isEvenState = selector({
+  key: 'isEven',
+  get: ({ get }) => get(countState) % 2 === 0,
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createAtom(0);
+const isEven = createAtom(() => count.get() % 2 === 0);
+```
+
+</SplitItem>
+</SplitItems>
+
+So the comparison is not "Recoil has granular derived state and XState Store does not." XState Store atoms are the corresponding feature.
+
+**Migration tip:** Replace selector dependency reads with direct `.get()` calls inside a derived atom.
+
+## Update Model
+
+Recoil atom updates happen through React hooks such as `useSetRecoilState` and writable selectors.
+
+XState Store atom updates happen directly on the atom:
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```tsx
+function Counter() {
+  const setCount = useSetRecoilState(countState);
+  return <button onClick={() => setCount((c) => c + 1)}>+</button>;
+}
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+count.set((value) => value + 1);
+```
+
+</SplitItem>
+</SplitItems>
+
+For updates that should be domain events, XState Store uses stores:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+**Migration tip:** Use `atom.set(...)` for local updates and store transitions for updates that should be named, checked with `store.can.*(...)`, emitted, or validated.
+
+## Effects Model
+
+Recoil supports async selectors and atom effects.
+
+XState Store splits this into:
+
+- async atoms for explicit pending/done/error atom values
+- store transition effects with `enqueue.effect(...)`
+- emitted events with `enqueue.emit(...)`
+
+That gives stores a deterministic transition surface while still supporting direct atom async state.
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const userState = selector({
+  key: 'user',
+  get: async () => {
+    const response = await fetch('/api/user');
+    return response.json();
+  },
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const user = createAsyncAtom(async ({ signal }) => {
+  const response = await fetch('/api/user', { signal });
+  return response.json();
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+## Integration And Rendering
+
+Recoil is React-specific. That is natural if your application is entirely React.
+
+XState Store atoms and stores are framework-neutral. React, Vue, Svelte, Solid, Angular, and Preact adapters subscribe to the same core primitives.
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```tsx
+function Counter() {
+  const count = useRecoilValue(countState);
+  return <span>{count}</span>;
+}
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```tsx
+function Counter() {
+  const count = useAtom(countAtom);
+  return <span>{count}</span>;
+}
+```
+
+</SplitItem>
+</SplitItems>
+
+## Extensions
+
+Recoil's model centers on the React atom graph.
+
+XState Store pairs atoms with store extensions:
+
+- persistence
+- undo/redo
+- reset
+- schema validation
+
+These are most useful when state changes through named store events.
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const persistedState = atom({
+  key: 'persisted',
+  default: 0,
+  effects: [persistEffect],
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {},
+}).with(persist({ name: 'counter' }));
+```
+
+</SplitItem>
+</SplitItems>
+
+## Types And Runtime Contracts
+
+Recoil atom and selector types are local to atom/selector definitions.
+
+XState Store atoms have local atom types, and stores add typed events, schema metadata, emitted events, and optional runtime validation.
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const countState = atom<number>({
+  key: 'count',
+  default: 0,
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createAtom(0);
+
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    inc: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```
+
+</SplitItem>
+</SplitItems>
+
+## When To Choose Recoil
+
+Choose Recoil when:
+
+- your app is React-only
+- you specifically want Recoil's atom/selector graph and APIs
+- your state architecture is mostly derived React state
+
+## When To Choose XState Store
+
+Choose XState Store when:
+
+- you want atom-style derived state outside React
+- you need framework adapters beyond React
+- parts of your state are better modeled as events and transitions
+- you want atom state and evented store state in the same library
+
+## Migrating from Recoil
+
+### Concept map
+
+| Recoil | XState Store |
+| --- | --- |
+| atom | `createAtom(initialValue)` |
+| selector | derived `createAtom(...)` |
+| writable selector | `atom.set(...)`, `createReducerAtom(...)`, or store transition |
+| async selector | `createAsyncAtom(...)` |
+| React hook subscription | framework adapter `useAtom(...)` or `useSelector(...)` |
+
+### Before
+
+<SplitItems>
+<SplitItem value="recoil" label="Recoil">
+
+```ts
+const countState = atom({
+  key: 'count',
+  default: 0,
+});
+
+const doubledState = selector({
+  key: 'doubled',
+  get: ({ get }) => get(countState) * 2,
+});
+```
+
+</SplitItem>
+<SplitItem value="xstate-store" label="XState Store">
+
+```ts
+const count = createAtom(0);
+const doubled = createAtom(() => count.get() * 2);
+```
+
+</SplitItem>
+</SplitItems>
+
+For updates that are really application events, move them into a store:
+
+```ts
+const store = createStore({
+  context: { count: 0 },
+  on: {
+    increment: (context, event: { by: number }) => ({
+      count: context.count + event.by,
+    }),
+  },
+});
+```

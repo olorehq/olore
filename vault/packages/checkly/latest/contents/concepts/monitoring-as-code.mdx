@@ -1,9 +1,10 @@
 ---
 title: 'Monitoring as Code'
 description: 'Define, version, and maintain your monitoring infrastructure alongside your application code'
+canonical: 'https://www.checklyhq.com/docs/concepts/monitoring-as-code/'
 ---
 
-**Monitoring as Code (MaC)** treats monitoring configurations like any other code artifactversion controlled, reviewed, tested, and deployed through automated pipelines.
+**Monitoring as Code (MaC)** treats monitoring configurations like any other code artifact—version controlled, reviewed, tested, and deployed through automated pipelines.
 
 With MaC, you can define, version, and maintain your monitoring infrastructure alongside your application code, reusing existing tests, code, data, and other assets to create a consistent, automated, and scalable monitoring setup.
 
@@ -20,6 +21,22 @@ To get started with Monitoring as Code, see our [Constructs](/constructs/overvie
 **Version Control**: Store monitoring configs in Git alongside application code to maintain consistency and enable collaboration.
 
 **Infrastructure Automation**: Deploy monitoring changes through CI/CD pipelines with the same rigor as application deployments.
+
+### Projects
+
+A **project** is the unit of deployment in monitoring as code. It bundles your checks, alert channels, and other resources with shared defaults and is identified by a `logicalId` that is unique within your Checkly account. Every project is defined in its own `checkly.config.ts` (or `checkly.config.js`) file at the project root, using the [Project construct](/constructs/project).
+
+<Frame>
+  <img src="/images/projects-overview.png" alt="Projects page in the Checkly UI listing two projects with their repository, last deploy, sync status, and resource count" />
+</Frame>
+
+A single Checkly account can hold multiple projects. Each team can keep its monitoring code next to the service or repository it owns and deploy it independently, while all results stay in the same account. See [Logical IDs](/constructs/overview#logical-ids) for how projects and their resources are identified.
+
+Every resource deployed from a project with [`checkly deploy`](/cli/checkly-deploy) shows a **Managed by** section in the Checkly UI. It links to the project and shows the `logicalId` the resource has within it, so you can trace any check back to the code that defines it.
+
+<Frame>
+  <img src="/images/projects-managed-by.png" alt="API check detail page in the Checkly UI with a Managed by row linking to the Storefront project and showing the logical ID api-products" />
+</Frame>
 
 
 

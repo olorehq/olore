@@ -1,10 +1,12 @@
 ---
 title: File uploads, downloads and the file system
+description: "Handle file uploads and downloads in Browser checks using Playwright's download event, the Download object, and setInputFiles to validate files end to end."
 sidebarTitle: File system
 
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/file-system/'
 ---
 
-You might want to use (binary) files in your browser checks. For example, you might want to upload a file to an upload 
+You might want to use (binary) files in your Browser checks. For example, you might want to upload a file to an upload
 form in your webapp. Or, you might want to validate some aspect of a file that is available for download on your
 app.
 
@@ -138,7 +140,7 @@ import { test, expect } from '@playwright/test'
 test('Upload a file using a POST request', async ({ request }) => {
   const fileUrl  = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
   const fileBuffer  = await request.get(fileUrl)
-  const response = await request.post('https://filebin.net/pp9on3zvwv7zq6lm/dummy.pdf', {
+  const response = await request.post('https://httpbin.org/post', {
     data: await fileBuffer.body(),
   })
   await expect(response).toBeOK()
@@ -151,7 +153,7 @@ const { test, expect } = require('@playwright/test')
 test('Upload a file using a POST request', async ({ request }) => {
   const fileUrl  = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
   const fileBuffer  = await request.get(fileUrl)
-  const response = await request.post('https://filebin.net/pp9on3zvwv7zq6lm/dummy.pdf', {
+  const response = await request.post('https://httpbin.org/post', {
     data: await fileBuffer.body(),
   })
   await expect(response).toBeOK()
@@ -199,14 +201,14 @@ test('Save file in directory', async ({ page }) => {
 </CodeGroup>
 
 Due to this sandbox, certain Node.js variables are adapted to our platform and have values we set for them. The behaviour
-is slightly different when creating a browser check in the Web UI or using the Checkly CLI.
+is slightly different when creating a Browser check in the Web UI or using the Checkly CLI.
 
-When creating a browser check in the Web UI, the variables are:
+When creating a Browser check in the Web UI, the variables are:
 
 * `__dirname` will have the value of `/`
 * `__filename` will have the value of `/script.js`
 
-When creating a browser check using the Checkly CLI the variables are:
+When creating a Browser check using the Checkly CLI, each run uses a temporary directory that mirrors your project structure:
 
-* `__dirname` will have the value of `/`
-* `__filename` will have the value of the actual file in your code base, relative to the project root.
+* `__dirname` is the directory of your spec file in that temporary directory, for example `/tmp/<random>/__checks__`.
+* `__filename` is the full path of your spec file in that temporary directory, for example `/tmp/<random>/__checks__/my.spec.ts`.

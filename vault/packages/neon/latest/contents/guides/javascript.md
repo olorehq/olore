@@ -1,16 +1,16 @@
 ---
-title: Connect a JavaScript/Node.js application to Neon Postgres
+title: Connect a JavaScript/Node.js application to Lakebase Postgres
 subtitle: Learn how to run SQL queries in Neon from JavaScript using pg, postgres.js, or
   the Neon serverless driver
 summary: >-
-  Connect a Node.js application to Neon Postgres using node-postgres (pg),
+  Connect a Node.js application to Lakebase Postgres using node-postgres (pg),
   Postgres.js, or the Neon serverless driver (@neondatabase/serverless). Each
   driver section includes working CRUD examples covering table creation, insert,
   select, update, and delete. The Neon serverless driver connects over HTTP and
-  suits serverless and edge runtimes. Bun and Deno users are directed to
-  separate guides.
+  suits serverless and edge runtimes. Bun users are directed to a separate
+  guide.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-14T02:43:52.455Z'
 ---
 
 <CopyPrompt src="/prompts/javascript-prompt.md" 
@@ -18,20 +18,20 @@ description="Pre-built prompt for connecting JavaScript applications to Neon"/>
 
 This guide describes how to create a Neon project and connect to it from a Node.js application using popular Postgres clients:
 
-- **[node-postgres (pg)](https://www.npmjs.com/package/pg)**: The most widely-used and robust driver for Node.js.
-- **[Postgres.js](https://www.npmjs.com/package/postgres)**: A modern, high-performance driver with a focus on a great developer experience.
-- **[@neondatabase/serverless](https://www.npmjs.com/package/@neondatabase/serverless)**: The Neon serverless driver, which connects over HTTP and is optimized for serverless and edge environments.
+- **[node-postgres (pg)](https://www.npmjs.com/package/pg)**: The most widely used Postgres driver for Node.js.
+- **[Postgres.js](https://www.npmjs.com/package/postgres)**: A Postgres driver with a tagged-template query API.
+- **[@neondatabase/serverless](https://www.npmjs.com/package/@neondatabase/serverless)**: The Neon serverless driver, which connects over HTTP and is designed for serverless and edge environments.
 
-You'll learn how to connect to your Neon database from a JavaScript application and perform basic Create, Read, Update, and Delete (CRUD) operations.
+You'll learn how to connect to your Lakebase Postgres database from a JavaScript application and perform basic Create, Read, Update, and Delete (CRUD) operations.
 
-<Admonition type="important" title="Connect from the Server-Side Only">
-Your database connection string contains sensitive credentials and must **never** be exposed in client-side javascript code (for example, in a browser). All database operations should be handled in a secure, server-side environment like a Node.js backend or a serverless function.
+<Admonition type="important" title="Connect from the server side only">
+Your database connection string contains sensitive credentials and must **never** be exposed in client-side JavaScript code (for example, in a browser). All database operations should be handled in a secure, server-side environment like a Node.js backend or a serverless function.
 </Admonition>
 
 ## Prerequisites
 
 - A Neon account. If you do not have one, see [Sign up](https://console.neon.tech/signup).
-- [Node.js](https://nodejs.org/) v18 or later.
+- [Node.js](https://nodejs.org/) v20 or later.
 
 <Steps>
 
@@ -43,7 +43,7 @@ If you do not have one already, create a Neon project.
 2.  Click **New Project**.
 3.  Specify your project settings and click **Create Project**.
 
-Your project is created with a ready-to-use database named `neondb`. In the following steps, you will connect to this database from your JavaScript application.
+Your project is created with a ready-to-use database named `neondb`. In the following steps, you will connect to this Lakebase Postgres database from your JavaScript application.
 
 ## Create a Node.js project
 
@@ -82,24 +82,21 @@ For your Node.js project, create a project directory, initialize it with `npm`, 
 
     </CodeTabs>
 
-4.  Open your `package.json` file and add the following line into it:
+4.  Set your project to use ES modules:
 
-    ```json
-    {
-      // other properties
-      "type": "module"
-    }
+    ```bash
+    npm pkg set type=module
     ```
 
-    This allows you to use ES module syntax (`import`) in your JavaScript files.
+    This sets `"type": "module"` in `package.json` (replacing the `"type": "commonjs"` that recent versions of `npm init` add), so you can use ES module syntax (`import`) in your JavaScript files.
 
 ## Store your Neon connection string
 
 Create a file named `.env` in your project's root directory. This file will securely store your database connection string, keeping your credentials separate from your source code.
 
-1.  In the [Neon Console](https://console.neon.tech), select your project on the **Dashboard**.
-2.  Click **Connect** on your **Project Dashboard** to open the **Connect to your database** modal.
-    ![Connection modal](/docs/connect/connection_details.png)
+1.  In the [Neon Console](https://console.neon.tech), open your project.
+2.  Click **Connect** in the Console nav to open the **Connect to your branch** modal.
+    ![Connection modal](/docs/connect/connect_to_branch_modal.png)
 3.  Select **Node.js** from the connection string dropdown and copy the full connection string.
 4.  Add the connection string to your `.env` file as shown below.
     ```text
@@ -107,9 +104,13 @@ Create a file named `.env` in your project's root directory. This file will secu
     ```
     > Replace `[user]`, `[password]`, `[neon_hostname]`, and `[dbname]` with your actual database credentials.
 
+<Admonition type="note">
+`pg` 8.23 and later print a `SECURITY WARNING` when a connection string uses `sslmode=require`. If you use node-postgres, change `sslmode=require` to `sslmode=verify-full` in your connection string to keep the current behavior and remove the warning.
+</Admonition>
+
 ## Examples
 
-This section provides example JavaScript scripts that demonstrate how to connect to your Neon database and perform basic operations such as [creating a table](#create-a-table-and-insert-data), [reading data](#read-data), [updating data](#update-data), and [deleting data](#deleting-data).
+This section provides example JavaScript scripts that demonstrate how to connect to your Neon database and perform basic operations such as [creating a table](#create-a-table-and-insert-data), [reading data](#read-data), [updating data](#update-data), and [deleting data](#delete-data).
 
 ### Create a table and insert data
 
@@ -123,9 +124,6 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    require: true,
-  },
 });
 
 async function setup() {
@@ -300,18 +298,18 @@ setup();
 The above code does the following:
 
 - Loads the connection string from the `.env` file.
-- Connects to the Neon database.
+- Connects to the Lakebase Postgres database.
 - Drops the `books` table if it already exists to ensure a clean slate.
 - Creates a table named `books` with columns for `id`, `title`, `author`, `publication_year`, and `in_stock`.
 - Inserts a single book record and then multiple book records.
 
-Run the script using the command for your runtime:
+Run the script:
 
 ```bash
 node create_table.js
 ```
 
-When the code runs successfully, it produces the following output:
+When the code runs successfully, it produces the following output. On the first run, postgres.js also prints a `NOTICE` that the `books` table doesn't exist yet, which you can ignore.
 
 ```text title="Output"
 Connection established
@@ -323,7 +321,7 @@ Inserted 3 rows of data.
 
 ### Read data
 
-In your project directory, create a file named `read_data.js`. This script connects to your Neon database and retrieves all rows from the `books` table.
+In your project directory, create a file named `read_data.js`. This script connects to your Lakebase Postgres database and retrieves all rows from the `books` table.
 
 <CodeTabs labels={[ "node-postgres (pg)","Neon serverless driver", "postgres.js"]}>
 
@@ -333,9 +331,6 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    require: true,
-  },
 });
 
 async function readData() {
@@ -426,7 +421,7 @@ readData();
 
 </CodeTabs>
 
-Run the script using the command for your runtime:
+Run the script:
 
 ```bash
 node read_data.js
@@ -447,7 +442,7 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: false
 
 ### Update data
 
-In your project directory, create a file named `update_data.js`. This script connects to your Neon database and updates the stock status of the book 'Dune' to `true`.
+In your project directory, create a file named `update_data.js`. This script connects to your Lakebase Postgres database and updates the stock status of the book 'Dune' to `true`.
 
 <CodeTabs labels={["node-postgres (pg)","Neon serverless driver", "postgres.js"]}>
 
@@ -457,9 +452,6 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    require: true,
-  },
 });
 
 async function updateData() {
@@ -529,7 +521,7 @@ updateData();
 
 </CodeTabs>
 
-Run the script using the command for your runtime:
+Run the script:
 
 ```bash
 node update_data.js
@@ -558,7 +550,7 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: true
 
 ### Delete data
 
-In your project directory, create a file named `delete_data.js`. This script connects to your Neon database and deletes the book '1984' from the `books` table.
+In your project directory, create a file named `delete_data.js`. This script connects to your Lakebase Postgres database and deletes the book '1984' from the `books` table.
 
 <CodeTabs labels={["node-postgres (pg)", "Neon serverless driver", "postgres.js"]}>
 
@@ -568,9 +560,6 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    require: true,
-  },
 });
 
 async function deleteData() {
@@ -640,7 +629,7 @@ deleteData();
 
 </CodeTabs>
 
-Run the script using the command for your runtime:
+Run the script:
 
 ```bash
 node delete_data.js
@@ -668,7 +657,7 @@ ID: 4, Title: Dune, Author: Frank Herbert, Year: 1965, In Stock: true
 
 </Steps>
 
-## Next steps: Using an ORM or framework
+## Use an ORM or framework
 
 While this guide demonstrates raw SQL queries, for more advanced and maintainable data interactions, consider using an Object-Relational Mapper (ORM) or query builder. ORMs let you work with your data as objects and manage schema changes through migrations, keeping your database structure in sync with your application models.
 
@@ -679,12 +668,17 @@ Explore these guides to integrate popular data tools with Neon:
 - [Connect with TypeORM](/docs/guides/typeorm)
 - [Connect with Sequelize](/docs/guides/sequelize)
 
-## Using Bun or Deno
+## Next steps: Neon backend services
 
-If you are using Bun or Deno, you can also connect to Neon databases using the Neon serverless driver or other Postgres clients. Follow these guides for more information:
+- [Set up Managed Better Auth](/docs/auth/overview): Add managed authentication that branches with your database
+- [Add Object Storage](/docs/storage/overview): S3-compatible file storage that branches with your database
+- [Deploy a Function](/docs/compute/functions/overview): Run backend compute next to your database, no separate hosting needed
+- [Call an LLM with AI Gateway](/docs/ai-gateway/overview): Access foundation models from Anthropic, OpenAI, Google, and more with one credential
+- [Add Realtime](/docs/realtime/overview): Make any SQL query live, with end-to-end, type-safe reactivity for apps and agents
 
-- [Connect with Bun](/docs/guides/bun)
-- [Connect with Deno](/docs/guides/deno)
+## Using Bun
+
+If you are using Bun, you can also connect to Neon databases using the Neon serverless driver or other Postgres clients. See [Connect with Bun](/docs/guides/bun).
 
 ## Source code
 
@@ -698,7 +692,7 @@ You can find the source code for the applications described in this guide on Git
 
 ## Resources
 
-- [Neon Serverless Driver Documentation](https://github.com/neondatabase/serverless)
+- [Neon serverless driver documentation](https://github.com/neondatabase/serverless)
 - [node-postgres (pg) documentation](https://node-postgres.com/)
 - [Postgres.js documentation](https://github.com/porsager/postgres)
 

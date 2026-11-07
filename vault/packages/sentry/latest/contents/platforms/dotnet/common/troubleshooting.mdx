@@ -41,6 +41,44 @@ This issue affects:
 
 </PlatformSection>
 
+<PlatformSection supported={["dotnet.maui", "dotnet.apple", "dotnet.android"]}>
+
+## Duplicate events from native crashes
+
+On Android and iOS, a single managed exception that surfaces as a native signal — for example a `NullReferenceException` that the runtime raises as a `SIGSEGV` — can be reported to Sentry **twice**: once as the managed .NET exception, and once as a native crash. This happens because both the .NET runtime and Sentry's native layer handle the same fault.
+
+</PlatformSection>
+<PlatformSection supported={["dotnet.maui", "dotnet.apple"]}>
+### iOS
+
+This is handled automatically as of **version 6.4.0** — no configuration is required. The SDK intercepts the managed exception first and tells the native layer to ignore the resulting signal, so you get a single event. If you're seeing duplicates on iOS, upgrade to 6.4.0 or later.
+
+</PlatformSection>
+<PlatformSection supported={["dotnet.maui", "dotnet.android"]}>
+### Android
+
+The preferred fix is to change the order in which the native and managed signal handlers run, so the .NET runtime handles the managed exception first. This is currently **experimental** and opt-in:
+
+```csharp
+options.Native.ExperimentalOptions.SignalHandlerStrategy =
+    Sentry.Android.SignalHandlerStrategy.ChainAtStart;
+```
+
+**Important Note:**
+- Requires Android 8.0 (API level 26) or later. On older versions, the SDK falls back to the default strategy automatically.
+- Only needed on the **Mono** runtime. On CoreCLR, the SDK already avoids the duplicate and keeps the default strategy.
+- Not compatible with .NET runtimes 10.0.0–10.0.3 (.NET SDKs 10.0.100–10.0.103). On those versions, the SDK falls back to the default strategy automatically. This was fixed in .NET runtime 10.0.4 (.NET SDK 10.0.200).
+
+As an alternative — or if you can't opt into the experimental strategy — you can suppress native segfault capture entirely:
+
+```csharp
+options.Android.SuppressSegfaults = true;
+```
+
+**Important Note**: This stops the native SDK from capturing `SIGSEGV` errors altogether, so it can also hide *genuine* native segfaults originating in native (non-managed) code. Prefer `SignalHandlerStrategy.ChainAtStart` where possible.
+
+</PlatformSection>
+
 ## Sentry CLI not configured
 
 The following message may appear in your build output:
@@ -105,18 +143,6 @@ You can then pin the appropriate versions of the transitive dependency that's ca
 ```
 
 Although the Sentry SDK only needs `Xamarin.AndroidX.Lifecycle.Common.Java8 2.8.5.1`, that version is problematic since it locks the transitive dependency `Xamarin.AndroidX.Lifecycle.Common` into the range `(>= 2.8.5.1 && < 2.8.6)`. By explicitly pinning `Xamarin.AndroidX.Lifecycle.Common.Java8` to `2.8.7.2` to match the version used by `Microsoft.Maui.Essentials`, we can resolve the conflict.
-
-## Updating to 4.12.0 broke my .NET iOS App
-
-Support for Xcode 16.0 was added on version 4.12.0 of the Sentry SDK for .NET
-If you are using Xcode 16.0, you will need to update the SDK version 4.12.0 or later.
-If you are still using Xcode 15.4 or earlier, you need to continue to use version 4.11.0 or earlier.
-
-Using Xcode 16 to build .NET applications targeting iOS and Mac Catalyst requires .NET workload for iOS SDK version 18.0.8303. We built the SDK version 4.12.0 using Xcode 16 in order to support this scenario. That, unfortunately, breaks folks using older version of Xcode.
-
-As such, if you are using SDK version 4.12.x and targeting iOS or Mac Catalyst, you will need to install and use Xcode 16 and workload iOS SDK 18.0.8303
-
-Note that .NET 9 will also support Xcode 16, when it is released next month (Nov 2024).
 
 ## The event is dropped by Sentry because it's too large
 

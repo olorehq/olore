@@ -4,7 +4,7 @@
 
 Playwright Test supports running multiple test projects at the same time. This is useful for running tests in multiple configurations. For example, consider running tests against multiple browsers. This type describes format of a project in the configuration file, to access resolved configuration parameters at run time use [FullProject].
 
-`TestProject` encapsulates configuration specific to a single project. Projects are configured in [`property: TestConfig.projects`] specified in the [configuration file](../test-configuration.md). Note that all properties of [TestProject] are available in the top-level [TestConfig], in which case they are shared between all projects.
+`TestProject` encapsulates configuration specific to a single project. Projects are configured in [`property: TestConfig.projects`] specified in the [configuration file](../test-configuration.md). Note that all properties of [TestProject] are available in the top-level [TestConfig], in which case they are shared between all projects. The exception is [`property: TestProject.webServer`]: top-level servers are started separately, for the whole run.
 
 Here is an example configuration that runs every test in Chromium, Firefox and WebKit, both Desktop and Mobile versions.
 
@@ -86,18 +86,51 @@ export default defineConfig({
 });
 ```
 
+## property: TestProject.default
+* since: v1.64
+- type: ?<[boolean]>
+
+Whether the project runs when no `--project` command line option is passed. Defaults to `true`.
+
+To run a project with `default: false`, select it with the `--project` command line option.
+
+A project with `default: false` still runs when another running project lists it in [`property: TestProject.dependencies`] or [`property: TestProject.teardown`].
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'chromium',
+      use: devices['Desktop Chrome'],
+    },
+    {
+      name: 'slow',
+      testDir: './slow-tests',
+      default: false,
+    },
+  ],
+});
+```
+
+Now `npx playwright test` only runs `chromium`, while `npx playwright test --project=slow` runs `slow`.
+
 ## property: TestProject.expect
 * since: v1.10
 - type: ?<[Object]>
   - `timeout` ?<[int]> Default timeout for async expect matchers in milliseconds, defaults to 5000ms.
   - `toHaveScreenshot` ?<[Object]> Configuration for the [`method: PageAssertions.toHaveScreenshot#1`] method.
     - `threshold` ?<[float]> an acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
-    - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default.
-    - `maxDiffPixelRatio` ?<[float]> an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
-    - `animations` ?<[ScreenshotAnimations]<"allow"|"disabled">> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
-    - `caret` ?<[ScreenshotCaret]<"hide"|"initial">> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
-    - `scale` ?<[ScreenshotScale]<"css"|"device">> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
+    - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default. Note that `threshold` defines which pixels are considered different.
+    - `maxDiffPixelRatio` ?<[float]> an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default. Note that `threshold` defines which pixels are considered different.
+    - `animations` "ScreenshotAnimations" ?<"allow"|"disabled"> See [`option: Page.screenshot.animations`] in [`method: Page.screenshot`]. Defaults to `"disabled"`.
+    - `caret` "ScreenshotCaret" ?<"hide"|"initial"> See [`option: Page.screenshot.caret`] in [`method: Page.screenshot`]. Defaults to `"hide"`.
+    - `scale` "ScreenshotScale" ?<"css"|"device"> See [`option: Page.screenshot.scale`] in [`method: Page.screenshot`]. Defaults to `"css"`.
     - `stylePath` ?<[string]|[Array]<[string]>> See [`option: Page.screenshot.style`] in [`method: Page.screenshot`].
+    - `type` "ScreenshotType" ?<"png"|"webp"> Format of the screenshots taken when the snapshot name is omitted, defaults to `"png"`. Snapshots with an explicit name use the format matching their `.png` or `.webp` extension.
     - `pathTemplate` ?<[string]> A template controlling location of the screenshots. See [`property: TestProject.snapshotPathTemplate`] for details.
     - `timeout` ?<[int]> Default timeout for [`method: PageAssertions.toHaveScreenshot#1`] in milliseconds, defaults to the global expect timeout. Setting to `0` disables the timeout.
   - `toMatchAriaSnapshot` ?<[Object]> Configuration for the [`method: LocatorAssertions.toMatchAriaSnapshot#2`] method.
@@ -105,8 +138,8 @@ export default defineConfig({
     - `children` ?<["contain" | "equal" | "deep-equal"]> Controls how children of the snapshot root are matched against the actual accessibility tree. This is equivalent to adding a `/children` property at the top of every aria snapshot template. Individual snapshots can override this by including an explicit `/children` property.
   - `toMatchSnapshot` ?<[Object]> Configuration for the [`method: SnapshotAssertions.toMatchSnapshot#1`] method.
     - `threshold` ?<[float]> an acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and `1` (lax). `"pixelmatch"` comparator computes color difference in [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
-    - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default.
-    - `maxDiffPixelRatio` ?<[float]> an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default.
+    - `maxDiffPixels` ?<[int]> an acceptable amount of pixels that could be different, unset by default. Note that `threshold` defines which pixels are considered different.
+    - `maxDiffPixelRatio` ?<[float]> an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by default. Note that `threshold` defines which pixels are considered different.
   - `toPass` ?<[Object]> Configuration for the [expect(value).toPass()](../test-assertions.md) method.
     - `timeout` ?<[int]> timeout for toPass method in milliseconds.
     - `intervals` ?<[Array]<[int]>> probe intervals for toPass method in milliseconds.
@@ -240,9 +273,13 @@ Whether to skip entries from `.gitignore` when searching for test files. By defa
 
 ## property: TestProject.retries
 * since: v1.10
-- type: ?<[int]>
+- type: ?<[int]|[Array]<[Object]>>
+  - `count` <[int]> The maximum number of retries given to a failed test when this entry applies.
+  - `condition` ?<[RegExp]> Regular expression matched against the error messages of the failed attempt. An entry without a condition always applies.
 
 The maximum number of retry attempts given to failed tests. Learn more about [test retries](../test-retries.md#retries).
+
+Set to a list to make the number of retries depend on the error, see [`property: TestConfig.retries`].
 
 Use [`method: Test.describe.configure`] to change the number of retries for a specific file or a group of tests.
 
@@ -394,6 +431,53 @@ export default defineConfig({
 ```
 
 Use [`property: TestConfig.use`] to change this option for all projects.
+
+## property: TestProject.webServer
+* since: v1.66
+- type: ?<[Object]|[Array]<[Object]>>
+
+Launch a development web server (or multiple) for this project. Accepts the same options as
+[`property: TestConfig.webServer`].
+
+Project servers are added to the top-level servers, not inherited from them or used to replace them.
+They start after `globalSetup` and stop before its returned teardown function and `globalTeardown`.
+In the command line, project selection controls which servers start, including servers for
+dependencies and teardown projects. Test filters and sharding do not affect server startup.
+Listing tests does not start project servers. In UI mode and VS Code, all project servers start
+with global setup and stay alive across test runs until global teardown or configuration reload.
+
+[`property: FullProject.webServer`] exposes these settings as an array, including in `globalSetup`.
+Project servers are not available during `globalSetup` or `globalTeardown`.
+
+For a single server with `port` and no `url`, the project's [`property: TestOptions.baseURL`] defaults
+to `http://localhost:<port>`. An explicitly configured `baseURL` takes precedence. For arrays or
+servers with `url`, configure `baseURL` explicitly.
+
+**Usage**
+
+```js title="playwright.config.ts"
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  projects: [
+    {
+      name: 'local',
+      webServer: {
+        command: 'npm run start',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+      },
+      use: { baseURL: 'http://localhost:3000' },
+    },
+    {
+      name: 'production',
+      use: { baseURL: 'https://production.example' },
+    },
+  ],
+});
+```
+
+Running `npx playwright test --project=production` does not start the local server.
 
 ## property: TestProject.workers
 * since: v1.52

@@ -1,6 +1,6 @@
 ---
 title: Monitor Neon with pgAdmin
-subtitle: Monitor your Neon Postgres database with pgAdmin
+subtitle: Monitor your Lakebase Postgres database with pgAdmin
 summary: >-
   pgAdmin 4 is an open-source Postgres management tool for monitoring real-time
   metrics including active sessions, transactions per second, tuple operations,
@@ -10,7 +10,7 @@ summary: >-
   system_stats extension required for the System Statistics tab is not
   supported on Neon.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-09-16T20:12:32.981Z'
 ---
 
 pgAdmin is a database management tool for Postgres that supports various database tasks, including monitoring performance metrics.
@@ -23,7 +23,7 @@ With pgAdmin, you can monitor real-time activity for a variety of metrics includ
 - Transactions per second (Transactions, Commits, Rollbacks)
 - Tuples in (Inserts, Updates, Deletes)
 - Tuples out (Fetched, Returned)
-- Block I/O for shared buffers (see [Cache your data](/docs/postgresql/query-performance#cache-your-data) for information about Neon's Local File Cache)
+- Block I/O for shared buffers (see [Cache your data](/docs/postgresql/query-performance#cache-your-data) for information about Neon's compute cache)
 - Database activity (Sessions, Locks, Prepared Transactions)
 
 <Admonition type="note" title="Notes">
@@ -36,9 +36,9 @@ Pre-compiled and configured installation packages for pgAdmin 4 are available fo
 
 ## How to connect to your database from pgAdmin
 
-Find the connection string for your database by clicking the **Connect** button on your **Project Dashboard**.
+Find the connection string for your database by clicking the **Connect** button in the Console nav.
 
-![Connection details modal](/docs/connect/connection_details.png)
+![Connection details modal](/docs/connect/connect_to_branch_modal.png)
 
 Enter your connection details as shown [here](/docs/connect/connect-postgres-gui#connect-to-the-database).
 

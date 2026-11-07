@@ -13,7 +13,7 @@ redirectFrom:
   - /docs/quickstart/postgres
   - /docs/integrations/postgres
   - /docs/get-started/query-with-psql-editor
-updatedOn: '2026-06-11T23:50:21.258Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 The following instructions require a working installation of [psql](https://www.postgresql.org/download/). The `psql` client is the native command-line client for Postgres. It provides an interactive session for sending commands to Postgres and running ad-hoc queries. For more information about `psql`, refer to the [psql reference](https://www.postgresql.org/docs/15/app-psql.html), in the _PostgreSQL Documentation_.
@@ -21,7 +21,7 @@ The following instructions require a working installation of [psql](https://www.
 <Admonition type="note">
 A Neon compute runs Postgres, which means that any Postgres application or standard utility such as `psql` is compatible with Neon. You can also use Postgres client libraries and drivers to connect. However, please be aware that some older client libraries and drivers, including older `psql` executables, are built without [Server Name Indication (SNI)](/docs/reference/glossary#sni) support and require a workaround. For more information, see [Connection errors](/docs/connect/connection-errors).
 
-Neon also provides a passwordless auth feature that uses `psql`. For more information, see [Passwordless auth](/docs/connect/passwordless-connect).
+The [Neon CLI](/docs/cli) also provides a [`neon psql`](/docs/cli/psql) command that opens a `psql` session without a connection string, and doesn't require `psql` to be installed.
 </Admonition>
 
 ## How to install psql
@@ -70,11 +70,11 @@ Ensure psql is included in the installation.
 
 The easiest way to connect to Neon using `psql` is with a connection string.
 
-You can obtain a connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal. Select a branch, a role, and the database you want to connect to. A connection string is constructed for you.
+You can obtain a connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal. Select a branch, a role, and the database you want to connect to. A connection string is constructed for you.
 
-![Connection details modal](/docs/connect/connection_details.png)
+![Connection details modal](/docs/connect/connect_to_branch_modal.png)
 
-From your terminal or command prompt, run the `psql` client with the connection string copied from the Neon **Dashboard**.
+From your terminal or command prompt, run the `psql` client with the connection string copied from the **Connect** dialog in the Neon Console.
 
 ```bash shouldWrap
 psql postgresql://[user]:[password]@[neon_hostname]/[dbname]
@@ -86,7 +86,7 @@ Neon requires that all connections use SSL/TLS encryption, but you can increase 
 
 ### Where do I obtain a password?
 
-You can obtain a Neon connection string by clicking the **Connect** button on your **Project Dashboard** to open the **Connect to your database** modal.
+You can obtain a Neon connection string by clicking the **Connect** button in the Console nav to open the **Connect to your branch** modal.
 
 ### What port does Neon use?
 

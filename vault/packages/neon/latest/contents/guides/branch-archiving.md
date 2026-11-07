@@ -10,7 +10,9 @@ summary: >-
   this page to understand archiving thresholds, blocking conditions, and how to
   monitor archive and unarchive operations via the Console, CLI, or API.
 enableTableOfContents: true
-updatedOn: '2026-06-11T23:50:21.258Z'
+redirectFrom:
+  - /docs/introduction/branch-archiving
+updatedOn: '2026-10-09T15:17:33.920Z'
 ---
 
 <InfoBlock>
@@ -21,9 +23,9 @@ updatedOn: '2026-06-11T23:50:21.258Z'
 </DocsList>
 
 <DocsList title="Related docs" theme="docs">
-  <a href="/docs/introduction/architecture-overview#archive-storage">Archive storage</a>
+  <a href="/docs/reference/glossary#archive-storage">Archive storage</a>
   <a href="/docs/cli/branches#list">Branches list command (Neon CLI)</a>
-  <a href="https://api-docs.neon.tech/reference/getprojectbranch">Get branch details (Neon API)</a>
+  <a href="/docs/reference/api/branches/get-project-branch">Get branch details (Neon API)</a>
 </DocsList>
 
 </InfoBlock>
@@ -58,7 +60,7 @@ For projects on paid Neon plans, there is a limit of **100 unarchived branches p
 When a branch is unarchived, its parent branches, all the way up to the root branch, are also unarchived.
 </Admonition>
 
-The following actions will automatically unarchive a branch, transferring the branch's data back to regular Neon storage:
+The following actions will automatically unarchive a branch, transferring the branch's data back to regular database storage:
 
 - [Connecting to or querying the branch from a client or application](/docs/connect/connect-from-any-app)
 - [Querying the branch from the Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor)
@@ -69,7 +71,7 @@ The following actions will automatically unarchive a branch, transferring the br
 - [Reset the branch from its parent](/docs/manage/branches#reset-a-branch-from-parent)
 - [Performing a restore operation on a branch](/docs/guides/branch-restore)
 - [Setting the branch as protected](/docs/guides/protected-branches)
-- Running [Neon CLI](/docs/cli) commands or [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api) calls that access the branch
+- Running [Neon CLI](/docs/cli) commands or [Neon API](/docs/reference/api) calls that access the branch
 
 ## Identifying archived branches
 
@@ -85,7 +87,7 @@ Archive and unarchive operations can also be monitored in the Neon Console or us
 
 ## About archive storage
 
-For Neon projects created in AWS regions, inactive branches are archived in Amazon S3 storage. For Neon projects created in Azure regions, branches are archived in Azure Blob storage. For more information about how archive storage works in Neon, refer to [Archive storage](/docs/introduction/architecture-overview#archive-storage) in our architecture documentation.
+For Neon projects created in AWS regions, inactive branches are archived in Amazon S3 storage. For Neon projects created in Azure regions, branches are archived in Azure Blob storage. For more information about how archive storage works in Neon, refer to [Archive storage](/docs/reference/glossary#archive-storage) in our architecture documentation.
 
 ## Is branch archiving configurable?
 
@@ -119,17 +121,14 @@ The Neon CLI [branches list](/docs/cli/branches#list) command shows a branch's `
 
       ```bash
       neon branches list --project-id green-hat-46829796
-      ┌───────────────────────────┬──────┬─────────┬───────────────┬──────────────────────┐
-      │ Id                        │ Name │ Default │ Current State │ Created At           │
-      ├───────────────────────────┼──────┼─────────┼───────────────┼──────────────────────┤
-      │ br-muddy-firefly-a7kzf0d4 │ main │ true    │ ready         │ 2024-10-30T14:59:57Z │
-      └───────────────────────────┴──────┴─────────┴───────────────┴──────────────────────┘
+      Name            ID                       Current State  Expires At  Created At
+      [default] main  br-muddy-firefly-123456  ready          never       2026-10-30T14:59:57Z
       ```
 
 </TabItem>
 
 <TabItem>
-The Neon API's [Get branch details](https://api-docs.neon.tech/reference/getprojectbranch) endpoint can retrieve a branch's state:
+The Neon API's [Get branch details](/docs/reference/api/branches/get-project-branch) endpoint can retrieve a branch's state:
 
 ```bash
 curl --request GET \

@@ -1,0 +1,555 @@
+---
+title: 'Send logs from Erlang to Axiom'
+description: 'This guide demonstrates how to configure logging in an Erlang/OTP app to send logs to Axiom'
+overview: 'Concurrent, fault-tolerant language and runtime for building distributed systems'
+sidebarTitle: Erlang
+keywords: ['guides', 'erlang', 'otp', 'logger', 'httpc', 'rebar3', 'beam']
+---
+
+import Prerequisites from "@/content/snippets/standard-prerequisites.mdx"
+import ReplaceDatasetToken from "@/content/snippets/replace-dataset-token.mdx"
+import ReplaceDomain from "@/content/snippets/replace-domain.mdx"
+import BaseDomains from "@/content/snippets/base-domains.mdx"
+
+This guide explains how to integrate Axiom as a logging solution in an Erlang/OTP app. Erlang’s `logger` module lets you attach custom handlers to the logging pipeline. In this guide, you create a handler that converts each log event into a JSON-friendly map, and a `gen_server` that buffers the events and sends them in batches to the ingest endpoint of your Axiom [edge deployment](/reference/edge-deployments). The integration only uses libraries that ship with Erlang/OTP: `httpc` from `inets` for HTTP, `ssl` for TLS, and the `json` module for encoding.
+
+<Prerequisites />
+- [Erlang/OTP](https://www.erlang.org/downloads) 27 or later. The `json` module used in this guide ships with OTP 27. On older releases, use a JSON library such as `jsx` or `thoas` instead.
+- [rebar3](https://rebar3.org/docs/getting-started/)
+
+## Installation
+
+### Create an Erlang app
+
+Create a new OTP app with rebar3. The `app` template generates an `application` callback module and a top-level supervisor.
+
+```bash
+rebar3 new app axiom_erlang_demo
+cd axiom_erlang_demo
+```
+
+### Declare the OTP applications you use
+
+The integration uses `inets` and `ssl`, which are part of Erlang/OTP. Open `src/axiom_erlang_demo.app.src` and add them to the `applications` list so that the runtime starts them before your app:
+
+```erlang
+{application, axiom_erlang_demo, [
+    {description, "Send logs from Erlang to Axiom"},
+    {vsn, "0.1.0"},
+    {registered, [axiom_logger_sender]},
+    {mod, {axiom_erlang_demo_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        inets,
+        ssl
+    ]},
+    {env, []},
+    {modules, []},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+ ]}.
+```
+
+No third-party dependencies are needed, so `rebar.config` keeps an empty `deps` list.
+
+## Configure the Axiom connection
+
+### Environment variables
+
+The supervisor you create later in this guide reads the connection settings from environment variables. Set them before you run the app:
+
+```bash
+export AXIOM_TOKEN=API_TOKEN
+export AXIOM_DATASET=DATASET_NAME
+export AXIOM_DOMAIN=AXIOM_DOMAIN
+```
+
+<Info>
+<ReplaceDatasetToken />
+<ReplaceDomain />
+</Info>
+
+### Target your edge deployment
+
+Axiom ingests, stores, and queries your event data within the edge deployment your dataset lives in. `AXIOM_DOMAIN` is the base domain of that edge deployment, and the handler sends events to `https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME`. Axiom currently offers edge deployments in the US and in the EU:
+
+<BaseDomains />
+
+For example, if your dataset lives in the `EU Central 1 (AWS)` edge deployment, set `AXIOM_DOMAIN` to `eu-central-1.aws.edge.axiom.co`. The handler then sends events to `https://eu-central-1.aws.edge.axiom.co/v1/ingest/DATASET_NAME`, and your event data is ingested, stored, and queried within the EU. For more information, including how to determine the edge deployment of your organization and how to create datasets in other edge deployments, see [Edge deployments](/reference/edge-deployments).
+
+### Log level
+
+The primary log level of the Erlang runtime defaults to `notice`, which means that `info` and `debug` events are discarded before any handler sees them. Create `config/sys.config` to lower the primary level, and to drop the supervisor progress reports that become visible at that level:
+
+```erlang
+[
+    {kernel, [
+        %% The primary log level defaults to notice. Lower it so info and
+        %% debug events reach the handlers.
+        {logger_level, debug},
+        %% At debug level the console also prints supervisor progress reports.
+        %% This primary filter keeps them out of every handler.
+        {logger, [
+            {filters, log, [{progress, {fun logger_filters:progress/2, stop}}]}
+        ]}
+    ]}
+].
+```
+
+Tell rebar3 to load this file when you start a shell. Open `rebar.config` and update the `shell` section:
+
+```erlang
+{erl_opts, [debug_info]}.
+{deps, []}.
+
+{shell, [
+    {config, "config/sys.config"},
+    {apps, [axiom_erlang_demo]}
+]}.
+```
+
+## Getting started with log levels in Erlang
+
+Erlang’s `logger` supports the eight syslog severity levels. Starting with the most severe:
+
+- **emergency**: Your app is unusable and needs immediate attention.
+- **alert**: Similar to emergency, but less severe.
+- **critical**: Critical errors within the main parts of your app.
+- **error**: Error conditions in your app.
+- **warning**: Something unusual happened that may need to be addressed later.
+- **notice**: Important information, but not a warning or error.
+- **info**: General updates about what your app is doing.
+- **debug**: Detailed messages used while debugging.
+
+Each level has a matching `?LOG_*` macro in `logger.hrl`. Pass structured data as a metadata map in the second argument. The handler you build in this guide forwards that metadata to Axiom as fields.
+
+```erlang
+-include_lib("kernel/include/logger.hrl").
+
+?LOG_DEBUG("Checking details."),
+?LOG_INFO("User logged in.", #{user_id => <<"exampleUserId">>}),
+?LOG_NOTICE("User tried a feature."),
+?LOG_WARNING("Feature might not work as expected."),
+?LOG_ERROR("Feature failed to load.", #{error_code => 500}),
+?LOG_CRITICAL("Major issue with the app."),
+?LOG_ALERT("Immediate action needed."),
+?LOG_EMERGENCY("The app is down.").
+```
+
+The `logger` module also provides plain functions such as `logger:info/2` that accept the same arguments. The functions don’t know where they were called from, so the events they produce only carry the PID of the calling process. The macros add the module, function, line, and file to the metadata, which is why this guide uses them.
+
+Output in the console from the default handler:
+
+```text
+=DEBUG REPORT==== 7-Sep-2026::00:42:15.454264 ===
+Checking details.
+=INFO REPORT==== 7-Sep-2026::00:42:15.465323 ===
+User logged in.
+=NOTICE REPORT==== 7-Sep-2026::00:42:15.465353 ===
+User tried a feature.
+=WARNING REPORT==== 7-Sep-2026::00:42:15.465378 ===
+Feature might not work as expected.
+=ERROR REPORT==== 7-Sep-2026::00:42:15.465404 ===
+Feature failed to load.
+=CRITICAL REPORT==== 7-Sep-2026::00:42:15.465423 ===
+Major issue with the app.
+=ALERT REPORT==== 7-Sep-2026::00:42:15.465437 ===
+Immediate action needed.
+=EMERGENCY REPORT==== 7-Sep-2026::00:42:15.465446 ===
+The app is down.
+```
+
+## Creating the custom logger handler
+
+The integration consists of two modules:
+
+- `axiom_logger_h` is a `logger` handler. Its `log/2` callback runs in the process that emitted the log event, so it only converts the event into a map and hands it to the sender.
+- `axiom_logger_sender` is a `gen_server` that collects events and sends them to Axiom in batches. Doing the HTTP work in a separate process means that logging never blocks your app.
+
+### Handler
+
+Create `src/axiom_logger_h.erl` with the following content:
+
+```erlang
+%% A logger handler that converts log events into JSON-friendly maps and hands
+%% them to axiom_logger_sender, which batches them and sends them to Axiom.
+-module(axiom_logger_h).
+
+-behaviour(logger_handler).
+
+-export([adding_handler/1, removing_handler/1, log/2]).
+
+%% Default metadata keys that are noise in Axiom.
+-define(SKIP_METADATA, [gl, time, report_cb, domain, error_logger, logger_formatter]).
+
+%% Called by logger when the handler is added.
+adding_handler(Config) ->
+    {ok, Config}.
+
+%% Called by logger when the handler is removed. Flush so nothing is lost on shutdown.
+removing_handler(_Config) ->
+    axiom_logger_sender:flush(),
+    ok.
+
+%% Never forward the sender's own log events. This prevents infinite loops.
+log(#{meta := #{axiom_internal := true}}, _Config) ->
+    ok;
+%% Called by logger in the process that emitted the log event, so keep it cheap:
+%% build the event and hand it to the sender.
+log(#{level := Level, msg := Msg, meta := Meta}, _Config) ->
+    axiom_logger_sender:push(build_event(Level, Msg, Meta)).
+
+build_event(Level, Msg, Meta) ->
+    Time = maps:get(time, Meta, erlang:system_time(microsecond)),
+    Event = #{<<"_time">> => rfc3339(Time),
+              <<"level">> => atom_to_binary(Level, utf8),
+              <<"metadata">> => build_metadata(Meta)},
+    put_message(Event, Msg).
+
+%% Plain strings, for example logger:info("User logged in.")
+put_message(Event, {string, String}) ->
+    Event#{<<"message">> => to_binary(String)};
+%% Structured reports, for example logger:info(#{event => order_placed, order_id => 42})
+put_message(Event, {report, Report}) when is_map(Report) ->
+    Event#{<<"report">> => sanitize(Report)};
+put_message(Event, {report, Report}) when is_list(Report) ->
+    case is_proplist(Report) of
+        true -> Event#{<<"report">> => sanitize(maps:from_list(Report))};
+        false -> Event#{<<"message">> => inspect(Report)}
+    end;
+%% Format strings, for example logger:info("~p items", [3])
+put_message(Event, {Format, Args}) ->
+    Message = try to_binary(io_lib:format(Format, Args))
+              catch _:_ -> inspect({Format, Args})
+              end,
+    Event#{<<"message">> => Message}.
+
+build_metadata(Meta) ->
+    {Mfa, Meta1} = take(mfa, Meta),
+    {File, Meta2} = take(file, Meta1),
+    Metadata = sanitize(maps:without(?SKIP_METADATA, Meta2)),
+    put_mfa(put_file(Metadata, File), Mfa).
+
+put_file(Metadata, undefined) -> Metadata;
+put_file(Metadata, File) -> Metadata#{<<"file">> => to_binary(File)}.
+
+put_mfa(Metadata, {Module, Function, Arity}) ->
+    Metadata#{<<"module">> => atom_to_binary(Module, utf8),
+              <<"function">> => to_binary(io_lib:format("~s/~B", [Function, Arity]))};
+put_mfa(Metadata, _) ->
+    Metadata.
+
+take(Key, Map) ->
+    {maps:get(Key, Map, undefined), maps:remove(Key, Map)}.
+
+%% Convert any Erlang term into something json:encode/1 accepts.
+sanitize(Value) when is_binary(Value); is_number(Value); is_boolean(Value); Value =:= null ->
+    Value;
+sanitize(Value) when is_atom(Value) ->
+    atom_to_binary(Value, utf8);
+sanitize(Value) when is_map(Value) ->
+    maps:fold(fun(Key, Val, Acc) -> Acc#{sanitize_key(Key) => sanitize(Val)} end, #{}, Value);
+sanitize(Value) when is_pid(Value) ->
+    list_to_binary(pid_to_list(Value));
+sanitize([]) ->
+    [];
+sanitize(Value) when is_list(Value) ->
+    case io_lib:printable_unicode_list(Value) of
+        true -> unicode:characters_to_binary(Value);
+        false ->
+            case is_proplist(Value) of
+                true -> sanitize(maps:from_list(Value));
+                false -> [sanitize(Item) || Item <- Value]
+            end
+    end;
+%% Tuples, references, functions, and ports
+sanitize(Value) ->
+    inspect(Value).
+
+sanitize_key(Key) when is_atom(Key) -> atom_to_binary(Key, utf8);
+sanitize_key(Key) when is_binary(Key) -> Key;
+sanitize_key(Key) -> inspect(Key).
+
+is_proplist(List) ->
+    lists:all(fun({Key, _}) -> is_atom(Key) orelse is_binary(Key); (_) -> false end, List).
+
+rfc3339(Microseconds) ->
+    list_to_binary(calendar:system_time_to_rfc3339(Microseconds, [{unit, microsecond}, {offset, "Z"}])).
+
+to_binary(Chardata) ->
+    unicode:characters_to_binary(Chardata).
+
+inspect(Term) ->
+    unicode:characters_to_binary(io_lib:format("~0tp", [Term])).
+```
+
+How the handler works:
+
+- **Timestamps**: The `time` metadata holds the time of the log call in microseconds. The handler converts it to an RFC 3339 string in a field named `_time`, which Axiom uses as the timestamp of the event. Without this field, Axiom uses the time it received the event instead.
+- **Messages and reports**: Plain string messages and format strings are sent in the `message` field. Structured reports, such as `logger:info(#{event => order_placed})`, are sent as a `report` object so that you can query each key as a separate field.
+- **Metadata**: Default metadata such as the module, function, line, file, and PID is sent in a `metadata` object together with any metadata map you pass to the log calls. The module, function, line, and file are only present for events logged through the `?LOG_*` macros. Erlang strings are lists, so printable lists become JSON strings and other lists become JSON arrays. Values that JSON can’t represent, such as tuples, references, and functions, are formatted with `~p`.
+- **Loop prevention**: The sender marks its own process with the `axiom_internal` metadata key. The first `log/2` clause ignores events that carry this key, so errors logged by the sender are never sent back to Axiom.
+- **Shutdown**: When the handler is removed, `removing_handler/1` flushes the sender so that the last events aren’t lost.
+
+### Sender
+
+Create `src/axiom_logger_sender.erl` with the following content:
+
+```erlang
+%% Collects log events and sends them to the Axiom ingest API in batches.
+%%
+%% Events are flushed when the batch reaches batch_size events or when
+%% flush_interval milliseconds have passed, whichever comes first.
+-module(axiom_logger_sender).
+
+-behaviour(gen_server).
+
+-export([start_link/1, push/1, flush/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
+
+-define(MAX_ATTEMPTS, 3).
+
+start_link(Config) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, Config, []).
+
+%% Adds an event to the buffer. Never blocks the caller.
+push(Event) ->
+    gen_server:cast(?MODULE, {push, Event}).
+
+%% Sends all buffered events immediately and waits for the request to finish.
+flush() ->
+    gen_server:call(?MODULE, flush, 30000).
+
+init(#{token := Token, dataset := Dataset, domain := Domain} = Config) ->
+    %% Run terminate/2 on shutdown so the last batch is sent.
+    process_flag(trap_exit, true),
+    %% Mark this process so axiom_logger_h ignores anything it logs.
+    logger:update_process_metadata(#{axiom_internal => true}),
+    State = #{url => "https://" ++ Domain ++ "/v1/ingest/" ++ uri_string:quote(Dataset),
+              token => Token,
+              batch_size => maps:get(batch_size, Config, 100),
+              flush_interval => maps:get(flush_interval, Config, 2000),
+              events => [],
+              count => 0},
+    {ok, schedule_flush(State)}.
+
+handle_cast({push, Event}, #{events := Events, count := Count, batch_size := BatchSize} = State) ->
+    State1 = State#{events := [Event | Events], count := Count + 1},
+    case Count + 1 >= BatchSize of
+        true -> {noreply, do_flush(State1)};
+        false -> {noreply, State1}
+    end.
+
+handle_call(flush, _From, State) ->
+    {reply, ok, do_flush(State)}.
+
+handle_info(flush, State) ->
+    {noreply, schedule_flush(do_flush(State))};
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, State) ->
+    do_flush(State),
+    ok.
+
+schedule_flush(#{flush_interval := Interval} = State) ->
+    erlang:send_after(Interval, self(), flush),
+    State.
+
+do_flush(#{events := []} = State) ->
+    State;
+do_flush(#{url := Url, token := Token, events := Events} = State) ->
+    Body = iolist_to_binary(json:encode(lists:reverse(Events))),
+    Request = {Url, [{"authorization", "Bearer " ++ Token}], "application/json", Body},
+    case post(Request, 1) of
+        ok -> ok;
+        {error, Reason} -> logger:error("Axiom ingest failed: ~p", [Reason])
+    end,
+    State#{events := [], count := 0}.
+
+%% POST the batch, retrying HTTP 408/429/5xx responses and connection errors.
+post(Request, Attempt) ->
+    HttpOptions = [{ssl, ssl_options()}, {connect_timeout, 5000}, {timeout, 15000}],
+    case httpc:request(post, Request, HttpOptions, [{body_format, binary}]) of
+        {ok, {{_, 200, _}, _Headers, _Body}} ->
+            ok;
+        {ok, {{_, Status, _}, _Headers, RespBody}} ->
+            maybe_retry({http, Status, RespBody}, retryable(Status), Request, Attempt);
+        {error, Reason} ->
+            maybe_retry(Reason, true, Request, Attempt)
+    end.
+
+maybe_retry(_Reason, true, Request, Attempt) when Attempt < ?MAX_ATTEMPTS ->
+    timer:sleep(500 * Attempt),
+    post(Request, Attempt + 1);
+maybe_retry(Reason, _Retryable, _Request, _Attempt) ->
+    {error, Reason}.
+
+retryable(Status) ->
+    lists:member(Status, [408, 429, 500, 502, 503, 504]).
+
+ssl_options() ->
+    [{verify, verify_peer},
+     {cacerts, public_key:cacerts_get()},
+     {depth, 3},
+     {customize_hostname_check, [{match_fun, public_key:pkix_verify_hostname_match_fun(https)}]}].
+```
+
+How the sender works:
+
+- **Endpoint**: Events are sent to `https://AXIOM_DOMAIN/v1/ingest/DATASET_NAME`, the ingest endpoint of your [edge deployment](/reference/edge-deployments). The dataset name is URL-encoded with `uri_string:quote/1`.
+- **Request**: `httpc:request/4` sends a POST request with the `Authorization: Bearer API_TOKEN` header and the `Content-Type` set to `application/json`. The body is the list of events encoded as a JSON array with `json:encode/1`, which is the format the ingest endpoint expects.
+- **TLS**: The `ssl` options verify the server certificate against the trust store of the operating system, which `public_key:cacerts_get/0` loads, and check that the certificate matches the host name.
+- **Retries**: The `post/2` function retries connection errors and responses with HTTP status 408, 429, 500, 502, 503, or 504 up to three times with a short backoff.
+- **Batching**: The sender sends a request when it has collected `batch_size` events or when `flush_interval` milliseconds have passed, whichever comes first. Axiom accepts up to 10,000 events in a single request. For more information, see [Limits](/reference/limits).
+- **Shutdown**: The process traps exits so that `terminate/2` runs when the app stops and sends the remaining events.
+
+## Starting the sender
+
+Open `src/axiom_erlang_demo_sup.erl` and replace its content with a supervisor that reads the connection settings from the environment and starts the sender:
+
+```erlang
+-module(axiom_erlang_demo_sup).
+
+-behaviour(supervisor).
+
+-export([start_link/0]).
+-export([init/1]).
+
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+init([]) ->
+    SupFlags = #{strategy => one_for_one, intensity => 5, period => 10},
+    ChildSpecs = [
+        #{id => axiom_logger_sender,
+          start => {axiom_logger_sender, start_link, [axiom_config()]}}
+    ],
+    {ok, {SupFlags, ChildSpecs}}.
+
+axiom_config() ->
+    #{token => env("AXIOM_TOKEN"),
+      dataset => env("AXIOM_DATASET"),
+      domain => env("AXIOM_DOMAIN"),
+      batch_size => 100,
+      flush_interval => 2000}.
+
+env(Name) ->
+    case os:getenv(Name) of
+        false -> error({missing_env_var, Name});
+        Value -> Value
+    end.
+```
+
+If one of the environment variables isn’t set, the app fails to start with a `missing_env_var` error that names the variable.
+
+## Attaching the handler
+
+Open `src/axiom_erlang_demo_app.erl` and replace its content with the following:
+
+```erlang
+-module(axiom_erlang_demo_app).
+
+-behaviour(application).
+
+-export([start/2, prep_stop/1, stop/1]).
+
+start(_StartType, _StartArgs) ->
+    {ok, Pid} = axiom_erlang_demo_sup:start_link(),
+    %% Attach the handler after the sender process is running.
+    ok = logger:add_handler(axiom, axiom_logger_h, #{
+        level => debug,
+        filters => [
+            %% Supervisor progress reports are emitted at info level for every
+            %% process that starts, including the HTTP connections this handler
+            %% opens. Drop them so they never feed back into the handler.
+            {progress, {fun logger_filters:progress/2, stop}},
+            %% Ignore events that originate from other nodes.
+            {remote_gl, {fun logger_filters:remote_gl/2, stop}}
+        ]
+    }),
+    {ok, Pid}.
+
+%% Removing the handler flushes buffered events before the supervision tree stops.
+prep_stop(State) ->
+    logger:remove_handler(axiom),
+    State.
+
+stop(_State) ->
+    ok.
+```
+
+The `start/2` callback starts the supervisor first and then attaches the handler with `logger:add_handler/3`. The `level` option sets the minimum level for this handler, and the filters keep supervisor progress reports and events from remote nodes out of Axiom. The `prep_stop/1` callback removes the handler before the supervision tree shuts down, which flushes the remaining events.
+
+## Creating the test module
+
+Create `src/axiom_erlang_demo.erl` with a function that logs a message at every level. The module includes `logger.hrl` so that the `?LOG_*` macros are available:
+
+```erlang
+%% Emits a log event at every level so you can see them arrive in Axiom.
+-module(axiom_erlang_demo).
+
+%% The ?LOG_* macros add the module, function, line, and file to the metadata.
+-include_lib("kernel/include/logger.hrl").
+
+-export([run/0]).
+
+run() ->
+    ?LOG_DEBUG("Checking details.", #{action => detail_check, status => initiated}),
+    ?LOG_INFO("User logged in.", #{user_id => <<"exampleUserId">>, method => standard_login}),
+    ?LOG_NOTICE("User tried a feature.", #{feature => experimental_feature_x, status => trial}),
+    ?LOG_WARNING("Feature might not work as expected.", #{feature => experimental_feature, stage => beta}),
+    ?LOG_ERROR("Feature failed to load.", #{feature => feature_y, error_code => 500}),
+    ?LOG_CRITICAL("Major issue with the app.", #{system => payment_processing, error => service_unavailable}),
+    ?LOG_ALERT("Immediate action needed.", #{issue => security, severity => high}),
+    ?LOG_EMERGENCY("The app is down.", #{system => entire_application, status => offline}),
+
+    %% Format strings work too.
+    ?LOG_INFO("Processed ~p orders in ~p ms", [42, 117]),
+
+    %% Structured report: the map becomes the `report` field in Axiom.
+    ?LOG_INFO(#{event => order_placed, order_id => 1234, total => 59.99, currency => <<"USD">>}),
+
+    %% Send whatever is still buffered before the shell exits.
+    axiom_logger_sender:flush().
+```
+
+The final call to `axiom_logger_sender:flush/0` sends the buffered events immediately. This is useful when you exit right after logging. In a long-running app, the sender flushes automatically.
+
+## Run the app
+
+Start a shell with rebar3. It compiles the app, loads `config/sys.config`, and starts the app together with `inets` and `ssl`:
+
+```bash
+rebar3 shell
+```
+
+Call the test function from the shell:
+
+```erlang
+1> axiom_erlang_demo:run().
+```
+
+To run the test without an interactive shell, pass the call with `--eval`. The `init:stop()` call shuts the app down cleanly, which flushes the remaining events:
+
+```bash
+rebar3 shell --eval "axiom_erlang_demo:run(), init:stop()."
+```
+
+## View the logs in Axiom
+
+Open your dataset in Axiom. Each event has a `level` and a `message` field, and Axiom flattens the nested objects into fields such as `metadata.module`, `metadata.function`, `metadata.line`, and `metadata.user_id`. Structured reports appear as `report.event`, `report.order_id`, and so on.
+
+For example, the following query lists the most severe events together with the module and line that logged them:
+
+```kusto
+['DATASET_NAME']
+| where level in ("error", "critical", "alert", "emergency")
+| project _time, level, message, ['metadata.module'], ['metadata.line']
+| order by _time desc
+```
+
+## Conclusion
+
+This guide has introduced you to integrating Axiom for logging in Erlang/OTP apps. You’ve learned how to attach a custom `logger` handler, batch events in a `gen_server`, and forward them to Axiom with `httpc` and the built-in `json` module. With this knowledge, you’re set to track errors and analyze structured log data from your Erlang apps in Axiom.

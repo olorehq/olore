@@ -33,7 +33,7 @@ Here's the basic render workflow using the low-level API to render Rives:
   <Step title="Clean-up created instances when finished" />
 </Steps>
 
-## Getting Started
+## Getting started
 
 If you’ve decided that the low-level JS APIs are what you need for your app, read below for a guide on how to set everything up, or you can skip to the end to see some examples in action.
 
@@ -43,10 +43,10 @@ The first step to setting up the low-level Rive APIs is to load in the Rive WASM
 
 You can load the Rive WASM file via [unpkg](https://unpkg.com/) (hosts our NPM modules for the JS runtimes), which will make a network call to the CDN, or you can choose to host the WASM file on your own servers. With `unpkg`, the URL will look something like this:
 
-https://unpkg.com/@rive-app/canvas-advanced@2.26.1/rive.wasm
+`https://unpkg.com/@rive-app/canvas-advanced@{{versionWeb}}/rive.wasm`
 
 <Note>
- You'll want to ensure that the version at the end of @rive-app/canvas-advanced@ or @rive-app/webgl2-advanced@ matches the version of the dependency you installed in your app. For example, if you installed @rive-app/canvas-advanced@2.26.1 in package.json, the Rive WASM file you request from unpkg would be https://unpkg.com/@rive-app/canvas-advanced@2.26.1/rive.wasm.
+ You'll want to ensure that the version at the end of @rive-app/canvas-advanced@ or @rive-app/webgl2-advanced@ matches the version of the dependency you installed in your app. For example, if you installed @rive-app/canvas-advanced@{{versionWeb}} in package.json, the Rive WASM file you request from unpkg would be `https://unpkg.com/@rive-app/canvas-advanced@{{versionWeb}}/rive.wasm`.
 <br/>
  See [Preloading WASM](/runtimes/web/preloading-wasm) to preload WASM.
 </Note>
@@ -58,13 +58,13 @@ import RiveCanvas from '@rive-app/canvas-advanced';
 
 async function main() {
   const rive = await RiveCanvas({
-    locateFile: (_) => '<https://unpkg.com/@rive-app/canvas-advanced@2.26.1/rive.wasm>'
+    locateFile: (_) => '<https://unpkg.com/@rive-app/canvas-advanced@{{versionWeb}}/rive.wasm>'
   });
 }
 main();
 ```
 
-### Creating the Renderer
+### Creating the renderer
 
 Once the WASM is loaded in, the next step is to create the renderer with the `makeRenderer()` API and pass in the canvas element on which Rive should render. The renderer draws Rive onto the `<canvas>` element with a rendering context. If you're using `@rive-app/canvas-advanced`, it will create a Canvas2D rendering context. If you're using `@rive-app/webgl2-advanced`, it will create a WebGL rendering context.
 
@@ -73,7 +73,7 @@ const canvas = document.getElementById('your-canvas-element');
 const renderer = rive.makeRenderer(canvas);
 ```
 
-### Loading in Rive Files
+### Loading in Rive files
 
 After the renderer is created, you can also start to load in the Rive file(s) as an ArrayBuffer, which you'll feed into the runtime's `load()` API. You can fetch this at a URL or from somewhere within your project.
 
@@ -89,7 +89,7 @@ const file = (await rive.load(new Uint8Array(bytes))) as File;
 <Note>
  Make sure to await the `.load()` call, as it synchronously tries to load assets from the `File`. Additionally, pass in the `ArrayBuffer` to a `Uint8Array` view before sending it as a param to `.load()`
 </Note>
-### Setting up the Instances
+### Setting up the instances
 
 Once you have a reference to the loaded `File` object, you can begin instancing all the artboards, state machines, and linear animations from the Rive file. Instancing creates an underlying CPP reference and allows you to control how each entity advances over time. More on that further down this guide.
 
@@ -117,7 +117,7 @@ The great thing here is if you want to display multiple artboards or even copies
 
 Beyond instancing the relevant pieces for the render loop, you can also extract references to nodes, targets, and bones within the drawing hierarchy. This is useful if you need to track any transform property values on a given node for any calculations or even to get world-space or parent transforms (i.e., tracking the x, y-coordinate, or rotation value of a node over the lifetime of an animation). See some of the examples at the bottom of the guide to see this in action.
 
-### Constructing the Render Loop
+### Constructing the render loop
 
 You may be familiar with constructing a render loop using `requestAnimationFrame` (rAF) to build animations frame-by-frame in between the browser's repaint cycle. If not, check out [this guide](https://developer.mozilla.org/en-US/docs/Games/Anatomy#building_a_main_loop_in_javascript) as a starting point for building a render loop.
 
@@ -144,7 +144,7 @@ function renderLoop(time) {
 rive.requestAnimationFrame(renderLoop);
 ```
 
-#### Advancing Animations
+#### Advancing animations
 
 A `LinearAnimationInstance` has a set of keyframes to apply to objects in an artboard. In the render loop, you'll want to call `.advance()` on the created animation instances to get those keyframes and, like the API is named, advance the animation by a certain amount of time (in seconds).
 
@@ -209,7 +209,7 @@ function renderLoop(time) {
 
 As you've seen above, advancing the artboard will do the work of updating the relevant objects in the hierarchy after the values have been applied through animations and/or state machines. If you're controlling multiple animations at once, you only need to advance the artboard once in the render loop. If you're controlling multiple artboards for your scene in the canvas, advance each artboard as needed in the render loop.
 
-#### Align and Render
+#### Align and render
 
 The last bit to consider in the render loop is to set the alignment of the artboard(s), set the bounds for the drawing area and artboard, and then finally pass the rendering context to the artboard so that the artboard gets drawn in the canvas.
 
@@ -267,7 +267,7 @@ rive.requestAnimationFrame(renderLoop);
 
 At this point, you should be able to render Rive on the canvas!
 
-### Cleaning Up Instances
+### Cleaning up instances
 
 For each of the created CPP instances, you’ll want to delete them when you are finished so that you don’t have any memory leaks in your application. Unfortunately, this is a manual operation as we cannot yet rely on the new finalizer API in browsers to be called for garbage collection. Call the `.delete()` API on any instances created from the Rive runtime when they are no longer needed. An example is shown below:
 
@@ -305,7 +305,7 @@ See below for links to examples demonstrating the use of low-level JS APIs:
 - [Simple use of @rive-app/webgl2-advanced](https://codesandbox.io/p/sandbox/rive-webgl-advanced-57lczl?file=%2Fsrc%2Findex.ts)
 - [Out of band assets (fonts) @rive-app/canvas-advanced](https://codesandbox.io/p/sandbox/rive-canvas-advanced-out-of-band-assets-fonts-3q4zzy?file=%2Fsrc%2Findex.ts)
 
-## API References
+## API references
 
 See our [types file](https://github.com/rive-app/rive-wasm/blob/master/js/src/rive_advanced.mjs.d.ts) for the advanced API to understand the API signatures and return types.
 
@@ -319,6 +319,6 @@ The high-level JS runtime APIs are built with the low-level APIs specified above
 
 When using Rive’s advanced JS APIs to customize how you use Rive, you will have to set up some of these affordances yourself. Take a look at how the [high-level Rive API is built here](https://github.com/rive-app/rive-wasm/blob/master/js/src/rive.ts) to get a sense of how to replicate some of these high-level affordances should you need these.
 
-## Integrating Rive into Existing rAF Loop
+## Integrating Rive into existing rAF loop
 
 If you're looking to add Rive to your existing render loop (the JS API `requestAniationFrame()`) and do not want to use the Rive-wrapped `requestAnimationFrame()` API, you can do so with an extra API call at the end of your render loop. Call the `rive.resolveAnimationFrame()` API at the end of the render loop before calling `requestAnimationFrame()` again.

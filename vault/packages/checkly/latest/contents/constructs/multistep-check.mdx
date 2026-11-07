@@ -1,21 +1,25 @@
 ---
-title: 'Multistep Check Construct'
-description: 'Learn how to configure multistep checks with the Checkly CLI.'
-sidebarTitle: 'Multistep Check'
+title: 'Multistep check construct'
+description: 'Learn how to configure Multistep checks with the Checkly CLI.'
+sidebarTitle: 'Multistep check'
+canonical: 'https://www.checklyhq.com/docs/constructs/multistep-check/'
+mode: "wide"
 ---
 
+import CheckIntent from '/snippets/check-intent.mdx';
+
 <Tip>
-Learn more about Multistep Checks in [the Multistep Checks overview](/detect/synthetic-monitoring/multistep-checks/overview).
+Learn more about Multistep checks in [the Multistep checks overview](/detect/synthetic-monitoring/multistep-checks/overview).
 </Tip>
 
-Use Multistep Checks to run complex end-to-end workflows with Playwright that span multiple endpoints. The examples below show how to configure Multistep Checks for different testing scenarios.
+Use Multistep checks to run complex end-to-end workflows with Playwright that span multiple endpoints. The examples below show how to configure Multistep checks for different testing scenarios.
 
 <Accordion title="Prerequisites">
-Before creating Multistep Checks, ensure you have:
+Before creating Multistep checks, ensure you have:
 
 - An initialized Checkly CLI project
 - Public endpoints you want to monitor
-- Runtime `2023.09` or later (Multistep Checks require [newer runtimes](platform/runtimes/runtime-specification))
+- Runtime `2023.09` or later (Multistep checks require [newer runtimes](/platform/runtimes/runtime-specification))
 
 For additional setup information, see [CLI overview](/cli/overview).
 </Accordion>
@@ -38,6 +42,7 @@ new MultiStepCheck("multistep-check-1", {
 
 ```ts Advanced Example
 import { MultiStepCheck, Frequency } from "checkly/constructs"
+import { secret } from "checkly/util"
 import * as path from "path"
 
 new MultiStepCheck("complex-multistep-check", {
@@ -51,7 +56,7 @@ new MultiStepCheck("complex-multistep-check", {
   environmentVariables: [
     { key: "BASE_URL", value: "https://app.example.com" },
     { key: "TEST_USER_EMAIL", value: "test@example.com" },
-    { key: "TEST_USER_PASSWORD", value: "{{SECRET_PASSWORD}}", secret: true },
+    { key: "TEST_USER_PASSWORD", value: secret("TEST_USER_PASSWORD"), secret: true },
   ],
   code: {
     entrypoint: path.join(__dirname, "user-journey.spec.ts"),
@@ -64,7 +69,7 @@ new MultiStepCheck("complex-multistep-check", {
 ## Configuration
 
 <Tabs>
-<Tab title="Multistep Check">
+<Tab title="Multistep check">
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
@@ -77,6 +82,8 @@ new MultiStepCheck("complex-multistep-check", {
 |----------|------|----------|---------|-------------|
 | `name` | `string` | ✅ | - | Friendly name for your check |
 | `description` | `string` | ❌ | `null` | A description of the check. Supports markdown. Max 500 characters |
+| `intent` | `CheckIntent` | ❌ | - | Structured guidance for root cause analysis and check repair. See [General Check Options](#general-check-options). |
+| `aiAutoRepairEnabled` | `boolean \| null` | ❌ | - | Enable or disable automatic repair, or inherit the account setting. Requires CLI 9.4.0 or later. See [General Check Options](#general-check-options). |
 | `activated` | `boolean` | ❌ | `true` | Whether the check is enabled |
 | `alertChannels` | `AlertChannel[]` | ❌ | `[]` | Array of AlertChannel objects for notifications |
 | `alertEscalationPolicy` | `AlertEscalationPolicy` | ❌ | - | Advanced alert settings |
@@ -86,8 +93,8 @@ new MultiStepCheck("complex-multistep-check", {
 | `locations` | `string[]` | ❌ | `[]` | Array of public location codes |
 | `muted` | `boolean` | ❌ | `false` | Whether alert notifications are muted |
 | `runtimeId` | `string` | ❌ | - | The ID of the runtime to use (2023.09 or later required) |
-| `privateLocations` | `string[]` | ❌ | `[]` | Array of Private Location slugs |
-| `retryStrategy` | `RetryStrategy` | ❌ | - | Strategy for configuring retries |
+| `privateLocations` | `string[]` | ❌ | `[]` | Array of private location slugs |
+| `retryStrategy` | `RetryStrategy` | ❌ | [`singleRetry()`](/constructs/retry-strategy#default-retry-strategy) | Strategy for configuring retries |
 | `runParallel` | `boolean` | ❌ | `false` | Run checks in parallel or round-robin |
 | `tags` | `string[]` | ❌ | `[]` | Array of tags to organize checks |
 | `testOnly` | `boolean` | ❌ | `false` | Only run with test, not during deploy |
@@ -96,10 +103,10 @@ new MultiStepCheck("complex-multistep-check", {
 </Tab>
 </Tabs>
 
-### Multistep Check Options
+### Multistep check options
 
 <ResponseField name="code" type="object" required>
-The Playwright test code that defines your Multistep Check monitor.
+The Playwright test code that defines your Multistep check monitor.
 
 **Usage:**
 
@@ -259,28 +266,31 @@ test("SpaceX-API Dragon Capsules & Next Launch", async ({ request }) => {
 ### General Check Options
 
 <ResponseField name="name" type="string" required>
-Friendly name for your multistep check that will be displayed in the Checkly dashboard and used in notifications.
+Friendly name for your Multistep check that will be displayed in the Checkly dashboard and used in notifications.
 
 **Usage:**
 
+{/* typecheck-wrap: MultiStepCheck */}
 ```ts highlight={2}
 new MultiStepCheck("my-multistep", {
-  name: "Complete User Journey Test"
+  name: "Complete User Journey Test",
+  /* More options... */
 })
 ```
 
 </ResponseField>
 
 <ResponseField name="runtimeId" type="string">
-The Checkly runtime version used to execute the Multistep Check. Runtimes are managed execution environments for Browser and Multistep Checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
+The Checkly runtime version used to execute the Multistep check. Runtimes are managed execution environments for Browser and Multistep checks. They include fixed Checkly-provided dependencies, such as Playwright, browser binaries, and runtime libraries.
 
 Multistep checks require runtime `2023.09` or later.
 
 Usage:
+{/* typecheck-wrap: MultiStepCheck */}
 ```ts highlight={3}
 new MultiStepCheck("my-multistep", {
   name: 'My Multistep Check',
-  runtimeId: "2025.04" // Use latest runtime for best performance
+  runtimeId: "2025.04",
   /* More options... */
 })
 ```
@@ -291,11 +301,11 @@ Multistep checks require runtime `2023.09` or later. Earlier runtimes do not sup
 </ResponseField>
 
 <ResponseField name="frequency" type="Frequency">
-How often the multistep check should run. Use the `Frequency` enum to set the check interval.
+How often the Multistep check should run. Use the `Frequency` enum to set the check interval.
 
 Usage:
 ```ts highlight={5}
-import { Frequency } from 'checkly/constructs'
+import { Frequency, MultiStepCheck } from 'checkly/constructs'
 
 new MultiStepCheck("my-multistep", {
   name: "My Multistep Check",
@@ -308,9 +318,10 @@ new MultiStepCheck("my-multistep", {
 </ResponseField>
 
 <ResponseField name="locations" type="string[]" default="[]">
-Array of public location codes where the multistep check should run. Multiple locations provide geographic coverage and user experience insights.
+Array of public location codes where the Multistep check should run. Multiple locations provide geographic coverage and user experience insights.
 
 Usage:
+{/* typecheck-wrap: MultiStepCheck */}
 ```ts highlight={3}
 new MultiStepCheck("global-check", {
   name: "Global Multistep Check",
@@ -324,6 +335,7 @@ Examples:
 <Tabs>
 <Tab title="Global User Experience">
 
+{/* typecheck-wrap: MultiStepCheck */}
 ```ts
 // Worldwide API testing
 new MultiStepCheck("global-journey", {
@@ -342,6 +354,7 @@ new MultiStepCheck("global-journey", {
 </Tab>
 <Tab title="Regional Focus">
 
+{/* typecheck-wrap: MultiStepCheck */}
 ```ts
 // European user focus
 new MultiStepCheck("eu-workflow", {
@@ -360,3 +373,11 @@ new MultiStepCheck("eu-workflow", {
 <Warning>
 Multistep checks are only supported on runtime `2023.09` or later. Make sure to specify a compatible `runtimeId` in your check configuration.
 </Warning>
+
+<CheckIntent />
+
+<ResponseField name="aiAutoRepairEnabled" type="boolean | null">
+Requires Checkly CLI 9.4.0 or later. Set `true` to enable automatic repair or `false` to disable it. Left unset, or set to `null`, the check follows your account default.
+
+You also need a valid check intent. See [Configure automatic repair](../resolve/automatic-check-repair#define-intent-with-monitoring-as-code) for a complete example and repair prerequisites.
+</ResponseField>

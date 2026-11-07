@@ -6,35 +6,23 @@ read_when:
 title: "Nostr"
 ---
 
-**Status:** Optional bundled plugin (disabled by default until configured).
+Nostr is a downloadable channel plugin (`@openclaw/nostr`) that lets OpenClaw receive and answer NIP-04 encrypted direct messages over Nostr relays. One account per gateway; DMs only.
 
-Nostr is a decentralized protocol for social networking. This channel enables OpenClaw to receive and respond to encrypted direct messages (DMs) via NIP-04.
-
-## Bundled plugin
-
-Current OpenClaw releases ship Nostr as a bundled plugin, so normal packaged
-builds do not need a separate install.
-
-### Older/custom installs
-
-- Onboarding (`openclaw onboard`) and `openclaw channels add` still surface
-  Nostr from the shared channel catalog.
-- If your build excludes bundled Nostr, install the npm package directly.
+## Install
 
 ```bash
 openclaw plugins install @openclaw/nostr
 ```
 
-Use the bare package to follow the current official release tag. Pin an exact
-version only when you need a reproducible install.
+Use the bare package spec to follow the current official release tag. Pin an exact version only when you need a reproducible install.
 
-Use a local checkout (dev workflows):
+From a local checkout (dev workflows):
 
 ```bash
 openclaw plugins install --link <path-to-local-nostr-plugin>
 ```
 
-Restart the Gateway after installing or enabling plugins.
+Installing or enabling the plugin applies it to a running Gateway; check the [application result](/plugins/manage-plugins#apply-changes-and-inspect). Onboarding (`openclaw onboard`) and `openclaw channels add` surface Nostr from the shared channel catalog once the plugin is installed.
 
 ### Non-interactive setup
 
@@ -43,7 +31,7 @@ openclaw channels add --channel nostr --private-key "$NOSTR_PRIVATE_KEY"
 openclaw channels add --channel nostr --private-key "$NOSTR_PRIVATE_KEY" --relay-urls "wss://relay.damus.io,wss://relay.primal.net"
 ```
 
-Use `--use-env` to keep `NOSTR_PRIVATE_KEY` in the environment instead of storing the key in config.
+Use `--use-env` to keep `NOSTR_PRIVATE_KEY` in the environment instead of storing the key in config (default account only).
 
 ## Quick setup
 
@@ -72,19 +60,19 @@ nak key generate
 export NOSTR_PRIVATE_KEY="nsec1..."
 ```
 
-4. Restart the Gateway.
+4. Restart the gateway.
 
 ## Configuration reference
 
-| Key          | Type     | Default                                     | Description                         |
-| ------------ | -------- | ------------------------------------------- | ----------------------------------- |
-| `privateKey` | string   | required                                    | Private key in `nsec` or hex format |
-| `relays`     | string[] | `['wss://relay.damus.io', 'wss://nos.lol']` | Relay URLs (WebSocket)              |
-| `dmPolicy`   | string   | `pairing`                                   | DM access policy                    |
-| `allowFrom`  | string[] | `[]`                                        | Allowed sender pubkeys              |
-| `enabled`    | boolean  | `true`                                      | Enable/disable channel              |
-| `name`       | string   | -                                           | Display name                        |
-| `profile`    | object   | -                                           | NIP-01 profile metadata             |
+| Key          | Type     | Default                                     | Description                                              |
+| ------------ | -------- | ------------------------------------------- | -------------------------------------------------------- |
+| `privateKey` | string   | required                                    | Private key in `nsec` or hex format; secret refs allowed |
+| `relays`     | string[] | `['wss://relay.damus.io', 'wss://nos.lol']` | Relay URLs (WebSocket)                                   |
+| `dmPolicy`   | string   | `pairing`                                   | DM access policy                                         |
+| `allowFrom`  | string[] | `[]`                                        | Allowed sender pubkeys                                   |
+| `enabled`    | boolean  | `true`                                      | Enable/disable channel                                   |
+| `name`       | string   | -                                           | Display name                                             |
+| `profile`    | object   | -                                           | NIP-01 profile metadata                                  |
 
 ## Profile metadata
 
@@ -126,11 +114,16 @@ Notes:
 - **open**: public inbound DMs (requires `allowFrom: ["*"]`).
 - **disabled**: ignore inbound DMs.
 
+Gateway pairing approval notifications require a running Nostr account. If the account is stopped, approval still succeeds, but the Gateway reports that notification failed.
+
+The CLI's `pairing approve nostr ... --notify` cannot access the Gateway's Nostr connection, so notification fails even when the account is running. Pairing approval still succeeds; use a Gateway client to request an approval notification.
+
 Enforcement notes:
 
 - Inbound event signatures are verified before sender policy and NIP-04 decryption, so forged events are rejected early.
-- Pairing replies are sent without processing the original DM body.
-- Inbound DMs are rate-limited and oversized payloads are dropped before decrypt.
+- Pairing replies are sent without decrypting or processing the original DM body.
+- Inbound DMs are rate-limited (globally and per sender) and oversized payloads are dropped before decrypt.
+- With `dmPolicy: "allowlist"` and a nonempty `allowFrom` containing only literal hex or `npub` public keys (optionally prefixed with `nostr:`), other authors are dropped locally before durable storage and rate accounting. The peer list is not sent to relays. Matching authors still undergo normal authorization. Wildcards, access groups, invalid entries, and other DM policies retain the normal admission path; this does not protect against relay/network flooding or abuse by allowed senders.
 
 ### Allowlist example
 
@@ -206,8 +199,8 @@ docker run -p 7777:7777 ghcr.io/hoytech/strfry
 
 ### Manual test
 
-1. Note the bot pubkey (npub) from logs.
-2. Open a Nostr client (Damus, Amethyst, etc.).
+1. Note the bot pubkey from gateway logs or `openclaw channels status` (hex; convert to npub in your client if needed).
+2. Open a Nostr client (Amethyst, Damus, etc.).
 3. DM the bot pubkey.
 4. Verify the response.
 
@@ -216,9 +209,9 @@ docker run -p 7777:7777 ghcr.io/hoytech/strfry
 ### Not receiving messages
 
 - Verify the private key is valid.
-- Ensure relay URLs are reachable and use `wss://` (or `ws://` for local).
+- Check that relay URLs are reachable and use `wss://` (or `ws://` for local).
 - Confirm `enabled` is not `false`.
-- Check Gateway logs for relay connection errors.
+- Check gateway logs for relay connection errors.
 
 ### Not sending responses
 
@@ -249,5 +242,5 @@ docker run -p 7777:7777 ghcr.io/hoytech/strfry
 - [Channels Overview](/channels) — all supported channels
 - [Pairing](/channels/pairing) — DM authentication and pairing flow
 - [Groups](/channels/groups) — group chat behavior and mention gating
-- [Channel Routing](/channels/channel-routing) — session routing for messages
+- [Channel routing](/channels/channel-routing) — session routing for messages
 - [Security](/gateway/security) — access model and hardening

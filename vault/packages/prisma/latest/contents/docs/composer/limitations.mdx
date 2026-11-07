@@ -1,0 +1,40 @@
+---
+title: Limitations
+description: What Prisma Composer does not do yet, so you can name the gap instead of working around it blind.
+url: /composer/limitations
+metaTitle: Limitations | Prisma Composer
+metaDescription: Current limitations of Prisma Composer, including contract kinds, in-memory bindings, control API auth, and Windows support.
+---
+
+This page lists what Prisma Composer does not do yet, so you can plan around a gap instead of discovering it mid-build. If something you need is missing here and below, check the [examples](https://github.com/prisma/composer/tree/main/examples) and design docs in the [Composer repository](https://github.com/prisma/composer), then file an issue there rather than guessing at an API.
+
+## Contracts and communication
+
+- **RPC over HTTP is the only contract kind.** No gRPC, WebSocket, or streaming contracts.
+- **No in-memory contract bindings.** A dependency cannot yet be wired to a co-located handler without HTTP; use [`bootstrapService`](/composer/testing#integration-tests-bootstrapservice) with a loopback fake in tests.
+
+## Deploys and auth
+
+- **The control API needs a service token.** `prisma deploy` on your machine uses your `auth login` session, but the in-process operations in `@prisma/composer/control` (including `destroy`) do not read it: export `PRISMA_SERVICE_TOKEN` and `PRISMA_WORKSPACE_ID` first. See [Credentials](/composer/deploying#credentials).
+- **Deploys do not build.** `deploy` assembles your built output; the build is always yours to run first.
+- **One `effect` version per app.** `@prisma/composer` pins the `effect` version its deploy engine needs, so you do not pin it yourself. If your app or another dependency brings in a different `effect`, the CLI cannot evaluate `prisma.config.ts`; see [When prisma.config.ts fails on an effect version conflict](/composer/deploying#when-prismaconfigts-fails-on-an-effect-version-conflict).
+- **A named hostname works only in production.** In every other environment, serve a [public URL](/composer/deploying#make-a-service-public) with `publicUrl.prismaBuild()`.
+
+## Platforms
+
+- **Windows is not supported yet** for local development (`dev`).
+- **Composer needs Node.js 22.18 or newer on the 22 line, 24.11 or newer on the 24 line, or 26 or newer.** Composer hands your TypeScript entry file straight to Node, and earlier versions cannot run `.ts` files directly.
+
+## Runtime behavior to design around
+
+These are properties of running on [Prisma Compute](/compute) rather than missing features; [Deploying](/composer/deploying#production-behavior) covers each with the fix:
+
+- Compute scales to zero, so idle database connections get closed and cold calls can see `ECONNRESET`.
+- A deployed RPC endpoint answers only its wired consumers; hand-rolled probes get `401`.
+- Environment variables prefixed `COMPOSER_*` belong to the deploy and are rewritten on every deploy.
+- Streaming responses are delivered as your service sends them, but the service has 60 seconds to send the first bytes before the ingress returns `504 Gateway Time-out`; see [Request timeout](/compute/request-timeout).
+
+## Next steps
+
+- [Deploying](/composer/deploying): operational behavior in full.
+- [Building blocks](/composer/building-blocks): what ships today, and how extensions arrive.

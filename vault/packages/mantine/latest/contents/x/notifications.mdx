@@ -58,6 +58,7 @@ The `@mantine/notifications` package exports a `notifications` object with the f
 - `notifications.show` – adds a given notification to the notifications list or queue, depending on the current state and `limit`
 - `notifications.hide` – removes a notification with the given `id` from the notifications state and queue
 - `notifications.update` – updates a notification that was previously added to the state or queue
+- `notifications.promise` – shows a loading notification and updates it with success or error state when the given promise settles
 - `notifications.updateState` – executes a given callback with current notifications state and queue as an argument and updates state with the returned value
 - `notifications.clean` – removes all notifications from the notifications state and queue
 - `notifications.cleanQueue` – removes all notifications from the queue
@@ -76,6 +77,7 @@ import {
   cleanNotifications, // notifications.clean
   cleanNotificationsQueue, // notifications.cleanQueue
   hideNotification, // notifications.hide
+  promiseNotification, // notifications.promise
   showNotification, // notifications.show
   updateNotification, // notifications.update
   updateNotificationsState, // notifications.updateState
@@ -94,6 +96,8 @@ import {
 - `onClose` – called when the notification is unmounted
 - `onOpen` – called when the notification is mounted
 - `autoClose` – defines timeout in ms after which the notification will be automatically closed; use `false` to disable auto close
+- `withAutoCloseProgress` – determines whether a progress line that fills up until the notification auto closes is displayed at the bottom of the notification; overrides `withAutoCloseProgress` prop of the `Notifications` component
+- `priority` – display priority used when the number of active notifications exceeds `limit`; higher numbers are shown first, defaults to `0`
 - `message` – required notification body
 - `color, icon, title, radius, className, style, loading` – props passed down to the [Notification](/core/notification/) component
 
@@ -115,6 +119,7 @@ notifications.show({
   onClose: () => console.log('unmounted'),
   onOpen: () => console.log('mounted'),
   autoClose: 5000,
+  withAutoCloseProgress: true,
   title: "You've been compromised",
   message: 'Leave the building immediately',
   color: 'red',
@@ -201,6 +206,34 @@ and displayed when a notification from the current state is hidden.
 
 <Demo data={NotificationsDemos.limit} />
 
+## Priority
+
+By default, notifications are distributed between the visible state and the queue in
+insertion order (FIFO): the first `limit` notifications are visible and the rest wait
+in the queue. Set the `priority` property in `notifications.show` or `notifications.update`
+to control which notifications take the visible slots when there are more active
+notifications than the `limit` allows.
+
+- Notifications with a higher `priority` are shown before notifications with a lower one.
+- Notifications with equal `priority` keep insertion order (FIFO).
+- `priority` defaults to `0`, so notifications without it behave exactly as before.
+- Within the visible set, higher priority notifications are rendered first.
+
+When a high priority notification is added while the visible state is already at `limit`,
+it takes a visible slot and the lowest priority visible notification is moved into the queue –
+even if it was already displayed. Priority is applied independently for each position.
+
+Note that a notification that is moved from the visible state back into the queue is unmounted
+and mounted again when it returns to a visible slot, so its `onOpen` callback runs each time it
+becomes visible.
+
+In the following example the `Notifications` component uses `limit={1}`. Show a low priority
+notification first, then a high priority one: the high priority notification replaces the
+low priority one, which is moved to the queue and shown again once the high priority
+notification is closed.
+
+<Demo data={NotificationsDemos.priority} />
+
 ## Remove notifications from state and queue
 
 To remove a specific notification from state or queue, use the `notifications.hide` function:
@@ -220,6 +253,44 @@ Use the `notifications.cleanQueue` function to remove all notifications from the
 ## Update notification
 
 <Demo data={NotificationsDemos.update} />
+
+## Promise
+
+Use `notifications.promise` function to display a loading notification while a promise is pending
+and update it with success or error state once the promise settles. The function accepts a promise
+and an object with `loading`, `success` and `error` notifications. `success` and `error` can be
+functions – they receive the resolved value or the rejection reason and return notification props.
+
+State objects accept all [notification props](#notification-props) except `id`.
+`notifications.promise` applies the following defaults, all of them can be overridden
+in the corresponding state object:
+
+- `loading` – `loading: true`, `autoClose: false`
+- `success` – `color: 'teal'`, `loading: false`, `autoClose` is reset to the default value
+- `error` – `color: 'red'`, `loading: false`, `autoClose` is reset to the default value
+
+All three states are displayed in the same notification, props that are not set in the next state
+are kept from the previous one. For example, if `title` is set only in `loading`, it is also displayed
+in `success` and `error` states.
+
+<Demo data={NotificationsDemos.promise} />
+
+`notifications.promise` returns the promise that was passed to it, so you can await it or chain it.
+If the loading notification was closed before the promise settled, the `success` or `error` state
+is shown as a new notification. Use `id` option to reuse the same notification for consecutive calls –
+when `notifications.promise` is called with the same `id` while the previous promise is still pending,
+the result of the previous promise is ignored:
+
+```tsx
+import { notifications } from '@mantine/notifications';
+
+const user = await notifications.promise(saveUser(values), {
+  id: 'save-user',
+  loading: { message: 'Saving user' },
+  success: (savedUser) => ({ message: `${savedUser.name} was saved` }),
+  error: { message: 'Failed to save user' },
+});
+```
 
 ## Auto close
 
@@ -255,6 +326,34 @@ notifications.update({
 
 <Demo data={NotificationsDemos.autoclose} />
 
+## Auto close progress
+
+Set `withAutoCloseProgress` prop on the `Notifications` component to display a progress line
+at the bottom of every notification that auto closes. The line fills up over the auto close
+timeout and reaches 100% right before the notification is closed:
+
+```tsx
+import { Notifications } from '@mantine/notifications';
+
+function Demo() {
+  return <Notifications withAutoCloseProgress />;
+}
+```
+
+The `Notifications` prop sets the default for all notifications, it can be overridden for
+individual notifications with the `withAutoCloseProgress` property in `notifications.show`
+and `notifications.update` functions.
+
+Note that:
+
+- The progress line is not displayed for notifications with `autoClose: false`
+- The progress line fades out when the auto close timer is paused (for example, when the notification is hovered) and fades back in, starting over, when the timer is restarted
+- The progress line uses notification `color`
+- The progress line is a part of the default notification rendering, it is not displayed for notifications rendered with `renderNotification`
+- Use `progress` [Styles API](/styles/styles-api/) selector of the `Notifications` component to customize the line, for example, to change its height or color
+
+<Demo data={NotificationsDemos.autoCloseProgress} />
+
 ## Pause auto close on hover
 
 By default, hovering over any notification pauses the auto close timer of all
@@ -270,6 +369,27 @@ function Demo() {
   return <Notifications pauseResetOnHover="notification" />;
 }
 ```
+
+## Custom notification rendering
+
+Use `renderNotification` prop on `Notifications` component or per notification in `notifications.show`/`notifications.update`
+to completely replace the default notification with custom content. All animations (enter, exit, drag dismiss, scroll dismiss)
+are preserved for custom notifications:
+
+<Demo data={NotificationsDemos.renderNotification} />
+
+## Stacked layout
+
+Set `layout="stacked"` on the `Notifications` component to display notifications in a stacked layout
+where only the latest notification is fully visible, and older notifications peek out behind it.
+
+The stack expands when it is hovered with a mouse, when keyboard focus moves into it, and when it is
+tapped on a touch device – a tap outside collapses it again. While collapsed, the notifications behind
+the first one are `inert`: they are not focusable and are hidden from screen readers.
+
+Note: the stacked demo uses a separate store to avoid affecting other notifications on the page.
+
+<Demo data={NotificationsDemos.stacked} />
 
 ## Subscribe to notifications state
 

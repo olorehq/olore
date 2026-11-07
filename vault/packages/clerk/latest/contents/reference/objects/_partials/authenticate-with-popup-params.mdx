@@ -1,0 +1,93 @@
+<Properties>
+  - `continueSignIn?`
+  - `boolean | undefined`
+
+  Whether to continue (i.e., PATCH) an existing `SignIn` (if present) or create a new `SignIn`.
+
+  ---
+
+  - `continueSignUp?`
+  - `boolean | undefined`
+
+  Whether to continue (i.e., PATCH) an existing `SignUp` (if present) or create a new `SignUp`.
+
+  ---
+
+  - `emailAddress?`
+  - `string | undefined`
+
+  Email address to use for targeting an enterprise connection at sign-up.
+
+  ---
+
+  - `enterpriseConnectionId?`
+  - `string`
+
+  **Optional if the `strategy` is set to `enterprise_sso`.** The identifier of the enterprise connection to target during sign-up. This is required if there are multiple enterprise connections configured in the instance.
+
+  ---
+
+  - `identifier?`
+  - `string | undefined`
+
+  Identifier to use for targeting an enterprise connection at sign-up.
+
+  ---
+
+  - `legalAccepted?`
+  - `boolean`
+
+  A boolean indicating whether the user has agreed to the [legal compliance](/docs/guides/secure/legal-compliance) documents.
+
+  ---
+
+  - `oidcPrompt?`
+  - `string`
+
+  The value to pass to the [OIDC prompt parameter](https://openid.net/specs/openid-connect-core-1_0.html#:~:text=prompt,reauthentication%20and%20consent.) in the generated OAuth redirect URL.
+
+  ---
+
+  - `popup`
+  - `Window`
+
+  A reference to a popup window opened via `window.open()`.
+
+  ---
+
+  - `redirectUrl`
+  - `string`
+
+  The absolute URL of your application's callback route. For example, use `new URL('/sso-callback', window.location.origin).href` to construct the URL for a `/sso-callback` route that either calls [`Clerk.handleRedirectCallback`](/docs/reference/objects/clerk#handleredirectcallback) or mounts the [`<AuthenticateWithRedirectCallback />`](/docs/reference/components/control/authenticate-with-redirect-callback) component. See the [custom flow](/docs/guides/development/custom-flows/authentication/legacy/oauth-connections) for implementation details.
+
+  ---
+
+  - `redirectUrlComplete`
+  - `string`
+
+  The full URL or path to navigate to after the OAuth or SAML flow completes.
+
+  ---
+
+  - `slackTeamIdHint?`
+  - `string`
+
+  The ID of the [Slack workspace to suggest](/docs/guides/configure/auth-strategies/social-connections/slack#suggest-a-slack-workspace-in-a-custom-flow) for this attempt, such as `T012ABCDEF`. It must start with `T`, followed by one or more uppercase letters or digits. Clerk accepts it only when `strategy` is `'oauth_slack'`.
+
+  ---
+
+  - `strategy`
+  - <code>[OAuthStrategy](/docs/reference/types/sso#oauthstrategy) | 'enterprise\_sso'</code>
+
+  The strategy to use for authentication. The following strategies are supported:
+
+  - `'oauth_<provider>'`: The user will be authenticated with their [social connection account](/docs/guides/configure/auth-strategies/social-connections/overview). See a list of [supported values for `<provider>`](/docs/reference/types/sso).
+  - `'enterprise_sso'`: The user will be authenticated either through SAML or OIDC depending on the configuration of their [enterprise SSO account](/docs/guides/configure/auth-strategies/enterprise-connections/overview).
+
+  ---
+
+  - `unsafeMetadata?`
+  - [`SignUpUnsafeMetadata`](/docs/reference/types/metadata#signupunsafemetadata)
+
+  Metadata that can be read and set from the frontend. Once the sign-up is complete, the value of this field will be automatically copied to the newly created user's unsafe metadata. One common use case for this attribute is to use it to implement custom fields that can be collected during sign-up and will automatically be attached to the created `User` object.
+</Properties>

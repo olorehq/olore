@@ -30,7 +30,7 @@ import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
 
         To load out-of-band assets, provide a key-value object that maps expected assets to their sources when loading the Rive file.
 
-        The **key** is the name + unique identifier combination, as exported from the Rive editor.
+        The **key** is the name + unique identifier combination, as exported from the Rive editor. Each value has a `source` (a `require()` or `{ uri }`) and a `type` (`'image'`, `'font'`, or `'audio'`).
         ```javascript
         const { riveFile, isLoading, error } = useRiveFile(
             require('path/to/file.riv'),
@@ -38,17 +38,31 @@ import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
                 referencedAssets: {
                     'Inter-594377': {
                         source: require('../../assets/fonts/Inter-594377.ttf'),
+                        type: 'font',
                     },
                     'referenced-image-2929282': {
                         source: { uri: 'https://picsum.photos/id/372/500/500' },
+                        type: 'image',
                     },
                     'referenced_audio-2929340': {
                         source: require('../../assets/audio/referenced_audio-2929340.wav'),
+                        type: 'audio',
                     },
                 },
             }
         );
         ```
+
+        <Note>
+        Set `type` on every asset. In `0.5.0` and later, the runtime can't detect the asset type when loading, so if `type` is missing it logs a warning and infers the type from the file extension or contents.
+        </Note>
+
+        <Warning>
+        In `0.5.0` and later:
+
+        - Assets set to load from the Rive CDN aren't fetched automatically. Supply them through `referencedAssets`.
+        - Assets are resolved once, when the file loads. Changing `referencedAssets` afterwards has no effect; to use different assets, load the file again. To swap an image while the graphic is running, use an [image property](/runtimes/react-native/data-binding#images) in data binding instead.
+        </Warning>
 
         <Note>
         You can optionally exclude the unique identifier. For example, instead of `Inter-594377`, you can use `Inter`. However, it is recommended to use the full identifier to avoid potential conflicts. Using just the asset name allows you to avoid knowing the unique identifier and gives you more control over naming.
@@ -97,10 +111,12 @@ import Resources from '/snippets/runtimes/loading-assets/resources.mdx'
                     referencedAssets: {
                         'Inter-594377': {
                         source: require('../../assets/fonts/Inter-594377.ttf'),
+                        type: 'font',
                         },
                         'referenced-image-2929282': riveImage,
                         'referenced_audio-2929340': {
                         source: require('../../assets/audio/referenced_audio-2929340.wav'),
+                        type: 'audio',
                         },
                     },
                 }

@@ -31,7 +31,7 @@ export function getRSS() {
       title: page.data.title,
       description: page.data.description,
       link: `${baseUrl}${page.url}`,
-      date: new Date(page.data.lastModified),
+      date: page.data.lastModified ?? new Date(),
 
       author: [
         {
@@ -74,7 +74,7 @@ export default [
 ] satisfies RouteConfig;
 ```
 
-```ts tab="Tanstack Start" title="src/routes/rss[.]xml.ts"
+```ts tab="TanStack Start" title="src/routes/rss[.]xml.ts"
 import { createFileRoute } from '@tanstack/react-router';
 import { getRSS } from '@/lib/rss';
 
@@ -87,11 +87,32 @@ export const Route = createFileRoute('/rss.xml')({
 });
 ```
 
-### Next.js Metadata
+```ts tab="Waku" title="pages/_api/rss.xml.ts"
+import { getRSS } from '@/lib/rss';
 
-You can add an alternates object to the metadata object with your feed’s title and URL.
+export function GET() {
+  return new Response(getRSS());
+}
 
-```ts title="app/layout.tsx"
+export async function getConfig() {
+  return {
+    render: 'static' as const,
+  } as const;
+}
+```
+
+```ts tab="Astro" title="src/pages/rss.xml.ts"
+import type { APIRoute } from 'astro';
+import { getRSS } from '@/lib/rss';
+
+export const GET: APIRoute = () => new Response(getRSS());
+```
+
+### Link the Feed
+
+Link it from your pages, so feed readers can discover it:
+
+```ts tab="Next.js" title="app/layout.tsx"
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -100,10 +121,40 @@ export const metadata: Metadata = {
       'application/rss+xml': [
         {
           title: 'Fumadocs Blog',
-          url: 'https://fumadocs.dev/blog/index.xml',
+          url: 'https://fumadocs.dev/rss.xml',
         },
       ],
     },
   },
 };
+```
+
+```ts tab="React Router" title="app/root.tsx"
+import type { Route } from './+types/root';
+
+export const links: Route.LinksFunction = () => [
+  { rel: 'alternate', type: 'application/rss+xml', title: 'Fumadocs Blog', href: '/rss.xml' },
+];
+```
+
+```tsx tab="TanStack Start" title="src/routes/__root.tsx"
+export const Route = createRootRoute({
+  head: () => ({
+    links: [
+      { rel: 'alternate', type: 'application/rss+xml', title: 'Fumadocs Blog', href: '/rss.xml' },
+    ],
+  }),
+  // ...
+});
+```
+
+```tsx tab="Waku" title="pages/_layout.tsx"
+// React hoists it into `<head>`
+<link rel="alternate" type="application/rss+xml" title="Fumadocs Blog" href="/rss.xml" />
+```
+
+```astro tab="Astro" title="src/layouts/Layout.astro"
+<head>
+  <link rel="alternate" type="application/rss+xml" title="Fumadocs Blog" href="/rss.xml" />
+</head>
 ```

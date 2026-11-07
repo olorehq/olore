@@ -1,0 +1,92 @@
+---
+title: "Custom roles"
+description: "Beta documentation for creating custom roles and assigning them to members, invitations, and service API keys."
+sidebarTitle: "Custom Roles"
+tag: "Beta"
+canonical: 'https://www.checklyhq.com/docs/admin/team-management/custom-roles/'
+---
+
+<Note>
+Custom roles are in beta and are not generally available. This documentation applies only to accounts where custom roles are enabled.
+</Note>
+
+A custom role is a named set of permissions that you pick one by one. Custom roles sit next to the [built-in roles](/admin/team-management/overview#team-member-roles). You can assign them to members, invitations, and [service API keys](/admin/creating-api-key#service-api-keys).
+
+## The Roles page
+
+**Account settings > Roles** lists your account's custom roles. It shows once custom roles are turned on for your account. Each row has the role's name and description, how many permissions it grants, and how many members, pending invitations, and service API keys hold it. Click a role's name to open it.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/custom-roles-list.png" alt="The Roles page with the New role button and a table of custom roles, each showing its name and description, its number of permissions, how many members and invites hold it, and a delete button" />
+  <img className="hidden dark:block" src="/images/team-management/custom-roles-list-dark.png" alt="The Roles page with the New role button and a table of custom roles, each showing its name and description, its number of permissions, how many members and invites hold it, and a delete button" />
+</Frame>
+
+| Permission | What it allows | Built-in roles |
+|------------|----------------|----------------|
+| View roles | See the Roles page and open a role to see its permissions | All roles |
+| Create roles | Create custom roles | Owner, Admin |
+| Edit roles | Change a role's name, description and permissions | Owner, Admin |
+| Delete roles | Delete custom roles and choose a replacement for affected holders | Owner, Admin |
+
+A custom role can hold these permissions too. They're listed under **Roles**.
+
+## Create a role
+
+1. On the Roles page, click **New role**.
+2. Enter a **Name** and, if you like, a **Description**. The description shows in the role picker.
+3. Tick the permissions the role grants. To start from an existing role, pick it in **Copy permissions from…**. You can copy any built-in role other than Owner, or another custom role. Copying replaces what you ticked so far. It leaves out the permissions you don't hold. A message lists them.
+4. Click **Create role**.
+
+- Names can be up to 100 characters.
+- A name must differ from every other role's name in the account, ignoring case.
+- A name can't be the name of a built-in role.
+- An account can have up to 50 custom roles.
+
+## The permission matrix
+
+The matrix uses permission names such as **Run checks**. If another guide refers to an ID such as `checks:run`, see [Permission names and IDs](/admin/team-management/permissions) to find its name, resource row, and how to get access.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/custom-roles-editor.png" alt="The Permissions card of the On-call responder role, with its incident, on-call and alert permissions ticked" />
+  <img className="hidden dark:block" src="/images/team-management/custom-roles-editor-dark.png" alt="The Permissions card of the On-call responder role, with its incident, on-call and alert permissions ticked" />
+</Frame>
+
+- Permissions are grouped by area, such as **Monitoring**, **On-call** and **Account**. Each resource has a row. The checkbox of a group or a row ticks or unticks everything in it that you can give.
+- You can only give permissions you hold yourself. The others are disabled.
+- Some permissions need others and bring them along. Ticking **Create checks**, for example, also ticks **Edit checks**, **View checks** and the other permissions the check editor needs. When a click changes more than the box you clicked, the group says how many more changed. Click **Undo** to revert them.
+- Unticking a permission that others need unticks them too. A link icon next to it names them. When they're in other rows, you confirm first.
+- Every role can view the account, its members and maintenance windows. Those permissions have no checkbox.
+- Deleting the account and transferring ownership stay with the owner. No custom role can hold them.
+
+## Edit a role
+
+Click the role's name on the Roles page, make your changes and click **Save role**. The page says how many members, pending invitations, and service API keys hold the role. Changes apply to them right away.
+
+- You can only edit a role when you hold all of its permissions yourself.
+- Without **Edit roles**, the role opens read-only.
+
+## Delete a role
+
+Click the trash button in the role's row. If the role is assigned, review the affected members, pending invitations, and service API keys, then choose their **Replacement role** before confirming. Their permissions change immediately. Deleting a role can't be undone.
+
+You must be allowed to assign the replacement to every affected holder. If no suitable replacement is available to you, ask your account owner or an admin to make the change.
+
+## Give a custom role
+
+You pick custom roles wherever you pick a role: when you [invite people](/admin/team-management/adding-team-members), [change members' roles](/admin/team-management/managing-team-members#change-members’-roles) or [change your own role](/admin/team-management/managing-team-members#change-your-own-role). The picker lists the built-in roles first, then the custom roles by name.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/team-management/custom-roles-picker.png" alt="The Change role dialog with the role picker open, listing the built-in roles and then the custom roles Billing manager and On-call responder" />
+  <img className="hidden dark:block" src="/images/team-management/custom-roles-picker-dark.png" alt="The Change role dialog with the role picker open, listing the built-in roles and then the custom roles Billing manager and On-call responder" />
+</Frame>
+
+The same rules apply as for built-in roles:
+
+- You can only give a role whose permissions you hold yourself.
+- You can only give it to members with less access than you. A member has less access than you when you hold every permission of their role and at least one more.
+- You can only move yourself to a role whose permissions you already hold.
+- To give custom roles, your own role needs **View roles**. Every built-in role has it.
+
+## API keys
+
+[User API keys](/admin/creating-api-key#user-api-keys) act with their member's role. A member with a custom role has the same permissions through the API and the CLI. Changes to the role apply to their keys right away. When the beta is enabled, [service API keys](/admin/creating-api-key#service-api-keys) can also use a custom role whose permissions you hold.

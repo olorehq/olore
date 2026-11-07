@@ -1,0 +1,60 @@
+---
+title: Prevent user enumeration
+description: Learn how to protect your users from user enumeration attacks.
+---
+
+> [!NOTE]
+> This protection is included on every plan. Bulk protection is always on, and you can switch to Strict protection.
+
+User enumeration is a technique where attackers use failed authentication attempts to determine whether a specific user account exists in an application.
+
+For example, if a user signs in with an identifier that doesn't match an existing account, Clerk tells them no account was found. This is helpful for legitimate users who may not remember if they signed up. However, a malicious actor can exploit these error messages to check whether accounts exist for specific identifiers (like emails or phone numbers) and build a list of valid accounts. This is user enumeration.
+
+## How user enumeration protection works
+
+Bulk protection adds rate limiting while preserving the normal sign-in experience. Strict protection hides whether accounts exist, which provides stronger security but means legitimate users won't get helpful feedback if they use the wrong identifier or misremember their account. Choose strict protection if preventing account discovery is a priority for your application.
+
+### Bulk {{ id: 'bulk-user-enumeration-protection' }}
+
+**Bulk** enforces rate limits to prevent attackers from checking registered email addresses and phone numbers in bulk. Targeted attacks against individual accounts are still possible.
+
+Clerk's existing PII protections still apply. For example, during sign-in, even though bulk protection reveals whether a user exists, Clerk redacts personal information, showing only enough to be recognizable (e.g., "Send SMS code to +\*\*\*\*\*\*\*\*00").
+
+### Strict {{ id: 'strict-user-enumeration-protection' }}
+
+With **Strict**, users **won't receive feedback about whether their identifier matches an existing account** until they verify their identity.
+
+> [!NOTE]
+> Under **strict**, the [`<SignIn />`](/docs/reference/components/authentication/sign-in) component supports sign-in-or-up: a sign-in for an identifier that doesn't exist proceeds to verification, then transfers to sign-up once the user verifies their identity. Refer to [Sign-in-or-up under strict protection](#sign-in-or-up-under-strict-protection) for the requirements, including the restriction on password. The [Account Portal](/docs/guides/account-portal/overview) hosts sign-in and sign-up on separate pages, so it can't transfer to sign-up under any setting — render `<SignIn />` in your own app for a sign-in-or-up experience.
+
+Strict enumeration covers:
+
+- Sign up: If you sign up with an email or phone number that already exists, Clerk won't send a verification code. Instead, it sends a notification (email or SMS) letting the account owner know someone tried to sign up, and suggesting they sign in instead.
+- Sign in: When the account exists, sign-in proceeds normally. When it doesn't, Clerk's behavior depends on the strategy:
+  - **Password or Web3 wallet**: The attempt is rejected without revealing whether the account exists.
+  - **Email code or email link**: Clerk shows the verification screen and sends a notification to the address explaining that someone attempted to sign in to a non-existent account.
+  - **Phone code**: Clerk shows the verification screen as if a message was sent, but doesn't actually send anything.
+    - Because SMS can be costly during an enumeration attack, Clerk doesn't send SMS for sign-in attempts to non-existent accounts. We're exploring ways to add SMS notifications as we develop our anti-fraud protections.
+- User profile: If you add an email or phone number to your profile that already exists, Clerk shows the verification screen as if a message was sent, but doesn't actually send anything. Clerk doesn't send notifications in this case, since these attempts are more likely to be attacks than real updates.
+
+## Settings
+
+The protection has one setting, **Protection level**. It's **Bulk** by default, and the protection can't be turned off. To remove the ability to determine whether an account exists, set **Protection level** to **Strict**. See [Manage protections in the Dashboard](/docs/guides/protect/protections/overview#manage-protections-in-the-dashboard).
+
+## Sign-in-or-up under strict protection
+
+Because a sign-in for an unknown identifier proceeds to verification instead of failing, [`<SignIn />`](/docs/reference/components/authentication/sign-in) can create the account after the user verifies their identity, as long as your instance is in [**Open** access mode](/docs/guides/secure/restricting-access#open). Unlike a standalone strict sign-in — which withholds verification from unknown identifiers, as described above — the sign-in-or-up flow sends a real verification code or email link so a new user can verify and continue to sign-up. No code changes are required. Refer to [sign-in-or-up](/docs/guides/development/custom-sign-in-or-up-page) for how to render the flow, and to the [`signUpIfMissing` custom flow](/docs/guides/development/custom-flows/authentication/sign-in-or-up#sign-in-or-up-with-signupifmissing) to build the same behavior yourself.
+
+Three limits apply under **strict** that don't apply otherwise:
+
+- **Your instance must be in Open access mode.** In [**Invite-only** or **Waitlist** access mode](/docs/guides/secure/restricting-access#access-mode), `<SignIn />` falls back to a standalone strict sign-in. Sign-up can't succeed under either setting, but **strict** also withholds the reason: the "you need an invitation" response shown otherwise appears only when no account exists, so it's an enumeration signal that **strict** has to suppress. An uninvited visitor reaches the verification screen, receives only the notification described above, and isn't told why they can't continue.
+- **Password can't be the starting strategy.** A password step has no safe exit under **strict**: a visitor who doesn't have an account is sent to a password screen they can't get past. A visitor who types in an incorrect password can't be redirected to sign up, because Clerk can't reveal whether the identifier they tried matches an existing account. Either disable **Password**, or [set the instance's preferred sign-in strategy to OTP](/docs/reference/backend-api/tag/instance-settings/PATCH/instance){{ target: '_blank' }}. On development instances, `<SignIn />` logs a console warning (`sign_up_if_missing_password_preferred`) when it detects this combination.
+- **Username identifiers aren't supported.** Clerk can't contact a user for verification with a username alone.
+
+## Password sign-in for accounts created with a social provider
+
+If **Password** is enabled and a user signs up with a social provider, they'll have an account with no password set. This is true even when password is required at sign-up, because social sign-up bypasses the password setup step.
+
+If that user later tries to sign in with the email on their social account instead of signing in through the social provider, Clerk will prompt them to enter a password. If the user tries entering a password, strict enumeration protection prevents Clerk from revealing that _no password_ is on file so, instead, the attempt fails with the same response as an _incorrect_ password, which can be confusing.
+
+Clerk's prebuilt components handle this in two ways: the sign-in start screen highlights the user's most recently used strategy with a **Last used** badge when they return on the same device, and the password screen always offers a **Use another method** option to switch strategies. In a custom sign-in flow, after calling `signIn.create()`, read [`SignIn.supportedFirstFactors`](/docs/reference/objects/sign-in#properties) to detect which strategies the user has, and always offer the social provider as an alternative.

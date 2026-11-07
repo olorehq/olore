@@ -37,7 +37,7 @@ Rive Native acts as the bridge between Flutter and the Rive C++ runtime, allowin
 
 ---
 
-## Getting Started
+## Getting started
 
 `rive_native` is not yet publicly available on GitHub but will be soon. For now, you can pull the source code and example by running:
 
@@ -53,7 +53,7 @@ For an example implementation, see the `rive_player.dart` file in `rive_native/e
 
 ---
 
-## Platform Support
+## Platform support
 
 | Platform | Flutter Renderer | Rive Renderer |
 | -------- | ---------------- | ------------- |
@@ -61,12 +61,17 @@ For an example implementation, see the `rive_player.dart` file in `rive_native/e
 | Android  | ✅               | ✅            |
 | macOS    | ✅               | ✅            |
 | Windows  | ✅               | ✅            |
-| Linux    | ❌               | ❌            |
+| Linux    | ✅               | ✅            |
 | Web      | ✅               | ✅            |
+
+<Note>
+  Prebuilt Linux libraries do not yet include arm64. On Linux arm64, [build
+  `rive_native` manually](#building-rive-native).
+</Note>
 
 ---
 
-## Feature Support
+## Feature support
 
 See the [Feature Support page](/feature-support) for details.
 
@@ -99,14 +104,58 @@ When enabled, you must manually run `dart run rive_native:setup --verbose --clea
 
 ## Building `rive_native`
 
-By default, prebuilt native libraries are downloaded and used. If you prefer to build the libraries yourself, use the `--build` flag with the setup script:
+By default, prebuilt native libraries are downloaded and used. You can build them from source instead: the published `rive_native` package includes the full C++ source (`native/` and `runtime/`), and the setup script compiles it in place in the Pub cache.
+
+Check the [build requirements](#build-requirements) for your platform, then run the following in the root of your Flutter app:
 
 ```bash
 flutter clean # Important
+flutter pub get # Setup needs .dart_tool/package_config.json
 dart run rive_native:setup --verbose --clean --build --platform macos
 ```
 
-> **Note**: Building the libraries requires specific tooling on your machine. Additional documentation will be provided soon.
+`--platform` accepts `android`, `ios`, `macos`, `windows`, and `linux`, or a comma-separated list (for example, `android,macos`). Each platform except Android must be built on the operating system it targets; Android builds on any host and produces all four ABIs (`armeabi-v7a`, `arm64-v8a`, `x86`, `x86_64`). For web, see [Web](#web) below.
+
+A successful build leaves a `rive_marker_<platform>_development` file in the package, so subsequent `flutter run` and `flutter build` calls use your locally built libraries instead of downloading prebuilts. Without `--clean`, setup does nothing once this marker exists.
+
+### Build requirements
+
+All platforms:
+
+- Network access and `git`: the first build clones the build system and third-party sources (HarfBuzz, Yoga, zlib, and others) from public GitHub repositories into the package's `native/dependencies/` folder - no credentials required.
+- `bash`, GNU `make`, and `python3`: used by the build scripts and shader generation.
+
+Per platform:
+
+- **macOS / iOS**: Xcode
+- **Android**: Android NDK r27c (`27.2.12479018`) - the exact version is enforced; point `NDK_PATH` or `ANDROID_NDK` at it - and `ninja`.
+- **Windows**: Visual Studio 2022 (**Desktop development with C++** workload) with `msbuild.exe` on `PATH` (for example, run from a Visual Studio developer prompt), Git Bash, and `make` (`choco install make`).
+- **Linux**: `clang`, `cmake`, `ninja-build`, `pkg-config`, `libgtk-3-dev`, `uuid-dev`, `libstdc++-12-dev`, and `libvulkan-dev` (apt package names).
+
+### Returning to prebuilt libraries
+
+Run the setup script without `--build` - `--clean` removes the built libraries and marker files, and prebuilts are downloaded again:
+
+```bash
+dart run rive_native:setup --verbose --clean --platform macos
+flutter clean
+```
+
+Because downloaded and locally built libraries both live inside the Pub cache, `dart pub cache repair` and `dart pub cache clean` also remove them. They are restored on the next `flutter run`, or by re-running the setup script.
+
+---
+
+## Web
+
+The setup script does not manage web binaries. On web, `rive_native` loads its WebAssembly module at runtime from Rive's CDN ([jsDelivr](https://www.jsdelivr.com/package/npm/@rive-app/flutter-native-wasm), pinned to the version matching the package).
+
+To self-host these files instead, copy the `wasm/` and `wasm_compatibility/` folders from the [`@rive-app/flutter-native-wasm`](https://www.npmjs.com/package/@rive-app/flutter-native-wasm) NPM package to your server, then build with:
+
+```bash
+flutter run --dart-define=RIVE_NATIVE_WASM_HOST=https://your-host/your-path/
+```
+
+The trailing slash is required - the runtime appends `wasm/rive_native.js` or `wasm_compatibility/rive_native.js` to the host URL.
 
 ---
 

@@ -1,0 +1,262 @@
+---
+title: Alerting that doesn't wake you up for nothing
+sidebarTitle: Alert without the Noise
+description: Send failures to the right people, retry blips in place, escalate on consecutive runs, let regions vote, and mute planned deploys, all defined in code with the Checkly CLI.
+canonical: 'https://www.checklyhq.com/docs/guides/alerting/'
+---
+
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
+
+By the end of this guide, you have a Slack channel and an on-call email defined in code, retries and degraded thresholds that absorb blips, run-based escalation with one reminder, a location threshold on a parallel monitor, and a maintenance window that mutes a planned deploy.
+
+<Frame>
+  <img src="/images/guides/alerting/retries-and-recovery.png" alt="A Checkly API check detail page for Books catalog, passing again, with run results showing failed runs from N. Virginia and Ireland, each retried twice in the same location before the final result" />
+</Frame>
+
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/alerting). It monitors the API and homepage of the [Danube demo shop](https://danube-web.shop).
+
+<Accordion title="Let your agent do it" icon="sparkles">
+
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Set up alerting for this Checkly project so that real failures reach the right people and blips do not.
+
+Success criteria:
+1. Create `__checks__/alert-channels.ts` with a `SlackAppAlertChannel` for my team channel that sends failures, recoveries, and degraded results, and an `EmailAlertChannel` for on-call that sends failures and recoveries only. Ask me for the Slack channel and the email address.
+2. Attach both channels in `checkly.config.ts` and set a project-wide fixed retry strategy: 2 retries, 30 seconds apart, in the same region.
+3. For my most important API check, set `degradedResponseTime` and `maxResponseTime`, and a run-based escalation that alerts after 2 consecutive failed runs with 1 reminder after 10 minutes.
+4. For my homepage, create a `UrlMonitor` that runs in parallel from 3 locations and alerts only when 50% of locations fail.
+5. Ask me when I deploy. Create a weekly `MaintenanceWindow` for that slot, targeting a tag that only the affected checks carry.
+6. Run `npx checkly test --record` and show me the session link.
+7. Show me `npx checkly deploy --preview` and wait for my confirmation before deploying.
+
+Explain each file you changed and why.
+```
+
+</div>
+
+<CopyPromptButton />
+
+The steps below are what the agent does, in the open.
+
+</Accordion>
+
+## Step 1: Route alerts by who needs them
+
+An alert is only useful if it lands with someone who can act on it. Split your channels by urgency. The team channel hears everything, including slow responses. The on-call inbox only hears about failures and their recovery.
+
+```ts __checks__/alert-channels.ts
+import { EmailAlertChannel, SlackAppAlertChannel } from 'checkly/constructs'
+
+// The team channel hears everything, including slow responses.
+export const opsSlack = new SlackAppAlertChannel('ops-slack', {
+  slackChannels: ['#ops-alerts'],
+  sendFailure: true,
+  sendRecovery: true,
+  sendDegraded: true,
+})
+
+// The on-call inbox only hears about real failures and their recovery.
+export const onCallEmail = new EmailAlertChannel('on-call-email', {
+  address: 'oncall@example.com',
+  sendFailure: true,
+  sendRecovery: true,
+  sendDegraded: false,
+})
+```
+
+`SlackAppAlertChannel` needs the [Checkly Slack app](/integrations/alerts/slack) installed in your workspace first. Invite the app to the channel if it is private.
+
+Attach both channels as project defaults, so every check gets them without anyone remembering to add them.
+
+```ts checkly.config.ts highlight={13-19}
+import { defineConfig } from 'checkly'
+import { Frequency, RetryStrategyBuilder } from 'checkly/constructs'
+import { opsSlack, onCallEmail } from './__checks__/alert-channels'
+
+export default defineConfig({
+  projectName: "Docs guide: Alerting that doesn't wake you up for nothing",
+  logicalId: 'docs-guide-alerting',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    frequency: Frequency.EVERY_5M,
+    locations: ['us-east-1', 'eu-west-1'],
+    tags: ['shop'],
+    alertChannels: [opsSlack, onCallEmail],
+    // A blip is retried in the same region before it counts as a failure.
+    retryStrategy: RetryStrategyBuilder.fixedStrategy({
+      baseBackoffSeconds: 30,
+      maxRetries: 2,
+      sameRegion: true,
+    }),
+    checkMatch: '**/__checks__/**/*.check.ts',
+  },
+  cli: {
+    runLocation: 'eu-west-1',
+  },
+})
+```
+
+## Step 2: Absorb blips before they count
+
+Most noise comes from single failed requests: a DNS lookup that times out, a dropped connection, a cold container. The retry strategy in the config above handles those. A failed run is retried twice, 30 seconds apart, in the same region. Only if all three attempts fail does the run count as failed. Retrying in the same region confirms the problem where it happened, instead of hiding it behind a pass from somewhere else.
+
+Slow is not the same as down. Give each check two thresholds. Above `degradedResponseTime` the result is degraded: the Slack channel hears about it, and the on-call inbox does not, because it has `sendDegraded: false`. Only above `maxResponseTime` does the check fail.
+
+```ts __checks__/api/books.check.ts highlight={8-10}
+import { AlertEscalationBuilder, ApiCheck, AssertionBuilder, Frequency } from 'checkly/constructs'
+import { apiGroup } from './group'
+
+new ApiCheck('shop-api-books', {
+  name: 'Books catalog',
+  group: apiGroup,
+  frequency: Frequency.EVERY_1M,
+  // Slow is not down: over 1 second is degraded, over 5 seconds fails.
+  degradedResponseTime: 1000,
+  maxResponseTime: 5000,
+  // Two failed runs in a row before anyone hears about it, then one reminder.
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(2, {
+    amount: 1,
+    interval: 10,
+  }),
+  request: {
+    method: 'GET',
+    url: '{{API_BASE_URL}}/books',
+    assertions: [
+      AssertionBuilder.statusCode().equals(200),
+      AssertionBuilder.jsonBody('$.length').greaterThan(0),
+    ],
+  },
+})
+```
+
+Set the degraded threshold from what you measure, not from what you hope. This endpoint answers in about 20 milliseconds from N. Virginia and 290 from Ireland, so 1 second leaves room for normal variance and still catches a real slowdown.
+
+## Step 3: Escalate on runs, and let regions vote
+
+Retries confirm that one run failed. Escalation decides when that is worth a notification. The same check file sets a run-based escalation: two failed runs in a row before anyone is alerted, then one reminder 10 minutes later if the check is still failing. When the check recovers, any pending reminder is cancelled.
+
+The threshold is a trade between noise and speed. On a check that runs every minute, two failed runs plus their retries took about three minutes in the test below. On a check that runs every 10 minutes, it is twenty, so lower the threshold or raise the frequency for anything that pages.
+
+For a check that runs from several locations at once, count locations instead of runs. The homepage runs in parallel from three regions and alerts only when half of them fail.
+
+```ts __checks__/web/homepage.check.ts highlight={8,11-15}
+import { AlertEscalationBuilder, Frequency, UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+
+// Three regions vote. One region failing is recorded, two page.
+new UrlMonitor('shop-homepage', {
+  name: 'Homepage',
+  frequency: Frequency.EVERY_5M,
+  locations: ['us-east-1', 'eu-central-1', 'ap-southeast-2'],
+  runParallel: true,
+  degradedResponseTime: 1500,
+  maxResponseTime: 10000,
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(
+    1,
+    { amount: 1, interval: 10 },
+    { enabled: true, percentage: 50 },
+  ),
+  request: {
+    url: 'https://danube-web.shop/',
+    followRedirects: true,
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+One failing region is recorded against that location and alerts nobody. Two failing regions is a real outage and alerts on the first run. Use an odd number of locations so a 50% threshold never lands on a tie. [Monitor from around the globe](/guides/global-monitoring) covers how to choose them.
+
+## Step 4: Mute a planned deploy
+
+A deploy that restarts the API is not an incident. Put a tag on what the deploy touches and schedule a maintenance window for that tag.
+
+```ts __checks__/api/group.ts highlight={6}
+import { CheckGroupV2 } from 'checkly/constructs'
+
+// The backend API. The `shop-api` tag is what the deploy window targets.
+export const apiGroup = new CheckGroupV2('shop-api', {
+  name: 'Shop API',
+  tags: ['shop-api'],
+  environmentVariables: [
+    { key: 'API_BASE_URL', value: 'https://danube-web.shop/api' },
+  ],
+})
+```
+
+```ts __checks__/maintenance.check.ts
+import { MaintenanceWindow } from 'checkly/constructs'
+
+// The API ships every Tuesday at 20:00 UTC. Checks tagged `shop-api` do not run
+// for those 30 minutes, so a planned restart is not an incident.
+new MaintenanceWindow('api-weekly-deploy', {
+  name: 'Shop API weekly deploy',
+  tags: ['shop-api'],
+  startsAt: new Date('2026-09-29T20:00:00.000Z'),
+  endsAt: new Date('2026-09-29T20:30:00.000Z'),
+  repeatInterval: 1,
+  repeatUnit: 'WEEK',
+})
+```
+
+Checks and groups with a matching tag skip their scheduled runs for the length of the window. Pick a tag only the affected checks carry. A broad tag like `api` also pauses every other team's checks that use it.
+
+Test everything, then deploy:
+
+```bash Terminal
+npx checkly test --record
+```
+
+```text Terminal
+Running 2 checks in eu-west-1.
+
+__checks__/api/books.check.ts
+  ✔ Books catalog (215ms)
+__checks__/web/homepage.check.ts
+  ✔ Homepage (218ms)
+
+2 passed, 2 total
+```
+
+```bash Terminal
+npx checkly deploy
+```
+
+## Verify it works
+
+Break the check on purpose. In `__checks__/api/books.check.ts`, change `statusCode().equals(200)` to `statusCode().equals(201)` and run `npx checkly deploy --schedule-on-deploy`, so that the check runs right away instead of at its next scheduled time.
+
+This is what happened when the sample was deployed that way:
+
+1. The first run, from Ireland, failed three times in a row, 30 seconds apart. That was one failed run and no alert.
+2. The next run, from N. Virginia, did the same. Two failed runs met the threshold, and the alert went out about three minutes after the deploy.
+
+The team channel gets the failure with the assertion that broke and the request that was sent:
+
+<Frame>
+  <img src="/images/guides/alerting/slack-alert-and-recovery.png" alt="Slack channel ops-alerts with two messages from the Checkly app: Books catalog failed in N. Virginia with the error Expected 200 to be equal to 201, then Books catalog recovered in N. Virginia 19 minutes later" />
+</Frame>
+
+The on-call inbox gets the same failure:
+
+<Frame>
+  <img src="/images/guides/alerting/email-alert.png" alt="Checkly failure alert email for Books catalog with the check link, 20 ms response time, location N. Virginia, group Shop API, tag shop, and the error Expected 200 to be equal to 201" />
+</Frame>
+
+Change the assertion back to `equals(200)` and deploy again. The first passing run sends a recovery to both channels. Open the check in the web app and filter run results by **Has retries** to see each failed run with its two retries.
+
+## Next
+
+[A status page backed by real monitors](/guides/communicate-availability): once alerts reach your team reliably, tell your users what is going on with the same checks.
+
+## Reference
+
+- [Alert channels](/communicate/alerts/channels) and the [Checkly Slack app](/integrations/alerts/slack)
+- [Alert escalation and location-based thresholds](/communicate/alerts/configuration#location-based-escalation)
+- [Retries](/communicate/alerts/retries)
+- [Maintenance windows](/communicate/maintenance-windows/overview)
+- [`SlackAppAlertChannel`](/constructs/slack-app-alert-channel), [`EmailAlertChannel`](/constructs/email-alert-channel), [`AlertEscalationBuilder`](/constructs/alert-escalation-policy), [`RetryStrategyBuilder`](/constructs/retry-strategy), and [`MaintenanceWindow`](/constructs/maintenance-window)
+- [Checkly Skills](/ai/skills)

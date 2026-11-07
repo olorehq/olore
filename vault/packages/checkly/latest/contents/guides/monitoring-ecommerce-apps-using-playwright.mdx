@@ -1,387 +1,405 @@
 ---
-title: How to Monitor an E-Commerce Application with Playwright
-sidebarTitle: Monitoring an E-Commerce App with Playwright
-description: Discover how Monitoring as Code transforms cloud infrastructure management with a hands-on Checkly case study. Start optimizing your workflow today!
-tags: Playwright
+title: Monitor a checkout flow
+sidebarTitle: Monitoring a Checkout Flow
+description: Cover browse, search, add to cart, and checkout on a shop with a Playwright Check Suite that asserts the order confirmation, uses safe test data, and runs against a per-environment base URL.
+canonical: 'https://www.checklyhq.com/docs/guides/monitoring-ecommerce-apps-using-playwright/'
 ---
 
-import CliAuth from '/snippets/cli-auth.mdx';
-import CliProjectInit from '/snippets/cli-project-init.mdx';
-import TsLoaderNote from '/snippets/ts-loader-note.mdx';
-import { YoutubeEmbed } from "/snippets/youtube-embed.jsx"
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-## Inspired by Infrastructure-as-Code and E2E-Testing
+By the end of this guide, four Playwright tests cover the path from the shop's home page to a confirmed order, run every ten minutes from two regions, and fail if the confirmation text is missing.
 
-Historically, IT infrastructure has been provisioned manually, both on premise and in the cloud. This presented several challenges, including fragmented workflows, lack of transparency and scalability issues. In response to these problems, the last few years have seen a shift to the Infrastructure-as-Code (IaC) paradigm, in which large-scale systems are declared in configuration files as code.
+<Frame>
+  <img src="/images/guides/checkout-flow/outcome-check-detail.png" alt="The Shop checkout flow Playwright Check Suite in Checkly, passing, running every 10 minutes from N. Virginia and Ireland" />
+</Frame>
 
-A new generation of tools has emerged to serve this use case, the most notable example of which is HashiCorp Terraform. Terraform provides a CLI workflow allowing users to specify what the final infrastructure setup should look like, and then takes care of all the intermediate steps needed to get there.
+The [sample project](https://github.com/checkly/docs/tree/main/samples/guides/checkout-flow) this guide is built on runs against the [Danube demo shop](https://danube-web.shop) and includes the Terraform variant.
 
-E2E testing evolved similarly during the last decade during from proprietary algorithms living in tools like HP Quality Center to open-source-based code hosted in your repository next to your application code. Today, cross-functional DevOps teams continuously run automated E2E tests in their CI/CD pipeline instead of isolated QA teams testing new versions of your app for three months before release.
+<Accordion title="Let your agent do it" icon="sparkles">
 
-## Monitoring as integral part of your SDLC
+<GuideAgentIntro />
 
-Setting up monitoring can present some of the same issues as provisioning infrastructure or testing. This becomes apparent when we move past the initial rollout or proof-of-concept and onboard multiple products and/or teams, and see our monitoring setup rapidly grow in scope - along with its maintenance needs, that is.
+<div id="ai-setup-prompt">
 
-Monitoring as code learns from IaC, Unit testing and E2E testing and brings your monitoring close to your development workflows. How? By having it defined as code, much like you would do with any kind of End-to-End tests.
+```txt Prompt
+Monitor the checkout flow of this shop with Checkly.
 
-## Why Monitoring as Code with the Checkly CLI
+Goal: a Playwright Check Suite with one test per step, browse, search, add to cart, and checkout, running every 10 minutes from us-east-1 and eu-west-1.
 
-What does one gain when moving from a manual to a monitoring as code approach? The **main advantages of the Checkly CLI** are:
+Success criteria:
+1. Four spec files under `tests/`, one per step. The checkout test asserts the order confirmation text with `expect(page.getByText(...)).toBeVisible()`, not just that a page loaded.
+2. All order data comes from one shared `tests/shopper.ts` with a marker in a free-text field that our order pipeline can filter out. Never create accounts or use real customer data.
+3. `playwright.config.ts` reads `baseURL` from `SHOP_URL` and falls back to the local dev server. Set `screenshot: 'only-on-failure'` and `trace: 'retain-on-failure'`.
+4. `checkly.config.ts` defines one entry in `playwrightChecks` that sets `SHOP_URL` to production in `environmentVariables`.
+5. Run `npx checkly test --record` and show me the session link.
+6. Stop. Show me `npx checkly deploy --preview` and wait for my confirmation before `npx checkly deploy`.
 
-1. **Unite E2E testing & monitoring in one workflow.** No more silos between Dev, QA and Ops.
-2. **Programmable, testable, reviewable.** Works with your dev pipeline. From your IDE, via PR to CI.
-3. **Native @playwright/test support.** No lock-in, just write standard *.spec.ts files.
-4. **Alerting baked in.** Set alerts for Slack, SMS and many more channels.
-5. **Typescript-first.** Fully typed for a stellar developer experience with code completion.
-6. **Run in the cloud or on-prem**. Run on the Checkly cloud or in your network using [Private Locations](/platform/private-locations/overview)
-
-Watch our launch event to learn more about our CLI:
-
-<YoutubeEmbed id="IcaMW2opx2U" title="The new Era of Monitoring as Code" />
-
-## Monitoring as Code with Checkly
-
-Users who have already used Checkly will be familiar with creating Checks, Check Groups, Alert Channels and other resources through the Checkly UI. Creating, debugging and managing E2E and synthetic monitoring at scale is best done “as code”. Currently, Checkly supports three tools you can use for your monitoring as code (MaC) workflow:
-
-1. [The Checkly CLI.](https://www.checklyhq.com/cli/overview)
-2. [Terraform (through our Terraform provider)](https://checklyhq-com-git-cli-guide-checkly.vercel.app/docs/terraform-provider/)
-3. [Pulumi (through our Pulumi provider)](https://www.checklyhq.com/docs/integrations/pulumi/)
-
-## Monitoring an e-commerce website - as code
-
-How does this all look like in practice? Let's find out by creating a small monitoring setup for our [demo e-commerce website](https://danube-web.shop/).
-
-### Setting up the Checkly CLI
-
-A quick way to bootstrap a new project with the Checkly CLI is to run the following command.
-
-<CliProjectInit/>
-
-But for this guide, we will show you the manual process to show you all the structure and general idea behind the setup.
-
-For our example we will be creating Browser Checks using [Playwright](https://playwright.dev) scripts we have previously written as part of our Playwright guides.
-
-<Tabs>
-<Tab title="Login">
-```ts login.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('test', async ({ page }) => {
-
-  // navigate to our target web page
-  await page.goto('https://danube-web.shop/');
-
-  // click on the login button and go through the login procedure
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await page.getByPlaceholder('Email').fill('user@email.com');
-  await page.getByPlaceholder('Password').fill('supersecure1');
-  await page.getByRole('button', { name: 'Sign In' }).click();
-
-  // wait until the login Welcome back message is shown
-  await page.getByText('Welcome back, user@email.com').isVisible();
-});
-```
-</Tab>
-<Tab title="Search">
- ```ts search.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('test', async ({ page }) => {
-
-  const bookList = [
-    "The Foreigner",
-    "The Transformation",
-    "For Whom the Ball Tells",
-    "Baiting for Robot",
-  ];
-
-  // navigate to our target web page
-  await page.goto("https://danube-web.shop/");
-
-  // search for keyword
-  await page.click(".topbar > input");
-  await page.type(".topbar > input", "for");
-  await page.click("#button-search");
-  await page.waitForSelector(
-    ".shop-content > ul > .preview:nth-child(1) > .preview-title"
-  );
-
-  // halt immediately if results do not equal expected number
-  let resultsNumber = (await page.$$(".preview-title")).length;
-
-  await expect(resultsNumber).toEqual(bookList.length);
-
-  // remove every element found from the original array...
-  for (var i = 0; i < resultsNumber; i++) {
-    const resultTitle = await page.$eval(
-      `.preview:nth-child(${i + 1}) > .preview-title`,
-      (e) => e.innerText
-    );
-
-    const index = bookList.indexOf(resultTitle);
-    bookList.splice(index, 1);
-  }
-
-  // ...then assert that the original array is now empty
-  await expect(bookList.length).toEqual(0);
-
-});
-```
-</Tab>
-<Tab title="Checkout">
- ```ts checkout.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('test', async ({ page }) => {
-  // navigate to our target web page
-  await page.goto('https://danube-web.shop/');
-
-  // add the first item to the cart
-  await page.getByText('Haben oder haben').click();
-  await page.getByRole('button', { name: 'Add to cart' }).click();
-
-  // navigate to cart and proceed
-  await page.getByRole('button', { name: 'Checkout' }).click();
-
-  // fill out checkout info
-  await page.locator('#s-name').fill('Max');
-  await page.getByPlaceholder('Surname').fill('Mustermann');
-  await page.getByPlaceholder('Address').fill('Charlottenstr. 57');
-  await page.getByPlaceholder('Zipcode').fill('10117');
-  await page.getByPlaceholder('City').fill('Berlin');
-  await page.getByPlaceholder('Company (optional)').fill('Firma GmbH');
-  await page.getByLabel('as soon as possible').check();
-
-  // confirm checkout
-  await page.getByRole('button', { name: 'Buy' }).click();
-
-  // wait until the order confirmation message is shown
-  await page.getByText('All good, order is on the way. Thank you!! Shop more').isVisible();
-});
- ```
-</Tab>
-</Tabs>
-
-Let's start off by creating a brand new folder:
-
-```bash create-project
-mkdir checkly-mac-cli-example && cd $_
+Explain each file you changed and why.
 ```
 
-To keep things easy, we create a subdirectory...
+</div>
 
-```bash create-checks-directory
-mkdir __checks__
+<CopyPromptButton />
+
+Every step below is what the agent just did, in the open, so you can read the result or do it by hand.
+
+</Accordion>
+
+## Step 1: Write one test per step of the flow
+
+A monitor that only runs the checkout tells you it broke, not where. Split the flow into the steps a shopper takes, so a failure names the step.
+
+<CodeGroup>
+
+```ts tests/browse.spec.ts
+import { test, expect } from '@playwright/test'
+
+test('browse to a product', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.locator('.preview').first()).toBeVisible()
+  await page.locator('.preview:nth-child(1) > .preview-author').click()
+
+  await expect(page.getByRole('button', { name: 'Add to cart' })).toBeVisible()
+})
 ```
 
-...and copy all our scripts from above into separate files, for example `login.spec.ts`.
+```ts tests/search.spec.ts
+import { test, expect } from '@playwright/test'
 
-...install playwright
+test('search finds a book', async ({ page }) => {
+  await page.goto('/')
 
-```bash install-playwright
-npm init playwright@latest
+  await page.locator('input[name="searchbar"]').fill('haben')
+  await page.getByRole('button', { name: 'Search' }).click()
+
+  await expect(page.locator('.preview').first()).toContainText('Haben oder haben')
+})
 ```
 
-First, install the CLI.
+```ts tests/cart.spec.ts
+import { test, expect } from '@playwright/test'
 
-```bash install-checkly-cli
+test('add to cart', async ({ page }) => {
+  await page.goto('/')
+
+  await page.locator('.preview:nth-child(1) > .preview-author').click()
+  const title = await page.locator('.detail-wrapper h2').innerText()
+  await page.getByRole('button', { name: 'Add to cart' }).click()
+  await page.locator('#logo').click()
+
+  await page.locator('#cart').click()
+  await expect(page.locator('.cart')).toContainText(title)
+})
+```
+
+</CodeGroup>
+
+The checkout test places an order from one shared identity, so every monitoring order looks the same to your backend.
+
+```ts tests/shopper.ts
+// One synthetic identity for every monitoring order. The company field
+// carries a marker your order pipeline can filter out of real sales.
+export const shopper = {
+  name: 'Checkly',
+  surname: 'Monitor',
+  address: 'Charlottenstr. 57',
+  zipcode: '10117',
+  city: 'Berlin',
+  company: 'synthetic-monitoring',
+}
+```
+
+```ts tests/checkout.spec.ts
+import { test, expect } from '@playwright/test'
+import { shopper } from './shopper'
+
+test('checkout completes', async ({ page }) => {
+  await page.goto('/')
+
+  await page.locator('.preview:nth-child(1) > .preview-author').click()
+  await page.getByRole('button', { name: 'Add to cart' }).click()
+  await page.locator('#logo').click()
+
+  await page.locator('#cart').click()
+  await page.getByRole('button', { name: 'Checkout' }).click()
+
+  await page.getByPlaceholder('Name', { exact: true }).fill(shopper.name)
+  await page.getByPlaceholder('Surname', { exact: true }).fill(shopper.surname)
+  await page.getByPlaceholder('Address').fill(shopper.address)
+  await page.getByPlaceholder('Zipcode').fill(shopper.zipcode)
+  await page.getByPlaceholder('City').fill(shopper.city)
+  await page.getByPlaceholder('Company (optional)').fill(shopper.company)
+  await page.getByLabel('as soon as possible').check()
+  await page.getByRole('button', { name: 'Buy' }).click()
+
+  // A page that loads is not a page that worked. Assert the confirmation text.
+  await expect(page.getByText('All good, order is on the way. Thank you!!')).toBeVisible()
+})
+```
+
+Every ten minutes, from two regions, this places an order. Decide up front how those orders stay out of your numbers: a marker in a free-text field like the company above, a test SKU, a test payment method, or a flag that skips fulfilment for a known customer. Never sign up accounts from a monitor, and never use a real customer's data.
+
+<Tip>
+On the demo shop, the "Company (optional)" field has to be filled or the Buy button does nothing. Run your own flow by hand once and note every required field.
+</Tip>
+
+## Step 2: Assert the confirmation text, not the page
+
+The last line of the checkout test is the whole point of the monitor. A rendered page proves nothing about the order. The confirmation text does. `getByText` matches anywhere on the page, case-insensitive, substring included, which suits anything a customer has to see: an order number, a "thank you" message, a best seller on the home page.
+
+```ts tests/checkout.spec.ts
+  await expect(page.getByText('All good, order is on the way. Thank you!!')).toBeVisible()
+```
+
+When the wording varies, pass a regular expression such as `/order (is on the way|confirmed)/i`. When the text can appear more than once, add `.first()`.
+
+## Step 3: Point the tests at each environment
+
+Keep the shop's address out of the tests. The Playwright config reads it from `SHOP_URL` and falls back to your dev server, so the same specs run locally, against staging in CI, and against production on Checkly.
+
+```ts playwright.config.ts
+import { defineConfig, devices } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './tests',
+  retries: process.env.CHECKLY === '1' ? 2 : 0,
+  use: {
+    // SHOP_URL is set per environment: on the Checkly check for production,
+    // in your shell or CI for staging. Local runs fall back to the dev server.
+    baseURL: process.env.SHOP_URL ?? 'http://localhost:3000',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    ...devices['Desktop Chrome'],
+  },
+})
+```
+
+`screenshot: 'only-on-failure'` is what puts a screenshot on the failed result in Checkly. Checkly records a trace on every run to collect network and console data, then keeps the trace file according to your `trace` setting, so with `retain-on-failure` only failed tests keep a trace. Checkly also sets `CHECKLY=1` on every run, which is what turns on the retries here. To run locally against the demo shop, prefix the command with `SHOP_URL=https://danube-web.shop`.
+
+## Step 4: Define the monitor
+
+Install the CLI if this repository does not have it yet, then describe the monitor next to your Playwright config. A Playwright Check Suite runs the whole suite with your config and shows one test case per spec. A Browser check runs a single spec file on its own. Pick one.
+
+```bash Terminal
 npm install --save-dev checkly
 ```
 
-<TsLoaderNote />
+<CodeGroup>
 
-Next up, we want to create our `checkly.config.ts` file and include the basic Checkly configuration as follows:
-
-<Tabs>
-<Tab title="checkly.config.ts">
-```ts checkly.config.ts
-import { defineConfig } from '@checkly/cli'
+```ts checkly.config.ts (Playwright Check Suite)
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
 
 export default defineConfig({
- projectName: 'Website Monitoring',
- logicalId: 'website-monitoring-1',
- repoUrl: 'https://github.com/acme/website',
- checks: {
-   activated: true,
-   muted: false,
-   runtimeId: '2022.10',
-   frequency: 5,
-   locations: ['us-east-1', 'eu-west-1'],
-   tags: ['website', 'api'],
-   alertChannels: [],
-   checkMatch: '**/__checks__/*.check.ts',
-   ignoreDirectoriesMatch: [],
-   browserChecks: {
-     frequency: 10,
-     testMatch: '**/__checks__/*.spec.ts',
-   },
- },
- cli: {
-   runLocation: 'eu-west-1',
- }
+  projectName: 'Docs guide: Monitor a checkout flow',
+  logicalId: 'docs-guide-checkout-flow',
+  checks: {
+    playwrightConfigPath: './playwright.config.ts',
+    playwrightChecks: [
+      {
+        name: 'Shop checkout flow',
+        logicalId: 'shop-checkout-flow',
+        frequency: Frequency.EVERY_10M,
+        locations: ['us-east-1', 'eu-west-1'],
+        // The production base URL lives on the check, not in the tests.
+        // Point a second check at staging by changing only this value.
+        environmentVariables: [
+          { key: 'SHOP_URL', value: 'https://danube-web.shop' },
+        ],
+      },
+    ],
+  },
+  cli: {
+    runLocation: 'eu-west-1',
+  },
 })
 ```
-</Tab>
-</Tabs>
 
-We are ready to run the first tests of our project. Use the CLI to authenticate and pick a Checkly account. Make sure you have signed up for a free account on [checklyhq.com](https://app.checklyhq.com/signup). That is achieved by running:
+```ts checks/checkout.check.ts (Browser Check)
+import { BrowserCheck, Frequency } from 'checkly/constructs'
+import * as path from 'path'
 
-<CliAuth/>
-
-After a few seconds, you should see a similar message to the following:
-
-```
-$ npx checkly login
-? Do you allow to open the browser to continue with login? Yes
-? Which account do you want to use? TestCheckly
-Successfully logged in as Hannes Lenke
-Welcome to @checkly/cli 🦝
-```
-
-Now it's time to test run your browser checks on Checkly:
-```bash run-tests
-npx checkly test
-```
-
-Success! You should see a similar message to the following:
-
-```
-$ npx checkly test
-
-Running 3 checks in eu-west-1.
-
-__checks__/checkout.spec.ts
-  ✔ checkout.spec.ts (6s)
-__checks__/login.spec.ts
-  ✔ login.spec.ts (6s)
-__checks__/search.spec.ts
-  ✔ search.spec.ts (5s)
-
-3 passed, 3 total
+// The single-file alternative: one spec file becomes one Browser Check.
+// Browser Checks run the file on its own, without playwright.config.ts,
+// so the spec reads SHOP_URL itself instead of relying on baseURL.
+new BrowserCheck('shop-checkout-browser-check', {
+  name: 'Shop checkout (Browser Check)',
+  frequency: Frequency.EVERY_10M,
+  locations: ['us-east-1', 'eu-west-1'],
+  environmentVariables: [
+    { key: 'SHOP_URL', value: 'https://danube-web.shop' },
+  ],
+  code: {
+    entrypoint: path.join(__dirname, 'checkout.spec.ts'),
+  },
+})
 ```
 
-### Deploy your first Checks to Checkly
-Now that our project has been initialised and we have added some resources, we can deploy our Checks by running `npx checkly deploy`.
+</CodeGroup>
 
-The CLI will determine all the needed changes to be performed to replicate our monitoring code on Checkly.
+The base URL is a check-level environment variable in both paths. A staging monitor is the same entry with a different `SHOP_URL`, and the tests never change. The Browser check path needs a copy of the checkout spec that opens `process.env.SHOP_URL` itself, kept in `checks/checkout.spec.ts` in the sample.
 
+## Step 5: Run it on Checkly, then deploy
+
+`npx checkly test` bundles the project, runs it on Checkly's infrastructure, and streams the result back. `--record` keeps the run so you can open it in the app.
+
+```bash Terminal
+npx checkly test --record
 ```
-$ npx checkly deploy
-? You are about to deploy your project "Website Monitoring" to account
-"TestCheckly". Do you want to continue? Yes
-Successfully deployed project "Website Monitoring" to account "TestCheckly".
+
+```text Terminal
+Parsing your project... ✅
+Validating project resources... ✅
+Bundling project resources... ✅
+Uploading Playwright tests... ✅
+
+Test session ID: 01a0d48f-d7df-70dd-852d-ee314453c954
+Open session: https://app.checklyhq.com/accounts/<account-id>/test-sessions/01a0d48f-d7df-70dd-852d-ee314453c954
+
+Running 2 checks in eu-west-1.
+
+checks/checkout.check.ts
+  ✔ Shop checkout (Browser Check) (4s)
+playwright.config.ts
+  ✔ Shop checkout flow (30s)
+
+2 passed, 2 total
 ```
 
-Logging in to our Checkly account, we will see the dashboard has been populated with our three Checks, which will soon start executing on their set schedules.
+Both variants ran because the sample contains both. The suite result lists the four test cases. With this config, traces and screenshots are kept only for failed tests. Set `trace: 'on'` if you want a trace for passing tests too.
 
-![CLI-deployed checks on checkly dashboard](/images/guides/images/guides-mac-cli-checks-on-checkly.png "CLI-deployed checks on Checkly")
+<Frame>
+  <img src="/images/guides/checkout-flow/result-passing.png" alt="A passing Shop checkout flow result in Checkly listing the browse, add to cart, checkout, and search test cases with trace and video attachments" />
+</Frame>
 
-### Monitoring API correctness and performance
+When the run is green, deploy.
 
-Browser Checks are now there to keep us informed on the status of our key website flows. What about our APIs, though? Whether they make up the foundation of our service or they are consumed directly by the customer, we need to ensure our endpoints are working as expected. This is easily achieved by setting up API Check resources.
+```bash Terminal
+npx checkly deploy
+```
 
-<Tabs>
-<Tab title="API check resource">
-```ts api.check.ts
-// __check__/api.check.ts
-import { ApiCheck, AssertionBuilder } from '@checkly/cli/constructs'
+```text Terminal
+Deploying project... ✅
 
-const api = new ApiCheck('webstore-list-books', {
-  name: 'List Books API',
-  locations: ['eu-central-1','us-west-1'], // overrides the locations property
-  frequency: 1, // overrides the frequency property
-  degradedResponseTime: 5000,
-  maxResponseTime: 10000,
-  request: {
-    method: 'GET',
-    url: 'https://danube-web.shop/api/books',
-    assertions: [
-      AssertionBuilder.statusCode().equals(200),
-      AssertionBuilder.jsonBody('$.length').equals('30')
-    ]
+Successfully deployed project "Docs guide: Monitor a checkout flow" to account "Checkly Marketing".
+```
+
+The suite now runs every ten minutes from both locations, and every later deploy updates it in place.
+
+## Same thing in Terraform
+
+If your team manages infrastructure with Terraform, the checkout flow is one `checkly_check` resource: a Browser check with the self-contained spec and the same `SHOP_URL` variable.
+
+```terraform terraform/main.tf
+# Provider block as in the Terraform overview, then:
+resource "checkly_check" "shop_checkout" {
+  name                      = "Shop checkout (Terraform)"
+  type                      = "BROWSER"
+  activated                 = true
+  frequency                 = 10
+  use_global_alert_settings = true
+  run_parallel              = true
+
+  locations = [
+    "us-east-1",
+    "eu-west-1"
+  ]
+
+  retry_strategy {
+    type = "LINEAR"
   }
-})
-```
-</Tab>
-</Tabs>
 
-We can now once more run `checkly deploy` to see the new Check on Checkly:
+  environment_variable {
+    key   = "SHOP_URL"
+    value = "https://danube-web.shop"
+  }
 
-![CLI-deployed api check on checkly](/images/guides/images/guides-mac-cli-api-checks-on-checkly.png "Our API and Browser Checks on Checkly")
-
-### Alerting
-
-Now that we have our Checks in place, we want to set up alerting to ensure we are informed as soon as a failure takes place. Alert channels can be declared as constructs, just like the Checks. Let's add the following to our `alert-channels.ts` file:
-
-```ts alert-channels.ts
-// alert-channels.ts
-import { EmailAlertChannel } from '@checkly/cli/constructs'
-
-const sendDefaults = {
-  sendFailure: true,
-  sendRecovery: true,
-  sendDegraded: false,
+  script = file("${path.module}/../checks/checkout.spec.ts")
 }
-
-export const emailChannel = new EmailAlertChannel('email-channel-1', {
-  address: 'alerts@acme.com',
-  ...sendDefaults
-})
 ```
 
-We are setting up things so that we are alerted when our Check starts failing, as well as when it recovers. But we still need to decide which Checks will subscribe to this channel, and therefore be able to trigger the alerts. This is done by adding the following inside the resource declaration of each check, e.g.:
+Set `TF_VAR_checkly_api_key` and `TF_VAR_checkly_account_id`, then run `terraform init` and `terraform plan`.
 
-```ts api.check.ts
-// __check__/api.check.ts
-import { ApiCheck, AssertionBuilder } from '@checkly/cli/constructs'
-import { emailChannel } from './alert-Channels'
+```text Terminal
+Terraform will perform the following actions:
 
-const api = new ApiCheck('webstore-list-books', {
-  name: 'List Books API',
-  alertChannels: [emailChannel],
-  locations: ['eu-central-1','us-west-1'], // overrides the locations property
-  frequency: 1, // overrides the frequency property
-  degradedResponseTime: 5000,
-  maxResponseTime: 10000,
-  request: {
-    method: 'GET',
-    url: 'https://danube-web.shop/api/books',
-    assertions: [
-      AssertionBuilder.statusCode().equals(200),
-      AssertionBuilder.jsonBody('$.length').equals('30')
-    ]
-  }
-})
+  # checkly_check.shop_checkout will be created
+  + resource "checkly_check" "shop_checkout" {
+      + frequency                 = 10
+      + locations                 = [
+          + "eu-west-1",
+          + "us-east-1",
+        ]
+      + name                      = "Shop checkout (Terraform)"
+      + type                      = "BROWSER"
+
+      + environment_variable {
+          + key    = "SHOP_URL"
+          + value  = "https://danube-web.shop"
+        }
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-The usual `checkly deploy` will apply the changes on our Checkly account:
+`terraform apply` creates the check. The provider also has a `checkly_playwright_check_suite` resource for the four-test split from step 1; see the [Terraform provider docs](/integrations/iac/terraform/overview).
 
-![CLI-deployed alert on checkly](/images/guides/images/guides-mac-cli-alert-channels-on-checkly.png "CLI-provisioned alert on Checkly")
+## Verify it works
 
-We are now fully up and running with our monitoring as code setup. Our Checks will run on a schedule, informing us promptly if anything were to go wrong. Rapidly getting to know about failures in our API and key website flows will allow us to react fast and mitigate impact on our users, ensuring a better experience with our product.
+Break the checkout on purpose before production does. Rename the `Buy` button in `tests/checkout.spec.ts` to `Purchase` and run the suite again, without deploying.
 
-You can find the more details about our CLI on our doc [Checkly cli docs](https://www.checklyhq.com/cli/overview).
+```bash Terminal
+npx checkly test --record --grep "Shop checkout flow"
+```
 
+```text Terminal
+Running 1 checks in eu-west-1.
 
-### More on MaC with our CLI
-Expanding our initial setup from here is easy, please follow these links if you want to know more:
+playwright.config.ts
+  ✖ Shop checkout flow (105s)
 
-1. [Why we built Monitoring as Code blog post](https://blog.checklyhq.com/why-we-built-a-developer-first-typescript-cli-for-monitoring-as-code/)
-2. [Deep-dive & live coding session](https://www.youtube.com/watch?v=IcaMW2opx2U)
-3. [Checkly CLI Docs](https://www.checklyhq.com/cli/overview)
+    14:03:58 INFO  Running 4 tests using 4 workers
+    14:04:01 INFO  1 ✓ browse.spec.ts > browse to a product
+    14:04:02 INFO  2 ✓ cart.spec.ts > add to cart
+    14:04:02 INFO  3 ✓ search.spec.ts > search finds a book
+    14:04:30 ERROR Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Purchase' })
 
-## Read More
+        at tests/checkout.spec.ts:21:56
+    14:05:35 INFO  4 ✘ checkout.spec.ts > checkout completes
 
-<div class="cards-list">
-<Card title="Monitoring as code" href="/guides/getting-started-with-monitoring-as-code">
-  Why should the way we manage monitoring be any different?
-</Card>
+    View result: https://chkly.link/l/3GNVN
 
-<Card title="End to end monitoring" href="/guides/end-to-end-monitoring/">
-  Learn end-to-end monitoring with playwright to test key website flows.
-</Card>
+1 failed, 1 total
+```
 
-<Card title="Setup scripts for API monitoring" href="/guides/setup-scripts-for-apis">
-  Setup scripts are a fundamental tool to tailor API checks to your own target endpoints.
-</Card>
-</div>
+Browse, search, and add to cart still passed, so the failure is scoped to checkout before anyone opens a trace. The result page shows the failing line, the error, a screenshot at the moment of failure, and the trace.
+
+<Frame>
+  <img src="/images/guides/checkout-flow/result-failing.png" alt="The failed checkout test case in Checkly showing three failed attempts, the Playwright error with the Purchase button line highlighted, and the View Trace and Screenshots buttons" />
+</Frame>
+
+Put `Buy` back. The deployed monitor never saw the broken version, because only `npx checkly deploy` changes the monitor.
+
+<Note>
+`--grep` matches the check's `name`, not its `logicalId`.
+</Note>
+
+## Next
+
+[Monitor a shop with Terraform](/guides/monitoring-ecommerce-apps-using-terraform): if your team manages infrastructure with Terraform, declare the shop's checks, group, and alert channel there instead.
+
+## Reference
+
+- [Playwright Check Suites overview](/detect/synthetic-monitoring/playwright-checks/overview)
+- [Playwright Check Suite configuration](/detect/synthetic-monitoring/playwright-checks/configuration)
+- [Playwright Check Suite environment variables](/detect/synthetic-monitoring/playwright-checks/environment-variables)
+- [`PlaywrightCheck` construct](/constructs/playwright-check)
+- [`BrowserCheck` construct](/constructs/browser-check)
+- [Environment variables and secrets](/platform/variables)
+- [Terraform provider](/integrations/iac/terraform/overview)
+- [`npx checkly test`](/cli/checkly-test) and [`npx checkly deploy`](/cli/checkly-deploy)
+- [Checkly Skills](/ai/skills)

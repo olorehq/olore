@@ -3,11 +3,12 @@ title: 'Playwright Monitoring Options'
 description: 'Compare the features of the different Playwright-based checks'
 sidebarTitle: 'Playwright Monitoring Options'
 
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/playwright-monitoring-comparison/'
 ---
 
 import { checkDurations } from '/snippets/check-comparison.mdx'
 
-[MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview), [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview), and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) use Playwright for synthetic monitoring. The different check types vary in capabilities, flexibility, and use cases.
+[Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview), [Browser checks](/detect/synthetic-monitoring/browser-checks/overview), and [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) use Playwright for synthetic monitoring. The different check types vary in capabilities, flexibility, and use cases.
 
 After logging into the Checkly web application, you can use the built-in editor to write Playwright code to monitor your APIs and sites. **Use MultiStep and Browser checks to get started quickly via the user interface**. Checkly handles code storage, configuration of advanced settings, and dependency updates with [runtimes](/platform/runtimes/overview/).
 
@@ -15,13 +16,13 @@ However, when your monitoring setup needs to scale with your growing project req
 
 All Playwright-based checks can be created, updated and configured as code. But, when should you use which?
 
-## When to use MultiStep Checks
+## When to use Multistep checks
 
-Choose [MultiStep Checks](/detect/synthetic-monitoring/multistep-checks/overview) when you need to monitor complex API workflows with sequential requests using the familiar Playwright API. MultiStep Check runs are based on a single `spec.ts` file, limited to making HTTP requests (there's no browser available) and **the max check run duration is capped at { checkDurations.multiStep }**.
+Choose [Multistep checks](/detect/synthetic-monitoring/multistep-checks/overview) when you need to monitor complex API workflows with sequential requests using the familiar Playwright API. Multistep check runs are based on a single `spec.ts` file, limited to making HTTP requests (there's no browser available) and **the max check run duration is capped at { checkDurations.multiStep }**.
 
-## When to use Browser Checks
+## When to use Browser checks
 
-Choose [Browser Checks](/detect/synthetic-monitoring/browser-checks/overview) when you need to monitor end-to-end user flows and realistic interactions with automated browser testing using Playwright. Browser Check runs are based on a single `spec.ts` file, support the headless Chromium/Chrome browser and **the max check run duration is capped at { checkDurations.browser }**.
+Choose [Browser checks](/detect/synthetic-monitoring/browser-checks/overview) when you need to monitor end-to-end user flows and realistic interactions with automated browser testing using Playwright. Browser check runs are based on a single `spec.ts` file, support the headless Chromium/Chrome browser and **the max check run duration is capped at { checkDurations.browser }**.
 
 ## When to use Playwright Check Suites
 
@@ -35,7 +36,7 @@ Playwright Check Suites are the native way to run your Playwright project in pro
 
 ## Feature comparison
 
-| Feature                                                     | Playwright Check Suites                                                                          | Browser Check                                                                          | MultiStep Check                                                                        |
+| Feature                                                     | Playwright Check Suites                                                                          | Browser check                                                                          | Multistep check                                                                        |
 |-------------------------------------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | Supports *Monitoring as Code*                               | Yes                                                                                              | Yes                                                                                    | Yes                                                                                    |
 | [Test fixtures](https://playwright.dev/docs/test-fixtures)  | `page`, `context`, `browser`, `browserName`, `request`                                           | `page`, `context`, `browser`, `browserName`, `request`                                 | `request`                                                                              |

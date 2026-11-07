@@ -2,6 +2,7 @@
 title: 'RetryStrategyBuilder Construct'
 description: 'Learn how to configure retry strategies with the Checkly CLI.'
 sidebarTitle: 'Retry Strategy'
+canonical: 'https://www.checklyhq.com/docs/constructs/retry-strategy/'
 ---
 
 <Tip>
@@ -62,6 +63,17 @@ new ApiCheck("exponential-retry-check", {
 
 ## Configuration
 
+### Default retry strategy
+
+A check, monitor or group that sets no `retryStrategy` uses the default for its type. For checks and monitors other than `PlaywrightCheck`, [`checks.retryStrategy`](/constructs/project#param-checks-retry-strategy) in your project config takes precedence over the default.
+
+| Construct | Default |
+|-----------|---------|
+| `ApiCheck`, `BrowserCheck`, `MultiStepCheck`, `CheckGroup` | `RetryStrategyBuilder.singleRetry({ baseBackoffSeconds: 0, sameRegion: false })`: one immediate retry in a different location |
+| Monitors | `RetryStrategyBuilder.noRetries()` |
+| `PlaywrightCheck` | No retry strategy. Configure retries in your Playwright configuration instead. |
+| `CheckGroupV2` | No group retry strategy. Each check in the group uses its own. |
+
 ### Retry Strategy Methods
 
 Use the `RetryStrategyBuilder` methods to apply different retry strategies to your checks and monitors.
@@ -80,6 +92,7 @@ Disables all retries for a check. When a check fails, it immediately triggers an
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4}
 // Critical endpoint that should alert immediately
 new ApiCheck("critical-endpoint", {
@@ -100,6 +113,7 @@ Performs exactly one retry after a failure.
 
 **Usage:**
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-6}
 new ApiCheck("single-retry-check", {
   name: "Single Retry Check",
@@ -123,6 +137,7 @@ Time between retries with five seconds `baseBackoffSeconds` and three retries: `
 <Tabs>
 <Tab title="Stable API">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-8}
 // Stable API with predictable retry pattern
 new ApiCheck("stable-api", {
@@ -140,6 +155,7 @@ new ApiCheck("stable-api", {
 </Tab>
 <Tab title="Database Check">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-8}
 // Database connectivity with consistent intervals
 new ApiCheck("database-health", {
@@ -170,6 +186,7 @@ Time between retries with five seconds `baseBackoffSeconds` and three retries: `
 <Tabs>
 <Tab title="Gradual Backoff">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-8}
 // API with gradual backoff strategy
 new ApiCheck("gradual-backoff", {
@@ -187,6 +204,7 @@ new ApiCheck("gradual-backoff", {
 </Tab>
 <Tab title="Service Recovery">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-8}
 // Service that might need time to recover
 new ApiCheck("recovering-service", {
@@ -217,6 +235,7 @@ Time between retries with five seconds `baseBackoffSeconds` and three retries: `
 <Tabs>
 <Tab title="Overloaded Service">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-9}
 // Service that might be overloaded
 new ApiCheck("overloaded-api", {
@@ -235,6 +254,7 @@ new ApiCheck("overloaded-api", {
 </Tab>
 <Tab title="Rate-Limited API">
 
+{/* typecheck-wrap: ApiCheck */}
 ```ts highlight={4-9}
 // API with rate limiting
 new ApiCheck("rate-limited-api", {
@@ -263,6 +283,7 @@ Time to wait before the first retry attempt. Also used as the base value for cal
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts highlight={3,8,13}
 // Quick retries for fast services
 RetryStrategyBuilder.fixedStrategy({
@@ -286,6 +307,7 @@ Maximum number of retry attempts after the initial failure. The total number of 
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts highlight={2}
 RetryStrategyBuilder.linearStrategy({
   maxRetries: 3, // 3 retry attempts after initial failure
@@ -300,6 +322,7 @@ Maximum total time to spend on all retry attempts. If the calculated retry sched
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts highlight={2}
 RetryStrategyBuilder.exponentialStrategy({
   maxDurationSeconds: 300, // Stop retrying after 5 minutes total
@@ -312,6 +335,7 @@ Whether retry attempts should run from the same region as the original failed ch
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts highlight={2}
 RetryStrategyBuilder.linearStrategy({
   sameRegion: false, // Try different regions for retries
@@ -330,6 +354,7 @@ Apply the retry strategy only when the failure cause matches the specified condi
 
 **Usage:**
 
+{/* typecheck-wrap */}
 ```ts highlight={3}
 RetryStrategyBuilder.fixedStrategy({
   maxRetries: 3,
@@ -491,6 +516,7 @@ Currently supports `'NETWORK_ERROR'` for `ApiCheck` and `UrlMonitor` constructs 
 
 <Tabs>
   <Tab title="Stable vs Non-Stable">
+    {/* typecheck-wrap */}
     ```ts
     // For stable APIs - minimal retries
     const stableApiRetry = RetryStrategyBuilder.fixedStrategy({
@@ -509,6 +535,7 @@ Currently supports `'NETWORK_ERROR'` for `ApiCheck` and `UrlMonitor` constructs 
   </Tab>
 
   <Tab title="Critical vs Non-Critical">
+    {/* typecheck-wrap */}
     ```ts
     // Critical endpoints - fail fast to alert quickly
     const criticalRetry = RetryStrategyBuilder.fixedStrategy({
@@ -527,6 +554,7 @@ Currently supports `'NETWORK_ERROR'` for `ApiCheck` and `UrlMonitor` constructs 
   </Tab>
 
   <Tab title="By Check Type">
+    {/* typecheck-wrap */}
     ```ts
     // Browser checks - longer backoff due to complexity
     const browserRetry = RetryStrategyBuilder.linearStrategy({

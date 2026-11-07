@@ -27,6 +27,18 @@ description: "Rive Component Props"
       The scale factor to apply to the Rive graphic when using `Fit.Layout`. The default value of `-1` uses the device's DPI.
       <Note>This property has no effect for any other `Fit` type.</Note>
     </ResponseField>
+    <ResponseField name="frameRate" type="number | FrameRateRange">
+      Caps how often the view renders. A number caps rendering at that many frames per second. A `FrameRateRange` (`{ minimum, maximum, preferred? }`) maps to `CAFrameRateRange` on iOS; Android caps at `preferred`, or `maximum` if `preferred` isn't set.
+
+      _If not set, the view renders at the display's refresh rate._
+
+      See [Frame rate](/runtimes/react-native/react-native#frame-rate).
+      <Note>Requires `0.5.0` or later.</Note>
+    </ResponseField>
+    <ResponseField name="semantics" type="Semantics" default="Semantics.Off">
+      Exposes accessibility semantics authored in the editor to the screen reader. See [Semantics](/runtimes/react-native/semantics).
+      <Note>Requires `0.5.0` or later. iOS only; ignored on Android.</Note>
+    </ResponseField>
     <ResponseField name="artboardName" type="String">
       The name of the artboard to display.
 
@@ -42,13 +54,19 @@ description: "Rive Component Props"
       - A `ViewModelInstance` object (from `useViewModelInstance`)
       - `DataBindMode.Auto` (default) - automatically binds the default view model instance
       - `DataBindMode.None` - no data binding
-      - `{ byName: string }` - bind by instance name
+      - `{ byName: string }` or `new DataBindByName(name)` - bind an instance of the artboard's default view model by name
 
       See the [Data Binding](/runtimes/react-native/data-binding) documentation for more details.
     </ResponseField>
-    <ResponseField name="onError" type="((error: RiveError) => void)" required>
-      Custom error handling callback.
+    <ResponseField name="onError" type="((error: RiveError) => void)">
+      Called when the view fails to configure or render, for example because of an invalid artboard or state machine name.
+
+      _If not set, errors are logged with `console.error`._
+
+      See [Error Handling](/runtimes/react-native/error-handling).
     </ResponseField>
+
+    `RiveView` also accepts standard React Native view props such as `style`.
 
   </Tab>
   <Tab title="Legacy Runtime">

@@ -1,23 +1,24 @@
 ---
 title: setError
+seoTitle: "setError: Set React Form Errors"
 description: Manually set validation errors on fields.
 metaDescription: Manually set a validation error on one or multiple fields, with support for server-side and custom errors in React Hook Form.
 sidebar: apiLinks
 ---
 
-## \</> `setError:` <TypeText>`(name: string, error: ErrorOption, { shouldFocus?: boolean }) => void`</TypeText>
+## \</> `setError:` <TypeText>[UseFormSetError](/ts#UseFormSetError)</TypeText>
 
-The function allows you to manually set one or more errors.
+This function allows you to manually set an error on a field. You can call it multiple times to set errors on multiple fields.
 
 ### Props
 
 ---
 
-| Name    | Type                                                                                    | Description                                                                                                                                             |
-| ------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`  | <TypeText>string</TypeText>                                                             | input's name.                                                                                                                                           |
-| `error` | <TypeText>`{ type?: string, message?: string, types?: MultipleFieldErrors }`</TypeText> | Set an error with its type and message.                                                                                                                 |
-| config  | <TypeText>`{ shouldFocus?: boolean }`</TypeText>                                        | Should focus the input during setting an error. This only works when the input's reference is registered, it will not work for custom register as well. |
+| Name    | Type                                                                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`  | <TypeText>string</TypeText>                                                             | input's name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `error` | <TypeText>`{ type?: string, message?: string, types?: MultipleFieldErrors }`</TypeText> | **`type`** _(optional)_ — An identifier for the error source (e.g. `"required"`, `"custom"`, `"serverError"`). Exposed as `errors[name].type`.<br/><br/>**`message`** _(optional)_ — The human-readable error message. Exposed as `errors[name].message`.<br/><br/>**`types`** _(optional)_ — A `Record<string, string \| boolean>` that assigns multiple messages to a single field, keyed by error type (e.g. `{ required: "This is required", minLength: "Too short" }`). Exposed as `errors[name].types`. Use this instead of `message` when you need to display more than one validation message for the same field simultaneously — set `criteriaMode: "all"` on the form if you also want built-in/schema validation to populate `types` the same way. |
+| options | <TypeText>`{ shouldFocus?: boolean }`</TypeText>                                        | Should focus the input during setting an error. This only works when the input's reference is registered, it will not work for custom register as well.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 <Admonition type="important" title="Rules">
 
@@ -27,26 +28,29 @@ The function allows you to manually set one or more errors.
   setError("registerInput", { type: "custom", message: "custom message" })
   // validation will pass as long as minLength requirement pass
   ```
-- An error that is not associated with an input field will be persisted until cleared with `clearErrors`. This behaviour is only applicable for built-in validation at field level.
+- An error that is not associated with an input field will be persisted until cleared with `clearErrors`. This behavior is only applicable for built-in validation at the field level.
   ```javascript
   setError("notRegisteredInput", { type: "custom", message: "custom message" })
-  // clearErrors() need to invoked manually to remove that custom error
+  // clearErrors() needs to be invoked manually to remove that custom error
   ```
-- You can set a server or global error with `root` as the key. This type of error will not persist with each submission.
-  ```javascript
-  setError("root.serverError", {
-    type: "400",
-  })
-  ```
+- <Since version="7.43.0" /> You can set a server or global error with `root` as
+  the key. This type of error will not persist with each submission.
+
+```javascript
+setError("root.serverError", {
+  type: "400",
+})
+```
+
 - `shouldFocus` doesn't work when an input has been disabled.
 - This method will force <code>formState.isValid</code> to <code>false</code>.
   However, <code>isValid</code> is always derived from the validation results of your
   registered inputs or schema.
-- There are certain keywords that need to be avoided to prevent conflicts with type checking.
+- Avoid using `type`, `root`, `ref`, `types`, `message`, or `form` as field names — these collide with the internal shape of `FieldError`/`GlobalError`.
 
 </Admonition>
 
-**Examples:**
+### Examples
 
 ---
 
@@ -55,7 +59,7 @@ The function allows you to manually set one or more errors.
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v7-ts-seterror-nfxxu"
-import * as React from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 type FormInputs = {
@@ -73,7 +77,7 @@ const App = () => {
     console.log(data)
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     setError("username", {
       type: "manual",
       message: "Dont Forget Your Username Should Be Cool!",
@@ -124,10 +128,11 @@ const App = () => {
 
 **Multiple Errors**
 
+`setError` sets exactly one error per call. To set errors on multiple fields, call it once per field — typically in a loop over the server's error response.
+
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx copy sandbox="https://codesandbox.io/s/react-hook-form-v7-ts-seterror-8h440"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 
 type FormInputs = {
@@ -169,7 +174,7 @@ const App = () => {
               name: "firstName",
               message: "Triple Check This",
             },
-          ]
+          ] as const
 
           inputs.forEach(({ name, type, message }) => {
             setError(name, { type, message })
@@ -185,7 +190,6 @@ const App = () => {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/react-hook-form-v7-seterror-3y1op"
-import * as React from "react"
 import { useForm } from "react-hook-form"
 
 const App = () => {
@@ -241,10 +245,12 @@ const App = () => {
 
 **Single Field Errors**
 
+Use `types` (with `criteriaMode: "all"`) to attach multiple validation messages to a single field at the same time. Each key in the object is an error-type identifier; each value is the message to display for that rule.
+
 <TabGroup buttonLabels={["TS", "JS"]}>
 
 ```tsx copy
-import * as React from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 type FormInputs = {
@@ -263,7 +269,7 @@ const App = () => {
 
   const onSubmit = (data: FormInputs) => console.log(data)
 
-  React.useEffect(() => {
+  useEffect(() => {
     setError("lastName", {
       types: {
         required: "This is required",
@@ -289,7 +295,7 @@ const App = () => {
 ```
 
 ```javascript copy sandbox="https://codesandbox.io/s/seterror-single-field-errors-79wcr9"
-import * as React from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 
 const App = () => {
@@ -305,7 +311,7 @@ const App = () => {
     console.log(data)
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     setError("lastName", {
       types: {
         required: "This is required",
@@ -335,7 +341,6 @@ const App = () => {
 **Server Error**
 
 ```javascript copy
-import * as React from "react";
 import { useForm } from "react-hook-form";
 
 const App = () => {
@@ -344,9 +349,9 @@ const App = () => {
   });
   const onSubmit = async () => {
     const response = await fetch(...)
-    if (response.statusCode > 200) {
+    if (response.status >= 400) {
         setError('root.serverError', {
-          type: response.statusCode,
+          type: String(response.status),
         })
     }
   }
@@ -356,7 +361,7 @@ const App = () => {
       <label>Last Name</label>
       <input {...register("lastName")} />
 
-      {errors.root.serverError.type === 400 && <p>server response message</p>}
+      {errors.root?.serverError?.type === "400" && <p>server response message</p>}
 
       <button>submit</button>
     </form>
@@ -368,6 +373,60 @@ const App = () => {
 
 ---
 
-The following video explain `setError` API in detail.
+The following video explains the `setError` API in detail.
 
 <YouTube youTubeId="raMqvE0YyIY" />
+
+### Tips
+
+---
+
+- Map field errors from your API onto the form, and focus the first one:
+
+  ```javascript
+  const onSubmit = async (data) => {
+    const response = await save(data)
+    if (!response.ok) {
+      const { fieldErrors } = await response.json() // e.g. { email: "Already taken" }
+      Object.entries(fieldErrors).forEach(([name, message], index) => {
+        setError(
+          name,
+          { type: "server", message },
+          { shouldFocus: index === 0 }
+        )
+      })
+    }
+  }
+  ```
+
+- Use `root.*` for errors that do not belong to one field, such as "Network error" or "Too many attempts". Root errors are cleared on the next submission. Show them with [`ErrorMessage`](/docs/useformstate/errormessage) and `name="root.server"`.
+- Give server errors a `type` such as `"server"`. Then your UI can show them differently from client-side validation errors.
+
+### Troubleshooting
+
+---
+
+<Troubleshoot>
+
+#### An error set with `setError` disappears on submit and doesn't stop `onSubmit`
+
+<Why>
+
+`setError` adds an error to the form state, but it does not add a validation rule. On submit, `handleSubmit` validates the form again and clears errors that are not backed by a rule, including `root.*` errors. If every field passes, your `onSubmit` runs.
+
+</Why>
+
+<Fix>
+
+Use `setError` to show errors that come back from the server after a submit. For errors that must block submission, add the check as a validation rule instead:
+
+```javascript
+register("username", {
+  validate: async (value) =>
+    (await isUsernameFree(value)) || "This username is taken",
+})
+```
+
+</Fix>
+
+</Troubleshoot>

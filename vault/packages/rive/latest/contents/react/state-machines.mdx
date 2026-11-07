@@ -13,6 +13,8 @@ import PlayingStateMachines from "/snippets/runtimes/state-machines/playing-stat
 
 <PlayingStateMachines />
 
+Name the state machine you want to play with the `stateMachine` parameter on `useRive` (or the `stateMachine` prop on the default `<Rive />` component).
+
 #### Autoplay the State Machine
 
 To auto-play a state machine by default, simply set `autoplay` to `true`.
@@ -20,7 +22,7 @@ To auto-play a state machine by default, simply set `autoplay` to `true`.
 export default function Simple() {
   const { RiveComponent } = useRive({
     src: 'https://cdn.rive.app/animations/vehicles.riv',
-    stateMachines: "bumpy",
+    stateMachine: "bumpy",
     autoplay: true,
   });
 
@@ -28,7 +30,7 @@ export default function Simple() {
 }
 ```
 
-#### Controlling State Machine Playback
+#### Controlling State Machine playback
 
 You can manually play and pause the state machine using the `play`, `pause`, and `stop` methods.
 
@@ -36,7 +38,7 @@ You can manually play and pause the state machine using the `play`, `pause`, and
   export default function Simple() {
     const { rive, RiveComponent } = useRive({
       src: "https://cdn.rive.app/animations/vehicles.riv",
-      stateMachines: "bumpy",
+      stateMachine: "bumpy",
       autoplay: true,
     });
 

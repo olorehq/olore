@@ -1,14 +1,15 @@
 ---
-title: Heartbeat Monitors
+title: Heartbeat monitors
 description:  Ensure your automated processes are running as expected.
 sidebarTitle: Overview
+canonical: 'https://www.checklyhq.com/docs/detect/uptime-monitoring/heartbeat-monitors/overview/'
 ---
 
 <Tip>
-**Monitoring as Code**: Learn more about the [Heartbeat Monitor Construct](/constructs/heartbeat-monitor).
+**Monitoring as Code**: Learn more about the [Heartbeat monitor construct](/constructs/heartbeat-monitor).
 </Tip>
 
-Monitor your scheduled jobs, background tasks, and automated processes with Checkly's heartbeat monitoring. Unlike traditional active monitoring, heartbeat monitors work passively—they listen for regular "pings" from your tasks to ensure they're running as expected.
+Monitor your scheduled jobs, background tasks, and automated processes with Checkly's heartbeat monitoring. Unlike traditional active monitoring, Heartbeat monitors work passively—they listen for regular "pings" from your tasks to ensure they're running as expected.
 
 <Frame>
 <img
@@ -25,7 +26,7 @@ Monitor your scheduled jobs, background tasks, and automated processes with Chec
 />
 </Frame>
 
-## What are Heartbeat Monitors?
+## What are Heartbeat monitors?
 
 Heartbeat monitors are passive monitoring checks that wait for your automated tasks to report their successful completion. When your scheduled job, backup script, or cron job finishes successfully, it sends a simple HTTP request (a "ping") to Checkly to confirm it ran.
 
@@ -39,11 +40,11 @@ Heartbeat monitors are perfect for:
 - Database cleanup tasks
 - File processing workflows
 
-## How Heartbeat Monitoring Works
+## How heartbeat monitoring works
 
-The heartbeat monitoring process is straightforward. Once created, your heartbeat monitor provides a unique ping URL. Your tasks should make an HTTP GET or POST request to this URL when they complete successfully.
+The heartbeat monitoring process is straightforward. Once created, your Heartbeat monitor provides a unique ping URL. Your tasks should make an HTTP GET or POST request to this URL when they complete successfully.
 
-1. **Create a monitor** - Set up a heartbeat monitor with your expected ping frequency
+1. **Create a monitor** - Set up a Heartbeat monitor with your expected ping frequency
 2. **Get your ping URL** - Checkly provides a unique URL for your task to ping
 3. **Add the ping** - Include a simple HTTP request in your task's success path
 4. **Monitor results** - Checkly tracks pings and alerts you if a ping is missed or delayed
@@ -80,7 +81,7 @@ Heartbeat monitors provide different metrics and insights than other types of ch
 - **Alert Timeline**: When alerts were triggered and resolved
 - **Source Tracking**: Which systems or processes sent pings
 
-Heartbeat metrics are also available via the [Prometheus V2 integration](/integrations/observability/prometheus-v2#heartbeat-metrics), including dead man's switch gauges for alerting in Grafana when a ping is overdue.
+Heartbeat metrics are also available via the [Prometheus integration](/integrations/observability/prometheus#heartbeat-metrics), including dead man's switch gauges for alerting in Grafana when a ping is overdue.
 
 <Warning>
 Remember: Heartbeat monitors detect when jobs fail to complete, but they can't tell you why a job failed. Combine heartbeat monitoring with application logging and error tracking for complete observability.
@@ -96,7 +97,7 @@ You can manually send pings via the Checkly UI. Use this to start the check time
 
 ![Manually send a ping via the Checkly UI in the quick menu](/images/docs/images/heartbeat-checks/heartbeat-ping-quick-menu.png)
 
-## Heartbeat Monitor Results
+## Heartbeat monitor results
 
 Heartbeat monitor results show information about the ping request, like when it was recieved and its source.
 

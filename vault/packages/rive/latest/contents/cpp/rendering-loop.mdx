@@ -64,7 +64,7 @@ On D3D12, Vulkan, and Metal you must update `currentFrameNumber` and
 renderer can't safely recycle staging buffers and you'll either see
 overwrites mid-flight or unbounded memory growth.
 
-## Fixed-Timestep Accumulator
+## Fixed-timestep accumulator
 
 State machines and animations are deterministic at fixed `dt`s. Wrap your
 real-elapsed-time delta in an accumulator so playback is reproducible across
@@ -88,7 +88,7 @@ void tick(float realDt) {
 The cap (`kMaxFrameDt`) prevents catch-up storms after the app gets paused
 in a debugger or backgrounded by the OS.
 
-## Resize Handling
+## Resize handling
 
 Three things have to happen on a resize:
 
@@ -139,7 +139,7 @@ Vec2D pt = align.invertOrIdentity() * Vec2D{(float)mx, (float)my};
 sm->pointerMove(pt);
 ```
 
-## When to Skip a Frame
+## When to skip a frame
 
 `advanceAndApply` returns `true` if the state machine has more work; `false` if
 everything has settled. For animations that have looped to rest, you can
@@ -149,7 +149,7 @@ zero between user inputs.
 Pointer events and external view-model writes can wake the state machine back up —
 re-draw at least once after each.
 
-## Tear-Down
+## Tear-down
 
 ```cpp
 sm.reset();

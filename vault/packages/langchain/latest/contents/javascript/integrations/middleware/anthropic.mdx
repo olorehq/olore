@@ -1,6 +1,10 @@
 ---
-title: "Anthropic integration"
-description: "Integrate with the Anthropic middleware using LangChain JavaScript."
+title: Anthropic integration
+description: Integrate with the Anthropic middleware using LangChain JavaScript.
+integration:
+  name: Anthropic
+  available: Prompt caching
+  source: "[`langchain-ai/langchainjs`](https://github.com/langchain-ai/langchainjs/tree/main/libs/langchain/src/agents/middleware/provider/anthropic)"
 ---
 
 Middleware specifically designed for Anthropic's Claude models. Learn more about [middleware](/oss/langchain/middleware/overview).
@@ -33,7 +37,7 @@ import { createAgent, anthropicPromptCachingMiddleware } from "langchain";
 
 const agent = createAgent({
   model: "claude-sonnet-4-6",
-  prompt: "<Your long system prompt here>",
+  systemPrompt: "<Your long system prompt here>",
   middleware: [anthropicPromptCachingMiddleware({ ttl: "5m" })],
 });
 ```
@@ -66,7 +70,7 @@ Please be a helpful assistant.
 
 const agent = createAgent({
   model: "claude-sonnet-4-6",
-  prompt: LONG_PROMPT,
+  systemPrompt: LONG_PROMPT,
   middleware: [anthropicPromptCachingMiddleware({ ttl: "5m" })],
 });
 

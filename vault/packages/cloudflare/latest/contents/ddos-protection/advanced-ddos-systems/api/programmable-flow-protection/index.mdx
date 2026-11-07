@@ -31,12 +31,20 @@ The `{account_id}` argument is the [account ID](/fundamentals/account/find-accou
 
 The tables in the following sections summarize the available operations.
 
+## Program versions
+
+Each uploaded program starts at version `1`. Updating a program with a `PATCH` request creates a new version under the same program ID. Program responses include the current version in the `version` field.
+
+Each rule is pinned to a specific program version, which appears in the rule's `program_version` field. Creating a rule without `program_version` pins it to the program's current version. Updating a program does not update existing rules that reference it.
+
+To move an existing rule to another successful version of its program, send a `PATCH` request to the rule endpoint with the target `program_version`. For an example, refer to [Update a rule](/ddos-protection/advanced-ddos-systems/api/programmable-flow-protection/examples/#update-a-rule).
+
 ### Program operations
 
 | Operation | Method and endpoint / Description |
 | --- | --- |
 | List programs | <p>`GET accounts/{account_id}/magic/programmable_flow_protection/configs/programs`</p>Fetches all Programmable Flow Protection programs in the account. |
-| Upload a program | <p>`POST accounts/{account_id}/magic/programmable_flow_protection/configs/programs`</p>Uploads a new program to the account. |
+| Upload a program | <p>`POST accounts/{account_id}/magic/programmable_flow_protection/configs/programs`</p>Uploads a new program to the account. Include the optional `X-Program-Name` header to specify a human-readable program name. If omitted, the API generates a UUID as the program name. |
 | Get a program | <p>`GET accounts/{account_id}/magic/programmable_flow_protection/configs/programs/{program_id}`</p>Fetches the details of an existing program. |
 | Update a program | <p>`PATCH accounts/{account_id}/magic/programmable_flow_protection/configs/programs/{program_id}`</p>Updates an existing program. |
 | Delete a program | <p>`DELETE accounts/{account_id}/magic/programmable_flow_protection/configs/programs/{program_id}`</p>Deletes an existing program from the account. |

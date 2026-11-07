@@ -30,7 +30,7 @@ Sentry owner, manager, or admin permissions and GitLab owner or maintainer permi
   </p>
 </Alert>
 
-1. Navigate to **Settings > Integrations > GitLab**.
+1. Navigate to [**Settings > Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/) > **GitLab**.
 
    ![Install GitLab integration =600x](./img/gitlab-overview.png)
 
@@ -60,7 +60,7 @@ Sentry owner, manager, or admin permissions and GitLab owner or maintainer permi
 
 1. In the resulting panel, click "Authorize".
 
-1. In Sentry, return to Organization Settings > **Integrations**. You’ll see a new instance of GitLab underneath the list of integrations.
+1. In Sentry, return to [Organization Settings > **Integrations**](https://sentry.io/orgredirect/organizations/:orgslug/settings/integrations/). You’ll see a new instance of GitLab underneath the list of integrations.
 
 1. Next to your GitLab Instance, click "Configure". _It’s important to configure to receive the full benefits of commit tracking._
 
@@ -82,9 +82,9 @@ Issue tracking allows you to create GitLab issues from within Sentry and link Se
 
    ![List of unresolved issues =600x](./img/sentry-unresolved-issues.png)
 
-1. Navigate to Linked Issues on the right panel of the issue's page and click "Link GitLab Issue".
+1. Navigate to External Links on the right panel of the issue's page and click "Link Issue".
 
-   ![GitLab logo with Link GitLab Issue text =600x](./img/link-gitlab-issue.png)
+   ![GitLab logo with Link GitLab Issue text =600x](./../img/global-link-issue.png)
 
 1. You have two options to complete the issue link:
 
@@ -96,9 +96,9 @@ Issue tracking allows you to create GitLab issues from within Sentry and link Se
 
       ![pop-up modal to search issue name =600x](./img/link-issue-by-name.png)
 
-1. To unlink an issue, click on the "X" next to its name under Linked Issues.
+1. To unlink an issue, click on the "X" next to its name under External Links.
 
-   ![GitLab logo and project next to an X icon =600x](./img/unlink-issue.png)
+   ![GitLab logo and project next to an X icon =600x](./img/unlink-issue2.png)
 
 ### Commit Tracking
 
@@ -126,52 +126,9 @@ A `<SHORT-ID>` may look something like 'BACKEND-C' in the image below.
 
 ### Stack Trace Linking
 
-Stack trace linking takes you from a file in your Sentry stack trace to that same file in your source code. If you have commit tracking set up in Sentry, we can take you to the exact version (using the commit associated with the event) of the source code when the error occurred. Otherwise we'll link you to the current state of the source code (using the default **branch**).
+Stack trace linking takes you from a file in your Sentry stack trace to the same file in GitLab. If you've set up commit tracking, Sentry links to the version of the file from the commit associated with the event. Otherwise, it links to the branch set in your code mapping.
 
-1. Navigate to **Settings > Integrations > GitLab > Configurations**.
-
-1. Click the "Configure" button next to your GitLab Instance.
-
-1. Click the **Code Mappings** tab.
-
-1. Set up a code mapping for each project for which you want to enable stack trace linking. To create a new code mapping, click **Add Mapping**.
-
-1. Fill out the form, then click **Save Changes**. Each form field is described below:
-
-   - **Project** (required): This is the Sentry project.
-   - **Repo** (required): This is the GitLab project associated with the Sentry project above. If you have more than one GitLab project being used per Sentry project, you'll need multiple code mappings.
-   - **Branch** (required): This is the default branch of your code we fall back to if you do not have commit tracking set up.
-   - **Stack Trace Root** and **Source Code Root** (optional): See below for information on determining these values.
-
-#### Stack Trace Root and Source Code Root
-
-<Alert>
-
-The following information is only valid for platforms which use traditional file paths. Platforms with package names (such as **Java**, **Cocoa**, and **Flutter**) require additional steps.
-
-</Alert>
-
-First, navigate to a stack trace that you wish to map. Find an **In App** frame, which is denoted by a bubble on the right side of the frame. The filename will be shown as the first piece of text at the left hand side of the frame header. In this example, it is `src/main.py`.
-
-<Include name="common-imgs/code-mappings-stacktrace" />
-
-For certain native platforms, the stack trace will look different. In cases like these, you can find the absolute path by hovering over the filename.
-
-![Highlighting where in the UI to find the file path for native stack traces =600x](./img/code-mappings-stacktrace-native.png)
-
-If you aren’t sure, you can look at the event JSON by clicking on the `{}` button in the event header. Find the text in the frame's `filename` or `abs_path`.
-
-<Include name="common-imgs/code-mappings-event-json" />
-
-Next, locate the file seen in the stack trace with your source code provider (e.g. GitHub). In this example, the path is `flask/src/main.py` (`empower` is ignored since it is the name of the repo).
-
-<Include name="common-imgs/code-mappings-source-file" />
-
-Compare the file path from the stack trace with the path found in your source repository. In this example, the `src/` folder in the stack trace matches the `flask/src` folder in the source code. Using that information, set the **Stack Trace Root** to `src/` and the **Source Code Root** to `flask/src/`. This tells Sentry to replace all file paths beginning in `src/` with `flask/src/` when searching for the source code.
-
-For best results, we recommend always providing a non-empty value for the **Stack Trace Root** when possible.
-
-<Include name="common-imgs/code-mappings-configure-modal" />
+To set up stack trace linking, [add a code mapping](/integrations/source-code-mgmt/code-mappings/) for each Sentry project and GitLab repository you want to link.
 
 ### Source Context
 
@@ -198,17 +155,17 @@ For more details, see the full documentation for [Code Owners](/product/issues/o
 ## Seer
 
 <Alert>
-The Gitlab Seer integration is currently in early beta, slowly opening up to more organizations. Please reach out to support@sentry.io if you are interested in trying it out.
+The Gitlab Seer integration is currently in early beta, slowly opening up to more organizations. Please reach out to seer@sentry.io if you are interested in trying it out.
 </Alert>
 
-With the GitLab integration connected, you can use Seer's AI features, including [Autofix](/product/ai-in-sentry/seer/autofix/) and [Code Review](/product/ai-in-sentry/seer/code-review) with your GitLab repositories.
+With the GitLab integration connected, you can use Seer's AI features, including [Autofix](/product/ai-in-sentry/seer/autofix/) and [Code Review](/product/ai-in-sentry/seer/code-review/) with your GitLab repositories.
 
 **Autofix** analyzes Sentry issues using your GitLab repo code as context and can open a merge request with the proposed fix directly in GitLab.
 
 **Code Review** reviews your merge requests for potential errors. Trigger it by commenting `@sentry review` on any MR. Automatic reviews also run when a merge request is opened or updated.
 
 <Alert>
-GitLab does not support the GitHub Checks API. Code Review results appear as MR comments, not as a pipeline status check. You cannot use Seer as a required GitLab CI/CD check.
+GitLab does not support external status checks. Code Review results appear as MR comments, not as a pipeline status check. You cannot use Seer as a required GitLab CI/CD check.
 </Alert>
 
 To set up Seer with GitLab, go to [Seer settings](https://sentry.io/orgredirect/organizations/:orgslug/settings/seer/) and connect your GitLab repositories. Only GitLab.com (cloud) is supported.
@@ -252,7 +209,7 @@ To set up Seer with GitLab, go to [Seer settings](https://sentry.io/orgredirect/
 
 - Why am I seeing an "Invalid Repository Names" error?
 
-  - GitLab takes into account the whitespace before and after the `/` . On the Repositories page (Organization Settings > Repositories), you’ll notice a space (for example, "Owner / Repo" as opposed to "Owner/Repo"), which will need to be included in any command you’re running. If you are using GitLab’s [environment variables](https://docs.gitlab.com/ee/ci/variables/#debug-tracing) to pass the repository as `CI_PROJECT_PATH` in a cURL request for example, it may not include the spaces and you’ll need to hardcode the name in order for it to work.
+  - GitLab takes into account the whitespace before and after the `/` . On the Repositories page ([Organization Settings > Repositories](https://sentry.io/orgredirect/organizations/:orgslug/settings/repos/)), you’ll notice a space (for example, "Owner / Repo" as opposed to "Owner/Repo"), which will need to be included in any command you’re running. If you are using GitLab’s [environment variables](https://docs.gitlab.com/ee/ci/variables/#debug-tracing) to pass the repository as `CI_PROJECT_PATH` in a cURL request for example, it may not include the spaces and you’ll need to hardcode the name in order for it to work.
 
 - Why am I always the reporter?
   - When using the GitLab integration to create issues, the “reporter” field is populated as the person who set up the integration by default — this is not configurable.

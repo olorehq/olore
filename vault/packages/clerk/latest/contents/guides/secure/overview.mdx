@@ -11,14 +11,17 @@ This page maps common threats to the Clerk features that protect your applicatio
 
 Clerk provides several features to protect your application from common authentication attacks. These features are configurable in the [Clerk Dashboard](https://dashboard.clerk.com).
 
+> [!TIP]
+> Run [`clerk security`](/docs/cli) to audit your instance against Clerk's security recommendations, including several protections listed below. Use `clerk security fix` to apply supported fixes. Other protections require manual configuration.
+
 | Threat | Description | Clerk feature |
 | - | - | - |
-| **[Credential stuffing](https://owasp.org/www-community/attacks/Credential_stuffing)** | Attackers use lists of stolen passwords to gain unauthorized access to accounts. | [Client Trust](/docs/guides/secure/client-trust) automatically requires a second factor on new devices. |
-| **[Brute force attacks](https://owasp.org/www-community/attacks/Brute_force_attack)** | Automated scripts try many passwords against a single account. | [User lockout](/docs/guides/secure/user-lockout) locks accounts after repeated failed attempts. |
-| **Bot attacks** | Automated bots create fake accounts at scale. | [Bot protection](/docs/guides/secure/bot-protection) uses Cloudflare to challenge suspicious sign-ups. |
-| **Account enumeration** | Attackers probe your application to discover which accounts exist. | [User enumeration protection](/docs/guides/secure/user-enumeration-protection) adds rate limiting and, in strict mode, hides whether an account exists. |
+| **[Credential stuffing](https://owasp.org/www-community/attacks/Credential_stuffing)** | Attackers use lists of stolen passwords to gain unauthorized access to accounts. | [Device Trust](/docs/guides/protect/device-trust) automatically requires a second factor when someone signs in with a password from a new device and hasn't enabled MFA. |
+| **[Brute force attacks](https://owasp.org/www-community/attacks/Brute_force_attack)** | Automated scripts try many passwords against a single account. | [Lock accounts after failed sign-ins](/docs/guides/protect/user-lockout) locks an account after repeated failed attempts. |
+| **Bot attacks** | Automated bots create fake accounts at scale. | [Challenge suspicious sign-ups](/docs/guides/protect/bot-protection) challenges sign-ups that look automated or come through VPNs, Tor, or proxies. |
+| **Account enumeration** | Attackers probe your application to discover which accounts exist. | [Prevent user enumeration](/docs/guides/protect/user-enumeration-protection) adds rate limiting and, at the **Strict** level, hides whether an account exists. |
 | **Compromised passwords** | Users reuse passwords that have appeared in data breaches. | [Password protection and rules](/docs/guides/secure/password-protection-and-rules) checks passwords against known breaches and enforces strength requirements. |
-| **Spam and abuse accounts** | Attackers create throwaway accounts using disposable emails or blocked domains. | [Restrictions](/docs/guides/secure/restricting-access) provides allowlists, blocklists, and disposable email blocking. |
+| **Spam and abuse accounts** | Attackers create throwaway accounts using disposable emails or blocked domains. | [Block disposable email addresses](/docs/guides/protect/protections/block-disposable-email-addresses) blocks throwaway inboxes, and [Restricting access](/docs/guides/secure/restricting-access) covers access modes, allowlists, and blocklists. |
 
 ## Web security best practices
 
@@ -29,7 +32,7 @@ Clerk provides recommended protections and configurable features to address comm
 | **[Cross-site scripting (XSS)](https://owasp.org/www-community/attacks/xss/)** | Malicious scripts injected into trusted pages steal user data. | [XSS leak protection](/docs/guides/secure/best-practices/xss-leak-protection) uses HttpOnly cookies for authenticated requests and limits token exposure with short-lived app-domain tokens. |
 | **[Cross-site request forgery (CSRF)](https://owasp.org/www-community/attacks/csrf)** | Attackers trick users into submitting unintended requests. | [CSRF protection](/docs/guides/secure/best-practices/csrf-protection) configures cookies with SameSite. |
 | **Content injection** | Attackers inject unauthorized scripts or styles into your pages. | Configure [CSP headers](/docs/guides/secure/best-practices/csp-headers) to restrict which resources can load on your pages. |
-| **[Session fixation](https://owasp.org/www-community/attacks/Session_fixation)** | Attackers hijack sessions by reusing session identifiers. | [Fixation protection](/docs/guides/secure/best-practices/fixation-protection) resets session tokens on sign-in and sign-out. |
+| **[Session fixation](https://owasp.org/www-community/attacks/Session_fixation)** | Attackers hijack sessions by reusing session identifiers. | [Fixation protection](/docs/guides/secure/best-practices/fixation-protection) resets [session tokens](!session-token) on sign-in and sign-out. |
 | **Phishing via email links** | Attackers exploit email verification links to gain access. | If enabled, [Protecting email links](/docs/guides/secure/best-practices/protect-email-links) enforces same-device and same-browser verification. |
 | **Unauthorized device access** | Someone signs in from an unrecognized device without the account owner's knowledge. | [Unauthorized sign-in notifications](/docs/guides/secure/best-practices/unauthorized-sign-in) alert users and allow session revocation. |
 
@@ -39,12 +42,13 @@ Beyond attack-specific protections, Clerk provides features that strengthen your
 
 - **[Reverification (step-up authentication)](/docs/guides/secure/reverification)** — Require users to re-verify their identity before performing sensitive actions like changing their password or accessing Billing settings.
 - **[Session options](/docs/guides/secure/session-options)** — Configure session lifetimes, inactivity timeouts, and single-session mode to control how long sessions stay active.
+- **[MFA account recovery](/docs/guides/secure/mfa-recovery)** — Reset MFA for users who have lost access to their second factor, and build a reset flow of your own with the Backend API.
 - **[Geo blocking](/docs/guides/development/geo-blocking)** — Restrict access to your application based on geographic location.
 
 ## Next steps
 
 <Cards>
-  - [Enable Client Trust](/docs/guides/secure/client-trust)
+  - [Enable Device Trust](/docs/guides/protect/device-trust)
   - Protect your users from credential stuffing attacks with automatic second-factor verification on new devices.
 
   ---
@@ -54,7 +58,7 @@ Beyond attack-specific protections, Clerk provides features that strengthen your
 
   ---
 
-  - [Set up bot protection](/docs/guides/secure/bot-protection)
+  - [Challenge suspicious sign-ups](/docs/guides/protect/bot-protection)
   - Prevent automated bots from creating fake accounts in your application.
 
   ---

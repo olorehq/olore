@@ -1,0 +1,101 @@
+---
+title: Import from code
+---
+
+import { Code, FilePlus2, Import } from 'lucide-react';
+
+Importing from code is helpful if you’ve already built machines while working with [XState](xstate), or have created a machine using our older [Stately Viz](https://stately.ai/viz) but haven’t yet tried Stately Studio’s editor.
+
+<Callout>
+
+Watch our [“Import from code” video on YouTube](https://www.youtube.com/watch?v=DAoIFaugDLo) (2m24s).
+
+</Callout>
+
+## Import state machines
+
+Your state machine code should be formatted as a [`createMachine()` factory function](/docs/actors#createmachine) before import. The importer has basic validation in case your machine has basic errors, including reminding you if the `createMachine` definition is missing.
+
+[Check out an importable machine code example at the end of this page](#machine-code-example).
+
+<Callout type="warning">
+
+**Caution**: importing code will overwrite your current or selected machine unless you create a new machine from the machines list inside a project.
+
+</Callout>
+
+<Callout>
+
+The Stately editor now supports importing multiple machines from code.
+
+</Callout>
+
+### Create a new machine inside a project using imported code
+
+Create a <FilePlus2 size={18} /> **New machine** from the machines list inside a project, then use the <Code size={18}/> **Import** button to import code into the new machine.
+
+### Import code to overwrite your machine
+
+Use **Import** button in the <Code size={18}/> **Code** panel, or **Machine** > <Import size={18}/> **Import** from the editor menu to overwrite your current machine.
+
+## Machine code example
+
+Below is an example of a `createMachine()` factory function which you can import as a machine without any errors:
+
+```js
+createMachine({
+  id: 'Video',
+  initial: 'Closed',
+  description: 'Video player',
+  states: {
+    Closed: {
+      on: {
+        PLAY: {
+          target: 'Opened',
+        },
+      },
+    },
+    Opened: {
+      invoke: {
+        src: 'startVideo',
+      },
+      initial: 'Playing',
+      description: 'Fullscreen mode',
+      states: {
+        Playing: {
+          on: {
+            PAUSE: {
+              target: 'Paused',
+            },
+          },
+        },
+        Paused: {
+          on: {
+            PLAY: {
+              target: 'Playing',
+            },
+          },
+        },
+        Stopped: {
+          type: 'final',
+          after: {
+            5000: {
+              target: '#Video.Closed',
+              actions: [],
+              internal: false,
+            },
+          },
+        },
+      },
+      on: {
+        STOP: {
+          target: '.Stopped',
+        },
+      },
+    },
+  },
+  context: {},
+  predictableActionArguments: true,
+  preserveActionOrder: true,
+});
+```

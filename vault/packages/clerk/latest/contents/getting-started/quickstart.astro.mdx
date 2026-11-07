@@ -2,28 +2,17 @@
 title: Astro Quickstart
 description: Add authentication and user management to your Astro app with Clerk.
 sdk: astro
-llm:
-  displayText: Use this pre-built prompt to get started faster.
-  src: prompts/astro-quickstart.md
 ---
 
-<TutorialHero
-  exampleRepo={[
-    {
-      title: "Astro Quickstart Repo",
-      link: "https://github.com/clerk/clerk-astro-quickstart"
-    }
-  ]}
-  beforeYouStart={[
-    {
-      title: "Set up a Clerk application",
-      link: "/docs/getting-started/quickstart/setup-clerk",
-      icon: "clerk",
-    },
-  ]}
-/>
+<PromptOnly>
+  Hand this prompt to your agent to add auth to your app with the [Clerk CLI](/docs/cli). No need to leave your terminal or copy and paste API keys.
 
-<Steps>
+  <Prompt variant="card" src="prompts/cli-setup.md" title="Add Clerk to Astro" output="replace" framework="astro" />
+
+  Or set up Clerk yourself by following the step-by-step instructions.
+</PromptOnly>
+
+<ManualSteps>
   ## Create a new Astro app
 
   If you don't already have an Astro app, run the following commands to [create a new one](https://docs.astro.build/en/install-and-setup/).
@@ -31,18 +20,19 @@ llm:
   ```npm
   npm create astro@latest clerk-astro
   cd clerk-astro
-  npm install
   ```
 
   ## Install `@clerk/astro`
 
   The [Clerk Astro SDK](/docs/reference/astro/overview) gives you access to a set of components, hooks, and stores to make user authentication easier.
 
-  Run the following command to install the SDK:
+  Run the following command to install the SDK and the [`@astrojs/node`](https://docs.astro.build/en/guides/integrations-guide/node/) adapter, which this quickstart uses:
 
   ```npm
-  npm install @clerk/astro
+  npm install @astrojs/node @clerk/astro
   ```
+
+  If you're adding Clerk to an existing app, keep your Astro version and adapter — the SDK supports Astro 5, 6, and 7. If you need an adapter, install the `@astrojs/node` major that matches your Astro version (v11 for Astro 7, v10 for Astro 6, v9 for Astro 5). If npm reports a peer conflict, update Astro to its latest minor first — the newest adapter releases require recent Astro minors. If you're on Astro 4, [upgrade to Astro 5](https://docs.astro.build/en/guides/upgrade-to/v5/) or later first — the SDK no longer supports it.
 
   ## Set your Clerk API keys
 
@@ -58,7 +48,7 @@ llm:
   To configure Clerk in your Astro app, you will need to update your `astro.config.mjs`.
 
   - Add the `clerk()` integration to the `integrations` list. For a list of available options, see the [integration reference](/docs/reference/astro/integration).
-  - Install an [SSR adapter](https://docs.astro.build/en/guides/server-side-rendering/#official-adapters). This quickstart uses the [`@astrojs/node`](https://docs.astro.build/en/guides/integrations-guide/node/) adapter.
+  - Add an [SSR adapter](https://docs.astro.build/en/guides/server-side-rendering/#official-adapters). This quickstart uses the [`@astrojs/node`](https://docs.astro.build/en/guides/integrations-guide/node/) adapter, which you installed in the [Install `@clerk/astro`](#install-clerk-astro) step. If you already have one, keep it.
   - Set `output` to `server`. This is required when deploying to a host supporting SSR.
 
   ```ts {{ filename: 'astro.config.mjs', mark: [2, 3, [6, 8]] }}
@@ -75,18 +65,18 @@ llm:
 
   ## Add `clerkMiddleware()` to your app
 
-  [`clerkMiddleware()`](/docs/reference/astro/clerk-middleware) grants you access to user authentication state throughout your app. It also allows you to protect specific routes from unauthenticated users. To add `clerkMiddleware()` to your app, follow these steps:
+  [`clerkMiddleware()`](/docs/reference/astro/clerk-middleware) grants you access to user authentication state throughout your app. To add `clerkMiddleware()` to your app, follow these steps:
 
   1. Create a `middleware.ts` file.
      - If you're using the `/src` directory, create `middleware.ts` in the `/src` directory.
-     - If you're not using the `/src` directory, create `middleware.ts` in the root directory alongside `.env`.
+     - If you're not using the `/src` directory, create `middleware.ts` in the root directory.
   1. In your `middleware.ts` file, export an `onRequest` constant and assign the result of the `clerkMiddleware()` function to it.
      ```tsx {{ filename: 'src/middleware.ts' }}
      import { clerkMiddleware } from '@clerk/astro/server'
 
      export const onRequest = clerkMiddleware()
      ```
-  1. By default, `clerkMiddleware()` will not protect any routes. All routes are public and you must opt-in to protection for routes. See the [`clerkMiddleware()` reference](/docs/reference/astro/clerk-middleware) to learn how to require authentication for specific routes.
+  1. By default, `clerkMiddleware()` will not protect any routes. All routes are public and you must opt-in to protection. To require a signed-in user, protect resources close to where they're used, as shown in the [guide on reading user data](/docs/guides/users/reading).
 
   ## Create a header with Clerk components
 
@@ -94,9 +84,11 @@ llm:
 
   <Include src="_partials/quickstarts/create-header-components-step" />
 
-  ```astro {{ filename: 'src/layouts/Layout.astro', mark: [2, [15, 23]], collapsible: true }}
+  ```astro {{ filename: 'src/layouts/Layout.astro', mark: [2, 4, 14, [17, 25]], collapsible: true }}
   ---
   import { Show, UserButton, SignInButton, SignUpButton } from '@clerk/astro/components'
+
+  const { title } = Astro.props
   ---
 
   <!doctype html>
@@ -106,7 +98,7 @@ llm:
       <meta name="viewport" content="width=device-width" />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       <meta name="generator" content={Astro.generator} />
-      <title>Astro Basics</title>
+      <title>{title}</title>
     </head>
     <body>
       <header>
@@ -156,28 +148,8 @@ llm:
 
   1. Visit your app's homepage at [http://localhost:4321](http://localhost:4321).
   1. Select "Sign up" on the page and authenticate to create your first user.
-</Steps>
+</ManualSteps>
 
 ## Next steps
 
-Learn more about Clerk components, route protection, and how to use Clerk's stores to access user data using the following guides.
-
-<Cards>
-  - [Prebuilt components](/docs/reference/components/overview)
-  - Learn how to quickly add authentication to your app using Clerk's suite of components.
-
-  ---
-
-  - [Protect routes using clerkMiddleware()](/docs/reference/astro/clerk-middleware)
-  - Learn how to protect specific routes from unauthenticated users.
-
-  ---
-
-  - [Protect content and read user data](/docs/astro/guides/users/reading)
-  - Learn how to use Clerk's stores and helpers to protect content and read user data in your Astro app.
-
-  ---
-
-  - [Get started with Organizations](/docs/astro/guides/organizations/getting-started)
-  - Learn how to create and manage Organizations in your Astro app.
-</Cards>
+<Include src="_partials/quickstarts/next-steps/frontend-sdks" />

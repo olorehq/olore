@@ -50,7 +50,7 @@ This is different from [SemVer] which considers all pre-1.0.0 packages to be inc
 
 ### Caret requirements
 
-**Caret requirements** are the default version requirement strategy. 
+**Caret requirements** are the default version requirement strategy.
 This version strategy allows [SemVer] compatible updates.
 They are specified as version requirements with a leading caret (`^`).
 
@@ -90,7 +90,8 @@ positioned.
 1.2.* := >=1.2.0, <1.3.0
 ```
 
-> **Note**: [crates.io] does not allow bare `*` versions.
+> [!NOTE]
+> [crates.io] does not allow bare `*` versions.
 
 ### Comparison requirements
 
@@ -149,7 +150,8 @@ pre-release update causes issues.
 [Version metadata](manifest.md#the-version-field), such as `1.0.0+21AF26D3`,
 is ignored and should not be used in version requirements.
 
-> **Recommendation:** When in doubt, use the default version requirement operator.
+> [!CAUTION]
+> When in doubt, use the default version requirement operator.
 >
 > In rare circumstances, a package with a "public dependency"
 > (re-exports the dependency or interoperates with it in its public API)
@@ -200,7 +202,8 @@ some-crate = { version = "1.0", registry = "my-registry" }
 where `my-registry` is the registry name configured in `.cargo/config.toml` file.
 See the [registries documentation] for more information.
 
-> **Note**: [crates.io] does not allow packages to be published with
+> [!NOTE]
+> [crates.io] does not allow packages to be published with
 > dependencies on code published outside of [crates.io].
 
 [registries documentation]: registries.md
@@ -216,7 +219,7 @@ regex = { git = "https://github.com/rust-lang/regex.git" }
 ```
 
 Cargo fetches the `git` repository at that location and traverses the file tree to find
-`Cargo.toml` file for the requested crate anywhere inside the `git` repository. 
+`Cargo.toml` file for the requested crate anywhere inside the `git` repository.
 For example, `regex-lite` and `regex-syntax` are members of `rust-lang/regex` repo
 and can be referred to by the repo's root URL (`https://github.com/rust-lang/regex.git`)
 regardless of where in the file tree they reside.
@@ -243,9 +246,9 @@ regex = { git = "https://github.com/rust-lang/regex.git", branch = "next" }
 
 Anything that is not a branch or a tag falls under `rev` key. This can be a commit
 hash like `rev = "4c59b707"`, or a named reference exposed by the remote
-repository such as `rev = "refs/pull/493/head"`. 
+repository such as `rev = "refs/pull/493/head"`.
 
-What references are available for the `rev` key varies by where the repo is hosted.  
+What references are available for the `rev` key varies by where the repo is hosted.
 GitHub exposes a reference to the most recent commit of every pull request as in the example above.
 Other git hosts may provide something equivalent under a different naming scheme.
 
@@ -283,7 +286,7 @@ The `version` key always implies that the package is available in a registry,
 regardless of the presence of `git` or `path` keys.
 
 The `version` key does _not_ affect which commit is used when Cargo retrieves the `git` dependency,
-but Cargo checks the version information in the dependency's `Cargo.toml` file 
+but Cargo checks the version information in the dependency's `Cargo.toml` file
 against the `version` key and raises an error if the check fails.
 
 In this example, Cargo retrieves the HEAD commit of the branch called `next` from Git and checks if the crate's version
@@ -294,10 +297,11 @@ is compatible with `version = "1.10.3"`:
 regex = { version = "1.10.3", git = "https://github.com/rust-lang/regex.git", branch = "next" }
 ```
 
-`version`, `git`, and `path` keys are considered separate locations for resolving the dependency. 
+`version`, `git`, and `path` keys are considered separate locations for resolving the dependency.
 See [Multiple locations](#multiple-locations) section below for detailed explanations.
 
-> **Note**: [crates.io] does not allow packages to be published with
+> [!NOTE]
+> [crates.io] does not allow packages to be published with
 > dependencies on code published outside of [crates.io] itself
 > ([dev-dependencies] are ignored). See the [Multiple
 > locations](#multiple-locations) section for a fallback alternative for `git`
@@ -382,7 +386,8 @@ hello_utils = { path = "hello_utils", version = "0.1.0" }
 
 The use of `path` and `version` keys together is explained in the [Multiple locations](#multiple-locations) section.
 
-> **Note**: [crates.io] does not allow packages to be published with
+> [!NOTE]
+> [crates.io] does not allow packages to be published with
 > dependencies on code outside of [crates.io], except for [dev-dependencies].
 > See the [Multiple locations](#multiple-locations) section
 > for a fallback alternative for `git` and `path` dependencies.
@@ -489,7 +494,8 @@ openssl = "1.0.1"
 native = { path = "native/i686" }
 ```
 
-> **Note**: Custom target specifications are not usable on the stable channel.
+> [!NOTE]
+> Custom target specifications are not usable on the stable channel.
 
 ## Development dependencies
 
@@ -498,7 +504,7 @@ is equivalent to `[dependencies]`:
 
 ```toml
 [dev-dependencies]
-tempdir = "0.3"
+tempfile = "3"
 ```
 
 Dev-dependencies are not used when compiling
@@ -517,7 +523,8 @@ example:
 mio = "0.0.1"
 ```
 
-> **Note**: When a package is published, only dev-dependencies that specify a
+> [!NOTE]
+> When a package is published, only dev-dependencies that specify a
 > `version` will be included in the published crate. For most use cases,
 > dev-dependencies are not needed when published, though some users (like OS
 > packagers) may want to run tests within a crate, so providing a `version` if
@@ -637,11 +644,16 @@ dependency in the workspace's [`[workspace.dependencies]`][workspace.dependencie
 After that, add it to the `[dependencies]` table with `workspace = true`.
 
 Along with the `workspace` key, dependencies can also include these keys:
-- [`optional`][optional]: Note that the`[workspace.dependencies]` table is not allowed to specify `optional`.
+- [`optional`][optional]: Note that the `[workspace.dependencies]` table is not allowed to specify `optional`.
 - [`features`][features]: These are additive with the features declared in the `[workspace.dependencies]`
+- [`default-features`][default-features] (Edition 2024 packages, requires Rust 1.99+):
+  Overrides the value set in `[workspace.dependencies]`.
+  If neither the package nor the workspace specifies `default-features`, it defaults to `true`.
+  Before Rust 1.99, or in earlier editions, package-level `default-features = false`
+  may be ignored or rejected unless the workspace dependency also disables default features.
 
-Other than `optional` and `features`, inherited dependencies cannot use any other
-dependency key (such as `version` or `default-features`).
+Other than `optional`, `features`, and `default-features`, inherited dependencies
+cannot use any other dependency key (such as `version`).
 
 Dependencies in the `[dependencies]`, `[dev-dependencies]`, `[build-dependencies]`, and
 `[target."...".dependencies]` sections support the ability to reference the
@@ -651,9 +663,11 @@ Dependencies in the `[dependencies]`, `[dev-dependencies]`, `[build-dependencies
 [package]
 name = "bar"
 version = "0.2.0"
+edition = "2024"
 
 [dependencies]
 regex = { workspace = true, features = ["unicode"] }
+serde = { workspace = true, default-features = false }
 
 [build-dependencies]
 cc.workspace = true
@@ -669,3 +683,4 @@ rand = { workspace = true, optional = true }
 [workspace.dependencies]: workspaces.md#the-dependencies-table
 [optional]: features.md#optional-dependencies
 [features]: features.md
+[default-features]: features.md#dependency-features

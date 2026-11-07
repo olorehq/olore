@@ -6,19 +6,15 @@ sidebar_order: 4
 sidebar_section: features
 ---
 
-<AgentSkillsCallout skill="sentry-nextjs-sdk" platformName="Next.js" />
+<AgentSetupCallout skill="sentry-nextjs-sdk" platformName="Next.js" />
 
 Sentry Logs let you send structured log data from your Next.js application. Unlike traditional string-based logging, structured logs include queryable attributes that help you debug issues faster by filtering on specific users, orders, or any business context you include.
 
 ## Setup
 
-<SplitLayout>
-<SplitSection>
-<SplitSectionText>
-
 ### Enable Logging
 
-Add `enableLogs: true` to your Sentry configuration in all three runtime files.
+Logs are enabled by default across all three runtime files. Initialize the SDK as usual, then use `Sentry.logger` to send logs.
 
 Logs work across all Next.js runtimes:
 
@@ -26,15 +22,11 @@ Logs work across all Next.js runtimes:
 - **Server** — Node.js server-side logging
 - **Edge** — Edge runtime logging
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript {tabTitle:Client} {mdExpandTabs} {filename:instrumentation-client.ts}
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
 });
 ```
 
@@ -43,7 +35,6 @@ import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
 });
 ```
 
@@ -52,19 +43,10 @@ import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-</SplitLayout>
-
 ## Send Logs
-
-<SplitLayout>
-<SplitSection>
-<SplitSectionText>
 
 ### Log Levels
 
@@ -79,9 +61,6 @@ Use the appropriate level for each message:
 | `error` | Failures that need attention     |
 | `fatal` | Critical failures, system down   |
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript
 import * as Sentry from "@sentry/nextjs";
 
@@ -94,24 +73,13 @@ Sentry.logger.error("Payment failed", { reason: "card_declined" });
 Sentry.logger.fatal("Database unavailable", { host: "primary" });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-</SplitLayout>
-
 ## Add Context
-
-<SplitLayout>
-<SplitSection>
-<SplitSectionText>
 
 ### Attributes
 
 Pass structured data as the second argument. These attributes become queryable columns in Sentry.
 
 Use the `fmt` helper for parameterized messages — values are extracted as searchable attributes.
-
-</SplitSectionText>
-<SplitSectionCode>
 
 ```typescript
 // Pass attributes directly
@@ -125,39 +93,26 @@ Sentry.logger.info("User signed up", {
 Sentry.logger.info(Sentry.logger.fmt`User ${userId} purchased ${productName}`);
 ```
 
-</SplitSectionCode>
-</SplitSection>
+### Shared Attributes
 
-<SplitSection>
-<SplitSectionText>
+<AvailableSince version="10.61.0" />
 
-### Scope Attributes
-
-Set attributes on a scope to automatically include them in all logs within that context.
-
-<Alert>
-
-Scopes don't propagate between Next.js runtimes. To include attributes on logs from all three runtimes, call `getIsolationScope().setAttribute()` in each (client, edge, server). Use isolation scope (not global) to prevent data leaking between concurrent requests. For server-side code, set context before any try/catch blocks so errors include it.
-
-</Alert>
+Use `Sentry.setAttribute` and `Sentry.setAttributes` to attach attributes that are automatically included in all logs (as well as your metrics). They work just like <PlatformLink to="/apis/#setTag">`Sentry.setTag` and `Sentry.setTags`</PlatformLink>, but accept `string`, `number`, and `boolean` values. To target a specific scope, use the scope APIs.
 
 See <PlatformLink to="/enriching-events/scopes/#different-kinds-of-scopes">Different Kinds of Scopes</PlatformLink> to learn more.
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript
-// setAttribute() or setAttributes()
+// Applied to all logs and metrics
+Sentry.setAttributes({
+  org_id: user.orgId,
+  user_tier: user.tier,
+});
+Sentry.setAttribute("service", "checkout");
+
 // Global scope - shared across entire app
 Sentry.getGlobalScope().setAttributes({
   service: "checkout",
   version: "2.1.0",
-});
-
-// Isolation scope - unique per request
-Sentry.getIsolationScope().setAttributes({
-  org_id: user.orgId,
-  user_tier: user.tier,
 });
 
 // Current scope - single operation
@@ -167,19 +122,11 @@ Sentry.withScope((scope) => {
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-</SplitLayout>
-
 ## Best Practices
 
 <PlatformContent includePath="logs/best-practices" />
 
 ## Integrations
-
-<SplitLayout>
-<SplitSection>
-<SplitSectionText>
 
 ### Console
 
@@ -187,13 +134,9 @@ Capture `console.log`, `console.warn`, and `console.error` calls as structured l
 
 The integration parses multiple arguments as searchable attributes.
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
   integrations: [
     Sentry.consoleLoggingIntegration({
       levels: ["log", "warn", "error"],
@@ -207,45 +150,26 @@ console.log("User action:", userId, success);
 // -> message.parameter.1: success
 ```
 
-</SplitSectionCode>
-</SplitSection>
-
-<SplitSection>
-<SplitSectionText>
-
 ### Pino
 
 Send logs from the [Pino](https://github.com/pinojs/pino) logging library to Sentry.
 
 Requires SDK version `10.18.0` or higher.
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
   integrations: [Sentry.pinoIntegration()],
 });
 ```
 
-See <PlatformLink to="/configuration/integrations/pino">Pino integration docs</PlatformLink> for configuration options.
-
-</SplitSectionCode>
-</SplitSection>
-
-<SplitSection>
-<SplitSectionText>
+See <PlatformLink to="/configuration/integrations/pino/">Pino integration docs</PlatformLink> for configuration options.
 
 ### Consola
 
 Send logs from the [Consola](https://github.com/unjs/consola) logging library to Sentry.
 
-Requires SDK version `10.12.0` or higher and `enableLogs: true` in your `Sentry.init` call.
-
-</SplitSectionText>
-<SplitSectionCode>
+Requires SDK version `10.12.0` or higher.
 
 ```typescript
 import { consola } from "consola";
@@ -257,20 +181,11 @@ const sentryReporter = Sentry.createConsolaReporter({
 consola.addReporter(sentryReporter);
 ```
 
-</SplitSectionCode>
-</SplitSection>
-
-<SplitSection>
-<SplitSectionText>
-
 ### Winston
 
 Send logs from the [Winston](https://github.com/winstonjs/winston) logging library to Sentry.
 
-Requires SDK version `9.13.0` or higher and `enableLogs: true` in your `Sentry.init` call.
-
-</SplitSectionText>
-<SplitSectionCode>
+Requires SDK version `9.13.0` or higher.
 
 ```typescript
 import winston from "winston";
@@ -285,11 +200,6 @@ const logger = winston.createLogger({
 });
 ```
 
-</SplitSectionCode>
-</SplitSection>
-
-</SplitLayout>
-
 ### Upcoming Integrations
 
 - [Node Bunyan](https://github.com/getsentry/sentry-javascript/issues/16474)
@@ -297,10 +207,6 @@ const logger = winston.createLogger({
 [Request an integration](https://github.com/getsentry/sentry-javascript/issues/new/choose)
 
 ## Filter Logs
-
-<SplitLayout>
-<SplitSection>
-<SplitSectionText>
 
 ### beforeSendLog
 
@@ -312,13 +218,9 @@ Use this to:
 - Filter noisy logs
 - Add computed attributes
 
-</SplitSectionText>
-<SplitSectionCode>
-
 ```typescript {filename:instrumentation-client.ts}
 Sentry.init({
   dsn: "___PUBLIC_DSN___",
-  enableLogs: true,
 
   beforeSendLog(log) {
     // Drop debug logs in production
@@ -335,10 +237,6 @@ Sentry.init({
   },
 });
 ```
-
-</SplitSectionCode>
-</SplitSection>
-</SplitLayout>
 
 ## Default Attributes
 
@@ -385,11 +283,14 @@ Sentry automatically adds these attributes to every log:
 }
 ```
 
+Any attributes set via `Sentry.setAttribute()` / `Sentry.setAttributes()` (or directly on a scope) are automatically included on all logs. `Sentry.setAttribute(s)` requires SDK version `10.61.0` or above. See [Shared Attributes](#shared-attributes) above for details.
+
+
 ## Troubleshooting
 
 ### Logs not appearing
 
-Make sure `enableLogs: true` is set in **all** Sentry config files:
+Logs are captured as soon as you call a `Sentry.logger.*` method or add a logging integration. Check that the runtime you're logging from initializes the SDK at all:
 
 - `instrumentation-client.ts` (client)
 - `sentry.server.config.ts` (server)

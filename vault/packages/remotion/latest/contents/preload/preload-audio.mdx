@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-preload-preload-audio.png
+image: https://remotion.media/docs/generated/articles-docs-preload-preload-audio.png
 id: preload-audio
 slug: preload-audio
 title: 'preloadAudio()'
@@ -8,11 +8,13 @@ crumb: '@remotion/preload'
 
 _This function is part of the [`@remotion/preload`](/docs/preload) package._
 
-This function preloads audio in the DOM so that when a audio tag is mounted, it can play immediately.
+This function preloads audio in the DOM so that when an HTML5 `<audio>` element is mounted, it can play immediately.
 
-While preload is not necessary for rendering, it can help with seamless playback in the [`<Player />`](/docs/player) and in the Studio.
+It only affects HTML5 audio elements such as [`<Html5Audio>`](/docs/html5-audio), not [`<Audio>` from `@remotion/media`](/docs/media/audio).
 
-An alternative to `preloadAudio()` is the [`prefetch()`](/docs/prefetch) API. See [`@remotion/preload` vs `prefetch()`](/docs/player/preloading#remotionpreload-vs-prefetch) to decide which one is better for your usecase.
+:::warning
+Using `preloadAudio()` is not recommended. Use [premounting](/docs/player/premounting) instead to give media time to load and initialize before it starts playing in the [Player](/docs/player) or [Studio](/docs/studio).
+:::
 
 ## Usage
 
@@ -70,6 +72,12 @@ const MyComp: React.FC = () => {
   return <Html5Audio src={urlToLoad} />;
 };
 ```
+
+## Compatibility
+
+<CompatibilityTable chrome firefox safari nodejs="" bun="" serverlessFunctions="" clientSideRendering={false} serverSideRendering player studio hideServers />
+
+This function preloads HTML5 audio elements. It does not preload the assets used by [`@remotion/media`](/docs/media) for client-side rendering.
 
 ## See also
 

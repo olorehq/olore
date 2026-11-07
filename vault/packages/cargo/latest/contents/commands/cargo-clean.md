@@ -54,12 +54,12 @@ the target directory.</p>
 
 
 <dt class="option-term" id="option-cargo-clean---release"><a class="option-anchor" href="#option-cargo-clean---release"><code>--release</code></a></dt>
-<dd class="option-desc"><p>Remove all artifacts in the <code>release</code> directory.</p>
+<dd class="option-desc"><p>Remove artifacts only in the <code>release</code> directory.</p>
 </dd>
 
 
 <dt class="option-term" id="option-cargo-clean---profile"><a class="option-anchor" href="#option-cargo-clean---profile"><code>--profile</code> <em>name</em></a></dt>
-<dd class="option-desc"><p>Remove all artifacts in the directory with the given profile name.</p>
+<dd class="option-desc"><p>Remove artifacts only in the directory with the given profile name.</p>
 </dd>
 
 
@@ -71,8 +71,8 @@ Defaults to <code>target</code> in the root of the workspace.</p>
 </dd>
 
 
-<dt class="option-term" id="option-cargo-clean---target"><a class="option-anchor" href="#option-cargo-clean---target"><code>--target</code> <em>triple</em></a></dt>
-<dd class="option-desc"><p>Clean for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the triple is
+<dt class="option-term" id="option-cargo-clean---target"><a class="option-anchor" href="#option-cargo-clean---target"><code>--target</code> <em>tuple</em></a></dt>
+<dd class="option-desc"><p>Clean for the specified target architecture. Flag may be specified multiple times. The default is the host architecture. The general format of the tuple is
 <code>&lt;arch&gt;&lt;sub&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</code>.</p>
 <p>Possible values:</p>
 <ul>

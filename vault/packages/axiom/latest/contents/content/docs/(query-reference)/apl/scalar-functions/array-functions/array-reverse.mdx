@@ -1,0 +1,147 @@
+---
+title: array_reverse
+description: 'This page explains how to use the array_reverse function in APL.'
+---
+
+Use the `array_reverse` function in APL to reverse the order of elements in an array. This function is useful when you need to transform data where the sequence matters, such as reversing a list of events for chronological analysis or processing lists in descending order.
+
+## Usage
+
+### Syntax
+
+```kusto
+array_reverse(array_expression)
+```
+
+### Parameters
+
+- `array_expression`: The array you want to reverse. This array must be of a dynamic type.
+
+### Returns
+
+Returns the input array with its elements in reverse order.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+Use `array_reverse` to inspect the sequence of actions in log entries, reversing the order to understand the initial steps of a user's session.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize paths = make_list(uri) by id
+| project id, reversed_paths = array_reverse(paths)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20summarize%20paths%20%3D%20make_list(uri)%20by%20id%20%7C%20project%20id%2C%20reversed_paths%20%3D%20array_reverse(paths)%22%7D)
+
+**Output**
+
+| id    | reversed_paths                        |
+|-------|---------------------------------------|
+| U1234 | ['/home', '/cart', '/product', '/']   |
+| U5678 | ['/login', '/search', '/']            |
+
+This example identifies a user’s navigation sequence in reverse, showing their entry point into the system.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+Use `array_reverse` to analyze trace data by reversing the sequence of span events for each trace, allowing you to trace back the sequence of service calls.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize spans = make_list(span_id) by trace_id
+| project trace_id, reversed_spans = array_reverse(spans)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'otel-demo-traces'%5D%20%7C%20summarize%20spans%20%3D%20make_list(span_id)%20by%20trace_id%20%7C%20project%20trace_id%2C%20reversed_spans%20%3D%20array_reverse(spans)%22%7D)
+
+**Output**
+
+| trace_id   | reversed_spans                    |
+|------------|-----------------------------------|
+| T12345     | ['S4', 'S3', 'S2', 'S1']          |
+| T67890     | ['S7', 'S6', 'S5']                |
+
+This example reveals the order in which service calls were made in a trace, but in reverse, aiding in backtracking issues.
+
+</Tab>
+<Tab title="Security logs">
+
+Apply `array_reverse` to examine security events, like login attempts or permission checks, in reverse order to identify unusual access patterns or last actions.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| where status == '403'
+| summarize blocked_uris = make_list(uri) by id
+| project id, reversed_blocked_uris = array_reverse(blocked_uris)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20where%20status%20%3D%3D%20'403'%20%7C%20summarize%20blocked_uris%20%3D%20make_list(uri)%20by%20id%20%7C%20project%20id%2C%20reversed_blocked_uris%20%3D%20array_reverse(blocked_uris)%22%7D)
+
+**Output**
+
+| id    | reversed_blocked_uris                |
+|-------|--------------------------------------|
+| U1234 | ['/admin', '/settings', '/login']    |
+| U5678 | ['/account', '/dashboard', '/login'] |
+
+This example helps identify the sequence of unauthorized access attempts by each user.
+
+</Tab>
+</Tabs>
+
+## List of related functions
+
+- [array_length](/apl/scalar-functions/array-functions/array-length): Returns the number of elements in an array.
+- [array_shift_right](/apl/scalar-functions/array-functions/array-shift-right): Shifts array elements to the right.
+- [array_shift_left](/apl/scalar-functions/array-functions/array-shift-left): Shifts array elements one position to the left, moving the first element to the last position.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk, reversing an array isn’t a built-in function, so you typically manipulate the data manually or use workarounds. In APL, `array_reverse` simplifies this process by reversing the array directly.
+
+<CodeGroup>
+
+```sql Splunk example
+# SPL doesn’t have a direct array_reverse equivalent.
+```
+
+```kusto APL equivalent
+let arr = dynamic([1, 2, 3, 4, 5]);
+print reversed_arr = array_reverse(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+Standard ANSI SQL lacks an explicit function to reverse an array; you generally need to create a custom solution. APL’s `array_reverse` makes reversing an array straightforward.
+
+<CodeGroup>
+
+```sql SQL example
+-- ANSI SQL lacks a built-in array reverse function.
+```
+
+```kusto APL equivalent
+let arr = dynamic([1, 2, 3, 4, 5]);
+print reversed_arr = array_reverse(arr)
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

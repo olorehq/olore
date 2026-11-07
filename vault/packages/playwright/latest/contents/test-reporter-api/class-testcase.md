@@ -15,7 +15,7 @@
 
 ## property: TestCase.expectedStatus
 * since: v1.10
-- type: <[TestStatus]<"passed"|"failed"|"timedOut"|"skipped"|"interrupted">>
+- type: "TestStatus" <"passed"|"failed"|"timedOut"|"skipped"|"interrupted">
 
 Expected test status.
 * Tests marked as [`method: Test.skip`] or [`method: Test.fixme`] are expected to be `'skipped'`.
@@ -44,7 +44,7 @@ Whether the test is considered running fine. Non-ok tests fail the test run with
 
 ## method: TestCase.outcome
 * since: v1.10
-- returns: <[TestOutcome]<"skipped"|"expected"|"unexpected"|"flaky">>
+- returns: "TestOutcome" <"skipped"|"expected"|"unexpected"|"flaky">
 
 Testing outcome for this test. Note that outcome is not the same as [`property: TestResult.status`]:
 * Test that is expected to fail and actually fails is `'expected'`.
@@ -72,7 +72,7 @@ Results for each run of this test.
 * since: v1.10
 - type: <[int]>
 
-The maximum number of retries given to this test in the configuration.
+The maximum number of retries given to this test in the configuration. With conditional retries, this is updated after each failed attempt to the number of retries that applies to that failure.
 
 Learn more about [test retries](../test-retries.md#retries).
 
@@ -104,6 +104,6 @@ Returns a list of titles from the root down to this test.
 
 ## property: TestCase.type
 * since: v1.44
-- returns: <[TestCaseType]<"test">>
+- returns: "TestCaseType" <"test">
 
 Returns "test". Useful for detecting test cases in [`method: Suite.entries`].

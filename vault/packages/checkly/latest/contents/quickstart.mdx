@@ -1,0 +1,228 @@
+---
+title: 'Checkly Quickstart'
+description: 'Add synthetic monitoring to your existing project in minutes. Let your AI agent set up Checkly, or follow the steps yourself.'
+sidebarTitle: 'Quickstart'
+canonical: 'https://www.checklyhq.com/docs/quickstart/'
+---
+
+import CliAuth from '/snippets/cli-auth.mdx';
+import { SetupFlow } from '/snippets/setup-flow.jsx';
+
+Add synthetic monitoring to a project you already have, in any language or framework, in minutes. You'll end up with checks running around the clock from global locations, alerting you the moment your site or API breaks. The fastest path is to let your AI coding agent set it up: `npx checkly init` installs the [Checkly CLI](/cli/overview) and [agent skills](/ai/skills), and from there your agent can generate, test, and deploy your monitoring as [Monitoring as Code](/concepts/monitoring-as-code) that lives alongside your application code.
+
+The steps below explain each phase so you understand what the agent does, and you can run them yourself if you prefer.
+
+<SetupFlow />
+
+_The recommended flow, end to end. Each phase is explained below._
+
+## Get started with Monitoring as Code
+
+<Accordion title="Prerequisites">
+- [Node.js](https://nodejs.org) `22.13+`, and npm
+- A terminal
+- (Optional) the URL of an app or API you want to monitor
+</Accordion>
+
+### Let your AI agent set it up (recommended)
+
+Run `npx checkly init` and answer a few prompts to let your agent take over:
+
+```text Terminal
+npx checkly init
+
+✔ Do you want your AI agent to set up Checkly? … yes
+✔ Install the Checkly skill for your AI coding agent? … yes
+✔ Which AI coding agent do you use? › Claude
+✔ Run npm install to install them now? … yes
+
+...
+
+✔ Copy prompt to clipboard? … yes
+
+You're ready to go!
+```
+
+`checkly init` installs the [Checkly CLI](/cli/overview) and [agent skills](/ai/skills), creates a `checkly.config.ts`, installs dependencies, and **copies a starter prompt tailored to your project to your clipboard**. Paste it into your AI agent and follow the instructions.
+
+From here, what the agent does depends on your project. It might:
+
+- Scan your project and discover monitoring targets
+- Create Checkly monitors in code
+- Test them with `npx checkly test`
+- Set up alert channels
+- Reuse your existing Playwright tests
+- Deploy your monitoring with `npx checkly deploy` after your confirmation
+
+It asks for input along the way. Open [your Checkly dashboard](https://app.checklyhq.com) to see your monitoring live.
+
+To see what each command does, or to run them yourself, follow the [steps below](#set-it-up-yourself).
+
+### Set it up yourself
+
+The steps below use the Checkly CLI directly so you can build and deploy your monitoring by hand.
+
+<Steps>
+  <Step title="Bootstrap a Checkly project">
+  Run the init command in your project directory and decline the agent setup. It scaffolds a working example you can edit.
+
+  ```text Terminal
+  npx checkly init
+
+  ✔ Do you want your AI agent to set up Checkly? … no
+  ✔ Run npm install to install them now? … yes
+  ✔ Add some demo checks to get started? … yes
+  ✔ Created __checks__/ with example checks
+
+  ...
+
+  All done!
+  ```
+
+  This scaffolds a `checkly.config.ts` file and a `__checks__` folder containing a few starter checks:
+
+  ```bash Project structure
+  |- checkly.config.ts
+  |__checks__
+      |- api.check.ts
+      |- heartbeat.check.ts
+      |- homepage.spec.ts
+      |- url.check.ts
+  ```
+
+  The `checkly.config.ts` file holds your project-wide settings, such as the default run frequency, locations, and which files contain your checks.
+  </Step>
+
+  <Step title="Log in to Checkly">
+  Log in to your Checkly account, or create a free one, right from the terminal.
+
+  <CliAuth />
+
+  This opens your browser to authenticate. Once you're logged in, you can run and deploy checks from your machine. Run `npx checkly whoami` at any time to confirm which account you're connected to.
+  </Step>
+
+  <Step title="Write your first check">
+  Checks are code. The scaffolded `__checks__/homepage.spec.ts` is a [Browser check](/detect/synthetic-monitoring/browser-checks/quickstart): a standard `@playwright/test` file that Checkly runs as a monitor. Edit it to load a page and assert on what matters:
+
+  <CodeGroup dropdown>
+  ```ts homepage.spec.ts
+  import { test, expect } from '@playwright/test'
+
+  test('homepage loads', async ({ page }) => {
+    const response = await page.goto('https://www.checklyhq.com')
+    expect(response?.status()).toBeLessThan(400)
+    await expect(page).toHaveTitle(/Checkly/)
+    await page.screenshot({ path: 'homepage.jpg' })
+  })
+  ```
+
+  ```js homepage.spec.js
+  const { test, expect } = require('@playwright/test')
+
+  test('homepage loads', async ({ page }) => {
+    const response = await page.goto('https://www.checklyhq.com')
+    expect(response?.status()).toBeLessThan(400)
+    await expect(page).toHaveTitle(/Checkly/)
+    await page.screenshot({ path: 'homepage.jpg' })
+  })
+  ```
+  </CodeGroup>
+
+  Checkly turns every `*.spec.ts` file in a `__checks__` folder into a Browser check through the `browserChecks.testMatch` pattern in your `checkly.config.ts`. To monitor an endpoint instead, edit `__checks__/api.check.ts`, which defines an [API check](/detect/synthetic-monitoring/api-checks/quickstart). For every construct and option, see the [Constructs reference](/constructs/overview).
+  </Step>
+
+  <Step title="Run your checks locally">
+  Dry-run all your checks against Checkly's global infrastructure before you deploy anything:
+
+  ```bash Terminal
+  npx checkly test
+  ```
+
+  You'll see the results in your terminal:
+
+  ```
+  Running 3 checks in eu-central-1.
+
+  __checks__/api.check.ts
+    ✔ Books API (72ms)
+  __checks__/homepage.spec.ts
+    ✔ homepage.spec.ts (3s)
+  __checks__/url.check.ts
+    ✔ Books URL (75ms)
+
+  3 passed, 3 total
+  ```
+
+  Runs are recorded as [test sessions](/detect/testing/overview) by default, with full logs, traces, and videos you can review in the [Checkly web app](https://app.checklyhq.com).
+  </Step>
+
+  <Step title="Deploy to production">
+  Deploy your checks and related resources to Checkly. From now on, they run around the clock from Checkly's global locations:
+
+  ```bash Terminal
+  npx checkly deploy
+  ```
+
+  Open [your Checkly dashboard](https://app.checklyhq.com) and you'll see your checks, ready to start monitoring.
+  </Step>
+
+  <Step title="Set up alerts">
+  Add an [alert channel](/communicate/alerts/overview) so you're notified when a check fails. Define the channels you want in a new `__checks__/alert-channels.ts` file, then attach them to your checks through the `alertChannels` defaults in your config.
+
+  <Tabs>
+    <Tab title="Email">
+    ```ts alert-channels.ts
+    import { EmailAlertChannel } from 'checkly/constructs'
+
+    export const emailChannel = new EmailAlertChannel('email-alert-channel', {
+      address: 'alerts@example.com',
+    })
+    ```
+    </Tab>
+
+    <Tab title="Phone">
+    ```ts alert-channels.ts
+    import { PhoneCallAlertChannel } from 'checkly/constructs'
+
+    export const phoneChannel = new PhoneCallAlertChannel('phone-alert-channel', {
+      name: 'On-call engineer',
+      phoneNumber: '+1234567890',
+    })
+    ```
+    </Tab>
+  </Tabs>
+
+  Import the channels you defined and set them as defaults in your `checkly.config.ts` so every check, including your Browser check, uses them. This example assumes you defined both, so import only the channels you created:
+
+  ```ts checkly.config.ts
+  import { defineConfig } from 'checkly'
+  import { emailChannel, phoneChannel } from './__checks__/alert-channels'
+
+  export default defineConfig({
+    projectName: 'My Project',
+    logicalId: 'my-project',
+    checks: {
+      // ...your existing check defaults
+      alertChannels: [emailChannel, phoneChannel],
+    },
+  })
+  ```
+
+  You can also attach `alertChannels` to an individual check or a [check group](/constructs/check-group-v2) for finer control. Run `npx checkly deploy` again to apply your alerting, and see the [alert channels overview](/communicate/alerts/channels) for every supported channel.
+  </Step>
+</Steps>
+
+<Note>
+When you're done experimenting, tear down everything this project created with `npx checkly destroy`.
+</Note>
+
+## Go deeper
+
+<Columns cols={2}>
+  <Card title="Structure a Checkly project" href="/guides/structuring-a-checkly-project">
+    Organize checks by service, share configuration, and deploy monitoring from CI.
+  </Card>
+  <Card title="Turn your Playwright tests into monitors" href="/guides/playwright-testing-to-monitoring">
+    Run the tests you already have as scheduled production monitors.
+  </Card>
+</Columns>

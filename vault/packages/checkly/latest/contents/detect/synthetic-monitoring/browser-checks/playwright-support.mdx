@@ -1,10 +1,12 @@
 ---
 title: Playwright Support in Checkly
+description: "See which Playwright features Checkly's Browser checks support, from trace files and video recordings to auto-waiting, locators, and visual regression testing."
 sidebarTitle: 'Playwright Support'
+canonical: 'https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/playwright-support/'
 ---
 
 
-Checkly natively supports running complex browser checks that mimic real user actions using Playwright, the best automation framework. Playwright and Checkly together elevate your monitoring and debugging experience by providing:
+Checkly natively supports running complex Browser checks that mimic real user actions using Playwright, the best automation framework. Playwright and Checkly together elevate your monitoring and debugging experience by providing:
 
 - Detailed trace files with step-by-step information on your test cases
 - Video recordings of browser sessions
@@ -13,6 +15,9 @@ Checkly natively supports running complex browser checks that mimic real user ac
 - Easy to use locators like `getByTitle`, `getByRole`
 - Visual regression testing
 
+<Note>
+Checkly runs Playwright tests written in JavaScript or TypeScript only. Tests written with Playwright's Python, Java, or .NET bindings can't run on Checkly.
+</Note>
 
 ## Features
 
@@ -25,10 +30,10 @@ This is the list of Playwright features that are currently supported. We will up
 | API testing              | Yes                                                                                                                       |
 | Custom fixtures          | Yes                                                                                                                       |
 | Reporters                | JSON                                                                          |
-| Typescript               | Yes                                                                                                                       |
-| Global configuration     | Yes, a subset of playwright config options.                                                                               |
+| TypeScript               | Yes                                                                                                                       |
+| Global configuration     | Yes, a subset of Playwright config options.                                                                               |
 | Visual comparisons       | Yes                                           |
-| Test retry               | No, enable Checkly's ["Double-check on failure"](/communicate/alerts/configuration) in the check settings to retry a check. |
+| Test retry               | No, configure a [retry strategy](/communicate/alerts/retries) in the check settings to retry a check. |
 | Parallelism and sharding | No                                                                                                                        |
 
 
@@ -60,7 +65,7 @@ We currently support the following configuration options. We will update this li
     | `projects`       | ❌         |
     | `webServer`      | ❌         |
 
-    For more information about the `global` options you can check playwright official documentation [Test configuration](https://playwright.dev/docs/test-configuration)
+    For more information about the `global` options you can check Playwright official documentation [Test configuration](https://playwright.dev/docs/test-configuration)
   </Tab>
   <Tab title="Use">
     | Option               | Supported |
@@ -83,7 +88,7 @@ We currently support the following configuration options. We will update this li
     | `actionTimeout`      | ✅         |
     | `navigationTimeout ` | ✅         |
     | `testIdAttribute`    | ✅         |
-    | `connectOptions`     | ✅         |
+    | `connectOptions`     | ❌         |
     | `contextOptions`     | ✅         |
     | `bypassCSP`          | ✅         |
     | `proxy`              | ✅         |
@@ -96,7 +101,7 @@ We currently support the following configuration options. We will update this li
     | `trace`              | ❌         |
     | `video`              | ❌         |
 
-    For more information about the `use` options you can check playwright official documentation [Test use options](https://playwright.dev/docs/test-use-options)
+    For more information about the `use` options you can check Playwright official documentation [Test use options](https://playwright.dev/docs/test-use-options)
   </Tab>
   <Tab title="Expect">
     | Option              | Supported |
@@ -105,14 +110,17 @@ We currently support the following configuration options. We will update this li
     | `toHaveScreenshot ` | ✅         |
     | `toMatchSnapshot `  | ✅         |
 
-    For more information about the `expect` options you can check playwright official documentation [Test Expect options](https://playwright.dev/docs/test-configuration#expect-options)
+    For more information about the `expect` options you can check Playwright official documentation [Test Expect options](https://playwright.dev/docs/test-configuration#expect-options)
   </Tab>
 </Tabs>
-
 
 <Warning>
 A check using [the Playwright Test Runner (`@playwright/test`)](https://playwright.dev/docs/intro) will currently run around 30-50% longer than [a regular Playwright check (`playwright`)](https://playwright.dev/docs/library). This is caused by the automatic creation of trace and video assets. We are aware of this and are investigating solutions. If this is significantly degrading the performance of your check, we recommend to divide longer tests into multiple checks.
 </Warning>
+
+<Note>
+When `use.extraHTTPHeaders` is missing from the Playwright configuration, Checkly adds its trace headers automatically. See how to [add Checkly's trace headers to your custom HTTP headers](/resolve/traces/overview#add-trace-headers-to-custom-http-headers).
+</Note>
 
 ## Hooks
 Playwright Test Runner offers hook functions such as `test.afterEach()` and `test.beforeEach()` that run before or after individual test cases or `test.afterAll()` and `test.beforeAll()` that run before or after all tests have started/finished.
@@ -149,7 +157,7 @@ the check is passing or failing. For scheduled check runs videos are only preser
 
 ## PageObject Model (POM)
 
-If you are structuring your test codebase following the [PageObject pattern](https://martinfowler.com/bliki/PageObject.html), you can use the [Checkly CLI](/cli) out of the box. Just make sure that:
+If you are structuring your test codebase following the [PageObject pattern](https://martinfowler.com/bliki/PageObject.html), you can use the [Checkly CLI](/cli/overview) out of the box. Just make sure that:
 
 - the folder you initialize your CLI in when building your project sits above your test spec files and their dependencies
 - your `testMatch` is pointing to the path(s) where your test specs live
@@ -283,7 +291,7 @@ test.describe('two tests', () => {
   </Tab>
 </Tabs>
 
-<Note> An executed browser check that includes multiple Playwright test cases still counts as a single check run towards your pricing plan's defined limits.</Note>
+<Note> An executed Browser check that includes multiple Playwright test cases still counts as a single check run towards your pricing plan's defined limits.</Note>
 
 
 ## Interactions & Navigations
@@ -306,7 +314,7 @@ await page.keyboard.press('Enter')
 await page.mouse.click(100, 200)
 await page.hover('.tooltip-trigger')
 
-// File operations
+// File operations (the file must exist in the check's sandbox, see Using the file system)
 await page.setInputFiles('input[type="file"]', './document.pdf')
 ```
 
@@ -407,24 +415,3 @@ await newPage.waitForLoadState()
 await expect(newPage).toHaveTitle('External Service')
 ```
 
-### Authentication and Session Management
-```typescript
-// Login once and reuse session
-test('Setup authentication', async ({ page }) => {
-  await page.goto('https://app.example.com/login')
-  await page.fill('[name="email"]', process.env.TEST_EMAIL)
-  await page.fill('[name="password"]', process.env.TEST_PASSWORD)
-  await page.click('[type="submit"]')
-
-  // Save authentication state
-  await page.context().storageState({ path: 'auth-state.json' })
-})
-
-// Use saved authentication
-test.use({ storageState: 'auth-state.json' })
-test('Authenticated user workflow', async ({ page }) => {
-  // User is already logged in
-  await page.goto('https://app.example.com/dashboard')
-  await expect(page.locator('.welcome-message')).toBeVisible()
-})
-```

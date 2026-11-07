@@ -1,0 +1,289 @@
+---
+title: Why monitoring from around the globe is critical for modern organizations
+sidebarTitle: Monitoring around the Globe
+description: A monitor next to your servers sees your servers. Your users see DNS, CDN edges, transit routes, and regions. Run the same checks from where they are, in parallel, and let the regions vote before you get paged.
+canonical: 'https://www.checklyhq.com/docs/guides/global-monitoring/'
+---
+
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
+
+By the end of this guide, you have a per-location latency profile of your site from thirteen locations, a default set of monitoring locations chosen from your users and your infrastructure, and a browser flow that retries in the region that failed and pages only when enough regions agree.
+
+<Frame>
+  <img src="/images/guides/global-monitoring/world-monitor.png" alt="A Checkly URL monitor detail page with run results from N. Virginia, Ireland, Sydney, Cape Town and other locations listed with their response times" />
+</Frame>
+
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/global-monitoring). It monitors the [Danube demo shop](https://danube-web.shop), which is hosted in AWS `us-east-1`. Every number in this guide was measured against it.
+
+<Accordion title="Let your agent do it" icon="sparkles">
+
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Set up global monitoring for this project with Checkly. Check which locations my plan allows before choosing them.
+
+Goal: measure the site from every region my users are in and alert only when regions agree.
+
+Success criteria:
+1. Create `__checks__/locations.ts` exporting the available public locations grouped by continent.
+2. Create a `UrlMonitor` for the homepage that runs every 5 minutes from every location in that file with `runParallel: true`, `degradedResponseTime: 1500`, and a 200 status assertion.
+3. Ask me which markets my users are in and which cloud regions I deploy to. Export `USERS`, `INFRA`, and one far-away `CONTROL` location from `locations.ts`, and set their combined set as `checks.locations` in `checkly.config.ts`.
+4. Create a `BrowserCheck` for my most important user flow that runs every 10 minutes from one location per continent in that set, with a same-region fixed retry strategy (2 retries, 30 seconds) and a run-based alert escalation that only fires when 50% of locations fail.
+5. Run `npx checkly test --record` and show me the session link.
+6. Show me `npx checkly deploy --preview` and wait for my confirmation before deploying.
+7. After the deploy has run for 15 minutes, use `npx checkly checks` or the Checkly MCP server to list the latest results per location, sorted by response time, and tell me the three slowest regions and the spread between fastest and slowest.
+
+Explain each file you changed and why.
+```
+
+</div>
+
+<CopyPromptButton />
+
+What follows is the reasoning behind that prompt and the same setup built step by step.
+
+</Accordion>
+
+## Why one location is not enough
+
+### One vantage point tells you about one path
+
+Most monitoring starts as a single check from a single place, usually the cloud region the app runs in. That check answers one question: can this region reach the origin? It says nothing about the path a user in Sydney takes to get there.
+
+<Frame>
+  <img src="/images/guides/global-monitoring/one-vantage-point.png" alt="Diagram: a monitor in us-east-1 reports 100% uptime against a healthy origin, while users in Australia hit a failed CDN edge, users in Brazil a congested peering link, and users in Japan a stale DNS answer" />
+</Frame>
+
+Between a browser and your code sit DNS, a CDN edge, transit networks, and a cloud region. Only the first hop is the same for everyone. The DNS answer, the edge that serves the request, the route it takes, and the region it lands in all depend on where the user is. Each of those hops can fail for one region and nobody else.
+
+<Frame>
+  <img src="/images/guides/global-monitoring/where-requests-break.png" alt="The six hops from a user's device to application code, one regional failure per hop, and two coverage bars: origin telemetry sees the last two hops, a monitor in the user's region sees all six" />
+</Frame>
+
+Origin-side telemetry, such as CPU, error rates, and traces, covers the last two hops. It cannot see a PoP returning 503s in Sydney, a WAF rule that blocks a country, or a submarine cable cut, because those requests never arrive. The only way to observe a path is to send a request down it.
+
+### Latency is distance, and you pay it four times
+
+Light in fibre covers roughly 200 kilometres per millisecond. Before the first byte of HTML arrives, a browser has already made about four round trips: DNS, TCP, TLS, and the HTTP request itself. Every one of them is priced by distance.
+
+<Frame>
+  <img src="/images/guides/global-monitoring/round-trips.png" alt="Chart of time to first byte from Ohio, Frankfurt, São Paulo, Mumbai and Sydney to an origin in Virginia, broken into DNS, TCP, TLS and HTTP round trips, ranging from about 60 milliseconds to about 800" />
+</Frame>
+
+None of that shows up in your code's timing, because the code runs after the handshakes. A monitor in the origin region reports the fast case forever. A monitor in Mumbai reports what a customer in Mumbai gets.
+
+## Build it in three steps
+
+### Step 1: Measure from everywhere
+
+Before you can choose locations, you need to know how your site behaves from each one. Put the locations in one file and treat it as configuration, not as a per-check afterthought.
+
+```ts __checks__/locations.ts
+// Thirteen of the public Checkly locations, grouped by continent. Pick from here.
+export const AMERICAS = ['us-east-1', 'us-west-2', 'ca-central-1', 'sa-east-1'] as const
+export const EUROPE = ['eu-west-1', 'eu-central-1', 'eu-north-1'] as const
+export const MIDDLE_EAST_AFRICA = ['me-south-1', 'af-south-1'] as const
+export const ASIA_PACIFIC = ['ap-south-1', 'ap-southeast-1', 'ap-northeast-1', 'ap-southeast-2'] as const
+
+export const WORLD = [...AMERICAS, ...EUROPE, ...MIDDLE_EAST_AFRICA, ...ASIA_PACIFIC]
+```
+
+A URL monitor is cheap enough to run from all of them.
+
+```ts __checks__/homepage-world.check.ts highlight={9-10}
+import { Frequency, UrlAssertionBuilder, UrlMonitor } from 'checkly/constructs'
+import { WORLD } from './locations'
+
+// The same request from thirteen places at the same moment.
+// Parallel scheduling is what turns "is it up?" into "is it up for whom?".
+new UrlMonitor('shop-homepage-world', {
+  name: 'Homepage from around the world',
+  frequency: Frequency.EVERY_5M,
+  locations: [...WORLD],
+  runParallel: true,
+  degradedResponseTime: 1500,
+  maxResponseTime: 10000,
+  request: {
+    url: 'https://danube-web.shop/',
+    followRedirects: true,
+    assertions: [UrlAssertionBuilder.statusCode().equals(200)],
+  },
+})
+```
+
+`runParallel` is the important line. Checkly schedules multi-location checks two ways. Round-robin runs one location per interval and rotates. Parallel runs every location every interval.
+
+<Frame>
+  <img src="/images/guides/global-monitoring/parallel-vs-round-robin.png" alt="Timeline comparing round-robin and parallel scheduling over 25 minutes when Sydney fails at 00:02: round-robin first fails at 00:15 and the retry elsewhere passes, parallel fails at 00:05 and the other three rows stay green" />
+</Frame>
+
+With four locations on a five-minute interval, round-robin takes up to fifteen minutes to run from the region that broke, and a retry from a different location then passes and hides it. Parallel catches it on the next tick and, because the other rows stay green, tells you it is regional. Round-robin still has a place: endpoints where the load of every location every minute is unwelcome and "up from somewhere" is the real requirement.
+
+Deploy it and give it fifteen minutes. Then read the run results by location. This is what three parallel runs against the demo shop produced:
+
+<Frame>
+  <img src="/images/guides/global-monitoring/measured-latency.png" alt="Bar chart of median response time by Checkly location for the demo shop: 22 milliseconds from N. Virginia rising to 1,079 milliseconds from Cape Town, with Oregon slower than Ireland" />
+</Frame>
+
+Two things in that chart matter more than the numbers. The spread is 49× for one static page, so a single "response time" for your site is not a real quantity. And Oregon is slower than Ireland despite sharing a continent with the origin, because routing decides the tail, not the map. You cannot reason your way to either fact. You have to measure from there.
+
+<Note>
+Bahrain shows 0 ms with a skipped marker in the same runs: the check did not execute there, so the chart leaves it out. Treat a location that is implausibly fast the same way you treat one that fails, and look at the raw result before you trust it.
+</Note>
+
+### Step 2: Choose the locations that matter
+
+Thirteen locations is right for a cheap measuring monitor, not for every check. Twenty-two [public locations](/concepts/locations) is a menu, not a target. Build a default set from three sources, and use the chart from Step 1 to check your picks.
+
+**Where your users are.** Export sessions or revenue by country from your analytics, group the countries into markets, and keep the markets that matter to revenue. Monitor from one location per market, not one per country. Users in the same market mostly share DNS resolvers, CDN edges, and transit, so one location sees the path they take.
+
+| If your users are in | Monitor from |
+|---|---|
+| US East and Canada | `us-east-1`, `ca-central-1` |
+| US West | `us-west-2` |
+| Latin America | `sa-east-1` |
+| UK and Western Europe | `eu-west-2`, `eu-central-1` |
+| Nordics | `eu-north-1` |
+| Middle East | `me-south-1` |
+| Africa | `af-south-1` |
+| India | `ap-south-1` |
+| Southeast Asia | `ap-southeast-1`, `ap-southeast-3` |
+| Japan and Korea | `ap-northeast-1`, `ap-northeast-2` |
+| Australia and New Zealand | `ap-southeast-2` |
+
+For a shop that is 60% US, 25% EU, and 10% India, that is `us-east-1`, `eu-central-1`, and `ap-south-1`.
+
+**Where you run.** Add one location in or next to every cloud region you deploy to, so a bad regional deploy shows up on its own row. Include standby regions: a failover region that serves no traffic until the day you need it is the one most likely to be broken on that day. The same shop runs in Virginia with failover in Ireland, which adds `eu-west-1` (`us-east-1` is already on the list). This only isolates a region if latency- or geo-based routing sends the monitor to its nearest region. If yours does not, point a separate check at the region's own hostname.
+
+**One control, far from both.** Pick a location with no users and no infrastructure. If only the control fails, the problem is the path, not the service. The slow end of the Step 1 chart is a good place to look: `ap-southeast-2` works for this shop and gives you the worst-case latency to design for.
+
+Name each source in `locations.ts` and make the combined set the project default, so a new check picks it up without anyone choosing locations again.
+
+```ts __checks__/locations.ts
+// The default set: where users are, where the app runs, and one control.
+export const USERS = ['us-east-1', 'eu-central-1', 'ap-south-1'] as const
+export const INFRA = ['us-east-1', 'eu-west-1'] as const
+export const CONTROL = ['ap-southeast-2'] as const
+
+export const CORE = [...new Set([...USERS, ...INFRA, ...CONTROL])]
+```
+
+```ts checkly.config.ts highlight={3,10}
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+import { CORE } from './__checks__/locations'
+
+export default defineConfig({
+  projectName: 'Docs guide: Global monitoring',
+  logicalId: 'docs-guide-global-monitoring',
+  checks: {
+    frequency: Frequency.EVERY_10M,
+    locations: CORE,
+    tags: ['global'],
+    checkMatch: '**/__checks__/**/*.check.ts',
+  },
+})
+```
+
+Checks that set their own `locations`, like the world monitor, keep them. Everything else runs from the five core locations.
+
+Start with five or six. Add a location when a real incident would have been caught sooner by it, not before. Review the set when your analytics show a new market, when you add or retire a region, and when you change CDN or DNS provider. For anything the public internet cannot reach, such as an office, a VPC, or a customer's network, a [private location](/platform/private-locations/overview) runs the same checks from inside.
+
+### Step 3: Make the regions vote
+
+The world monitor tells you where the site is slow. Checkout is the flow that should wake someone up, and it is also the most expensive check you run. That shapes how many locations it gets.
+
+In a parallel check, every location runs at every interval, and each one is a check run. Width multiplies:
+
+| Check | Locations | Frequency | Runs per hour |
+|---|---|---|---|
+| Homepage from around the world | 13 | 5 minutes | 156 |
+| Checkout from three continents | 3 | 10 minutes | 18 |
+
+Spend the width where it is cheap. URL, TCP, DNS, and ICMP monitors run in milliseconds, so run them from the core set or wider: they are what finds a regional path problem. API checks follow the core set. Browser checks and Playwright Check Suites take seconds to minutes per run, so one location per continent with meaningful revenue is enough to prove the flow works there.
+
+Even three locations create more chances for one noisy path to page someone. Two settings turn that around. Retry in the same region, so a flaky path is confirmed rather than papered over. Then alert only when a percentage of locations agree.
+
+```ts __checks__/checkout-regions.check.ts highlight={11-20}
+import { AlertEscalationBuilder, BrowserCheck, Frequency, RetryStrategyBuilder } from 'checkly/constructs'
+import * as path from 'path'
+import { AMERICAS, EUROPE, ASIA_PACIFIC } from './locations'
+
+// A full browser flow from one location per continent your users are on.
+// Retries stay in the region that failed, and an alert needs half the
+// locations to agree, so one bad path to one region is not a page.
+new BrowserCheck('shop-checkout-regions', {
+  name: 'Checkout from three continents',
+  frequency: Frequency.EVERY_10M,
+  locations: [AMERICAS[0], EUROPE[1], ASIA_PACIFIC[3]],
+  runParallel: true,
+  retryStrategy: RetryStrategyBuilder.fixedStrategy({
+    baseBackoffSeconds: 30,
+    maxRetries: 2,
+    sameRegion: true,
+  }),
+  alertEscalationPolicy: AlertEscalationBuilder.runBasedEscalation(
+    1,
+    { interval: 10, amount: 0 },
+    { enabled: true, percentage: 50 },
+  ),
+  code: {
+    entrypoint: path.join(__dirname, 'checkout.spec.ts'),
+  },
+})
+```
+
+<Frame>
+  <img src="/images/guides/global-monitoring/location-consensus.png" alt="Two scenarios with four locations and a 50% threshold: one failing region retries in place and does not page; three failing regions retry in place and page, with the one passing region pointing at CDN or routing" />
+</Frame>
+
+In scenario A one region fails, retries in place, and stays failed. That is real, it is recorded per location, and it is not a page, because 25% is under the threshold. In scenario B three regions fail and the alert fires. The region that still passes is the first clue about where to look. Retrying from a different region would have hidden scenario A entirely, which is the opposite of what you want from monitoring.
+
+Use an odd number of locations on any check with a location-based threshold, so a 50% threshold never lands on a tie. With three, two agreeing regions page and one does not.
+
+The full flow, from bundling to a passing run in every location:
+
+```bash Terminal
+npx checkly test --record
+```
+
+```text Terminal
+Running 2 checks in eu-west-1.
+
+__checks__/checkout-regions.check.ts
+  ✔ Checkout from three continents (33s)
+__checks__/homepage-world.check.ts
+  ✔ Homepage from around the world (234ms)
+
+2 passed, 2 total
+```
+
+```bash Terminal
+npx checkly deploy
+```
+
+## Verify it works
+
+With the [Checkly MCP server](/ai/mcp-server) connected, the same read is one prompt away, and it is the kind of question you will ask again after every deploy:
+
+```text Prompt
+Using Checkly, show the latest results of "Homepage from around the world" grouped by location, sorted by response time. Which three locations are slowest, and is any location above the degraded threshold?
+```
+
+Open the world monitor and sort its run results by location. The order should match the chart above within a few positions, and every location should be under the `degradedResponseTime` you set. If one is not, that is the number to design around, because it is what a real user there is waiting. Then open the checkout check: three rows, one per continent, each with its own screenshots and trace, so a failure in one is already localised before anyone looks at a log.
+
+## Next
+
+[Run checks on every deploy](/guides/sdlc-monitoring): your checks now run from the right places on a schedule. Run the same checks against each deploy, so a broken release fails before it reaches that schedule.
+
+## Reference
+
+- [Locations](/concepts/locations) and [Scheduling strategies](/concepts/scheduling)
+- [Alert escalation and location-based thresholds](/communicate/alerts/configuration#location-based-escalation)
+- [`RetryStrategyBuilder`](/constructs/retry-strategy) and [`AlertEscalationBuilder`](/constructs/alert-escalation-policy)
+- [`UrlMonitor`](/constructs/url-monitor) and [`BrowserCheck`](/constructs/browser-check)
+- [Private locations](/platform/private-locations/overview)
+- [Checkly Skills](/ai/skills) and the [MCP server tools](/ai/mcp-server/tools)

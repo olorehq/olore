@@ -1,11 +1,16 @@
 ---
 title: 'IncidentTrigger Configuration'
 description: 'Learn how to configure status page incident automation with the Checkly CLI.'
-sidebarTitle: 'Incident Trigger'
+sidebarTitle: 'Incident Trigger (deprecated)'
+canonical: 'https://www.checklyhq.com/docs/constructs/incident-trigger/'
+mode: "wide"
 ---
 
+<Warning>
+**Deprecated.** Incident triggers automate incidents on v2 (services-based) status pages. On v3 pages, use [`StatusPageV3AutomationRule`](/constructs/status-page-v3-automation-rule) instead.
+</Warning>
 <Tip>
-Learn more about Status Pages in [the Status Pages overview](/communicate/status-pages/overview).
+Learn more about status pages in [the status pages overview](/communicate/status-pages/overview).
 </Tip>
 
 Use incident triggers to automatically create and resolve an incident and notify subscribers based on the alert configuration of a monitor or check. This allows you to link synthetic monitoring failures directly to incidents on your status pages.
@@ -67,6 +72,7 @@ The status page service that this incident will be associated with. When a check
 
 **Usage:**
 
+{/* typecheck-wrap: StatusPageService */}
 ```ts highlight={6}
 const searchService = new StatusPageService("search-service", {
   name: "Search Service",

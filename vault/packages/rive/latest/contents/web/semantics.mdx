@@ -1,0 +1,147 @@
+---
+title: "Semantics"
+description: "Make your Rive graphics accessible to screen readers by enabling semantics in the Web (JS) runtime."
+---
+
+import OverviewIntro from "/snippets/runtimes/semantics/overview-intro.mdx"
+import DefinedInEditor from "/snippets/runtimes/semantics/defined-in-editor.mdx"
+
+This page covers enabling semantics in the Web (JS) runtime so your Rive graphics are accessible to screen readers. To learn what semantics are and how to add them to a graphic, see the [Semantics](/editor/accessibility/semantics) editor documentation.
+
+## Overview
+
+<OverviewIntro />
+
+At runtime, the Web (JS) runtime reads those semantics from the running state machine and builds an invisible DOM tree next to your `<canvas>`, keeping it in sync as the state machine advances.
+
+Because a `<canvas>` is opaque to assistive technologies (AT), this DOM overlay is what makes your graphic discoverable. Each semantic node becomes a real DOM element with the matching ARIA role, attributes, and keyboard handlers, positioned over the corresponding nodes in the Rive graphic.
+
+<Warning>
+  Semantics are **opt-in**. The default mode is `SemanticMode.Disabled`, so no semantic DOM is created until you enable semantics. As an experimental API, `semanticsMode` and `semanticsOptions` may change behavior without a major version bump.
+</Warning>
+
+<DefinedInEditor />
+
+## Semantics modes
+
+Semantics are controlled by the `SemanticMode` enum, which you import from your Rive package and pass as a parameter when you instantiate Rive:
+
+| Mode | Description |
+| --- | --- |
+| `SemanticMode.Disabled` | **Default.** Semantics are disabled. No semantic tree or accessibility DOM is created. |
+| `SemanticMode.Enabled` | Semantics are active. The accessibility DOM is created after load and kept up to date as the state machine advances. |
+
+## Usage
+
+Import `SemanticMode` and pass it as `semanticsMode` when you instantiate Rive.
+
+```js highlight={1,9}
+import { Rive, SemanticMode } from "@rive-app/webgl2";
+
+const rive = new Rive({
+  canvas: document.getElementById("rive-canvas"),
+  src: "login.riv",
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  autoBind: true,
+  semanticsMode: SemanticMode.Enabled,
+});
+```
+
+### Enabling semantics after load
+
+If you want to programmatically control when semantics are enabled, construct `Rive` with the default `SemanticMode.Disabled` and call the `enableSemantics()` method when the user opts in.
+
+```js highlight={12}
+const rive = new Rive({
+  canvas: document.getElementById("rive-canvas"),
+  src: "login.riv",
+  stateMachine: "State Machine 1",
+  semanticsMode: SemanticMode.Disabled,
+  autoplay: true,
+  autoBind: true,
+});
+
+accessibilityToggle.addEventListener("change", (event) => {
+  if (event.target.checked) {
+    rive.enableSemantics();
+  }
+});
+```
+
+### Labeling the graphic
+
+The semantic overlay's container element is a `role="region"` landmark. Use the `semanticsOptions.riveCanvasLabel` parameter when instantiating Rive to give it an `aria-label` that describes what the graphic is, so screen reader users know what they are entering.
+
+```js highlight={8-10}
+const rive = new Rive({
+  canvas: document.getElementById("rive-canvas"),
+  src: "login.riv",
+  stateMachine: "State Machine 1",
+  autoplay: true,
+  autoBind: true,
+  semanticsMode: SemanticMode.Enabled,
+  semanticsOptions: {
+    riveCanvasLabel: "Login Experience",
+  },
+});
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `riveCanvasLabel` | `string` | `aria-label` applied to the overlay container. Defaults to `"Rive animation"`. |
+
+## How semantics map to the DOM
+
+The runtime translates each editor semantic role into an ARIA role, and each state and trait into the matching ARIA attribute. In most cases, these are attached to `<div>` elements to standardize
+on common style/layout patterns across browsers. Text content is wrapped in an inner `<span>` to assist with AT's browsing text.
+
+| Editor role | DOM output |
+| --- | --- |
+| Button | `role="button"` |
+| Checkbox | `role="checkbox"` |
+| Switch | `role="switch"` |
+| Slider | `role="slider"` |
+| Text | Text lives as DOM text content in an inner `<span>` with a parent `<div>`. For headers, the `<div>` has `role="heading"` with `aria-level` set. |
+| Image | `role="img"` but must have a label |
+| Group / None | `role="group"` |
+| List / List item | `role="list"` / `role="listitem"` |
+| Tab / Tab list | `role="tab"` / `role="tablist"` |
+| Dialog / Alert dialog | `role="dialog"` with `aria-modal` when modal / `role="alertdialog"` always with `aria-modal` |
+| Radio group / Radio button | `role="radiogroup"` / `role="radio"` |
+
+States and traits map to ARIA attributes such as `aria-expanded`, `aria-selected`, `aria-checked`, `aria-pressed`, `aria-required`, and `aria-disabled`. An attribute is only set when the corresponding trait is present in the editor or if ARIA requires its presence, so ATs see "not applicable" rather than "false".
+
+- **Label** becomes `aria-label` (or DOM text content for text nodes).
+- **Hint** becomes a visually hidden description referenced by `aria-describedby`.
+- **Value** on a slider becomes `aria-valuenow` and `aria-valuetext`.
+- **Hidden** becomes `aria-hidden="true"`.
+- **Live Region** becomes `aria-live="polite"`.
+
+<Note>
+  An image with no label is treated as decorative and hidden from assistive technologies, since a `role="img"` element without an accessible name is a WCAG failure. Add a label in the editor to any image that carries meaning.
+</Note>
+
+## Other considerations
+
+### Tab index
+
+Interactive, focusable, and list item overlay elements are given `tabindex="-1"`, which keeps them out of the browser's sequential Tab order; the rest carry no tabindex at all. These elements remain reachable by a screen reader's cursor. Sighted keyboard users instead move through the graphic's focus nodes, so the graphic itself should show which node is focused; see [Focus](/runtimes/web/focus).
+
+### Semantic overlay positioning
+
+Rive keeps the overlay matched to the canvas as it resizes or moves. The runtime watches the canvas, its parent, and the window for changes and re-syncs the overlay, so the common cases need no extra work.
+
+The overlay container is inserted as a sibling of the `<canvas>` and positioned using the canvas's layout offsets. When possible, give the canvas's container `position: relative` so the overlay and the canvas resolve their positions against the same ancestor. If no ancestor of the canvas is positioned, the overlay resolves against the document instead, and the `<body>` margin offsets it from the canvas.
+
+## Testing semantics
+
+Turn on a screen reader and navigate through your graphic after enabling semantics at runtime:
+
+- **macOS / iOS**: VoiceOver
+- **Android**: TalkBack
+- **Windows**: Narrator or NVDA
+
+Check that each element announces a clear label, the correct role, an accurate value and state, and that navigation follows a logical order. You can also inspect the generated DOM in your browser's devtools — look for the `<div id="rive-a11y-...">` element immediately after your canvas — or use the browser's accessibility tree inspector.
+
+For a full checklist, see [Testing Semantics](/editor/accessibility/semantics#testing-semantics) in the editor documentation.

@@ -1,0 +1,130 @@
+---
+title: Axiom MCP Server
+description: "Connect AI agents to Axiom with the Model Context Protocol (MCP) Server."
+sidebarTitle: Overview
+keywords: ["MCP", "Model Context Protocol", "MCP server", "Axiom MCP", "EU MCP server", "Claude MCP", "Cursor MCP", "AI agent"]
+---
+
+import Prerequisites from "@/content/snippets/minimal-prerequisites.mdx"
+import ReplaceOrgId from "@/content/snippets/replace-org-id.mdx"
+
+Axiom MCP Server is a [Model Context Protocol](https://modelcontextprotocol.io/) server implementation that enables AI agents to query your data using Axiom Processing Language (APL).
+
+For guidance on when to use Axiom MCP Server and Axiom Skills, see [AI agents](/console/intelligence/ai-agents-overview).
+
+For the full list of tools and prompts with example queries, see [MCP tools reference](/console/intelligence/mcp-server/tools).
+
+If your agent doesn’t have an Axiom organization to work in yet, it can provision a temporary one itself and hand you a claim link later. For more information, see [Agent-created organizations](/console/intelligence/agent-created-orgs).
+
+## Current capabilities
+
+### Tools and prompts
+
+Axiom MCP Server works with AI agents that support MCP. It exposes tools for querying data, exploring datasets and metrics, and managing dashboards, monitors, and notifiers, plus prebuilt prompts for common investigations. For the full list with example queries, see [MCP tools reference](/console/intelligence/mcp-server/tools).
+
+<Prerequisites />
+
+## Setup
+
+Remote MCP with OAuth is the recommended setup for most use cases.
+
+### Choose a region
+
+Axiom hosts the MCP Server in the US and in the EU:
+
+| Region | Remote MCP URL |
+| --- | --- |
+| US | `https://mcp.axiom.co/mcp` |
+| EU | `https://mcp.eu.axiom.co/mcp` |
+
+Both MCP Servers work with every Axiom organization and use the same sign-in. Wherever your agent connects, each query runs in the [edge deployment](/reference/edge-deployments) that holds the dataset. The region determines where the MCP Server handles query results on their way to your agent:
+
+- The US MCP Server handles query results in data centers worldwide.
+- The EU MCP Server handles query results only in data centers in the EU.
+
+If your datasets are in the `EU Central 1 (AWS)` edge deployment and query results must stay in the EU, use the EU MCP Server.
+
+Both MCP Servers send sign-in and other requests that aren’t queries, such as listing datasets, fields, dashboards, and monitors, to Axiom’s US API.
+
+The setup steps on this page use the US MCP Server. To use the EU MCP Server, replace `mcp.axiom.co` with `mcp.eu.axiom.co`.
+
+### Install with add-mcp
+
+Use the [`add-mcp`](https://add-mcp.com/docs/quickstart) CLI to add Axiom MCP Server to your coding agents:
+
+```bash
+npx -y add-mcp https://mcp.axiom.co/mcp -g
+```
+
+For the EU MCP Server:
+
+```bash
+npx -y add-mcp https://mcp.eu.axiom.co/mcp -g
+```
+
+Authenticate in your browser when the agent prompts you.
+
+Optional flags:
+
+- Omit `-g` to install for the current project only.
+- Add `-y` to skip confirmation prompts.
+- Target specific agents with `-a`, for example `-a cursor -a claude-code`.
+
+### Quick setup
+
+Choose your client to get its fastest setup path, or copy a setup prompt for your AI agent.
+
+<McpQuickSetup />
+
+#### Header-based authentication
+
+If your AI agent doesn’t support browser-based OAuth (for example, Agent Builder from OpenAI), authenticate with headers:
+
+1. [Create a personal access token](/reference/tokens#personal-access-tokens-pat).
+1. [Determine organization ID](/reference/tokens#determine-organization-id).
+1. Configure your AI agent to use the [remote MCP URL](#choose-a-region) for your region, for example `https://mcp.axiom.co/mcp`.
+1. Send these headers with each request:
+
+    - **Authorization:** `Bearer PERSONAL_ACCESS_TOKEN`
+    - **x-axiom-org-id:** `ORGANIZATION_ID`
+
+    <Info>
+    Replace `PERSONAL_ACCESS_TOKEN` with the personal access token you have generated.
+
+    <ReplaceOrgId />
+    </Info>
+
+    If your agent only supports the Authorization header, pass the organization ID as a URL parameter: `https://mcp.axiom.co/mcp?org-id=ORGANIZATION_ID`
+
+## Token hygiene
+
+The remote MCP Server uses OAuth for authentication which handles credential isolation automatically. Agents never see your tokens. You can [revoke access](#revoke-access) at any time.
+
+When you use [Axiom Skills](/console/intelligence/skills), you configure API tokens directly. For detailed guidance on secure token configuration, see [Token hygiene for AI agents](/console/intelligence/ai-agents-overview#token-hygiene-for-ai-agents).
+
+## Limit query costs
+
+Query cost limits let you cap the hourly and daily query costs of an AI agent so it can query your data autonomously without creating unexpected costs. With MCP Server, the agent acts as your user account through OAuth, so set query cost limits on your roles.
+
+For more information, see [Set query cost limits for AI agents](/console/intelligence/query-cost-limits).
+
+## Use MCP Server
+
+After setup, ask your agent about your data. For example:
+
+- “List datasets.”
+- “List the fields in the dataset `logs`.”
+- “Get the most common status codes in the last 30 minutes in the dataset `logs`.”
+
+Optional: use the [prebuilt prompts](/console/intelligence/mcp-server/tools#prompts) in clients that support MCP prompts.
+
+For more examples and the full tool list, see [MCP tools reference](/console/intelligence/mcp-server/tools).
+
+## Revoke access
+
+To revoke access:
+
+1. In Axiom, go to <Icon icon="gear" iconType="solid"/> **Settings > Profile**.
+1. In the Sessions section, find the session where you authorized your AI client, and then click <Icon icon="trash" iconType="light"/> **Delete** on the right.
+
+If you connected with the `mcp-remote` library, clear the `.mcp-auth` folder. On a Mac, the default path is `~/.mcp-auth`.

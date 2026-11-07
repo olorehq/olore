@@ -3,15 +3,14 @@ title: "Caching a Rive File"
 description: ""
 ---
 
-import { Apple } from "/snippets/constants.mdx";
 import Overview from "/snippets/runtimes/caching/overview.mdx"
 
 <Overview />
 
-## Example Usage
+## Example usage
 
 <Tabs>
-    <Tab title={Apple.currentRuntimeName}>
+    <Tab title={"{{runtimeCurrentNameApple}}"}>
         To cache a Rive file, you can create a strong reference to a `File` object. This `File` can then be reused to create `Rive` objects.
 
         Artboards and state machines are unique when created using the `create` functions. This means that you can create a new `Rive` object with the same file, but with different (and unique) artboards and state machines.
@@ -48,7 +47,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
         let rive5 = try await builder.createRive(artboard: "MainArtboard", stateMachine: "Idle") // Creates a unique artboard and state machine, behaving separately from the first four Rive objects
         ```
     </Tab>
-    <Tab title={Apple.legacyRuntimeName}>
+    <Tab title={"{{runtimeLegacyNameApple}}"}>
         ```swift
         // Cache a RiveFile somewhere to cache for reuse
         let file = try! RiveFile(resource: "file", loadCdn: false)

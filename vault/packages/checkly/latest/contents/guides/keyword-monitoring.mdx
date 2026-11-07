@@ -1,280 +1,215 @@
 ---
-title: Creating a Keyword Monitor
-sidebarTitle: Keyword Monitoring
-description: With Checkly, we can use Playwright to create monitors that verify page content by checking for keywords.
-tags: Playwright
+title: Monitor the content your customers need to see
+sidebarTitle: Monitoring Changes in Content
+description: Assert that your best seller, offer banner, and call to action are on the page, in the right place, exactly once, and that error copy never is, with one Playwright test that runs every five minutes.
+canonical: 'https://www.checklyhq.com/docs/guides/keyword-monitoring/'
 ---
 
-While basic uptime monitoring tells you if your site is running, it can't tell you if your most critical content is actually visible to customers. Monitoring for keywords or content in a user-interface can help extend coverage and improve your UX and bottom-line. It can be used for several purposes:
+import GuideAgentIntro from '/snippets/guide-agent-intro.mdx'
+import { CopyPromptButton } from '/snippets/copy-prompt-button.jsx'
 
-1. Content Monitoring: Checking if specific text appears or disappears from web pages
-2. Error Detection: Looking for error messages or specific warning text
-3. Compliance: Ensuring required disclaimers or legal text remains present
-4. Competition Tracking: Monitoring competitor websites for specific product names or features
+By the end of this guide, one Playwright test checks that your shop's home page shows the content that sells, runs every five minutes from two regions, and names the exact text that went missing when it fails.
 
-With Checkly, we can use Playwright to create monitors that verify content in these situations.
+<Frame>
+  <img src="/images/guides/keyword-monitoring/check-detail.png" alt="The Shop home page content Playwright Check Suite in Checkly, passing, running every 5 minutes from N. Virginia and Ireland, managed by the Docs guide project" />
+</Frame>
 
-Picture this: you’ve got a successful eCommerce book store. Your best-sellers provide you with 100% of your operating revenue, and your long tail of products provides pure profit. Life is good. But suddenly users start reporting that they came to your shop looking for your best selling book, but couldn’t find it. You only have scattered reports, but by the time you’re investigating your sales, and your profits, are already slipping. Game over. To prevent this disaster scenario, we want to monitor our site constantly to make sure that our best-selling items are always visible, no matter how the site is updated.
+To follow along without your own app, clone the [sample project](https://github.com/checkly/docs/tree/main/samples/guides/keyword-monitoring). It monitors the home page of the [Danube demo shop](https://danube-web.shop).
 
-<Note>
-Tl;dr this is the playwright code to check for a keyword on your page
-</Note>
+<Accordion title="Let your agent do it" icon="sparkles">
 
-```jsx Playwright.test.ts
-await expect(page.getByText('KEYWORD')).toBeVisible()
+<GuideAgentIntro />
+
+<div id="ai-setup-prompt">
+
+```txt Prompt
+Monitor the content on my home page that customers need to see, with Checkly.
+
+Goal: one Playwright test that fails when key text is missing, misplaced, duplicated, or when error copy appears, running every 5 minutes from us-east-1 and eu-west-1.
+
+Success criteria:
+1. Ask me which content matters: the product or headline that must be first, any banner that must appear exactly once, the call to action and its approved wordings, and error messages that must never show.
+2. Write `tests/home-content.spec.ts`. Scope each assertion to the element it belongs to instead of matching text anywhere on the page. Use `toHaveText` for exact text, `toHaveCount(1)` for things that must appear once, a case-insensitive regular expression for approved variations, and `toHaveCount(0)` for error copy. Do not use `.first()` to silence strict mode violations.
+3. In `checkly.config.ts`, define one entry in `playwrightChecks` that runs every 5 minutes from us-east-1 and eu-west-1.
+4. Run `npx checkly test --record` and show me the session link.
+5. Stop. Show me `npx checkly deploy --preview` and wait for my confirmation before `npx checkly deploy`.
+
+Explain each file you changed and why.
 ```
 
-If you want to see a real-world example, and how to handle cases like the keyword appearing multiple times, or allowing some variations, read on!
+</div>
 
-## Creating a keyword assertion in Playwright
+<CopyPromptButton />
 
-In this example from the [Danube Web Shop](https://danube-webshop.herokuapp.com/), we need to make sure that ‘Haben oder haben’ is always visible. It’s not enough for the page to load, we need our best seller displayed at the top, so we’ll create an assertion looking for the keyword.
+The steps below are what the agent does, in the open.
 
-![An ecommerce storefront](/images/guides/images/guide-keyword-testing-1.png "A demo ecommerce storefront")
+</Accordion>
 
-The code for this page monitor reads as follows:
+## Step 1: Write down what must be on the page
 
-```tsx BestSeller.test.ts
-const { expect, test } = require('@playwright/test')
+An uptime monitor tells you the home page answered. It can't tell you the page is selling. If a deploy drops your best seller from the top spot, duplicates the offer banner, or renders an error message inside a healthy 200 response, customers notice long before a status code does.
 
-test('Check for my best seller', async ({ page }) => {
-  const response = await page.goto('https://danube-webshop.herokuapp.com/')
-  await expect(page.getByText('Haben oder haben')).toBeVisible()
-  await expect(page.getByText('9.95').first()).toBeVisible()
-  // Take a screenshot
-  await page.screenshot({ path: 'screenshot.jpg' })
-})
+Write each of those expectations as an assertion:
 
-```
+```ts tests/home-content.spec.ts
+import { test, expect } from '@playwright/test'
 
-This requires that an element somewhere on the page have the text `KEYWORD`. It makes no expectation of the element’s type, so it could be a button or a div or a span or anything else. Further, this doesn’t require that the complete text of the element be this, it could be a button that says ‘click here for Keyword’ and this test would pass. As a final note, `getByText` isn’t case sensitive so ‘Keyword,’ ‘KEYWORD’ or ‘KeYwOrD’ would all pass.
+test('home page shows the content that sells', async ({ page }) => {
+  await page.goto('https://danube-web.shop/')
 
-## Configuring a keyword monitor in Checkly
+  // The best seller is the first book on the page, not just somewhere on it.
+  const bestSeller = page.locator('.preview').first()
+  await expect(bestSeller.locator('.preview-title')).toHaveText('Haben oder haben')
 
-Next, we’ll add this code to Checkly and set it up to monitor on a set frequency. We have two options for how to set up a page monitor with Checkly:
+  // "$9.95" appears on every book. Scope the price to the best seller's card.
+  await expect(bestSeller.locator('.preview-price')).toHaveText('$9.95')
 
-1. Through the Checkly Web UI
-2. As a direct deployment with the Checkly CLI, implementing the [monitoring as code](https://www.checklyhq.com/guides/monitoring-as-code/) model
+  // The offer banner must be there exactly once.
+  await expect(page.getByText(/special offer/i)).toHaveCount(1)
 
-While more advanced operations engineers and QA teams will probably prefer the second option, this guide will show you how to do everything you need from the web UI. If you’d like to know how to configure and deploy this monitor from the command line, see our [documentation on the Checkly CLI](https://www.checklyhq.com/cli/overview).
-
-### Creating a page monitor in the Checkly web interface
-
-With our test code from the section above, we can log in to checkly and create a new browser check, select an empty template, and paste in our code.
-
-![The checkly web UI with our keyword monitoring code](/images/guides/images/guide-keyword-testing-2.png "We can create a new browser check to get all the framing code we’ll need for this keyword monitor.")
-
-Next we’ll make some decisions about how frequently we want to run our check, under ‘Settings’ for our browser check. 
-
-- Since my ecommerce shop sees dozens of sales per minute, I’m going to set the frequency of runs to every 2 minutes.
-- Since I have users in the US and Europe, I’ll select geographic locations there to run checks from.
-- The failures I’ve experienced are rarely localized to one region, so I’ll select ‘round robin’ to run one check every 2 minutes from one of my geographic locations.
-
-The final settings on frequency and locations will look like this:
-
-![the checkly web UI with multiple frequency settings](/images/guides/images/guide-keyword-testing-3.png)
-
-Next I’ll make a few settings about how we want to retry our checks. 
-
-- A fleeting failure isn’t a big issue to me. If a single page load didn’t have the best seller for some reason, that’s fine as long as it’s there when you check again a minute later, so I’ll set the retry time to ‘linear,’ retrying 2 more times with a minute between them
-- Finally I’ll use the global notification settings, and get notified via email, slack, SMS and a via a webhook to [Rootly](https://www.checklyhq.com/docs/integrations/rootly/)
-
-![The checkly web UI with multiple notification settings, described in the article text above](/images/guides/images/guide-keyword-testing-4.png)
-
-With these settings we can rest easy knowing that our users are seeing our best-selling items are visible for all visitors to our main page.
-
-### A complete code example to monitor for a keyword on your page.
-
-The code above lacks the wrapper code to be run as a Checkly monitor, here’s a bare-bones example of that code:
-
-```jsx KeywordMonitor.test.ts
-const { expect, test } = require('@playwright/test')
-
-test('Check for an element with text containing a keyword', async ({ page }) => {
-  await page.goto('https://www.mysite-url.com/')
-  await expect(page.getByText('keyword')).toBeVisible()
-  // Take a screenshot of the current page
-  await page.screenshot({ path: 'screenshot.jpg' })
-})
-```
-
-If you’re unfamiliar with [Playwright](https://www.checklyhq.com/learn/playwright/what-is-playwright/), you may be wondering why there’s no `wait` step after loading the page. Here as in so many page checks we benefit from [Playwright’s auto-waiting](https://www.checklyhq.com/learn/playwright/navigation/#waiting) feature, meaning the code will wait for the element to become visible, and then continue executing as soon as it does. This has a lot of advantages over any manual wait time, aka [‘hard waits’](https://www.checklyhq.com/learn/playwright/waits-and-timeouts/) that can make your page monitors both flakier and slower. 
-
-If you’d like to see the benefit of auto-waiting, run the script above from the Checkly editor with the ‘Run Script’ command at the bottom right, then take a look at the trace captured from this check run. The report viewer at the left is also where we can view the screenshot we captured with the last line of our check.
-
-![The checkly web UI showing a trace](/images/guides/images/guide-keyword-testing-5.png)
-
-In the trace from this check run, we’ll see individual timings for:
-
-- The page load
-- When our target text was visible
-    
-![The checkly web UI showing a trace](/images/guides/images/guide-keyword-testing-6.png "You can scan through this trace to see the initial content paint")
-    
-
-In this case, the page load took 1.8 seconds, and only 33ms later, our best seller was visible. At that point the test was passed and we were able to move forward with our check. This saves execution time compared to a manually added wait! 
-
-### Narrowing text requirements: exact matching of keywords
-
-If you want to find an element that has an *exact* match of the text we searched for, this is an option with the Playwright `getByText` method.
-
-```jsx KeywordMonitor.test.ts
-  await expect(page.getByText('Keyword!', {exact: true})).toBeVisible()
-```
-
-Now the match will require that text is the exact text of the element, e.g. `<span>Keyword!</span>` and matching the capitalization. 
-
-### Matching multiple elements with a keyword
-
-Taking a look back at our storefront:
-
-![our demo ecommerce storefront](/images/guides/images/guide-keyword-testing-7.png)
-
-A number of strings are repeated in a few places (for example the word ‘Fiction’ or ‘$9.95’) and a keyword check for those using the code above will fail. If we change the assertion to be:
-
-```tsx KeywordMonitor.test.ts
-  await expect(page.getByText('9.95')).toBeVisible()
-```
-
-We’ll get an error reading something like:
-
-`expect.toBeVisible: Error: strict mode violation: getByText('9.95') resolved to 30 elements`
-
-This isn’t a bug in Playwright, it’s just saying: ‘you wanted me to test something about an element, I found many elements that matched the parameters you gave me, so I don’t know which one you were talking about.’ For example, how would we evaluate this test if some of the matches were visible, but others weren’t? Since we can’t give a simple binary answer with multiple results, this check will fail.
-
-![The Checkly report showing a newly failing monitor](/images/guides/images/guide-keyword-testing-8.png "The Checkly report showing a newly failing monitor")
-
-In our Checkly report for this monitor, we’ll get notified if this code starts matching multiple results, the monitor’s status will go to ‘failing’ and we’ll get a descriptive report about the error message received. In this case we’ll even get a list of the multiple elements that matched our `page.getByText()`.
-
-### Solving `strict mode violation` when matching keywords
-
-Tl;dr you can suppress all these `resolved to [number] elements` by only looking at the first result:
-
-```jsx KeywordMonitor.test.ts
-  await expect(page.getByText('9.95').first()).toBeVisible()
-```
-
-When I’m writing my own page monitors with Checkly and Playwright, I often add `.first()` preemptively since I’m really only worried that the element appears *somewhere* and don’t care about multiple matches. However this may not make sense for every page monitor!
-
-On the web shop above, the page has a top banner offering a sale. We may want to check if this banner is visible by doing a keyword monitor for the text in the banner, but it wouldn’t be good if this banner was showing up twice.
-
-![a demo ecommerce store showing an error, with two visible offer banners](/images/guides/images/guide-keyword-testing-9.png "now our ecommerce store has two banners!")
-
-*If our page looks like this, something has gone wrong!*
-
-For page components like banners, CTA’s, and login buttons, it may make sense to have our monitor fail if we have multiple matches.
-
-## Checking for multiple possible keywords
-
-In another scenario, we might be checking to make sure that each page has a ‘sign up’ call to action somewhere on the page. We start with an assertion like:
-
-```jsx KeywordMonitor.test.ts
-await expect(page.getByText('sign up')).toBeVisible()
-```
-
-But it turns out the marketing team keeps rewriting the call to action on various pages, using ‘create an account’ and ‘register your account’ in various places. We’d like to monitor pages to make sure any variation is present in the page. We might spend a minute exploring something like soft assertions, but that’s really not the use case for soft assertions. No, what we want is something like the logical ‘inclusive OR’ that returns a passing check when any of these possible strings is present.
-
-### Checking for keywords with a regular expression
-
-almost any place an assertion or locator is taking a string within Playwright, a regex pattern can also be used. 
-
-```jsx KeywordMonitor.test.ts
-  await expect(page.getByText(/Sign up|register/)).toBeVisible()
-```
-
-note that by default in Playwright, patterns are run without the `/i` config, meaning they will be case sensitive. When I first went to write the example above I used `/sign up|register/` and it failed. Made more confusing since the text on the page has `text-transform:uppercase` 🤣
-
-Regex can be quite useful for detailed matching. For example, if I only want to accept correct capitalization I could write:
-
-```jsx KeywordMonitor.test.ts
-  await expect(page.getByText(/[Ss]ign [Uu]p|[Rr]egister/)).toBeVisible()
-```
-
-so that ‘sIGn uP’ would also cause the monitor to fail. Of course with regular expressions the sky is the limit for what we can match!
-
-### Checking for multiple conditions with `.or()`
-
-Since we can return multiple matches on a Playwright locator with `.or()` the other way to match on multiple keywords is with a check like this:
-
-```jsx KeywordMonitor.test.ts
-const { expect, test } = require('@playwright/test')
-
-test('visit page and take screenshot', async ({ page }) => {
-  const response = await page.goto('https://danube-webshop.herokuapp.com/')
+  // Marketing rewords the call to action. Accept any of the approved wordings.
   await expect(
-    page.getByText('sign up')
-      .or(page.getByText('register'))
+    page.getByRole('button', { name: /sign up|register|create an account/i }),
   ).toBeVisible()
 
-  // Take a screenshot
-  await page.screenshot({ path: 'screenshot.jpg' })
+  // Error copy must never reach the storefront.
+  await expect(page.getByText(/something went wrong|internal server error/i)).toHaveCount(0)
 })
 ```
 
-Note that, since we’re now explicitly giving multiple locators, it would be a good idea to add `.first()` so our test will not fail with multiple matches, and examine the first item found for further check conditions:
+Every assertion is web-first, so Playwright retries it until it passes or times out. There is no wait to tune. See [waits and timeouts](/learn/playwright/waits-and-timeouts) for why that matters.
 
-```jsx KeywordMonitor.test.ts
-  await expect(
-    page.getByText('sign up')
-      .or(page.getByText('register'))
-      .first()
-  ).toBeVisible()
+## Step 2: Match the keyword where it belongs
+
+The simplest keyword check is `page.getByText('keyword')`. It works until the keyword appears more than once. On the Danube shop, every book costs $9.95:
+
+```ts
+await expect(page.getByText('$9.95')).toBeVisible()
 ```
 
-## Putting it all together: complete Playwright and Checkly Code for Keyword Monitoring
+```text Terminal
+Error: expect(locator).toBeVisible() failed
 
-Let’s cover the case where we want to make sure that users see a ‘sign up’ button on the page we’re checking. 
-
-```jsx BestSellerOnFrontPage.test.ts
-//best-seller-on-front-page.spec.ts
-const { expect, test } = require('@playwright/test')
-
-test('Check for my best seller', async ({ page }) => {
-  const response = await page.goto('https://danube-webshop.herokuapp.com/')
-  await expect(page.getByText('Haben oder haben')).toBeVisible()
-  await expect(
-    page.getByText('sign up')
-      .or(page.getByText('register'))
-  ).toBeVisible()
-  // Take a screenshot
-  await page.screenshot({ path: 'screenshot.jpg' })
-})
+Locator: getByText('$9.95')
+Expected: visible
+Error: strict mode violation: getByText('$9.95') resolved to 30 elements:
+    1) <p data-v-159be0e2="" class="preview-price">$9.95</p> aka getByText('$').first()
+    2) <p data-v-159be0e2="" class="preview-price">$9.95</p> aka getByText('$').nth(1)
+    ...
 ```
 
-Previously we’ve used the Checkly web UI to make our settings to this page monitor, but as you monitor a production site you’ll want to consider adopting a [monitoring as code](https://www.checklyhq.com/guides/monitoring-as-code/) strategy where your page monitors *and* their configuration are stored in a code repository. In that case the same configuration described in a previous section would be stored in a config file:
+Adding `.first()` makes the error go away and the check useless: it passes as long as any book costs $9.95. The test in Step 1 answers a sharper question instead. Each choice maps to a way content breaks:
 
-```jsx BestSellerOnFrontPage.check.ts   
-//best-seller-on-front-page.check.ts
-import { BrowserCheck, Frequency, RetryStrategyBuilder } from 'checkly/constructs'
+- **Position matters:** the best seller is located as the first `.preview` card, and `toHaveText` requires its title to be exactly "Haben oder haben". A reorder fails the check, and so does a truncated or renamed title.
+- **Context matters:** the price is looked up inside the best seller's card, so it checks that book's price, not any price.
+- **Duplicates matter:** `toHaveCount(1)` fails if the offer banner disappears and also if a layout bug renders it twice.
+- **Wording varies:** the call to action is matched by role and a case-insensitive regular expression, so marketing can rename "Sign up" to "Create an account" without breaking the monitor. Regular expressions in Playwright are case-sensitive unless you add the `i` flag.
+- **Absence matters:** `toHaveCount(0)` turns error copy into a failure, even when the page itself loads fine.
 
-new BrowserCheck('best-seller-on-front-page', {
-  name: 'Best Seller on front page',
-  activated: true,
-  muted: false,
-  shouldFail: false,
-  runParallel: false,
-  runtimeId: '2024.09',
-  locations: ['us-west-2', 'us-west-1', 'eu-central-1', 'eu-south-1'],
-  tags: [],
-  sslCheckDomain: '',
-  frequency: Frequency.EVERY_2M,
-  environmentVariables: [],
-  code: {
-    entrypoint: './best-seller-on-front-page.spec.ts',
+## Step 3: Run it on a schedule
+
+Run the test as a Playwright Check Suite, or as a Browser check if you prefer one file per check. Both use the same spec file.
+
+<CodeGroup>
+
+```ts checkly.config.ts
+import { defineConfig } from 'checkly'
+import { Frequency } from 'checkly/constructs'
+
+export default defineConfig({
+  projectName: 'Docs guide: Monitor the content your customers need to see',
+  logicalId: 'docs-guide-keyword-monitoring',
+  repoUrl: 'https://github.com/checkly/docs',
+  checks: {
+    tags: ['guide-keyword-monitoring'],
+    checkMatch: '**/checks/**/*.check.ts',
+    playwrightConfigPath: './playwright.config.ts',
+    playwrightChecks: [
+      {
+        name: 'Shop home page content',
+        logicalId: 'shop-home-content',
+        frequency: Frequency.EVERY_5M,
+        locations: ['us-east-1', 'eu-west-1'],
+      },
+    ],
   },
-  retryStrategy: RetryStrategyBuilder.linearStrategy({
-    baseBackoffSeconds: 60,
-    maxRetries: 2,
-    maxDurationSeconds: 600,
-    sameRegion: true,
-  }),
+  cli: { runLocation: 'us-east-1' },
 })
 ```
 
-## Conclusion
+```ts checks/home-content.check.ts
+import { BrowserCheck, Frequency } from 'checkly/constructs'
+import * as path from 'path'
 
-Keyword-based monitoring with Checkly and Playwright is a simple but effective way to ensure critical content on your site remains accessible and visible, even as updates or unexpected issues arise. From best-sellers in an ecommerce store to key calls-to-action on landing pages, monitoring for specific text gives you peace of mind that your users are seeing the information they need.
+// The same spec file as a single Browser Check.
+new BrowserCheck('shop-home-content-browser-check', {
+  name: 'Shop home page content (Browser Check)',
+  frequency: Frequency.EVERY_5M,
+  locations: ['us-east-1', 'eu-west-1'],
+  code: {
+    entrypoint: path.join(__dirname, '../tests/home-content.spec.ts'),
+  },
+  // Runs with `npx checkly test` but is skipped by `npx checkly deploy`,
+  // so this sample deploys only the Check Suite.
+  testOnly: true,
+})
+```
 
-By configuring Checkly to run frequent, geographically distributed checks and customizing retry strategies, you can detect and respond to potential issues before they impact your business. Whether you’re working with a simple keyword, exact matches, or complex conditions using; the flexibility of Playwright ensures you can tailor your tests to fit any use case.
+</CodeGroup>
 
-Combined with a [monitoring as code](https://www.checklyhq.com/guides/monitoring-as-code/) approach, you can maintain consistency and version control over both your tests and their configurations. With these tools in place, you’re well-equipped to keep your site reliable and your customers satisfied.
+The Playwright Check Suite reads `playwright.config.ts`, which keeps a trace and a screenshot of every failure:
+
+```ts playwright.config.ts
+import { defineConfig, devices } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './tests',
+  use: {
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    ...devices['Desktop Chrome'],
+  },
+})
+```
+
+Run both on Checkly before you deploy:
+
+```bash Terminal
+npx checkly test --record
+```
+
+```text Terminal
+Running 2 checks in us-east-1.
+
+checks/home-content.check.ts
+  ✔ Shop home page content (Browser Check) (3s)
+playwright.config.ts
+  ✔ Shop home page content (7s)
+
+2 passed, 2 total
+```
+
+```bash Terminal
+npx checkly deploy
+```
+
+## Verify it works
+
+Simulate the shop reordering its best sellers. In `tests/home-content.spec.ts`, change the expected title from `'Haben oder haben'` to `'Parry Hotter'`, the second book on the page, and run `npx checkly test --record` again. Both checks fail. The result names the assertion, the text it expected, and the text it found:
+
+<Frame>
+  <img src="/images/guides/keyword-monitoring/verify-failing.png" alt="A failed Checkly test case named home page shows the content that sells, with the error expect locator toHaveText failed, expected Parry Hotter, received Haben oder haben, and the failing line of the spec highlighted" />
+</Frame>
+
+Change the title back before you deploy again.
+
+## Next
+
+[Monitor from around the globe](/guides/global-monitoring): content can differ by region when a CDN serves a stale page or a locale redirect goes wrong. Choose the locations that match where your customers are.
+
+## Reference
+
+- [Playwright Check Suites](/detect/synthetic-monitoring/playwright-checks/overview) and [Browser checks](/detect/synthetic-monitoring/browser-checks/overview)
+- [Assertions in Playwright](/learn/playwright/assertions) and [locators](/learn/playwright/selectors)
+- [`BrowserCheck`](/constructs/browser-check) and [project configuration](/constructs/project)
+- [Checkly Skills](/ai/skills)

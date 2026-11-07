@@ -21,9 +21,9 @@ turso auth api-tokens mint <api-token-name> --org <organization-slug>
 | --- | --- |
 | `--org` | Restrict the token to a specific organization. |
 | `--group` | Restrict the token to a specific group inside `--org`. Requires `--org` and at least one scope. |
-| `--scope` | Permission to grant a group-scoped token. Repeatable. |
+| `--scope` | Permission to grant the token. Repeatable. |
 | `--read-only` | Shorthand for `--scope read`. |
-| `--full-access` | Shorthand for granting every scope. |
+| `--full-access` | Shorthand for granting every group scope. Does not include the organization scopes. |
 
 ## Organization-scoped tokens
 
@@ -34,6 +34,30 @@ turso auth api-tokens mint <api-token-name> --org <organization-slug>
 ```
 
 An org-scoped token can only manage resources (groups, databases, members) within that organization. Requests to any other organization will be rejected.
+
+Without scopes, the token can do everything that you can do in the organization. Add `--scope` to limit it. The scopes then apply to every group in the organization:
+
+```bash
+# Read the audit logs, members, and billing data of the organization
+turso auth api-tokens mint audit-reader --org my-org --scope org:read
+
+# Create databases and mint SQL tokens in every group
+turso auth api-tokens mint deploy-bot --org my-org --scope db:create --scope db:mint-token
+```
+
+An org-scoped token accepts all the [group scopes](#available-scopes), and also the organization scopes that follow. A token with scopes cannot manage members or invites, change organization settings, transfer groups or databases, or mint API tokens.
+
+### Organization scopes
+
+These scopes are valid only on org-scoped tokens, that is, without `--group`:
+
+| Scope | Allows |
+| --- | --- |
+| `group:create` | Create groups in the organization. |
+| `group:delete` | Delete groups in the organization. |
+| `org:read` | Read organization data: members, invites, billing, invoices, audit logs, SSO, JWKS, and API tokens. |
+
+Reading invites and audit logs also requires that you are an admin or owner of the organization. `--full-access` does not include these scopes. To grant them, list each scope with `--scope`.
 
 ## Group-scoped tokens
 
@@ -62,7 +86,7 @@ turso auth api-tokens mint deploy-bot --org my-org --group default \
 | `read` | All GET-style routes: list/retrieve databases and groups, configuration, usage, instances, locations. |
 | `db:create` | Create databases inside the group, seed from a dump, restore. |
 | `db:delete` | Delete a database inside the group. |
-| `db:configure` | Patch database configuration, transfer, wake, add or remove instances. |
+| `db:configure` | Patch database configuration, wake, add or remove instances. |
 | `db:mint-token` | Issue a SQL-engine token or TLS client certificate for a database inside the group. |
 | `db:rotate-creds` | Rotate the database signing key, invalidating every SQL token previously issued for it. |
 | `group:configure` | Configure, rename, update, unarchive the group, or add and remove locations. |

@@ -1,8 +1,8 @@
 ---
 title: Use Neon with Cloudflare Pages
-subtitle: Connect a Neon Postgres database to your Cloudflare Pages web application
+subtitle: Connect a Lakebase Postgres database to your Cloudflare Pages web application
 summary: >-
-  Neon Postgres integration with Cloudflare Pages uses the Neon serverless
+  Lakebase Postgres integration with Cloudflare Pages uses the Neon serverless
   driver (@neondatabase/serverless) inside Cloudflare Functions to query a
   Postgres database from the edge. Use this guide when you need server-side
   database access in a Cloudflare Pages app and want to avoid traditional
@@ -11,14 +11,18 @@ summary: >-
   Wrangler, and adding DATABASE_URL as a Cloudflare environment variable for
   production deployment.
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
+
+<Admonition type="note">
+Cloudflare recommends Workers for new projects. To build a new app, see [Use Neon with Cloudflare Workers](/docs/guides/cloudflare-workers). This guide still applies to existing Cloudflare Pages projects.
+</Admonition>
 
 `Cloudflare Pages` is a modern web application hosting platform that allows you to build, deploy, and scale your web applications. While it is typically used to host static websites, you can also use it to host interactive web applications by leveraging `functions` to run server-side code. Internally, Cloudflare functions are powered by `Cloudflare Workers`, a serverless platform that allows you to run JavaScript code on Cloudflare's edge network.
 
-This guide demonstrates how to connect to a Neon Postgres database from your Cloudflare Pages application. We'll create a simple web application using `React` that tracks our reading list using the database and provides a form to add new books to it.
+This guide demonstrates how to connect to a Lakebase Postgres database from your Cloudflare Pages application. We'll create a simple web application using `React` that tracks our reading list using the database and provides a form to add new books to it.
 
-We'll use the [Neon serverless driver](/docs/serverless/serverless-driver) to connect to the database and make queries.
+We'll use the Neon serverless driver to connect to the database and make queries.
 
 ## Prerequisites
 
@@ -36,7 +40,7 @@ To follow along with this guide, you will need:
 
 2. Click the **New Project** button to create a new project.
 
-3. From your project dashboard, navigate to the **SQL Editor** from the sidebar, and run the following SQL command to create a new table in your database:
+3. In the Neon Console, navigate to **Postgres database** > **SQL Editor** from the sidebar, and run the following SQL command to create a new table in your database:
 
    ```sql
    CREATE TABLE books_to_read (
@@ -59,7 +63,7 @@ To follow along with this guide, you will need:
 
 ### Retrieve your Neon database connection string
 
-Navigate to your **Project Dashboard** in the Neon Console and click **Connect** to open the **Connect to your database** modal to find your database connection string. It should look similar to this:
+In the Neon Console, click **Connect** in the nav to open the **Connect to your branch** modal to find your database connection string. It should look similar to this:
 
 ```bash
 postgresql://alex:AbC123dEf@ep-cool-darkness-123456.us-east-2.aws.neon.tech/dbname?sslmode=require&channel_binding=require
@@ -185,7 +189,7 @@ The `App` component fetches the list of books from the server and displays them.
 
 ### Implement the serverless functions
 
-We'll use the [Neon serverless driver](/docs/serverless/serverless-driver) to connect to the Neon database, so we first need to install it as a dependency:
+We'll use the Neon serverless driver to connect to the database, so we first need to install it as a dependency:
 
 ```bash
 npm install @neondatabase/serverless
@@ -257,7 +261,7 @@ This function extracts the book details from the request body and inserts it int
 
 ### Test the application locally
 
-Our application is now ready to be tested locally. However, we first need to configure the `DATABASE_URL` environment variable to point to our Neon database.
+Our application is now ready to be tested locally. However, we first need to configure the `DATABASE_URL` environment variable to point to our database.
 
 We can do this by creating a `.dev.vars` file at the root of the project directory with the following content:
 
@@ -336,7 +340,7 @@ To make sure the environment variable is available to the serverless functions, 
 npx wrangler pages deploy dist --project-name <NAME_OF_YOUR_PROJECT>
 ```
 
-Now, visit the URL of your `Cloudflare Pages` application to interact with it. You should see the list of books fetched from the Neon database and a form to add new books.
+Now, visit the URL of your `Cloudflare Pages` application to interact with it. You should see the list of books fetched from the database and a form to add new books.
 
 ## Removing the example application and Neon project
 

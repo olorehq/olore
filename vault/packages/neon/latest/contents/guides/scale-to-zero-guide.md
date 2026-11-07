@@ -13,7 +13,7 @@ summary: >-
 redirectFrom:
   - /docs/guides/auto-suspend-guide
 enableTableOfContents: true
-updatedOn: '2026-06-05T17:20:32.620Z'
+updatedOn: '2026-10-09T10:14:56.146Z'
 ---
 
 Neon's [Scale to Zero](/docs/introduction/scale-to-zero) feature controls whether a Neon compute transitions to an idle state due to inactivity. For example, if scale to zero is enabled, your compute will transition to an idle state after it's been inactive for 5 minutes. Neon's paid plans allow you to disable scale to zero to keep your compute active. On the Scale plan, you can configure the scale to zero threshold.
@@ -42,9 +42,9 @@ Scale to zero is only available for computes up to 16 CU in size. Computes large
 
 To enable or disable scale to zero:
 
-1. In the Neon Console, select **Branches**.
-1. Select a branch.
-1. On the **Computes** tab, click **Edit**.
+1. In the Neon Console, select your branch from the project/branch menu at the top of the sidebar.
+1. Under **Postgres database**, select **Computes**.
+1. Click **Edit**.
 1. Enable or disable the scale to zero setting, and save your selection.
 
 > Disabling scale to zero is only supported on paid plans.
@@ -53,7 +53,7 @@ To enable or disable scale to zero:
 
 On the Scale plan, you can configure "Scale to zero after" time to increase or decrease the amount of time after which a compute scales to zero. For example, decreasing the time to 1 minute means that your compute will scale to zero faster (after the compute is inactive for 1 minute), or increasing the value to an hour means that your compute will only scale to zero after being inactive for an hour.
 
-Initial configuration of the scale to zero time is only supported via an [Update compute endpoint](https://api-docs.neon.tech/reference/updateprojectendpoint#/) or [Update project](https://api-docs.neon.tech/reference/updateproject#/) API call. Use the `Update compute endpoint` API to change the setting for an existing compute. The `Update project` API sets a default for all compute endpoints created in the future; it does not change the configuration of existing computes.
+Initial configuration of the scale to zero time is only supported via an [Update compute endpoint](/docs/reference/api/endpoints/update-project-endpoint) or [Update project](/docs/reference/api/projects/update-project) API call. Use the `Update compute endpoint` API to change the setting for an existing compute. The `Update project` API sets a default for all compute endpoints created in the future; it does not change the configuration of existing computes.
 
 <CodeTabs labels={["Update compute endpoint", "Update project"]}>
 
@@ -114,8 +114,8 @@ Configuring the scale to zero setting in your project's settings sets the projec
 To configure the scale to zero default for an existing project:
 
 1. Select a project in the Neon Console.
-1. On the **Dashboard**, select **Settings**.
-1. Navigate to the **Compute defaults** section.
+1. Select **Settings** in the sidebar.
+1. Select **Postgres** and find the **Compute defaults** section.
 1. Select **Modify defaults**.
 1. Enable or disable the scale to zero setting, and save your selection.
 
@@ -125,12 +125,12 @@ You can monitor scale to zero on the **Branches** page in the Neon Console. A co
 
 ![Compute status](/docs/introduction/compute_state.png)
 
-You can also view compute state transitions in the **Branches** widget on the Neon **Dashboard**.
+You can also see each branch's compute status and when it was last active on the **Branches** page.
 
-User actions that activate an idle compute include [connecting from a client such as psql](/docs/connect/query-with-psql-editor), running a query on your database from the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor), or accessing the compute via the [Neon API](https://api-docs.neon.tech/reference/getting-started-with-neon-api).
+User actions that activate an idle compute include [connecting from a client such as psql](/docs/connect/query-with-psql-editor), running a query on your database from the [Neon SQL Editor](/docs/get-started/query-with-neon-sql-editor), or accessing the compute via the [Neon API](/docs/reference/api).
 
 <Admonition type="info">
-The Neon API includes a [Start endpoint](https://api-docs.neon.tech/reference/startprojectendpoint) method for the specific purpose of activating and suspending a compute.
+The Neon API includes a [Start endpoint](/docs/reference/api/endpoints/start-project-endpoint) method for the specific purpose of activating and suspending a compute.
 </Admonition>
 
 You can try any of these methods and watch the status of your compute as it transitions from an **Idle** to an **Active** state.

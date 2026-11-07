@@ -1,5 +1,6 @@
 ---
 title: Test Dynamic Content by Mocking API Responses
+description: "Stabilize tests for dynamic pages by mocking API responses in Playwright, fixing unpredictable data like stock counts while leaving the rest of the page live."
 subTitle: Manipulating and mocking API responses
 date: 2025-03-12
 author:
@@ -12,6 +13,7 @@ weight: 125
 sidebarTitle: Mocking API Responses
 learn_playwright:
   parent: "Basics"
+canonical: 'https://www.checklyhq.com/docs/learn/playwright/mock-api/'
 ---
 
 import PlaywrightCheckSuiteTryOut from "/snippets/playwright-check-suite-tryout.mdx"
@@ -180,13 +182,13 @@ We can also stress test the UI in other ways: returning very large numbers for t
 
 ### Editing API responses and visual regression tests
 
-As we find ourselves testing correct rendering of a page under unusual conditions, this does suggest a [visual regression test](https://www.checklyhq.com/docs/browser-checks/visual-regression-snapshot-testing/) to make sure a page looks correct. Visual regression tests shouldn’t be a default mode for functionality testing, but they are part of our toolkit and editing dynamic API responses can be an effective way of making sure that a page is always rendering with identical data for visual comparison.
+As we find ourselves testing correct rendering of a page under unusual conditions, this does suggest a [visual regression test](/detect/synthetic-monitoring/browser-checks/visual-regressions) to make sure a page looks correct. Visual regression tests shouldn’t be a default mode for functionality testing, but they are part of our toolkit and editing dynamic API responses can be an effective way of making sure that a page is always rendering with identical data for visual comparison.
 
 ![Our e-commerce storefront](/images/learn/images/mock-api-06.png)
 
 *With fixed responses for dynamic page components, a visual regression test can create a golden file with a screenshot that isn’t expected to change*
 
-To go further, see our full documentation on [visual regression checks in Playwright and Checkly](https://www.checklyhq.com/docs/browser-checks/visual-regression-snapshot-testing/#visual-regression--snapshot-testing).
+To go further, see our full documentation on [visual regression checks in Playwright and Checkly](/detect/synthetic-monitoring/browser-checks/visual-regressions#visual-regression-testing).
 
 ## Results and Conclusions: Playwright Mocking and Testing in Production
 

@@ -1,7 +1,8 @@
 ---
 title: 'Environment variables and secrets'
-sidebarTitle: 'Environment Variables'
+sidebarTitle: 'Environment variables'
 description: 'Store and manage common configuration values across your checks'
+canonical: 'https://www.checklyhq.com/docs/platform/variables/'
 ---
 
 import GenericRuntimeVariablesTable from '/snippets/generic-runtime-variables-table.mdx';
@@ -15,13 +16,13 @@ There are two ways to store configuration information in Checkly: Variables and 
 * **Secrets** allow you to store sensitive data for use in checks. Once saved, secrets are never shown in the UI or in logs and cannot be accessed via the CLI or API.
 
 <Note>
-Secrets are fully supported starting with runtime version 2024.09 and later. For [Private Locations](/platform/private-locations/overview/), secrets are available in agent version `3.3.4` and later, and for the [CLI](/cli/overview/), in version `4.9.0` and later.
+Secrets are fully supported starting with runtime version 2024.09 and later. For [private locations](/platform/private-locations/overview/), secrets are available in agent version `3.3.4` and later, and for the [CLI](/cli/overview/), in version `4.9.0` and later.
 </Note>
 
 <Warning>
-To ensure the integrity of Playwright artifacts (traces, videos and screenshots), the following are not scrubbed, even when saved as secrets: The characters `/` and `*` and the full or partial match of `/artifact/`, `https://`, `http://`, `*********`, and `123`.
+To ensure the integrity of Playwright artifacts (traces, videos and screenshots), the following are not scrubbed, even when saved as secrets: The characters `/` and `*` and the full or partial match of `/artifact/`, `https://`, `http://`, `*********`, and `123`. The same exceptions apply to API check results.
 Values of the keys `sha1`, `_sha1`, `pageref`, `downloadsPath`, `tracesDir`, `pageId` and any string that ends with `sha1` will not be scrubbed from the Playwright trace, but will be scrubbed from the general check result.
-Numbers are not scrubbed from the Playwright trace, but from the general check result.
+On runtime 2025.04 and later, a secret that appears as a number or as a field name in the Playwright trace is scrubbed. A secret written in a different letter case, for example upper-cased, is not scrubbed.
 </Warning>
 
 <Tip>
@@ -85,12 +86,12 @@ be overridden at the check level.
 
 How variables are accessed depends on where you're accessing them from:
 
-* In [Browser](/detect/synthetic-monitoring/browser-checks/mac-structure#environment-variables), [Multistep](/detect/synthetic-monitoring/multistep-checks/overview#built-in-runtime-variables), and [API Check setup/teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown#built-in-variables), use the standard Node.js `process.env.VARIABLE_NAME` notation.
-* In [API Check requests](/detect/synthetic-monitoring/api-checks/configuration#accessing-environment-variables), use Handlebars/Moustache templating delimiters, i.e. `{{VARIABLE_NAME}}`
-* In [webhook alert channels](/integrations/alerts/webhooks#template-variables), also use the Handlebar/Moustache format, i.e. `{{VARIABLE_NAME}}`
+* In [Browser](/detect/synthetic-monitoring/browser-checks/mac-structure#environment-variables), [Multistep](/detect/synthetic-monitoring/multistep-checks/overview#built-in-runtime-variables), and [API check setup/teardown scripts](/detect/synthetic-monitoring/api-checks/setup-and-teardown#built-in-variables), use the standard Node.js `process.env.VARIABLE_NAME` notation.
+* In [API check requests](/detect/synthetic-monitoring/api-checks/configuration#accessing-environment-variables), use Handlebars/Moustache templating delimiters, i.e. `{{VARIABLE_NAME}}`
+* In [webhook alert channels](/integrations/alerts/webhooks#using-variables), also use the Handlebar/Moustache format, i.e. `{{VARIABLE_NAME}}`
 
 <Note>
-  Handlebar (double brackets) variables will be URI encoded. To avoid encoding, you can access your environment variables with triple brackets, i.e. `{{{VARIABLE_NAME}}}`.
+  Handlebar (double brackets) variables are HTML-escaped: `&`, `<`, `>`, `"`, `'`, `` ` `` and `=` are replaced with HTML entities, for example `&` becomes `&amp;`. To insert the raw value, access your environment variables with triple brackets, i.e. `{{{VARIABLE_NAME}}}`.
 </Note>
 
 ## Playwright Check Suite Variables

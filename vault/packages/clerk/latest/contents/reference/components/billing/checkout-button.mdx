@@ -1,7 +1,7 @@
 ---
 title: "`<CheckoutButton />` component"
 description: "Clerk's <CheckoutButton /> component renders a button that opens the checkout drawer for Subscription Plans."
-sdk: react, nextjs, vue
+sdk: react, nextjs, tanstack-react-start, vue
 ---
 
 ![The \<CheckoutButton /> component renders a button that opens the checkout drawer.](/docs/images/ui-components/checkout-button.svg)
@@ -36,17 +36,17 @@ The `<CheckoutButton />` component renders a button that opens the checkout draw
 </>
 ```
 
-`<CheckoutButton />` preserves any click handlers attached to custom button elements, while maintaining the checkout drawer functionality.
+`<CheckoutButton />` preserves any click handlers attached to custom button elements, while maintaining the checkout drawer functionality. The same props apply when using a custom button: `planId` is required, and optional props, such as `planPeriod`, can still be provided.
 
 ```tsx
-<CheckoutButton planId="cplan_xxx">
+<CheckoutButton planId="cplan_xxx" planPeriod="month">
   <button onClick={() => console.log('Starting checkout')} className="custom-button">
     Start Subscription
   </button>
 </CheckoutButton>
 ```
 
-### Examples
+### Example
 
 <If sdk="nextjs">
   ```tsx {{ filename: 'app/pricing/page.tsx' }}
@@ -136,6 +136,53 @@ The `<CheckoutButton />` component renders a button that opens the checkout draw
   ```
 </If>
 
+<If sdk="tanstack-react-start">
+  ```tsx {{ filename: 'src/routes/pricing.tsx' }}
+  import { Show } from '@clerk/tanstack-react-start'
+  import { CheckoutButton } from '@clerk/tanstack-react-start/experimental'
+  import { createFileRoute } from '@tanstack/react-router'
+
+  export const Route = createFileRoute('/pricing')({
+    component: PricingPage,
+  })
+
+  function PricingPage() {
+    return (
+      <Show when="signed-in">
+        {/* Basic usage */}
+        <CheckoutButton planId="cplan_xxx" planPeriod="month" />
+
+        {/* Customizes the appearance of the checkout drawer */}
+        <CheckoutButton
+          planId="cplan_xxx"
+          planPeriod="annual"
+          checkoutProps={{
+            appearance: {
+              /* custom theme */
+            },
+          }}
+        />
+
+        {/* Custom button */}
+        <CheckoutButton
+          planId="cplan_xxx"
+          planPeriod="annual"
+          onSubscriptionComplete={() => {
+            console.log('Subscription completed!')
+          }}
+          newSubscriptionRedirectUrl="/dashboard"
+        >
+          <button className="custom-button">
+            <Icon name="credit-card" />
+            Subscribe Now - $9.99/month
+          </button>
+        </CheckoutButton>
+      </Show>
+    )
+  }
+  ```
+</If>
+
 <If sdk="vue">
   ```vue {{ filename: 'pricing.vue' }}
   <script setup lang="ts">
@@ -180,6 +227,46 @@ The `<CheckoutButton />` component renders a button that opens the checkout draw
 ## Properties
 
 <Properties>
+  - `checkoutProps?`
+  - `{ appearance?: Appearance; portalId?: string; portalRoot?: HTMLElement | null; onClose?: () => void }`
+
+  Options for the checkout drawer. Accepts the following properties:
+
+  - [`appearance`](/docs/guides/customizing-clerk/appearance-prop/overview): an object used to style your components. For example: `<CheckoutButton checkoutProps={{ appearance: { ... } }} />`.
+  - `portalId`: the ID of the portal element used to render the checkout drawer.
+  - `portalRoot`: the HTML element in which to render the checkout drawer.
+  - `onClose`: a callback function that is called when the checkout drawer closes.
+
+  ---
+
+  - `children?`
+  - `React.ReactNode`
+
+  A custom button element. If not provided, defaults to a button with the text "Checkout".
+
+  ---
+
+  - `for?`
+  - `'user' | 'organization'`
+
+  Determines whether the Subscription is for the current user or Organization. Defaults to `'user'`.
+
+  ---
+
+  - `newSubscriptionRedirectUrl?`
+  - `string`
+
+  The URL to redirect to after a successful Subscription.
+
+  ---
+
+  - `onSubscriptionComplete?`
+  - `() => void`
+
+  A callback function that is called when a Subscription is successfully completed.
+
+  ---
+
   - `planId`
   - `string`
 
@@ -194,38 +281,15 @@ The `<CheckoutButton />` component renders a button that opens the checkout draw
 
   ---
 
-  - `for?`
-  - `'user' | 'organization'`
-
-  Determines whether the Subscription is for the current user or Organization. Defaults to `'user'`.
-
-  ---
-
-  - `children?`
-  - `React.ReactNode`
-
-  A custom button element. If not provided, defaults to a button with the text "Checkout".
-
-  ---
-
-  - `onSubscriptionComplete?`
-  - `() => void`
-
-  A callback function that is called when a Subscription is successfully completed.
-
-  ---
-
-  - `newSubscriptionRedirectUrl?`
+  - `priceId?`
   - `string`
 
-  The URL to redirect to after a successful Subscription.
+  The ID of the specific price to check out for when it isn't the Plan's current default price.
 
   ---
 
-  - `checkoutProps?`
-  - `{ appearance: Appearance }`
+  - `seatsQuantity?`
+  - `number`
 
-  Options for the checkout drawer. Accepts the following properties:
-
-  - [`appearance`](/docs/guides/customizing-clerk/appearance-prop/overview): an object used to style your components. For example: `<CheckoutButton checkoutProps={{ appearance: { ... } }} />`.
+  The total number of seats to check out for.
 </Properties>

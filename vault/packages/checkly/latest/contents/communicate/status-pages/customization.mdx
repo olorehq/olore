@@ -1,52 +1,70 @@
 ---
-title: "Status Page Customization"
-description: "Add a custom domain and look & feel to your Status Page."
+title: "Status page customization"
+description: "Change the logo, favicon, theme, colors, header and footer links, and search settings to match your brand."
 sidebarTitle: "Customization"
+canonical: 'https://www.checklyhq.com/docs/communicate/status-pages/customization/'
 ---
 
-## Custom domain
-
-<Note>
-  Custom domains are available on Communicate Starter, Team and Enterprise
-  plans. [View pricing](https://checklyhq.com/pricing)
-</Note>
-
-You can host your Status Page on your own domain. To set it up, add the domain in Checkly and create the required DNS records with your DNS provider.
-
-<Steps>
-<Step title="Add a custom domain to your Status Page">
-![Custom domain configuration](/images/docs/images/status-pages/status-pages-custom-domain-1.png)
-</Step>
-
-<Step title="Create a CNAME record that points to `custom-slug.checkly-status-page.com`">
-  Create a CNAME record with your DNS provider and point it to
-  `custom-domain.checkly-status-page.com` For example, in Cloudflare, the
-  configuration looks like this: ![Custom domain CNAME
-  configuration](/images/docs/images/status-pages/status-pages-custom-domain-2.png)
-  If your provider is Cloudflare, you must disable the proxy on the CNAME, it
-  should always be set to DNS only.
-</Step>
-
-<Step title="Add TXT record(s) to perform validation and prove domain ownership">
-After you've added your custom domain and saved the page, one or more TXT records will be displayed depending on the domain you're using. 
-![Example custom domain TXT configuration](/images/docs/images/status-pages/status-pages-custom-domain-3.png)
-
-Update your DNS settings to match the TXT record(s) displayed on your Status Page to prove the ownership of the domain.
-
-<Note>
-Search engines require this verification to index and list your Status Page.
-</Note>
-</Step>
-</Steps>
-
-## Customize your Status Page to match your brand identity
-
-- Upload your company logo and the link it should open
-- Upload a custom favicon
-- Choose the default theme: auto (system), light or dark
-- Customize the color theme to match your brand
+You can change how your status page looks and match it to your branding. Add your logo and favicon, pick a light or d
+ark theme, and override the colors used across the page.
 
 <Note>
   Theme customization is available on Communicate Team and Enterprise plans.
   [View pricing](https://checklyhq.com/pricing)
 </Note>
+
+## Logo and favicon
+
+Put your own brand front and center. Your logo sits at the top of every page view, and your favicon makes the page easy to spot in a crowded tab bar. Both are set by URL, so host the image files somewhere publicly reachable first.
+
+- **Logo**: your primary brand mark, displayed in the page header. Use a PNG, JPG, or SVG with a roughly 5:3 aspect ratio for the best fit.
+- **Dark mode logo**: an alternative version shown when the page is in dark mode, so your logo looks sharp on both light and dark backgrounds.
+- **Logo redirects user to**: where visitors go when they click your logo. Point it at your website to keep them close to your product.
+- **Favicon**: the icon in the browser tab and bookmarks. Use a PNG, ICO, or SVG.
+
+## Theme
+
+Choose the look that suits your brand, or let each visitor decide:
+
+- **Auto**: matches the visitor's system preference, so the page always feels native.
+- **Light**: a clean, bright layout for every visitor.
+- **Dark**: a darker layout for every visitor.
+
+## Custom theme colors
+
+Go beyond a logo and make the whole page yours. Every major surface and text color can be overridden to match your
+brand guidelines, with separate palettes for light and dark mode under the **Light** and **Dark** tabs.
+
+![Status page customizaztion example](/images/docs/images/status-pages-v3/status_page_v3_custom_1.jpg)
+
+| Color | Where it's used |
+|-------|-----------------|
+| Body background | Background of the page body |
+| Header background | Background of the page header |
+| Header font | Main header text, such as your company name |
+| Title font | Titles on the page |
+| Body font | Regular body text |
+| Body font (muted) | Secondary text, such as timestamps |
+| Navigation font | Navigation links in the header |
+| Link font | Links within the page content |
+| Card background | Component and incident cards |
+| Border | Divider below the header and card borders |
+| Primary button background | Primary buttons, such as **Get updates** |
+| Primary button font | Text on primary buttons |
+
+## Header and footer
+
+In the **Header & Footer** settings of your status page:
+
+- **Support link**: shown as a "Contact Support" link in the page header. Use a URL or a `mailto:` address.
+- **Footer text**: shown at the bottom of every page, for example a legal notice about your company.
+- **Privacy policy link** and **Terms of service link**: shown as links in the page footer.
+
+## SEO and analytics
+
+In the **SEO & analytics** settings of your status page:
+
+- **Google Analytics tag**: your Google Analytics measurement ID, such as `G-XXXXXXXXXX`. Checkly adds the tracking script to your status page.
+- **Allow search engines to index this page**: on by default. When you turn it off, the page asks search engines not to list it (with a `noindex` robots meta tag). This doesn't restrict access. To keep a page private, use [password protection](/communicate/status-pages/password-protection).
+
+To set these options in code, see the [StatusPageV3 construct](/constructs/status-page-v3).

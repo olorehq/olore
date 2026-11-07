@@ -3,7 +3,14 @@ id: createTRPCQueryUtils
 title: createTRPCQueryUtils
 sidebar_label: createTRPCQueryUtils()
 slug: /client/react/createTRPCQueryUtils
+section: "Client Usage"
+parent: "client/react"
+order: 61
 ---
+
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
 
 The use case for `createTRPCQueryUtils` is when you need to use the helpers outside of a React Component, for example in `react-router`'s loaders.
 
@@ -104,4 +111,4 @@ If you were using Remix Run or SSR you wouldn't re-use the same `queryClient` fo
 
 Much like `useUtils`, `createTRPCQueryUtils` gives you access to same set of helpers, including `queryOptions` and `infiniteQueryOptions`. The only difference is that you need to pass in the `queryClient` and `client` objects.
 
-You can see them on the [useUtils](./useUtils.mdx#helpers)-page.
+You can see them on the [useUtils](./useUtils.md#helpers)-page.

@@ -1,6 +1,6 @@
 ---
 title: 'Preloading WASM'
-description: ''
+description: 'Optimize loading Rive animations on page load'
 ---
 
 import Overview from '/snippets/runtimes/preloading-wasm/overview.mdx'
@@ -8,25 +8,65 @@ import Thanks from '/snippets/runtimes/preloading-wasm/thanks.mdx'
 
 <Overview />
 
-If you're using the base `@rive-app/canvas` or `@rive-app/webgl2` (or any plain JS-variant runtime), import the WASM resource into your app, as well as the `RuntimeLoader` API:
+A few notes if you do decide to host the WASM file yourself:
+  1. The `rive.wasm` file version must match the `@rive-app` package version in your package.json — they are built as a pair, and a mismatch can break rendering/functionality at runtime. Put the version in the path or filename (e.g. `https://unpkg.com/@rive-app/webgl2@{{versionWeb}}/rive.wasm"`) and update the hosted file in the same change as any dependency bump.
+  2. The `<link rel="preload">` href and the URL passed to `setWasmUrl()` must be exactly the same, or the preloaded bytes are discarded and the file downloads twice. See example below.
+  3. Serve the file with the `application/wasm` MIME type — anything else drops you off the streaming-compilation path and onto a slower fallback.
+  4. If the file is on a different origin than the page (e.g. a CDN subdomain), also send `Access-Control-Allow-Origin` for your page origin.
+  5. Serve the versioned file with `Cache-Control: public, max-age=31536000, immutable`, and confirm your CDN applies brotli/gzip to .wasm (some only compress text types by default).
 
-```javascript
-import riveWASMResource from '@rive-app/canvas/rive.wasm';
-import { Rive, RuntimeLoader } from '@rive-app/canvas';
+## Initializing Rive on page load
 
-RuntimeLoader.setWasmUrl(riveWASMResource);
-...
-const riveInstance = new Rive({
-  src: 'foo.riv',
-  ...
-});
+If you need Rive to be ready to render your graphics immediately on page load (i.e. hero animations), we recommend preloading both the `rive.wasm` file and the actual `.riv` file to
+begin downloading of the necessary resources up front. On the JS side, you can use the `RuntimeLoader` API to begin downloading and compiling the WASM early on before instancing the Rive graphic on the page.
+One other optimization is to fetch the `.riv` file and get the bytes as an ArrayBuffer early so you can pass it to the Rive instance.
+
+```html
+<!-- index.html -->
+<!-- Open the connection to the wasm CDN as early as possible -->
+<!-- If you are hosting the WASM file yourself, set this to your CDN URL instead -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+
+<!-- Preload the exact versioned wasm URL the runtime will request.
+     The version MUST match the installed @rive-app package version, or the
+     runtime re-fetches the resource -->
+<!-- If you are hosting the WASM file yourself, set this to the rive.wasm location on your server -->
+<link
+  rel="preload"
+  as="fetch"
+  crossorigin
+  href="https://unpkg.com/@rive-app/webgl2@{{versionWeb}}/rive.wasm"
+/>
+
+<!-- Preload the main hero .riv file too -->
+<link rel="preload" as="fetch" crossorigin href="/assets/hero.riv" />
 ```
 
-The `RuntimeLoader` is a singleton that manages loading in the WASM file behind the scenes when loading in the `Rive` instance. By calling the `setWasmUrl` API, you can load in WASM for the Rive runtime with the data URI from the direct import of the WASM file. Run this API on any page that has a Rive animation to load.
 
-<Note>
- You may need to add configuration into your build tool to import WASM files and inline it as a data URI. See the [original blog post](https://dev.to/alex_barashkov/optimization-techniques-for-rive-animations-in-react-apps-1a8p) that inspired us to add these to docs for some guidance here
-</Note>
+```javascript
+import { Rive, RuntimeLoader } from '@rive-app/canvas';
+
+// (Optional) Only add this if you are hosting the WASM file on your own servers
+// const WASM_URL = "https://cdn.example.com/assets/rive-{{versionWeb}}.wasm";
+// RuntimeLoader.setWasmUrl(WASM_URL);
+
+// Run this API as early as possible on page load to begin compiling the rive.wasm file
+RuntimeLoader.awaitInstance().catch(() => {});
+
+const heroFetch = fetch("/assets/hero.riv").then((r) => r.arrayBuffer());
+
+// ... later, when mounting:
+async function mountHero(canvas) {
+  const riveInstance = new Rive({
+    canvas,
+    buffer: await heroFetch,
+    stateMachine: "State Machine 1",
+    autoBind: true,
+    autoplay: true,
+    // ... other configuration
+  });
+}
+```
 
 <Thanks />
 

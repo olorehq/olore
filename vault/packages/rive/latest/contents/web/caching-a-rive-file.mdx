@@ -8,7 +8,7 @@ import Overview from "/snippets/runtimes/caching/overview.mdx"
 
 <Overview />
 
-## Example Usage
+## Example usage
 
 <Demos examples={["cachingARiveFile"]} runtime="web" />
 
@@ -36,7 +36,7 @@ if (!canvas) return;
 const riveInstance = new rive.Rive({
     riveFile: loadedRiveFile,
     // Be sure to specify the correct state machine (or animation) name
-    stateMachines: "Motion", // Name of the State Machine to play
+    stateMachine: "Motion", // Name of the State Machine to play
     canvas: canvas,
     layout: new rive.Layout({
     fit: rive.Fit.FitWidth,
@@ -78,3 +78,7 @@ window.addEventListener(
 false
 );
 ```
+
+<Note>
+  A `RiveFile` created with `enableGPUCanvas: true` can't be shared across Rive instances the way this example shares one — GPU Canvas binds a file to a single `<canvas>`, so the first Rive instance claims it. Construct one `RiveFile` per instance. While sharing the `RiveFile` in this scenario won't fail, the runtime prints a warning and re-imports the file for each additional instance, which means the `RiveFile` you passed in goes unused. See [GPU Canvas](/runtimes/web/gpu-canvas) for more details.
+</Note>

@@ -1,0 +1,145 @@
+---
+title: make_set
+description: 'This page explains how to use the make_set aggregation function in APL.'
+---
+
+The `make_set` aggregation in APL (Axiom Processing Language) is used to collect unique values from a specific column into an array. It’s useful when you want to reduce your data by grouping it and then retrieving all unique values for each group. This aggregation is valuable for tasks such as grouping logs, traces, or events by a common attribute and retrieving the unique values of a specific field for further analysis.
+
+You can use `make_set` when you need to collect non-repeating values across rows within a group, such as finding all the unique HTTP methods in web server logs or unique trace IDs in telemetry data.
+
+## Usage
+
+### Syntax
+
+```kusto
+make_set(column, [limit])
+```
+
+### Parameters
+
+- `column`: The column from which unique values are aggregated.
+- `limit`: (Optional) The maximum number of unique values to return. Defaults to 128 if not specified.
+
+### Returns
+
+An array of unique values from the specified column.
+
+## Use case examples
+
+<Tabs>
+<Tab title="Log analysis">
+
+In this use case, you want to collect all unique HTTP methods used by each user in the log data.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_set(method) by id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D+%7C+summarize+make_set%28method%29+by+id%22%7D)
+
+**Output**
+
+| id         | make_set_method              |
+|------------|------------------------------|
+| user123    | ['GET', 'POST']               |
+| user456    | ['GET']                       |
+
+This query groups the log entries by `id` and returns all unique HTTP methods used by each user.
+
+</Tab>
+<Tab title="OpenTelemetry traces">
+
+In this use case, you want to gather the unique service names involved in a trace.
+
+**Query**
+
+```kusto
+['otel-demo-traces']
+| summarize make_set(['service.name']) by trace_id
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27otel-demo-traces%27%5D+%7C+summarize+make_set%28%5B%27service.name%27%5D%29+by+trace_id%22%7D)
+
+**Output**
+
+| trace_id       | make_set_service.name           |
+|----------------|---------------------------------|
+| traceA         | ['frontend', 'checkoutservice'] |
+| traceB         | ['cartservice']                 |
+
+This query groups the telemetry data by `trace_id` and collects the unique services involved in each trace.
+
+</Tab>
+<Tab title="Security logs">
+
+In this use case, you want to collect all unique HTTP status codes for each country where the requests originated.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| summarize make_set(status) by ['geo.country']
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B%27sample-http-logs%27%5D+%7C+summarize+make_set%28status%29+by+%5B%27geo.country%27%5D%22%7D)
+
+**Output**
+
+| geo.country | make_set_status    |
+|-------------|--------------------|
+| USA         | ['200', '404']     |
+| UK          | ['200']            |
+
+This query collects all unique HTTP status codes returned for each country from which requests were made.
+
+</Tab>
+</Tabs>
+
+## List of related aggregations
+
+- [**make_list**](/apl/aggregation-function/make-list): Similar to `make_set`, but returns all values, including duplicates, in a list. Use `make_list` if you want to preserve duplicates.
+- [**count**](/apl/aggregation-function/count): Counts the number of records in each group. Use `count` when you need the total count rather than the unique values.
+- [**dcount**](/apl/aggregation-function/dcount): Returns the distinct count of values in a column. Use `dcount` when you need the number of unique values, rather than an array of them.
+- [**max**](/apl/aggregation-function/max): Finds the maximum value in a group. Use `max` when you are interested in the largest value rather than collecting values.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+In Splunk SPL, the `values` function is similar to `make_set` in APL. The main difference is that while `values` returns all non-null values, `make_set` specifically returns only unique values and stores them in an array.
+
+<CodeGroup>
+```sql Splunk example
+| stats values(method) by id
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize make_set(method) by id
+```
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+In ANSI SQL, the `GROUP_CONCAT` or `ARRAY_AGG(DISTINCT)` functions are commonly used to aggregate unique values in a column. `make_set` in APL works similarly by aggregating distinct values from a specific column into an array, but it offers better performance for large datasets.
+
+<CodeGroup>
+```sql SQL example
+SELECT id, ARRAY_AGG(DISTINCT method)
+FROM sample_http_logs
+GROUP BY id;
+```
+
+```kusto APL equivalent
+['sample-http-logs']
+| summarize make_set(method) by id
+```
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

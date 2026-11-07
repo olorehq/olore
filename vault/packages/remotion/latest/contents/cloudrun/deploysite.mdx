@@ -1,5 +1,5 @@
 ---
-image: /generated/articles-docs-cloudrun-deploysite.png
+image: https://remotion.media/docs/generated/articles-docs-cloudrun-deploysite.png
 id: deploysite
 title: deploySite()
 slug: /cloudrun/deploysite
@@ -79,7 +79,15 @@ Callback function that gets called when uploading of the assets has progressed. 
 
 #### `webpackOverride?`
 
-Allows to pass a custom webpack override. See [`bundle()` -> webpackOverride](/docs/bundle#webpackoverride) for more information.
+Passes a custom Webpack override. It is ignored if `rspack` is `true`. See [`bundle()` → `webpackOverride`](/docs/bundle#webpackoverride).
+
+#### `bundlerOverride?`<AvailableFrom v="4.0.498" />
+
+Passes an override shared by Webpack and Rspack. See [`bundle()` → `bundlerOverride`](/docs/bundle#bundleroverride).
+
+#### `rspackOverride?`<AvailableFrom v="4.0.498" />
+
+Passes a custom Rspack override. See [`bundle()` → `rspackOverride`](/docs/bundle#rspackoverride).
 
 #### `enableCaching?`
 
@@ -109,13 +117,9 @@ Ignore an error that gets thrown if you pass an entry point file which does not 
 
 <Options id="disable-ask-ai" />
 
-#### `experimentalClientSideRenderingEnabled?`<AvailableFrom v="4.0.407"/>
-
-<Options id="enable-experimental-client-side-rendering" />
-
 #### `rspack?`<AvailableFrom v="4.0.426"/>
 
-<Options id="experimental-rspack" />
+<Options id="rspack" />
 
 ## Return value
 
@@ -151,6 +155,10 @@ An object with 3 entries:
 - `untouchedFiles`
 
 Each one is a `number`.
+
+## Compatibility
+
+<CompatibilityTable chrome={false} firefox={false} safari={false} nodejs bun serverlessFunctions={false} clientSideRendering="" serverSideRendering="" player="" studio="" hideBrowsers />
 
 ## See also
 

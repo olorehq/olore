@@ -1,7 +1,7 @@
 ---
 title: '`<APIKeys />` component'
 description: Clerk's <APIKeys /> component renders a UI to manage API keys.
-sdk: astro, chrome-extension, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
+sdk: astro, chrome-extension, electron, nextjs, nuxt, react, react-router, tanstack-react-start, vue, js-frontend
 ---
 
 The `<APIKeys />` component is used to manage API keys for your application. It allows you to create, edit, and revoke API keys for your application.
@@ -38,6 +38,16 @@ To utilize the `<APIKeys />` component, you must first enable API keys in the Cl
   <If sdk="react">
     ```tsx {{ filename: 'src/api-keys.tsx' }}
     import { APIKeys } from '@clerk/react'
+
+    export default function Page() {
+      return <APIKeys />
+    }
+    ```
+  </If>
+
+  <If sdk="electron">
+    ```tsx {{ filename: 'src/App.tsx' }}
+    import { APIKeys } from '@clerk/electron/react'
 
     export default function Page() {
       return <APIKeys />
@@ -110,8 +120,8 @@ To utilize the `<APIKeys />` component, you must first enable API keys in the Cl
 
   The following methods available on an instance of the [`Clerk`](/docs/reference/objects/clerk) class are used to render and control the `<APIKeys />` component:
 
-  - [`mountAPIKeys()`](#mount-api-keys)
-  - [`unmountAPIKeys()`](#unmount-api-keys)
+  - [`mountAPIKeys()`](#mountapikeys)
+  - [`unmountAPIKeys()`](#unmountapikeys)
 
   The following examples assume that you have followed the [quickstart](/docs/js-frontend/getting-started/quickstart) in order to add Clerk to your JavaScript application.
 
@@ -209,20 +219,6 @@ To utilize the `<APIKeys />` component, you must first enable API keys in the Cl
 All props are optional.
 
 <Properties>
-  - `perPage?`
-  - `number`
-
-  The number of API keys to show per page. Defaults to `10`.
-
-  ---
-
-  - `showDescription?`
-  - `boolean`
-
-  Whether to show the description field in the API key creation form. Defaults to `false`.
-
-  ---
-
   - `appearance?`
   - <code>[Appearance](/docs/guides/customizing-clerk/appearance-prop/overview) | undefined</code>
 
@@ -234,6 +230,20 @@ All props are optional.
   - `ReactNode`
 
   An element to be rendered while the component is mounting.
+
+  ---
+
+  - `perPage?`
+  - `number`
+
+  The number of API keys to show per page. Defaults to `10`.
+
+  ---
+
+  - `showDescription?`
+  - `boolean`
+
+  Whether to show the description field in the API key creation form. Defaults to `false`.
 </Properties>
 
 ## Customization

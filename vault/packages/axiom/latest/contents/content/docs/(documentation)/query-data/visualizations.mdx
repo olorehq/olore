@@ -1,0 +1,196 @@
+---
+title: Visualize
+description: 'Learn how to run powerful aggregations across your data to produce insights that are easy to understand and monitor.'
+keywords: ['axiom documentation', 'documentation', 'axiom', 'visualizations', 'aggregations', 'count', 'distinct', 'avg', 'max', 'min', 'sum', 'percentiles', 'histogram', 'topk', 'variance', 'stddev']
+---
+
+Visualizations are powerful aggregations of your data to produce insights that are easy to understand and monitor. With visualizations, you can create and obtain data stats, group fields, and observe methods in running deployments.
+
+This page introduces you to the visualizations supported by Axiom and some tips on how best to use them.
+
+<Info>
+The visualizations explained on this page are only available for APL queries.
+
+To visualize metrics data, see [MPL language features](/mpl/introduction).
+</Info>
+
+## `count`
+
+The `count` visualization counts all matching events and produces a time series chart.
+
+#### Arguments
+
+This visualization doesn’t take an argument.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`count` overview">
+  <img src="/docs/doc-assets/shots/count.png" alt="`count` overview" />
+</Frame>
+
+## `distinct`
+
+The `distinct` visualization counts each distinct occurrence of the distinct field inside the dataset and produce a time series chart.
+
+#### Arguments
+
+`field: any` is the field to aggregate.
+
+#### Group-By Behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`distinct` overview">
+  <img src="/docs/doc-assets/shots/distinct.png" alt="`distinct` overview" />
+</Frame>
+
+## `avg`
+
+The `avg` visualization averages the values of the field inside the dataset and produces a time series chart.
+
+#### Arguments
+
+`field: number` is the number field to average.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`avg` overview">
+  <img src="/docs/doc-assets/shots/average.png" alt="`avg` overview" />
+</Frame>
+
+## `max`
+
+The `max` visualization finds the maximum value of the field inside the dataset and produces a time series chart.
+
+#### Arguments
+
+`field: number` is the number field where Axiom finds the maximum value.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="max overview">
+  <img src="/docs/doc-assets/shots/max.png" alt="max overview" />
+</Frame>
+
+## `min`
+
+The `min` visualization finds the minimum value of the field inside the dataset and produces a time series chart.
+
+#### Arguments
+
+`field: number` is the number field where Axiom finds the minimum value.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`min` overview">
+  <img src="/docs/doc-assets/shots/min.png" alt="`min` overview" />
+</Frame>
+
+## `sum`
+
+The `sum` visualization adds all the values of the field inside the dataset and produces a time series chart.
+
+#### Arguments
+
+`field: number` is the number field where Axiom calculates the sum.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`sum` overview">
+  <img src="/docs/doc-assets/shots/sum.png" alt="`sum` overview" />
+</Frame>
+
+## `percentiles`
+
+The `percentiles` visualization calculates the requested percentiles of the field in the dataset and produces a time series chart.
+
+#### Arguments
+
+- `field: number` is the number field where Axiom calculates the percentiles.
+- `percentiles: number [, ...]` is a list of percentiles , each a float between 0 and 100. For example, `percentiles(request_size, 95, 99, 99.9)`.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a horizontal bar chart, allowing for visual comparison across the groups.
+
+<Frame caption="`percentile` overview">
+  <img src="/docs/doc-assets/shots/percentile.png" alt="`percentile` overview" />
+</Frame>
+
+## `histogram`
+
+The `histogram` visualization buckets the field into a distribution of N buckets, returning a time series heatmap chart.
+
+#### Arguments
+
+- `field: number` is the number field where Axiom calculates the distribution.
+- `nBuckets` is the number of buckets to return. For example, `histogram(request_size, 15)`.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series histogram. Hovering over a group in the totals table shows only the results for that group in the histogram.
+
+<Frame caption="`histogram` overview">
+  <img src="/docs/doc-assets/shots/histogram.png" alt="`histogram` overview" />
+</Frame>
+
+## `topk`
+
+The `topk` visualization calculates the top values for a field in a dataset.
+
+#### Arguments
+
+- `field: number` is the number field where Axiom calculates the top values.
+- `nResults` is the number of top values to return. For example, `topk(method, 10)`.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`topk` overview">
+  <img src="/docs/doc-assets/shots/topk.png" alt="`topk` overview" />
+</Frame>
+
+## `variance`
+
+The `variance` visualization calculates the variance of the field in the dataset and produces a time series chart.
+The `variance` aggregation returns the sample variance of the fields of the dataset.
+
+#### Arguments
+
+`field: number` is the number field where Axiom calculates the variance.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`variance` overview">
+  <img src="/docs/doc-assets/shots/variance.png" alt="`variance` overview" />
+</Frame>
+
+## `stddev`
+
+The `stddev` visualization calculates the standard deviation of the field in the dataset and produces a time series chart.
+The `stddev` aggregation returns the sample standard deviation of the fields of the dataset.
+
+#### Arguments
+
+`field: number` is the number field where Axiom calculates the standard deviation.
+
+#### Group-by behaviour
+
+The visualization produces a separate result for each group plotted on a time series chart.
+
+<Frame caption="`stddev` overview">
+  <img src="/docs/doc-assets/shots/stdev.png" alt="`stddev` overview" />
+</Frame>

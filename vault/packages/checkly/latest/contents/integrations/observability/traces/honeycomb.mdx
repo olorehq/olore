@@ -1,0 +1,25 @@
+---
+title: 'Export traces to Honeycomb'
+description: 'Send Checkly traces to Honeycomb with an Ingest API key.'
+sidebarTitle: 'Honeycomb'
+canonical: 'https://www.checklyhq.com/docs/integrations/observability/traces/honeycomb/'
+---
+
+import OtlpVendorIntro from '/snippets/otlp-vendor-intro.mdx';
+import OtlpVendorOutro from '/snippets/otlp-vendor-outro.mdx';
+
+<OtlpVendorIntro vendor="Honeycomb" />
+
+1. Get the endpoint for your Honeycomb region. US is `https://api.honeycomb.io/v1/traces` and EU is `https://api.eu1.honeycomb.io/v1/traces`.
+2. Get the key. In Honeycomb, select **Environments** > **Manage Environments**, open your environment, then go to **API Keys** > **Ingest** and select **Create Ingest API Key**. Copy the key.
+3. Paste the values into Checkly. On the [Traces settings page](https://app.checklyhq.com/settings/account/traces), turn on **Enable exporting traces**, paste the URL, and add the header from the table below.
+4. Find the spans. In Honeycomb, open the environment you used. The spans appear under service `checkly`.
+
+| Header name | Value |
+|---|---|
+| `x-honeycomb-team` | `<Ingest API key>` |
+
+Only Honeycomb Classic also needs an `x-honeycomb-dataset` header row. Environment keys do not.
+
+Honeycomb documents the endpoints in [Send data with OpenTelemetry](https://docs.honeycomb.io/send-data/opentelemetry/).
+<OtlpVendorOutro />

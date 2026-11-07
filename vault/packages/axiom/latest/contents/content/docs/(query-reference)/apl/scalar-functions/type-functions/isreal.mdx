@@ -1,0 +1,93 @@
+---
+title: isreal
+description: 'This page explains how to use the isreal function in APL.'
+---
+
+Use the `isreal` function to determine whether a value is a real number. This function is helpful when you need to validate data before performing numeric operations. For example, you can use `isreal` to filter out invalid values which could otherwise disrupt aggregations or calculations.
+
+You often use `isreal` in data cleaning pipelines, conditional logic, and when inspecting metrics like durations, latencies, or numeric identifiers. It’s especially useful when working with telemetry or log data that includes optional or incomplete numeric fields.
+
+## Usage
+
+### Syntax
+
+```kusto
+isreal(value)
+```
+
+### Parameters
+
+| Name  | Type    | Description                  |
+| ----- | ------- | ---------------------------- |
+| value | any | The input value to evaluate. |
+
+### Returns
+
+Returns `true` if the input is a valid real number. Returns `false` for strings, nulls, or non-numeric types.
+
+## Example
+
+Use `isreal` to identify real number values.
+
+**Query**
+
+```kusto
+['sample-http-logs']
+| extend is_real = isreal(123.11)
+```
+
+[Run in Playground](https://play.axiom.co/axiom-play-qf1k/query?initForm=%7B%22apl%22%3A%22%5B'sample-http-logs'%5D%20%7C%20extend%20is_real%20%3D%20isreal(123.11)%22%7D)
+
+**Output**
+
+| _time               | is_real |
+| -------------------- | ----------------- |
+| 2025-06-05T12:01:00Z | true               |
+
+## List of related functions
+
+- [isimei](/apl/scalar-functions/type-functions/isimei): Checks whether a value is a valid International Mobile Equipment Identity (IMEI) number.
+- [ismap](/apl/scalar-functions/type-functions/ismap): Checks whether a value is of the `dynamic` type and represents a mapping.
+- [iscc](/apl/scalar-functions/type-functions/iscc): Checks whether a value is a valid credit card (CC) number.
+- [isstring](/apl/scalar-functions/type-functions/isstring): Checks whether a value is a string. Use this for scalar string validation.
+- [isutf8](/apl/scalar-functions/type-functions/isutf8): Checks whether a value is a valid UTF-8 encoded sequence.
+
+## Other query languages
+
+<LanguageComparisons>
+<Accordion title="Splunk SPL users">
+
+Splunk uses the `isnum` function to check whether a string represents a numeric value.
+
+<CodeGroup>
+```sql Splunk example
+... | eval is_valid = if(isnum(duration), "yes", "no")
+````
+
+```kusto APL equivalent
+... | extend is_valid = iff(isreal(duration), 'yes', 'no')
+```
+
+</CodeGroup>
+
+</Accordion>
+<Accordion title="ANSI SQL users">
+
+ANSI SQL doesn’t have a direct equivalent to `isreal`. You typically check for numeric values using `IS NOT NULL` and avoid known invalid markers manually. APL’s `isreal` abstracts this by directly checking if a value is a real number.
+
+<CodeGroup>
+```sql SQL example
+SELECT *,
+       CASE WHEN duration IS NOT NULL THEN 'yes' ELSE 'no' END AS is_valid
+FROM traces
+```
+
+```kusto APL equivalent
+['otel-demo-traces']
+| extend is_valid = iff(isreal(duration), 'yes', 'no')
+```
+
+</CodeGroup>
+
+</Accordion>
+</LanguageComparisons>

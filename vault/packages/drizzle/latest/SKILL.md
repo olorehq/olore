@@ -13,13 +13,13 @@ Drizzle ORM documentation. Use for Drizzle queries, schema definitions, migratio
 |------|-------------|
 | Overview | `contents/overview.mdx` |
 | Quick start | `contents/quick.mdx` |
-| Schema declaration | `contents/sql-schema-declaration.mdx` |
-| SELECT queries | `contents/select.mdx` |
-| INSERT / UPDATE / DELETE | `contents/insert.mdx`, `contents/update.mdx`, `contents/delete.mdx` |
-| Relational queries | `contents/rqb.mdx` |
-| Migrations (Kit) | `contents/kit-overview.mdx` |
+| Schema declaration | `contents/pg/sql-schema-declaration.mdx` (also mysql/, sqlite/, mssql/, cockroach/, singlestore/) |
+| SELECT queries | `contents/pg/select.mdx` |
+| INSERT / UPDATE / DELETE | `contents/pg/insert.mdx`, `update.mdx`, `delete.mdx` |
+| Relational queries | `contents/pg/rqb.mdx` |
+| Migrations (Kit) | `contents/pg/kit-overview.mdx` |
 | Drizzle config | `contents/drizzle-config-file.mdx` |
-| Column types (PG) | `contents/column-types/pg.mdx` |
+| Column types (PG) | `contents/pg/column-types.mdx` |
 | Get started by DB | `contents/get-started/` |
 
 ## When to use
