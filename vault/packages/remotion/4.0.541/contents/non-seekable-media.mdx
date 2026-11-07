@@ -1,0 +1,48 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-non-seekable-media.png
+id: non-seekable-media
+title: Non-seekable media
+crumb: "Troubleshooting"
+---
+
+If you see the following error in the console:
+
+```
+The media [src] cannot be seeked.
+This could be one of two reasons:
+1) The media resource was replaced while the video is playing but it was not loaded yet.
+2) The media does not support seeking.
+Please see https://remotion.dev/docs/non-seekable-media for assistance.
+```
+
+## Meaning
+
+The cause for this is that when requesting the media file, either:
+
+- No `Content-Range` HTTP header has been sent by the server, making it impossible for the browser and therefore for Remotion to seek the media.
+- No `Content-Length` HTTP header has been sent by the server, also preventing seeking.
+- The file does not support [Faststart](https://www.videoconverterfactory.com/tips/mp4-fast-start.html) or equivalent.
+
+You can verify that this is the problem by opening the video or audio in a new tab and observe that you cannot seek the media.
+
+Alternatively, it could be that the media was prevented from being loaded into a video tag.
+
+The following headers can prevent a file from being included:
+
+- `X-Frame-Options: DENY`
+- `X-Frame-Options: SAMEORIGIN`
+- `X-Frame-Options: ALLOW-FROM https://example.com/`
+- `Content-Security-Policy: frame-ancestors 'none'`
+- `Content-Security-Policy: frame-ancestors 'self'`
+- `Content-Security-Policy: frame-ancestors https://example.com/`
+- `Cross-Origin-Resource-Policy: same-origin`
+
+Those videos files cannot be loaded due to policy from the server.
+
+## Solutions
+
+Consider one of these solutions:
+
+- Use the [`<Video>`](/docs/media/video) component from `@remotion/media`, which can handle more cases.
+- Serve the media from a webhost that supports the `Range` header and returns a `Content-Length` and `Content-Range` header.
+- Download the media and import it locally using `staticFile`.

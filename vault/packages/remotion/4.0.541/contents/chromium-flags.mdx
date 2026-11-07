@@ -1,0 +1,168 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-chromium-flags.png
+id: chromium-flags
+title: Chromium flags
+crumb: 'Tweaks'
+---
+
+We allow you to set the following flags in Chromium and Google Chrome since Remotion 2.6.5:
+
+## `--disable-web-security`
+
+This will most notably disable CORS among other security features.
+
+:::note
+Remotion will automatically append the `--user-data-dir` flag.
+:::
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.disableWebSecurity`](/docs/options/disable-web-security) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#chromiumoptions) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#chromiumoptions).
+
+### Via CLI flag
+
+Pass [`--disable-web-security`](/docs/options/disable-web-security).
+
+### Via config file
+
+Use [setChromiumDisableWebSecurity()](/docs/config#setchromiumdisablewebsecurity).
+
+```tsx twoslash
+import {Config} from '@remotion/cli/config';
+
+// ---cut---
+
+Config.setChromiumDisableWebSecurity(true);
+```
+
+:::note
+Prior to `v3.3.39`, the option was called `Config.Puppeteer.setChromiumDisableWebSecurity()`.
+:::
+
+## `--ignore-certificate-errors`
+
+Results in invalid SSL certificates, such as self-signed ones, being ignored.
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.ignoreCertificateErrors`](/docs/options/ignore-certificate-errors) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#chromiumoptions) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#chromiumoptions).
+
+### Via CLI flag
+
+Pass [`--ignore-certificate-errors`](/docs/options/ignore-certificate-errors).
+
+### Via config file
+
+Use [setChromiumIgnoreCertificateErrors()](/docs/config#setchromiumignorecertificateerrors).
+
+```tsx twoslash
+import {Config} from '@remotion/cli/config';
+
+// ---cut---
+
+Config.setChromiumIgnoreCertificateErrors(true);
+```
+
+:::note
+Prior to `v3.3.39`, the option was called `Config.Puppeteer.setChromiumIgnoreCertificateErrors()`.
+:::
+
+## `--disable-headless`
+
+<Options id="disable-headless" />
+
+Whether a window opens depends on the browser executable:
+
+| Browser executable                                                                               | Opens a window                                |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Default Chrome Headless Shell                                                                    | No. Chrome Headless Shell has no headed mode. |
+| [Chrome for Testing](/docs/miscellaneous/chrome-headless-shell#using-chrome-for-testing-instead) | Yes.                                          |
+| Custom desktop Chrome or Chromium                                                                | Yes.                                          |
+| Custom Chrome Headless Shell                                                                     | No.                                           |
+
+On Linux, headed mode requires a running display server. It is not available on Remotion Lambda, Cloud Run or Vercel.
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.headless: false`](/docs/options/disable-headless) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions).
+
+Also pass `chromeMode: 'chrome-for-testing'`, or provide a compatible desktop browser using `browserExecutable`.
+
+### Via CLI flag
+
+Pass [`--disable-headless`](/docs/options/disable-headless) together with `--chrome-mode=chrome-for-testing`:
+
+```bash title="Render with a visible Chrome window"
+npx remotion render ... --chrome-mode=chrome-for-testing --disable-headless
+```
+
+Alternatively, combine it with [`--browser-executable`](/docs/options/browser-executable) to use a custom desktop browser.
+
+### Via config file
+
+Use [setChromiumHeadlessMode()](/docs/config#setchromiumheadlessmode) and select Chrome for Testing:
+
+```tsx twoslash title="remotion.config.ts"
+import {Config} from '@remotion/cli/config';
+
+// ---cut---
+
+Config.setChromeMode('chrome-for-testing');
+Config.setChromiumHeadlessMode(false);
+```
+
+:::note
+Prior to `v3.3.39`, the option was called `Config.Puppeteer.setChromiumHeadlessMode()`.
+:::
+
+## `--gl`
+
+<Options id="gl" />
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.gl`](/docs/options/gl) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions#chromiumoptions), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#chromiumoptions) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#chromiumoptions).
+
+### Via CLI flag
+
+Pass [`--gl=swiftshader`](/docs/options/gl).
+
+### Via config file
+
+```tsx twoslash
+import {Config} from '@remotion/cli/config';
+
+// ---cut---
+
+Config.setChromiumOpenGlRenderer('swiftshader');
+```
+
+:::note
+Prior to `v3.3.39`, the option was called `Config.Puppeteer.setChromiumOpenGlRenderer()`.
+:::
+
+## `--user-agent`<AvailableFrom v="3.3.83"/>
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.userAgent`](/docs/options/user-agent) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions#chromiumoptions), [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda#chromiumoptions), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#chromiumoptions) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#chromiumoptions).
+
+### Via CLI flag
+
+Pass [`--user-agent`](/docs/options/user-agent).
+
+## `--dark-mode`<AvailableFrom v="4.0.381"/>
+
+<Options id="dark-mode" />
+
+### Via Node.JS APIs
+
+Pass [`chromiumOptions.darkMode`](/docs/options/dark-mode) in rendering APIs, including [`getCompositions()`](/docs/renderer/get-compositions#chromiumoptions), [`renderMediaOnLambda()`](/docs/lambda/rendermediaonlambda#chromiumoptions), [`renderMediaOnVercel()`](/docs/vercel/render-media-on-vercel#chromiumoptions) and [`renderStillOnVercel()`](/docs/vercel/render-still-on-vercel#chromiumoptions).
+
+### Via CLI flag
+
+Pass [`--dark-mode`](/docs/options/dark-mode).
+
+## Need more flags?
+
+Open a [GitHub issue](https://github.com/remotion-dev/remotion/issues/new?assignees=&labels=&template=feature_request.md&title=) to request it.

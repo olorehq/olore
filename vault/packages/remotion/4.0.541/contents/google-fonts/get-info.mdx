@@ -1,0 +1,113 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-google-fonts-get-info.png
+title: getInfo()
+crumb: '@remotion/google-fonts'
+---
+
+import {AvailableFonts} from '../../components/AvailableFonts';
+
+# `getInfo()`
+
+_Part of the [`@remotion/google-fonts`](/docs/google-fonts) package_
+
+Each font exports a `getInfo()` function that returns information such as the available weights, styles and subsets.
+
+## Usage
+
+Import `getInfo()` from a generated font module:
+
+```tsx twoslash title="Get info about the font"
+import {getInfo} from '@remotion/google-fonts/Montserrat';
+console.log(getInfo());
+```
+
+## Return value
+
+An object containing metadata about the font.
+
+```json title="Example value of info object"
+{
+  "fontFamily": "Titan One",
+  "importName": "TitanOne",
+  "version": "v13",
+  "url": "https://fonts.googleapis.com/css2?family=Titan+One:ital,wght@0,400",
+  "unicodeRanges": {
+    "latin-ext": "U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF",
+    "latin": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+  },
+  "fonts": {
+    "normal": {
+      "400": {
+        "latin-ext": "https://fonts.gstatic.com/s/titanone/v13/mFTzWbsGxbbS_J5cQcjCmjgm6Es.woff2",
+        "latin": "https://fonts.gstatic.com/s/titanone/v13/mFTzWbsGxbbS_J5cQcjClDgm.woff2"
+      }
+    }
+  },
+  "subsets": ["latin", "latin-ext"]
+}
+```
+
+### `fontFamily`
+
+The font family name.
+
+### `importName`
+
+The name used to import the generated font module.
+
+### `version`
+
+The Google Fonts version identifier.
+
+### `url`
+
+The Google Fonts CSS URL for the static font variants.
+
+### `unicodeRanges`
+
+The Unicode range covered by each character subset.
+
+### `fonts`
+
+The source URL of each available combination of style, weight and character subset.
+
+### `subsets`
+
+The character subsets supported by the font.
+
+### `variable?`<AvailableFrom v="4.0.525" />
+
+For fonts that support variable axes, this property contains the variable font metadata. It is omitted for non-variable fonts.
+
+```tsx twoslash title="Read variable font axes"
+import {getInfo} from '@remotion/google-fonts/NotoSans';
+
+const variable = getInfo().variable;
+
+if (variable) {
+  console.log(variable.axes.wght);
+  // {min: 100, max: 900}
+}
+```
+
+#### `axes`
+
+An object containing the minimum and maximum value of each variation axis.
+
+#### `fontFaces`
+
+The style, weight range, stretch range, character subset, Unicode range and source URL of each variable font face.
+
+#### `url`
+
+The Google Fonts CSS URL used to retrieve the variable font faces.
+
+## Compatibility
+
+<CompatibilityTable chrome firefox safari nodejs bun serverlessFunctions clientSideRendering serverSideRendering player studio />
+
+## See also
+
+- [Fonts](/docs/fonts)
+- [`@remotion/google-fonts`](/docs/google-fonts)
+- [`loadVariableFont()`](/docs/google-fonts/load-variable-font)

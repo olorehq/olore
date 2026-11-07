@@ -1,0 +1,283 @@
+---
+icon: authenticationOtherSocialProviders
+title: Other Social Providers
+description: Other social providers setup and usage.
+---
+
+Better Auth supports any social provider that implements OAuth 2.0 or OpenID Connect (OIDC) through the [Generic OAuth Plugin](/docs/plugins/generic-oauth). You can use a built-in provider helper, install a community provider helper, or configure a provider manually.
+
+## Installation
+
+<Steps>
+  <Step>
+    ### Add the plugin to your auth config
+
+    To use the Generic OAuth plugin, add it to your auth config.
+
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth"
+    import { genericOAuth } from "better-auth/plugins" // [!code highlight]
+
+    export const auth = betterAuth({
+        // ... other config options
+        plugins: [
+            genericOAuth({ // [!code highlight]
+                config: [ // [!code highlight]
+                    { // [!code highlight]
+                        providerId: "provider-id", // [!code highlight]
+                        clientId: "test-client-id", // [!code highlight]
+                        clientSecret: "test-client-secret", // [!code highlight]
+                        discoveryUrl: "https://auth.example.com/.well-known/openid-configuration", // [!code highlight]
+                        // ... other config options // [!code highlight]
+                    }, // [!code highlight]
+                    // Add more providers as needed // [!code highlight]
+                ] // [!code highlight]
+            }) // [!code highlight]
+        ]
+    })
+    ```
+  </Step>
+
+  <Step>
+    ### Create your auth client
+
+    ```ts title="auth-client.ts"
+    import { createAuthClient } from "better-auth/client"
+
+    const authClient = createAuthClient()
+    ```
+  </Step>
+</Steps>
+
+<Callout>
+  Read more about installation and usage of the Generic OAuth plugin
+  [Generic OAuth plugin documentation](/docs/plugins/generic-oauth#usage).
+</Callout>
+
+## Example Usage
+
+Here's a basic example of configuring a generic OAuth provider:
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth"
+import { genericOAuth } from "better-auth/plugins"
+
+export const auth = betterAuth({
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "provider-id",
+          clientId: process.env.CLIENT_ID,
+          clientSecret: process.env.CLIENT_SECRET,
+          discoveryUrl: "https://auth.example.com/.well-known/openid-configuration",
+        },
+      ],
+    }),
+  ],
+})
+```
+
+## Provider Helpers
+
+Provider helpers package provider-specific endpoints, scopes, and profile mapping as reusable `GenericOAuthConfig` factories.
+
+### Built-in Provider Helpers
+
+Better Auth includes helpers for these providers:
+
+* **Auth0** - `auth0(options)`
+* **Gumroad** - `gumroad(options)`
+* **HubSpot** - `hubspot(options)`
+* **Keycloak** - `keycloak(options)`
+* **LINE** - `line(options)`
+* **Microsoft Entra ID (Azure AD)** - `microsoftEntraId(options)`
+* **Okta** - `okta(options)`
+* **Patreon** - `patreon(options)`
+* **Slack** - `slack(options)`
+* **Yandex** - `yandex(options)`
+
+Here's an example using Slack:
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth"
+import { genericOAuth, slack } from "better-auth/plugins"
+
+export const auth = betterAuth({
+  plugins: [
+    genericOAuth({
+      config: [
+        slack({
+          clientId: process.env.SLACK_CLIENT_ID,
+          clientSecret: process.env.SLACK_CLIENT_SECRET,
+        }),
+      ],
+    }),
+  ],
+})
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.social({
+  provider: "slack",
+  callbackURL: "/dashboard",
+})
+```
+
+Each helper accepts common OAuth options through `BaseOAuthProviderOptions`, plus these provider-specific fields:
+
+* **Auth0**: Requires `domain` (for example, `dev-xxx.eu.auth0.com`)
+* **HubSpot**: Accepts optional `scopes`, which default to `["oauth"]`
+* **Keycloak**: Requires `issuer` (for example, `https://my-domain/realms/MyRealm`)
+* **LINE**: Accepts an optional `providerId`. Call `line()` with different provider IDs and credentials to support multiple country-specific channels
+* **Microsoft Entra ID**: Requires a concrete tenant GUID. Use the built-in [Microsoft social provider](/docs/authentication/microsoft) for the multi-tenant `"common"`, `"organizations"`, or `"consumers"` authorities
+* **Okta**: Requires `issuer` (for example, `https://dev-xxxxx.okta.com/oauth2/default`)
+
+All helpers accept these common options:
+
+* `clientId`
+* `clientSecret`
+* `tokenEndpointAuth`
+* `scopes`
+* `redirectURI`
+* `pkce`
+* `disableImplicitSignUp`
+* `disableSignUp`
+* `overrideUserInfo`
+* `endSessionEndpoint`
+* `postLogoutRedirectURI`
+* `disableProviderLogout`
+
+### Community Provider Helpers
+
+Provider authors and community maintainers can publish reusable helpers that return a typed [`GenericOAuthConfig`](/docs/plugins/generic-oauth) for use with the Generic OAuth plugin.
+
+<Callout type="info">
+  Community provider helpers are not official or verified by the Better Auth
+  team. Use them at your own discretion and review their source code before
+  integrating them into your application.
+</Callout>
+
+| Provider                                                          | Package                                  | Repository                                                                                                 | Maintained by                                        |
+| ----------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [AgentID](https://agentid.com)                                    | `@agentmail/agentid-better-auth`         | [agentmail-to/agentid-better-auth](https://github.com/agentmail-to/agentid-better-auth)                    | [@agentmail-to](https://github.com/agentmail-to)     |
+| [EVE Online](https://developers.eveonline.com/docs/services/sso/) | `@localisprimary/better-auth-eve-online` | [localisprimary/better-auth-eve-online](https://github.com/localisprimary/better-auth-eve-online)          | [@localisprimary](https://github.com/localisprimary) |
+| [ThunderID](https://thunderid.dev)                                | `@thunderid/better-auth`                 | [thunder-id/javascript-sdks](https://github.com/thunder-id/javascript-sdks/tree/main/packages/better-auth) | [@thunder-id](https://github.com/thunder-id)         |
+
+#### Create a Provider Helper
+
+A provider helper accepts credentials and provider-specific options, then returns a `GenericOAuthConfig`.
+
+```ts title="provider.ts"
+import type {
+  BaseOAuthProviderOptions,
+  GenericOAuthConfig,
+} from "better-auth/plugins/generic-oauth";
+
+export interface ExampleOptions extends BaseOAuthProviderOptions {}
+
+export function example(
+  options: ExampleOptions,
+): GenericOAuthConfig<"example"> {
+  return {
+    providerId: "example",
+    discoveryUrl: "https://auth.example.com/.well-known/openid-configuration",
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    tokenEndpointAuth: options.tokenEndpointAuth,
+    scopes: options.scopes ?? ["openid", "email", "profile"],
+    redirectURI: options.redirectURI,
+  };
+}
+```
+
+Users install the helper from its author and pass it to Generic OAuth.
+
+```ts title="auth.ts"
+import { example } from "@example/better-auth";
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  plugins: [
+    genericOAuth({
+      config: [
+        example({
+          clientId: process.env.EXAMPLE_CLIENT_ID!,
+          clientSecret: process.env.EXAMPLE_CLIENT_SECRET!,
+        }),
+      ],
+    }),
+  ],
+});
+```
+
+To share a provider helper with the community, see the [contribution guidelines](/docs/reference/contributing#social-provider-integrations).
+
+## Configure a Provider Manually
+
+If you need to configure a provider that doesn't have a provider helper, you can configure it manually:
+
+### Instagram Example
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  // ... other config options
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "instagram",
+          clientId: process.env.INSTAGRAM_CLIENT_ID as string,
+          clientSecret: process.env.INSTAGRAM_CLIENT_SECRET as string,
+          authorizationUrl: "https://api.instagram.com/oauth/authorize",
+          tokenUrl: "https://api.instagram.com/oauth/access_token",
+          scopes: ["user_profile", "user_media"],
+        },
+      ],
+    }),
+  ],
+});
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.social({
+  provider: "instagram",
+  callbackURL: "/dashboard",
+});
+```
+
+### Coinbase Example
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  // ... other config options
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "coinbase",
+          clientId: process.env.COINBASE_CLIENT_ID as string,
+          clientSecret: process.env.COINBASE_CLIENT_SECRET as string,
+          authorizationUrl: "https://www.coinbase.com/oauth/authorize",
+          tokenUrl: "https://api.coinbase.com/oauth/token",
+          scopes: ["wallet:user:read"], // and more...
+        },
+      ],
+    }),
+  ],
+});
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.social({
+  provider: "coinbase",
+  callbackURL: "/dashboard",
+});
+```

@@ -1,0 +1,101 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-lambda-troubleshooting-rate-limit.png
+id: rate-limit
+sidebar_label: ConcurrentInvocationLimitExceeded
+title: AWS Rate Limit Troubleshooting
+crumb: 'Lambda Troubleshooting'
+---
+
+If you get an error message:
+
+```
+TooManyRequestsException: Rate Exceeded.
+```
+
+or
+
+```
+ConcurrentInvocationLimitExceeded
+```
+
+while calling a Lambda function, it means your concurrency limit has been reached.
+
+- **Concurrency limit**: The maximum amount of Lambda functions that can run concurrently per region per account.
+- **Burst limit**: The maximum amount of concurrency increase in 10 seconds (the burst limit is 1000)
+
+## Default concurrency limits
+
+By default, the concurrency limit is 1000 functions per region, however in some regions the burst limit is only 500, somewhat limiting the scale you can use.
+
+## New accounts using AWS Lambda
+
+According to AWS, "some accounts" which are new to AWS Lambda might get a very low concurrency limit such as 10 when they first start with AWS Lambda. In that case, increase the limit via the AWS console or the Remotion CLI (see below).
+
+### Render with one function
+
+From <AvailableFrom v="4.0.517" inline />, you can set `concurrency` to `1` to render the video on the main function.
+
+While waiting for AWS to approve a higher limit, use:
+
+```bash title="Terminal"
+npx remotion lambda render <serve-url> <composition-id> --concurrency=1
+```
+
+```ts twoslash title="render.ts"
+import {renderMediaOnLambda} from '@remotion/lambda/client';
+
+await renderMediaOnLambda({
+  region: 'us-east-1',
+  functionName: 'remotion-render-bds9aab',
+  serveUrl: 'https://example.com',
+  composition: 'MyVideo',
+  codec: 'h264',
+  concurrency: 1,
+});
+```
+
+A progress request may briefly use one additional invocation.
+
+This is slower than distributed rendering, but it is useful for testing Remotion Lambda on accounts with a low concurrency limit.
+
+### Use limited distributed rendering
+
+You can also set `concurrency` below your account limit. Leave capacity for the launch function, progress requests, other renders, and unrelated Lambda functions in the same region.
+
+For an account limit of 10, this command uses up to eight renderer functions and one launch function, leaving one invocation available for progress:
+
+```bash title="Terminal"
+npx remotion lambda render <serve-url> <composition-id> --concurrency=8
+```
+
+Use a lower value if other Lambda workloads share the quota. Request a quota increase for production workloads that need higher concurrency.
+
+## See your limits
+
+To see your limits, run
+
+```
+npx remotion lambda quotas
+```
+
+:::note
+If you get a permission error, repeat the user policy step in the [Setup Guide](/docs/lambda/setup) and update your user policy file in the AWS console.
+:::
+
+## Request an increase
+
+You can request a quota increase under [`https://console.aws.amazon.com/servicequotas/home`](https://console.aws.amazon.com/servicequotas/home) or using the [Remotion CLI](/docs/lambda/cli/quotas):
+
+```
+npx remotion lambda quotas increase
+```
+
+:::note
+This only works for AWS Root accounts, not the children of an organization. You can still request an increase via the console.
+:::
+
+[See here](/docs/lambda/limits#if-aws-asks-you-for-the-reason) for a default answer if AWS asks why you requested the increase.
+
+## Unhelpful?
+
+Contact the Remotion team, preferrably via [Discord](https://remotion.dev/discord) and we will be happy to help you with your rate limit problem.

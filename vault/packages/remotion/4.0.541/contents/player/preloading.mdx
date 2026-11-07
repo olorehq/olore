@@ -1,0 +1,175 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-player-preloading.png
+sidebar_label: 'Preloading'
+title: 'Preloading assets'
+crumb: '@remotion/player'
+---
+
+Assets should be preloaded before entering the scene so they are ready once they should be played.
+
+The recommended way is to use a [**default premounting for all items in the `<Player />`**](/docs/player/premounting#default-premounting-in-the-player).
+
+This article documents 2 other, **not recommended** approaches which were developed when Remotion was not yet as mature.
+
+## Preloading videos using `@remotion/preload`
+
+:::warning
+Don't use this for preloading audio and video: It only works for native HTML5 tags such as `<video>` and `<audio>`, but not for Remotion's own implementations such as `<Video>` and `<Audio>`.
+:::
+
+By preloading, a `<link type='preload'>` tag is placed on the page, signaling to the browser that it may start loading the media.  
+For videos, use [`preloadVideo()`](/docs/preload/preload-video) API, for audio use [`preloadAudio()`](/docs/preload/preload-audio), for images use [`preloadImage()`](/docs/preload/preload-image). Perform the preload outside a component or inside an [`useEffect()`](https://react.dev/reference/react/useEffect).
+
+```tsx twoslash
+import {preloadAudio, preloadVideo} from '@remotion/preload';
+
+const unpreloadVideo = preloadVideo('https://example.com/video.mp4');
+const unpreloadAudio = preloadAudio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+
+// Later, you can optionally clean up the preload
+unpreloadVideo();
+unpreloadAudio();
+```
+
+## Prefetching using `prefetch()`
+
+_Available in v3.2.23_
+
+:::warning
+Don't use this: It first needs to download the whole media and keep it in memory.
+:::
+
+By prefetching, the full media is downloaded and turned into a Blob URL using [`URL.createObjectURL()`](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL).  
+If you pass the original URL into a [`<Video>`](/docs/media/video), [`<Audio>`](/docs/media/audio), [`<Img>`](/docs/img), or a media tag from [`remotion`](/docs/remotion) such as [`<Html5Audio>`](/docs/html5-audio), [`<Html5Video>`](/docs/html5-video), or [`<OffthreadVideo>`](/docs/offthreadvideo), and the asset is prefetched, those components will use Blob URL instead.
+
+```tsx twoslash
+import {prefetch} from 'remotion';
+
+const {free, waitUntilDone} = prefetch('https://example.com/video.mp4');
+
+waitUntilDone().then(() => {
+  console.log('Video has finished loading');
+});
+
+// Call free() if you want to un-prefetch and free up the memory:
+free();
+```
+
+## `@remotion/preload` vs. `prefetch()`
+
+<table>
+  <tr>
+    <th></th>
+    <th>
+      <div>
+        <code>preloadAudio()</code>
+        <br />
+        <code>preloadVideo()</code>
+        <br />
+        <code>preloadImage()</code>
+        <br />
+        <code>preloadFont()</code>
+      </div>
+    </th>
+    <th>
+      <div>
+        <code>prefetch()</code>
+      </div>
+    </th>
+  </tr>
+  <tr>
+    <td>Works with</td>
+    <td>HTML5 audio/video tags, images, and fonts</td>
+    <td>
+      <a href="/docs/media/video">
+        <code>{'<Video/>'}</code>
+      </a>
+      ,{' '}
+      <a href="/docs/media/audio">
+        <code>{'<Audio/>'}</code>
+      </a>
+      ,{' '}
+      <a href="/docs/img">
+        <code>{'<Img/>'}</code>
+      </a>
+      , and media tags from <code>remotion</code>
+    </td>
+  </tr>
+  <tr>
+    <td>Mechanism</td>
+    <td>
+      Inserts a <code>{"<link type='preload'>"}</code> tag
+    </td>
+    <td>Fetches the asset and turns it into a URL blob or Base 64 URL</td>
+  </tr>
+  <tr>
+    <td>Readiness</td>
+    <td style={{color: 'green'}}>Ready to play when asset is partially loaded</td>
+    <td style={{color: 'red'}}>Asset must be fully fetched</td>
+  </tr>
+  <tr>
+    <td>Reliability</td>
+    <td style={{color: 'red'}}>No guarantee, just a signal to the browser</td>
+    <td style={{color: 'green'}}>Guaranteed to be ready, posssible to track progress of loading</td>
+  </tr>
+  <tr>
+    <td>Callback</td>
+    <td
+      style={{
+        color: 'red',
+      }}
+    >
+      No way to determine if ready
+    </td>
+    <td
+      style={{
+        color: 'green',
+      }}
+    >
+      Ready when promise resolves
+    </td>
+  </tr>
+  <tr>
+    <td>Package</td>
+    <td>@remotion/preload</td>
+    <td>remotion</td>
+  </tr>
+  <tr>
+    <td>Handles HTTP redirects</td>
+    <td>
+      Must use{' '}
+      <a href="/docs/preload/resolve-redirect">
+        <code>resolveRedirect()</code>
+      </a>
+    </td>
+    <td>Handled automatically</td>
+  </tr>
+  <tr>
+    <td>
+      <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">CORS</a>
+    </td>
+    <td>
+      Resource must support CORS if{' '}
+      <a href="/docs/preload/resolve-redirect">
+        <code>resolveRedirect()</code>
+      </a>{' '}
+      is used
+    </td>
+    <td>Resource must support CORS</td>
+  </tr>
+  <tr>
+    <td>Available from</td>
+    <td>v3.0.14</td>
+    <td>v3.2.23</td>
+  </tr>
+</table>
+
+## Preloading GIFs
+
+You can preload and preparse GIFs using [`preloadGif()`](/docs/gif/preload-gif)
+
+## See also
+
+- [`@remotion/preload`](/docs/preload)
+- [`prefetch()`](/docs/prefetch)
+- [Avoiding flickering in `<Player>`](/docs/troubleshooting/player-flicker)

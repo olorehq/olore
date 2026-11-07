@@ -1,0 +1,18 @@
+---
+id: TableState_RowPagination
+title: TableState_RowPagination
+---
+
+# Interface: TableState\_RowPagination
+
+Defined in: [features/row-pagination/rowPaginationFeature.types.ts:10](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/row-pagination/rowPaginationFeature.types.ts#L10)
+
+## Properties
+
+### pagination
+
+```ts
+pagination: PaginationState;
+```
+
+Defined in: [features/row-pagination/rowPaginationFeature.types.ts:11](https://github.com/TanStack/table/blob/main/packages/table-core/src/features/row-pagination/rowPaginationFeature.types.ts#L11)

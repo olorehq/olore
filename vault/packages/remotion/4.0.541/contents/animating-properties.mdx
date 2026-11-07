@@ -1,0 +1,114 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-animating-properties.png
+id: animating-properties
+title: Animating properties
+crumb: "The basics"
+---
+
+import {AnimatingProperties, EasingDemo, PosterizationDemo} from '../components/DocsDark';
+
+Animation works by changing properties over time.  
+For example: To fade the text in over two seconds, gradually change its `opacity` from `0` to `1`.
+
+```tsx twoslash {3, 9-12, 20-23} title="FadeIn.tsx"
+import { interpolate, Interactive, useCurrentFrame, useVideoConfig } from "remotion";
+// ---cut---
+const FadeInInner = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  return (
+    <Interactive.Div
+      style={{
+        fontSize: 80,
+        opacity: interpolate(frame, [0, 2 * fps], [0, 1], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        }),
+      }}
+    >
+      Hello World!
+    </Interactive.Div>
+  );
+};
+
+export const FadeIn = Interactive.create({
+  Component: FadeInInner,
+  layout: "absolute-fill",
+});
+```
+
+<AnimatingProperties />
+
+## Easing
+
+Add an `easing` option to apply a curve from [`Easing`](/docs/easing):
+
+```tsx twoslash {4} title="SlideIn.tsx"
+import { Easing, interpolate, Interactive, useCurrentFrame, useVideoConfig } from "remotion";
+const frame = useCurrentFrame();
+const { fps } = useVideoConfig();
+// ---cut---
+<Interactive.Div
+  style={{
+    translate: interpolate(frame, [0, 2 * fps], ["0px 240px", "0px 0px"], {
+      easing: Easing.bezier(0.42, 0, 0.58, 1),
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }),
+  }}
+>
+  Hello World!
+</Interactive.Div>
+```
+
+<EasingDemo />
+
+See [`Easing`](/docs/easing) for more curves.
+
+## Posterization
+
+[Posterization](/docs/posterization) makes an animation update in steps.  
+Sometimes this is useful for creating a certain style.
+
+```tsx twoslash {5} title="SlideIn.tsx"
+import { Easing, interpolate, Interactive, useCurrentFrame, useVideoConfig } from "remotion";
+const frame = useCurrentFrame();
+const { fps } = useVideoConfig();
+// ---cut---
+<Interactive.Div
+  style={{
+    translate: interpolate(frame, [0, 2 * fps], ["0px 240px", "0px 0px"], {
+      easing: Easing.bezier(0.42, 0, 0.58, 1),
+      posterize: 3,
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }),
+  }}
+>
+  Hello World!
+</Interactive.Div>
+```
+
+With [`posterize: 3`](/docs/interpolate#posterize), the position changes only every three frames.
+
+<PosterizationDemo />
+
+## Always animate using `useCurrentFrame()`
+
+Watch out for flickering issues during rendering that arise if you write animations that are not driven by [`useCurrentFrame()`](/docs/use-current-frame) – for example CSS transitions.
+
+[Read more about how Remotion's rendering works](/docs/flickering) - understanding it will help you avoid issues down the road.
+
+## Interactivity guidelines
+
+Using [`interpolate()`](/docs/interpolate) on inline properties is recommended, because it will show up as keyframes in the [Remotion Studio](/docs/studio).  
+See also: [Interactivity best practices](/docs/studio/interactivity-best-practices)
+
+## See also
+
+- [Don't use CSS animations](/docs/troubleshooting/css-animations)
+- [`interpolate()`](/docs/interpolate)
+- [`Easing`](/docs/easing)
+- [`spring()`](/docs/spring)
+- [Flickering](/docs/flickering)

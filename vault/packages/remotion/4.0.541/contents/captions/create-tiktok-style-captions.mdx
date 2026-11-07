@@ -1,0 +1,155 @@
+---
+image: https://remotion.media/docs/generated/articles-docs-captions-create-tiktok-style-captions.png
+title: createTikTokStyleCaptions()
+crumb: '@remotion/captions'
+---
+
+# createTikTokStyleCaptions()<AvailableFrom v="4.0.216"/>
+
+Using this function, you can segment tokens to create "pages" of captions, as commonly seen on TikTok videos.
+
+You may specify how often pages switch.
+A high value for `combineTokensWithinMilliseconds` will fit many words on 1 page, while a low value will lead to word-by-word animation.
+
+This function is safe to use in the browser, Node.js and Bun.
+
+:::note
+This API expects the whitespace to be included in the `text` field **before each word. Spaces are used as delimiters, and omitting them will cause the entire text to merge into a single line or page, resulting in poorly formatted captions.**.
+:::
+
+```tsx twoslash title="Create pages from captions"
+import {createTikTokStyleCaptions, Caption} from '@remotion/captions';
+
+const captions: Caption[] = [
+  {
+    text: 'Using',
+    startMs: 40,
+    endMs: 300,
+    timestampMs: 200,
+    confidence: null,
+  },
+  {
+    text: " Remotion's",
+    startMs: 300,
+    endMs: 900,
+    timestampMs: 440,
+    confidence: null,
+  },
+  {
+    text: ' TikTok',
+    startMs: 900,
+    endMs: 1260,
+    timestampMs: 1080,
+    confidence: null,
+  },
+  {
+    text: ' template,',
+    startMs: 1260,
+    endMs: 1950,
+    timestampMs: 1600,
+    confidence: null,
+  },
+];
+
+const {pages} = createTikTokStyleCaptions({
+  captions,
+  combineTokensWithinMilliseconds: 1200,
+});
+
+/* pages: [
+  {
+    text: "Using Remotion's",
+    startMs: 40,
+    durationMs: 860,
+    tokens: [
+      {
+        text: 'Using',
+        fromMs: 40,
+        toMs: 300,
+      },
+      {
+        text: " Remotion's",
+        fromMs: 300,
+        toMs: 900,
+      },
+    ],
+  },
+  {
+    text: 'TikTok template,',
+    startMs: 900,
+    durationMs: 1050,
+    tokens: [
+      {
+        text: 'TikTok',
+        fromMs: 900,
+        toMs: 1260,
+      },
+      {
+        text: ' template,',
+        fromMs: 1260,
+        toMs: 1950,
+      },
+    ],
+  }
+] */
+```
+
+## API
+
+### `captions`
+
+An array of [`Caption`](/docs/captions/caption) objects.
+
+### `combineTokensWithinMilliseconds`
+
+Controls how long captions are combined into a page. Once the current page's duration exceeds this value, the next caption that starts with a space begins a new page.
+
+### `breakOnSilenceAfterMilliseconds?`<AvailableFrom v="4.0.514" />
+
+_number_
+
+If set, a gap of at least this many milliseconds between the end of one caption and the start of the next begins a new page, even if `combineTokensWithinMilliseconds` has not been exceeded yet. By default, gaps do not cause an early page break.
+
+This compares caption timestamps and does not analyze the audio track.
+
+As with all page breaks, the previous page's `durationMs` extends until the next page starts, so the caption stays on screen through the pause.
+
+A value of `0` starts a new page at every word boundary, resulting in word-by-word pages.
+
+This option only adds earlier page breaks: `combineTokensWithinMilliseconds` remains the upper bound, and pages can only get shorter, never longer.
+
+## Return value
+
+An object with the following properties:
+
+### `pages`
+
+An array of `TikTokPage` objects.
+
+A page consists of:
+
+- `text`: The text of the page.
+- `startMs`: The start time of the page in milliseconds.
+- `durationMs`: The duration of the page in milliseconds (_from v4.0.261_).
+- `tokens`: An array of objects, if you want to animate word-per-word:
+  - `text`: The text of the token.
+  - `fromMs`: The absolute start time of the token in milliseconds.
+  - `toMs`: The absolute end time of the token in milliseconds.
+  - `pageBreakAfter`: Whether the source caption forced the page to end after this token (_from v4.0.517_).
+
+If a [`Caption`](/docs/captions/caption) has `pageBreakAfter: true`, the current page ends after the corresponding token and the next caption starts a new page. The token preserves the marker, while the page's `text` does not include a trailing newline.
+
+## Whitespace sensitivity
+
+The [`text`](/docs/captions/caption#text) field is whitespace sensitive. You should include spaces in it, ideally before each word.
+
+While rendering, apply the [`white-space: pre`](https://developer.mozilla.org/en-US/docs/Web/CSS/white-space) CSS property to the container of the caption to ensure that the spaces are preserved.
+
+## Compatibility
+
+<CompatibilityTable chrome firefox safari nodejs bun serverlessFunctions clientSideRendering serverSideRendering player studio />
+
+## See also
+
+- [Source code for this function](https://github.com/remotion-dev/remotion/blob/main/packages/captions/src/create-tiktok-style-captions.ts)
+- [`@remotion/captions`](/docs/captions/api)

@@ -1,0 +1,197 @@
+---
+icon: adaptersPostgreSQL
+title: PostgreSQL
+description: Integrate Better Auth with PostgreSQL.
+---
+
+PostgreSQL is a powerful, open-source relational database management system known for its advanced features, extensibility, and support for complex queries and large datasets.
+Read more about [PostgreSQL](https://www.postgresql.org/).
+
+## Example Usage
+
+Make sure you have PostgreSQL installed and configured.
+Then, you can connect it straight into Better Auth.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
+
+export const auth = betterAuth({
+  database: new Pool({
+    connectionString: "postgres://user:password@localhost:5432/database",
+  }),
+});
+```
+
+<Callout>
+  For more information, read Kysely's documentation to the
+  [PostgresDialect](https://kysely-org.github.io/kysely-apidoc/classes/PostgresDialect.html).
+</Callout>
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <thead>
+    <tr className="border-b">
+      <th>
+        <p className="font-bold text-[16px] mb-1">PostgreSQL Schema Generation</p>
+      </th>
+
+      <th>
+        <p className="font-bold text-[16px] mb-1">PostgreSQL Schema Migration</p>
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr className="h-10">
+      <td>✅ Supported</td>
+      <td>✅ Supported</td>
+    </tr>
+  </tbody>
+</table>
+
+<Tabs items={["migrate", "generate"]}>
+  <Tab value="migrate">
+    ```package-install
+    npx auth@latest migrate
+    ```
+  </Tab>
+
+  <Tab value="generate">
+    ```package-install
+    npx auth@latest generate
+    ```
+  </Tab>
+</Tabs>
+
+## Joins
+
+Database joins are useful when Better-Auth needs to fetch related data from multiple tables in a single query.
+Endpoints like `/get-session`, `/get-full-organization` and many others benefit greatly from this feature,
+seeing upwards of 2x to 3x performance improvements depending on database latency.
+
+The Kysely PostgreSQL dialect supports joins out of the box since version `1.4.0`.
+To enable this feature, set `advanced.database.joins` to `true` in your auth configuration.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+  advanced: {
+    database: {
+      joins: true,
+    },
+  },
+});
+```
+
+## Use a non-default schema
+
+PostgreSQL uses the `public` schema by default. You can select another schema explicitly with `database.schemaName` or configure PostgreSQL's `search_path`.
+
+When both are configured, Better Auth uses `database.schemaName`. Other unqualified queries continue to use the connection's `search_path`.
+
+### Set `database.schemaName`
+
+<Tabs items={["Kysely dialect", "Kysely instance"]}>
+  <Tab value="Kysely dialect">
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth";
+    import { PostgresDialect } from "kysely";
+    import { Pool } from "pg";
+
+    export const auth = betterAuth({
+      database: {
+        dialect: new PostgresDialect({
+          pool: new Pool({
+            connectionString: "postgres://user:password@localhost:5432/database",
+          }),
+        }),
+        type: "postgres",
+        schemaName: "auth", // [!code highlight]
+      },
+    });
+    ```
+  </Tab>
+
+  <Tab value="Kysely instance">
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth";
+    import { db } from "./database";
+
+    export const auth = betterAuth({
+      database: {
+        db,
+        type: "postgres",
+        schemaName: "auth", // [!code highlight]
+      },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+The schema applies to runtime queries and CLI migrations. `npx auth@latest migrate` creates it when needed and ignores same-named tables in other schemas.
+
+`npx auth@latest generate` starts the generated migration by creating the schema:
+
+```sql
+create schema if not exists "auth";
+```
+
+All subsequent statements use schema-qualified table names, such as `"auth"."user"`.
+
+The PostgreSQL role used by Better Auth must be able to create the schema and its tables. Otherwise, create the schema and grant access to that role before running `npx auth@latest migrate`.
+
+### Set `search_path`
+
+Use PostgreSQL's `search_path` instead when passing a `pg.Pool` directly, or when every unqualified query on the connection should use the same schema.
+
+When using `search_path`, the Better Auth CLI expects the schema to already exist. Create it and grant access to the connection role before running `npx auth@latest migrate`.
+
+<Tabs items={["Pool options", "Connection string"]}>
+  <Tab value="Pool options">
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth";
+    import { Pool } from "pg";
+
+    export const auth = betterAuth({
+      database: new Pool({
+        connectionString: "postgres://user:password@localhost:5432/database",
+        options: "-c search_path=auth",
+      }),
+    });
+    ```
+  </Tab>
+
+  <Tab value="Connection string">
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth";
+    import { Pool } from "pg";
+
+    export const auth = betterAuth({
+      database: new Pool({
+        connectionString: "postgres://user:password@localhost:5432/database?options=-c%20search_path%3Dauth",
+      }),
+    });
+    ```
+  </Tab>
+</Tabs>
+
+To make the schema the default when a PostgreSQL role connects to a specific database:
+
+```sql
+ALTER ROLE your_role IN DATABASE your_database
+SET search_path TO auth;
+```
+
+Reconnect after changing this default. Run `SHOW search_path` to verify the active value.
+
+## Additional Information
+
+PostgreSQL is supported under the hood via the [Kysely](https://kysely.dev/) adapter, any database supported by Kysely would also be supported. (<Link href="/docs/adapters/other-relational-databases">Read more here</Link>)
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
