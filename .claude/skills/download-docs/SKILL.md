@@ -64,6 +64,12 @@ bash -c 'source .claude/skills/build-docs/scripts/github.sh && download_from_git
 bash -c 'source .claude/skills/build-docs/scripts/url.sh && download_from_urls "vault/configs/{config_name}.json" "vault/packages" "{version}"'
 ```
 
+**With `--force`:** pass `"true"` (or `"--force"`) as the 4th argument, otherwise an already-built version is skipped:
+```bash
+bash -c 'source .claude/skills/build-docs/scripts/github.sh && download_from_github "vault/configs/{config_name}.json" "vault/packages" "{version}" true'
+```
+(Same for `download_from_urls`.)
+
 Verify download succeeded:
 ```bash
 test -f vault/packages/{config_name}/{version}/olore-lock.json && echo "OK" || echo "FAILED"
